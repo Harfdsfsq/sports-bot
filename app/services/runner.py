@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from dataclasses import asdict
 from datetime import UTC, datetime
 from typing import Any
 
 from app.config import Settings
+from app.providers.bookies_api import BookiesApiProvider
 from app.providers.odds_api_io import OddsApiIoProvider
 from app.providers.sstats import SStatsContextProvider
 from app.providers.the_odds_api import TheOddsApiProvider
@@ -20,6 +22,7 @@ class PredictionRunner:
         self.settings = settings
         self.the_odds = TheOddsApiProvider(settings)
         self.odds_api_io = OddsApiIoProvider(settings)
+        self.bookies_api = BookiesApiProvider(settings)
         self.sstats = SStatsContextProvider(settings)
         self.factory = CandidateFactory(settings)
         self.telegram = TelegramPublisher(settings)
@@ -34,7 +37,8 @@ class PredictionRunner:
             the_odds_offers = the_odds_snapshot.get("offers_by_match") or {}
 
             odds_api_io_offers, odds_io_stats, odds_io_preview = await self.odds_api_io.fetch_offers(matches)
-            merged_offers = merge_offers(self.settings, the_odds_offers, odds_api_io_offers)
+            bookies_api_offers, bookies_stats, bookies_preview = await self.bookies_api.fetch_offers(matches)
+            merged_offers = merge_offers(self.settings, the_odds_offers, odds_api_io_offers, bookies_api_offers)
 
             contexts, sstats_stats, sstats_preview = await self.sstats.fetch_context(matches)
             candidates, rejections, model_debug = self.factory.build_candidates(matches, merged_offers, contexts)
@@ -48,6 +52,7 @@ class PredictionRunner:
             source_stats = {
                 "the_odds_api": the_odds_snapshot.get("stats") or {},
                 "odds_api_io": odds_io_stats,
+                "bookies_api": bookies_stats,
                 "sstats": sstats_stats,
             }
             mode_counts: dict[str, int] = defaultdict(int)
@@ -64,10 +69,10 @@ class PredictionRunner:
                 "debug_path": self.settings.debug_path,
                 "source_stats": source_stats,
                 "mapping": {
-                    "matched_exact": odds_io_stats.get("matched_exact", 0),
-                    "matched_loose": odds_io_stats.get("matched_loose", 0),
-                    "matched_fuzzy": odds_io_stats.get("matched_fuzzy", 0),
-                    "unmatched_offer_events": odds_io_stats.get("unmatched_offer_events", 0),
+                    "matched_exact": odds_io_stats.get("matched_exact", 0) + bookies_stats.get("matched_exact", 0),
+                    "matched_loose": odds_io_stats.get("matched_loose", 0) + bookies_stats.get("matched_loose", 0),
+                    "matched_fuzzy": odds_io_stats.get("matched_fuzzy", 0) + bookies_stats.get("matched_fuzzy", 0),
+                    "unmatched_offer_events": odds_io_stats.get("unmatched_offer_events", 0) + bookies_stats.get("unmatched_offer_events", 0),
                     "sstats_exact": sstats_stats.get("matched_exact", 0),
                     "sstats_loose": sstats_stats.get("matched_loose", 0),
                     "sstats_fuzzy": sstats_stats.get("matched_fuzzy", 0),
@@ -87,10 +92,14 @@ class PredictionRunner:
                         "target_bookmakers": self.settings.target_bookmakers,
                         "consensus_bookmakers": self.settings.consensus_bookmakers,
                         "publish_dry_run": self.settings.publish_dry_run,
+                        "enable_bookies_api": self.settings.enable_bookies_api,
+                        "bookies_api_use_for_backfill_only": self.settings.bookies_api_use_for_backfill_only,
+                        "bookies_api_markets": self.settings.bookies_api_markets,
                     },
                     "source_previews": {
                         "the_odds_api": the_odds_snapshot.get("preview") or {},
                         "odds_api_io": odds_io_preview,
+                        "bookies_api": bookies_preview,
                         "sstats": sstats_preview,
                     },
                     "sample_matches": [
@@ -117,10 +126,12 @@ class PredictionRunner:
         except Exception as exc:
             error_text = f"{type(exc).__name__}: {exc}"
             self.state.save_run("error", error_text=error_text)
-            self.state.write_debug({
-                "created_at": datetime.now(UTC).isoformat(),
-                "error": error_text,
-            })
+            self.state.write_debug(
+                {
+                    "created_at": datetime.now(UTC).isoformat(),
+                    "error": error_text,
+                }
+            )
             raise
 
     @staticmethod
