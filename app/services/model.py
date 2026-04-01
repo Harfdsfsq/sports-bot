@@ -29,7 +29,7 @@ from app.utils import (
 class CandidateFactory:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.target_books = {normalize_bookmaker_name(name): True for name in settings.target_bookmakers}
+        self.target_books = {normalize_bookmaker_name(name): True for name in settings.target_bookmakers if normalize_bookmaker_name(name)}
 
     def build_candidates(
         self,
@@ -71,19 +71,34 @@ class CandidateFactory:
         model_base = self._derive_model_base(match, context, h2h_all)
 
         target_offers = [offer for offer in offers if self._is_target_book(offer.bookmaker)]
+        rejections["non_target_bookmaker"] += max(0, len(offers) - len(target_offers))
         if not target_offers:
-            target_offers = offers
+            debug = {
+                "match_key": match.match_key,
+                "sport": match.sport_key,
+                "league": match.league_name,
+                "home": match.home_team,
+                "away": match.away_team,
+                "offers_total": len(offers),
+                "target_offers": 0,
+                "groups": {key: sum(len(v) for v in books.values()) for key, books in grouped.items()},
+                "context": asdict(context) if context is not None else None,
+                "model_base": model_base,
+                "candidate_count": 0,
+                "mode": "target_bookmakers_only",
+            }
+            return [], rejections, debug
 
         seen_candidate_keys: dict[tuple[str, str, str, str], CandidateBet] = {}
         for offer in target_offers:
             tag = self._selection_tag(match, offer)
             group_key = self._group_key(offer)
             if not tag or not group_key:
-                rejections["unsupported_offer_shape"] += 1
+                rejections["unsupported_market_family"] += 1
                 continue
-            candidate = self._evaluate_offer(match, offer, grouped, context, model_base)
+            candidate, rejection_reason = self._evaluate_offer(match, offer, grouped, context, model_base)
             if candidate is None:
-                rejections["offer_rejected"] += 1
+                rejections[rejection_reason or "offer_rejected"] += 1
                 continue
             dedupe_key = (
                 candidate.family,
@@ -103,6 +118,7 @@ class CandidateFactory:
             "home": match.home_team,
             "away": match.away_team,
             "offers_total": len(offers),
+            "target_offers": len(target_offers),
             "groups": {key: sum(len(v) for v in books.values()) for key, books in grouped.items()},
             "context": asdict(context) if context is not None else None,
             "model_base": model_base,
@@ -117,18 +133,18 @@ class CandidateFactory:
         grouped: dict[str, dict[str, dict[str, dict[str, Any]]]],
         context: MatchContext | None,
         model_base: dict[str, Any],
-    ) -> CandidateBet | None:
+    ) -> tuple[CandidateBet | None, str | None]:
         tag = self._selection_tag(match, offer)
         group_key = self._group_key(offer)
         if not tag or not group_key:
-            return None
+            return None, "unsupported_market_family"
 
         target_book_key = normalize_bookmaker_name(offer.bookmaker)
         consensus = self._consensus_for_group(match, grouped, group_key, tag, exclude_book=target_book_key)
         if consensus is None or consensus.get("books_count", 0) < self.settings.min_books_for_consensus:
             consensus = self._consensus_for_group(match, grouped, group_key, tag, exclude_book=None)
         if consensus is None:
-            return None
+            return None, "no_consensus_group"
 
         market_prob = consensus["fair_probability"]
         books_count = int(consensus.get("books_count", 0))
@@ -145,7 +161,7 @@ class CandidateFactory:
             exclude_book=target_book_key,
         )
         if model_probability is None:
-            return None
+            return None, "no_consensus_group"
 
         confidence = self._build_confidence(
             offer=offer,
@@ -166,17 +182,17 @@ class CandidateFactory:
         ev_pct = (adjusted_probability * offer.price - 1.0) * 100.0
 
         if offer.price < self.settings.odds_min or offer.price > self.settings.odds_max:
-            return None
+            return None, "odds_out_of_range"
         if books_count < self.settings.min_books_publish:
-            return None
+            return None, "insufficient_books"
         if sources_count < self.settings.min_sources_publish:
-            return None
+            return None, "insufficient_sources"
         if confidence < self.settings.min_model_confidence:
-            return None
+            return None, "confidence_below_threshold"
         if edge_pct < self.settings.min_edge_pct:
-            return None
+            return None, "edge_below_threshold"
         if ev_pct < self.settings.min_ev_pct:
-            return None
+            return None, "ev_below_threshold"
 
         outlier_distance = price_distance_pct(offer.price, reference_price) if reference_price else None
         outlier_penalty = 0.0
@@ -186,6 +202,8 @@ class CandidateFactory:
                 0.0,
                 self.settings.outlier_max_penalty,
             )
+        if outlier_penalty >= self.settings.outlier_max_penalty:
+            return None, "outlier_penalty_too_high"
         publication_score = self._publication_score(
             family=offer.family,
             edge_pct=edge_pct,
@@ -196,10 +214,15 @@ class CandidateFactory:
             outlier_penalty=outlier_penalty,
         )
 
+        final_probability = adjusted_probability
+        model_mode = "market_only" if model_reason == "consensus" else model_reason
         reasons = [
+            f"mode={model_mode}",
             f"model={model_reason}",
             f"consensus_fair_odds={round2(consensus.get('fair_odds'))}",
             f"market_prob={round2(market_prob * 100.0)}%",
+            f"model_prob={round2(model_probability * 100.0)}%",
+            f"final_prob={round2(final_probability * 100.0)}%",
         ]
         if context and context.expected_home is not None and context.expected_away is not None:
             reasons.append(f"xg={round2(context.expected_home)}:{round2(context.expected_away)}")
@@ -216,8 +239,12 @@ class CandidateFactory:
             odds=offer.price,
             fair_odds=1.0 / adjusted_probability,
             implied_probability=implied,
+            market_probability=market_prob,
+            consensus_probability=market_prob,
             model_probability=model_probability,
+            final_probability=final_probability,
             adjusted_probability=adjusted_probability,
+            model_mode=model_mode,
             edge_pct=edge_pct,
             ev_pct=ev_pct,
             confidence=confidence,
@@ -232,6 +259,7 @@ class CandidateFactory:
                 "target_bookmaker": offer.bookmaker,
                 "consensus_books": consensus.get("bookmakers", []),
                 "consensus_sources": consensus.get("sources", []),
+                "mode": model_mode,
             },
             diagnostics={
                 "offer_point": offer.point,
@@ -239,6 +267,9 @@ class CandidateFactory:
                 "group_key": group_key,
                 "selection_tag": tag,
                 "market_probability": market_prob,
+                "consensus_probability": market_prob,
+                "model_probability": model_probability,
+                "final_probability": final_probability,
                 "reference_price": reference_price,
                 "consensus_fair_odds": consensus.get("fair_odds"),
                 "outlier_distance_pct": outlier_distance,
@@ -246,7 +277,7 @@ class CandidateFactory:
                 "match_mode": offer.metadata.get("match_mode"),
             },
             publication_score=publication_score,
-        )
+        ), None
 
     def _derive_model_base(self, match: Match, context: MatchContext | None, h2h_consensus: dict[str, Any] | None) -> dict[str, Any]:
         base: dict[str, Any] = {

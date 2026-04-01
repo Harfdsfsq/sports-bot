@@ -50,6 +50,9 @@ class PredictionRunner:
                 "odds_api_io": odds_io_stats,
                 "sstats": sstats_stats,
             }
+            mode_counts: dict[str, int] = defaultdict(int)
+            for candidate in candidates:
+                mode_counts[str(candidate.model_mode)] += 1
             summary = {
                 "matches_seen": len(matches),
                 "matches_with_offers": sum(1 for match in matches if merged_offers.get(match.match_key)),
@@ -71,6 +74,7 @@ class PredictionRunner:
                     "sstats_unmatched_rows": sstats_stats.get("unmatched_rows", 0),
                 },
                 "rejections": rejections,
+                "candidate_modes": dict(mode_counts),
             }
 
             self.state.write_debug(

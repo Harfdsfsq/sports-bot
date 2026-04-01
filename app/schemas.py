@@ -80,13 +80,17 @@ class CandidateBet:
     odds: float
     fair_odds: float
     implied_probability: float
+    market_probability: float
+    consensus_probability: float
     model_probability: float
+    final_probability: float
     adjusted_probability: float
     edge_pct: float
     ev_pct: float
     confidence: float
     books_count: int
     sources_count: int
+    model_mode: str = "market_only"
     point: float | None = None
     expected_home: float | None = None
     expected_away: float | None = None

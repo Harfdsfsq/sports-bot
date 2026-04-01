@@ -48,8 +48,13 @@ class OddsApiIoProvider:
             "unmatched_offer_events": 0,
             "markets_parsed": 0,
             "offers_parsed": 0,
+            "event_http_statuses": [],
+            "odds_http_statuses": [],
+            "payload_shapes": [],
+            "bookmakers_seen": 0,
+            "last_body_preview": None,
         }
-        preview: dict[str, Any] = {"unmatched_events": [], "matched_examples": []}
+        preview: dict[str, Any] = {"unmatched_events": [], "matched_examples": [], "response_debug": []}
         if not self.settings.enable_odds_api_io or not self.settings.odds_api_io_key or not matches:
             return {}, stats, preview
 
@@ -96,6 +101,14 @@ class OddsApiIoProvider:
                         parsed_offers, markets_parsed = self._parse_event_odds(row, entry["match"], entry["mode"])
                         stats["markets_parsed"] += markets_parsed
                         stats["offers_parsed"] += len(parsed_offers)
+                        stats["bookmakers_seen"] += len(row.get("bookmakers") or []) if isinstance(row.get("bookmakers"), (dict, list)) else 0
+                        preview["response_debug"].append({
+                            "event_id": event_id,
+                            "markets_parsed": markets_parsed,
+                            "offers_parsed": len(parsed_offers),
+                            "top_level_keys": sorted(list(row.keys()))[:12],
+                            "bookmakers_type": type(row.get("bookmakers") or {}).__name__,
+                        })
                         if parsed_offers:
                             offers_by_match[entry["match"].match_key].extend(parsed_offers)
 
@@ -122,6 +135,8 @@ class OddsApiIoProvider:
             except Exception:
                 stats["response_errors"] += 1
                 break
+            stats.setdefault("event_http_statuses", []).append(response.status_code)
+            stats["last_body_preview"] = response.text[:500]
             if response.status_code != 200:
                 stats["response_errors"] += 1
                 break
@@ -131,7 +146,11 @@ class OddsApiIoProvider:
                 stats["response_errors"] += 1
                 break
             if not isinstance(payload, list):
-                break
+                if isinstance(payload, dict):
+                    stats.setdefault("payload_shapes", []).append(",".join(sorted(payload.keys())[:10]))
+                    payload = payload.get("data") or payload.get("events") or payload.get("results") or []
+                if not isinstance(payload, list):
+                    break
             rows.extend([item for item in payload if isinstance(item, dict)])
             if len(payload) < self.settings.odds_api_io_page_limit:
                 break
@@ -243,6 +262,8 @@ class OddsApiIoProvider:
             except Exception:
                 stats["response_errors"] += 1
                 return []
+            stats.setdefault("odds_http_statuses", []).append(response.status_code)
+            stats["last_body_preview"] = response.text[:800]
             if response.status_code != 200:
                 stats["response_errors"] += 1
                 return []
@@ -252,8 +273,13 @@ class OddsApiIoProvider:
             stats["response_errors"] += 1
             return []
         if isinstance(payload, list):
+            stats.setdefault("payload_shapes", []).append("odds:list")
             return [item for item in payload if isinstance(item, dict)]
         if isinstance(payload, dict):
+            stats.setdefault("payload_shapes", []).append("odds:" + ",".join(sorted(payload.keys())[:10]))
+            direct_rows = payload.get("data") or payload.get("results") or payload.get("events")
+            if isinstance(direct_rows, list):
+                return [item for item in direct_rows if isinstance(item, dict)]
             rows: list[dict[str, Any]] = []
             for key, value in payload.items():
                 if isinstance(value, dict):
@@ -266,11 +292,24 @@ class OddsApiIoProvider:
 
     def _parse_event_odds(self, row: dict[str, Any], match: Match, match_mode: str) -> tuple[list[Offer], int]:
         bookmakers = row.get("bookmakers") or {}
-        if not isinstance(bookmakers, dict):
-            return [], 0
         offers: list[Offer] = []
         markets_parsed = 0
-        for bookmaker_name, markets in bookmakers.items():
+        bookmaker_rows: list[tuple[str, Any]] = []
+        if isinstance(bookmakers, dict):
+            bookmaker_rows.extend(bookmakers.items())
+        elif isinstance(bookmakers, list):
+            for bookmaker in bookmakers:
+                if not isinstance(bookmaker, dict):
+                    continue
+                bookmaker_name = str(bookmaker.get("name") or bookmaker.get("title") or bookmaker.get("key") or "")
+                bookmaker_rows.append((bookmaker_name, bookmaker))
+        else:
+            return [], 0
+        for bookmaker_name, markets in bookmaker_rows:
+            if isinstance(markets, dict):
+                markets = markets.get("markets") or markets.get("odds") or markets.get("lines") or markets
+                if isinstance(markets, dict):
+                    markets = list(markets.values())
             if not isinstance(markets, list):
                 continue
             for market in markets:
@@ -280,7 +319,9 @@ class OddsApiIoProvider:
                 if detected is None:
                     continue
                 family, subtype = detected
-                prices = market.get("odds") or []
+                prices = market.get("odds") or market.get("outcomes") or market.get("prices") or []
+                if isinstance(prices, dict):
+                    prices = [prices]
                 if not isinstance(prices, list):
                     continue
                 markets_parsed += 1

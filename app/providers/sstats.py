@@ -30,8 +30,12 @@ class SStatsContextProvider:
             "matched_loose": 0,
             "matched_fuzzy": 0,
             "unmatched_rows": 0,
+            "http_statuses": [],
+            "payload_shapes": [],
+            "last_body_preview": None,
+            "last_url": None,
         }
-        preview: dict[str, Any] = {"unmatched_rows": [], "matched_examples": []}
+        preview: dict[str, Any] = {"unmatched_rows": [], "matched_examples": [], "request_debug": []}
         if not self.settings.enable_sstats_context or not self.settings.sstats_api_key:
             return {}, stats, preview
 
@@ -58,6 +62,13 @@ class SStatsContextProvider:
                 stats["unmatched_rows"] += day_stats["unmatched_rows"]
                 preview["unmatched_rows"].extend(day_preview["unmatched_rows"][:10])
                 preview["matched_examples"].extend(day_preview["matched_examples"][:10])
+                if stats.get("last_url"):
+                    preview["request_debug"].append({
+                        "date": date_key,
+                        "url": stats.get("last_url"),
+                        "status": (stats.get("http_statuses") or [None])[-1],
+                        "shape": (stats.get("payload_shapes") or [None])[-1],
+                    })
         return contexts, stats, preview
 
     async def _fetch_day(self, client: httpx.AsyncClient, date_key: str, stats: dict[str, Any]) -> list[dict[str, Any]]:
@@ -69,12 +80,15 @@ class SStatsContextProvider:
         }
         headers = {"apikey": self.settings.sstats_api_key}
         stats["requests"] += 1
-        for url in [self.primary_url, self.fallback_url]:
+        for url in [self.primary_url, self.fallback_url, self.primary_url + "/", self.fallback_url + "/"]:
+            stats["last_url"] = url
             try:
                 response = await client.get(url, params=params, headers=headers)
             except Exception:
                 stats["response_errors"] += 1
                 continue
+            stats.setdefault("http_statuses", []).append(response.status_code)
+            stats["last_body_preview"] = response.text[:400]
             if response.status_code != 200:
                 stats["response_errors"] += 1
                 continue
@@ -84,9 +98,19 @@ class SStatsContextProvider:
                 stats["response_errors"] += 1
                 continue
             if isinstance(payload, list):
+                stats.setdefault("payload_shapes", []).append("list")
                 return [row for row in payload if isinstance(row, dict)]
             if isinstance(payload, dict):
-                rows = payload.get("data") or payload.get("results") or payload.get("rows") or []
+                stats.setdefault("payload_shapes", []).append(",".join(sorted(payload.keys())[:10]))
+                rows = (
+                    payload.get("data")
+                    or payload.get("results")
+                    or payload.get("rows")
+                    or payload.get("games")
+                    or payload.get("matches")
+                    or payload.get("items")
+                    or []
+                )
                 if isinstance(rows, list):
                     return [row for row in rows if isinstance(row, dict)]
             return []

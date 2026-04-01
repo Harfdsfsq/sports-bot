@@ -76,6 +76,19 @@ _CYR_MAP = {
     "я": "ya",
 }
 
+BOOKMAKER_ALIAS_MAP = {
+    "unibet": "unibet",
+    "unibetuk": "unibet",
+    "unibetfr": "unibet",
+    "unibetnl": "unibet",
+    "unibetse": "unibet",
+    "bet365": "bet365",
+    "bet365com": "bet365",
+    "bet365sportsbook": "bet365",
+    "betfair": "betfair",
+    "betfairexchange": "betfair",
+}
+
 TEAM_ALIAS_MAP = {
     "internacional": "internacional",
     "sc internacional": "internacional",
@@ -201,14 +214,14 @@ def normalize_text(value: str) -> str:
         r"\bu\.?s\.?a\.?\b": " usa ",
         r"\bunited states\b": " usa ",
         r"\bivory coast\b": " cote d ivoire ",
-        r"\bwomen|womens|ladies|zh|femminile|femenino|feminino\b": " women ",
-        r"\breserve|reserves|res|ii team|b team\b": " reserves ",
-        r"\bu17|u18|u19|u20|u21|u23\b": " ",
+        r"\b(?:women|womens|ladies|zh|femminile|femenino|feminino)\b": " women ",
+        r"\b(?:reserve|reserves|res|ii team|b team)\b": " reserves ",
+        r"\b(?:u17|u18|u19|u20|u21|u23)\b": " ",
         r"\butd\b": " united ",
         r"\biii\b": " 3 ",
         r"\bii\b": " 2 ",
         r"\band\b": " ",
-        r"\bfc|cf|ac|sc|club|fk|bk|afc|calcio|hc|bc|kk|baseball|basketball|hockey|club de futbol|esporte clube|deportivo|de|da|del|cd|ud|sd\b": " ",
+        r"\b(?:fc|cf|ac|sc|club|fk|bk|afc|calcio|hc|bc|kk|baseball|basketball|hockey|club de futbol|esporte clube|deportivo|de|da|del|cd|ud|sd)\b": " ",
     }
     for pattern, replacement in replacements.items():
         text = re.sub(pattern, replacement, text)
@@ -239,7 +252,14 @@ def canonicalize_league_name(name: str) -> str:
 
 
 def normalize_bookmaker_name(name: str) -> str:
-    return "".join(ch for ch in str(name or "").lower() if ch.isalnum())
+    raw = "".join(ch for ch in str(name or "").lower() if ch.isalnum())
+    if not raw:
+        return ""
+    if raw.startswith("unibet"):
+        return "unibet"
+    if raw.startswith("bet365"):
+        return "bet365"
+    return BOOKMAKER_ALIAS_MAP.get(raw, raw)
 
 
 def make_bookmaker_lookup(names: Iterable[str]) -> dict[str, bool]:
