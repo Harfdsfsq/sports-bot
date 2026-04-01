@@ -1,3 +1,4 @@
+from collections import defaultdict
 from __future__ import annotations
 
 from dataclasses import asdict
