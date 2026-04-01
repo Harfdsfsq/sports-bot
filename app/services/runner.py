@@ -1,7 +1,3 @@
-from collections import defaultdict
-git add app/services/runner.py
-git commit -m "Fix missing defaultdict import in runner"
-git push
 from __future__ import annotations
 
 from collections import defaultdict
