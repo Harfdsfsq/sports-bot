@@ -38,7 +38,8 @@ jobs:
     BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
     BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
     BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
-
+  run: |
+          mkdir -p .data
   run: python -m app.cli run-once
       - name: Commit state and debug
         run: |
