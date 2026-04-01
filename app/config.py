@@ -4,7 +4,9 @@ from functools import lru_cache
 from typing import Any
 
 from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Annotated
+
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 LEGACY_SOCCER_KEYS = [
     "soccer_fifa_world_cup",
@@ -72,16 +74,16 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("API_FOOTBALL_KEY"),
     )
 
-    run_sports: list[str] = Field(default_factory=lambda: ["soccer"])
+    run_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["soccer"])
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
     publish_window_hours: int = Field(default=48, validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"))
 
-    target_bookmakers: list[str] = Field(default_factory=lambda: ["Bet365", "Unibet"])
-    consensus_bookmakers: list[str] = Field(
+    target_bookmakers: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["Bet365", "Unibet"])
+    consensus_bookmakers: Annotated[list[str], NoDecode] = Field(
         default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"]
     )
-    the_odds_regions: list[str] = Field(default_factory=lambda: ["eu", "uk", "us"])
-    the_odds_sport_keys: list[str] = Field(default_factory=lambda: LEGACY_SOCCER_KEYS.copy())
+    the_odds_regions: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["eu", "uk", "us"])
+    the_odds_sport_keys: Annotated[list[str], NoDecode] = Field(default_factory=lambda: LEGACY_SOCCER_KEYS.copy())
 
     allow_low_tier: bool = Field(default=False, validation_alias=AliasChoices("ALLOW_LOW_TIER", "EXCLUDE_EXOTIC_LEAGUES"))
     match_start_tolerance_hours: float = Field(
