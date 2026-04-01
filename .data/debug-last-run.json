@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-04-01T22:11:09.738026+00:00",
+  "created_at": "2026-04-01T22:18:58.062000+00:00",
   "summary": {
     "matches_seen": 0,
     "matches_with_offers": 0,
@@ -21,6 +21,22 @@
         "offers_parsed": 0,
         "quota_remaining": null,
         "quota_used": null
+      },
+      "bookies_bootstrap": {
+        "enabled": true,
+        "used_as_primary_source": false,
+        "requests": 2,
+        "response_errors": 1,
+        "events_fetched": 0,
+        "matches_built": 0,
+        "event_http_statuses": [
+          200,
+          200
+        ],
+        "payload_shapes": [
+          "capacity_requests,date_games,games_pre,last_time_your_key,remain_requests,time_request"
+        ],
+        "last_body_preview": "{\"time_request\":0.29469108581542969,\"capacity_requests\":\"1000\",\"remain_requests\":998,\"last_time_your_key\":\"07.04.2026 16:39:03\",\"date_games\":\"02.04.2026\",\"games_pre\":[{\"game_id\":\"11244701\",\"time\":\"1775088000\",\"time_status\":\"0\",\"league\":{\"name\":\"\\u0413\\u0432\\u0430\\u0442\\u0435\\u043c\\u0430\\u043b\\u0430 - \\u041b\\u0438\\u0433\\u0430 \\u041d\\u0430\\u0441\\u044c\\u043e\\u043d\\u0430\\u043b\\u044c\",\"id\":\"928\"},\"home\":{\"name\":\"\\u0413\\u0424\\u041a \\u0410\\u043d\\u0442\\u0438\\u0433\\u0443\\u0430\",\"id\":\"44119\",\"image_id\":\"163296\"},\"away\":{\"name\":\"\\u041c\\u0438\\u043a\\u0442\\u043b\\u0430\\u043d\",\"id\":\"44118\",\"image_id\":\"7020\"},\"bet365_id\":\"192190461\"},{\"game_id\":\"11417221\",\"time\":\"1775088000\",\"time_status\":\"0\",\"league\":{\"name\":\"\\u0411\\u0440\\u0430\\u0437\\u0438\\u043b\\u0438\\u044f - \\u0421\\u0435\\u0440\\u0438\\u044f B\",\"id\":\"328\"},\"home\":{\"name\":\"\\u041f\\u043e\\u043d\\u0442\\u0435-\\u041f\\u0440\\u0435\\u0442\\u0430\",\"id\":\"9173\",\"image_id\":\"1969\"},\"away\":{\"name\":\"\\u0421\\u0435\\u0430\\u0440\\u0430\",\"id\":\"1264\",\"image_id\":\"2001\"},\"bet365_id\":\"191076992\"},{\"game_id\":\"11650093\",\"time\":\"1775088000\",\"time_status\":\"0\",\"league\":{\"name\":\"\\u0421\\u0428\\u0410 - \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u043a\\u0443\\u0431\\u043e\\u043a \\u0421\\"
       },
       "odds_api_io": {
         "enabled": true,
@@ -110,13 +126,18 @@
       "Unibet"
     ],
     "publish_dry_run": false,
-    "bookies_api_enabled": true,
-    "bookies_api_base_url": "https://bookiesapi.com/api/get.php",
-    "bookies_api_odds_task": "allodds"
+    "enable_bookies_api": true,
+    "bookies_api_use_for_backfill_only": true,
+    "bookies_api_sports": [
+      "soccer"
+    ]
   },
   "source_previews": {
     "the_odds_api": {
       "sample_matches": []
+    },
+    "bookies_bootstrap": {
+      "sample_events": []
     },
     "odds_api_io": {
       "unmatched_events": [],
