@@ -3,7 +3,7 @@ name: Run Sports Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */3 * * *"
+    - cron: "0 */6 * * *"
 
 jobs:
   run-bot:
@@ -32,23 +32,19 @@ jobs:
           PUBLISH_DRY_RUN: false
           RUN_SPORTS: soccer
           RUN_DAYS_AHEAD: 2
-
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-
           BOOKIES_API_ENABLED: ${{ secrets.BOOKIES_API_ENABLED }}
           BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
           BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
           BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
           BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
           BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
-
           SHEET_ID: ${{ secrets.SHEET_ID }}
         run: python -m app.cli run-once
 
