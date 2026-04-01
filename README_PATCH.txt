@@ -1,28 +1,20 @@
-This archive contains targeted replacement files for sports-bot.
+Что в архиве:
+- app/config.py
+- app/providers/bookies_api.py
+- app/services/runner.py
+- .github/workflows/run-bot.yml
 
-What changed:
-1. runner.py
-   - adds BookiesBootstrapProvider
-   - if The Odds API returns zero matches, the runner bootstraps soccer fixtures from BookiesAPI predatapage
-   - keeps existing BookiesAPI odds parsing provider for allodds/odds
-   - writes bookies_bootstrap stats into debug summary
+Что сделано:
+1. Добавлена интеграция с bookiesapi.com на основе старого Google Apps Script:
+   - login + token
+   - task=predatapage для поиска событий
+   - task=allodds, fallback на task=odds
+2. Bookies API подключен в runner как третий источник коэффициентов.
+3. В workflow прокинуты BOOKIES_API_* secrets и исправлен Telegram secret.
+4. Расписание уменьшено до 1 запуска раз в 3 часа, чтобы меньше жечь лимит The Odds API.
+5. В debug summary добавлен блок bookies_api.
 
-2. app/providers/bookies_bootstrap.py
-   - new lightweight provider
-   - fetches fixtures from BookiesAPI predatapage directly
-   - builds Match objects so the existing pipeline can continue even when The Odds API is empty or rate-limited
-
-3. run-bot.yml
-   - lowers schedule to every 6 hours
-   - keeps BOOKIES_API_* secrets wired in
-
-How to apply:
-- replace app/services/runner.py
-- add app/providers/bookies_bootstrap.py
-- replace .github/workflows/run-bot.yml
-- commit and push
-
-Important:
-- BOOKIES_API_ENABLED secret should be exactly: true
-- this patch was built from your logs and the uploaded Google Apps Script integration logic
-- I could not run your live APIs from this environment, so treat this as a targeted fallback patch and verify via GitHub Actions logs
+Как применить:
+- заменить эти файлы в репозитории
+- проверить, что секрет BOOKIES_API_ENABLED имеет значение true
+- запустить workflow вручную
