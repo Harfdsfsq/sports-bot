@@ -1,46 +1,61 @@
-name: run-bot
+name: Run Sports Bot
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: '15 * * * *'
-
-permissions:
-  contents: write
+    - cron: "0 */3 * * *"
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
+
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Prepare data dir
+        run: mkdir -p .data
+
       - name: Run bot
         env:
           APP_ENV: production
           STATE_PATH: .data/state.json
           DEBUG_PATH: .data/debug-last-run.json
-          PUBLISH_DRY_RUN: ${{ vars.PUBLISH_DRY_RUN || 'false' }}
-          RUN_SPORTS: ${{ vars.RUN_SPORTS || 'soccer' }}
-          RUN_DAYS_AHEAD: ${{ vars.RUN_DAYS_AHEAD || '4' }}
-          TARGET_BOOKMAKERS: ${{ vars.TARGET_BOOKMAKERS || 'Bet365,Unibet' }}
-          CONSENSUS_BOOKMAKERS: ${{ vars.CONSENSUS_BOOKMAKERS || 'Pinnacle,Betfair,Bet365,Unibet' }}
+          PUBLISH_DRY_RUN: false
+          RUN_SPORTS: soccer
+          RUN_DAYS_AHEAD: 2
+
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+
+          BOOKIES_API_ENABLED: ${{ secrets.BOOKIES_API_ENABLED }}
+          BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
+          BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
+          BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
+          BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
+          BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
+
+          SHEET_ID: ${{ secrets.SHEET_ID }}
+        run: python -m app.cli run-once
+
+      - name: Commit updated state
         run: |
-          mkdir -p .data
-          python -m app.cli run-once
-      - name: Commit state and debug
-        run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
           git add .data/state.json .data/debug-last-run.json || true
-          git diff --cached --quiet && exit 0
-          git commit -m "Update bot state"
+          git diff --cached --quiet || git commit -m "Update bot state"
           git push

@@ -10,9 +10,9 @@ from app.providers.bookies_api import BookiesApiProvider
 from app.providers.odds_api_io import OddsApiIoProvider
 from app.providers.sstats import SStatsContextProvider
 from app.providers.the_odds_api import TheOddsApiProvider
-from app.schemas import CandidateBet
+from app.schemas import CandidateBet, Offer
 from app.services.model import CandidateFactory
-from app.services.normalizer import dedupe_matches, merge_offers
+from app.services.normalizer import dedupe_matches
 from app.services.telegram import TelegramPublisher
 from app.state import JsonStateStore
 
@@ -37,9 +37,12 @@ class PredictionRunner:
             the_odds_offers = the_odds_snapshot.get("offers_by_match") or {}
 
             odds_api_io_offers, odds_io_stats, odds_io_preview = await self.odds_api_io.fetch_offers(matches)
-            bookies_api_offers, bookies_stats, bookies_preview = await self.bookies_api.fetch_offers(matches)
-            merged_offers = merge_offers(self.settings, the_odds_offers, odds_api_io_offers, bookies_api_offers)
+            bookies_api_offers, bookies_stats, bookies_preview = await self.bookies_api.fetch_offers(
+                matches,
+                {"the_odds_api": the_odds_offers, "odds_api_io": odds_api_io_offers},
+            )
 
+            merged_offers = self._merge_offer_maps(the_odds_offers, odds_api_io_offers, bookies_api_offers)
             contexts, sstats_stats, sstats_preview = await self.sstats.fetch_context(matches)
             candidates, rejections, model_debug = self.factory.build_candidates(matches, merged_offers, contexts)
 
@@ -55,9 +58,7 @@ class PredictionRunner:
                 "bookies_api": bookies_stats,
                 "sstats": sstats_stats,
             }
-            mode_counts: dict[str, int] = defaultdict(int)
-            for candidate in candidates:
-                mode_counts[str(candidate.model_mode)] += 1
+            mode_counts = self._candidate_mode_counts(candidates)
             summary = {
                 "matches_seen": len(matches),
                 "matches_with_offers": sum(1 for match in matches if merged_offers.get(match.match_key)),
@@ -79,9 +80,8 @@ class PredictionRunner:
                     "sstats_unmatched_rows": sstats_stats.get("unmatched_rows", 0),
                 },
                 "rejections": rejections,
-                "candidate_modes": dict(mode_counts),
+                "candidate_modes": mode_counts,
             }
-
             self.state.write_debug(
                 {
                     "created_at": datetime.now(UTC).isoformat(),
@@ -92,9 +92,9 @@ class PredictionRunner:
                         "target_bookmakers": self.settings.target_bookmakers,
                         "consensus_bookmakers": self.settings.consensus_bookmakers,
                         "publish_dry_run": self.settings.publish_dry_run,
-                        "enable_bookies_api": self.settings.enable_bookies_api,
-                        "bookies_api_use_for_backfill_only": self.settings.bookies_api_use_for_backfill_only,
-                        "bookies_api_markets": self.settings.bookies_api_markets,
+                        "bookies_api_enabled": self.settings.bookies_api_enabled,
+                        "bookies_api_base_url": self.settings.bookies_api_base_url,
+                        "bookies_api_odds_task": self.settings.bookies_api_odds_task,
                     },
                     "source_previews": {
                         "the_odds_api": the_odds_snapshot.get("preview") or {},
@@ -115,7 +115,7 @@ class PredictionRunner:
                         }
                         for match in matches[:25]
                     ],
-                    "sample_offers": self._serialize_offers(merged_offers, limit=25),
+                    "sample_offers": self._serialize_offers(merged_offers, limit=40),
                     "model_debug": model_debug,
                     "candidates": [self._serialize_candidate(item) for item in candidates[:25]],
                     "telegram_messages": telegram_payloads,
@@ -133,6 +133,38 @@ class PredictionRunner:
                 }
             )
             raise
+
+    @staticmethod
+    def _merge_offer_maps(*maps: dict[str, list[Offer]]) -> dict[str, list[Offer]]:
+        merged: dict[str, list[Offer]] = defaultdict(list)
+        seen: set[tuple[str, str, str, str, float | None, float | None, str | None]] = set()
+        for mapping in maps:
+            for match_key, offers in (mapping or {}).items():
+                for offer in offers or []:
+                    fingerprint = (
+                        match_key,
+                        offer.source,
+                        offer.bookmaker,
+                        offer.family,
+                        offer.price,
+                        offer.point,
+                        offer.team_side,
+                    )
+                    if fingerprint in seen:
+                        continue
+                    seen.add(fingerprint)
+                    merged[match_key].append(offer)
+        return dict(merged)
+
+    @staticmethod
+    def _candidate_mode_counts(candidates: list[CandidateBet]) -> dict[str, int]:
+        counts: dict[str, int] = defaultdict(int)
+        for item in candidates:
+            mode = None
+            diagnostics = item.diagnostics or {}
+            mode = diagnostics.get("model_mode") or diagnostics.get("mode") or item.source_summary.get("model_mode")
+            counts[str(mode or "unknown")] += 1
+        return dict(counts)
 
     @staticmethod
     def _serialize_candidate(item: CandidateBet) -> dict[str, Any]:

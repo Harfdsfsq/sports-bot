@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 from functools import lru_cache
-from typing import Any
+from typing import Annotated, Any
 
 from pydantic import AliasChoices, Field, field_validator
-from typing import Annotated
-
 from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 LEGACY_SOCCER_KEYS = [
@@ -44,7 +42,6 @@ class Settings(BaseSettings):
         default="Europe/Moscow",
         validation_alias=AliasChoices("APP_TIMEZONE", "TIMEZONE", "TZ"),
     )
-
     state_path: str = Field(default=".data/state.json", validation_alias=AliasChoices("STATE_PATH"))
     debug_path: str = Field(default=".data/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
 
@@ -52,38 +49,38 @@ class Settings(BaseSettings):
         default=None,
         validation_alias=AliasChoices("TELEGRAM_BOT_TOKEN", "TELEGRAM_TOKEN"),
     )
-    telegram_chat_id: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("TELEGRAM_CHAT_ID"),
-    )
+    telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
 
     the_odds_api_key: str | None = Field(
         default=None,
         validation_alias=AliasChoices("THE_ODDS_API_KEY", "ODDS_API_KEY"),
     )
-    odds_api_io_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("ODDS_API_IO_KEY"),
+    odds_api_io_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDS_API_IO_KEY"))
+    sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices("SSTATS_API_KEY"))
+    api_football_key: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_KEY"))
+
+    bookies_api_enabled: bool = Field(default=False, validation_alias=AliasChoices("BOOKIES_API_ENABLED"))
+    bookies_api_login: str | None = Field(default=None, validation_alias=AliasChoices("BOOKIES_API_LOGIN"))
+    bookies_api_token: str | None = Field(default=None, validation_alias=AliasChoices("BOOKIES_API_TOKEN"))
+    bookies_api_key: str | None = Field(default=None, validation_alias=AliasChoices("BOOKIES_API_KEY"))
+    bookies_api_base_url: str = Field(
+        default="https://bookiesapi.com/api/get.php",
+        validation_alias=AliasChoices("BOOKIES_API_BASE_URL"),
     )
-    sstats_api_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("SSTATS_API_KEY"),
+    bookies_api_odds_task: str = Field(default="allodds", validation_alias=AliasChoices("BOOKIES_API_ODDS_TASK"))
+    bookies_api_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["soccer"])
+    bookies_api_page_limit: int = Field(default=50, validation_alias=AliasChoices("BOOKIES_API_PAGE_LIMIT"))
+    bookies_api_max_pages_per_day: int = Field(
+        default=10,
+        validation_alias=AliasChoices("BOOKIES_API_MAX_PAGES_PER_DAY"),
     )
-    bookies_api_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_KEY"),
+    bookies_api_use_for_backfill_only: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("BOOKIES_API_USE_FOR_BACKFILL_ONLY"),
     )
-    bookies_api_login: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_LOGIN"),
-    )
-    bookies_api_token: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_TOKEN"),
-    )
-    api_football_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("API_FOOTBALL_KEY"),
+    bookies_api_timeout_seconds: float = Field(
+        default=25.0,
+        validation_alias=AliasChoices("BOOKIES_API_TIMEOUT_SECONDS", "BOOKIES_API_TIMEOUT_MS"),
     )
 
     run_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["soccer"])
@@ -106,7 +103,6 @@ class Settings(BaseSettings):
         default=8.0,
         validation_alias=AliasChoices("FALLBACK_MATCH_START_TOLERANCE_HOURS"),
     )
-
     min_books_for_consensus: int = Field(
         default=2,
         validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"),
@@ -119,44 +115,28 @@ class Settings(BaseSettings):
     max_picks_per_run: int = Field(default=5, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
     odds_min: float = Field(default=1.60, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
     odds_max: float = Field(default=3.20, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
-
     outlier_price_tolerance_pct: float = Field(
         default=5.5,
         validation_alias=AliasChoices("OUTLIER_PRICE_TOLERANCE_PCT"),
     )
-    outlier_max_penalty: float = Field(
-        default=10.0,
-        validation_alias=AliasChoices("OUTLIER_MAX_PENALTY"),
-    )
-
+    outlier_max_penalty: float = Field(default=10.0, validation_alias=AliasChoices("OUTLIER_MAX_PENALTY"))
     enable_derived_soccer_markets: bool = Field(
         default=True,
         validation_alias=AliasChoices("ENABLE_DERIVED_SOCCER_MARKETS"),
     )
     enable_team_totals: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_TEAM_TOTALS"))
     enable_odds_api_io: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_ODDS_API_IO"))
-    enable_bookies_api: bool = Field(default=False, validation_alias=AliasChoices("BOOKIES_API_ENABLED", "ENABLE_BOOKIES_API"))
     enable_sstats_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_SSTATS_CONTEXT"))
-
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
 
     the_odds_timeout_seconds: float = Field(default=30.0, validation_alias=AliasChoices("THE_ODDS_TIMEOUT_SECONDS"))
     odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"))
-    bookies_api_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("BOOKIES_API_TIMEOUT_MS", "BOOKIES_API_TIMEOUT_SECONDS"))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))
-
     odds_api_io_page_limit: int = Field(default=60, validation_alias=AliasChoices("ODDS_API_IO_PAGE_LIMIT"))
     odds_api_io_max_pages_per_sport: int = Field(
         default=4,
         validation_alias=AliasChoices("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT"),
     )
-    bookies_api_base_url: str = Field(default="https://bookiesapi.com/api/get.php", validation_alias=AliasChoices("BOOKIES_API_BASE_URL"))
-    bookies_api_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("BOOKIES_API_SPORTS"))
-    bookies_api_markets: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["h2h", "spreads", "totals", "btts", "dnb", "doubleChance", "teamTotals"], validation_alias=AliasChoices("BOOKIES_API_MARKETS"))
-    bookies_api_use_for_backfill_only: bool = Field(default=True, validation_alias=AliasChoices("BOOKIES_API_USE_FOR_BACKFILL_ONLY"))
-    bookies_api_page_limit: int = Field(default=50, validation_alias=AliasChoices("BOOKIES_API_PAGE_LIMIT"))
-    bookies_api_max_pages_per_day: int = Field(default=10, validation_alias=AliasChoices("BOOKIES_API_MAX_PAGES_PER_DAY"))
-    bookies_api_odds_task: str = Field(default="allodds", validation_alias=AliasChoices("BOOKIES_API_ODDS_TASK"))
     max_matches_for_odds_fetch: int = Field(
         default=300,
         validation_alias=AliasChoices("MAX_MATCHES_FOR_ODDS_FETCH", "MAX_MATCHES_FOR_PRICING"),
@@ -179,17 +159,19 @@ class Settings(BaseSettings):
     totals_score_weight: float = Field(default=1.18, validation_alias=AliasChoices("TOTALS_SCORE_WEIGHT"))
     spreads_score_weight: float = Field(default=1.15, validation_alias=AliasChoices("SPREADS_SCORE_WEIGHT"))
     dnb_score_weight: float = Field(default=1.00, validation_alias=AliasChoices("DNB_SCORE_WEIGHT"))
-    double_chance_score_weight: float = Field(
-        default=0.82,
-        validation_alias=AliasChoices("DOUBLE_CHANCE_SCORE_WEIGHT"),
-    )
+    double_chance_score_weight: float = Field(default=0.82, validation_alias=AliasChoices("DOUBLE_CHANCE_SCORE_WEIGHT"))
     btts_score_weight: float = Field(default=1.12, validation_alias=AliasChoices("BTTS_SCORE_WEIGHT"))
-    team_totals_score_weight: float = Field(
-        default=1.20,
-        validation_alias=AliasChoices("TEAM_TOTALS_SCORE_WEIGHT"),
-    )
+    team_totals_score_weight: float = Field(default=1.20, validation_alias=AliasChoices("TEAM_TOTALS_SCORE_WEIGHT"))
 
-    @field_validator("run_sports", "target_bookmakers", "consensus_bookmakers", "the_odds_regions", "the_odds_sport_keys", "bookies_api_sports", "bookies_api_markets", mode="before")
+    @field_validator(
+        "run_sports",
+        "target_bookmakers",
+        "consensus_bookmakers",
+        "the_odds_regions",
+        "the_odds_sport_keys",
+        "bookies_api_sports",
+        mode="before",
+    )
     @classmethod
     def split_csv(cls, value: Any) -> Any:
         if value is None:
@@ -216,6 +198,17 @@ class Settings(BaseSettings):
             keys.extend(THE_ODDS_SPORTS_DEFAULT.get(sport, []))
         return keys
 
+    @field_validator("bookies_api_timeout_seconds", mode="before")
+    @classmethod
+    def normalize_bookies_timeout(cls, value: Any) -> Any:
+        if value is None:
+            return 25.0
+        try:
+            number = float(value)
+        except Exception:
+            return value
+        return number / 1000.0 if number > 1000 else number
+
     def source_weight(self, source_name: str) -> float:
         key = source_name.lower().strip()
         if key == "the_odds_api":
@@ -236,7 +229,7 @@ class Settings(BaseSettings):
             return self.bookmaker_weight_betfair
         if normalized == "bet365":
             return self.bookmaker_weight_bet365
-        if normalized == "unibet":
+        if normalized.startswith("unibet"):
             return self.bookmaker_weight_unibet
         if normalized in {"williamhill", "ladbrokes", "sbobet"}:
             return 1.08
@@ -263,6 +256,3 @@ class Settings(BaseSettings):
 @lru_cache(maxsize=1)
 def get_settings() -> Settings:
     return Settings()
-
-
-Settings.model_rebuild()
