@@ -1,11 +1,11 @@
 {
-  "created_at": "2026-04-01T18:04:47.154347+00:00",
+  "created_at": "2026-04-01T19:27:43.031486+00:00",
   "summary": {
     "matches_seen": 38,
     "matches_with_offers": 38,
     "contexts_built": 0,
-    "candidates": 1,
-    "published": 1,
+    "candidates": 0,
+    "published": 0,
     "dry_run": false,
     "state_path": ".data/state.json",
     "debug_path": ".data/debug-last-run.json",
@@ -14,13 +14,13 @@
         "enabled": true,
         "api_key_present": true,
         "requests": 11,
-        "response_errors": 1,
-        "events_fetched": 135,
+        "response_errors": 2,
+        "events_fetched": 115,
         "matches_kept": 38,
-        "markets_parsed": 2622,
-        "offers_parsed": 6885,
-        "quota_remaining": "239",
-        "quota_used": "261"
+        "markets_parsed": 2652,
+        "offers_parsed": 6960,
+        "quota_remaining": "95",
+        "quota_used": "405"
       },
       "odds_api_io": {
         "enabled": true,
@@ -29,13 +29,46 @@
         "odds_requests": 1,
         "response_errors": 1,
         "events_fetched": 240,
-        "events_matched": 4,
+        "events_matched": 3,
         "matched_exact": 0,
         "matched_loose": 0,
-        "matched_fuzzy": 4,
+        "matched_fuzzy": 3,
         "unmatched_offer_events": 0,
         "markets_parsed": 0,
-        "offers_parsed": 0
+        "offers_parsed": 0,
+        "event_http_statuses": [
+          200,
+          200,
+          200,
+          200
+        ],
+        "odds_http_statuses": [
+          401
+        ],
+        "payload_shapes": [],
+        "bookmakers_seen": 0,
+        "last_body_preview": "{\"error\":\"You need to provide a valid apiKey\"}"
+      },
+      "bookies_api": {
+        "enabled": false,
+        "candidate_matches": 0,
+        "event_requests": 0,
+        "odds_requests": 0,
+        "events_fetched": 0,
+        "events_matched": 0,
+        "matched_exact": 0,
+        "matched_loose": 0,
+        "matched_fuzzy": 0,
+        "unmatched_offer_events": 0,
+        "markets_parsed": 0,
+        "offers_parsed": 0,
+        "response_errors": 0,
+        "event_http_statuses": [],
+        "odds_http_statuses": [],
+        "payload_shapes": [],
+        "bookmakers_seen": 0,
+        "last_body_preview": null,
+        "task_used": "allodds"
       },
       "sstats": {
         "enabled": true,
@@ -48,13 +81,29 @@
         "matched_exact": 0,
         "matched_loose": 0,
         "matched_fuzzy": 0,
-        "unmatched_rows": 0
+        "unmatched_rows": 0,
+        "http_statuses": [
+          200,
+          200,
+          200,
+          200,
+          200
+        ],
+        "payload_shapes": [
+          "count,data,offset,status,traceId",
+          "count,data,offset,status,traceId",
+          "count,data,offset,status,traceId",
+          "count,data,offset,status,traceId",
+          "count,data,offset,status,traceId"
+        ],
+        "last_body_preview": "{\"status\":\"OK\",\"count\":0,\"data\":[],\"offset\":0,\"traceId\":\"00-daebccf784d7ab22148990416e9d9e26-4fb0cde0c7e83ec4-00\"}",
+        "last_url": "https://api.sstats.net/Games/list"
       }
     },
     "mapping": {
       "matched_exact": 0,
       "matched_loose": 0,
-      "matched_fuzzy": 4,
+      "matched_fuzzy": 3,
       "unmatched_offer_events": 0,
       "sstats_exact": 0,
       "sstats_loose": 0,
@@ -62,8 +111,11 @@
       "sstats_unmatched_rows": 0
     },
     "rejections": {
-      "offer_rejected": 6779
-    }
+      "non_target_bookmaker": 6332,
+      "edge_below_threshold": 122,
+      "odds_out_of_range": 68
+    },
+    "candidate_modes": {}
   },
   "settings": {
     "run_sports": [
@@ -80,66 +132,63 @@
       "Bet365",
       "Unibet"
     ],
-    "publish_dry_run": false
+    "publish_dry_run": false,
+    "enable_bookies_api": false,
+    "bookies_api_use_for_backfill_only": true,
+    "bookies_api_markets": [
+      "h2h",
+      "spreads",
+      "totals",
+      "btts",
+      "dnb",
+      "doubleChance",
+      "teamTotals"
+    ]
   },
   "source_previews": {
     "the_odds_api": {
       "sample_matches": [
         {
           "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Rayo Vallecano",
-          "away": "Elche CF",
-          "commence_time": "2026-04-03T19:00:00+00:00"
+          "league": "Serie A - Italy",
+          "home": "Sassuolo",
+          "away": "Cagliari",
+          "commence_time": "2026-04-04T13:00:00+00:00"
         },
         {
           "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Real Sociedad",
-          "away": "Levante",
-          "commence_time": "2026-04-04T12:00:00+00:00"
+          "league": "Serie A - Italy",
+          "home": "Hellas Verona",
+          "away": "Fiorentina",
+          "commence_time": "2026-04-04T16:00:00+00:00"
         },
         {
           "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Mallorca",
-          "away": "Real Madrid",
-          "commence_time": "2026-04-04T14:15:00+00:00"
+          "league": "Serie A - Italy",
+          "home": "Lazio",
+          "away": "Parma",
+          "commence_time": "2026-04-04T18:45:00+00:00"
         },
         {
           "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Real Betis",
-          "away": "Espanyol",
-          "commence_time": "2026-04-04T16:30:00+00:00"
+          "league": "Serie A - Italy",
+          "home": "Cremonese",
+          "away": "Bologna",
+          "commence_time": "2026-04-05T13:00:00+00:00"
         },
         {
           "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Atlético Madrid",
-          "away": "Barcelona",
-          "commence_time": "2026-04-04T19:00:00+00:00"
+          "league": "Serie A - Italy",
+          "home": "Pisa",
+          "away": "Torino",
+          "commence_time": "2026-04-05T16:00:00+00:00"
         },
         {
           "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Getafe",
-          "away": "Athletic Bilbao",
-          "commence_time": "2026-04-05T12:00:00+00:00"
-        },
-        {
-          "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Valencia",
-          "away": "Celta Vigo",
-          "commence_time": "2026-04-05T14:15:00+00:00"
-        },
-        {
-          "sport": "soccer",
-          "league": "La Liga - Spain",
-          "home": "Oviedo",
-          "away": "Sevilla",
-          "commence_time": "2026-04-05T16:30:00+00:00"
+          "league": "Serie A - Italy",
+          "home": "Inter Milan",
+          "away": "AS Roma",
+          "commence_time": "2026-04-05T18:45:00+00:00"
         },
         {
           "sport": "soccer",
@@ -154,163 +203,25 @@
           "home": "Hamburger SV",
           "away": "Augsburg",
           "commence_time": "2026-04-04T13:30:00+00:00"
+        },
+        {
+          "sport": "soccer",
+          "league": "Bundesliga - Germany",
+          "home": "Bayer Leverkusen",
+          "away": "VfL Wolfsburg",
+          "commence_time": "2026-04-04T13:30:00+00:00"
+        },
+        {
+          "sport": "soccer",
+          "league": "Bundesliga - Germany",
+          "home": "SC Freiburg",
+          "away": "Bayern Munich",
+          "commence_time": "2026-04-04T13:30:00+00:00"
         }
       ]
     },
     "odds_api_io": {
       "unmatched_events": [
-        {
-          "event_id": 63148077,
-          "home": "CD Valle de Egues",
-          "away": "CD Avance Ezcabarte",
-          "league": "Spain Amateur - Tercera Federacion, Group 15",
-          "date": "2026-04-01T18:15:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 62216384,
-          "home": "FC La Sarraz-Eclepens",
-          "away": "CS Chenois",
-          "league": "Switzerland - Erste Liga",
-          "date": "2026-04-01T18:15:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 68377338,
-          "home": "Latina Calcio",
-          "away": "Potenza Calcio",
-          "league": "Italy - Coppa Italia Serie C",
-          "date": "2026-04-01T18:30:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 70444044,
-          "home": "Universidad Catolica Del Ecuador",
-          "away": "Csd Macara",
-          "league": "Ecuador - Superliga, Women",
-          "date": "2026-04-01T18:30:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69279886,
-          "home": "Dundee United WFC",
-          "away": "Spartans WFC",
-          "league": "Scotland - Premier League 2, Women",
-          "date": "2026-04-01T18:30:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69279888,
-          "home": "Gartcairn Wfc",
-          "away": "Boroughmuir Thistle FC",
-          "league": "Scotland - Premier League 2, Women",
-          "date": "2026-04-01T18:30:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69279890,
-          "home": "Kilmarnock Lfc",
-          "away": "Queen's Park LFC",
-          "league": "Scotland - Premier League 2, Women",
-          "date": "2026-04-01T18:30:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69594488,
-          "home": "SC Buochs",
-          "away": "FC Courtetelle",
-          "league": "Switzerland - Erste Liga",
-          "date": "2026-04-01T18:30:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69086370,
-          "home": "Zurrieq",
-          "away": "Marsa FC",
-          "league": "Malta - Challenge League",
-          "date": "2026-04-01T18:45:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69279528,
-          "home": "Glasgow City LFC",
-          "away": "Hibernian LFC",
-          "league": "Scotland - Premier League, Women",
-          "date": "2026-04-01T18:45:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 70399396,
-          "home": "Olympique Club de Safi",
-          "away": "Rs Berkane",
-          "league": "Morocco - Botola Pro D1",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69680698,
-          "home": "AL Orobah U21",
-          "away": "AL Fateh",
-          "league": "Saudi Arabia - U21 Elite League",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 70444198,
-          "home": "El Nacional (Ecu)",
-          "away": "Deportivo Ibarra",
-          "league": "Ecuador - Superliga, Women",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 68533638,
-          "home": "Chelsea FC",
-          "away": "Arsenal WFC",
-          "league": "International Clubs - UEFA Champions League Women",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69854566,
-          "home": "FC Astana Reserve",
-          "away": "Aktobe Reserve",
-          "league": "Kazakhstan - Pervaya Liga",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 63145917,
-          "home": "CD Union Sur Yaiza",
-          "away": "San Bartolome CF",
-          "league": "Spain Amateur - Tercera Federacion, Group 12",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 68751616,
-          "home": "Cuiaba EC MT",
-          "away": "America FC MG",
-          "league": "Brazil - U20 Campeonato Brasileiro",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 70263802,
-          "home": "Fjolnir",
-          "away": "UMF Vidir",
-          "league": "Iceland - Cup",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
-        {
-          "event_id": 69279532,
-          "home": "Rangers LFC",
-          "away": "Partick Thistle LFC",
-          "league": "Scotland - Premier League, Women",
-          "date": "2026-04-01T19:00:00Z",
-          "reason": "no_match"
-        },
         {
           "event_id": 61623742,
           "home": "Racing Santander",
@@ -318,16 +229,168 @@
           "league": "Spain - LaLiga 2",
           "date": "2026-04-01T19:30:00Z",
           "reason": "no_match"
+        },
+        {
+          "event_id": 62941259,
+          "home": "Arucas CF",
+          "away": "UD Villa Santa Brigida U19",
+          "league": "Spain - U19 Division de Honor Juvenil",
+          "date": "2026-04-01T19:30:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69129472,
+          "home": "Gualaceo SC",
+          "away": "LDU Portoviejo",
+          "league": "Ecuador - Serie B",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69129474,
+          "home": "22 de Julio",
+          "away": "CSD Vargas Torres",
+          "league": "Ecuador - Serie B",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 70444200,
+          "home": "Liga Deportiva Universitaria de Quito",
+          "away": "CS Emelec",
+          "league": "Ecuador - Superliga, Women",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69129466,
+          "home": "CD Independiente Juniors",
+          "away": "San Antonio FC",
+          "league": "Ecuador - Serie B",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69129468,
+          "home": "9 de Octubre FC",
+          "away": "Atletico Rojiblanco",
+          "league": "Ecuador - Serie B",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69129470,
+          "home": "CD El Nacional",
+          "away": "Club Deportivo Cuenca Juniors",
+          "league": "Ecuador - Serie B",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 63145901,
+          "home": "UD Tamaraceite",
+          "away": "CF Panaderia Pulido",
+          "league": "Spain Amateur - Tercera Federacion, Group 12",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 63145903,
+          "home": "UD Villa Santa Brigida",
+          "away": "UD San Fernando",
+          "league": "Spain Amateur - Tercera Federacion, Group 12",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 70472866,
+          "home": "Alianza FC II",
+          "away": "San Martin FC",
+          "league": "Panama - Liga Prom",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 68129086,
+          "home": "Bogota FC",
+          "away": "Real Cundinamarca",
+          "league": "Colombia - Primera B",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 70418368,
+          "home": "Sportivo Luqueno",
+          "away": "Cerro Porteno Asuncion",
+          "league": "Paraguay - Primera Division Reserve, Apertura",
+          "date": "2026-04-01T20:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69851690,
+          "home": "Harbour View FC",
+          "away": "Chapelton Maroons FC",
+          "league": "Jamaica - Premier League",
+          "date": "2026-04-01T20:30:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 69693186,
+          "home": "Colo-Colo",
+          "away": "Huachipato",
+          "league": "Chile - Copa de la Liga",
+          "date": "2026-04-01T21:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 70444352,
+          "home": "CD Espuce",
+          "away": "Carneras Ups",
+          "league": "Ecuador - Superliga, Women",
+          "date": "2026-04-01T21:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 70444202,
+          "home": "Barcelona SC",
+          "away": "Quito FC",
+          "league": "Ecuador - Superliga, Women",
+          "date": "2026-04-01T21:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 68822704,
+          "home": "America FC MG",
+          "away": "Botafogo FC SP",
+          "league": "Brazil - Brasileiro Serie B",
+          "date": "2026-04-01T21:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 70472880,
+          "home": "Union Cocle FC B",
+          "away": "SD Atletico Nacional",
+          "league": "Panama - Liga Prom",
+          "date": "2026-04-01T21:00:00Z",
+          "reason": "no_match"
+        },
+        {
+          "event_id": 68129088,
+          "home": "Boyaca Patriotas",
+          "away": "Itagui Leones FC",
+          "league": "Colombia - Primera B",
+          "date": "2026-04-01T21:00:00Z",
+          "reason": "no_match"
         }
       ],
       "matched_examples": [
         {
           "event_id": "66886650",
           "mode": "fuzzy",
-          "score": 79.73,
+          "score": 73.07,
           "home": "SC Internacional RS",
           "away": "Sao Paulo FC SP",
-          "match_key": "soccer|intern ional|sao paulo|2026-04-01"
+          "match_key": "soccer|internacional|sao paulo|2026-04-01"
         },
         {
           "event_id": "66886648",
@@ -338,14 +401,6 @@
           "match_key": "soccer|cruzeiro|vitoria|2026-04-01"
         },
         {
-          "event_id": "66886652",
-          "mode": "fuzzy",
-          "score": 70.4,
-          "home": "Coritiba FC PR",
-          "away": "CR Vasco da Gama RJ",
-          "match_key": "soccer|coritiba|va o gama|2026-04-01"
-        },
-        {
           "event_id": "66886638",
           "mode": "fuzzy",
           "score": 66.4,
@@ -353,11 +408,49 @@
           "away": "SC Corinthians SP",
           "match_key": "soccer|corinthians|fluminense|2026-04-02"
         }
-      ]
+      ],
+      "response_debug": []
+    },
+    "bookies_api": {
+      "matched_examples": [],
+      "unmatched_events": [],
+      "response_debug": []
     },
     "sstats": {
       "unmatched_rows": [],
-      "matched_examples": []
+      "matched_examples": [],
+      "request_debug": [
+        {
+          "date": "2026-04-01",
+          "url": "https://api.sstats.net/Games/list",
+          "status": 200,
+          "shape": "count,data,offset,status,traceId"
+        },
+        {
+          "date": "2026-04-02",
+          "url": "https://api.sstats.net/Games/list",
+          "status": 200,
+          "shape": "count,data,offset,status,traceId"
+        },
+        {
+          "date": "2026-04-03",
+          "url": "https://api.sstats.net/Games/list",
+          "status": 200,
+          "shape": "count,data,offset,status,traceId"
+        },
+        {
+          "date": "2026-04-04",
+          "url": "https://api.sstats.net/Games/list",
+          "status": 200,
+          "shape": "count,data,offset,status,traceId"
+        },
+        {
+          "date": "2026-04-05",
+          "url": "https://api.sstats.net/Games/list",
+          "status": 200,
+          "shape": "count,data,offset,status,traceId"
+        }
+      ]
     }
   },
   "sample_matches": [
@@ -368,17 +461,17 @@
       "home": "Botafogo",
       "away": "Mirassol",
       "commence_time": "2026-04-01T22:30:00+00:00",
-      "offers": 188,
+      "offers": 179,
       "has_context": false
     },
     {
-      "match_key": "soccer|intern ional|sao paulo|2026-04-01",
+      "match_key": "soccer|internacional|sao paulo|2026-04-01",
       "sport": "soccer",
       "league": "Brazil Série A",
       "home": "Internacional",
       "away": "Sao Paulo",
       "commence_time": "2026-04-01T22:30:00+00:00",
-      "offers": 188,
+      "offers": 179,
       "has_context": false
     },
     {
@@ -388,7 +481,7 @@
       "home": "Bahia",
       "away": "Atletico Paranaense",
       "commence_time": "2026-04-01T23:00:00+00:00",
-      "offers": 179,
+      "offers": 170,
       "has_context": false
     },
     {
@@ -398,17 +491,17 @@
       "home": "Cruzeiro",
       "away": "Vitoria",
       "commence_time": "2026-04-01T23:00:00+00:00",
-      "offers": 190,
+      "offers": 181,
       "has_context": false
     },
     {
-      "match_key": "soccer|coritiba|va o gama|2026-04-01",
+      "match_key": "soccer|coritiba|vasco da gama|2026-04-01",
       "sport": "soccer",
       "league": "Brazil Série A",
       "home": "Coritiba",
       "away": "Vasco da Gama",
       "commence_time": "2026-04-01T23:30:00+00:00",
-      "offers": 179,
+      "offers": 173,
       "has_context": false
     },
     {
@@ -418,7 +511,7 @@
       "home": "Fluminense",
       "away": "Corinthians",
       "commence_time": "2026-04-02T00:30:00+00:00",
-      "offers": 188,
+      "offers": 179,
       "has_context": false
     },
     {
@@ -428,7 +521,7 @@
       "home": "Chapecoense",
       "away": "Atletico Mineiro",
       "commence_time": "2026-04-02T22:00:00+00:00",
-      "offers": 188,
+      "offers": 179,
       "has_context": false
     },
     {
@@ -438,7 +531,7 @@
       "home": "Santos",
       "away": "Remo",
       "commence_time": "2026-04-02T22:00:00+00:00",
-      "offers": 190,
+      "offers": 181,
       "has_context": false
     },
     {
@@ -448,7 +541,7 @@
       "home": "Bragantino-SP",
       "away": "Flamengo",
       "commence_time": "2026-04-03T00:30:00+00:00",
-      "offers": 187,
+      "offers": 178,
       "has_context": false
     },
     {
@@ -458,7 +551,7 @@
       "home": "Palmeiras",
       "away": "Grêmio",
       "commence_time": "2026-04-03T00:30:00+00:00",
-      "offers": 184,
+      "offers": 175,
       "has_context": false
     },
     {
@@ -468,37 +561,27 @@
       "home": "Paris Saint Germain",
       "away": "Toulouse",
       "commence_time": "2026-04-03T18:45:00+00:00",
-      "offers": 184,
+      "offers": 182,
       "has_context": false
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "sport": "soccer",
-      "league": "La Liga - Spain",
-      "home": "Rayo Vallecano",
-      "away": "Elche CF",
-      "commence_time": "2026-04-03T19:00:00+00:00",
-      "offers": 169,
+      "league": "Serie A - Italy",
+      "home": "Sassuolo",
+      "away": "Cagliari",
+      "commence_time": "2026-04-04T13:00:00+00:00",
+      "offers": 179,
       "has_context": false
     },
     {
-      "match_key": "soccer|levante|real socie d|2026-04-04",
-      "sport": "soccer",
-      "league": "La Liga - Spain",
-      "home": "Real Sociedad",
-      "away": "Levante",
-      "commence_time": "2026-04-04T12:00:00+00:00",
-      "offers": 173,
-      "has_context": false
-    },
-    {
-      "match_key": "soccer|1 hei nheim|borussia monchengladb h|2026-04-04",
+      "match_key": "soccer|1 heidenheim|borussia monchengladbach|2026-04-04",
       "sport": "soccer",
       "league": "Bundesliga - Germany",
       "home": "Borussia Monchengladbach",
       "away": "1. FC Heidenheim",
       "commence_time": "2026-04-04T13:30:00+00:00",
-      "offers": 193,
+      "offers": 177,
       "has_context": false
     },
     {
@@ -508,7 +591,7 @@
       "home": "Hamburger SV",
       "away": "Augsburg",
       "commence_time": "2026-04-04T13:30:00+00:00",
-      "offers": 191,
+      "offers": 175,
       "has_context": false
     },
     {
@@ -518,7 +601,7 @@
       "home": "Bayer Leverkusen",
       "away": "VfL Wolfsburg",
       "commence_time": "2026-04-04T13:30:00+00:00",
-      "offers": 191,
+      "offers": 177,
       "has_context": false
     },
     {
@@ -528,7 +611,7 @@
       "home": "SC Freiburg",
       "away": "Bayern Munich",
       "commence_time": "2026-04-04T13:30:00+00:00",
-      "offers": 191,
+      "offers": 175,
       "has_context": false
     },
     {
@@ -538,27 +621,17 @@
       "home": "TSG Hoffenheim",
       "away": "FSV Mainz 05",
       "commence_time": "2026-04-04T13:30:00+00:00",
-      "offers": 189,
+      "offers": 173,
       "has_context": false
     },
     {
-      "match_key": "soccer|rb leipzig|wer r bremen|2026-04-04",
+      "match_key": "soccer|rb leipzig|werder bremen|2026-04-04",
       "sport": "soccer",
       "league": "Bundesliga - Germany",
       "home": "Werder Bremen",
       "away": "RB Leipzig",
       "commence_time": "2026-04-04T13:30:00+00:00",
-      "offers": 191,
-      "has_context": false
-    },
-    {
-      "match_key": "soccer|mallorca|real madrid|2026-04-04",
-      "sport": "soccer",
-      "league": "La Liga - Spain",
-      "home": "Mallorca",
-      "away": "Real Madrid",
-      "commence_time": "2026-04-04T14:15:00+00:00",
-      "offers": 173,
+      "offers": 175,
       "has_context": false
     },
     {
@@ -568,17 +641,17 @@
       "home": "Strasbourg",
       "away": "Nice",
       "commence_time": "2026-04-04T15:00:00+00:00",
-      "offers": 184,
+      "offers": 182,
       "has_context": false
     },
     {
-      "match_key": "soccer|espanyol|real betis|2026-04-04",
+      "match_key": "soccer|fiorentina|hellas verona|2026-04-04",
       "sport": "soccer",
-      "league": "La Liga - Spain",
-      "home": "Real Betis",
-      "away": "Espanyol",
-      "commence_time": "2026-04-04T16:30:00+00:00",
-      "offers": 170,
+      "league": "Serie A - Italy",
+      "home": "Hellas Verona",
+      "away": "Fiorentina",
+      "commence_time": "2026-04-04T16:00:00+00:00",
+      "offers": 179,
       "has_context": false
     },
     {
@@ -588,11 +661,11 @@
       "home": "VfB Stuttgart",
       "away": "Borussia Dortmund",
       "commence_time": "2026-04-04T16:30:00+00:00",
-      "offers": 191,
+      "offers": 175,
       "has_context": false
     },
     {
-      "match_key": "soccer|b reserves t|rennes|2026-04-04",
+      "match_key": "soccer|brest|rennes|2026-04-04",
       "sport": "soccer",
       "league": "Ligue 1 - France",
       "home": "Brest",
@@ -602,264 +675,284 @@
       "has_context": false
     },
     {
-      "match_key": "soccer|atletico madrid|barcelona|2026-04-04",
+      "match_key": "soccer|lazio|parma|2026-04-04",
       "sport": "soccer",
-      "league": "La Liga - Spain",
-      "home": "Atlético Madrid",
-      "away": "Barcelona",
-      "commence_time": "2026-04-04T19:00:00+00:00",
-      "offers": 163,
+      "league": "Serie A - Italy",
+      "home": "Lazio",
+      "away": "Parma",
+      "commence_time": "2026-04-04T18:45:00+00:00",
+      "offers": 179,
+      "has_context": false
+    },
+    {
+      "match_key": "soccer|lille|rc lens|2026-04-04",
+      "sport": "soccer",
+      "league": "Ligue 1 - France",
+      "home": "Lille",
+      "away": "RC Lens",
+      "commence_time": "2026-04-04T19:05:00+00:00",
+      "offers": 184,
+      "has_context": false
+    },
+    {
+      "match_key": "soccer|cruzeiro|sao paulo|2026-04-04",
+      "sport": "soccer",
+      "league": "Brazil Série A",
+      "home": "Sao Paulo",
+      "away": "Cruzeiro",
+      "commence_time": "2026-04-04T21:30:00+00:00",
+      "offers": 117,
       "has_context": false
     }
   ],
   "sample_offers": [
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
-      "bookmaker": "Unibet (UK)",
+      "bookmaker": "Pinnacle",
       "family": "h2h",
-      "selection": "Elche CF",
-      "price": 4.75,
+      "selection": "Cagliari",
+      "price": 4.52,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
-      "bookmaker": "Unibet (UK)",
+      "bookmaker": "Pinnacle",
       "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.75,
+      "selection": "Sassuolo",
+      "price": 2.01,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
-      "bookmaker": "Unibet (UK)",
-      "family": "h2h",
-      "selection": "Draw",
-      "price": 3.6,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Winamax (FR)",
-      "family": "h2h",
-      "selection": "Elche CF",
-      "price": 4.5,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Winamax (FR)",
-      "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.7,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Winamax (FR)",
+      "bookmaker": "Pinnacle",
       "family": "h2h",
       "selection": "Draw",
-      "price": 3.6,
+      "price": 3.15,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Pinnacle",
+      "family": "spreads",
+      "selection": "Cagliari",
+      "price": 1.88,
+      "point": 0.5,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Pinnacle",
+      "family": "spreads",
+      "selection": "Sassuolo",
+      "price": 2.02,
+      "point": -0.5,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Pinnacle",
+      "family": "totals",
+      "selection": "Over",
+      "price": 1.9,
+      "point": 2.25,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Pinnacle",
+      "family": "totals",
+      "selection": "Under",
+      "price": 1.98,
+      "point": 2.25,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Codere (IT)",
+      "family": "h2h",
+      "selection": "Cagliari",
+      "price": 4.2,
+      "point": null,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Codere (IT)",
+      "family": "h2h",
+      "selection": "Sassuolo",
+      "price": 2.02,
+      "point": null,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Codere (IT)",
+      "family": "h2h",
+      "selection": "Draw",
+      "price": 3.15,
+      "point": null,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Codere (IT)",
+      "family": "totals",
+      "selection": "Over",
+      "price": 2.06,
+      "point": 2.5,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Codere (IT)",
+      "family": "totals",
+      "selection": "Under",
+      "price": 1.65,
+      "point": 2.5,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Winamax (DE)",
+      "family": "h2h",
+      "selection": "Cagliari",
+      "price": 4.3,
+      "point": null,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Winamax (DE)",
+      "family": "h2h",
+      "selection": "Sassuolo",
+      "price": 1.98,
+      "point": null,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
+      "source": "the_odds_api",
+      "bookmaker": "Winamax (DE)",
+      "family": "h2h",
+      "selection": "Draw",
+      "price": 3.0,
+      "point": null,
+      "team_side": null
+    },
+    {
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "h2h",
-      "selection": "Elche CF",
-      "price": 5.02,
+      "selection": "Cagliari",
+      "price": 4.55,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.82,
+      "selection": "Sassuolo",
+      "price": 2.07,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "h2h",
       "selection": "Draw",
-      "price": 3.75,
+      "price": 3.21,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "spreads",
-      "selection": "Elche CF",
-      "price": 1.33,
-      "point": 1.5,
+      "selection": "Cagliari",
+      "price": 3.0,
+      "point": 0.0,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "spreads",
-      "selection": "Rayo Vallecano",
-      "price": 3.04,
-      "point": -1.5,
+      "selection": "Sassuolo",
+      "price": 1.39,
+      "point": 0.0,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "totals",
       "selection": "Over",
-      "price": 2.05,
+      "price": 2.22,
       "point": 2.5,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
       "bookmaker": "1xBet",
       "family": "totals",
       "selection": "Under",
-      "price": 1.9,
+      "price": 1.77,
       "point": 2.5,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
-      "bookmaker": "Winamax (DE)",
+      "bookmaker": "Marathon Bet",
       "family": "h2h",
-      "selection": "Elche CF",
-      "price": 4.7,
+      "selection": "Cagliari",
+      "price": 4.45,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
-      "bookmaker": "Winamax (DE)",
+      "bookmaker": "Marathon Bet",
       "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.72,
+      "selection": "Sassuolo",
+      "price": 2.02,
       "point": null,
       "team_side": null
     },
     {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+      "match_key": "soccer|cagliari|sassuolo|2026-04-04",
       "source": "the_odds_api",
-      "bookmaker": "Winamax (DE)",
+      "bookmaker": "Marathon Bet",
       "family": "h2h",
       "selection": "Draw",
-      "price": 3.7,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Unibet (FR)",
-      "family": "h2h",
-      "selection": "Elche CF",
-      "price": 4.6,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Unibet (FR)",
-      "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.71,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Unibet (FR)",
-      "family": "h2h",
-      "selection": "Draw",
-      "price": 3.6,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "FanDuel",
-      "family": "h2h",
-      "selection": "Elche CF",
-      "price": 4.8,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "FanDuel",
-      "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.69,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "FanDuel",
-      "family": "h2h",
-      "selection": "Draw",
-      "price": 3.5,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Paddy Power",
-      "family": "h2h",
-      "selection": "Elche CF",
-      "price": 4.75,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Paddy Power",
-      "family": "h2h",
-      "selection": "Rayo Vallecano",
-      "price": 1.75,
-      "point": null,
-      "team_side": null
-    },
-    {
-      "match_key": "soccer|elche|rayo vallecano|2026-04-03",
-      "source": "the_odds_api",
-      "bookmaker": "Paddy Power",
-      "family": "h2h",
-      "selection": "Draw",
-      "price": 3.5,
+      "price": 3.14,
       "point": null,
       "team_side": null
     }
@@ -872,9 +965,10 @@
         "league": "Brazil Série A",
         "home": "Botafogo",
         "away": "Mirassol",
-        "offers_total": 188,
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 123,
           "totals|2.50": 30,
           "spreads|0.00": 2,
           "spreads|1.00": 2,
@@ -885,9 +979,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.4247858640188507,
-          "draw": 0.2814393639645035,
-          "away": 0.2937747720166458,
+          "home": 0.4252999961091411,
+          "draw": 0.28143535304413314,
+          "away": 0.29326465084672576,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -897,14 +991,15 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|intern ional|sao paulo|2026-04-01",
+        "match_key": "soccer|internacional|sao paulo|2026-04-01",
         "sport": "soccer",
         "league": "Brazil Série A",
         "home": "Internacional",
         "away": "Sao Paulo",
-        "offers_total": 188,
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 123,
           "totals|2.50": 30,
           "spreads|0.00": 2,
           "spreads|1.00": 2,
@@ -915,9 +1010,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.41236378578969735,
-          "draw": 0.3013419815569543,
-          "away": 0.28629423265334847,
+          "home": 0.41572224337846087,
+          "draw": 0.2990648961404457,
+          "away": 0.28521286048109357,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -932,9 +1027,10 @@
         "league": "Brazil Série A",
         "home": "Bahia",
         "away": "Atletico Paranaense",
-        "offers_total": 179,
+        "offers_total": 170,
+        "target_offers": 5,
         "groups": {
-          "h2h": 123,
+          "h2h": 114,
           "totals|2.50": 28,
           "spreads|0.00": 2,
           "spreads|1.00": 2,
@@ -944,9 +1040,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.5072708138876078,
-          "draw": 0.27341601774357055,
-          "away": 0.21931316836882173,
+          "home": 0.5068849645919674,
+          "draw": 0.27373159758926763,
+          "away": 0.21938343781876504,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -961,21 +1057,22 @@
         "league": "Brazil Série A",
         "home": "Cruzeiro",
         "away": "Vitoria",
-        "offers_total": 190,
+        "offers_total": 181,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 123,
           "spreads|1.50": 2,
-          "totals|2.50": 30,
+          "totals|2.50": 34,
           "spreads|1.00": 14,
-          "totals|2.25": 10,
-          "spreads|0.50": 2
+          "spreads|0.50": 2,
+          "totals|2.25": 6
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.6105021614712968,
-          "draw": 0.2401579357812048,
-          "away": 0.14933990274749837,
+          "home": 0.6087526182092658,
+          "draw": 0.24059598905346022,
+          "away": 0.15065139273727385,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -985,14 +1082,15 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|coritiba|va o gama|2026-04-01",
+        "match_key": "soccer|coritiba|vasco da gama|2026-04-01",
         "sport": "soccer",
         "league": "Brazil Série A",
         "home": "Coritiba",
         "away": "Vasco da Gama",
-        "offers_total": 179,
+        "offers_total": 173,
+        "target_offers": 5,
         "groups": {
-          "h2h": 123,
+          "h2h": 117,
           "spreads|0.00": 14,
           "totals|2.50": 26,
           "spreads|1.00": 2,
@@ -1003,16 +1101,16 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.36530827941566296,
-          "draw": 0.30794680454332535,
-          "away": 0.32674491604101175,
+          "home": 0.36452215380244396,
+          "draw": 0.30876742724635936,
+          "away": 0.3267104189511968,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
           "away_lambda": null,
           "confidence_anchor": 54.0
         },
-        "candidate_count": 1
+        "candidate_count": 0
       },
       {
         "match_key": "soccer|corinthians|fluminense|2026-04-02",
@@ -1020,9 +1118,10 @@
         "league": "Brazil Série A",
         "home": "Fluminense",
         "away": "Corinthians",
-        "offers_total": 188,
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 123,
           "totals|2.50": 28,
           "spreads|1.50": 2,
           "spreads|1.00": 2,
@@ -1034,9 +1133,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.5490579101381513,
-          "draw": 0.2715884674855829,
-          "away": 0.17935362237626576,
+          "home": 0.5506106347025088,
+          "draw": 0.2708249020796949,
+          "away": 0.17856446321779626,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1051,9 +1150,10 @@
         "league": "Brazil Série A",
         "home": "Chapecoense",
         "away": "Atletico Mineiro",
-        "offers_total": 188,
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 123,
           "spreads|0.25": 6,
           "totals|2.25": 10,
           "totals|2.50": 30,
@@ -1064,9 +1164,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.3215535482568362,
-          "draw": 0.28950963169874083,
-          "away": 0.388936820044423,
+          "home": 0.3224403216483894,
+          "draw": 0.2890122969270089,
+          "away": 0.38854738142460166,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1081,9 +1181,10 @@
         "league": "Brazil Série A",
         "home": "Santos",
         "away": "Remo",
-        "offers_total": 190,
+        "offers_total": 181,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 123,
           "spreads|1.00": 14,
           "totals|2.50": 40,
           "spreads|1.50": 2,
@@ -1092,9 +1193,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.6119754638434508,
-          "draw": 0.2297937821576819,
-          "away": 0.15823075399886724,
+          "home": 0.6113098702148417,
+          "draw": 0.23034083951735773,
+          "away": 0.15834929026780045,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1109,9 +1210,10 @@
         "league": "Brazil Série A",
         "home": "Bragantino-SP",
         "away": "Flamengo",
-        "offers_total": 187,
+        "offers_total": 178,
+        "target_offers": 5,
         "groups": {
-          "h2h": 129,
+          "h2h": 120,
           "spreads|0.50": 14,
           "totals|2.25": 10,
           "totals|2.50": 28,
@@ -1122,9 +1224,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.23070239182196065,
-          "draw": 0.28545271828563434,
-          "away": 0.48384488989240493,
+          "home": 0.22991581770414407,
+          "draw": 0.285689764222431,
+          "away": 0.48439441807342487,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1139,9 +1241,10 @@
         "league": "Brazil Série A",
         "home": "Palmeiras",
         "away": "Grêmio",
-        "offers_total": 184,
+        "offers_total": 175,
+        "target_offers": 5,
         "groups": {
-          "h2h": 126,
+          "h2h": 117,
           "spreads|1.00": 14,
           "totals|2.50": 40,
           "spreads|1.50": 4
@@ -1149,9 +1252,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.6184944062478264,
-          "draw": 0.2248551136650118,
-          "away": 0.15665048008716187,
+          "home": 0.6183093410821948,
+          "draw": 0.2249761585016437,
+          "away": 0.15671450041616133,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1166,20 +1269,21 @@
         "league": "Ligue 1 - France",
         "home": "Paris Saint Germain",
         "away": "Toulouse",
-        "offers_total": 184,
+        "offers_total": 182,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
-          "spreads|1.50": 16,
+          "h2h": 126,
+          "spreads|1.50": 18,
           "totals|2.50": 20,
-          "totals|3.00": 10,
+          "totals|3.00": 12,
           "totals|3.50": 6
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.734775484621539,
-          "draw": 0.1714712822760898,
-          "away": 0.09375323310237135,
+          "home": 0.7346042971041336,
+          "draw": 0.17114696529478876,
+          "away": 0.0942487376010777,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1189,25 +1293,27 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|elche|rayo vallecano|2026-04-03",
+        "match_key": "soccer|cagliari|sassuolo|2026-04-04",
         "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Rayo Vallecano",
-        "away": "Elche CF",
-        "offers_total": 169,
+        "league": "Serie A - Italy",
+        "home": "Sassuolo",
+        "away": "Cagliari",
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
           "h2h": 123,
-          "spreads|1.50": 2,
-          "totals|2.50": 34,
-          "spreads|0.75": 8,
+          "spreads|0.50": 14,
+          "totals|2.25": 8,
+          "totals|2.50": 30,
+          "spreads|0.00": 2,
           "spreads|1.00": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.5383108676908653,
-          "draw": 0.2625070538810051,
-          "away": 0.19918207842812957,
+          "home": 0.47444418647498926,
+          "draw": 0.3038730191109943,
+          "away": 0.22168279441401642,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1217,56 +1323,28 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|levante|real socie d|2026-04-04",
-        "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Real Sociedad",
-        "away": "Levante",
-        "offers_total": 173,
-        "groups": {
-          "h2h": 123,
-          "spreads|1.50": 2,
-          "totals|2.50": 28,
-          "spreads|1.00": 12,
-          "totals|2.75": 6,
-          "totals|3.00": 2
-        },
-        "context": null,
-        "model_base": {
-          "family": "market_only",
-          "home": 0.6005883294076614,
-          "draw": 0.22562229032319167,
-          "away": 0.17378938026914698,
-          "btts_yes": null,
-          "over25": null,
-          "home_lambda": null,
-          "away_lambda": null,
-          "confidence_anchor": 54.0
-        },
-        "candidate_count": 0
-      },
-      {
-        "match_key": "soccer|1 hei nheim|borussia monchengladb h|2026-04-04",
+        "match_key": "soccer|1 heidenheim|borussia monchengladbach|2026-04-04",
         "sport": "soccer",
         "league": "Bundesliga - Germany",
         "home": "Borussia Monchengladbach",
         "away": "1. FC Heidenheim",
-        "offers_total": 193,
+        "offers_total": 177,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|1.50": 2,
           "totals|2.50": 26,
-          "spreads|1.00": 14,
-          "totals|3.00": 12,
+          "spreads|1.00": 12,
+          "totals|3.00": 10,
           "totals|3.50": 2,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.6068235337134728,
-          "draw": 0.21726776765282085,
-          "away": 0.17590869863370653,
+          "home": 0.6064515780181212,
+          "draw": 0.21760161708421974,
+          "away": 0.17594680489765896,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1281,22 +1359,23 @@
         "league": "Bundesliga - Germany",
         "home": "Hamburger SV",
         "away": "Augsburg",
-        "offers_total": 191,
+        "offers_total": 175,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|0.00": 2,
           "totals|2.50": 36,
           "spreads|1.00": 2,
-          "spreads|0.25": 10,
-          "totals|2.75": 4,
+          "spreads|0.25": 8,
+          "totals|2.75": 2,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.42058688004535194,
-          "draw": 0.27572229842763063,
-          "away": 0.3036908215270174,
+          "home": 0.4204876835935187,
+          "draw": 0.275562645266202,
+          "away": 0.3039496711402794,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1311,22 +1390,23 @@
         "league": "Bundesliga - Germany",
         "home": "Bayer Leverkusen",
         "away": "VfL Wolfsburg",
-        "offers_total": 191,
+        "offers_total": 177,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
-          "spreads|1.50": 6,
+          "h2h": 123,
+          "spreads|1.50": 8,
           "totals|3.50": 26,
-          "totals|3.00": 2,
+          "totals|3.00": 4,
           "totals|2.50": 2,
-          "spreads|1.25": 10,
-          "totals|3.25": 10
+          "spreads|1.25": 8,
+          "totals|3.25": 6
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.6714569775916284,
-          "draw": 0.18808539293003812,
-          "away": 0.1404576294783334,
+          "home": 0.6715686717455207,
+          "draw": 0.18818753798547458,
+          "away": 0.1402437902690048,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1341,20 +1421,21 @@
         "league": "Bundesliga - Germany",
         "home": "SC Freiburg",
         "away": "Bayern Munich",
-        "offers_total": 191,
+        "offers_total": 175,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|1.50": 10,
-          "totals|3.50": 38,
+          "totals|3.50": 36,
           "totals|2.50": 2,
-          "spreads|1.25": 6
+          "spreads|1.25": 4
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.1407818911971953,
-          "draw": 0.17774999198595293,
-          "away": 0.6814681168168517,
+          "home": 0.14074274372230577,
+          "draw": 0.17745687926958595,
+          "away": 0.6818003770081081,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1369,23 +1450,24 @@
         "league": "Bundesliga - Germany",
         "home": "TSG Hoffenheim",
         "away": "FSV Mainz 05",
-        "offers_total": 189,
+        "offers_total": 173,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|1.50": 2,
           "totals|3.50": 14,
           "spreads|1.00": 2,
-          "totals|3.00": 12,
+          "totals|3.00": 10,
           "totals|2.50": 12,
-          "spreads|0.75": 10,
+          "spreads|0.75": 8,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.5418916138734682,
-          "draw": 0.23462056915487492,
-          "away": 0.2234878169716569,
+          "home": 0.5416788400421926,
+          "draw": 0.23481590064978855,
+          "away": 0.22350525930801887,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1395,57 +1477,29 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|rb leipzig|wer r bremen|2026-04-04",
+        "match_key": "soccer|rb leipzig|werder bremen|2026-04-04",
         "sport": "soccer",
         "league": "Bundesliga - Germany",
         "home": "Werder Bremen",
         "away": "RB Leipzig",
-        "offers_total": 191,
+        "offers_total": 175,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|0.00": 2,
           "totals|3.50": 24,
           "spreads|1.00": 2,
-          "totals|3.00": 2,
+          "totals|3.00": 4,
           "totals|2.50": 2,
-          "spreads|0.50": 14,
-          "totals|3.25": 10
+          "spreads|0.50": 12,
+          "totals|3.25": 6
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.28057286276093313,
-          "draw": 0.24226293962324907,
-          "away": 0.47716419761581774,
-          "btts_yes": null,
-          "over25": null,
-          "home_lambda": null,
-          "away_lambda": null,
-          "confidence_anchor": 54.0
-        },
-        "candidate_count": 0
-      },
-      {
-        "match_key": "soccer|mallorca|real madrid|2026-04-04",
-        "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Mallorca",
-        "away": "Real Madrid",
-        "offers_total": 173,
-        "groups": {
-          "h2h": 123,
-          "totals|2.50": 28,
-          "spreads|1.50": 2,
-          "spreads|1.00": 12,
-          "totals|2.75": 6,
-          "totals|3.00": 2
-        },
-        "context": null,
-        "model_base": {
-          "family": "market_only",
-          "home": 0.17316485073991134,
-          "draw": 0.22008612858095283,
-          "away": 0.6067490206791358,
+          "home": 0.28015572143144024,
+          "draw": 0.2423307878498156,
+          "away": 0.47751349071874416,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1460,21 +1514,22 @@
         "league": "Ligue 1 - France",
         "home": "Strasbourg",
         "away": "Nice",
-        "offers_total": 184,
+        "offers_total": 182,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 126,
           "spreads|0.00": 2,
           "totals|2.50": 30,
           "spreads|1.00": 2,
-          "spreads|0.50": 12,
-          "totals|2.75": 6
+          "spreads|0.50": 14,
+          "totals|2.75": 8
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.5161853400613547,
-          "draw": 0.257582398209817,
-          "away": 0.22623226172882818,
+          "home": 0.5161116208254407,
+          "draw": 0.2579095173960493,
+          "away": 0.22597886177851,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1484,26 +1539,28 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|espanyol|real betis|2026-04-04",
+        "match_key": "soccer|fiorentina|hellas verona|2026-04-04",
         "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Real Betis",
-        "away": "Espanyol",
-        "offers_total": 170,
+        "league": "Serie A - Italy",
+        "home": "Hellas Verona",
+        "away": "Fiorentina",
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
-          "h2h": 120,
-          "spreads|0.75": 8,
-          "totals|2.50": 36,
-          "spreads|0.50": 2,
-          "spreads|1.50": 2,
-          "spreads|1.00": 2
+          "h2h": 123,
+          "spreads|0.50": 14,
+          "totals|2.25": 8,
+          "totals|2.50": 28,
+          "spreads|0.00": 2,
+          "spreads|1.00": 2,
+          "totals|2.00": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.5537320822740112,
-          "draw": 0.23757857164658777,
-          "away": 0.20868934607940107,
+          "home": 0.2325173049559475,
+          "draw": 0.2783439151024004,
+          "away": 0.48913877994165217,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1518,23 +1575,24 @@
         "league": "Bundesliga - Germany",
         "home": "VfB Stuttgart",
         "away": "Borussia Dortmund",
-        "offers_total": 191,
+        "offers_total": 175,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|0.00": 8,
           "totals|3.50": 26,
           "spreads|1.00": 2,
           "totals|2.50": 2,
-          "spreads|0.25": 6,
-          "totals|3.25": 10,
+          "spreads|0.25": 4,
+          "totals|3.25": 8,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.40727802875165114,
-          "draw": 0.2405125374359988,
-          "away": 0.35220943381235,
+          "home": 0.40739815105029364,
+          "draw": 0.2408408351124165,
+          "away": 0.35176101383728975,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1544,26 +1602,27 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|b reserves t|rennes|2026-04-04",
+        "match_key": "soccer|brest|rennes|2026-04-04",
         "sport": "soccer",
         "league": "Ligue 1 - France",
         "home": "Brest",
         "away": "Rennes",
         "offers_total": 184,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 126,
           "spreads|0.00": 2,
-          "totals|2.50": 38,
+          "totals|2.50": 40,
           "spreads|1.00": 2,
-          "spreads|0.25": 8,
-          "spreads|0.50": 2
+          "spreads|0.25": 10,
+          "spreads|0.50": 4
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.30455638311432215,
-          "draw": 0.2709913286198812,
-          "away": 0.4244522882657967,
+          "home": 0.30520301849740733,
+          "draw": 0.27117230430935874,
+          "away": 0.4236246771932339,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1573,28 +1632,28 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|atletico madrid|barcelona|2026-04-04",
+        "match_key": "soccer|lazio|parma|2026-04-04",
         "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Atlético Madrid",
-        "away": "Barcelona",
-        "offers_total": 163,
+        "league": "Serie A - Italy",
+        "home": "Lazio",
+        "away": "Parma",
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
-          "h2h": 117,
-          "totals|3.50": 24,
+          "h2h": 123,
+          "spreads|0.50": 14,
+          "totals|2.25": 8,
+          "totals|2.50": 26,
           "spreads|0.00": 2,
-          "totals|2.50": 2,
-          "spreads|0.25": 8,
-          "totals|3.25": 6,
-          "spreads|1.00": 2,
-          "totals|3.00": 2
+          "totals|2.00": 4,
+          "spreads|1.00": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.3117397321900293,
-          "draw": 0.2533886203625741,
-          "away": 0.4348716474473967,
+          "home": 0.5264505237493948,
+          "draw": 0.2785622844316774,
+          "away": 0.1949871918189277,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1609,21 +1668,22 @@
         "league": "Ligue 1 - France",
         "home": "Lille",
         "away": "RC Lens",
-        "offers_total": 186,
+        "offers_total": 184,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
-          "spreads|0.00": 12,
-          "totals|2.50": 32,
+          "h2h": 126,
+          "spreads|0.00": 14,
+          "totals|2.50": 36,
           "spreads|1.00": 2,
-          "totals|2.75": 6,
-          "spreads|0.50": 2
+          "spreads|0.50": 2,
+          "totals|2.75": 4
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.3661130715439899,
-          "draw": 0.28229385777315125,
-          "away": 0.3515930706828587,
+          "home": 0.36538846824077637,
+          "draw": 0.282725821407816,
+          "away": 0.3518857103514077,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1638,9 +1698,10 @@
         "league": "Brazil Série A",
         "home": "Sao Paulo",
         "away": "Cruzeiro",
-        "offers_total": 126,
+        "offers_total": 117,
+        "target_offers": 5,
         "groups": {
-          "h2h": 96,
+          "h2h": 87,
           "totals|2.50": 24,
           "spreads|0.00": 2,
           "spreads|1.00": 2,
@@ -1649,9 +1710,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.4432992010435707,
-          "draw": 0.2862944954593778,
-          "away": 0.2704063034970514,
+          "home": 0.43955261007290475,
+          "draw": 0.2907902082625111,
+          "away": 0.2696571816645841,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1666,9 +1727,10 @@
         "league": "Brazil Série A",
         "home": "Coritiba",
         "away": "Fluminense",
-        "offers_total": 126,
+        "offers_total": 117,
+        "target_offers": 5,
         "groups": {
-          "h2h": 96,
+          "h2h": 87,
           "totals|2.50": 22,
           "spreads|0.00": 2,
           "spreads|1.00": 2,
@@ -1678,9 +1740,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.2965231297615031,
-          "draw": 0.3020204304877704,
-          "away": 0.4014564397507266,
+          "home": 0.2969997690696243,
+          "draw": 0.302050482883125,
+          "away": 0.40094974804725075,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1690,14 +1752,15 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|botafogo|va o gama|2026-04-05",
+        "match_key": "soccer|botafogo|vasco da gama|2026-04-05",
         "sport": "soccer",
         "league": "Brazil Série A",
         "home": "Vasco da Gama",
         "away": "Botafogo",
-        "offers_total": 123,
+        "offers_total": 117,
+        "target_offers": 5,
         "groups": {
-          "h2h": 93,
+          "h2h": 87,
           "totals|2.50": 24,
           "spreads|0.00": 2,
           "spreads|1.00": 2,
@@ -1706,9 +1769,9 @@
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.4303985200182425,
-          "draw": 0.28076074632755277,
-          "away": 0.2888407336542046,
+          "home": 0.4296501044847269,
+          "draw": 0.28099223920211297,
+          "away": 0.28935765631316007,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1718,26 +1781,27 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|athletic bilbao|getafe|2026-04-05",
+        "match_key": "soccer|bologna|cremonese|2026-04-05",
         "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Getafe",
-        "away": "Athletic Bilbao",
-        "offers_total": 173,
+        "league": "Serie A - Italy",
+        "home": "Cremonese",
+        "away": "Bologna",
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
           "h2h": 123,
-          "totals|1.50": 26,
-          "spreads|0.00": 12,
-          "totals|2.50": 2,
-          "totals|1.75": 8,
-          "spreads|1.00": 2
+          "spreads|0.00": 2,
+          "totals|2.50": 40,
+          "spreads|0.25": 10,
+          "spreads|1.00": 2,
+          "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.308672761416769,
-          "draw": 0.3326218466834724,
-          "away": 0.3587053918997587,
+          "home": 0.2645590543457693,
+          "draw": 0.2796984807558123,
+          "away": 0.4557424648984185,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1752,22 +1816,23 @@
         "league": "Ligue 1 - France",
         "home": "Angers",
         "away": "Lyon",
-        "offers_total": 182,
+        "offers_total": 180,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 126,
           "spreads|1.50": 2,
           "totals|2.50": 28,
           "spreads|1.00": 2,
           "spreads|0.50": 8,
-          "totals|2.25": 8,
-          "spreads|0.75": 2
+          "totals|2.25": 10,
+          "spreads|0.75": 4
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.19864184419182543,
-          "draw": 0.2703791014594895,
-          "away": 0.530979054348685,
+          "home": 0.19860821721535535,
+          "draw": 0.2708547708675378,
+          "away": 0.5305370119171068,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1782,52 +1847,24 @@
         "league": "Bundesliga - Germany",
         "home": "Union Berlin",
         "away": "FC St. Pauli",
-        "offers_total": 189,
+        "offers_total": 173,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|0.00": 2,
           "totals|2.50": 22,
           "spreads|1.00": 2,
-          "totals|2.00": 12,
-          "spreads|0.25": 10,
+          "totals|2.00": 10,
+          "spreads|0.25": 8,
           "totals|1.50": 4,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.448923474988671,
-          "draw": 0.29458117182327237,
-          "away": 0.2564953531880565,
-          "btts_yes": null,
-          "over25": null,
-          "home_lambda": null,
-          "away_lambda": null,
-          "confidence_anchor": 54.0
-        },
-        "candidate_count": 0
-      },
-      {
-        "match_key": "soccer|celta vigo|valencia|2026-04-05",
-        "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Valencia",
-        "away": "Celta Vigo",
-        "offers_total": 168,
-        "groups": {
-          "h2h": 120,
-          "spreads|0.00": 2,
-          "totals|2.50": 28,
-          "spreads|0.25": 8,
-          "totals|2.25": 8,
-          "spreads|1.00": 2
-        },
-        "context": null,
-        "model_base": {
-          "family": "market_only",
-          "home": 0.403962288142073,
-          "draw": 0.2894347431250042,
-          "away": 0.3066029687329228,
+          "home": 0.4487477222238156,
+          "draw": 0.2943789074845173,
+          "away": 0.2568733702916672,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1842,23 +1879,24 @@
         "league": "Ligue 1 - France",
         "home": "Le Havre",
         "away": "Auxerre",
-        "offers_total": 184,
+        "offers_total": 182,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
+          "h2h": 126,
           "spreads|0.00": 2,
           "totals|2.50": 28,
           "spreads|1.00": 2,
           "totals|2.00": 2,
-          "spreads|0.25": 8,
-          "totals|2.25": 8,
+          "spreads|0.25": 10,
+          "totals|2.25": 10,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.39474511286725944,
-          "draw": 0.3015558132851406,
-          "away": 0.30369907384760003,
+          "home": 0.39436063957035905,
+          "draw": 0.30186992005585533,
+          "away": 0.30376944037378556,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1873,22 +1911,23 @@
         "league": "Ligue 1 - France",
         "home": "Lorient",
         "away": "Paris FC",
-        "offers_total": 177,
+        "offers_total": 175,
+        "target_offers": 5,
         "groups": {
-          "h2h": 129,
+          "h2h": 123,
           "spreads|0.00": 2,
           "totals|2.50": 30,
           "spreads|1.00": 2,
-          "spreads|0.25": 6,
-          "totals|2.25": 6,
+          "spreads|0.25": 8,
+          "totals|2.25": 8,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.40981154315144447,
-          "draw": 0.2911485738331496,
-          "away": 0.2990398830154059,
+          "home": 0.4100355861848114,
+          "draw": 0.291177846882518,
+          "away": 0.2987865669326708,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1903,21 +1942,22 @@
         "league": "Ligue 1 - France",
         "home": "Metz",
         "away": "Nantes",
-        "offers_total": 186,
+        "offers_total": 184,
+        "target_offers": 5,
         "groups": {
-          "h2h": 132,
-          "spreads|0.00": 12,
+          "h2h": 126,
+          "spreads|0.00": 14,
           "totals|2.50": 30,
           "spreads|1.00": 2,
-          "totals|2.25": 8,
+          "totals|2.25": 10,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.3225158937544507,
-          "draw": 0.2889677735197815,
-          "away": 0.38851633272576785,
+          "home": 0.3223544427211098,
+          "draw": 0.2895606449475072,
+          "away": 0.38808491233138287,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1927,27 +1967,28 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|1 koln|eintr ht frankfurt|2026-04-05",
+        "match_key": "soccer|1 koln|eintracht frankfurt|2026-04-05",
         "sport": "soccer",
         "league": "Bundesliga - Germany",
         "home": "Eintracht Frankfurt",
         "away": "1. FC Köln",
-        "offers_total": 189,
+        "offers_total": 173,
+        "target_offers": 5,
         "groups": {
-          "h2h": 135,
+          "h2h": 123,
           "spreads|0.00": 2,
           "totals|2.50": 28,
           "spreads|1.00": 2,
-          "spreads|0.25": 10,
-          "totals|2.75": 10,
+          "spreads|0.25": 8,
+          "totals|2.75": 8,
           "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.44556008790925355,
-          "draw": 0.26860773651123476,
-          "away": 0.2858321755795117,
+          "home": 0.4458703376078913,
+          "draw": 0.26790142010510754,
+          "away": 0.2862282422870012,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1957,25 +1998,120 @@
         "candidate_count": 0
       },
       {
-        "match_key": "soccer|oviedo|sevilla|2026-04-05",
+        "match_key": "soccer|pisa|torino|2026-04-05",
         "sport": "soccer",
-        "league": "La Liga - Spain",
-        "home": "Oviedo",
-        "away": "Sevilla",
-        "offers_total": 173,
+        "league": "Serie A - Italy",
+        "home": "Pisa",
+        "away": "Torino",
+        "offers_total": 179,
+        "target_offers": 5,
         "groups": {
           "h2h": 123,
-          "totals|2.50": 26,
-          "spreads|0.00": 12,
-          "totals|2.00": 10,
-          "spreads|1.00": 2
+          "spreads|0.25": 6,
+          "totals|2.25": 10,
+          "spreads|0.00": 6,
+          "totals|2.50": 28,
+          "spreads|1.00": 2,
+          "totals|2.00": 2,
+          "spreads|0.50": 2
         },
         "context": null,
         "model_base": {
           "family": "market_only",
-          "home": 0.3270714957499064,
-          "draw": 0.3161585748393549,
-          "away": 0.3567699294107386,
+          "home": 0.30367052124574234,
+          "draw": 0.3186746086265287,
+          "away": 0.37765487012772886,
+          "btts_yes": null,
+          "over25": null,
+          "home_lambda": null,
+          "away_lambda": null,
+          "confidence_anchor": 54.0
+        },
+        "candidate_count": 0
+      },
+      {
+        "match_key": "soccer|as roma|inter milan|2026-04-05",
+        "sport": "soccer",
+        "league": "Serie A - Italy",
+        "home": "Inter Milan",
+        "away": "AS Roma",
+        "offers_total": 179,
+        "target_offers": 5,
+        "groups": {
+          "h2h": 123,
+          "spreads|1.50": 2,
+          "totals|2.50": 40,
+          "spreads|0.75": 10,
+          "spreads|1.00": 2,
+          "spreads|0.50": 2
+        },
+        "context": null,
+        "model_base": {
+          "family": "market_only",
+          "home": 0.5774223263172393,
+          "draw": 0.24229990880364197,
+          "away": 0.18027776487911876,
+          "btts_yes": null,
+          "over25": null,
+          "home_lambda": null,
+          "away_lambda": null,
+          "confidence_anchor": 54.0
+        },
+        "candidate_count": 0
+      },
+      {
+        "match_key": "soccer|as monaco|marseille|2026-04-05",
+        "sport": "soccer",
+        "league": "Ligue 1 - France",
+        "home": "AS Monaco",
+        "away": "Marseille",
+        "offers_total": 180,
+        "target_offers": 5,
+        "groups": {
+          "h2h": 126,
+          "spreads|0.00": 2,
+          "totals|3.50": 24,
+          "spreads|1.00": 2,
+          "totals|3.00": 12,
+          "totals|2.50": 2,
+          "spreads|0.25": 10,
+          "spreads|0.50": 2
+        },
+        "context": null,
+        "model_base": {
+          "family": "market_only",
+          "home": 0.4288929950351655,
+          "draw": 0.25945225924740684,
+          "away": 0.3116547457174277,
+          "btts_yes": null,
+          "over25": null,
+          "home_lambda": null,
+          "away_lambda": null,
+          "confidence_anchor": 54.0
+        },
+        "candidate_count": 0
+      },
+      {
+        "match_key": "soccer|chapecoense|vitoria|2026-04-05",
+        "sport": "soccer",
+        "league": "Brazil Série A",
+        "home": "Chapecoense",
+        "away": "Vitoria",
+        "offers_total": 117,
+        "target_offers": 5,
+        "groups": {
+          "h2h": 87,
+          "totals|2.50": 24,
+          "spreads|0.00": 2,
+          "spreads|1.00": 2,
+          "spreads|0.50": 2
+        },
+        "context": null,
+        "model_base": {
+          "family": "market_only",
+          "home": 0.3868657352171255,
+          "draw": 0.2908523167240231,
+          "away": 0.32228194805885135,
           "btts_yes": null,
           "over25": null,
           "home_lambda": null,
@@ -1986,69 +2122,6 @@
       }
     ]
   },
-  "candidates": [
-    {
-      "match_key": "soccer|coritiba|va o gama|2026-04-01",
-      "sport_key": "soccer",
-      "league_name": "Brazil Série A",
-      "home_team": "Coritiba",
-      "away_team": "Vasco da Gama",
-      "commence_time": "2026-04-01T23:30:00+00:00",
-      "family": "totals",
-      "selection": "Over",
-      "odds": 2.54,
-      "fair_odds": 2.43370230230743,
-      "implied_probability": 0.39370078740157477,
-      "model_probability": 0.4108965994122966,
-      "adjusted_probability": 0.4108965994122966,
-      "edge_pct": 1.7195812010721845,
-      "ev_pct": 4.367736250723331,
-      "confidence": 63.8,
-      "books_count": 12,
-      "sources_count": 1,
-      "point": 2.5,
-      "expected_home": null,
-      "expected_away": null,
-      "reasons": [
-        "model=consensus",
-        "consensus_fair_odds=2.43",
-        "market_prob=41.09%"
-      ],
-      "source_summary": {
-        "target_source": "the_odds_api",
-        "target_bookmaker": "Matchbook",
-        "consensus_books": [
-          "1xBet",
-          "Nordic Bet",
-          "Betsson",
-          "Codere (IT)",
-          "BetRivers",
-          "Casumo",
-          "LeoVegas",
-          "Grosvenor",
-          "Unibet (NL)",
-          "Tipico",
-          "BetMGM",
-          "GTbets"
-        ],
-        "consensus_sources": [
-          "the_odds_api"
-        ]
-      },
-      "diagnostics": {
-        "offer_point": 2.5,
-        "offer_team_side": null,
-        "group_key": "totals|2.50",
-        "selection_tag": "over",
-        "market_probability": 0.4108965994122966,
-        "reference_price": 2.2733333333333334,
-        "consensus_fair_odds": 2.43370230230743,
-        "outlier_distance_pct": 11.730205278592372,
-        "outlier_penalty": 6.230205278592372,
-        "match_mode": "native"
-      },
-      "publication_score": 62.804
-    }
-  ],
+  "candidates": [],
   "telegram_messages": []
 }
