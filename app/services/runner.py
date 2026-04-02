@@ -85,7 +85,9 @@ class PredictionRunner:
             telegram_payloads: list[str] = []
             if candidates:
                 sent_messages, telegram_payloads = await self.telegram.publish(candidates)
-            published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
+            stored_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
+            telegram_pick_count = len(candidates) if (telegram_payloads and not self.settings.publish_dry_run) else 0
+            published_count = telegram_pick_count or stored_count
 
             source_stats = {
                 "the_odds_api": the_odds_snapshot.get("stats") or {},
@@ -101,8 +103,6 @@ class PredictionRunner:
             for candidate in candidates:
                 mode_counts[str(candidate.model_mode)] += 1
 
-            sheet_export_info = self.sheet_export.write(candidates)
-
             summary = {
                 "matches_seen": len(matches),
                 "matches_before_publish_window": matches_before_publish_window,
@@ -110,6 +110,9 @@ class PredictionRunner:
                 "contexts_built": len(contexts),
                 "candidates": len(candidates),
                 "published": published_count,
+                "published_to_telegram": telegram_pick_count,
+                "stored_candidates": stored_count,
+                "telegram_messages_sent": sent_messages,
                 "dry_run": self.settings.publish_dry_run,
                 "state_path": self.settings.state_path,
                 "debug_path": self.settings.debug_path,
@@ -126,8 +129,10 @@ class PredictionRunner:
                 },
                 "rejections": rejections,
                 "candidate_modes": dict(mode_counts),
-                "sheet_export": sheet_export_info,
             }
+
+            sheet_export_info = self.sheet_export.write(candidates, matches=matches, summary=summary)
+            summary["sheet_export"] = sheet_export_info
 
             self.state.write_debug(
                 {
