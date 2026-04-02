@@ -30,6 +30,11 @@ class CandidateFactory:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.target_books = {normalize_bookmaker_name(name): True for name in settings.target_bookmakers if normalize_bookmaker_name(name)}
+        self.consensus_books = {
+            normalize_bookmaker_name(name)
+            for name in getattr(settings, 'consensus_bookmakers', []) or []
+            if normalize_bookmaker_name(name)
+        }
 
     def build_candidates(
         self,
@@ -234,13 +239,6 @@ class CandidateFactory:
                 return None, "xg_gap_too_wide"
             if match.tier == "low" and context is not None and context.confidence < 66.0:
                 return None, "xg_low_tier_context_too_weak"
-            if sources_count < 2:
-                if books_count < max(self.settings.min_books_publish + 4, 8):
-                    return None, "xg_single_source_books_too_few"
-                if edge_pct < max(self.settings.min_edge_pct + 0.8, 3.2):
-                    return None, "xg_single_source_edge_too_small"
-                if confidence < max(self.settings.min_model_confidence + 3.0, 68.0):
-                    return None, "xg_single_source_confidence_too_low"
 
         if model_mode == "market_only" and context is None and sources_count < 2:
             min_books_for_market_only = max(self.settings.min_books_publish + 4, 6)
@@ -590,8 +588,6 @@ class CandidateFactory:
             adjusted_confidence -= 3.0
         if sources_count < 1:
             adjusted_confidence -= 3.0
-        elif sources_count < 2:
-            adjusted_confidence -= 3.5
         if match.tier == "low":
             adjusted_confidence -= 2.0
         return clamp(adjusted_confidence, 44.0, 88.0)
@@ -646,8 +642,6 @@ class CandidateFactory:
         score -= outlier_penalty * 1.4
         if model_mode != "market_only":
             score += 6.0
-            if model_mode in {"xg_total", "xg_spread", "xg_team_total"} and sources_count < 2:
-                score -= 4.0
         else:
             score -= 3.0
         if match_tier == "low":
@@ -967,4 +961,6 @@ class CandidateFactory:
         key = normalize_bookmaker_name(bookmaker)
         if not key:
             return False
-        return key in self.target_books or key in self.consensus_books
+        target_books = getattr(self, 'target_books', {}) or {}
+        consensus_books = getattr(self, 'consensus_books', set()) or set()
+        return key in target_books or key in consensus_books
