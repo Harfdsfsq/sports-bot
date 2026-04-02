@@ -39,6 +39,7 @@ class BookiesBootstrapProvider:
             "last_body_preview": None,
         }
         preview: dict[str, Any] = {"sample_events": []}
+
         if not self.settings.bookies_api_enabled:
             return [], stats, preview
 
@@ -54,58 +55,94 @@ class BookiesBootstrapProvider:
 
         async with httpx.AsyncClient(timeout=self.settings.bookies_api_timeout_seconds) as client:
             for offset in range(days):
-                day = (datetime.now(UTC) + timedelta(days=offset)).strftime("%Y%m%d")
+                day_dt = datetime.now(UTC) + timedelta(days=offset)
+
+                # BookiesAPI predatapage чаще ожидает дату формата DD.MM.YYYY
+                day_candidates = [
+                    day_dt.strftime("%d.%m.%Y"),
+                    day_dt.strftime("%Y%m%d"),
+                ]
+
                 for page in range(1, max(1, self.settings.bookies_api_max_pages_per_day) + 1):
-                    params = {
-                        "login": self.settings.bookies_api_login,
-                        "token": token,
-                        "task": "predatapage",
-                        "sport": "soccer",
-                        "day": day,
-                        "p": page,
-                    }
-                    stats["requests"] += 1
-                    try:
-                        response = await client.get(self.base_url, params=params)
-                    except Exception as exc:
-                        stats["response_errors"] += 1
-                        stats["last_body_preview"] = f"request failed: {exc}"
-                        break
+                    payload = None
+                    last_items: list[dict[str, Any]] = []
 
-                    stats["event_http_statuses"].append(response.status_code)
-                    stats["last_body_preview"] = response.text[:1200]
-                    if response.status_code != 200:
-                        stats["response_errors"] += 1
-                        break
+                    for day in day_candidates:
+                        params = {
+                            "login": self.settings.bookies_api_login,
+                            "token": token,
+                            "task": "predatapage",
+                            "sport": "soccer",
+                            "day": day,
+                            "p": page,
+                        }
+                        stats["requests"] += 1
+                        try:
+                            response = await client.get(self.base_url, params=params)
+                        except Exception as exc:
+                            stats["response_errors"] += 1
+                            stats["last_body_preview"] = f"request failed: {exc}"
+                            response = None
 
-                    try:
-                        payload = response.json()
-                    except Exception:
-                        stats["response_errors"] += 1
-                        break
+                        if response is None:
+                            continue
 
-                    stats["payload_shapes"].append(self._payload_shape(payload))
-                    items = self._get_event_list(payload)
+                        stats["event_http_statuses"].append(response.status_code)
+                        stats["last_body_preview"] = response.text[:1200]
+
+                        if response.status_code != 200:
+                            stats["response_errors"] += 1
+                            continue
+
+                        try:
+                            payload = response.json()
+                        except Exception:
+                            stats["response_errors"] += 1
+                            continue
+
+                        shape = self._payload_shape(payload)
+                        if shape not in stats["payload_shapes"]:
+                            stats["payload_shapes"].append(shape)
+
+                        items = self._get_event_list(payload)
+                        if items:
+                            last_items = items
+                            break
+
+                    items = last_items
                     stats["events_fetched"] += len(items)
-                    if page == 1:
+
+                    if page == 1 and items:
                         preview["sample_events"] = items[:3]
+
                     if not items:
                         break
 
                     added_this_page = 0
                     for item in items:
-                        match = self._parse_match(item)
+                        try:
+                            match = self._parse_match(item)
+                        except Exception as exc:
+                            stats["response_errors"] += 1
+                            stats["last_body_preview"] = f"parse_match failed: {exc}; item={str(item)[:600]}"
+                            continue
+
                         if match is None:
                             continue
+
                         key = match.match_key
                         if key in seen:
                             continue
+
                         seen.add(key)
                         matches.append(match)
                         added_this_page += 1
 
+                    # Если записей мало — вероятно, страниц больше нет
                     if len(items) < max(1, self.settings.bookies_api_page_limit):
                         break
+
+                    # Если со второй страницы и дальше ничего не добавили — выходим
                     if added_this_page == 0 and page >= 2:
                         break
 
@@ -121,17 +158,38 @@ class BookiesBootstrapProvider:
     def _get_event_list(self, payload: Any) -> list[dict[str, Any]]:
         if not payload:
             return []
+
         if isinstance(payload, list):
             return [item for item in payload if isinstance(item, dict)]
+
         if isinstance(payload, dict):
-            for key in ("data", "results", "response", "games", "matches"):
+            # ВАЖНО: у predatapage BookiesAPI матчи приходят именно в games_pre
+            for key in (
+                "games_pre",
+                "data",
+                "results",
+                "response",
+                "games",
+                "matches",
+                "events",
+                "fixtures",
+            ):
                 value = payload.get(key)
                 if isinstance(value, list):
                     return [item for item in value if isinstance(item, dict)]
+
         return []
 
     def _parse_match(self, item: dict[str, Any]) -> Match | None:
-        game_id = item.get("game_id") or item.get("gameId") or item.get("id") or item.get("match_id") or item.get("fixture_id") or item.get("event_id")
+        game_id = (
+            item.get("game_id")
+            or item.get("gameId")
+            or item.get("id")
+            or item.get("match_id")
+            or item.get("fixture_id")
+            or item.get("event_id")
+        )
+
         home, away = self._extract_teams(item)
         if not game_id or not home or not away:
             return None
@@ -141,6 +199,14 @@ class BookiesBootstrapProvider:
             return None
 
         league = self._extract_league(item)
+
+        metadata = {
+            "bootstrap": True,
+            "raw_game_id": str(game_id),
+        }
+        if item.get("bet365_id"):
+            metadata["bet365_id"] = str(item.get("bet365_id"))
+
         return Match(
             source="bookies_api",
             source_event_id=str(game_id),
@@ -153,7 +219,7 @@ class BookiesBootstrapProvider:
             away_team_norm=_canonicalize_name(away),
             league_key=_league_key(league),
             tier="mid",
-            metadata={"bootstrap": True, "raw_game_id": str(game_id)},
+            metadata=metadata,
         )
 
     def _extract_teams(self, item: dict[str, Any]) -> tuple[str, str]:
@@ -164,23 +230,58 @@ class BookiesBootstrapProvider:
                 return str(value)
             if isinstance(value, dict):
                 for key in (
-                    "name", "team_name", "teamName", "title", "short_name", "shortName",
-                    "common_name", "commonName", "en_name", "enName", "slug", "label",
-                    "full_name", "fullName", "abbr", "code",
+                    "name",
+                    "team_name",
+                    "teamName",
+                    "title",
+                    "short_name",
+                    "shortName",
+                    "common_name",
+                    "commonName",
+                    "en_name",
+                    "enName",
+                    "slug",
+                    "label",
+                    "full_name",
+                    "fullName",
+                    "abbr",
+                    "code",
                 ):
                     if value.get(key):
                         return str(value[key])
             return ""
 
         home_candidates = [
-            item.get("home_team"), item.get("homeTeam"), item.get("home"), item.get("team_home"), item.get("team1"),
-            item.get("team1_name"), item.get("home_name"), item.get("opponent1"), item.get("opponent1_name"), item.get("opp_1"),
-            item.get("localteam"), item.get("localteam_name"), item.get("local"), item.get("local_name"),
+            item.get("home_team"),
+            item.get("homeTeam"),
+            item.get("home"),
+            item.get("team_home"),
+            item.get("team1"),
+            item.get("team1_name"),
+            item.get("home_name"),
+            item.get("opponent1"),
+            item.get("opponent1_name"),
+            item.get("opp_1"),
+            item.get("localteam"),
+            item.get("localteam_name"),
+            item.get("local"),
+            item.get("local_name"),
         ]
         away_candidates = [
-            item.get("away_team"), item.get("awayTeam"), item.get("away"), item.get("team_away"), item.get("team2"),
-            item.get("team2_name"), item.get("away_name"), item.get("opponent2"), item.get("opponent2_name"), item.get("opp_2"),
-            item.get("visitorteam"), item.get("visitorteam_name"), item.get("visitor"), item.get("visitor_name"),
+            item.get("away_team"),
+            item.get("awayTeam"),
+            item.get("away"),
+            item.get("team_away"),
+            item.get("team2"),
+            item.get("team2_name"),
+            item.get("away_name"),
+            item.get("opponent2"),
+            item.get("opponent2_name"),
+            item.get("opp_2"),
+            item.get("visitorteam"),
+            item.get("visitorteam_name"),
+            item.get("visitor"),
+            item.get("visitor_name"),
         ]
 
         teams = item.get("teams")
@@ -211,31 +312,54 @@ class BookiesBootstrapProvider:
             for key in ("name", "title", "league_name"):
                 if league.get(key):
                     return str(league[key])
+
         competition = item.get("competition")
         if isinstance(competition, dict):
             for key in ("name", "title"):
                 if competition.get(key):
                     return str(competition[key])
+
         tournament = item.get("tournament")
         if isinstance(tournament, dict):
             for key in ("name", "title"):
                 if tournament.get(key):
                     return str(tournament[key])
-        for key in ("league_name", "competition_name", "tournament_name", "championship", "league", "competition"):
+
+        for key in ("league_name", "competition_name", "tournament_name", "championship"):
             if item.get(key):
                 return str(item[key])
+
+        if isinstance(item.get("league"), str):
+            return str(item["league"])
+        if isinstance(item.get("competition"), str):
+            return str(item["competition"])
+
         return ""
 
     def _parse_datetime(self, item: dict[str, Any]) -> datetime | None:
         raw = (
-            item.get("event_date") or item.get("start_time") or item.get("commence_time") or item.get("kickoff") or item.get("date")
-            or item.get("match_time") or item.get("time") or item.get("datetime") or item.get("start") or item.get("starts_at")
-            or item.get("startAt") or item.get("match_date") or item.get("event_time") or item.get("ts") or item.get("timestamp")
+            item.get("event_date")
+            or item.get("start_time")
+            or item.get("commence_time")
+            or item.get("kickoff")
+            or item.get("date")
+            or item.get("match_time")
+            or item.get("time")
+            or item.get("datetime")
+            or item.get("start")
+            or item.get("starts_at")
+            or item.get("startAt")
+            or item.get("match_date")
+            or item.get("event_time")
+            or item.get("ts")
+            or item.get("timestamp")
         )
+
         if not raw and item.get("date_start") and item.get("time_start"):
             raw = f"{item['date_start']} {item['time_start']}"
         if not raw and item.get("date") and item.get("time"):
             raw = f"{item['date']} {item['time']}"
+
         if raw is None or raw == "":
             return None
 
@@ -243,24 +367,40 @@ class BookiesBootstrapProvider:
             number = int(raw)
             if number > 1_000_000_000:
                 if number < 1_000_000_000_000:
-                    number *= 1000
+                    return datetime.fromtimestamp(number, tz=UTC)
                 return datetime.fromtimestamp(number / 1000, tz=UTC)
             raw = str(raw)
 
         text = str(raw).strip()
+
+        # Unix timestamp строкой
         if text.isdigit() and len(text) in (10, 13):
             number = int(text)
             if len(text) == 10:
-                number *= 1000
+                return datetime.fromtimestamp(number, tz=UTC)
             return datetime.fromtimestamp(number / 1000, tz=UTC)
+
+        # DD.MM.YYYY HH:MM[:SS]
+        for fmt in (
+            "%d.%m.%Y %H:%M:%S",
+            "%d.%m.%Y %H:%M",
+            "%d.%m.%Y",
+        ):
+            try:
+                dt = datetime.strptime(text, fmt)
+                return dt.replace(tzinfo=UTC)
+            except Exception:
+                pass
 
         text = text.replace("/", "-")
         if "T" not in text and " " in text:
             text = text.replace(" ", "T", 1)
+
         for candidate in (text, text + "Z"):
             try:
                 dt = datetime.fromisoformat(candidate.replace("Z", "+00:00"))
                 return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
             except Exception:
                 continue
+
         return None
