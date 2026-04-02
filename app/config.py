@@ -93,12 +93,15 @@ class Settings(BaseSettings):
             "Unibet",
             "Pinnacle",
             "Betfair",
-            "Betsson",
-            "Duelbits",
-            "Bwin",
             "WilliamHill",
             "Marathonbet",
-            "888sport",
+            "888Sport",
+            "BetAtHome",
+            "Betsson",
+            "1XBet",
+            "MelBet",
+            "Duelbits",
+            "Spreadex",
         ]
     )
     consensus_bookmakers: Annotated[list[str], NoDecode] = Field(
@@ -107,11 +110,12 @@ class Settings(BaseSettings):
             "Betfair",
             "Bet365",
             "Unibet",
-            "Betsson",
-            "Bwin",
             "WilliamHill",
             "Marathonbet",
-            "888sport",
+            "888Sport",
+            "Betsson",
+            "Spreadex",
+            "Duelbits",
         ]
     )
     the_odds_regions: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["eu", "uk", "us"])
@@ -130,11 +134,11 @@ class Settings(BaseSettings):
         default=2,
         validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"),
     )
-    min_books_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
-    min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
-    min_edge_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EDGE_PCT"))
-    min_ev_pct: float = Field(default=1.0, validation_alias=AliasChoices("MIN_EV_PCT"))
-    min_model_confidence: float = Field(default=54.0, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
+    min_books_publish: int = Field(default=3, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
+    min_sources_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
+    min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("MIN_EDGE_PCT"))
+    min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EV_PCT"))
+    min_model_confidence: float = Field(default=58.0, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
     max_picks_per_run: int = Field(default=5, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
     odds_min: float = Field(default=1.60, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
     odds_max: float = Field(default=3.20, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
@@ -256,9 +260,9 @@ class Settings(BaseSettings):
             return self.bookmaker_weight_unibet
         if normalized in {"williamhill", "ladbrokes", "sbobet"}:
             return 1.08
-        if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet"}:
+        if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet", "spreadex", "duelbits"}:
             return 1.03
-        if normalized in {"10bet", "betsson", "betregal", "duelbits"}:
+        if normalized in {"10bet", "betsson", "betregal"}:
             return 1.01
         if normalized in {"1xbet", "melbet", "cashpoint", "betathome"}:
             return 0.96
