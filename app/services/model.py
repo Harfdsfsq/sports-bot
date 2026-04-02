@@ -164,11 +164,13 @@ class CandidateFactory:
             return None, "no_consensus_group"
 
         confidence = self._build_confidence(
+            match=match,
             offer=offer,
             books_count=books_count,
             sources_count=sources_count,
             context=context,
             model_base=model_base,
+            model_reason=model_reason,
         )
         adjusted_probability = shrink_probability(
             model_probability,
@@ -194,6 +196,16 @@ class CandidateFactory:
         if ev_pct < self.settings.min_ev_pct:
             return None, "ev_below_threshold"
 
+        model_mode = "market_only" if model_reason == "consensus" else model_reason
+        if model_mode == "market_only" and context is None and sources_count < 2:
+            min_books_for_market_only = max(self.settings.min_books_publish + 4, 6)
+            if books_count < min_books_for_market_only:
+                return None, "market_only_books_too_few"
+        if model_mode == "market_only" and match.tier == "low" and (sources_count < 2 or books_count < max(self.settings.min_books_publish + 2, 4)):
+            return None, "market_only_low_tier"
+        if model_mode == "market_only" and context is None and sources_count < 2 and edge_pct < max(self.settings.min_edge_pct + 0.8, 2.2):
+            return None, "market_only_edge_too_small"
+
         outlier_distance = price_distance_pct(offer.price, reference_price) if reference_price else None
         outlier_penalty = 0.0
         if outlier_distance is not None and outlier_distance > self.settings.outlier_price_tolerance_pct:
@@ -206,6 +218,8 @@ class CandidateFactory:
             return None, "outlier_penalty_too_high"
         publication_score = self._publication_score(
             family=offer.family,
+            model_mode=model_mode,
+            match_tier=match.tier,
             edge_pct=edge_pct,
             ev_pct=ev_pct,
             confidence=confidence,
@@ -215,7 +229,6 @@ class CandidateFactory:
         )
 
         final_probability = adjusted_probability
-        model_mode = "market_only" if model_reason == "consensus" else model_reason
         reasons = [
             f"mode={model_mode}",
             f"model={model_reason}",
@@ -471,11 +484,13 @@ class CandidateFactory:
     def _build_confidence(
         self,
         *,
+        match: Match,
         offer: Offer,
         books_count: int,
         sources_count: int,
         context: MatchContext | None,
         model_base: dict[str, Any],
+        model_reason: str,
     ) -> float:
         confidence = float(model_base.get("confidence_anchor") or 51.0)
         confidence += min(8.0, books_count * 1.7)
@@ -483,6 +498,12 @@ class CandidateFactory:
         confidence += (self.settings.score_weight_for_family(offer.family) - 1.0) * 10.0
         if context is not None:
             confidence = max(confidence, context.confidence)
+            if context.expected_home is not None and context.expected_away is not None:
+                confidence += 2.0
+        elif model_reason == "consensus":
+            confidence -= 4.0
+        if match.tier == "low":
+            confidence -= 3.0
         match_mode = str(offer.metadata.get("match_mode") or "")
         if match_mode == "fuzzy":
             confidence -= 5.0
@@ -490,12 +511,14 @@ class CandidateFactory:
             confidence -= 2.0
         if offer.source == "odds_api_io" and offer.family in {"dnb", "doubleChance", "btts", "teamTotals"}:
             confidence += 1.5
-        return clamp(confidence, 46.0, 88.0)
+        return clamp(confidence, 44.0, 88.0)
 
     def _publication_score(
         self,
         *,
         family: str,
+        model_mode: str,
+        match_tier: str,
         edge_pct: float,
         ev_pct: float,
         confidence: float,
@@ -506,6 +529,12 @@ class CandidateFactory:
         score = edge_pct * 3.1 + ev_pct * 2.0 + (confidence - 50.0) * 1.6
         score += books_count * 2.0 + sources_count * 1.8
         score -= outlier_penalty * 1.4
+        if model_mode != "market_only":
+            score += 6.0
+        else:
+            score -= 3.0
+        if match_tier == "low":
+            score -= 6.0
         score *= self.settings.score_weight_for_family(family)
         return round(score, 3)
 

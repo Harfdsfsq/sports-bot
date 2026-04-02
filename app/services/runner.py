@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.config import Settings
@@ -57,6 +57,9 @@ class PredictionRunner:
                     matches = dedupe_matches(bootstrap_matches)
                     bootstrap_stats["used_as_primary_source"] = True
 
+            matches_before_publish_window = len(matches)
+            matches = self._filter_matches_for_publish_window(matches)
+
             odds_api_io_offers, odds_io_stats, odds_io_preview = await self.odds_api_io.fetch_offers(matches)
             bookies_api_offers, bookies_stats, bookies_preview = await self.bookies_api.fetch_offers(
                 matches,
@@ -89,6 +92,7 @@ class PredictionRunner:
 
             summary = {
                 "matches_seen": len(matches),
+                "matches_before_publish_window": matches_before_publish_window,
                 "matches_with_offers": sum(1 for match in matches if merged_offers.get(match.match_key)),
                 "contexts_built": len(contexts),
                 "candidates": len(candidates),
@@ -158,6 +162,14 @@ class PredictionRunner:
             self.state.save_run("error", error_text=error_text)
             self.state.write_debug({"created_at": datetime.now(UTC).isoformat(), "error": error_text})
             raise
+
+    def _filter_matches_for_publish_window(self, matches: list[Any]) -> list[Any]:
+        if not matches:
+            return []
+        now = datetime.now(UTC)
+        cutoff = now + timedelta(hours=max(1, int(self.settings.publish_window_hours or 48)))
+        filtered = [match for match in matches if now <= match.commence_time <= cutoff]
+        return filtered or matches
 
     @staticmethod
     def _serialize_candidate(item: CandidateBet) -> dict[str, Any]:

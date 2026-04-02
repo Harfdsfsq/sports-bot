@@ -78,9 +78,10 @@ class BookiesApiProvider:
         candidates = self._candidate_matches(matches, existing_offer_maps or {})
         stats["candidate_matches"] = len(candidates)
         max_matches = max(1, int(self.settings.max_matches_for_odds_fetch or 300))
-        if len(candidates) > max_matches:
-            candidates = candidates[:max_matches]
-            stats["candidate_matches_limited_to"] = max_matches
+        candidate_scan_limit = min(len(candidates), max_matches if max_matches >= 30 else max_matches * 4)
+        if len(candidates) > candidate_scan_limit:
+            candidates = candidates[:candidate_scan_limit]
+            stats["candidate_matches_limited_to"] = candidate_scan_limit
         if not candidates:
             return {}, stats, preview
 
@@ -179,7 +180,18 @@ class BookiesApiProvider:
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             bookmakers_seen: set[str] = set()
 
-            for match_key, item in matched_events.items():
+            odds_now = datetime.now(UTC)
+            odds_cutoff = odds_now + timedelta(hours=max(1, int(self.settings.publish_window_hours or 48)))
+            ranked_matched_items = sorted(
+                matched_events.items(),
+                key=lambda pair: self._candidate_priority(pair[1]["match"], odds_now, odds_cutoff),
+            )
+            odds_fetch_limit = min(len(ranked_matched_items), max_matches if max_matches >= 20 else max(max_matches * 2, 20))
+            if len(ranked_matched_items) > odds_fetch_limit:
+                stats["odds_fetch_limited_to"] = odds_fetch_limit
+
+            useful_matches = 0
+            for match_key, item in ranked_matched_items[:odds_fetch_limit]:
                 game_id = item["event"]["game_id"]
                 parsed_offers, odds_payload = await self._fetch_odds_for_game(client, game_id, item["match"], stats)
 
@@ -206,6 +218,9 @@ class BookiesApiProvider:
                     {(o.bookmaker, o.family, o.market_name, o.point) for o in parsed_offers}
                 )
                 bookmakers_seen.update(o.bookmaker for o in parsed_offers)
+                useful_matches += 1
+                if useful_matches >= max_matches:
+                    break
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
             return dict(offers_by_match), stats, preview
@@ -258,6 +273,8 @@ class BookiesApiProvider:
                 continue
             if allowed_sports and "soccer" not in allowed_sports:
                 continue
+            if not self.settings.allow_low_tier and match.tier == "low":
+                continue
             merged_existing: list[Offer] = []
             for source_map in existing_offer_maps.values():
                 merged_existing.extend(source_map.get(match.match_key) or [])
@@ -265,7 +282,26 @@ class BookiesApiProvider:
             if self.settings.bookies_api_use_for_backfill_only and has_h2h:
                 continue
             out.append(match)
+        now = datetime.now(UTC)
+        publish_cutoff = now + timedelta(hours=max(1, int(self.settings.publish_window_hours or 48)))
+        out.sort(key=lambda match: self._candidate_priority(match, now, publish_cutoff))
         return out
+
+    @staticmethod
+    def _candidate_priority(match: Match, now: datetime, publish_cutoff: datetime) -> tuple[int, int, int, float, str, str, str]:
+        in_window = 0 if now <= match.commence_time <= publish_cutoff else 1
+        tier_rank = 0 if match.tier == "top" else 1 if match.tier == "mid" else 2
+        has_bet365 = 0 if match.metadata.get("bet365_id") else 1
+        kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
+        return (
+            in_window,
+            tier_rank,
+            has_bet365,
+            kickoff_distance,
+            match.league_name.lower(),
+            match.home_team.lower(),
+            match.away_team.lower(),
+        )
 
     @staticmethod
     def _candidate_lookup_by_date(matches: list[Match]) -> dict[str, list[Match]]:

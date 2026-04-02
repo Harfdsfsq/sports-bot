@@ -7,7 +7,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
-from app.utils import parse_datetime, score_event_match
+from app.utils import clamp, parse_datetime, score_event_match
 
 
 class SStatsContextProvider:
@@ -69,6 +69,7 @@ class SStatsContextProvider:
             return {}, stats, preview
 
         contexts: dict[str, MatchContext] = {}
+        best_scores: dict[str, float] = {}
         for row in rows:
             event_home = self._extract_team_name(row, "home")
             event_away = self._extract_team_name(row, "away")
@@ -118,8 +119,13 @@ class SStatsContextProvider:
                     )
                 continue
 
+            previous_score = best_scores.get(best_match.match_key)
+            if previous_score is not None and previous_score >= best_score:
+                continue
+
             context = self._row_to_context(row)
             contexts[best_match.match_key] = context
+            best_scores[best_match.match_key] = best_score
             stats["contexts_built"] = len(contexts)
 
             if best_quality == "exact":
@@ -212,18 +218,32 @@ class SStatsContextProvider:
             ["ExpectedGoalsAway", "xGAway", "CalculatedXgAway", "awayXg", "away_xg"],
         )
 
-        if expected_home is None or expected_away is None:
-            home_prob, away_prob = self._extract_win_probabilities(row)
-            if expected_home is None and home_prob is not None:
-                expected_home = home_prob * 2.4
-            if expected_away is None and away_prob is not None:
-                expected_away = away_prob * 2.4
+        home_prob, away_prob = self._extract_win_probabilities(row)
+        if expected_home is None and home_prob is not None:
+            expected_home = home_prob * 2.4
+        if expected_away is None and away_prob is not None:
+            expected_away = away_prob * 2.4
+
+        confidence = 58.0
+        if expected_home is not None and expected_away is not None:
+            confidence += 6.0
+        if home_prob is not None and away_prob is not None:
+            confidence += 4.0
+        confidence = clamp(confidence, 56.0, 72.0)
 
         return MatchContext(
             source="sstats",
             payload=row,
             expected_home=expected_home,
             expected_away=expected_away,
+            home_win_probability=home_prob,
+            away_win_probability=away_prob,
+            confidence=confidence,
+            details={
+                "sstats_home_win_probability": home_prob,
+                "sstats_away_win_probability": away_prob,
+                "has_expected_goals": expected_home is not None and expected_away is not None,
+            },
         )
 
     def _extract_win_probabilities(self, row: dict[str, Any]) -> tuple[float | None, float | None]:

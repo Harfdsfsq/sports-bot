@@ -7,6 +7,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match
+from app.utils import canonicalize_league_name, canonicalize_team_name, is_low_tier_league
 
 
 def _canonicalize_name(value: str) -> str:
@@ -34,6 +35,7 @@ class BookiesBootstrapProvider:
             "response_errors": 0,
             "events_fetched": 0,
             "matches_built": 0,
+            "low_tier_skipped": 0,
             "event_http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
@@ -128,6 +130,8 @@ class BookiesBootstrapProvider:
                             continue
 
                         if match is None:
+                            if is_low_tier_league(self._extract_league(item)) and not self.settings.allow_low_tier:
+                                stats["low_tier_skipped"] += 1
                             continue
 
                         key = match.match_key
@@ -199,6 +203,9 @@ class BookiesBootstrapProvider:
             return None
 
         league = self._extract_league(item)
+        low_tier = is_low_tier_league(league)
+        if low_tier and not self.settings.allow_low_tier:
+            return None
 
         metadata = {
             "bootstrap": True,
@@ -215,10 +222,10 @@ class BookiesBootstrapProvider:
             home_team=home,
             away_team=away,
             commence_time=commence_time,
-            home_team_norm=_canonicalize_name(home),
-            away_team_norm=_canonicalize_name(away),
-            league_key=_league_key(league),
-            tier="mid",
+            home_team_norm=canonicalize_team_name(home),
+            away_team_norm=canonicalize_team_name(away),
+            league_key=canonicalize_league_name(league),
+            tier="low" if low_tier else "mid",
             metadata=metadata,
         )
 
