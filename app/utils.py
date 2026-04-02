@@ -757,19 +757,39 @@ def get_spread_selection_key(name: str, home_team: str, away_team: str) -> str |
     return get_outcome_key(name, home_team, away_team)
 
 
-def normalize_probability_percent(value: float | None) -> float | None:
+def normalize_probability_percent(value: Any) -> float | None:
     if value is None:
         return None
-    number = float(value)
+    try:
+        raw = str(value).strip().replace(",", ".")
+        if not raw:
+            return None
+        if raw.endswith("%"):
+            raw = raw[:-1].strip()
+        if not raw:
+            return None
+        number = float(raw)
+    except Exception:
+        return None
     if 0.0 <= number <= 1.0:
         return number * 100.0
     return number
 
 
-def to_decimal_probability(value: float | None) -> float | None:
+def to_decimal_probability(value: Any) -> float | None:
     if value is None:
         return None
-    number = float(value)
+    try:
+        raw = str(value).strip().replace(",", ".")
+        if not raw:
+            return None
+        if raw.endswith("%"):
+            raw = raw[:-1].strip()
+        if not raw:
+            return None
+        number = float(raw)
+    except Exception:
+        return None
     if number > 1.0:
         return number / 100.0
     return number
