@@ -3,6 +3,7 @@ from __future__ import annotations
 import math
 import re
 import unicodedata
+from difflib import SequenceMatcher
 from datetime import UTC, datetime
 from statistics import median
 from typing import Iterable
@@ -203,12 +204,11 @@ def normalize_text(value: str) -> str:
     text = transliterate_cyrillic_to_latin(str(value or ""))
     text = unicodedata.normalize("NFD", text)
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
-    text = (
-        text.lower()
-        .replace("&", " and ")
-        .replace("st.", " saint ")
-        .replace("st ", " saint ")
-    )
+    text = text.lower().replace("&", " and ")
+    # NOTE: we only expand the standalone abbreviation "st". The previous
+    # naive string replacement also rewrote words like "west" -> "we saint",
+    # which destroyed team matching for clubs such as West Brom or Stoke.
+    text = re.sub(r"\bst\.?\b", " saint ", text)
     replacements = {
         r"\bsaint\b": " saint ",
         r"\bu\.?s\.?a\.?\b": " usa ",
@@ -218,6 +218,10 @@ def normalize_text(value: str) -> str:
         r"\b(?:reserve|reserves|res|ii team|b team)\b": " reserves ",
         r"\b(?:u17|u18|u19|u20|u21|u23)\b": " ",
         r"\butd\b": " united ",
+        r"\byunaited\b": " united ",
+        r"\byunayted\b": " united ",
+        r"\bsiti\b": " city ",
+        r"\btaun\b": " town ",
         r"\biii\b": " 3 ",
         r"\bii\b": " 2 ",
         r"\band\b": " ",
@@ -322,6 +326,58 @@ def token_similarity(a: str, b: str) -> float:
     return intersection / union
 
 
+def _phonetic_token(value: str) -> str:
+    token = canonicalize_team_name(value)
+    token = token.replace(" ", "")
+    replacements = (
+        ("wr", "r"),
+        ("wh", "w"),
+        ("sch", "sh"),
+        ("shch", "sh"),
+        ("ph", "f"),
+        ("kh", "h"),
+        ("ck", "k"),
+        ("qu", "k"),
+        ("x", "ks"),
+        ("w", "v"),
+        ("zh", "j"),
+        ("ts", "c"),
+        ("tz", "c"),
+        ("ou", "u"),
+        ("oo", "u"),
+        ("ee", "i"),
+        ("ea", "i"),
+        ("ie", "i"),
+        ("ei", "i"),
+        ("th", "t"),
+        ("ya", "ia"),
+        ("yo", "io"),
+        ("yu", "u"),
+        ("ye", "e"),
+    )
+    for source, target in replacements:
+        token = token.replace(source, target)
+    token = re.sub(r"(.)\1+", r"\1", token)
+    if not token:
+        return ""
+    return token[:1] + re.sub(r"[aeiouy]", "", token[1:])
+
+
+def team_similarity(a: str, b: str) -> float:
+    ca = canonicalize_team_name(a)
+    cb = canonicalize_team_name(b)
+    if not ca or not cb:
+        return 0.0
+    if ca == cb:
+        return 1.0
+    if ca in cb or cb in ca:
+        return 0.96
+    token_score = token_similarity(ca, cb)
+    text_score = SequenceMatcher(None, ca, cb).ratio()
+    phonetic_score = SequenceMatcher(None, _phonetic_token(ca), _phonetic_token(cb)).ratio()
+    return max(token_score, text_score, phonetic_score)
+
+
 def fuzzy_teams_equivalent(home_a: str, away_a: str, home_b: str, away_b: str) -> bool:
     direct = soft_contains_team(home_a, home_b) and soft_contains_team(away_a, away_b)
     reverse = soft_contains_team(home_a, away_b) and soft_contains_team(away_a, home_b)
@@ -376,44 +432,50 @@ def score_event_match(
     exact_tolerance_hours: float,
     fuzzy_tolerance_hours: float,
 ) -> tuple[float, str | None]:
-    if not match_teams_equivalent(match_home, match_away, event_home, event_away):
-        direct_home = token_similarity(match_home, event_home)
-        direct_away = token_similarity(match_away, event_away)
-        reverse_home = token_similarity(match_home, event_away)
-        reverse_away = token_similarity(match_away, event_home)
-        direct_score = direct_home + direct_away
-        reverse_score = reverse_home + reverse_away
-        teams_score = max(direct_score, reverse_score)
-        if teams_score < 1.0:
-            return 0.0, None
     diff = date_diff_hours(match_start, event_start)
     if diff is None:
         diff = 999.0
-    league_same = canonicalize_league_name(match_league) == canonicalize_league_name(event_league)
+
+    league_match = canonicalize_league_name(match_league)
+    league_event = canonicalize_league_name(event_league)
+    league_same = league_match == league_event
+    league_related = bool(league_match and league_event and (league_match in league_event or league_event in league_match))
+
     if build_match_key(sport, match_home, match_away, match_start) == build_match_key(sport, event_home, event_away, event_start):
         if diff <= exact_tolerance_hours:
             return 100.0 + max(0.0, 6.0 - diff), "exact"
     if build_loose_match_key(sport, match_home, match_away) == build_loose_match_key(sport, event_home, event_away):
         if diff <= exact_tolerance_hours:
             return 92.0 + max(0.0, 5.0 - diff), "loose"
+
     if diff > fuzzy_tolerance_hours:
         return 0.0, None
-    direct_home = token_similarity(match_home, event_home)
-    direct_away = token_similarity(match_away, event_away)
-    reverse_home = token_similarity(match_home, event_away)
-    reverse_away = token_similarity(match_away, event_home)
+
+    direct_home = team_similarity(match_home, event_home)
+    direct_away = team_similarity(match_away, event_away)
+    reverse_home = team_similarity(match_home, event_away)
+    reverse_away = team_similarity(match_away, event_home)
+
     direct_score = direct_home + direct_away
     reverse_score = reverse_home + reverse_away
-    teams_score = max(direct_score, reverse_score)
-    if teams_score < 1.0:
+    if direct_score >= reverse_score:
+        teams_score = direct_score
+        side_floor = min(direct_home, direct_away)
+    else:
+        teams_score = reverse_score
+        side_floor = min(reverse_home, reverse_away)
+
+    if teams_score < 1.18 or side_floor < 0.45:
         return 0.0, None
-    score = teams_score * 40.0
+
+    score = teams_score * 38.0
     score += max(0.0, 12.0 - diff) * 2.2
+    score += side_floor * 10.0
     if league_same:
         score += 10.0
-    elif canonicalize_league_name(match_league) and canonicalize_league_name(match_league) in canonicalize_league_name(event_league):
+    elif league_related:
         score += 4.0
-    if score < 48.0:
+    if score < 54.0:
         return 0.0, None
     return score, "fuzzy"
 
