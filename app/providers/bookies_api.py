@@ -319,6 +319,31 @@ class BookiesApiProvider:
                 out[(base + timedelta(days=offset)).isoformat()].append(match)
         return out
 
+    @staticmethod
+    def _matched_event_priority(item: dict[str, Any]) -> tuple[int, int, int, float, str, str, str]:
+        match = item.get('match')
+        event = item.get('event') or {}
+        if match is None:
+            return (3, 3, 1, 9999.0, '', '', '')
+
+        quality_rank_map = {'exact': 0, 'loose': 1, 'fuzzy': 2}
+        tier_rank_map = {'top': 0, 'mid': 1, 'low': 2}
+
+        quality_rank = quality_rank_map.get(str(event.get('match_quality') or '').lower(), 3)
+        tier_rank = tier_rank_map.get(str(getattr(match, 'tier', '') or '').lower(), 3)
+        has_bet365 = 0 if getattr(match, 'metadata', {}).get('bet365_id') else 1
+        now = datetime.now(UTC)
+        kickoff_distance = abs((getattr(match, 'commence_time', now) - now).total_seconds()) / 3600.0
+        return (
+            quality_rank,
+            tier_rank,
+            has_bet365,
+            kickoff_distance,
+            str(getattr(match, 'league_name', '')).lower(),
+            str(getattr(match, 'home_team', '')).lower(),
+            str(getattr(match, 'away_team', '')).lower(),
+        )
+
     def _get_event_list(self, payload: Any) -> list[Any]:
         if payload is None:
             return []
