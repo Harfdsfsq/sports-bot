@@ -40,6 +40,8 @@ class ApiFootballContextProvider:
         soccer_matches = [match for match in matches if match.sport_key == "soccer"]
         if not soccer_matches:
             return {}, stats, preview
+
+        days = max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4))
         soccer_matches = self._prioritize_matches(soccer_matches)
         limit = self._prediction_limit(days)
         if limit and len(soccer_matches) > limit:
@@ -48,7 +50,6 @@ class ApiFootballContextProvider:
 
         headers = {"x-apisports-key": self.api_key}
         now = datetime.now(UTC)
-        days = max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4))
         fixtures: list[dict[str, Any]] = []
 
         async with httpx.AsyncClient(timeout=25.0) as client:
