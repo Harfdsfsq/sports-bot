@@ -87,9 +87,32 @@ class Settings(BaseSettings):
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
     publish_window_hours: int = Field(default=48, validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"))
 
-    target_bookmakers: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["Bet365", "Unibet"])
+    target_bookmakers: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: [
+            "Bet365",
+            "Unibet",
+            "Pinnacle",
+            "Betfair",
+            "Betsson",
+            "Duelbits",
+            "Bwin",
+            "WilliamHill",
+            "Marathonbet",
+            "888sport",
+        ]
+    )
     consensus_bookmakers: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"]
+        default_factory=lambda: [
+            "Pinnacle",
+            "Betfair",
+            "Bet365",
+            "Unibet",
+            "Betsson",
+            "Bwin",
+            "WilliamHill",
+            "Marathonbet",
+            "888sport",
+        ]
     )
     the_odds_regions: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["eu", "uk", "us"])
     the_odds_sport_keys: Annotated[list[str], NoDecode] = Field(default_factory=lambda: LEGACY_SOCCER_KEYS.copy())
@@ -235,7 +258,7 @@ class Settings(BaseSettings):
             return 1.08
         if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet"}:
             return 1.03
-        if normalized in {"10bet", "betsson", "betregal"}:
+        if normalized in {"10bet", "betsson", "betregal", "duelbits"}:
             return 1.01
         if normalized in {"1xbet", "melbet", "cashpoint", "betathome"}:
             return 0.96
