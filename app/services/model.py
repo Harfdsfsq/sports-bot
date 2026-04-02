@@ -30,7 +30,6 @@ class CandidateFactory:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.target_books = {normalize_bookmaker_name(name): True for name in settings.target_bookmakers if normalize_bookmaker_name(name)}
-        self.consensus_books = {normalize_bookmaker_name(name): True for name in settings.consensus_bookmakers if normalize_bookmaker_name(name)}
 
     def build_candidates(
         self,
@@ -72,31 +71,33 @@ class CandidateFactory:
         model_base = self._derive_model_base(match, context, h2h_all)
 
         target_offers = [offer for offer in offers if self._is_target_book(offer.bookmaker)]
-        fallback_sharp_offers = [offer for offer in offers if normalize_bookmaker_name(offer.bookmaker) in self.consensus_books]
         rejections["non_target_bookmaker"] += max(0, len(offers) - len(target_offers))
-        selection_mode = "target_bookmakers_only"
-        if not target_offers and fallback_sharp_offers:
-            target_offers = fallback_sharp_offers
-            selection_mode = "consensus_bookmaker_fallback"
-        if not target_offers:
-            debug = {
-                "match_key": match.match_key,
-                "sport": match.sport_key,
-                "league": match.league_name,
-                "home": match.home_team,
-                "away": match.away_team,
-                "offers_total": len(offers),
-                "target_offers": 0,
-                "groups": {key: sum(len(v) for v in books.values()) for key, books in grouped.items()},
-                "context": asdict(context) if context is not None else None,
-                "model_base": model_base,
-                "candidate_count": 0,
-                "mode": selection_mode,
-            }
-            return [], rejections, debug
+
+        evaluation_offers = target_offers
+        evaluation_mode = "target_bookmakers_only"
+        if not evaluation_offers:
+            evaluation_offers = [offer for offer in offers if self._is_consensus_book(offer.bookmaker)]
+            if evaluation_offers:
+                evaluation_mode = "consensus_bookmaker_fallback"
+            else:
+                debug = {
+                    "match_key": match.match_key,
+                    "sport": match.sport_key,
+                    "league": match.league_name,
+                    "home": match.home_team,
+                    "away": match.away_team,
+                    "offers_total": len(offers),
+                    "target_offers": 0,
+                    "groups": {key: sum(len(v) for v in books.values()) for key, books in grouped.items()},
+                    "context": asdict(context) if context is not None else None,
+                    "model_base": model_base,
+                    "candidate_count": 0,
+                    "mode": "target_bookmakers_only",
+                }
+                return [], rejections, debug
 
         seen_candidate_keys: dict[tuple[str, str, str, str], CandidateBet] = {}
-        for offer in target_offers:
+        for offer in evaluation_offers:
             tag = self._selection_tag(match, offer)
             group_key = self._group_key(offer)
             if not tag or not group_key:
@@ -129,7 +130,6 @@ class CandidateFactory:
             "context": asdict(context) if context is not None else None,
             "model_base": model_base,
             "candidate_count": len(candidates),
-            "mode": selection_mode,
         }
         return candidates, rejections, debug
 
@@ -170,6 +170,16 @@ class CandidateFactory:
         if model_probability is None:
             return None, "no_consensus_group"
 
+        model_probability = self._calibrate_model_probability(
+            match=match,
+            offer=offer,
+            context=context,
+            model_reason=model_reason,
+            market_probability=market_prob,
+            model_probability=model_probability,
+            sources_count=sources_count,
+        )
+
         confidence = self._build_confidence(
             match=match,
             offer=offer,
@@ -179,6 +189,17 @@ class CandidateFactory:
             model_base=model_base,
             model_reason=model_reason,
         )
+        confidence = self._apply_model_gap_penalty(
+            match=match,
+            offer=offer,
+            context=context,
+            model_reason=model_reason,
+            confidence=confidence,
+            market_probability=market_prob,
+            model_probability=model_probability,
+            sources_count=sources_count,
+        )
+
         adjusted_probability = shrink_probability(
             model_probability,
             market_prob,
@@ -204,6 +225,20 @@ class CandidateFactory:
             return None, "ev_below_threshold"
 
         model_mode = "market_only" if model_reason == "consensus" else model_reason
+        if model_mode in {"xg_total", "xg_spread", "xg_team_total"}:
+            model_market_gap = abs(model_probability - market_prob)
+            max_gap = 0.22 if match.tier != "low" else 0.18
+            if sources_count < 1 and context is None:
+                return None, "xg_requires_context"
+            if model_market_gap > max_gap and (context is None or context.confidence < 72.0):
+                return None, "xg_gap_too_wide"
+            if match.tier == "low" and context is not None and context.confidence < 66.0:
+                return None, "xg_low_tier_context_too_weak"
+
+        if model_mode == "market_only" and context is None and sources_count < 2:
+            min_books_for_market_only = max(self.settings.min_books_publish + 4, 6)
+            if books_count < min_books_for_market_only:
+                return None, "market_only_books_too_few"
         if model_mode == "market_only" and match.tier == "low" and (sources_count < 2 or books_count < max(self.settings.min_books_publish + 2, 4)):
             return None, "market_only_low_tier"
         if model_mode == "market_only" and context is None and sources_count < 2 and edge_pct < max(self.settings.min_edge_pct + 0.8, 2.2):
@@ -483,6 +518,74 @@ class CandidateFactory:
             return market_probability, "consensus"
 
         return market_probability, "consensus"
+
+    def _calibrate_model_probability(
+        self,
+        *,
+        match: Match,
+        offer: Offer,
+        context: MatchContext | None,
+        model_reason: str,
+        market_probability: float,
+        model_probability: float,
+        sources_count: int,
+    ) -> float:
+        calibrated = float(model_probability)
+        if model_reason not in {"xg_total", "xg_spread", "xg_team_total"}:
+            return clamp(calibrated, 0.01, 0.99)
+
+        cap = 0.80
+        if match.tier == "low":
+            cap = 0.76
+        elif match.tier == "mid":
+            cap = 0.78
+        if context is not None and context.confidence >= 72.0 and sources_count >= 1:
+            cap += 0.02
+        cap = clamp(cap, 0.70, 0.82)
+        calibrated = clamp(calibrated, 1.0 - cap, cap)
+
+        max_gap = 0.22 if match.tier != "low" else 0.18
+        if context is not None and context.confidence >= 72.0:
+            max_gap += 0.03
+        if sources_count >= 2:
+            max_gap += 0.03
+        max_gap = clamp(max_gap, 0.14, 0.28)
+
+        if calibrated > market_probability + max_gap:
+            calibrated = market_probability + max_gap
+        elif calibrated < market_probability - max_gap:
+            calibrated = market_probability - max_gap
+
+        return clamp(calibrated, 0.01, 0.99)
+
+    def _apply_model_gap_penalty(
+        self,
+        *,
+        match: Match,
+        offer: Offer,
+        context: MatchContext | None,
+        model_reason: str,
+        confidence: float,
+        market_probability: float,
+        model_probability: float,
+        sources_count: int,
+    ) -> float:
+        adjusted_confidence = float(confidence)
+        if model_reason not in {"xg_total", "xg_spread", "xg_team_total"}:
+            return clamp(adjusted_confidence, 44.0, 88.0)
+
+        gap_pct = abs(model_probability - market_probability) * 100.0
+        if gap_pct > 10.0:
+            adjusted_confidence -= min(12.0, (gap_pct - 10.0) * 0.65)
+        if context is None:
+            adjusted_confidence -= 5.0
+        elif context.confidence < 66.0:
+            adjusted_confidence -= 3.0
+        if sources_count < 1:
+            adjusted_confidence -= 3.0
+        if match.tier == "low":
+            adjusted_confidence -= 2.0
+        return clamp(adjusted_confidence, 44.0, 88.0)
 
     def _build_confidence(
         self,
@@ -848,3 +951,9 @@ class CandidateFactory:
         if not self.target_books:
             return True
         return normalize_bookmaker_name(bookmaker) in self.target_books
+
+    def _is_consensus_book(self, bookmaker: str) -> bool:
+        key = normalize_bookmaker_name(bookmaker)
+        if not key:
+            return False
+        return key in self.target_books or key in self.consensus_books

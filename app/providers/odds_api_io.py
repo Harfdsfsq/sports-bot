@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -208,12 +209,24 @@ class OddsApiIoProvider:
             return dict(offers_by_match), stats, preview
 
     def _bookmakers_param(self) -> str:
-        values: list[str] = []
-        for item in list(getattr(self.settings, "target_bookmakers", []) or []) + list(getattr(self.settings, "consensus_bookmakers", []) or []):
-            name = str(item or "").strip()
-            if name and name not in values:
-                values.append(name)
-        return ",".join(values or ["Bet365", "Unibet", "Pinnacle", "Betfair"])
+        raw = os.getenv("ODDS_API_IO_BOOKMAKERS") or getattr(self.settings, "odds_api_io_bookmakers", None)
+        if raw in (None, ""):
+            raw = "Bet365,Unibet"
+        if isinstance(raw, str):
+            requested = [part.strip() for part in raw.split(",") if part.strip()]
+        else:
+            requested = [str(part or "").strip() for part in raw if str(part or "").strip()]
+
+        canonical = []
+        for item in requested:
+            name = self._odds_api_io_bookmaker_name(item)
+            if name and name not in canonical:
+                canonical.append(name)
+
+        allowed = [name for name in canonical if name in {"Bet365", "Unibet"}]
+        if not allowed:
+            allowed = ["Bet365", "Unibet"]
+        return ",".join(allowed)
 
     @staticmethod
     def _safe_json(response: httpx.Response) -> Any | None:
@@ -393,6 +406,15 @@ class OddsApiIoProvider:
             return "totals"
         if "spread" in key or "handicap" in key:
             return "spreads"
+        return None
+
+    @staticmethod
+    def _odds_api_io_bookmaker_name(name: str) -> str | None:
+        norm = normalize_bookmaker_name(name)
+        if norm == "bet365":
+            return "Bet365"
+        if norm == "unibet":
+            return "Unibet"
         return None
 
     @staticmethod

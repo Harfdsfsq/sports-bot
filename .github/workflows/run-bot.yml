@@ -51,22 +51,28 @@ jobs:
 
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          ODDS_API_IO_BOOKMAKERS: ${{ vars.ODDS_API_IO_BOOKMAKERS || 'Bet365,Unibet' }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
           BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          API_FOOTBALL_PREDICTIONS_LIMIT: ${{ vars.API_FOOTBALL_PREDICTIONS_LIMIT || '4' }}
 
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
           SHEET_ID: ${{ secrets.SHEET_ID || vars.SHEET_ID }}
+          GOOGLE_SHEETS_WEBHOOK_URL: ${{ secrets.GOOGLE_SHEETS_WEBHOOK_URL || vars.GOOGLE_SHEETS_WEBHOOK_URL }}
+          GOOGLE_SHEETS_WEBHOOK_TOKEN: ${{ secrets.GOOGLE_SHEETS_WEBHOOK_TOKEN || vars.GOOGLE_SHEETS_WEBHOOK_TOKEN }}
         run: |
           mkdir -p .data
           python -m app.cli run-once
 
       - name: Commit state and debug
         run: |
-          git config user.name github-actions
-          git config user.email github-actions@github.com
-          git add .data/state.json .data/debug-last-run.json .data/sheet-export.json .data/sheet-export.csv || true
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add .data/state.json .data/debug-last-run.json .data/sheet-export.json .data/sheet-run-summary.json .data/sheet-picks.csv .data/sheet-matches.csv || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push

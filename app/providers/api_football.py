@@ -25,6 +25,8 @@ class ApiFootballContextProvider:
             "response_errors": 0,
             "fixtures_fetched": 0,
             "contexts_built": 0,
+            "prediction_requests_limited_to": 0,
+            "rate_limited": False,
             "matched_exact": 0,
             "matched_loose": 0,
             "matched_fuzzy": 0,
@@ -38,6 +40,11 @@ class ApiFootballContextProvider:
         soccer_matches = [match for match in matches if match.sport_key == "soccer"]
         if not soccer_matches:
             return {}, stats, preview
+        soccer_matches = self._prioritize_matches(soccer_matches)
+        limit = self._prediction_limit(days)
+        if limit and len(soccer_matches) > limit:
+            soccer_matches = soccer_matches[:limit]
+            stats["prediction_requests_limited_to"] = limit
 
         headers = {"x-apisports-key": self.api_key}
         now = datetime.now(UTC)
@@ -68,6 +75,8 @@ class ApiFootballContextProvider:
 
             contexts: dict[str, MatchContext] = {}
             for match in soccer_matches:
+                if stats.get("rate_limited"):
+                    break
                 fixture, quality = self._match_fixture(match, fixtures)
                 if fixture is None:
                     continue
@@ -87,6 +96,10 @@ class ApiFootballContextProvider:
                     stats["response_errors"] += 1
                     continue
                 payload = self._safe_json(response)
+                if self._has_rate_limit_error(payload):
+                    stats["response_errors"] += 1
+                    stats["rate_limited"] = True
+                    break
                 rows = self._response_rows(payload)
                 if not rows:
                     continue
@@ -102,6 +115,23 @@ class ApiFootballContextProvider:
                     stats["matched_fuzzy"] += 1
 
         return contexts, stats, preview
+
+    def _prediction_limit(self, days: int) -> int:
+        raw = os.getenv("API_FOOTBALL_PREDICTIONS_LIMIT") or getattr(self.settings, "api_football_predictions_limit", None)
+        safe_default = max(1, 10 - (days + 1))
+        try:
+            value = int(raw) if raw not in (None, "") else safe_default
+        except Exception:
+            value = safe_default
+        return max(1, min(value, safe_default))
+
+    def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
+        now = datetime.now(UTC)
+        def key(match: Match) -> tuple[int, float, str, str]:
+            tier_rank = 0 if getattr(match, "tier", "mid") == "top" else 1 if getattr(match, "tier", "mid") == "mid" else 2
+            kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
+            return (tier_rank, kickoff_distance, match.league_name.lower(), match.home_team.lower())
+        return sorted(matches, key=key)
 
     @staticmethod
     def _safe_json(response: httpx.Response) -> Any | None:
@@ -150,6 +180,15 @@ class ApiFootballContextProvider:
                 best_quality = quality
                 best = row
         return (best, best_quality) if best_score >= 48.0 else (None, None)
+
+    @staticmethod
+    def _has_rate_limit_error(payload: Any) -> bool:
+        if not isinstance(payload, dict):
+            return False
+        errors = payload.get("errors")
+        if isinstance(errors, dict):
+            return bool(errors.get("rateLimit"))
+        return False
 
     def _prediction_to_context(self, row: dict[str, Any], fixture: dict[str, Any]) -> MatchContext:
         preds = row.get("predictions") or row.get("prediction") or {}
