@@ -508,29 +508,38 @@ class BookiesApiProvider:
         return parsed, payload
 
     def _parse_odds_payload(self, payload: Any, match: Match) -> list[Offer]:
-        if isinstance(payload, dict) and "games_pre" in payload:
+        if not isinstance(payload, dict):
+            return []
+
+        if "games_pre" in payload:
+            return []
+
+        odds = payload.get("odds")
+        if not isinstance(odds, dict):
             return []
 
         offers: list[Offer] = []
         seen: set[tuple[str, str, str, float | None, str | None]] = set()
-        known_books = self._known_bookmakers()
 
         def add_offer(
             bookmaker: str,
             family: str,
             selection: str,
-            price: float,
+            price_value: Any,
             *,
-            point: float | None = None,
+            point: Any = None,
             market_name: str = "",
             market_key: str = "",
             team_side: str | None = None,
         ) -> None:
             book = self._canonical_bookmaker_name(bookmaker)
-            if not book or price <= 1.0:
+            price = self._to_float(price_value)
+            point_value = self._to_float(point)
+
+            if not book or price is None or price <= 1.0:
                 return
 
-            key = (book, family, selection, point, team_side)
+            key = (book, family, selection, point_value, team_side)
             if key in seen:
                 return
             seen.add(key)
@@ -542,7 +551,7 @@ class BookiesApiProvider:
                     family=family,  # type: ignore[arg-type]
                     selection=selection,
                     price=price,
-                    point=point,
+                    point=point_value,
                     team_side=team_side,
                     market_name=market_name,
                     market_key=market_key,
@@ -551,174 +560,104 @@ class BookiesApiProvider:
                 )
             )
 
-        def parse_selection_item(item: dict[str, Any], ctx: dict[str, Any]) -> None:
-            bookmaker = ctx.get("bookmaker") or self._first_text(item, ["bookmaker", "bookie", "company", "site", "source"])
-            market_key = str(ctx.get("market_key") or item.get("market_key") or item.get("key") or "")
-            market_name = str(ctx.get("market_name") or item.get("market_name") or item.get("market") or item.get("type") or item.get("name") or "")
-            descriptor = " > ".join(part for part in [ctx.get("path"), market_name] if part)
+        def parse_three_way(bookmaker: str, row: dict[str, Any], stage: str) -> None:
+            add_offer(
+                bookmaker,
+                "h2h",
+                match.home_team,
+                row.get("home_od"),
+                market_name=f"1X2 {stage}",
+                market_key="h2h",
+            )
+            add_offer(
+                bookmaker,
+                "h2h",
+                "Draw",
+                row.get("draw_od"),
+                market_name=f"1X2 {stage}",
+                market_key="h2h",
+            )
+            add_offer(
+                bookmaker,
+                "h2h",
+                match.away_team,
+                row.get("away_od"),
+                market_name=f"1X2 {stage}",
+                market_key="h2h",
+            )
 
-            info = detect_market_family(market_key, descriptor or market_name, match.sport_key)
-            if info is None:
-                return
-            family, _ = info
-
-            price = self._to_float(self._first_value(item, ["price", "odd", "odds", "value", "decimal", "koef"]))
-            if price is None or price <= 1.0:
-                return
-
-            point = self._to_float(self._first_value(item, ["point", "line", "total", "handicap", "hdp"]))
-            if point is None:
-                point = self._to_float(ctx.get("point"))
-
-            raw_name = self._first_text(item, ["name", "label", "selection", "outcome", "team", "title", "type"])
-
-            if family == "h2h":
-                selection = get_outcome_key(raw_name, match.home_team, match.away_team) or raw_name
-                if selection in {"home", "away", "draw"}:
-                    selection = {"home": match.home_team, "away": match.away_team, "draw": "Draw"}[selection]
-                add_offer(bookmaker, "h2h", selection, price, point=point, market_name=market_name, market_key=market_key)
-
-            elif family == "totals":
-                total_key = get_total_selection_key(raw_name)
-                if total_key and point is not None:
-                    add_offer(
-                        bookmaker,
-                        "totals",
-                        "Over" if total_key == "over" else "Under",
-                        price,
-                        point=point,
-                        market_name=market_name,
-                        market_key=market_key,
-                    )
-
-            elif family == "spreads":
-                side = get_spread_selection_key(raw_name, match.home_team, match.away_team)
-                if side and point is not None:
-                    selection = match.home_team if side == "home" else match.away_team if side == "away" else raw_name
-                    add_offer(bookmaker, "spreads", selection, price, point=point, market_name=market_name, market_key=market_key)
-
-            elif family == "dnb":
-                side = get_outcome_key(raw_name, match.home_team, match.away_team)
-                if side in {"home", "away"}:
-                    selection = match.home_team if side == "home" else match.away_team
-                    add_offer(bookmaker, "dnb", selection, price, market_name=market_name, market_key=market_key)
-
-            elif family == "doubleChance":
-                raw = raw_name.strip().lower().replace(" ", "")
-                mapping = {
-                    "1x": "1X",
-                    "x2": "X2",
-                    "12": "12",
-                    "homedraw": "1X",
-                    "awaydraw": "X2",
-                    "homeaway": "12",
-                }
-                if raw in mapping:
-                    add_offer(bookmaker, "doubleChance", mapping[raw], price, market_name=market_name, market_key=market_key)
-
-            elif family == "btts":
-                raw = raw_name.strip().lower()
-                if raw in {"yes", "both teams to score - yes", "btts yes"}:
-                    add_offer(bookmaker, "btts", "Yes", price, market_name=market_name, market_key=market_key)
-                elif raw in {"no", "both teams to score - no", "btts no"}:
-                    add_offer(bookmaker, "btts", "No", price, market_name=market_name, market_key=market_key)
-
-            elif family == "teamTotals":
-                total_key = get_total_selection_key(raw_name)
-                side = infer_team_total_side(market_name, market_key, raw_name, match.home_team, match.away_team)
-                if total_key and side and point is not None:
-                    add_offer(
-                        bookmaker,
-                        "teamTotals",
-                        "Over" if total_key == "over" else "Under",
-                        price,
-                        point=point,
-                        market_name=market_name,
-                        market_key=market_key,
-                        team_side=side,
-                    )
-
-        def parse_scalar_mapping(node: dict[str, Any], ctx: dict[str, Any]) -> None:
-            market_key = str(ctx.get("market_key") or "")
-            market_name = str(ctx.get("market_name") or "")
-            descriptor = " > ".join(part for part in [ctx.get("path"), market_name] if part)
-
-            info = detect_market_family(market_key, descriptor or market_name, match.sport_key)
-            if info is None:
+        def parse_spread(bookmaker: str, row: dict[str, Any], stage: str) -> None:
+            handicap = self._to_float(row.get("handicap"))
+            if handicap is None:
                 return
 
-            bookmaker = ctx.get("bookmaker")
-            point = self._to_float(ctx.get("point"))
+            home_price = self._to_float(row.get("home_od"))
+            away_price = self._to_float(row.get("away_od"))
 
-            for key, value in node.items():
-                if isinstance(value, (dict, list)):
-                    continue
-                price = self._to_float(value)
-                if price is None or price <= 1.0:
-                    continue
-                parse_selection_item(
-                    {"name": key, "price": price},
-                    {
-                        **ctx,
-                        "point": point,
-                        "market_name": market_name,
-                        "market_key": market_key,
-                        "bookmaker": bookmaker,
-                    },
+            if home_price is not None and home_price > 1.0:
+                add_offer(
+                    bookmaker,
+                    "spreads",
+                    match.home_team,
+                    home_price,
+                    point=handicap,
+                    market_name=f"Handicap {stage}",
+                    market_key="spreads",
                 )
 
-        def walk(node: Any, ctx: dict[str, Any] | None = None, depth: int = 0, path: list[str] | None = None) -> None:
-            if depth > 8 or node is None:
+            if away_price is not None and away_price > 1.0:
+                add_offer(
+                    bookmaker,
+                    "spreads",
+                    match.away_team,
+                    away_price,
+                    point=-handicap,
+                    market_name=f"Handicap {stage}",
+                    market_key="spreads",
+                )
+
+        def parse_totals(bookmaker: str, row: dict[str, Any], stage: str) -> None:
+            total = self._to_float(row.get("handicap"))
+            if total is None:
                 return
 
-            ctx = dict(ctx or {})
-            path = list(path or [])
+            add_offer(
+                bookmaker,
+                "totals",
+                "Over",
+                row.get("over_od"),
+                point=total,
+                market_name=f"Totals {stage}",
+                market_key="totals",
+            )
+            add_offer(
+                bookmaker,
+                "totals",
+                "Under",
+                row.get("under_od"),
+                point=total,
+                market_name=f"Totals {stage}",
+                market_key="totals",
+            )
 
-            if isinstance(node, list):
-                for item in node:
-                    if isinstance(item, dict):
-                        parse_selection_item(item, {**ctx, "path": " > ".join(path)})
-                    walk(item, ctx, depth + 1, path)
-                return
+        for bookmaker, bookmaker_payload in odds.items():
+            if not isinstance(bookmaker_payload, dict):
+                continue
 
-            if not isinstance(node, dict):
-                return
+            for stage in ("prematch", "kickoff", "live"):
+                rows = bookmaker_payload.get(stage)
+                if not isinstance(rows, list):
+                    continue
 
-            direct_book = self._first_text(node, ["bookmaker", "bookie", "company", "site", "source"])
-            if direct_book:
-                ctx["bookmaker"] = direct_book
+                if len(rows) >= 1 and isinstance(rows[0], dict):
+                    parse_three_way(bookmaker, rows[0], stage)
 
-            if not ctx.get("market_key"):
-                mk = self._first_text(node, ["market_key", "key"])
-                if mk:
-                    ctx["market_key"] = mk
+                if len(rows) >= 2 and isinstance(rows[1], dict):
+                    parse_spread(bookmaker, rows[1], stage)
 
-            if not ctx.get("market_name"):
-                mn = self._first_text(node, ["market_name", "market", "type", "group", "bet", "wager"])
-                if mn:
-                    ctx["market_name"] = mn
+                if len(rows) >= 3 and isinstance(rows[2], dict):
+                    parse_totals(bookmaker, rows[2], stage)
 
-            direct_point = self._to_float(self._first_value(node, ["point", "line", "total", "handicap", "hdp"]))
-            if direct_point is not None:
-                ctx["point"] = direct_point
-
-            if any(not isinstance(v, (dict, list)) for v in node.values()):
-                parse_scalar_mapping(node, {**ctx, "path": " > ".join(path)})
-
-            for key, value in node.items():
-                child = dict(ctx)
-                norm_key = normalize_bookmaker_name(key)
-                if norm_key in known_books:
-                    child["bookmaker"] = known_books[norm_key]
-                if self._looks_like_market_code(key):
-                    child["market_key"] = key
-                    child["market_name"] = key
-                numeric_key = self._to_float(key)
-                if numeric_key is not None and child.get("market_key"):
-                    child["point"] = numeric_key
-                walk(value, child, depth + 1, path + [str(key)])
-
-        walk(payload)
         return offers
 
     def _known_bookmakers(self) -> dict[str, str]:
