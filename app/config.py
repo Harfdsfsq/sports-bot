@@ -135,7 +135,7 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"),
     )
     min_books_publish: int = Field(default=3, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
-    min_sources_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
+    min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
     min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("MIN_EDGE_PCT"))
     min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EV_PCT"))
     min_model_confidence: float = Field(default=58.0, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
