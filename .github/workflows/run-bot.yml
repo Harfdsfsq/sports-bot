@@ -11,6 +11,7 @@ permissions:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v6
 
@@ -58,15 +59,13 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SHEET_ID: ${{ secrets.SHEET_ID || vars.SHEET_ID }}
-        run: |
-          mkdir -p .data
-          python -m app.cli run-once
+        run: bash scripts/run_bot_ci.sh
 
       - name: Commit state and debug
         run: |
           git config user.name github-actions
           git config user.email github-actions@github.com
-          git add .data/state.json .data/debug-last-run.json .data/sheet-export.json .data/sheet-export.csv || true
+          git add .data/state.json .data/debug-last-run.json .data/sheet-export.json .data/sheet-export.csv .data/run-bot.log || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
