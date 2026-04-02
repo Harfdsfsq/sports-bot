@@ -30,6 +30,7 @@ class CandidateFactory:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.target_books = {normalize_bookmaker_name(name): True for name in settings.target_bookmakers if normalize_bookmaker_name(name)}
+        self.consensus_books = {normalize_bookmaker_name(name): True for name in settings.consensus_bookmakers if normalize_bookmaker_name(name)}
 
     def build_candidates(
         self,
@@ -71,7 +72,12 @@ class CandidateFactory:
         model_base = self._derive_model_base(match, context, h2h_all)
 
         target_offers = [offer for offer in offers if self._is_target_book(offer.bookmaker)]
+        fallback_sharp_offers = [offer for offer in offers if normalize_bookmaker_name(offer.bookmaker) in self.consensus_books]
         rejections["non_target_bookmaker"] += max(0, len(offers) - len(target_offers))
+        selection_mode = "target_bookmakers_only"
+        if not target_offers and fallback_sharp_offers:
+            target_offers = fallback_sharp_offers
+            selection_mode = "consensus_bookmaker_fallback"
         if not target_offers:
             debug = {
                 "match_key": match.match_key,
@@ -85,7 +91,7 @@ class CandidateFactory:
                 "context": asdict(context) if context is not None else None,
                 "model_base": model_base,
                 "candidate_count": 0,
-                "mode": "target_bookmakers_only",
+                "mode": selection_mode,
             }
             return [], rejections, debug
 
@@ -123,6 +129,7 @@ class CandidateFactory:
             "context": asdict(context) if context is not None else None,
             "model_base": model_base,
             "candidate_count": len(candidates),
+            "mode": selection_mode,
         }
         return candidates, rejections, debug
 
@@ -197,10 +204,6 @@ class CandidateFactory:
             return None, "ev_below_threshold"
 
         model_mode = "market_only" if model_reason == "consensus" else model_reason
-        if model_mode == "market_only" and context is None and sources_count < 2:
-            min_books_for_market_only = max(self.settings.min_books_publish + 4, 6)
-            if books_count < min_books_for_market_only:
-                return None, "market_only_books_too_few"
         if model_mode == "market_only" and match.tier == "low" and (sources_count < 2 or books_count < max(self.settings.min_books_publish + 2, 4)):
             return None, "market_only_low_tier"
         if model_mode == "market_only" and context is None and sources_count < 2 and edge_pct < max(self.settings.min_edge_pct + 0.8, 2.2):

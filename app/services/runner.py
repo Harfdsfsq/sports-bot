@@ -6,7 +6,9 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.config import Settings
+from app.providers.api_football import ApiFootballContextProvider
 from app.providers.bookies_api import BookiesApiProvider
+from app.providers.bzzoiro import BzzoiroContextProvider
 from app.providers.bookies_bootstrap import BookiesBootstrapProvider
 from app.providers.odds_api_io import OddsApiIoProvider
 from app.providers.sstats import SStatsContextProvider
@@ -14,6 +16,7 @@ from app.providers.the_odds_api import TheOddsApiProvider
 from app.schemas import CandidateBet
 from app.services.model import CandidateFactory
 from app.services.normalizer import dedupe_matches, merge_offers
+from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.state import JsonStateStore
 
@@ -26,8 +29,11 @@ class PredictionRunner:
         self.bookies_api = BookiesApiProvider(settings)
         self.bookies_bootstrap = BookiesBootstrapProvider(settings)
         self.sstats = SStatsContextProvider(settings)
+        self.bzzoiro = BzzoiroContextProvider(settings)
+        self.api_football = ApiFootballContextProvider(settings)
         self.factory = CandidateFactory(settings)
         self.telegram = TelegramPublisher(settings)
+        self.sheet_export = SheetExportService(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
 
     async def run_once(self) -> dict[str, Any]:
@@ -69,7 +75,10 @@ class PredictionRunner:
                 },
             )
             merged_offers = merge_offers(self.settings, the_odds_offers, odds_api_io_offers, bookies_api_offers)
-            contexts, sstats_stats, sstats_preview = await self.sstats.fetch_context(matches)
+            sstats_contexts, sstats_stats, sstats_preview = await self.sstats.fetch_context(matches)
+            bzzoiro_contexts, bzzoiro_stats, bzzoiro_preview = await self.bzzoiro.fetch_context(matches)
+            api_football_contexts, api_football_stats, api_football_preview = await self.api_football.fetch_context(matches)
+            contexts = self._merge_contexts(sstats_contexts, bzzoiro_contexts, api_football_contexts)
             candidates, rejections, model_debug = self.factory.build_candidates(matches, merged_offers, contexts)
 
             sent_messages = 0
@@ -84,11 +93,15 @@ class PredictionRunner:
                 "odds_api_io": odds_io_stats,
                 "bookies_api": bookies_stats,
                 "sstats": sstats_stats,
+                "bzzoiro": bzzoiro_stats,
+                "api_football": api_football_stats,
             }
 
             mode_counts: dict[str, int] = defaultdict(int)
             for candidate in candidates:
                 mode_counts[str(candidate.model_mode)] += 1
+
+            sheet_export_info = self.sheet_export.write(candidates)
 
             summary = {
                 "matches_seen": len(matches),
@@ -113,6 +126,7 @@ class PredictionRunner:
                 },
                 "rejections": rejections,
                 "candidate_modes": dict(mode_counts),
+                "sheet_export": sheet_export_info,
             }
 
             self.state.write_debug(
@@ -135,6 +149,8 @@ class PredictionRunner:
                         "odds_api_io": odds_io_preview,
                         "bookies_api": bookies_preview,
                         "sstats": sstats_preview,
+                        "bzzoiro": bzzoiro_preview,
+                        "api_football": api_football_preview,
                     },
                     "sample_matches": [
                         {
@@ -170,6 +186,22 @@ class PredictionRunner:
         cutoff = now + timedelta(hours=max(1, int(self.settings.publish_window_hours or 48)))
         filtered = [match for match in matches if now <= match.commence_time <= cutoff]
         return filtered or matches
+
+    def _merge_contexts(self, *maps: dict[str, Any]) -> dict[str, Any]:
+        merged: dict[str, Any] = {}
+        for mapping in maps:
+            for match_key, context in (mapping or {}).items():
+                current = merged.get(match_key)
+                if current is None or self._context_score(context) > self._context_score(current):
+                    merged[match_key] = context
+        return merged
+
+    @staticmethod
+    def _context_score(context: Any) -> tuple[float, int, int, int]:
+        expected = int(getattr(context, "expected_home", None) is not None) + int(getattr(context, "expected_away", None) is not None)
+        win_probs = int(getattr(context, "home_win_probability", None) is not None) + int(getattr(context, "away_win_probability", None) is not None)
+        details = len(getattr(context, "details", {}) or {})
+        return (float(getattr(context, "confidence", 0.0) or 0.0), expected, win_probs, details)
 
     @staticmethod
     def _serialize_candidate(item: CandidateBet) -> dict[str, Any]:

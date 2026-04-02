@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -14,6 +15,7 @@ from app.utils import (
     get_spread_selection_key,
     get_total_selection_key,
     infer_team_total_side,
+    is_simulated_or_esports_event,
     normalize_bookmaker_name,
     parse_datetime,
     score_event_match,
@@ -62,6 +64,7 @@ class BookiesApiProvider:
             "payload_shapes": [],
             "bookmakers_seen": 0,
             "last_body_preview": None,
+            "simulated_skipped": 0,
             "task_used": self.settings.bookies_api_odds_task,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
@@ -78,10 +81,9 @@ class BookiesApiProvider:
         candidates = self._candidate_matches(matches, existing_offer_maps or {})
         stats["candidate_matches"] = len(candidates)
         max_matches = max(1, int(self.settings.max_matches_for_odds_fetch or 300))
-        candidate_scan_limit = min(len(candidates), max_matches if max_matches >= 30 else max_matches * 4)
-        if len(candidates) > candidate_scan_limit:
-            candidates = candidates[:candidate_scan_limit]
-            stats["candidate_matches_limited_to"] = candidate_scan_limit
+        if len(candidates) > max_matches:
+            candidates = candidates[:max_matches]
+            stats["candidate_matches_limited_to"] = max_matches
         if not candidates:
             return {}, stats, preview
 
@@ -149,6 +151,16 @@ class BookiesApiProvider:
                     for raw in items:
                         event = self._parse_event(raw)
                         if event is None:
+                            if isinstance(raw, dict):
+                                league_name = self._extract_league(raw)
+                                try:
+                                    home_name = str(raw.get("home") or raw.get("home_team") or raw.get("team1") or "")
+                                    away_name = str(raw.get("away") or raw.get("away_team") or raw.get("team2") or "")
+                                except Exception:
+                                    home_name = ""
+                                    away_name = ""
+                                if is_simulated_or_esports_event(home_name, away_name, league_name):
+                                    stats["simulated_skipped"] += 1
                             continue
 
                         matched = self._match_event(event, day_matches)
@@ -180,18 +192,14 @@ class BookiesApiProvider:
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             bookmakers_seen: set[str] = set()
 
-            odds_now = datetime.now(UTC)
-            odds_cutoff = odds_now + timedelta(hours=max(1, int(self.settings.publish_window_hours or 48)))
-            ranked_matched_items = sorted(
-                matched_events.items(),
-                key=lambda pair: self._candidate_priority(pair[1]["match"], odds_now, odds_cutoff),
-            )
-            odds_fetch_limit = min(len(ranked_matched_items), max_matches if max_matches >= 20 else max(max_matches * 2, 20))
-            if len(ranked_matched_items) > odds_fetch_limit:
+            matched_items = list(matched_events.items())
+            matched_items.sort(key=lambda row: self._matched_event_priority(row[1]))
+            odds_fetch_limit = int(os.getenv("BOOKIES_API_ODDS_FETCH_LIMIT", str(getattr(self.settings, "bookies_api_odds_fetch_limit", 0) or 0)) or 0)
+            if odds_fetch_limit > 0 and len(matched_items) > odds_fetch_limit:
+                matched_items = matched_items[:odds_fetch_limit]
                 stats["odds_fetch_limited_to"] = odds_fetch_limit
 
-            useful_matches = 0
-            for match_key, item in ranked_matched_items[:odds_fetch_limit]:
+            for match_key, item in matched_items:
                 game_id = item["event"]["game_id"]
                 parsed_offers, odds_payload = await self._fetch_odds_for_game(client, game_id, item["match"], stats)
 
@@ -218,9 +226,6 @@ class BookiesApiProvider:
                     {(o.bookmaker, o.family, o.market_name, o.point) for o in parsed_offers}
                 )
                 bookmakers_seen.update(o.bookmaker for o in parsed_offers)
-                useful_matches += 1
-                if useful_matches >= max_matches:
-                    break
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
             return dict(offers_by_match), stats, preview
@@ -272,6 +277,8 @@ class BookiesApiProvider:
             if match.sport_key != "soccer":
                 continue
             if allowed_sports and "soccer" not in allowed_sports:
+                continue
+            if is_simulated_or_esports_event(match.home_team, match.away_team, match.league_name):
                 continue
             if not self.settings.allow_low_tier and match.tier == "low":
                 continue
@@ -402,6 +409,8 @@ class BookiesApiProvider:
 
         game_id = self._first_text(raw, ["game_id", "gameId", "id", "match_id", "event_id"])
         league = self._extract_league(raw)
+        if is_simulated_or_esports_event(home, away, league):
+            return None
 
         date_value = None
         for key in ("commence_time", "start", "starts_at", "start_time", "time", "date", "datetime", "isoDate"):

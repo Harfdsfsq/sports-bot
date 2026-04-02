@@ -1,68 +1,72 @@
-name: Run Sports Bot
+name: run-bot
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 */6 * * *"
+    - cron: '15 * * * *'
 
-concurrency:
-  group: sports-bot-run
-  cancel-in-progress: false
+permissions:
+  contents: write
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Prepare data dir
-        run: mkdir -p .data
 
       - name: Run bot
         env:
           APP_ENV: production
           STATE_PATH: .data/state.json
           DEBUG_PATH: .data/debug-last-run.json
-          PUBLISH_DRY_RUN: false
 
-          RUN_SPORTS: soccer
-          RUN_DAYS_AHEAD: 2
+          PUBLISH_DRY_RUN: ${{ vars.PUBLISH_DRY_RUN || 'false' }}
+          RUN_SPORTS: ${{ vars.RUN_SPORTS || 'soccer' }}
+          RUN_DAYS_AHEAD: ${{ vars.RUN_DAYS_AHEAD || '4' }}
+          ALLOW_LOW_TIER: ${{ vars.ALLOW_LOW_TIER || secrets.ALLOW_LOW_TIER || 'false' }}
+          PUBLISH_WINDOW_HOURS: ${{ vars.PUBLISH_WINDOW_HOURS || secrets.PUBLISH_WINDOW_HOURS || '48' }}
 
-          MAX_MATCHES_FOR_ODDS_FETCH: "10"
+          TARGET_BOOKMAKERS: ${{ vars.TARGET_BOOKMAKERS || secrets.TARGET_BOOKMAKERS || 'Bet365,Unibet' }}
+          CONSENSUS_BOOKMAKERS: ${{ vars.CONSENSUS_BOOKMAKERS || secrets.CONSENSUS_BOOKMAKERS || 'Pinnacle,Betfair,Bet365,Unibet' }}
+          MIN_BOOKS_PUBLISH: ${{ vars.MIN_BOOKS_PUBLISH || secrets.MIN_BOOKS_PUBLISH || '2' }}
+          MIN_SOURCES_PUBLISH: ${{ vars.MIN_SOURCES_PUBLISH || secrets.MIN_SOURCES_PUBLISH || '1' }}
+          MIN_MODEL_CONFIDENCE: ${{ vars.MIN_MODEL_CONFIDENCE || secrets.MIN_MODEL_CONFIDENCE || '54' }}
+          MAX_MATCHES_FOR_ODDS_FETCH: ${{ vars.MAX_MATCHES_FOR_ODDS_FETCH || secrets.MAX_MATCHES_FOR_ODDS_FETCH || '40' }}
 
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          BOOKIES_API_ENABLED: ${{ vars.BOOKIES_API_ENABLED || secrets.BOOKIES_API_ENABLED || 'true' }}
+          BOOKIES_API_BASE_URL: ${{ vars.BOOKIES_API_BASE_URL || secrets.BOOKIES_API_BASE_URL || 'https://bookiesapi.com/api/get.php' }}
+          BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
+          BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
+          BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN || secrets.BOOKIES_API_KEY }}
+          BOOKIES_API_USE_FOR_BACKFILL_ONLY: ${{ vars.BOOKIES_API_USE_FOR_BACKFILL_ONLY || secrets.BOOKIES_API_USE_FOR_BACKFILL_ONLY || 'true' }}
+          BOOKIES_API_ODDS_TASK: ${{ vars.BOOKIES_API_ODDS_TASK || secrets.BOOKIES_API_ODDS_TASK || 'allodds' }}
+          BOOKIES_API_ODDS_FETCH_LIMIT: ${{ vars.BOOKIES_API_ODDS_FETCH_LIMIT || secrets.BOOKIES_API_ODDS_FETCH_LIMIT || '20' }}
+
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
 
-          BOOKIES_API_ENABLED: ${{ secrets.BOOKIES_API_ENABLED }}
-          BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
-          BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
-          BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
-          BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
-          BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
-
-          SHEET_ID: ${{ secrets.SHEET_ID }}
-        run: python -m app.cli run-once
-
-      - name: Commit updated state
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SHEET_ID: ${{ secrets.SHEET_ID || vars.SHEET_ID }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add .data/state.json .data/debug-last-run.json || true
-          git diff --cached --quiet || git commit -m "Update bot state"
+          mkdir -p .data
+          python -m app.cli run-once
+
+      - name: Commit state and debug
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add .data/state.json .data/debug-last-run.json .data/sheet-export.json .data/sheet-export.csv || true
+          git diff --cached --quiet && exit 0
+          git commit -m "Update bot state"
           git push

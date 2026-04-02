@@ -9,23 +9,11 @@ import httpx
 from app.config import Settings
 from app.schemas import Match, Offer
 from app.utils import (
-    canonicalize_league_name,
-    canonicalize_team_name,
-    detect_market_family,
-    get_outcome_key,
-    get_spread_selection_key,
-    get_total_selection_key,
-    infer_team_total_side,
+    is_simulated_or_esports_event,
+    normalize_bookmaker_name,
     parse_datetime,
     score_event_match,
 )
-
-SPORT_MAP = {
-    "soccer": "football",
-    "basketball": "basketball",
-    "baseball": "baseball",
-    "icehockey": "ice-hockey",
-}
 
 
 class OddsApiIoProvider:
@@ -35,8 +23,8 @@ class OddsApiIoProvider:
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
-            "enabled": bool(self.settings.enable_odds_api_io and self.settings.odds_api_io_key),
-            "api_key_present": bool(self.settings.odds_api_io_key),
+            "enabled": True,
+            "api_key_present": bool(getattr(self.settings, "odds_api_io_key", None)),
             "event_requests": 0,
             "odds_requests": 0,
             "response_errors": 0,
@@ -53,474 +41,380 @@ class OddsApiIoProvider:
             "payload_shapes": [],
             "bookmakers_seen": 0,
             "last_body_preview": None,
+            "simulated_skipped": 0,
         }
-        preview: dict[str, Any] = {"unmatched_events": [], "matched_examples": [], "response_debug": []}
-        if not self.settings.enable_odds_api_io or not self.settings.odds_api_io_key or not matches:
+        preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
+
+        api_key = getattr(self.settings, "odds_api_io_key", None)
+        if not api_key:
             return {}, stats, preview
 
-        selected_matches = matches[: self.settings.max_matches_for_odds_fetch]
-        grouped: dict[str, list[Match]] = defaultdict(list)
-        for match in selected_matches:
-            grouped[match.sport_key].append(match)
+        soccer_matches = [
+            match
+            for match in matches
+            if match.sport_key == "soccer" and not is_simulated_or_esports_event(match.home_team, match.away_team, match.league_name)
+        ]
+        if not soccer_matches:
+            return {}, stats, preview
 
-        offers_by_match: dict[str, list[Offer]] = defaultdict(list)
-        async with httpx.AsyncClient(timeout=self.settings.odds_api_io_timeout_seconds) as client:
-            for sport_key, sport_matches in grouped.items():
-                sport_slug = SPORT_MAP.get(sport_key)
-                if not sport_slug:
+        now = datetime.now(UTC)
+        days_ahead = max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4))
+        until = now + timedelta(days=days_ahead)
+        target_books = self._bookmakers_param()
+
+        events: list[dict[str, Any]] = []
+        seen_event_ids: set[int] = set()
+        async with httpx.AsyncClient(timeout=25.0) as client:
+            for page in range(1, 5):
+                params = {
+                    "apiKey": api_key,
+                    "sport": "football",
+                    "status": "pending,live",
+                    "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                    "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                    "limit": 100,
+                    "page": page,
+                }
+                stats["event_requests"] += 1
+                try:
+                    response = await client.get(f"{self.base_url}/events", params=params)
+                except Exception as exc:
+                    stats["response_errors"] += 1
+                    stats["last_body_preview"] = f"events request failed: {exc}"
                     continue
-                events = await self._fetch_events_for_sport(client, sport_slug, stats)
-                stats["events_fetched"] += len(events)
-                mapping, unmatched = self._map_events_to_matches(events, sport_matches, stats)
-                for item in unmatched[:20]:
-                    preview["unmatched_events"].append(item)
-                if not mapping:
+
+                stats["event_http_statuses"].append(response.status_code)
+                stats["last_body_preview"] = response.text[:1500]
+                if response.status_code != 200:
+                    stats["response_errors"] += 1
                     continue
-                stats["events_matched"] += len(mapping)
-                for event_id, entry in list(mapping.items())[:10]:
-                    preview["matched_examples"].append(
-                        {
-                            "event_id": event_id,
-                            "mode": entry["mode"],
-                            "score": round(entry["score"], 2),
-                            "home": entry["event"].get("home"),
-                            "away": entry["event"].get("away"),
-                            "match_key": entry["match"].match_key,
-                        }
-                    )
-                event_ids = list(mapping.keys())
-                for start in range(0, len(event_ids), 10):
-                    chunk = event_ids[start : start + 10]
-                    rows = await self._fetch_odds_chunk(client, chunk, stats)
-                    for row in rows:
-                        event_id = str(row.get("id") or "")
-                        entry = mapping.get(event_id)
-                        if entry is None:
-                            stats["unmatched_offer_events"] += 1
-                            continue
-                        parsed_offers, markets_parsed = self._parse_event_odds(row, entry["match"], entry["mode"])
-                        stats["markets_parsed"] += markets_parsed
-                        stats["offers_parsed"] += len(parsed_offers)
-                        stats["bookmakers_seen"] += len(row.get("bookmakers") or []) if isinstance(row.get("bookmakers"), (dict, list)) else 0
-                        preview["response_debug"].append({
-                            "event_id": event_id,
-                            "markets_parsed": markets_parsed,
-                            "offers_parsed": len(parsed_offers),
-                            "top_level_keys": sorted(list(row.keys()))[:12],
-                            "bookmakers_type": type(row.get("bookmakers") or {}).__name__,
-                        })
-                        if parsed_offers:
-                            offers_by_match[entry["match"].match_key].extend(parsed_offers)
 
-        return {key: value for key, value in offers_by_match.items()}, stats, preview
+                payload = self._safe_json(response)
+                if payload is None:
+                    stats["response_errors"] += 1
+                    continue
+                shape = self._payload_shape(payload)
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
 
-    async def _fetch_events_for_sport(self, client: httpx.AsyncClient, sport_slug: str, stats: dict[str, Any]) -> list[dict[str, Any]]:
-        now = datetime.now(UTC) - timedelta(hours=2)
-        cutoff = datetime.now(UTC) + timedelta(days=self.settings.run_days_ahead)
-        skip = 0
-        rows: list[dict[str, Any]] = []
-        for _page in range(self.settings.odds_api_io_max_pages_per_sport):
-            params = {
-                "apiKey": self.settings.odds_api_io_key,
-                "sport": sport_slug,
-                "status": "pending",
-                "from": now.isoformat().replace("+00:00", "Z"),
-                "to": cutoff.isoformat().replace("+00:00", "Z"),
-                "limit": self.settings.odds_api_io_page_limit,
-                "skip": skip,
-            }
-            stats["event_requests"] += 1
-            try:
-                response = await client.get(f"{self.base_url}/events", params=params)
-            except Exception:
-                stats["response_errors"] += 1
-                break
-            stats.setdefault("event_http_statuses", []).append(response.status_code)
-            stats["last_body_preview"] = response.text[:500]
-            if response.status_code != 200:
-                stats["response_errors"] += 1
-                break
-            try:
-                payload = response.json()
-            except Exception:
-                stats["response_errors"] += 1
-                break
-            if not isinstance(payload, list):
-                if isinstance(payload, dict):
-                    stats.setdefault("payload_shapes", []).append(",".join(sorted(payload.keys())[:10]))
-                    payload = payload.get("data") or payload.get("events") or payload.get("results") or []
-                if not isinstance(payload, list):
+                items = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                if page == 1 and items:
+                    preview["sample_events"] = items[:3]
+                if not items:
                     break
-            rows.extend([item for item in payload if isinstance(item, dict)])
-            if len(payload) < self.settings.odds_api_io_page_limit:
-                break
-            skip += self.settings.odds_api_io_page_limit
-        return rows
 
-    def _map_events_to_matches(
-        self,
-        events: list[dict[str, Any]],
-        matches: list[Match],
-        stats: dict[str, Any],
-    ) -> tuple[dict[str, dict[str, Any]], list[dict[str, Any]]]:
-        mapped: dict[str, dict[str, Any]] = {}
-        best_for_match: dict[str, tuple[str, float]] = {}
-        unmatched: list[dict[str, Any]] = []
-        for event in events:
-            event_home = str(event.get("home") or "").strip()
-            event_away = str(event.get("away") or "").strip()
-            event_league = str((event.get("league") or {}).get("name") or "").strip()
-            try:
-                event_start = parse_datetime(event.get("date"))
-            except Exception:
-                unmatched.append(
-                    {
-                        "event_id": event.get("id"),
-                        "home": event_home,
-                        "away": event_away,
-                        "league": event_league,
-                        "reason": "bad_date",
-                    }
-                )
-                continue
-            best_score = 0.0
-            best_mode: str | None = None
-            best_match: Match | None = None
-            for match in matches:
-                score, mode = score_event_match(
-                    sport=match.sport_key,
-                    match_home=match.home_team,
-                    match_away=match.away_team,
-                    match_start=match.commence_time,
-                    match_league=match.league_name,
-                    event_home=event_home,
-                    event_away=event_away,
-                    event_start=event_start,
-                    event_league=event_league,
-                    exact_tolerance_hours=self.settings.match_start_tolerance_hours,
-                    fuzzy_tolerance_hours=self.settings.fallback_match_start_tolerance_hours,
-                )
-                if score > best_score:
-                    best_score = score
-                    best_mode = mode
-                    best_match = match
-            if best_match is None or best_mode is None:
-                unmatched.append(
-                    {
-                        "event_id": event.get("id"),
-                        "home": event_home,
-                        "away": event_away,
-                        "league": event_league,
-                        "date": event.get("date"),
-                        "reason": "no_match",
-                    }
-                )
-                continue
-            previous = best_for_match.get(best_match.match_key)
-            if previous is not None and previous[1] >= best_score:
-                continue
-            if previous is not None:
-                mapped.pop(previous[0], None)
-            event_id = str(event.get("id") or "")
-            mapped[event_id] = {
-                "match": best_match,
-                "mode": best_mode,
-                "score": best_score,
-                "event": event,
-            }
-            best_for_match[best_match.match_key] = (event_id, best_score)
-        for entry in mapped.values():
-            mode = entry["mode"]
-            if mode == "exact":
-                stats["matched_exact"] += 1
-            elif mode == "loose":
-                stats["matched_loose"] += 1
-            else:
-                stats["matched_fuzzy"] += 1
-        return mapped, unmatched
-
-    async def _fetch_odds_chunk(self, client: httpx.AsyncClient, event_ids: list[str], stats: dict[str, Any]) -> list[dict[str, Any]]:
-        if not event_ids:
-            return []
-        params = {
-            "apiKey": self.settings.odds_api_io_key,
-            "eventIds": ",".join(event_ids),
-            "bookmakers": ",".join(self.settings.consensus_bookmakers),
-        }
-        stats["odds_requests"] += 1
-        try:
-            response = await client.get(f"{self.base_url}/odds/multi", params=params)
-        except Exception:
-            stats["response_errors"] += 1
-            return []
-        if response.status_code != 200:
-            retry_params = dict(params)
-            retry_params.pop("apiKey", None)
-            retry_params["apikey"] = self.settings.odds_api_io_key
-            try:
-                response = await client.get(f"{self.base_url}/odds/multi", params=retry_params)
-            except Exception:
-                stats["response_errors"] += 1
-                return []
-            stats.setdefault("odds_http_statuses", []).append(response.status_code)
-            stats["last_body_preview"] = response.text[:800]
-            if response.status_code != 200:
-                stats["response_errors"] += 1
-                return []
-        try:
-            payload = response.json()
-        except Exception:
-            stats["response_errors"] += 1
-            return []
-        if isinstance(payload, list):
-            stats.setdefault("payload_shapes", []).append("odds:list")
-            return [item for item in payload if isinstance(item, dict)]
-        if isinstance(payload, dict):
-            stats.setdefault("payload_shapes", []).append("odds:" + ",".join(sorted(payload.keys())[:10]))
-            direct_rows = payload.get("data") or payload.get("results") or payload.get("events")
-            if isinstance(direct_rows, list):
-                return [item for item in direct_rows if isinstance(item, dict)]
-            rows: list[dict[str, Any]] = []
-            for key, value in payload.items():
-                if isinstance(value, dict):
-                    if "id" not in value:
-                        value = dict(value)
-                        value["id"] = key
-                    rows.append(value)
-            return rows
-        return []
-
-    def _parse_event_odds(self, row: dict[str, Any], match: Match, match_mode: str) -> tuple[list[Offer], int]:
-        bookmakers = row.get("bookmakers") or {}
-        offers: list[Offer] = []
-        markets_parsed = 0
-        bookmaker_rows: list[tuple[str, Any]] = []
-        if isinstance(bookmakers, dict):
-            bookmaker_rows.extend(bookmakers.items())
-        elif isinstance(bookmakers, list):
-            for bookmaker in bookmakers:
-                if not isinstance(bookmaker, dict):
-                    continue
-                bookmaker_name = str(bookmaker.get("name") or bookmaker.get("title") or bookmaker.get("key") or "")
-                bookmaker_rows.append((bookmaker_name, bookmaker))
-        else:
-            return [], 0
-        for bookmaker_name, markets in bookmaker_rows:
-            if isinstance(markets, dict):
-                markets = markets.get("markets") or markets.get("odds") or markets.get("lines") or markets
-                if isinstance(markets, dict):
-                    markets = list(markets.values())
-            if not isinstance(markets, list):
-                continue
-            for market in markets:
-                market_name = str(market.get("name") or "")
-                market_key = str(market.get("key") or market_name)
-                detected = detect_market_family(market_key, market_name, match.sport_key)
-                if detected is None:
-                    continue
-                family, subtype = detected
-                prices = market.get("odds") or market.get("outcomes") or market.get("prices") or []
-                if isinstance(prices, dict):
-                    prices = [prices]
-                if not isinstance(prices, list):
-                    continue
-                markets_parsed += 1
-                for price_row in prices:
-                    if not isinstance(price_row, dict):
+                before = len(seen_event_ids)
+                for item in items:
+                    event_id = item.get("id")
+                    if not isinstance(event_id, int):
                         continue
-                    offers.extend(self._parse_market_row(family, subtype, bookmaker_name, market_name, market_key, price_row, match, row, match_mode))
-        return offers, markets_parsed
+                    if event_id in seen_event_ids:
+                        continue
+                    seen_event_ids.add(event_id)
+                    events.append(item)
+                stats["events_fetched"] = len(events)
+                if len(seen_event_ids) == before:
+                    break
+                if len(items) < 100:
+                    break
 
-    def _parse_market_row(
-        self,
-        family: str,
-        subtype: str,
-        bookmaker_name: str,
-        market_name: str,
-        market_key: str,
-        price_row: dict[str, Any],
-        match: Match,
-        raw_row: dict[str, Any],
-        match_mode: str,
-    ) -> list[Offer]:
-        offers: list[Offer] = []
-        meta = {
-            "match_mode": match_mode,
-            "raw_event_id": raw_row.get("id"),
-            "event_home": raw_row.get("home"),
-            "event_away": raw_row.get("away"),
-        }
-        if family == "h2h":
-            for key, selection in [("home", match.home_team), ("draw", "Draw"), ("away", match.away_team)]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="h2h",
-                            selection=selection,
-                            price=price,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        if family == "doubleChance":
-            for key, selection in [("1x", "1X"), ("x2", "X2"), ("12", "12")]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="doubleChance",
-                            selection=selection,
-                            price=price,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        if family == "dnb":
-            for key, selection in [("home", match.home_team), ("away", match.away_team)]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="dnb",
-                            selection=selection,
-                            price=price,
-                            point=0.0,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        if family == "btts":
-            for key, selection in [("yes", "Yes"), ("no", "No")]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="btts",
-                            selection=selection,
-                            price=price,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        if family == "totals":
-            point = self._first_float(price_row, ["point", "line", "total", "max"])
-            if point is None:
-                return offers
-            for key, selection in [("over", "Over"), ("under", "Under")]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="totals",
-                            selection=selection,
-                            price=price,
-                            point=point,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        if family == "teamTotals":
-            point = self._first_float(price_row, ["point", "line", "total", "max"])
-            team_side = infer_team_total_side(market_name, market_key, "", match.home_team, match.away_team)
-            if point is None or team_side is None:
-                return offers
-            for key, selection in [("over", "Over"), ("under", "Under")]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="teamTotals",
-                            selection=selection,
-                            price=price,
-                            point=point,
-                            team_side=team_side,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        if family == "spreads":
-            raw_line = self._first_float(price_row, ["point", "line", "handicap", "hdp", "home_line"])
-            home_line = self._first_float(price_row, ["home_line", "homeHandicap", "home_spread", "homeSpread", "hdp"])
-            away_line = self._first_float(price_row, ["away_line", "awayHandicap", "away_spread", "awaySpread"])
-            if home_line is None and away_line is None and raw_line is not None:
-                home_line = raw_line
-                away_line = -raw_line
-            elif home_line is None and away_line is not None:
-                home_line = -away_line
-            elif away_line is None and home_line is not None:
-                away_line = -home_line
-            if home_line is None or away_line is None:
-                return offers
-            for key, selection, point in [("home", match.home_team, home_line), ("away", match.away_team, away_line)]:
-                price = self._to_float(price_row.get(key))
-                if price and price > 1.0:
-                    offers.append(
-                        Offer(
-                            source="odds_api_io",
-                            bookmaker=str(bookmaker_name),
-                            family="spreads",
-                            selection=selection,
-                            price=price,
-                            point=point,
-                            market_name=market_name,
-                            market_key=market_key,
-                            market_subtype=subtype,
-                            source_event_id=str(raw_row.get("id") or ""),
-                            metadata=dict(meta),
-                        )
-                    )
-            return offers
-        return offers
+            mapping: dict[str, dict[str, Any]] = {}
+            for raw_event in events:
+                event = self._parse_event(raw_event)
+                if event is None:
+                    if isinstance(raw_event, dict) and is_simulated_or_esports_event(
+                        str(raw_event.get("home") or ""),
+                        str(raw_event.get("away") or ""),
+                        str((raw_event.get("league") or {}).get("name") or ""),
+                    ):
+                        stats["simulated_skipped"] += 1
+                    continue
+                matched = self._match_event(event, soccer_matches)
+                if matched is None:
+                    stats["unmatched_offer_events"] += 1
+                    continue
+                existing = mapping.get(matched.match_key)
+                if existing is None or float(event.get("match_score") or 0.0) > float(existing["event"].get("match_score") or 0.0):
+                    mapping[matched.match_key] = {"match": matched, "event": event}
+
+            stats["events_matched"] = len(mapping)
+            for item in mapping.values():
+                quality = item["event"].get("match_quality")
+                if quality == "exact":
+                    stats["matched_exact"] += 1
+                elif quality == "loose":
+                    stats["matched_loose"] += 1
+                elif quality == "fuzzy":
+                    stats["matched_fuzzy"] += 1
+
+            matched_items = list(mapping.values())
+            matched_items.sort(key=lambda row: self._match_priority(row["match"], now))
+            max_fetch = max(1, int(getattr(self.settings, "max_matches_for_odds_fetch", 40) or 40))
+            if len(matched_items) > max_fetch:
+                matched_items = matched_items[:max_fetch]
+                stats["matches_limited_to"] = max_fetch
+
+            offers_by_match: dict[str, list[Offer]] = defaultdict(list)
+            bookmakers_seen: set[str] = set()
+            for start in range(0, len(matched_items), 10):
+                chunk = matched_items[start : start + 10]
+                if not chunk:
+                    continue
+                event_ids = ",".join(str(item["event"]["id"]) for item in chunk)
+                params = {
+                    "apiKey": api_key,
+                    "eventIds": event_ids,
+                    "bookmakers": target_books,
+                }
+                stats["odds_requests"] += 1
+                try:
+                    response = await client.get(f"{self.base_url}/odds/multi", params=params)
+                except Exception as exc:
+                    stats["response_errors"] += 1
+                    stats["last_body_preview"] = f"odds request failed: {exc}"
+                    continue
+
+                stats["odds_http_statuses"].append(response.status_code)
+                stats["last_body_preview"] = response.text[:2000]
+                if response.status_code != 200:
+                    stats["response_errors"] += 1
+                    continue
+
+                payload = self._safe_json(response)
+                if payload is None:
+                    stats["response_errors"] += 1
+                    continue
+                shape = self._payload_shape(payload)
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
+                if len(preview["sample_odds"]) < 2:
+                    preview["sample_odds"].append(payload)
+
+                event_list = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                for event_payload in event_list:
+                    event_id = int(event_payload.get("id") or 0)
+                    row = next((item for item in chunk if int(item["event"]["id"]) == event_id), None)
+                    if row is None:
+                        continue
+                    parsed = self._parse_event_odds(event_payload, row["match"])
+                    if not parsed:
+                        continue
+                    offers_by_match[row["match"].match_key].extend(parsed)
+                    stats["offers_parsed"] += len(parsed)
+                    stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
+                    bookmakers_seen.update(offer.bookmaker for offer in parsed)
+
+            stats["bookmakers_seen"] = len(bookmakers_seen)
+            return dict(offers_by_match), stats, preview
+
+    def _bookmakers_param(self) -> str:
+        values: list[str] = []
+        for item in list(getattr(self.settings, "target_bookmakers", []) or []) + list(getattr(self.settings, "consensus_bookmakers", []) or []):
+            name = str(item or "").strip()
+            if name and name not in values:
+                values.append(name)
+        return ",".join(values or ["Bet365", "Unibet", "Pinnacle", "Betfair"])
 
     @staticmethod
-    def _to_float(value: Any) -> float | None:
+    def _safe_json(response: httpx.Response) -> Any | None:
         try:
-            if value is None or value == "":
-                return None
-            return float(value)
+            return response.json()
         except Exception:
             return None
 
-    def _first_float(self, payload: dict[str, Any], keys: list[str]) -> float | None:
-        for key in keys:
-            value = self._to_float(payload.get(key))
-            if value is not None:
-                return value
+    @staticmethod
+    def _payload_shape(payload: Any) -> str:
+        if isinstance(payload, list):
+            return "list"
+        if isinstance(payload, dict):
+            return ",".join(sorted(map(str, payload.keys()))[:12])
+        return type(payload).__name__
+
+    def _parse_event(self, raw: dict[str, Any]) -> dict[str, Any] | None:
+        home = str(raw.get("home") or "").strip()
+        away = str(raw.get("away") or "").strip()
+        league = str((raw.get("league") or {}).get("name") or "").strip()
+        if not home or not away:
+            return None
+        if is_simulated_or_esports_event(home, away, league):
+            return None
+        try:
+            commence_time = parse_datetime(raw.get("date"))
+        except Exception:
+            return None
+        return {
+            "id": int(raw.get("id") or 0),
+            "home": home,
+            "away": away,
+            "league": league,
+            "commence_time": commence_time,
+            "raw": raw,
+        }
+
+    def _match_event(self, event: dict[str, Any], matches: list[Match]) -> Match | None:
+        best_match: Match | None = None
+        best_score = 0.0
+        best_quality: str | None = None
+        exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)
+        fuzzy_tol = float(getattr(self.settings, "fallback_match_start_tolerance_hours", 8) or 8)
+        for match in matches:
+            score, quality = score_event_match(
+                sport=match.sport_key,
+                match_home=match.home_team,
+                match_away=match.away_team,
+                match_start=match.commence_time,
+                match_league=match.league_name,
+                event_home=event["home"],
+                event_away=event["away"],
+                event_start=event["commence_time"],
+                event_league=event["league"],
+                exact_tolerance_hours=exact_tol,
+                fuzzy_tolerance_hours=fuzzy_tol,
+            )
+            if score > best_score:
+                best_score = score
+                best_quality = quality
+                best_match = match
+        if best_match is None or best_score < 48.0:
+            return None
+        event["match_score"] = best_score
+        event["match_quality"] = best_quality
+        return best_match
+
+    def _match_priority(self, match: Match, now: datetime) -> tuple[int, int, int, float, str, str]:
+        publish_window = now + timedelta(hours=max(1, int(getattr(self.settings, "publish_window_hours", 48) or 48)))
+        in_window = 0 if now <= match.commence_time <= publish_window else 1
+        tier_rank = 0 if match.tier == "top" else 1 if match.tier == "mid" else 2
+        kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
+        return (in_window, tier_rank, 0 if match.metadata.get("bet365_id") else 1, kickoff_distance, match.league_name.lower(), match.home_team.lower())
+
+    def _parse_event_odds(self, payload: dict[str, Any], match: Match) -> list[Offer]:
+        bookmakers = payload.get("bookmakers")
+        offers: list[Offer] = []
+        seen: set[tuple[str, str, str, float | None]] = set()
+
+        def add_offer(bookmaker: str, family: str, selection: str, price_value: Any, point: Any = None, market_name: str = "") -> None:
+            try:
+                price = float(price_value)
+            except Exception:
+                return
+            if price <= 1.0:
+                return
+            point_value = None
+            try:
+                if point not in (None, ""):
+                    point_value = float(str(point).replace(",", "."))
+            except Exception:
+                point_value = None
+            book = self._canonical_bookmaker(bookmaker)
+            key = (book, family, selection, point_value)
+            if key in seen:
+                return
+            seen.add(key)
+            offers.append(
+                Offer(
+                    source="odds_api_io",
+                    bookmaker=book,
+                    family=family,
+                    selection=selection,
+                    price=price,
+                    point=point_value,
+                    market_name=market_name,
+                    market_key=family,
+                    metadata={"odds_api_io": True},
+                )
+            )
+
+        def parse_outcomes(bookmaker_name: str, market_key: str, outcomes: list[dict[str, Any]]) -> None:
+            family = self._family_for_market(market_key)
+            if family is None:
+                return
+            for row in outcomes:
+                if not isinstance(row, dict):
+                    continue
+                name = str(row.get("name") or row.get("label") or row.get("selection") or "").strip()
+                point = row.get("point") or row.get("line")
+                if family == "h2h":
+                    selection = self._map_h2h_selection(name, match)
+                elif family == "totals":
+                    selection = "Over" if name.lower().startswith("over") else "Under" if name.lower().startswith("under") else name
+                elif family == "spreads":
+                    selection = match.home_team if name.lower() in {"home", match.home_team.lower(), "1"} else match.away_team if name.lower() in {"away", match.away_team.lower(), "2"} else name
+                    if selection == match.away_team and point not in (None, ""):
+                        try:
+                            point = -float(str(point).replace(",", "."))
+                        except Exception:
+                            pass
+                else:
+                    selection = name
+                add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal"), point, market_key)
+
+        if isinstance(bookmakers, dict):
+            iterator = bookmakers.items()
+        elif isinstance(bookmakers, list):
+            iterator = []
+            for item in bookmakers:
+                if isinstance(item, dict):
+                    iterator.append((str(item.get("name") or item.get("bookmaker") or "unknown"), item))
+        else:
+            iterator = []
+
+        for bookmaker_name, bookmaker_payload in iterator:
+            if not isinstance(bookmaker_payload, dict):
+                continue
+            markets = bookmaker_payload.get("markets", bookmaker_payload)
+            if isinstance(markets, list):
+                for market in markets:
+                    if not isinstance(market, dict):
+                        continue
+                    market_key = str(market.get("key") or market.get("name") or market.get("market") or "").lower()
+                    outcomes = market.get("outcomes")
+                    if isinstance(outcomes, list):
+                        parse_outcomes(bookmaker_name, market_key, outcomes)
+            elif isinstance(markets, dict):
+                for market_key, market_value in markets.items():
+                    key = str(market_key or "").lower()
+                    if isinstance(market_value, dict):
+                        outcomes = market_value.get("outcomes")
+                        if isinstance(outcomes, list):
+                            parse_outcomes(bookmaker_name, key, outcomes)
+                            continue
+                    if isinstance(market_value, list):
+                        parse_outcomes(bookmaker_name, key, [row for row in market_value if isinstance(row, dict)])
+
+        return offers
+
+    @staticmethod
+    def _family_for_market(market_key: str) -> str | None:
+        key = str(market_key or "").lower()
+        if key in {"h2h", "1x2", "moneyline"}:
+            return "h2h"
+        if "total" in key or key in {"ou", "o/u"}:
+            return "totals"
+        if "spread" in key or "handicap" in key:
+            return "spreads"
         return None
+
+    @staticmethod
+    def _canonical_bookmaker(name: str) -> str:
+        norm = normalize_bookmaker_name(name)
+        if norm == "bet365":
+            return "Bet365"
+        if norm == "unibet":
+            return "Unibet"
+        if norm == "betfair":
+            return "Betfair"
+        if norm == "pinnacle":
+            return "Pinnacle"
+        return str(name or "Unknown")
+
+    @staticmethod
+    def _map_h2h_selection(raw_name: str, match: Match) -> str:
+        name = str(raw_name or "").strip().lower()
+        if name in {"home", "1", match.home_team.lower()}:
+            return match.home_team
+        if name in {"away", "2", match.away_team.lower()}:
+            return match.away_team
+        if name in {"draw", "x", "tie"}:
+            return "Draw"
+        return raw_name or ""

@@ -773,3 +773,59 @@ def to_decimal_probability(value: float | None) -> float | None:
     if number > 1.0:
         return number / 100.0
     return number
+
+
+SIMULATED_LEAGUE_PATTERNS = [
+    r"\besoccer\b",
+    r"\bebasketball\b",
+    r"\betennis\b",
+    r"\bcyber\b",
+    r"\bvirtual\b",
+    r"\bsimulat(?:ed|ion)\b",
+    r"\bfifa\b",
+    r"\bfc ?2[45]\b",
+    r"\bshort football\b",
+    r"\bsoccer battle\b",
+    r"\bgt leagues?\b",
+    r"\bvolta\b",
+]
+
+_SIMULATED_TEAM_SUFFIX_RE = re.compile(r"\(([^()]{2,24})\)\s*$")
+
+
+def extract_parenthetical_suffix(name: str) -> str:
+    match = _SIMULATED_TEAM_SUFFIX_RE.search(str(name or "").strip())
+    if not match:
+        return ""
+    return match.group(1).strip()
+
+
+def looks_like_simulated_team_name(name: str) -> bool:
+    raw = str(name or "").strip()
+    if not raw:
+        return False
+    suffix = extract_parenthetical_suffix(raw)
+    if not suffix:
+        return False
+    suffix_norm = normalize_text(suffix)
+    if not suffix_norm:
+        return False
+    # Typical simulated feeds use gamer-like nicknames in brackets, e.g.
+    # Liverpool (pikalicaaa), Germany (Profik), England (Koss).
+    if len(suffix_norm.replace(" ", "")) <= 24 and " " not in suffix_norm:
+        return True
+    return False
+
+
+def is_simulated_or_esports_event(home: str, away: str, league_name: str = "") -> bool:
+    league = canonicalize_league_name(league_name)
+    if league and any(re.search(pattern, league) for pattern in SIMULATED_LEAGUE_PATTERNS):
+        return True
+    home_flag = looks_like_simulated_team_name(home)
+    away_flag = looks_like_simulated_team_name(away)
+    if home_flag and away_flag:
+        return True
+    joined = normalize_text(f"{home} {away} {league_name}")
+    if any(re.search(pattern, joined) for pattern in SIMULATED_LEAGUE_PATTERNS):
+        return True
+    return False
