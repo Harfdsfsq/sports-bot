@@ -102,6 +102,11 @@ class Settings(BaseSettings):
             "MelBet",
             "Duelbits",
             "Spreadex",
+            "SBOBET",
+            "DafaBet",
+            "GGBet",
+            "FonBet",
+            "YSB88",
         ]
     )
     consensus_bookmakers: Annotated[list[str], NoDecode] = Field(
@@ -116,6 +121,10 @@ class Settings(BaseSettings):
             "Betsson",
             "Spreadex",
             "Duelbits",
+            "SBOBET",
+            "DafaBet",
+            "GGBet",
+            "FonBet",
         ]
     )
     the_odds_regions: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["eu", "uk", "us"])
@@ -260,9 +269,9 @@ class Settings(BaseSettings):
             return self.bookmaker_weight_unibet
         if normalized in {"williamhill", "ladbrokes", "sbobet"}:
             return 1.08
-        if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet", "spreadex", "duelbits"}:
+        if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet", "spreadex", "duelbits", "dafabet", "ggbet", "fonbet"}:
             return 1.03
-        if normalized in {"10bet", "betsson", "betregal"}:
+        if normalized in {"10bet", "betsson", "betregal", "ysb88"}:
             return 1.01
         if normalized in {"1xbet", "melbet", "cashpoint", "betathome"}:
             return 0.96
