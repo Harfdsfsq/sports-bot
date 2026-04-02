@@ -143,14 +143,14 @@ class Settings(BaseSettings):
         default=2,
         validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"),
     )
-    min_books_publish: int = Field(default=3, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
+    min_books_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
     min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
-    min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("MIN_EDGE_PCT"))
-    min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EV_PCT"))
+    min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
+    min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EV_PCT"))
     min_model_confidence: float = Field(default=58.0, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
     max_picks_per_run: int = Field(default=5, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
-    odds_min: float = Field(default=1.60, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
-    odds_max: float = Field(default=3.20, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
+    odds_min: float = Field(default=1.55, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
+    odds_max: float = Field(default=3.60, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
     outlier_price_tolerance_pct: float = Field(
         default=5.5,
         validation_alias=AliasChoices("OUTLIER_PRICE_TOLERANCE_PCT"),
