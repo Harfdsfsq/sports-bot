@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from datetime import UTC
 from html import escape
 from typing import Iterable
+from zoneinfo import ZoneInfo
 
 import httpx
 
@@ -20,7 +20,6 @@ class TelegramPublisher:
             return 0, []
 
         rendered = self._render_message(items)
-
         if self.settings.publish_dry_run:
             return 0, [rendered]
 
@@ -29,7 +28,6 @@ class TelegramPublisher:
 
         messages = self._split_message(rendered, 3600)
         sent = 0
-
         async with httpx.AsyncClient(timeout=20.0) as client:
             for message in messages:
                 response = await client.post(
@@ -43,7 +41,6 @@ class TelegramPublisher:
                 )
                 if response.status_code == 200:
                     sent += 1
-
         return sent, messages
 
     def _render_message(self, candidates: list[CandidateBet]) -> str:
@@ -52,12 +49,9 @@ class TelegramPublisher:
             "В выдачу попадают только одиночные ставки с подтверждённым рыночным сигналом. "
             "На один матч — не более одной ставки."
         )
-
         blocks = [f"<b>{escape(title)}</b>", "", escape(intro)]
-
         for idx, bet in enumerate(candidates, start=1):
             blocks.extend(["", self._render_candidate(idx, bet)])
-
         return "\n".join(blocks).strip()
 
     def _render_candidate(self, idx: int, bet: CandidateBet) -> str:
@@ -70,12 +64,12 @@ class TelegramPublisher:
 
         commence_time = getattr(bet, "commence_time", None)
         if commence_time is not None:
-            start_text = commence_time.astimezone(UTC).strftime("%d.%m.%Y %H:%M UTC")
+            local_tz = ZoneInfo(self.settings.app_timezone)
+            start_text = commence_time.astimezone(local_tz).strftime("%d.%m.%Y %H:%M МСК")
         else:
             start_text = "—"
 
         source_label = self._source_label(bet)
-
         lines = [
             f"⚽️ {escape(sport_name)}. {escape(getattr(bet, 'league_name', ''))}",
             f"{idx}. <b>{escape(getattr(bet, 'home_team', ''))} - {escape(getattr(bet, 'away_team', ''))}</b>",
@@ -101,14 +95,13 @@ class TelegramPublisher:
 
         reasons = [str(r).strip() for r in (getattr(bet, "reasons", None) or []) if str(r).strip()]
         if reasons:
-            lines.extend(["", "📌 <b>Ключевые факторы:</b>"])
+            lines.extend(["", "📌 Ключевые факторы:"])
             for reason in reasons[:5]:
                 lines.append(f"• {escape(reason)}")
 
         books_count = getattr(bet, "books_count", 0) or 0
         sources_count = getattr(bet, "sources_count", 0) or 0
         model_mode = getattr(bet, "model_mode", "") or "market_only"
-
         if books_count or sources_count:
             lines.extend(
                 [
@@ -130,7 +123,6 @@ class TelegramPublisher:
         parts: list[str] = []
         current: list[str] = []
         current_len = 0
-
         for line in message.splitlines():
             extra = len(line) + 1
             if current and current_len + extra > limit:
@@ -140,10 +132,8 @@ class TelegramPublisher:
             else:
                 current.append(line)
                 current_len += extra
-
         if current:
             parts.append("\n".join(current))
-
         return parts
 
     @staticmethod
@@ -154,7 +144,6 @@ class TelegramPublisher:
             number = float(value)
         except Exception:
             return "—"
-
         rounded = round(number, digits)
         text = f"{rounded:.{digits}f}".rstrip("0").rstrip(".")
         return text.replace(".", ",")

@@ -42,8 +42,13 @@ class Settings(BaseSettings):
         default="Europe/Moscow",
         validation_alias=AliasChoices("APP_TIMEZONE", "TIMEZONE", "TZ"),
     )
+
     state_path: str = Field(default=".data/state.json", validation_alias=AliasChoices("STATE_PATH"))
     debug_path: str = Field(default=".data/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
+    storage_export_dir: str = Field(
+        default=".data/exports",
+        validation_alias=AliasChoices("STORAGE_EXPORT_DIR"),
+    )
 
     telegram_bot_token: str | None = Field(
         default=None,
@@ -67,7 +72,10 @@ class Settings(BaseSettings):
         default="https://bookiesapi.com/api/get.php",
         validation_alias=AliasChoices("BOOKIES_API_BASE_URL"),
     )
-    bookies_api_odds_task: str = Field(default="allodds", validation_alias=AliasChoices("BOOKIES_API_ODDS_TASK"))
+    bookies_api_odds_task: str = Field(
+        default="allodds",
+        validation_alias=AliasChoices("BOOKIES_API_ODDS_TASK"),
+    )
     bookies_api_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["soccer"])
     bookies_api_page_limit: int = Field(default=50, validation_alias=AliasChoices("BOOKIES_API_PAGE_LIMIT"))
     bookies_api_max_pages_per_day: int = Field(
@@ -86,51 +94,22 @@ class Settings(BaseSettings):
     run_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["soccer"])
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
     publish_window_hours: int = Field(default=48, validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"))
-
-    target_bookmakers: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: [
-            "Bet365",
-            "Unibet",
-            "Pinnacle",
-            "Betfair",
-            "WilliamHill",
-            "Marathonbet",
-            "888Sport",
-            "BetAtHome",
-            "Betsson",
-            "1XBet",
-            "MelBet",
-            "Duelbits",
-            "Spreadex",
-            "SBOBET",
-            "DafaBet",
-            "GGBet",
-            "FonBet",
-            "YSB88",
-        ]
+    min_kickoff_lead_minutes: int = Field(
+        default=30,
+        validation_alias=AliasChoices("MIN_KICKOFF_LEAD_MINUTES"),
     )
+
+    target_bookmakers: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["Bet365", "Unibet"])
     consensus_bookmakers: Annotated[list[str], NoDecode] = Field(
-        default_factory=lambda: [
-            "Pinnacle",
-            "Betfair",
-            "Bet365",
-            "Unibet",
-            "WilliamHill",
-            "Marathonbet",
-            "888Sport",
-            "Betsson",
-            "Spreadex",
-            "Duelbits",
-            "SBOBET",
-            "DafaBet",
-            "GGBet",
-            "FonBet",
-        ]
+        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"]
     )
     the_odds_regions: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ["eu", "uk", "us"])
     the_odds_sport_keys: Annotated[list[str], NoDecode] = Field(default_factory=lambda: LEGACY_SOCCER_KEYS.copy())
 
-    allow_low_tier: bool = Field(default=False, validation_alias=AliasChoices("ALLOW_LOW_TIER", "EXCLUDE_EXOTIC_LEAGUES"))
+    allow_low_tier: bool = Field(
+        default=False,
+        validation_alias=AliasChoices("ALLOW_LOW_TIER", "EXCLUDE_EXOTIC_LEAGUES"),
+    )
     match_start_tolerance_hours: float = Field(
         default=12.0,
         validation_alias=AliasChoices("MATCH_START_TOLERANCE_HOURS"),
@@ -145,17 +124,22 @@ class Settings(BaseSettings):
     )
     min_books_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
     min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
-    min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
-    min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EV_PCT"))
-    min_model_confidence: float = Field(default=58.0, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
-    max_picks_per_run: int = Field(default=5, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
-    odds_min: float = Field(default=1.55, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
-    odds_max: float = Field(default=3.60, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
+    min_edge_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EDGE_PCT"))
+    min_ev_pct: float = Field(default=1.0, validation_alias=AliasChoices("MIN_EV_PCT"))
+    min_model_confidence: float = Field(default=54.0, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
+    max_picks_per_run: int = Field(
+        default=5,
+        validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"),
+    )
+    odds_min: float = Field(default=1.60, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
+    odds_max: float = Field(default=3.20, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
+
     outlier_price_tolerance_pct: float = Field(
         default=5.5,
         validation_alias=AliasChoices("OUTLIER_PRICE_TOLERANCE_PCT"),
     )
     outlier_max_penalty: float = Field(default=10.0, validation_alias=AliasChoices("OUTLIER_MAX_PENALTY"))
+
     enable_derived_soccer_markets: bool = Field(
         default=True,
         validation_alias=AliasChoices("ENABLE_DERIVED_SOCCER_MARKETS"),
@@ -165,9 +149,19 @@ class Settings(BaseSettings):
     enable_sstats_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_SSTATS_CONTEXT"))
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
 
-    the_odds_timeout_seconds: float = Field(default=30.0, validation_alias=AliasChoices("THE_ODDS_TIMEOUT_SECONDS"))
-    odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"))
-    sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))
+    the_odds_timeout_seconds: float = Field(
+        default=30.0,
+        validation_alias=AliasChoices("THE_ODDS_TIMEOUT_SECONDS"),
+    )
+    odds_api_io_timeout_seconds: float = Field(
+        default=25.0,
+        validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"),
+    )
+    sstats_timeout_seconds: float = Field(
+        default=25.0,
+        validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"),
+    )
+
     odds_api_io_page_limit: int = Field(default=60, validation_alias=AliasChoices("ODDS_API_IO_PAGE_LIMIT"))
     odds_api_io_max_pages_per_sport: int = Field(
         default=4,
@@ -186,18 +180,36 @@ class Settings(BaseSettings):
     source_weight_bookiesapi: float = Field(default=0.98, validation_alias=AliasChoices("SOURCE_WEIGHT_BOOKIESAPI"))
     source_weight_sstats: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_SSTATS"))
 
-    bookmaker_weight_pinnacle: float = Field(default=1.16, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_PINNACLE"))
-    bookmaker_weight_betfair: float = Field(default=1.12, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_BETFAIR"))
-    bookmaker_weight_bet365: float = Field(default=1.08, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_BET365"))
-    bookmaker_weight_unibet: float = Field(default=1.03, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_UNIBET"))
+    bookmaker_weight_pinnacle: float = Field(
+        default=1.16,
+        validation_alias=AliasChoices("BOOKMAKER_WEIGHT_PINNACLE"),
+    )
+    bookmaker_weight_betfair: float = Field(
+        default=1.12,
+        validation_alias=AliasChoices("BOOKMAKER_WEIGHT_BETFAIR"),
+    )
+    bookmaker_weight_bet365: float = Field(
+        default=1.08,
+        validation_alias=AliasChoices("BOOKMAKER_WEIGHT_BET365"),
+    )
+    bookmaker_weight_unibet: float = Field(
+        default=1.03,
+        validation_alias=AliasChoices("BOOKMAKER_WEIGHT_UNIBET"),
+    )
 
     h2h_score_weight: float = Field(default=0.88, validation_alias=AliasChoices("H2H_SCORE_WEIGHT"))
     totals_score_weight: float = Field(default=1.18, validation_alias=AliasChoices("TOTALS_SCORE_WEIGHT"))
     spreads_score_weight: float = Field(default=1.15, validation_alias=AliasChoices("SPREADS_SCORE_WEIGHT"))
     dnb_score_weight: float = Field(default=1.00, validation_alias=AliasChoices("DNB_SCORE_WEIGHT"))
-    double_chance_score_weight: float = Field(default=0.82, validation_alias=AliasChoices("DOUBLE_CHANCE_SCORE_WEIGHT"))
+    double_chance_score_weight: float = Field(
+        default=0.82,
+        validation_alias=AliasChoices("DOUBLE_CHANCE_SCORE_WEIGHT"),
+    )
     btts_score_weight: float = Field(default=1.12, validation_alias=AliasChoices("BTTS_SCORE_WEIGHT"))
-    team_totals_score_weight: float = Field(default=1.20, validation_alias=AliasChoices("TEAM_TOTALS_SCORE_WEIGHT"))
+    team_totals_score_weight: float = Field(
+        default=1.20,
+        validation_alias=AliasChoices("TEAM_TOTALS_SCORE_WEIGHT"),
+    )
 
     @field_validator(
         "run_sports",
@@ -269,9 +281,9 @@ class Settings(BaseSettings):
             return self.bookmaker_weight_unibet
         if normalized in {"williamhill", "ladbrokes", "sbobet"}:
             return 1.08
-        if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet", "spreadex", "duelbits", "dafabet", "ggbet", "fonbet"}:
+        if normalized in {"marathonbet", "bwin", "888sport", "188bet", "betvictor", "cloudbet"}:
             return 1.03
-        if normalized in {"10bet", "betsson", "betregal", "ysb88"}:
+        if normalized in {"10bet", "betsson", "betregal"}:
             return 1.01
         if normalized in {"1xbet", "melbet", "cashpoint", "betathome"}:
             return 0.96
