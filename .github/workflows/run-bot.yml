@@ -3,7 +3,7 @@ name: run-bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '15 * * * *'
+    - cron: '0 5 * * *'
 
 permissions:
   contents: write
@@ -32,6 +32,7 @@ jobs:
           RUN_DAYS_AHEAD: ${{ vars.RUN_DAYS_AHEAD || '4' }}
           ALLOW_LOW_TIER: ${{ vars.ALLOW_LOW_TIER || secrets.ALLOW_LOW_TIER || 'false' }}
           PUBLISH_WINDOW_HOURS: ${{ vars.PUBLISH_WINDOW_HOURS || secrets.PUBLISH_WINDOW_HOURS || '48' }}
+          MIN_KICKOFF_LEAD_MINUTES: ${{ vars.MIN_KICKOFF_LEAD_MINUTES || '30' }}
 
           TARGET_BOOKMAKERS: ${{ vars.TARGET_BOOKMAKERS || secrets.TARGET_BOOKMAKERS || 'Bet365,Unibet' }}
           CONSENSUS_BOOKMAKERS: ${{ vars.CONSENSUS_BOOKMAKERS || secrets.CONSENSUS_BOOKMAKERS || 'Pinnacle,Betfair,Bet365,Unibet' }}
