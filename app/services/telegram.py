@@ -1,9 +1,5 @@
 from __future__ import annotations
 
-from html import escape
-from typing import Iterable
-from zoneinfo import ZoneInfo
-
 import httpx
 
 from app.config import Settings
@@ -11,179 +7,104 @@ from app.schemas import CandidateBet
 
 
 class TelegramPublisher:
-    def __init__(self, settings: Settings) -> None:
+    def __init__(self, settings: Settings):
         self.settings = settings
 
-    async def publish(self, candidates: Iterable[CandidateBet]) -> tuple[int, list[str]]:
-        items = list(candidates)
-        if not items:
-            return 0, []
+    def _translate_market(self, family: str) -> str:
+        mapping = {
+            "totals": "Тотал",
+            "h2h": "Исход",
+            "spread": "Фора",
+            "handicap": "Фора",
+            "btts": "Обе забьют",
+            "double_chance": "Двойной шанс",
+        }
+        return mapping.get((family or "").lower(), family)
 
-        rendered = self._render_message(items)
-        if self.settings.publish_dry_run:
-            return 0, [rendered]
+    def _translate_selection(self, selection: str) -> str:
+        normalized = (selection or "").strip()
+        lowered = normalized.lower()
 
-        if not self.settings.telegram_bot_token or not self.settings.telegram_chat_id:
-            return 0, []
+        exact_mapping = {
+            "draw": "Ничья",
+            "home": "П1",
+            "away": "П2",
+            "1": "П1",
+            "2": "П2",
+            "1x": "1X",
+            "x2": "X2",
+            "12": "12",
+            "yes": "Да",
+            "no": "Нет",
+        }
+        if lowered in exact_mapping:
+            return exact_mapping[lowered]
 
-        messages = self._split_message(rendered, 3600)
-        sent = 0
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            for message in messages:
-                response = await client.post(
-                    f"https://api.telegram.org/bot{self.settings.telegram_bot_token}/sendMessage",
-                    json={
-                        "chat_id": self.settings.telegram_chat_id,
-                        "text": message,
-                        "parse_mode": "HTML",
-                        "disable_web_page_preview": True,
-                    },
-                )
-                if response.status_code == 200:
-                    sent += 1
-        return sent, messages
+        if lowered.startswith("under"):
+            tail = normalized[5:].strip()
+            return f"Меньше {tail}".strip()
 
-    def _render_message(self, candidates: list[CandidateBet]) -> str:
-        title = f"🔥 {len(candidates)} лучших валуйных ставок на ближайшие 48 часов"
-        intro = (
-            "В выдачу попадают только одиночные ставки с подтверждённым рыночным сигналом. "
-            "На один матч — не более одной ставки."
+        if lowered.startswith("over"):
+            tail = normalized[4:].strip()
+            return f"Больше {tail}".strip()
+
+        return normalized.replace("Draw", "Ничья").replace("draw", "ничья")
+
+    def render_message(self, bets: list[CandidateBet]) -> str:
+        header = f"🔥 {len(bets)} лучших валуйных ставок на ближайшие 48–72 часа\n\n"
+        notes = (
+            "В выдачу попадают только одиночные ставки с подтверждением рынком, "
+            "достаточным числом букмекеров и модельным контекстом.\n"
+            "На один матч — не более одной ставки, без коррелированных дублей."
         )
-        blocks = [f"<b>{escape(title)}</b>", "", escape(intro)]
-        for idx, bet in enumerate(candidates, start=1):
-            blocks.extend(["", self._render_candidate(idx, bet)])
-        return "\n".join(blocks).strip()
 
-    def _render_candidate(self, idx: int, bet: CandidateBet) -> str:
-        sport_name = self._sport_label(getattr(bet, "sport_key", ""))
-        family_name = self._family_label(getattr(bet, "family", ""))
+        blocks: list[str] = [header + notes]
+        for idx, bet in enumerate(bets, start=1):
+            xg = ""
+            if bet.expected_home is not None and bet.expected_away is not None:
+                xg = f"\n📈 xG: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
 
-        point_text = ""
-        if getattr(bet, "point", None) is not None:
-            point_text = f" ({self._fmt_num(bet.point, 2)})"
+            point_suffix = f" ({bet.point:g})" if bet.point is not None else ""
+            family_label = self._translate_market(bet.family)
+            selection_label = self._translate_selection(bet.selection)
 
-        commence_time = getattr(bet, "commence_time", None)
-        if commence_time is not None:
-            local_tz = ZoneInfo(self.settings.app_timezone)
-            start_text = commence_time.astimezone(local_tz).strftime("%d.%m.%Y %H:%M МСК")
-        else:
-            start_text = "—"
-
-        source_label = self._source_label(bet)
-        lines = [
-            f"⚽️ {escape(sport_name)}. {escape(getattr(bet, 'league_name', ''))}",
-            f"{idx}. <b>{escape(getattr(bet, 'home_team', ''))} - {escape(getattr(bet, 'away_team', ''))}</b>",
-            "",
-            f"🎯 <b>{escape(family_name)}</b>",
-            f"Прогноз: <b>{escape(str(getattr(bet, 'selection', '')))}{escape(point_text)}</b>",
-            (
-                f"💸 Коэффициент: <b>{self._fmt_num(getattr(bet, 'odds', None), 2)}</b> | "
-                f"EV: <b>{self._fmt_num(getattr(bet, 'ev_pct', None), 2)}%</b> | "
-                f"Edge: <b>{self._fmt_num(getattr(bet, 'edge_pct', None), 2)}%</b>"
-            ),
-            (
-                f"📊 Модель: {self._fmt_pct(getattr(bet, 'model_probability', None))} | "
-                f"скорр.: {self._fmt_pct(getattr(bet, 'adjusted_probability', None))} | "
-                f"линия: {self._fmt_pct(getattr(bet, 'market_probability', None))}"
-            ),
-            (
-                f"🧠 Уверенность: <b>{self._fmt_num(getattr(bet, 'confidence', None), 1)}%</b> | "
-                f"Источник: {escape(source_label)}"
-            ),
-            f"🕒 Начало: {escape(start_text)}",
-        ]
-
-        reasons = [str(r).strip() for r in (getattr(bet, "reasons", None) or []) if str(r).strip()]
-        if reasons:
-            lines.extend(["", "📌 Ключевые факторы:"])
-            for reason in reasons[:5]:
-                lines.append(f"• {escape(reason)}")
-
-        books_count = getattr(bet, "books_count", 0) or 0
-        sources_count = getattr(bet, "sources_count", 0) or 0
-        model_mode = getattr(bet, "model_mode", "") or "market_only"
-        if books_count or sources_count:
-            lines.extend(
-                [
-                    "",
-                    (
-                        f"📝 Подтверждение: букмекеров — {books_count}, "
-                        f"источников — {sources_count}, режим — {escape(str(model_mode))}"
-                    ),
-                ]
+            blocks.append(
+                f"{idx}. {bet.home_team} - {bet.away_team}\n"
+                f"🎯 Рынок: {family_label} | Выбор: {selection_label}{point_suffix}\n"
+                f"💸 Кэф: {bet.odds:.2f} | EV: {bet.ev_pct:.2f}% | Edge: {bet.edge_pct:.2f}%\n"
+                f"📊 Модель: {bet.model_probability * 100:.1f}% | "
+                f"скорр.: {bet.adjusted_probability * 100:.1f}% | "
+                f"линия: {bet.implied_probability * 100:.1f}%\n"
+                f"✅ Уверенность: {bet.confidence:.1f}% | "
+                f"Книг: {bet.books_count} | Источников: {bet.sources_count}\n"
+                f"🏆 Лига: {bet.league_name}\n"
+                f"🕒 Старт: {bet.commence_time.strftime('%d.%m.%Y %H:%M')}"
+                f"{xg}\n"
+                f"📌 Причины: {'; '.join(bet.reasons[:3])}"
             )
 
-        return "\n".join(lines)
+        return "\n\n".join(blocks)
 
-    @staticmethod
-    def _split_message(message: str, limit: int) -> list[str]:
-        if len(message) <= limit:
-            return [message]
+    async def publish(self, bets: list[CandidateBet]) -> str | None:
+        if not bets:
+            return None
 
-        parts: list[str] = []
-        current: list[str] = []
-        current_len = 0
-        for line in message.splitlines():
-            extra = len(line) + 1
-            if current and current_len + extra > limit:
-                parts.append("\n".join(current))
-                current = [line]
-                current_len = extra
-            else:
-                current.append(line)
-                current_len += extra
-        if current:
-            parts.append("\n".join(current))
-        return parts
+        message = self.render_message(bets)
+        if (
+            self.settings.publish_dry_run
+            or not self.settings.telegram_bot_token
+            or not self.settings.telegram_chat_id
+        ):
+            return message
 
-    @staticmethod
-    def _fmt_num(value: object, digits: int = 2) -> str:
-        try:
-            if value is None:
-                return "—"
-            number = float(value)
-        except Exception:
-            return "—"
-        rounded = round(number, digits)
-        text = f"{rounded:.{digits}f}".rstrip("0").rstrip(".")
-        return text.replace(".", ",")
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_bot_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
 
-    @classmethod
-    def _fmt_pct(cls, value: object) -> str:
-        try:
-            if value is None:
-                return "—"
-            number = float(value) * 100.0
-        except Exception:
-            return "—"
-        return f"{cls._fmt_num(number, 1)}%"
-
-    @staticmethod
-    def _sport_label(sport_key: str) -> str:
-        return {
-            "soccer": "Футбол",
-            "basketball": "Баскетбол",
-            "baseball": "Бейсбол",
-            "icehockey": "Хоккей",
-        }.get(sport_key, str(sport_key).title() if sport_key else "Спорт")
-
-    @staticmethod
-    def _family_label(family: str) -> str:
-        return {
-            "h2h": "Исход",
-            "totals": "Тотал",
-            "spreads": "Фора",
-            "dnb": "Draw No Bet",
-            "doubleChance": "Двойной шанс",
-            "btts": "Обе забьют",
-            "teamTotals": "Индивидуальный тотал",
-        }.get(family, family or "Ставка")
-
-    @staticmethod
-    def _source_label(bet: CandidateBet) -> str:
-        source_summary = getattr(bet, "source_summary", None) or {}
-        if isinstance(source_summary, dict):
-            source = source_summary.get("best_source") or source_summary.get("source")
-            if source:
-                return str(source)
-        return "Market"
+        return message
