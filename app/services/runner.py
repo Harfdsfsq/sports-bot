@@ -86,7 +86,8 @@ class PredictionRunner:
             sent_messages = 0
             telegram_payloads: list[str] = []
             if candidates:
-                sent_messages, telegram_payloads = await self.telegram.publish(candidates)
+                publish_result = await self.telegram.publish(candidates)
+                sent_messages, telegram_payloads = self._normalize_publish_result(publish_result)
 
             published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
             self._write_exports(filtered_matches, merged_offers, contexts, candidates)
@@ -187,6 +188,71 @@ class PredictionRunner:
             self.state.save_run("error", error_text=error_text)
             self.state.write_debug({"created_at": datetime.now(UTC).isoformat(), "error": error_text})
             raise
+
+    @staticmethod
+    def _normalize_publish_result(publish_result: Any) -> tuple[int, list[str]]:
+        def _coerce_count(value: Any) -> int:
+            if value is None:
+                return 0
+            if isinstance(value, bool):
+                return int(value)
+            if isinstance(value, int):
+                return value
+            if isinstance(value, float):
+                return int(value)
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return 0
+
+        def _coerce_payloads(value: Any) -> list[str]:
+            if value is None:
+                return []
+            if isinstance(value, str):
+                return [value]
+            if isinstance(value, (list, tuple, set)):
+                return [str(item) for item in value if item is not None]
+            return [str(value)]
+
+        if isinstance(publish_result, dict):
+            sent_messages = _coerce_count(
+                publish_result.get("sent_messages")
+                or publish_result.get("telegram_messages_sent")
+                or publish_result.get("count")
+                or publish_result.get("published")
+            )
+            telegram_payloads = _coerce_payloads(
+                publish_result.get("telegram_payloads")
+                or publish_result.get("payloads")
+                or publish_result.get("messages")
+            )
+            return sent_messages, telegram_payloads
+
+        if isinstance(publish_result, (list, tuple)):
+            if not publish_result:
+                return 0, []
+
+            first = publish_result[0]
+            second = publish_result[1] if len(publish_result) > 1 else None
+
+            if isinstance(first, (list, tuple, set)) and second is None:
+                payloads = _coerce_payloads(first)
+                return len(payloads), payloads
+
+            sent_messages = _coerce_count(first)
+            telegram_payloads = _coerce_payloads(second)
+
+            if sent_messages == 0 and second is None:
+                payloads = _coerce_payloads(first)
+                if payloads and not (len(payloads) == 1 and payloads[0] == str(first)):
+                    return len(payloads), payloads
+
+            return sent_messages, telegram_payloads
+
+        if isinstance(publish_result, str):
+            return 1, [publish_result]
+
+        return _coerce_count(publish_result), []
 
     def _filter_matches_for_run(self, matches: list[Match], now_utc: datetime) -> tuple[list[Match], dict[str, Any]]:
         publish_deadline = now_utc + timedelta(hours=self.settings.publish_window_hours)
