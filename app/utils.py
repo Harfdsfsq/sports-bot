@@ -524,7 +524,21 @@ def price_distance_pct(price: float, baseline_price: float) -> float | None:
     return abs(price - baseline_price) * 100.0 / baseline_price
 
 
-def shrink_probability(model_prob: float, market_prob: float, confidence: float, shrink_min: float, shrink_max: float) -> float:
+def shrink_probability(
+    model_prob: float,
+    market_prob: float,
+    confidence: float,
+    shrink_min: float = 0.18,
+    shrink_max: float = 0.55,
+) -> float:
+    """Blend model probability back toward market probability.
+
+    Keep backward compatibility with older call sites that pass only three
+    positional arguments. Newer callers may still override shrink_min and
+    shrink_max explicitly.
+    """
+    if shrink_min > shrink_max:
+        shrink_min, shrink_max = shrink_max, shrink_min
     shrink = clamp(shrink_min + (confidence / 100.0) * (shrink_max - shrink_min), shrink_min, shrink_max)
     return market_prob + (model_prob - market_prob) * shrink
 
