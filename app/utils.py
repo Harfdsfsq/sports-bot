@@ -1,125 +1,195 @@
 from __future__ import annotations
 
-import math
 import re
 from datetime import UTC, datetime
-from statistics import median
-
-TEAM_ALIAS_MAP = {
-    'red bull bragantino': 'bragantino',
-    'rb bragantino': 'bragantino',
-    'athletico paranaense': 'athletico pr',
-    'atletico paranaense': 'athletico pr',
-    'vasco gama': 'vasco da gama',
-    'internacional rs': 'internacional',
-}
-
-STOP_WORDS = {
-    'fc', 'cf', 'ac', 'sc', 'club', 'fk', 'bk', 'hc', 'bc', 'kk', 'de', 'da', 'do', 'the'
-}
-
-LOW_TIER_PATTERNS = [
-    r'\bu19\b',
-    r'\bu20\b',
-    r'\bu21\b',
-    r'\byouth\b',
-    r'\breserve\b',
-    r"\bwomen'?s\b",
-    r'\besports\b',
-    r'\bfriendly\b',
-]
+from typing import Any
 
 
-def normalize_text(value: str) -> str:
-    value = value.lower().strip()
-    value = re.sub(r'[^a-z0-9\s]+', ' ', value)
-    tokens = [t for t in value.split() if t and t not in STOP_WORDS]
-    value = ' '.join(tokens)
-    return TEAM_ALIAS_MAP.get(value, value)
+def normalize_bookmaker_name(value: str | None) -> str:
+    raw = (value or "").strip().lower()
+    return "".join(ch for ch in raw if ch.isalnum())
 
 
-def dedupe_key(sport_key: str, home_team: str, away_team: str, date_iso: str) -> str:
-    return f'{sport_key}|{normalize_text(home_team)}|{normalize_text(away_team)}|{date_iso}'
+def _strip_accents_like(value: str) -> str:
+    return value.replace("ё", "е")
+
+
+def canonicalize_team_name(value: str | None) -> str:
+    text = _strip_accents_like((value or "").lower())
+    text = text.replace("&", " and ")
+    text = re.sub(r"\b(fc|fk|cf|sc|ac|cd|ud|bk|if|sk|jk|fk|afc|bsc|sv|club|deportivo|atletico|athletic)\b", " ", text)
+    text = re.sub(r"\b(u\d{2}|u\d{1,2}|women|woman|ladies|reserves|b|ii|iii)\b", " ", text)
+    text = re.sub(r"[^\w\s]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
+
+
+def canonicalize_league_name(value: str | None) -> str:
+    text = _strip_accents_like((value or "").lower())
+    text = re.sub(r"[^\w\s]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text
 
 
 def build_match_key(sport_key: str, home_team: str, away_team: str, commence_time: datetime) -> str:
-    dt = ensure_utc(commence_time)
-    return dedupe_key(sport_key, home_team, away_team, dt.date().isoformat())
+    dt = commence_time.astimezone(UTC).strftime("%Y%m%d%H%M")
+    return "|".join([sport_key, canonicalize_team_name(home_team), canonicalize_team_name(away_team), dt])
 
 
 def build_loose_match_key(sport_key: str, home_team: str, away_team: str) -> str:
-    return f'{sport_key}|{normalize_text(home_team)}|{normalize_text(away_team)}'
+    return "|".join([sport_key, canonicalize_team_name(home_team), canonicalize_team_name(away_team)])
 
 
-def ensure_utc(value: datetime) -> datetime:
-    if value.tzinfo is None:
-        return value.replace(tzinfo=UTC)
-    return value.astimezone(UTC)
+def parse_datetime(value: Any) -> datetime:
+    if isinstance(value, datetime):
+        return value if value.tzinfo else value.replace(tzinfo=UTC)
+    if isinstance(value, (int, float)):
+        number = int(value)
+        if abs(number) > 1_000_000_000_000:
+            number = number // 1000
+        return datetime.fromtimestamp(number, tz=UTC)
+    text = str(value or "").strip()
+    if not text:
+        raise ValueError("empty datetime")
+    if text.isdigit():
+        return parse_datetime(int(text))
+    if text.endswith("Z"):
+        text = text[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(text)
+    except ValueError:
+        for fmt in ("%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%d.%m.%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+            try:
+                dt = datetime.strptime(text, fmt)
+                break
+            except ValueError:
+                continue
+        else:
+            raise
+    return dt if dt.tzinfo else dt.replace(tzinfo=UTC)
 
 
-def is_low_tier_league(league_name: str) -> bool:
-    value = league_name.lower()
-    return any(re.search(pattern, value) for pattern in LOW_TIER_PATTERNS)
+def _token_overlap(a: str, b: str) -> float:
+    a_set = set(a.split())
+    b_set = set(b.split())
+    if not a_set or not b_set:
+        return 0.0
+    inter = len(a_set & b_set)
+    union = len(a_set | b_set)
+    return inter / union if union else 0.0
 
 
-def implied_probability(decimal_odds: float) -> float:
-    return 1.0 / decimal_odds if decimal_odds > 0 else 0.0
+def score_event_match(
+    *,
+    sport: str,
+    match_home: str,
+    match_away: str,
+    match_start: datetime,
+    match_league: str,
+    event_home: str,
+    event_away: str,
+    event_start: datetime,
+    event_league: str,
+    exact_tolerance_hours: float = 12.0,
+    fuzzy_tolerance_hours: float = 8.0,
+) -> tuple[float, str]:
+    home_a = canonicalize_team_name(match_home)
+    away_a = canonicalize_team_name(match_away)
+    home_b = canonicalize_team_name(event_home)
+    away_b = canonicalize_team_name(event_away)
+    league_a = canonicalize_league_name(match_league)
+    league_b = canonicalize_league_name(event_league)
+
+    same_order = _token_overlap(home_a, home_b) * 0.5 + _token_overlap(away_a, away_b) * 0.5
+    reverse_order = _token_overlap(home_a, away_b) * 0.5 + _token_overlap(away_a, home_b) * 0.5
+    teams_score = max(same_order, reverse_order) * 70.0
+
+    time_diff_hours = abs((match_start.astimezone(UTC) - event_start.astimezone(UTC)).total_seconds()) / 3600.0
+    if time_diff_hours <= max(0.25, fuzzy_tolerance_hours):
+        time_score = 20.0
+        quality = "exact"
+    elif time_diff_hours <= max(exact_tolerance_hours, fuzzy_tolerance_hours * 2):
+        time_score = 12.0
+        quality = "loose"
+    else:
+        time_score = 0.0
+        quality = "fuzzy"
+
+    league_score = _token_overlap(league_a, league_b) * 10.0
+    total = teams_score + time_score + league_score
+    if total >= 92:
+        quality = "exact"
+    elif total >= 75:
+        quality = "loose"
+    else:
+        quality = "fuzzy"
+    return total, quality
 
 
-def clamp(value: float, lower: float, upper: float) -> float:
-    return max(lower, min(value, upper))
+def detect_market_family(value: Any = None, *args: Any, **kwargs: Any) -> str | None:
+    text_parts = [str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]
+    text = " ".join(text_parts).lower()
+    if any(key in text for key in ["double chance", "1x", "x2", "12"]):
+        return "doubleChance"
+    if "draw no bet" in text or "dnb" in text:
+        return "dnb"
+    if "both teams" in text or "btts" in text:
+        return "btts"
+    if "team total" in text or "individual total" in text:
+        return "teamTotals"
+    if any(key in text for key in ["spread", "handicap", "asian handicap", "european handicap"]):
+        return "spreads"
+    if any(key in text for key in ["total", "goals over/under", "over/under", "goal line"]):
+        return "totals"
+    if any(key in text for key in ["moneyline", "match winner", "result", "ml", "1x2", "winner"]):
+        return "h2h"
+    return None
 
 
-def weighted_median(values: list[tuple[float, float]]) -> float:
-    if not values:
-        raise ValueError('weighted_median requires at least one value')
-    expanded: list[float] = []
-    for value, weight in values:
-        expanded.extend([value] * max(1, int(round(weight))))
-    return float(median(expanded))
-
-
-def poisson_over_probability(expected_total: float, line: float) -> float:
-    threshold = math.floor(line)
-    push_on_half = abs(line - threshold - 0.5) < 1e-9
-    less_or_equal = sum(
-        math.exp(-expected_total) * (expected_total ** goals) / math.factorial(goals)
-        for goals in range(0, threshold + (0 if push_on_half else 1))
-    )
-    return clamp(1.0 - less_or_equal, 0.01, 0.99)
-
-
-def shrink_probability(model_prob: float, market_prob: float, confidence: float) -> float:
-    shrink = clamp(0.18 + (confidence / 100.0) * 0.32, 0.18, 0.50)
-    return market_prob + (model_prob - market_prob) * shrink
-
-
-def russian_market_name(family: str) -> str:
+def get_outcome_key(value: Any = None, *args: Any, **kwargs: Any) -> str:
+    text = " ".join([str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]).strip().lower()
     mapping = {
-        'h2h': 'Исход',
-        'totals': 'Тотал',
-        'spreads': 'Фора',
-        'dnb': 'Фора 0',
-        'doubleChance': 'Двойной шанс',
-        'btts': 'Обе забьют',
-        'teamTotals': 'Инд. тотал',
+        "1": "home",
+        "home": "home",
+        "host": "home",
+        "2": "away",
+        "away": "away",
+        "x": "draw",
+        "draw": "draw",
+        "tie": "draw",
+        "yes": "yes",
+        "no": "no",
+        "1x": "home_or_draw",
+        "x2": "away_or_draw",
+        "12": "home_or_away",
     }
-    return mapping.get(family, family)
+    return mapping.get(text, text)
 
 
-def russian_selection(family: str, selection: str, point: float | None = None) -> str:
-    low = selection.strip().lower()
-    if family == 'totals':
-        if low.startswith('over'):
-            return 'Больше'
-        if low.startswith('under'):
-            return 'Меньше'
-    if family == 'h2h':
-        if low == 'draw':
-            return 'Ничья'
-    if family == 'btts':
-        if low in {'yes', 'both teams to score - yes'}:
-            return 'Да'
-        if low in {'no', 'both teams to score - no'}:
-            return 'Нет'
-    return selection
+def get_total_selection_key(value: Any = None, *args: Any, **kwargs: Any) -> str:
+    text = " ".join([str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]).lower()
+    if "under" in text or "less" in text or "мень" in text:
+        return "under"
+    return "over"
+
+
+def get_spread_selection_key(value: Any = None, *args: Any, **kwargs: Any) -> str:
+    text = " ".join([str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]).lower().strip()
+    if text in {"1", "home", "host"}:
+        return "home"
+    if text in {"2", "away", "guest"}:
+        return "away"
+    if "home" in text or "1" == text:
+        return "home"
+    if "away" in text or "2" == text:
+        return "away"
+    return text or "home"
+
+
+def infer_team_total_side(value: Any = None, *args: Any, **kwargs: Any) -> str | None:
+    text = " ".join([str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]).lower()
+    if any(key in text for key in ["home", "host", "1"]):
+        return "home"
+    if any(key in text for key in ["away", "guest", "2"]):
+        return "away"
+    return None

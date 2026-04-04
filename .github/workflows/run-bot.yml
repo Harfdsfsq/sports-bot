@@ -3,7 +3,7 @@ name: Run Sports Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 5 * * *'
+    - cron: "0 5 * * *"
 
 jobs:
   run-bot:
@@ -16,27 +16,27 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
+          python-version: "3.12"
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Prepare data dir
+        run: mkdir -p .data .data/exports
 
       - name: Run bot
         env:
           APP_ENV: production
           APP_TIMEZONE: Europe/Moscow
           TZ: Europe/Moscow
-
           STATE_PATH: .data/state.json
           DEBUG_PATH: .data/debug-last-run.json
           STORAGE_EXPORT_DIR: .data/exports
-
           PUBLISH_DRY_RUN: false
           RUN_SPORTS: soccer
           RUN_DAYS_AHEAD: 4
           PUBLISH_WINDOW_HOURS: 48
           MIN_KICKOFF_LEAD_MINUTES: 30
-
           TARGET_BOOKMAKERS: Bet365,Unibet
           CONSENSUS_BOOKMAKERS: Bet365,Unibet
           ODDS_API_IO_BOOKMAKERS: Bet365,Unibet
@@ -45,15 +45,13 @@ jobs:
           MIN_MODEL_CONFIDENCE: 0.55
           MAX_MATCHES_FOR_ODDS_FETCH: 300
           MAX_MATCHES_FOR_PRICING: 300
-          ALLOW_LOW_TIER: false
           MAX_PICKS_PER_RUN: 5
-
+          ALLOW_LOW_TIER: false
           BOOKIES_BOOTSTRAP_ENABLED: true
           BOOKIES_API_ENABLED: true
           SSTATS_ENABLED: true
           ENABLE_ODDS_API_IO: true
           ENABLE_SSTATS_CONTEXT: true
-
           BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
           BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
           BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
@@ -64,19 +62,15 @@ jobs:
           BOOKIES_API_TIMEOUT_SECONDS: 30
           BOOKIES_API_MAX_PAGES_PER_DAY: 40
           BOOKIES_API_PAGE_LIMIT: 50
-
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-        run: |
-          mkdir -p .data .data/exports
-          python -m app.cli run-once
+        run: python -m app.cli run-once
 
-      - name: Commit updated state
+      - name: Commit updated state and exports
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
