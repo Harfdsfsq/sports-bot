@@ -1,29 +1,27 @@
-name: Run Sports Bot
+name: run-bot
 
 on:
   workflow_dispatch:
   schedule:
-    # 08:00 Moscow time (MSK, UTC+3) = 05:00 UTC
-    - cron: "0 5 * * *"
+    # 08:00 по Москве = 05:00 UTC
+    - cron: '0 5 * * *'
+
+permissions:
+  contents: write
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
-        uses: actions/checkout@v6
+      - uses: actions/checkout@v6
 
-      - name: Set up Python
-        uses: actions/setup-python@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
-
-      - name: Prepare data dir
-        run: mkdir -p .data
 
       - name: Run bot
         env:
@@ -33,39 +31,37 @@ jobs:
           STATE_PATH: .data/state.json
           DEBUG_PATH: .data/debug-last-run.json
           STORAGE_EXPORT_DIR: .data/exports
-          PUBLISH_DRY_RUN: false
-          RUN_SPORTS: soccer
-          RUN_DAYS_AHEAD: 2
-          PUBLISH_WINDOW_HOURS: 48
-          MIN_KICKOFF_LEAD_MINUTES: 30
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          PUBLISH_DRY_RUN: ${{ vars.PUBLISH_DRY_RUN || 'false' }}
+          RUN_SPORTS: ${{ vars.RUN_SPORTS || 'soccer' }}
+          RUN_DAYS_AHEAD: ${{ vars.RUN_DAYS_AHEAD || '4' }}
+          PUBLISH_WINDOW_HOURS: ${{ vars.PUBLISH_WINDOW_HOURS || '48' }}
+          MIN_KICKOFF_LEAD_MINUTES: ${{ vars.MIN_KICKOFF_LEAD_MINUTES || '30' }}
+          TARGET_BOOKMAKERS: ${{ vars.TARGET_BOOKMAKERS || 'Bet365,Unibet' }}
+          CONSENSUS_BOOKMAKERS: ${{ vars.CONSENSUS_BOOKMAKERS || 'Bet365,Unibet' }}
           THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
           BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-          BOOKIES_API_ENABLED: ${{ secrets.BOOKIES_API_ENABLED }}
+          BOOKIES_API_ENABLED: ${{ vars.BOOKIES_API_ENABLED || 'true' }}
           BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
           BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
           BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
           BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
-          BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
-          BOOKIES_API_ODDS_FETCH_LIMIT: ${{ secrets.BOOKIES_API_ODDS_FETCH_LIMIT }}
-          TARGET_BOOKMAKERS: ${{ secrets.TARGET_BOOKMAKERS }}
-          CONSENSUS_BOOKMAKERS: ${{ secrets.CONSENSUS_BOOKMAKERS }}
-          MIN_BOOKS_PUBLISH: ${{ secrets.MIN_BOOKS_PUBLISH }}
-          MIN_SOURCES_PUBLISH: ${{ secrets.MIN_SOURCES_PUBLISH }}
-          MIN_MODEL_CONFIDENCE: ${{ secrets.MIN_MODEL_CONFIDENCE }}
-          MAX_MATCHES_FOR_ODDS_FETCH: ${{ secrets.MAX_MATCHES_FOR_ODDS_FETCH }}
-          ALLOW_LOW_TIER: ${{ secrets.ALLOW_LOW_TIER }}
-        run: python -m app.cli run-once
-
-      - name: Commit updated state and exports
+          BOOKIES_API_ODDS_TASK: ${{ vars.BOOKIES_API_ODDS_TASK || 'odds' }}
+          BOOKIES_API_ODDS_FETCH_LIMIT: ${{ vars.BOOKIES_API_ODDS_FETCH_LIMIT || '40' }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          ALLOW_LOW_TIER: ${{ vars.ALLOW_LOW_TIER || 'false' }}
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add -A .data
+          mkdir -p .data
+          python -m app.cli run-once
+
+      - name: Commit state and exports
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add -A .data || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
