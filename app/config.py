@@ -65,15 +65,24 @@ class Settings(BaseSettings):
     )
     telegram_chat_id: str | None = None
 
-    odds_api_io_key: str | None = None
-    sstats_api_key: str | None = None
-    api_football_key: str | None = None
-    bzzoiro_api_key: str | None = None
+    # External providers
+    the_odds_api_key: str | None = None
+    the_odds_api_enabled: bool = False
+    the_odds_api_timeout_seconds: float = 30.0
 
-    enable_sstats_context: bool = True
+    odds_api_io_key: str | None = None
+    odds_api_io_timeout_seconds: float = 30.0
+
+    sstats_api_key: str | None = None
     sstats_timeout_seconds: float = 30.0
+    enable_sstats_context: bool = True
     match_start_tolerance_hours: float = 3.0
     fallback_match_start_tolerance_hours: float = 12.0
+
+    api_football_key: str | None = None
+    api_football_predictions_limit: int = 4
+
+    bzzoiro_api_key: str | None = None
 
     bookies_api_enabled: bool = True
     bookies_api_base_url: str | None = None
@@ -83,8 +92,7 @@ class Settings(BaseSettings):
     bookies_api_use_for_backfill_only: bool = False
     bookies_api_odds_task: str = 'odds'
     bookies_api_odds_fetch_limit: int = 40
-
-    api_football_predictions_limit: int = 4
+    bookies_api_timeout_seconds: float = 30.0
 
     @field_validator(
         'run_sports',
@@ -116,6 +124,7 @@ class Settings(BaseSettings):
     @field_validator(
         'telegram_token',
         'telegram_chat_id',
+        'the_odds_api_key',
         'odds_api_io_key',
         'sstats_api_key',
         'api_football_key',
@@ -146,6 +155,14 @@ class Settings(BaseSettings):
     @property
     def bookies_api_sports(self) -> list[str]:
         return self.run_sports
+
+    @property
+    def target_books(self) -> list[str]:
+        return self.target_bookmakers
+
+    @property
+    def consensus_books(self) -> list[str]:
+        return self.consensus_bookmakers
 
 
 @lru_cache(maxsize=1)
