@@ -267,4 +267,4 @@ class OddsApiIoProvider:
             add("home", row.get("home"), point=point, team_side="home")
             add("away", row.get("away"), point=point, team_side="away")
 
-        return offers\n
+        return offers
