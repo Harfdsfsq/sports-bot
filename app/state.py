@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import csv
 import json
+import os
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 from typing import Any
 
 from app.schemas import CandidateBet, Match
@@ -81,9 +83,11 @@ class JsonStateStore:
         candidates: list[CandidateBet],
     ) -> dict[str, str]:
         root = Path(export_dir)
-        day_dir = root / datetime.now(UTC).astimezone().strftime('%Y-%m-%d')
+        tz = ZoneInfo(os.getenv('APP_TIMEZONE', 'Europe/Moscow'))
+        now_local = datetime.now(UTC).astimezone(tz)
+        day_dir = root / now_local.strftime('%Y-%m-%d')
         day_dir.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now(UTC).astimezone().strftime('%H%M%S')
+        stamp = now_local.strftime('%H%M%S')
 
         matches_rows = [self._serialize_match(item) for item in matches]
         picks_rows = [self._serialize_candidate(item) for item in candidates]
