@@ -56,8 +56,26 @@ class CandidateFactory:
 
             match_candidates.sort(key=lambda item: (item.ev_pct, item.edge_pct, item.confidence), reverse=True)
             if match_candidates:
-                candidates.append(match_candidates[0])
-                debug_rows.append({'match_key': match_key, 'picked': match_candidates[0].selection, 'count': len(match_candidates)})
+                picked = match_candidates[0]
+                candidates.append(picked)
+                debug_rows.append(
+                    {
+                        'match_key': match_key,
+                        'selection': picked.selection,
+                        'family': picked.family,
+                        'count': len(match_candidates),
+                        'context_source': picked.source_summary.get('context_source'),
+                        'context_mode': picked.source_summary.get('context_mode'),
+                        'selected_bookmaker': picked.source_summary.get('selected_bookmaker'),
+                        'selected_source': picked.source_summary.get('selected_source'),
+                        'market_probability': round(float(picked.market_probability), 4),
+                        'model_probability': round(float(picked.model_probability), 4),
+                        'adjusted_probability': round(float(picked.adjusted_probability), 4),
+                        'confidence': round(float(picked.confidence), 2),
+                        'expected_home': picked.expected_home,
+                        'expected_away': picked.expected_away,
+                    }
+                )
             else:
                 rejections['no_candidate_for_match'] += 1
 
@@ -100,13 +118,15 @@ class CandidateFactory:
                 market_prob=market_prob,
                 model_prob=model_prob,
                 reasons=[
-                    f'mode=xg_total',
-                    f'model=xg_total',
+                    'mode=xg_total',
+                    'model=xg_total',
                     f'consensus_fair_odds={1 / max(market_prob, 0.01):.2f}',
+                    f'context={self._context_label(context)}',
                 ],
                 expected_home=context.expected_home,
                 expected_away=context.expected_away,
                 model_mode='xg_total',
+                context=context,
             )
             if candidate:
                 result.append(candidate)
@@ -125,17 +145,8 @@ class CandidateFactory:
         buckets: dict[str, list[Offer]] = defaultdict(list)
         for offer in offers:
             buckets[offer.selection].append(offer)
-        denom = max(context.expected_home + context.expected_away, 0.1)
-        home_base = clamp(context.expected_home / denom, 0.05, 0.85)
-        away_base = clamp(context.expected_away / denom, 0.05, 0.85)
-        draw_base = clamp(1.0 - abs(home_base - away_base) - 0.35, 0.08, 0.30)
-        scale = home_base + away_base + draw_base
-        probs = {
-            match.home_team: home_base / scale,
-            match.away_team: away_base / scale,
-            'draw': draw_base / scale,
-            'Draw': draw_base / scale,
-        }
+
+        probs = self._derive_h2h_probabilities(match, context)
         result: list[CandidateBet] = []
         for selection, bucket in buckets.items():
             if len({self._norm_book(item.bookmaker) for item in bucket}) < self.settings.min_books_publish:
@@ -153,10 +164,15 @@ class CandidateFactory:
                 offers=bucket,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=soccer_context', 'model=1x2_from_xg'],
+                reasons=[
+                    'mode=soccer_context',
+                    'model=1x2_from_xg',
+                    f'context={self._context_label(context)}',
+                ],
                 expected_home=context.expected_home,
                 expected_away=context.expected_away,
                 model_mode='soccer_context',
+                context=context,
             )
             if candidate:
                 result.append(candidate)
@@ -197,10 +213,15 @@ class CandidateFactory:
                 offers=books,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=xg_spread', 'model=xg_spread'],
+                reasons=[
+                    'mode=xg_spread',
+                    'model=xg_spread',
+                    f'context={self._context_label(context)}',
+                ],
                 expected_home=context.expected_home,
                 expected_away=context.expected_away,
                 model_mode='xg_spread',
+                context=context,
             )
             if candidate:
                 result.append(candidate)
@@ -220,6 +241,7 @@ class CandidateFactory:
         expected_home: float | None,
         expected_away: float | None,
         model_mode: str,
+        context: MatchContext | None,
     ) -> CandidateBet | None:
         books = {offer.bookmaker for offer in offers}
         sources = {offer.source for offer in offers}
@@ -227,14 +249,39 @@ class CandidateFactory:
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
-        best_price = max(offer.price for offer in offers)
+        best_offer = self._select_best_offer(offers)
+        best_price = best_offer.price
         if not (self.settings.odds_min <= best_price <= self.settings.odds_max):
             return None
-        confidence = clamp(48 + len(books) * 4 + len(sources) * 5, 0, 100)
-        adjusted = shrink_probability(model_prob, market_prob, confidence)
+
+        base_confidence = clamp(48 + len(books) * 4 + len(sources) * 5, 0, 100)
+        context_confidence = float(getattr(context, 'confidence', 58.0) or 58.0) if context is not None else base_confidence
+        confidence = (base_confidence * 0.60) + (context_confidence * 0.40)
+        shrink_min = 0.18
+        shrink_max = 0.55
+        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
+        if context_source == 'sstats_form':
+            confidence = min(confidence, 62.0)
+            shrink_min = 0.10
+            shrink_max = 0.28
+        elif context_source == 'sstats':
+            confidence = min(confidence, 68.0)
+            shrink_min = 0.15
+            shrink_max = 0.42
+        confidence = clamp(confidence, 0, 100)
+
+        adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)
         fair_odds = 1.0 / max(adjusted, 0.01)
         ev_pct = (adjusted * best_price - 1.0) * 100.0
         edge_pct = (adjusted - market_prob) * 100.0
+
+        context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        reasons = list(reasons)
+        reasons.append(f'selected_book={best_offer.bookmaker}')
+        reasons.append(f'selected_source={best_offer.source}')
+        if context_source:
+            reasons.append(f'context_confidence={context_confidence:.1f}')
+
         return CandidateBet(
             match_key=match.match_key,
             sport_key=match.sport_key,
@@ -266,8 +313,111 @@ class CandidateFactory:
                 'books': sorted(books),
                 'sources': sorted(sources),
                 'offers_seen': len(offers),
+                'selected_bookmaker': best_offer.bookmaker,
+                'selected_source': best_offer.source,
+                'selected_price': best_offer.price,
+                'context_source': context_source or None,
+                'context_confidence': round(context_confidence, 2) if context is not None else None,
+                'context_mode': context_details.get('sstats_mode'),
+                'home_recent_count': context_details.get('home_recent_count'),
+                'away_recent_count': context_details.get('away_recent_count'),
+                'home_goals_for_avg': context_details.get('home_goals_for_avg'),
+                'home_goals_against_avg': context_details.get('home_goals_against_avg'),
+                'away_goals_for_avg': context_details.get('away_goals_for_avg'),
+                'away_goals_against_avg': context_details.get('away_goals_against_avg'),
+                'raw_model_probability': round(float(model_prob), 4),
+                'adjusted_probability': round(float(adjusted), 4),
+                'market_probability': round(float(market_prob), 4),
             },
         )
+
+    def _derive_h2h_probabilities(self, match: Match, context: MatchContext) -> dict[str, float]:
+        denom = max((context.expected_home or 0.0) + (context.expected_away or 0.0), 0.1)
+        xg_home = clamp((context.expected_home or 0.0) / denom, 0.08, 0.80)
+        xg_away = clamp((context.expected_away or 0.0) / denom, 0.08, 0.80)
+        gap = abs((context.expected_home or 0.0) - (context.expected_away or 0.0))
+        xg_draw = clamp(0.28 - gap * 0.06, 0.10, 0.30)
+        xg_probs = self._normalize_probabilities({
+            match.home_team: xg_home,
+            match.away_team: xg_away,
+            'draw': xg_draw,
+            'Draw': xg_draw,
+        })
+
+        ctx_home = self._safe_probability(context.home_win_probability)
+        ctx_away = self._safe_probability(context.away_win_probability)
+        if ctx_home is None or ctx_away is None:
+            return xg_probs
+
+        ctx_draw = clamp(1.0 - ctx_home - ctx_away, 0.08, 0.30)
+        ctx_probs = self._normalize_probabilities({
+            match.home_team: ctx_home,
+            match.away_team: ctx_away,
+            'draw': ctx_draw,
+            'Draw': ctx_draw,
+        })
+
+        if str(context.source or '') == 'sstats_form':
+            xg_weight = 0.42
+            ctx_weight = 0.58
+        else:
+            xg_weight = 0.60
+            ctx_weight = 0.40
+
+        blended = {
+            match.home_team: xg_probs[match.home_team] * xg_weight + ctx_probs[match.home_team] * ctx_weight,
+            match.away_team: xg_probs[match.away_team] * xg_weight + ctx_probs[match.away_team] * ctx_weight,
+            'draw': xg_probs['draw'] * xg_weight + ctx_probs['draw'] * ctx_weight,
+            'Draw': xg_probs['Draw'] * xg_weight + ctx_probs['Draw'] * ctx_weight,
+        }
+        return self._normalize_probabilities(blended)
+
+    @staticmethod
+    def _normalize_probabilities(probs: dict[str, float]) -> dict[str, float]:
+        team_values = {
+            key: clamp(float(value or 0.0), 0.01, 0.98)
+            for key, value in probs.items()
+            if key not in {'draw', 'Draw'}
+        }
+        draw_value = clamp(float(probs.get('draw', probs.get('Draw', 0.10)) or 0.10), 0.05, 0.40)
+        total = sum(team_values.values()) + draw_value
+        if total <= 0:
+            normalized = {**team_values, 'draw': draw_value}
+        else:
+            normalized = {key: value / total for key, value in team_values.items()}
+            normalized['draw'] = draw_value / total
+        normalized['Draw'] = normalized['draw']
+        return normalized
+
+    @staticmethod
+    def _safe_probability(value: Any) -> float | None:
+        try:
+            if value is None:
+                return None
+            return clamp(float(value), 0.01, 0.95)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _context_label(context: MatchContext | None) -> str:
+        if context is None:
+            return 'none'
+        mode = str((context.details or {}).get('sstats_mode') or '').strip()
+        if mode:
+            return f'{context.source}:{mode}'
+        return str(context.source or 'unknown')
+
+    @staticmethod
+    def _select_best_offer(offers: list[Offer]) -> Offer:
+        def key(offer: Offer) -> tuple[float, float, str, str]:
+            return (
+                float(offer.price),
+                BOOKMAKER_WEIGHTS.get(str(offer.bookmaker), 1.0),
+                str(offer.source),
+                str(offer.bookmaker),
+            )
+
+        return max(offers, key=key)
 
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []

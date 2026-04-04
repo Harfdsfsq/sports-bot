@@ -85,8 +85,16 @@ class SStatsContextProvider:
 
         contexts: dict[str, MatchContext] = {}
         best_scores: dict[str, float] = {}
+        direct_window_hours = max(
+            int(getattr(self.settings, "match_start_tolerance_hours", 12) or 12),
+            int(getattr(self.settings, "fallback_match_start_tolerance_hours", 48) or 48),
+        ) + 6
+        earliest_match_start = min(m.commence_time for m in soccer_matches).astimezone(UTC)
+        latest_match_start = max(m.commence_time for m in soccer_matches).astimezone(UTC)
 
         # Pass 1: direct event matching, but keep it strict to avoid false positives.
+        # When SStats returns only historical rows, skip the expensive O(rows * matches)
+        # matcher entirely for rows that are far outside the target fixture window.
         for row in rows:
             event_home = self._extract_team_name(row, "home")
             event_away = self._extract_team_name(row, "away")
@@ -98,6 +106,20 @@ class SStatsContextProvider:
             event_start = self._extract_start(row)
             if event_start is None:
                 stats["unmatched_rows"] += 1
+                continue
+
+            if event_start < earliest_match_start - timedelta(hours=direct_window_hours) or event_start > latest_match_start + timedelta(hours=direct_window_hours):
+                stats["unmatched_rows"] += 1
+                if len(preview["unmatched_rows"]) < 10:
+                    preview["unmatched_rows"].append(
+                        {
+                            "home": event_home,
+                            "away": event_away,
+                            "league": event_league,
+                            "date": event_start.isoformat(),
+                            "reason": "outside_direct_window",
+                        }
+                    )
                 continue
 
             best_match: Match | None = None
@@ -398,13 +420,17 @@ class SStatsContextProvider:
             away_prob = clamp(expected_away / total, 0.08, 0.82)
             league_overlap = int(self._count_league_matches(home_recent, match.league_name) + self._count_league_matches(away_recent, match.league_name))
             confidence = clamp(
-                55.0
-                + min(len(home_recent), 4) * 1.8
-                + min(len(away_recent), 4) * 1.8
-                + min(league_overlap, 4) * 0.9,
-                56.0,
-                68.0,
+                53.0
+                + min(len(home_recent), 4) * 1.6
+                + min(len(away_recent), 4) * 1.6
+                + min(league_overlap, 4) * 0.8,
+                54.0,
+                65.0,
             )
+            home_goals_for_avg = self._avg_field(home_recent, "goals_for")
+            home_goals_against_avg = self._avg_field(home_recent, "goals_against")
+            away_goals_for_avg = self._avg_field(away_recent, "goals_for")
+            away_goals_against_avg = self._avg_field(away_recent, "goals_against")
 
             context = MatchContext(
                 source="sstats_form",
@@ -425,6 +451,10 @@ class SStatsContextProvider:
                     "home_recent_count": len(home_recent),
                     "away_recent_count": len(away_recent),
                     "league_overlap_count": league_overlap,
+                    "home_goals_for_avg": round(home_goals_for_avg, 3) if home_goals_for_avg is not None else None,
+                    "home_goals_against_avg": round(home_goals_against_avg, 3) if home_goals_against_avg is not None else None,
+                    "away_goals_for_avg": round(away_goals_for_avg, 3) if away_goals_for_avg is not None else None,
+                    "away_goals_against_avg": round(away_goals_against_avg, 3) if away_goals_against_avg is not None else None,
                 },
             )
             contexts[match.match_key] = context
@@ -520,6 +550,13 @@ class SStatsContextProvider:
         weights = [1.0 / (index + 1) ** 0.6 for index in range(len(clean))]
         total_weight = sum(weights)
         return sum(value * weight for value, weight in zip(clean, weights, strict=False)) / total_weight
+
+    @staticmethod
+    def _avg_field(rows: list[dict[str, Any]], key: str) -> float | None:
+        values = [float(row[key]) for row in rows if row.get(key) is not None]
+        if not values:
+            return None
+        return sum(values) / len(values)
 
     def _resolve_team_key(
         self,
