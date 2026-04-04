@@ -5,6 +5,23 @@ from datetime import UTC, datetime
 from typing import Any
 
 
+SIMULATED_MARKERS = (
+    "simulated",
+    "simulation",
+    "esoccer",
+    "ebasketball",
+    "ehockey",
+    "fifa",
+    "cyber",
+    "cybersport",
+    "esport",
+    "e-sport",
+    "electronic",
+    "virtual",
+    "vsports",
+)
+
+
 def normalize_bookmaker_name(value: str | None) -> str:
     raw = (value or "").strip().lower()
     return "".join(ch for ch in raw if ch.isalnum())
@@ -17,8 +34,8 @@ def _strip_accents_like(value: str) -> str:
 def canonicalize_team_name(value: str | None) -> str:
     text = _strip_accents_like((value or "").lower())
     text = text.replace("&", " and ")
-    text = re.sub(r"\b(fc|fk|cf|sc|ac|cd|ud|bk|if|sk|jk|fk|afc|bsc|sv|club|deportivo|atletico|athletic)\b", " ", text)
-    text = re.sub(r"\b(u\d{2}|u\d{1,2}|women|woman|ladies|reserves|b|ii|iii)\b", " ", text)
+    text = re.sub(r"\b(fc|fk|cf|sc|ac|cd|ud|bk|if|sk|jk|afc|bsc|sv|club|deportivo|atletico|athletic)\b", " ", text)
+    text = re.sub(r"\b(u\d{1,2}|women|woman|ladies|reserves|b|ii|iii)\b", " ", text)
     text = re.sub(r"[^\w\s]+", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     return text
@@ -58,7 +75,13 @@ def parse_datetime(value: Any) -> datetime:
     try:
         dt = datetime.fromisoformat(text)
     except ValueError:
-        for fmt in ("%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%d.%m.%Y", "%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M"):
+        for fmt in (
+            "%d.%m.%Y %H:%M:%S",
+            "%d.%m.%Y %H:%M",
+            "%d.%m.%Y",
+            "%Y-%m-%d %H:%M:%S",
+            "%Y-%m-%d %H:%M",
+        ):
             try:
                 dt = datetime.strptime(text, fmt)
                 break
@@ -137,11 +160,11 @@ def detect_market_family(value: Any = None, *args: Any, **kwargs: Any) -> str | 
         return "btts"
     if "team total" in text or "individual total" in text:
         return "teamTotals"
-    if any(key in text for key in ["spread", "handicap", "asian handicap", "european handicap"]):
+    if any(key in text for key in ["spread", "handicap", "asian handicap", "european handicap", "fora"]):
         return "spreads"
-    if any(key in text for key in ["total", "goals over/under", "over/under", "goal line"]):
+    if any(key in text for key in ["total", "goals over/under", "over/under", "goal line", "тотал"]):
         return "totals"
-    if any(key in text for key in ["moneyline", "match winner", "result", "ml", "1x2", "winner"]):
+    if any(key in text for key in ["moneyline", "match winner", "result", "ml", "1x2", "winner", "исход"]):
         return "h2h"
     return None
 
@@ -152,13 +175,18 @@ def get_outcome_key(value: Any = None, *args: Any, **kwargs: Any) -> str:
         "1": "home",
         "home": "home",
         "host": "home",
+        "п1": "home",
         "2": "away",
         "away": "away",
+        "п2": "away",
         "x": "draw",
         "draw": "draw",
         "tie": "draw",
+        "ничья": "draw",
         "yes": "yes",
+        "да": "yes",
         "no": "no",
+        "нет": "no",
         "1x": "home_or_draw",
         "x2": "away_or_draw",
         "12": "home_or_away",
@@ -175,21 +203,27 @@ def get_total_selection_key(value: Any = None, *args: Any, **kwargs: Any) -> str
 
 def get_spread_selection_key(value: Any = None, *args: Any, **kwargs: Any) -> str:
     text = " ".join([str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]).lower().strip()
-    if text in {"1", "home", "host"}:
+    if text in {"1", "home", "host", "п1"}:
         return "home"
-    if text in {"2", "away", "guest"}:
+    if text in {"2", "away", "guest", "п2"}:
         return "away"
-    if "home" in text or "1" == text:
+    if "home" in text or "п1" in text:
         return "home"
-    if "away" in text or "2" == text:
+    if "away" in text or "п2" in text:
         return "away"
     return text or "home"
 
 
 def infer_team_total_side(value: Any = None, *args: Any, **kwargs: Any) -> str | None:
     text = " ".join([str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]).lower()
-    if any(key in text for key in ["home", "host", "1"]):
+    if any(key in text for key in ["home", "host", "1", "п1"]):
         return "home"
-    if any(key in text for key in ["away", "guest", "2"]):
+    if any(key in text for key in ["away", "guest", "2", "п2"]):
         return "away"
     return None
+
+
+def is_simulated_or_esports_event(value: Any = None, *args: Any, **kwargs: Any) -> bool:
+    text_parts = [str(value or "")] + [str(arg or "") for arg in args] + [str(v or "") for v in kwargs.values()]
+    haystack = canonicalize_league_name(" ".join(text_parts))
+    return any(marker in haystack for marker in SIMULATED_MARKERS)

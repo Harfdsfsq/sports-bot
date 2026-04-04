@@ -74,6 +74,10 @@ class Settings(BaseSettings):
         default_factory=lambda: ["Bet365", "Unibet"],
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS"),
     )
+    bookies_api_sports: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["soccer"],
+        validation_alias=AliasChoices("BOOKIES_API_SPORTS"),
+    )
 
     allow_low_tier: bool = Field(default=False, validation_alias=AliasChoices("ALLOW_LOW_TIER", "EXCLUDE_EXOTIC_LEAGUES"))
     match_start_tolerance_hours: float = Field(
@@ -191,6 +195,7 @@ class Settings(BaseSettings):
         "target_bookmakers",
         "consensus_bookmakers",
         "odds_api_io_bookmakers",
+        "bookies_api_sports",
         mode="before",
     )
     @classmethod
