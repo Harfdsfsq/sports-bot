@@ -1,194 +1,151 @@
 from __future__ import annotations
 
+import json
 from functools import lru_cache
-from typing import Any
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from typing import Annotated, Any
+from zoneinfo import ZoneInfo
 
 from pydantic import AliasChoices, Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
-
-
-def _split_csv(value: Any) -> list[str] | Any:
-    if isinstance(value, str):
-        return [item.strip() for item in value.split(",") if item.strip()]
-    return value
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
-        env_file=".env",
-        env_file_encoding="utf-8",
-        extra="ignore",
+        env_file='.env',
+        env_file_encoding='utf-8',
+        case_sensitive=False,
+        extra='ignore',
     )
 
-    app_name: str = "sports-value-bot"
-    app_env: str = Field("development", validation_alias=AliasChoices("APP_ENV"))
-    app_timezone: str = Field(
-        "Europe/Moscow",
-        validation_alias=AliasChoices("APP_TIMEZONE", "TZ"),
+    app_name: str = 'sports-value-bot'
+    app_env: str = 'production'
+    app_timezone: str = 'Europe/Moscow'
+
+    state_path: str = '.data/state.json'
+    debug_path: str = '.data/debug-last-run.json'
+    storage_export_dir: str = '.data/exports'
+
+    publish_dry_run: bool = False
+
+    run_sports: Annotated[list[str], NoDecode] = Field(default_factory=lambda: ['soccer'])
+    run_days_ahead: int = 4
+    publish_window_hours: int = 48
+    min_kickoff_lead_minutes: int = 30
+
+    target_bookmakers: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ['Bet365', 'Unibet']
+    )
+    consensus_bookmakers: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ['Bet365', 'Unibet']
+    )
+    odds_api_io_bookmakers: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ['Bet365', 'Unibet']
     )
 
-    state_path: str = Field(
-        ".data/state.json",
-        validation_alias=AliasChoices("STATE_PATH"),
-    )
-    debug_path: str = Field(
-        ".data/debug-last-run.json",
-        validation_alias=AliasChoices("DEBUG_PATH"),
-    )
-    storage_export_dir: str = Field(
-        ".data/exports",
-        validation_alias=AliasChoices("STORAGE_EXPORT_DIR"),
-    )
+    min_books_publish: int = 2
+    min_sources_publish: int = 1
+    min_model_confidence: float = 0.55
+
+    min_books: int = 2
+    min_sources: int = 1
+    min_edge_pct: float = 2.5
+    min_ev_pct: float = 1.75
+    max_picks_per_run: int = 5
+    odds_min: float = 1.70
+    odds_max: float = 3.50
+
+    max_matches_for_odds_fetch: int = 300
+    max_matches_for_pricing: int = 300
+
+    allow_low_tier: bool = False
 
     telegram_token: str | None = Field(
         default=None,
-        validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"),
+        validation_alias=AliasChoices('TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN'),
     )
-    telegram_chat_id: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("TELEGRAM_CHAT_ID"),
-    )
+    telegram_chat_id: str | None = None
 
-    odds_api_io_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("ODDS_API_IO_KEY"),
-    )
-    sstats_api_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("SSTATS_API_KEY"),
-    )
-    api_football_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("API_FOOTBALL_KEY"),
-    )
-    bzzoiro_api_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BZZOIRO_API_KEY"),
-    )
+    odds_api_io_key: str | None = None
+    sstats_api_key: str | None = None
+    api_football_key: str | None = None
+    bzzoiro_api_key: str | None = None
 
-    run_sports: list[str] = Field(
-        default_factory=lambda: ["soccer"],
-        validation_alias=AliasChoices("RUN_SPORTS"),
-    )
-    run_days_ahead: int = Field(4, validation_alias=AliasChoices("RUN_DAYS_AHEAD"))
-    publish_window_hours: int = Field(
-        48,
-        validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"),
-    )
-    min_kickoff_lead_minutes: int = Field(
-        30,
-        validation_alias=AliasChoices("MIN_KICKOFF_LEAD_MINUTES"),
-    )
+    enable_sstats_context: bool = True
+    sstats_timeout_seconds: float = 30.0
+    match_start_tolerance_hours: float = 3.0
+    fallback_match_start_tolerance_hours: float = 12.0
 
-    target_bookmakers: list[str] = Field(
-        default_factory=lambda: ["Bet365", "Unibet"],
-        validation_alias=AliasChoices("TARGET_BOOKMAKERS"),
-    )
-    consensus_bookmakers: list[str] = Field(
-        default_factory=lambda: ["Bet365", "Unibet"],
-        validation_alias=AliasChoices("CONSENSUS_BOOKMAKERS"),
-    )
+    bookies_api_enabled: bool = True
+    bookies_api_base_url: str | None = None
+    bookies_api_login: str | None = None
+    bookies_api_key: str | None = None
+    bookies_api_token: str | None = None
+    bookies_api_use_for_backfill_only: bool = False
+    bookies_api_odds_task: str = 'odds'
+    bookies_api_odds_fetch_limit: int = 40
 
-    min_books_publish: int = Field(
-        3,
-        validation_alias=AliasChoices("MIN_BOOKS_PUBLISH", "MIN_BOOKS"),
-    )
-    min_sources_publish: int = Field(
-        1,
-        validation_alias=AliasChoices("MIN_SOURCES_PUBLISH", "MIN_SOURCES"),
-    )
-    min_model_confidence: float = Field(
-        58.0,
-        validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"),
-    )
-    max_matches_for_odds_fetch: int = Field(
-        300,
-        validation_alias=AliasChoices("MAX_MATCHES_FOR_ODDS_FETCH", "MAX_MATCHES_FOR_PRICING"),
-    )
+    api_football_predictions_limit: int = 4
 
-    min_edge_pct: float = Field(2.5, validation_alias=AliasChoices("MIN_EDGE_PCT"))
-    min_ev_pct: float = Field(1.75, validation_alias=AliasChoices("MIN_EV_PCT"))
-    max_picks_per_run: int = Field(5, validation_alias=AliasChoices("MAX_PICKS_PER_RUN"))
-    odds_min: float = Field(1.70, validation_alias=AliasChoices("ODDS_MIN"))
-    odds_max: float = Field(3.00, validation_alias=AliasChoices("ODDS_MAX"))
-
-    allow_low_tier: bool = Field(
-        False,
-        validation_alias=AliasChoices("ALLOW_LOW_TIER"),
+    @field_validator(
+        'run_sports',
+        'target_bookmakers',
+        'consensus_bookmakers',
+        'odds_api_io_bookmakers',
+        mode='before',
     )
-    publish_dry_run: bool = Field(
-        True,
-        validation_alias=AliasChoices("PUBLISH_DRY_RUN"),
-    )
-
-    bookies_api_enabled: bool = Field(
-        True,
-        validation_alias=AliasChoices("BOOKIES_API_ENABLED"),
-    )
-    bookies_api_login: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_LOGIN"),
-    )
-    bookies_api_token: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_TOKEN"),
-    )
-    bookies_api_key: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_KEY"),
-    )
-    bookies_api_base_url: str | None = Field(
-        default=None,
-        validation_alias=AliasChoices("BOOKIES_API_BASE_URL"),
-    )
-    bookies_api_odds_task: str = Field(
-        "odds",
-        validation_alias=AliasChoices("BOOKIES_API_ODDS_TASK"),
-    )
-    bookies_api_odds_fetch_limit: int = Field(
-        40,
-        validation_alias=AliasChoices("BOOKIES_API_ODDS_FETCH_LIMIT"),
-    )
-    bookies_api_use_for_backfill_only: bool = Field(
-        False,
-        validation_alias=AliasChoices("BOOKIES_API_USE_FOR_BACKFILL_ONLY"),
-    )
-
-    api_football_predictions_limit: int = Field(
-        4,
-        validation_alias=AliasChoices("API_FOOTBALL_PREDICTIONS_LIMIT"),
-    )
-
-    @field_validator("run_sports", "target_bookmakers", "consensus_bookmakers", mode="before")
     @classmethod
-    def split_csv(cls, value: Any) -> Any:
-        return _split_csv(value)
+    def parse_listish(cls, value: Any) -> list[str]:
+        if value is None:
+            return []
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw:
+                return []
+            if raw.startswith('[') and raw.endswith(']'):
+                try:
+                    parsed = json.loads(raw)
+                    if isinstance(parsed, list):
+                        return [str(item).strip() for item in parsed if str(item).strip()]
+                except json.JSONDecodeError:
+                    pass
+            return [item.strip() for item in raw.split(',') if item.strip()]
+        return [str(value).strip()]
 
-    @field_validator("app_timezone")
+    @field_validator(
+        'telegram_token',
+        'telegram_chat_id',
+        'odds_api_io_key',
+        'sstats_api_key',
+        'api_football_key',
+        'bzzoiro_api_key',
+        'bookies_api_base_url',
+        'bookies_api_login',
+        'bookies_api_key',
+        'bookies_api_token',
+        mode='before',
+    )
     @classmethod
-    def validate_timezone(cls, value: str) -> str:
-        try:
-            ZoneInfo(value)
-        except ZoneInfoNotFoundError as exc:
-            raise ValueError(f"Unknown timezone: {value}") from exc
+    def empty_string_to_none(cls, value: Any) -> Any:
+        if isinstance(value, str) and not value.strip():
+            return None
         return value
 
     @property
     def tzinfo(self) -> ZoneInfo:
-        return ZoneInfo(self.app_timezone)
+        try:
+            return ZoneInfo(self.app_timezone)
+        except Exception:
+            return ZoneInfo('UTC')
 
     @property
-    def max_matches_for_pricing(self) -> int:
-        return self.max_matches_for_odds_fetch
+    def telegram_bot_token(self) -> str | None:
+        return self.telegram_token
 
     @property
-    def min_books(self) -> int:
-        return self.min_books_publish
-
-    @property
-    def min_sources(self) -> int:
-        return self.min_sources_publish
+    def bookies_api_sports(self) -> list[str]:
+        return self.run_sports
 
 
 @lru_cache(maxsize=1)

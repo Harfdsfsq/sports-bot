@@ -1,53 +1,69 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Any
 
-from app.config import Settings
 from app.schemas import Match, Offer
-from app.utils import normalize_bookmaker_name
 
 
 def dedupe_matches(matches: list[Match]) -> list[Match]:
     best: dict[str, Match] = {}
     for match in matches:
-        current = best.get(match.match_key)
-        if current is None:
+        existing = best.get(match.match_key)
+        if existing is None:
             best[match.match_key] = match
             continue
-        if current.tier != "top" and match.tier == "top":
+
+        existing_has_meta = len(getattr(existing, 'metadata', {}) or {})
+        current_has_meta = len(getattr(match, 'metadata', {}) or {})
+        if current_has_meta > existing_has_meta:
             best[match.match_key] = match
             continue
-        if match.commence_time < current.commence_time:
+
+        if match.source == 'bookies_api' and existing.source != 'bookies_api':
             best[match.match_key] = match
-    return sorted(best.values(), key=lambda item: item.commence_time)
+
+    return list(best.values())
 
 
-def merge_offers(settings: Settings, *maps: dict[str, list[Offer]]) -> dict[str, list[Offer]]:
+def merge_offers(
+    settings: Any,
+    *offer_maps: dict[str, list[Offer]],
+) -> dict[str, list[Offer]]:
+    target_books = {
+        name.strip().lower()
+        for name in getattr(settings, 'target_bookmakers', [])
+        if str(name).strip()
+    }
+    consensus_books = {
+        name.strip().lower()
+        for name in getattr(settings, 'consensus_bookmakers', [])
+        if str(name).strip()
+    }
+    allowed_books = target_books | consensus_books
+
     merged: dict[str, list[Offer]] = defaultdict(list)
-    for mapping in maps:
-        for match_key, offers in mapping.items():
-            merged[match_key].extend(offers)
+    seen: set[tuple[str, str, str, str, float | None, float]] = set()
 
-    result: dict[str, list[Offer]] = {}
-    for match_key, offers in merged.items():
-        chosen: dict[tuple[str, str, str, str, str, str], Offer] = {}
-        for offer in offers:
-            book = normalize_bookmaker_name(offer.bookmaker)
-            selection = str(offer.selection or "").strip().lower()
-            point = "" if offer.point is None else f"{float(offer.point):.2f}"
-            team_side = str(offer.team_side or "")
-            subtype = str(offer.market_subtype or "")
-            key = (book, offer.family, selection, point, team_side, subtype)
-            current = chosen.get(key)
-            if current is None:
-                chosen[key] = offer
-                continue
-            current_weight = settings.source_weight(current.source)
-            new_weight = settings.source_weight(offer.source)
-            if new_weight > current_weight + 1e-9:
-                chosen[key] = offer
-                continue
-            if abs(new_weight - current_weight) <= 1e-9 and offer.price > current.price:
-                chosen[key] = offer
-        result[match_key] = list(chosen.values())
-    return result
+    for offer_map in offer_maps:
+        for match_key, offers in (offer_map or {}).items():
+            for offer in offers or []:
+                bookmaker_key = (offer.bookmaker or '').strip().lower()
+                if allowed_books and bookmaker_key and bookmaker_key not in allowed_books:
+                    continue
+
+                dedupe_key = (
+                    match_key,
+                    offer.source,
+                    offer.bookmaker,
+                    offer.family,
+                    offer.point,
+                    round(float(offer.price), 6),
+                )
+                if dedupe_key in seen:
+                    continue
+
+                seen.add(dedupe_key)
+                merged[match_key].append(offer)
+
+    return dict(merged)
