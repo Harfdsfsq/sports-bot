@@ -64,15 +64,19 @@ class OddsApiIoProvider:
 
         events: list[dict[str, Any]] = []
         seen_event_ids: set[int] = set()
-        async with httpx.AsyncClient(timeout=25.0) as client:
-            for page in range(1, 5):
+        timeout = float(getattr(self.settings, "odds_api_io_timeout_seconds", 25.0) or 25.0)
+        max_pages = max(1, int(getattr(self.settings, "odds_api_io_max_pages_per_sport", 4) or 4))
+        page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
+
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            for page in range(1, max_pages + 1):
                 params = {
                     "apiKey": api_key,
                     "sport": "football",
                     "status": "pending,live",
                     "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
                     "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-                    "limit": 100,
+                    "limit": page_limit,
                     "page": page,
                 }
                 stats["event_requests"] += 1
@@ -115,7 +119,7 @@ class OddsApiIoProvider:
                 stats["events_fetched"] = len(events)
                 if len(seen_event_ids) == before:
                     break
-                if len(items) < 100:
+                if len(items) < page_limit:
                     break
 
             mapping: dict[str, dict[str, Any]] = {}
@@ -209,7 +213,9 @@ class OddsApiIoProvider:
 
     def _bookmakers_param(self) -> str:
         values: list[str] = []
-        for item in list(getattr(self.settings, "target_bookmakers", []) or []) + list(getattr(self.settings, "consensus_bookmakers", []) or []):
+        preferred = list(getattr(self.settings, "odds_api_io_bookmakers", []) or [])
+        fallback = list(getattr(self.settings, "target_bookmakers", []) or []) + list(getattr(self.settings, "consensus_bookmakers", []) or [])
+        for item in preferred + fallback:
             name = str(item or "").strip()
             if name and name not in values:
                 values.append(name)
@@ -293,19 +299,19 @@ class OddsApiIoProvider:
         offers: list[Offer] = []
         seen: set[tuple[str, str, str, float | None]] = set()
 
+        def to_float(value: Any) -> float | None:
+            try:
+                if value in (None, ""):
+                    return None
+                return float(str(value).replace(",", "."))
+            except Exception:
+                return None
+
         def add_offer(bookmaker: str, family: str, selection: str, price_value: Any, point: Any = None, market_name: str = "") -> None:
-            try:
-                price = float(price_value)
-            except Exception:
+            price = to_float(price_value)
+            if price is None or price <= 1.0:
                 return
-            if price <= 1.0:
-                return
-            point_value = None
-            try:
-                if point not in (None, ""):
-                    point_value = float(str(point).replace(",", "."))
-            except Exception:
-                point_value = None
+            point_value = to_float(point)
             book = self._canonical_bookmaker(bookmaker)
             key = (book, family, selection, point_value)
             if key in seen:
@@ -333,7 +339,7 @@ class OddsApiIoProvider:
                 if not isinstance(row, dict):
                     continue
                 name = str(row.get("name") or row.get("label") or row.get("selection") or "").strip()
-                point = row.get("point") or row.get("line")
+                point = row.get("point") or row.get("line") or row.get("handicap")
                 if family == "h2h":
                     selection = self._map_h2h_selection(name, match)
                 elif family == "totals":
@@ -347,7 +353,64 @@ class OddsApiIoProvider:
                             pass
                 else:
                     selection = name
-                add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal"), point, market_key)
+                add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), point, market_key)
+
+        def parse_market_rows(bookmaker_name: str, market_key: str, rows: list[dict[str, Any]]) -> None:
+            family = self._family_for_market(market_key)
+            if family is None:
+                return
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+
+                point = row.get("point") or row.get("line") or row.get("handicap")
+                label = str(row.get("label") or row.get("name") or row.get("selection") or "").strip()
+
+                if family == "h2h":
+                    added = False
+                    for selection, field in ((match.home_team, "home"), ("Draw", "draw"), (match.away_team, "away")):
+                        price = row.get(field) or row.get(f"{field}_od")
+                        if price not in (None, ""):
+                            add_offer(bookmaker_name, family, selection, price, None, market_key)
+                            added = True
+                    if not added and label:
+                        selection = self._map_h2h_selection(label, match)
+                        add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), None, market_key)
+                    continue
+
+                if family == "totals":
+                    added = False
+                    over_price = row.get("over") or row.get("over_od")
+                    under_price = row.get("under") or row.get("under_od")
+                    if over_price not in (None, ""):
+                        add_offer(bookmaker_name, family, "Over", over_price, point, market_key)
+                        added = True
+                    if under_price not in (None, ""):
+                        add_offer(bookmaker_name, family, "Under", under_price, point, market_key)
+                        added = True
+                    if not added and label:
+                        selection = "Over" if label.lower().startswith("over") else "Under" if label.lower().startswith("under") else label
+                        add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), point, market_key)
+                    continue
+
+                if family == "spreads":
+                    added = False
+                    home_price = row.get("home") or row.get("home_od")
+                    away_price = row.get("away") or row.get("away_od")
+                    point_value = to_float(point)
+                    if home_price not in (None, ""):
+                        add_offer(bookmaker_name, family, match.home_team, home_price, point_value, market_key)
+                        added = True
+                    if away_price not in (None, ""):
+                        away_point = -point_value if point_value is not None else point
+                        add_offer(bookmaker_name, family, match.away_team, away_price, away_point, market_key)
+                        added = True
+                    if not added and label:
+                        selection = match.home_team if label.lower() in {"home", match.home_team.lower(), "1"} else match.away_team if label.lower() in {"away", match.away_team.lower(), "2"} else label
+                        normalized_point = point_value
+                        if selection == match.away_team and normalized_point is not None:
+                            normalized_point = -normalized_point
+                        add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), normalized_point, market_key)
 
         if isinstance(bookmakers, dict):
             iterator = bookmakers.items()
@@ -360,9 +423,13 @@ class OddsApiIoProvider:
             iterator = []
 
         for bookmaker_name, bookmaker_payload in iterator:
-            if not isinstance(bookmaker_payload, dict):
+            if isinstance(bookmaker_payload, list):
+                markets = bookmaker_payload
+            elif isinstance(bookmaker_payload, dict):
+                markets = bookmaker_payload.get("markets", bookmaker_payload)
+            else:
                 continue
-            markets = bookmaker_payload.get("markets", bookmaker_payload)
+
             if isinstance(markets, list):
                 for market in markets:
                     if not isinstance(market, dict):
@@ -370,26 +437,36 @@ class OddsApiIoProvider:
                     market_key = str(market.get("key") or market.get("name") or market.get("market") or "").lower()
                     outcomes = market.get("outcomes")
                     if isinstance(outcomes, list):
-                        parse_outcomes(bookmaker_name, market_key, outcomes)
+                        parse_outcomes(bookmaker_name, market_key, [row for row in outcomes if isinstance(row, dict)])
+                        continue
+                    odds_rows = market.get("odds")
+                    if isinstance(odds_rows, list):
+                        parse_market_rows(bookmaker_name, market_key, [row for row in odds_rows if isinstance(row, dict)])
             elif isinstance(markets, dict):
                 for market_key, market_value in markets.items():
                     key = str(market_key or "").lower()
                     if isinstance(market_value, dict):
                         outcomes = market_value.get("outcomes")
                         if isinstance(outcomes, list):
-                            parse_outcomes(bookmaker_name, key, outcomes)
+                            parse_outcomes(bookmaker_name, key, [row for row in outcomes if isinstance(row, dict)])
+                            continue
+                        odds_rows = market_value.get("odds")
+                        if isinstance(odds_rows, list):
+                            parse_market_rows(bookmaker_name, key, [row for row in odds_rows if isinstance(row, dict)])
                             continue
                     if isinstance(market_value, list):
-                        parse_outcomes(bookmaker_name, key, [row for row in market_value if isinstance(row, dict)])
+                        rows = [row for row in market_value if isinstance(row, dict)]
+                        parse_outcomes(bookmaker_name, key, rows)
+                        parse_market_rows(bookmaker_name, key, rows)
 
         return offers
 
     @staticmethod
     def _family_for_market(market_key: str) -> str | None:
-        key = str(market_key or "").lower()
-        if key in {"h2h", "1x2", "moneyline"}:
+        key = str(market_key or "").lower().strip()
+        if key in {"h2h", "1x2", "moneyline", "ml", "match winner", "match result", "full time result"} or "moneyline" in key:
             return "h2h"
-        if "total" in key or key in {"ou", "o/u"}:
+        if "total" in key or key in {"ou", "o/u", "over/under", "over under"} or ("over" in key and "under" in key):
             return "totals"
         if "spread" in key or "handicap" in key:
             return "spreads"

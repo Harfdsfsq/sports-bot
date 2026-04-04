@@ -166,47 +166,95 @@ class SStatsContextProvider:
         to_date: str,
         stats: dict[str, Any],
     ) -> list[dict[str, Any]]:
-        params = {
-            "from": from_date,
-            "to": to_date,
-            "limit": 1000,
-            "apikey": self.settings.sstats_api_key,
-        }
+        limit = 1000
+        offset = 0
+        total_count: int | None = None
+        rows: list[dict[str, Any]] = []
+        seen_signatures: set[tuple[Any, ...]] = set()
 
-        stats["requests"] += 1
-        try:
-            response = await client.get(self.url, params=params)
-        except Exception as exc:
-            stats["response_errors"] += 1
-            stats["last_body_preview"] = f"request failed: {exc}"
-            return []
+        while True:
+            params = {
+                "from": from_date,
+                "to": to_date,
+                "limit": limit,
+                "offset": offset,
+                "apikey": self.settings.sstats_api_key,
+            }
 
-        stats["http_statuses"].append(response.status_code)
-        stats["last_body_preview"] = response.text[:2000]
+            stats["requests"] += 1
+            try:
+                response = await client.get(self.url, params=params)
+            except Exception as exc:
+                stats["response_errors"] += 1
+                stats["last_body_preview"] = f"request failed: {exc}"
+                break
 
-        if response.status_code != 200:
-            stats["response_errors"] += 1
-            return []
+            stats["http_statuses"].append(response.status_code)
+            stats["last_body_preview"] = response.text[:2000]
 
-        try:
-            payload = response.json()
-        except Exception:
-            stats["response_errors"] += 1
-            return []
+            if response.status_code != 200:
+                stats["response_errors"] += 1
+                break
 
-        if isinstance(payload, dict):
-            stats["payload_shapes"].append(",".join(sorted(payload.keys())[:12]))
-            data = payload.get("data") or payload.get("results") or []
-        elif isinstance(payload, list):
-            stats["payload_shapes"].append("list")
-            data = payload
-        else:
-            stats["payload_shapes"].append(type(payload).__name__)
-            return []
+            try:
+                payload = response.json()
+            except Exception:
+                stats["response_errors"] += 1
+                break
 
-        if not isinstance(data, list):
-            return []
-        return [row for row in data if isinstance(row, dict)]
+            if isinstance(payload, dict):
+                shape = ",".join(sorted(payload.keys())[:12])
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
+                data = payload.get("data") or payload.get("results") or []
+                try:
+                    raw_total = payload.get("count")
+                    if raw_total not in (None, ""):
+                        total_count = int(raw_total)
+                except Exception:
+                    total_count = total_count
+            elif isinstance(payload, list):
+                if "list" not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append("list")
+                data = payload
+            else:
+                shape = type(payload).__name__
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
+                break
+
+            if not isinstance(data, list):
+                break
+
+            batch = [row for row in data if isinstance(row, dict)]
+            if not batch:
+                break
+
+            added = 0
+            for row in batch:
+                signature = (
+                    row.get("id"),
+                    row.get("flashId"),
+                    row.get("date"),
+                    self._extract_team_name(row, "home"),
+                    self._extract_team_name(row, "away"),
+                )
+                if signature in seen_signatures:
+                    continue
+                seen_signatures.add(signature)
+                rows.append(row)
+                added += 1
+
+            if len(batch) < limit:
+                break
+            if added == 0:
+                break
+
+            offset += len(batch)
+            if total_count is not None and offset >= total_count:
+                break
+
+        return rows
 
     def _row_to_context(self, row: dict[str, Any]) -> MatchContext:
         expected_home = self._first_float(

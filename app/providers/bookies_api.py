@@ -59,6 +59,7 @@ class BookiesApiProvider:
             "markets_parsed": 0,
             "offers_parsed": 0,
             "response_errors": 0,
+            "empty_offer_payloads": 0,
             "event_http_statuses": [],
             "odds_http_statuses": [],
             "payload_shapes": [],
@@ -574,7 +575,7 @@ class BookiesApiProvider:
 
         parsed = self._parse_odds_payload(payload, match)
         if not parsed:
-            stats["response_errors"] += 1
+            stats["empty_offer_payloads"] = int(stats.get("empty_offer_payloads", 0)) + 1
         return parsed, payload
 
     def _parse_odds_payload(self, payload: Any, match: Match) -> list[Offer]:
@@ -673,6 +674,7 @@ class BookiesApiProvider:
                     point=handicap,
                     market_name=f"Handicap {stage}",
                     market_key="spreads",
+                    team_side="home",
                 )
 
             if away_price is not None and away_price > 1.0:
@@ -684,6 +686,7 @@ class BookiesApiProvider:
                     point=-handicap,
                     market_name=f"Handicap {stage}",
                     market_key="spreads",
+                    team_side="away",
                 )
 
         def parse_totals(bookmaker: str, row: dict[str, Any], stage: str) -> None:
