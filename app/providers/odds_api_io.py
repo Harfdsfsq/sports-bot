@@ -42,6 +42,7 @@ class OddsApiIoProvider:
             "bookmakers_seen": 0,
             "last_body_preview": None,
             "simulated_skipped": 0,
+            "requested_bookmakers": None,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
@@ -61,6 +62,7 @@ class OddsApiIoProvider:
         days_ahead = max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4))
         until = now + timedelta(days=days_ahead)
         target_books = self._bookmakers_param()
+        stats["requested_bookmakers"] = target_books
 
         events: list[dict[str, Any]] = []
         seen_event_ids: set[int] = set()
@@ -212,14 +214,32 @@ class OddsApiIoProvider:
             return dict(offers_by_match), stats, preview
 
     def _bookmakers_param(self) -> str:
-        values: list[str] = []
+        """Use only the provider-specific bookmaker allowlist.
+
+        Do not fall back to target/consensus bookmakers here: those lists use
+        project-level canonical names, while odds-api.io expects its own exact
+        bookmaker identifiers. Mixing them caused 400 responses such as
+        "Pinnacle is not a valid bookmaker".
+        """
         preferred = list(getattr(self.settings, "odds_api_io_bookmakers", []) or [])
-        fallback = list(getattr(self.settings, "target_bookmakers", []) or []) + list(getattr(self.settings, "consensus_bookmakers", []) or [])
-        for item in preferred + fallback:
-            name = str(item or "").strip()
-            if name and name not in values:
-                values.append(name)
-        return ",".join(values or ["Bet365", "Unibet", "Pinnacle", "Betfair"])
+        values: list[str] = []
+        mapping = {
+            "bet365": "Bet365",
+            "unibet": "Unibet",
+            "betfair": "BetFair",
+            "betfairexchange": "BetFair",
+            "pinnacle": "PinnacleSports",
+            "pinnaclesports": "PinnacleSports",
+        }
+        for item in preferred:
+            raw = str(item or "").strip()
+            if not raw:
+                continue
+            key = normalize_bookmaker_name(raw)
+            value = mapping.get(key, raw)
+            if value and value not in values:
+                values.append(value)
+        return ",".join(values or ["Bet365", "Unibet"])
 
     @staticmethod
     def _safe_json(response: httpx.Response) -> Any | None:
