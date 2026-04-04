@@ -3,8 +3,8 @@ name: run-bot
 on:
   workflow_dispatch:
   schedule:
-    # 08:00 по Москве = 05:00 UTC
-    - cron: '0 5 * * *'
+    - cron: '0 8 * * *'
+      timezone: 'Europe/Moscow'
 
 permissions:
   contents: write
@@ -38,23 +38,28 @@ jobs:
           MIN_KICKOFF_LEAD_MINUTES: ${{ vars.MIN_KICKOFF_LEAD_MINUTES || '30' }}
           TARGET_BOOKMAKERS: ${{ vars.TARGET_BOOKMAKERS || 'Bet365,Unibet' }}
           CONSENSUS_BOOKMAKERS: ${{ vars.CONSENSUS_BOOKMAKERS || 'Bet365,Unibet' }}
-          THE_ODDS_API_KEY: ${{ secrets.THE_ODDS_API_KEY }}
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-          BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+          MIN_BOOKS_PUBLISH: ${{ vars.MIN_BOOKS_PUBLISH || '3' }}
+          MIN_SOURCES_PUBLISH: ${{ vars.MIN_SOURCES_PUBLISH || '1' }}
+          MIN_MODEL_CONFIDENCE: ${{ vars.MIN_MODEL_CONFIDENCE || '58' }}
+          MAX_MATCHES_FOR_ODDS_FETCH: ${{ vars.MAX_MATCHES_FOR_ODDS_FETCH || '300' }}
+          ALLOW_LOW_TIER: ${{ vars.ALLOW_LOW_TIER || 'false' }}
           BOOKIES_API_ENABLED: ${{ vars.BOOKIES_API_ENABLED || 'true' }}
-          BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
-          BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
-          BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
           BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
+          BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
+          BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
+          BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
+          BOOKIES_API_USE_FOR_BACKFILL_ONLY: ${{ vars.BOOKIES_API_USE_FOR_BACKFILL_ONLY || 'false' }}
           BOOKIES_API_ODDS_TASK: ${{ vars.BOOKIES_API_ODDS_TASK || 'odds' }}
           BOOKIES_API_ODDS_FETCH_LIMIT: ${{ vars.BOOKIES_API_ODDS_FETCH_LIMIT || '40' }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+          BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          API_FOOTBALL_PREDICTIONS_LIMIT: ${{ vars.API_FOOTBALL_PREDICTIONS_LIMIT || '4' }}
+          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          ALLOW_LOW_TIER: ${{ vars.ALLOW_LOW_TIER || 'false' }}
         run: |
-          mkdir -p .data
+          mkdir -p .data .data/exports
           python -m app.cli run-once
 
       - name: Commit state and exports
