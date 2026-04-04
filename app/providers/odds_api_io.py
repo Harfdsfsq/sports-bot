@@ -23,7 +23,7 @@ class OddsApiIoProvider:
         self.base_url = "https://api.odds-api.io/v3"
 
     async def fetch_offers(self, matches: list[Match]):
-        # Совместимо и со старым вызовом, и с новым runner, который ждёт (offers, stats, preview)
+        # Runner в этом репо ожидает: (offers_by_match, stats, preview)
         if not self.settings.odds_api_io_key:
             empty_stats = {
                 "enabled": False,
@@ -48,8 +48,11 @@ class OddsApiIoProvider:
             }
             return {}, empty_stats, {"sample_events": []}
 
+        max_matches = getattr(self.settings, "max_matches_for_pricing", None)
+        limited_matches = matches[:max_matches] if isinstance(max_matches, int) and max_matches > 0 else matches
+
         grouped: dict[str, list[Match]] = defaultdict(list)
-        for match in matches[: self.settings.max_matches_for_pricing]:
+        for match in limited_matches:
             grouped[match.sport_key].append(match)
 
         offers_by_match: dict[str, list[Offer]] = defaultdict(list)
@@ -78,13 +81,18 @@ class OddsApiIoProvider:
 
         async with httpx.AsyncClient(timeout=30.0) as client:
             for sport_key, sport_matches in grouped.items():
-                ids = [m.source_event_id for m in sport_matches if getattr(m, "source", None) == "the_odds_api"]
+                ids = [
+                    str(m.source_event_id)
+                    for m in sport_matches
+                    if getattr(m, "source", None) == "the_odds_api" and getattr(m, "source_event_id", None)
+                ]
                 if not ids:
                     continue
 
                 for chunk_start in range(0, len(ids), 10):
                     chunk = ids[chunk_start : chunk_start + 10]
                     stats["odds_requests"] += 1
+
                     response = await client.get(
                         f"{self.base_url}/odds/multi",
                         params={
@@ -99,24 +107,26 @@ class OddsApiIoProvider:
                         stats["response_errors"] += 1
                         continue
 
-                    payload = response.json()
-                    stats["payload_shapes"].append(type(payload).__name__)
                     try:
-                        stats["last_body_preview"] = response.text[:2000]
+                        payload = response.json()
                     except Exception:
-                        stats["last_body_preview"] = None
+                        stats["response_errors"] += 1
+                        continue
+
+                    stats["payload_shapes"].append(type(payload).__name__)
+                    stats["last_body_preview"] = response.text[:2000]
 
                     # Новый формат odds-api.io: список событий
                     if isinstance(payload, list):
                         events = payload
-                    # Старый/альтернативный формат: dict {event_id: {...}}
+                    # fallback на dict-формат
                     elif isinstance(payload, dict):
                         events = []
                         for event_id, event in payload.items():
                             if isinstance(event, dict):
-                                event = dict(event)
-                                event.setdefault("id", event_id)
-                                events.append(event)
+                                item = dict(event)
+                                item.setdefault("id", event_id)
+                                events.append(item)
                     else:
                         events = []
 
@@ -124,12 +134,13 @@ class OddsApiIoProvider:
 
                     for event in events:
                         event_id = str(event.get("id", ""))
-                        match = next((m for m in sport_matches if str(m.source_event_id) == event_id), None)
+                        match = next((m for m in sport_matches if str(getattr(m, "source_event_id", "")) == event_id), None)
                         if not match:
                             stats["unmatched_offer_events"] += 1
                             continue
 
                         stats["events_matched"] += 1
+
                         if len(preview["sample_events"]) < 5:
                             preview["sample_events"].append(
                                 {
@@ -142,10 +153,8 @@ class OddsApiIoProvider:
 
                         bookmakers = event.get("bookmakers") or {}
 
-                        # Новый формат: {"Bet365": [ {name, odds...}, ... ], "Unibet": [...]}
                         if isinstance(bookmakers, dict):
                             bookmaker_items = bookmakers.items()
-                        # На случай старого формата: [{"name": "...", "markets": [...]}]
                         elif isinstance(bookmakers, list):
                             bookmaker_items = []
                             for book in bookmakers:
@@ -156,6 +165,7 @@ class OddsApiIoProvider:
 
                         for book_name, markets in bookmaker_items:
                             stats["bookmakers_seen"] += 1
+
                             if not isinstance(markets, list):
                                 continue
 
@@ -165,7 +175,6 @@ class OddsApiIoProvider:
 
                                 market_name = str(market.get("name") or "").strip().lower()
                                 odds_rows = market.get("odds") or []
-                                updated_at = market.get("updatedAt")
 
                                 family = None
                                 if market_name in {"ml", "match winner", "1x2", "half time result"}:
@@ -175,7 +184,6 @@ class OddsApiIoProvider:
                                 elif "spread" in market_name or "handicap" in market_name:
                                     family = "spreads"
                                 elif market_name in {"draw no bet", "double chance", "both teams to score"}:
-                                    # Эти рынки сейчас не используем в модели
                                     continue
 
                                 if family is None:
@@ -187,14 +195,13 @@ class OddsApiIoProvider:
                                     if not isinstance(row, dict):
                                         continue
 
-                                    parsed = self._parse_market_row(
+                                    for offer in self._parse_market_row(
                                         family=family,
                                         row=row,
                                         source="odds_api_io",
                                         bookmaker=str(book_name),
                                         source_event_id=event_id,
-                                    )
-                                    for offer in parsed:
+                                    ):
                                         offers_by_match[match.match_key].append(offer)
                                         stats["offers_parsed"] += 1
 
@@ -216,6 +223,7 @@ class OddsApiIoProvider:
                 price_value = float(price)
             except (TypeError, ValueError):
                 return
+
             if price_value <= 1.01:
                 return
 
@@ -240,12 +248,10 @@ class OddsApiIoProvider:
             )
 
         if family == "h2h":
-            # Формат: {"home": "1.90", "draw": "3.20", "away": "4.10"}
             if "home" in row or "draw" in row or "away" in row:
                 add("home", row.get("home"), team_side="home")
                 add("draw", row.get("draw"))
                 add("away", row.get("away"), team_side="away")
-            # Формат: {"label": "Draw", "under": "3.75"}
             elif "label" in row and "under" in row:
                 label = str(row.get("label", "")).strip().lower()
                 if "draw" in label or label == "x":
@@ -261,4 +267,4 @@ class OddsApiIoProvider:
             add("home", row.get("home"), point=point, team_side="home")
             add("away", row.get("away"), point=point, team_side="away")
 
-        return offers
+        return offers\n
