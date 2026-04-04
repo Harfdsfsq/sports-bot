@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from functools import cached_property, lru_cache
-from typing import Any
+from functools import lru_cache
+from pathlib import Path
+from typing import Annotated, Any
 from zoneinfo import ZoneInfo
 
 from pydantic import Field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
+
+
+CsvList = Annotated[list[str], NoDecode]
 
 
 class Settings(BaseSettings):
@@ -14,6 +18,7 @@ class Settings(BaseSettings):
         env_file_encoding='utf-8',
         extra='ignore',
         populate_by_name=True,
+        enable_decoding=False,
     )
 
     app_name: str = 'sports-value-bot'
@@ -25,29 +30,33 @@ class Settings(BaseSettings):
     storage_export_dir: str = Field('.data/exports', alias='STORAGE_EXPORT_DIR')
 
     publish_dry_run: bool = Field(True, alias='PUBLISH_DRY_RUN')
-    run_sports: list[str] = Field(default_factory=lambda: ['soccer'], alias='RUN_SPORTS')
+    run_sports: CsvList = Field(default_factory=lambda: ['soccer'], alias='RUN_SPORTS')
     run_days_ahead: int = Field(4, alias='RUN_DAYS_AHEAD')
     publish_window_hours: int = Field(48, alias='PUBLISH_WINDOW_HOURS')
     min_kickoff_lead_minutes: int = Field(30, alias='MIN_KICKOFF_LEAD_MINUTES')
     allow_low_tier: bool = Field(False, alias='ALLOW_LOW_TIER')
 
-    target_bookmakers: list[str] = Field(default_factory=lambda: ['Bet365', 'Unibet'], alias='TARGET_BOOKMAKERS')
-    consensus_bookmakers: list[str] = Field(default_factory=lambda: ['Bet365', 'Unibet'], alias='CONSENSUS_BOOKMAKERS')
-    odds_api_io_bookmakers: list[str] = Field(default_factory=lambda: ['Bet365', 'Unibet'], alias='ODDS_API_IO_BOOKMAKERS')
+    target_bookmakers: CsvList = Field(default_factory=lambda: ['Bet365', 'Unibet'], alias='TARGET_BOOKMAKERS')
+    consensus_bookmakers: CsvList = Field(
+        default_factory=lambda: ['Bet365', 'Unibet', 'Pinnacle', 'Betfair'],
+        alias='CONSENSUS_BOOKMAKERS',
+    )
+    odds_api_io_bookmakers: CsvList = Field(
+        default_factory=lambda: ['Bet365', 'Unibet'],
+        alias='ODDS_API_IO_BOOKMAKERS',
+    )
 
     min_books_publish: int = Field(2, alias='MIN_BOOKS_PUBLISH')
     min_sources_publish: int = Field(1, alias='MIN_SOURCES_PUBLISH')
     min_model_confidence: float = Field(0.55, alias='MIN_MODEL_CONFIDENCE')
     max_matches_for_odds_fetch: int = Field(300, alias='MAX_MATCHES_FOR_ODDS_FETCH')
     max_matches_for_pricing: int = Field(300, alias='MAX_MATCHES_FOR_PRICING')
+    max_picks_per_run: int = Field(5, alias='MAX_PICKS_PER_RUN')
 
-    min_books: int = 2
-    min_sources: int = 1
-    min_edge_pct: float = 2.5
-    min_ev_pct: float = 1.75
-    max_picks_per_run: int = 5
-    odds_min: float = 1.70
-    odds_max: float = 3.00
+    min_edge_pct: float = Field(2.0, alias='MIN_EDGE_PCT')
+    min_ev_pct: float = Field(1.5, alias='MIN_EV_PCT')
+    odds_min: float = Field(1.5, alias='ODDS_MIN')
+    odds_max: float = Field(4.5, alias='ODDS_MAX')
 
     telegram_token: str | None = Field(None, alias='TELEGRAM_TOKEN')
     telegram_chat_id: str | None = Field(None, alias='TELEGRAM_CHAT_ID')
@@ -55,7 +64,6 @@ class Settings(BaseSettings):
     odds_api_io_key: str | None = Field(None, alias='ODDS_API_IO_KEY')
     sstats_api_key: str | None = Field(None, alias='SSTATS_API_KEY')
     api_football_key: str | None = Field(None, alias='API_FOOTBALL_KEY')
-    api_football_predictions_limit: int = Field(4, alias='API_FOOTBALL_PREDICTIONS_LIMIT')
     bzzoiro_api_key: str | None = Field(None, alias='BZZOIRO_API_KEY')
 
     bookies_api_enabled: bool = Field(True, alias='BOOKIES_API_ENABLED')
@@ -68,11 +76,7 @@ class Settings(BaseSettings):
     bookies_api_odds_fetch_limit: int = Field(40, alias='BOOKIES_API_ODDS_FETCH_LIMIT')
     bookies_api_timeout_seconds: float = Field(30.0, alias='BOOKIES_API_TIMEOUT_SECONDS')
     bookies_api_max_pages_per_day: int = Field(40, alias='BOOKIES_API_MAX_PAGES_PER_DAY')
-    bookies_api_sports: list[str] = Field(default_factory=lambda: ['soccer'], alias='BOOKIES_API_SPORTS')
-
-    sheet_id: str | None = Field(None, alias='SHEET_ID')
-    google_sheets_webhook_url: str | None = Field(None, alias='GOOGLE_SHEETS_WEBHOOK_URL')
-    google_sheets_webhook_token: str | None = Field(None, alias='GOOGLE_SHEETS_WEBHOOK_TOKEN')
+    bookies_api_sports: CsvList = Field(default_factory=list, alias='BOOKIES_API_SPORTS')
 
     @field_validator(
         'run_sports',
@@ -83,35 +87,27 @@ class Settings(BaseSettings):
         mode='before',
     )
     @classmethod
-    def _split_csv(cls, value: Any) -> Any:
+    def split_csv(cls, value: Any) -> list[str]:
         if value is None:
             return []
-        if isinstance(value, str):
-            text = value.strip()
-            if not text:
-                return []
-            if text.startswith('['):
-                return value
-            return [item.strip() for item in text.split(',') if item.strip()]
-        return value
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        text = str(value).strip()
+        if not text:
+            return []
+        return [item.strip() for item in text.split(',') if item.strip()]
 
-    @field_validator('run_sports', mode='after')
-    @classmethod
-    def _default_run_sports(cls, value: list[str]) -> list[str]:
-        return value or ['soccer']
-
-    @field_validator('bookies_api_sports', mode='after')
-    @classmethod
-    def _default_bookies_sports(cls, value: list[str]) -> list[str]:
-        return value or ['soccer']
-
-    @cached_property
+    @property
     def tzinfo(self) -> ZoneInfo:
         return ZoneInfo(self.app_timezone)
 
     @property
     def telegram_bot_token(self) -> str | None:
         return self.telegram_token
+
+    @property
+    def export_dir_path(self) -> Path:
+        return Path(self.storage_export_dir)
 
 
 @lru_cache(maxsize=1)
