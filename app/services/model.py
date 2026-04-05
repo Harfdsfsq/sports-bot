@@ -108,7 +108,7 @@ class CandidateFactory:
             if point not in allowed_total_points:
                 rejections['unsupported_total_line'] += 1
                 continue
-            required_books = self._required_books_for_bucket('h2h', None, bucket, context)
+            required_books = self._required_books_for_bucket('totals', point, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
@@ -162,7 +162,7 @@ class CandidateFactory:
         probs = self._derive_h2h_probabilities(match, context)
         result: list[CandidateBet] = []
         for selection, bucket in buckets.items():
-            required_books = self._required_books_for_bucket('h2h', None, bucket, context)
+            required_books = self._required_books_for_bucket('totals', point, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
@@ -514,6 +514,16 @@ class CandidateFactory:
     def _is_target_or_consensus_book(self, bookmaker: str) -> bool:
         key = self._norm_book(bookmaker)
         return not (self.target_books or self.consensus_books) or key in self.target_books or key in self.consensus_books
+
+
+    @staticmethod
+    def _context_label(context: MatchContext | None) -> str:
+        if context is None:
+            return 'none'
+        source = str(getattr(context, 'source', '') or 'unknown')
+        details = dict(getattr(context, 'details', {}) or {})
+        mode = str(details.get('sstats_mode') or details.get('context_mode') or '').strip()
+        return f'{source}:{mode}' if mode else source
 
     @staticmethod
     def _coerce_context(value: Any) -> MatchContext | None:
