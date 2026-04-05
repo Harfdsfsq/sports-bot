@@ -445,8 +445,6 @@ class CandidateFactory:
             value /= 100.0
         return clamp(value, 0.02, 0.98)
 
-    @staticmethod
-
     def _required_books_for_bucket(
         self,
         family: str,
