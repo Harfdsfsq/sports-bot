@@ -76,6 +76,7 @@ class PredictionRunner:
 
             sent_messages, telegram_payloads = await self.telegram.publish(candidates)
             published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
+            telegram_picks_sent = len(candidates) if sent_messages > 0 else 0
             export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, candidates)
 
             source_stats = {
@@ -97,8 +98,10 @@ class PredictionRunner:
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
-                'published': published_count,
-                'published_to_telegram': sent_messages,
+                'published': telegram_picks_sent,
+                'published_to_telegram': telegram_picks_sent,
+                'telegram_messages_sent': sent_messages,
+                'published_unique_state': published_count,
                 'dry_run': self.settings.publish_dry_run,
                 'state_path': self.settings.state_path,
                 'debug_path': self.settings.debug_path,

@@ -97,11 +97,16 @@ class CandidateFactory:
         for offer in offers:
             buckets[(offer.selection, offer.point)].append(offer)
 
+        allowed_total_points = {1.5, 2.5, 3.5, 4.5}
         expected_total = context.expected_home + context.expected_away
         result: list[CandidateBet] = []
         for (selection, point), bucket in buckets.items():
             low = selection.lower()
             if point is None or not (low.startswith('over') or low.startswith('under')):
+                continue
+            point = round(float(point), 2)
+            if point not in allowed_total_points:
+                rejections['unsupported_total_line'] += 1
                 continue
             if len({self._norm_book(item.bookmaker) for item in bucket}) < self.settings.min_books_publish:
                 rejections['insufficient_books'] += 1
@@ -127,6 +132,7 @@ class CandidateFactory:
                     'mode=xg_total',
                     f'model={model_reason}',
                     f'consensus_fair_odds={1 / max(market_prob, 0.01):.2f}',
+                    f'line={point:g}',
                     f'context={self._context_label(context)}',
                 ],
                 expected_home=context.expected_home,

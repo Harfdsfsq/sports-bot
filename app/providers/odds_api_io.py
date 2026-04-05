@@ -352,6 +352,8 @@ class OddsApiIoProvider:
             )
 
         def parse_outcomes(bookmaker_name: str, market_key: str, outcomes: list[dict[str, Any]]) -> None:
+            if not self._is_supported_market(market_key):
+                return
             family = self._family_for_market(market_key)
             if family is None:
                 return
@@ -382,6 +384,8 @@ class OddsApiIoProvider:
                 add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), point, market_key)
 
         def parse_market_rows(bookmaker_name: str, market_key: str, rows: list[dict[str, Any]]) -> None:
+            if not self._is_supported_market(market_key):
+                return
             family = self._family_for_market(market_key)
             if family is None:
                 return
@@ -494,13 +498,30 @@ class OddsApiIoProvider:
         return offers
 
     @staticmethod
+    def _is_supported_market(market_key: str) -> bool:
+        key = str(market_key or '').lower().strip()
+        if not key:
+            return False
+        banned_terms = (
+            '1st half', 'first half', '2nd half', 'second half', 'half time', 'halftime', 'ht',
+            'corner', 'corners', 'booking', 'bookings', 'card', 'cards', 'throw', 'throws',
+            'offside', 'offsides', 'shot', 'shots', 'foul', 'fouls', 'team total', 'home total',
+            'away total', 'player', 'next goal', 'correct score', 'double chance', 'draw no bet',
+            'btts', 'both teams to score', 'alternative', 'alternate', 'alt ', 'race to', 'odd/even',
+            'clean sheet', 'win to nil', 'to qualify', 'penalty', 'minute', 'asian corners',
+        )
+        if any(term in key for term in banned_terms):
+            return False
+        return True
+
+    @staticmethod
     def _family_for_market(market_key: str) -> str | None:
         key = str(market_key or "").lower().strip()
         if key in {"h2h", "1x2", "moneyline", "ml", "match winner", "match result", "full time result"} or "moneyline" in key:
             return "h2h"
-        if "total" in key or key in {"ou", "o/u", "over/under", "over under"} or ("over" in key and "under" in key):
+        if key in {"totals", "goals over/under", "goal line", "over/under", "over under", "ou", "o/u"} or key.startswith("totals ") or key.startswith("goals over/under"):
             return "totals"
-        if "spread" in key or "handicap" in key:
+        if key in {"spread", "spreads", "handicap", "asian handicap"} or key.startswith("spread ") or key.startswith("handicap "):
             return "spreads"
         return None
 
