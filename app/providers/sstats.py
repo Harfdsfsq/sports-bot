@@ -40,6 +40,15 @@ class SStatsContextProvider:
             "matched_fuzzy": 0,
             "unmatched_rows": 0,
             "team_form_contexts_built": 0,
+            "bzzoiro_enabled": bool(getattr(self.settings, "bzzoiro_api_key", None)),
+            "bzzoiro_requests": 0,
+            "bzzoiro_response_errors": 0,
+            "bzzoiro_events_fetched": 0,
+            "bzzoiro_contexts_built": 0,
+            "bzzoiro_matched_exact": 0,
+            "bzzoiro_matched_loose": 0,
+            "bzzoiro_matched_fuzzy": 0,
+            "bzzoiro_unmatched_rows": 0,
             "http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
@@ -51,6 +60,7 @@ class SStatsContextProvider:
             "matched_examples": [],
             "unmatched_rows": [],
             "team_form_examples": [],
+            "sample_bzzoiro": [],
         }
 
         if not self.settings.enable_sstats_context:
@@ -226,6 +236,27 @@ class SStatsContextProvider:
                 )
 
         stats["team_form_contexts_built"] = added_fallback
+
+        bzz_preview: list[dict[str, Any]] = []
+        if getattr(self.settings, "bzzoiro_api_key", None):
+            timeout = float(getattr(self.settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                bzz_contexts, bzz_stats, bzz_preview = await self._fetch_bzzoiro_contexts(client, soccer_matches)
+            stats["bzzoiro_requests"] = int(bzz_stats.get("requests", 0) or 0)
+            stats["bzzoiro_response_errors"] = int(bzz_stats.get("response_errors", 0) or 0)
+            stats["bzzoiro_events_fetched"] = int(bzz_stats.get("events_fetched", 0) or 0)
+            stats["bzzoiro_contexts_built"] = int(bzz_stats.get("contexts_built", 0) or 0)
+            stats["bzzoiro_matched_exact"] = int(bzz_stats.get("matched_exact", 0) or 0)
+            stats["bzzoiro_matched_loose"] = int(bzz_stats.get("matched_loose", 0) or 0)
+            stats["bzzoiro_matched_fuzzy"] = int(bzz_stats.get("matched_fuzzy", 0) or 0)
+            stats["bzzoiro_unmatched_rows"] = int(bzz_stats.get("unmatched_rows", 0) or 0)
+            if bzz_preview:
+                preview["sample_bzzoiro"] = bzz_preview[:10]
+            for match_key, context in bzz_contexts.items():
+                existing = contexts.get(match_key)
+                if existing is None or str(existing.source or "") == "sstats_form":
+                    contexts[match_key] = context
+
         stats["contexts_built"] = len(contexts)
         return contexts, stats, preview
 
@@ -325,6 +356,192 @@ class SStatsContextProvider:
                 break
 
         return rows
+
+    async def _fetch_bzzoiro_contexts(
+        self,
+        client: httpx.AsyncClient,
+        matches: list[Match],
+    ) -> tuple[dict[str, MatchContext], dict[str, Any], list[dict[str, Any]]]:
+        stats: dict[str, Any] = {
+            "requests": 0,
+            "response_errors": 0,
+            "events_fetched": 0,
+            "contexts_built": 0,
+            "matched_exact": 0,
+            "matched_loose": 0,
+            "matched_fuzzy": 0,
+            "unmatched_rows": 0,
+        }
+        preview: list[dict[str, Any]] = []
+        api_key = getattr(self.settings, "bzzoiro_api_key", None)
+        if not api_key or not matches:
+            return {}, stats, preview
+
+        min_dt = min(m.commence_time for m in matches).astimezone(UTC)
+        max_dt = max(m.commence_time for m in matches).astimezone(UTC)
+        from_date = min_dt.date().isoformat()
+        to_date = max_dt.date().isoformat()
+        max_pages = max(1, int(getattr(self.settings, "bzzoiro_max_pages", 8) or 8))
+
+        rows: list[dict[str, Any]] = []
+        next_page: int | None = 1
+        headers = {"Authorization": f"Token {api_key}"}
+        while next_page is not None and next_page <= max_pages:
+            params = {
+                "date_from": from_date,
+                "date_to": to_date,
+                "upcoming": "true",
+                "tz": "UTC",
+                "page": next_page,
+            }
+            stats["requests"] += 1
+            try:
+                response = await client.get("https://sports.bzzoiro.com/api/predictions/", params=params, headers=headers)
+            except Exception:
+                stats["response_errors"] += 1
+                break
+            if response.status_code != 200:
+                stats["response_errors"] += 1
+                break
+            try:
+                payload = response.json()
+            except Exception:
+                stats["response_errors"] += 1
+                break
+
+            batch = payload.get("results") if isinstance(payload, dict) else None
+            if not isinstance(batch, list) or not batch:
+                break
+            rows.extend([item for item in batch if isinstance(item, dict)])
+            next_url = payload.get("next") if isinstance(payload, dict) else None
+            if next_url:
+                next_page += 1
+            else:
+                next_page = None
+
+        stats["events_fetched"] = len(rows)
+        contexts: dict[str, MatchContext] = {}
+        best_scores: dict[str, float] = {}
+        for row in rows:
+            event = row.get("event") or {}
+            if not isinstance(event, dict):
+                stats["unmatched_rows"] += 1
+                continue
+            event_home = str(event.get("home_team") or "").strip()
+            event_away = str(event.get("away_team") or "").strip()
+            event_league = str((event.get("league") or {}).get("name") or "").strip() if isinstance(event.get("league"), dict) else str(event.get("league") or "").strip()
+            if not event_home or not event_away:
+                stats["unmatched_rows"] += 1
+                continue
+            try:
+                event_start = parse_datetime(event.get("event_date"))
+            except Exception:
+                stats["unmatched_rows"] += 1
+                continue
+
+            best_match: Match | None = None
+            best_score = 0.0
+            best_quality: str | None = None
+            for match in matches:
+                score, quality = score_event_match(
+                    sport=match.sport_key,
+                    match_home=match.home_team,
+                    match_away=match.away_team,
+                    match_start=match.commence_time,
+                    match_league=match.league_name,
+                    event_home=event_home,
+                    event_away=event_away,
+                    event_start=event_start,
+                    event_league=event_league,
+                    exact_tolerance_hours=self.settings.match_start_tolerance_hours,
+                    fuzzy_tolerance_hours=self.settings.fallback_match_start_tolerance_hours,
+                )
+                if score > best_score:
+                    best_match = match
+                    best_score = score
+                    best_quality = quality
+            if best_match is None or best_score < 58.0:
+                stats["unmatched_rows"] += 1
+                continue
+            context = self._row_to_bzzoiro_context(row)
+            if context.expected_home is None or context.expected_away is None:
+                stats["unmatched_rows"] += 1
+                continue
+            previous_score = best_scores.get(best_match.match_key)
+            if previous_score is not None and previous_score >= best_score:
+                continue
+            contexts[best_match.match_key] = context
+            best_scores[best_match.match_key] = best_score
+            if best_quality == "exact":
+                stats["matched_exact"] += 1
+            elif best_quality == "loose":
+                stats["matched_loose"] += 1
+            elif best_quality == "fuzzy":
+                stats["matched_fuzzy"] += 1
+            if len(preview) < 10:
+                preview.append({
+                    "match_key": best_match.match_key,
+                    "match_home": best_match.home_team,
+                    "match_away": best_match.away_team,
+                    "provider_home": event_home,
+                    "provider_away": event_away,
+                    "expected_home": context.expected_home,
+                    "expected_away": context.expected_away,
+                    "source": context.source,
+                    "quality": best_quality,
+                    "score": round(best_score, 2),
+                })
+        stats["contexts_built"] = len(contexts)
+        return contexts, stats, preview
+
+    def _row_to_bzzoiro_context(self, row: dict[str, Any]) -> MatchContext:
+        def pct(value: Any) -> float | None:
+            try:
+                if value is None or value == "":
+                    return None
+                num = float(value)
+                if num > 1.0:
+                    num /= 100.0
+                return clamp(num, 0.01, 0.95)
+            except Exception:
+                return None
+
+        expected_home = self._to_float(row.get("expected_home_goals"))
+        expected_away = self._to_float(row.get("expected_away_goals"))
+        home_prob = pct(row.get("prob_home_win"))
+        away_prob = pct(row.get("prob_away_win"))
+        draw_prob = pct(row.get("prob_draw"))
+        raw_conf = row.get("confidence")
+        try:
+            confidence_value = float(raw_conf) if raw_conf not in (None, "") else 0.62
+        except Exception:
+            confidence_value = 0.62
+        if confidence_value > 1.0:
+            confidence_value /= 100.0
+        confidence = clamp(55.0 + confidence_value * 18.0, 56.0, 73.0)
+
+        return MatchContext(
+            source="bzzoiro_predictions",
+            payload=row,
+            expected_home=expected_home,
+            expected_away=expected_away,
+            home_win_probability=home_prob,
+            away_win_probability=away_prob,
+            confidence=confidence,
+            details={
+                "sstats_mode": "bzzoiro_prediction",
+                "prob_draw": draw_prob,
+                "prob_over_1_5": pct(row.get("prob_over_15")),
+                "prob_over_2_5": pct(row.get("prob_over_25")),
+                "prob_over_3_5": pct(row.get("prob_over_35")),
+                "prob_btts_yes": pct(row.get("prob_btts_yes")),
+                "favorite": row.get("favorite"),
+                "favorite_prob": pct(row.get("favorite_prob")),
+                "most_likely_score": row.get("most_likely_score"),
+                "model_version": row.get("model_version"),
+                "provider_confidence": confidence_value,
+            },
+        )
 
     def _build_team_form_contexts(
         self,

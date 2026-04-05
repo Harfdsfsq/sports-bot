@@ -359,7 +359,13 @@ class OddsApiIoProvider:
                 if not isinstance(row, dict):
                     continue
                 name = str(row.get("name") or row.get("label") or row.get("selection") or "").strip()
-                point = row.get("point") or row.get("line") or row.get("handicap")
+                point = (
+                    row.get("point")
+                    or row.get("line")
+                    or row.get("handicap")
+                    or row.get("hdp")
+                    or row.get("max")
+                )
                 if family == "h2h":
                     selection = self._map_h2h_selection(name, match)
                 elif family == "totals":
@@ -383,7 +389,13 @@ class OddsApiIoProvider:
                 if not isinstance(row, dict):
                     continue
 
-                point = row.get("point") or row.get("line") or row.get("handicap")
+                point = (
+                    row.get("point")
+                    or row.get("line")
+                    or row.get("handicap")
+                    or row.get("hdp")
+                    or row.get("max")
+                )
                 label = str(row.get("label") or row.get("name") or row.get("selection") or "").strip()
 
                 if family == "h2h":

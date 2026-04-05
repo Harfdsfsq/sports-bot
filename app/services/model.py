@@ -107,7 +107,13 @@ class CandidateFactory:
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = mean(implied_probability(item.price) for item in bucket)
-            over_prob = poisson_over_probability(expected_total, point)
+            explicit_total_prob = self._context_total_probability(context, point)
+            if explicit_total_prob is not None:
+                over_prob = explicit_total_prob
+                model_reason = 'context_total_probability'
+            else:
+                over_prob = poisson_over_probability(expected_total, point)
+                model_reason = 'xg_total'
             model_prob = over_prob if low.startswith('over') else (1.0 - over_prob)
             candidate = self._candidate_from_bucket(
                 match=match,
@@ -119,7 +125,7 @@ class CandidateFactory:
                 model_prob=model_prob,
                 reasons=[
                     'mode=xg_total',
-                    'model=xg_total',
+                    f'model={model_reason}',
                     f'consensus_fair_odds={1 / max(market_prob, 0.01):.2f}',
                     f'context={self._context_label(context)}',
                 ],
@@ -268,6 +274,10 @@ class CandidateFactory:
             confidence = min(confidence, 68.0)
             shrink_min = 0.15
             shrink_max = 0.42
+        elif context_source == 'bzzoiro_predictions':
+            confidence = min(confidence, 72.0)
+            shrink_min = 0.16
+            shrink_max = 0.36
         confidence = clamp(confidence, 0, 100)
 
         adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)
@@ -357,9 +367,13 @@ class CandidateFactory:
             'Draw': ctx_draw,
         })
 
-        if str(context.source or '') == 'sstats_form':
+        source = str(context.source or '')
+        if source == 'sstats_form':
             xg_weight = 0.42
             ctx_weight = 0.58
+        elif source == 'bzzoiro_predictions':
+            xg_weight = 0.30
+            ctx_weight = 0.70
         else:
             xg_weight = 0.60
             ctx_weight = 0.40
@@ -397,6 +411,22 @@ class CandidateFactory:
             return clamp(float(value), 0.01, 0.95)
         except Exception:
             return None
+
+    def _context_total_probability(self, context: MatchContext | None, point: float | None) -> float | None:
+        if context is None or point is None:
+            return None
+        details = dict(getattr(context, 'details', {}) or {})
+        point_key = f'prob_over_{str(point).replace('.', '_')}'
+        raw = details.get(point_key)
+        try:
+            if raw is None:
+                return None
+            value = float(raw)
+        except Exception:
+            return None
+        if value > 1.0:
+            value /= 100.0
+        return clamp(value, 0.02, 0.98)
 
     @staticmethod
     def _context_label(context: MatchContext | None) -> str:
