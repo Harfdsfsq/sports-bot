@@ -9,7 +9,7 @@ from importlib import import_module
 from typing import Any
 
 from app.config import Settings
-from app.schemas import CandidateBet, Match, Offer
+from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.model import CandidateFactory
 from app.services.telegram import TelegramPublisher
 from app.state import JsonStateStore
@@ -23,6 +23,9 @@ class PredictionRunner:
         self.odds_api_io = self._safe_provider('app.providers.odds_api_io', 'OddsApiIoProvider')
         self.bookies_api = self._safe_provider('app.providers.bookies_api', 'BookiesApiProvider')
         self.sstats = self._safe_provider('app.providers.sstats', 'SStatsContextProvider')
+        self.api_football = self._safe_provider('app.providers.api_football', 'ApiFootballContextProvider')
+        self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
+        self.thesportsdb = self._safe_provider('app.providers.thesportsdb', 'TheSportsDbContextProvider')
         self.factory = CandidateFactory(settings)
         self.telegram = TelegramPublisher(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
@@ -35,6 +38,12 @@ class PredictionRunner:
         if module_name.endswith('bookies_api') and not getattr(self.settings, 'bookies_api_enabled', False):
             return None
         if module_name.endswith('sstats') and (not getattr(self.settings, 'sstats_enabled', True) or not getattr(self.settings, 'enable_sstats_context', True)):
+            return None
+        if module_name.endswith('api_football') and not getattr(self.settings, 'api_football_enabled', True):
+            return None
+        if module_name.endswith('espn') and not getattr(self.settings, 'enable_espn_context', True):
+            return None
+        if module_name.endswith('thesportsdb') and not getattr(self.settings, 'enable_thesportsdb_context', True):
             return None
         try:
             module = import_module(module_name)
@@ -66,11 +75,36 @@ class PredictionRunner:
                 filtered_matches,
                 empty_data={},
             )
-            contexts, sstats_stats, sstats_preview = await self._fetch_provider(
+            sstats_contexts, sstats_stats, sstats_preview = await self._fetch_provider(
                 self.sstats,
                 'fetch_context',
                 filtered_matches,
                 empty_data={},
+            )
+            api_football_contexts, api_football_stats, api_football_preview = await self._fetch_provider(
+                self.api_football,
+                'fetch_context',
+                filtered_matches,
+                empty_data={},
+            )
+            espn_contexts, espn_stats, espn_preview = await self._fetch_provider(
+                self.espn,
+                'fetch_context',
+                filtered_matches,
+                empty_data={},
+            )
+            thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview = await self._fetch_provider(
+                self.thesportsdb,
+                'fetch_context',
+                filtered_matches,
+                empty_data={},
+            )
+
+            contexts = self._merge_context_maps(
+                sstats_contexts,
+                api_football_contexts,
+                espn_contexts,
+                thesportsdb_contexts,
             )
 
             merged_offers = self._merge_offers(odds_api_io_offers, bookies_api_offers)
@@ -96,6 +130,9 @@ class PredictionRunner:
                 'odds_api_io': odds_io_stats,
                 'bookies_api': bookies_stats,
                 'sstats': sstats_stats,
+                'api_football': api_football_stats,
+                'espn': espn_stats,
+                'thesportsdb': thesportsdb_stats,
             }
             mode_counts: dict[str, int] = defaultdict(int)
             for candidate in candidates:
@@ -131,6 +168,13 @@ class PredictionRunner:
                     'sstats_loose': sstats_stats.get('matched_loose', 0),
                     'sstats_fuzzy': sstats_stats.get('matched_fuzzy', 0),
                     'sstats_unmatched_rows': sstats_stats.get('unmatched_rows', 0),
+                    'api_football_exact': api_football_stats.get('matched_exact', 0),
+                    'api_football_loose': api_football_stats.get('matched_loose', 0),
+                    'api_football_fuzzy': api_football_stats.get('matched_fuzzy', 0),
+                    'espn_exact': espn_stats.get('matched_exact', 0),
+                    'espn_loose': espn_stats.get('matched_loose', 0),
+                    'espn_fuzzy': espn_stats.get('matched_fuzzy', 0),
+                    'thesportsdb_contexts': thesportsdb_stats.get('contexts_built', 0),
                 },
                 'rejections': rejections,
                 'candidate_modes': dict(mode_counts),
@@ -154,9 +198,13 @@ class PredictionRunner:
                         'odds_api_io': odds_io_preview,
                         'bookies_api': bookies_preview,
                         'sstats': sstats_preview,
+                        'api_football': api_football_preview,
+                        'espn': espn_preview,
+                        'thesportsdb': thesportsdb_preview,
                     },
                     'sample_matches': [self._serialize_match(item) for item in filtered_matches[:25]],
                     'sample_offers': self._serialize_offers(merged_offers, limit=25),
+                    'sample_contexts': [self._serialize_context(item) for item in list(contexts.values())[:25]],
                     'model_debug': model_debug,
                     'candidates': [self._serialize_candidate(item) for item in candidates[:25]],
                     'telegram_messages': telegram_payloads,
@@ -308,6 +356,92 @@ class PredictionRunner:
                     merged[match_key].append(offer)
         return dict(merged)
 
+    def _merge_context_maps(self, *maps: dict[str, Any]) -> dict[str, MatchContext]:
+        merged: dict[str, MatchContext] = {}
+        for mapping in maps:
+            for match_key, raw_context in (mapping or {}).items():
+                context = self._coerce_context(raw_context)
+                if context is None:
+                    continue
+                existing = merged.get(match_key)
+                merged[match_key] = context if existing is None else self._blend_contexts(existing, context)
+        return merged
+
+    @staticmethod
+    def _coerce_context(value: Any) -> MatchContext | None:
+        if value is None:
+            return None
+        if isinstance(value, MatchContext):
+            return value
+        if isinstance(value, dict):
+            return MatchContext(
+                source=str(value.get('source', 'unknown')),
+                payload=value.get('payload', value),
+                expected_home=value.get('expected_home'),
+                expected_away=value.get('expected_away'),
+                home_win_probability=value.get('home_win_probability'),
+                away_win_probability=value.get('away_win_probability'),
+                home_starting=value.get('home_starting'),
+                away_starting=value.get('away_starting'),
+                confidence=float(value.get('confidence', 58.0) or 58.0),
+                profits=value.get('profits', {}),
+                details=value.get('details', {}),
+            )
+        return None
+
+    def _blend_contexts(self, base: MatchContext, new: MatchContext) -> MatchContext:
+        base_weight = max(float(getattr(base, 'confidence', 0.0) or 0.0), 1.0)
+        new_weight = max(float(getattr(new, 'confidence', 0.0) or 0.0), 1.0)
+
+        def blend(a: Any, b: Any) -> float | None:
+            pairs: list[tuple[float, float]] = []
+            try:
+                if a is not None:
+                    pairs.append((float(a), base_weight))
+            except Exception:
+                pass
+            try:
+                if b is not None:
+                    pairs.append((float(b), new_weight))
+            except Exception:
+                pass
+            if not pairs:
+                return None
+            total_weight = sum(weight for _, weight in pairs)
+            if total_weight <= 0:
+                return None
+            return sum(value * weight for value, weight in pairs) / total_weight
+
+        merged_sources = []
+        for source in (str(base.source or ''), str(new.source or '')):
+            if source and source not in merged_sources:
+                merged_sources.append(source)
+
+        merged_payload = {
+            'sources': {
+                str(base.source or 'base'): base.payload,
+                str(new.source or 'new'): new.payload,
+            }
+        }
+        merged_details = dict(base.details or {})
+        merged_details.update(dict(new.details or {}))
+        merged_details['merged_sources'] = merged_sources
+        merged_details['context_mode'] = 'ensemble' if len(merged_sources) > 1 else merged_sources[0] if merged_sources else 'unknown'
+
+        return MatchContext(
+            source='ensemble' if len(merged_sources) > 1 else (merged_sources[0] if merged_sources else str(base.source or new.source or 'unknown')),
+            payload=merged_payload,
+            expected_home=blend(base.expected_home, new.expected_home),
+            expected_away=blend(base.expected_away, new.expected_away),
+            home_win_probability=blend(base.home_win_probability, new.home_win_probability),
+            away_win_probability=blend(base.away_win_probability, new.away_win_probability),
+            home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
+            away_starting=int(round(blend(base.away_starting, new.away_starting))) if blend(base.away_starting, new.away_starting) is not None else (new.away_starting or base.away_starting),
+            confidence=min(84.0, max(base_weight, new_weight) + (4.0 if len(merged_sources) > 1 else 0.0)),
+            profits={**dict(base.profits or {}), **dict(new.profits or {})},
+            details=merged_details,
+        )
+
     @staticmethod
     def _serialize_candidate(item: CandidateBet) -> dict[str, Any]:
         row = asdict(item)
@@ -318,17 +452,33 @@ class PredictionRunner:
     def _serialize_match(match: Match) -> dict[str, Any]:
         return {
             'match_key': match.match_key,
-            'sport': match.sport_key,
-            'league': match.league_name,
-            'home': match.home_team,
-            'away': match.away_team,
+            'source': match.source,
+            'source_event_id': match.source_event_id,
+            'sport_key': match.sport_key,
+            'league_name': match.league_name,
+            'home_team': match.home_team,
+            'away_team': match.away_team,
             'commence_time': match.commence_time.isoformat(),
+            'tier': match.tier,
+            'metadata': match.metadata,
         }
 
     @staticmethod
-    def _serialize_offers(mapping: dict[str, list[Offer]], limit: int = 25) -> list[dict[str, Any]]:
+    def _serialize_context(item: MatchContext) -> dict[str, Any]:
+        return {
+            'source': item.source,
+            'expected_home': item.expected_home,
+            'expected_away': item.expected_away,
+            'home_win_probability': item.home_win_probability,
+            'away_win_probability': item.away_win_probability,
+            'confidence': item.confidence,
+            'details': item.details,
+        }
+
+    @staticmethod
+    def _serialize_offers(offers_by_match: dict[str, list[Offer]], limit: int = 25) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-        for match_key, offers in mapping.items():
+        for match_key, offers in offers_by_match.items():
             for offer in offers:
                 rows.append(
                     {
@@ -340,6 +490,8 @@ class PredictionRunner:
                         'price': offer.price,
                         'point': offer.point,
                         'team_side': offer.team_side,
+                        'market_name': offer.market_name,
+                        'market_key': offer.market_key,
                     }
                 )
                 if len(rows) >= limit:

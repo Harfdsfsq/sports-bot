@@ -1,0 +1,460 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime, timedelta
+from typing import Any
+
+import httpx
+
+from app.config import Settings
+from app.schemas import Match, MatchContext
+from app.utils import clamp, canonicalize_league_name, canonicalize_team_name, parse_datetime, score_event_match
+
+ESPN_SOCCER_LEAGUE_ALIASES = {
+    'epl': 'eng.1',
+    'english premier league': 'eng.1',
+    'premier league': 'eng.1',
+    'english championship': 'eng.2',
+    'championship': 'eng.2',
+    'laliga': 'esp.1',
+    'la liga': 'esp.1',
+    'spanish laliga': 'esp.1',
+    'serie a': 'ita.1',
+    'italian serie a': 'ita.1',
+    'bundesliga': 'ger.1',
+    'german bundesliga': 'ger.1',
+    'ligue 1': 'fra.1',
+    'french ligue 1': 'fra.1',
+    'eredivisie': 'ned.1',
+    'netherlands eredivisie': 'ned.1',
+    'primeira liga': 'por.1',
+    'portuguese primeira liga': 'por.1',
+    'super lig': 'tur.1',
+    'turkish super lig': 'tur.1',
+    'jupiler pro league': 'bel.1',
+    'belgian pro league': 'bel.1',
+    'uefa champions league': 'uefa.champions',
+    'champions league': 'uefa.champions',
+    'uefa europa league': 'uefa.europa',
+    'europa league': 'uefa.europa',
+    'uefa europa conference league': 'uefa.europa.conf',
+    'conference league': 'uefa.europa.conf',
+}
+
+
+class EspnContextProvider:
+    def __init__(self, settings: Settings) -> None:
+        self.settings = settings
+        self.site_base_url = (settings.espn_base_site_url or 'https://site.api.espn.com/apis/site/v2').rstrip('/')
+        self.core_base_url = (settings.espn_base_core_url or 'https://sports.core.api.espn.com/v2').rstrip('/')
+        self.timeout = float(settings.espn_timeout_seconds or 20.0)
+        self.allowed_leagues = {item.strip() for item in (settings.espn_soccer_leagues or []) if item and item.strip()}
+
+    async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+        stats: dict[str, Any] = {
+            'enabled': bool(self.settings.enable_espn_context),
+            'scoreboard_requests': 0,
+            'probability_requests': 0,
+            'summary_requests': 0,
+            'response_errors': 0,
+            'events_fetched': 0,
+            'events_matched': 0,
+            'contexts_built': 0,
+            'matched_exact': 0,
+            'matched_loose': 0,
+            'matched_fuzzy': 0,
+            'league_slugs_used': [],
+            'last_body_preview': None,
+            'http_statuses': [],
+        }
+        preview: dict[str, Any] = {
+            'sample_events': [],
+            'sample_probabilities': [],
+            'matched_examples': [],
+        }
+        if not self.settings.enable_espn_context:
+            return {}, stats, preview
+
+        soccer_matches = [match for match in matches if match.sport_key == 'soccer']
+        if not soccer_matches:
+            return {}, stats, preview
+
+        prioritized = sorted(soccer_matches, key=lambda item: (item.commence_time, item.league_name, item.home_team))
+        max_matches = max(1, int(self.settings.espn_max_matches or 24))
+        if len(prioritized) > max_matches:
+            prioritized = prioritized[:max_matches]
+            stats['candidate_matches_limited_to'] = max_matches
+
+        slugs = sorted({slug for match in prioritized if (slug := self._league_slug(match.league_name))})
+        if self.allowed_leagues:
+            slugs = [slug for slug in slugs if slug in self.allowed_leagues]
+        stats['league_slugs_used'] = slugs
+        if not slugs:
+            return {}, stats, preview
+
+        events_by_slug: dict[str, list[dict[str, Any]]] = {slug: [] for slug in slugs}
+        now = datetime.now(UTC)
+        days = max(1, int(self.settings.run_days_ahead or 4))
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            for slug in slugs:
+                for offset in range(days + 1):
+                    target_day = (now + timedelta(days=offset)).strftime('%Y%m%d')
+                    url = f'{self.site_base_url}/sports/soccer/{slug}/scoreboard'
+                    stats['scoreboard_requests'] += 1
+                    try:
+                        response = await client.get(url, params={'dates': target_day})
+                    except Exception as exc:
+                        stats['response_errors'] += 1
+                        stats['last_body_preview'] = f'scoreboard request failed: {exc}'
+                        continue
+                    stats['http_statuses'].append(response.status_code)
+                    stats['last_body_preview'] = response.text[:1200]
+                    if response.status_code != 200:
+                        stats['response_errors'] += 1
+                        continue
+                    payload = self._safe_json(response)
+                    events = self._extract_events(payload)
+                    if events and not preview['sample_events']:
+                        preview['sample_events'] = events[:3]
+                    stats['events_fetched'] += len(events)
+                    events_by_slug[slug].extend(events)
+
+            contexts: dict[str, MatchContext] = {}
+            for match in prioritized:
+                slug = self._league_slug(match.league_name)
+                if not slug or slug not in events_by_slug:
+                    continue
+                event, quality = self._match_event(match, events_by_slug[slug], slug)
+                if event is None:
+                    continue
+                stats['events_matched'] += 1
+                if quality == 'exact':
+                    stats['matched_exact'] += 1
+                elif quality == 'loose':
+                    stats['matched_loose'] += 1
+                elif quality == 'fuzzy':
+                    stats['matched_fuzzy'] += 1
+
+                if len(preview['matched_examples']) < 8:
+                    preview['matched_examples'].append(
+                        {
+                            'match_key': match.match_key,
+                            'league_slug': slug,
+                            'event_id': event.get('id'),
+                            'home': self._event_home(event),
+                            'away': self._event_away(event),
+                            'quality': quality,
+                        }
+                    )
+
+                context = await self._build_context(client, slug, event, stats, preview)
+                if context is None:
+                    continue
+                contexts[match.match_key] = context
+                stats['contexts_built'] += 1
+
+        return contexts, stats, preview
+
+    def _league_slug(self, league_name: str) -> str | None:
+        key = canonicalize_league_name(league_name)
+        if key in ESPN_SOCCER_LEAGUE_ALIASES:
+            return ESPN_SOCCER_LEAGUE_ALIASES[key]
+        for alias, slug in ESPN_SOCCER_LEAGUE_ALIASES.items():
+            if alias in key or key in alias:
+                return slug
+        return None
+
+    @staticmethod
+    def _safe_json(response: httpx.Response) -> Any | None:
+        try:
+            return response.json()
+        except Exception:
+            return None
+
+    @staticmethod
+    def _extract_events(payload: Any) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+        events = payload.get('events')
+        if not isinstance(events, list):
+            return []
+        return [event for event in events if isinstance(event, dict)]
+
+    def _match_event(self, match: Match, events: list[dict[str, Any]], slug: str) -> tuple[dict[str, Any] | None, str | None]:
+        best_event: dict[str, Any] | None = None
+        best_quality: str | None = None
+        best_score = 0.0
+        for event in events:
+            start = self._event_start(event)
+            if start is None:
+                continue
+            score, quality = score_event_match(
+                sport='soccer',
+                match_home=match.home_team,
+                match_away=match.away_team,
+                match_start=match.commence_time,
+                match_league=match.league_name,
+                event_home=self._event_home(event),
+                event_away=self._event_away(event),
+                event_start=start,
+                event_league=slug,
+                exact_tolerance_hours=float(getattr(self.settings, 'match_start_tolerance_hours', 12) or 12),
+                fuzzy_tolerance_hours=float(getattr(self.settings, 'fallback_match_start_tolerance_hours', 8) or 8),
+            )
+            if score > best_score:
+                best_score = score
+                best_quality = quality
+                best_event = event
+        return (best_event, best_quality) if best_score >= 48.0 else (None, None)
+
+    async def _build_context(
+        self,
+        client: httpx.AsyncClient,
+        slug: str,
+        event: dict[str, Any],
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+    ) -> MatchContext | None:
+        event_id = str(event.get('id') or '')
+        competition = self._event_competition(event)
+        competition_id = str(competition.get('id') or event_id)
+        home_team = self._event_team(event, 'home')
+        away_team = self._event_team(event, 'away')
+
+        home_prob: float | None = None
+        away_prob: float | None = None
+        draw_prob: float | None = None
+
+        probability_url = f'{self.core_base_url}/sports/soccer/leagues/{slug}/events/{event_id}/competitions/{competition_id}/probabilities'
+        stats['probability_requests'] += 1
+        try:
+            response = await client.get(probability_url)
+        except Exception as exc:
+            stats['response_errors'] += 1
+            stats['last_body_preview'] = f'probabilities request failed: {exc}'
+            response = None
+        if response is not None:
+            stats['http_statuses'].append(response.status_code)
+            stats['last_body_preview'] = response.text[:1200]
+            if response.status_code == 200:
+                payload = self._safe_json(response)
+                item = self._probability_item(payload)
+                if item is not None:
+                    home_prob = self._to_float(item.get('homeWinPercentage'))
+                    away_prob = self._to_float(item.get('awayWinPercentage'))
+                    draw_prob = self._to_float(item.get('tiePercentage'))
+                    if len(preview['sample_probabilities']) < 3:
+                        preview['sample_probabilities'].append(item)
+            else:
+                stats['response_errors'] += 1
+
+        summary_predictor: dict[str, Any] | None = None
+        if home_prob is None or away_prob is None:
+            summary_url = f'{self.site_base_url}/sports/soccer/{slug}/summary'
+            stats['summary_requests'] += 1
+            try:
+                response = await client.get(summary_url, params={'event': event_id})
+            except Exception as exc:
+                stats['response_errors'] += 1
+                stats['last_body_preview'] = f'summary request failed: {exc}'
+                response = None
+            if response is not None:
+                stats['http_statuses'].append(response.status_code)
+                stats['last_body_preview'] = response.text[:1200]
+                if response.status_code == 200:
+                    payload = self._safe_json(response)
+                    summary_predictor = self._extract_predictor(payload)
+                    if summary_predictor is not None:
+                        maybe_home = self._to_float((summary_predictor.get('homeTeam') or {}).get('gameProjection'))
+                        maybe_away = self._to_float((summary_predictor.get('awayTeam') or {}).get('gameProjection'))
+                        if maybe_home is not None:
+                            home_prob = maybe_home / 100.0 if maybe_home > 1.0 else maybe_home
+                        if maybe_away is not None:
+                            away_prob = maybe_away / 100.0 if maybe_away > 1.0 else maybe_away
+                else:
+                    stats['response_errors'] += 1
+
+        home_form = self._form_score(home_team)
+        away_form = self._form_score(away_team)
+        if home_prob is None or away_prob is None:
+            if home_form is None or away_form is None:
+                return None
+            delta = clamp((home_form - away_form) * 0.18 + 0.08, -0.35, 0.35)
+            draw_prob = clamp(0.24 - abs(delta) * 0.18, 0.14, 0.30)
+            home_prob = 0.38 + delta
+            away_prob = 1.0 - home_prob - draw_prob
+
+        probs = self._normalize_probs(home_prob, away_prob, draw_prob)
+        expected_home, expected_away = self._expected_goals_from_probs(
+            home_prob=probs['home'],
+            away_prob=probs['away'],
+            draw_prob=probs['draw'],
+            home_form=home_form,
+            away_form=away_form,
+        )
+
+        confidence = 56.0
+        if summary_predictor is not None:
+            confidence += 5.0
+        if probs['home'] is not None and probs['away'] is not None:
+            confidence += 6.0
+        if home_form is not None and away_form is not None:
+            confidence += 2.0
+        confidence = clamp(confidence, 56.0, 72.0)
+
+        return MatchContext(
+            source='espn',
+            payload={'event': event, 'probabilities': {'home': probs['home'], 'away': probs['away'], 'draw': probs['draw']}},
+            expected_home=expected_home,
+            expected_away=expected_away,
+            home_win_probability=probs['home'],
+            away_win_probability=probs['away'],
+            confidence=confidence,
+            details={
+                'espn_draw_probability': probs['draw'],
+                'espn_league_slug': slug,
+                'espn_event_id': event_id,
+                'espn_competition_id': competition_id,
+                'espn_home_form': home_form,
+                'espn_away_form': away_form,
+            },
+        )
+
+    @staticmethod
+    def _probability_item(payload: Any) -> dict[str, Any] | None:
+        if isinstance(payload, dict):
+            items = payload.get('items')
+            if isinstance(items, list) and items and isinstance(items[0], dict):
+                return items[0]
+            if all(key in payload for key in ('homeWinPercentage', 'awayWinPercentage')):
+                return payload
+        return None
+
+    @staticmethod
+    def _extract_predictor(payload: Any) -> dict[str, Any] | None:
+        if not isinstance(payload, dict):
+            return None
+        predictor = payload.get('predictor')
+        return predictor if isinstance(predictor, dict) else None
+
+    @staticmethod
+    def _event_start(event: dict[str, Any]) -> datetime | None:
+        try:
+            return parse_datetime(event.get('date'))
+        except Exception:
+            return None
+
+    @staticmethod
+    def _event_competition(event: dict[str, Any]) -> dict[str, Any]:
+        competitions = event.get('competitions')
+        if isinstance(competitions, list):
+            for item in competitions:
+                if isinstance(item, dict):
+                    return item
+        return {}
+
+    def _event_team(self, event: dict[str, Any], side: str) -> dict[str, Any]:
+        competitors = (self._event_competition(event).get('competitors') or [])
+        side = side.lower()
+        for competitor in competitors:
+            if not isinstance(competitor, dict):
+                continue
+            if str(competitor.get('homeAway') or '').lower() == side:
+                team = competitor.get('team') or {}
+                return team if isinstance(team, dict) else {}
+        return {}
+
+    def _event_home(self, event: dict[str, Any]) -> str:
+        team = self._event_team(event, 'home')
+        return str(team.get('displayName') or team.get('shortDisplayName') or team.get('name') or '')
+
+    def _event_away(self, event: dict[str, Any]) -> str:
+        team = self._event_team(event, 'away')
+        return str(team.get('displayName') or team.get('shortDisplayName') or team.get('name') or '')
+
+    @staticmethod
+    def _form_score(team: dict[str, Any]) -> float | None:
+        candidates: list[str] = []
+        for key in ('form', 'recentForm', 'formDisplayValue'):
+            value = team.get(key)
+            if isinstance(value, str) and value.strip():
+                candidates.append(value)
+        records = team.get('records')
+        if isinstance(records, list):
+            for record in records:
+                if not isinstance(record, dict):
+                    continue
+                for key in ('summary', 'displayValue', 'value'):
+                    value = record.get(key)
+                    if isinstance(value, str) and value.strip():
+                        candidates.append(value)
+        for text in candidates:
+            score = EspnContextProvider._parse_form_text(text)
+            if score is not None:
+                return score
+        return None
+
+    @staticmethod
+    def _parse_form_text(value: str) -> float | None:
+        raw = ''.join(ch for ch in str(value or '').upper() if ch.isalnum())
+        if not raw:
+            return None
+        letters = [ch for ch in raw if ch in {'W', 'D', 'L'}]
+        if letters:
+            total = 0.0
+            for ch in letters[-5:]:
+                if ch == 'W':
+                    total += 1.0
+                elif ch == 'D':
+                    total += 0.5
+            return total / max(1, min(len(letters), 5))
+        parts = raw.split('-')
+        if len(parts) >= 3:
+            try:
+                wins, draws, losses = (float(parts[0]), float(parts[1]), float(parts[2]))
+                played = max(1.0, wins + draws + losses)
+                return (wins + 0.5 * draws) / played
+            except Exception:
+                return None
+        return None
+
+    @staticmethod
+    def _normalize_probs(home: float | None, away: float | None, draw: float | None) -> dict[str, float]:
+        home_value = clamp(float(home or 0.0), 0.05, 0.90)
+        away_value = clamp(float(away or 0.0), 0.05, 0.90)
+        draw_value = clamp(float(draw or max(0.10, 1.0 - home_value - away_value)), 0.06, 0.35)
+        total = home_value + away_value + draw_value
+        if total <= 0:
+            return {'home': 0.40, 'away': 0.32, 'draw': 0.28}
+        return {
+            'home': home_value / total,
+            'away': away_value / total,
+            'draw': draw_value / total,
+        }
+
+    @staticmethod
+    def _expected_goals_from_probs(
+        *,
+        home_prob: float,
+        away_prob: float,
+        draw_prob: float,
+        home_form: float | None,
+        away_form: float | None,
+    ) -> tuple[float, float]:
+        total_goals = 2.45
+        if home_form is not None and away_form is not None:
+            total_goals += (home_form + away_form - 1.0) * 0.35
+        total_goals = clamp(total_goals, 1.8, 3.4)
+        diff = clamp((home_prob - away_prob) * 1.35 + (0.5 - draw_prob) * 0.18, -1.35, 1.35)
+        expected_home = clamp((total_goals / 2.0) + diff / 2.0 + 0.08, 0.35, 3.3)
+        expected_away = clamp(total_goals - expected_home, 0.25, 3.1)
+        return expected_home, expected_away
+
+    @staticmethod
+    def _to_float(value: Any) -> float | None:
+        try:
+            if value in (None, ''):
+                return None
+            return float(value)
+        except Exception:
+            return None

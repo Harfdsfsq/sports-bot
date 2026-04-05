@@ -6,7 +6,15 @@ from typing import Any
 
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, Offer
-from app.utils import clamp, implied_probability, poisson_over_probability, russian_selection, shrink_probability
+from app.utils import (
+    clamp,
+    implied_probability,
+    poisson_over_probability,
+    russian_selection,
+    shrink_probability,
+    strip_vig_three_way,
+    strip_vig_two_way,
+)
 
 BOOKMAKER_WEIGHTS = {
     'Pinnacle': 1.20,
@@ -112,7 +120,7 @@ class CandidateFactory:
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
-            market_prob = mean(implied_probability(item.price) for item in bucket)
+            market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
             explicit_total_prob = self._context_total_probability(context, point)
             if explicit_total_prob is not None:
                 over_prob = explicit_total_prob
@@ -169,7 +177,7 @@ class CandidateFactory:
             model_prob = probs.get(selection)
             if model_prob is None:
                 continue
-            market_prob = mean(implied_probability(item.price) for item in bucket)
+            market_prob = self._fair_market_probability_h2h(match, offers, selection)
             candidate = self._candidate_from_bucket(
                 match=match,
                 family='h2h',
@@ -219,7 +227,7 @@ class CandidateFactory:
                 model_prob = clamp(0.50 + diff * 0.10, 0.05, 0.95)
             else:
                 model_prob = clamp(0.50 - diff * 0.10, 0.05, 0.95)
-            market_prob = mean(implied_probability(item.price) for item in books)
+            market_prob = self._fair_market_probability_spreads(books, offers, offer.selection, offer.point, team_side)
             candidate = self._candidate_from_bucket(
                 match=match,
                 family='spreads',
@@ -357,6 +365,174 @@ class CandidateFactory:
                 'market_probability': round(float(market_prob), 4),
             },
         )
+
+    def _fair_market_probability_h2h(self, match: Match, offers: list[Offer], selection: str) -> float:
+        selection_key = self._h2h_selection_key(match, selection)
+        weighted_probs: list[tuple[float, float]] = []
+        by_book: dict[str, dict[str, float]] = defaultdict(dict)
+        for offer in offers:
+            key = self._h2h_selection_key(match, offer.selection)
+            if not key:
+                continue
+            book = self._norm_book(offer.bookmaker)
+            if not book or offer.price <= 1.0:
+                continue
+            best = by_book[book].get(key)
+            if best is None or offer.price > best:
+                by_book[book][key] = float(offer.price)
+
+        for book, price_map in by_book.items():
+            weight = self._bookmaker_weight(book)
+            if {'home', 'draw', 'away'} <= set(price_map):
+                probs = strip_vig_three_way(price_map['home'], price_map['draw'], price_map['away'])
+                if probs is None:
+                    continue
+                mapping = {'home': probs[0], 'draw': probs[1], 'away': probs[2]}
+                if selection_key in mapping:
+                    weighted_probs.append((mapping[selection_key], weight))
+
+        if weighted_probs:
+            return clamp(sum(value * weight for value, weight in weighted_probs) / sum(weight for _, weight in weighted_probs), 0.02, 0.98)
+
+        aggregate: dict[str, float] = {}
+        for key in ('home', 'draw', 'away'):
+            prices = [offer.price for offer in offers if self._h2h_selection_key(match, offer.selection) == key and offer.price > 1.0]
+            if prices:
+                aggregate[key] = mean(prices)
+        if {'home', 'draw', 'away'} <= set(aggregate):
+            probs = strip_vig_three_way(aggregate['home'], aggregate['draw'], aggregate['away'])
+            if probs is not None:
+                mapping = {'home': probs[0], 'draw': probs[1], 'away': probs[2]}
+                if selection_key in mapping:
+                    return clamp(mapping[selection_key], 0.02, 0.98)
+
+        fallback = [implied_probability(item.price) for item in offers if self._h2h_selection_key(match, item.selection) == selection_key]
+        if fallback:
+            return clamp(mean(fallback), 0.02, 0.98)
+        return 0.50
+
+    def _fair_market_probability_totals(
+        self,
+        bucket: list[Offer],
+        offers: list[Offer],
+        selection: str,
+        point: float,
+    ) -> float:
+        current_side = 'over' if str(selection).lower().startswith('over') else 'under'
+        other_side = 'under' if current_side == 'over' else 'over'
+        weighted_probs: list[tuple[float, float]] = []
+
+        by_book: dict[str, dict[str, float]] = defaultdict(dict)
+        for offer in offers:
+            if offer.point is None or round(float(offer.point), 2) != round(float(point), 2):
+                continue
+            low = str(offer.selection or '').lower()
+            side = 'over' if low.startswith('over') else 'under' if low.startswith('under') else None
+            if side is None or offer.price <= 1.0:
+                continue
+            book = self._norm_book(offer.bookmaker)
+            best = by_book[book].get(side)
+            if best is None or offer.price > best:
+                by_book[book][side] = float(offer.price)
+
+        for book, price_map in by_book.items():
+            if current_side not in price_map or other_side not in price_map:
+                continue
+            probs = strip_vig_two_way(price_map[current_side], price_map[other_side])
+            if probs is None:
+                continue
+            weight = self._bookmaker_weight(book)
+            weighted_probs.append((probs[0], weight))
+
+        if weighted_probs:
+            return clamp(sum(value * weight for value, weight in weighted_probs) / sum(weight for _, weight in weighted_probs), 0.02, 0.98)
+
+        current_prices = [offer.price for offer in offers if offer.point is not None and round(float(offer.point), 2) == round(float(point), 2) and str(offer.selection or '').lower().startswith(current_side)]
+        other_prices = [offer.price for offer in offers if offer.point is not None and round(float(offer.point), 2) == round(float(point), 2) and str(offer.selection or '').lower().startswith(other_side)]
+        if current_prices and other_prices:
+            probs = strip_vig_two_way(mean(current_prices), mean(other_prices))
+            if probs is not None:
+                return clamp(probs[0], 0.02, 0.98)
+
+        fallback = [implied_probability(item.price) for item in bucket if item.price > 1.0]
+        if fallback:
+            return clamp(mean(fallback), 0.02, 0.98)
+        return 0.50
+
+    def _fair_market_probability_spreads(
+        self,
+        bucket: list[Offer],
+        offers: list[Offer],
+        selection: str,
+        point: float | None,
+        team_side: str,
+    ) -> float:
+        if point is None:
+            fallback = [implied_probability(item.price) for item in bucket if item.price > 1.0]
+            return clamp(mean(fallback), 0.02, 0.98) if fallback else 0.50
+        current_side = str(team_side or '').lower()
+        other_side = 'away' if current_side == 'home' else 'home'
+        weighted_probs: list[tuple[float, float]] = []
+
+        by_book: dict[str, dict[str, float]] = defaultdict(dict)
+        for offer in offers:
+            if offer.point is None or round(float(offer.point), 2) != round(float(point), 2):
+                continue
+            side = str(offer.team_side or '').lower()
+            if side not in {'home', 'away'} or offer.price <= 1.0:
+                continue
+            book = self._norm_book(offer.bookmaker)
+            best = by_book[book].get(side)
+            if best is None or offer.price > best:
+                by_book[book][side] = float(offer.price)
+
+        for book, price_map in by_book.items():
+            if current_side not in price_map or other_side not in price_map:
+                continue
+            probs = strip_vig_two_way(price_map[current_side], price_map[other_side])
+            if probs is None:
+                continue
+            weight = self._bookmaker_weight(book)
+            weighted_probs.append((probs[0], weight))
+
+        if weighted_probs:
+            return clamp(sum(value * weight for value, weight in weighted_probs) / sum(weight for _, weight in weighted_probs), 0.02, 0.98)
+
+        current_prices = [offer.price for offer in offers if offer.point is not None and round(float(offer.point), 2) == round(float(point), 2) and str(offer.team_side or '').lower() == current_side]
+        other_prices = [offer.price for offer in offers if offer.point is not None and round(float(offer.point), 2) == round(float(point), 2) and str(offer.team_side or '').lower() == other_side]
+        if current_prices and other_prices:
+            probs = strip_vig_two_way(mean(current_prices), mean(other_prices))
+            if probs is not None:
+                return clamp(probs[0], 0.02, 0.98)
+
+        fallback = [implied_probability(item.price) for item in bucket if item.price > 1.0]
+        if fallback:
+            return clamp(mean(fallback), 0.02, 0.98)
+        return 0.50
+
+    @staticmethod
+    def _h2h_selection_key(match: Match, selection: str) -> str | None:
+        text = str(selection or '').strip().lower()
+        if text in {'draw', 'x'}:
+            return 'draw'
+        if CandidateFactory._canonical_team(selection) == CandidateFactory._canonical_team(match.home_team):
+            return 'home'
+        if CandidateFactory._canonical_team(selection) == CandidateFactory._canonical_team(match.away_team):
+            return 'away'
+        return None
+
+    def _bookmaker_weight(self, bookmaker: str) -> float:
+        normalized = self._norm_book(bookmaker)
+        for raw_name, weight in BOOKMAKER_WEIGHTS.items():
+            if self._norm_book(raw_name) == normalized:
+                return weight
+        return 1.0
+
+    @staticmethod
+    def _canonical_team(value: str) -> str:
+        from app.utils import canonicalize_team_name
+
+        return canonicalize_team_name(value)
 
     def _derive_h2h_probabilities(self, match: Match, context: MatchContext) -> dict[str, float]:
         denom = max((context.expected_home or 0.0) + (context.expected_away or 0.0), 0.1)

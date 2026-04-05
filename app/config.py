@@ -59,12 +59,13 @@ class Settings(BaseSettings):
     odds_min: float = Field(default=1.50, validation_alias=AliasChoices('TARGET_ODDS_HARD_MIN', 'ODDS_MIN'))
     odds_max: float = Field(default=4.50, validation_alias=AliasChoices('TARGET_ODDS_HARD_MAX', 'ODDS_MAX'))
 
-    publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices('PUBLISH_DRY_RUN'))
-
     bookies_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices('BOOKIES_BOOTSTRAP_ENABLED'))
     enable_odds_api_io: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_ODDS_API_IO', 'ODDS_API_IO_ENABLED'))
     sstats_enabled: bool = Field(default=True, validation_alias=AliasChoices('SSTATS_ENABLED'))
     enable_sstats_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_SSTATS_CONTEXT'))
+    api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices('API_FOOTBALL_ENABLED'))
+    enable_espn_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_ESPN_CONTEXT', 'ESPN_CONTEXT_ENABLED'))
+    enable_thesportsdb_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_THESPORTSDB_CONTEXT', 'THESPORTSDB_CONTEXT_ENABLED'))
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN'))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_CHAT_ID'))
@@ -76,7 +77,25 @@ class Settings(BaseSettings):
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices('SSTATS_API_KEY'))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices('SSTATS_TIMEOUT_SECONDS'))
+
     api_football_key: str | None = Field(default=None, validation_alias=AliasChoices('API_FOOTBALL_KEY'))
+    api_football_base_url: str = Field(default='https://v3.football.api-sports.io', validation_alias=AliasChoices('API_FOOTBALL_BASE_URL'))
+    api_football_predictions_limit: int | None = Field(default=None, validation_alias=AliasChoices('API_FOOTBALL_PREDICTIONS_LIMIT'))
+
+    espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('ESPN_TIMEOUT_SECONDS'))
+    espn_base_site_url: str = Field(default='https://site.api.espn.com/apis/site/v2', validation_alias=AliasChoices('ESPN_BASE_SITE_URL'))
+    espn_base_core_url: str = Field(default='https://sports.core.api.espn.com/v2', validation_alias=AliasChoices('ESPN_BASE_CORE_URL'))
+    espn_soccer_leagues: CsvList = Field(
+        default_factory=lambda: ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'],
+        validation_alias=AliasChoices('ESPN_SOCCER_LEAGUES'),
+    )
+    espn_max_matches: int = Field(default=24, validation_alias=AliasChoices('ESPN_MAX_MATCHES'))
+
+    thesportsdb_api_key: str = Field(default='123', validation_alias=AliasChoices('THESPORTSDB_API_KEY'))
+    thesportsdb_base_url: str = Field(default='https://www.thesportsdb.com/api/v1/json', validation_alias=AliasChoices('THESPORTSDB_BASE_URL'))
+    thesportsdb_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('THESPORTSDB_TIMEOUT_SECONDS'))
+    thesportsdb_max_leagues: int = Field(default=12, validation_alias=AliasChoices('THESPORTSDB_MAX_LEAGUES'))
+
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices('BZZOIRO_API_KEY'))
 
     bookies_api_enabled: bool = Field(default=False, validation_alias=AliasChoices('BOOKIES_API_ENABLED'))
@@ -109,7 +128,15 @@ class Settings(BaseSettings):
     btts_score_weight: float = Field(default=1.12, validation_alias=AliasChoices('BTTS_SCORE_WEIGHT'))
     team_totals_score_weight: float = Field(default=1.20, validation_alias=AliasChoices('TEAM_TOTALS_SCORE_WEIGHT'))
 
-    @field_validator('run_sports', 'target_bookmakers', 'consensus_bookmakers', 'odds_api_io_bookmakers', 'bookies_api_sports', mode='before')
+    @field_validator(
+        'run_sports',
+        'target_bookmakers',
+        'consensus_bookmakers',
+        'odds_api_io_bookmakers',
+        'bookies_api_sports',
+        'espn_soccer_leagues',
+        mode='before',
+    )
     @classmethod
     def split_csv(cls, value: Any) -> list[str]:
         if value is None:
