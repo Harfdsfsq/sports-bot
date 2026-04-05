@@ -162,7 +162,7 @@ class CandidateFactory:
         probs = self._derive_h2h_probabilities(match, context)
         result: list[CandidateBet] = []
         for selection, bucket in buckets.items():
-            required_books = self._required_books_for_bucket('totals', point, bucket, context)
+            required_books = self._required_books_for_bucket('h2h', None, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
