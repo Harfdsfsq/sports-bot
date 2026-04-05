@@ -498,15 +498,26 @@ class CandidateFactory:
                     rejections['single_book_total_guard'] += 1
                     continue
 
-            if item.family == 'h2h' and context_source == 'sstats_form' and float(item.odds) >= 3.0:
-                passes_guard = (
-                    item.sources_count >= 2
-                    or float(item.confidence) >= 64.0
-                    or (float(item.adjusted_probability) - float(item.market_probability)) >= 0.10
-                )
-                if not passes_guard:
-                    rejections['high_odds_form_guard'] += 1
-                    continue
+            if item.family == 'h2h' and context_source == 'sstats_form':
+                odds_value = float(item.odds)
+                edge_prob = float(item.adjusted_probability) - float(item.market_probability)
+                if odds_value >= 4.0:
+                    passes_guard = (
+                        float(item.confidence) >= 65.0
+                        or edge_prob >= 0.12
+                    )
+                    if not passes_guard:
+                        rejections['very_high_odds_form_guard'] += 1
+                        continue
+                elif odds_value >= 3.0:
+                    passes_guard = (
+                        item.sources_count >= 2
+                        or float(item.confidence) >= 64.0
+                        or edge_prob >= 0.10
+                    )
+                    if not passes_guard:
+                        rejections['high_odds_form_guard'] += 1
+                        continue
 
             filtered.append(item)
 
