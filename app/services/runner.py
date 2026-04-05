@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from collections import defaultdict
+import json
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from importlib import import_module
 from typing import Any
 
@@ -72,7 +74,17 @@ class PredictionRunner:
             )
 
             merged_offers = self._merge_offers(odds_api_io_offers, bookies_api_offers)
-            candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts)
+            raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts)
+
+            seen_fingerprints = self._load_seen_candidate_fingerprints()
+            candidates = []
+            skipped_already_in_state = 0
+            for candidate in raw_candidates:
+                fingerprint = self._candidate_fingerprint(candidate)
+                if fingerprint and fingerprint in seen_fingerprints:
+                    skipped_already_in_state += 1
+                    continue
+                candidates.append(candidate)
 
             sent_messages, telegram_payloads = await self.telegram.publish(candidates)
             published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
@@ -98,6 +110,8 @@ class PredictionRunner:
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
+                'candidates_raw': len(raw_candidates),
+                'skipped_already_in_state': skipped_already_in_state,
                 'published': telegram_picks_sent,
                 'published_to_telegram': telegram_picks_sent,
                 'telegram_messages_sent': sent_messages,
@@ -217,6 +231,59 @@ class PredictionRunner:
         for match in matches:
             unique.setdefault(match.match_key, match)
         return list(unique.values())
+
+    def _load_seen_candidate_fingerprints(self) -> set[str]:
+        paths = [Path(self.settings.state_path)]
+        latest_picks = Path(self.settings.storage_export_dir) / 'latest-picks.json'
+        if latest_picks not in paths:
+            paths.append(latest_picks)
+
+        seen: set[str] = set()
+        for path in paths:
+            if not path.exists() or not path.is_file():
+                continue
+            try:
+                payload = json.loads(path.read_text(encoding='utf-8'))
+            except Exception:
+                continue
+            self._collect_candidate_fingerprints(payload, seen)
+        return seen
+
+    def _collect_candidate_fingerprints(self, value: Any, seen: set[str]) -> None:
+        if isinstance(value, dict):
+            fingerprint = self._candidate_fingerprint(value)
+            if fingerprint:
+                seen.add(fingerprint)
+            for item in value.values():
+                self._collect_candidate_fingerprints(item, seen)
+            return
+        if isinstance(value, list):
+            for item in value:
+                self._collect_candidate_fingerprints(item, seen)
+
+    @staticmethod
+    def _candidate_fingerprint(candidate: CandidateBet | dict[str, Any]) -> str | None:
+        def get(field: str) -> Any:
+            if isinstance(candidate, dict):
+                return candidate.get(field)
+            return getattr(candidate, field, None)
+
+        match_key = get('match_key')
+        family = get('family')
+        selection = get('selection')
+        if not match_key or not family or not selection:
+            return None
+
+        point = get('point')
+        if isinstance(point, float):
+            point = round(point, 4)
+        commence_time = get('commence_time')
+        if hasattr(commence_time, 'isoformat'):
+            commence_time = commence_time.isoformat()
+        if commence_time is None:
+            commence_time = ''
+
+        return '|'.join(str(part) for part in (match_key, family, selection, point, commence_time))
 
     @staticmethod
     def _merge_offers(*maps: dict[str, list[Offer]]) -> dict[str, list[Offer]]:
