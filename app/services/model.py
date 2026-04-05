@@ -108,7 +108,8 @@ class CandidateFactory:
             if point not in allowed_total_points:
                 rejections['unsupported_total_line'] += 1
                 continue
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < self.settings.min_books_publish:
+            required_books = self._required_books_for_bucket('h2h', None, bucket, context)
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = mean(implied_probability(item.price) for item in bucket)
@@ -161,7 +162,8 @@ class CandidateFactory:
         probs = self._derive_h2h_probabilities(match, context)
         result: list[CandidateBet] = []
         for selection, bucket in buckets.items():
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < self.settings.min_books_publish:
+            required_books = self._required_books_for_bucket('h2h', None, bucket, context)
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             model_prob = probs.get(selection)
@@ -206,7 +208,8 @@ class CandidateFactory:
             if offer.point is None:
                 continue
             books = [item for item in offers if item.selection == offer.selection and item.point == offer.point]
-            if len({self._norm_book(item.bookmaker) for item in books}) < self.settings.min_books_publish:
+            required_books = self._required_books_for_bucket('spreads', offer.point, books, context)
+            if len({self._norm_book(item.bookmaker) for item in books}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             team_side = (offer.team_side or '').lower()
@@ -257,7 +260,8 @@ class CandidateFactory:
     ) -> CandidateBet | None:
         books = {offer.bookmaker for offer in offers}
         sources = {offer.source for offer in offers}
-        if len(books) < self.settings.min_books_publish:
+        required_books = self._required_books_for_bucket(family, point, offers, context)
+        if len(books) < required_books:
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
@@ -272,6 +276,10 @@ class CandidateFactory:
         shrink_min = 0.18
         shrink_max = 0.55
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
+        if len(books) == 1:
+            confidence -= 6.0
+            shrink_min = min(shrink_min, 0.10)
+            shrink_max = min(shrink_max, 0.24)
         if context_source == 'sstats_form':
             confidence = min(confidence, 62.0)
             shrink_min = 0.10
@@ -297,6 +305,8 @@ class CandidateFactory:
         reasons.append(f'selected_source={best_offer.source}')
         if context_source:
             reasons.append(f'context_confidence={context_confidence:.1f}')
+        if len(books) == 1:
+            reasons.append('single_book_guard=enabled')
 
         return CandidateBet(
             match_key=match.match_key,
@@ -329,6 +339,7 @@ class CandidateFactory:
                 'books': sorted(books),
                 'sources': sorted(sources),
                 'offers_seen': len(offers),
+                'required_books': required_books,
                 'selected_bookmaker': best_offer.bookmaker,
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
@@ -435,13 +446,28 @@ class CandidateFactory:
         return clamp(value, 0.02, 0.98)
 
     @staticmethod
-    def _context_label(context: MatchContext | None) -> str:
-        if context is None:
-            return 'none'
-        mode = str((context.details or {}).get('sstats_mode') or '').strip()
-        if mode:
-            return f'{context.source}:{mode}'
-        return str(context.source or 'unknown')
+
+    def _required_books_for_bucket(
+        self,
+        family: str,
+        point: float | None,
+        offers: list[Offer],
+        context: MatchContext | None,
+    ) -> int:
+        base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
+        if base <= 1:
+            return 1
+
+        norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
+        has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet'})
+        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
+
+        # Permit a single strong bookmaker only for mainstream totals,
+        # and only when there is model context beyond raw odds.
+        if family == 'totals' and point in {2.5, 3.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats'}:
+            return 1
+
+        return base
 
     @staticmethod
     def _select_best_offer(offers: list[Offer]) -> Offer:

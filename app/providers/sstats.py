@@ -466,7 +466,7 @@ class SStatsContextProvider:
             league_match = canonicalize_league_name(best_match.league_name)
             league_event_norm = canonicalize_league_name(event_league)
             leagues_related = bool(league_match and league_event_norm and (league_match == league_event_norm or league_match in league_event_norm or league_event_norm in league_match))
-            min_score = 72.0 if best_quality == "fuzzy" else 64.0
+            min_score = 69.0 if best_quality == "fuzzy" else 64.0
             if best_quality == "fuzzy" and not leagues_related:
                 stats["unmatched_rows"] += 1
                 continue
@@ -500,6 +500,7 @@ class SStatsContextProvider:
                     "source": context.source,
                     "quality": best_quality,
                     "score": round(best_score, 2),
+                    "leagues_related": leagues_related,
                 })
         stats["contexts_built"] = len(contexts)
         return contexts, stats, preview
