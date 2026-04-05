@@ -462,7 +462,7 @@ class CandidateFactory:
 
         # Permit a single strong bookmaker only for mainstream totals,
         # and only when there is model context beyond raw odds.
-        if family == 'totals' and point in {2.5, 3.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats'}:
+        if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats'}:
             return 1
 
         return base
@@ -491,16 +491,41 @@ class CandidateFactory:
             if item.edge_pct < self.settings.min_edge_pct:
                 rejections['edge_below_threshold'] += 1
                 continue
+
+            context_source = str((item.source_summary or {}).get('context_source') or '')
+            if item.family == 'totals' and item.books_count == 1:
+                if item.confidence < 58.0 or item.edge_pct < 7.0:
+                    rejections['single_book_total_guard'] += 1
+                    continue
+
+            if item.family == 'h2h' and context_source == 'sstats_form' and float(item.odds) >= 3.0:
+                passes_guard = (
+                    item.sources_count >= 2
+                    or float(item.confidence) >= 64.0
+                    or (float(item.adjusted_probability) - float(item.market_probability)) >= 0.10
+                )
+                if not passes_guard:
+                    rejections['high_odds_form_guard'] += 1
+                    continue
+
             filtered.append(item)
+
         filtered.sort(
             key=lambda item: (round(item.ev_pct, 3), round(item.edge_pct, 3), round(item.confidence, 3)),
             reverse=True,
         )
         deduped: list[CandidateBet] = []
         used_matches: set[str] = set()
+        seen_xg_total_profiles: set[tuple[float, float, float | None]] = set()
         for item in filtered:
             if item.match_key in used_matches:
                 continue
+            if item.model_mode == 'xg_total' and item.expected_home is not None and item.expected_away is not None:
+                profile = (round(float(item.expected_home), 2), round(float(item.expected_away), 2), item.point)
+                if profile in seen_xg_total_profiles:
+                    rejections['duplicate_xg_total_profile'] += 1
+                    continue
+                seen_xg_total_profiles.add(profile)
             used_matches.add(item.match_key)
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
