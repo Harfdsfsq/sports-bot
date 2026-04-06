@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from collections import defaultdict
 from statistics import mean
 from typing import Any
@@ -273,6 +274,16 @@ class CandidateFactory:
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
+        try:
+            market_prob = float(market_prob)
+            model_prob = float(model_prob)
+        except (TypeError, ValueError):
+            return None
+        if not (math.isfinite(market_prob) and math.isfinite(model_prob)):
+            return None
+        market_prob = clamp(market_prob, 0.01, 0.99)
+        model_prob = clamp(model_prob, 0.01, 0.99)
+
         best_offer = self._select_best_offer(offers)
         best_price = best_offer.price
         if not (self.settings.odds_min <= best_price <= self.settings.odds_max):
