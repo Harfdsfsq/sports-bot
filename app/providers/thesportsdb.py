@@ -39,6 +39,17 @@ LEAGUE_ALIASES = {
     'belgium pro league': 'belgian pro league',
     'portugal primeira liga': 'portuguese primeira liga',
     'scotland premiership': 'scottish premiership',
+    'league one': 'english league one',
+    'league 1': 'english league one',
+    'league two': 'english league two',
+    'league 2': 'english league two',
+    'championship': 'english league championship',
+    'bundesliga 2': 'german bundesliga 2',
+    '2. bundesliga': 'german bundesliga 2',
+    'eerste divisie': 'dutch eerste divisie',
+    'scottish championship': 'scottish championship',
+    'scottish league one': 'scottish league one',
+    'scottish league two': 'scottish league two',
 }
 
 
@@ -174,10 +185,14 @@ class TheSportsDbContextProvider:
         for row in league_rows:
             if str(row.get('strSport') or '').lower() != 'soccer':
                 continue
-            row_name = str(row.get('strLeague') or row.get('strLeagueAlternate') or '')
-            row_key = self._normalize_league_key(row_name)
-            if row_key:
-                normalized_rows.append((str(row.get('idLeague') or ''), row_key))
+            row_name = str(row.get('strLeague') or '')
+            row_alt = str(row.get('strLeagueAlternate') or '')
+            keys = {self._normalize_league_key(row_name)}
+            if row_alt:
+                keys.add(self._normalize_league_key(row_alt))
+            for row_key in keys:
+                if row_key:
+                    normalized_rows.append((str(row.get('idLeague') or ''), row_key))
         for league_name in league_names:
             target = self._normalize_league_key(league_name)
             best_id: str | None = None
@@ -192,18 +207,20 @@ class TheSportsDbContextProvider:
                 if score > best_score:
                     best_score = score
                     best_id = league_id
-            if best_id and best_score >= 0.68:
+            threshold = float(getattr(self.settings, 'thesportsdb_league_match_threshold', 0.60) or 0.60)
+            if best_id and best_score >= threshold:
                 resolved[league_name] = best_id
         return resolved
 
     def _match_table_row(self, team_name: str, rows: list[dict[str, Any]]) -> dict[str, Any] | None:
-        target = canonicalize_team_name(team_name)
+        target = self._normalize_team_key(team_name)
         best_row: dict[str, Any] | None = None
         best_score = 0.0
         for row in rows:
             row_name = str(row.get('strTeam') or row.get('name') or row.get('team') or '')
-            score = team_similarity(target, row_name)
-            if canonicalize_team_name(row_name) == target:
+            row_key = self._normalize_team_key(row_name)
+            score = team_similarity(target, row_key)
+            if row_key == target:
                 score = 1.0
             if score > best_score:
                 best_score = score
@@ -226,6 +243,31 @@ class TheSportsDbContextProvider:
             if values:
                 aggregate[key] = str(round(sum(values) / len(values), 3))
         return aggregate
+
+    def _normalize_team_key(self, team_name: str) -> str:
+        key = canonicalize_team_name(team_name)
+        replacements = {
+            ' football club ': ' ',
+            ' futbol club ': ' ',
+            ' soccer club ': ' ',
+            ' athletic club ': ' ',
+            ' association football club ': ' ',
+            ' fc ': ' ',
+            ' cf ': ' ',
+            ' ac ': ' ',
+            ' sc ': ' ',
+            ' afc ': ' ',
+            ' u23 ': ' ',
+            ' u21 ': ' ',
+            ' u19 ': ' ',
+            ' women ': ' ',
+            ' wfc ': ' ',
+            ' calcio ': ' ',
+        }
+        padded = f' {key} '
+        for src, dst in replacements.items():
+            padded = padded.replace(src, dst)
+        return ' '.join(padded.split())
 
     def _rows_to_context(self, match: Match, home_row: dict[str, Any], away_row: dict[str, Any], partial: bool = False) -> MatchContext:
         home_played = max(self._to_float(home_row, 'intPlayed', 'played', 'gamesPlayed', 'games') or 0.0, 1.0)

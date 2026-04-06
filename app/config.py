@@ -89,10 +89,13 @@ class Settings(BaseSettings):
     espn_base_site_url: str = Field(default='https://site.api.espn.com/apis/site/v2', validation_alias=AliasChoices('ESPN_BASE_SITE_URL'))
     espn_base_core_url: str = Field(default='https://sports.core.api.espn.com/v2', validation_alias=AliasChoices('ESPN_BASE_CORE_URL'))
     espn_soccer_leagues: CsvList = Field(
-        default_factory=lambda: ['eng.1', 'eng.2', 'eng.3', 'eng.4', 'esp.1', 'esp.2', 'ita.1', 'ita.2', 'ger.1', 'ger.2', 'fra.1', 'fra.2', 'ned.1', 'bel.1', 'por.1', 'sco.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'],
+        default_factory=lambda: ['eng.1', 'eng.2', 'eng.3', 'eng.4', 'eng.5', 'esp.1', 'esp.2', 'ita.1', 'ita.2', 'ger.1', 'ger.2', 'fra.1', 'fra.2', 'ned.1', 'ned.2', 'sco.1', 'sco.2', 'sco.3', 'sco.4', 'bel.1', 'por.1', 'den.1', 'nor.1', 'swe.1', 'tur.1', 'aut.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'],
         validation_alias=AliasChoices('ESPN_SOCCER_LEAGUES'),
     )
-    espn_max_matches: int = Field(default=120, validation_alias=AliasChoices('ESPN_MAX_MATCHES'))
+    espn_max_matches: int = Field(default=180, validation_alias=AliasChoices('ESPN_MAX_MATCHES'))
+    espn_event_match_threshold: float = Field(default=44.0, validation_alias=AliasChoices('ESPN_EVENT_MATCH_THRESHOLD'))
+    espn_slugs_per_run_limit: int = Field(default=30, validation_alias=AliasChoices('ESPN_SLUGS_PER_RUN_LIMIT'))
+    espn_form_only_context_confidence: float = Field(default=53.0, validation_alias=AliasChoices('ESPN_FORM_ONLY_CONTEXT_CONFIDENCE'))
 
     thesportsdb_api_key: str = Field(default='123', validation_alias=AliasChoices('THESPORTSDB_API_KEY'))
     thesportsdb_base_url: str = Field(default='https://www.thesportsdb.com/api/v1/json', validation_alias=AliasChoices('THESPORTSDB_BASE_URL'))
@@ -167,7 +170,8 @@ class Settings(BaseSettings):
     espn_allow_partial_context: bool = Field(default=True, validation_alias=AliasChoices('ESPN_ALLOW_PARTIAL_CONTEXT'))
     espn_soft_fail_statuses: CsvList = Field(default_factory=lambda: ['400', '404'], validation_alias=AliasChoices('ESPN_SOFT_FAIL_STATUSES'))
     thesportsdb_allow_partial_context: bool = Field(default=True, validation_alias=AliasChoices('THESPORTSDB_ALLOW_PARTIAL_CONTEXT'))
-    thesportsdb_partial_match_threshold: float = Field(default=0.58, validation_alias=AliasChoices('THESPORTSDB_PARTIAL_MATCH_THRESHOLD'))
+    thesportsdb_partial_match_threshold: float = Field(default=0.52, validation_alias=AliasChoices('THESPORTSDB_PARTIAL_MATCH_THRESHOLD'))
+    thesportsdb_league_match_threshold: float = Field(default=0.60, validation_alias=AliasChoices('THESPORTSDB_LEAGUE_MATCH_THRESHOLD'))
     fallback_publish_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices('FALLBACK_PUBLISH_MODE_ENABLED'))
     fallback_publish_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_EV_PCT'))
     fallback_publish_min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_EDGE_PCT'))

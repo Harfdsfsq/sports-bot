@@ -55,6 +55,23 @@ ESPN_SOCCER_LEAGUE_ALIASES = {
     'europa league': 'uefa.europa',
     'uefa europa conference league': 'uefa.europa.conf',
     'conference league': 'uefa.europa.conf',
+    'english national league': 'eng.5',
+    'national league': 'eng.5',
+    'netherlands eerste divisie': 'ned.2',
+    'eerste divisie': 'ned.2',
+    'netherlands tweede divisie': 'ned.3',
+    'scottish championship': 'sco.2',
+    'scottish league one': 'sco.3',
+    'scottish league two': 'sco.4',
+    'norwegian eliteserien': 'nor.1',
+    'eliteserien': 'nor.1',
+    'danish superliga': 'den.1',
+    'superliga': 'den.1',
+    'swedish allsvenskan': 'swe.1',
+    'allsvenskan': 'swe.1',
+    'turkish super lig': 'tur.1',
+    'super lig': 'tur.1',
+    'austrian bundesliga': 'aut.1',
 }
 
 
@@ -202,15 +219,25 @@ class EspnContextProvider:
                     discovered.append(slug)
         elif self.allowed_leagues:
             discovered = [slug for slug in discovered if slug in self.allowed_leagues]
-        return discovered[: max(1, len(self.allowed_leagues) or 12)]
+        limit = max(1, int(getattr(self.settings, 'espn_slugs_per_run_limit', 30) or 30))
+        return discovered[:limit]
 
     def _league_slug(self, league_name: str) -> str | None:
         key = canonicalize_league_name(league_name)
-        if key in ESPN_SOCCER_LEAGUE_ALIASES:
-            return ESPN_SOCCER_LEAGUE_ALIASES[key]
-        for alias, slug in ESPN_SOCCER_LEAGUE_ALIASES.items():
-            if alias in key or key in alias:
-                return slug
+        candidates = [key]
+        compact = key.replace(' - ', ' ').replace('-', ' ')
+        if compact not in candidates:
+            candidates.append(compact)
+        simplified = compact.replace('first division', 'league one').replace('second division', 'league two').replace('1st division', 'league one').replace('2nd division', 'league two')
+        if simplified not in candidates:
+            candidates.append(simplified)
+        for candidate in candidates:
+            if candidate in ESPN_SOCCER_LEAGUE_ALIASES:
+                return ESPN_SOCCER_LEAGUE_ALIASES[candidate]
+        for candidate in candidates:
+            for alias, slug in ESPN_SOCCER_LEAGUE_ALIASES.items():
+                if alias in candidate or candidate in alias:
+                    return slug
         return None
 
     @staticmethod
@@ -256,7 +283,8 @@ class EspnContextProvider:
                 best_quality = quality
                 best_event = event
                 best_slug = slug
-        return (best_event, best_slug, best_quality) if best_score >= 48.0 else (None, None, None)
+        threshold = float(getattr(self.settings, 'espn_event_match_threshold', 44.0) or 44.0)
+        return (best_event, best_slug, best_quality) if best_score >= threshold else (None, None, None)
 
     async def _build_context(
         self,
@@ -354,9 +382,15 @@ class EspnContextProvider:
                 away_prob = 1.0 - home_prob - draw_prob
             elif getattr(self.settings, 'espn_allow_partial_context', True):
                 partial_context = True
-                draw_prob = 0.26 if draw_prob is None else draw_prob
-                home_prob = 0.39 if home_prob is None else home_prob
-                away_prob = 1.0 - home_prob - draw_prob if away_prob is None else away_prob
+                if home_form is not None or away_form is not None:
+                    base_home = 0.39 + ((home_form or 0.5) - (away_form or 0.5)) * 0.16
+                    draw_prob = 0.25 if draw_prob is None else draw_prob
+                    home_prob = base_home if home_prob is None else home_prob
+                    away_prob = 1.0 - home_prob - draw_prob if away_prob is None else away_prob
+                else:
+                    draw_prob = 0.26 if draw_prob is None else draw_prob
+                    home_prob = 0.39 if home_prob is None else home_prob
+                    away_prob = 1.0 - home_prob - draw_prob if away_prob is None else away_prob
             else:
                 return None
 
@@ -385,7 +419,7 @@ class EspnContextProvider:
         if home_injuries or away_injuries:
             confidence += 1.0
         if partial_context:
-            confidence -= 7.0
+            confidence = float(getattr(self.settings, 'espn_form_only_context_confidence', 53.0) or 53.0) if summary_payload is None else confidence - 7.0
             stats['partial_contexts_built'] += 1
         confidence = clamp(confidence, 50.0, 74.0)
 
