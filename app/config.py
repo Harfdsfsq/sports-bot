@@ -111,6 +111,13 @@ class Settings(BaseSettings):
     signal_weight_injuries: float = Field(default=0.07, validation_alias=AliasChoices('SIGNAL_WEIGHT_INJURIES'))
     espn_query_all_allowed_when_unmapped: bool = Field(default=True, validation_alias=AliasChoices('ESPN_QUERY_ALL_ALLOWED_WHEN_UNMAPPED'))
     espn_enable_injuries: bool = Field(default=True, validation_alias=AliasChoices('ESPN_ENABLE_INJURIES'))
+    espn_enable_news_context: bool = Field(default=True, validation_alias=AliasChoices('ESPN_ENABLE_NEWS_CONTEXT'))
+    espn_injury_out_weight: float = Field(default=1.00, validation_alias=AliasChoices('ESPN_INJURY_OUT_WEIGHT'))
+    espn_injury_doubtful_weight: float = Field(default=0.45, validation_alias=AliasChoices('ESPN_INJURY_DOUBTFUL_WEIGHT'))
+    espn_injury_suspension_weight: float = Field(default=0.85, validation_alias=AliasChoices('ESPN_INJURY_SUSPENSION_WEIGHT'))
+    espn_injury_questionable_weight: float = Field(default=0.35, validation_alias=AliasChoices('ESPN_INJURY_QUESTIONABLE_WEIGHT'))
+    espn_news_absence_penalty_per_point: float = Field(default=0.05, validation_alias=AliasChoices('ESPN_NEWS_ABSENCE_PENALTY_PER_POINT'))
+    thesportsdb_team_alias_relaxed: bool = Field(default=True, validation_alias=AliasChoices('THESPORTSDB_TEAM_ALIAS_RELAXED'))
 
     bookies_api_enabled: bool = Field(default=False, validation_alias=AliasChoices('BOOKIES_API_ENABLED'))
     bookies_api_login: str | None = Field(default=None, validation_alias=AliasChoices('BOOKIES_API_LOGIN'))

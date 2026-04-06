@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import Counter
+import re
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -403,11 +404,12 @@ class EspnContextProvider:
             away_form=away_form,
         )
 
-        home_injuries = away_injuries = 0
+        home_injuries = away_injuries = 0.0
         if summary_payload and getattr(self.settings, 'espn_enable_injuries', True):
             home_injuries, away_injuries = self._extract_injury_counts(summary_payload, match.home_team, match.away_team)
-            expected_home = clamp(expected_home - min(home_injuries, 4) * 0.07, 0.25, 3.4)
-            expected_away = clamp(expected_away - min(away_injuries, 4) * 0.07, 0.25, 3.2)
+            penalty = float(getattr(self.settings, 'espn_news_absence_penalty_per_point', 0.05) or 0.05)
+            expected_home = clamp(expected_home - min(float(home_injuries), 5.0) * penalty, 0.25, 3.4)
+            expected_away = clamp(expected_away - min(float(away_injuries), 5.0) * penalty, 0.25, 3.2)
 
         confidence = 57.0
         if summary_payload is not None:
@@ -442,6 +444,8 @@ class EspnContextProvider:
                 'espn_away_injuries': away_injuries,
                 'home_injuries': home_injuries,
                 'away_injuries': away_injuries,
+                'home_absences': home_injuries,
+                'away_absences': away_injuries,
                 'espn_partial_context': partial_context,
             },
         )
@@ -462,6 +466,71 @@ class EspnContextProvider:
             return None
         predictor = payload.get('predictor')
         return predictor if isinstance(predictor, dict) else None
+
+    @staticmethod
+    def _team_aliases(team_name: str) -> set[str]:
+        key = canonicalize_team_name(team_name)
+        if not key:
+            return set()
+        aliases = {key}
+        padded = f" {key} "
+        replacements = {
+            ' football club ': ' ',
+            ' futbol club ': ' ',
+            ' soccer club ': ' ',
+            ' association football club ': ' ',
+            ' athletic club ': ' ',
+            ' united ': ' utd ',
+            ' utd ': ' united ',
+            ' saint ': ' st ',
+            ' st ': ' saint ',
+            ' club ': ' ',
+            ' fc ': ' ',
+            ' cf ': ' ',
+            ' sc ': ' ',
+            ' ac ': ' ',
+            ' afc ': ' ',
+            ' u23 ': ' ',
+            ' u21 ': ' ',
+            ' u20 ': ' ',
+            ' u19 ': ' ',
+        }
+        aliases.add(' '.join(padded.split()))
+        for src, dst in replacements.items():
+            aliases.add(' '.join(padded.replace(src, dst).split()))
+            aliases.add(' '.join(padded.replace(src, ' ').split()))
+        return {item for item in aliases if item}
+
+    @classmethod
+    def _match_team_bucket(cls, team_text: str, home_team: str, away_team: str) -> str | None:
+        candidate = canonicalize_team_name(team_text)
+        if not candidate:
+            return None
+        home_aliases = cls._team_aliases(home_team)
+        away_aliases = cls._team_aliases(away_team)
+        if candidate in home_aliases:
+            return 'home'
+        if candidate in away_aliases:
+            return 'away'
+        for alias in home_aliases:
+            if alias and (alias in candidate or candidate in alias):
+                return 'home'
+        for alias in away_aliases:
+            if alias and (alias in candidate or candidate in alias):
+                return 'away'
+        return None
+
+    def _absence_weight(self, text: str) -> float:
+        lower = str(text or '').lower()
+        if any(token in lower for token in ('suspend', 'red card', 'banned')):
+            return float(getattr(self.settings, 'espn_injury_suspension_weight', 0.85) or 0.85)
+        if any(token in lower for token in ('out', 'ruled out', 'inactive', 'missing')):
+            return float(getattr(self.settings, 'espn_injury_out_weight', 1.0) or 1.0)
+        if any(token in lower for token in ('doubt', 'doubtful')):
+            return float(getattr(self.settings, 'espn_injury_doubtful_weight', 0.45) or 0.45)
+        if any(token in lower for token in ('question', 'day-to-day', 'fitness test')):
+            return float(getattr(self.settings, 'espn_injury_questionable_weight', 0.35) or 0.35)
+        return 0.0
 
     @staticmethod
     def _extract_injury_counts(payload: dict[str, Any], home_team: str, away_team: str) -> tuple[int, int]:

@@ -263,6 +263,13 @@ class TheSportsDbContextProvider:
             ' women ': ' ',
             ' wfc ': ' ',
             ' calcio ': ' ',
+            ' united ': ' utd ',
+            ' utd ': ' united ',
+            ' saint ': ' st ',
+            ' st ': ' saint ',
+            ' deportivo ': ' depo ',
+            ' athletic ': ' ath ',
+            ' atletico ': ' atleti ',
         }
         padded = f' {key} '
         for src, dst in replacements.items():

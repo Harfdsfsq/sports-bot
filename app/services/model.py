@@ -1129,7 +1129,7 @@ class CandidateFactory:
             return None
         home_inj = float(home_inj or 0.0)
         away_inj = float(away_inj or 0.0)
-        delta = clamp((away_inj - home_inj) * 0.025, -0.10, 0.10)
+        delta = clamp((away_inj - home_inj) * 0.03, -0.12, 0.12)
         draw = clamp(0.24, 0.16, 0.28)
         home = 0.38 + delta
         away = 1.0 - home - draw
@@ -1345,8 +1345,10 @@ class CandidateFactory:
             labels.append('attack_defense')
         if self._first_float(details, 'home_rest_days', 'espn_home_rest_days') is not None:
             labels.append('rest')
-        if self._first_float(details, 'home_injuries', 'espn_home_injuries') is not None:
+        if self._first_float(details, 'home_injuries', 'espn_home_injuries', 'home_absences') is not None or self._first_float(details, 'away_injuries', 'espn_away_injuries', 'away_absences') is not None:
             labels.append('injuries')
+        if self._first_float(details, 'home_absences', 'away_absences') is not None:
+            labels.append('news')
         return '+'.join(labels[:5])
 
     def _explicit_h2h_probabilities_dummy(self, context: MatchContext) -> bool:
