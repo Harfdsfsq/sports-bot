@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     enable_espn_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_ESPN_CONTEXT', 'ESPN_CONTEXT_ENABLED'))
     enable_thesportsdb_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_THESPORTSDB_CONTEXT', 'THESPORTSDB_CONTEXT_ENABLED'))
 
+    enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_PROVIDER_DIAGNOSTICS'))
+    diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices('DIAGNOSTICS_MATCH_LIMIT'))
+
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN'))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_CHAT_ID'))
 

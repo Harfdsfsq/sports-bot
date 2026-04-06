@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections import defaultdict
+from collections import Counter, defaultdict
 import json
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
@@ -100,14 +100,19 @@ class PredictionRunner:
                 empty_data={},
             )
 
-            contexts = self._merge_context_maps(
-                sstats_contexts,
-                api_football_contexts,
-                espn_contexts,
-                thesportsdb_contexts,
-            )
+            context_maps = {
+                'sstats': sstats_contexts,
+                'api_football': api_football_contexts,
+                'espn': espn_contexts,
+                'thesportsdb': thesportsdb_contexts,
+            }
+            contexts = self._merge_context_maps(*context_maps.values())
 
-            merged_offers = self._merge_offers(odds_api_io_offers, bookies_api_offers)
+            offer_maps = {
+                'odds_api_io': odds_api_io_offers,
+                'bookies_api': bookies_api_offers,
+            }
+            merged_offers = self._merge_offers(*offer_maps.values())
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts)
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
@@ -137,6 +142,16 @@ class PredictionRunner:
             mode_counts: dict[str, int] = defaultdict(int)
             for candidate in candidates:
                 mode_counts[str(candidate.model_mode)] += 1
+
+            provider_diagnostics = self._build_provider_diagnostics(
+                filtered_matches=filtered_matches,
+                offer_maps=offer_maps,
+                context_maps=context_maps,
+                merged_contexts=contexts,
+                raw_candidates=raw_candidates,
+                published_candidates=candidates,
+                source_stats=source_stats,
+            )
 
             summary = {
                 'current_time_utc': now_utc.isoformat(),
@@ -178,6 +193,7 @@ class PredictionRunner:
                 },
                 'rejections': rejections,
                 'candidate_modes': dict(mode_counts),
+                'provider_diagnostics': provider_diagnostics['summary'],
                 'exports': export_paths,
             }
 
@@ -205,6 +221,7 @@ class PredictionRunner:
                     'sample_matches': [self._serialize_match(item) for item in filtered_matches[:25]],
                     'sample_offers': self._serialize_offers(merged_offers, limit=25),
                     'sample_contexts': [self._serialize_context(item) for item in list(contexts.values())[:25]],
+                    'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
                     'model_debug': model_debug,
                     'candidates': [self._serialize_candidate(item) for item in candidates[:25]],
                     'telegram_messages': telegram_payloads,
@@ -497,3 +514,128 @@ class PredictionRunner:
                 if len(rows) >= limit:
                     return rows
         return rows
+
+
+    def _build_provider_diagnostics(
+        self,
+        *,
+        filtered_matches: list[Match],
+        offer_maps: dict[str, dict[str, list[Offer]]],
+        context_maps: dict[str, dict[str, MatchContext]],
+        merged_contexts: dict[str, MatchContext],
+        raw_candidates: list[CandidateBet],
+        published_candidates: list[CandidateBet],
+        source_stats: dict[str, dict[str, Any]],
+    ) -> dict[str, Any]:
+        if not getattr(self.settings, 'enable_provider_diagnostics', True):
+            return {'enabled': False, 'summary': {}, 'matches': []}
+
+        raw_by_match = Counter(str(item.match_key) for item in raw_candidates)
+        published_by_match = Counter(str(item.match_key) for item in published_candidates)
+        raw_modes_by_match: dict[str, list[str]] = defaultdict(list)
+        for item in raw_candidates:
+            key = str(item.match_key)
+            mode = str(item.model_mode)
+            if mode not in raw_modes_by_match[key]:
+                raw_modes_by_match[key].append(mode)
+        published_modes_by_match: dict[str, list[str]] = defaultdict(list)
+        for item in published_candidates:
+            key = str(item.match_key)
+            mode = str(item.model_mode)
+            if mode not in published_modes_by_match[key]:
+                published_modes_by_match[key].append(mode)
+
+        matches_payload: list[dict[str, Any]] = []
+        context_combo_counter: Counter[str] = Counter()
+        offer_combo_counter: Counter[str] = Counter()
+
+        limit = max(int(getattr(self.settings, 'diagnostics_match_limit', 150) or 150), 0)
+        for match in filtered_matches[:limit]:
+            context_sources = [name for name, mapping in context_maps.items() if mapping.get(match.match_key) is not None]
+            offer_sources = [name for name, mapping in offer_maps.items() if mapping.get(match.match_key)]
+            context_combo_key = '+'.join(context_sources) if context_sources else 'none'
+            offer_combo_key = '+'.join(offer_sources) if offer_sources else 'none'
+            context_combo_counter[context_combo_key] += 1
+            offer_combo_counter[offer_combo_key] += 1
+
+            offers = []
+            for source_name, mapping in offer_maps.items():
+                source_offers = list(mapping.get(match.match_key) or [])
+                if not source_offers:
+                    continue
+                families = Counter(str(item.family) for item in source_offers)
+                bookmakers = Counter(str(item.bookmaker) for item in source_offers)
+                offers.append({
+                    'source': source_name,
+                    'offers_count': len(source_offers),
+                    'families': dict(families),
+                    'top_bookmakers': [name for name, _ in bookmakers.most_common(5)],
+                })
+
+            contexts = []
+            for source_name, mapping in context_maps.items():
+                context = mapping.get(match.match_key)
+                if context is None:
+                    continue
+                details = getattr(context, 'details', None) or {}
+                contexts.append({
+                    'source': source_name,
+                    'confidence': getattr(context, 'confidence', None),
+                    'expected_home': getattr(context, 'expected_home', None),
+                    'expected_away': getattr(context, 'expected_away', None),
+                    'home_win_probability': getattr(context, 'home_win_probability', None),
+                    'away_win_probability': getattr(context, 'away_win_probability', None),
+                    'details_keys': sorted(list(details.keys()))[:12],
+                })
+
+            merged_context = merged_contexts.get(match.match_key)
+            merged_sources = []
+            if merged_context is not None:
+                merged_sources = list(((getattr(merged_context, 'details', None) or {}).get('merged_sources')) or [])
+
+            matches_payload.append({
+                'match_key': match.match_key,
+                'sport_key': match.sport_key,
+                'league_name': match.league_name,
+                'home_team': match.home_team,
+                'away_team': match.away_team,
+                'commence_time': match.commence_time.isoformat(),
+                'offer_sources': offer_sources,
+                'context_sources': context_sources,
+                'offers': offers,
+                'contexts': contexts,
+                'has_merged_context': merged_context is not None,
+                'merged_context_source': getattr(merged_context, 'source', None) if merged_context is not None else None,
+                'merged_context_sources': merged_sources,
+                'raw_candidate_count': raw_by_match.get(match.match_key, 0),
+                'published_candidate_count': published_by_match.get(match.match_key, 0),
+                'raw_candidate_modes': raw_modes_by_match.get(match.match_key, []),
+                'published_candidate_modes': published_modes_by_match.get(match.match_key, []),
+            })
+
+        provider_summary: dict[str, Any] = {}
+        for source_name, mapping in offer_maps.items():
+            provider_summary[source_name] = {
+                'type': 'offers',
+                'matches_with_data': sum(1 for _match_key, offers in (mapping or {}).items() if offers),
+                'items_total': sum(len(offers or []) for offers in (mapping or {}).values()),
+                'stats': source_stats.get(source_name, {}),
+            }
+        for source_name, mapping in context_maps.items():
+            provider_summary[source_name] = {
+                'type': 'context',
+                'matches_with_data': sum(1 for _match_key, context in (mapping or {}).items() if context is not None),
+                'items_total': sum(1 for _match_key, context in (mapping or {}).items() if context is not None),
+                'stats': source_stats.get(source_name, {}),
+            }
+
+        summary = {
+            'providers': provider_summary,
+            'matches_with_any_offer_source': sum(1 for match in filtered_matches if any((mapping.get(match.match_key) or []) for mapping in offer_maps.values())),
+            'matches_with_any_context_source': sum(1 for match in filtered_matches if any(mapping.get(match.match_key) is not None for mapping in context_maps.values())),
+            'matches_with_merged_context': sum(1 for match in filtered_matches if merged_contexts.get(match.match_key) is not None),
+            'context_source_combinations': dict(context_combo_counter),
+            'offer_source_combinations': dict(offer_combo_counter),
+        }
+
+        return {'enabled': True, 'summary': summary, 'matches': matches_payload}
