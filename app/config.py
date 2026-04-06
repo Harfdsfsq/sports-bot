@@ -146,6 +146,20 @@ class Settings(BaseSettings):
     min_expected_goals_value: float = Field(default=0.15, validation_alias=AliasChoices('MIN_EXPECTED_GOALS_VALUE'))
     max_expected_goals_value: float = Field(default=4.80, validation_alias=AliasChoices('MAX_EXPECTED_GOALS_VALUE'))
 
+
+    market_monitor_enabled: bool = Field(default=True, validation_alias=AliasChoices('MARKET_MONITOR_ENABLED'))
+    line_movement_signal_enabled: bool = Field(default=True, validation_alias=AliasChoices('LINE_MOVEMENT_SIGNAL_ENABLED'))
+    clv_tracking_enabled: bool = Field(default=True, validation_alias=AliasChoices('CLV_TRACKING_ENABLED'))
+    closing_line_monitor_enabled: bool = Field(default=True, validation_alias=AliasChoices('CLOSING_LINE_MONITOR_ENABLED'))
+    line_movement_min_delta_pct: float = Field(default=1.75, validation_alias=AliasChoices('LINE_MOVEMENT_MIN_DELTA_PCT'))
+    line_movement_confidence_bonus: float = Field(default=4.0, validation_alias=AliasChoices('LINE_MOVEMENT_CONFIDENCE_BONUS'))
+    line_movement_confidence_penalty: float = Field(default=3.0, validation_alias=AliasChoices('LINE_MOVEMENT_CONFIDENCE_PENALTY'))
+    max_consensus_dispersion_pct: float = Field(default=6.5, validation_alias=AliasChoices('MAX_CONSENSUS_DISPERSION_PCT'))
+    consensus_tight_confidence_bonus: float = Field(default=2.0, validation_alias=AliasChoices('CONSENSUS_TIGHT_CONFIDENCE_BONUS'))
+    market_snapshot_history_limit: int = Field(default=96, validation_alias=AliasChoices('MARKET_SNAPSHOT_HISTORY_LIMIT'))
+    clv_resolve_grace_minutes: int = Field(default=45, validation_alias=AliasChoices('CLV_RESOLVE_GRACE_MINUTES'))
+    market_monitor_subdir: str = Field(default='market-monitor', validation_alias=AliasChoices('MARKET_MONITOR_SUBDIR'))
+
     @field_validator(
         'run_sports',
         'target_bookmakers',

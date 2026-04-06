@@ -10,6 +10,7 @@ from typing import Any
 
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, Offer
+from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.telegram import TelegramPublisher
 from app.state import JsonStateStore
@@ -27,6 +28,7 @@ class PredictionRunner:
         self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
         self.thesportsdb = self._safe_provider('app.providers.thesportsdb', 'TheSportsDbContextProvider')
         self.factory = CandidateFactory(settings)
+        self.market_monitor = MarketMonitor(settings) if getattr(settings, 'market_monitor_enabled', True) else None
         self.telegram = TelegramPublisher(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
 
@@ -113,7 +115,12 @@ class PredictionRunner:
                 'bookies_api': bookies_api_offers,
             }
             merged_offers = self._merge_offers(*offer_maps.values())
-            raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts)
+            market_signals: dict[str, dict[str, Any]] = {}
+            market_monitor_stats: dict[str, Any] = {'enabled': False}
+            market_monitor_preview: dict[str, Any] = {}
+            if self.market_monitor is not None:
+                market_signals, market_monitor_stats, market_monitor_preview = self.market_monitor.build_signals(filtered_matches, merged_offers, now_utc)
+            raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
             candidates = []
@@ -128,6 +135,7 @@ class PredictionRunner:
             sent_messages, telegram_payloads = await self.telegram.publish(candidates)
             published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
             telegram_picks_sent = len(candidates) if sent_messages > 0 else 0
+            clv_record_stats = self.market_monitor.record_published_candidates(candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
             export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, candidates)
 
             source_stats = {
@@ -138,6 +146,7 @@ class PredictionRunner:
                 'api_football': api_football_stats,
                 'espn': espn_stats,
                 'thesportsdb': thesportsdb_stats,
+                'market_monitor': market_monitor_stats,
             }
             mode_counts: dict[str, int] = defaultdict(int)
             for candidate in candidates:
@@ -194,6 +203,10 @@ class PredictionRunner:
                 'rejections': rejections,
                 'candidate_modes': dict(mode_counts),
                 'provider_diagnostics': provider_diagnostics['summary'],
+                'market_monitor': {
+                    **market_monitor_stats,
+                    'clv_tracked_now': clv_record_stats.get('tracked', 0),
+                },
                 'exports': export_paths,
             }
 
@@ -217,6 +230,7 @@ class PredictionRunner:
                         'api_football': api_football_preview,
                         'espn': espn_preview,
                         'thesportsdb': thesportsdb_preview,
+                        'market_monitor': market_monitor_preview,
                     },
                     'sample_matches': [self._serialize_match(item) for item in filtered_matches[:25]],
                     'sample_offers': self._serialize_offers(merged_offers, limit=25),

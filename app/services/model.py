@@ -30,16 +30,19 @@ class CandidateFactory:
         self.settings = settings
         self.target_books = {self._norm_book(item) for item in settings.target_bookmakers}
         self.consensus_books = {self._norm_book(item) for item in settings.consensus_bookmakers}
+        self._market_signals_by_match: dict[str, dict[str, Any]] = {}
 
     def build_candidates(
         self,
         matches: list[Match],
         offers_by_match: dict[str, list[Offer]],
         contexts_by_match: dict[str, Any],
+        market_signals_by_match: dict[str, dict[str, Any]] | None = None,
     ) -> tuple[list[CandidateBet], dict[str, int], dict[str, Any]]:
         candidates: list[CandidateBet] = []
         rejections: dict[str, int] = defaultdict(int)
         debug_rows: list[dict[str, Any]] = []
+        self._market_signals_by_match = market_signals_by_match or {}
         matches_by_key = {m.match_key: m for m in matches}
 
         for match_key, offers in offers_by_match.items():
@@ -85,6 +88,7 @@ class CandidateFactory:
                         'context_mode': picked.source_summary.get('context_mode'),
                         'selected_bookmaker': picked.source_summary.get('selected_bookmaker'),
                         'selected_source': picked.source_summary.get('selected_source'),
+                        'market_movement': picked.source_summary.get('market_movement'),
                         'market_probability': round(float(picked.market_probability), 4),
                         'model_probability': round(float(picked.model_probability), 4),
                         'adjusted_probability': round(float(picked.adjusted_probability), 4),
@@ -489,6 +493,7 @@ class CandidateFactory:
         expected_away: float | None,
         model_mode: str,
         context: MatchContext | None,
+        market_signal: dict[str, Any] | None = None,
     ) -> CandidateBet | None:
         if not self._is_valid_probability(model_prob) or not self._is_valid_probability(market_prob):
             return None
@@ -507,6 +512,19 @@ class CandidateFactory:
 
         market_prob = clamp(float(market_prob), 0.02, 0.98)
         model_prob = clamp(float(model_prob), 0.02, 0.98)
+
+        market_signal = market_signal or self._market_signal_for_bucket(match.match_key, family, offers, point)
+        market_signal_key = None
+        steam_delta = None
+        movement_label = None
+        dispersion_pct = None
+        best_vs_consensus_edge_pct = None
+        if isinstance(market_signal, dict):
+            market_signal_key = self._market_signal_key(family, str(getattr(offers[0], 'selection', '') or ''), point, str(getattr(offers[0], 'team_side', '') or '')) if offers else None
+            steam_delta = self._to_float_safe(market_signal.get('delta_prob_pp'))
+            movement_label = str(market_signal.get('movement_label') or '') or None
+            dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
+            best_vs_consensus_edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct'))
 
         base_confidence = clamp(48 + len(books) * 4 + len(sources) * 5, 0, 100)
         context_confidence = float(getattr(context, 'confidence', 58.0) or 58.0) if context is not None else base_confidence
@@ -532,6 +550,14 @@ class CandidateFactory:
             shrink_max = 0.36
         elif context_source in {'ensemble', 'api_football', 'espn', 'thesportsdb'}:
             confidence = min(confidence + 2.0, 76.0)
+        if getattr(self.settings, 'line_movement_signal_enabled', True) and steam_delta is not None:
+            threshold = float(getattr(self.settings, 'line_movement_min_delta_pct', 1.75) or 1.75)
+            if steam_delta >= threshold:
+                confidence += float(getattr(self.settings, 'line_movement_confidence_bonus', 4.0) or 4.0)
+            elif steam_delta <= -threshold:
+                confidence -= float(getattr(self.settings, 'line_movement_confidence_penalty', 3.0) or 3.0)
+        if dispersion_pct is not None and dispersion_pct <= float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5):
+            confidence += float(getattr(self.settings, 'consensus_tight_confidence_bonus', 2.0) or 2.0)
         confidence = clamp(confidence, 0, 100)
 
         adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)
@@ -548,6 +574,14 @@ class CandidateFactory:
             reasons.append(f'context_confidence={context_confidence:.1f}')
         if len(books) == 1:
             reasons.append('single_book_guard=enabled')
+        if movement_label:
+            reasons.append(f'market_move={movement_label}')
+        if steam_delta is not None:
+            reasons.append(f'line_move_pp={steam_delta:+.2f}')
+        if best_vs_consensus_edge_pct is not None:
+            reasons.append(f'best_vs_consensus={best_vs_consensus_edge_pct:+.2f}%')
+        if dispersion_pct is not None:
+            reasons.append(f'consensus_dispersion={dispersion_pct:.2f}%')
 
         return CandidateBet(
             match_key=match.match_key,
@@ -592,8 +626,45 @@ class CandidateFactory:
                 'raw_model_probability': round(float(model_prob), 4),
                 'adjusted_probability': round(float(adjusted), 4),
                 'market_probability': round(float(market_prob), 4),
+                'market_signal_key': market_signal_key,
+                'market_movement': movement_label,
+                'line_move_pp': round(float(steam_delta), 3) if steam_delta is not None else None,
+                'consensus_dispersion_pct': round(float(dispersion_pct), 3) if dispersion_pct is not None else None,
+                'best_vs_consensus_edge_pct': round(float(best_vs_consensus_edge_pct), 3) if best_vs_consensus_edge_pct is not None else None,
             },
         )
+
+
+    def _market_signal_key(self, family: str, selection: str, point: float | None, team_side: str | None) -> str:
+        family_key = str(family or '').strip()
+        selection_key = str(selection or '').strip().lower()
+        point_key = '' if point is None else f'{float(point):.2f}'
+        team_key = str(team_side or '').strip().lower()
+        return '|'.join([family_key, selection_key, point_key, team_key])
+
+    def _market_signal_for_bucket(self, match_key: str, family: str, offers: list[Offer], point: float | None) -> dict[str, Any] | None:
+        mapping = self._market_signals_by_match.get(str(match_key)) or {}
+        if not mapping or not offers:
+            return None
+        first = offers[0]
+        key = self._market_signal_key(family, str(getattr(first, 'selection', '') or ''), point, str(getattr(first, 'team_side', '') or ''))
+        signal = mapping.get(key)
+        if isinstance(signal, dict):
+            return signal
+        return None
+
+
+    @staticmethod
+    def _to_float_safe(value: Any) -> float | None:
+        try:
+            if value in (None, ''):
+                return None
+            number = float(value)
+            if math.isnan(number) or math.isinf(number):
+                return None
+            return number
+        except Exception:
+            return None
 
     def _fair_market_probability_h2h(self, match: Match, offers: list[Offer], selection: str) -> float:
         selection_key = self._h2h_selection_key(match, selection)
