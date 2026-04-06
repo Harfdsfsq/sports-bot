@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from typing import Any
 
 import httpx
@@ -9,6 +10,8 @@ from app.schemas import Match, MatchContext
 from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, team_similarity
 
 LEAGUE_ALIASES = {
+    'italy serie a': 'italian serie a',
+    'italy serie b': 'italian serie b',
     'italy serie c': 'italian serie c',
     'italy serie c girone a': 'italian serie c',
     'italy serie c girone b': 'italian serie c',
@@ -24,9 +27,18 @@ LEAGUE_ALIASES = {
     'italian serie c group c': 'italian serie c',
     'england premier league': 'english premier league',
     'england championship': 'english league championship',
+    'england league one': 'english league one',
+    'england league two': 'english league two',
     'spain la liga': 'spanish la liga',
+    'spain la liga 2': 'spanish la liga 2',
     'germany bundesliga': 'german bundesliga',
+    'germany bundesliga 2': 'german bundesliga 2',
     'france ligue 1': 'french ligue 1',
+    'france ligue 2': 'french ligue 2',
+    'netherlands eredivisie': 'dutch eredivisie',
+    'belgium pro league': 'belgian pro league',
+    'portugal primeira liga': 'portuguese primeira liga',
+    'scotland premiership': 'scottish premiership',
 }
 
 
@@ -61,8 +73,9 @@ class TheSportsDbContextProvider:
         if not soccer_matches:
             return {}, stats, preview
 
-        league_names = sorted({match.league_name for match in soccer_matches})
-        max_leagues = max(1, int(self.settings.thesportsdb_max_leagues or 12))
+        counts = Counter(match.league_name for match in soccer_matches)
+        league_names = [name for name, _ in sorted(counts.items(), key=lambda item: (-item[1], self._normalize_league_key(item[0])))]
+        max_leagues = max(1, int(self.settings.thesportsdb_max_leagues or 24))
         if len(league_names) > max_leagues:
             league_names = league_names[:max_leagues]
             stats['league_limit_applied'] = max_leagues
@@ -142,17 +155,19 @@ class TheSportsDbContextProvider:
 
     def _resolve_league_ids(self, league_names: list[str], league_rows: list[dict[str, Any]]) -> dict[str, str]:
         resolved: dict[str, str] = {}
+        normalized_rows: list[tuple[str, str]] = []
+        for row in league_rows:
+            if str(row.get('strSport') or '').lower() != 'soccer':
+                continue
+            row_name = str(row.get('strLeague') or row.get('strLeagueAlternate') or '')
+            row_key = self._normalize_league_key(row_name)
+            if row_key:
+                normalized_rows.append((str(row.get('idLeague') or ''), row_key))
         for league_name in league_names:
             target = self._normalize_league_key(league_name)
             best_id: str | None = None
             best_score = 0.0
-            for row in league_rows:
-                if str(row.get('strSport') or '').lower() != 'soccer':
-                    continue
-                row_name = str(row.get('strLeague') or row.get('strLeagueAlternate') or '')
-                row_key = self._normalize_league_key(row_name)
-                if not row_key:
-                    continue
+            for league_id, row_key in normalized_rows:
                 if row_key == target:
                     score = 1.0
                 elif row_key in target or target in row_key:
@@ -161,8 +176,8 @@ class TheSportsDbContextProvider:
                     score = team_similarity(target, row_key)
                 if score > best_score:
                     best_score = score
-                    best_id = str(row.get('idLeague') or '')
-            if best_id and best_score >= 0.72:
+                    best_id = league_id
+            if best_id and best_score >= 0.68:
                 resolved[league_name] = best_id
         return resolved
 
@@ -178,7 +193,7 @@ class TheSportsDbContextProvider:
             if score > best_score:
                 best_score = score
                 best_row = row
-        return best_row if best_score >= 0.74 else None
+        return best_row if best_score >= 0.70 else None
 
     def _rows_to_context(self, match: Match, home_row: dict[str, Any], away_row: dict[str, Any]) -> MatchContext:
         home_played = max(self._to_float(home_row, 'intPlayed', 'played', 'gamesPlayed', 'games') or 0.0, 1.0)
@@ -190,6 +205,10 @@ class TheSportsDbContextProvider:
         home_ga = self._to_float(home_row, 'intGoalsAgainst', 'goalsagainst', 'ga', 'against') or 0.0
         away_gf = self._to_float(away_row, 'intGoalsFor', 'goalsfor', 'gf', 'for') or 0.0
         away_ga = self._to_float(away_row, 'intGoalsAgainst', 'goalsagainst', 'ga', 'against') or 0.0
+        home_wins = self._to_float(home_row, 'intWin', 'wins', 'win') or 0.0
+        home_draws = self._to_float(home_row, 'intDraw', 'draws', 'draw') or 0.0
+        away_wins = self._to_float(away_row, 'intWin', 'wins', 'win') or 0.0
+        away_draws = self._to_float(away_row, 'intDraw', 'draws', 'draw') or 0.0
 
         home_ppg = home_points / home_played
         away_ppg = away_points / away_played
@@ -197,11 +216,13 @@ class TheSportsDbContextProvider:
         home_ga_pg = home_ga / home_played
         away_gf_pg = away_gf / away_played
         away_ga_pg = away_ga / away_played
+        home_form_score = (home_wins + 0.5 * home_draws) / home_played
+        away_form_score = (away_wins + 0.5 * away_draws) / away_played
 
         expected_home = clamp(((home_gf_pg + away_ga_pg) / 2.0) + 0.16, 0.35, 3.2)
         expected_away = clamp(((away_gf_pg + home_ga_pg) / 2.0) - 0.04, 0.25, 3.0)
 
-        strength_delta = clamp((home_ppg - away_ppg) * 0.18 + 0.08, -0.38, 0.38)
+        strength_delta = clamp((home_ppg - away_ppg) * 0.18 + 0.08 + (home_form_score - away_form_score) * 0.10, -0.40, 0.40)
         draw_prob = clamp(0.25 - abs(strength_delta) * 0.16, 0.14, 0.30)
         home_prob = 0.38 + strength_delta
         away_prob = 1.0 - home_prob - draw_prob
@@ -212,7 +233,9 @@ class TheSportsDbContextProvider:
             confidence += 3.0
         if home_ppg > 0 and away_ppg > 0:
             confidence += 2.0
-        confidence = clamp(confidence, 57.0, 64.0)
+        if home_form_score > 0 and away_form_score > 0:
+            confidence += 1.0
+        confidence = clamp(confidence, 57.0, 66.0)
 
         return MatchContext(
             source='thesportsdb',
@@ -230,8 +253,20 @@ class TheSportsDbContextProvider:
                 'thesportsdb_home_ga_pg': round(home_ga_pg, 3),
                 'thesportsdb_away_gf_pg': round(away_gf_pg, 3),
                 'thesportsdb_away_ga_pg': round(away_ga_pg, 3),
+                'thesportsdb_home_form_score': round(home_form_score, 3),
+                'thesportsdb_away_form_score': round(away_form_score, 3),
+                'home_form': round(home_form_score, 3),
+                'away_form': round(away_form_score, 3),
+                'home_ppg': round(home_ppg, 3),
+                'away_ppg': round(away_ppg, 3),
+                'home_gf_pg': round(home_gf_pg, 3),
+                'home_ga_pg': round(home_ga_pg, 3),
+                'away_gf_pg': round(away_gf_pg, 3),
+                'away_ga_pg': round(away_ga_pg, 3),
                 'thesportsdb_home_rank': self._to_float(home_row, 'intRank', 'rank', 'position'),
                 'thesportsdb_away_rank': self._to_float(away_row, 'intRank', 'rank', 'position'),
+                'home_rank': self._to_float(home_row, 'intRank', 'rank', 'position'),
+                'away_rank': self._to_float(away_row, 'intRank', 'rank', 'position'),
             },
         )
 
@@ -267,6 +302,6 @@ class TheSportsDbContextProvider:
         for token in (' group a', ' group b', ' group c', ' girone a', ' girone b', ' girone c'):
             if key.endswith(token):
                 key = key[: -len(token)]
-        key = key.replace(' italy ', ' italian ').replace(' england ', ' english ').replace(' spain ', ' spanish ').replace(' germany ', ' german ').replace(' france ', ' french ')
+        key = key.replace(' italy ', ' italian ').replace(' england ', ' english ').replace(' spain ', ' spanish ').replace(' germany ', ' german ').replace(' france ', ' french ').replace(' netherlands ', ' dutch ').replace(' portugal ', ' portuguese ')
         key = ' '.join(key.split())
         return key

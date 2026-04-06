@@ -89,17 +89,25 @@ class Settings(BaseSettings):
     espn_base_site_url: str = Field(default='https://site.api.espn.com/apis/site/v2', validation_alias=AliasChoices('ESPN_BASE_SITE_URL'))
     espn_base_core_url: str = Field(default='https://sports.core.api.espn.com/v2', validation_alias=AliasChoices('ESPN_BASE_CORE_URL'))
     espn_soccer_leagues: CsvList = Field(
-        default_factory=lambda: ['eng.1', 'esp.1', 'ita.1', 'ger.1', 'fra.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'],
+        default_factory=lambda: ['eng.1', 'eng.2', 'eng.3', 'eng.4', 'esp.1', 'esp.2', 'ita.1', 'ita.2', 'ger.1', 'ger.2', 'fra.1', 'fra.2', 'ned.1', 'bel.1', 'por.1', 'sco.1', 'usa.1', 'uefa.champions', 'uefa.europa', 'uefa.europa.conf'],
         validation_alias=AliasChoices('ESPN_SOCCER_LEAGUES'),
     )
-    espn_max_matches: int = Field(default=24, validation_alias=AliasChoices('ESPN_MAX_MATCHES'))
+    espn_max_matches: int = Field(default=120, validation_alias=AliasChoices('ESPN_MAX_MATCHES'))
 
     thesportsdb_api_key: str = Field(default='123', validation_alias=AliasChoices('THESPORTSDB_API_KEY'))
     thesportsdb_base_url: str = Field(default='https://www.thesportsdb.com/api/v1/json', validation_alias=AliasChoices('THESPORTSDB_BASE_URL'))
     thesportsdb_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('THESPORTSDB_TIMEOUT_SECONDS'))
-    thesportsdb_max_leagues: int = Field(default=12, validation_alias=AliasChoices('THESPORTSDB_MAX_LEAGUES'))
+    thesportsdb_max_leagues: int = Field(default=24, validation_alias=AliasChoices('THESPORTSDB_MAX_LEAGUES'))
 
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices('BZZOIRO_API_KEY'))
+
+    signal_weight_explicit: float = Field(default=0.40, validation_alias=AliasChoices('SIGNAL_WEIGHT_EXPLICIT'))
+    signal_weight_xg: float = Field(default=0.34, validation_alias=AliasChoices('SIGNAL_WEIGHT_XG'))
+    signal_weight_strength: float = Field(default=0.16, validation_alias=AliasChoices('SIGNAL_WEIGHT_STRENGTH'))
+    signal_weight_momentum: float = Field(default=0.10, validation_alias=AliasChoices('SIGNAL_WEIGHT_MOMENTUM'))
+    signal_weight_injuries: float = Field(default=0.07, validation_alias=AliasChoices('SIGNAL_WEIGHT_INJURIES'))
+    espn_query_all_allowed_when_unmapped: bool = Field(default=True, validation_alias=AliasChoices('ESPN_QUERY_ALL_ALLOWED_WHEN_UNMAPPED'))
+    espn_enable_injuries: bool = Field(default=True, validation_alias=AliasChoices('ESPN_ENABLE_INJURIES'))
 
     bookies_api_enabled: bool = Field(default=False, validation_alias=AliasChoices('BOOKIES_API_ENABLED'))
     bookies_api_login: str | None = Field(default=None, validation_alias=AliasChoices('BOOKIES_API_LOGIN'))

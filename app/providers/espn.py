@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import Counter
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
@@ -13,25 +14,41 @@ ESPN_SOCCER_LEAGUE_ALIASES = {
     'epl': 'eng.1',
     'english premier league': 'eng.1',
     'premier league': 'eng.1',
-    'english championship': 'eng.2',
+    'england premier league': 'eng.1',
+    'english league championship': 'eng.2',
     'championship': 'eng.2',
+    'england championship': 'eng.2',
+    'league one': 'eng.3',
+    'england league one': 'eng.3',
+    'league two': 'eng.4',
+    'england league two': 'eng.4',
     'laliga': 'esp.1',
     'la liga': 'esp.1',
     'spanish laliga': 'esp.1',
+    'la liga 2': 'esp.2',
+    'spanish la liga 2': 'esp.2',
     'serie a': 'ita.1',
     'italian serie a': 'ita.1',
+    'serie b': 'ita.2',
+    'italian serie b': 'ita.2',
     'bundesliga': 'ger.1',
     'german bundesliga': 'ger.1',
+    'bundesliga 2': 'ger.2',
+    'german bundesliga 2': 'ger.2',
     'ligue 1': 'fra.1',
     'french ligue 1': 'fra.1',
+    'ligue 2': 'fra.2',
+    'french ligue 2': 'fra.2',
     'eredivisie': 'ned.1',
     'netherlands eredivisie': 'ned.1',
-    'primeira liga': 'por.1',
-    'portuguese primeira liga': 'por.1',
-    'super lig': 'tur.1',
-    'turkish super lig': 'tur.1',
     'jupiler pro league': 'bel.1',
     'belgian pro league': 'bel.1',
+    'primeira liga': 'por.1',
+    'portuguese primeira liga': 'por.1',
+    'scottish premiership': 'sco.1',
+    'scotland premiership': 'sco.1',
+    'mls': 'usa.1',
+    'major league soccer': 'usa.1',
     'uefa champions league': 'uefa.champions',
     'champions league': 'uefa.champions',
     'uefa europa league': 'uefa.europa',
@@ -47,7 +64,7 @@ class EspnContextProvider:
         self.site_base_url = (settings.espn_base_site_url or 'https://site.api.espn.com/apis/site/v2').rstrip('/')
         self.core_base_url = (settings.espn_base_core_url or 'https://sports.core.api.espn.com/v2').rstrip('/')
         self.timeout = float(settings.espn_timeout_seconds or 20.0)
-        self.allowed_leagues = {item.strip() for item in (settings.espn_soccer_leagues or []) if item and item.strip()}
+        self.allowed_leagues = [item.strip() for item in (settings.espn_soccer_leagues or []) if item and item.strip()]
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -63,6 +80,7 @@ class EspnContextProvider:
             'matched_loose': 0,
             'matched_fuzzy': 0,
             'league_slugs_used': [],
+            'injury_counts_seen': 0,
             'last_body_preview': None,
             'http_statuses': [],
         }
@@ -78,15 +96,13 @@ class EspnContextProvider:
         if not soccer_matches:
             return {}, stats, preview
 
-        prioritized = sorted(soccer_matches, key=lambda item: (item.commence_time, item.league_name, item.home_team))
-        max_matches = max(1, int(self.settings.espn_max_matches or 24))
+        prioritized = self._prioritize_matches(soccer_matches)
+        max_matches = max(1, int(self.settings.espn_max_matches or 120))
         if len(prioritized) > max_matches:
             prioritized = prioritized[:max_matches]
             stats['candidate_matches_limited_to'] = max_matches
 
-        slugs = sorted({slug for match in prioritized if (slug := self._league_slug(match.league_name))})
-        if self.allowed_leagues:
-            slugs = [slug for slug in slugs if slug in self.allowed_leagues]
+        slugs = self._candidate_slugs(prioritized)
         stats['league_slugs_used'] = slugs
         if not slugs:
             return {}, stats, preview
@@ -120,12 +136,14 @@ class EspnContextProvider:
                     events_by_slug[slug].extend(events)
 
             contexts: dict[str, MatchContext] = {}
+            all_events = [(slug, event) for slug, items in events_by_slug.items() for event in items]
             for match in prioritized:
-                slug = self._league_slug(match.league_name)
-                if not slug or slug not in events_by_slug:
-                    continue
-                event, quality = self._match_event(match, events_by_slug[slug], slug)
-                if event is None:
+                hinted_slug = self._league_slug(match.league_name)
+                search_pool = [(slug, event) for slug, event in all_events if slug == hinted_slug] if hinted_slug else []
+                if not search_pool:
+                    search_pool = all_events
+                event, slug, quality = self._match_event(match, search_pool)
+                if event is None or slug is None:
                     continue
                 stats['events_matched'] += 1
                 if quality == 'exact':
@@ -147,13 +165,42 @@ class EspnContextProvider:
                         }
                     )
 
-                context = await self._build_context(client, slug, event, stats, preview)
+                context = await self._build_context(client, match, slug, event, stats, preview)
                 if context is None:
                     continue
                 contexts[match.match_key] = context
                 stats['contexts_built'] += 1
+                injuries = (context.details or {}).get('espn_home_injuries', 0) + (context.details or {}).get('espn_away_injuries', 0)
+                stats['injury_counts_seen'] += int(injuries or 0)
 
         return contexts, stats, preview
+
+    def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
+        counts = Counter(match.league_name for match in matches)
+        return sorted(
+            matches,
+            key=lambda item: (
+                0 if self._league_slug(item.league_name) else 1,
+                -counts[item.league_name],
+                item.commence_time,
+                item.league_name,
+                item.home_team,
+            ),
+        )
+
+    def _candidate_slugs(self, matches: list[Match]) -> list[str]:
+        discovered = []
+        for match in matches:
+            slug = self._league_slug(match.league_name)
+            if slug and slug not in discovered:
+                discovered.append(slug)
+        if getattr(self.settings, 'espn_query_all_allowed_when_unmapped', True):
+            for slug in self.allowed_leagues:
+                if slug not in discovered:
+                    discovered.append(slug)
+        elif self.allowed_leagues:
+            discovered = [slug for slug in discovered if slug in self.allowed_leagues]
+        return discovered[: max(1, len(self.allowed_leagues) or 12)]
 
     def _league_slug(self, league_name: str) -> str | None:
         key = canonicalize_league_name(league_name)
@@ -180,11 +227,12 @@ class EspnContextProvider:
             return []
         return [event for event in events if isinstance(event, dict)]
 
-    def _match_event(self, match: Match, events: list[dict[str, Any]], slug: str) -> tuple[dict[str, Any] | None, str | None]:
+    def _match_event(self, match: Match, pool: list[tuple[str, dict[str, Any]]]) -> tuple[dict[str, Any] | None, str | None, str | None]:
         best_event: dict[str, Any] | None = None
+        best_slug: str | None = None
         best_quality: str | None = None
         best_score = 0.0
-        for event in events:
+        for slug, event in pool:
             start = self._event_start(event)
             if start is None:
                 continue
@@ -205,11 +253,13 @@ class EspnContextProvider:
                 best_score = score
                 best_quality = quality
                 best_event = event
-        return (best_event, best_quality) if best_score >= 48.0 else (None, None)
+                best_slug = slug
+        return (best_event, best_slug, best_quality) if best_score >= 48.0 else (None, None, None)
 
     async def _build_context(
         self,
         client: httpx.AsyncClient,
+        match: Match,
         slug: str,
         event: dict[str, Any],
         stats: dict[str, Any],
@@ -224,6 +274,7 @@ class EspnContextProvider:
         home_prob: float | None = None
         away_prob: float | None = None
         draw_prob: float | None = None
+        summary_payload: dict[str, Any] | None = None
 
         probability_url = f'{self.core_base_url}/sports/soccer/leagues/{slug}/events/{event_id}/competitions/{competition_id}/probabilities'
         stats['probability_requests'] += 1
@@ -248,31 +299,31 @@ class EspnContextProvider:
             else:
                 stats['response_errors'] += 1
 
-        summary_predictor: dict[str, Any] | None = None
-        if home_prob is None or away_prob is None:
-            summary_url = f'{self.site_base_url}/sports/soccer/{slug}/summary'
-            stats['summary_requests'] += 1
-            try:
-                response = await client.get(summary_url, params={'event': event_id})
-            except Exception as exc:
-                stats['response_errors'] += 1
-                stats['last_body_preview'] = f'summary request failed: {exc}'
-                response = None
-            if response is not None:
-                stats['http_statuses'].append(response.status_code)
-                stats['last_body_preview'] = response.text[:1200]
-                if response.status_code == 200:
-                    payload = self._safe_json(response)
-                    summary_predictor = self._extract_predictor(payload)
-                    if summary_predictor is not None:
-                        maybe_home = self._to_float((summary_predictor.get('homeTeam') or {}).get('gameProjection'))
-                        maybe_away = self._to_float((summary_predictor.get('awayTeam') or {}).get('gameProjection'))
+        summary_url = f'{self.site_base_url}/sports/soccer/{slug}/summary'
+        stats['summary_requests'] += 1
+        try:
+            response = await client.get(summary_url, params={'event': event_id})
+        except Exception as exc:
+            stats['response_errors'] += 1
+            stats['last_body_preview'] = f'summary request failed: {exc}'
+            response = None
+        if response is not None:
+            stats['http_statuses'].append(response.status_code)
+            stats['last_body_preview'] = response.text[:1200]
+            if response.status_code == 200:
+                payload = self._safe_json(response)
+                if isinstance(payload, dict):
+                    summary_payload = payload
+                    predictor = self._extract_predictor(payload)
+                    if predictor is not None and (home_prob is None or away_prob is None):
+                        maybe_home = self._to_float((predictor.get('homeTeam') or {}).get('gameProjection'))
+                        maybe_away = self._to_float((predictor.get('awayTeam') or {}).get('gameProjection'))
                         if maybe_home is not None:
                             home_prob = maybe_home / 100.0 if maybe_home > 1.0 else maybe_home
                         if maybe_away is not None:
                             away_prob = maybe_away / 100.0 if maybe_away > 1.0 else maybe_away
-                else:
-                    stats['response_errors'] += 1
+            else:
+                stats['response_errors'] += 1
 
         home_form = self._form_score(home_team)
         away_form = self._form_score(away_team)
@@ -293,14 +344,22 @@ class EspnContextProvider:
             away_form=away_form,
         )
 
-        confidence = 56.0
-        if summary_predictor is not None:
-            confidence += 5.0
+        home_injuries = away_injuries = 0
+        if summary_payload and getattr(self.settings, 'espn_enable_injuries', True):
+            home_injuries, away_injuries = self._extract_injury_counts(summary_payload, match.home_team, match.away_team)
+            expected_home = clamp(expected_home - min(home_injuries, 4) * 0.07, 0.25, 3.4)
+            expected_away = clamp(expected_away - min(away_injuries, 4) * 0.07, 0.25, 3.2)
+
+        confidence = 57.0
+        if summary_payload is not None:
+            confidence += 4.0
         if probs['home'] is not None and probs['away'] is not None:
             confidence += 6.0
         if home_form is not None and away_form is not None:
             confidence += 2.0
-        confidence = clamp(confidence, 56.0, 72.0)
+        if home_injuries or away_injuries:
+            confidence += 1.0
+        confidence = clamp(confidence, 56.0, 74.0)
 
         return MatchContext(
             source='espn',
@@ -317,6 +376,10 @@ class EspnContextProvider:
                 'espn_competition_id': competition_id,
                 'espn_home_form': home_form,
                 'espn_away_form': away_form,
+                'espn_home_injuries': home_injuries,
+                'espn_away_injuries': away_injuries,
+                'home_injuries': home_injuries,
+                'away_injuries': away_injuries,
             },
         )
 
@@ -336,6 +399,44 @@ class EspnContextProvider:
             return None
         predictor = payload.get('predictor')
         return predictor if isinstance(predictor, dict) else None
+
+    @staticmethod
+    def _extract_injury_counts(payload: dict[str, Any], home_team: str, away_team: str) -> tuple[int, int]:
+        home_key = canonicalize_team_name(home_team)
+        away_key = canonicalize_team_name(away_team)
+        home_count = 0
+        away_count = 0
+
+        def walk(node: Any) -> list[dict[str, Any]]:
+            found: list[dict[str, Any]] = []
+            if isinstance(node, dict):
+                for key, value in node.items():
+                    if key == 'injuries' and isinstance(value, list):
+                        found.extend(item for item in value if isinstance(item, dict))
+                    else:
+                        found.extend(walk(value))
+            elif isinstance(node, list):
+                for item in node:
+                    found.extend(walk(item))
+            return found
+
+        for item in walk(payload):
+            team_text = ' '.join(
+                str(item.get(key) or '')
+                for key in ('team', 'teamName', 'displayName', 'shortDisplayName', 'abbreviation')
+            ).strip()
+            team_key = canonicalize_team_name(team_text)
+            if not team_key:
+                raw_team = item.get('team')
+                if isinstance(raw_team, dict):
+                    team_key = canonicalize_team_name(
+                        str(raw_team.get('displayName') or raw_team.get('shortDisplayName') or raw_team.get('name') or '')
+                    )
+            if team_key == home_key:
+                home_count += 1
+            elif team_key == away_key:
+                away_count += 1
+        return home_count, away_count
 
     @staticmethod
     def _event_start(event: dict[str, Any]) -> datetime | None:
@@ -396,7 +497,7 @@ class EspnContextProvider:
 
     @staticmethod
     def _parse_form_text(value: str) -> float | None:
-        raw = ''.join(ch for ch in str(value or '').upper() if ch.isalnum())
+        raw = ''.join(ch for ch in str(value or '').upper() if ch.isalnum() or ch == '-')
         if not raw:
             return None
         letters = [ch for ch in raw if ch in {'W', 'D', 'L'}]

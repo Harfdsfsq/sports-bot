@@ -106,7 +106,7 @@ class CandidateFactory:
         context: MatchContext | None,
         rejections: dict[str, int],
     ) -> list[CandidateBet]:
-        xg = self._validated_expected_goals(context)
+        xg = self._enriched_expected_goals(match, context)
         if xg is None:
             rejections['missing_context_totals'] += 1
             return []
@@ -118,6 +118,7 @@ class CandidateFactory:
 
         allowed_total_points = {1.5, 2.5, 3.5, 4.5}
         expected_total = expected_home + expected_away
+        signal_label = self._signal_stack_label(context)
         result: list[CandidateBet] = []
         for (selection, point), bucket in buckets.items():
             low = str(selection or '').lower()
@@ -138,7 +139,8 @@ class CandidateFactory:
                 model_reason = 'context_total_probability'
             else:
                 over_prob = poisson_over_probability(expected_total, point)
-                model_reason = 'xg_total'
+                over_prob = self._adjust_total_probability(over_prob, point, expected_home, expected_away, context)
+                model_reason = 'xg_total_ensemble'
             if not self._is_valid_probability(over_prob):
                 rejections['missing_model_probability_totals'] += 1
                 continue
@@ -154,6 +156,7 @@ class CandidateFactory:
                 reasons=[
                     'mode=xg_total',
                     f'model={model_reason}',
+                    f'signals={signal_label}',
                     f'consensus_fair_odds={1 / max(float(market_prob), 0.01):.2f}',
                     f'line={point:g}',
                     f'context={self._context_label(context)}',
@@ -178,12 +181,14 @@ class CandidateFactory:
         if probs is None:
             rejections['missing_context_h2h'] += 1
             return []
+        xg = self._enriched_expected_goals(match, context)
 
         buckets: dict[str, list[Offer]] = defaultdict(list)
         for offer in offers:
             buckets[offer.selection].append(offer)
 
         result: list[CandidateBet] = []
+        signal_label = self._signal_stack_label(context)
         for selection, bucket in buckets.items():
             required_books = self._required_books_for_bucket('h2h', None, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
@@ -203,11 +208,12 @@ class CandidateFactory:
                 model_prob=model_prob,
                 reasons=[
                     'mode=soccer_context',
-                    'model=1x2_ensemble',
+                    'model=1x2_signal_stack',
+                    f'signals={signal_label}',
                     f'context={self._context_label(context)}',
                 ],
-                expected_home=self._validated_expected_goals(context)[0] if self._validated_expected_goals(context) else None,
-                expected_away=self._validated_expected_goals(context)[1] if self._validated_expected_goals(context) else None,
+                expected_home=xg[0] if xg else None,
+                expected_away=xg[1] if xg else None,
                 model_mode='soccer_context',
                 context=context,
             )
@@ -222,7 +228,7 @@ class CandidateFactory:
         context: MatchContext | None,
         rejections: dict[str, int],
     ) -> list[CandidateBet]:
-        xg = self._validated_expected_goals(context)
+        xg = self._enriched_expected_goals(match, context)
         if xg is None:
             rejections['missing_context_spreads'] += 1
             return []
@@ -255,7 +261,7 @@ class CandidateFactory:
                 offers=books,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=xg_spread', 'model=xg_spread', f'context={self._context_label(context)}'],
+                reasons=['mode=xg_spread', 'model=xg_spread_stack', f'signals={self._signal_stack_label(context)}', f'context={self._context_label(context)}'],
                 expected_home=expected_home,
                 expected_away=expected_away,
                 model_mode='xg_spread',
@@ -272,12 +278,13 @@ class CandidateFactory:
         context: MatchContext | None,
         rejections: dict[str, int],
     ) -> list[CandidateBet]:
-        xg = self._validated_expected_goals(context)
+        xg = self._enriched_expected_goals(match, context)
         if xg is None:
             rejections['missing_context_btts'] += 1
             return []
         expected_home, expected_away = xg
         yes_prob = self._btts_yes_probability(expected_home, expected_away)
+        yes_prob = self._adjust_btts_probability(yes_prob, expected_home, expected_away, context)
         if not self._is_valid_probability(yes_prob):
             rejections['missing_model_probability_btts'] += 1
             return []
@@ -287,6 +294,7 @@ class CandidateFactory:
             if key:
                 buckets[key].append(offer)
         result: list[CandidateBet] = []
+        signal_label = self._signal_stack_label(context)
         for key, bucket in buckets.items():
             required_books = self._required_books_for_bucket('btts', None, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
@@ -302,7 +310,7 @@ class CandidateFactory:
                 offers=bucket,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=btts_poisson', 'model=btts_from_xg', f'context={self._context_label(context)}'],
+                reasons=['mode=btts_poisson', 'model=btts_signal_stack', f'signals={signal_label}', f'context={self._context_label(context)}'],
                 expected_home=expected_home,
                 expected_away=expected_away,
                 model_mode='btts_poisson',
@@ -319,7 +327,7 @@ class CandidateFactory:
         context: MatchContext | None,
         rejections: dict[str, int],
     ) -> list[CandidateBet]:
-        xg = self._validated_expected_goals(context)
+        xg = self._enriched_expected_goals(match, context)
         if xg is None:
             rejections['missing_context_team_totals'] += 1
             return []
@@ -328,6 +336,7 @@ class CandidateFactory:
         for offer in offers:
             buckets[(offer.selection, offer.point, str(offer.team_side or '').lower())].append(offer)
         result: list[CandidateBet] = []
+        signal_label = self._signal_stack_label(context)
         for (selection, point, team_side), bucket in buckets.items():
             low = str(selection or '').lower()
             if point is None or team_side not in {'home', 'away'}:
@@ -340,6 +349,7 @@ class CandidateFactory:
                 continue
             lam = expected_home if team_side == 'home' else expected_away
             over_prob = poisson_over_probability(lam, float(point))
+            over_prob = self._adjust_team_total_probability(over_prob, lam, float(point), team_side, context)
             if not self._is_valid_probability(over_prob):
                 rejections['missing_model_probability_team_totals'] += 1
                 continue
@@ -355,7 +365,7 @@ class CandidateFactory:
                 offers=bucket,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=team_total_poisson', f'model={team_side}_team_total', f'context={self._context_label(context)}'],
+                reasons=['mode=team_total_poisson', f'model={team_side}_team_total_stack', f'signals={signal_label}', f'context={self._context_label(context)}'],
                 expected_home=expected_home,
                 expected_away=expected_away,
                 model_mode='team_total_poisson',
@@ -821,11 +831,74 @@ class CandidateFactory:
             return None
         return clamp(home, min_goal, max_goal), clamp(away, min_goal, max_goal)
 
+    def _enriched_expected_goals(self, match: Match, context: MatchContext | None) -> tuple[float, float] | None:
+        base = self._validated_expected_goals(context)
+        if base is None:
+            return None
+        home, away = base
+        details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
+        min_goal = float(getattr(self.settings, 'min_expected_goals_value', 0.15) or 0.15)
+
+        form_home = self._metric01(self._first_float(details, 'espn_home_form', 'home_form', 'api_football_home_form', 'thesportsdb_home_form_score'))
+        form_away = self._metric01(self._first_float(details, 'espn_away_form', 'away_form', 'api_football_away_form', 'thesportsdb_away_form_score'))
+        if form_home is not None and form_away is not None:
+            delta = clamp((form_home - form_away) * 0.22, -0.18, 0.18)
+            home += max(delta, 0.0) * 0.55
+            away += max(-delta, 0.0) * 0.55
+
+        ppg_home = self._first_float(details, 'thesportsdb_home_ppg', 'home_ppg', 'sstats_home_ppg')
+        ppg_away = self._first_float(details, 'thesportsdb_away_ppg', 'away_ppg', 'sstats_away_ppg')
+        if ppg_home is not None and ppg_away is not None:
+            delta = clamp((ppg_home - ppg_away) * 0.10, -0.16, 0.16)
+            home += max(delta, 0.0) * 0.60
+            away += max(-delta, 0.0) * 0.60
+
+        home_att = self._metric01(self._first_float(details, 'home_attack', 'api_football_home_attack', 'api_football_home_att', 'espn_home_attack'))
+        away_att = self._metric01(self._first_float(details, 'away_attack', 'api_football_away_attack', 'api_football_away_att', 'espn_away_attack'))
+        home_def = self._metric01(self._first_float(details, 'home_defense', 'api_football_home_defense', 'api_football_home_def', 'espn_home_defense'))
+        away_def = self._metric01(self._first_float(details, 'away_defense', 'api_football_away_defense', 'api_football_away_def', 'espn_away_defense'))
+        if home_att is not None:
+            home += (home_att - 0.5) * 0.35
+        if away_att is not None:
+            away += (away_att - 0.5) * 0.35
+        if away_def is not None:
+            home += (0.5 - away_def) * 0.30
+        if home_def is not None:
+            away += (0.5 - home_def) * 0.30
+
+        gf_home = self._first_float(details, 'thesportsdb_home_gf_pg', 'home_gf_pg', 'sstats_home_goals_for_pg')
+        ga_home = self._first_float(details, 'thesportsdb_home_ga_pg', 'home_ga_pg', 'sstats_home_goals_against_pg')
+        gf_away = self._first_float(details, 'thesportsdb_away_gf_pg', 'away_gf_pg', 'sstats_away_goals_for_pg')
+        ga_away = self._first_float(details, 'thesportsdb_away_ga_pg', 'away_ga_pg', 'sstats_away_goals_against_pg')
+        if gf_home is not None and ga_away is not None:
+            home = (home * 0.78) + (((gf_home + ga_away) / 2.0) * 0.22)
+        if gf_away is not None and ga_home is not None:
+            away = (away * 0.78) + (((gf_away + ga_home) / 2.0) * 0.22)
+
+        home_rest = self._first_float(details, 'home_rest_days', 'espn_home_rest_days', 'sstats_home_rest_days')
+        away_rest = self._first_float(details, 'away_rest_days', 'espn_away_rest_days', 'sstats_away_rest_days')
+        if home_rest is not None and away_rest is not None:
+            rest_delta = clamp((home_rest - away_rest) * 0.03, -0.12, 0.12)
+            home += max(rest_delta, 0.0)
+            away += max(-rest_delta, 0.0)
+
+        home_inj = self._first_float(details, 'home_injuries', 'espn_home_injuries', 'home_absences')
+        away_inj = self._first_float(details, 'away_injuries', 'espn_away_injuries', 'away_absences')
+        if home_inj is not None:
+            home -= min(home_inj, 4.0) * 0.07
+        if away_inj is not None:
+            away -= min(away_inj, 4.0) * 0.07
+
+        home = clamp(home, min_goal, max_goal)
+        away = clamp(away, min_goal, max_goal)
+        return home, away
+
     def _derive_h2h_probabilities(self, match: Match, context: MatchContext | None) -> dict[str, float] | None:
         if context is None:
             return None
         weighted_parts: list[tuple[dict[str, float], float]] = []
-        xg = self._validated_expected_goals(context)
+        xg = self._enriched_expected_goals(match, context)
         if xg is not None:
             expected_home, expected_away = xg
             denom = max(expected_home + expected_away, 0.1)
@@ -838,15 +911,23 @@ class CandidateFactory:
                 match.away_team: xg_away,
                 'draw': xg_draw,
                 'Draw': xg_draw,
-            }), 0.42))
+            }), float(getattr(self.settings, 'signal_weight_xg', 0.34) or 0.34)))
         explicit = self._explicit_h2h_probabilities(match, context)
         if explicit is not None:
             source = str(context.source or '')
-            explicit_weight = 0.52 if source in {'api_football', 'espn', 'ensemble', 'thesportsdb'} else 0.40
+            explicit_weight = float(getattr(self.settings, 'signal_weight_explicit', 0.40) or 0.40)
+            if source in {'api_football', 'espn', 'ensemble', 'thesportsdb'}:
+                explicit_weight += 0.05
             weighted_parts.append((explicit, explicit_weight))
         strength = self._strength_probabilities(match, context)
         if strength is not None:
-            weighted_parts.append((strength, 0.18))
+            weighted_parts.append((strength, float(getattr(self.settings, 'signal_weight_strength', 0.16) or 0.16)))
+        momentum = self._momentum_probabilities(match, context)
+        if momentum is not None:
+            weighted_parts.append((momentum, float(getattr(self.settings, 'signal_weight_momentum', 0.10) or 0.10)))
+        injury = self._injury_probabilities(match, context)
+        if injury is not None:
+            weighted_parts.append((injury, float(getattr(self.settings, 'signal_weight_injuries', 0.07) or 0.07)))
         if not weighted_parts:
             return None
         aggregate: dict[str, float] = defaultdict(float)
@@ -880,18 +961,18 @@ class CandidateFactory:
         details = dict(getattr(context, 'details', {}) or {})
         delta = 0.0
         parts = 0
-        ppg_home = self._first_float(details, 'thesportsdb_home_ppg', 'home_ppg')
-        ppg_away = self._first_float(details, 'thesportsdb_away_ppg', 'away_ppg')
+        ppg_home = self._first_float(details, 'thesportsdb_home_ppg', 'home_ppg', 'sstats_home_ppg')
+        ppg_away = self._first_float(details, 'thesportsdb_away_ppg', 'away_ppg', 'sstats_away_ppg')
         if ppg_home is not None and ppg_away is not None:
             delta += clamp((ppg_home - ppg_away) * 0.12, -0.18, 0.18)
             parts += 1
-        rank_home = self._first_float(details, 'thesportsdb_home_rank', 'home_rank')
-        rank_away = self._first_float(details, 'thesportsdb_away_rank', 'away_rank')
+        rank_home = self._first_float(details, 'thesportsdb_home_rank', 'home_rank', 'sstats_home_rank')
+        rank_away = self._first_float(details, 'thesportsdb_away_rank', 'away_rank', 'sstats_away_rank')
         if rank_home is not None and rank_away is not None:
             delta += clamp((rank_away - rank_home) * 0.015, -0.14, 0.14)
             parts += 1
-        form_home = self._first_float(details, 'espn_home_form', 'home_form')
-        form_away = self._first_float(details, 'espn_away_form', 'away_form')
+        form_home = self._metric01(self._first_float(details, 'espn_home_form', 'home_form', 'api_football_home_form', 'thesportsdb_home_form_score'))
+        form_away = self._metric01(self._first_float(details, 'espn_away_form', 'away_form', 'api_football_away_form', 'thesportsdb_away_form_score'))
         if form_home is not None and form_away is not None:
             delta += clamp((form_home - form_away) * 0.18, -0.12, 0.12)
             parts += 1
@@ -907,6 +988,47 @@ class CandidateFactory:
             'draw': draw,
             'Draw': draw,
         })
+
+    def _momentum_probabilities(self, match: Match, context: MatchContext) -> dict[str, float] | None:
+        details = dict(getattr(context, 'details', {}) or {})
+        delta = 0.0
+        parts = 0
+        home_att = self._metric01(self._first_float(details, 'home_attack', 'api_football_home_attack', 'api_football_home_att'))
+        away_att = self._metric01(self._first_float(details, 'away_attack', 'api_football_away_attack', 'api_football_away_att'))
+        home_def = self._metric01(self._first_float(details, 'home_defense', 'api_football_home_defense', 'api_football_home_def'))
+        away_def = self._metric01(self._first_float(details, 'away_defense', 'api_football_away_defense', 'api_football_away_def'))
+        if home_att is not None and away_def is not None:
+            delta += clamp((home_att - away_def) * 0.16, -0.14, 0.14)
+            parts += 1
+        if away_att is not None and home_def is not None:
+            delta += clamp((home_def - away_att) * -0.16, -0.14, 0.14)
+            parts += 1
+        home_rest = self._first_float(details, 'home_rest_days', 'espn_home_rest_days', 'sstats_home_rest_days')
+        away_rest = self._first_float(details, 'away_rest_days', 'espn_away_rest_days', 'sstats_away_rest_days')
+        if home_rest is not None and away_rest is not None:
+            delta += clamp((home_rest - away_rest) * 0.03, -0.08, 0.08)
+            parts += 1
+        if parts == 0:
+            return None
+        delta /= parts
+        draw = clamp(0.24 - abs(delta) * 0.18, 0.14, 0.30)
+        home = 0.38 + delta
+        away = 1.0 - home - draw
+        return self._normalize_probabilities({match.home_team: home, match.away_team: away, 'draw': draw, 'Draw': draw})
+
+    def _injury_probabilities(self, match: Match, context: MatchContext) -> dict[str, float] | None:
+        details = dict(getattr(context, 'details', {}) or {})
+        home_inj = self._first_float(details, 'home_injuries', 'espn_home_injuries', 'home_absences')
+        away_inj = self._first_float(details, 'away_injuries', 'espn_away_injuries', 'away_absences')
+        if home_inj is None and away_inj is None:
+            return None
+        home_inj = float(home_inj or 0.0)
+        away_inj = float(away_inj or 0.0)
+        delta = clamp((away_inj - home_inj) * 0.025, -0.10, 0.10)
+        draw = clamp(0.24, 0.16, 0.28)
+        home = 0.38 + delta
+        away = 1.0 - home - draw
+        return self._normalize_probabilities({match.home_team: home, match.away_team: away, 'draw': draw, 'Draw': draw})
 
     def _context_draw_probability(self, context: MatchContext | None) -> float | None:
         if context is None:
@@ -977,6 +1099,90 @@ class CandidateFactory:
                 return number
         return None
 
+    @staticmethod
+    def _metric01(value: Any) -> float | None:
+        try:
+            if value is None:
+                return None
+            number = float(value)
+        except Exception:
+            return None
+        if not math.isfinite(number):
+            return None
+        if number > 1.0:
+            number /= 100.0
+        return clamp(number, 0.0, 1.0)
+
+    def _adjust_total_probability(self, base_prob: float, point: float, expected_home: float, expected_away: float, context: MatchContext | None) -> float:
+        prob = clamp(float(base_prob), 0.02, 0.98)
+        details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        env = 0.0
+        form_home = self._metric01(self._first_float(details, 'espn_home_form', 'home_form', 'api_football_home_form'))
+        form_away = self._metric01(self._first_float(details, 'espn_away_form', 'away_form', 'api_football_away_form'))
+        if form_home is not None and form_away is not None:
+            env += ((form_home + form_away) - 1.0) * 0.05
+        gf_home = self._first_float(details, 'thesportsdb_home_gf_pg', 'home_gf_pg', 'sstats_home_goals_for_pg')
+        gf_away = self._first_float(details, 'thesportsdb_away_gf_pg', 'away_gf_pg', 'sstats_away_goals_for_pg')
+        ga_home = self._first_float(details, 'thesportsdb_home_ga_pg', 'home_ga_pg', 'sstats_home_goals_against_pg')
+        ga_away = self._first_float(details, 'thesportsdb_away_ga_pg', 'away_ga_pg', 'sstats_away_goals_against_pg')
+        if None not in {gf_home, gf_away, ga_home, ga_away}:
+            env += ((((gf_home or 0) + (gf_away or 0) + (ga_home or 0) + (ga_away or 0)) / 4.0) - 1.15) * 0.04
+        if point >= 3.5:
+            env *= 0.85
+        return clamp(prob + env, 0.02, 0.98)
+
+    def _adjust_btts_probability(self, base_prob: float, expected_home: float, expected_away: float, context: MatchContext | None) -> float:
+        prob = clamp(float(base_prob), 0.02, 0.98)
+        details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        boost = 0.0
+        if min(expected_home, expected_away) >= 0.9:
+            boost += 0.03
+        if min(expected_home, expected_away) <= 0.45:
+            boost -= 0.04
+        form_home = self._metric01(self._first_float(details, 'espn_home_form', 'home_form', 'api_football_home_form'))
+        form_away = self._metric01(self._first_float(details, 'espn_away_form', 'away_form', 'api_football_away_form'))
+        if form_home is not None and form_away is not None:
+            boost += ((form_home + form_away) - 1.0) * 0.03
+        return clamp(prob + boost, 0.02, 0.98)
+
+    def _adjust_team_total_probability(self, base_prob: float, lam: float, point: float, team_side: str, context: MatchContext | None) -> float:
+        prob = clamp(float(base_prob), 0.02, 0.98)
+        details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        att_key = 'api_football_home_attack' if team_side == 'home' else 'api_football_away_attack'
+        form_key = 'espn_home_form' if team_side == 'home' else 'espn_away_form'
+        boost = 0.0
+        attack = self._metric01(self._first_float(details, att_key, 'home_attack' if team_side == 'home' else 'away_attack'))
+        if attack is not None:
+            boost += (attack - 0.5) * 0.08
+        form = self._metric01(self._first_float(details, form_key, 'home_form' if team_side == 'home' else 'away_form'))
+        if form is not None:
+            boost += (form - 0.5) * 0.05
+        if lam < 0.75 and point >= 1.5:
+            boost -= 0.03
+        return clamp(prob + boost, 0.02, 0.98)
+
+    def _signal_stack_label(self, context: MatchContext | None) -> str:
+        if context is None:
+            return 'xg'
+        details = dict(getattr(context, 'details', {}) or {})
+        labels = ['xg']
+        if self._explicit_h2h_probabilities_dummy(context):
+            labels.append('explicit')
+        if self._first_float(details, 'thesportsdb_home_ppg', 'home_ppg', 'sstats_home_ppg') is not None:
+            labels.append('table')
+        if self._first_float(details, 'espn_home_form', 'home_form', 'api_football_home_form') is not None:
+            labels.append('form')
+        if self._first_float(details, 'api_football_home_attack', 'home_attack') is not None:
+            labels.append('attack_defense')
+        if self._first_float(details, 'home_rest_days', 'espn_home_rest_days') is not None:
+            labels.append('rest')
+        if self._first_float(details, 'home_injuries', 'espn_home_injuries') is not None:
+            labels.append('injuries')
+        return '+'.join(labels[:5])
+
+    def _explicit_h2h_probabilities_dummy(self, context: MatchContext) -> bool:
+        return self._safe_probability(getattr(context, 'home_win_probability', None)) is not None and self._safe_probability(getattr(context, 'away_win_probability', None)) is not None
+
     def _context_total_probability(self, context: MatchContext | None, point: float | None) -> float | None:
         if context is None or point is None:
             return None
@@ -1000,7 +1206,7 @@ class CandidateFactory:
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
         has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet'})
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
-        if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats', 'ensemble', 'api_football'}:
+        if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats', 'ensemble', 'api_football', 'espn', 'thesportsdb'}:
             return 1
         return base
 
