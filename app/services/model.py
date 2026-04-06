@@ -199,10 +199,19 @@ class CandidateFactory:
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
-            model_prob = probs.get(selection)
-            if model_prob is None:
+            raw_model_prob = probs.get(selection)
+            if raw_model_prob is None:
                 continue
             market_prob = self._fair_market_probability_h2h(match, offers, selection)
+            selection_key = self._h2h_selection_key(match, selection)
+            model_prob = self._calibrate_h2h_selection_probability(
+                match=match,
+                context=context,
+                selection_key=selection_key,
+                base_prob=float(raw_model_prob),
+                market_prob=market_prob,
+                xg=xg,
+            )
             candidate = self._candidate_from_bucket(
                 match=match,
                 family='h2h',
@@ -213,7 +222,7 @@ class CandidateFactory:
                 model_prob=model_prob,
                 reasons=[
                     'mode=soccer_context',
-                    'model=1x2_signal_stack',
+                    'model=1x2_market_calibrated',
                     f'signals={signal_label}',
                     f'context={self._context_label(context)}',
                 ],
@@ -306,7 +315,14 @@ class CandidateFactory:
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_yes_no(bucket, offers, key, selector=self._yes_no_key)
-            model_prob = float(yes_prob) if key == 'yes' else 1.0 - float(yes_prob)
+            model_prob = self._calibrate_btts_selection_probability(
+                selection_key=key,
+                yes_prob=float(yes_prob),
+                market_prob=market_prob,
+                expected_home=expected_home,
+                expected_away=expected_away,
+                context=context,
+            )
             candidate = self._candidate_from_bucket(
                 match=match,
                 family='btts',
@@ -315,7 +331,7 @@ class CandidateFactory:
                 offers=bucket,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=btts_poisson', 'model=btts_signal_stack', f'signals={signal_label}', f'context={self._context_label(context)}'],
+                reasons=['mode=btts_poisson', 'model=btts_market_calibrated', f'signals={signal_label}', f'context={self._context_label(context)}'],
                 expected_home=expected_home,
                 expected_away=expected_away,
                 model_mode='btts_poisson',
@@ -1234,6 +1250,70 @@ class CandidateFactory:
             boost += ((form_home + form_away) - 1.0) * 0.03
         return clamp(prob + boost, 0.02, 0.98)
 
+
+    def _calibrate_btts_selection_probability(
+        self,
+        selection_key: str,
+        yes_prob: float,
+        market_prob: float | None,
+        expected_home: float,
+        expected_away: float,
+        context: MatchContext | None,
+    ) -> float:
+        prob_yes = clamp(float(yes_prob), 0.02, 0.98)
+        over25 = self._context_total_probability(context, 2.5)
+        if over25 is not None:
+            synergy = float(getattr(self.settings, 'btts_over25_synergy_weight', 0.08) or 0.08)
+            prob_yes += (float(over25) - 0.50) * synergy
+        total_xg = max(float(expected_home) + float(expected_away), 0.1)
+        if total_xg >= 3.1:
+            prob_yes += 0.03
+        elif total_xg <= 1.9:
+            prob_yes -= 0.05
+        if min(float(expected_home), float(expected_away)) >= 0.85:
+            prob_yes += 0.025
+        elif min(float(expected_home), float(expected_away)) <= 0.45:
+            prob_yes -= 0.04
+        market = self._to_float_safe(market_prob)
+        if market is not None:
+            blend = float(getattr(self.settings, 'btts_market_prior_blend', 0.12) or 0.12)
+            prob_yes = prob_yes * (1.0 - blend) + market * blend
+        prob_yes = clamp(prob_yes, 0.02, 0.98)
+        return prob_yes if selection_key == 'yes' else clamp(1.0 - prob_yes, 0.02, 0.98)
+
+    def _calibrate_h2h_selection_probability(
+        self,
+        match: Match,
+        context: MatchContext | None,
+        selection_key: str | None,
+        base_prob: float,
+        market_prob: float | None,
+        xg: tuple[float, float] | None,
+    ) -> float:
+        prob = clamp(float(base_prob), 0.02, 0.98)
+        market = self._to_float_safe(market_prob)
+        side_blend = float(getattr(self.settings, 'h2h_market_prior_blend_side', 0.16) or 0.16)
+        draw_blend = float(getattr(self.settings, 'h2h_market_prior_blend_draw', 0.08) or 0.08)
+        if market is not None:
+            blend = draw_blend if selection_key == 'draw' else side_blend
+            source = str(getattr(context, 'source', '') or '')
+            if source in {'espn', 'api_football', 'ensemble'}:
+                blend = max(0.03, blend - 0.03)
+            prob = prob * (1.0 - blend) + market * blend
+        if xg is not None:
+            expected_home, expected_away = float(xg[0]), float(xg[1])
+            gap = expected_home - expected_away
+            if selection_key == 'home':
+                prob += clamp(gap * 0.05, -0.05, 0.05)
+            elif selection_key == 'away':
+                prob += clamp((-gap) * 0.05, -0.05, 0.05)
+            elif selection_key == 'draw':
+                prob -= clamp(abs(gap) * 0.06, 0.0, 0.12)
+        if selection_key == 'draw':
+            cap = float(getattr(self.settings, 'h2h_draw_probability_cap', 0.34) or 0.34)
+            return clamp(prob, 0.05, cap)
+        return clamp(prob, 0.04, 0.88)
+
     def _adjust_team_total_probability(self, base_prob: float, lam: float, point: float, team_side: str, context: MatchContext | None) -> float:
         prob = clamp(float(base_prob), 0.02, 0.98)
         details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
@@ -1391,11 +1471,56 @@ class CandidateFactory:
                     if not (item.sources_count >= 2 or float(item.confidence) >= 64.0 or edge_prob >= 0.10):
                         rejections['high_odds_form_guard'] += 1
                         continue
-            if item.family == 'h2h' and 'ничья' in str(item.selection).lower():
-                xg_pair = (item.expected_home, item.expected_away)
-                if xg_pair[0] is not None and xg_pair[1] is not None and abs(float(xg_pair[0]) - float(xg_pair[1])) > 0.85:
-                    rejections['draw_signal_too_imbalanced'] += 1
-                    continue
+            if item.family == 'h2h':
+                selection_text = str(item.selection or '').lower()
+                is_draw = 'ничья' in selection_text or selection_text == 'draw'
+                if is_draw:
+                    if float(item.confidence) < float(getattr(self.settings, 'h2h_draw_min_confidence', 61.0) or 61.0):
+                        rejections['h2h_draw_confidence_guard'] += 1
+                        continue
+                    if float(item.edge_pct) < float(getattr(self.settings, 'h2h_draw_min_edge_pct', 3.2) or 3.2):
+                        rejections['h2h_draw_edge_guard'] += 1
+                        continue
+                    if float(item.ev_pct) < float(getattr(self.settings, 'h2h_draw_min_ev_pct', 2.4) or 2.4):
+                        rejections['h2h_draw_ev_guard'] += 1
+                        continue
+                    xg_pair = (item.expected_home, item.expected_away)
+                    if xg_pair[0] is not None and xg_pair[1] is not None and abs(float(xg_pair[0]) - float(xg_pair[1])) > 0.85:
+                        rejections['draw_signal_too_imbalanced'] += 1
+                        continue
+                else:
+                    if float(item.confidence) < float(getattr(self.settings, 'h2h_side_min_confidence', 56.0) or 56.0):
+                        rejections['h2h_side_confidence_guard'] += 1
+                        continue
+                    if float(item.edge_pct) < float(getattr(self.settings, 'h2h_side_min_edge_pct', 2.0) or 2.0):
+                        rejections['h2h_side_edge_guard'] += 1
+                        continue
+                    if float(item.ev_pct) < float(getattr(self.settings, 'h2h_side_min_ev_pct', 1.4) or 1.4):
+                        rejections['h2h_side_ev_guard'] += 1
+                        continue
+            if item.family == 'btts':
+                selection_text = str(item.selection or '').lower()
+                is_yes = 'да' in selection_text or 'yes' in selection_text
+                if is_yes:
+                    if float(item.confidence) < float(getattr(self.settings, 'btts_yes_min_confidence', 56.0) or 56.0):
+                        rejections['btts_yes_confidence_guard'] += 1
+                        continue
+                    if float(item.edge_pct) < float(getattr(self.settings, 'btts_yes_min_edge_pct', 1.8) or 1.8):
+                        rejections['btts_yes_edge_guard'] += 1
+                        continue
+                    if float(item.ev_pct) < float(getattr(self.settings, 'btts_yes_min_ev_pct', 1.3) or 1.3):
+                        rejections['btts_yes_ev_guard'] += 1
+                        continue
+                else:
+                    if float(item.confidence) < float(getattr(self.settings, 'btts_no_min_confidence', 55.0) or 55.0):
+                        rejections['btts_no_confidence_guard'] += 1
+                        continue
+                    if float(item.edge_pct) < float(getattr(self.settings, 'btts_no_min_edge_pct', 1.6) or 1.6):
+                        rejections['btts_no_edge_guard'] += 1
+                        continue
+                    if float(item.ev_pct) < float(getattr(self.settings, 'btts_no_min_ev_pct', 1.1) or 1.1):
+                        rejections['btts_no_ev_guard'] += 1
+                        continue
             filtered.append(item)
 
         filtered.sort(key=self._candidate_rank_key, reverse=True)
