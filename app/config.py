@@ -270,6 +270,30 @@ class Settings(BaseSettings):
             return []
         return [item.strip() for item in text.split(',') if item.strip()]
 
+
+    bookmaker_alias_relaxed: bool = Field(default=True, validation_alias=AliasChoices('BOOKMAKER_ALIAS_RELAXED'))
+    allow_single_sharp_book: bool = Field(default=True, validation_alias=AliasChoices('ALLOW_SINGLE_SHARP_BOOK'))
+    single_sharp_min_confidence: float = Field(default=64.0, validation_alias=AliasChoices('SINGLE_SHARP_MIN_CONFIDENCE'))
+    single_sharp_min_edge_pct: float = Field(default=4.0, validation_alias=AliasChoices('SINGLE_SHARP_MIN_EDGE_PCT'))
+    min_weighted_books_for_consensus: float = Field(default=1.75, validation_alias=AliasChoices('MIN_WEIGHTED_BOOKS_FOR_CONSENSUS'))
+    sharp_bookmakers: CsvList = Field(
+        default_factory=lambda: ['Pinnacle', 'Betfair', 'SBOBET', 'Marathonbet', 'Bet365', 'Unibet'],
+        validation_alias=AliasChoices('SHARP_BOOKMAKERS'),
+    )
+    consensus_alias_groups: CsvList = Field(
+        default_factory=lambda: [
+            'bet365|bet365_4|bet 365',
+            'unibet|uni bet|uni-bet',
+            'pinnaclesports|pinnacle|pinny',
+            'betfair|bet fair|betfair exchange',
+            'sbobet|sbo bet',
+            'williamhill|william hill',
+            'marathonbet|marathon bet',
+            '1xbet|1xbetcom|1x bet',
+        ],
+        validation_alias=AliasChoices('CONSENSUS_ALIAS_GROUPS'),
+    )
+
     @field_validator('run_sports')
     @classmethod
     def normalize_sports(cls, value: list[str]) -> list[str]:

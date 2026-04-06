@@ -906,12 +906,17 @@ class CandidateFactory:
             return 'no'
         return None
 
+
     def _bookmaker_weight(self, bookmaker: str) -> float:
         normalized = self._norm_book(bookmaker)
+        sharp = {self._norm_book(item) for item in getattr(self.settings, 'sharp_bookmakers', []) or []}
         for raw_name, weight in BOOKMAKER_WEIGHTS.items():
             if self._norm_book(raw_name) == normalized:
-                return weight
-        return 1.0
+                base = float(weight)
+                if normalized in sharp:
+                    base = max(base, 1.1)
+                return base
+        return 1.1 if normalized in sharp else 1.0
 
     @staticmethod
     def _canonical_team(value: str) -> str:
@@ -1416,15 +1421,57 @@ class CandidateFactory:
             return None
         return clamp(float(direct), 0.02, 0.98)
 
+
+    def _alias_groups(self) -> dict[str, str]:
+        mapping: dict[str, str] = {}
+        raw_groups = list(getattr(self.settings, 'consensus_alias_groups', []) or [])
+        for raw in raw_groups:
+            tokens = [self._norm_book_base(part) for part in str(raw).split('|') if self._norm_book_base(part)]
+            if not tokens:
+                continue
+            canonical = tokens[0]
+            for token in tokens:
+                mapping[token] = canonical
+        return mapping
+
+    @staticmethod
+    def _norm_book_base(value: str) -> str:
+        text = str(value or '').strip().lower()
+        for needle in (' bookmaker', 'sportsbook', ' exchange'):
+            text = text.replace(needle, '')
+        text = text.replace('_', ' ').replace('-', ' ')
+        text = ''.join(ch for ch in text if ch.isalnum() or ch.isspace())
+        return ' '.join(text.split())
+
+    def _weighted_unique_books(self, offers: list[Offer]) -> float:
+        seen: dict[str, float] = {}
+        for offer in offers:
+            key = self._norm_book(offer.bookmaker)
+            if not key:
+                continue
+            seen[key] = max(seen.get(key, 0.0), self._bookmaker_weight(key))
+        return sum(min(weight, 1.15) for weight in seen.values())
+
+    def _has_sharp_book(self, offers: list[Offer]) -> bool:
+        sharp = {self._norm_book(item) for item in getattr(self.settings, 'sharp_bookmakers', []) or []}
+        return any(self._norm_book(offer.bookmaker) in sharp for offer in offers)
+
+
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
         base = self.settings.min_books_for_family(family)
         if base <= 1:
             return 1
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
-        has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet'})
+        weighted_books = self._weighted_unique_books(offers)
+        has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
+        has_sharp = self._has_sharp_book(offers)
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
         if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats', 'ensemble', 'api_football', 'espn', 'thesportsdb'}:
             return 1
+        if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
+            return min(base, 2)
+        if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
+            return min(base, 2)
         return base
 
     @staticmethod
@@ -1600,9 +1647,15 @@ class CandidateFactory:
     def _btts_yes_probability(expected_home: float, expected_away: float) -> float:
         return clamp((1.0 - math.exp(-expected_home)) * (1.0 - math.exp(-expected_away)), 0.02, 0.98)
 
-    @staticmethod
-    def _norm_book(value: str) -> str:
-        return str(value or '').strip().lower()
+
+    def _norm_book(self, value: str) -> str:
+        base = self._norm_book_base(value)
+        if not getattr(self.settings, 'bookmaker_alias_relaxed', True):
+            return base.replace(' ', '')
+        alias = self._alias_groups().get(base)
+        if alias:
+            return alias.replace(' ', '')
+        return base.replace(' ', '')
 
     def _is_target_or_consensus_book(self, bookmaker: str) -> bool:
         key = self._norm_book(bookmaker)
