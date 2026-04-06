@@ -131,6 +131,13 @@ class Settings(BaseSettings):
     btts_score_weight: float = Field(default=1.12, validation_alias=AliasChoices('BTTS_SCORE_WEIGHT'))
     team_totals_score_weight: float = Field(default=1.20, validation_alias=AliasChoices('TEAM_TOTALS_SCORE_WEIGHT'))
 
+    max_picks_per_league: int = Field(default=2, validation_alias=AliasChoices('MAX_PICKS_PER_LEAGUE'))
+    max_picks_per_family: int = Field(default=2, validation_alias=AliasChoices('MAX_PICKS_PER_FAMILY'))
+    max_same_reason_signature: int = Field(default=2, validation_alias=AliasChoices('MAX_SAME_REASON_SIGNATURE'))
+    reject_negative_expected_goals: bool = Field(default=True, validation_alias=AliasChoices('REJECT_NEGATIVE_EXPECTED_GOALS'))
+    min_expected_goals_value: float = Field(default=0.15, validation_alias=AliasChoices('MIN_EXPECTED_GOALS_VALUE'))
+    max_expected_goals_value: float = Field(default=4.80, validation_alias=AliasChoices('MAX_EXPECTED_GOALS_VALUE'))
+
     @field_validator(
         'run_sports',
         'target_bookmakers',

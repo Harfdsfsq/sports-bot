@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
 from typing import Any
 
 import httpx
@@ -8,6 +7,27 @@ import httpx
 from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, team_similarity
+
+LEAGUE_ALIASES = {
+    'italy serie c': 'italian serie c',
+    'italy serie c girone a': 'italian serie c',
+    'italy serie c girone b': 'italian serie c',
+    'italy serie c girone c': 'italian serie c',
+    'italy serie c group a': 'italian serie c',
+    'italy serie c group b': 'italian serie c',
+    'italy serie c group c': 'italian serie c',
+    'italian serie c girone a': 'italian serie c',
+    'italian serie c girone b': 'italian serie c',
+    'italian serie c girone c': 'italian serie c',
+    'italian serie c group a': 'italian serie c',
+    'italian serie c group b': 'italian serie c',
+    'italian serie c group c': 'italian serie c',
+    'england premier league': 'english premier league',
+    'england championship': 'english league championship',
+    'spain la liga': 'spanish la liga',
+    'germany bundesliga': 'german bundesliga',
+    'france ligue 1': 'french ligue 1',
+}
 
 
 class TheSportsDbContextProvider:
@@ -92,13 +112,7 @@ class TheSportsDbContextProvider:
 
         return contexts, stats, preview
 
-    async def _fetch_json(
-        self,
-        client: httpx.AsyncClient,
-        path: str,
-        stats: dict[str, Any],
-        params: dict[str, Any] | None = None,
-    ) -> Any | None:
+    async def _fetch_json(self, client: httpx.AsyncClient, path: str, stats: dict[str, Any], params: dict[str, Any] | None = None) -> Any | None:
         stats['requests'] += 1
         try:
             response = await client.get(f'{self.base_url}{path}', params=params)
@@ -129,27 +143,26 @@ class TheSportsDbContextProvider:
     def _resolve_league_ids(self, league_names: list[str], league_rows: list[dict[str, Any]]) -> dict[str, str]:
         resolved: dict[str, str] = {}
         for league_name in league_names:
-            target = canonicalize_league_name(league_name)
+            target = self._normalize_league_key(league_name)
             best_id: str | None = None
             best_score = 0.0
             for row in league_rows:
                 if str(row.get('strSport') or '').lower() != 'soccer':
                     continue
                 row_name = str(row.get('strLeague') or row.get('strLeagueAlternate') or '')
-                row_key = canonicalize_league_name(row_name)
+                row_key = self._normalize_league_key(row_name)
                 if not row_key:
                     continue
-                score = 0.0
                 if row_key == target:
                     score = 1.0
                 elif row_key in target or target in row_key:
-                    score = 0.92
+                    score = 0.95
                 else:
                     score = team_similarity(target, row_key)
                 if score > best_score:
                     best_score = score
                     best_id = str(row.get('idLeague') or '')
-            if best_id and best_score >= 0.75:
+            if best_id and best_score >= 0.72:
                 resolved[league_name] = best_id
         return resolved
 
@@ -230,11 +243,7 @@ class TheSportsDbContextProvider:
         total = home_value + away_value + draw_value
         if total <= 0:
             return {'home': 0.40, 'away': 0.32, 'draw': 0.28}
-        return {
-            'home': home_value / total,
-            'away': away_value / total,
-            'draw': draw_value / total,
-        }
+        return {'home': home_value / total, 'away': away_value / total, 'draw': draw_value / total}
 
     @staticmethod
     def _to_float(row: dict[str, Any], *keys: str) -> float | None:
@@ -247,3 +256,17 @@ class TheSportsDbContextProvider:
             except Exception:
                 continue
         return None
+
+    @staticmethod
+    def _normalize_league_key(value: str) -> str:
+        key = canonicalize_league_name(value)
+        for old, new in LEAGUE_ALIASES.items():
+            if key == old:
+                key = new
+                break
+        for token in (' group a', ' group b', ' group c', ' girone a', ' girone b', ' girone c'):
+            if key.endswith(token):
+                key = key[: -len(token)]
+        key = key.replace(' italy ', ' italian ').replace(' england ', ' english ').replace(' spain ', ' spanish ').replace(' germany ', ' german ').replace(' france ', ' french ')
+        key = ' '.join(key.split())
+        return key
