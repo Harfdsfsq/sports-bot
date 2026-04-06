@@ -120,7 +120,7 @@ class CandidateFactory:
         for offer in offers:
             buckets[(offer.selection, offer.point)].append(offer)
 
-        allowed_total_points = {1.5, 2.5, 3.5, 4.5}
+        supported_total_points = self.settings.supported_lines_for_family('totals')
         expected_total = expected_home + expected_away
         signal_label = self._signal_stack_label(context)
         result: list[CandidateBet] = []
@@ -128,10 +128,11 @@ class CandidateFactory:
             low = str(selection or '').lower()
             if point is None or not (low.startswith('over') or low.startswith('under')):
                 continue
-            point = round(float(point), 2)
-            if point not in allowed_total_points:
+            normalized_point = self._normalize_supported_line(point, 'totals')
+            if normalized_point is None:
                 rejections['unsupported_total_line'] += 1
                 continue
+            point = normalized_point
             required_books = self._required_books_for_bucket('totals', point, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
@@ -142,7 +143,7 @@ class CandidateFactory:
                 over_prob = explicit_total_prob
                 model_reason = 'context_total_probability'
             else:
-                over_prob = poisson_over_probability(expected_total, point)
+                over_prob = self._poisson_line_probability(expected_total, point)
                 over_prob = self._adjust_total_probability(over_prob, point, expected_home, expected_away, context)
                 model_reason = 'xg_total_ensemble'
             if not self._is_valid_probability(over_prob):
@@ -347,12 +348,17 @@ class CandidateFactory:
                 continue
             if not (low.startswith('over') or low.startswith('under')):
                 continue
+            normalized_point = self._normalize_supported_line(point, 'teamTotals')
+            if normalized_point is None:
+                rejections['unsupported_team_total_line'] += 1
+                continue
+            point = normalized_point
             required_books = self._required_books_for_bucket('teamTotals', point, bucket, context)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             lam = expected_home if team_side == 'home' else expected_away
-            over_prob = poisson_over_probability(lam, float(point))
+            over_prob = self._poisson_line_probability(lam, float(point))
             over_prob = self._adjust_team_total_probability(over_prob, lam, float(point), team_side, context)
             if not self._is_valid_probability(over_prob):
                 rejections['missing_model_probability_team_totals'] += 1
@@ -1270,7 +1276,20 @@ class CandidateFactory:
         if context is None or point is None:
             return None
         details = dict(getattr(context, 'details', {}) or {})
-        point_key = f"prob_over_{str(point).replace('.', '_')}"
+        direct = self._context_total_probability_for_key(details, float(point))
+        if direct is not None:
+            return direct
+        frac = round(float(point) - math.floor(float(point)), 2)
+        if frac in {0.25, 0.75}:
+            low = self._context_total_probability_for_key(details, round(float(point) - 0.25, 2))
+            high = self._context_total_probability_for_key(details, round(float(point) + 0.25, 2))
+            if low is not None and high is not None:
+                return clamp((low + high) / 2.0, 0.02, 0.98)
+        return None
+
+    @staticmethod
+    def _context_total_probability_for_key(details: dict[str, Any], point: float) -> float | None:
+        point_key = f"prob_over_{str(round(point, 2)).replace('.', '_')}"
         raw = details.get(point_key)
         try:
             if raw is None:
@@ -1282,8 +1301,41 @@ class CandidateFactory:
             value /= 100.0
         return clamp(value, 0.02, 0.98)
 
+    def _normalize_supported_line(self, point: float | None, family: str) -> float | None:
+        if point is None:
+            return None
+        try:
+            raw_point = round(float(point), 2)
+        except Exception:
+            return None
+        allowed = sorted(self.settings.supported_lines_for_family(family))
+        if not allowed:
+            return raw_point
+        tolerance = float(getattr(self.settings, 'line_support_tolerance', 0.06) or 0.06)
+        nearest = min(allowed, key=lambda item: abs(item - raw_point))
+        if abs(nearest - raw_point) <= tolerance:
+            return round(float(nearest), 2)
+        return None
+
+    def _poisson_line_probability(self, lam: float | None, point: float | None) -> float | None:
+        if lam is None or point is None:
+            return None
+        frac = round(float(point) - math.floor(float(point)), 2)
+        if frac in {0.25, 0.75}:
+            lower = round(float(point) - 0.25, 2)
+            upper = round(float(point) + 0.25, 2)
+            low_prob = poisson_over_probability(float(lam), lower)
+            high_prob = poisson_over_probability(float(lam), upper)
+            if low_prob is None or high_prob is None:
+                return None
+            return clamp((float(low_prob) + float(high_prob)) / 2.0, 0.02, 0.98)
+        direct = poisson_over_probability(float(lam), float(point))
+        if direct is None:
+            return None
+        return clamp(float(direct), 0.02, 0.98)
+
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
-        base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
+        base = self.settings.min_books_for_family(family)
         if base <= 1:
             return 1
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
@@ -1311,13 +1363,16 @@ class CandidateFactory:
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
         for item in candidates:
-            if item.model_probability < self.settings.min_model_confidence:
+            min_conf = float(self.settings.min_model_confidence_for_family(item.family))
+            min_ev = float(self.settings.min_ev_pct_for_family(item.family))
+            min_edge = float(self.settings.min_edge_pct_for_family(item.family))
+            if item.model_probability < min_conf:
                 rejections['confidence_below_threshold'] += 1
                 continue
-            if item.ev_pct < self.settings.min_ev_pct:
-                rejections['edge_below_threshold'] += 1
+            if item.ev_pct < min_ev:
+                rejections['ev_below_threshold'] += 1
                 continue
-            if item.edge_pct < self.settings.min_edge_pct:
+            if item.edge_pct < min_edge:
                 rejections['edge_below_threshold'] += 1
                 continue
             context_source = str((item.source_summary or {}).get('context_source') or '')

@@ -174,6 +174,51 @@ class Settings(BaseSettings):
     fallback_publish_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_CONFIDENCE'))
     fallback_publish_min_books: int = Field(default=2, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_BOOKS'))
 
+    supported_total_lines: CsvList = Field(
+        default_factory=lambda: ['1.5', '2.0', '2.25', '2.5', '2.75', '3.0', '3.25', '3.5', '3.75', '4.0', '4.25', '4.5'],
+        validation_alias=AliasChoices('SUPPORTED_TOTAL_LINES'),
+    )
+    supported_team_total_lines: CsvList = Field(
+        default_factory=lambda: ['0.5', '0.75', '1.0', '1.25', '1.5', '1.75', '2.0', '2.25', '2.5', '2.75', '3.0', '3.25', '3.5'],
+        validation_alias=AliasChoices('SUPPORTED_TEAM_TOTAL_LINES'),
+    )
+    line_support_tolerance: float = Field(default=0.06, validation_alias=AliasChoices('LINE_SUPPORT_TOLERANCE'))
+
+    totals_min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices('TOTALS_MIN_EDGE_PCT'))
+    totals_min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices('TOTALS_MIN_EV_PCT'))
+    totals_min_model_confidence: float = Field(default=0.54, validation_alias=AliasChoices('TOTALS_MIN_MODEL_CONFIDENCE'))
+    totals_min_books: int = Field(default=1, validation_alias=AliasChoices('TOTALS_MIN_BOOKS'))
+
+    h2h_min_edge_pct: float = Field(default=2.7, validation_alias=AliasChoices('H2H_MIN_EDGE_PCT'))
+    h2h_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices('H2H_MIN_EV_PCT'))
+    h2h_min_model_confidence: float = Field(default=0.57, validation_alias=AliasChoices('H2H_MIN_MODEL_CONFIDENCE'))
+    h2h_min_books: int = Field(default=2, validation_alias=AliasChoices('H2H_MIN_BOOKS'))
+
+    spreads_min_edge_pct: float = Field(default=2.2, validation_alias=AliasChoices('SPREADS_MIN_EDGE_PCT'))
+    spreads_min_ev_pct: float = Field(default=1.7, validation_alias=AliasChoices('SPREADS_MIN_EV_PCT'))
+    spreads_min_model_confidence: float = Field(default=0.55, validation_alias=AliasChoices('SPREADS_MIN_MODEL_CONFIDENCE'))
+    spreads_min_books: int = Field(default=2, validation_alias=AliasChoices('SPREADS_MIN_BOOKS'))
+
+    dnb_min_edge_pct: float = Field(default=1.8, validation_alias=AliasChoices('DNB_MIN_EDGE_PCT'))
+    dnb_min_ev_pct: float = Field(default=1.3, validation_alias=AliasChoices('DNB_MIN_EV_PCT'))
+    dnb_min_model_confidence: float = Field(default=0.54, validation_alias=AliasChoices('DNB_MIN_MODEL_CONFIDENCE'))
+    dnb_min_books: int = Field(default=1, validation_alias=AliasChoices('DNB_MIN_BOOKS'))
+
+    double_chance_min_edge_pct: float = Field(default=1.2, validation_alias=AliasChoices('DOUBLE_CHANCE_MIN_EDGE_PCT'))
+    double_chance_min_ev_pct: float = Field(default=0.9, validation_alias=AliasChoices('DOUBLE_CHANCE_MIN_EV_PCT'))
+    double_chance_min_model_confidence: float = Field(default=0.56, validation_alias=AliasChoices('DOUBLE_CHANCE_MIN_MODEL_CONFIDENCE'))
+    double_chance_min_books: int = Field(default=1, validation_alias=AliasChoices('DOUBLE_CHANCE_MIN_BOOKS'))
+
+    btts_min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices('BTTS_MIN_EDGE_PCT'))
+    btts_min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices('BTTS_MIN_EV_PCT'))
+    btts_min_model_confidence: float = Field(default=0.55, validation_alias=AliasChoices('BTTS_MIN_MODEL_CONFIDENCE'))
+    btts_min_books: int = Field(default=1, validation_alias=AliasChoices('BTTS_MIN_BOOKS'))
+
+    team_totals_min_edge_pct: float = Field(default=2.1, validation_alias=AliasChoices('TEAM_TOTALS_MIN_EDGE_PCT'))
+    team_totals_min_ev_pct: float = Field(default=1.6, validation_alias=AliasChoices('TEAM_TOTALS_MIN_EV_PCT'))
+    team_totals_min_model_confidence: float = Field(default=0.55, validation_alias=AliasChoices('TEAM_TOTALS_MIN_MODEL_CONFIDENCE'))
+    team_totals_min_books: int = Field(default=1, validation_alias=AliasChoices('TEAM_TOTALS_MIN_BOOKS'))
+
     @field_validator(
         'run_sports',
         'target_bookmakers',
@@ -182,6 +227,8 @@ class Settings(BaseSettings):
         'bookies_api_sports',
         'espn_soccer_leagues',
         'espn_soft_fail_statuses',
+        'supported_total_lines',
+        'supported_team_total_lines',
         mode='before',
     )
     @classmethod
@@ -270,6 +317,62 @@ class Settings(BaseSettings):
             'btts': self.btts_score_weight,
             'teamTotals': self.team_totals_score_weight,
         }.get(family, 1.0)
+
+    def supported_lines_for_family(self, family: str) -> set[float]:
+        raw = self.supported_team_total_lines if family == 'teamTotals' else self.supported_total_lines
+        values: set[float] = set()
+        for item in raw or []:
+            try:
+                values.add(round(float(item), 2))
+            except Exception:
+                continue
+        if values:
+            return values
+        return {1.5, 2.5, 3.5, 4.5} if family != 'teamTotals' else {0.5, 1.5, 2.5}
+
+    def min_edge_pct_for_family(self, family: str) -> float:
+        return {
+            'totals': self.totals_min_edge_pct,
+            'h2h': self.h2h_min_edge_pct,
+            'spreads': self.spreads_min_edge_pct,
+            'dnb': self.dnb_min_edge_pct,
+            'doubleChance': self.double_chance_min_edge_pct,
+            'btts': self.btts_min_edge_pct,
+            'teamTotals': self.team_totals_min_edge_pct,
+        }.get(family, self.min_edge_pct)
+
+    def min_ev_pct_for_family(self, family: str) -> float:
+        return {
+            'totals': self.totals_min_ev_pct,
+            'h2h': self.h2h_min_ev_pct,
+            'spreads': self.spreads_min_ev_pct,
+            'dnb': self.dnb_min_ev_pct,
+            'doubleChance': self.double_chance_min_ev_pct,
+            'btts': self.btts_min_ev_pct,
+            'teamTotals': self.team_totals_min_ev_pct,
+        }.get(family, self.min_ev_pct)
+
+    def min_model_confidence_for_family(self, family: str) -> float:
+        return {
+            'totals': self.totals_min_model_confidence,
+            'h2h': self.h2h_min_model_confidence,
+            'spreads': self.spreads_min_model_confidence,
+            'dnb': self.dnb_min_model_confidence,
+            'doubleChance': self.double_chance_min_model_confidence,
+            'btts': self.btts_min_model_confidence,
+            'teamTotals': self.team_totals_min_model_confidence,
+        }.get(family, self.min_model_confidence)
+
+    def min_books_for_family(self, family: str) -> int:
+        return max(1, int({
+            'totals': self.totals_min_books,
+            'h2h': self.h2h_min_books,
+            'spreads': self.spreads_min_books,
+            'dnb': self.dnb_min_books,
+            'doubleChance': self.double_chance_min_books,
+            'btts': self.btts_min_books,
+            'teamTotals': self.team_totals_min_books,
+        }.get(family, self.min_books_publish) or 1))
 
 
 @lru_cache(maxsize=1)
