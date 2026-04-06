@@ -1,49 +1,52 @@
+"""Application package initialization and startup compatibility patches."""
+
 __all__ = []
 
-from __future__ import annotations
-
-import importlib
-from typing import Any
+import math
+import re
 
 
-def _patched_normalize_probability_percent(value: Any):
+def _patched_normalize_probability_percent(value):
     if value is None:
         return None
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, (int, float)):
-        number = float(value)
-        if number < 0:
+
+    if isinstance(value, str):
+        cleaned = value.strip()
+        if not cleaned:
             return None
-        return number / 100.0 if number > 1 else number
+        if cleaned.lower() in {"n/a", "na", "none", "null", "-", "--"}:
+            return None
+        cleaned = cleaned.replace(",", ".")
+        cleaned = re.sub(r"\s+", "", cleaned)
+        if cleaned.endswith("%"):
+            cleaned = cleaned[:-1]
+            if not cleaned:
+                return None
+            try:
+                return float(cleaned) / 100.0
+            except ValueError:
+                return None
+        try:
+            number = float(cleaned)
+        except ValueError:
+            return None
+    else:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
 
-    text = str(value).strip()
-    if not text:
+    if math.isnan(number) or math.isinf(number):
         return None
-
-    lowered = text.lower()
-    if lowered in {"n/a", "na", "none", "null", "-", "nan"}:
+    if number > 1.0:
+        number = number / 100.0
+    if number < 0.0 or number > 1.0:
         return None
-
-    is_percent = "%" in text
-    cleaned = text.replace("%", "").replace(",", ".").strip()
-    if not cleaned:
-        return None
-
-    try:
-        number = float(cleaned)
-    except (TypeError, ValueError):
-        return None
-
-    if number < 0:
-        return None
-    if is_percent or number > 1:
-        return number / 100.0
     return number
 
 
 try:
-    _utils = importlib.import_module(__name__ + ".utils")
-    _utils.normalize_probability_percent = _patched_normalize_probability_percent
+    from app import utils as _app_utils
+    _app_utils.normalize_probability_percent = _patched_normalize_probability_percent
 except Exception:
     pass
