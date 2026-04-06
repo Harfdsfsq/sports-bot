@@ -200,16 +200,24 @@ class MarketMonitor:
                 current_best = self._to_float(row.get('best_price'))
                 previous_best = self._to_float((prev_row or {}).get('best_price'))
                 current_consensus = self._to_float(row.get('consensus_fair_odds'))
+                books_count = len(row.get('books') or [])
+                sources_count = len(row.get('sources') or [])
+                history_ready = bool(current_best and previous_best and current_best > 1.0 and previous_best > 1.0)
+                enough_sample = books_count >= max(1, int(getattr(self.settings, 'line_movement_min_books', 2) or 2)) and sources_count >= max(1, int(getattr(self.settings, 'line_movement_min_sources', 1) or 1))
                 delta_prob_pp = None
                 delta_odds_pct = None
-                if current_best and previous_best and current_best > 1.0 and previous_best > 1.0:
+                if history_ready:
                     delta_prob_pp = ((1.0 / current_best) - (1.0 / previous_best)) * 100.0
                     delta_odds_pct = ((current_best - previous_best) / previous_best) * 100.0
                 best_vs_consensus_edge_pct = None
                 if current_best and current_consensus and current_consensus > 1.0:
                     best_vs_consensus_edge_pct = ((current_best / current_consensus) - 1.0) * 100.0
                 movement_label = 'flat'
-                if delta_prob_pp is not None:
+                if not history_ready:
+                    movement_label = 'insufficient_history'
+                elif not enough_sample:
+                    movement_label = 'low_sample'
+                elif delta_prob_pp is not None:
                     if delta_prob_pp >= min_delta:
                         movement_label = 'steam'
                     elif delta_prob_pp <= -min_delta:
@@ -223,8 +231,10 @@ class MarketMonitor:
                     'delta_odds_pct': round(delta_odds_pct, 3) if delta_odds_pct is not None else None,
                     'best_vs_consensus_edge_pct': round(best_vs_consensus_edge_pct, 3) if best_vs_consensus_edge_pct is not None else None,
                     'movement_label': movement_label,
-                    'books_count': len(row.get('books') or []),
-                    'sources_count': len(row.get('sources') or []),
+                    'history_ready': history_ready,
+                    'observation_count': 2 if history_ready else 1,
+                    'books_count': books_count,
+                    'sources_count': sources_count,
                 }
             result[match_key] = per_match
         return result

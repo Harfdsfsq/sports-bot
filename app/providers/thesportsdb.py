@@ -58,6 +58,7 @@ class TheSportsDbContextProvider:
             'tables_fetched': 0,
             'contexts_built': 0,
             'missing_table_rows': 0,
+            'partial_contexts_built': 0,
             'last_body_preview': None,
             'http_statuses': [],
         }
@@ -107,12 +108,25 @@ class TheSportsDbContextProvider:
                 continue
             home_row = self._match_table_row(match.home_team, table_rows)
             away_row = self._match_table_row(match.away_team, table_rows)
+            partial = False
             if home_row is None or away_row is None:
                 stats['missing_table_rows'] += 1
-                continue
-            context = self._rows_to_context(match, home_row, away_row)
+                if not getattr(self.settings, 'thesportsdb_allow_partial_context', True):
+                    continue
+                avg_row = self._league_average_row(table_rows)
+                if home_row is None and away_row is None:
+                    continue
+                if home_row is None:
+                    home_row = avg_row
+                    partial = True
+                if away_row is None:
+                    away_row = avg_row
+                    partial = True
+            context = self._rows_to_context(match, home_row, away_row, partial=partial)
             contexts[match.match_key] = context
             stats['contexts_built'] += 1
+            if partial:
+                stats['partial_contexts_built'] += 1
             if len(preview['sample_contexts']) < 6:
                 preview['sample_contexts'].append(
                     {
@@ -120,6 +134,7 @@ class TheSportsDbContextProvider:
                         'league_name': match.league_name,
                         'expected_home': context.expected_home,
                         'expected_away': context.expected_away,
+                        'partial': partial,
                     }
                 )
 
@@ -193,9 +208,26 @@ class TheSportsDbContextProvider:
             if score > best_score:
                 best_score = score
                 best_row = row
-        return best_row if best_score >= 0.70 else None
+        threshold = float(getattr(self.settings, 'thesportsdb_partial_match_threshold', 0.58) or 0.58)
+        return best_row if best_score >= threshold else None
 
-    def _rows_to_context(self, match: Match, home_row: dict[str, Any], away_row: dict[str, Any]) -> MatchContext:
+    @staticmethod
+    def _league_average_row(rows: list[dict[str, Any]]) -> dict[str, Any]:
+        numeric_keys = ['intPlayed', 'intPoints', 'intGoalsFor', 'intGoalsAgainst', 'intWin', 'intDraw', 'intLoss']
+        aggregate: dict[str, str] = {'strTeam': 'League Average'}
+        valid_rows = [row for row in rows if isinstance(row, dict)]
+        for key in numeric_keys:
+            values = []
+            for row in valid_rows:
+                try:
+                    values.append(float(row.get(key)))
+                except Exception:
+                    pass
+            if values:
+                aggregate[key] = str(round(sum(values) / len(values), 3))
+        return aggregate
+
+    def _rows_to_context(self, match: Match, home_row: dict[str, Any], away_row: dict[str, Any], partial: bool = False) -> MatchContext:
         home_played = max(self._to_float(home_row, 'intPlayed', 'played', 'gamesPlayed', 'games') or 0.0, 1.0)
         away_played = max(self._to_float(away_row, 'intPlayed', 'played', 'gamesPlayed', 'games') or 0.0, 1.0)
 
@@ -235,7 +267,9 @@ class TheSportsDbContextProvider:
             confidence += 2.0
         if home_form_score > 0 and away_form_score > 0:
             confidence += 1.0
-        confidence = clamp(confidence, 57.0, 66.0)
+        if partial:
+            confidence -= 6.0
+        confidence = clamp(confidence, 51.0, 66.0)
 
         return MatchContext(
             source='thesportsdb',
@@ -258,6 +292,7 @@ class TheSportsDbContextProvider:
                 'home_form': round(home_form_score, 3),
                 'away_form': round(away_form_score, 3),
                 'home_ppg': round(home_ppg, 3),
+                'thesportsdb_partial_context': partial,
                 'away_ppg': round(away_ppg, 3),
                 'home_gf_pg': round(home_gf_pg, 3),
                 'home_ga_pg': round(home_ga_pg, 3),

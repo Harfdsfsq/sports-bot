@@ -81,6 +81,8 @@ class EspnContextProvider:
             'matched_fuzzy': 0,
             'league_slugs_used': [],
             'injury_counts_seen': 0,
+            'soft_failures': 0,
+            'partial_contexts_built': 0,
             'last_body_preview': None,
             'http_statuses': [],
         }
@@ -297,7 +299,11 @@ class EspnContextProvider:
                     if len(preview['sample_probabilities']) < 3:
                         preview['sample_probabilities'].append(item)
             else:
-                stats['response_errors'] += 1
+                soft_statuses = {str(item).strip() for item in (getattr(self.settings, 'espn_soft_fail_statuses', []) or [])}
+                if str(response.status_code) in soft_statuses:
+                    stats['soft_failures'] += 1
+                else:
+                    stats['response_errors'] += 1
 
         summary_url = f'{self.site_base_url}/sports/soccer/{slug}/summary'
         stats['summary_requests'] += 1
@@ -323,17 +329,36 @@ class EspnContextProvider:
                         if maybe_away is not None:
                             away_prob = maybe_away / 100.0 if maybe_away > 1.0 else maybe_away
             else:
-                stats['response_errors'] += 1
+                soft_statuses = {str(item).strip() for item in (getattr(self.settings, 'espn_soft_fail_statuses', []) or [])}
+                if str(response.status_code) in soft_statuses:
+                    stats['soft_failures'] += 1
+                else:
+                    stats['response_errors'] += 1
 
         home_form = self._form_score(home_team)
         away_form = self._form_score(away_team)
+        if home_form is None or away_form is None:
+            comp_home_form, comp_away_form = self._competitor_form_scores(event)
+            home_form = home_form if home_form is not None else comp_home_form
+            away_form = away_form if away_form is not None else comp_away_form
+        if summary_payload is not None and (home_form is None or away_form is None):
+            summary_home_form, summary_away_form = self._summary_form_scores(summary_payload, match.home_team, match.away_team)
+            home_form = home_form if home_form is not None else summary_home_form
+            away_form = away_form if away_form is not None else summary_away_form
+        partial_context = False
         if home_prob is None or away_prob is None:
-            if home_form is None or away_form is None:
+            if home_form is not None and away_form is not None:
+                delta = clamp((home_form - away_form) * 0.18 + 0.08, -0.35, 0.35)
+                draw_prob = clamp(0.24 - abs(delta) * 0.18, 0.14, 0.30)
+                home_prob = 0.38 + delta
+                away_prob = 1.0 - home_prob - draw_prob
+            elif getattr(self.settings, 'espn_allow_partial_context', True):
+                partial_context = True
+                draw_prob = 0.26 if draw_prob is None else draw_prob
+                home_prob = 0.39 if home_prob is None else home_prob
+                away_prob = 1.0 - home_prob - draw_prob if away_prob is None else away_prob
+            else:
                 return None
-            delta = clamp((home_form - away_form) * 0.18 + 0.08, -0.35, 0.35)
-            draw_prob = clamp(0.24 - abs(delta) * 0.18, 0.14, 0.30)
-            home_prob = 0.38 + delta
-            away_prob = 1.0 - home_prob - draw_prob
 
         probs = self._normalize_probs(home_prob, away_prob, draw_prob)
         expected_home, expected_away = self._expected_goals_from_probs(
@@ -359,7 +384,10 @@ class EspnContextProvider:
             confidence += 2.0
         if home_injuries or away_injuries:
             confidence += 1.0
-        confidence = clamp(confidence, 56.0, 74.0)
+        if partial_context:
+            confidence -= 7.0
+            stats['partial_contexts_built'] += 1
+        confidence = clamp(confidence, 50.0, 74.0)
 
         return MatchContext(
             source='espn',
@@ -380,6 +408,7 @@ class EspnContextProvider:
                 'espn_away_injuries': away_injuries,
                 'home_injuries': home_injuries,
                 'away_injuries': away_injuries,
+                'espn_partial_context': partial_context,
             },
         )
 
@@ -472,6 +501,45 @@ class EspnContextProvider:
     def _event_away(self, event: dict[str, Any]) -> str:
         team = self._event_team(event, 'away')
         return str(team.get('displayName') or team.get('shortDisplayName') or team.get('name') or '')
+
+    def _competitor_form_scores(self, event: dict[str, Any]) -> tuple[float | None, float | None]:
+        competition = self._event_competition(event)
+        competitors = competition.get('competitors') if isinstance(competition, dict) else []
+        home_form = away_form = None
+        if isinstance(competitors, list):
+            for competitor in competitors:
+                if not isinstance(competitor, dict):
+                    continue
+                score = self._form_score(competitor)
+                side = str(competitor.get('homeAway') or '').lower()
+                if side == 'home' and home_form is None:
+                    home_form = score
+                elif side == 'away' and away_form is None:
+                    away_form = score
+        return home_form, away_form
+
+    def _summary_form_scores(self, payload: dict[str, Any], home_team: str, away_team: str) -> tuple[float | None, float | None]:
+        boxscore = payload.get('boxscore') if isinstance(payload, dict) else None
+        form_rows = boxscore.get('form') if isinstance(boxscore, dict) else None
+        if not isinstance(form_rows, list):
+            return None, None
+        home_key = canonicalize_team_name(home_team)
+        away_key = canonicalize_team_name(away_team)
+        home_form = away_form = None
+        for row in form_rows:
+            if not isinstance(row, dict):
+                continue
+            team = row.get('team') if isinstance(row.get('team'), dict) else {}
+            team_name = str(team.get('displayName') or team.get('shortDisplayName') or team.get('name') or '')
+            team_key = canonicalize_team_name(team_name)
+            score = self._form_score(row)
+            if score is None:
+                score = self._form_score(team)
+            if team_key == home_key and home_form is None:
+                home_form = score
+            elif team_key == away_key and away_form is None:
+                away_form = score
+        return home_form, away_form
 
     @staticmethod
     def _form_score(team: dict[str, Any]) -> float | None:

@@ -160,6 +160,20 @@ class Settings(BaseSettings):
     clv_resolve_grace_minutes: int = Field(default=45, validation_alias=AliasChoices('CLV_RESOLVE_GRACE_MINUTES'))
     market_monitor_subdir: str = Field(default='market-monitor', validation_alias=AliasChoices('MARKET_MONITOR_SUBDIR'))
 
+    line_movement_requires_history: bool = Field(default=True, validation_alias=AliasChoices('LINE_MOVEMENT_REQUIRES_HISTORY'))
+    line_movement_min_books: int = Field(default=2, validation_alias=AliasChoices('LINE_MOVEMENT_MIN_BOOKS'))
+    line_movement_min_sources: int = Field(default=1, validation_alias=AliasChoices('LINE_MOVEMENT_MIN_SOURCES'))
+    line_movement_negative_penalty_factor: float = Field(default=0.5, validation_alias=AliasChoices('LINE_MOVEMENT_NEGATIVE_PENALTY_FACTOR'))
+    espn_allow_partial_context: bool = Field(default=True, validation_alias=AliasChoices('ESPN_ALLOW_PARTIAL_CONTEXT'))
+    espn_soft_fail_statuses: CsvList = Field(default_factory=lambda: ['400', '404'], validation_alias=AliasChoices('ESPN_SOFT_FAIL_STATUSES'))
+    thesportsdb_allow_partial_context: bool = Field(default=True, validation_alias=AliasChoices('THESPORTSDB_ALLOW_PARTIAL_CONTEXT'))
+    thesportsdb_partial_match_threshold: float = Field(default=0.58, validation_alias=AliasChoices('THESPORTSDB_PARTIAL_MATCH_THRESHOLD'))
+    fallback_publish_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices('FALLBACK_PUBLISH_MODE_ENABLED'))
+    fallback_publish_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_EV_PCT'))
+    fallback_publish_min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_EDGE_PCT'))
+    fallback_publish_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_CONFIDENCE'))
+    fallback_publish_min_books: int = Field(default=2, validation_alias=AliasChoices('FALLBACK_PUBLISH_MIN_BOOKS'))
+
     @field_validator(
         'run_sports',
         'target_bookmakers',
@@ -167,6 +181,7 @@ class Settings(BaseSettings):
         'odds_api_io_bookmakers',
         'bookies_api_sports',
         'espn_soccer_leagues',
+        'espn_soft_fail_statuses',
         mode='before',
     )
     @classmethod

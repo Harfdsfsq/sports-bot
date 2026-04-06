@@ -550,12 +550,22 @@ class CandidateFactory:
             shrink_max = 0.36
         elif context_source in {'ensemble', 'api_football', 'espn', 'thesportsdb'}:
             confidence = min(confidence + 2.0, 76.0)
+        history_ready = bool((market_signal or {}).get('history_ready')) if isinstance(market_signal, dict) else False
+        observation_count = int((market_signal or {}).get('observation_count') or (2 if steam_delta is not None else 1)) if isinstance(market_signal, dict) else (2 if steam_delta is not None else 1)
+        books_signal_count = int((market_signal or {}).get('books_count') or len(books)) if isinstance(market_signal, dict) else len(books)
+        sources_signal_count = int((market_signal or {}).get('sources_count') or len(sources)) if isinstance(market_signal, dict) else len(sources)
         if getattr(self.settings, 'line_movement_signal_enabled', True) and steam_delta is not None:
             threshold = float(getattr(self.settings, 'line_movement_min_delta_pct', 1.75) or 1.75)
-            if steam_delta >= threshold:
+            movement_ready = True
+            if getattr(self.settings, 'line_movement_requires_history', True):
+                movement_ready = history_ready and observation_count >= 2
+            movement_ready = movement_ready and books_signal_count >= max(1, int(getattr(self.settings, 'line_movement_min_books', 2) or 2)) and sources_signal_count >= max(1, int(getattr(self.settings, 'line_movement_min_sources', 1) or 1))
+            if movement_ready and steam_delta >= threshold:
                 confidence += float(getattr(self.settings, 'line_movement_confidence_bonus', 4.0) or 4.0)
-            elif steam_delta <= -threshold:
-                confidence -= float(getattr(self.settings, 'line_movement_confidence_penalty', 3.0) or 3.0)
+            elif movement_ready and steam_delta <= -threshold:
+                penalty = float(getattr(self.settings, 'line_movement_confidence_penalty', 3.0) or 3.0)
+                penalty *= float(getattr(self.settings, 'line_movement_negative_penalty_factor', 0.5) or 0.5)
+                confidence -= penalty
         if dispersion_pct is not None and dispersion_pct <= float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5):
             confidence += float(getattr(self.settings, 'consensus_tight_confidence_bonus', 2.0) or 2.0)
         confidence = clamp(confidence, 0, 100)
@@ -576,6 +586,8 @@ class CandidateFactory:
             reasons.append('single_book_guard=enabled')
         if movement_label:
             reasons.append(f'market_move={movement_label}')
+        if not history_ready:
+            reasons.append('market_history=limited')
         if steam_delta is not None:
             reasons.append(f'line_move_pp={steam_delta:+.2f}')
         if best_vs_consensus_edge_pct is not None:
@@ -1361,6 +1373,35 @@ class CandidateFactory:
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
                 break
+        if deduped or not getattr(self.settings, 'fallback_publish_mode_enabled', True):
+            return deduped
+        fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
+        fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
+        fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
+        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if float(item.confidence) < fallback_min_conf:
+                continue
+            if float(item.ev_pct) < fallback_min_ev or float(item.edge_pct) < fallback_min_edge:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < fallback_min_books:
+                continue
+            if item.expected_home is not None and float(item.expected_home) < 0:
+                continue
+            if item.expected_away is not None and float(item.expected_away) < 0:
+                continue
+            try:
+                item.reasons.append('fallback_publish_mode=enabled')
+                if isinstance(item.source_summary, dict):
+                    item.source_summary['fallback_publish_mode'] = True
+            except Exception:
+                pass
+            rejections['fallback_publish_mode_used'] += 1
+            return [item]
+        rejections['fallback_publish_no_candidate'] += 1
         return deduped
 
     @staticmethod
