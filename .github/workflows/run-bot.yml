@@ -39,6 +39,9 @@ jobs:
 
       - name: Run bot
         env:
+          ODDS_API_IO_ENABLED: "true"
+          ODDS_API_IO_BOOTSTRAP_ENABLED: "true"
+          BOOKIES_API_ENABLED: "false"
           CONFIDENCE_DISPERSION_PENALTY_WEIGHT: 0.18
           CONFIDENCE_PRICE_PREMIUM_BONUS: 0.08
           CONFIDENCE_SOURCES_BONUS: 1.10
@@ -76,7 +79,6 @@ jobs:
           MATCH_BOOTSTRAP_PROVIDER: odds_api_io
           BOOTSTRAP_FALLBACK_TO_BOOKIES: false
           BOOKIES_BOOTSTRAP_ENABLED: false
-          BOOKIES_API_ENABLED: false
           SSTATS_ENABLED: true
           ENABLE_ODDS_API_IO: true
           ENABLE_SSTATS_CONTEXT: true
