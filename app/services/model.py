@@ -588,8 +588,26 @@ class CandidateFactory:
                 penalty = float(getattr(self.settings, 'line_movement_confidence_penalty', 3.0) or 3.0)
                 penalty *= float(getattr(self.settings, 'line_movement_negative_penalty_factor', 0.5) or 0.5)
                 confidence -= penalty
-        if dispersion_pct is not None and dispersion_pct <= float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5):
+        consensus_dispersion_cap = float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5)
+        if dispersion_pct is not None and dispersion_pct <= consensus_dispersion_cap:
             confidence += float(getattr(self.settings, 'consensus_tight_confidence_bonus', 2.0) or 2.0)
+
+        raw_gap_pct = abs(model_prob - market_prob) * 100.0
+        consensus_fair_odds = 1.0 / max(market_prob, 0.01)
+        price_premium_pct = max(0.0, ((best_price / max(consensus_fair_odds, 1.01)) - 1.0) * 100.0)
+
+        confidence += min(4.0, raw_gap_pct * float(getattr(self.settings, 'confidence_gap_bonus_weight', 0.10) or 0.10))
+        confidence += max(0.0, len(books) - 1) * float(getattr(self.settings, 'confidence_books_bonus', 0.90) or 0.90)
+        confidence += max(0.0, len(sources) - 1) * float(getattr(self.settings, 'confidence_sources_bonus', 1.10) or 1.10)
+        confidence += min(2.0, price_premium_pct * float(getattr(self.settings, 'confidence_price_premium_bonus', 0.08) or 0.08))
+
+        if dispersion_pct is not None and dispersion_pct > consensus_dispersion_cap:
+            confidence -= min(
+                2.5,
+                (dispersion_pct - consensus_dispersion_cap)
+                * float(getattr(self.settings, 'confidence_dispersion_penalty_weight', 0.18) or 0.18),
+            )
+
         confidence = clamp(confidence, 0, 100)
 
         adjusted = shrink_probability(model_prob, market_prob, confidence, shrink_min, shrink_max)

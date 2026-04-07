@@ -1,5 +1,4 @@
 from __future__ import annotations
-
 from datetime import UTC
 
 import httpx
@@ -14,19 +13,18 @@ class TelegramPublisher:
         self.settings = settings
 
     def render_message(self, bets: list[CandidateBet]) -> str:
-        header = f'🔥 {len(bets)} лучших валуйных ставок на ближайшие 48 часов\n\n'
+        header = f"🔥 {len(bets)} лучших валуйных ставок на ближайшие 48 часов\n\n"
         notes = (
-            'В выдачу попадают только одиночные ставки с подтверждённым рыночным сигналом. '
-            'На один матч — не более одной ставки.\n'
+            "В выдачу попадают только одиночные ставки с подтверждением минимум по 2 букмекерским котировкам "
+            "из доступных рыночных источников. На один матч — не более одной ставки.\n"
         )
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
-            point_suffix = f' ({bet.point:g})' if bet.point is not None else ''
-            xg = ''
+            point_suffix = f" ({bet.point:g})" if bet.point is not None else ""
+            xg = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg = f"\n📈 xG: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
-
             start_text = bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M МСК')
             blocks.append(
                 f"{idx}. {bet.home_team} - {bet.away_team}\n"
@@ -39,6 +37,7 @@ class TelegramPublisher:
                 f"{xg}\n"
                 f"📌 Причины: {'; '.join(bet.reasons[:3])}"
             )
+
         return '\n\n'.join(blocks)
 
     async def publish(self, bets: list[CandidateBet]) -> tuple[int, list[str]]:
@@ -59,4 +58,4 @@ class TelegramPublisher:
                 },
             )
             response.raise_for_status()
-        return 1, [message]
+            return 1, [message]
