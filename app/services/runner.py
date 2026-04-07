@@ -219,12 +219,12 @@ class PredictionRunner:
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
             candidates = []
-            skipped_already_in_state = 0
+            reused_already_in_state = 0
             for candidate in raw_candidates:
                 fingerprint = self._candidate_fingerprint(candidate)
                 if fingerprint and fingerprint in seen_fingerprints:
-                    skipped_already_in_state += 1
-                    continue
+                    reused_already_in_state += 1
+                    candidate.already_used = True
                 candidates.append(candidate)
 
             sent_messages, telegram_payloads = await self.telegram.publish(candidates)
@@ -279,7 +279,8 @@ class PredictionRunner:
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
                 'candidates_raw': len(raw_candidates),
-                'skipped_already_in_state': skipped_already_in_state,
+                'skipped_already_in_state': 0,
+                'reused_already_in_state': reused_already_in_state,
                 'published': telegram_picks_sent,
                 'published_to_telegram': telegram_picks_sent,
                 'telegram_messages_sent': sent_messages,

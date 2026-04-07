@@ -28,6 +28,7 @@ class TelegramPublisher:
             xg_text = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
+            used_text = "\n⚠️ Прогноз использован" if bet.already_used else ""
             explanation = self._build_explanation(bet)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
@@ -37,7 +38,8 @@ class TelegramPublisher:
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"🏆 Турнир: {bet.league_name}\n"
                 f"🕒 Начало: {start_text}"
-                f"{xg_text}\n"
+                f"{xg_text}"
+                f"{used_text}\n"
                 f"📝 Почему ставка интересна: {explanation}"
             )
 
