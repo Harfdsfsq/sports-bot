@@ -33,7 +33,7 @@ class Settings(BaseSettings):
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices('RUN_DAYS_AHEAD', 'DAYS_AHEAD'))
     publish_window_hours: int = Field(default=48, validation_alias=AliasChoices('PUBLISH_WINDOW_HOURS'))
     min_kickoff_lead_minutes: int = Field(default=30, validation_alias=AliasChoices('MIN_KICKOFF_LEAD_MINUTES'))
-    max_picks_per_run: int = Field(default=5, validation_alias=AliasChoices('MAX_PICKS_PER_RUN', 'TELEGRAM_TOP_LIMIT'))
+    max_picks_per_run: int = Field(default=7, validation_alias=AliasChoices('MAX_PICKS_PER_RUN', 'TELEGRAM_TOP_LIMIT'))
 
     target_bookmakers: CsvList = Field(default_factory=lambda: ['Bet365', 'Unibet'], validation_alias=AliasChoices('TARGET_BOOKMAKERS'))
     consensus_bookmakers: CsvList = Field(
@@ -69,7 +69,7 @@ class Settings(BaseSettings):
 
     enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_PROVIDER_DIAGNOSTICS'))
     diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices('DIAGNOSTICS_MATCH_LIMIT'))
-    context_enrichment_match_limit: int = Field(default=90, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_MATCH_LIMIT'))
+    context_enrichment_match_limit: int = Field(default=180, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_MATCH_LIMIT'))
     context_enrichment_requires_offers: bool = Field(default=True, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_REQUIRES_OFFERS'))
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN'))
@@ -77,8 +77,8 @@ class Settings(BaseSettings):
 
     odds_api_io_key: str | None = Field(default=None, validation_alias=AliasChoices('ODDS_API_IO_KEY'))
     odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices('ODDS_API_IO_TIMEOUT_SECONDS'))
-    odds_api_io_page_limit: int = Field(default=60, validation_alias=AliasChoices('ODDS_API_IO_PAGE_LIMIT'))
-    odds_api_io_max_pages_per_sport: int = Field(default=4, validation_alias=AliasChoices('ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT'))
+    odds_api_io_page_limit: int = Field(default=100, validation_alias=AliasChoices('ODDS_API_IO_PAGE_LIMIT'))
+    odds_api_io_max_pages_per_sport: int = Field(default=8, validation_alias=AliasChoices('ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT'))
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices('SSTATS_API_KEY'))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices('SSTATS_TIMEOUT_SECONDS'))
@@ -154,8 +154,8 @@ class Settings(BaseSettings):
     btts_score_weight: float = Field(default=1.12, validation_alias=AliasChoices('BTTS_SCORE_WEIGHT'))
     team_totals_score_weight: float = Field(default=1.20, validation_alias=AliasChoices('TEAM_TOTALS_SCORE_WEIGHT'))
 
-    max_picks_per_league: int = Field(default=2, validation_alias=AliasChoices('MAX_PICKS_PER_LEAGUE'))
-    max_picks_per_family: int = Field(default=2, validation_alias=AliasChoices('MAX_PICKS_PER_FAMILY'))
+    max_picks_per_league: int = Field(default=3, validation_alias=AliasChoices('MAX_PICKS_PER_LEAGUE'))
+    max_picks_per_family: int = Field(default=3, validation_alias=AliasChoices('MAX_PICKS_PER_FAMILY'))
     max_same_reason_signature: int = Field(default=2, validation_alias=AliasChoices('MAX_SAME_REASON_SIGNATURE'))
     reject_negative_expected_goals: bool = Field(default=True, validation_alias=AliasChoices('REJECT_NEGATIVE_EXPECTED_GOALS'))
     min_expected_goals_value: float = Field(default=0.15, validation_alias=AliasChoices('MIN_EXPECTED_GOALS_VALUE'))
@@ -171,6 +171,11 @@ class Settings(BaseSettings):
     line_movement_confidence_penalty: float = Field(default=3.0, validation_alias=AliasChoices('LINE_MOVEMENT_CONFIDENCE_PENALTY'))
     max_consensus_dispersion_pct: float = Field(default=6.5, validation_alias=AliasChoices('MAX_CONSENSUS_DISPERSION_PCT'))
     consensus_tight_confidence_bonus: float = Field(default=2.0, validation_alias=AliasChoices('CONSENSUS_TIGHT_CONFIDENCE_BONUS'))
+    confidence_gap_bonus_weight: float = Field(default=0.10, validation_alias=AliasChoices('CONFIDENCE_GAP_BONUS_WEIGHT'))
+    confidence_books_bonus: float = Field(default=0.90, validation_alias=AliasChoices('CONFIDENCE_BOOKS_BONUS'))
+    confidence_sources_bonus: float = Field(default=1.10, validation_alias=AliasChoices('CONFIDENCE_SOURCES_BONUS'))
+    confidence_price_premium_bonus: float = Field(default=0.08, validation_alias=AliasChoices('CONFIDENCE_PRICE_PREMIUM_BONUS'))
+    confidence_dispersion_penalty_weight: float = Field(default=0.18, validation_alias=AliasChoices('CONFIDENCE_DISPERSION_PENALTY_WEIGHT'))
     market_snapshot_history_limit: int = Field(default=96, validation_alias=AliasChoices('MARKET_SNAPSHOT_HISTORY_LIMIT'))
     clv_resolve_grace_minutes: int = Field(default=45, validation_alias=AliasChoices('CLV_RESOLVE_GRACE_MINUTES'))
     market_monitor_subdir: str = Field(default='market-monitor', validation_alias=AliasChoices('MARKET_MONITOR_SUBDIR'))
