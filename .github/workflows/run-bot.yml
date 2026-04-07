@@ -3,7 +3,14 @@ name: Run Sports Bot
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 5 * * *"
+    - cron: "15 */12 * * *"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sports-bot-runner-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   run-bot:
@@ -20,6 +27,12 @@ jobs:
 
       - name: Install dependencies
         run: pip install -r requirements.txt
+
+      - name: Smoke check imports
+        run: python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor"
+
+      - name: Compile critical modules
+        run: python -m py_compile app/config.py app/services/runner.py app/services/model.py app/services/market_monitor.py
 
       - name: Prepare data dir
         run: mkdir -p .data .data/exports
@@ -47,6 +60,10 @@ jobs:
           MAX_MATCHES_FOR_PRICING: 300
           MAX_PICKS_PER_RUN: 5
           ALLOW_LOW_TIER: false
+          ENABLE_PROVIDER_DIAGNOSTICS: true
+          DIAGNOSTICS_MATCH_LIMIT: 180
+          CONTEXT_ENRICHMENT_MATCH_LIMIT: 90
+          CONTEXT_ENRICHMENT_REQUIRES_OFFERS: true
           BOOKIES_BOOTSTRAP_ENABLED: true
           BOOKIES_API_ENABLED: true
           SSTATS_ENABLED: true
@@ -74,7 +91,12 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add .data/state.json .data/exports/latest-picks.json .data/exports/latest-picks.csv || true
+          git add \
+            .data/state.json \
+            .data/exports/latest-picks.json \
+            .data/exports/latest-picks.csv \
+            .data/exports/latest-matches.json \
+            .data/exports/latest-matches.csv || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push

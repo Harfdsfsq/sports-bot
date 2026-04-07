@@ -20,6 +20,8 @@ from app.utils import ensure_utc
 class PredictionRunner:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
+        self.provider_status: dict[str, dict[str, Any]] = {}
+        self.provider_runtime_errors: dict[str, list[str]] = defaultdict(list)
         self.bookies_bootstrap = self._safe_provider('app.providers.bookies_bootstrap', 'BookiesBootstrapProvider')
         self.odds_api_io = self._safe_provider('app.providers.odds_api_io', 'OddsApiIoProvider')
         self.bookies_api = self._safe_provider('app.providers.bookies_api', 'BookiesApiProvider')
@@ -32,26 +34,64 @@ class PredictionRunner:
         self.telegram = TelegramPublisher(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
 
+    @staticmethod
+    def _provider_name_from_module(module_name: str) -> str:
+        return module_name.rsplit('.', 1)[-1]
+
+    @staticmethod
+    def _format_exception(exc: Exception) -> str:
+        return f'{type(exc).__name__}: {exc}'
+
+    def _mark_provider_status(self, provider_name: str, **payload: Any) -> None:
+        current = dict(self.provider_status.get(provider_name, {}))
+        current.update(payload)
+        self.provider_status[provider_name] = current
+
+    def _provider_name(self, provider: Any | None) -> str:
+        if provider is None:
+            return 'unknown'
+        module_name = getattr(provider.__class__, '__module__', '')
+        if module_name:
+            return self._provider_name_from_module(module_name)
+        return provider.__class__.__name__.lower()
+
     def _safe_provider(self, module_name: str, class_name: str) -> Any | None:
+        provider_name = self._provider_name_from_module(module_name)
         if module_name.endswith('bookies_bootstrap') and not getattr(self.settings, 'bookies_bootstrap_enabled', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('odds_api_io') and not getattr(self.settings, 'enable_odds_api_io', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('bookies_api') and not getattr(self.settings, 'bookies_api_enabled', False):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('sstats') and (not getattr(self.settings, 'sstats_enabled', True) or not getattr(self.settings, 'enable_sstats_context', True)):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('api_football') and not getattr(self.settings, 'api_football_enabled', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('espn') and not getattr(self.settings, 'enable_espn_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('thesportsdb') and not getattr(self.settings, 'enable_thesportsdb_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         try:
             module = import_module(module_name)
             cls = getattr(module, class_name)
-            return cls(self.settings)
-        except Exception:
+            instance = cls(self.settings)
+            self._mark_provider_status(provider_name, enabled=True, loaded=True, class_name=class_name)
+            return instance
+        except Exception as exc:
+            self._mark_provider_status(
+                provider_name,
+                enabled=True,
+                loaded=False,
+                class_name=class_name,
+                error=self._format_exception(exc),
+            )
             return None
 
     async def run_once(self) -> dict[str, Any]:
@@ -77,28 +117,40 @@ class PredictionRunner:
                 filtered_matches,
                 empty_data={},
             )
+
+            offer_maps = {
+                'odds_api_io': odds_api_io_offers,
+                'bookies_api': bookies_api_offers,
+            }
+            merged_offers = self._merge_offers(*offer_maps.values())
+            context_target_matches, context_enrichment = self._select_context_enrichment_matches(
+                filtered_matches,
+                merged_offers,
+                now_utc,
+            )
+
             sstats_contexts, sstats_stats, sstats_preview = await self._fetch_provider(
                 self.sstats,
                 'fetch_context',
-                filtered_matches,
+                context_target_matches,
                 empty_data={},
             )
             api_football_contexts, api_football_stats, api_football_preview = await self._fetch_provider(
                 self.api_football,
                 'fetch_context',
-                filtered_matches,
+                context_target_matches,
                 empty_data={},
             )
             espn_contexts, espn_stats, espn_preview = await self._fetch_provider(
                 self.espn,
                 'fetch_context',
-                filtered_matches,
+                context_target_matches,
                 empty_data={},
             )
             thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview = await self._fetch_provider(
                 self.thesportsdb,
                 'fetch_context',
-                filtered_matches,
+                context_target_matches,
                 empty_data={},
             )
 
@@ -110,11 +162,6 @@ class PredictionRunner:
             }
             contexts = self._merge_context_maps(*context_maps.values())
 
-            offer_maps = {
-                'odds_api_io': odds_api_io_offers,
-                'bookies_api': bookies_api_offers,
-            }
-            merged_offers = self._merge_offers(*offer_maps.values())
             market_signals: dict[str, dict[str, Any]] = {}
             market_monitor_stats: dict[str, Any] = {'enabled': False}
             market_monitor_preview: dict[str, Any] = {}
@@ -169,6 +216,8 @@ class PredictionRunner:
                 'matches_seen': len(filtered_matches),
                 'matches_before_publish_window': len(deduped_matches),
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
+                'context_matches_requested': len(context_target_matches),
+                'context_enrichment': context_enrichment,
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
                 'candidates_raw': len(raw_candidates),
@@ -221,6 +270,8 @@ class PredictionRunner:
                         'consensus_bookmakers': self.settings.consensus_bookmakers,
                         'publish_dry_run': self.settings.publish_dry_run,
                         'app_timezone': self.settings.app_timezone,
+                        'context_enrichment_match_limit': self.settings.context_enrichment_match_limit,
+                        'context_enrichment_requires_offers': self.settings.context_enrichment_requires_offers,
                     },
                     'source_previews': {
                         'bookies_bootstrap': bootstrap_preview,
@@ -260,7 +311,14 @@ class PredictionRunner:
     async def _fetch_provider(self, provider: Any | None, method_name: str, *args: Any, empty_data: Any) -> tuple[Any, dict[str, Any], dict[str, Any]]:
         if provider is None or not hasattr(provider, method_name):
             return empty_data, {'enabled': False}, {}
-        result = await getattr(provider, method_name)(*args)
+        provider_name = self._provider_name(provider)
+        try:
+            result = await getattr(provider, method_name)(*args)
+        except Exception as exc:
+            error_text = self._format_exception(exc)
+            self.provider_runtime_errors[provider_name].append(error_text)
+            self._mark_provider_status(provider_name, runtime_error=error_text)
+            return empty_data, {'enabled': True, 'runtime_error': error_text}, {'error': error_text}
         if isinstance(result, tuple):
             if len(result) == 3:
                 return result[0], result[1] or {}, result[2] or {}
@@ -303,6 +361,53 @@ class PredictionRunner:
             'now_local': now_utc.astimezone(self.settings.tzinfo).isoformat(),
         }
         return filtered, filtering
+
+    def _select_context_enrichment_matches(
+        self,
+        matches: list[Match],
+        offers_by_match: dict[str, list[Offer]],
+        now_utc: datetime,
+    ) -> tuple[list[Match], dict[str, Any]]:
+        requires_offers = bool(getattr(self.settings, 'context_enrichment_requires_offers', True))
+        limit = int(getattr(self.settings, 'context_enrichment_match_limit', 0) or 0)
+        target_bookmakers = {str(name).strip().lower() for name in (self.settings.target_bookmakers or []) if str(name).strip()}
+
+        ranked: list[tuple[tuple[float, ...], Match]] = []
+        skipped_without_offers = 0
+        for match in matches:
+            offers = list(offers_by_match.get(match.match_key) or [])
+            if requires_offers and not offers:
+                skipped_without_offers += 1
+                continue
+            unique_books = {str(item.bookmaker or '').strip().lower() for item in offers if str(item.bookmaker or '').strip()}
+            supported_books = len(unique_books & target_bookmakers) if target_bookmakers else len(unique_books)
+            families = {str(item.family or '').strip().lower() for item in offers if str(item.family or '').strip()}
+            kickoff_delta = max((ensure_utc(match.commence_time) - now_utc).total_seconds(), 0.0)
+            rank_key = (
+                float(supported_books),
+                float(len(unique_books)),
+                float(len(offers)),
+                float(len(families)),
+                -kickoff_delta,
+            )
+            ranked.append((rank_key, match))
+
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        selected = [match for _, match in ranked]
+        trimmed = 0
+        if limit > 0 and len(selected) > limit:
+            trimmed = len(selected) - limit
+            selected = selected[:limit]
+
+        summary = {
+            'requires_offers': requires_offers,
+            'limit': limit,
+            'eligible_matches': len(ranked),
+            'selected_matches': len(selected),
+            'trimmed_matches': trimmed,
+            'skipped_without_offers': skipped_without_offers,
+        }
+        return selected, summary
 
     @staticmethod
     def _dedupe_matches(matches: list[Match]) -> list[Match]:
@@ -645,6 +750,8 @@ class PredictionRunner:
 
         summary = {
             'providers': provider_summary,
+            'provider_status': dict(self.provider_status),
+            'provider_runtime_errors': {name: list(errors) for name, errors in self.provider_runtime_errors.items()},
             'matches_with_any_offer_source': sum(1 for match in filtered_matches if any((mapping.get(match.match_key) or []) for mapping in offer_maps.values())),
             'matches_with_any_context_source': sum(1 for match in filtered_matches if any(mapping.get(match.match_key) is not None for mapping in context_maps.values())),
             'matches_with_merged_context': sum(1 for match in filtered_matches if merged_contexts.get(match.match_key) is not None),

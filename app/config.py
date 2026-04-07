@@ -69,6 +69,8 @@ class Settings(BaseSettings):
 
     enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_PROVIDER_DIAGNOSTICS'))
     diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices('DIAGNOSTICS_MATCH_LIMIT'))
+    context_enrichment_match_limit: int = Field(default=90, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_MATCH_LIMIT'))
+    context_enrichment_requires_offers: bool = Field(default=True, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_REQUIRES_OFFERS'))
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN'))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_CHAT_ID'))
