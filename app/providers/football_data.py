@@ -29,6 +29,7 @@ class FootballDataContextProvider:
             'contexts_built': 0,
             'standings_requests': 0,
             'standings_loaded': 0,
+            'history_requests': 0,
             'history_contexts_built': 0,
             'matched_exact': 0,
             'matched_loose': 0,
@@ -54,11 +55,10 @@ class FootballDataContextProvider:
         match_limit = max(1, int(getattr(self.settings, 'football_data_match_limit', 36) or 36))
         soccer_matches = soccer_matches[:match_limit]
 
-        start = min(item.commence_time for item in soccer_matches).astimezone(UTC).date()
-        end = max(item.commence_time for item in soccer_matches).astimezone(UTC).date()
+        start_date = min(item.commence_time for item in soccer_matches).astimezone(UTC).date()
+        end_date = max(item.commence_time for item in soccer_matches).astimezone(UTC).date()
         days_ahead = max(1, int(getattr(self.settings, 'football_data_days_ahead', 2) or 2))
-        end = max(end, start + timedelta(days=days_ahead))
-        history_start = start - timedelta(days=35)
+        end_date = max(end_date, start_date + timedelta(days=days_ahead))
 
         headers = {'X-Auth-Token': str(self.settings.football_data_api_key)}
         async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
@@ -67,9 +67,9 @@ class FootballDataContextProvider:
                 '/matches',
                 stats,
                 params={
-                    'dateFrom': start.isoformat(),
-                    'dateTo': end.isoformat(),
-                    'status': 'SCHEDULED',
+                    'dateFrom': start_date.isoformat(),
+                    'dateTo': end_date.isoformat(),
+                    'status': 'SCHEDULED,TIMED',
                     'limit': 200,
                 },
             )
@@ -80,26 +80,10 @@ class FootballDataContextProvider:
             if not rows:
                 return {}, stats, preview
 
-            history_payload = await self._fetch_json(
-                client,
-                '/matches',
-                stats,
-                params={
-                    'dateFrom': history_start.isoformat(),
-                    'dateTo': start.isoformat(),
-                    'status': 'FINISHED',
-                    'limit': 200,
-                },
-                soft_fail_statuses={400, 403, 404},
-            )
-            history_rows = self._extract_rows(history_payload, 'matches')
-            stats['history_rows_fetched'] = len(history_rows)
-            if history_rows:
-                preview['sample_history'] = history_rows[:3]
-
             mapping: dict[str, dict[str, Any]] = {}
-            comp_codes: list[str] = []
-            seen_codes: set[str] = set()
+            competition_types: dict[str, str] = {}
+            competition_seasons: dict[str, int] = {}
+            competition_counts: dict[str, int] = defaultdict(int)
             for row in rows:
                 event = self._row_to_event(row)
                 if event is None:
@@ -112,10 +96,14 @@ class FootballDataContextProvider:
                 existing = mapping.get(matched.match_key)
                 if existing is None or score > float(existing['score']):
                     mapping[matched.match_key] = {'match': matched, 'row': row, 'score': score, 'quality': quality}
-                code = event.get('competition_code')
-                if code and code not in seen_codes:
-                    seen_codes.add(code)
-                    comp_codes.append(code)
+                comp_ref = str(event.get('competition_ref') or '').strip().upper()
+                if comp_ref:
+                    competition_counts[comp_ref] += 1
+                    if event.get('competition_type'):
+                        competition_types[comp_ref] = str(event.get('competition_type') or '').strip().upper()
+                    season_year = event.get('season_start_year')
+                    if isinstance(season_year, int) and season_year > 0:
+                        competition_seasons[comp_ref] = season_year
 
             stats['events_matched'] = len(mapping)
             for payload_row in mapping.values():
@@ -138,40 +126,71 @@ class FootballDataContextProvider:
                         'score': round(float(payload_row.get('score') or 0.0), 2),
                     })
 
-            standings_limit = max(1, int(getattr(self.settings, 'football_data_standings_limit', 8) or 8))
-            standings_by_code: dict[str, list[dict[str, Any]]] = {}
-            for code in comp_codes[:standings_limit]:
+            standings_limit = max(1, int(getattr(self.settings, 'football_data_standings_limit', 4) or 4))
+            history_limit = max(1, int(getattr(self.settings, 'football_data_history_competitions_limit', 4) or 4))
+            competition_match_limit = max(50, int(getattr(self.settings, 'football_data_competition_match_limit', 120) or 120))
+
+            standings_by_ref: dict[str, list[dict[str, Any]]] = {}
+            league_refs = [
+                ref
+                for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0]))
+                if competition_types.get(ref) in {'LEAGUE', 'LEAGUE_CUP'}
+            ]
+            for ref in league_refs[:standings_limit]:
                 standings_payload = await self._fetch_json(
                     client,
-                    f'/competitions/{code}/standings',
+                    f'/competitions/{ref}/standings',
                     stats,
                     soft_fail_statuses={400, 403, 404},
                 )
                 stats['standings_requests'] += 1
                 table = self._extract_standings_table(standings_payload)
                 if table:
-                    standings_by_code[code] = table
+                    standings_by_ref[ref] = table
                     stats['standings_loaded'] += 1
                     if len(preview['sample_tables']) < 4:
-                        preview['sample_tables'].append({'competition_code': code, 'rows': table[:3]})
+                        preview['sample_tables'].append({'competition_ref': ref, 'rows': table[:3]})
 
-        history_by_code: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        for row in history_rows:
-            code = str(((row.get('competition') or {}).get('code')) or '').strip().upper()
-            if code:
-                history_by_code[code].append(row)
+            history_by_ref: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            history_refs = [
+                ref
+                for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0]))
+                if ref not in standings_by_ref
+            ]
+            for ref in history_refs[:history_limit]:
+                params: dict[str, Any] = {'limit': competition_match_limit}
+                season_year = competition_seasons.get(ref)
+                if season_year:
+                    params['season'] = season_year
+                history_payload = await self._fetch_json(
+                    client,
+                    f'/competitions/{ref}/matches',
+                    stats,
+                    params=params,
+                    soft_fail_statuses={400, 403, 404},
+                )
+                stats['history_requests'] += 1
+                history_rows = self._extract_rows(history_payload, 'matches')
+                if history_rows:
+                    history_by_ref[ref].extend(history_rows)
+                    stats['history_rows_fetched'] += len(history_rows)
+                    if len(preview['sample_history']) < 3:
+                        preview['sample_history'].extend(history_rows[: max(0, 3 - len(preview['sample_history']))])
 
         contexts: dict[str, MatchContext] = {}
         for item in mapping.values():
             match = item['match']
             row = item['row']
-            code = str(((row.get('competition') or {}).get('code')) or '').strip().upper()
-            table = standings_by_code.get(code) or []
+            comp = row.get('competition') or {}
+            comp_ref = str((comp.get('code') or comp.get('id') or '')).strip().upper()
+            table = standings_by_ref.get(comp_ref) or []
             context = self._build_context_from_standings(match, row, table) if table else None
             if context is None:
-                context = self._build_context_from_history(match, row, history_by_code.get(code) or history_rows)
-                if context is not None:
-                    stats['history_contexts_built'] += 1
+                history_rows = history_by_ref.get(comp_ref) or []
+                if history_rows:
+                    context = self._build_context_from_history(match, row, history_rows)
+                    if context is not None:
+                        stats['history_contexts_built'] += 1
             if context is None:
                 continue
             contexts[match.match_key] = context
@@ -247,12 +266,24 @@ class FootballDataContextProvider:
         dt = parse_datetime(str(row.get('utcDate') or ''))
         if dt is None:
             return None
+        competition = row.get('competition') or {}
+        season = row.get('season') or {}
+        season_start = str(season.get('startDate') or '').strip()
+        season_start_year: int | None = None
+        if season_start[:4].isdigit():
+            season_start_year = int(season_start[:4])
+        code = str((competition.get('code') or '')).strip().upper()
+        comp_id = competition.get('id')
+        comp_ref = code or (str(comp_id).strip().upper() if comp_id is not None else '')
         return {
             'home': home,
             'away': away,
             'commence_time': dt,
-            'league': str(((row.get('competition') or {}).get('name')) or '').strip(),
-            'competition_code': str(((row.get('competition') or {}).get('code')) or '').strip().upper(),
+            'league': str((competition.get('name') or '')).strip(),
+            'competition_code': code,
+            'competition_ref': comp_ref,
+            'competition_type': str((competition.get('type') or '')).strip().upper(),
+            'season_start_year': season_start_year,
         }
 
     def _match_event(self, event: dict[str, Any], matches: list[Match]) -> tuple[Match | None, float, str | None]:
