@@ -8,7 +8,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
-from app.utils import clamp, parse_datetime, score_event_match, team_similarity
+from app.utils import canonicalize_team_name, clamp, parse_datetime, score_event_match, soft_contains_team, team_similarity
 
 
 class FootballDataContextProvider:
@@ -24,10 +24,12 @@ class FootballDataContextProvider:
             'requests': 0,
             'response_errors': 0,
             'matches_fetched': 0,
+            'history_rows_fetched': 0,
             'events_matched': 0,
             'contexts_built': 0,
             'standings_requests': 0,
             'standings_loaded': 0,
+            'history_contexts_built': 0,
             'matched_exact': 0,
             'matched_loose': 0,
             'matched_fuzzy': 0,
@@ -37,6 +39,7 @@ class FootballDataContextProvider:
         }
         preview: dict[str, Any] = {
             'sample_matches': [],
+            'sample_history': [],
             'matched_examples': [],
             'sample_contexts': [],
             'sample_tables': [],
@@ -55,6 +58,7 @@ class FootballDataContextProvider:
         end = max(item.commence_time for item in soccer_matches).astimezone(UTC).date()
         days_ahead = max(1, int(getattr(self.settings, 'football_data_days_ahead', 2) or 2))
         end = max(end, start + timedelta(days=days_ahead))
+        history_start = start - timedelta(days=35)
 
         headers = {'X-Auth-Token': str(self.settings.football_data_api_key)}
         async with httpx.AsyncClient(timeout=self.timeout, headers=headers) as client:
@@ -75,6 +79,23 @@ class FootballDataContextProvider:
                 preview['sample_matches'] = rows[:3]
             if not rows:
                 return {}, stats, preview
+
+            history_payload = await self._fetch_json(
+                client,
+                '/matches',
+                stats,
+                params={
+                    'dateFrom': history_start.isoformat(),
+                    'dateTo': start.isoformat(),
+                    'status': 'FINISHED',
+                    'limit': 200,
+                },
+                soft_fail_statuses={400, 403, 404},
+            )
+            history_rows = self._extract_rows(history_payload, 'matches')
+            stats['history_rows_fetched'] = len(history_rows)
+            if history_rows:
+                preview['sample_history'] = history_rows[:3]
 
             mapping: dict[str, dict[str, Any]] = {}
             comp_codes: list[str] = []
@@ -120,7 +141,12 @@ class FootballDataContextProvider:
             standings_limit = max(1, int(getattr(self.settings, 'football_data_standings_limit', 8) or 8))
             standings_by_code: dict[str, list[dict[str, Any]]] = {}
             for code in comp_codes[:standings_limit]:
-                standings_payload = await self._fetch_json(client, f'/competitions/{code}/standings', stats)
+                standings_payload = await self._fetch_json(
+                    client,
+                    f'/competitions/{code}/standings',
+                    stats,
+                    soft_fail_statuses={400, 403, 404},
+                )
                 stats['standings_requests'] += 1
                 table = self._extract_standings_table(standings_payload)
                 if table:
@@ -129,12 +155,23 @@ class FootballDataContextProvider:
                     if len(preview['sample_tables']) < 4:
                         preview['sample_tables'].append({'competition_code': code, 'rows': table[:3]})
 
+        history_by_code: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for row in history_rows:
+            code = str(((row.get('competition') or {}).get('code')) or '').strip().upper()
+            if code:
+                history_by_code[code].append(row)
+
         contexts: dict[str, MatchContext] = {}
         for item in mapping.values():
             match = item['match']
             row = item['row']
-            code = str(((row.get('competition') or {}).get('code')) or '').strip()
-            context = self._build_context(match, row, standings_by_code.get(code) or [])
+            code = str(((row.get('competition') or {}).get('code')) or '').strip().upper()
+            table = standings_by_code.get(code) or []
+            context = self._build_context_from_standings(match, row, table) if table else None
+            if context is None:
+                context = self._build_context_from_history(match, row, history_by_code.get(code) or history_rows)
+                if context is not None:
+                    stats['history_contexts_built'] += 1
             if context is None:
                 continue
             contexts[match.match_key] = context
@@ -145,6 +182,7 @@ class FootballDataContextProvider:
                     'expected_home': context.expected_home,
                     'expected_away': context.expected_away,
                     'confidence': context.confidence,
+                    'source': context.source,
                 })
 
         return contexts, stats, preview
@@ -155,6 +193,7 @@ class FootballDataContextProvider:
         path: str,
         stats: dict[str, Any],
         params: dict[str, Any] | None = None,
+        soft_fail_statuses: set[int] | None = None,
     ) -> Any | None:
         stats['requests'] += 1
         try:
@@ -166,6 +205,8 @@ class FootballDataContextProvider:
         stats['http_statuses'].append(response.status_code)
         stats['last_body_preview'] = response.text[:1800]
         if response.status_code != 200:
+            if soft_fail_statuses and response.status_code in soft_fail_statuses:
+                return None
             stats['response_errors'] += 1
             return None
         try:
@@ -201,21 +242,17 @@ class FootballDataContextProvider:
     def _row_to_event(self, row: dict[str, Any]) -> dict[str, Any] | None:
         home = str(((row.get('homeTeam') or {}).get('name')) or '').strip()
         away = str(((row.get('awayTeam') or {}).get('name')) or '').strip()
-        league = str(((row.get('competition') or {}).get('name')) or '').strip()
-        code = str(((row.get('competition') or {}).get('code')) or '').strip()
         if not home or not away:
             return None
-        try:
-            commence = parse_datetime(str(row.get('utcDate') or row.get('date') or ''))
-        except Exception:
+        dt = parse_datetime(str(row.get('utcDate') or ''))
+        if dt is None:
             return None
         return {
-            'id': row.get('id'),
             'home': home,
             'away': away,
-            'league': league,
-            'competition_code': code,
-            'commence_time': commence,
+            'commence_time': dt,
+            'league': str(((row.get('competition') or {}).get('name')) or '').strip(),
+            'competition_code': str(((row.get('competition') or {}).get('code')) or '').strip().upper(),
         }
 
     def _match_event(self, event: dict[str, Any], matches: list[Match]) -> tuple[Match | None, float, str | None]:
@@ -246,7 +283,7 @@ class FootballDataContextProvider:
             return None, 0.0, None
         return best_match, best_score, best_quality
 
-    def _build_context(self, match: Match, row: dict[str, Any], table: list[dict[str, Any]]) -> MatchContext | None:
+    def _build_context_from_standings(self, match: Match, row: dict[str, Any], table: list[dict[str, Any]]) -> MatchContext | None:
         home_row = self._find_team_row(match.home_team, table)
         away_row = self._find_team_row(match.away_team, table)
         if home_row is None or away_row is None:
@@ -275,22 +312,101 @@ class FootballDataContextProvider:
             'away_ppg': round(away_ppg, 3),
             'home_form': round(home_form, 3),
             'away_form': round(away_form, 3),
-            'home_attack': round(clamp(home_stats['gf_pg'] / 2.2, 0.0, 1.0), 3),
-            'away_attack': round(clamp(away_stats['gf_pg'] / 2.2, 0.0, 1.0), 3),
-            'home_defense': round(clamp(1.0 - home_stats['ga_pg'] / 2.2, 0.0, 1.0), 3),
-            'away_defense': round(clamp(1.0 - away_stats['ga_pg'] / 2.2, 0.0, 1.0), 3),
-            'draw_probability': round(probs['draw'], 4),
-            'football_data_home_rank': home_rank,
-            'football_data_away_rank': away_rank,
-            'football_data_home_ppg': round(home_ppg, 3),
-            'football_data_away_ppg': round(away_ppg, 3),
-            'football_data_home_form': round(home_form, 3),
-            'football_data_away_form': round(away_form, 3),
+            'football_data_mode': 'standings',
             'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
         }
         return MatchContext(
             source='football_data',
             payload=row,
+            expected_home=round(expected_home, 3),
+            expected_away=round(expected_away, 3),
+            home_win_probability=round(probs['home'], 4),
+            away_win_probability=round(probs['away'], 4),
+            confidence=float(round(confidence, 2)),
+            details=details,
+        )
+
+    def _build_context_from_history(self, match: Match, row: dict[str, Any], rows: list[dict[str, Any]]) -> MatchContext | None:
+        match_dt = match.commence_time.astimezone(UTC)
+        home_games: list[tuple[datetime, float, float]] = []
+        away_games: list[tuple[datetime, float, float]] = []
+        h2h_totals: list[float] = []
+        for hist in rows:
+            try:
+                dt = parse_datetime(str(hist.get('utcDate') or ''))
+            except Exception:
+                dt = None
+            if dt is None or dt >= match_dt:
+                continue
+            score = hist.get('score') or {}
+            full = score.get('fullTime') if isinstance(score, dict) else None
+            if not isinstance(full, dict):
+                continue
+            try:
+                home_goals = float(full.get('home') if full.get('home') is not None else full.get('homeTeam'))
+                away_goals = float(full.get('away') if full.get('away') is not None else full.get('awayTeam'))
+            except Exception:
+                continue
+            hist_home = str(((hist.get('homeTeam') or {}).get('name')) or '').strip()
+            hist_away = str(((hist.get('awayTeam') or {}).get('name')) or '').strip()
+            if not hist_home or not hist_away:
+                continue
+
+            home_sim = self._team_match_score(match.home_team, hist_home)
+            away_sim = self._team_match_score(match.away_team, hist_away)
+            rev_home = self._team_match_score(match.home_team, hist_away)
+            rev_away = self._team_match_score(match.away_team, hist_home)
+
+            if home_sim >= 0.78:
+                home_games.append((dt, home_goals, away_goals))
+            elif rev_home >= 0.78:
+                home_games.append((dt, away_goals, home_goals))
+
+            if away_sim >= 0.78:
+                away_games.append((dt, away_goals, home_goals))
+            elif rev_away >= 0.78:
+                away_games.append((dt, home_goals, away_goals))
+
+            if (home_sim >= 0.76 and away_sim >= 0.76) or (rev_home >= 0.76 and rev_away >= 0.76):
+                h2h_totals.append(home_goals + away_goals)
+
+        home_games.sort(key=lambda item: item[0], reverse=True)
+        away_games.sort(key=lambda item: item[0], reverse=True)
+        if len(home_games) < 2 or len(away_games) < 2:
+            return None
+
+        home_recent = home_games[:5]
+        away_recent = away_games[:5]
+        home_gf = sum(item[1] for item in home_recent) / len(home_recent)
+        home_ga = sum(item[2] for item in home_recent) / len(home_recent)
+        away_gf = sum(item[1] for item in away_recent) / len(away_recent)
+        away_ga = sum(item[2] for item in away_recent) / len(away_recent)
+        home_points = sum(3.0 if gf > ga else 1.0 if gf == ga else 0.0 for _, gf, ga in home_recent)
+        away_points = sum(3.0 if gf > ga else 1.0 if gf == ga else 0.0 for _, gf, ga in away_recent)
+        home_ppg = home_points / len(home_recent)
+        away_ppg = away_points / len(away_recent)
+        home_form = home_ppg / 3.0
+        away_form = away_ppg / 3.0
+        expected_home = clamp(((home_gf + away_ga) / 2.0) + 0.14, 0.30, 3.25)
+        expected_away = clamp(((away_gf + home_ga) / 2.0), 0.25, 3.10)
+        delta = clamp((home_ppg - away_ppg) * 0.12 + (home_form - away_form) * 0.08, -0.18, 0.18)
+        draw = clamp(0.26 - abs(delta) * 0.16, 0.17, 0.31)
+        home = 0.38 + delta
+        away = 1.0 - home - draw
+        probs = self._normalize_probs(home, away, draw)
+        confidence = clamp(54.0 + min(len(home_recent), len(away_recent)) * 1.6, 53.0, 62.0)
+        details = {
+            'football_data_mode': 'history_fallback',
+            'football_data_home_ppg': round(home_ppg, 3),
+            'football_data_away_ppg': round(away_ppg, 3),
+            'football_data_home_form': round(home_form, 3),
+            'football_data_away_form': round(away_form, 3),
+            'football_data_h2h_avg_goals': round(sum(h2h_totals) / len(h2h_totals), 3) if h2h_totals else None,
+            'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
+        }
+        return MatchContext(
+            source='football_data',
+            payload={'scheduled': row, 'recent_home': home_recent, 'recent_away': away_recent},
             expected_home=round(expected_home, 3),
             expected_away=round(expected_away, 3),
             home_win_probability=round(probs['home'], 4),
@@ -343,8 +459,24 @@ class FootballDataContextProvider:
             row_name = str(((row.get('team') or {}).get('name')) or row.get('name') or '').strip()
             if not row_name:
                 continue
-            score = team_similarity(team_name, row_name)
+            score = self._team_match_score(team_name, row_name)
             if score > best_score:
                 best_score = score
                 best_row = row
         return best_row if best_score >= 0.72 else None
+
+    @staticmethod
+    def _team_match_score(a: str, b: str) -> float:
+        if not a or not b:
+            return 0.0
+        if soft_contains_team(a, b):
+            return 1.0
+        ca = canonicalize_team_name(a)
+        cb = canonicalize_team_name(b)
+        if not ca or not cb:
+            return 0.0
+        if ca == cb:
+            return 1.0
+        if ca.startswith(cb) or cb.startswith(ca):
+            return 0.95
+        return team_similarity(a, b)
