@@ -101,8 +101,12 @@ class PredictionRunner:
             now_utc = datetime.now(UTC)
             now_local = now_utc.astimezone(self.settings.tzinfo)
 
-            bootstrap_matches, bootstrap_stats, bootstrap_preview = await self._fetch_matches()
+            bootstrap_matches, bootstrap_meta = await self._fetch_matches()
             deduped_matches = self._dedupe_matches(bootstrap_matches)
+            bootstrap_provider = str(bootstrap_meta.get('provider') or 'none')
+            bootstrap_attempts = dict(bootstrap_meta.get('attempts') or {})
+            bootstrap_stats = dict(bootstrap_meta.get('stats') or {})
+            bootstrap_preview = dict(bootstrap_meta.get('preview') or {})
             filtered_matches, filtering = self._filter_matches(deduped_matches, now_utc)
 
             odds_api_io_offers, odds_io_stats, odds_io_preview = await self._fetch_provider(
@@ -186,8 +190,14 @@ class PredictionRunner:
             export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, candidates)
 
             source_stats = {
-                'bookies_bootstrap': bootstrap_stats,
+                'match_bootstrap': {
+                    'provider': bootstrap_provider,
+                    'stats': bootstrap_stats,
+                    'attempts': {name: (payload.get('stats') or {}) for name, payload in bootstrap_attempts.items()},
+                },
+                'bookies_bootstrap': (bootstrap_attempts.get('bookies_bootstrap', {}).get('stats') or {'enabled': False}),
                 'odds_api_io': odds_io_stats,
+                'odds_api_io_bootstrap': (bootstrap_attempts.get('odds_api_io', {}).get('stats') or {'enabled': False}),
                 'bookies_api': bookies_stats,
                 'sstats': sstats_stats,
                 'api_football': api_football_stats,
@@ -231,6 +241,7 @@ class PredictionRunner:
                 'debug_path': self.settings.debug_path,
                 'storage_export_dir': self.settings.storage_export_dir,
                 'filtering': filtering,
+                'bootstrap_provider': bootstrap_provider,
                 'source_stats': source_stats,
                 'mapping': {
                     'matched_exact': odds_io_stats.get('matched_exact', 0) + bookies_stats.get('matched_exact', 0),
@@ -270,11 +281,15 @@ class PredictionRunner:
                         'consensus_bookmakers': self.settings.consensus_bookmakers,
                         'publish_dry_run': self.settings.publish_dry_run,
                         'app_timezone': self.settings.app_timezone,
+                        'match_bootstrap_provider': self.settings.match_bootstrap_provider,
+                        'bootstrap_fallback_to_bookies': self.settings.bootstrap_fallback_to_bookies,
                         'context_enrichment_match_limit': self.settings.context_enrichment_match_limit,
                         'context_enrichment_requires_offers': self.settings.context_enrichment_requires_offers,
                     },
                     'source_previews': {
-                        'bookies_bootstrap': bootstrap_preview,
+                        'match_bootstrap': bootstrap_preview,
+                        'bookies_bootstrap': (bootstrap_attempts.get('bookies_bootstrap', {}).get('preview') or {}),
+                        'odds_api_io_bootstrap': (bootstrap_attempts.get('odds_api_io', {}).get('preview') or {}),
                         'odds_api_io': odds_io_preview,
                         'bookies_api': bookies_preview,
                         'sstats': sstats_preview,
@@ -300,13 +315,48 @@ class PredictionRunner:
             self.state.write_debug({'created_at': datetime.now(UTC).isoformat(), 'error': error_text})
             raise
 
-    async def _fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
-        matches, stats, preview = await self._fetch_provider(
-            self.bookies_bootstrap,
-            'fetch_matches',
-            empty_data=[],
-        )
-        return list(matches or []), stats, preview
+    async def _fetch_matches(self) -> tuple[list[Match], dict[str, Any]]:
+        strategy = str(getattr(self.settings, 'match_bootstrap_provider', 'odds_api_io') or 'odds_api_io').strip().lower()
+        allow_fallback = bool(getattr(self.settings, 'bootstrap_fallback_to_bookies', True))
+
+        provider_order: list[tuple[str, Any]]
+        if strategy == 'bookies_bootstrap':
+            provider_order = [('bookies_bootstrap', self.bookies_bootstrap)]
+            if allow_fallback:
+                provider_order.append(('odds_api_io', self.odds_api_io))
+        elif strategy == 'auto':
+            provider_order = [('odds_api_io', self.odds_api_io), ('bookies_bootstrap', self.bookies_bootstrap)]
+        else:
+            provider_order = [('odds_api_io', self.odds_api_io)]
+            if allow_fallback:
+                provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
+
+        attempts: dict[str, dict[str, Any]] = {}
+        for provider_name, provider in provider_order:
+            matches, stats, preview = await self._fetch_provider(
+                provider,
+                'fetch_matches',
+                empty_data=[],
+            )
+            attempts[provider_name] = {
+                'matches': len(matches or []),
+                'stats': stats or {},
+                'preview': preview or {},
+            }
+            if matches:
+                return list(matches or []), {
+                    'provider': provider_name,
+                    'stats': stats or {},
+                    'preview': preview or {},
+                    'attempts': attempts,
+                }
+
+        return [], {
+            'provider': 'none',
+            'stats': {},
+            'preview': {},
+            'attempts': attempts,
+        }
 
     async def _fetch_provider(self, provider: Any | None, method_name: str, *args: Any, empty_data: Any) -> tuple[Any, dict[str, Any], dict[str, Any]]:
         if provider is None or not hasattr(provider, method_name):

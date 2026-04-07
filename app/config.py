@@ -135,6 +135,9 @@ class Settings(BaseSettings):
 
     max_matches_for_odds_fetch: int = Field(default=300, validation_alias=AliasChoices('MAX_MATCHES_FOR_ODDS_FETCH', 'MAX_MATCHES_FOR_PRICING'))
 
+    match_bootstrap_provider: str = Field(default='odds_api_io', validation_alias=AliasChoices('MATCH_BOOTSTRAP_PROVIDER'))
+    bootstrap_fallback_to_bookies: bool = Field(default=True, validation_alias=AliasChoices('BOOTSTRAP_FALLBACK_TO_BOOKIES'))
+
     source_weight_theodds: float = Field(default=1.04, validation_alias=AliasChoices('SOURCE_WEIGHT_THEODDS'))
     source_weight_oddsapiio: float = Field(default=1.00, validation_alias=AliasChoices('SOURCE_WEIGHT_ODDSAPIIO'))
     source_weight_bookiesapi: float = Field(default=0.98, validation_alias=AliasChoices('SOURCE_WEIGHT_BOOKIESAPI'))
@@ -302,6 +305,22 @@ class Settings(BaseSettings):
         allowed = {'soccer', 'basketball', 'baseball', 'icehockey'}
         result = [item.strip().lower() for item in value if item and item.strip().lower() in allowed]
         return result or ['soccer']
+
+    @field_validator('match_bootstrap_provider', mode='before')
+    @classmethod
+    def normalize_match_bootstrap_provider(cls, value: Any) -> str:
+        text = str(value or 'odds_api_io').strip().lower()
+        aliases = {
+            'bookies': 'bookies_bootstrap',
+            'bookies_api': 'bookies_bootstrap',
+            'bookiesbootstrap': 'bookies_bootstrap',
+            'bootstrap': 'bookies_bootstrap',
+            'oddsapiio': 'odds_api_io',
+            'odds_apiio': 'odds_api_io',
+            'odds-api-io': 'odds_api_io',
+        }
+        text = aliases.get(text, text)
+        return text if text in {'odds_api_io', 'bookies_bootstrap', 'auto'} else 'odds_api_io'
 
     @field_validator('bookies_api_timeout_seconds', mode='before')
     @classmethod

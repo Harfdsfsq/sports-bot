@@ -32,7 +32,7 @@ jobs:
         run: python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor"
 
       - name: Compile critical modules
-        run: python -m py_compile app/config.py app/services/runner.py app/services/model.py app/services/market_monitor.py
+        run: python -m py_compile app/config.py app/providers/odds_api_io.py app/services/runner.py app/services/model.py app/services/market_monitor.py
 
       - name: Prepare data dir
         run: mkdir -p .data .data/exports
@@ -64,21 +64,13 @@ jobs:
           DIAGNOSTICS_MATCH_LIMIT: 180
           CONTEXT_ENRICHMENT_MATCH_LIMIT: 90
           CONTEXT_ENRICHMENT_REQUIRES_OFFERS: true
-          BOOKIES_BOOTSTRAP_ENABLED: true
-          BOOKIES_API_ENABLED: true
+          MATCH_BOOTSTRAP_PROVIDER: odds_api_io
+          BOOTSTRAP_FALLBACK_TO_BOOKIES: false
+          BOOKIES_BOOTSTRAP_ENABLED: false
+          BOOKIES_API_ENABLED: false
           SSTATS_ENABLED: true
           ENABLE_ODDS_API_IO: true
           ENABLE_SSTATS_CONTEXT: true
-          BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
-          BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
-          BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
-          BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
-          BOOKIES_API_USE_FOR_BACKFILL_ONLY: true
-          BOOKIES_API_ODDS_TASK: odds
-          BOOKIES_API_ODDS_FETCH_LIMIT: 40
-          BOOKIES_API_TIMEOUT_SECONDS: 30
-          BOOKIES_API_MAX_PAGES_PER_DAY: 40
-          BOOKIES_API_PAGE_LIMIT: 50
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
