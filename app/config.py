@@ -101,8 +101,10 @@ class Settings(BaseSettings):
     football_data_api_key: str | None = Field(default=None, validation_alias=AliasChoices('FOOTBALL_DATA_API_KEY', 'FOOTBALL_DATA_KEY'))
     football_data_base_url: str = Field(default='https://api.football-data.org/v4', validation_alias=AliasChoices('FOOTBALL_DATA_BASE_URL'))
     football_data_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('FOOTBALL_DATA_TIMEOUT_SECONDS'))
-    football_data_match_limit: int = Field(default=36, validation_alias=AliasChoices('FOOTBALL_DATA_MATCH_LIMIT'))
-    football_data_standings_limit: int = Field(default=8, validation_alias=AliasChoices('FOOTBALL_DATA_STANDINGS_LIMIT'))
+    football_data_match_limit: int = Field(default=48, validation_alias=AliasChoices('FOOTBALL_DATA_MATCH_LIMIT'))
+    football_data_recent_days: int = Field(default=21, validation_alias=AliasChoices('FOOTBALL_DATA_RECENT_DAYS'))
+    football_data_history_competitions_limit: int = Field(default=12, validation_alias=AliasChoices('FOOTBALL_DATA_HISTORY_COMPETITIONS_LIMIT'))
+    football_data_standings_limit: int = Field(default=6, validation_alias=AliasChoices('FOOTBALL_DATA_STANDINGS_LIMIT'))
     football_data_days_ahead: int = Field(default=2, validation_alias=AliasChoices('FOOTBALL_DATA_DAYS_AHEAD'))
     api_football_predictions_limit: int | None = Field(default=None, validation_alias=AliasChoices('API_FOOTBALL_PREDICTIONS_LIMIT'))
 
@@ -137,8 +139,8 @@ class Settings(BaseSettings):
     gnews_lookback_hours: int = Field(default=72, validation_alias=AliasChoices('GNEWS_LOOKBACK_HOURS'))
     openfootball_base_url: str = Field(default='https://raw.githubusercontent.com/openfootball/football.json/master', validation_alias=AliasChoices('OPENFOOTBALL_BASE_URL'))
     openfootball_timeout_seconds: float = Field(default=15.0, validation_alias=AliasChoices('OPENFOOTBALL_TIMEOUT_SECONDS'))
-    openfootball_dataset_limit: int = Field(default=12, validation_alias=AliasChoices('OPENFOOTBALL_DATASET_LIMIT'))
-    openfootball_match_limit: int = Field(default=24, validation_alias=AliasChoices('OPENFOOTBALL_MATCH_LIMIT'))
+    openfootball_dataset_limit: int = Field(default=20, validation_alias=AliasChoices('OPENFOOTBALL_DATASET_LIMIT'))
+    openfootball_match_limit: int = Field(default=150, validation_alias=AliasChoices('OPENFOOTBALL_MATCH_LIMIT'))
     openfootball_competition_map: CsvList = Field(default_factory=lambda: [
         'english premier league=en.1',
         'english league championship=en.2',

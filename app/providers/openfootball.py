@@ -31,24 +31,27 @@ class OpenFootballContextProvider:
             'http_statuses': [],
             'last_body_preview': None,
         }
-        preview: dict[str, Any] = {'sample_datasets': [], 'sample_contexts': []}
+        preview: dict[str, Any] = {'sample_datasets': [], 'sample_contexts': [], 'candidate_keys': []}
         if not stats['enabled']:
             return {}, stats, preview
         soccer_matches = [item for item in matches if item.sport_key == 'soccer']
         if not soccer_matches:
             return {}, stats, preview
-        match_limit = max(1, int(getattr(self.settings, 'openfootball_match_limit', 24) or 24))
+        match_limit = max(1, int(getattr(self.settings, 'openfootball_match_limit', 150) or 150))
         soccer_matches = soccer_matches[:match_limit]
         grouped: dict[tuple[str, str], list[Match]] = defaultdict(list)
         for match in soccer_matches:
-            comp_key = self._competition_key(match.league_name)
-            if not comp_key:
+            comp_keys = self._competition_keys(match)
+            if len(preview['candidate_keys']) < 12 and comp_keys:
+                preview['candidate_keys'].append({'league_name': match.league_name, 'candidates': comp_keys[:3]})
+            if not comp_keys:
                 continue
             season_candidates = self._season_candidates(match.commence_time.astimezone(UTC))
-            grouped[(comp_key, season_candidates[0])].append(match)
+            for comp_key in comp_keys[:2]:
+                grouped[(comp_key, season_candidates[0])].append(match)
 
         datasets: dict[tuple[str, str], list[dict[str, Any]]] = {}
-        dataset_limit = max(1, int(getattr(self.settings, 'openfootball_dataset_limit', 12) or 12))
+        dataset_limit = max(1, int(getattr(self.settings, 'openfootball_dataset_limit', 20) or 20))
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             for (comp_key, primary_season), match_group in list(grouped.items())[:dataset_limit]:
                 loaded = None
@@ -69,8 +72,10 @@ class OpenFootballContextProvider:
 
         contexts: dict[str, MatchContext] = {}
         for (comp_key, season), rows in datasets.items():
-            target_matches = [m for m in soccer_matches if self._competition_key(m.league_name) == comp_key]
+            target_matches = [m for m in soccer_matches if comp_key in self._competition_keys(m)]
             for match in target_matches:
+                if match.match_key in contexts:
+                    continue
                 context, quality = self._build_context(match, rows)
                 if context is None:
                     continue
@@ -97,12 +102,11 @@ class OpenFootballContextProvider:
         stats['http_statuses'].append(response.status_code)
         stats['last_body_preview'] = response.text[:1200]
         if response.status_code != 200:
-            # Missing dataset is expected; do not treat as hard failure.
             return None
         try:
             return response.json()
         except Exception:
-            stats['response_errors'] += 1
+            # upstream occasionally ships malformed JSON for a dataset; soft-fail and try another season/key
             return None
 
     @staticmethod
@@ -116,21 +120,82 @@ class OpenFootballContextProvider:
             result[left.strip().lower()] = right.strip()
         return result
 
-    def _competition_key(self, league_name: str) -> str | None:
-        key = str(league_name or '').strip().lower()
-        if key in self.league_map:
-            return self.league_map[key]
+    def _competition_keys(self, match: Match) -> list[str]:
+        candidates: list[str] = []
+        league_name = str(match.league_name or '').strip()
+        lowered = league_name.lower()
+        explicit = self._competition_key(lowered)
+        if explicit:
+            candidates.append(explicit)
+        slug = ''
+        try:
+            raw_event = ((match.metadata or {}).get('raw_event') or {})
+            slug = str(((raw_event.get('league') or {}).get('slug')) or '').strip().lower()
+        except Exception:
+            slug = ''
+        auto = self._infer_competition_key(league_name, slug)
+        if auto and auto not in candidates:
+            candidates.append(auto)
+        return candidates
+
+    def _competition_key(self, lowered_league_name: str) -> str | None:
+        if lowered_league_name in self.league_map:
+            return self.league_map[lowered_league_name]
         for left, right in self.league_map.items():
-            if left in key or key in left:
+            if left in lowered_league_name or lowered_league_name in left:
                 return right
+        return None
+
+    def _infer_competition_key(self, league_name: str, slug: str) -> str | None:
+        value = f'{league_name} {slug}'.lower()
+        pairs = [
+            (('england', 'premier'), 'en.1'),
+            (('england', 'championship'), 'en.2'),
+            (('england', 'league one'), 'en.3'),
+            (('england', 'league two'), 'en.4'),
+            (('germany', 'bundesliga', '2'), 'de.2'),
+            (('germany', 'bundesliga'), 'de.1'),
+            (('3. liga',), 'de.3'),
+            (('spain', 'segunda'), 'es.2'),
+            (('spain', 'liga'), 'es.1'),
+            (('italy', 'serie c'), 'it.3'),
+            (('italy', 'serie b'), 'it.2'),
+            (('italy', 'serie a'), 'it.1'),
+            (('france', 'ligue 2'), 'fr.2'),
+            (('france', 'ligue 1'), 'fr.1'),
+            (('netherlands', 'eredivisie'), 'nl.1'),
+            (('portugal', 'primeira'), 'pt.1'),
+            (('belgium', 'pro league'), 'be.1'),
+            (('scotland', 'premiership'), 'sco.1'),
+            (('denmark', 'superliga'), 'dk.1'),
+            (('norway', '1st division'), 'no.2'),
+            (('norway', 'eliteserien'), 'no.1'),
+            (('sweden', 'allsvenskan'), 'se.1'),
+            (('turkey', 'super lig'), 'tr.1'),
+            (('greece', 'super league'), 'gr.1'),
+            (('switzerland', 'challenge league'), 'ch.2'),
+            (('switzerland', 'super league'), 'ch.1'),
+        ]
+        for tokens, code in pairs:
+            if all(token in value for token in tokens):
+                return code
         return None
 
     @staticmethod
     def _season_candidates(dt: datetime) -> list[str]:
         year = dt.year
+        candidates = []
         if dt.month >= 7:
-            return [f'{year}-{str(year + 1)[-2:]}', str(year)]
-        return [f'{year - 1}-{str(year)[-2:]}', str(year), str(year - 1)]
+            candidates.extend([f'{year}-{str(year + 1)[-2:]}', str(year), f'{year - 1}-{str(year)[-2:]}'])
+        else:
+            candidates.extend([f'{year - 1}-{str(year)[-2:]}', str(year), str(year - 1), f'{year - 2}-{str(year - 1)[-2:]}'])
+        seen: set[str] = set()
+        result: list[str] = []
+        for item in candidates:
+            if item and item not in seen:
+                seen.add(item)
+                result.append(item)
+        return result
 
     def _build_context(self, match: Match, rows: list[dict[str, Any]]) -> tuple[MatchContext | None, str | None]:
         match_dt = match.commence_time.astimezone(UTC)
@@ -164,10 +229,8 @@ class OpenFootballContextProvider:
             rev_away = team_similarity(match.away_team, t1)
             if home_sim >= 0.84 and away_sim >= 0.84:
                 best_quality = best_quality or 'exact'
-                if team_similarity(match.home_team, t1) >= 0.80:
-                    home_games.append((row_dt, goals1, goals2))
-                if team_similarity(match.away_team, t2) >= 0.80:
-                    away_games.append((row_dt, goals2, goals1))
+                home_games.append((row_dt, goals1, goals2))
+                away_games.append((row_dt, goals2, goals1))
                 h2h_goals.append(goals1 + goals2)
                 continue
             if rev_home >= 0.84 and rev_away >= 0.84:
@@ -216,7 +279,7 @@ class OpenFootballContextProvider:
         home /= total
         away /= total
         draw /= total
-        confidence = clamp(55.0 + min(len(home_recent), len(away_recent)) * 1.6, 54.0, 64.0)
+        confidence = clamp(55.0 + min(len(home_recent), len(away_recent)) * 1.6 + (1.2 if h2h_goals else 0.0), 54.0, 64.0)
         details = {
             'home_form': round(home_form, 3),
             'away_form': round(away_form, 3),
