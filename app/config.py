@@ -66,11 +66,24 @@ class Settings(BaseSettings):
     api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices('API_FOOTBALL_ENABLED'))
     enable_espn_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_ESPN_CONTEXT', 'ESPN_CONTEXT_ENABLED'))
     enable_thesportsdb_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_THESPORTSDB_CONTEXT', 'THESPORTSDB_CONTEXT_ENABLED'))
+    enable_football_data_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_FOOTBALL_DATA_CONTEXT', 'FOOTBALL_DATA_ENABLED'))
+    enable_openfootball_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_OPENFOOTBALL_CONTEXT', 'OPENFOOTBALL_ENABLED'))
+    enable_newsapi_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_NEWSAPI_CONTEXT', 'NEWSAPI_ENABLED'))
+    enable_gnews_context: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_GNEWS_CONTEXT', 'GNEWS_ENABLED'))
 
     enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices('ENABLE_PROVIDER_DIAGNOSTICS'))
     diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices('DIAGNOSTICS_MATCH_LIMIT'))
     context_enrichment_match_limit: int = Field(default=180, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_MATCH_LIMIT'))
     context_enrichment_requires_offers: bool = Field(default=True, validation_alias=AliasChoices('CONTEXT_ENRICHMENT_REQUIRES_OFFERS'))
+    simple_market_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices('SIMPLE_MARKET_FALLBACK_ENABLED'))
+    simple_market_totals_min_ev_pct: float = Field(default=2.2, validation_alias=AliasChoices('SIMPLE_MARKET_TOTALS_MIN_EV_PCT'))
+    simple_market_totals_min_edge_pct: float = Field(default=2.8, validation_alias=AliasChoices('SIMPLE_MARKET_TOTALS_MIN_EDGE_PCT'))
+    simple_market_totals_min_confidence: float = Field(default=58.0, validation_alias=AliasChoices('SIMPLE_MARKET_TOTALS_MIN_CONFIDENCE'))
+    simple_market_h2h_min_ev_pct: float = Field(default=3.6, validation_alias=AliasChoices('SIMPLE_MARKET_H2H_MIN_EV_PCT'))
+    simple_market_h2h_min_edge_pct: float = Field(default=4.4, validation_alias=AliasChoices('SIMPLE_MARKET_H2H_MIN_EDGE_PCT'))
+    simple_market_h2h_min_confidence: float = Field(default=62.0, validation_alias=AliasChoices('SIMPLE_MARKET_H2H_MIN_CONFIDENCE'))
+    simple_market_min_signal_boost_pct: float = Field(default=0.9, validation_alias=AliasChoices('SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT'))
+    analysis_match_cap_per_run: int = Field(default=150, validation_alias=AliasChoices('ANALYSIS_MATCH_CAP_PER_RUN', 'DAILY_ANALYSIS_MATCH_LIMIT'))
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_TOKEN', 'TELEGRAM_BOT_TOKEN'))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices('TELEGRAM_CHAT_ID'))
@@ -85,6 +98,12 @@ class Settings(BaseSettings):
 
     api_football_key: str | None = Field(default=None, validation_alias=AliasChoices('API_FOOTBALL_KEY'))
     api_football_base_url: str = Field(default='https://v3.football.api-sports.io', validation_alias=AliasChoices('API_FOOTBALL_BASE_URL'))
+    football_data_api_key: str | None = Field(default=None, validation_alias=AliasChoices('FOOTBALL_DATA_API_KEY', 'FOOTBALL_DATA_KEY'))
+    football_data_base_url: str = Field(default='https://api.football-data.org/v4', validation_alias=AliasChoices('FOOTBALL_DATA_BASE_URL'))
+    football_data_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('FOOTBALL_DATA_TIMEOUT_SECONDS'))
+    football_data_match_limit: int = Field(default=36, validation_alias=AliasChoices('FOOTBALL_DATA_MATCH_LIMIT'))
+    football_data_standings_limit: int = Field(default=8, validation_alias=AliasChoices('FOOTBALL_DATA_STANDINGS_LIMIT'))
+    football_data_days_ahead: int = Field(default=2, validation_alias=AliasChoices('FOOTBALL_DATA_DAYS_AHEAD'))
     api_football_predictions_limit: int | None = Field(default=None, validation_alias=AliasChoices('API_FOOTBALL_PREDICTIONS_LIMIT'))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('ESPN_TIMEOUT_SECONDS'))
@@ -103,6 +122,51 @@ class Settings(BaseSettings):
     thesportsdb_base_url: str = Field(default='https://www.thesportsdb.com/api/v1/json', validation_alias=AliasChoices('THESPORTSDB_BASE_URL'))
     thesportsdb_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices('THESPORTSDB_TIMEOUT_SECONDS'))
     thesportsdb_max_leagues: int = Field(default=24, validation_alias=AliasChoices('THESPORTSDB_MAX_LEAGUES'))
+
+    newsapi_key: str | None = Field(default=None, validation_alias=AliasChoices('NEWSAPI_KEY'))
+    newsapi_base_url: str = Field(default='https://newsapi.org/v2', validation_alias=AliasChoices('NEWSAPI_BASE_URL'))
+    newsapi_timeout_seconds: float = Field(default=15.0, validation_alias=AliasChoices('NEWSAPI_TIMEOUT_SECONDS'))
+    newsapi_match_limit: int = Field(default=12, validation_alias=AliasChoices('NEWSAPI_MATCH_LIMIT'))
+    newsapi_articles_per_match: int = Field(default=6, validation_alias=AliasChoices('NEWSAPI_ARTICLES_PER_MATCH'))
+    newsapi_lookback_hours: int = Field(default=72, validation_alias=AliasChoices('NEWSAPI_LOOKBACK_HOURS'))
+    gnews_key: str | None = Field(default=None, validation_alias=AliasChoices('GNEWS_KEY'))
+    gnews_base_url: str = Field(default='https://gnews.io/api/v4', validation_alias=AliasChoices('GNEWS_BASE_URL'))
+    gnews_timeout_seconds: float = Field(default=15.0, validation_alias=AliasChoices('GNEWS_TIMEOUT_SECONDS'))
+    gnews_match_limit: int = Field(default=12, validation_alias=AliasChoices('GNEWS_MATCH_LIMIT'))
+    gnews_articles_per_match: int = Field(default=6, validation_alias=AliasChoices('GNEWS_ARTICLES_PER_MATCH'))
+    gnews_lookback_hours: int = Field(default=72, validation_alias=AliasChoices('GNEWS_LOOKBACK_HOURS'))
+    openfootball_base_url: str = Field(default='https://raw.githubusercontent.com/openfootball/football.json/master', validation_alias=AliasChoices('OPENFOOTBALL_BASE_URL'))
+    openfootball_timeout_seconds: float = Field(default=15.0, validation_alias=AliasChoices('OPENFOOTBALL_TIMEOUT_SECONDS'))
+    openfootball_dataset_limit: int = Field(default=12, validation_alias=AliasChoices('OPENFOOTBALL_DATASET_LIMIT'))
+    openfootball_match_limit: int = Field(default=24, validation_alias=AliasChoices('OPENFOOTBALL_MATCH_LIMIT'))
+    openfootball_competition_map: CsvList = Field(default_factory=lambda: [
+        'english premier league=en.1',
+        'english league championship=en.2',
+        'english league one=en.3',
+        'english league two=en.4',
+        'german bundesliga=de.1',
+        'german bundesliga 2=de.2',
+        '3 liga=de.3',
+        'spanish la liga=es.1',
+        'spanish la liga 2=es.2',
+        'italian serie a=it.1',
+        'italian serie b=it.2',
+        'italian serie c=it.3',
+        'french ligue 1=fr.1',
+        'french ligue 2=fr.2',
+        'dutch eredivisie=nl.1',
+        'portuguese primeira liga=pt.1',
+        'belgian pro league=be.1',
+        'scottish premiership=sco.1',
+        'danish superliga=dk.1',
+        'norway 1st division=no.2',
+        'norwegian eliteserien=no.1',
+        'swedish allsvenskan=se.1',
+        'turkish super lig=tr.1',
+        'greece super league=gr.1',
+        'switzerland super league=ch.1',
+        'switzerland challenge league=ch.2',
+    ], validation_alias=AliasChoices('OPENFOOTBALL_COMPETITION_MAP'))
 
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices('BZZOIRO_API_KEY'))
 
@@ -133,7 +197,7 @@ class Settings(BaseSettings):
     bookies_api_use_for_backfill_only: bool = Field(default=True, validation_alias=AliasChoices('BOOKIES_API_USE_FOR_BACKFILL_ONLY'))
     bookies_api_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices('BOOKIES_API_TIMEOUT_SECONDS', 'BOOKIES_API_TIMEOUT_MS'))
 
-    max_matches_for_odds_fetch: int = Field(default=300, validation_alias=AliasChoices('MAX_MATCHES_FOR_ODDS_FETCH', 'MAX_MATCHES_FOR_PRICING'))
+    max_matches_for_odds_fetch: int = Field(default=150, validation_alias=AliasChoices('MAX_MATCHES_FOR_ODDS_FETCH', 'MAX_MATCHES_FOR_PRICING'))
 
     match_bootstrap_provider: str = Field(default='odds_api_io', validation_alias=AliasChoices('MATCH_BOOTSTRAP_PROVIDER'))
     bootstrap_fallback_to_bookies: bool = Field(default=True, validation_alias=AliasChoices('BOOTSTRAP_FALLBACK_TO_BOOKIES'))
@@ -275,6 +339,7 @@ class Settings(BaseSettings):
         'espn_soft_fail_statuses',
         'supported_total_lines',
         'supported_team_total_lines',
+        'openfootball_competition_map',
         mode='before',
     )
     @classmethod

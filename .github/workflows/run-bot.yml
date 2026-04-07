@@ -29,19 +29,16 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Smoke check imports
-        run: python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor"
+        run: python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
 
       - name: Compile critical modules
-        run: python -m py_compile app/config.py app/providers/odds_api_io.py app/services/runner.py app/services/model.py app/services/market_monitor.py
+        run: python -m py_compile app/config.py app/schemas.py app/providers/odds_api_io.py app/providers/football_data.py app/providers/openfootball.py app/providers/newsapi.py app/providers/gnews.py app/services/runner.py app/services/model.py app/services/market_monitor.py
 
       - name: Prepare data dir
         run: mkdir -p .data .data/exports
 
       - name: Run bot
         env:
-          ODDS_API_IO_ENABLED: "true"
-          ODDS_API_IO_BOOTSTRAP_ENABLED: "true"
-          BOOKIES_API_ENABLED: "false"
           CONFIDENCE_DISPERSION_PENALTY_WEIGHT: 0.18
           CONFIDENCE_PRICE_PREMIUM_BONUS: 0.08
           CONFIDENCE_SOURCES_BONUS: 1.10
@@ -68,23 +65,38 @@ jobs:
           MIN_BOOKS_PUBLISH: 2
           MIN_SOURCES_PUBLISH: 1
           MIN_MODEL_CONFIDENCE: 0.55
-          MAX_MATCHES_FOR_ODDS_FETCH: 120
+          MAX_MATCHES_FOR_ODDS_FETCH: 150
           MAX_MATCHES_FOR_PRICING: 300
           MAX_PICKS_PER_RUN: 7
           ALLOW_LOW_TIER: false
           ENABLE_PROVIDER_DIAGNOSTICS: true
+          ENABLE_FOOTBALL_DATA_CONTEXT: true
+          ENABLE_OPENFOOTBALL_CONTEXT: true
+          ENABLE_NEWSAPI_CONTEXT: true
+          ENABLE_GNEWS_CONTEXT: true
+          FOOTBALL_DATA_MATCH_LIMIT: 36
+          FOOTBALL_DATA_STANDINGS_LIMIT: 8
+          OPENFOOTBALL_MATCH_LIMIT: 24
+          OPENFOOTBALL_DATASET_LIMIT: 12
+          NEWSAPI_MATCH_LIMIT: 10
+          GNEWS_MATCH_LIMIT: 10
           DIAGNOSTICS_MATCH_LIMIT: 180
-          CONTEXT_ENRICHMENT_MATCH_LIMIT: 180
+          CONTEXT_ENRICHMENT_MATCH_LIMIT: 150
+          ANALYSIS_MATCH_CAP_PER_RUN: 150
           CONTEXT_ENRICHMENT_REQUIRES_OFFERS: true
           MATCH_BOOTSTRAP_PROVIDER: odds_api_io
           BOOTSTRAP_FALLBACK_TO_BOOKIES: false
           BOOKIES_BOOTSTRAP_ENABLED: false
+          BOOKIES_API_ENABLED: false
           SSTATS_ENABLED: true
           ENABLE_ODDS_API_IO: true
           ENABLE_SSTATS_CONTEXT: true
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
           SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
           API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+          GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
           BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

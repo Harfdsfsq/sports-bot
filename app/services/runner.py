@@ -29,6 +29,10 @@ class PredictionRunner:
         self.api_football = self._safe_provider('app.providers.api_football', 'ApiFootballContextProvider')
         self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
         self.thesportsdb = self._safe_provider('app.providers.thesportsdb', 'TheSportsDbContextProvider')
+        self.football_data = self._safe_provider('app.providers.football_data', 'FootballDataContextProvider')
+        self.openfootball = self._safe_provider('app.providers.openfootball', 'OpenFootballContextProvider')
+        self.newsapi = self._safe_provider('app.providers.newsapi', 'NewsApiContextProvider')
+        self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')
         self.factory = CandidateFactory(settings)
         self.market_monitor = MarketMonitor(settings) if getattr(settings, 'market_monitor_enabled', True) else None
         self.telegram = TelegramPublisher(settings)
@@ -76,6 +80,18 @@ class PredictionRunner:
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('thesportsdb') and not getattr(self.settings, 'enable_thesportsdb_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('football_data') and not getattr(self.settings, 'enable_football_data_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('openfootball') and not getattr(self.settings, 'enable_openfootball_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('newsapi') and not getattr(self.settings, 'enable_newsapi_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('gnews') and not getattr(self.settings, 'enable_gnews_context', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         try:
@@ -157,12 +173,40 @@ class PredictionRunner:
                 context_target_matches,
                 empty_data={},
             )
+            football_data_contexts, football_data_stats, football_data_preview = await self._fetch_provider(
+                self.football_data,
+                'fetch_context',
+                context_target_matches,
+                empty_data={},
+            )
+            openfootball_contexts, openfootball_stats, openfootball_preview = await self._fetch_provider(
+                self.openfootball,
+                'fetch_context',
+                context_target_matches,
+                empty_data={},
+            )
+            newsapi_contexts, newsapi_stats, newsapi_preview = await self._fetch_provider(
+                self.newsapi,
+                'fetch_context',
+                context_target_matches,
+                empty_data={},
+            )
+            gnews_contexts, gnews_stats, gnews_preview = await self._fetch_provider(
+                self.gnews,
+                'fetch_context',
+                context_target_matches,
+                empty_data={},
+            )
 
             context_maps = {
                 'sstats': sstats_contexts,
                 'api_football': api_football_contexts,
                 'espn': espn_contexts,
                 'thesportsdb': thesportsdb_contexts,
+                'football_data': football_data_contexts,
+                'openfootball': openfootball_contexts,
+                'newsapi': newsapi_contexts,
+                'gnews': gnews_contexts,
             }
             contexts = self._merge_context_maps(*context_maps.values())
 
@@ -203,6 +247,10 @@ class PredictionRunner:
                 'api_football': api_football_stats,
                 'espn': espn_stats,
                 'thesportsdb': thesportsdb_stats,
+                'football_data': football_data_stats,
+                'openfootball': openfootball_stats,
+                'newsapi': newsapi_stats,
+                'gnews': gnews_stats,
                 'market_monitor': market_monitor_stats,
             }
             mode_counts: dict[str, int] = defaultdict(int)
@@ -296,6 +344,10 @@ class PredictionRunner:
                         'api_football': api_football_preview,
                         'espn': espn_preview,
                         'thesportsdb': thesportsdb_preview,
+                        'football_data': football_data_preview,
+                        'openfootball': openfootball_preview,
+                        'newsapi': newsapi_preview,
+                        'gnews': gnews_preview,
                         'market_monitor': market_monitor_preview,
                     },
                     'sample_matches': [self._serialize_match(item) for item in filtered_matches[:25]],

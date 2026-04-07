@@ -26,13 +26,11 @@ class Match:
     @property
     def match_key(self) -> str:
         from app.utils import build_match_key
-
         return build_match_key(self.sport_key, self.home_team, self.away_team, self.commence_time)
 
     @property
     def loose_key(self) -> str:
         from app.utils import build_loose_match_key
-
         return build_loose_match_key(self.sport_key, self.home_team, self.away_team)
 
 

@@ -9,9 +9,6 @@ import httpx
 from app.config import Settings
 from app.schemas import Match, Offer
 from app.utils import (
-    canonicalize_league_name,
-    canonicalize_team_name,
-    is_low_tier_league,
     is_simulated_or_esports_event,
     normalize_bookmaker_name,
     parse_datetime,
@@ -23,6 +20,7 @@ class OddsApiIoProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.base_url = "https://api.odds-api.io/v3"
+
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -38,8 +36,7 @@ class OddsApiIoProvider:
             "payload_shapes": [],
             "last_body_preview": None,
         }
-        preview: dict[str, Any] = {"sample_events": []}
-
+        preview: dict[str, Any] = {"sample_events": [], "sample_matches": []}
         api_key = getattr(self.settings, "odds_api_io_key", None)
         if not api_key:
             return [], stats, preview
@@ -48,103 +45,99 @@ class OddsApiIoProvider:
         days_ahead = max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4))
         until = now + timedelta(days=days_ahead)
         timeout = float(getattr(self.settings, "odds_api_io_timeout_seconds", 25.0) or 25.0)
-
-        async with httpx.AsyncClient(timeout=timeout) as client:
-            events = await self._fetch_events_window(client, api_key, now, until, stats, preview)
-
-        matches: list[Match] = []
-        seen_keys: set[str] = set()
-        for raw_event in events:
-            event = self._parse_event(raw_event)
-            if event is None:
-                if isinstance(raw_event, dict) and is_simulated_or_esports_event(
-                    str(raw_event.get("home") or ""),
-                    str(raw_event.get("away") or ""),
-                    str((raw_event.get("league") or {}).get("name") or ""),
-                ):
-                    stats["simulated_skipped"] += 1
-                continue
-            match = self._event_to_match(event)
-            if match is None:
-                league = str(event.get("league") or "")
-                if league and is_low_tier_league(league) and not self.settings.allow_low_tier:
-                    stats["low_tier_skipped"] += 1
-                continue
-            if match.match_key in seen_keys:
-                continue
-            seen_keys.add(match.match_key)
-            matches.append(match)
-
-        matches.sort(key=lambda item: item.commence_time)
-        stats["matches_built"] = len(matches)
-        return matches, stats, preview
-
-    async def _fetch_events_window(
-        self,
-        client: httpx.AsyncClient,
-        api_key: str,
-        now: datetime,
-        until: datetime,
-        stats: dict[str, Any],
-        preview: dict[str, Any],
-    ) -> list[dict[str, Any]]:
-        events: list[dict[str, Any]] = []
-        seen_event_ids: set[int] = set()
         max_pages = max(1, int(getattr(self.settings, "odds_api_io_max_pages_per_sport", 4) or 4))
         page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
-
-        for page in range(1, max_pages + 1):
-            params = {
-                "apiKey": api_key,
-                "sport": "football",
-                "status": "pending,live",
-                "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-                "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-                "limit": page_limit,
-                "page": page,
+        matches: list[Match] = []
+        seen_ids: set[int] = set()
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            for page in range(1, max_pages + 1):
+                params = {
+                    "apiKey": api_key,
+                    "sport": "football",
+                    "status": "pending,live",
+                    "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                    "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                    "limit": page_limit,
+                    "page": page,
+                }
+                stats["event_requests"] += 1
+                try:
+                    response = await client.get(f"{self.base_url}/events", params=params)
+                except Exception as exc:
+                    stats["response_errors"] += 1
+                    stats["last_body_preview"] = f"events request failed: {exc}"
+                    continue
+                stats["event_http_statuses"].append(response.status_code)
+                stats["last_body_preview"] = response.text[:1500]
+                if response.status_code != 200:
+                    stats["response_errors"] += 1
+                    continue
+                payload = self._safe_json(response)
+                if payload is None:
+                    stats["response_errors"] += 1
+                    continue
+                shape = self._payload_shape(payload)
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
+                items = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                if page == 1 and items:
+                    preview["sample_events"] = items[:3]
+                if not items:
+                    break
+                before = len(seen_ids)
+                for raw in items:
+                    event = self._parse_event(raw)
+                    if event is None:
+                        if isinstance(raw, dict) and is_simulated_or_esports_event(
+                            str(raw.get("home") or ""),
+                            str(raw.get("away") or ""),
+                            str((raw.get("league") or {}).get("name") or ""),
+                        ):
+                            stats["simulated_skipped"] += 1
+                        continue
+                    event_id = int(event.get("id") or 0)
+                    if event_id in seen_ids:
+                        continue
+                    seen_ids.add(event_id)
+                    tier = "low" if self._looks_low_tier(event.get("league") or "") else "mid"
+                    if tier == "low" and not bool(getattr(self.settings, "allow_low_tier", False)):
+                        stats["low_tier_skipped"] += 1
+                        continue
+                    match = Match(
+                        source="odds_api_io",
+                        source_event_id=str(event_id),
+                        sport_key="soccer",
+                        league_name=str(event.get("league") or ""),
+                        home_team=str(event.get("home") or ""),
+                        away_team=str(event.get("away") or ""),
+                        commence_time=event["commence_time"],
+                        home_team_norm="",
+                        away_team_norm="",
+                        league_key="",
+                        tier=tier,
+                        metadata={
+                            "odds_api_io_id": event_id,
+                            "competition": event.get("league"),
+                            "raw_event": raw,
+                        },
+                    )
+                    matches.append(match)
+                stats["events_fetched"] = len(seen_ids)
+                stats["matches_built"] = len(matches)
+                if len(seen_ids) == before or len(items) < page_limit:
+                    break
+        preview["sample_matches"] = [
+            {
+                "match_key": item.match_key,
+                "league_name": item.league_name,
+                "home_team": item.home_team,
+                "away_team": item.away_team,
+                "commence_time": item.commence_time.isoformat(),
+                "tier": item.tier,
             }
-            stats["event_requests"] += 1
-            try:
-                response = await client.get(f"{self.base_url}/events", params=params)
-            except Exception as exc:
-                stats["response_errors"] += 1
-                stats["last_body_preview"] = f"events request failed: {exc}"
-                continue
-
-            stats["event_http_statuses"].append(response.status_code)
-            stats["last_body_preview"] = response.text[:1500]
-            if response.status_code != 200:
-                stats["response_errors"] += 1
-                continue
-
-            payload = self._safe_json(response)
-            if payload is None:
-                stats["response_errors"] += 1
-                continue
-            shape = self._payload_shape(payload)
-            if shape not in stats["payload_shapes"]:
-                stats["payload_shapes"].append(shape)
-
-            items = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
-            if page == 1 and items:
-                preview["sample_events"] = items[:3]
-            if not items:
-                break
-
-            before = len(seen_event_ids)
-            for item in items:
-                event_id = item.get("id")
-                if not isinstance(event_id, int):
-                    continue
-                if event_id in seen_event_ids:
-                    continue
-                seen_event_ids.add(event_id)
-                events.append(item)
-            stats["events_fetched"] = len(events)
-            if len(seen_event_ids) == before or len(items) < page_limit:
-                break
-
-        return events
+            for item in matches[:5]
+        ]
+        return matches, stats, preview
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -189,10 +182,65 @@ class OddsApiIoProvider:
         target_books = self._bookmakers_param()
         stats["requested_bookmakers"] = target_books
 
+        events: list[dict[str, Any]] = []
+        seen_event_ids: set[int] = set()
         timeout = float(getattr(self.settings, "odds_api_io_timeout_seconds", 25.0) or 25.0)
+        max_pages = max(1, int(getattr(self.settings, "odds_api_io_max_pages_per_sport", 4) or 4))
+        page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
 
         async with httpx.AsyncClient(timeout=timeout) as client:
-            events = await self._fetch_events_window(client, api_key, now, until, stats, preview)
+            for page in range(1, max_pages + 1):
+                params = {
+                    "apiKey": api_key,
+                    "sport": "football",
+                    "status": "pending,live",
+                    "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                    "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                    "limit": page_limit,
+                    "page": page,
+                }
+                stats["event_requests"] += 1
+                try:
+                    response = await client.get(f"{self.base_url}/events", params=params)
+                except Exception as exc:
+                    stats["response_errors"] += 1
+                    stats["last_body_preview"] = f"events request failed: {exc}"
+                    continue
+
+                stats["event_http_statuses"].append(response.status_code)
+                stats["last_body_preview"] = response.text[:1500]
+                if response.status_code != 200:
+                    stats["response_errors"] += 1
+                    continue
+
+                payload = self._safe_json(response)
+                if payload is None:
+                    stats["response_errors"] += 1
+                    continue
+                shape = self._payload_shape(payload)
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
+
+                items = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                if page == 1 and items:
+                    preview["sample_events"] = items[:3]
+                if not items:
+                    break
+
+                before = len(seen_event_ids)
+                for item in items:
+                    event_id = item.get("id")
+                    if not isinstance(event_id, int):
+                        continue
+                    if event_id in seen_event_ids:
+                        continue
+                    seen_event_ids.add(event_id)
+                    events.append(item)
+                stats["events_fetched"] = len(events)
+                if len(seen_event_ids) == before:
+                    break
+                if len(items) < page_limit:
+                    break
 
             mapping: dict[str, dict[str, Any]] = {}
             for raw_event in events:
@@ -340,56 +388,7 @@ class OddsApiIoProvider:
             "raw": raw,
         }
 
-    def _event_to_match(self, event: dict[str, Any]) -> Match | None:
-        home = str(event.get("home") or "").strip()
-        away = str(event.get("away") or "").strip()
-        league = str(event.get("league") or "").strip()
-        commence_time = event.get("commence_time")
-        if not home or not away or commence_time is None:
-            return None
-        low_tier = is_low_tier_league(league)
-        if low_tier and not self.settings.allow_low_tier:
-            return None
-
-        raw = dict(event.get("raw") or {})
-        metadata: dict[str, Any] = {
-            "odds_api_io": True,
-            "raw_event_id": str(event.get("id") or ""),
-        }
-        bookmaker_ids = raw.get("bookmakerIds")
-        if isinstance(bookmaker_ids, dict):
-            metadata["bookmaker_ids"] = bookmaker_ids
-            bet365_id = bookmaker_ids.get("Bet365") or bookmaker_ids.get("Bet365_4")
-            if bet365_id:
-                metadata["bet365_id"] = str(bet365_id)
-        urls = raw.get("urls")
-        if isinstance(urls, dict) and urls:
-            metadata["urls"] = urls
-
-        return Match(
-            source="odds_api_io",
-            source_event_id=str(event.get("id") or ""),
-            sport_key="soccer",
-            league_name=league or "Unknown",
-            home_team=home,
-            away_team=away,
-            commence_time=commence_time,
-            home_team_norm=canonicalize_team_name(home),
-            away_team_norm=canonicalize_team_name(away),
-            league_key=canonicalize_league_name(league),
-            tier="low" if low_tier else "mid",
-            metadata=metadata,
-        )
-
     def _match_event(self, event: dict[str, Any], matches: list[Match]) -> Match | None:
-        event_id = str(event.get("id") or "").strip()
-        if event_id:
-            for match in matches:
-                if str(getattr(match, "source", "")) == "odds_api_io" and str(getattr(match, "source_event_id", "")) == event_id:
-                    event["match_score"] = 100.0
-                    event["match_quality"] = "exact"
-                    return match
-
         best_match: Match | None = None
         best_score = 0.0
         best_quality: str | None = None
@@ -660,3 +659,9 @@ class OddsApiIoProvider:
         if name in {"draw", "x", "tie"}:
             return "Draw"
         return raw_name or ""
+
+
+    def _looks_low_tier(self, league_name: str) -> bool:
+        text = str(league_name or "").lower()
+        markers = ("u17", "u18", "u19", "u20", "u21", "u23", "women", "reserve", "friendly", "esports")
+        return any(marker in text for marker in markers)

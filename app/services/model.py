@@ -73,6 +73,11 @@ class CandidateFactory:
                 match_candidates.extend(self._build_btts_candidates(match, families['btts'], context, rejections))
             if families.get('teamTotals'):
                 match_candidates.extend(self._build_team_totals_candidates(match, families['teamTotals'], context, rejections))
+            if not match_candidates and getattr(self.settings, 'simple_market_fallback_enabled', True):
+                if families.get('totals'):
+                    match_candidates.extend(self._build_simple_market_totals_candidates(match, families['totals'], rejections))
+                if not match_candidates and families.get('h2h'):
+                    match_candidates.extend(self._build_simple_market_h2h_candidates(match, families['h2h'], rejections))
 
             match_candidates.sort(key=lambda item: self._candidate_rank_key(item), reverse=True)
             if match_candidates:
@@ -234,6 +239,147 @@ class CandidateFactory:
             if candidate:
                 result.append(candidate)
         return result
+
+
+    def _build_simple_market_totals_candidates(
+        self,
+        match: Match,
+        offers: list[Offer],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        buckets: dict[tuple[str, float | None], list[Offer]] = defaultdict(list)
+        for offer in offers:
+            buckets[(offer.selection, offer.point)].append(offer)
+        result: list[CandidateBet] = []
+        for (selection, point), bucket in buckets.items():
+            low = str(selection or '').lower()
+            if point is None or not (low.startswith('over') or low.startswith('under')):
+                continue
+            normalized_point = self._normalize_supported_line(point, 'totals')
+            if normalized_point is None:
+                continue
+            point = normalized_point
+            required_books = self._required_books_for_bucket('totals', point, bucket, None)
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+                continue
+            market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
+            market_signal = self._market_signal_for_bucket(match.match_key, 'totals', bucket, point)
+            model_prob = self._simple_market_model_probability(
+                family='totals',
+                market_prob=market_prob,
+                market_signal=market_signal,
+                books_count=len({self._norm_book(item.bookmaker) for item in bucket}),
+            )
+            if model_prob is None:
+                rejections['simple_market_signal_missing_totals'] += 1
+                continue
+            candidate = self._candidate_from_bucket(
+                match=match,
+                family='totals',
+                selection=russian_selection('totals', selection, point),
+                point=point,
+                offers=bucket,
+                market_prob=market_prob,
+                model_prob=model_prob,
+                reasons=[
+                    'mode=market_fallback',
+                    'model=market_signal_consensus',
+                    'signals=market+consensus',
+                    f'line={point:g}',
+                    'context=none',
+                ],
+                expected_home=None,
+                expected_away=None,
+                model_mode='market_simple_totals',
+                context=None,
+                market_signal=market_signal,
+            )
+            if candidate:
+                result.append(candidate)
+        return result
+
+    def _build_simple_market_h2h_candidates(
+        self,
+        match: Match,
+        offers: list[Offer],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        buckets: dict[str, list[Offer]] = defaultdict(list)
+        for offer in offers:
+            buckets[offer.selection].append(offer)
+        result: list[CandidateBet] = []
+        for selection, bucket in buckets.items():
+            selection_key = self._h2h_selection_key(match, selection)
+            if selection_key not in {'home', 'away'}:
+                continue
+            required_books = self._required_books_for_bucket('h2h', None, bucket, None)
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+                continue
+            best_offer = self._select_best_offer(bucket)
+            if float(best_offer.price) >= 3.35:
+                rejections['simple_market_h2h_high_odds_skip'] += 1
+                continue
+            market_prob = self._fair_market_probability_h2h(match, offers, selection)
+            market_signal = self._market_signal_for_bucket(match.match_key, 'h2h', bucket, None)
+            model_prob = self._simple_market_model_probability(
+                family='h2h',
+                market_prob=market_prob,
+                market_signal=market_signal,
+                books_count=len({self._norm_book(item.bookmaker) for item in bucket}),
+            )
+            if model_prob is None:
+                rejections['simple_market_signal_missing_h2h'] += 1
+                continue
+            candidate = self._candidate_from_bucket(
+                match=match,
+                family='h2h',
+                selection=russian_selection('h2h', selection),
+                point=None,
+                offers=bucket,
+                market_prob=market_prob,
+                model_prob=model_prob,
+                reasons=[
+                    'mode=market_fallback',
+                    'model=market_signal_consensus',
+                    'signals=market+consensus',
+                    'context=none',
+                ],
+                expected_home=None,
+                expected_away=None,
+                model_mode='market_simple_h2h',
+                context=None,
+                market_signal=market_signal,
+            )
+            if candidate:
+                result.append(candidate)
+        return result
+
+    def _simple_market_model_probability(
+        self,
+        *,
+        family: str,
+        market_prob: float,
+        market_signal: dict[str, Any] | None,
+        books_count: int,
+    ) -> float | None:
+        market_prob = clamp(float(market_prob), 0.02, 0.98)
+        edge_pct = self._to_float_safe((market_signal or {}).get('best_vs_consensus_edge_pct')) or 0.0
+        steam_delta = self._to_float_safe((market_signal or {}).get('delta_prob_pp')) or 0.0
+        dispersion_pct = self._to_float_safe((market_signal or {}).get('consensus_dispersion_pct'))
+        signal_boost_pct = 0.0
+        if edge_pct > 0:
+            signal_boost_pct += min(2.0, edge_pct * 0.55)
+        if steam_delta > 0:
+            signal_boost_pct += min(1.8, steam_delta * 0.55)
+        if dispersion_pct is not None and dispersion_pct <= float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5):
+            signal_boost_pct += 0.5
+        signal_boost_pct += max(0, books_count - 1) * 0.2
+        min_signal = float(getattr(self.settings, 'simple_market_min_signal_boost_pct', 0.9) or 0.9)
+        if signal_boost_pct < min_signal:
+            return None
+        family_cap = 3.6 if family == 'totals' else 3.0
+        boost_prob = min(family_cap, signal_boost_pct) / 100.0
+        return clamp(market_prob + boost_prob, 0.02, 0.98)
 
     def _build_spread_candidates(
         self,
@@ -1044,7 +1190,7 @@ class CandidateFactory:
         if explicit is not None:
             source = str(context.source or '')
             explicit_weight = float(getattr(self.settings, 'signal_weight_explicit', 0.40) or 0.40)
-            if source in {'api_football', 'espn', 'ensemble', 'thesportsdb'}:
+            if source in {'api_football', 'espn', 'ensemble', 'thesportsdb', 'football_data', 'openfootball', 'newsapi', 'gnews'}:
                 explicit_weight += 0.05
             weighted_parts.append((explicit, explicit_weight))
         strength = self._strength_probabilities(match, context)
@@ -1484,7 +1630,7 @@ class CandidateFactory:
         has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
-        if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats', 'ensemble', 'api_football', 'espn', 'thesportsdb'}:
+        if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats', 'ensemble', 'api_football', 'espn', 'thesportsdb', 'football_data', 'openfootball', 'newsapi', 'gnews'}:
             return 1
         if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
             return min(base, 2)
@@ -1523,6 +1669,26 @@ class CandidateFactory:
                 rejections['edge_below_threshold'] += 1
                 continue
             context_source = str((item.source_summary or {}).get('context_source') or '')
+            if item.model_mode == 'market_simple_totals':
+                if float(item.confidence) < float(getattr(self.settings, 'simple_market_totals_min_confidence', 58.0) or 58.0):
+                    rejections['simple_market_totals_confidence_guard'] += 1
+                    continue
+                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_totals_min_ev_pct', 2.2) or 2.2):
+                    rejections['simple_market_totals_ev_guard'] += 1
+                    continue
+                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_totals_min_edge_pct', 2.8) or 2.8):
+                    rejections['simple_market_totals_edge_guard'] += 1
+                    continue
+            if item.model_mode == 'market_simple_h2h':
+                if float(item.confidence) < float(getattr(self.settings, 'simple_market_h2h_min_confidence', 62.0) or 62.0):
+                    rejections['simple_market_h2h_confidence_guard'] += 1
+                    continue
+                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_h2h_min_ev_pct', 3.6) or 3.6):
+                    rejections['simple_market_h2h_ev_guard'] += 1
+                    continue
+                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_h2h_min_edge_pct', 4.4) or 4.4):
+                    rejections['simple_market_h2h_edge_guard'] += 1
+                    continue
             if item.family == 'totals' and item.books_count == 1:
                 if item.confidence < 58.0 or item.edge_pct < 7.0:
                     rejections['single_book_total_guard'] += 1
