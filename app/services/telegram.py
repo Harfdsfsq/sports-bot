@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+
 import httpx
 
 from app.config import Settings
@@ -29,7 +31,7 @@ class TelegramPublisher:
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
             used_text = "\n⚠️ Прогноз использован" if bet.already_used else ""
-            explanation = self._build_explanation(bet)
+            explanation = self._build_explanation(bet, selection_text)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
@@ -45,33 +47,90 @@ class TelegramPublisher:
 
         return "\n\n".join(blocks)
 
-    def _build_explanation(self, bet: CandidateBet) -> str:
+    def _normalize_selection(self, value: str | None) -> str:
+        text = (value or "").strip().lower()
+        text = text.replace("ё", "е")
+        text = re.sub(r"[^a-zа-я0-9+\-. ]+", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    def _selection_kind(self, family: str, selection: str | None, selection_text: str | None = None) -> str:
+        raw = " ".join(
+            part for part in [self._normalize_selection(selection), self._normalize_selection(selection_text)] if part
+        )
+
+        if family == "totals":
+            if any(token in raw for token in ["over", "больше", "бол", "+", "tb", "тб"]):
+                return "over"
+            if any(token in raw for token in ["under", "меньше", "мен", "tm", "тм"]):
+                return "under"
+            return "unknown_total"
+
+        if family == "btts":
+            if any(token in raw for token in ["yes", "обе забьют да", "обе забьют", "да"]):
+                return "yes"
+            if any(token in raw for token in ["no", "обе забьют нет", "нет"]):
+                return "no"
+            return "unknown_btts"
+
+        if family == "h2h":
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["home", "1", "п1"]):
+                return "home"
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["away", "2", "п2"]):
+                return "away"
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["draw", "x", "ничья"]):
+                return "draw"
+            return "unknown_h2h"
+
+        if family == "spreads":
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["home", "1", "п1"]):
+                return "home"
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["away", "2", "п2"]):
+                return "away"
+            return "unknown_spread"
+
+        return "unknown"
+
+    def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
         raw_reasons = " ".join(bet.reasons).lower()
         parts: list[str] = []
+        kind = self._selection_kind(bet.family, bet.selection, selection_text)
 
         if bet.family == "totals":
-            if "over" in bet.selection.lower():
+            if kind == "over":
                 parts.append("Модель ждёт более результативный матч, чем это предполагает коэффициент.")
+            elif kind == "under":
+                parts.append("Модель ждёт менее результативный и более осторожный матч, чем это предполагает коэффициент.")
             else:
-                parts.append("Модель ждёт более закрытый матч, чем это предполагает коэффициент.")
+                parts.append("По тоталу модель видит перевес над текущим коэффициентом.")
         elif bet.family == "h2h":
-            team = bet.home_team if bet.selection.lower() == "home" else bet.away_team if bet.selection.lower() == "away" else "этот исход"
-            parts.append(f"По нашим данным у {team} есть перевес, а коэффициент всё ещё остаётся интересным.")
-        elif bet.family == "spreads":
-            parts.append("Модель видит запас по форе и считает линию чуть мягче, чем должна быть.")
-        elif bet.family == "btts":
-            if "yes" in bet.selection.lower():
-                parts.append("Есть хорошие шансы, что обе команды забьют.")
+            if kind == "home":
+                team = bet.home_team
+                parts.append(f"По нашим данным у {team} есть перевес, а коэффициент всё ещё выглядит интересным.")
+            elif kind == "away":
+                team = bet.away_team
+                parts.append(f"По нашим данным у {team} есть перевес, а коэффициент всё ещё выглядит интересным.")
+            elif kind == "draw":
+                parts.append("Модель допускает более равный матч, чем это видно по линии.")
             else:
+                parts.append("По исходу модель видит перевес над текущим коэффициентом.")
+        elif bet.family == "spreads":
+            parts.append("По форе у ставки есть запас относительно текущей линии.")
+        elif bet.family == "btts":
+            if kind == "yes":
+                parts.append("Есть хорошие шансы, что обе команды забьют.")
+            elif kind == "no":
                 parts.append("Есть причины ждать, что хотя бы одна команда останется без гола.")
+            else:
+                parts.append("По этой линии модель видит перевес над текущим коэффициентом.")
         else:
-            parts.append("По модели этот вариант выглядит сильнее, чем его оценивает рынок.")
+            parts.append("По модели этот вариант выглядит сильнее, чем его сейчас оценивает рынок.")
 
         if bet.expected_home is not None and bet.expected_away is not None:
             total_xg = bet.expected_home + bet.expected_away
-            if bet.family == "totals" and "over" in bet.selection.lower() and total_xg >= 2.6:
+            if bet.family == "totals" and kind == "over" and total_xg >= 2.6:
                 parts.append("По ожидаемым голам матч тянет на открытую игру с моментами у обеих сторон.")
-            elif bet.family == "totals" and "under" in bet.selection.lower() and total_xg <= 2.2:
+            elif bet.family == "totals" and kind == "under" and total_xg <= 2.2:
                 parts.append("По ожидаемым голам матч больше похож на осторожную игру с небольшим числом моментов.")
             elif bet.family == "h2h":
                 if bet.expected_home > bet.expected_away + 0.25:
@@ -86,7 +145,7 @@ class TelegramPublisher:
         if "injuries" in raw_reasons:
             parts.append("Есть кадровые новости, которые могут заметно повлиять на игру.")
         if "news" in raw_reasons:
-            parts.append("Свежий новостной фон не ломает идею ставки.")
+            parts.append("Свежий новостной фон не ломает идею этой ставки.")
         if "xg" in raw_reasons and all("ожидаемым голам" not in p for p in parts):
             parts.append("По качеству создаваемых моментов ставка выглядит логично.")
 
