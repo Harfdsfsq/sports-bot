@@ -1547,6 +1547,35 @@ class CandidateFactory:
                     if float(item.ev_pct) < float(getattr(self.settings, 'h2h_side_min_ev_pct', 1.4) or 1.4):
                         rejections['h2h_side_ev_guard'] += 1
                         continue
+                    if item.sources_count <= 1:
+                        if float(item.confidence) < float(getattr(self.settings, 'h2h_single_source_min_confidence', 62.0) or 62.0):
+                            rejections['h2h_single_source_confidence_guard'] += 1
+                            continue
+                        if float(item.edge_pct) < float(getattr(self.settings, 'h2h_single_source_min_edge_pct', 4.2) or 4.2):
+                            rejections['h2h_single_source_edge_guard'] += 1
+                            continue
+                        if float(item.ev_pct) < float(getattr(self.settings, 'h2h_single_source_min_ev_pct', 3.0) or 3.0):
+                            rejections['h2h_single_source_ev_guard'] += 1
+                            continue
+                    if bool(getattr(self.settings, 'h2h_xg_dislocation_guard_enabled', True)):
+                        expected_home = item.expected_home
+                        expected_away = item.expected_away
+                        if expected_home is not None and expected_away is not None:
+                            stronger_side = None
+                            xg_diff = float(expected_home) - float(expected_away)
+                            if xg_diff >= 0:
+                                stronger_side = 'home'
+                            else:
+                                stronger_side = 'away'
+                            selected_side = 'home' if item.selection == item.home_team else ('away' if item.selection == item.away_team else None)
+                            if selected_side and stronger_side == selected_side:
+                                if abs(xg_diff) >= float(getattr(self.settings, 'h2h_xg_dislocation_min_diff', 1.60) or 1.60):
+                                    if float(item.market_probability) <= float(getattr(self.settings, 'h2h_xg_dislocation_market_max_prob', 0.37) or 0.37):
+                                        min_sources = max(1, int(getattr(self.settings, 'h2h_xg_dislocation_min_sources', 2) or 2))
+                                        min_conf = float(getattr(self.settings, 'h2h_xg_dislocation_min_confidence', 66.0) or 66.0)
+                                        if item.sources_count < min_sources and float(item.confidence) < min_conf:
+                                            rejections['h2h_xg_market_dislocation_guard'] += 1
+                                            continue
             if item.family == 'btts':
                 selection_text = str(item.selection or '').lower()
                 is_yes = 'да' in selection_text or 'yes' in selection_text
