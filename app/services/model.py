@@ -816,6 +816,7 @@ class CandidateFactory:
                 'selected_bookmaker': best_offer.bookmaker,
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
+                'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode'),
@@ -1653,6 +1654,35 @@ class CandidateFactory:
             round(item.adjusted_probability, 4),
         )
 
+
+    @staticmethod
+    def _candidate_selection_kind(item: CandidateBet) -> str:
+        raw = str(item.selection or '').strip().lower().replace('ё', 'е')
+        if any(token in raw for token in ['больше', 'over', 'тб']):
+            return 'over'
+        if any(token in raw for token in ['меньше', 'under', 'тм']):
+            return 'under'
+        if raw in {'draw', 'ничья', 'x'}:
+            return 'draw'
+        return 'other'
+
+    def _is_risky_totals_candidate(self, item: CandidateBet) -> bool:
+        source_summary = dict(getattr(item, 'source_summary', {}) or {})
+        parts = [
+            str(getattr(item, 'league_name', '') or '').lower(),
+            str(getattr(item, 'home_team', '') or '').lower(),
+            str(getattr(item, 'away_team', '') or '').lower(),
+            str(source_summary.get('match_tier') or '').lower(),
+        ]
+        haystack = ' '.join(parts)
+        if any(term in haystack for term in (getattr(self.settings, 'risky_totals_league_terms', []) or [])):
+            return True
+        if any(term in haystack for term in (getattr(self.settings, 'risky_totals_team_terms', []) or [])):
+            return True
+        if source_summary.get('match_tier') == 'low':
+            return True
+        return False
+
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
         for item in candidates:
@@ -1689,10 +1719,50 @@ class CandidateFactory:
                 if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_h2h_min_edge_pct', 4.4) or 4.4):
                     rejections['simple_market_h2h_edge_guard'] += 1
                     continue
-            if item.family == 'totals' and item.books_count == 1:
-                if item.confidence < 58.0 or item.edge_pct < 7.0:
-                    rejections['single_book_total_guard'] += 1
-                    continue
+            if item.family == 'totals':
+                selection_kind = self._candidate_selection_kind(item)
+                point = self._to_float_safe(getattr(item, 'point', None))
+                total_xg = None
+                if item.expected_home is not None and item.expected_away is not None:
+                    total_xg = float(item.expected_home) + float(item.expected_away)
+                if selection_kind == 'over' and point is not None and abs(float(point) - 2.5) <= 0.01:
+                    min_conf_guard = float(getattr(self.settings, 'totals_over25_min_confidence', 60.0) or 60.0)
+                    min_edge_guard = float(getattr(self.settings, 'totals_over25_min_edge_pct', 4.5) or 4.5)
+                    min_ev_guard = float(getattr(self.settings, 'totals_over25_min_ev_pct', 3.0) or 3.0)
+                    min_sum_xg_guard = float(getattr(self.settings, 'totals_over25_min_sum_xg', 2.95) or 2.95)
+                    if float(item.confidence) < min_conf_guard:
+                        rejections['totals_over25_confidence_guard'] += 1
+                        continue
+                    if float(item.edge_pct) < min_edge_guard:
+                        rejections['totals_over25_edge_guard'] += 1
+                        continue
+                    if float(item.ev_pct) < min_ev_guard:
+                        rejections['totals_over25_ev_guard'] += 1
+                        continue
+                    if total_xg is None or total_xg < min_sum_xg_guard:
+                        rejections['totals_over25_xg_guard'] += 1
+                        continue
+                    if self._is_risky_totals_candidate(item):
+                        risky_min_conf = float(getattr(self.settings, 'risky_totals_min_confidence', 64.0) or 64.0)
+                        risky_min_edge = float(getattr(self.settings, 'risky_totals_min_edge_pct', 6.0) or 6.0)
+                        risky_min_ev = float(getattr(self.settings, 'risky_totals_min_ev_pct', 4.5) or 4.5)
+                        risky_min_sum_xg = float(getattr(self.settings, 'risky_totals_min_sum_xg', 3.10) or 3.10)
+                        if float(item.confidence) < risky_min_conf:
+                            rejections['risky_totals_confidence_guard'] += 1
+                            continue
+                        if float(item.edge_pct) < risky_min_edge:
+                            rejections['risky_totals_edge_guard'] += 1
+                            continue
+                        if float(item.ev_pct) < risky_min_ev:
+                            rejections['risky_totals_ev_guard'] += 1
+                            continue
+                        if total_xg < risky_min_sum_xg:
+                            rejections['risky_totals_xg_guard'] += 1
+                            continue
+                if item.books_count == 1:
+                    if item.confidence < 58.0 or item.edge_pct < 7.0:
+                        rejections['single_book_total_guard'] += 1
+                        continue
             if item.family == 'h2h' and context_source == 'sstats_form':
                 odds_value = float(item.odds)
                 edge_prob = float(item.adjusted_probability) - float(item.market_probability)

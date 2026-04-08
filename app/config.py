@@ -285,6 +285,22 @@ class Settings(BaseSettings):
     totals_min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices('TOTALS_MIN_EV_PCT'))
     totals_min_model_confidence: float = Field(default=0.54, validation_alias=AliasChoices('TOTALS_MIN_MODEL_CONFIDENCE'))
     totals_min_books: int = Field(default=1, validation_alias=AliasChoices('TOTALS_MIN_BOOKS'))
+    totals_over25_min_edge_pct: float = Field(default=4.5, validation_alias=AliasChoices('TOTALS_OVER25_MIN_EDGE_PCT'))
+    totals_over25_min_ev_pct: float = Field(default=3.0, validation_alias=AliasChoices('TOTALS_OVER25_MIN_EV_PCT'))
+    totals_over25_min_confidence: float = Field(default=60.0, validation_alias=AliasChoices('TOTALS_OVER25_MIN_CONFIDENCE'))
+    totals_over25_min_sum_xg: float = Field(default=2.95, validation_alias=AliasChoices('TOTALS_OVER25_MIN_SUM_XG'))
+    risky_totals_min_edge_pct: float = Field(default=6.0, validation_alias=AliasChoices('RISKY_TOTALS_MIN_EDGE_PCT'))
+    risky_totals_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices('RISKY_TOTALS_MIN_EV_PCT'))
+    risky_totals_min_confidence: float = Field(default=64.0, validation_alias=AliasChoices('RISKY_TOTALS_MIN_CONFIDENCE'))
+    risky_totals_min_sum_xg: float = Field(default=3.10, validation_alias=AliasChoices('RISKY_TOTALS_MIN_SUM_XG'))
+    risky_totals_league_terms: CsvList = Field(
+        default_factory=lambda: ['serie c', 'primera nacional', 'liga de expansion', 'u17', 'u19', 'u20', 'u21', 'u23', 'youth', 'academy', 'reserve', 'reserves', 'primavera'],
+        validation_alias=AliasChoices('RISKY_TOTALS_LEAGUE_TERMS'),
+    )
+    risky_totals_team_terms: CsvList = Field(
+        default_factory=lambda: ['u17', 'u19', 'u20', 'u21', 'u23', 'academy', 'reserve', 'reserves', 'primavera'],
+        validation_alias=AliasChoices('RISKY_TOTALS_TEAM_TERMS'),
+    )
 
     h2h_min_edge_pct: float = Field(default=2.2, validation_alias=AliasChoices('H2H_MIN_EDGE_PCT'))
     h2h_min_ev_pct: float = Field(default=1.6, validation_alias=AliasChoices('H2H_MIN_EV_PCT'))
