@@ -367,28 +367,33 @@ class Settings(BaseSettings):
     team_totals_min_books: int = Field(default=1, validation_alias=AliasChoices('TEAM_TOTALS_MIN_BOOKS'))
 
     @field_validator(
-        'run_sports',
-        'target_bookmakers',
-        'consensus_bookmakers',
-        'odds_api_io_bookmakers',
-        'bookies_api_sports',
-        'espn_soccer_leagues',
-        'espn_soft_fail_statuses',
-        'supported_total_lines',
-        'supported_team_total_lines',
-        'openfootball_competition_map',
-        mode='before',
-    )
-    @classmethod
-    def split_csv(cls, value: Any) -> list[str]:
-        if value is None:
-            return []
-        if isinstance(value, list):
-            return [str(item).strip() for item in value if str(item).strip()]
-        text = str(value).strip()
-        if not text:
-            return []
-        return [item.strip() for item in text.split(',') if item.strip()]
+    'run_sports',
+    'target_bookmakers',
+    'consensus_bookmakers',
+    'odds_api_io_bookmakers',
+    'bookies_api_sports',
+    'espn_soccer_leagues',
+    'espn_soft_fail_statuses',
+    'supported_total_lines',
+    'supported_team_total_lines',
+    'openfootball_competition_map',
+    'sharp_bookmakers',
+    'consensus_alias_groups',
+    'risky_totals_league_terms',
+    'risky_totals_team_terms',
+    mode='before',
+)
+@classmethod
+def split_csv(cls, value: Any) -> list[str]:
+    if value is None:
+        return []
+    if isinstance(value, list):
+        return [str(item).strip() for item in value if str(item).strip()]
+    text = str(value).strip()
+    if not text:
+        return []
+    return [item.strip() for item in text.split(',') if item.strip()]
+
 
 
     bookmaker_alias_relaxed: bool = Field(default=True, validation_alias=AliasChoices('BOOKMAKER_ALIAS_RELAXED'))
