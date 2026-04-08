@@ -368,13 +368,17 @@ class CandidateFactory:
         dispersion_pct = self._to_float_safe((market_signal or {}).get('consensus_dispersion_pct'))
         signal_boost_pct = 0.0
         if edge_pct > 0:
-            signal_boost_pct += min(2.0, edge_pct * 0.55)
+            signal_boost_pct += min(2.4, edge_pct * 0.65)
         if steam_delta > 0:
-            signal_boost_pct += min(1.8, steam_delta * 0.55)
+            signal_boost_pct += min(2.0, steam_delta * 0.60)
         if dispersion_pct is not None and dispersion_pct <= float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5):
             signal_boost_pct += 0.5
-        signal_boost_pct += max(0, books_count - 1) * 0.2
+        signal_boost_pct += max(0, books_count - 1) * 0.30
         min_signal = float(getattr(self.settings, 'simple_market_min_signal_boost_pct', 0.9) or 0.9)
+        if family == 'totals':
+            min_signal = max(0.45, min_signal - 0.15)
+        elif family == 'h2h':
+            min_signal = max(0.50, min_signal - 0.10)
         if signal_boost_pct < min_signal:
             return None
         family_cap = 3.6 if family == 'totals' else 3.0
