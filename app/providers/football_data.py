@@ -321,8 +321,8 @@ class FootballDataContextProvider:
         return best_match, best_score, best_quality
 
     def _build_context_from_standings(self, match: Match, row: dict[str, Any], table: list[dict[str, Any]]) -> MatchContext | None:
-        home_row = self._find_team_row(match.home_team, table)
-        away_row = self._find_team_row(match.away_team, table)
+        home_row = self._find_team_row(match.home_team, table, ((row.get('homeTeam') or {}).get('id')))
+        away_row = self._find_team_row(match.away_team, table, ((row.get('awayTeam') or {}).get('id')))
         if home_row is None or away_row is None:
             return None
 
@@ -368,6 +368,7 @@ class FootballDataContextProvider:
         home_games: list[tuple[datetime, float, float]] = []
         away_games: list[tuple[datetime, float, float]] = []
         h2h_totals: list[float] = []
+        competition_totals: list[float] = []
         for hist in rows:
             try:
                 dt = parse_datetime(str(hist.get('utcDate') or ''))
@@ -384,6 +385,7 @@ class FootballDataContextProvider:
                 away_goals = float(full.get('away') if full.get('away') is not None else full.get('awayTeam'))
             except Exception:
                 continue
+            competition_totals.append(home_goals + away_goals)
             hist_home = str(((hist.get('homeTeam') or {}).get('name')) or '').strip()
             hist_away = str(((hist.get('awayTeam') or {}).get('name')) or '').strip()
             if not hist_home or not hist_away:
@@ -394,50 +396,68 @@ class FootballDataContextProvider:
             rev_home = self._team_match_score(match.home_team, hist_away)
             rev_away = self._team_match_score(match.away_team, hist_home)
 
-            if home_sim >= 0.78:
+            if home_sim >= 0.74:
                 home_games.append((dt, home_goals, away_goals))
-            elif rev_home >= 0.78:
+            elif rev_home >= 0.74:
                 home_games.append((dt, away_goals, home_goals))
 
-            if away_sim >= 0.78:
+            if away_sim >= 0.74:
                 away_games.append((dt, away_goals, home_goals))
-            elif rev_away >= 0.78:
+            elif rev_away >= 0.74:
                 away_games.append((dt, home_goals, away_goals))
 
-            if (home_sim >= 0.76 and away_sim >= 0.76) or (rev_home >= 0.76 and rev_away >= 0.76):
+            if (home_sim >= 0.72 and away_sim >= 0.72) or (rev_home >= 0.72 and rev_away >= 0.72):
                 h2h_totals.append(home_goals + away_goals)
 
         home_games.sort(key=lambda item: item[0], reverse=True)
         away_games.sort(key=lambda item: item[0], reverse=True)
-        if len(home_games) < 2 or len(away_games) < 2:
+        if not home_games or not away_games:
             return None
 
         home_recent = home_games[:5]
         away_recent = away_games[:5]
-        home_gf = sum(item[1] for item in home_recent) / len(home_recent)
-        home_ga = sum(item[2] for item in home_recent) / len(home_recent)
-        away_gf = sum(item[1] for item in away_recent) / len(away_recent)
-        away_ga = sum(item[2] for item in away_recent) / len(away_recent)
-        home_points = sum(3.0 if gf > ga else 1.0 if gf == ga else 0.0 for _, gf, ga in home_recent)
-        away_points = sum(3.0 if gf > ga else 1.0 if gf == ga else 0.0 for _, gf, ga in away_recent)
-        home_ppg = home_points / len(home_recent)
-        away_ppg = away_points / len(away_recent)
-        home_form = home_ppg / 3.0
-        away_form = away_ppg / 3.0
-        expected_home = clamp(((home_gf + away_ga) / 2.0) + 0.14, 0.30, 3.25)
-        expected_away = clamp(((away_gf + home_ga) / 2.0), 0.25, 3.10)
-        delta = clamp((home_ppg - away_ppg) * 0.12 + (home_form - away_form) * 0.08, -0.18, 0.18)
-        draw = clamp(0.26 - abs(delta) * 0.16, 0.17, 0.31)
+        competition_avg_total = (sum(competition_totals) / len(competition_totals)) if competition_totals else 2.35
+        neutral_side = competition_avg_total / 2.0
+
+        def _blend_side(recent: list[tuple[datetime, float, float]]) -> tuple[float, float, float, float, int]:
+            sample = len(recent)
+            gf_obs = sum(item[1] for item in recent) / sample
+            ga_obs = sum(item[2] for item in recent) / sample
+            points = sum(3.0 if gf > ga else 1.0 if gf == ga else 0.0 for _, gf, ga in recent)
+            ppg_obs = points / sample
+            form_obs = ppg_obs / 3.0
+            # shrink small samples toward competition mean so cup ties with little history still get usable context
+            weight = sample / (sample + 2.0)
+            gf = (gf_obs * weight) + (neutral_side * (1.0 - weight))
+            ga = (ga_obs * weight) + (neutral_side * (1.0 - weight))
+            ppg = (ppg_obs * weight) + (1.35 * (1.0 - weight))
+            form = (form_obs * weight) + (0.50 * (1.0 - weight))
+            return gf, ga, ppg, form, sample
+
+        home_gf, home_ga, home_ppg, home_form, home_sample = _blend_side(home_recent)
+        away_gf, away_ga, away_ppg, away_form, away_sample = _blend_side(away_recent)
+        expected_home = clamp(((home_gf + away_ga) / 2.0) + 0.12, 0.35, 3.20)
+        expected_away = clamp(((away_gf + home_ga) / 2.0), 0.30, 3.05)
+        delta = clamp((home_ppg - away_ppg) * 0.11 + (home_form - away_form) * 0.07, -0.16, 0.16)
+        draw = clamp(0.27 - abs(delta) * 0.15, 0.18, 0.31)
         home = 0.38 + delta
         away = 1.0 - home - draw
         probs = self._normalize_probs(home, away, draw)
-        confidence = clamp(54.0 + min(len(home_recent), len(away_recent)) * 1.6, 53.0, 62.0)
+        base_conf = 50.0 + min(home_sample, away_sample) * 2.6
+        if h2h_totals:
+            base_conf += 2.0
+        if len(competition_totals) >= 20:
+            base_conf += 2.0
+        confidence = clamp(base_conf, 50.0, 63.0)
         details = {
             'football_data_mode': 'history_fallback',
             'football_data_home_ppg': round(home_ppg, 3),
             'football_data_away_ppg': round(away_ppg, 3),
             'football_data_home_form': round(home_form, 3),
             'football_data_away_form': round(away_form, 3),
+            'football_data_home_sample': home_sample,
+            'football_data_away_sample': away_sample,
+            'football_data_competition_avg_goals': round(competition_avg_total, 3),
             'football_data_h2h_avg_goals': round(sum(h2h_totals) / len(h2h_totals), 3) if h2h_totals else None,
             'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
         }
@@ -489,18 +509,22 @@ class FootballDataContextProvider:
             'form_score': form_score,
         }
 
-    def _find_team_row(self, team_name: str, rows: list[dict[str, Any]]) -> dict[str, Any] | None:
+    def _find_team_row(self, team_name: str, rows: list[dict[str, Any]], team_id: Any | None = None) -> dict[str, Any] | None:
         best_row: dict[str, Any] | None = None
         best_score = 0.0
         for row in rows:
-            row_name = str(((row.get('team') or {}).get('name')) or row.get('name') or '').strip()
+            row_team = row.get('team') or {}
+            row_name = str((row_team.get('name')) or row.get('name') or '').strip()
             if not row_name:
                 continue
+            row_id = row_team.get('id') if isinstance(row_team, dict) else None
+            if team_id is not None and row_id is not None and str(team_id) == str(row_id):
+                return row
             score = self._team_match_score(team_name, row_name)
             if score > best_score:
                 best_score = score
                 best_row = row
-        return best_row if best_score >= 0.72 else None
+        return best_row if best_score >= 0.66 else None
 
     @staticmethod
     def _team_match_score(a: str, b: str) -> float:
