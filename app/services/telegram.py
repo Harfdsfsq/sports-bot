@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import httpx
 
@@ -36,7 +37,7 @@ class TelegramPublisher:
             xg_text = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
-            used_text = "\n⚠️ Прогноз использован" if bet.already_used else ""
+            used_text = "\n⚠️ Прогноз использован" if (bet.already_used and getattr(self.settings, 'telegram_writeup_show_used_marker', False)) else ""
             explanation = self._build_explanation(bet, selection_text)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
@@ -99,9 +100,37 @@ class TelegramPublisher:
 
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
         analysis = dict(getattr(bet, 'analysis', {}) or {})
+        blocks = analysis.get('analysis_blocks') or []
+        if isinstance(blocks, list) and blocks:
+            max_points = max(3, int(getattr(self.settings, 'telegram_writeup_max_points', 5) or 5))
+            min_sample = max(0, int(getattr(self.settings, 'telegram_writeup_min_recent_sample', 3) or 3))
+            selected: list[str] = []
+            seen: set[str] = set()
+            for block in sorted((item for item in blocks if isinstance(item, dict)), key=lambda item: (-float(item.get('priority', 0) or 0), str(item.get('tag', '')))):
+                text = ' '.join(str(block.get('text') or '').split())
+                if not text:
+                    continue
+                if text in seen:
+                    continue
+                tag = str(block.get('tag') or '')
+                reliability = str(block.get('reliability') or 'medium')
+                block_sample = int(block.get('min_sample') or 0)
+                if reliability == 'low':
+                    continue
+                if tag in {'profile', 'recent', 'form'} and block_sample and block_sample < min_sample:
+                    continue
+                if tag == 'basis' and len(selected) >= 3:
+                    continue
+                seen.add(text)
+                selected.append(text)
+                if len(selected) >= max_points:
+                    break
+            if selected:
+                return "\n\n".join(selected)
+
         summary_points = [str(item).strip() for item in (analysis.get('summary_points') or []) if str(item).strip()]
         if summary_points:
-            return "\n\n".join(summary_points)
+            return "\n\n".join(summary_points[: max(3, int(getattr(self.settings, 'telegram_writeup_max_points', 5) or 5))])
 
         raw_reasons = " ".join(bet.reasons).lower()
         parts: list[str] = []

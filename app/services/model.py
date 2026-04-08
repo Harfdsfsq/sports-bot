@@ -884,6 +884,26 @@ class CandidateFactory:
             },
         )
 
+    def _analysis_block(
+        self,
+        *,
+        tag: str,
+        text: str | None,
+        priority: float,
+        min_sample: int = 0,
+        reliability: str = 'medium',
+    ) -> dict[str, Any] | None:
+        normalized = ' '.join(str(text or '').split())
+        if not normalized:
+            return None
+        return {
+            'tag': str(tag or '').strip(),
+            'text': normalized,
+            'priority': float(priority),
+            'min_sample': max(0, int(min_sample or 0)),
+            'reliability': str(reliability or 'medium'),
+        }
+
     def _build_candidate_analysis(
         self,
         *,
@@ -910,97 +930,103 @@ class CandidateFactory:
         if expected_home is not None and expected_away is not None:
             total_xg = round(float(expected_home) + float(expected_away), 2)
 
-        points: list[str] = []
+        blocks: list[dict[str, Any]] = []
         flags: list[str] = []
         selection_low = str(selection or '').lower()
+
+        def add_block(tag: str, text: str | None, priority: float, min_sample: int = 0, reliability: str = 'medium') -> None:
+            block = self._analysis_block(tag=tag, text=text, priority=priority, min_sample=min_sample, reliability=reliability)
+            if block is None:
+                return
+            blocks.append(block)
+            if tag not in flags:
+                flags.append(tag)
 
         if family == 'totals':
             is_under = 'меньше' in selection_low or 'under' in selection_low
             direction = 'низ' if is_under else 'верх'
-            points.append(
+            add_block(
+                'value',
                 f'По линии на этот {direction} дают около {market_probability * 100:.1f}%, а модель поднимает вероятность до {adjusted_probability * 100:.1f}%. '
-                f'Запас по вероятности {probability_gap_pp:+.1f} п.п. создаёт value относительно рынка.'
+                f'Запас по вероятности {probability_gap_pp:+.1f} п.п. создаёт value относительно рынка.',
+                priority=100,
+                reliability='high',
             )
             if total_xg is not None and point is not None:
                 stance = 'осторожному' if is_under else 'результативному'
-                points.append(
+                add_block(
+                    'xg',
                     f'По ожидаемым голам модель видит около {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}), '
-                    f'поэтому матч больше тянет к {stance} сценарию относительно линии {point:g}.'
+                    f'поэтому матч больше тянет к {stance} сценарию относительно линии {point:g}.',
+                    priority=95,
+                    reliability='high',
                 )
-                flags.append('xg')
         elif family == 'h2h':
             team = match.home_team if str(selection).strip() == match.home_team else match.away_team if str(selection).strip() == match.away_team else str(selection)
-            points.append(
+            add_block(
+                'value',
                 f'Модель оценивает исход {team} в {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по линии. '
-                f'Это даёт перевес {probability_gap_pp:+.1f} п.п. и делает цену интереснее рынка.'
+                f'Это даёт перевес {probability_gap_pp:+.1f} п.п. и делает цену интереснее рынка.',
+                priority=100,
+                reliability='high',
             )
             if total_xg is not None:
                 stronger = match.home_team if float(expected_home or 0) >= float(expected_away or 0) else match.away_team
-                points.append(
+                add_block(
+                    'xg',
                     f'По качеству моментов матч выглядит как {float(expected_home or 0):.2f} : {float(expected_away or 0):.2f} по xG, '
-                    f'то есть игровое преимущество модель видит у {stronger}.'
+                    f'то есть игровое преимущество модель видит у {stronger}.',
+                    priority=92,
+                    reliability='high',
                 )
-                flags.append('xg')
         else:
-            points.append(
+            add_block(
+                'value',
                 f'Модель даёт {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по линии, '
-                f'что даёт запас {probability_gap_pp:+.1f} п.п. и объясняет интерес к ставке.'
+                f'что даёт запас {probability_gap_pp:+.1f} п.п. и объясняет интерес к ставке.',
+                priority=100,
+                reliability='high',
             )
 
-        form_text = self._build_form_summary(match, context_details)
-        if form_text:
-            points.append(form_text)
-            flags.append('form')
+        for builder in (
+            self._build_form_summary(match, context_details),
+            self._build_profile_summary(match, context_details, family, point, expected_home, expected_away),
+            self._build_table_summary(match, context_details),
+            self._build_recent_summary(match, context_details, family),
+            self._build_injuries_summary(match, context_details),
+            self._build_market_confirmation_summary(books, sources, movement_label, steam_delta, best_vs_consensus_edge_pct),
+            self._build_context_basis_summary(context, context_details),
+        ):
+            if isinstance(builder, dict):
+                add_block(
+                    str(builder.get('tag') or ''),
+                    str(builder.get('text') or ''),
+                    float(builder.get('priority') or 0),
+                    min_sample=int(builder.get('min_sample') or 0),
+                    reliability=str(builder.get('reliability') or 'medium'),
+                )
 
-        profile_text = self._build_profile_summary(match, context_details, family, point, expected_home, expected_away)
-        if profile_text:
-            points.append(profile_text)
-            flags.append('recent_profile')
-
-        table_text = self._build_table_summary(match, context_details)
-        if table_text:
-            points.append(table_text)
-            flags.append('table')
-
-        recent_text = self._build_recent_summary(match, context_details, family)
-        if recent_text:
-            points.append(recent_text)
-            flags.append('recent')
-
-        injuries_text = self._build_injuries_summary(match, context_details)
-        if injuries_text:
-            points.append(injuries_text)
-            flags.append('injuries')
-
-        market_text = self._build_market_confirmation_summary(books, sources, movement_label, steam_delta, best_vs_consensus_edge_pct)
-        if market_text:
-            points.append(market_text)
-            flags.append('market')
-
-        basis_text = self._build_context_basis_summary(context, context_details)
-        if basis_text:
-            points.append(basis_text)
-            flags.append('basis')
-
-        clean_points: list[str] = []
+        sorted_blocks = sorted(blocks, key=lambda item: (-float(item.get('priority', 0) or 0), str(item.get('tag') or '')))
+        clean_blocks: list[dict[str, Any]] = []
         seen: set[str] = set()
-        for point_text in points:
-            normalized = ' '.join(str(point_text or '').split())
-            if not normalized or normalized in seen:
+        for block in sorted_blocks:
+            text_value = str(block.get('text') or '')
+            if not text_value or text_value in seen:
                 continue
-            seen.add(normalized)
-            clean_points.append(normalized)
-            if len(clean_points) >= max_points:
-                break
+            seen.add(text_value)
+            clean_blocks.append(block)
 
+        summary_points = [str(item.get('text') or '') for item in clean_blocks[:max_points]]
+        unique_flags = list(dict.fromkeys(flags))
         return {
-            'summary_points': clean_points,
-            'flags': flags[:max_points + 1],
+            'summary_points': summary_points,
+            'analysis_blocks': clean_blocks,
+            'flags': unique_flags[:max_points + 1],
             'probability_gap_pp': probability_gap_pp,
             'total_xg': total_xg,
             'context_source': str(getattr(context, 'source', '') or '') if context is not None else None,
             'confidence': round(float(confidence), 2),
-            'context_depth_score': round(min(4.0, len(clean_points) * 0.35 + len(set(flags)) * 0.20), 3),
+            'context_depth_score': round(min(4.0, len(summary_points) * 0.35 + len(set(unique_flags)) * 0.20), 3),
         }
 
     def _build_market_confirmation_summary(
@@ -1010,7 +1036,7 @@ class CandidateFactory:
         movement_label: str | None,
         steam_delta: float | None,
         best_vs_consensus_edge_pct: float | None,
-    ) -> str | None:
+    ) -> dict[str, Any] | None:
         parts: list[str] = []
         if books:
             if len(books) >= 2:
@@ -1022,22 +1048,29 @@ class CandidateFactory:
         if movement_label == 'steam' and steam_delta is not None:
             parts.append(f'По движению линии тоже есть подтверждение: рынок сдвинул вероятность примерно на {steam_delta:+.2f} п.п.')
         if sources and len(sources) >= 2:
-            parts.append(f'Сигнал подтверждён не только книгами, но и несколькими источниками данных ({", ".join(sources[:3])}).')
+            parts.append(f'Сигнал подтверждён несколькими источниками данных ({", ".join(sources[:3])}).')
         if not parts:
             return None
-        return ' '.join(parts)
+        return self._analysis_block(tag='market', text=' '.join(parts), priority=55, reliability='high')
 
-    def _build_form_summary(self, match: Match, details: dict[str, Any]) -> str | None:
+    def _build_form_summary(self, match: Match, details: dict[str, Any]) -> dict[str, Any] | None:
         home_form = self._metric01(self._first_float(details, 'espn_home_form', 'football_data_home_form', 'thesportsdb_home_form', 'openfootball_home_form', 'home_form'))
         away_form = self._metric01(self._first_float(details, 'espn_away_form', 'football_data_away_form', 'thesportsdb_away_form', 'openfootball_away_form', 'away_form'))
         if home_form is None or away_form is None:
             return None
+        sample = int(max(0, min(
+            self._first_float(details, 'home_recent_count', 'football_data_home_sample') or 0,
+            self._first_float(details, 'away_recent_count', 'football_data_away_sample') or 0,
+        )))
         diff = home_form - away_form
         if abs(diff) < 0.05:
-            return f'По форме команды выглядят близко: примерно {home_form * 100:.0f}% против {away_form * 100:.0f}%, без явного перекоса.'
-        stronger = match.home_team if diff > 0 else match.away_team
-        weaker = match.away_team if diff > 0 else match.home_team
-        return f'По форме сейчас лучше выглядит {stronger}: около {max(home_form, away_form) * 100:.0f}% против {min(home_form, away_form) * 100:.0f}% у {weaker}.'
+            text = f'По форме команды выглядят близко: примерно {home_form * 100:.0f}% против {away_form * 100:.0f}%, без явного перекоса.'
+        else:
+            stronger = match.home_team if diff > 0 else match.away_team
+            weaker = match.away_team if diff > 0 else match.home_team
+            text = f'По форме сейчас лучше выглядит {stronger}: около {max(home_form, away_form) * 100:.0f}% против {min(home_form, away_form) * 100:.0f}% у {weaker}.'
+        reliability = 'high' if sample >= 5 else 'medium'
+        return self._analysis_block(tag='form', text=text, priority=70, min_sample=sample, reliability=reliability)
 
     def _build_profile_summary(
         self,
@@ -1047,69 +1080,81 @@ class CandidateFactory:
         point: float | None,
         expected_home: float | None,
         expected_away: float | None,
-    ) -> str | None:
+    ) -> dict[str, Any] | None:
         home_gf = self._first_float(details, 'home_goals_for_avg', 'football_data_home_gf_pg')
         away_gf = self._first_float(details, 'away_goals_for_avg', 'football_data_away_gf_pg')
         home_ga = self._first_float(details, 'home_goals_against_avg', 'football_data_home_ga_pg')
         away_ga = self._first_float(details, 'away_goals_against_avg', 'football_data_away_ga_pg')
         home_sample = self._first_float(details, 'home_recent_count', 'football_data_home_sample')
         away_sample = self._first_float(details, 'away_recent_count', 'football_data_away_sample')
+        min_sample = int(max(0, min(home_sample or 0, away_sample or 0)))
+        sample_floor = max(1, int(getattr(self.settings, 'telegram_writeup_min_recent_sample', 3) or 3))
         if family == 'totals' and None not in (home_gf, away_gf, home_ga, away_ga):
+            if min_sample < sample_floor:
+                return None
             total_profile = float(home_gf) + float(away_gf)
             base = (
-                f'На короткой дистанции {match.home_team} идёт с профилем {float(home_gf):.2f}/{float(home_ga):.2f} по голам за матч, '
-                f'а {match.away_team} — {float(away_gf):.2f}/{float(away_ga):.2f}.'
+                f'На короткой дистанции {match.home_team} идёт с {float(home_gf):.2f} забитого и {float(home_ga):.2f} пропущенного за матч, '
+                f'а {match.away_team} — с {float(away_gf):.2f} и {float(away_ga):.2f}.'
             )
-            extra = []
+            extra: list[str] = []
             if point is not None and total_profile >= float(point):
-                extra.append(f'В сумме это поддерживает темп выше линии {float(point):g}.')
+                extra.append(f'Такой профиль поддерживает темп выше линии {float(point):g}.')
             if expected_home is not None and expected_away is not None:
                 stronger = match.home_team if float(expected_home) >= float(expected_away) else match.away_team
                 extra.append(f'Основной вклад в давление модель ждёт от {stronger}.')
-            if home_sample is not None and away_sample is not None:
-                extra.append(f'База собрана минимум по {int(min(home_sample, away_sample))} недавним матчам на сторону.')
-            return ' '.join([base, *extra]).strip()
+            if min_sample >= max(4, sample_floor):
+                extra.append(f'Опора здесь — минимум на {min_sample} недавних матчах на сторону.')
+            reliability = 'high' if min_sample >= 5 else 'medium'
+            return self._analysis_block(tag='profile', text=' '.join([base, *extra]).strip(), priority=68, min_sample=min_sample, reliability=reliability)
         if family == 'h2h' and None not in (home_gf, away_gf, home_ga, away_ga):
+            if min_sample < sample_floor:
+                return None
             stronger = match.home_team if float(home_gf) - float(home_ga) >= float(away_gf) - float(away_ga) else match.away_team
-            return (
-                f'По последнему игровому профилю {match.home_team} идёт с {float(home_gf):.2f}/{float(home_ga):.2f} по голам, '
+            text = (
+                f'По последнему игровому профилю {match.home_team} идёт с {float(home_gf):.2f}/{float(home_ga):.2f} по голам за матч, '
                 f'а {match.away_team} — с {float(away_gf):.2f}/{float(away_ga):.2f}. '
                 f'Это даёт небольшое преимущество {stronger}.'
             )
+            reliability = 'high' if min_sample >= 5 else 'medium'
+            return self._analysis_block(tag='profile', text=text, priority=68, min_sample=min_sample, reliability=reliability)
         return None
 
-    def _build_table_summary(self, match: Match, details: dict[str, Any]) -> str | None:
+    def _build_table_summary(self, match: Match, details: dict[str, Any]) -> dict[str, Any] | None:
         home_ppg = self._first_float(details, 'thesportsdb_home_ppg', 'football_data_home_ppg', 'home_ppg')
         away_ppg = self._first_float(details, 'thesportsdb_away_ppg', 'football_data_away_ppg', 'away_ppg')
         home_rank = self._first_float(details, 'thesportsdb_home_rank', 'football_data_home_rank', 'home_rank')
         away_rank = self._first_float(details, 'thesportsdb_away_rank', 'football_data_away_rank', 'away_rank')
         if home_ppg is not None and away_ppg is not None and abs(home_ppg - away_ppg) >= 0.15:
             better = match.home_team if home_ppg > away_ppg else match.away_team
-            return f'По таблице и набору очков за матч чуть убедительнее выглядит {better}: {max(home_ppg, away_ppg):.2f} очка за игру против {min(home_ppg, away_ppg):.2f}.'
+            text = f'По таблице и набору очков за матч чуть убедительнее выглядит {better}: {max(home_ppg, away_ppg):.2f} очка за игру против {min(home_ppg, away_ppg):.2f}.'
+            return self._analysis_block(tag='table', text=text, priority=52, reliability='high')
         if home_rank is not None and away_rank is not None and abs(home_rank - away_rank) >= 2:
             better = match.home_team if home_rank < away_rank else match.away_team
-            return f'Таблица тоже поддерживает сценарий: выше сейчас идёт {better} (примерно {int(min(home_rank, away_rank))}-е место против {int(max(home_rank, away_rank))}-го).' 
+            text = f'Таблица тоже поддерживает сценарий: выше сейчас идёт {better} (примерно {int(min(home_rank, away_rank))}-е место против {int(max(home_rank, away_rank))}-го).'
+            return self._analysis_block(tag='table', text=text, priority=52, reliability='high')
         return None
 
-    def _build_recent_summary(self, match: Match, details: dict[str, Any], family: str) -> str | None:
+    def _build_recent_summary(self, match: Match, details: dict[str, Any], family: str) -> dict[str, Any] | None:
         home_recent = self._first_float(details, 'home_recent_count', 'football_data_home_sample')
         away_recent = self._first_float(details, 'away_recent_count', 'football_data_away_sample')
         h2h_total = self._first_float(details, 'openfootball_h2h_avg_goals', 'football_data_h2h_avg_goals')
         comp_total = self._first_float(details, 'football_data_competition_avg_goals')
-        if family == 'totals':
-            extras: list[str] = []
-            if h2h_total is not None:
-                extras.append(f'Средний тотал по доступной истории очных/похожих матчей около {h2h_total:.2f}.')
-            if comp_total is not None:
-                extras.append(f'Средний тотал по турниру держится около {comp_total:.2f}.')
-            if home_recent is not None and away_recent is not None:
-                extras.append(f'Недавняя база покрывает минимум {int(min(home_recent, away_recent))} матчей на сторону.')
-            return ' '.join(extras) if extras else None
-        if home_recent is not None and away_recent is not None:
-            return f'Контекст собран по недавней выборке минимум {int(min(home_recent, away_recent))} матчей на сторону, поэтому сигнал не выглядит случайным.'
-        return None
+        min_sample = int(max(0, min(home_recent or 0, away_recent or 0)))
+        sample_floor = max(1, int(getattr(self.settings, 'telegram_writeup_min_recent_sample', 3) or 3))
+        extras: list[str] = []
+        if family == 'totals' and comp_total is not None:
+            extras.append(f'Средний тотал по турниру держится около {comp_total:.2f}.')
+        if family == 'totals' and h2h_total is not None and min_sample >= sample_floor:
+            extras.append(f'По доступной истории очных и похожих матчей средний тотал находится около {h2h_total:.2f}.')
+        if min_sample >= max(4, sample_floor):
+            extras.append(f'Недавняя база покрывает минимум {min_sample} матчей на сторону, поэтому сигнал не опирается на единичный кейс.')
+        if not extras:
+            return None
+        reliability = 'high' if min_sample >= 5 or comp_total is not None else 'medium'
+        return self._analysis_block(tag='recent', text=' '.join(extras), priority=45, min_sample=min_sample, reliability=reliability)
 
-    def _build_injuries_summary(self, match: Match, details: dict[str, Any]) -> str | None:
+    def _build_injuries_summary(self, match: Match, details: dict[str, Any]) -> dict[str, Any] | None:
         home_abs = self._first_float(details, 'espn_home_injuries', 'gnews_home_absences', 'newsapi_home_absences', 'home_absences', 'home_injuries')
         away_abs = self._first_float(details, 'espn_away_injuries', 'gnews_away_absences', 'newsapi_away_absences', 'away_absences', 'away_injuries')
         article_count = self._first_float(details, 'news_article_count', 'gnews_article_count', 'newsapi_article_count')
@@ -1117,24 +1162,24 @@ class CandidateFactory:
             return None
         if home_abs is not None and away_abs is not None and abs(home_abs - away_abs) >= 0.6:
             affected = match.home_team if home_abs > away_abs else match.away_team
-            return f'По кадрам и новостям больше потерь сейчас у {affected}, это тоже смещает сценарий матча.'
+            return self._analysis_block(tag='injuries', text=f'По кадрам и новостям больше потерь сейчас у {affected}, это тоже смещает сценарий матча.', priority=48, reliability='high')
         if article_count is not None and article_count >= 2:
-            return 'По матчу дополнительно просмотрены свежие новости и кадровый фон; явных противоречий ставке там нет.'
+            return self._analysis_block(tag='injuries', text='По матчу дополнительно просмотрены свежие новости и кадровый фон; явных противоречий ставке там нет.', priority=46, reliability='medium')
         return None
 
-    def _build_context_basis_summary(self, context: MatchContext | None, details: dict[str, Any]) -> str | None:
+    def _build_context_basis_summary(self, context: MatchContext | None, details: dict[str, Any]) -> dict[str, Any] | None:
         if context is None:
             return None
         merged_sources = details.get('merged_sources') or []
         source = str(getattr(context, 'source', '') or '')
         if isinstance(merged_sources, list) and merged_sources:
             sources = ', '.join(str(item) for item in merged_sources[:3])
-            return f'Разбор собран из нескольких источников ({sources}), поэтому ставка опирается не на один частный сигнал.'
+            return self._analysis_block(tag='basis', text=f'Контекст дополнительно сверен по нескольким источникам ({sources}), а не построен на одном частном сигнале.', priority=18, reliability='medium')
         if source:
             if source == 'sstats_form':
-                return 'Основа модели здесь — недавняя форма и профиль команд по SStats, без тяжёлых платных источников.'
+                return self._analysis_block(tag='basis', text='Основа оценки здесь — недавняя форма и игровой профиль команд по SStats.', priority=16, reliability='medium')
             if source == 'football_data':
-                return 'Контекст дополнительно проверен по данным турнира и недавней истории через football-data.'
+                return self._analysis_block(tag='basis', text='Контекст дополнительно проверен по данным турнира и недавней истории через football-data.', priority=16, reliability='medium')
         return None
 
     def _market_signal_key(self, family: str, selection: str, point: float | None, team_side: str | None) -> str:

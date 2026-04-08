@@ -126,7 +126,9 @@ class Settings(BaseSettings):
     premium_news_shortlist_limit: int = Field(default=3, validation_alias=AliasChoices("PREMIUM_NEWS_SHORTLIST_LIMIT"))
     value_hint_min_edge_pct: float = Field(default=1.0, validation_alias=AliasChoices("VALUE_HINT_MIN_EDGE_PCT"))
     detailed_telegram_writeup: bool = Field(default=True, validation_alias=AliasChoices("DETAILED_TELEGRAM_WRITEUP"))
-    telegram_writeup_max_points: int = Field(default=4, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MAX_POINTS"))
+    telegram_writeup_max_points: int = Field(default=5, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MAX_POINTS"))
+    telegram_writeup_min_recent_sample: int = Field(default=3, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_RECENT_SAMPLE"))
+    telegram_writeup_show_used_marker: bool = Field(default=False, validation_alias=AliasChoices("TELEGRAM_WRITEUP_SHOW_USED_MARKER"))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("ESPN_TIMEOUT_SECONDS"))
     espn_base_site_url: str = Field(default="https://site.api.espn.com/apis/site/v2", validation_alias=AliasChoices("ESPN_BASE_SITE_URL"))
