@@ -793,6 +793,7 @@ class CandidateFactory:
             match=match,
             family=family,
             selection=selection,
+            selection_key=self._candidate_selection_key(match, family, selection, point, best_offer.team_side),
             point=point,
             adjusted_probability=adjusted,
             market_probability=market_prob,
@@ -1281,6 +1282,46 @@ class CandidateFactory:
     def _build_context_basis_summary(self, context: MatchContext | None, details: dict[str, Any]) -> str | None:
         return None
 
+
+
+    def _candidate_selection_key(
+        self,
+        match: Match,
+        family: str,
+        selection: str,
+        point: float | None,
+        team_side: str | None,
+    ) -> str:
+        family_key = str(family or '').strip().lower()
+        selection_text = str(selection or '').strip()
+        selection_low = selection_text.lower()
+        side_key = str(team_side or '').strip().lower()
+
+        if family_key == 'h2h':
+            return self._h2h_selection_key(match, selection_text) or selection_low or 'h2h'
+        if family_key == 'btts':
+            return self._yes_no_key(selection_text) or selection_low or 'btts'
+        if family_key == 'totals':
+            if 'under' in selection_low or 'меньше' in selection_low:
+                return 'under'
+            if 'over' in selection_low or 'больше' in selection_low:
+                return 'over'
+            return selection_low or 'totals'
+        if family_key == 'team_totals':
+            if 'under' in selection_low or 'меньше' in selection_low:
+                total_side = 'under'
+            elif 'over' in selection_low or 'больше' in selection_low:
+                total_side = 'over'
+            else:
+                total_side = selection_low or 'team_totals'
+            if side_key in {'home', 'away'}:
+                return f'{side_key}_{total_side}'
+            return total_side
+        if family_key == 'spreads':
+            if side_key in {'home', 'away'}:
+                return side_key
+            return selection_low or 'spreads'
+        return selection_low or family_key or 'selection'
 
     def _market_signal_key(self, family: str, selection: str, point: float | None, team_side: str | None) -> str:
         family_key = str(family or '').strip()
