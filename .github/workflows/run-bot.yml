@@ -1,117 +1,188 @@
-name: Run Sports Bot
+name: Run bot
 
 on:
   workflow_dispatch:
   schedule:
-    - cron: "15 */12 * * *"
+    - cron: '*/30 * * * *'
 
 permissions:
   contents: write
 
 concurrency:
-  group: sports-bot-runner-${{ github.ref }}
+  group: run-bot
   cancel-in-progress: false
+
+env:
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  SHEET_ID: ${{ secrets.SHEET_ID }}
+
+  ODDS_API_IO_ENABLED: 'true'
+  ODDS_API_IO_BOOTSTRAP_ENABLED: 'true'
+  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDS_API_IO_BOOKMAKERS: 'Bet365,Unibet'
+  TARGET_BOOKMAKERS: 'Bet365,Unibet'
+  CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
+  SHARP_BOOKMAKERS: 'Bet365,Unibet'
+  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '2'
+  MIN_BOOKS_PUBLISH: '2'
+
+  BOOKIES_API_ENABLED: 'false'
+  BOOKIES_API_USE_FOR_BACKFILL_ONLY: 'true'
+  BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
+  BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
+  BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
+  BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
+  BOOKIES_API_ODDS_FETCH_LIMIT: '0'
+  BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
+
+  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+
+  ENABLE_PROVIDER_DIAGNOSTICS: 'true'
+  DIAGNOSTICS_MATCH_LIMIT: '80'
+
+  ENABLE_ESPN_CONTEXT: 'false'
+  ESPN_ENABLE_NEWS_CONTEXT: 'false'
+  ESPN_TIMEOUT_SECONDS: '6'
+  ESPN_SOCCER_LEAGUES: 'eng.1,eng.2,eng.3,esp.1,ita.1,ger.1,fra.1,uefa.champions,uefa.europa'
+  ESPN_INJURY_OUT_WEIGHT: '1.0'
+  ESPN_INJURY_DOUBTFUL_WEIGHT: '0.35'
+  ESPN_INJURY_QUESTIONABLE_WEIGHT: '0.25'
+  ESPN_INJURY_SUSPENSION_WEIGHT: '1.0'
+  ESPN_NEWS_ABSENCE_PENALTY_PER_POINT: '0.06'
+
+  ENABLE_THESPORTSDB_CONTEXT: 'true'
+  THESPORTSDB_MAX_LEAGUES: '10'
+  THESPORTSDB_TIMEOUT_SECONDS: '8'
+  THESPORTSDB_TEAM_ALIAS_RELAXED: 'false'
+
+  MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
+  PUBLISH_WINDOW_HOURS: '24'
+  MIN_KICKOFF_LEAD_MINUTES: '45'
+  MAX_MATCHES_FOR_ODDS_FETCH: '28'
+  MAX_PICKS_PER_FAMILY: '1'
+  MAX_PICKS_PER_LEAGUE: '1'
+  MAX_SAME_REASON_SIGNATURE: '1'
+
+  ALLOW_LOW_TIER: 'false'
+  ALLOW_SINGLE_SHARP_BOOK: 'false'
+  BOOKMAKER_ALIAS_RELAXED: 'false'
+  CONSENSUS_ALIAS_GROUPS: ''
+
+  MIN_SOURCES_PUBLISH: '2'
+  MIN_MODEL_CONFIDENCE: '0.72'
+  LINE_SUPPORT_TOLERANCE: '0.02'
+  REJECT_NEGATIVE_EXPECTED_GOALS: 'true'
+  MIN_EXPECTED_GOALS_VALUE: '0.35'
+  MAX_EXPECTED_GOALS_VALUE: '4.8'
+
+  H2H_MIN_BOOKS: '2'
+  H2H_MIN_EDGE_PCT: '7'
+  H2H_MIN_EV_PCT: '4'
+  H2H_MIN_MODEL_CONFIDENCE: '0.72'
+  H2H_SINGLE_SOURCE_MIN_CONFIDENCE: '0.78'
+  H2H_SINGLE_SOURCE_MIN_EDGE_PCT: '10'
+  H2H_SINGLE_SOURCE_MIN_EV_PCT: '6'
+  H2H_XG_DISLOCATION_GUARD_ENABLED: 'true'
+  H2H_XG_DISLOCATION_MARKET_MAX_PROB: '0.62'
+  H2H_XG_DISLOCATION_MIN_CONFIDENCE: '0.75'
+  H2H_XG_DISLOCATION_MIN_DIFF: '0.55'
+  H2H_XG_DISLOCATION_MIN_SOURCES: '2'
+
+  TOTALS_MIN_BOOKS: '2'
+  TOTALS_MIN_EDGE_PCT: '8'
+  TOTALS_MIN_EV_PCT: '5'
+  TOTALS_MIN_MODEL_CONFIDENCE: '0.74'
+
+  TEAM_TOTALS_MIN_BOOKS: '2'
+  TEAM_TOTALS_MIN_EDGE_PCT: '8'
+  TEAM_TOTALS_MIN_EV_PCT: '5'
+  TEAM_TOTALS_MIN_MODEL_CONFIDENCE: '0.75'
+
+  BTTS_MIN_BOOKS: '2'
+  BTTS_MIN_EDGE_PCT: '8'
+  BTTS_MIN_EV_PCT: '5'
+  BTTS_MIN_MODEL_CONFIDENCE: '0.75'
+
+  SINGLE_SHARP_MIN_CONFIDENCE: '0.80'
+  SINGLE_SHARP_MIN_EDGE_PCT: '10'
+
+  SUPPORTED_TOTAL_LINES: '2.0,2.25,2.5'
+  SUPPORTED_TEAM_TOTAL_LINES: '0.5,1.0,1.25,1.5'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
-      - name: Set up Python
+      - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: "3.12"
+          python-version: '3.12'
+          cache: 'pip'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Smoke check imports
-        run: python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
+      - name: Smoke import check
+        run: |
+          python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.providers.odds_api_io; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
 
-      - name: Compile critical modules
-        run: python -m py_compile app/config.py app/schemas.py app/providers/odds_api_io.py app/providers/football_data.py app/providers/openfootball.py app/providers/newsapi.py app/providers/gnews.py app/services/runner.py app/services/model.py app/services/market_monitor.py
+      - name: Compile key modules
+        run: |
+          python -m py_compile \
+            app/config.py \
+            app/schemas.py \
+            app/providers/odds_api_io.py \
+            app/providers/football_data.py \
+            app/providers/openfootball.py \
+            app/providers/newsapi.py \
+            app/providers/gnews.py \
+            app/services/runner.py \
+            app/services/model.py \
+            app/services/market_monitor.py
 
-      - name: Prepare data dir
+      - name: Prepare local state folders
         run: mkdir -p .data .data/exports
 
-      - name: Run bot
-        env:
-          CONFIDENCE_DISPERSION_PENALTY_WEIGHT: 0.18
-          CONFIDENCE_PRICE_PREMIUM_BONUS: 0.08
-          CONFIDENCE_SOURCES_BONUS: 1.10
-          CONFIDENCE_BOOKS_BONUS: 0.90
-          CONFIDENCE_GAP_BONUS_WEIGHT: 0.10
-          MAX_PICKS_PER_FAMILY: 3
-          MAX_PICKS_PER_LEAGUE: 3
-          ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: 8
-          ODDS_API_IO_PAGE_LIMIT: 100
-          APP_ENV: production
-          APP_TIMEZONE: Europe/Moscow
-          TZ: Europe/Moscow
-          STATE_PATH: .data/state.json
-          DEBUG_PATH: .data/debug-last-run.json
-          STORAGE_EXPORT_DIR: .data/exports
-          PUBLISH_DRY_RUN: false
-          RUN_SPORTS: soccer
-          RUN_DAYS_AHEAD: 4
-          PUBLISH_WINDOW_HOURS: 48
-          MIN_KICKOFF_LEAD_MINUTES: 30
-          TARGET_BOOKMAKERS: Bet365,Unibet
-          CONSENSUS_BOOKMAKERS: Bet365,Unibet,Pinnacle,Betfair
-          ODDS_API_IO_BOOKMAKERS: Bet365,Unibet
-          MIN_BOOKS_PUBLISH: 2
-          MIN_SOURCES_PUBLISH: 1
-          MIN_MODEL_CONFIDENCE: 0.55
-          MAX_MATCHES_FOR_ODDS_FETCH: 150
-          MAX_MATCHES_FOR_PRICING: 300
-          MAX_PICKS_PER_RUN: 7
-          ALLOW_LOW_TIER: false
-          ENABLE_PROVIDER_DIAGNOSTICS: true
-          ENABLE_FOOTBALL_DATA_CONTEXT: true
-          ENABLE_OPENFOOTBALL_CONTEXT: true
-          ENABLE_NEWSAPI_CONTEXT: true
-          ENABLE_GNEWS_CONTEXT: true
-          FOOTBALL_DATA_MATCH_LIMIT: 36
-          FOOTBALL_DATA_STANDINGS_LIMIT: 8
-          OPENFOOTBALL_MATCH_LIMIT: 24
-          OPENFOOTBALL_DATASET_LIMIT: 12
-          NEWSAPI_MATCH_LIMIT: 10
-          GNEWS_MATCH_LIMIT: 10
-          DIAGNOSTICS_MATCH_LIMIT: 180
-          CONTEXT_ENRICHMENT_MATCH_LIMIT: 150
-          ANALYSIS_MATCH_CAP_PER_RUN: 150
-          CONTEXT_ENRICHMENT_REQUIRES_OFFERS: true
-          MATCH_BOOTSTRAP_PROVIDER: odds_api_io
-          BOOTSTRAP_FALLBACK_TO_BOOKIES: false
-          BOOKIES_BOOTSTRAP_ENABLED: false
-          BOOKIES_API_ENABLED: false
-          SSTATS_ENABLED: true
-          ENABLE_ODDS_API_IO: true
-          ENABLE_SSTATS_CONTEXT: true
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-          API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-          FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-          NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-          GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
-          BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-          TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      - name: Run bot once
         run: python -m app.cli run-once
 
-      - name: Commit updated state and exports
+      - name: Upload latest debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-debug-${{ github.run_id }}
+          path: |
+            .data/debug-last-run.json
+            .data/exports/latest-matches.json
+            .data/exports/latest-matches.csv
+            .data/exports/latest-picks.json
+            .data/exports/latest-picks.csv
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit updated bot state
+        if: always()
         run: |
           git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          git add \
-            .data/state.json \
-            .data/exports/latest-picks.json \
-            .data/exports/latest-picks.csv \
-            .data/exports/latest-matches.json \
-            .data/exports/latest-matches.csv || true
+          git config user.email "github-actions@users.noreply.github.com"
+          git add .data/state.json .data/debug-last-run.json .data/exports || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
