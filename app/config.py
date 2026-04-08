@@ -128,6 +128,9 @@ class Settings(BaseSettings):
     detailed_telegram_writeup: bool = Field(default=True, validation_alias=AliasChoices("DETAILED_TELEGRAM_WRITEUP"))
     telegram_writeup_max_points: int = Field(default=5, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MAX_POINTS"))
     telegram_writeup_min_recent_sample: int = Field(default=3, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_RECENT_SAMPLE"))
+    telegram_writeup_min_split_sample: int = Field(default=3, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_SPLIT_SAMPLE"))
+    telegram_writeup_min_form_diff_pct: float = Field(default=6.0, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_FORM_DIFF_PCT"))
+    telegram_writeup_min_table_gap: float = Field(default=0.22, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_TABLE_GAP"))
     telegram_writeup_show_used_marker: bool = Field(default=False, validation_alias=AliasChoices("TELEGRAM_WRITEUP_SHOW_USED_MARKER"))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("ESPN_TIMEOUT_SECONDS"))
