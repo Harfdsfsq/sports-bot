@@ -368,20 +368,24 @@ class CandidateFactory:
         dispersion_pct = self._to_float_safe((market_signal or {}).get('consensus_dispersion_pct'))
         signal_boost_pct = 0.0
         if edge_pct > 0:
-            signal_boost_pct += min(2.4, edge_pct * 0.65)
+            signal_boost_pct += min(3.2, edge_pct * 0.85)
         if steam_delta > 0:
-            signal_boost_pct += min(2.0, steam_delta * 0.60)
-        if dispersion_pct is not None and dispersion_pct <= float(getattr(self.settings, 'max_consensus_dispersion_pct', 6.5) or 6.5):
-            signal_boost_pct += 0.5
-        signal_boost_pct += max(0, books_count - 1) * 0.30
-        min_signal = float(getattr(self.settings, 'simple_market_min_signal_boost_pct', 0.9) or 0.9)
+            signal_boost_pct += min(2.8, steam_delta * 0.75)
+        max_dispersion = float(getattr(self.settings, 'max_consensus_dispersion_pct', 12.0) or 12.0)
+        if dispersion_pct is not None and dispersion_pct <= max_dispersion:
+            signal_boost_pct += 0.75
+        if books_count >= 2:
+            signal_boost_pct += 0.55
+        elif books_count == 1:
+            signal_boost_pct += 0.15
+        min_signal = float(getattr(self.settings, 'simple_market_min_signal_boost_pct', 0.7) or 0.7)
         if family == 'totals':
-            min_signal = max(0.45, min_signal - 0.15)
+            min_signal = max(0.25, min_signal - 0.25)
         elif family == 'h2h':
-            min_signal = max(0.50, min_signal - 0.10)
+            min_signal = max(0.35, min_signal - 0.15)
         if signal_boost_pct < min_signal:
             return None
-        family_cap = 3.6 if family == 'totals' else 3.0
+        family_cap = 4.2 if family == 'totals' else 3.6
         boost_prob = min(family_cap, signal_boost_pct) / 100.0
         return clamp(market_prob + boost_prob, 0.02, 0.98)
 
@@ -1971,20 +1975,20 @@ class CandidateFactory:
 
         if bucket == 'preferred':
             if (
-                confidence >= float(getattr(self.settings, 'preferred_single_book_min_confidence', 76.0) or 76.0)
-                and edge_pct >= float(getattr(self.settings, 'preferred_single_book_min_edge_pct', 9.0) or 9.0)
-                and ev_pct >= float(getattr(self.settings, 'preferred_single_book_min_ev_pct', 5.0) or 5.0)
-                and publication_score >= float(getattr(self.settings, 'preferred_single_book_min_publication_score', 18.0) or 18.0)
+                confidence >= float(getattr(self.settings, 'preferred_single_book_min_confidence', 71.0) or 76.0)
+                and edge_pct >= float(getattr(self.settings, 'preferred_single_book_min_edge_pct', 6.5) or 9.0)
+                and ev_pct >= float(getattr(self.settings, 'preferred_single_book_min_ev_pct', 3.6) or 5.0)
+                and publication_score >= float(getattr(self.settings, 'preferred_single_book_min_publication_score', 13.5) or 18.0)
             ):
                 return 1
             return max(2, base)
 
         if bucket == 'secondary':
             if (
-                confidence >= float(getattr(self.settings, 'secondary_single_book_min_confidence', 78.0) or 78.0)
-                and edge_pct >= float(getattr(self.settings, 'secondary_single_book_min_edge_pct', 10.0) or 10.0)
-                and ev_pct >= float(getattr(self.settings, 'secondary_single_book_min_ev_pct', 5.8) or 5.8)
-                and publication_score >= float(getattr(self.settings, 'secondary_single_book_min_publication_score', 20.0) or 20.0)
+                confidence >= float(getattr(self.settings, 'secondary_single_book_min_confidence', 73.0) or 78.0)
+                and edge_pct >= float(getattr(self.settings, 'secondary_single_book_min_edge_pct', 7.2) or 10.0)
+                and ev_pct >= float(getattr(self.settings, 'secondary_single_book_min_ev_pct', 4.0) or 5.8)
+                and publication_score >= float(getattr(self.settings, 'secondary_single_book_min_publication_score', 15.5) or 20.0)
             ):
                 return 1
             return max(2, base)
@@ -2025,36 +2029,36 @@ class CandidateFactory:
                 if int(getattr(item, 'books_count', 0) or 0) < int(getattr(self.settings, 'non_core_league_min_books', 2) or 2):
                     rejections['non_core_books_guard'] += 1
                     continue
-                if float(item.confidence) < float(getattr(self.settings, 'non_core_league_min_confidence', 68.0) or 68.0):
+                if float(item.confidence) < float(getattr(self.settings, 'non_core_league_min_confidence', 65.0) or 68.0):
                     rejections['non_core_confidence_guard'] += 1
                     continue
-                if float(item.edge_pct) < float(getattr(self.settings, 'non_core_league_min_edge_pct', 7.5) or 7.5):
+                if float(item.edge_pct) < float(getattr(self.settings, 'non_core_league_min_edge_pct', 6.0) or 7.5):
                     rejections['non_core_edge_guard'] += 1
                     continue
-                if float(item.ev_pct) < float(getattr(self.settings, 'non_core_league_min_ev_pct', 4.5) or 4.5):
+                if float(item.ev_pct) < float(getattr(self.settings, 'non_core_league_min_ev_pct', 3.6) or 4.5):
                     rejections['non_core_ev_guard'] += 1
                     continue
                 if bool(getattr(self.settings, 'non_core_league_require_core_context', True)) and not self._has_core_context(item):
                     rejections['non_core_context_guard'] += 1
                     continue
             if item.model_mode == 'market_simple_totals':
-                if float(item.confidence) < float(getattr(self.settings, 'simple_market_totals_min_confidence', 58.0) or 58.0):
+                if float(item.confidence) < float(getattr(self.settings, 'simple_market_totals_min_confidence', 55.0) or 58.0):
                     rejections['simple_market_totals_confidence_guard'] += 1
                     continue
-                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_totals_min_ev_pct', 2.2) or 2.2):
+                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_totals_min_ev_pct', 2.0) or 2.2):
                     rejections['simple_market_totals_ev_guard'] += 1
                     continue
-                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_totals_min_edge_pct', 2.8) or 2.8):
+                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_totals_min_edge_pct', 2.4) or 2.8):
                     rejections['simple_market_totals_edge_guard'] += 1
                     continue
             if item.model_mode == 'market_simple_h2h':
-                if float(item.confidence) < float(getattr(self.settings, 'simple_market_h2h_min_confidence', 62.0) or 62.0):
+                if float(item.confidence) < float(getattr(self.settings, 'simple_market_h2h_min_confidence', 60.0) or 62.0):
                     rejections['simple_market_h2h_confidence_guard'] += 1
                     continue
-                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_h2h_min_ev_pct', 3.6) or 3.6):
+                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_h2h_min_ev_pct', 3.0) or 3.6):
                     rejections['simple_market_h2h_ev_guard'] += 1
                     continue
-                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_h2h_min_edge_pct', 4.4) or 4.4):
+                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_h2h_min_edge_pct', 3.8) or 4.4):
                     rejections['simple_market_h2h_edge_guard'] += 1
                     continue
             if item.family == 'totals':
