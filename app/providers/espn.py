@@ -209,11 +209,16 @@ class EspnContextProvider:
         )
 
     def _candidate_slugs(self, matches: list[Match]) -> list[str]:
-        discovered = []
-        for match in matches:
+        slug_scores: dict[str, float] = {}
+        for idx, match in enumerate(matches):
             slug = self._league_slug(match.league_name)
-            if slug and slug not in discovered:
-                discovered.append(slug)
+            if not slug:
+                continue
+            tier_bonus = 2.5 if getattr(match, 'tier', 'mid') == 'top' else 1.0 if getattr(match, 'tier', 'mid') == 'mid' else 0.0
+            competition_bonus = 2.5 if slug.startswith('uefa.') else 0.0
+            recency_bonus = max(0.0, 3.0 - idx * 0.08)
+            slug_scores[slug] = max(slug_scores.get(slug, 0.0), tier_bonus + competition_bonus + recency_bonus)
+        discovered = [slug for slug, _ in sorted(slug_scores.items(), key=lambda item: item[1], reverse=True)]
         if getattr(self.settings, 'espn_query_all_allowed_when_unmapped', True):
             for slug in self.allowed_leagues:
                 if slug not in discovered:

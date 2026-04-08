@@ -115,6 +115,12 @@ class Settings(BaseSettings):
     openfootball_context_match_limit: int = Field(default=120, validation_alias=AliasChoices("OPENFOOTBALL_CONTEXT_MATCH_LIMIT"))
     newsapi_context_match_limit: int = Field(default=12, validation_alias=AliasChoices("NEWSAPI_CONTEXT_MATCH_LIMIT"))
     gnews_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("GNEWS_CONTEXT_MATCH_LIMIT"))
+    enable_context_staging: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_CONTEXT_STAGING"))
+    premium_context_shortlist_limit: int = Field(default=18, validation_alias=AliasChoices("PREMIUM_CONTEXT_SHORTLIST_LIMIT"))
+    premium_news_shortlist_limit: int = Field(default=3, validation_alias=AliasChoices("PREMIUM_NEWS_SHORTLIST_LIMIT"))
+    value_hint_min_edge_pct: float = Field(default=1.0, validation_alias=AliasChoices("VALUE_HINT_MIN_EDGE_PCT"))
+    detailed_telegram_writeup: bool = Field(default=True, validation_alias=AliasChoices("DETAILED_TELEGRAM_WRITEUP"))
+    telegram_writeup_max_points: int = Field(default=4, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MAX_POINTS"))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("ESPN_TIMEOUT_SECONDS"))
     espn_base_site_url: str = Field(default="https://site.api.espn.com/apis/site/v2", validation_alias=AliasChoices("ESPN_BASE_SITE_URL"))
@@ -257,47 +263,6 @@ class Settings(BaseSettings):
     max_picks_per_family: int = Field(default=3, validation_alias=AliasChoices("MAX_PICKS_PER_FAMILY"))
     max_same_reason_signature: int = Field(default=2, validation_alias=AliasChoices("MAX_SAME_REASON_SIGNATURE"))
 
-    preferred_league_terms: CsvList = Field(
-        default_factory=lambda: [
-            "uefa champions league", "champions league", "uefa europa league", "europa league",
-            "conference league", "premier league", "la liga", "serie a", "bundesliga", "ligue 1",
-            "eredivisie", "primeira liga", "super lig", "championship", "major league soccer",
-            "mls", "copa libertadores", "copa sudamericana", "uefa nations league"
-        ],
-        validation_alias=AliasChoices("PREFERRED_LEAGUE_TERMS"),
-    )
-    secondary_league_terms: CsvList = Field(
-        default_factory=lambda: [
-            "serie b", "la liga 2", "segunda division", "2. bundesliga", "bundesliga 2", "ligue 2",
-            "jupiler pro league", "belgian pro league", "scottish premiership", "super league",
-            "superliga", "a league", "allsvenskan", "eliteserien", "virsliga", "first division"
-        ],
-        validation_alias=AliasChoices("SECONDARY_LEAGUE_TERMS"),
-    )
-    blocked_league_terms: CsvList = Field(
-        default_factory=lambda: [
-            "u17", "u18", "u19", "u20", "u21", "u23", "reserve", "reserves", "academy",
-            "women", "friendly", "amateur", "regional", "division de honor juvenil", "esports"
-        ],
-        validation_alias=AliasChoices("BLOCKED_LEAGUE_TERMS"),
-    )
-    core_context_sources: CsvList = Field(
-        default_factory=lambda: ["ensemble", "api_football", "football_data", "espn", "bzzoiro", "bzzoiro_prediction"],
-        validation_alias=AliasChoices("CORE_CONTEXT_SOURCES"),
-    )
-    weak_context_sources: CsvList = Field(
-        default_factory=lambda: ["sstats", "sstats_form", "thesportsdb", "newsapi", "gnews", "openfootball"],
-        validation_alias=AliasChoices("WEAK_CONTEXT_SOURCES"),
-    )
-    min_publication_score: float = Field(default=12.5, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE"))
-    min_publication_score_other_league: float = Field(default=18.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_OTHER_LEAGUE"))
-    min_publication_score_low_tier: float = Field(default=24.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_LOW_TIER"))
-    non_core_league_min_books: int = Field(default=2, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_BOOKS"))
-    non_core_league_min_confidence: float = Field(default=69.0, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_CONFIDENCE"))
-    non_core_league_min_edge_pct: float = Field(default=8.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
-    non_core_league_min_ev_pct: float = Field(default=5.0, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EV_PCT"))
-    non_core_league_require_core_context: bool = Field(default=True, validation_alias=AliasChoices("NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT"))
-
     reject_negative_expected_goals: bool = Field(default=True, validation_alias=AliasChoices("REJECT_NEGATIVE_EXPECTED_GOALS"))
     min_expected_goals_value: float = Field(default=0.15, validation_alias=AliasChoices("MIN_EXPECTED_GOALS_VALUE"))
     max_expected_goals_value: float = Field(default=4.80, validation_alias=AliasChoices("MAX_EXPECTED_GOALS_VALUE"))
@@ -334,6 +299,30 @@ class Settings(BaseSettings):
     fallback_publish_min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_EDGE_PCT"))
     fallback_publish_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_CONFIDENCE"))
     fallback_publish_min_books: int = Field(default=2, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_BOOKS"))
+
+    min_publication_score: float = Field(default=12.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE"))
+    min_publication_score_secondary_league: float = Field(default=14.5, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_SECONDARY_LEAGUE"))
+    min_publication_score_other_league: float = Field(default=18.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_OTHER_LEAGUE"))
+    min_publication_score_low_tier: float = Field(default=22.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_LOW_TIER"))
+    non_core_league_min_books: int = Field(default=2, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_BOOKS"))
+    non_core_league_min_confidence: float = Field(default=68.0, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_CONFIDENCE"))
+    non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
+    non_core_league_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EV_PCT"))
+    non_core_league_require_core_context: bool = Field(default=True, validation_alias=AliasChoices("NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT"))
+    preferred_league_terms: CsvList = Field(
+        default_factory=lambda: ["champions league", "europa league", "conference league", "premier league", "la liga", "laliga", "serie a", "bundesliga", "ligue 1", "eredivisie", "primeira liga", "championship", "world cup", "euro", "nations league"],
+        validation_alias=AliasChoices("PREFERRED_LEAGUE_TERMS"),
+    )
+    secondary_league_terms: CsvList = Field(
+        default_factory=lambda: ["libertadores", "sudamericana", "brazil serie a", "argentina primera", "liga mx", "mls", "turkey super lig", "belgium pro league", "scotland premiership", "swiss super league", "austria bundesliga", "croatia hnl", "greece super league", "czech liga", "denmark superliga", "norway eliteserien", "sweden allsvenskan"],
+        validation_alias=AliasChoices("SECONDARY_LEAGUE_TERMS"),
+    )
+    totals_over25_min_weaker_side_xg: float = Field(default=0.68, validation_alias=AliasChoices("TOTALS_OVER25_MIN_WEAKER_SIDE_XG"))
+    totals_over25_max_team_xg_share: float = Field(default=0.79, validation_alias=AliasChoices("TOTALS_OVER25_MAX_TEAM_XG_SHARE"))
+    totals_over25_dual_threat_guard_enabled: bool = Field(default=True, validation_alias=AliasChoices("TOTALS_OVER25_DUAL_THREAT_GUARD_ENABLED"))
+
+    api_football_fetch_match_dates_only: bool = Field(default=True, validation_alias=AliasChoices("API_FOOTBALL_FETCH_MATCH_DATES_ONLY"))
+    api_football_free_days_ahead: int = Field(default=1, validation_alias=AliasChoices("API_FOOTBALL_FREE_DAYS_AHEAD"))
 
     supported_total_lines: CsvList = Field(
         default_factory=lambda: ["1.5", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25", "3.5", "3.75", "4.0", "4.25", "4.5"],
@@ -462,11 +451,6 @@ class Settings(BaseSettings):
         "consensus_alias_groups",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
-        "preferred_league_terms",
-        "secondary_league_terms",
-        "blocked_league_terms",
-        "core_context_sources",
-        "weak_context_sources",
         mode="before",
     )
     @classmethod
@@ -633,29 +617,6 @@ class Settings(BaseSettings):
                 or 1
             ),
         )
-
-    @staticmethod
-    def _league_text(value: str) -> str:
-        return ' '.join(str(value or '').lower().replace('_', ' ').replace('-', ' ').split())
-
-    def league_profile(self, league_name: str) -> str:
-        text = self._league_text(league_name)
-        if any(term in text for term in self.blocked_league_terms or []):
-            return 'blocked'
-        if any(term in text for term in self.preferred_league_terms or []):
-            return 'preferred'
-        if any(term in text for term in self.secondary_league_terms or []):
-            return 'secondary'
-        return 'other'
-
-    def league_priority_score(self, league_name: str) -> float:
-        profile = self.league_profile(league_name)
-        return {
-            'preferred': 1.0,
-            'secondary': 0.72,
-            'other': 0.35,
-            'blocked': 0.0,
-        }.get(profile, 0.35)
 
 
 Settings.model_rebuild()

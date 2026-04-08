@@ -51,10 +51,18 @@ class ApiFootballContextProvider:
         headers = {"x-apisports-key": self.api_key}
         now = datetime.now(UTC)
         fixtures: list[dict[str, Any]] = []
+        match_dates = sorted({ensure_date.astimezone(UTC).date().isoformat() for ensure_date in [m.commence_time for m in soccer_matches]})
+        if bool(getattr(self.settings, "api_football_fetch_match_dates_only", True)) and match_dates:
+            free_ahead = max(0, int(getattr(self.settings, "api_football_free_days_ahead", 1) or 1))
+            max_allowed = (now + timedelta(days=free_ahead)).date()
+            date_list = [day for day in match_dates if datetime.fromisoformat(day).date() <= max_allowed]
+            if not date_list:
+                date_list = [(now + timedelta(days=offset)).date().isoformat() for offset in range(min(days + 1, free_ahead + 1))]
+        else:
+            date_list = [(now + timedelta(days=offset)).date().isoformat() for offset in range(days + 1)]
 
         async with httpx.AsyncClient(timeout=25.0) as client:
-            for offset in range(days + 1):
-                day = (now + timedelta(days=offset)).date().isoformat()
+            for day in date_list:
                 stats["requests"] += 1
                 try:
                     response = await client.get(f"{self.base_url}/fixtures", headers=headers, params={"date": day, "timezone": "UTC"})
@@ -68,6 +76,9 @@ class ApiFootballContextProvider:
                     stats["response_errors"] += 1
                     continue
                 payload = self._safe_json(response)
+                if self._has_plan_error(payload):
+                    stats["response_errors"] += 1
+                    break
                 rows = self._response_rows(payload)
                 fixtures.extend(rows)
                 if offset == 0 and rows:
@@ -189,6 +200,15 @@ class ApiFootballContextProvider:
         errors = payload.get("errors")
         if isinstance(errors, dict):
             return bool(errors.get("rateLimit"))
+        return False
+
+    @staticmethod
+    def _has_plan_error(payload: Any) -> bool:
+        if not isinstance(payload, dict):
+            return False
+        errors = payload.get("errors")
+        if isinstance(errors, dict):
+            return bool(errors.get("plan"))
         return False
 
     def _prediction_to_context(self, row: dict[str, Any], fixture: dict[str, Any]) -> MatchContext:
