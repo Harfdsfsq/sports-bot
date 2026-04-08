@@ -148,53 +148,64 @@ class PredictionRunner:
                 merged_offers,
                 now_utc,
             )
+            provider_targets = {
+                'sstats': self._select_provider_context_matches(context_target_matches, 'sstats'),
+                'api_football': self._select_provider_context_matches(context_target_matches, 'api_football'),
+                'espn': self._select_provider_context_matches(context_target_matches, 'espn'),
+                'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb'),
+                'football_data': self._select_provider_context_matches(context_target_matches, 'football_data'),
+                'openfootball': self._select_provider_context_matches(context_target_matches, 'openfootball'),
+                'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi'),
+                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews'),
+            }
+            provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
 
             sstats_contexts, sstats_stats, sstats_preview = await self._fetch_provider(
                 self.sstats,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['sstats'],
                 empty_data={},
             )
             api_football_contexts, api_football_stats, api_football_preview = await self._fetch_provider(
                 self.api_football,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['api_football'],
                 empty_data={},
             )
             espn_contexts, espn_stats, espn_preview = await self._fetch_provider(
                 self.espn,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['espn'],
                 empty_data={},
             )
             thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview = await self._fetch_provider(
                 self.thesportsdb,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['thesportsdb'],
                 empty_data={},
             )
             football_data_contexts, football_data_stats, football_data_preview = await self._fetch_provider(
                 self.football_data,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['football_data'],
                 empty_data={},
             )
             openfootball_contexts, openfootball_stats, openfootball_preview = await self._fetch_provider(
                 self.openfootball,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['openfootball'],
                 empty_data={},
             )
             newsapi_contexts, newsapi_stats, newsapi_preview = await self._fetch_provider(
                 self.newsapi,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['newsapi'],
                 empty_data={},
             )
             gnews_contexts, gnews_stats, gnews_preview = await self._fetch_provider(
                 self.gnews,
                 'fetch_context',
-                context_target_matches,
+                provider_targets['gnews'],
                 empty_data={},
             )
 
@@ -276,6 +287,7 @@ class PredictionRunner:
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
                 'context_matches_requested': len(context_target_matches),
                 'context_enrichment': context_enrichment,
+                'provider_context_targets': provider_target_counts,
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
                 'candidates_raw': len(raw_candidates),
@@ -464,6 +476,22 @@ class PredictionRunner:
             'now_local': now_utc.astimezone(self.settings.tzinfo).isoformat(),
         }
         return filtered, filtering
+
+    def _select_provider_context_matches(self, matches: list[Match], provider_name: str) -> list[Match]:
+        limit_map = {
+            'sstats': 0,
+            'api_football': int(getattr(self.settings, 'api_football_context_match_limit', 18) or 18),
+            'espn': int(getattr(self.settings, 'espn_context_match_limit', 24) or 24),
+            'thesportsdb': int(getattr(self.settings, 'thesportsdb_context_match_limit', 80) or 80),
+            'football_data': int(getattr(self.settings, 'football_data_context_match_limit', 80) or 80),
+            'openfootball': int(getattr(self.settings, 'openfootball_context_match_limit', 120) or 120),
+            'newsapi': int(getattr(self.settings, 'newsapi_context_match_limit', 12) or 12),
+            'gnews': int(getattr(self.settings, 'gnews_context_match_limit', 8) or 8),
+        }
+        limit = max(0, int(limit_map.get(str(provider_name or '').strip().lower(), 0) or 0))
+        if limit <= 0 or len(matches) <= limit:
+            return matches
+        return matches[:limit]
 
     def _select_context_enrichment_matches(
         self,

@@ -1631,8 +1631,8 @@ class CandidateFactory:
         has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
-        if family == 'totals' and point in {2.5, 3.5, 4.5} and has_preferred_book and context_source in {'bzzoiro_predictions', 'sstats_form', 'sstats', 'ensemble', 'api_football', 'espn', 'thesportsdb', 'football_data', 'openfootball', 'newsapi', 'gnews'}:
-            return 1
+        if family == 'totals' and point in {2.5, 3.5, 4.5}:
+            base = max(base, 2)
         if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
             return min(base, 2)
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
@@ -1726,10 +1726,11 @@ class CandidateFactory:
                 if item.expected_home is not None and item.expected_away is not None:
                     total_xg = float(item.expected_home) + float(item.expected_away)
                 if selection_kind == 'over' and point is not None and abs(float(point) - 2.5) <= 0.01:
-                    min_conf_guard = float(getattr(self.settings, 'totals_over25_min_confidence', 60.0) or 60.0)
-                    min_edge_guard = float(getattr(self.settings, 'totals_over25_min_edge_pct', 4.5) or 4.5)
-                    min_ev_guard = float(getattr(self.settings, 'totals_over25_min_ev_pct', 3.0) or 3.0)
-                    min_sum_xg_guard = float(getattr(self.settings, 'totals_over25_min_sum_xg', 2.95) or 2.95)
+                    min_conf_guard = float(getattr(self.settings, 'totals_over25_min_confidence', 66.0) or 66.0)
+                    min_edge_guard = float(getattr(self.settings, 'totals_over25_min_edge_pct', 6.0) or 6.0)
+                    min_ev_guard = float(getattr(self.settings, 'totals_over25_min_ev_pct', 4.5) or 4.5)
+                    min_sum_xg_guard = float(getattr(self.settings, 'totals_over25_min_sum_xg', 3.15) or 3.15)
+                    min_adjusted_guard = float(getattr(self.settings, 'totals_over25_min_adjusted_probability', 0.51) or 0.51)
                     if float(item.confidence) < min_conf_guard:
                         rejections['totals_over25_confidence_guard'] += 1
                         continue
@@ -1739,14 +1740,18 @@ class CandidateFactory:
                     if float(item.ev_pct) < min_ev_guard:
                         rejections['totals_over25_ev_guard'] += 1
                         continue
+                    if float(item.adjusted_probability) < min_adjusted_guard:
+                        rejections['totals_over25_probability_guard'] += 1
+                        continue
                     if total_xg is None or total_xg < min_sum_xg_guard:
                         rejections['totals_over25_xg_guard'] += 1
                         continue
                     if self._is_risky_totals_candidate(item):
-                        risky_min_conf = float(getattr(self.settings, 'risky_totals_min_confidence', 64.0) or 64.0)
-                        risky_min_edge = float(getattr(self.settings, 'risky_totals_min_edge_pct', 6.0) or 6.0)
-                        risky_min_ev = float(getattr(self.settings, 'risky_totals_min_ev_pct', 4.5) or 4.5)
-                        risky_min_sum_xg = float(getattr(self.settings, 'risky_totals_min_sum_xg', 3.10) or 3.10)
+                        risky_min_conf = float(getattr(self.settings, 'risky_totals_min_confidence', 70.0) or 70.0)
+                        risky_min_edge = float(getattr(self.settings, 'risky_totals_min_edge_pct', 8.0) or 8.0)
+                        risky_min_ev = float(getattr(self.settings, 'risky_totals_min_ev_pct', 6.0) or 6.0)
+                        risky_min_sum_xg = float(getattr(self.settings, 'risky_totals_min_sum_xg', 3.30) or 3.30)
+                        risky_min_adjusted = float(getattr(self.settings, 'risky_totals_min_adjusted_probability', 0.53) or 0.53)
                         if float(item.confidence) < risky_min_conf:
                             rejections['risky_totals_confidence_guard'] += 1
                             continue
@@ -1755,6 +1760,9 @@ class CandidateFactory:
                             continue
                         if float(item.ev_pct) < risky_min_ev:
                             rejections['risky_totals_ev_guard'] += 1
+                            continue
+                        if float(item.adjusted_probability) < risky_min_adjusted:
+                            rejections['risky_totals_probability_guard'] += 1
                             continue
                         if total_xg < risky_min_sum_xg:
                             rejections['risky_totals_xg_guard'] += 1
