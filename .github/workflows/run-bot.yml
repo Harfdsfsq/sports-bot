@@ -33,7 +33,7 @@ env:
   TARGET_BOOKMAKERS: 'Bet365,Unibet'
   CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
   SHARP_BOOKMAKERS: 'Bet365,Unibet'
-  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '2'
+  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '1.75'
   MIN_BOOKS_PUBLISH: '1'
 
   BOOKIES_API_ENABLED: 'false'
@@ -71,12 +71,20 @@ env:
   THESPORTSDB_TIMEOUT_SECONDS: '8'
   THESPORTSDB_TEAM_ALIAS_RELAXED: 'false'
 
+  ENABLE_OPENFOOTBALL_CONTEXT: 'false'
+  ENABLE_NEWSAPI_CONTEXT: 'false'
+  ENABLE_GNEWS_CONTEXT: 'true'
+  GNEWS_CONTEXT_MATCH_LIMIT: '3'
+  GNEWS_MATCH_LIMIT: '3'
+  GNEWS_ARTICLES_PER_MATCH: '3'
+  GNEWS_LOOKBACK_HOURS: '36'
+
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
   PUBLISH_WINDOW_HOURS: '24'
   MIN_KICKOFF_LEAD_MINUTES: '45'
-  MAX_MATCHES_FOR_ODDS_FETCH: '28'
-  MAX_PICKS_PER_FAMILY: '1'
-  MAX_PICKS_PER_LEAGUE: '1'
+  MAX_MATCHES_FOR_ODDS_FETCH: '40'
+  MAX_PICKS_PER_FAMILY: '2'
+  MAX_PICKS_PER_LEAGUE: '2'
   MAX_SAME_REASON_SIGNATURE: '1'
   ALLOW_LOW_TIER: 'false'
   ALLOW_SINGLE_SHARP_BOOK: 'true'
@@ -84,7 +92,7 @@ env:
   CONSENSUS_ALIAS_GROUPS: ''
   MIN_SOURCES_PUBLISH: '1'
   MIN_MODEL_CONFIDENCE: '0.68'
-  LINE_SUPPORT_TOLERANCE: '0.02'
+  LINE_SUPPORT_TOLERANCE: '0.04'
   REJECT_NEGATIVE_EXPECTED_GOALS: 'true'
   MIN_EXPECTED_GOALS_VALUE: '0.35'
   MAX_EXPECTED_GOALS_VALUE: '4.8'
@@ -120,8 +128,8 @@ env:
   SINGLE_SHARP_MIN_CONFIDENCE: '0.76'
   SINGLE_SHARP_MIN_EDGE_PCT: '8'
 
-  SUPPORTED_TOTAL_LINES: '1.75,2.0,2.25,2.5,2.75,3.0,3.25'
-  SUPPORTED_TEAM_TOTAL_LINES: '0.5,0.75,1.0,1.25,1.5,1.75,2.0'
+  SUPPORTED_TOTAL_LINES: '1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0'
+  SUPPORTED_TEAM_TOTAL_LINES: '0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0'
 
 jobs:
   run-bot:
@@ -149,17 +157,7 @@ jobs:
 
       - name: Compile key modules
         run: |
-          python -m py_compile \
-            app/config.py \
-            app/schemas.py \
-            app/providers/odds_api_io.py \
-            app/providers/football_data.py \
-            app/providers/openfootball.py \
-            app/providers/newsapi.py \
-            app/providers/gnews.py \
-            app/services/runner.py \
-            app/services/model.py \
-            app/services/market_monitor.py
+          python -m py_compile             app/config.py             app/schemas.py             app/providers/odds_api_io.py             app/providers/football_data.py             app/providers/openfootball.py             app/providers/newsapi.py             app/providers/gnews.py             app/services/runner.py             app/services/model.py             app/services/market_monitor.py
 
       - name: Prepare local state folders
         run: mkdir -p .data .data/exports
