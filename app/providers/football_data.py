@@ -349,6 +349,10 @@ class FootballDataContextProvider:
             'away_ppg': round(away_ppg, 3),
             'home_form': round(home_form, 3),
             'away_form': round(away_form, 3),
+            'football_data_home_gf_pg': round(home_stats['gf_pg'], 3),
+            'football_data_away_gf_pg': round(away_stats['gf_pg'], 3),
+            'football_data_home_ga_pg': round(home_stats['ga_pg'], 3),
+            'football_data_away_ga_pg': round(away_stats['ga_pg'], 3),
             'football_data_mode': 'standings',
             'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
         }
@@ -369,6 +373,9 @@ class FootballDataContextProvider:
         away_games: list[tuple[datetime, float, float]] = []
         h2h_totals: list[float] = []
         competition_totals: list[float] = []
+        scheduled_home_id = ((row.get('homeTeam') or {}).get('id'))
+        scheduled_away_id = ((row.get('awayTeam') or {}).get('id'))
+        exact_id_hits = 0
         for hist in rows:
             try:
                 dt = parse_datetime(str(hist.get('utcDate') or ''))
@@ -386,38 +393,62 @@ class FootballDataContextProvider:
             except Exception:
                 continue
             competition_totals.append(home_goals + away_goals)
-            hist_home = str(((hist.get('homeTeam') or {}).get('name')) or '').strip()
-            hist_away = str(((hist.get('awayTeam') or {}).get('name')) or '').strip()
+            hist_home_team = hist.get('homeTeam') or {}
+            hist_away_team = hist.get('awayTeam') or {}
+            hist_home = str((hist_home_team.get('name')) or '').strip()
+            hist_away = str((hist_away_team.get('name')) or '').strip()
             if not hist_home or not hist_away:
                 continue
+
+            hist_home_id = hist_home_team.get('id')
+            hist_away_id = hist_away_team.get('id')
+            home_exact = scheduled_home_id is not None and (hist_home_id == scheduled_home_id or hist_away_id == scheduled_home_id)
+            away_exact = scheduled_away_id is not None and (hist_home_id == scheduled_away_id or hist_away_id == scheduled_away_id)
+            if home_exact:
+                exact_id_hits += 1
+            if away_exact:
+                exact_id_hits += 1
 
             home_sim = self._team_match_score(match.home_team, hist_home)
             away_sim = self._team_match_score(match.away_team, hist_away)
             rev_home = self._team_match_score(match.home_team, hist_away)
             rev_away = self._team_match_score(match.away_team, hist_home)
 
-            if home_sim >= 0.74:
+            home_cut = 0.62
+            away_cut = 0.62
+            h2h_cut = 0.60
+
+            if (scheduled_home_id is not None and hist_home_id == scheduled_home_id) or home_sim >= home_cut:
                 home_games.append((dt, home_goals, away_goals))
-            elif rev_home >= 0.74:
+            elif (scheduled_home_id is not None and hist_away_id == scheduled_home_id) or rev_home >= home_cut:
                 home_games.append((dt, away_goals, home_goals))
 
-            if away_sim >= 0.74:
+            if (scheduled_away_id is not None and hist_away_id == scheduled_away_id) or away_sim >= away_cut:
                 away_games.append((dt, away_goals, home_goals))
-            elif rev_away >= 0.74:
+            elif (scheduled_away_id is not None and hist_home_id == scheduled_away_id) or rev_away >= away_cut:
                 away_games.append((dt, home_goals, away_goals))
 
-            if (home_sim >= 0.72 and away_sim >= 0.72) or (rev_home >= 0.72 and rev_away >= 0.72):
+            if ((scheduled_home_id is not None and scheduled_away_id is not None and hist_home_id == scheduled_home_id and hist_away_id == scheduled_away_id)
+                or (scheduled_home_id is not None and scheduled_away_id is not None and hist_home_id == scheduled_away_id and hist_away_id == scheduled_home_id)
+                or ((home_sim >= h2h_cut and away_sim >= h2h_cut) or (rev_home >= h2h_cut and rev_away >= h2h_cut))):
                 h2h_totals.append(home_goals + away_goals)
 
         home_games.sort(key=lambda item: item[0], reverse=True)
         away_games.sort(key=lambda item: item[0], reverse=True)
+
+        competition_avg_total = (sum(competition_totals) / len(competition_totals)) if competition_totals else 2.45
+        neutral_side = competition_avg_total / 2.0
+        if not home_games and not away_games:
+            return None
+        if not home_games and away_games:
+            home_games = [(dt, neutral_side, neutral_side) for dt, _, _ in away_games[:3]]
+        if not away_games and home_games:
+            away_games = [(dt, neutral_side, neutral_side) for dt, _, _ in home_games[:3]]
         if not home_games or not away_games:
             return None
 
         home_recent = home_games[:5]
         away_recent = away_games[:5]
-        competition_avg_total = (sum(competition_totals) / len(competition_totals)) if competition_totals else 2.35
-        neutral_side = competition_avg_total / 2.0
 
         def _blend_side(recent: list[tuple[datetime, float, float]]) -> tuple[float, float, float, float, int]:
             sample = len(recent)
@@ -443,12 +474,14 @@ class FootballDataContextProvider:
         home = 0.38 + delta
         away = 1.0 - home - draw
         probs = self._normalize_probs(home, away, draw)
-        base_conf = 50.0 + min(home_sample, away_sample) * 2.6
+        base_conf = 50.0 + min(home_sample, away_sample) * 2.4
         if h2h_totals:
             base_conf += 2.0
-        if len(competition_totals) >= 20:
-            base_conf += 2.0
-        confidence = clamp(base_conf, 50.0, 63.0)
+        if len(competition_totals) >= 12:
+            base_conf += 1.5
+        if exact_id_hits >= 2:
+            base_conf += 1.5
+        confidence = clamp(base_conf, 50.0, 64.0)
         details = {
             'football_data_mode': 'history_fallback',
             'football_data_home_ppg': round(home_ppg, 3),
@@ -457,8 +490,13 @@ class FootballDataContextProvider:
             'football_data_away_form': round(away_form, 3),
             'football_data_home_sample': home_sample,
             'football_data_away_sample': away_sample,
+            'football_data_home_gf_pg': round(home_gf, 3),
+            'football_data_away_gf_pg': round(away_gf, 3),
+            'football_data_home_ga_pg': round(home_ga, 3),
+            'football_data_away_ga_pg': round(away_ga, 3),
             'football_data_competition_avg_goals': round(competition_avg_total, 3),
             'football_data_h2h_avg_goals': round(sum(h2h_totals) / len(h2h_totals), 3) if h2h_totals else None,
+            'football_data_exact_id_hits': exact_id_hits,
             'football_data_competition': str(((row.get('competition') or {}).get('name')) or match.league_name),
         }
         return MatchContext(
