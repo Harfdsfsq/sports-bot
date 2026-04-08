@@ -618,6 +618,45 @@ class Settings(BaseSettings):
             ),
         )
 
+    @staticmethod
+    def _normalize_league_text(value: str | None) -> str:
+        text = str(value or "").strip().lower()
+        return " ".join(text.split())
+
+    def is_preferred_league(self, league_name: str | None) -> bool:
+        text = self._normalize_league_text(league_name)
+        return bool(text) and any(term in text for term in (self.preferred_league_terms or []))
+
+    def is_secondary_league(self, league_name: str | None) -> bool:
+        text = self._normalize_league_text(league_name)
+        return bool(text) and any(term in text for term in (self.secondary_league_terms or []))
+
+    def is_low_tier_league(self, league_name: str | None) -> bool:
+        text = self._normalize_league_text(league_name)
+        if not text:
+            return False
+        low_tier_terms = {
+            "amateur", "cup women", "women cup", "u17", "u18", "u19", "u20", "u21", "u23",
+            "youth", "academy", "reserve", "reserves", "primavera", "regional", "district",
+            "division 2", "division 3", "division 4", "liga 2", "liga 3", "serie c", "serie d",
+        }
+        risky_terms = {str(item).strip().lower() for item in (self.risky_totals_league_terms or []) if str(item).strip()}
+        return any(term in text for term in (low_tier_terms | risky_terms))
+
+    def league_priority_score(self, league_name: str | None) -> float:
+        text = self._normalize_league_text(league_name)
+        if not text:
+            return 0.0
+        if self.is_preferred_league(text):
+            return 4.0
+        if self.is_secondary_league(text):
+            return 3.0
+        if self.is_low_tier_league(text):
+            return 0.5
+        if "international clubs" in text or "uefa" in text or "conmebol" in text:
+            return 2.5
+        return 1.5
+
 
 Settings.model_rebuild()
 
