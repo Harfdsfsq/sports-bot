@@ -309,14 +309,6 @@ class Settings(BaseSettings):
     non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
     non_core_league_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EV_PCT"))
     non_core_league_require_core_context: bool = Field(default=True, validation_alias=AliasChoices("NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT"))
-    preferred_single_book_min_confidence: float = Field(default=76.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_CONFIDENCE"))
-    preferred_single_book_min_edge_pct: float = Field(default=9.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_EDGE_PCT"))
-    preferred_single_book_min_ev_pct: float = Field(default=5.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_EV_PCT"))
-    preferred_single_book_min_publication_score: float = Field(default=18.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
-    secondary_single_book_min_confidence: float = Field(default=78.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_CONFIDENCE"))
-    secondary_single_book_min_edge_pct: float = Field(default=10.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EDGE_PCT"))
-    secondary_single_book_min_ev_pct: float = Field(default=5.8, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EV_PCT"))
-    secondary_single_book_min_publication_score: float = Field(default=20.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
     preferred_league_terms: CsvList = Field(
         default_factory=lambda: ["champions league", "europa league", "conference league", "premier league", "la liga", "laliga", "serie a", "bundesliga", "ligue 1", "eredivisie", "primeira liga", "championship", "world cup", "euro", "nations league"],
         validation_alias=AliasChoices("PREFERRED_LEAGUE_TERMS"),
@@ -608,6 +600,58 @@ class Settings(BaseSettings):
             "btts": self.btts_min_model_confidence,
             "teamTotals": self.team_totals_min_model_confidence,
         }.get(family, self.min_model_confidence)
+
+
+
+    def _normalize_league_key(self, league_name: str | None) -> str:
+        text = str(league_name or "").strip().lower()
+        if not text:
+            return ""
+        normalized = []
+        prev_space = False
+        for ch in text:
+            if ch.isalnum():
+                normalized.append(ch)
+                prev_space = False
+            else:
+                if not prev_space:
+                    normalized.append(" ")
+                    prev_space = True
+        return " ".join("".join(normalized).split())
+
+    def is_preferred_league(self, league_name: str | None) -> bool:
+        key = self._normalize_league_key(league_name)
+        if not key:
+            return False
+        return any(self._normalize_league_key(term) in key for term in (self.preferred_league_terms or []))
+
+    def is_secondary_league(self, league_name: str | None) -> bool:
+        key = self._normalize_league_key(league_name)
+        if not key or self.is_preferred_league(key):
+            return False
+        return any(self._normalize_league_key(term) in key for term in (self.secondary_league_terms or []))
+
+    def is_low_tier_league(self, league_name: str | None) -> bool:
+        key = self._normalize_league_key(league_name)
+        if not key:
+            return False
+        low_tier_terms = (
+            "u19", "u20", "u21", "u23", "reserves", "reserve", "women", "youth",
+            "amateur", "regional", "division 2", "division 3", "division a", "division b",
+            "state league", "county", "cup qualification", "qualification", "qualifying"
+        )
+        if any(term in key for term in low_tier_terms):
+            return True
+        return False
+
+    def league_priority_score(self, league_name: str | None) -> float:
+        if self.is_preferred_league(league_name):
+            return 3.0
+        if self.is_secondary_league(league_name):
+            return 2.0
+        if self.is_low_tier_league(league_name):
+            return 0.5
+        return 1.0
 
     def min_books_for_family(self, family: str) -> int:
         return max(
