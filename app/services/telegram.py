@@ -15,17 +15,12 @@ class TelegramPublisher:
 
     def render_message(self, bets: list[CandidateBet]) -> str:
         count = len(bets)
-        min_books = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
-        books_note = (
-            'есть подтверждение как минимум по двум котировкам.'
-            if min_books >= 2
-            else 'есть подтверждение хотя бы по одной рабочей котировке.'
-        )
         header = f"🔥 {count} лучших ставок на ближайшие 48 часов\n\n"
+        min_books = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
         notes = (
-            'Показываем только одиночные ставки. '
-            'На один матч — не больше одной рекомендации. '
-            f'В список попадают варианты, где модель видит перевес над линией и {books_note}'
+            "Показываем только одиночные ставки. "
+            "На один матч — не больше одной рекомендации. "
+            f"В список попадают варианты, где модель видит перевес над линией и есть подтверждение как минимум по {min_books} котировкам."
         )
         blocks: list[str] = [header + notes]
 
@@ -37,7 +32,7 @@ class TelegramPublisher:
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
             used_text = "\n⚠️ Прогноз использован" if bet.already_used else ""
-            explanation = self._build_explanation(bet, selection_text)
+            explanation = bet.analysis.strip() if getattr(bet, 'analysis', '').strip() else self._build_explanation(bet, selection_text)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
@@ -66,9 +61,9 @@ class TelegramPublisher:
         )
 
         if family == "totals":
-            if any(token in raw for token in ["over", "больше", "+", "tb", "тб"]):
+            if any(token in raw for token in ["over", "больше", "бол", "+", "tb", "тб"]):
                 return "over"
-            if any(token in raw for token in ["under", "меньше", "tm", "тм"]):
+            if any(token in raw for token in ["under", "меньше", "мен", "tm", "тм"]):
                 return "under"
             return "unknown_total"
 
@@ -98,11 +93,6 @@ class TelegramPublisher:
         return "unknown"
 
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
-        analysis = dict(getattr(bet, 'analysis', {}) or {})
-        summary_points = [str(item).strip() for item in (analysis.get('summary_points') or []) if str(item).strip()]
-        if summary_points:
-            return "\n\n".join(summary_points)
-
         raw_reasons = " ".join(bet.reasons).lower()
         parts: list[str] = []
         kind = self._selection_kind(bet.family, bet.selection, selection_text)
@@ -116,13 +106,24 @@ class TelegramPublisher:
                 parts.append("По тоталу модель видит перевес над текущим коэффициентом.")
         elif bet.family == "h2h":
             if kind == "home":
-                parts.append(f"По нашим данным у {bet.home_team} есть перевес, а коэффициент всё ещё выглядит интересным.")
+                team = bet.home_team
+                parts.append(f"По нашим данным у {team} есть перевес, а коэффициент всё ещё выглядит интересным.")
             elif kind == "away":
-                parts.append(f"По нашим данным у {bet.away_team} есть перевес, а коэффициент всё ещё выглядит интересным.")
+                team = bet.away_team
+                parts.append(f"По нашим данным у {team} есть перевес, а коэффициент всё ещё выглядит интересным.")
             elif kind == "draw":
                 parts.append("Модель допускает более равный матч, чем это видно по линии.")
             else:
                 parts.append("По исходу модель видит перевес над текущим коэффициентом.")
+        elif bet.family == "spreads":
+            parts.append("По форе у ставки есть запас относительно текущей линии.")
+        elif bet.family == "btts":
+            if kind == "yes":
+                parts.append("Есть хорошие шансы, что обе команды забьют.")
+            elif kind == "no":
+                parts.append("Есть причины ждать, что хотя бы одна команда останется без гола.")
+            else:
+                parts.append("По этой линии модель видит перевес над текущим коэффициентом.")
         else:
             parts.append("По модели этот вариант выглядит сильнее, чем его сейчас оценивает рынок.")
 
@@ -132,13 +133,22 @@ class TelegramPublisher:
                 parts.append("По ожидаемым голам матч тянет на открытую игру с моментами у обеих сторон.")
             elif bet.family == "totals" and kind == "under" and total_xg <= 2.2:
                 parts.append("По ожидаемым голам матч больше похож на осторожную игру с небольшим числом моментов.")
+            elif bet.family == "h2h":
+                if bet.expected_home > bet.expected_away + 0.25:
+                    parts.append(f"{bet.home_team} должен создавать больше опасных моментов.")
+                elif bet.expected_away > bet.expected_home + 0.25:
+                    parts.append(f"{bet.away_team} должен создавать больше опасных моментов.")
 
-        if "injuries" in raw_reasons:
-            parts.append("Есть кадровые новости, которые могут заметно повлиять на игру.")
         if "form" in raw_reasons:
             parts.append("Текущая форма команд не противоречит этой ставке.")
         if "table" in raw_reasons:
             parts.append("Положение команд в таблице тоже поддерживает такой сценарий.")
+        if "injuries" in raw_reasons:
+            parts.append("Есть кадровые новости, которые могут заметно повлиять на игру.")
+        if "news" in raw_reasons:
+            parts.append("Свежий новостной фон не ломает идею этой ставки.")
+        if "xg" in raw_reasons and all("ожидаемым голам" not in p for p in parts):
+            parts.append("По качеству создаваемых моментов ставка выглядит логично.")
 
         cleaned: list[str] = []
         seen: set[str] = set()
@@ -148,7 +158,9 @@ class TelegramPublisher:
                 continue
             seen.add(key)
             cleaned.append(key)
-        return "\n\n".join(cleaned[:3])
+            if len(cleaned) >= 3:
+                break
+        return " ".join(cleaned)
 
     async def publish(self, bets: list[CandidateBet]) -> tuple[int, list[str]]:
         if not bets:
