@@ -1940,6 +1940,45 @@ class CandidateFactory:
         core_names = ('api_football', 'football_data', 'thesportsdb', 'espn', 'ensemble')
         return any(name in context_source for name in core_names) or any(flag in {'injuries', 'table'} for flag in flags)
 
+    def _required_publish_books(self, item: CandidateBet) -> int:
+        bucket = self._league_bucket(item)
+        base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
+        non_core_base = max(base, int(getattr(self.settings, 'non_core_league_min_books', 2) or 2))
+        books_count = int(getattr(item, 'books_count', 0) or 0)
+        if books_count >= 2:
+            return 2
+        if bucket in {'other', 'low'}:
+            return non_core_base
+        if not self._has_core_context(item):
+            return max(2, base)
+
+        confidence = float(getattr(item, 'confidence', 0.0) or 0.0)
+        edge_pct = float(getattr(item, 'edge_pct', 0.0) or 0.0)
+        ev_pct = float(getattr(item, 'ev_pct', 0.0) or 0.0)
+        publication_score = float(getattr(item, 'publication_score', 0.0) or 0.0)
+
+        if bucket == 'preferred':
+            if (
+                confidence >= float(getattr(self.settings, 'preferred_single_book_min_confidence', 76.0) or 76.0)
+                and edge_pct >= float(getattr(self.settings, 'preferred_single_book_min_edge_pct', 9.0) or 9.0)
+                and ev_pct >= float(getattr(self.settings, 'preferred_single_book_min_ev_pct', 5.0) or 5.0)
+                and publication_score >= float(getattr(self.settings, 'preferred_single_book_min_publication_score', 18.0) or 18.0)
+            ):
+                return 1
+            return max(2, base)
+
+        if bucket == 'secondary':
+            if (
+                confidence >= float(getattr(self.settings, 'secondary_single_book_min_confidence', 78.0) or 78.0)
+                and edge_pct >= float(getattr(self.settings, 'secondary_single_book_min_edge_pct', 10.0) or 10.0)
+                and ev_pct >= float(getattr(self.settings, 'secondary_single_book_min_ev_pct', 5.8) or 5.8)
+                and publication_score >= float(getattr(self.settings, 'secondary_single_book_min_publication_score', 20.0) or 20.0)
+            ):
+                return 1
+            return max(2, base)
+
+        return max(2, base)
+
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
         for item in candidates:
@@ -1949,7 +1988,7 @@ class CandidateFactory:
             if item.model_probability < min_conf:
                 rejections['confidence_below_threshold'] += 1
                 continue
-            min_publish_books = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
+            min_publish_books = self._required_publish_books(item)
             if int(getattr(item, 'books_count', 0) or 0) < min_publish_books:
                 rejections['publish_books_guard'] += 1
                 continue

@@ -309,6 +309,14 @@ class Settings(BaseSettings):
     non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
     non_core_league_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EV_PCT"))
     non_core_league_require_core_context: bool = Field(default=True, validation_alias=AliasChoices("NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT"))
+    preferred_single_book_min_confidence: float = Field(default=76.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_CONFIDENCE"))
+    preferred_single_book_min_edge_pct: float = Field(default=9.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_EDGE_PCT"))
+    preferred_single_book_min_ev_pct: float = Field(default=5.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_EV_PCT"))
+    preferred_single_book_min_publication_score: float = Field(default=18.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
+    secondary_single_book_min_confidence: float = Field(default=78.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_CONFIDENCE"))
+    secondary_single_book_min_edge_pct: float = Field(default=10.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EDGE_PCT"))
+    secondary_single_book_min_ev_pct: float = Field(default=5.8, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EV_PCT"))
+    secondary_single_book_min_publication_score: float = Field(default=20.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
     preferred_league_terms: CsvList = Field(
         default_factory=lambda: ["champions league", "europa league", "conference league", "premier league", "la liga", "laliga", "serie a", "bundesliga", "ligue 1", "eredivisie", "primeira liga", "championship", "world cup", "euro", "nations league"],
         validation_alias=AliasChoices("PREFERRED_LEAGUE_TERMS"),
@@ -617,45 +625,6 @@ class Settings(BaseSettings):
                 or 1
             ),
         )
-
-    @staticmethod
-    def _normalize_league_text(value: str | None) -> str:
-        text = str(value or "").strip().lower()
-        return " ".join(text.split())
-
-    def is_preferred_league(self, league_name: str | None) -> bool:
-        text = self._normalize_league_text(league_name)
-        return bool(text) and any(term in text for term in (self.preferred_league_terms or []))
-
-    def is_secondary_league(self, league_name: str | None) -> bool:
-        text = self._normalize_league_text(league_name)
-        return bool(text) and any(term in text for term in (self.secondary_league_terms or []))
-
-    def is_low_tier_league(self, league_name: str | None) -> bool:
-        text = self._normalize_league_text(league_name)
-        if not text:
-            return False
-        low_tier_terms = {
-            "amateur", "cup women", "women cup", "u17", "u18", "u19", "u20", "u21", "u23",
-            "youth", "academy", "reserve", "reserves", "primavera", "regional", "district",
-            "division 2", "division 3", "division 4", "liga 2", "liga 3", "serie c", "serie d",
-        }
-        risky_terms = {str(item).strip().lower() for item in (self.risky_totals_league_terms or []) if str(item).strip()}
-        return any(term in text for term in (low_tier_terms | risky_terms))
-
-    def league_priority_score(self, league_name: str | None) -> float:
-        text = self._normalize_league_text(league_name)
-        if not text:
-            return 0.0
-        if self.is_preferred_league(text):
-            return 4.0
-        if self.is_secondary_league(text):
-            return 3.0
-        if self.is_low_tier_league(text):
-            return 0.5
-        if "international clubs" in text or "uefa" in text or "conmebol" in text:
-            return 2.5
-        return 1.5
 
 
 Settings.model_rebuild()

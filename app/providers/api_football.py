@@ -62,7 +62,7 @@ class ApiFootballContextProvider:
             date_list = [(now + timedelta(days=offset)).date().isoformat() for offset in range(days + 1)]
 
         async with httpx.AsyncClient(timeout=25.0) as client:
-            for day in date_list:
+            for idx, day in enumerate(date_list):
                 stats["requests"] += 1
                 try:
                     response = await client.get(f"{self.base_url}/fixtures", headers=headers, params={"date": day, "timezone": "UTC"})
@@ -81,7 +81,7 @@ class ApiFootballContextProvider:
                     break
                 rows = self._response_rows(payload)
                 fixtures.extend(rows)
-                if offset == 0 and rows:
+                if idx == 0 and rows:
                     preview["sample_fixtures"] = rows[:3]
             stats["fixtures_fetched"] = len(fixtures)
 
