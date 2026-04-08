@@ -14,7 +14,7 @@ from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.telegram import TelegramPublisher
 from app.state import JsonStateStore
-from app.utils import ensure_utc
+from app.utils import clamp, ensure_utc
 
 
 class PredictionRunner:
@@ -143,10 +143,17 @@ class PredictionRunner:
                 'bookies_api': bookies_api_offers,
             }
             merged_offers = self._merge_offers(*offer_maps.values())
+            market_signals: dict[str, dict[str, Any]] = {}
+            market_monitor_stats: dict[str, Any] = {'enabled': False}
+            market_monitor_preview: dict[str, Any] = {}
+            if self.market_monitor is not None:
+                market_signals, market_monitor_stats, market_monitor_preview = self.market_monitor.build_signals(filtered_matches, merged_offers, now_utc)
+
             context_target_matches, context_enrichment = self._select_context_enrichment_matches(
                 filtered_matches,
                 merged_offers,
                 now_utc,
+                market_signals,
             )
             provider_targets = {
                 'sstats': self._select_provider_context_matches(context_target_matches, 'sstats'),
@@ -221,11 +228,6 @@ class PredictionRunner:
             }
             contexts = self._merge_context_maps(*context_maps.values())
 
-            market_signals: dict[str, dict[str, Any]] = {}
-            market_monitor_stats: dict[str, Any] = {'enabled': False}
-            market_monitor_preview: dict[str, Any] = {}
-            if self.market_monitor is not None:
-                market_signals, market_monitor_stats, market_monitor_preview = self.market_monitor.build_signals(filtered_matches, merged_offers, now_utc)
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
@@ -488,8 +490,21 @@ class PredictionRunner:
             'newsapi': int(getattr(self.settings, 'newsapi_context_match_limit', 12) or 12),
             'gnews': int(getattr(self.settings, 'gnews_context_match_limit', 8) or 8),
         }
-        limit = max(0, int(limit_map.get(str(provider_name or '').strip().lower(), 0) or 0))
-        if limit <= 0 or len(matches) <= limit:
+        provider_key = str(provider_name or '').strip().lower()
+        limit = max(0, int(limit_map.get(provider_key, 0) or 0))
+        if limit <= 0:
+            return matches
+
+        staged = bool(getattr(self.settings, 'enable_context_staging', True))
+        premium_limit = max(0, int(getattr(self.settings, 'premium_context_shortlist_limit', 18) or 18))
+        if staged:
+            if provider_key in {'espn', 'api_football', 'newsapi', 'gnews', 'openfootball'}:
+                limit = min(limit, premium_limit)
+            elif provider_key in {'thesportsdb'}:
+                limit = min(limit, max(premium_limit * 2, premium_limit))
+            elif provider_key in {'football_data'}:
+                limit = min(limit, max(premium_limit * 3, premium_limit))
+        if len(matches) <= limit:
             return matches
         return matches[:limit]
 
@@ -498,13 +513,17 @@ class PredictionRunner:
         matches: list[Match],
         offers_by_match: dict[str, list[Offer]],
         now_utc: datetime,
+        market_signals_by_match: dict[str, dict[str, Any]] | None = None,
     ) -> tuple[list[Match], dict[str, Any]]:
         requires_offers = bool(getattr(self.settings, 'context_enrichment_requires_offers', True))
         limit = int(getattr(self.settings, 'context_enrichment_match_limit', 0) or 0)
         target_bookmakers = {str(name).strip().lower() for name in (self.settings.target_bookmakers or []) if str(name).strip()}
+        market_signals_by_match = market_signals_by_match or {}
+        min_value_hint = float(getattr(self.settings, 'value_hint_min_edge_pct', 1.0) or 1.0)
 
         ranked: list[tuple[tuple[float, ...], Match]] = []
         skipped_without_offers = 0
+        hints_kept = 0
         for match in matches:
             offers = list(offers_by_match.get(match.match_key) or [])
             if requires_offers and not offers:
@@ -516,7 +535,21 @@ class PredictionRunner:
             kickoff_delta = max((ensure_utc(match.commence_time) - now_utc).total_seconds(), 0.0)
             league_priority = float(self.settings.league_priority_score(match.league_name))
             rich_offer_bonus = 1.0 if {'h2h', 'totals', 'btts'} & families else 0.0
+            signal_pack = market_signals_by_match.get(match.match_key) or {}
+            best_hint = 0.0
+            steam_hits = 0.0
+            for signal in signal_pack.values():
+                if not isinstance(signal, dict):
+                    continue
+                edge = float(signal.get('best_vs_consensus_edge_pct') or 0.0)
+                best_hint = max(best_hint, edge)
+                if str(signal.get('movement_label') or '') == 'steam':
+                    steam_hits += 1.0
+            if best_hint >= min_value_hint:
+                hints_kept += 1
+            value_hint = clamp(best_hint / 2.5, 0.0, 6.0) + min(steam_hits, 2.0) * 0.5
             rank_key = (
+                value_hint,
                 league_priority,
                 float(supported_books),
                 float(len(unique_books)),
@@ -534,6 +567,7 @@ class PredictionRunner:
             trimmed = len(selected) - limit
             selected = selected[:limit]
 
+        premium_limit = max(0, int(getattr(self.settings, 'premium_context_shortlist_limit', 18) or 18))
         summary = {
             'requires_offers': requires_offers,
             'limit': limit,
@@ -541,6 +575,8 @@ class PredictionRunner:
             'selected_matches': len(selected),
             'trimmed_matches': trimmed,
             'skipped_without_offers': skipped_without_offers,
+            'premium_shortlist_limit': premium_limit,
+            'matches_with_value_hint': hints_kept,
         }
         return selected, summary
 

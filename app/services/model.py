@@ -789,14 +789,6 @@ class CandidateFactory:
         if dispersion_pct is not None:
             reasons.append(f'consensus_dispersion={dispersion_pct:.2f}%')
 
-        publication_score = round(
-            (ev_pct * 1.15)
-            + (edge_pct * 0.95)
-            + (confidence * 0.18)
-            + (len(books) * 1.35)
-            + (len(sources) * 1.10),
-            3,
-        )
         analysis = self._build_candidate_analysis(
             match=match,
             family=family,
@@ -814,6 +806,25 @@ class CandidateFactory:
             movement_label=movement_label,
             steam_delta=steam_delta,
             best_vs_consensus_edge_pct=best_vs_consensus_edge_pct,
+        )
+        analysis_flags = list(analysis.get('flags') or [])
+        context_depth = min(4.0, float(len(analysis_flags)) * 0.55 + float(len(analysis.get('summary_points') or [])) * 0.20)
+        league_bonus = float(self.settings.league_priority_score(match.league_name)) * 1.15
+        market_bonus = 0.0
+        if best_vs_consensus_edge_pct is not None and best_vs_consensus_edge_pct > 0:
+            market_bonus += min(2.0, float(best_vs_consensus_edge_pct) * 0.45)
+        if steam_delta is not None and steam_delta > 0:
+            market_bonus += min(1.2, float(steam_delta) * 0.30)
+        publication_score = round(
+            (ev_pct * 1.18)
+            + (edge_pct * 0.98)
+            + (confidence * 0.18)
+            + (len(books) * 1.35)
+            + (len(sources) * 1.10)
+            + context_depth
+            + league_bonus
+            + market_bonus,
+            3,
         )
 
         return CandidateBet(
@@ -893,7 +904,7 @@ class CandidateFactory:
         steam_delta: float | None,
         best_vs_consensus_edge_pct: float | None,
     ) -> dict[str, Any]:
-        max_points = max(2, int(getattr(self.settings, 'telegram_writeup_max_points', 4) or 4))
+        max_points = max(3, int(getattr(self.settings, 'telegram_writeup_max_points', 5) or 5))
         probability_gap_pp = round((float(adjusted_probability) - float(market_probability)) * 100.0, 2)
         total_xg = None
         if expected_home is not None and expected_away is not None:
@@ -905,56 +916,46 @@ class CandidateFactory:
 
         if family == 'totals':
             is_under = 'меньше' in selection_low or 'under' in selection_low
-            if is_under:
-                points.append(
-                    f'Линия даёт около {market_probability * 100:.1f}% на низ, а модель — {adjusted_probability * 100:.1f}%. '
-                    f'Запас по вероятности составляет {probability_gap_pp:+.1f} п.п., поэтому under выглядит валуйно.'
-                )
-            else:
-                points.append(
-                    f'По линии на верх дают около {market_probability * 100:.1f}%, а модель поднимает вероятность до {adjusted_probability * 100:.1f}%. '
-                    f'Запас по вероятности {probability_gap_pp:+.1f} п.п. делает ставку интересной.'
-                )
+            direction = 'низ' if is_under else 'верх'
+            points.append(
+                f'По линии на этот {direction} дают около {market_probability * 100:.1f}%, а модель поднимает вероятность до {adjusted_probability * 100:.1f}%. '
+                f'Запас по вероятности {probability_gap_pp:+.1f} п.п. создаёт value относительно рынка.'
+            )
             if total_xg is not None and point is not None:
-                if is_under:
-                    points.append(
-                        f'По ожидаемым голам выходит около {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}), '
-                        f'то есть темп матча ближе к осторожному сценарию относительно линии {point:g}.'
-                    )
-                else:
-                    points.append(
-                        f'По ожидаемым голам модель видит около {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}), '
-                        f'что поддерживает более результативный сценарий относительно линии {point:g}.'
-                    )
+                stance = 'осторожному' if is_under else 'результативному'
+                points.append(
+                    f'По ожидаемым голам модель видит около {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}), '
+                    f'поэтому матч больше тянет к {stance} сценарию относительно линии {point:g}.'
+                )
                 flags.append('xg')
         elif family == 'h2h':
             team = match.home_team if str(selection).strip() == match.home_team else match.away_team if str(selection).strip() == match.away_team else str(selection)
             points.append(
-                f'Модель поднимает вероятность на исход {team} до {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по линии. '
+                f'Модель оценивает исход {team} в {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по линии. '
                 f'Это даёт перевес {probability_gap_pp:+.1f} п.п. и делает цену интереснее рынка.'
             )
             if total_xg is not None:
                 stronger = match.home_team if float(expected_home or 0) >= float(expected_away or 0) else match.away_team
                 points.append(
-                    f'По качеству моментов матч оценивается в {float(expected_home or 0):.2f} : {float(expected_away or 0):.2f} по xG, '
-                    f'то есть небольшое игровое преимущество модель видит у {stronger}.'
+                    f'По качеству моментов матч выглядит как {float(expected_home or 0):.2f} : {float(expected_away or 0):.2f} по xG, '
+                    f'то есть игровое преимущество модель видит у {stronger}.'
                 )
                 flags.append('xg')
-        elif family == 'btts':
-            points.append(
-                f'Разница между моделью ({adjusted_probability * 100:.1f}%) и линией ({market_probability * 100:.1f}%) составляет {probability_gap_pp:+.1f} п.п., '
-                'поэтому вариант на обе забьют/нет выглядит недооценённым рынком.'
-            )
         else:
             points.append(
-                f'У ставки есть перевес над линией: модель даёт {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по рынку, '
-                f'что даёт {probability_gap_pp:+.1f} п.п. запаса.'
+                f'Модель даёт {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по линии, '
+                f'что даёт запас {probability_gap_pp:+.1f} п.п. и объясняет интерес к ставке.'
             )
 
         form_text = self._build_form_summary(match, context_details)
         if form_text:
             points.append(form_text)
             flags.append('form')
+
+        profile_text = self._build_profile_summary(match, context_details, family, point, expected_home, expected_away)
+        if profile_text:
+            points.append(profile_text)
+            flags.append('recent_profile')
 
         table_text = self._build_table_summary(match, context_details)
         if table_text:
@@ -976,6 +977,11 @@ class CandidateFactory:
             points.append(market_text)
             flags.append('market')
 
+        basis_text = self._build_context_basis_summary(context, context_details)
+        if basis_text:
+            points.append(basis_text)
+            flags.append('basis')
+
         clean_points: list[str] = []
         seen: set[str] = set()
         for point_text in points:
@@ -989,11 +995,12 @@ class CandidateFactory:
 
         return {
             'summary_points': clean_points,
-            'flags': flags[:max_points],
+            'flags': flags[:max_points + 1],
             'probability_gap_pp': probability_gap_pp,
             'total_xg': total_xg,
             'context_source': str(getattr(context, 'source', '') or '') if context is not None else None,
             'confidence': round(float(confidence), 2),
+            'context_depth_score': round(min(4.0, len(clean_points) * 0.35 + len(set(flags)) * 0.20), 3),
         }
 
     def _build_market_confirmation_summary(
@@ -1007,13 +1014,15 @@ class CandidateFactory:
         parts: list[str] = []
         if books:
             if len(books) >= 2:
-                parts.append(f'Рынок подтверждает идею сразу у {len(books)} букмекеров ({", ".join(books[:3])}).')
+                parts.append(f'Рынок подтверждает идею у {len(books)} букмекеров ({", ".join(books[:3])}).')
             else:
-                parts.append(f'Сейчас идею подтверждает как минимум {books[0]}.')
+                parts.append(f'Сейчас сильное подтверждение идёт хотя бы от {books[0]}.')
         if best_vs_consensus_edge_pct is not None and best_vs_consensus_edge_pct > 0:
             parts.append(f'Лучшая цена выше условного консенсуса примерно на {best_vs_consensus_edge_pct:.1f}%.')
         if movement_label == 'steam' and steam_delta is not None:
             parts.append(f'По движению линии тоже есть подтверждение: рынок сдвинул вероятность примерно на {steam_delta:+.2f} п.п.')
+        if sources and len(sources) >= 2:
+            parts.append(f'Сигнал подтверждён не только книгами, но и несколькими источниками данных ({", ".join(sources[:3])}).')
         if not parts:
             return None
         return ' '.join(parts)
@@ -1025,42 +1034,79 @@ class CandidateFactory:
             return None
         diff = home_form - away_form
         if abs(diff) < 0.05:
-            return f'По форме команды выглядят близко: примерно {home_form * 100:.0f}% против {away_form * 100:.0f}%.'
+            return f'По форме команды выглядят близко: примерно {home_form * 100:.0f}% против {away_form * 100:.0f}%, без явного перекоса.'
         stronger = match.home_team if diff > 0 else match.away_team
-        return f'По форме сейчас лучше выглядит {stronger}: около {max(home_form, away_form) * 100:.0f}% против {min(home_form, away_form) * 100:.0f}% у соперника.'
+        weaker = match.away_team if diff > 0 else match.home_team
+        return f'По форме сейчас лучше выглядит {stronger}: около {max(home_form, away_form) * 100:.0f}% против {min(home_form, away_form) * 100:.0f}% у {weaker}.'
+
+    def _build_profile_summary(
+        self,
+        match: Match,
+        details: dict[str, Any],
+        family: str,
+        point: float | None,
+        expected_home: float | None,
+        expected_away: float | None,
+    ) -> str | None:
+        home_gf = self._first_float(details, 'home_goals_for_avg', 'football_data_home_gf_pg')
+        away_gf = self._first_float(details, 'away_goals_for_avg', 'football_data_away_gf_pg')
+        home_ga = self._first_float(details, 'home_goals_against_avg', 'football_data_home_ga_pg')
+        away_ga = self._first_float(details, 'away_goals_against_avg', 'football_data_away_ga_pg')
+        home_sample = self._first_float(details, 'home_recent_count', 'football_data_home_sample')
+        away_sample = self._first_float(details, 'away_recent_count', 'football_data_away_sample')
+        if family == 'totals' and None not in (home_gf, away_gf, home_ga, away_ga):
+            total_profile = float(home_gf) + float(away_gf)
+            base = (
+                f'На короткой дистанции {match.home_team} идёт с профилем {float(home_gf):.2f}/{float(home_ga):.2f} по голам за матч, '
+                f'а {match.away_team} — {float(away_gf):.2f}/{float(away_ga):.2f}.'
+            )
+            extra = []
+            if point is not None and total_profile >= float(point):
+                extra.append(f'В сумме это поддерживает темп выше линии {float(point):g}.')
+            if expected_home is not None and expected_away is not None:
+                stronger = match.home_team if float(expected_home) >= float(expected_away) else match.away_team
+                extra.append(f'Основной вклад в давление модель ждёт от {stronger}.')
+            if home_sample is not None and away_sample is not None:
+                extra.append(f'База собрана минимум по {int(min(home_sample, away_sample))} недавним матчам на сторону.')
+            return ' '.join([base, *extra]).strip()
+        if family == 'h2h' and None not in (home_gf, away_gf, home_ga, away_ga):
+            stronger = match.home_team if float(home_gf) - float(home_ga) >= float(away_gf) - float(away_ga) else match.away_team
+            return (
+                f'По последнему игровому профилю {match.home_team} идёт с {float(home_gf):.2f}/{float(home_ga):.2f} по голам, '
+                f'а {match.away_team} — с {float(away_gf):.2f}/{float(away_ga):.2f}. '
+                f'Это даёт небольшое преимущество {stronger}.'
+            )
+        return None
 
     def _build_table_summary(self, match: Match, details: dict[str, Any]) -> str | None:
         home_ppg = self._first_float(details, 'thesportsdb_home_ppg', 'football_data_home_ppg', 'home_ppg')
         away_ppg = self._first_float(details, 'thesportsdb_away_ppg', 'football_data_away_ppg', 'away_ppg')
         home_rank = self._first_float(details, 'thesportsdb_home_rank', 'football_data_home_rank', 'home_rank')
         away_rank = self._first_float(details, 'thesportsdb_away_rank', 'football_data_away_rank', 'away_rank')
-        if home_ppg is not None and away_ppg is not None and abs(home_ppg - away_ppg) >= 0.2:
+        if home_ppg is not None and away_ppg is not None and abs(home_ppg - away_ppg) >= 0.15:
             better = match.home_team if home_ppg > away_ppg else match.away_team
             return f'По таблице и набору очков за матч чуть убедительнее выглядит {better}: {max(home_ppg, away_ppg):.2f} очка за игру против {min(home_ppg, away_ppg):.2f}.'
         if home_rank is not None and away_rank is not None and abs(home_rank - away_rank) >= 2:
             better = match.home_team if home_rank < away_rank else match.away_team
-            return f'Таблица тоже не спорит со ставкой: выше сейчас идёт {better} (примерно {int(min(home_rank, away_rank))}-е место против {int(max(home_rank, away_rank))}-го).'
+            return f'Таблица тоже поддерживает сценарий: выше сейчас идёт {better} (примерно {int(min(home_rank, away_rank))}-е место против {int(max(home_rank, away_rank))}-го).' 
         return None
 
     def _build_recent_summary(self, match: Match, details: dict[str, Any], family: str) -> str | None:
-        home_recent = self._first_float(details, 'home_recent_count')
-        away_recent = self._first_float(details, 'away_recent_count')
-        home_gf = self._first_float(details, 'home_goals_for_avg', 'football_data_home_gf_pg')
-        away_gf = self._first_float(details, 'away_goals_for_avg', 'football_data_away_gf_pg')
-        home_ga = self._first_float(details, 'home_goals_against_avg', 'football_data_home_ga_pg')
-        away_ga = self._first_float(details, 'away_goals_against_avg', 'football_data_away_ga_pg')
+        home_recent = self._first_float(details, 'home_recent_count', 'football_data_home_sample')
+        away_recent = self._first_float(details, 'away_recent_count', 'football_data_away_sample')
         h2h_total = self._first_float(details, 'openfootball_h2h_avg_goals', 'football_data_h2h_avg_goals')
-        if family == 'totals' and home_gf is not None and away_gf is not None and home_ga is not None and away_ga is not None:
-            base = (
-                f'По последним матчам профиль тоже понятен: {match.home_team} в среднем забивает/пропускает {home_gf:.2f}/{home_ga:.2f}, '
-                f'а {match.away_team} — {away_gf:.2f}/{away_ga:.2f}.'
-            )
-            extra = []
+        comp_total = self._first_float(details, 'football_data_competition_avg_goals')
+        if family == 'totals':
+            extras: list[str] = []
             if h2h_total is not None:
-                extra.append(f'Средний тотал по историческим данным около {h2h_total:.2f}.')
-            if home_recent and away_recent:
-                extra.append(f'База собрана минимум по {int(min(home_recent, away_recent))} недавним матчам на сторону.')
-            return ' '.join([base, *extra]).strip()
+                extras.append(f'Средний тотал по доступной истории очных/похожих матчей около {h2h_total:.2f}.')
+            if comp_total is not None:
+                extras.append(f'Средний тотал по турниру держится около {comp_total:.2f}.')
+            if home_recent is not None and away_recent is not None:
+                extras.append(f'Недавняя база покрывает минимум {int(min(home_recent, away_recent))} матчей на сторону.')
+            return ' '.join(extras) if extras else None
+        if home_recent is not None and away_recent is not None:
+            return f'Контекст собран по недавней выборке минимум {int(min(home_recent, away_recent))} матчей на сторону, поэтому сигнал не выглядит случайным.'
         return None
 
     def _build_injuries_summary(self, match: Match, details: dict[str, Any]) -> str | None:
@@ -1071,9 +1117,24 @@ class CandidateFactory:
             return None
         if home_abs is not None and away_abs is not None and abs(home_abs - away_abs) >= 0.6:
             affected = match.home_team if home_abs > away_abs else match.away_team
-            return f'По кадрам и новостям больше потерь сейчас у {affected}, это тоже влияет на сценарий матча.'
+            return f'По кадрам и новостям больше потерь сейчас у {affected}, это тоже смещает сценарий матча.'
         if article_count is not None and article_count >= 2:
-            return 'По матчу дополнительно просмотрены свежие новости и кадровый фон, явных противоречий ставке там нет.'
+            return 'По матчу дополнительно просмотрены свежие новости и кадровый фон; явных противоречий ставке там нет.'
+        return None
+
+    def _build_context_basis_summary(self, context: MatchContext | None, details: dict[str, Any]) -> str | None:
+        if context is None:
+            return None
+        merged_sources = details.get('merged_sources') or []
+        source = str(getattr(context, 'source', '') or '')
+        if isinstance(merged_sources, list) and merged_sources:
+            sources = ', '.join(str(item) for item in merged_sources[:3])
+            return f'Разбор собран из нескольких источников ({sources}), поэтому ставка опирается не на один частный сигнал.'
+        if source:
+            if source == 'sstats_form':
+                return 'Основа модели здесь — недавняя форма и профиль команд по SStats, без тяжёлых платных источников.'
+            if source == 'football_data':
+                return 'Контекст дополнительно проверен по данным турнира и недавней истории через football-data.'
         return None
 
     def _market_signal_key(self, family: str, selection: str, point: float | None, team_side: str | None) -> str:
