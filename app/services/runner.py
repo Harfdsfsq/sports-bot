@@ -143,29 +143,87 @@ class PredictionRunner:
                 'bookies_api': bookies_api_offers,
             }
             merged_offers = self._merge_offers(*offer_maps.values())
+
+            market_signals: dict[str, dict[str, Any]] = {}
+            market_monitor_stats: dict[str, Any] = {'enabled': False}
+            market_monitor_preview: dict[str, Any] = {}
+            if self.market_monitor is not None:
+                market_signals, market_monitor_stats, market_monitor_preview = self.market_monitor.build_signals(filtered_matches, merged_offers, now_utc)
+
             context_target_matches, context_enrichment = self._select_context_enrichment_matches(
                 filtered_matches,
                 merged_offers,
                 now_utc,
             )
-            provider_targets = {
+
+            core_provider_targets = {
                 'sstats': self._select_provider_context_matches(context_target_matches, 'sstats'),
-                'api_football': self._select_provider_context_matches(context_target_matches, 'api_football'),
-                'espn': self._select_provider_context_matches(context_target_matches, 'espn'),
                 'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb'),
                 'football_data': self._select_provider_context_matches(context_target_matches, 'football_data'),
                 'openfootball': self._select_provider_context_matches(context_target_matches, 'openfootball'),
-                'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi'),
-                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews'),
             }
-            provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
 
             sstats_contexts, sstats_stats, sstats_preview = await self._fetch_provider(
                 self.sstats,
                 'fetch_context',
-                provider_targets['sstats'],
+                core_provider_targets['sstats'],
                 empty_data={},
             )
+            thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview = await self._fetch_provider(
+                self.thesportsdb,
+                'fetch_context',
+                core_provider_targets['thesportsdb'],
+                empty_data={},
+            )
+            football_data_contexts, football_data_stats, football_data_preview = await self._fetch_provider(
+                self.football_data,
+                'fetch_context',
+                core_provider_targets['football_data'],
+                empty_data={},
+            )
+            openfootball_contexts, openfootball_stats, openfootball_preview = await self._fetch_provider(
+                self.openfootball,
+                'fetch_context',
+                core_provider_targets['openfootball'],
+                empty_data={},
+            )
+
+            core_context_maps = {
+                'sstats': sstats_contexts,
+                'thesportsdb': thesportsdb_contexts,
+                'football_data': football_data_contexts,
+                'openfootball': openfootball_contexts,
+            }
+            core_contexts = self._merge_context_maps(*core_context_maps.values())
+
+            premium_seed_matches = self._select_premium_context_matches(
+                context_target_matches,
+                merged_offers,
+                market_signals,
+                core_contexts,
+                now_utc,
+            )
+            premium_news_matches = self._select_premium_context_matches(
+                context_target_matches,
+                merged_offers,
+                market_signals,
+                core_contexts,
+                now_utc,
+                news_mode=True,
+            )
+
+            provider_targets = {
+                'sstats': core_provider_targets['sstats'],
+                'api_football': self._select_provider_context_matches(premium_seed_matches, 'api_football'),
+                'espn': self._select_provider_context_matches(premium_seed_matches, 'espn'),
+                'thesportsdb': core_provider_targets['thesportsdb'],
+                'football_data': core_provider_targets['football_data'],
+                'openfootball': core_provider_targets['openfootball'],
+                'newsapi': self._select_provider_context_matches(premium_news_matches, 'newsapi'),
+                'gnews': self._select_provider_context_matches(premium_news_matches, 'gnews'),
+            }
+            provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
+
             api_football_contexts, api_football_stats, api_football_preview = await self._fetch_provider(
                 self.api_football,
                 'fetch_context',
@@ -176,24 +234,6 @@ class PredictionRunner:
                 self.espn,
                 'fetch_context',
                 provider_targets['espn'],
-                empty_data={},
-            )
-            thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview = await self._fetch_provider(
-                self.thesportsdb,
-                'fetch_context',
-                provider_targets['thesportsdb'],
-                empty_data={},
-            )
-            football_data_contexts, football_data_stats, football_data_preview = await self._fetch_provider(
-                self.football_data,
-                'fetch_context',
-                provider_targets['football_data'],
-                empty_data={},
-            )
-            openfootball_contexts, openfootball_stats, openfootball_preview = await self._fetch_provider(
-                self.openfootball,
-                'fetch_context',
-                provider_targets['openfootball'],
                 empty_data={},
             )
             newsapi_contexts, newsapi_stats, newsapi_preview = await self._fetch_provider(
@@ -210,22 +250,13 @@ class PredictionRunner:
             )
 
             context_maps = {
-                'sstats': sstats_contexts,
+                **core_context_maps,
                 'api_football': api_football_contexts,
                 'espn': espn_contexts,
-                'thesportsdb': thesportsdb_contexts,
-                'football_data': football_data_contexts,
-                'openfootball': openfootball_contexts,
                 'newsapi': newsapi_contexts,
                 'gnews': gnews_contexts,
             }
             contexts = self._merge_context_maps(*context_maps.values())
-
-            market_signals: dict[str, dict[str, Any]] = {}
-            market_monitor_stats: dict[str, Any] = {'enabled': False}
-            market_monitor_preview: dict[str, Any] = {}
-            if self.market_monitor is not None:
-                market_signals, market_monitor_stats, market_monitor_preview = self.market_monitor.build_signals(filtered_matches, merged_offers, now_utc)
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
@@ -539,6 +570,91 @@ class PredictionRunner:
             'skipped_without_offers': skipped_without_offers,
         }
         return selected, summary
+
+    def _select_premium_context_matches(
+        self,
+        matches: list[Match],
+        offers_by_match: dict[str, list[Offer]],
+        market_signals_by_match: dict[str, dict[str, Any]],
+        existing_contexts: dict[str, MatchContext],
+        now_utc: datetime,
+        *,
+        news_mode: bool = False,
+    ) -> list[Match]:
+        if not matches:
+            return []
+        limit_setting = 'premium_news_shortlist_limit' if news_mode else 'premium_context_shortlist_limit'
+        limit = max(0, int(getattr(self.settings, limit_setting, 0) or 0))
+        if limit <= 0:
+            return []
+        ranked: list[tuple[float, Match]] = []
+        min_edge_hint = float(getattr(self.settings, 'value_hint_min_edge_pct', 1.0) or 1.0)
+        for match in matches:
+            offers = list(offers_by_match.get(match.match_key) or [])
+            if not offers:
+                continue
+            unique_books = {str(item.bookmaker or '').strip().lower() for item in offers if str(item.bookmaker or '').strip()}
+            families = {str(item.family or '').strip().lower() for item in offers if str(item.family or '').strip()}
+            signal_rows = dict(market_signals_by_match.get(match.match_key) or {})
+            best_edge_hint = 0.0
+            best_steam_hint = 0.0
+            for payload in signal_rows.values():
+                if not isinstance(payload, dict):
+                    continue
+                try:
+                    best_edge_hint = max(best_edge_hint, float(payload.get('best_vs_consensus_edge_pct') or 0.0))
+                except Exception:
+                    pass
+                try:
+                    best_steam_hint = max(best_steam_hint, float(payload.get('delta_prob_pp') or 0.0))
+                except Exception:
+                    pass
+            if best_edge_hint < min_edge_hint and not news_mode and len(unique_books) < 2 and len(families) < 2:
+                continue
+            kickoff_hours = max((ensure_utc(match.commence_time) - now_utc).total_seconds() / 3600.0, 0.0)
+            context = existing_contexts.get(match.match_key)
+            context_confidence = float(getattr(context, 'confidence', 0.0) or 0.0) if context is not None else 0.0
+            missing_context_bonus = 9.0 if context is None else max(0.0, 5.5 - (context_confidence / 12.0))
+            tier_bonus = self._league_priority_bonus(match.league_name, getattr(match, 'tier', None))
+            recency_bonus = max(0.0, 6.0 - min(kickoff_hours, 36.0) * 0.12)
+            score = (
+                best_edge_hint * (1.4 if news_mode else 2.6)
+                + best_steam_hint * (0.8 if news_mode else 1.4)
+                + len(unique_books) * 1.4
+                + len(families) * 0.9
+                + missing_context_bonus
+                + tier_bonus
+                + recency_bonus
+            )
+            ranked.append((score, match))
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        selected: list[Match] = []
+        seen: set[str] = set()
+        for _, match in ranked:
+            if match.match_key in seen:
+                continue
+            seen.add(match.match_key)
+            selected.append(match)
+            if len(selected) >= limit:
+                break
+        return selected
+
+    @staticmethod
+    def _league_priority_bonus(league_name: str, tier: str | None) -> float:
+        text = str(league_name or '').lower()
+        bonus = 0.0
+        if tier == 'high':
+            bonus += 2.0
+        important_terms = (
+            'champions league', 'europa', 'conference league', 'libertadores', 'sudamericana',
+            'premier league', 'la liga', 'serie a', 'bundesliga', 'ligue 1', 'eredivisie', 'primeira liga',
+            'super lig', 'superliga', 'world cup', 'euro', 'nations league'
+        )
+        if any(term in text for term in important_terms):
+            bonus += 2.5
+        if 'international clubs' in text or 'uefa' in text:
+            bonus += 1.5
+        return bonus
 
     @staticmethod
     def _dedupe_matches(matches: list[Match]) -> list[Match]:

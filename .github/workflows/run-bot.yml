@@ -6,7 +6,7 @@ on:
       reset_state:
         description: Delete .data/state.json before this manual run
         required: false
-        default: true
+        default: false
         type: boolean
   schedule:
     - cron: '*/30 * * * *'
@@ -33,8 +33,8 @@ env:
   TARGET_BOOKMAKERS: 'Bet365,Unibet'
   CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
   SHARP_BOOKMAKERS: 'Bet365,Unibet'
-  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '1.75'
-  MIN_BOOKS_PUBLISH: '1'
+  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '2.0'
+  MIN_BOOKS_PUBLISH: '2'
 
   BOOKIES_API_ENABLED: 'false'
   BOOKIES_API_USE_FOR_BACKFILL_ONLY: 'true'
@@ -54,12 +54,15 @@ env:
   GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
 
   ENABLE_PROVIDER_DIAGNOSTICS: 'true'
-  DIAGNOSTICS_MATCH_LIMIT: '80'
+  DIAGNOSTICS_MATCH_LIMIT: '140'
 
-  ENABLE_ESPN_CONTEXT: 'false'
+  ENABLE_ESPN_CONTEXT: 'true'
   ESPN_ENABLE_NEWS_CONTEXT: 'false'
   ESPN_TIMEOUT_SECONDS: '6'
-  ESPN_SOCCER_LEAGUES: 'eng.1,eng.2,eng.3,esp.1,ita.1,ger.1,fra.1,uefa.champions,uefa.europa'
+  ESPN_CONTEXT_MATCH_LIMIT: '20'
+  ESPN_MAX_MATCHES: '40'
+  ESPN_SLUGS_PER_RUN_LIMIT: '6'
+  ESPN_SOCCER_LEAGUES: 'eng.1,esp.1,ita.1,ger.1,fra.1,uefa.champions,uefa.europa,uefa.europa.conf'
   ESPN_INJURY_OUT_WEIGHT: '1.0'
   ESPN_INJURY_DOUBTFUL_WEIGHT: '0.35'
   ESPN_INJURY_QUESTIONABLE_WEIGHT: '0.25'
@@ -67,32 +70,57 @@ env:
   ESPN_NEWS_ABSENCE_PENALTY_PER_POINT: '0.06'
 
   ENABLE_THESPORTSDB_CONTEXT: 'true'
-  THESPORTSDB_MAX_LEAGUES: '10'
+  THESPORTSDB_MAX_LEAGUES: '18'
+  THESPORTSDB_CONTEXT_MATCH_LIMIT: '120'
   THESPORTSDB_TIMEOUT_SECONDS: '8'
   THESPORTSDB_TEAM_ALIAS_RELAXED: 'false'
 
+  ENABLE_FOOTBALL_DATA_CONTEXT: 'true'
+  FOOTBALL_DATA_TIMEOUT_SECONDS: '12'
+  FOOTBALL_DATA_MATCH_LIMIT: '120'
+  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: '120'
+  FOOTBALL_DATA_STANDINGS_LIMIT: '12'
+  FOOTBALL_DATA_DAYS_AHEAD: '3'
+
+  API_FOOTBALL_PREDICTIONS_LIMIT: '12'
+  API_FOOTBALL_CONTEXT_MATCH_LIMIT: '20'
+
   ENABLE_OPENFOOTBALL_CONTEXT: 'false'
+  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: '0'
+
   ENABLE_NEWSAPI_CONTEXT: 'false'
+  NEWSAPI_CONTEXT_MATCH_LIMIT: '0'
+  NEWSAPI_MATCH_LIMIT: '0'
+  NEWSAPI_ARTICLES_PER_MATCH: '0'
+  NEWSAPI_LOOKBACK_HOURS: '24'
+
   ENABLE_GNEWS_CONTEXT: 'true'
-  GNEWS_CONTEXT_MATCH_LIMIT: '3'
-  GNEWS_MATCH_LIMIT: '3'
-  GNEWS_ARTICLES_PER_MATCH: '3'
-  GNEWS_LOOKBACK_HOURS: '36'
+  ENABLE_CONTEXT_STAGING: 'true'
+  PREMIUM_CONTEXT_SHORTLIST_LIMIT: '20'
+  PREMIUM_NEWS_SHORTLIST_LIMIT: '2'
+  VALUE_HINT_MIN_EDGE_PCT: '1.25'
+  DETAILED_TELEGRAM_WRITEUP: 'true'
+  TELEGRAM_WRITEUP_MAX_POINTS: '4'
+  GNEWS_TIMEOUT_SECONDS: '8'
+  GNEWS_CONTEXT_MATCH_LIMIT: '2'
+  GNEWS_MATCH_LIMIT: '2'
+  GNEWS_ARTICLES_PER_MATCH: '2'
+  GNEWS_LOOKBACK_HOURS: '24'
 
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
   PUBLISH_WINDOW_HOURS: '24'
   MIN_KICKOFF_LEAD_MINUTES: '45'
-  MAX_MATCHES_FOR_ODDS_FETCH: '40'
+  MAX_MATCHES_FOR_ODDS_FETCH: '64'
   MAX_PICKS_PER_FAMILY: '2'
   MAX_PICKS_PER_LEAGUE: '2'
-  MAX_SAME_REASON_SIGNATURE: '1'
+  MAX_SAME_REASON_SIGNATURE: '2'
   ALLOW_LOW_TIER: 'false'
-  ALLOW_SINGLE_SHARP_BOOK: 'true'
+  ALLOW_SINGLE_SHARP_BOOK: 'false'
   BOOKMAKER_ALIAS_RELAXED: 'false'
   CONSENSUS_ALIAS_GROUPS: ''
   MIN_SOURCES_PUBLISH: '1'
-  MIN_MODEL_CONFIDENCE: '0.68'
-  LINE_SUPPORT_TOLERANCE: '0.04'
+  MIN_MODEL_CONFIDENCE: '0.69'
+  LINE_SUPPORT_TOLERANCE: '0.05'
   REJECT_NEGATIVE_EXPECTED_GOALS: 'true'
   MIN_EXPECTED_GOALS_VALUE: '0.35'
   MAX_EXPECTED_GOALS_VALUE: '4.8'
@@ -100,33 +128,33 @@ env:
   H2H_MIN_BOOKS: '1'
   H2H_MIN_EDGE_PCT: '6'
   H2H_MIN_EV_PCT: '3'
-  H2H_MIN_MODEL_CONFIDENCE: '0.68'
-  H2H_SINGLE_SOURCE_MIN_CONFIDENCE: '0.74'
-  H2H_SINGLE_SOURCE_MIN_EDGE_PCT: '8'
-  H2H_SINGLE_SOURCE_MIN_EV_PCT: '4'
+  H2H_MIN_MODEL_CONFIDENCE: '0.69'
+  H2H_SINGLE_SOURCE_MIN_CONFIDENCE: '0.76'
+  H2H_SINGLE_SOURCE_MIN_EDGE_PCT: '9'
+  H2H_SINGLE_SOURCE_MIN_EV_PCT: '5'
   H2H_XG_DISLOCATION_GUARD_ENABLED: 'true'
   H2H_XG_DISLOCATION_MARKET_MAX_PROB: '0.62'
-  H2H_XG_DISLOCATION_MIN_CONFIDENCE: '0.72'
-  H2H_XG_DISLOCATION_MIN_DIFF: '0.55'
-  H2H_XG_DISLOCATION_MIN_SOURCES: '1'
+  H2H_XG_DISLOCATION_MIN_CONFIDENCE: '0.74'
+  H2H_XG_DISLOCATION_MIN_DIFF: '0.60'
+  H2H_XG_DISLOCATION_MIN_SOURCES: '2'
 
   TOTALS_MIN_BOOKS: '1'
   TOTALS_MIN_EDGE_PCT: '7'
   TOTALS_MIN_EV_PCT: '4'
-  TOTALS_MIN_MODEL_CONFIDENCE: '0.70'
+  TOTALS_MIN_MODEL_CONFIDENCE: '0.72'
 
   TEAM_TOTALS_MIN_BOOKS: '1'
   TEAM_TOTALS_MIN_EDGE_PCT: '7'
   TEAM_TOTALS_MIN_EV_PCT: '4'
-  TEAM_TOTALS_MIN_MODEL_CONFIDENCE: '0.71'
+  TEAM_TOTALS_MIN_MODEL_CONFIDENCE: '0.73'
 
   BTTS_MIN_BOOKS: '1'
   BTTS_MIN_EDGE_PCT: '7'
   BTTS_MIN_EV_PCT: '4'
-  BTTS_MIN_MODEL_CONFIDENCE: '0.71'
+  BTTS_MIN_MODEL_CONFIDENCE: '0.73'
 
-  SINGLE_SHARP_MIN_CONFIDENCE: '0.76'
-  SINGLE_SHARP_MIN_EDGE_PCT: '8'
+  SINGLE_SHARP_MIN_CONFIDENCE: '0.80'
+  SINGLE_SHARP_MIN_EDGE_PCT: '10'
 
   SUPPORTED_TOTAL_LINES: '1.5,1.75,2.0,2.25,2.5,2.75,3.0,3.25,3.5,3.75,4.0'
   SUPPORTED_TEAM_TOTAL_LINES: '0.5,0.75,1.0,1.25,1.5,1.75,2.0,2.25,2.5,2.75,3.0'
@@ -157,7 +185,17 @@ jobs:
 
       - name: Compile key modules
         run: |
-          python -m py_compile             app/config.py             app/schemas.py             app/providers/odds_api_io.py             app/providers/football_data.py             app/providers/openfootball.py             app/providers/newsapi.py             app/providers/gnews.py             app/services/runner.py             app/services/model.py             app/services/market_monitor.py
+          python -m py_compile \
+            app/config.py \
+            app/schemas.py \
+            app/providers/odds_api_io.py \
+            app/providers/football_data.py \
+            app/providers/openfootball.py \
+            app/providers/newsapi.py \
+            app/providers/gnews.py \
+            app/services/runner.py \
+            app/services/model.py \
+            app/services/market_monitor.py
 
       - name: Prepare local state folders
         run: mkdir -p .data .data/exports

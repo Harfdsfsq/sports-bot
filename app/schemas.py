@@ -96,4 +96,5 @@ class CandidateBet:
     source_summary: dict[str, Any] = field(default_factory=dict)
     diagnostics: dict[str, Any] = field(default_factory=dict)
     publication_score: float = 0.0
+    analysis: dict[str, Any] = field(default_factory=dict)
     already_used: bool = False

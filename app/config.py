@@ -115,6 +115,12 @@ class Settings(BaseSettings):
     openfootball_context_match_limit: int = Field(default=120, validation_alias=AliasChoices("OPENFOOTBALL_CONTEXT_MATCH_LIMIT"))
     newsapi_context_match_limit: int = Field(default=12, validation_alias=AliasChoices("NEWSAPI_CONTEXT_MATCH_LIMIT"))
     gnews_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("GNEWS_CONTEXT_MATCH_LIMIT"))
+    enable_context_staging: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_CONTEXT_STAGING"))
+    premium_context_shortlist_limit: int = Field(default=18, validation_alias=AliasChoices("PREMIUM_CONTEXT_SHORTLIST_LIMIT"))
+    premium_news_shortlist_limit: int = Field(default=3, validation_alias=AliasChoices("PREMIUM_NEWS_SHORTLIST_LIMIT"))
+    value_hint_min_edge_pct: float = Field(default=1.0, validation_alias=AliasChoices("VALUE_HINT_MIN_EDGE_PCT"))
+    detailed_telegram_writeup: bool = Field(default=True, validation_alias=AliasChoices("DETAILED_TELEGRAM_WRITEUP"))
+    telegram_writeup_max_points: int = Field(default=4, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MAX_POINTS"))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("ESPN_TIMEOUT_SECONDS"))
     espn_base_site_url: str = Field(default="https://site.api.espn.com/apis/site/v2", validation_alias=AliasChoices("ESPN_BASE_SITE_URL"))
