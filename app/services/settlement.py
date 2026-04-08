@@ -6,7 +6,7 @@ from typing import Any
 import httpx
 
 from app.config import Settings
-from app.utils import parse_datetime, score_event_match
+from app.utils import candidate_selection_key, parse_datetime, score_event_match
 
 
 class SettlementService:
@@ -110,6 +110,17 @@ class SettlementService:
     def _grade_bet(self, bet: dict[str, Any], home_goals: float, away_goals: float) -> tuple[str | None, float]:
         family = str(bet.get('family') or '')
         selection = str(bet.get('selection') or '')
+        selection_key = str(
+            bet.get('selection_key')
+            or candidate_selection_key(
+                family,
+                selection,
+                point=bet.get('point'),
+                team_side=bet.get('team_side'),
+                home_team=str(bet.get('home_team') or ''),
+                away_team=str(bet.get('away_team') or ''),
+            )
+        ).strip().lower()
         point = bet.get('point')
         point = float(point) if point not in (None, '') else None
         odds = float(bet.get('odds') or 0.0)
@@ -117,37 +128,40 @@ class SettlementService:
         if odds <= 1.0 or stake <= 0:
             return None, 0.0
         if family == 'h2h':
-            target = self._side_from_selection(selection, bet)
+            target = selection_key if selection_key in {'home', 'away', 'draw'} else self._side_from_selection(selection, bet)
             win = (target == 'home' and home_goals > away_goals) or (target == 'away' and away_goals > home_goals) or (target == 'draw' and home_goals == away_goals)
             return ('won', round((odds - 1.0) * stake, 2)) if win else ('lost', round(-stake, 2))
         if family == 'dnb':
-            target = self._side_from_selection(selection, bet)
+            target = selection_key if selection_key in {'home', 'away'} else self._side_from_selection(selection, bet)
             if home_goals == away_goals:
                 return 'push', 0.0
             win = (target == 'home' and home_goals > away_goals) or (target == 'away' and away_goals > home_goals)
             return ('won', round((odds - 1.0) * stake, 2)) if win else ('lost', round(-stake, 2))
         if family == 'doubleChance':
-            token = self._norm(selection)
-            if any(x in token for x in ['1x', 'home draw', 'home or draw']):
+            if selection_key == 'home_draw':
                 win = home_goals >= away_goals
-            elif any(x in token for x in ['x2', 'away draw', 'away or draw']):
+            elif selection_key == 'away_draw':
                 win = away_goals >= home_goals
-            else:
+            elif selection_key == '12':
                 win = home_goals != away_goals
+            else:
+                return None, 0.0
             return ('won', round((odds - 1.0) * stake, 2)) if win else ('lost', round(-stake, 2))
         if family == 'btts':
             yes = home_goals > 0 and away_goals > 0
-            wants_yes = 'yes' in self._norm(selection) or self._norm(selection) in {'da', 'both'}
+            if selection_key not in {'yes', 'no'}:
+                return None, 0.0
+            wants_yes = selection_key == 'yes'
             win = yes if wants_yes else not yes
             return ('won', round((odds - 1.0) * stake, 2)) if win else ('lost', round(-stake, 2))
         if family == 'totals':
-            return self._grade_total(self._norm(selection), point, home_goals + away_goals, odds, stake)
+            return self._grade_total(selection_key, point, home_goals + away_goals, odds, stake)
         if family == 'teamTotals':
             side = str(bet.get('team_side') or self._side_from_selection(selection, bet))
             team_goals = home_goals if side == 'home' else away_goals
-            return self._grade_total(self._norm(selection), point, team_goals, odds, stake)
+            return self._grade_total(selection_key, point, team_goals, odds, stake)
         if family == 'spreads':
-            side = self._side_from_selection(selection, bet)
+            side = selection_key if selection_key in {'home', 'away'} else self._side_from_selection(selection, bet)
             margin = (home_goals - away_goals) if side == 'home' else (away_goals - home_goals)
             return self._grade_margin(margin + float(point or 0.0), odds, stake)
         return None, 0.0
@@ -155,7 +169,9 @@ class SettlementService:
     def _grade_total(self, token: str, point: float | None, value: float, odds: float, stake: float) -> tuple[str, float]:
         if point is None:
             return 'void', 0.0
-        wants_over = any(x in token for x in ['over', 'bolshe', 'tb'])
+        if token not in {'over', 'under'}:
+            return 'void', 0.0
+        wants_over = token == 'over'
         margin = value - point if wants_over else point - value
         return self._grade_margin(margin, odds, stake)
 
@@ -188,15 +204,16 @@ class SettlementService:
         return 'lost', round(-stake, 2)
 
     def _side_from_selection(self, selection: str, bet: dict[str, Any]) -> str:
-        token = self._norm(selection)
-        home = self._norm(str(bet.get('home_team') or ''))
-        away = self._norm(str(bet.get('away_team') or ''))
-        if token in {'x', 'draw', 'nichya'}:
-            return 'draw'
-        if token in {'home', '1', 'p1'} or (home and home in token):
-            return 'home'
-        if token in {'away', '2', 'p2'} or (away and away in token):
-            return 'away'
+        key = candidate_selection_key(
+            str(bet.get('family') or ''),
+            selection,
+            point=bet.get('point'),
+            team_side=bet.get('team_side'),
+            home_team=str(bet.get('home_team') or ''),
+            away_team=str(bet.get('away_team') or ''),
+        )
+        if key in {'home', 'away', 'draw'}:
+            return key
         return 'away'
 
     @staticmethod

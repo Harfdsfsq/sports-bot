@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections import Counter, defaultdict
 import json
 from dataclasses import asdict
@@ -12,10 +13,11 @@ from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
+from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
 from app.state import JsonStateStore
-from app.utils import clamp, ensure_utc
+from app.utils import candidate_selection_key, clamp, ensure_utc
 
 
 class PredictionRunner:
@@ -36,6 +38,7 @@ class PredictionRunner:
         self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')
         self.factory = CandidateFactory(settings)
         self.market_monitor = MarketMonitor(settings) if getattr(settings, 'market_monitor_enabled', True) else None
+        self.sheet_export = SheetExportService(settings)
         self.telegram = TelegramPublisher(settings)
         self.settlement = SettlementService(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
@@ -131,17 +134,19 @@ class PredictionRunner:
             bootstrap_preview = dict(bootstrap_meta.get('preview') or {})
             filtered_matches, filtering = self._filter_matches(deduped_matches, now_utc)
 
-            odds_api_io_offers, odds_io_stats, odds_io_preview = await self._fetch_provider(
-                self.odds_api_io,
-                'fetch_offers',
-                filtered_matches,
-                empty_data={},
-            )
-            bookies_api_offers, bookies_stats, bookies_preview = await self._fetch_provider(
-                self.bookies_api,
-                'fetch_offers',
-                filtered_matches,
-                empty_data={},
+            (odds_api_io_offers, odds_io_stats, odds_io_preview), (bookies_api_offers, bookies_stats, bookies_preview) = await asyncio.gather(
+                self._fetch_provider(
+                    self.odds_api_io,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
+                self._fetch_provider(
+                    self.bookies_api,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
             )
 
             offer_maps = {
@@ -173,53 +178,24 @@ class PredictionRunner:
             }
             provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
 
-            sstats_contexts, sstats_stats, sstats_preview = await self._fetch_provider(
-                self.sstats,
-                'fetch_context',
-                provider_targets['sstats'],
-                empty_data={},
-            )
-            api_football_contexts, api_football_stats, api_football_preview = await self._fetch_provider(
-                self.api_football,
-                'fetch_context',
-                provider_targets['api_football'],
-                empty_data={},
-            )
-            espn_contexts, espn_stats, espn_preview = await self._fetch_provider(
-                self.espn,
-                'fetch_context',
-                provider_targets['espn'],
-                empty_data={},
-            )
-            thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview = await self._fetch_provider(
-                self.thesportsdb,
-                'fetch_context',
-                provider_targets['thesportsdb'],
-                empty_data={},
-            )
-            football_data_contexts, football_data_stats, football_data_preview = await self._fetch_provider(
-                self.football_data,
-                'fetch_context',
-                provider_targets['football_data'],
-                empty_data={},
-            )
-            openfootball_contexts, openfootball_stats, openfootball_preview = await self._fetch_provider(
-                self.openfootball,
-                'fetch_context',
-                provider_targets['openfootball'],
-                empty_data={},
-            )
-            newsapi_contexts, newsapi_stats, newsapi_preview = await self._fetch_provider(
-                self.newsapi,
-                'fetch_context',
-                provider_targets['newsapi'],
-                empty_data={},
-            )
-            gnews_contexts, gnews_stats, gnews_preview = await self._fetch_provider(
-                self.gnews,
-                'fetch_context',
-                provider_targets['gnews'],
-                empty_data={},
+            (
+                (sstats_contexts, sstats_stats, sstats_preview),
+                (api_football_contexts, api_football_stats, api_football_preview),
+                (espn_contexts, espn_stats, espn_preview),
+                (thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview),
+                (football_data_contexts, football_data_stats, football_data_preview),
+                (openfootball_contexts, openfootball_stats, openfootball_preview),
+                (newsapi_contexts, newsapi_stats, newsapi_preview),
+                (gnews_contexts, gnews_stats, gnews_preview),
+            ) = await asyncio.gather(
+                self._fetch_provider(self.sstats, 'fetch_context', provider_targets['sstats'], empty_data={}),
+                self._fetch_provider(self.api_football, 'fetch_context', provider_targets['api_football'], empty_data={}),
+                self._fetch_provider(self.espn, 'fetch_context', provider_targets['espn'], empty_data={}),
+                self._fetch_provider(self.thesportsdb, 'fetch_context', provider_targets['thesportsdb'], empty_data={}),
+                self._fetch_provider(self.football_data, 'fetch_context', provider_targets['football_data'], empty_data={}),
+                self._fetch_provider(self.openfootball, 'fetch_context', provider_targets['openfootball'], empty_data={}),
+                self._fetch_provider(self.newsapi, 'fetch_context', provider_targets['newsapi'], empty_data={}),
+                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),
             )
 
             context_maps = {
@@ -237,13 +213,16 @@ class PredictionRunner:
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
-            candidates = []
+            candidates: list[CandidateBet] = []
+            reused_candidates: list[CandidateBet] = []
             reused_already_in_state = 0
             for candidate in raw_candidates:
                 fingerprint = self._candidate_fingerprint(candidate)
                 if fingerprint and fingerprint in seen_fingerprints:
                     reused_already_in_state += 1
                     candidate.already_used = True
+                    reused_candidates.append(candidate)
+                    continue
                 candidates.append(candidate)
 
             candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
@@ -304,7 +283,7 @@ class PredictionRunner:
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
                 'candidates_raw': len(raw_candidates),
-                'skipped_already_in_state': 0,
+                'skipped_already_in_state': reused_already_in_state,
                 'reused_already_in_state': reused_already_in_state,
                 'published': telegram_picks_sent,
                 'published_to_telegram': telegram_picks_sent,
@@ -349,6 +328,9 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
+            sheet_export_result = self.sheet_export.write(candidates, matches=filtered_matches, summary=summary)
+            summary['sheet_export'] = sheet_export_result
+
             self.state.write_debug(
                 {
                     'created_at': datetime.now(UTC).isoformat(),
@@ -387,12 +369,14 @@ class PredictionRunner:
                     'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
                     'model_debug': model_debug,
                     'candidates': [self._serialize_candidate(item) for item in candidates[:25]],
+                    'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates[:25]],
                     'telegram_messages': telegram_payloads,
                     'settlement': {
                         'probe': settlement_probe,
                         'summary': settlement_summary,
                     },
                     'bankroll': bankroll_summary,
+                    'sheet_export': sheet_export_result,
                 }
             )
             self.state.save_run('ok', summary=summary)
@@ -644,22 +628,35 @@ class PredictionRunner:
                 return candidate.get(field)
             return getattr(candidate, field, None)
 
+        existing_fingerprint = get('fingerprint')
+        if existing_fingerprint:
+            return str(existing_fingerprint)
+
         match_key = get('match_key')
         family = get('family')
         selection = get('selection')
-        if not match_key or not family or not selection:
+        point = get('point')
+        selection_key = get('selection_key') or candidate_selection_key(
+            str(family or ''),
+            str(selection or ''),
+            point=point,
+            team_side=get('team_side'),
+            home_team=str(get('home_team') or ''),
+            away_team=str(get('away_team') or ''),
+        )
+        if not match_key or not family or not selection_key:
             return None
 
-        point = get('point')
         if isinstance(point, float):
             point = round(point, 4)
+        team_side = str(get('team_side') or '').strip().lower()
         commence_time = get('commence_time')
         if hasattr(commence_time, 'isoformat'):
             commence_time = commence_time.isoformat()
         if commence_time is None:
             commence_time = ''
 
-        return '|'.join(str(part) for part in (match_key, family, selection, point, commence_time))
+        return '|'.join(str(part) for part in (match_key, family, selection_key, team_side, point, commence_time))
 
     @staticmethod
     def _merge_offers(*maps: dict[str, list[Offer]]) -> dict[str, list[Offer]]:

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 import json
 from dataclasses import asdict
 from datetime import UTC, datetime
@@ -7,6 +8,7 @@ from pathlib import Path
 from typing import Any
 
 from app.schemas import CandidateBet, Match
+from app.utils import candidate_selection_key
 
 
 class JsonStateStore:
@@ -244,11 +246,15 @@ class JsonStateStore:
         return {
             'matches_json': str(self._write_json(dated / f'{stamp}-matches.json', match_rows)),
             'picks_json': str(self._write_json(dated / f'{stamp}-picks.json', pick_rows)),
+            'matches_csv': str(self._write_csv(dated / f'{stamp}-matches.csv', match_rows)),
+            'picks_csv': str(self._write_csv(dated / f'{stamp}-picks.csv', pick_rows)),
             'bankroll_json': str(self._write_json(dated / f'{stamp}-bankroll.json', bank)),
             'pending_bets_json': str(self._write_json(dated / f'{stamp}-pending-bets.json', pending)),
             'settled_bets_json': str(self._write_json(dated / f'{stamp}-settled-bets.json', settled)),
             'latest_matches_json': str(self._write_json(root / 'latest-matches.json', match_rows)),
             'latest_picks_json': str(self._write_json(root / 'latest-picks.json', pick_rows)),
+            'latest_matches_csv': str(self._write_csv(root / 'latest-matches.csv', match_rows)),
+            'latest_picks_csv': str(self._write_csv(root / 'latest-picks.csv', pick_rows)),
             'latest_bankroll_json': str(self._write_json(root / 'latest-bankroll.json', bank)),
             'latest_pending_bets_json': str(self._write_json(root / 'latest-pending-bets.json', pending)),
             'latest_settled_bets_json': str(self._write_json(root / 'latest-settled-bets.json', settled)),
@@ -259,6 +265,29 @@ class JsonStateStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
         return path
+
+    @staticmethod
+    def _write_csv(path: Path, rows: list[dict[str, Any]]) -> Path:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        headers: list[str] = []
+        for row in rows:
+            for key in row.keys():
+                if key not in headers:
+                    headers.append(key)
+        with path.open('w', newline='', encoding='utf-8') as handle:
+            writer = csv.DictWriter(handle, fieldnames=headers)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({key: JsonStateStore._csv_value(row.get(key)) for key in headers})
+        return path
+
+    @staticmethod
+    def _csv_value(value: Any) -> Any:
+        if value is None:
+            return ''
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, ensure_ascii=False, sort_keys=True)
+        return value
 
     @staticmethod
     def _serialize_match(match: Match) -> dict[str, Any]:
@@ -285,10 +314,20 @@ class JsonStateStore:
     @staticmethod
     def _fingerprint_from_candidate(candidate: CandidateBet) -> str:
         point = '' if candidate.point is None else f'{float(candidate.point):g}'
+        selection_key = getattr(candidate, 'selection_key', '') or candidate_selection_key(
+            str(candidate.family or ''),
+            str(candidate.selection or ''),
+            point=candidate.point,
+            team_side=getattr(candidate, 'team_side', None),
+            home_team=str(candidate.home_team or ''),
+            away_team=str(candidate.away_team or ''),
+        )
+        team_side = str(getattr(candidate, 'team_side', '') or '').strip().lower()
         return '|'.join([
             str(candidate.match_key or ''),
             str(candidate.family or ''),
-            str(candidate.selection or ''),
+            str(selection_key or candidate.selection or ''),
+            team_side,
             point,
             candidate.commence_time.astimezone(UTC).isoformat(),
         ])

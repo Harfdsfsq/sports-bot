@@ -234,6 +234,15 @@ def normalize_text(value: str) -> str:
     return text
 
 
+def normalize_selection_text(value: str) -> str:
+    text = transliterate_cyrillic_to_latin(str(value or ""))
+    text = unicodedata.normalize("NFD", text)
+    text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
+    text = text.lower().replace("&", " and ")
+    text = re.sub(r"[^a-z0-9+.\-]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
+
+
 def canonicalize_team_name(name: str) -> str:
     raw = normalize_text(name)
     if raw in TEAM_ALIAS_MAP:
@@ -769,6 +778,85 @@ def get_outcome_key(name: str, home_team: str, away_team: str) -> str | None:
 
 def get_spread_selection_key(name: str, home_team: str, away_team: str) -> str | None:
     return get_outcome_key(name, home_team, away_team)
+
+
+def candidate_selection_key(
+    family: str,
+    selection: str | None,
+    *,
+    point: float | None = None,
+    team_side: str | None = None,
+    home_team: str | None = None,
+    away_team: str | None = None,
+) -> str:
+    family_key = str(family or "").strip()
+    raw = normalize_selection_text(selection or "")
+    if not raw:
+        return ""
+
+    selection_text = str(selection or "")
+    selection_norm = canonicalize_team_name(selection_text)
+    home_norm = canonicalize_team_name(home_team or "")
+    away_norm = canonicalize_team_name(away_team or "")
+
+    def refers_home() -> bool:
+        if raw in {"home", "1", "p1"}:
+            return True
+        if home_norm and selection_norm == home_norm:
+            return True
+        if home_team and soft_contains_team(selection_text, str(home_team)):
+            return True
+        return bool(home_team and team_similarity(selection_text, str(home_team)) >= 0.92)
+
+    def refers_away() -> bool:
+        if raw in {"away", "2", "p2"}:
+            return True
+        if away_norm and selection_norm == away_norm:
+            return True
+        if away_team and soft_contains_team(selection_text, str(away_team)):
+            return True
+        return bool(away_team and team_similarity(selection_text, str(away_team)) >= 0.92)
+
+    if family_key in {"totals", "teamTotals"}:
+        if re.search(r"\b(over|bolshe|tb)\b", raw):
+            return "over"
+        if re.search(r"\b(under|menshe|tm)\b", raw):
+            return "under"
+        return raw
+
+    if family_key == "btts":
+        if raw in {"yes", "da", "both", "btts yes"} or re.search(r"\b(yes|da)\b", raw):
+            return "yes"
+        if raw in {"no", "net", "btts no"} or re.search(r"\b(no|net)\b", raw):
+            return "no"
+        return raw
+
+    if family_key == "doubleChance":
+        if "1x" in raw or "x1" in raw:
+            return "home_draw"
+        if "x2" in raw or "2x" in raw:
+            return "away_draw"
+        if "12" in raw or "no draw" in raw or "bez nich" in raw:
+            return "12"
+        has_draw = bool(re.search(r"\b(draw|nichya)\b", raw))
+        if refers_home() and has_draw:
+            return "home_draw"
+        if refers_away() and has_draw:
+            return "away_draw"
+        return raw
+
+    if family_key in {"h2h", "dnb", "spreads"}:
+        if raw in {"x", "draw", "nichya"} or re.search(r"\b(draw|nichya)\b", raw):
+            return "draw"
+        if refers_home():
+            return "home"
+        if refers_away():
+            return "away"
+        if family_key in {"dnb", "spreads"} and str(team_side or "").lower() in {"home", "away"}:
+            return str(team_side or "").lower()
+        return raw
+
+    return raw
 
 
 def normalize_probability_percent(value: float | None) -> float | None:

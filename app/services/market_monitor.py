@@ -10,6 +10,7 @@ from typing import Any
 
 from app.config import Settings
 from app.schemas import CandidateBet, Match, Offer
+from app.utils import candidate_selection_key
 
 
 class MarketMonitor:
@@ -72,6 +73,8 @@ class MarketMonitor:
                     'match_key': candidate.match_key,
                     'family': candidate.family,
                     'selection': candidate.selection,
+                    'selection_key': getattr(candidate, 'selection_key', ''),
+                    'team_side': getattr(candidate, 'team_side', None),
                     'point': candidate.point,
                     'commence_time': candidate.commence_time.isoformat(),
                     'entry_odds': candidate.odds,
@@ -291,11 +294,21 @@ class MarketMonitor:
         point = candidate.point
         if isinstance(point, float):
             point = round(point, 4)
+        selection_key = getattr(candidate, 'selection_key', '') or candidate_selection_key(
+            str(candidate.family or ''),
+            str(candidate.selection or ''),
+            point=candidate.point,
+            team_side=getattr(candidate, 'team_side', None),
+            home_team=str(candidate.home_team or ''),
+            away_team=str(candidate.away_team or ''),
+        )
+        team_side = str(getattr(candidate, 'team_side', '') or '').strip().lower()
         return '|'.join(
             [
                 str(candidate.match_key),
                 str(candidate.family),
-                str(candidate.selection),
+                str(selection_key or candidate.selection),
+                team_side,
                 str(point),
                 candidate.commence_time.isoformat(),
             ]

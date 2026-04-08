@@ -104,6 +104,7 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
+    sheet_id: str | None = Field(default=None, validation_alias=AliasChoices("SHEET_ID"))
 
     odds_api_io_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDS_API_IO_KEY"))
     odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"))
@@ -112,6 +113,8 @@ class Settings(BaseSettings):
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices("SSTATS_API_KEY"))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))
+    sstats_lookback_days: int = Field(default=21, validation_alias=AliasChoices("SSTATS_LOOKBACK_DAYS"))
+    sstats_recent_matches: int = Field(default=6, validation_alias=AliasChoices("SSTATS_RECENT_MATCHES"))
 
     api_football_key: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_KEY"))
     api_football_base_url: str = Field(default="https://v3.football.api-sports.io", validation_alias=AliasChoices("API_FOOTBALL_BASE_URL"))
@@ -234,6 +237,8 @@ class Settings(BaseSettings):
     )
 
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices("BZZOIRO_API_KEY"))
+    bzzoiro_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("BZZOIRO_TIMEOUT_SECONDS"))
+    bzzoiro_max_pages: int = Field(default=8, validation_alias=AliasChoices("BZZOIRO_MAX_PAGES"))
 
     signal_weight_explicit: float = Field(default=0.40, validation_alias=AliasChoices("SIGNAL_WEIGHT_EXPLICIT"))
     signal_weight_xg: float = Field(default=0.34, validation_alias=AliasChoices("SIGNAL_WEIGHT_XG"))
@@ -297,6 +302,7 @@ class Settings(BaseSettings):
     market_monitor_enabled: bool = Field(default=True, validation_alias=AliasChoices("MARKET_MONITOR_ENABLED"))
     clv_tracking_enabled: bool = Field(default=True, validation_alias=AliasChoices("CLV_TRACKING_ENABLED"))
     closing_line_monitor_enabled: bool = Field(default=True, validation_alias=AliasChoices("CLOSING_LINE_MONITOR_ENABLED"))
+    line_movement_signal_enabled: bool = Field(default=True, validation_alias=AliasChoices("LINE_MOVEMENT_SIGNAL_ENABLED"))
     line_movement_min_delta_pct: float = Field(default=1.75, validation_alias=AliasChoices("LINE_MOVEMENT_MIN_DELTA_PCT"))
     line_movement_confidence_bonus: float = Field(default=4.0, validation_alias=AliasChoices("LINE_MOVEMENT_CONFIDENCE_BONUS"))
     line_movement_confidence_penalty: float = Field(default=3.0, validation_alias=AliasChoices("LINE_MOVEMENT_CONFIDENCE_PENALTY"))
@@ -444,6 +450,14 @@ class Settings(BaseSettings):
     allow_single_sharp_book: bool = Field(default=True, validation_alias=AliasChoices("ALLOW_SINGLE_SHARP_BOOK"))
     single_sharp_min_confidence: float = Field(default=64.0, validation_alias=AliasChoices("SINGLE_SHARP_MIN_CONFIDENCE"))
     single_sharp_min_edge_pct: float = Field(default=4.0, validation_alias=AliasChoices("SINGLE_SHARP_MIN_EDGE_PCT"))
+    preferred_single_book_min_confidence: float = Field(default=71.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_CONFIDENCE"))
+    preferred_single_book_min_edge_pct: float = Field(default=6.5, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_EDGE_PCT"))
+    preferred_single_book_min_ev_pct: float = Field(default=3.6, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_EV_PCT"))
+    preferred_single_book_min_publication_score: float = Field(default=13.5, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
+    secondary_single_book_min_confidence: float = Field(default=73.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_CONFIDENCE"))
+    secondary_single_book_min_edge_pct: float = Field(default=7.2, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EDGE_PCT"))
+    secondary_single_book_min_ev_pct: float = Field(default=4.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EV_PCT"))
+    secondary_single_book_min_publication_score: float = Field(default=15.5, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
     min_weighted_books_for_consensus: float = Field(default=1.75, validation_alias=AliasChoices("MIN_WEIGHTED_BOOKS_FOR_CONSENSUS"))
     sharp_bookmakers: CsvList = Field(
         default_factory=lambda: ["Pinnacle", "Betfair", "SBOBET", "Marathonbet", "Bet365", "Unibet"],

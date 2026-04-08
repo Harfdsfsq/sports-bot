@@ -249,7 +249,9 @@ jobs:
             app/services/runner.py \
             app/services/model.py \
             app/services/market_monitor.py \
+            app/services/sheet_export.py \
             app/services/settlement.py \
+            app/services/telegram.py \
             app/state.py
 
       - name: Prepare local state folders
@@ -273,6 +275,11 @@ jobs:
             .data/exports/latest-matches.csv
             .data/exports/latest-picks.json
             .data/exports/latest-picks.csv
+            .data/sheet-export.json
+            .data/sheet-export.csv
+            .data/sheet-run-summary.json
+            .data/sheet-picks.csv
+            .data/sheet-matches.csv
           if-no-files-found: ignore
           retention-days: 7
 
@@ -281,7 +288,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add .data/state.json .data/debug-last-run.json .data/exports || true
+          git add .data/state.json .data/debug-last-run.json .data/exports .data/sheet-export.json .data/sheet-export.csv .data/sheet-run-summary.json .data/sheet-picks.csv .data/sheet-matches.csv || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push

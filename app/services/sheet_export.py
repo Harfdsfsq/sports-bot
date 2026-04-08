@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 
 from app.config import Settings
+from app.utils import russian_market_name, russian_selection
 
 
 SHEET_HEADERS = [
@@ -22,7 +23,7 @@ SHEET_HEADERS = [
     "Линия",
     "Коэффициент",
     "БК",
-    "Источник коэффициента",
+    "Источники коэффициента",
     "Вероятность модели %",
     "Скорр. вероятность %",
     "Импл. вероятность %",
@@ -60,7 +61,13 @@ class SheetExportService:
         self.picks_csv_path = Path(os.getenv("SHEET_PICKS_CSV_PATH") or default_dir / "sheet-picks.csv")
         self.matches_csv_path = Path(os.getenv("SHEET_MATCHES_CSV_PATH") or default_dir / "sheet-matches.csv")
 
-    def write(self, candidates: list[Any], *, matches: list[Any] | None = None, summary: dict[str, Any] | None = None) -> dict[str, Any]:
+    def write(
+        self,
+        candidates: list[Any],
+        *,
+        matches: list[Any] | None = None,
+        summary: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
         rows = [self._row_for_candidate(item) for item in candidates]
         match_rows = [self._row_for_match(item) for item in (matches or [])]
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
@@ -116,28 +123,52 @@ class SheetExportService:
 
     def _row_for_candidate(self, bet: Any) -> dict[str, Any]:
         point = getattr(bet, "point", None)
+        family = str(getattr(bet, "family", "") or "")
+        selection = str(getattr(bet, "selection", "") or "")
+        source_summary = getattr(bet, "source_summary", None) or {}
+        analysis = getattr(bet, "analysis", None) or {}
+
+        selected_bookmaker = ""
+        odds_sources = ""
+        if isinstance(source_summary, dict):
+            selected_bookmaker = str(
+                source_summary.get("selected_bookmaker")
+                or source_summary.get("target_bookmaker")
+                or ""
+            )
+            odds_sources = ", ".join(str(item) for item in (source_summary.get("sources") or [])[:4])
+
+        factors_list: list[str] = []
+        if isinstance(analysis, dict):
+            factors_list.extend(
+                str(item).strip()
+                for item in (analysis.get("summary_points") or [])[:4]
+                if str(item).strip()
+            )
+        if not factors_list:
+            factors_list.extend(
+                str(item).strip()
+                for item in (getattr(bet, "reasons", None) or [])[:6]
+                if str(item).strip()
+            )
+
         xg = ""
         if getattr(bet, "expected_home", None) is not None or getattr(bet, "expected_away", None) is not None:
             xg = f"{self._fmt(getattr(bet, 'expected_home', None))} : {self._fmt(getattr(bet, 'expected_away', None))}"
-        mode = ""
-        if isinstance(getattr(bet, "details", None), dict):
-            mode = str((bet.details or {}).get("mode") or "")
-        factors = "; ".join(str(x) for x in (getattr(bet, "reasons", None) or [])[:6])
-        target_book = ""
-        source_summary = getattr(bet, "source_summary", None) or {}
-        if isinstance(source_summary, dict):
-            target_book = str(source_summary.get("target_bookmaker") or "")
+
         return {
             "Вид спорта": getattr(bet, "sport_key", ""),
-            "Дата матча UTC": getattr(getattr(bet, "commence_time", None), "strftime", lambda _f: "")("%d.%m.%Y %H:%M") if getattr(bet, "commence_time", None) else "",
+            "Дата матча UTC": getattr(getattr(bet, "commence_time", None), "strftime", lambda _f: "")("%d.%m.%Y %H:%M")
+            if getattr(bet, "commence_time", None)
+            else "",
             "Лига": getattr(bet, "league_name", ""),
             "Матч": f"{getattr(bet, 'home_team', '')} - {getattr(bet, 'away_team', '')}",
-            "Рынок": getattr(bet, "family", ""),
-            "Исход": getattr(bet, "selection", ""),
+            "Рынок": russian_market_name(family),
+            "Исход": russian_selection(family, selection, point),
             "Линия": "" if point is None else point,
             "Коэффициент": self._fmt(getattr(bet, "odds", None)),
-            "БК": target_book,
-            "Источник коэффициента": ", ".join(source_summary.get("sources", [])[:4]) if isinstance(source_summary, dict) else "",
+            "БК": selected_bookmaker,
+            "Источники коэффициента": odds_sources,
             "Вероятность модели %": self._pct(getattr(bet, "model_probability", None)),
             "Скорр. вероятность %": self._pct(getattr(bet, "adjusted_probability", None)),
             "Импл. вероятность %": self._pct(getattr(bet, "implied_probability", None)),
@@ -146,10 +177,10 @@ class SheetExportService:
             "Confidence": self._fmt(getattr(bet, "confidence", None)),
             "Книг": getattr(bet, "books_count", ""),
             "Источников": getattr(bet, "sources_count", ""),
-            "Режим модели": mode or getattr(bet, "model_mode", ""),
+            "Режим модели": getattr(bet, "model_mode", ""),
             "Score публикации": self._fmt(getattr(bet, "publication_score", None)),
             "xG / модель": xg,
-            "Факторы": factors,
+            "Факторы": "; ".join(factors_list[:6]),
         }
 
     def _row_for_match(self, match: Any) -> dict[str, Any]:

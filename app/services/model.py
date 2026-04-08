@@ -8,6 +8,7 @@ from typing import Any
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.utils import (
+    candidate_selection_key,
     clamp,
     implied_probability,
     poisson_over_probability,
@@ -159,6 +160,7 @@ class CandidateFactory:
                 match=match,
                 family='totals',
                 selection=russian_selection('totals', selection, point),
+                selection_key='over' if low.startswith('over') else 'under',
                 point=point,
                 offers=bucket,
                 market_prob=market_prob,
@@ -221,6 +223,7 @@ class CandidateFactory:
                 match=match,
                 family='h2h',
                 selection=russian_selection('h2h', selection),
+                selection_key=selection_key or candidate_selection_key('h2h', selection, home_team=match.home_team, away_team=match.away_team),
                 point=None,
                 offers=bucket,
                 market_prob=market_prob,
@@ -277,6 +280,7 @@ class CandidateFactory:
                 match=match,
                 family='totals',
                 selection=russian_selection('totals', selection, point),
+                selection_key='over' if low.startswith('over') else 'under',
                 point=point,
                 offers=bucket,
                 market_prob=market_prob,
@@ -334,6 +338,7 @@ class CandidateFactory:
                 match=match,
                 family='h2h',
                 selection=russian_selection('h2h', selection),
+                selection_key=selection_key,
                 point=None,
                 offers=bucket,
                 market_prob=market_prob,
@@ -425,6 +430,7 @@ class CandidateFactory:
                 match=match,
                 family='spreads',
                 selection=offer.selection,
+                selection_key=team_side,
                 point=offer.point,
                 offers=books,
                 market_prob=market_prob,
@@ -481,6 +487,7 @@ class CandidateFactory:
                 match=match,
                 family='btts',
                 selection='Обе забьют: Да' if key == 'yes' else 'Обе забьют: Нет',
+                selection_key=key,
                 point=None,
                 offers=bucket,
                 market_prob=market_prob,
@@ -541,6 +548,7 @@ class CandidateFactory:
                 match=match,
                 family='teamTotals',
                 selection=f'{team_name} {side_text} {float(point):g}',
+                selection_key='over' if low.startswith('over') else 'under',
                 point=float(point),
                 offers=bucket,
                 market_prob=market_prob,
@@ -591,6 +599,7 @@ class CandidateFactory:
                 match=match,
                 family='doubleChance',
                 selection=selection,
+                selection_key=key,
                 point=None,
                 offers=bucket,
                 market_prob=market_prob,
@@ -640,6 +649,7 @@ class CandidateFactory:
                 match=match,
                 family='dnb',
                 selection=selection,
+                selection_key=key,
                 point=None,
                 offers=bucket,
                 market_prob=market_prob,
@@ -660,6 +670,7 @@ class CandidateFactory:
         match: Match,
         family: str,
         selection: str,
+        selection_key: str,
         point: float | None,
         offers: list[Offer],
         market_prob: float,
@@ -674,6 +685,14 @@ class CandidateFactory:
         if not self._is_valid_probability(model_prob) or not self._is_valid_probability(market_prob):
             return None
 
+        canonical_selection_key = selection_key or candidate_selection_key(
+            family,
+            selection,
+            point=point,
+            team_side=getattr(offers[0], 'team_side', None) if offers else None,
+            home_team=match.home_team,
+            away_team=match.away_team,
+        )
         books = {offer.bookmaker for offer in offers}
         sources = {offer.source for offer in offers}
         required_books = self._required_books_for_bucket(family, point, offers, context)
@@ -836,6 +855,7 @@ class CandidateFactory:
             commence_time=match.commence_time,
             family=family,
             selection=selection,
+            selection_key=canonical_selection_key,
             point=point,
             odds=best_price,
             fair_odds=fair_odds,
@@ -866,6 +886,7 @@ class CandidateFactory:
                 'selected_bookmaker': best_offer.bookmaker,
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
+                'selection_key': canonical_selection_key,
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
@@ -2027,12 +2048,12 @@ class CandidateFactory:
 
     @staticmethod
     def _candidate_selection_kind(item: CandidateBet) -> str:
-        raw = str(item.selection or '').strip().lower().replace('ё', 'е')
-        if any(token in raw for token in ['больше', 'over', 'тб']):
+        raw = str(getattr(item, 'selection_key', '') or '').strip().lower()
+        if raw == 'over':
             return 'over'
-        if any(token in raw for token in ['меньше', 'under', 'тм']):
+        if raw == 'under':
             return 'under'
-        if raw in {'draw', 'ничья', 'x'}:
+        if raw == 'draw':
             return 'draw'
         return 'other'
 
@@ -2259,8 +2280,8 @@ class CandidateFactory:
                         rejections['high_odds_form_guard'] += 1
                         continue
             if item.family == 'h2h':
-                selection_text = str(item.selection or '').lower()
-                is_draw = 'ничья' in selection_text or selection_text == 'draw'
+                selection_key = str(getattr(item, 'selection_key', '') or '').lower()
+                is_draw = selection_key == 'draw'
                 if is_draw:
                     if float(item.confidence) < float(getattr(self.settings, 'h2h_draw_min_confidence', 61.0) or 61.0):
                         rejections['h2h_draw_confidence_guard'] += 1
@@ -2305,7 +2326,7 @@ class CandidateFactory:
                                 stronger_side = 'home'
                             else:
                                 stronger_side = 'away'
-                            selected_side = 'home' if item.selection == item.home_team else ('away' if item.selection == item.away_team else None)
+                            selected_side = selection_key if selection_key in {'home', 'away'} else None
                             if selected_side and stronger_side == selected_side:
                                 if abs(xg_diff) >= float(getattr(self.settings, 'h2h_xg_dislocation_min_diff', 1.60) or 1.60):
                                     if float(item.market_probability) <= float(getattr(self.settings, 'h2h_xg_dislocation_market_max_prob', 0.37) or 0.37):
@@ -2315,8 +2336,8 @@ class CandidateFactory:
                                             rejections['h2h_xg_market_dislocation_guard'] += 1
                                             continue
             if item.family == 'btts':
-                selection_text = str(item.selection or '').lower()
-                is_yes = 'да' in selection_text or 'yes' in selection_text
+                selection_key = str(getattr(item, 'selection_key', '') or '').lower()
+                is_yes = selection_key == 'yes'
                 if is_yes:
                     if float(item.confidence) < float(getattr(self.settings, 'btts_yes_min_confidence', 56.0) or 56.0):
                         rejections['btts_yes_confidence_guard'] += 1

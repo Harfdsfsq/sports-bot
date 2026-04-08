@@ -14,64 +14,100 @@ class TelegramPublisher:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    def _money_suffix(self, bankroll_summary: dict[str, Any] | None = None, candidate: CandidateBet | None = None) -> str:
-        currency = ''
-        if bankroll_summary:
-            currency = str(bankroll_summary.get('currency') or '').strip()
-        if not currency and candidate is not None:
-            currency = str(getattr(candidate, 'bankroll_currency', '') or '').strip()
-        if currency.lower() in {'', 'u', 'unit', 'units'}:
-            return ''
-        return f' {currency}'
+    def _timezone_label(self, value: Any) -> str:
+        try:
+            label = value.astimezone(self.settings.tzinfo).tzname()
+        except Exception:
+            label = None
+        return str(label or getattr(self.settings, "app_timezone", "UTC"))
 
-    def _format_money(self, value: float, bankroll_summary: dict[str, Any] | None = None, candidate: CandidateBet | None = None) -> str:
+    def _money_suffix(
+        self,
+        bankroll_summary: dict[str, Any] | None = None,
+        candidate: CandidateBet | None = None,
+    ) -> str:
+        currency = ""
+        if bankroll_summary:
+            currency = str(bankroll_summary.get("currency") or "").strip()
+        if not currency and candidate is not None:
+            currency = str(getattr(candidate, "bankroll_currency", "") or "").strip()
+        if currency.lower() in {"", "u", "unit", "units"}:
+            return ""
+        return f" {currency}"
+
+    def _format_money(
+        self,
+        value: float,
+        bankroll_summary: dict[str, Any] | None = None,
+        candidate: CandidateBet | None = None,
+    ) -> str:
         return f"{float(value or 0.0):.2f}{self._money_suffix(bankroll_summary=bankroll_summary, candidate=candidate)}"
 
     def _format_outcome(self, value: str) -> str:
         mapping = {
-            'won': 'выигрыш',
-            'half_won': 'половина выигрыша',
-            'lost': 'проигрыш',
-            'half_lost': 'половина проигрыша',
-            'push': 'возврат',
-            'void': 'возврат',
+            "won": "выигрыш",
+            "half_won": "половина выигрыша",
+            "lost": "проигрыш",
+            "half_lost": "половина проигрыша",
+            "push": "возврат",
+            "void": "возврат",
         }
-        return mapping.get(str(value or '').strip().lower(), str(value or 'н/д'))
+        return mapping.get(str(value or "").strip().lower(), str(value or "н/д"))
 
-
-    def render_message(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> str:
+    def render_message(
+        self,
+        bets: list[CandidateBet],
+        bankroll_summary: dict[str, Any] | None = None,
+    ) -> str:
         count = len(bets)
-        min_books = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
+        min_books = max(1, int(getattr(self.settings, "min_books_publish", 1) or 1))
+        publish_window_hours = max(1, int(getattr(self.settings, "publish_window_hours", 48) or 48))
         books_note = (
-            'есть рыночное подтверждение; приоритет — совпадение как минимум у двух котировок, а исключения допускаются только при очень сильном сигнале и глубоком контексте.'
+            "есть рыночное подтверждение; приоритет — совпадение как минимум у двух котировок, а исключения допускаются только при очень сильном сигнале и глубоком контексте."
             if min_books <= 1
-            else 'есть подтверждение как минимум по двум котировкам.'
+            else "есть подтверждение как минимум по двум котировкам."
         )
+
         bank_line = ""
         if bankroll_summary:
             current_bank = float(bankroll_summary.get("current_balance") or 0.0)
             open_exposure = float(bankroll_summary.get("open_exposure") or 0.0)
             available = float(bankroll_summary.get("available_balance") or max(0.0, current_bank - open_exposure))
-            bank_line = f"💼 Банк: {self._format_money(current_bank, bankroll_summary=bankroll_summary)} | Открытый риск: {self._format_money(open_exposure, bankroll_summary=bankroll_summary)} | Доступно: {self._format_money(available, bankroll_summary=bankroll_summary)}\n\n"
-        header = f"🔥 {count} лучших ставок на ближайшие 48 часов\n\n" + bank_line
+            bank_line = (
+                f"💼 Банк: {self._format_money(current_bank, bankroll_summary=bankroll_summary)} | "
+                f"Открытый риск: {self._format_money(open_exposure, bankroll_summary=bankroll_summary)} | "
+                f"Доступно: {self._format_money(available, bankroll_summary=bankroll_summary)}\n\n"
+            )
+
+        header = f"🔥 {count} лучших ставок на ближайшие {publish_window_hours} часов\n\n" + bank_line
         notes = (
-            'Показываем только одиночные ставки. '
-            'На один матч — не больше одной рекомендации. '
-            f'В список попадают варианты, где модель видит перевес над линией и {books_note}'
+            "Показываем только одиночные ставки. "
+            "На один матч — не больше одной рекомендации. "
+            f"В список попадают варианты, где модель видит перевес над линией и {books_note}"
         )
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
             selection_text = russian_selection(bet.family, bet.selection, bet.point)
             point_suffix = f" ({bet.point:g})" if bet.point is not None else ""
-            start_text = bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M МСК')
+            start_text = (
+                f"{bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M')} "
+                f"{self._timezone_label(bet.commence_time)}"
+            )
             xg_text = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
             stake_text = ""
-            if float(getattr(bet, 'stake_amount', 0.0) or 0.0) > 0:
-                stake_text = f"\n💰 Сумма ставки: {self._format_money(bet.stake_amount, candidate=bet)} ({bet.stake_pct:.2f}% от банка {self._format_money(bet.bankroll_snapshot, candidate=bet)})"
-            used_text = "\n⚠️ Прогноз использован" if (bet.already_used and bool(getattr(self.settings, 'telegram_writeup_show_used_marker', False))) else ""
+            if float(getattr(bet, "stake_amount", 0.0) or 0.0) > 0:
+                stake_text = (
+                    f"\n💰 Сумма ставки: {self._format_money(bet.stake_amount, candidate=bet)} "
+                    f"({bet.stake_pct:.2f}% от банка {self._format_money(bet.bankroll_snapshot, candidate=bet)})"
+                )
+            used_text = (
+                "\n⚠️ Прогноз уже использовался"
+                if bet.already_used and bool(getattr(self.settings, "telegram_writeup_show_used_marker", False))
+                else ""
+            )
             explanation = self._build_explanation(bet, selection_text)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
@@ -96,7 +132,21 @@ class TelegramPublisher:
         text = re.sub(r"\s+", " ", text).strip()
         return text
 
-    def _selection_kind(self, family: str, selection: str | None, selection_text: str | None = None) -> str:
+    def _selection_kind(
+        self,
+        family: str,
+        selection: str | None,
+        selection_text: str | None = None,
+        selection_key: str | None = None,
+    ) -> str:
+        raw_key = str(selection_key or "").strip().lower()
+        if family == "totals" and raw_key in {"over", "under"}:
+            return raw_key
+        if family == "btts" and raw_key in {"yes", "no"}:
+            return raw_key
+        if family in {"h2h", "spreads", "dnb"} and raw_key in {"home", "away", "draw"}:
+            return raw_key
+
         raw = " ".join(
             part for part in [self._normalize_selection(selection), self._normalize_selection(selection_text)] if part
         )
@@ -115,39 +165,37 @@ class TelegramPublisher:
                 return "no"
             return "unknown_btts"
 
-        if family == "h2h":
+        if family in {"h2h", "spreads", "dnb"}:
             if any(token == raw or f" {token} " in f" {raw} " for token in ["home", "1", "п1"]):
                 return "home"
             if any(token == raw or f" {token} " in f" {raw} " for token in ["away", "2", "п2"]):
                 return "away"
-            if any(token == raw or f" {token} " in f" {raw} " for token in ["draw", "x", "ничья"]):
+            if family == "h2h" and any(token == raw or f" {token} " in f" {raw} " for token in ["draw", "x", "ничья"]):
                 return "draw"
-            return "unknown_h2h"
-
-        if family == "spreads":
-            if any(token == raw or f" {token} " in f" {raw} " for token in ["home", "1", "п1"]):
-                return "home"
-            if any(token == raw or f" {token} " in f" {raw} " for token in ["away", "2", "п2"]):
-                return "away"
-            return "unknown_spread"
+            return "unknown_side"
 
         return "unknown"
 
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
-        analysis = dict(getattr(bet, 'analysis', {}) or {})
-        summary_points = [str(item).strip() for item in (analysis.get('summary_points') or []) if str(item).strip()]
+        analysis = dict(getattr(bet, "analysis", {}) or {})
+        summary_points = [str(item).strip() for item in (analysis.get("summary_points") or []) if str(item).strip()]
         if summary_points:
             return "\n\n".join(summary_points)
 
         raw_reasons = " ".join(bet.reasons).lower()
         parts: list[str] = []
-        kind = self._selection_kind(bet.family, bet.selection, selection_text)
+        kind = self._selection_kind(
+            bet.family,
+            bet.selection,
+            selection_text,
+            getattr(bet, "selection_key", None),
+        )
 
         if bet.family == "totals":
             if kind == "over":
-                parts.append("Модель ждёт более результативный матч, чем это предполагает коэффициент.")
+                parts.append("Модель ждёт более результативный матч, чем это предполагает текущий коэффициент.")
             elif kind == "under":
-                parts.append("Модель ждёт менее результативный и более осторожный матч, чем это предполагает коэффициент.")
+                parts.append("Модель ждёт более осторожный матч и более низкий тотал, чем сейчас закладывает линия.")
             else:
                 parts.append("По тоталу модель видит перевес над текущим коэффициентом.")
         elif bet.family == "h2h":
@@ -159,6 +207,13 @@ class TelegramPublisher:
                 parts.append("Модель допускает более равный матч, чем это видно по линии.")
             else:
                 parts.append("По исходу модель видит перевес над текущим коэффициентом.")
+        elif bet.family == "btts":
+            if kind == "yes":
+                parts.append("Обе команды создают достаточно моментов, чтобы сценарий с голами с двух сторон был вероятнее рынка.")
+            elif kind == "no":
+                parts.append("Модель ждёт менее открытый матч, чем предполагает рынок, и снижает шанс обмена голами.")
+            else:
+                parts.append("По рынку обе забьют модель видит перевес над текущей ценой.")
         else:
             parts.append("По модели этот вариант выглядит сильнее, чем его сейчас оценивает рынок.")
 
@@ -170,11 +225,11 @@ class TelegramPublisher:
                 parts.append("По ожидаемым голам матч больше похож на осторожную игру с небольшим числом моментов.")
 
         if "injuries" in raw_reasons:
-            parts.append("Есть кадровые новости, которые могут заметно повлиять на игру.")
+            parts.append("Есть кадровые новости, которые могут заметно повлиять на рисунок игры.")
         if "form" in raw_reasons:
-            parts.append("Текущая форма команд не противоречит этой ставке.")
+            parts.append("Текущая форма команд не противоречит этому сценарию.")
         if "table" in raw_reasons:
-            parts.append("Положение команд в таблице тоже поддерживает такой сценарий.")
+            parts.append("Положение команд в таблице тоже поддерживает такой сценарий матча.")
 
         cleaned: list[str] = []
         seen: set[str] = set()
@@ -186,36 +241,42 @@ class TelegramPublisher:
             cleaned.append(key)
         return "\n\n".join(cleaned[:3])
 
-
     def render_settlement_summary(self, settlement_summary: dict[str, Any]) -> str | None:
-        items = list(settlement_summary.get('items') or [])
+        items = list(settlement_summary.get("items") or [])
         if not items:
             return None
-        bankroll = dict(settlement_summary.get('bankroll') or {})
+
+        bankroll = dict(settlement_summary.get("bankroll") or {})
         lines = ["📒 Проверка завершённых ставок"]
         for idx, item in enumerate(items[:5], start=1):
-            settlement = dict(item.get('settlement') or item)
-            outcome = str(settlement.get('outcome') or '')
-            emoji = '✅' if outcome in {'won', 'half_won'} else '❌' if outcome in {'lost', 'half_lost'} else '➖'
+            settlement = dict(item.get("settlement") or item)
+            outcome = str(settlement.get("outcome") or "")
+            emoji = "✅" if outcome in {"won", "half_won"} else "❌" if outcome in {"lost", "half_lost"} else "➖"
             score = None
-            if settlement.get('final_home_goals') is not None and settlement.get('final_away_goals') is not None:
+            if settlement.get("final_home_goals") is not None and settlement.get("final_away_goals") is not None:
                 score = f"{int(float(settlement['final_home_goals']))}:{int(float(settlement['final_away_goals']))}"
-            point = item.get('point')
-            point_suffix = f" ({float(point):g})" if point not in (None, '') else ""
+            point = item.get("point")
+            point_suffix = f" ({float(point):g})" if point not in (None, "") else ""
             lines.append(
                 f"{idx}. {item.get('home_team')} — {item.get('away_team')}\n"
                 f"{emoji} Итог: {self._format_outcome(outcome)} | Счёт: {score or 'н/д'}\n"
-                f"Ставка: {russian_market_name(str(item.get('family') or ''))} — {russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} @ {float(item.get('odds') or 0.0):.2f}\n"
-                f"Сумма: {self._format_money(float(item.get('stake_amount') or 0.0), bankroll_summary=bankroll)} | P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
+                f"Ставка: {russian_market_name(str(item.get('family') or ''))} — "
+                f"{russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} "
+                f"@ {float(item.get('odds') or 0.0):.2f}\n"
+                f"Сумма: {self._format_money(float(item.get('stake_amount') or 0.0), bankroll_summary=bankroll)} | "
+                f"P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
             )
+
         if bankroll:
             lines.append(
-                f"💼 Банк: {self._format_money(float(bankroll.get('current_balance') or 0.0), bankroll_summary=bankroll)} | Открытый риск: {self._format_money(float(bankroll.get('open_exposure') or 0.0), bankroll_summary=bankroll)} | ROI: {float(bankroll.get('roi_pct') or 0.0):+.2f}%"
+                f"💼 Банк: {self._format_money(float(bankroll.get('current_balance') or 0.0), bankroll_summary=bankroll)} | "
+                f"Открытый риск: {self._format_money(float(bankroll.get('open_exposure') or 0.0), bankroll_summary=bankroll)} | "
+                f"ROI: {float(bankroll.get('roi_pct') or 0.0):+.2f}%"
             )
         return "\n\n".join(lines)
 
     async def publish_settlement_summary(self, settlement_summary: dict[str, Any]) -> tuple[int, list[str]]:
-        if not getattr(self.settings, 'settlement_send_telegram_summary', True):
+        if not getattr(self.settings, "settlement_send_telegram_summary", True):
             return 0, []
         message = self.render_settlement_summary(settlement_summary)
         if not message:

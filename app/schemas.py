@@ -75,6 +75,7 @@ class CandidateBet:
     commence_time: datetime
     family: MarketFamily
     selection: str
+    selection_key: str
     odds: float
     fair_odds: float
     implied_probability: float
