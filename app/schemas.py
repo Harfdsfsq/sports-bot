@@ -97,4 +97,11 @@ class CandidateBet:
     diagnostics: dict[str, Any] = field(default_factory=dict)
     analysis: dict[str, Any] = field(default_factory=dict)
     publication_score: float = 0.0
+    source_event_id: str | None = None
+    team_side: str | None = None
+    stake_amount: float = 0.0
+    stake_pct: float = 0.0
+    bankroll_snapshot: float = 0.0
+    bankroll_currency: str = "u"
+    risk_label: str = "standard"
     already_used: bool = False

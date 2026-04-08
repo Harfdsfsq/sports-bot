@@ -13,6 +13,7 @@ from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.telegram import TelegramPublisher
+from app.services.settlement import SettlementService
 from app.state import JsonStateStore
 from app.utils import clamp, ensure_utc
 
@@ -36,6 +37,7 @@ class PredictionRunner:
         self.factory = CandidateFactory(settings)
         self.market_monitor = MarketMonitor(settings) if getattr(settings, 'market_monitor_enabled', True) else None
         self.telegram = TelegramPublisher(settings)
+        self.settlement = SettlementService(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
 
     @staticmethod
@@ -116,6 +118,10 @@ class PredictionRunner:
         try:
             now_utc = datetime.now(UTC)
             now_local = now_utc.astimezone(self.settings.tzinfo)
+
+            settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
+            settlement_summary = self.state.apply_settlements(list(settlement_probe.get('items') or []), self.settings)
+            bankroll_summary = self.state.bankroll_summary(self.settings)
 
             bootstrap_matches, bootstrap_meta = await self._fetch_matches()
             deduped_matches = self._dedupe_matches(bootstrap_matches)
@@ -240,11 +246,16 @@ class PredictionRunner:
                     candidate.already_used = True
                 candidates.append(candidate)
 
-            sent_messages, telegram_payloads = await self.telegram.publish(candidates)
+            candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
+            settlement_messages_sent, settlement_payloads = await self.telegram.publish_settlement_summary(settlement_summary)
+            sent_messages, telegram_payloads = await self.telegram.publish(candidates, bankroll_summary=self.state.bankroll_summary(self.settings))
             published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
             telegram_picks_sent = len(candidates) if sent_messages > 0 else 0
+            sent_messages += settlement_messages_sent
+            telegram_payloads = list(settlement_payloads) + list(telegram_payloads)
             clv_record_stats = self.market_monitor.record_published_candidates(candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
             export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, candidates)
+            bankroll_summary = self.state.bankroll_summary(self.settings)
 
             source_stats = {
                 'match_bootstrap': {
@@ -330,6 +341,11 @@ class PredictionRunner:
                     **market_monitor_stats,
                     'clv_tracked_now': clv_record_stats.get('tracked', 0),
                 },
+                'settlement': {
+                    'checked': settlement_probe.get('checked', 0),
+                    'settled_count': settlement_summary.get('settled_count', 0),
+                },
+                'bankroll': bankroll_summary,
                 'exports': export_paths,
             }
 
@@ -372,6 +388,11 @@ class PredictionRunner:
                     'model_debug': model_debug,
                     'candidates': [self._serialize_candidate(item) for item in candidates[:25]],
                     'telegram_messages': telegram_payloads,
+                    'settlement': {
+                        'probe': settlement_probe,
+                        'summary': settlement_summary,
+                    },
+                    'bankroll': bankroll_summary,
                 }
             )
             self.state.save_run('ok', summary=summary)

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from typing import Any
 
 import httpx
 
@@ -13,7 +14,7 @@ class TelegramPublisher:
     def __init__(self, settings: Settings):
         self.settings = settings
 
-    def render_message(self, bets: list[CandidateBet]) -> str:
+    def render_message(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> str:
         count = len(bets)
         min_books = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
         books_note = (
@@ -21,7 +22,13 @@ class TelegramPublisher:
             if min_books <= 1
             else 'есть подтверждение как минимум по двум котировкам.'
         )
-        header = f"🔥 {count} лучших ставок на ближайшие 48 часов\n\n"
+        bank_line = ""
+        if bankroll_summary:
+            current_bank = float(bankroll_summary.get("current_balance") or 0.0)
+            open_exposure = float(bankroll_summary.get("open_exposure") or 0.0)
+            available = float(bankroll_summary.get("available_balance") or max(0.0, current_bank - open_exposure))
+            bank_line = f"💼 Банк: {current_bank:.2f} | Открытый риск: {open_exposure:.2f} | Доступно: {available:.2f}\n\n"
+        header = f"🔥 {count} лучших ставок на ближайшие 48 часов\n\n" + bank_line
         notes = (
             'Показываем только одиночные ставки. '
             'На один матч — не больше одной рекомендации. '
@@ -36,6 +43,9 @@ class TelegramPublisher:
             xg_text = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
+            stake_text = ""
+            if float(getattr(bet, 'stake_amount', 0.0) or 0.0) > 0:
+                stake_text = f"\n💰 Сумма ставки: {bet.stake_amount:.2f} ({bet.stake_pct:.2f}% от банка {bet.bankroll_snapshot:.2f})"
             used_text = "\n⚠️ Прогноз использован" if (bet.already_used and bool(getattr(self.settings, 'telegram_writeup_show_used_marker', False))) else ""
             explanation = self._build_explanation(bet, selection_text)
             blocks.append(
@@ -46,6 +56,7 @@ class TelegramPublisher:
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"🏆 Турнир: {bet.league_name}\n"
                 f"🕒 Начало: {start_text}"
+                f"{stake_text}"
                 f"{xg_text}"
                 f"{used_text}\n"
                 f"📝 Разбор:\n{explanation}"
@@ -150,11 +161,59 @@ class TelegramPublisher:
             cleaned.append(key)
         return "\n\n".join(cleaned[:3])
 
-    async def publish(self, bets: list[CandidateBet]) -> tuple[int, list[str]]:
+
+    def render_settlement_summary(self, settlement_summary: dict[str, Any]) -> str | None:
+        items = list(settlement_summary.get('items') or [])
+        if not items:
+            return None
+        bankroll = dict(settlement_summary.get('bankroll') or {})
+        lines = ["📒 Проверка завершённых ставок"]
+        for idx, item in enumerate(items[:5], start=1):
+            settlement = dict(item.get('settlement') or item)
+            outcome = str(settlement.get('outcome') or '')
+            emoji = '✅' if outcome in {'won', 'half_won'} else '❌' if outcome in {'lost', 'half_lost'} else '➖'
+            score = None
+            if settlement.get('final_home_goals') is not None and settlement.get('final_away_goals') is not None:
+                score = f"{int(float(settlement['final_home_goals']))}:{int(float(settlement['final_away_goals']))}"
+            point = item.get('point')
+            point_suffix = f" ({float(point):g})" if point not in (None, '') else ""
+            lines.append(
+                f"{idx}. {item.get('home_team')} — {item.get('away_team')}\n"
+                f"{emoji} Итог: {outcome} | Счёт: {score or 'н/д'}\n"
+                f"Ставка: {russian_market_name(str(item.get('family') or ''))} — {russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} @ {float(item.get('odds') or 0.0):.2f}\n"
+                f"Сумма: {float(item.get('stake_amount') or 0.0):.2f} | P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
+            )
+        if bankroll:
+            lines.append(
+                f"💼 Банк: {float(bankroll.get('current_balance') or 0.0):.2f} | Открытый риск: {float(bankroll.get('open_exposure') or 0.0):.2f} | ROI: {float(bankroll.get('roi_pct') or 0.0):+.2f}%"
+            )
+        return "\n\n".join(lines)
+
+    async def publish_settlement_summary(self, settlement_summary: dict[str, Any]) -> tuple[int, list[str]]:
+        if not getattr(self.settings, 'settlement_send_telegram_summary', True):
+            return 0, []
+        message = self.render_settlement_summary(settlement_summary)
+        if not message:
+            return 0, []
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, [message]
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
+            response.raise_for_status()
+            return 1, [message]
+
+    async def publish(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> tuple[int, list[str]]:
         if not bets:
             return 0, []
 
-        message = self.render_message(bets)
+        message = self.render_message(bets, bankroll_summary=bankroll_summary)
         if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
             return 0, [message]
 
