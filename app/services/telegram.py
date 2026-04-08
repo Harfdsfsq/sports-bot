@@ -14,6 +14,31 @@ class TelegramPublisher:
     def __init__(self, settings: Settings):
         self.settings = settings
 
+    def _money_suffix(self, bankroll_summary: dict[str, Any] | None = None, candidate: CandidateBet | None = None) -> str:
+        currency = ''
+        if bankroll_summary:
+            currency = str(bankroll_summary.get('currency') or '').strip()
+        if not currency and candidate is not None:
+            currency = str(getattr(candidate, 'bankroll_currency', '') or '').strip()
+        if currency.lower() in {'', 'u', 'unit', 'units'}:
+            return ''
+        return f' {currency}'
+
+    def _format_money(self, value: float, bankroll_summary: dict[str, Any] | None = None, candidate: CandidateBet | None = None) -> str:
+        return f"{float(value or 0.0):.2f}{self._money_suffix(bankroll_summary=bankroll_summary, candidate=candidate)}"
+
+    def _format_outcome(self, value: str) -> str:
+        mapping = {
+            'won': 'выигрыш',
+            'half_won': 'половина выигрыша',
+            'lost': 'проигрыш',
+            'half_lost': 'половина проигрыша',
+            'push': 'возврат',
+            'void': 'возврат',
+        }
+        return mapping.get(str(value or '').strip().lower(), str(value or 'н/д'))
+
+
     def render_message(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> str:
         count = len(bets)
         min_books = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
@@ -27,7 +52,7 @@ class TelegramPublisher:
             current_bank = float(bankroll_summary.get("current_balance") or 0.0)
             open_exposure = float(bankroll_summary.get("open_exposure") or 0.0)
             available = float(bankroll_summary.get("available_balance") or max(0.0, current_bank - open_exposure))
-            bank_line = f"💼 Банк: {current_bank:.2f} | Открытый риск: {open_exposure:.2f} | Доступно: {available:.2f}\n\n"
+            bank_line = f"💼 Банк: {self._format_money(current_bank, bankroll_summary=bankroll_summary)} | Открытый риск: {self._format_money(open_exposure, bankroll_summary=bankroll_summary)} | Доступно: {self._format_money(available, bankroll_summary=bankroll_summary)}\n\n"
         header = f"🔥 {count} лучших ставок на ближайшие 48 часов\n\n" + bank_line
         notes = (
             'Показываем только одиночные ставки. '
@@ -45,7 +70,7 @@ class TelegramPublisher:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
             stake_text = ""
             if float(getattr(bet, 'stake_amount', 0.0) or 0.0) > 0:
-                stake_text = f"\n💰 Сумма ставки: {bet.stake_amount:.2f} ({bet.stake_pct:.2f}% от банка {bet.bankroll_snapshot:.2f})"
+                stake_text = f"\n💰 Сумма ставки: {self._format_money(bet.stake_amount, candidate=bet)} ({bet.stake_pct:.2f}% от банка {self._format_money(bet.bankroll_snapshot, candidate=bet)})"
             used_text = "\n⚠️ Прогноз использован" if (bet.already_used and bool(getattr(self.settings, 'telegram_writeup_show_used_marker', False))) else ""
             explanation = self._build_explanation(bet, selection_text)
             blocks.append(
@@ -179,13 +204,13 @@ class TelegramPublisher:
             point_suffix = f" ({float(point):g})" if point not in (None, '') else ""
             lines.append(
                 f"{idx}. {item.get('home_team')} — {item.get('away_team')}\n"
-                f"{emoji} Итог: {outcome} | Счёт: {score or 'н/д'}\n"
+                f"{emoji} Итог: {self._format_outcome(outcome)} | Счёт: {score or 'н/д'}\n"
                 f"Ставка: {russian_market_name(str(item.get('family') or ''))} — {russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} @ {float(item.get('odds') or 0.0):.2f}\n"
-                f"Сумма: {float(item.get('stake_amount') or 0.0):.2f} | P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
+                f"Сумма: {self._format_money(float(item.get('stake_amount') or 0.0), bankroll_summary=bankroll)} | P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
             )
         if bankroll:
             lines.append(
-                f"💼 Банк: {float(bankroll.get('current_balance') or 0.0):.2f} | Открытый риск: {float(bankroll.get('open_exposure') or 0.0):.2f} | ROI: {float(bankroll.get('roi_pct') or 0.0):+.2f}%"
+                f"💼 Банк: {self._format_money(float(bankroll.get('current_balance') or 0.0), bankroll_summary=bankroll)} | Открытый риск: {self._format_money(float(bankroll.get('open_exposure') or 0.0), bankroll_summary=bankroll)} | ROI: {float(bankroll.get('roi_pct') or 0.0):+.2f}%"
             )
         return "\n\n".join(lines)
 

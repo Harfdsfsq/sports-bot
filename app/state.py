@@ -25,7 +25,7 @@ class JsonStateStore:
             'last_run': {},
             'bankroll': {
                 'enabled': True,
-                'currency': 'u',
+                'currency': 'units',
                 'starting_balance': 1000.0,
                 'current_balance': 1000.0,
                 'peak_balance': 1000.0,
@@ -84,7 +84,10 @@ class JsonStateStore:
         if current <= 0:
             current = starting
         bank['enabled'] = bool(getattr(settings, 'bankroll_enabled', True))
-        bank['currency'] = str(getattr(settings, 'bankroll_currency', 'u') or 'u')
+        currency = str(getattr(settings, 'bankroll_currency', 'units') or 'units').strip()
+        if currency.lower() == 'u':
+            currency = 'units'
+        bank['currency'] = currency
         bank['starting_balance'] = starting
         bank['current_balance'] = current
         bank['peak_balance'] = max(float(bank.get('peak_balance') or 0.0), current, starting)

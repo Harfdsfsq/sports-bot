@@ -30,7 +30,7 @@ class Settings(BaseSettings):
 
     bankroll_enabled: bool = Field(default=True, validation_alias=AliasChoices("BANKROLL_ENABLED"))
     bankroll_starting_balance: float = Field(default=1000.0, validation_alias=AliasChoices("BANKROLL_STARTING_BALANCE", "BANKROLL_INITIAL"))
-    bankroll_currency: str = Field(default="u", validation_alias=AliasChoices("BANKROLL_CURRENCY"))
+    bankroll_currency: str = Field(default="units", validation_alias=AliasChoices("BANKROLL_CURRENCY"))
     bankroll_flat_stake_pct: float = Field(default=3.0, validation_alias=AliasChoices("BANKROLL_FLAT_STAKE_PCT"))
     bankroll_kelly_enabled: bool = Field(default=True, validation_alias=AliasChoices("BANKROLL_KELLY_ENABLED"))
     bankroll_kelly_fraction: float = Field(default=0.35, validation_alias=AliasChoices("BANKROLL_KELLY_FRACTION"))
