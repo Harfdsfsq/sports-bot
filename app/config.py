@@ -106,6 +106,12 @@ class Settings(BaseSettings):
     football_data_match_limit: int = Field(default=80, validation_alias=AliasChoices("FOOTBALL_DATA_MATCH_LIMIT"))
     football_data_standings_limit: int = Field(default=8, validation_alias=AliasChoices("FOOTBALL_DATA_STANDINGS_LIMIT"))
     football_data_days_ahead: int = Field(default=2, validation_alias=AliasChoices("FOOTBALL_DATA_DAYS_AHEAD"))
+    football_data_history_competitions_limit: int = Field(default=8, validation_alias=AliasChoices("FOOTBALL_DATA_HISTORY_COMPETITIONS_LIMIT"))
+    football_data_competition_match_limit: int = Field(default=220, validation_alias=AliasChoices("FOOTBALL_DATA_COMPETITION_MATCH_LIMIT"))
+    football_data_min_team_history_matches: int = Field(default=1, validation_alias=AliasChoices("FOOTBALL_DATA_MIN_TEAM_HISTORY_MATCHES"))
+    football_data_allow_cup_standings: bool = Field(default=True, validation_alias=AliasChoices("FOOTBALL_DATA_ALLOW_CUP_STANDINGS"))
+    football_data_match_score_threshold: float = Field(default=42.0, validation_alias=AliasChoices("FOOTBALL_DATA_MATCH_SCORE_THRESHOLD"))
+    football_data_team_match_threshold: float = Field(default=0.68, validation_alias=AliasChoices("FOOTBALL_DATA_TEAM_MATCH_THRESHOLD"))
 
     api_football_predictions_limit: int | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_PREDICTIONS_LIMIT"))
     api_football_context_match_limit: int = Field(default=18, validation_alias=AliasChoices("API_FOOTBALL_CONTEXT_MATCH_LIMIT"))

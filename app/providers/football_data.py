@@ -131,11 +131,14 @@ class FootballDataContextProvider:
             competition_match_limit = max(50, int(getattr(self.settings, 'football_data_competition_match_limit', 120) or 120))
 
             standings_by_ref: dict[str, list[dict[str, Any]]] = {}
-            league_refs = [
-                ref
-                for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0]))
-                if competition_types.get(ref) in {'LEAGUE', 'LEAGUE_CUP'}
-            ]
+            allow_cup_standings = bool(getattr(self.settings, 'football_data_allow_cup_standings', True))
+            league_refs = []
+            for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0])):
+                comp_type = competition_types.get(ref)
+                if comp_type in {'LEAGUE', 'LEAGUE_CUP'}:
+                    league_refs.append(ref)
+                elif allow_cup_standings and comp_type == 'CUP':
+                    league_refs.append(ref)
             for ref in league_refs[:standings_limit]:
                 standings_payload = await self._fetch_json(
                     client,
@@ -152,11 +155,7 @@ class FootballDataContextProvider:
                         preview['sample_tables'].append({'competition_ref': ref, 'rows': table[:3]})
 
             history_by_ref: dict[str, list[dict[str, Any]]] = defaultdict(list)
-            history_refs = [
-                ref
-                for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0]))
-                if ref not in standings_by_ref
-            ]
+            history_refs = [ref for ref, _ in sorted(competition_counts.items(), key=lambda item: (-item[1], item[0]))]
             for ref in history_refs[:history_limit]:
                 params: dict[str, Any] = {'limit': competition_match_limit}
                 season_year = competition_seasons.get(ref)
@@ -259,8 +258,10 @@ class FootballDataContextProvider:
         return []
 
     def _row_to_event(self, row: dict[str, Any]) -> dict[str, Any] | None:
-        home = str(((row.get('homeTeam') or {}).get('name')) or '').strip()
-        away = str(((row.get('awayTeam') or {}).get('name')) or '').strip()
+        home_team = row.get('homeTeam') or {}
+        away_team = row.get('awayTeam') or {}
+        home = str((home_team.get('name')) or '').strip()
+        away = str((away_team.get('name')) or '').strip()
         if not home or not away:
             return None
         dt = parse_datetime(str(row.get('utcDate') or ''))
@@ -278,12 +279,16 @@ class FootballDataContextProvider:
         return {
             'home': home,
             'away': away,
+            'home_team_id': home_team.get('id'),
+            'away_team_id': away_team.get('id'),
             'commence_time': dt,
             'league': str((competition.get('name') or '')).strip(),
             'competition_code': code,
             'competition_ref': comp_ref,
             'competition_type': str((competition.get('type') or '')).strip().upper(),
             'season_start_year': season_start_year,
+            'stage': str(row.get('stage') or '').strip().upper(),
+            'group': str(row.get('group') or '').strip().upper(),
         }
 
     def _match_event(self, event: dict[str, Any], matches: list[Match]) -> tuple[Match | None, float, str | None]:
@@ -310,7 +315,8 @@ class FootballDataContextProvider:
                 best_score = score
                 best_quality = quality
                 best_match = match
-        if best_match is None or best_score < 46.0:
+        threshold = float(getattr(self.settings, 'football_data_match_score_threshold', 42.0) or 42.0)
+        if best_match is None or best_score < threshold:
             return None, 0.0, None
         return best_match, best_score, best_quality
 
