@@ -1938,7 +1938,15 @@ class CandidateFactory:
         details = dict(getattr(item, 'analysis', {}) or {})
         flags = {str(v).lower() for v in (details.get('flags') or [])}
         core_names = ('api_football', 'football_data', 'thesportsdb', 'espn', 'ensemble')
-        return any(name in context_source for name in core_names) or any(flag in {'injuries', 'table'} for flag in flags)
+        if any(name in context_source for name in core_names):
+            return True
+        if any(flag in {'injuries', 'table'} for flag in flags):
+            return True
+        # SStats is our most reliable free context source in practice.
+        # Treat it as core only when it brings match-shape information, not just a loose mapping.
+        if 'sstats' in context_source and any(flag in {'xg', 'form', 'recent_form', 'recent_profile', 'history'} for flag in flags):
+            return True
+        return False
 
     def _required_publish_books(self, item: CandidateBet) -> int:
         bucket = self._league_bucket(item)
