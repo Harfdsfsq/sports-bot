@@ -37,7 +37,7 @@ class Settings(BaseSettings):
     bankroll_min_stake_pct: float = Field(default=1.0, validation_alias=AliasChoices("BANKROLL_MIN_STAKE_PCT"))
     bankroll_max_stake_pct: float = Field(default=6.0, validation_alias=AliasChoices("BANKROLL_MAX_STAKE_PCT"))
     bankroll_min_stake_amount: float = Field(default=10.0, validation_alias=AliasChoices("BANKROLL_MIN_STAKE_AMOUNT"))
-    bankroll_max_open_exposure_pct: float = Field(default=18.0, validation_alias=AliasChoices("BANKROLL_MAX_OPEN_EXPOSURE_PCT"))
+    bankroll_max_open_exposure_pct: float = Field(default=100.0, validation_alias=AliasChoices("BANKROLL_MAX_OPEN_EXPOSURE_PCT"))
     bankroll_round_to: float = Field(default=1.0, validation_alias=AliasChoices("BANKROLL_ROUND_TO"))
     settlement_enabled: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_ENABLED"))
     settlement_grace_minutes: int = Field(default=180, validation_alias=AliasChoices("SETTLEMENT_GRACE_MINUTES"))
@@ -48,7 +48,7 @@ class Settings(BaseSettings):
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
     publish_window_hours: int = Field(default=48, validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"))
     min_kickoff_lead_minutes: int = Field(default=30, validation_alias=AliasChoices("MIN_KICKOFF_LEAD_MINUTES"))
-    max_picks_per_run: int = Field(default=7, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
+    max_picks_per_run: int = Field(default=3, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
 
     target_bookmakers: CsvList = Field(default_factory=lambda: ["Bet365", "Unibet"], validation_alias=AliasChoices("TARGET_BOOKMAKERS"))
     consensus_bookmakers: CsvList = Field(

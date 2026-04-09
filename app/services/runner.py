@@ -261,15 +261,20 @@ class PredictionRunner:
                 candidates.append(candidate)
 
             candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
-            bankroll_preview = self._project_bankroll_summary(candidates)
+            zero_stake_candidates = [
+                candidate for candidate in candidates
+                if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0
+            ]
+            publishable_candidates = self._filter_publishable_candidates(candidates)
+            bankroll_preview = self._project_bankroll_summary(publishable_candidates)
             settlement_messages_sent, settlement_payloads = await self.telegram.publish_settlement_summary(settlement_summary)
-            sent_messages, telegram_payloads = await self.telegram.publish(candidates, bankroll_summary=bankroll_preview)
-            published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
-            telegram_picks_sent = len(candidates) if sent_messages > 0 else 0
+            sent_messages, telegram_payloads = await self.telegram.publish(publishable_candidates, bankroll_summary=bankroll_preview)
+            published_count = self.state.store_candidates(publishable_candidates, telegram_sent=sent_messages > 0)
+            telegram_picks_sent = len(publishable_candidates) if sent_messages > 0 else 0
             sent_messages += settlement_messages_sent
             telegram_payloads = list(settlement_payloads) + list(telegram_payloads)
-            clv_record_stats = self.market_monitor.record_published_candidates(candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
-            export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, candidates)
+            clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
+            export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, publishable_candidates)
             bankroll_summary = self.state.bankroll_summary(self.settings)
 
             source_stats = {
@@ -296,7 +301,7 @@ class PredictionRunner:
                 'market_monitor': market_monitor_stats,
             }
             mode_counts: dict[str, int] = defaultdict(int)
-            for candidate in candidates:
+            for candidate in publishable_candidates:
                 mode_counts[str(candidate.model_mode)] += 1
 
             provider_diagnostics = self._build_provider_diagnostics(
@@ -305,7 +310,7 @@ class PredictionRunner:
                 context_maps=context_maps,
                 merged_contexts=contexts,
                 raw_candidates=raw_candidates,
-                published_candidates=candidates,
+                published_candidates=publishable_candidates,
                 source_stats=source_stats,
             )
 
@@ -321,6 +326,8 @@ class PredictionRunner:
                 'provider_context_targets': provider_target_counts,
                 'contexts_built': len(contexts),
                 'candidates': len(candidates),
+                'candidates_publishable': len(publishable_candidates),
+                'candidates_zero_stake': len(zero_stake_candidates),
                 'candidates_raw': len(raw_candidates),
                 'skipped_already_in_state': reused_already_in_state,
                 'reused_already_in_state': reused_already_in_state,
@@ -367,7 +374,7 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
-            sheet_export_result = self.sheet_export.write(candidates, matches=filtered_matches, summary=summary)
+            sheet_export_result = self.sheet_export.write(publishable_candidates, matches=filtered_matches, summary=summary)
             summary['sheet_export'] = sheet_export_result
 
             self.state.write_debug(
@@ -410,7 +417,8 @@ class PredictionRunner:
                     'sample_contexts': [self._serialize_context(item) for item in list(contexts.values())[:25]],
                     'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
                     'model_debug': model_debug,
-                    'candidates': [self._serialize_candidate(item) for item in candidates[:25]],
+                    'candidates': [self._serialize_candidate(item) for item in publishable_candidates[:25]],
+                    'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates[:25]],
                     'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates[:25]],
                     'telegram_messages': telegram_payloads,
                     'settlement': {
@@ -679,6 +687,14 @@ class PredictionRunner:
         projected['yield_pct'] = round((closed_pnl / total_staked * 100.0) if total_staked > 0 else 0.0, 2)
         return projected
 
+    def _filter_publishable_candidates(self, candidates: list[CandidateBet]) -> list[CandidateBet]:
+        if not getattr(self.settings, 'bankroll_enabled', True):
+            return candidates
+        return [
+            candidate for candidate in candidates
+            if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) > 0.0
+        ]
+
     def _collect_candidate_fingerprints(self, value: Any, seen: set[str]) -> None:
         if isinstance(value, dict):
             fingerprint = self._candidate_fingerprint(value)
@@ -699,9 +715,6 @@ class PredictionRunner:
             return getattr(candidate, field, None)
 
         existing_fingerprint = get('fingerprint')
-        if existing_fingerprint:
-            return str(existing_fingerprint)
-
         match_key = get('match_key')
         family = get('family')
         selection = get('selection')
@@ -714,19 +727,34 @@ class PredictionRunner:
             home_team=str(get('home_team') or ''),
             away_team=str(get('away_team') or ''),
         )
-        if not match_key or not family or not selection_key:
-            return None
-
-        if isinstance(point, float):
-            point = round(point, 4)
         team_side = str(get('team_side') or '').strip().lower()
         commence_time = get('commence_time')
-        if hasattr(commence_time, 'isoformat'):
-            commence_time = commence_time.isoformat()
-        if commence_time is None:
-            commence_time = ''
-
-        return '|'.join(str(part) for part in (match_key, family, selection_key, team_side, point, commence_time))
+        if match_key and family and selection_key:
+            point_text = ''
+            if point not in (None, ''):
+                try:
+                    point_text = f'{float(point):g}'
+                except Exception:
+                    point_text = str(point)
+            commence_text = ''
+            if commence_time not in (None, ''):
+                try:
+                    commence_text = ensure_utc(commence_time).isoformat()
+                except Exception:
+                    commence_text = str(commence_time)
+            return '|'.join(
+                (
+                    str(match_key),
+                    str(family),
+                    str(selection_key),
+                    team_side,
+                    point_text,
+                    commence_text,
+                )
+            )
+        if existing_fingerprint:
+            return str(existing_fingerprint)
+        return None
 
     @staticmethod
     def _merge_offers(*maps: dict[str, list[Offer]]) -> dict[str, list[Offer]]:

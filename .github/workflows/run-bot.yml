@@ -9,7 +9,7 @@ on:
         default: false
         type: boolean
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '0 */5 * * *'
 
 permissions:
   contents: write
@@ -35,7 +35,7 @@ env:
   BANKROLL_MIN_STAKE_PCT: '1.0'
   BANKROLL_MAX_STAKE_PCT: '6.0'
   BANKROLL_MIN_STAKE_AMOUNT: '10'
-  BANKROLL_MAX_OPEN_EXPOSURE_PCT: '18.0'
+  BANKROLL_MAX_OPEN_EXPOSURE_PCT: '100.0'
   SETTLEMENT_ENABLED: 'true'
   SETTLEMENT_GRACE_MINUTES: '180'
   SETTLEMENT_LOOKBACK_DAYS: '5'
@@ -160,6 +160,7 @@ env:
   PUBLISH_WINDOW_HOURS: '24'
   MIN_KICKOFF_LEAD_MINUTES: '45'
   MAX_MATCHES_FOR_ODDS_FETCH: '80'
+  MAX_PICKS_PER_RUN: '3'
   MAX_PICKS_PER_FAMILY: '2'
   MAX_PICKS_PER_LEAGUE: '2'
   MAX_SAME_REASON_SIGNATURE: '2'

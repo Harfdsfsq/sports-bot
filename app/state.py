@@ -124,7 +124,11 @@ class JsonStateStore:
             return candidates
         current = float(bank.get('current_balance') or 0.0)
         open_exposure = float(bank.get('open_exposure') or 0.0)
-        available_open = max(0.0, current * float(getattr(settings, 'bankroll_max_open_exposure_pct', 18.0) or 18.0) / 100.0 - open_exposure)
+        open_limit_pct = float(getattr(settings, 'bankroll_max_open_exposure_pct', 100.0) or 100.0)
+        if open_limit_pct >= 100.0 or open_limit_pct <= 0.0:
+            available_open = max(0.0, current - open_exposure)
+        else:
+            available_open = max(0.0, current * open_limit_pct / 100.0 - open_exposure)
         for candidate in candidates:
             pct = self._stake_pct(candidate, settings)
             stake = current * pct / 100.0

@@ -11,6 +11,7 @@ from app.utils import candidate_selection_key, parse_datetime, score_event_match
 
 class SettlementService:
     url = 'https://api.sstats.net/Games/list'
+    football_data_url = 'https://api.football-data.org/v4/matches'
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -19,11 +20,17 @@ class SettlementService:
         if not getattr(self.settings, 'settlement_enabled', True):
             return {'checked': 0, 'items': []}
         pending = [item for item in bets if self._eligible(item, now_utc)]
-        if not pending or not getattr(self.settings, 'sstats_api_key', None):
+        has_sstats = bool(getattr(self.settings, 'sstats_api_key', None))
+        has_football_data = bool(getattr(self.settings, 'football_data_api_key', None))
+        if not pending or (not has_sstats and not has_football_data):
             return {'checked': len(pending), 'items': []}
         start_date = (min(parse_datetime(item['commence_time']) for item in pending).astimezone(UTC) - timedelta(days=1)).date().isoformat()
         end_date = now_utc.date().isoformat()
-        rows = await self._fetch_rows(start_date, end_date)
+        rows: list[dict[str, Any]] = []
+        if has_sstats:
+            rows.extend(await self._fetch_sstats_rows(start_date, end_date))
+        if has_football_data:
+            rows.extend(await self._fetch_football_data_rows(start_date, end_date))
         items: list[dict[str, Any]] = []
         for bet in pending:
             row = self._match_row(bet, rows)
@@ -43,7 +50,7 @@ class SettlementService:
                 'final_home_goals': float(home_goals),
                 'final_away_goals': float(away_goals),
                 'settled_at': now_utc.isoformat(),
-                'source': 'sstats',
+                'source': str(row.get('_settlement_source') or 'unknown'),
                 'note': f"{self._extract_team_name(row, 'home')} {int(home_goals)}:{int(away_goals)} {self._extract_team_name(row, 'away')}",
             })
         return {'checked': len(pending), 'items': items}
@@ -59,31 +66,94 @@ class SettlementService:
         lookback = timedelta(days=int(getattr(self.settings, 'settlement_lookback_days', 5) or 5))
         return commence + grace <= now_utc <= commence + lookback
 
-    async def _fetch_rows(self, start_date: str, end_date: str) -> list[dict[str, Any]]:
+    async def _fetch_sstats_rows(self, start_date: str, end_date: str) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         offset = 0
         limit = 1000
-        async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'sstats_timeout_seconds', 25.0) or 25.0)) as client:
-            while True:
+        total_count: int | None = None
+        seen_signatures: set[tuple[Any, ...]] = set()
+        try:
+            async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'sstats_timeout_seconds', 25.0) or 25.0)) as client:
+                while True:
+                    response = await client.get(
+                        self.url,
+                        params={
+                            'from': start_date,
+                            'to': end_date,
+                            'limit': limit,
+                            'offset': offset,
+                            'apikey': str(self.settings.sstats_api_key),
+                        },
+                        headers={'X-API-Key': str(self.settings.sstats_api_key)},
+                    )
+                    response.raise_for_status()
+                    payload = response.json()
+                    if isinstance(payload, dict):
+                        batch = payload.get('data') or payload.get('results') or []
+                        raw_total = payload.get('count')
+                        if raw_total not in (None, ''):
+                            try:
+                                total_count = int(raw_total)
+                            except Exception:
+                                total_count = total_count
+                    elif isinstance(payload, list):
+                        batch = payload
+                    else:
+                        batch = []
+                    if not isinstance(batch, list) or not batch:
+                        break
+                    added = 0
+                    for item in batch:
+                        if not isinstance(item, dict):
+                            continue
+                        signature = (
+                            item.get('id'),
+                            item.get('flashId'),
+                            item.get('date'),
+                            self._extract_team_name(item, 'home'),
+                            self._extract_team_name(item, 'away'),
+                        )
+                        if signature in seen_signatures:
+                            continue
+                        seen_signatures.add(signature)
+                        rows.append({**item, '_settlement_source': 'sstats'})
+                        added += 1
+                    if len(batch) < limit or added == 0:
+                        break
+                    offset += len(batch)
+                    if total_count is not None and offset >= total_count:
+                        break
+        except Exception:
+            return []
+        return rows
+
+    async def _fetch_football_data_rows(self, start_date: str, end_date: str) -> list[dict[str, Any]]:
+        try:
+            async with httpx.AsyncClient(
+                timeout=float(getattr(self.settings, 'football_data_timeout_seconds', 20.0) or 20.0),
+                headers={'X-Auth-Token': str(self.settings.football_data_api_key)},
+            ) as client:
                 response = await client.get(
-                    self.url,
-                    params={'from': start_date, 'to': end_date, 'limit': limit, 'offset': offset},
-                    headers={'X-API-Key': str(self.settings.sstats_api_key)},
+                    self.football_data_url,
+                    params={
+                        'dateFrom': start_date,
+                        'dateTo': end_date,
+                        'status': 'FINISHED',
+                        'limit': 200,
+                    },
                 )
                 response.raise_for_status()
                 payload = response.json()
-                batch = payload.get('data') or payload.get('results') or []
-                if not isinstance(batch, list) or not batch:
-                    break
-                rows.extend(item for item in batch if isinstance(item, dict))
-                if len(batch) < limit:
-                    break
-                offset += limit
-        return rows
+        except Exception:
+            return []
+        rows = payload.get('matches') if isinstance(payload, dict) else []
+        if not isinstance(rows, list):
+            return []
+        return [{**item, '_settlement_source': 'football_data'} for item in rows if isinstance(item, dict)]
 
     def _match_row(self, bet: dict[str, Any], rows: list[dict[str, Any]]) -> dict[str, Any] | None:
         best_row = None
-        best_score = 0.0
+        best_key: tuple[int, float, int] | None = None
         match_start = parse_datetime(str(bet.get('commence_time')))
         for row in rows:
             event_start = self._extract_start(row)
@@ -102,10 +172,15 @@ class SettlementService:
                 exact_tolerance_hours=24,
                 fuzzy_tolerance_hours=60,
             )
-            if score > best_score:
-                best_score = score
+            has_score = int(self._extract_result(row, 'home') is not None and self._extract_result(row, 'away') is not None)
+            source_priority = 2 if str(row.get('_settlement_source') or '') == 'sstats' else 1
+            key = (has_score, score, source_priority)
+            if best_key is None or key > best_key:
+                best_key = key
                 best_row = row
-        return best_row if best_score >= 70.0 else None
+        if best_row is None or best_key is None or best_key[1] < 70.0:
+            return None
+        return best_row
 
     def _grade_bet(self, bet: dict[str, Any], home_goals: float, away_goals: float) -> tuple[str | None, float]:
         family = str(bet.get('family') or '')
@@ -217,10 +292,6 @@ class SettlementService:
         return 'away'
 
     @staticmethod
-    def _norm(text: str | None) -> str:
-        return ' '.join(str(text or '').lower().replace('ё', 'е').replace('-', ' ').replace('_', ' ').split())
-
-    @staticmethod
     def _extract_team_name(row: dict[str, Any], side: str) -> str:
         nested_key = 'homeTeam' if side == 'home' else 'awayTeam'
         nested = row.get(nested_key)
@@ -235,6 +306,9 @@ class SettlementService:
 
     @staticmethod
     def _extract_league_name(row: dict[str, Any]) -> str:
+        competition = row.get('competition')
+        if isinstance(competition, dict) and competition.get('name'):
+            return str(competition.get('name')).strip()
         season = row.get('season')
         if isinstance(season, dict):
             league = season.get('league')
@@ -242,13 +316,17 @@ class SettlementService:
                 return str(league.get('name')).strip()
         for key in ['League', 'league', 'Tournament', 'CompetitionName', 'competition']:
             value = row.get(key)
+            if isinstance(value, dict):
+                if value.get('name'):
+                    return str(value.get('name')).strip()
+                continue
             if value:
                 return str(value).strip()
         return ''
 
     @staticmethod
     def _extract_start(row: dict[str, Any]) -> Any | None:
-        for key in ['date', 'Date', 'GameStart', 'StartTime', 'datetime', 'MatchDate']:
+        for key in ['utcDate', 'date', 'Date', 'GameStart', 'StartTime', 'datetime', 'MatchDate']:
             value = row.get(key)
             if value not in (None, ''):
                 try:
@@ -259,6 +337,17 @@ class SettlementService:
 
     @staticmethod
     def _extract_result(row: dict[str, Any], side: str) -> float | None:
+        score = row.get('score')
+        if isinstance(score, dict):
+            full_time = score.get('fullTime')
+            if isinstance(full_time, dict):
+                key = 'home' if side == 'home' else 'away'
+                value = full_time.get(key)
+                if value not in (None, ''):
+                    try:
+                        return float(value)
+                    except Exception:
+                        pass
         keys = ['homeResult', 'homeFTResult', 'HomeScore'] if side == 'home' else ['awayResult', 'awayFTResult', 'AwayScore']
         for key in keys:
             value = row.get(key)
