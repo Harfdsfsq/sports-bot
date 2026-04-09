@@ -103,10 +103,7 @@ class FutrixMetricsContextProvider:
         except Exception:
             stats["response_errors"] += 1
             return None
-        rows = payload.get("data") if isinstance(payload, dict) else None
-        if not isinstance(rows, list):
-            return []
-        return [row for row in rows if isinstance(row, dict)]
+        return self._extract_rows(payload)
 
     def _build_context(self, match: Match, home_rows: list[dict[str, Any]], away_rows: list[dict[str, Any]]) -> MatchContext | None:
         home_avg = self._avg_rating(home_rows)
@@ -165,6 +162,26 @@ class FutrixMetricsContextProvider:
             return None
         sample = values[: min(len(values), 18)]
         return sum(sample) / len(sample)
+
+    @staticmethod
+    def _extract_rows(payload: Any) -> list[dict[str, Any]]:
+        if not isinstance(payload, dict):
+            return []
+
+        direct = payload.get("data")
+        if isinstance(direct, list):
+            return [row for row in direct if isinstance(row, dict)]
+
+        # Futrix can return scores in nested payloads instead of `data`.
+        for key in ("pro_scores", "base_scores"):
+            block = payload.get(key)
+            if not isinstance(block, dict):
+                continue
+            rows = block.get("rows")
+            if isinstance(rows, list) and rows:
+                return [row for row in rows if isinstance(row, dict)]
+
+        return []
 
     @staticmethod
     def _normalize_rating(value: float) -> float | None:
