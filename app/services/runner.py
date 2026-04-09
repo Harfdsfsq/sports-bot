@@ -836,6 +836,21 @@ class PredictionRunner:
             )
         return None
 
+    @staticmethod
+    def _context_source_names(context: MatchContext) -> list[str]:
+        details = dict(getattr(context, 'details', {}) or {})
+        raw_sources = details.get('merged_sources') or []
+        names: list[str] = []
+        if isinstance(raw_sources, (list, tuple, set)):
+            for item in raw_sources:
+                text = str(item or '').strip()
+                if text and text not in names:
+                    names.append(text)
+        if names:
+            return names
+        source = str(getattr(context, 'source', '') or '').strip()
+        return [source] if source else []
+
     def _blend_contexts(self, base: MatchContext, new: MatchContext) -> MatchContext:
         base_weight = max(float(getattr(base, 'confidence', 0.0) or 0.0), 1.0)
         new_weight = max(float(getattr(new, 'confidence', 0.0) or 0.0), 1.0)
@@ -859,8 +874,10 @@ class PredictionRunner:
                 return None
             return sum(value * weight for value, weight in pairs) / total_weight
 
-        merged_sources = []
-        for source in (str(base.source or ''), str(new.source or '')):
+        base_sources = self._context_source_names(base)
+        new_sources = self._context_source_names(new)
+        merged_sources: list[str] = []
+        for source in [*base_sources, *new_sources]:
             if source and source not in merged_sources:
                 merged_sources.append(source)
 
@@ -875,6 +892,22 @@ class PredictionRunner:
         merged_details['merged_sources'] = merged_sources
         merged_details['context_mode'] = 'ensemble' if len(merged_sources) > 1 else merged_sources[0] if merged_sources else 'unknown'
 
+        source_count = max(len(base_sources), 1) + max(len(new_sources), 1)
+        weighted_confidence = ((base_weight * max(len(base_sources), 1)) + (new_weight * max(len(new_sources), 1))) / max(source_count, 1)
+        merged_confidence = weighted_confidence + min(2.5, max(0, len(merged_sources) - 1) * 0.75)
+        structural_sources = {'api_football', 'espn', 'football_data', 'thesportsdb', 'openfootball'}
+        predictive_sources = structural_sources | {'sstats', 'sstats_form', 'bzzoiro', 'futrixmetrics'}
+        news_sources = {'newsapi', 'gnews'}
+        normalized_sources = {str(source or '').strip().lower() for source in merged_sources if str(source or '').strip()}
+        if normalized_sources and normalized_sources.issubset(news_sources):
+            confidence_cap = 62.0
+        elif normalized_sources & structural_sources:
+            confidence_cap = 76.0
+        elif normalized_sources & predictive_sources:
+            confidence_cap = 68.0
+        else:
+            confidence_cap = 64.0
+
         return MatchContext(
             source='ensemble' if len(merged_sources) > 1 else (merged_sources[0] if merged_sources else str(base.source or new.source or 'unknown')),
             payload=merged_payload,
@@ -884,7 +917,7 @@ class PredictionRunner:
             away_win_probability=blend(base.away_win_probability, new.away_win_probability),
             home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
             away_starting=int(round(blend(base.away_starting, new.away_starting))) if blend(base.away_starting, new.away_starting) is not None else (new.away_starting or base.away_starting),
-            confidence=min(84.0, max(base_weight, new_weight) + (4.0 if len(merged_sources) > 1 else 0.0)),
+            confidence=clamp(merged_confidence, 50.0, confidence_cap),
             profits={**dict(base.profits or {}), **dict(new.profits or {})},
             details=merged_details,
         )

@@ -446,6 +446,13 @@ class Settings(BaseSettings):
     h2h_market_prior_blend_side: float = Field(default=0.16, validation_alias=AliasChoices("H2H_MARKET_PRIOR_BLEND_SIDE"))
     h2h_market_prior_blend_draw: float = Field(default=0.08, validation_alias=AliasChoices("H2H_MARKET_PRIOR_BLEND_DRAW"))
     h2h_draw_probability_cap: float = Field(default=0.34, validation_alias=AliasChoices("H2H_DRAW_PROBABILITY_CAP"))
+    h2h_high_odds_min_odds: float = Field(default=3.60, validation_alias=AliasChoices("H2H_HIGH_ODDS_MIN_ODDS"))
+    h2h_high_odds_market_max_prob: float = Field(default=0.30, validation_alias=AliasChoices("H2H_HIGH_ODDS_MARKET_MAX_PROB"))
+    h2h_high_odds_min_confidence: float = Field(default=68.0, validation_alias=AliasChoices("H2H_HIGH_ODDS_MIN_CONFIDENCE"))
+    h2h_high_odds_min_edge_pct: float = Field(default=5.0, validation_alias=AliasChoices("H2H_HIGH_ODDS_MIN_EDGE_PCT"))
+    h2h_high_odds_min_ev_pct: float = Field(default=2.8, validation_alias=AliasChoices("H2H_HIGH_ODDS_MIN_EV_PCT"))
+    h2h_high_odds_min_xg_diff: float = Field(default=0.35, validation_alias=AliasChoices("H2H_HIGH_ODDS_MIN_XG_DIFF"))
+    h2h_high_odds_min_context_sources: int = Field(default=2, validation_alias=AliasChoices("H2H_HIGH_ODDS_MIN_CONTEXT_SOURCES"))
 
     spreads_min_edge_pct: float = Field(default=2.2, validation_alias=AliasChoices("SPREADS_MIN_EDGE_PCT"))
     spreads_min_ev_pct: float = Field(default=1.7, validation_alias=AliasChoices("SPREADS_MIN_EV_PCT"))

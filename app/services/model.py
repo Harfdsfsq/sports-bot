@@ -879,6 +879,7 @@ class CandidateFactory:
                 'selected_price': best_offer.price,
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
+                'context_sources': list(context_details.get('merged_sources') or ([context_source] if context_source else [])),
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode'),
                 'home_recent_count': context_details.get('home_recent_count'),
@@ -1296,8 +1297,6 @@ class CandidateFactory:
         if home_abs is not None and away_abs is not None and abs(home_abs - away_abs) >= 0.6:
             affected = match.home_team if home_abs > away_abs else match.away_team
             return f'По кадрам и новостям больше потерь сейчас у {affected}, это тоже смещает сценарий матча.'
-        if article_count is not None and article_count >= 2:
-            return 'По матчу дополнительно просмотрены свежие новости и кадровый фон; явных противоречий ставке там нет.'
         return None
 
     
@@ -1662,7 +1661,7 @@ class CandidateFactory:
         if explicit is not None:
             source = str(context.source or '')
             explicit_weight = float(getattr(self.settings, 'signal_weight_explicit', 0.40) or 0.40)
-            if source in {'api_football', 'espn', 'ensemble', 'thesportsdb', 'football_data', 'openfootball', 'newsapi', 'gnews'}:
+            if source in {'api_football', 'espn', 'thesportsdb', 'football_data', 'openfootball'}:
                 explicit_weight += 0.05
             weighted_parts.append((explicit, explicit_weight))
         strength = self._strength_probabilities(match, context)
@@ -2174,10 +2173,17 @@ class CandidateFactory:
     def _has_core_context(self, item: CandidateBet) -> bool:
         source_summary = dict(getattr(item, 'source_summary', {}) or {})
         context_source = str(source_summary.get('context_source') or '').lower()
+        context_sources = {
+            str(value or '').strip().lower()
+            for value in (source_summary.get('context_sources') or [])
+            if str(value or '').strip()
+        }
         details = dict(getattr(item, 'analysis', {}) or {})
         flags = {str(v).lower() for v in (details.get('flags') or [])}
         core_names = ('api_football', 'football_data', 'thesportsdb', 'espn', 'ensemble')
         if any(name in context_source for name in core_names):
+            return True
+        if context_sources & {'api_football', 'football_data', 'thesportsdb', 'espn', 'openfootball'}:
             return True
         if any(flag in {'injuries', 'table'} for flag in flags):
             return True
@@ -2440,6 +2446,45 @@ class CandidateFactory:
                             continue
                         if float(item.ev_pct) < float(getattr(self.settings, 'h2h_single_source_min_ev_pct', 3.0) or 3.0):
                             rejections['h2h_single_source_ev_guard'] += 1
+                            continue
+                    context_sources = {
+                        str(value or '').strip().lower()
+                        for value in (source_summary.get('context_sources') or [])
+                        if str(value or '').strip()
+                    }
+                    if not context_sources and context_source:
+                        context_sources = {context_source.lower()}
+                    high_odds = (
+                        float(item.market_probability) <= float(getattr(self.settings, 'h2h_high_odds_market_max_prob', 0.30) or 0.30)
+                        or float(item.odds) >= float(getattr(self.settings, 'h2h_high_odds_min_odds', 3.60) or 3.60)
+                    )
+                    if high_odds:
+                        if float(item.confidence) < float(getattr(self.settings, 'h2h_high_odds_min_confidence', 68.0) or 68.0):
+                            rejections['h2h_high_odds_confidence_guard'] += 1
+                            continue
+                        if float(item.edge_pct) < float(getattr(self.settings, 'h2h_high_odds_min_edge_pct', 5.0) or 5.0):
+                            rejections['h2h_high_odds_edge_guard'] += 1
+                            continue
+                        if float(item.ev_pct) < float(getattr(self.settings, 'h2h_high_odds_min_ev_pct', 2.8) or 2.8):
+                            rejections['h2h_high_odds_ev_guard'] += 1
+                            continue
+                        predictive_contexts = context_sources & {'api_football', 'football_data', 'thesportsdb', 'espn', 'openfootball', 'bzzoiro', 'sstats', 'sstats_form'}
+                        if len(predictive_contexts) < max(1, int(getattr(self.settings, 'h2h_high_odds_min_context_sources', 2) or 2)):
+                            rejections['h2h_high_odds_context_guard'] += 1
+                            continue
+                        expected_home = item.expected_home
+                        expected_away = item.expected_away
+                        if expected_home is None or expected_away is None:
+                            rejections['h2h_high_odds_xg_missing_guard'] += 1
+                            continue
+                        xg_diff = float(expected_home) - float(expected_away)
+                        min_xg_diff = float(getattr(self.settings, 'h2h_high_odds_min_xg_diff', 0.35) or 0.35)
+                        selected_side = 'home' if item.selection == item.home_team else ('away' if item.selection == item.away_team else None)
+                        if selected_side == 'home' and xg_diff < min_xg_diff:
+                            rejections['h2h_high_odds_xg_guard'] += 1
+                            continue
+                        if selected_side == 'away' and (-xg_diff) < min_xg_diff:
+                            rejections['h2h_high_odds_xg_guard'] += 1
                             continue
                     if bool(getattr(self.settings, 'h2h_xg_dislocation_guard_enabled', True)):
                         expected_home = item.expected_home
