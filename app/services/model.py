@@ -940,16 +940,27 @@ class CandidateFactory:
             points.append(market_line)
 
             if total_xg is not None and point is not None:
-                pace_word = 'низовой' if is_under else 'результативный'
+                xg_gap = float(total_xg) - float(point)
                 pressure_side = None
                 if expected_home is not None and expected_away is not None:
                     if float(expected_home) > float(expected_away) + 0.18:
                         pressure_side = match.home_team
                     elif float(expected_away) > float(expected_home) + 0.18:
                         pressure_side = match.away_team
+                if abs(xg_gap) <= 0.18:
+                    profile_text = f'По сумме xG матч идёт почти вровень с линией {point:g}, так что здесь нет яркого перекоса по одной только сумме xG.'
+                elif is_under and xg_gap < 0:
+                    profile_text = f'Для линии {point:g} это уже профиль в пользу низового сценария.'
+                elif (not is_under) and xg_gap > 0:
+                    profile_text = f'Для линии {point:g} это уже профиль в пользу результативного сценария.'
+                else:
+                    profile_text = (
+                        f'Но по сумме xG это скорее не поддерживает {label}, поэтому ставка здесь держится не на одном только xG, '
+                        f'а на дополнительном тотальном сигнале из контекста.'
+                    )
                 xg_text = (
                     f'По ожидаемым голам матч тянет к {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}). '
-                    f'Для линии {point:g} это уже профиль в пользу {pace_word} сценария.'
+                    f'{profile_text}'
                 )
                 if pressure_side:
                     xg_text += f' Основной вклад в темп модель ждёт от {pressure_side}.'
@@ -2084,6 +2095,8 @@ class CandidateFactory:
 
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
         base = self.settings.min_books_for_family(family)
+        if family in {'totals', 'h2h'}:
+            return max(2, base)
         if base <= 1:
             return 1
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
@@ -2181,6 +2194,8 @@ class CandidateFactory:
         books_count = int(getattr(item, 'books_count', 0) or 0)
         if books_count >= 2:
             return 2
+        if item.family in {'totals', 'h2h'}:
+            return max(2, base)
         if bucket in {'other', 'low'}:
             return non_core_base
         if not self._has_core_context(item):
@@ -2232,7 +2247,39 @@ class CandidateFactory:
             if item.edge_pct < min_edge:
                 rejections['edge_below_threshold'] += 1
                 continue
-            context_source = str((item.source_summary or {}).get('context_source') or '')
+            source_summary = dict(getattr(item, 'source_summary', {}) or {})
+            context_source = str(source_summary.get('context_source') or '')
+            context_mode = str(source_summary.get('context_mode') or '')
+            home_recent_count = int(self._to_float_safe(source_summary.get('home_recent_count')) or 0)
+            away_recent_count = int(self._to_float_safe(source_summary.get('away_recent_count')) or 0)
+            if context_mode == 'team_form' and home_recent_count > 0 and away_recent_count > 0:
+                min_sample = max(2, int(getattr(self.settings, 'sstats_form_min_sample_per_team', 3) or 3))
+                risky_min_sample = max(min_sample, int(getattr(self.settings, 'sstats_form_risky_min_sample_per_team', 4) or 4))
+                sample_floor = min(home_recent_count, away_recent_count)
+                if sample_floor < min_sample:
+                    rejections['sstats_form_sample_guard'] += 1
+                    continue
+                item_point = self._to_float_safe(getattr(item, 'point', None))
+                item_selection_kind = self._candidate_selection_kind(item)
+                risky_totals = (
+                    item.family == 'totals'
+                    and item_selection_kind == 'over'
+                    and item_point is not None
+                    and float(item_point) >= 2.5
+                )
+                risky_h2h = (
+                    item.family == 'h2h'
+                    and item_selection_kind != 'draw'
+                    and (
+                        float(getattr(item, 'market_probability', 0.0) or 0.0)
+                        <= float(getattr(self.settings, 'sstats_form_h2h_underdog_market_max_prob', 0.42) or 0.42)
+                        or float(getattr(item, 'odds', 0.0) or 0.0)
+                        >= float(getattr(self.settings, 'sstats_form_h2h_underdog_min_odds', 2.3) or 2.3)
+                    )
+                )
+                if (risky_totals or risky_h2h) and sample_floor < risky_min_sample:
+                    rejections['sstats_form_risky_sample_guard'] += 1
+                    continue
             league_bucket = self._league_bucket(item)
             min_pub_score = float({
                 'preferred': getattr(self.settings, 'min_publication_score', 12.0),
@@ -2285,6 +2332,14 @@ class CandidateFactory:
                 total_xg = None
                 if item.expected_home is not None and item.expected_away is not None:
                     total_xg = float(item.expected_home) + float(item.expected_away)
+                if selection_kind in {'under', 'over'} and point is not None and total_xg is not None:
+                    conflict_buffer = float(getattr(self.settings, 'totals_xg_conflict_buffer', 0.75) or 0.75)
+                    if selection_kind == 'under' and total_xg > point + conflict_buffer:
+                        rejections['totals_under_xg_conflict_guard'] += 1
+                        continue
+                    if selection_kind == 'over' and total_xg < point - conflict_buffer:
+                        rejections['totals_over_xg_conflict_guard'] += 1
+                        continue
                 if selection_kind == 'over' and point is not None and abs(float(point) - 2.5) <= 0.01:
                     if bool(getattr(self.settings, 'totals_over25_dual_threat_guard_enabled', True)) and item.expected_home is not None and item.expected_away is not None:
                         weaker_xg = min(float(item.expected_home), float(item.expected_away))

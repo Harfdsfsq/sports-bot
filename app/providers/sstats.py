@@ -616,6 +616,7 @@ class SStatsContextProvider:
         resolved_cache: dict[str, str | None] = {}
         contexts: dict[str, MatchContext] = {}
         recent_limit = max(4, int(getattr(self.settings, "sstats_recent_matches", 6) or 6))
+        min_sample = max(2, int(getattr(self.settings, "sstats_form_min_sample_per_team", 3) or 3))
 
         for match in matches:
             home_key = self._resolve_team_key(match.home_team, canonical_keys, resolved_cache)
@@ -636,6 +637,8 @@ class SStatsContextProvider:
                 limit=recent_limit,
             )
             if not home_recent or not away_recent:
+                continue
+            if min(len(home_recent), len(away_recent)) < min_sample:
                 continue
 
             expected_home = self._blend_expected_goals(home_recent, away_recent, side="home")
