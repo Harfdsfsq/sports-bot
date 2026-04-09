@@ -793,6 +793,7 @@ class CandidateFactory:
             match=match,
             family=family,
             selection=selection,
+            selection_key=selection_key,
             point=point,
             adjusted_probability=adjusted,
             market_probability=market_prob,
