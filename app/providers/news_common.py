@@ -35,9 +35,10 @@ GENERIC_SPORT_TERMS = ('football', 'soccer', 'match', 'team', 'cup', 'league')
 
 
 def build_match_news_query(match: Match) -> str:
-    home = match.home_team.replace('"', '').strip()
-    away = match.away_team.replace('"', '').strip()
-    return f'("{home}" OR "{away}") AND (football OR soccer OR match OR team OR lineup OR injury OR suspension)'
+    home_terms = _team_query_terms(match.home_team)
+    away_terms = _team_query_terms(match.away_team)
+    team_clause = " OR ".join(f'"{term}"' for term in [*home_terms, *away_terms])
+    return f'({team_clause}) AND (football OR soccer OR match OR team OR lineup OR injury OR suspension)'
 
 
 def article_text(article: dict[str, Any]) -> str:
@@ -49,10 +50,45 @@ def article_text(article: dict[str, Any]) -> str:
 
 def _mentions_team(text: str, team_name: str) -> bool:
     canonical_text = canonicalize_team_name(text)
-    canonical_team = canonicalize_team_name(team_name)
-    if not canonical_text or not canonical_team:
+    team_variants = _team_variants(team_name)
+    if not canonical_text or not team_variants:
         return False
-    return canonical_team in canonical_text
+    return any(variant in canonical_text for variant in team_variants)
+
+
+def _team_variants(team_name: str) -> list[str]:
+    base = canonicalize_team_name(team_name)
+    if not base:
+        return []
+    variants: list[str] = []
+
+    def add(value: str) -> None:
+        candidate = " ".join(str(value or "").split()).strip()
+        if candidate and candidate not in variants:
+            variants.append(candidate)
+
+    add(base)
+    tokens = base.split()
+    if len(tokens) > 1 and len(tokens[-1]) <= 3:
+        add(" ".join(tokens[:-1]))
+    if len(tokens) > 2:
+        add(" ".join(tokens[:2]))
+    if tokens:
+        add(tokens[0])
+    return variants
+
+
+def _team_query_terms(team_name: str) -> list[str]:
+    variants = _team_variants(team_name)
+    raw = str(team_name or "").replace('"', '').strip()
+    terms: list[str] = []
+    if raw:
+        terms.append(raw)
+    for variant in variants:
+        pretty = " ".join(part.capitalize() for part in variant.split())
+        if pretty not in terms:
+            terms.append(pretty)
+    return terms[:4]
 
 
 def articles_to_context(match: Match, articles: list[dict[str, Any]], source: str) -> MatchContext | None:

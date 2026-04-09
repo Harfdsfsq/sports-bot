@@ -238,7 +238,7 @@ class SStatsContextProvider:
         stats["team_form_contexts_built"] = added_fallback
 
         bzz_preview: list[dict[str, Any]] = []
-        if getattr(self.settings, "bzzoiro_api_key", None):
+        if getattr(self.settings, "bzzoiro_api_key", None) and not bool(getattr(self.settings, "enable_bzzoiro_context", True)):
             timeout = float(getattr(self.settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 bzz_contexts, bzz_stats, bzz_preview = await self._fetch_bzzoiro_contexts(client, soccer_matches)

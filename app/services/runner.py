@@ -32,6 +32,7 @@ class PredictionRunner:
         self.allsportsapi = self._safe_provider('app.providers.allsportsapi', 'AllSportsApiOddsProvider')
         self.futrixmetrics = self._safe_provider('app.providers.futrixmetrics', 'FutrixMetricsContextProvider')
         self.sstats = self._safe_provider('app.providers.sstats', 'SStatsContextProvider')
+        self.bzzoiro = self._safe_provider('app.providers.bzzoiro', 'BzzoiroContextProvider')
         self.api_football = self._safe_provider('app.providers.api_football', 'ApiFootballContextProvider')
         self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
         self.thesportsdb = self._safe_provider('app.providers.thesportsdb', 'TheSportsDbContextProvider')
@@ -85,6 +86,9 @@ class PredictionRunner:
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('futrixmetrics') and not getattr(self.settings, 'enable_futrixmetrics_context', False):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('bzzoiro') and not getattr(self.settings, 'enable_bzzoiro_context', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('sstats') and (not getattr(self.settings, 'sstats_enabled', True) or not getattr(self.settings, 'enable_sstats_context', True)):
@@ -199,6 +203,7 @@ class PredictionRunner:
             )
             provider_targets = {
                 'sstats': self._select_provider_context_matches(context_target_matches, 'sstats'),
+                'bzzoiro': self._select_provider_context_matches(context_target_matches, 'bzzoiro'),
                 'api_football': self._select_provider_context_matches(context_target_matches, 'api_football'),
                 'espn': self._select_provider_context_matches(context_target_matches, 'espn'),
                 'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb'),
@@ -212,6 +217,7 @@ class PredictionRunner:
 
             (
                 (sstats_contexts, sstats_stats, sstats_preview),
+                (bzzoiro_contexts, bzzoiro_stats, bzzoiro_preview),
                 (api_football_contexts, api_football_stats, api_football_preview),
                 (espn_contexts, espn_stats, espn_preview),
                 (thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview),
@@ -222,6 +228,7 @@ class PredictionRunner:
                 (gnews_contexts, gnews_stats, gnews_preview),
             ) = await asyncio.gather(
                 self._fetch_provider(self.sstats, 'fetch_context', provider_targets['sstats'], empty_data={}),
+                self._fetch_provider(self.bzzoiro, 'fetch_context', provider_targets['bzzoiro'], empty_data={}),
                 self._fetch_provider(self.api_football, 'fetch_context', provider_targets['api_football'], empty_data={}),
                 self._fetch_provider(self.espn, 'fetch_context', provider_targets['espn'], empty_data={}),
                 self._fetch_provider(self.thesportsdb, 'fetch_context', provider_targets['thesportsdb'], empty_data={}),
@@ -235,6 +242,7 @@ class PredictionRunner:
             context_maps = {
                 'futrixmetrics': futrixmetrics_contexts,
                 'sstats': sstats_contexts,
+                'bzzoiro': bzzoiro_contexts,
                 'api_football': api_football_contexts,
                 'espn': espn_contexts,
                 'thesportsdb': thesportsdb_contexts,
@@ -291,6 +299,7 @@ class PredictionRunner:
                 'allsportsapi': allsportsapi_stats,
                 'futrixmetrics': futrixmetrics_stats,
                 'sstats': sstats_stats,
+                'bzzoiro': bzzoiro_stats,
                 'api_football': api_football_stats,
                 'espn': espn_stats,
                 'thesportsdb': thesportsdb_stats,
@@ -351,6 +360,10 @@ class PredictionRunner:
                     'sstats_loose': sstats_stats.get('matched_loose', 0),
                     'sstats_fuzzy': sstats_stats.get('matched_fuzzy', 0),
                     'sstats_unmatched_rows': sstats_stats.get('unmatched_rows', 0),
+                    'bzzoiro_exact': bzzoiro_stats.get('matched_exact', 0),
+                    'bzzoiro_loose': bzzoiro_stats.get('matched_loose', 0),
+                    'bzzoiro_fuzzy': bzzoiro_stats.get('matched_fuzzy', 0),
+                    'bzzoiro_contexts': bzzoiro_stats.get('contexts_built', 0),
                     'api_football_exact': api_football_stats.get('matched_exact', 0),
                     'api_football_loose': api_football_stats.get('matched_loose', 0),
                     'api_football_fuzzy': api_football_stats.get('matched_fuzzy', 0),
@@ -412,6 +425,7 @@ class PredictionRunner:
                         'allsportsapi': allsportsapi_preview,
                         'futrixmetrics': futrixmetrics_preview,
                         'sstats': sstats_preview,
+                        'bzzoiro': bzzoiro_preview,
                         'api_football': api_football_preview,
                         'espn': espn_preview,
                         'thesportsdb': thesportsdb_preview,
@@ -546,6 +560,7 @@ class PredictionRunner:
     def _select_provider_context_matches(self, matches: list[Match], provider_name: str) -> list[Match]:
         limit_map = {
             'sstats': 0,
+            'bzzoiro': int(getattr(self.settings, 'bzzoiro_context_match_limit', 80) or 80),
             'api_football': int(getattr(self.settings, 'api_football_context_match_limit', 18) or 18),
             'espn': int(getattr(self.settings, 'espn_context_match_limit', 24) or 24),
             'thesportsdb': int(getattr(self.settings, 'thesportsdb_context_match_limit', 80) or 80),

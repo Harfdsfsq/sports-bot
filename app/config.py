@@ -86,6 +86,7 @@ class Settings(BaseSettings):
     enable_openfootball_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_OPENFOOTBALL_CONTEXT", "OPENFOOTBALL_ENABLED"))
     enable_newsapi_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_NEWSAPI_CONTEXT", "NEWSAPI_ENABLED"))
     enable_gnews_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_GNEWS_CONTEXT", "GNEWS_ENABLED"))
+    enable_bzzoiro_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_BZZOIRO_CONTEXT", "BZZOIRO_ENABLED"))
     enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_PROVIDER_DIAGNOSTICS"))
 
     diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices("DIAGNOSTICS_MATCH_LIMIT"))
@@ -121,6 +122,7 @@ class Settings(BaseSettings):
 
     api_football_key: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_KEY"))
     api_football_base_url: str = Field(default="https://v3.football.api-sports.io", validation_alias=AliasChoices("API_FOOTBALL_BASE_URL"))
+    api_football_rapidapi_host: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_RAPIDAPI_HOST"))
 
     football_data_api_key: str | None = Field(default=None, validation_alias=AliasChoices("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY"))
     football_data_base_url: str = Field(default="https://api.football-data.org/v4", validation_alias=AliasChoices("FOOTBALL_DATA_BASE_URL"))
@@ -144,6 +146,7 @@ class Settings(BaseSettings):
     newsapi_context_match_limit: int = Field(default=12, validation_alias=AliasChoices("NEWSAPI_CONTEXT_MATCH_LIMIT"))
     gnews_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("GNEWS_CONTEXT_MATCH_LIMIT"))
     futrixmetrics_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("FUTRIXMETRICS_CONTEXT_MATCH_LIMIT"))
+    bzzoiro_context_match_limit: int = Field(default=80, validation_alias=AliasChoices("BZZOIRO_CONTEXT_MATCH_LIMIT"))
     enable_context_staging: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_CONTEXT_STAGING"))
     premium_context_shortlist_limit: int = Field(default=24, validation_alias=AliasChoices("PREMIUM_CONTEXT_SHORTLIST_LIMIT"))
     premium_news_shortlist_limit: int = Field(default=3, validation_alias=AliasChoices("PREMIUM_NEWS_SHORTLIST_LIMIT"))

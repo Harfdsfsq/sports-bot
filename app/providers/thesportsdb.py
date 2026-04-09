@@ -50,6 +50,15 @@ LEAGUE_ALIASES = {
     'scottish championship': 'scottish championship',
     'scottish league one': 'scottish league one',
     'scottish league two': 'scottish league two',
+    'international clubs copa libertadores': 'copa libertadores',
+    'conmebol copa libertadores': 'copa libertadores',
+    'copa conmebol libertadores': 'copa libertadores',
+    'international clubs copa sudamericana': 'copa sudamericana',
+    'conmebol copa sudamericana': 'copa sudamericana',
+    'copa conmebol sudamericana': 'copa sudamericana',
+    'international clubs uefa champions league': 'uefa champions league',
+    'international clubs uefa europa league': 'uefa europa league',
+    'international clubs uefa europa conference league': 'uefa europa conference league',
 }
 
 

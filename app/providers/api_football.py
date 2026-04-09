@@ -14,8 +14,9 @@ from app.utils import clamp, normalize_probability_percent, parse_datetime, scor
 class ApiFootballContextProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.api_key = os.getenv("API_FOOTBALL_KEY") or getattr(settings, "api_football_key", None)
+        self.api_key = str(os.getenv("API_FOOTBALL_KEY") or getattr(settings, "api_football_key", None) or "").strip()
         self.base_url = os.getenv("API_FOOTBALL_BASE_URL") or getattr(settings, "api_football_base_url", None) or "https://v3.football.api-sports.io"
+        self.rapidapi_host = str(getattr(settings, "api_football_rapidapi_host", None) or os.getenv("API_FOOTBALL_RAPIDAPI_HOST") or "").strip()
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -48,7 +49,12 @@ class ApiFootballContextProvider:
             soccer_matches = soccer_matches[:limit]
             stats["prediction_requests_limited_to"] = limit
 
-        headers = {"x-apisports-key": self.api_key}
+        headers = {
+            "x-apisports-key": self.api_key,
+            "x-rapidapi-key": self.api_key,
+        }
+        if self.rapidapi_host:
+            headers["x-rapidapi-host"] = self.rapidapi_host
         now = datetime.now(UTC)
         fixtures: list[dict[str, Any]] = []
         match_dates = sorted({ensure_date.astimezone(UTC).date().isoformat() for ensure_date in [m.commence_time for m in soccer_matches]})
@@ -76,8 +82,9 @@ class ApiFootballContextProvider:
                     stats["response_errors"] += 1
                     continue
                 payload = self._safe_json(response)
-                if self._has_plan_error(payload):
+                if self._has_auth_error(payload) or self._has_plan_error(payload):
                     stats["response_errors"] += 1
+                    stats["auth_failed"] = True
                     break
                 rows = self._response_rows(payload)
                 fixtures.extend(rows)
@@ -108,6 +115,10 @@ class ApiFootballContextProvider:
                     stats["response_errors"] += 1
                     continue
                 payload = self._safe_json(response)
+                if self._has_auth_error(payload):
+                    stats["response_errors"] += 1
+                    stats["auth_failed"] = True
+                    break
                 if self._has_rate_limit_error(payload):
                     stats["response_errors"] += 1
                     stats["rate_limited"] = True
@@ -209,6 +220,15 @@ class ApiFootballContextProvider:
         errors = payload.get("errors")
         if isinstance(errors, dict):
             return bool(errors.get("plan"))
+        return False
+
+    @staticmethod
+    def _has_auth_error(payload: Any) -> bool:
+        if not isinstance(payload, dict):
+            return False
+        errors = payload.get("errors")
+        if isinstance(errors, dict):
+            return bool(errors.get("token") or errors.get("authorization") or errors.get("auth"))
         return False
 
     def _prediction_to_context(self, row: dict[str, Any], fixture: dict[str, Any]) -> MatchContext:
