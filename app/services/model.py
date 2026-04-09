@@ -8,6 +8,7 @@ from typing import Any
 from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.utils import (
+    candidate_selection_key,
     clamp,
     implied_probability,
     poisson_over_probability,
@@ -770,6 +771,14 @@ class CandidateFactory:
         edge_pct = (adjusted - market_prob) * 100.0
 
         context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        selection_key = candidate_selection_key(
+            family,
+            selection,
+            point=point,
+            team_side=getattr(best_offer, 'team_side', None),
+            home_team=match.home_team,
+            away_team=match.away_team,
+        )
         reasons = list(reasons)
         reasons.append(f'selected_book={best_offer.bookmaker}')
         reasons.append(f'selected_source={best_offer.source}')
@@ -836,6 +845,7 @@ class CandidateFactory:
             commence_time=match.commence_time,
             family=family,
             selection=selection,
+            selection_key=selection_key,
             point=point,
             odds=best_price,
             fair_odds=fair_odds,
@@ -906,7 +916,6 @@ class CandidateFactory:
         movement_label: str | None,
         steam_delta: float | None,
         best_vs_consensus_edge_pct: float | None,
-        selection_key: str | None = None,
     ) -> dict[str, Any]:
         max_points = max(3, int(getattr(self.settings, 'telegram_writeup_max_points', 5) or 5))
         probability_gap_pp = round((float(adjusted_probability) - float(market_probability)) * 100.0, 2)
@@ -1030,7 +1039,6 @@ class CandidateFactory:
                 break
 
         return {
-            'selection_key': selection_key,
             'summary_points': clean_points,
             'flags': flags[:max_points + 1],
             'probability_gap_pp': probability_gap_pp,
