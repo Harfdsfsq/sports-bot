@@ -369,6 +369,10 @@ class PredictionRunner:
                 'settlement': {
                     'checked': settlement_probe.get('checked', 0),
                     'settled_count': settlement_summary.get('settled_count', 0),
+                    'rows_fetched': settlement_probe.get('rows_fetched', 0),
+                    'rows_by_source': settlement_probe.get('rows_by_source', {}),
+                    'reasons': settlement_probe.get('reasons', {}),
+                    'sample': settlement_probe.get('sample', []),
                 },
                 'bankroll': bankroll_summary,
                 'exports': export_paths,
