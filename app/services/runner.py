@@ -28,6 +28,9 @@ class PredictionRunner:
         self.bookies_bootstrap = self._safe_provider('app.providers.bookies_bootstrap', 'BookiesBootstrapProvider')
         self.odds_api_io = self._safe_provider('app.providers.odds_api_io', 'OddsApiIoProvider')
         self.bookies_api = self._safe_provider('app.providers.bookies_api', 'BookiesApiProvider')
+        self.oddspapi = self._safe_provider('app.providers.oddspapi', 'OddsPapiProvider')
+        self.allsportsapi = self._safe_provider('app.providers.allsportsapi', 'AllSportsApiOddsProvider')
+        self.futrixmetrics = self._safe_provider('app.providers.futrixmetrics', 'FutrixMetricsContextProvider')
         self.sstats = self._safe_provider('app.providers.sstats', 'SStatsContextProvider')
         self.api_football = self._safe_provider('app.providers.api_football', 'ApiFootballContextProvider')
         self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
@@ -73,6 +76,15 @@ class PredictionRunner:
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('bookies_api') and not getattr(self.settings, 'bookies_api_enabled', False):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('oddspapi') and not getattr(self.settings, 'enable_oddspapi', False):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('allsportsapi') and not getattr(self.settings, 'enable_allsportsapi', False):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('futrixmetrics') and not getattr(self.settings, 'enable_futrixmetrics_context', False):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('sstats') and (not getattr(self.settings, 'sstats_enabled', True) or not getattr(self.settings, 'enable_sstats_context', True)):
@@ -134,7 +146,12 @@ class PredictionRunner:
             bootstrap_preview = dict(bootstrap_meta.get('preview') or {})
             filtered_matches, filtering = self._filter_matches(deduped_matches, now_utc)
 
-            (odds_api_io_offers, odds_io_stats, odds_io_preview), (bookies_api_offers, bookies_stats, bookies_preview) = await asyncio.gather(
+            (
+                (odds_api_io_offers, odds_io_stats, odds_io_preview),
+                (bookies_api_offers, bookies_stats, bookies_preview),
+                (oddspapi_offers, oddspapi_stats, oddspapi_preview),
+                (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
+            ) = await asyncio.gather(
                 self._fetch_provider(
                     self.odds_api_io,
                     'fetch_offers',
@@ -147,11 +164,25 @@ class PredictionRunner:
                     filtered_matches,
                     empty_data={},
                 ),
+                self._fetch_provider(
+                    self.oddspapi,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
+                self._fetch_provider(
+                    self.allsportsapi,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
             )
 
             offer_maps = {
                 'odds_api_io': odds_api_io_offers,
                 'bookies_api': bookies_api_offers,
+                'oddspapi': oddspapi_offers,
+                'allsportsapi': allsportsapi_offers,
             }
             merged_offers = self._merge_offers(*offer_maps.values())
             market_signals: dict[str, dict[str, Any]] = {}
@@ -172,6 +203,7 @@ class PredictionRunner:
                 'espn': self._select_provider_context_matches(context_target_matches, 'espn'),
                 'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb'),
                 'football_data': self._select_provider_context_matches(context_target_matches, 'football_data'),
+                'futrixmetrics': self._select_provider_context_matches(context_target_matches, 'futrixmetrics'),
                 'openfootball': self._select_provider_context_matches(context_target_matches, 'openfootball'),
                 'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi'),
                 'gnews': self._select_provider_context_matches(context_target_matches, 'gnews'),
@@ -184,6 +216,7 @@ class PredictionRunner:
                 (espn_contexts, espn_stats, espn_preview),
                 (thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview),
                 (football_data_contexts, football_data_stats, football_data_preview),
+                (futrixmetrics_contexts, futrixmetrics_stats, futrixmetrics_preview),
                 (openfootball_contexts, openfootball_stats, openfootball_preview),
                 (newsapi_contexts, newsapi_stats, newsapi_preview),
                 (gnews_contexts, gnews_stats, gnews_preview),
@@ -193,12 +226,14 @@ class PredictionRunner:
                 self._fetch_provider(self.espn, 'fetch_context', provider_targets['espn'], empty_data={}),
                 self._fetch_provider(self.thesportsdb, 'fetch_context', provider_targets['thesportsdb'], empty_data={}),
                 self._fetch_provider(self.football_data, 'fetch_context', provider_targets['football_data'], empty_data={}),
+                self._fetch_provider(self.futrixmetrics, 'fetch_context', provider_targets['futrixmetrics'], empty_data={}),
                 self._fetch_provider(self.openfootball, 'fetch_context', provider_targets['openfootball'], empty_data={}),
                 self._fetch_provider(self.newsapi, 'fetch_context', provider_targets['newsapi'], empty_data={}),
                 self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),
             )
 
             context_maps = {
+                'futrixmetrics': futrixmetrics_contexts,
                 'sstats': sstats_contexts,
                 'api_football': api_football_contexts,
                 'espn': espn_contexts,
@@ -246,6 +281,9 @@ class PredictionRunner:
                 'odds_api_io': odds_io_stats,
                 'odds_api_io_bootstrap': (bootstrap_attempts.get('odds_api_io', {}).get('stats') or {'enabled': False}),
                 'bookies_api': bookies_stats,
+                'oddspapi': oddspapi_stats,
+                'allsportsapi': allsportsapi_stats,
+                'futrixmetrics': futrixmetrics_stats,
                 'sstats': sstats_stats,
                 'api_football': api_football_stats,
                 'espn': espn_stats,
@@ -353,6 +391,9 @@ class PredictionRunner:
                         'odds_api_io_bootstrap': (bootstrap_attempts.get('odds_api_io', {}).get('preview') or {}),
                         'odds_api_io': odds_io_preview,
                         'bookies_api': bookies_preview,
+                        'oddspapi': oddspapi_preview,
+                        'allsportsapi': allsportsapi_preview,
+                        'futrixmetrics': futrixmetrics_preview,
                         'sstats': sstats_preview,
                         'api_football': api_football_preview,
                         'espn': espn_preview,
@@ -491,6 +532,7 @@ class PredictionRunner:
             'espn': int(getattr(self.settings, 'espn_context_match_limit', 24) or 24),
             'thesportsdb': int(getattr(self.settings, 'thesportsdb_context_match_limit', 80) or 80),
             'football_data': int(getattr(self.settings, 'football_data_context_match_limit', 80) or 80),
+            'futrixmetrics': int(getattr(self.settings, 'futrixmetrics_context_match_limit', 6) or 6),
             'openfootball': int(getattr(self.settings, 'openfootball_context_match_limit', 120) or 120),
             'newsapi': int(getattr(self.settings, 'newsapi_context_match_limit', 12) or 12),
             'gnews': int(getattr(self.settings, 'gnews_context_match_limit', 8) or 8),
@@ -509,6 +551,8 @@ class PredictionRunner:
                 limit = min(limit, max(premium_limit * 2, premium_limit))
             elif provider_key in {'football_data'}:
                 limit = min(limit, max(premium_limit * 3, premium_limit))
+            elif provider_key in {'futrixmetrics'}:
+                limit = min(limit, max(4, premium_limit // 2))
         if len(matches) <= limit:
             return matches
         return matches[:limit]

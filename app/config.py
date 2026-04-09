@@ -140,6 +140,7 @@ class Settings(BaseSettings):
     openfootball_context_match_limit: int = Field(default=120, validation_alias=AliasChoices("OPENFOOTBALL_CONTEXT_MATCH_LIMIT"))
     newsapi_context_match_limit: int = Field(default=12, validation_alias=AliasChoices("NEWSAPI_CONTEXT_MATCH_LIMIT"))
     gnews_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("GNEWS_CONTEXT_MATCH_LIMIT"))
+    futrixmetrics_context_match_limit: int = Field(default=6, validation_alias=AliasChoices("FUTRIXMETRICS_CONTEXT_MATCH_LIMIT"))
     enable_context_staging: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_CONTEXT_STAGING"))
     premium_context_shortlist_limit: int = Field(default=18, validation_alias=AliasChoices("PREMIUM_CONTEXT_SHORTLIST_LIMIT"))
     premium_news_shortlist_limit: int = Field(default=3, validation_alias=AliasChoices("PREMIUM_NEWS_SHORTLIST_LIMIT"))
@@ -187,6 +188,31 @@ class Settings(BaseSettings):
     gnews_match_limit: int = Field(default=12, validation_alias=AliasChoices("GNEWS_MATCH_LIMIT"))
     gnews_articles_per_match: int = Field(default=6, validation_alias=AliasChoices("GNEWS_ARTICLES_PER_MATCH"))
     gnews_lookback_hours: int = Field(default=72, validation_alias=AliasChoices("GNEWS_LOOKBACK_HOURS"))
+
+    enable_oddspapi: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_ODDSPAPI", "ODDSPAPI_ENABLED"))
+    oddspapi_api_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDSPAPI_API_KEY"))
+    oddspapi_base_url: str = Field(default="https://api.oddspapi.io/v4", validation_alias=AliasChoices("ODDSPAPI_BASE_URL"))
+    oddspapi_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("ODDSPAPI_TIMEOUT_SECONDS"))
+    oddspapi_min_fetch_interval_minutes: int = Field(default=360, validation_alias=AliasChoices("ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES"))
+    oddspapi_match_limit: int = Field(default=16, validation_alias=AliasChoices("ODDSPAPI_MATCH_LIMIT"))
+    oddspapi_tournament_limit: int = Field(default=4, validation_alias=AliasChoices("ODDSPAPI_TOURNAMENT_LIMIT"))
+    oddspapi_bookmakers: CsvList = Field(default_factory=lambda: ["bet365", "unibet"], validation_alias=AliasChoices("ODDSPAPI_BOOKMAKERS"))
+
+    enable_allsportsapi: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_ALLSPORTSAPI", "ALLSPORTSAPI_ENABLED"))
+    allsportsapi_api_key: str | None = Field(default=None, validation_alias=AliasChoices("ALLSPORTSAPI_API_KEY"))
+    allsportsapi_base_url: str = Field(default="https://apiv2.allsportsapi.com/football/", validation_alias=AliasChoices("ALLSPORTSAPI_BASE_URL"))
+    allsportsapi_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("ALLSPORTSAPI_TIMEOUT_SECONDS"))
+    allsportsapi_min_fetch_interval_minutes: int = Field(default=120, validation_alias=AliasChoices("ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES"))
+    allsportsapi_match_limit: int = Field(default=12, validation_alias=AliasChoices("ALLSPORTSAPI_MATCH_LIMIT"))
+    allsportsapi_bookmakers: CsvList = Field(default_factory=lambda: ["Bet365", "Unibet"], validation_alias=AliasChoices("ALLSPORTSAPI_BOOKMAKERS"))
+
+    enable_futrixmetrics_context: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_FUTRIXMETRICS_CONTEXT", "FUTRIXMETRICS_ENABLED"))
+    futrixmetrics_api_key: str | None = Field(default=None, validation_alias=AliasChoices("FUTRIXMETRICS_API_KEY"))
+    futrixmetrics_base_url: str = Field(default="https://footballperformanceapi.site", validation_alias=AliasChoices("FUTRIXMETRICS_BASE_URL"))
+    futrixmetrics_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("FUTRIXMETRICS_TIMEOUT_SECONDS"))
+    futrixmetrics_context_match_limit: int = Field(default=6, validation_alias=AliasChoices("FUTRIXMETRICS_CONTEXT_MATCH_LIMIT"))
+    futrixmetrics_team_cache_ttl_hours: int = Field(default=168, validation_alias=AliasChoices("FUTRIXMETRICS_TEAM_CACHE_TTL_HOURS"))
+    futrixmetrics_limit_per_team: int = Field(default=80, validation_alias=AliasChoices("FUTRIXMETRICS_LIMIT_PER_TEAM"))
 
     openfootball_base_url: str = Field(default="https://raw.githubusercontent.com/openfootball/football.json/master", validation_alias=AliasChoices("OPENFOOTBALL_BASE_URL"))
     openfootball_timeout_seconds: float = Field(default=15.0, validation_alias=AliasChoices("OPENFOOTBALL_TIMEOUT_SECONDS"))
@@ -277,6 +303,9 @@ class Settings(BaseSettings):
     source_weight_oddsapiio: float = Field(default=1.00, validation_alias=AliasChoices("SOURCE_WEIGHT_ODDSAPIIO"))
     source_weight_bookiesapi: float = Field(default=0.98, validation_alias=AliasChoices("SOURCE_WEIGHT_BOOKIESAPI"))
     source_weight_sstats: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_SSTATS"))
+    source_weight_oddspapi: float = Field(default=1.00, validation_alias=AliasChoices("SOURCE_WEIGHT_ODDSPAPI"))
+    source_weight_allsportsapi: float = Field(default=0.99, validation_alias=AliasChoices("SOURCE_WEIGHT_ALLSPORTSAPI"))
+    source_weight_futrixmetrics: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_FUTRIXMETRICS"))
 
     bookmaker_weight_pinnacle: float = Field(default=1.16, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_PINNACLE"))
     bookmaker_weight_betfair: float = Field(default=1.12, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_BETFAIR"))
@@ -564,6 +593,12 @@ class Settings(BaseSettings):
             return self.source_weight_bookiesapi
         if key == "sstats":
             return self.source_weight_sstats
+        if key == "oddspapi":
+            return self.source_weight_oddspapi
+        if key == "allsportsapi":
+            return self.source_weight_allsportsapi
+        if key == "futrixmetrics":
+            return self.source_weight_futrixmetrics
         return 1.0
 
     def bookmaker_weight(self, bookmaker: str) -> float:
