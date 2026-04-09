@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import asyncio
 import json
+import re
 from collections import defaultdict
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
@@ -30,6 +32,7 @@ class OddsPapiProvider:
             "api_key_present": bool(self.api_key),
             "cache_hit": False,
             "requests": 0,
+            "rate_limit_retries": 0,
             "response_errors": 0,
             "fixtures_fetched": 0,
             "events_matched": 0,
@@ -132,23 +135,62 @@ class OddsPapiProvider:
         return output, stats, preview
 
     async def _get_json(self, client: httpx.AsyncClient, path: str, stats: dict[str, Any], params: dict[str, Any]) -> Any | None:
-        stats["requests"] += 1
+        for attempt in range(2):
+            stats["requests"] += 1
+            try:
+                response = await client.get(f"{self.base_url}{path}", params=params)
+            except Exception as exc:
+                stats["response_errors"] += 1
+                stats["last_body_preview"] = f"request failed: {exc}"
+                return None
+            stats["http_statuses"].append(response.status_code)
+            stats["last_body_preview"] = response.text[:1800]
+            if response.status_code == 429 and attempt == 0:
+                stats["rate_limit_retries"] = int(stats.get("rate_limit_retries", 0) or 0) + 1
+                await asyncio.sleep(self._retry_delay_seconds(response))
+                continue
+            if response.status_code != 200:
+                stats["response_errors"] += 1
+                return None
+            try:
+                return response.json()
+            except Exception:
+                stats["response_errors"] += 1
+                return None
+        stats["response_errors"] += 1
+        return None
+
+    @staticmethod
+    def _retry_delay_seconds(response: httpx.Response) -> float:
+        raw_values = [response.headers.get("Retry-After")]
         try:
-            response = await client.get(f"{self.base_url}{path}", params=params)
-        except Exception as exc:
-            stats["response_errors"] += 1
-            stats["last_body_preview"] = f"request failed: {exc}"
-            return None
-        stats["http_statuses"].append(response.status_code)
-        stats["last_body_preview"] = response.text[:1800]
-        if response.status_code != 200:
-            stats["response_errors"] += 1
-            return None
-        try:
-            return response.json()
+            payload = response.json()
         except Exception:
-            stats["response_errors"] += 1
-            return None
+            payload = None
+        if isinstance(payload, dict):
+            error = payload.get("error")
+            if isinstance(error, dict):
+                raw_values.append(error.get("retryAfter"))
+                retry_ms = error.get("retryMs")
+                if retry_ms not in (None, ""):
+                    try:
+                        return max(0.25, min(float(retry_ms) / 1000.0, 2.0))
+                    except Exception:
+                        pass
+        for raw in raw_values:
+            if raw in (None, ""):
+                continue
+            text = str(raw).strip()
+            try:
+                return max(0.25, min(float(text), 2.0))
+            except Exception:
+                match = re.search(r"([0-9]+(?:\.[0-9]+)?)", text)
+                if match:
+                    try:
+                        return max(0.25, min(float(match.group(1)), 2.0))
+                    except Exception:
+                        continue
+        return 1.0
 
     def _parse_fixture_odds(self, row: dict[str, Any], match: Match, bookmaker_slug: str) -> list[Offer]:
         bookmaker_odds = row.get("bookmakerOdds") or {}
