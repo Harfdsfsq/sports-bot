@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
+import json
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -18,21 +20,15 @@ class SettlementService:
         self.settings = settings
 
     async def settle_pending_bets(self, bets: list[dict[str, Any]], now_utc: datetime) -> dict[str, Any]:
+        manual_overrides, manual_meta = self._load_manual_overrides()
         if not getattr(self.settings, 'settlement_enabled', True):
-            return {'checked': 0, 'items': []}
+            return self._empty_probe_result(0, manual_meta)
         pending = [item for item in bets if self._eligible(item, now_utc)]
         has_sstats = bool(getattr(self.settings, 'sstats_api_key', None))
         has_football_data = bool(getattr(self.settings, 'football_data_api_key', None))
-        if not pending or (not has_sstats and not has_football_data):
-            return {
-                'checked': len(pending),
-                'items': [],
-                'rows_fetched': 0,
-                'rows_by_source': {},
-                'reasons': {},
-                'bets': [],
-                'sample': [],
-            }
+        has_manual = manual_meta['valid_count'] > 0
+        if not pending or (not has_sstats and not has_football_data and not has_manual):
+            return self._empty_probe_result(len(pending), manual_meta)
         start_date = (min(parse_datetime(item['commence_time']) for item in pending).astimezone(UTC) - timedelta(days=1)).date().isoformat()
         end_date = now_utc.date().isoformat()
         rows: list[dict[str, Any]] = []
@@ -43,6 +39,7 @@ class SettlementService:
         items: list[dict[str, Any]] = []
         reasons: defaultdict[str, int] = defaultdict(int)
         debug_bets: list[dict[str, Any]] = []
+        manual_matches = 0
         for bet in pending:
             debug_entry: dict[str, Any] = {
                 'fingerprint': str(bet.get('fingerprint') or ''),
@@ -55,8 +52,14 @@ class SettlementService:
                 'selection_key': str(bet.get('selection_key') or ''),
                 'point': bet.get('point'),
             }
-            row, match_debug = self._match_row_with_debug(bet, rows)
-            debug_entry.update(match_debug)
+            manual_row, manual_debug = self._find_manual_override_row(bet, manual_overrides)
+            if manual_row is not None:
+                row = manual_row
+                debug_entry.update(manual_debug)
+                manual_matches += 1
+            else:
+                row, match_debug = self._match_row_with_debug(bet, rows)
+                debug_entry.update(match_debug)
             if row is None:
                 debug_entry['reason'] = 'no_match'
                 reasons['no_match'] += 1
@@ -100,9 +103,30 @@ class SettlementService:
             'items': items,
             'rows_fetched': len(rows),
             'rows_by_source': rows_by_source,
+            'manual_overrides_loaded': manual_meta['loaded_count'],
+            'manual_overrides_valid': manual_meta['valid_count'],
+            'manual_overrides_disabled': manual_meta['disabled_count'],
+            'manual_overrides_invalid': manual_meta['invalid_count'],
+            'manual_overrides_matched': manual_matches,
             'reasons': dict(reasons),
             'bets': debug_bets,
             'sample': [self._compact_debug_entry(item) for item in debug_bets[:8]],
+        }
+
+    def _empty_probe_result(self, checked: int, manual_meta: dict[str, int]) -> dict[str, Any]:
+        return {
+            'checked': checked,
+            'items': [],
+            'rows_fetched': 0,
+            'rows_by_source': {},
+            'manual_overrides_loaded': manual_meta['loaded_count'],
+            'manual_overrides_valid': manual_meta['valid_count'],
+            'manual_overrides_disabled': manual_meta['disabled_count'],
+            'manual_overrides_invalid': manual_meta['invalid_count'],
+            'manual_overrides_matched': 0,
+            'reasons': {},
+            'bets': [],
+            'sample': [],
         }
 
     def _eligible(self, bet: dict[str, Any], now_utc: datetime) -> bool:
@@ -226,7 +250,8 @@ class SettlementService:
                 fuzzy_tolerance_hours=60,
             )
             has_score = int(self._extract_result(row, 'home') is not None and self._extract_result(row, 'away') is not None)
-            source_priority = 2 if str(row.get('_settlement_source') or '') == 'sstats' else 1
+            source_name = str(row.get('_settlement_source') or '')
+            source_priority = 3 if source_name == 'manual_override' else 2 if source_name == 'sstats' else 1
             key = (has_score, score, source_priority)
             candidate_debug = self._row_debug(row=row, score=score, has_score=bool(has_score))
             top_candidates.append((key, candidate_debug))
@@ -250,6 +275,138 @@ class SettlementService:
         if best_row is None or best_key is None or best_key[1] < 70.0:
             return None, debug
         return best_row, debug
+
+    def _load_manual_overrides(self) -> tuple[list[dict[str, Any]], dict[str, int]]:
+        path = Path(str(getattr(self.settings, 'manual_settlement_path', '.data/manual-settlements.json') or '.data/manual-settlements.json'))
+        if not path.is_absolute():
+            path = Path.cwd() / path
+        meta: dict[str, int] = {
+            'loaded_count': 0,
+            'valid_count': 0,
+            'disabled_count': 0,
+            'invalid_count': 0,
+        }
+        if not path.exists():
+            return [], meta
+        try:
+            payload = json.loads(path.read_text(encoding='utf-8'))
+        except Exception:
+            meta['invalid_count'] = 1
+            return [], meta
+        raw_items = payload.get('items') if isinstance(payload, dict) else payload
+        if not isinstance(raw_items, list):
+            meta['invalid_count'] = 1
+            return [], meta
+        overrides: list[dict[str, Any]] = []
+        meta['loaded_count'] = len(raw_items)
+        for item in raw_items:
+            normalized = self._normalize_manual_override(item)
+            status = str(normalized.get('_status') or 'invalid')
+            if status == 'valid':
+                overrides.append(normalized)
+                meta['valid_count'] += 1
+            elif status == 'disabled':
+                meta['disabled_count'] += 1
+            else:
+                meta['invalid_count'] += 1
+        return overrides, meta
+
+    def _normalize_manual_override(self, item: Any) -> dict[str, Any]:
+        if not isinstance(item, dict):
+            return {'_status': 'invalid'}
+        if not bool(item.get('enabled', True)):
+            return {'_status': 'disabled'}
+        home_goals = self._coerce_goal(item.get('home_goals'))
+        away_goals = self._coerce_goal(item.get('away_goals'))
+        if home_goals is None or away_goals is None:
+            return {'_status': 'invalid'}
+        fingerprint = str(item.get('fingerprint') or '').strip()
+        match_key = str(item.get('match_key') or '').strip()
+        home_team = str(item.get('home_team') or '').strip()
+        away_team = str(item.get('away_team') or '').strip()
+        if not fingerprint and not match_key and (not home_team or not away_team):
+            return {'_status': 'invalid'}
+        return {
+            '_status': 'valid',
+            'fingerprint': fingerprint,
+            'match_key': match_key,
+            'sport_key': str(item.get('sport_key') or '').strip(),
+            'league_name': str(item.get('league_name') or '').strip(),
+            'home_team': home_team,
+            'away_team': away_team,
+            'commence_time': str(item.get('commence_time') or '').strip(),
+            'home_goals': home_goals,
+            'away_goals': away_goals,
+            'note': str(item.get('note') or '').strip(),
+        }
+
+    def _find_manual_override_row(self, bet: dict[str, Any], overrides: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, dict[str, Any]]:
+        for override in overrides:
+            match_mode = self._manual_override_match_mode(bet, override)
+            if match_mode is None:
+                continue
+            row = self._build_manual_override_row(bet, override, match_mode)
+            debug = {
+                'rows_considered': 0,
+                'rows_with_start': 0,
+                'best_score': 100.0,
+                'best_source': 'manual_override',
+                'best_status': self._row_status(row),
+                'best_has_score': True,
+                'best_event': self._row_event_label(row),
+                'best_scoreline': self._row_scoreline(row),
+                'matched_via': 'manual_override',
+                'manual_override_match_mode': match_mode,
+                'manual_override_note': override.get('note') or None,
+                'top_candidates': [self._row_debug(row=row, score=100.0, has_score=True)],
+            }
+            return row, debug
+        return None, {}
+
+    def _manual_override_match_mode(self, bet: dict[str, Any], override: dict[str, Any]) -> str | None:
+        fingerprint = str(override.get('fingerprint') or '')
+        if fingerprint and fingerprint == str(bet.get('fingerprint') or ''):
+            return 'fingerprint'
+        match_key = str(override.get('match_key') or '')
+        if match_key and match_key == str(bet.get('match_key') or ''):
+            return 'match_key'
+        home_team = str(override.get('home_team') or '')
+        away_team = str(override.get('away_team') or '')
+        if not home_team or not away_team:
+            return None
+        if self._normalize_name(home_team) != self._normalize_name(str(bet.get('home_team') or '')):
+            return None
+        if self._normalize_name(away_team) != self._normalize_name(str(bet.get('away_team') or '')):
+            return None
+        sport_key = str(override.get('sport_key') or '')
+        if sport_key and self._normalize_name(sport_key) != self._normalize_name(str(bet.get('sport_key') or '')):
+            return None
+        league_name = str(override.get('league_name') or '')
+        if league_name and self._normalize_name(league_name) != self._normalize_name(str(bet.get('league_name') or '')):
+            return None
+        commence_time = str(override.get('commence_time') or '')
+        if commence_time:
+            if self._safe_date(commence_time) != self._safe_date(str(bet.get('commence_time') or '')):
+                return None
+        return 'teams'
+
+    def _build_manual_override_row(self, bet: dict[str, Any], override: dict[str, Any], match_mode: str) -> dict[str, Any]:
+        return {
+            '_settlement_source': 'manual_override',
+            '_manual_override_match_mode': match_mode,
+            '_manual_override_note': str(override.get('note') or ''),
+            'utcDate': str(override.get('commence_time') or bet.get('commence_time') or ''),
+            'status': 'FINISHED',
+            'competition': {'name': str(override.get('league_name') or bet.get('league_name') or '')},
+            'homeTeam': {'name': str(override.get('home_team') or bet.get('home_team') or '')},
+            'awayTeam': {'name': str(override.get('away_team') or bet.get('away_team') or '')},
+            'score': {
+                'fullTime': {
+                    'home': float(override.get('home_goals') or 0.0),
+                    'away': float(override.get('away_goals') or 0.0),
+                }
+            },
+        }
 
     def _grade_bet(self, bet: dict[str, Any], home_goals: float, away_goals: float) -> tuple[str | None, float]:
         family = str(bet.get('family') or '')
@@ -496,3 +653,25 @@ class SettlementService:
             except Exception:
                 continue
         return None
+
+    @staticmethod
+    def _coerce_goal(value: Any) -> float | None:
+        if value in (None, ''):
+            return None
+        try:
+            return float(value)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _normalize_name(value: str) -> str:
+        return ' '.join(str(value or '').strip().casefold().split())
+
+    @staticmethod
+    def _safe_date(value: str) -> str | None:
+        if value in (None, ''):
+            return None
+        try:
+            return parse_datetime(str(value)).astimezone(UTC).date().isoformat()
+        except Exception:
+            return None
