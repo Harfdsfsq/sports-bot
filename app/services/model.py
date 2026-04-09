@@ -904,6 +904,7 @@ class CandidateFactory:
         match: Match,
         family: str,
         selection: str,
+        selection_key: str | None,
         point: float | None,
         adjusted_probability: float,
         market_probability: float,
