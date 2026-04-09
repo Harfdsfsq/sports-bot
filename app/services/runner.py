@@ -261,8 +261,9 @@ class PredictionRunner:
                 candidates.append(candidate)
 
             candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
+            bankroll_preview = self._project_bankroll_summary(candidates)
             settlement_messages_sent, settlement_payloads = await self.telegram.publish_settlement_summary(settlement_summary)
-            sent_messages, telegram_payloads = await self.telegram.publish(candidates, bankroll_summary=self.state.bankroll_summary(self.settings))
+            sent_messages, telegram_payloads = await self.telegram.publish(candidates, bankroll_summary=bankroll_preview)
             published_count = self.state.store_candidates(candidates, telegram_sent=sent_messages > 0)
             telegram_picks_sent = len(candidates) if sent_messages > 0 else 0
             sent_messages += settlement_messages_sent
@@ -652,6 +653,31 @@ class PredictionRunner:
                 continue
             self._collect_candidate_fingerprints(payload, seen)
         return seen
+
+    def _project_bankroll_summary(self, candidates: list[CandidateBet]) -> dict[str, Any]:
+        summary = self.state.bankroll_summary(self.settings)
+        total_new_stakes = round(
+            sum(max(0.0, float(getattr(candidate, 'stake_amount', 0.0) or 0.0)) for candidate in candidates),
+            2,
+        )
+        if total_new_stakes <= 0:
+            return summary
+
+        projected = dict(summary)
+        current_balance = float(projected.get('current_balance') or 0.0)
+        open_exposure = float(projected.get('open_exposure') or 0.0) + total_new_stakes
+        total_staked = float(projected.get('total_staked') or 0.0) + total_new_stakes
+        closed_pnl = float(projected.get('closed_pnl') or 0.0)
+        published_with_stake = sum(
+            1 for candidate in candidates if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) > 0
+        )
+
+        projected['open_exposure'] = round(open_exposure, 2)
+        projected['total_staked'] = round(total_staked, 2)
+        projected['bets_published'] = int(projected.get('bets_published') or 0) + published_with_stake
+        projected['available_balance'] = round(max(0.0, current_balance - open_exposure), 2)
+        projected['yield_pct'] = round((closed_pnl / total_staked * 100.0) if total_staked > 0 else 0.0, 2)
+        return projected
 
     def _collect_candidate_fingerprints(self, value: Any, seen: set[str]) -> None:
         if isinstance(value, dict):

@@ -60,7 +60,8 @@ class TelegramPublisher:
         bankroll_summary: dict[str, Any] | None = None,
     ) -> str:
         count = len(bets)
-        min_books = max(1, int(getattr(self.settings, "min_books_publish", 1) or 1))
+        single_book_count = sum(1 for bet in bets if int(getattr(bet, "books_count", 0) or 0) <= 1)
+        min_books = 1 if single_book_count else 2
         publish_window_hours = max(1, int(getattr(self.settings, "publish_window_hours", 48) or 48))
         books_note = (
             "есть рыночное подтверждение; приоритет — совпадение как минимум у двух котировок, а исключения допускаются только при очень сильном сигнале и глубоком контексте."
@@ -85,6 +86,8 @@ class TelegramPublisher:
             "На один матч — не больше одной рекомендации. "
             f"В список попадают варианты, где модель видит перевес над линией и {books_note}"
         )
+        if single_book_count:
+            notes += " Допускаем одиночные линии, когда free-tier не дает полного консенсуса, но сигнал модели остается рабочим."
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
