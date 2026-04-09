@@ -265,7 +265,7 @@ jobs:
 
       - name: Smoke import check
         run: |
-          python -c "import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.futrixmetrics; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
+          python -c "from app.config import Settings; Settings(); import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.futrixmetrics; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
 
       - name: Compile key modules
         run: |
