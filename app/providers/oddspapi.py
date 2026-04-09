@@ -103,6 +103,10 @@ class OddsPapiProvider:
                 if tid and tid not in tournament_ids:
                     tournament_ids.append(tid)
             tournament_ids = tournament_ids[: self.tournament_limit]
+            if not tournament_ids:
+                output: dict[str, list[Offer]] = {}
+                self._write_cache(output)
+                return output, stats, preview
 
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             for bookmaker_slug in bookmakers:
@@ -224,32 +228,62 @@ class OddsPapiProvider:
                 metadata={"oddspapi_bookmaker": bookmaker_slug},
             ))
 
-        for market_value in markets.values():
+        for market_key, market_value in markets.items():
             if not isinstance(market_value, dict):
                 continue
             outcomes = market_value.get("outcomes") or {}
             parsed_h2h = False
-            for outcome in outcomes.values():
+            for outcome_key, outcome in outcomes.items():
                 if not isinstance(outcome, dict):
                     continue
                 players = outcome.get("players") or {}
                 for player in players.values():
                     if not isinstance(player, dict):
                         continue
-                    label = str(player.get("bookmakerOutcomeId") or "").strip().lower()
+                    selection = self._resolve_h2h_selection(
+                        match=match,
+                        market_key=str(market_key or ""),
+                        outcome_key=str(outcome_key or ""),
+                        player=player,
+                    )
+                    if not selection:
+                        continue
                     price = player.get("price")
-                    if label == "home":
-                        add("h2h", match.home_team, price)
-                        parsed_h2h = True
-                    elif label == "away":
-                        add("h2h", match.away_team, price)
-                        parsed_h2h = True
-                    elif label == "draw":
-                        add("h2h", "Draw", price)
-                        parsed_h2h = True
+                    add("h2h", selection, price)
+                    parsed_h2h = True
             if parsed_h2h:
                 continue
         return offers
+
+    @staticmethod
+    def _resolve_h2h_selection(match: Match, market_key: str, outcome_key: str, player: dict[str, Any]) -> str | None:
+        market_key = str(market_key or "").strip()
+        outcome_key = str(outcome_key or "").strip()
+        player_name = str(player.get("playerName") or "").strip().lower()
+        bookmaker_outcome_id = str(player.get("bookmakerOutcomeId") or "").strip().lower()
+
+        if market_key == "101":
+            direct = {
+                "101": match.home_team,
+                "102": "Draw",
+                "103": match.away_team,
+            }.get(outcome_key)
+            if direct:
+                return direct
+            if bookmaker_outcome_id.endswith("101"):
+                return match.home_team
+            if bookmaker_outcome_id.endswith("102"):
+                return "Draw"
+            if bookmaker_outcome_id.endswith("103"):
+                return match.away_team
+
+        if player_name in {"home", "1"}:
+            return match.home_team
+        if player_name in {"away", "2"}:
+            return match.away_team
+        if player_name in {"draw", "x"}:
+            return "Draw"
+        return None
 
     def _match_fixture(self, row: dict[str, Any], matches: list[Match]) -> tuple[Match, str] | None:
         home = str(row.get("participant1Name") or "").strip()
