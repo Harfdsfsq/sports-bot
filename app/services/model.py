@@ -2346,6 +2346,34 @@ class CandidateFactory:
                     if selection_kind == 'over' and total_xg < point - conflict_buffer:
                         rejections['totals_over_xg_conflict_guard'] += 1
                         continue
+                if (
+                    bool(getattr(self.settings, 'totals_short_price_guard_enabled', True))
+                    and selection_kind in {'under', 'over'}
+                    and float(getattr(item, 'odds', 0.0) or 0.0) <= float(getattr(self.settings, 'totals_short_price_max_odds', 1.70) or 1.70)
+                ):
+                    short_price_min_conf = float(getattr(self.settings, 'totals_short_price_min_confidence', 70.0) or 70.0)
+                    short_price_min_edge = float(getattr(self.settings, 'totals_short_price_min_edge_pct', 6.5) or 6.5)
+                    short_price_min_ev = float(getattr(self.settings, 'totals_short_price_min_ev_pct', 4.0) or 4.0)
+                    short_price_min_adjusted = float(getattr(self.settings, 'totals_short_price_min_adjusted_probability', 0.66) or 0.66)
+                    short_price_min_context = float(getattr(self.settings, 'totals_short_price_min_context_confidence', 70.0) or 70.0)
+                    context_confidence = self._to_float_safe(source_summary.get('context_confidence'))
+                    if float(item.confidence) < short_price_min_conf:
+                        rejections['totals_short_price_confidence_guard'] += 1
+                        continue
+                    if float(item.edge_pct) < short_price_min_edge:
+                        rejections['totals_short_price_edge_guard'] += 1
+                        continue
+                    if float(item.ev_pct) < short_price_min_ev:
+                        rejections['totals_short_price_ev_guard'] += 1
+                        continue
+                    if float(item.adjusted_probability) < short_price_min_adjusted:
+                        rejections['totals_short_price_probability_guard'] += 1
+                        continue
+                    if short_price_min_context > 0.0 and (
+                        context_confidence is None or float(context_confidence) < short_price_min_context
+                    ):
+                        rejections['totals_short_price_context_guard'] += 1
+                        continue
                 if selection_kind == 'over' and point is not None and abs(float(point) - 2.5) <= 0.01:
                     if bool(getattr(self.settings, 'totals_over25_dual_threat_guard_enabled', True)) and item.expected_home is not None and item.expected_away is not None:
                         weaker_xg = min(float(item.expected_home), float(item.expected_away))

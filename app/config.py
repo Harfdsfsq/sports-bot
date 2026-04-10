@@ -410,6 +410,13 @@ class Settings(BaseSettings):
     totals_over25_min_confidence: float = Field(default=66.0, validation_alias=AliasChoices("TOTALS_OVER25_MIN_CONFIDENCE"))
     totals_over25_min_sum_xg: float = Field(default=3.15, validation_alias=AliasChoices("TOTALS_OVER25_MIN_SUM_XG"))
     totals_over25_min_adjusted_probability: float = Field(default=0.51, validation_alias=AliasChoices("TOTALS_OVER25_MIN_ADJUSTED_PROBABILITY"))
+    totals_short_price_guard_enabled: bool = Field(default=True, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_GUARD_ENABLED"))
+    totals_short_price_max_odds: float = Field(default=1.70, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_MAX_ODDS"))
+    totals_short_price_min_edge_pct: float = Field(default=6.5, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_MIN_EDGE_PCT"))
+    totals_short_price_min_ev_pct: float = Field(default=4.0, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_MIN_EV_PCT"))
+    totals_short_price_min_confidence: float = Field(default=70.0, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_MIN_CONFIDENCE"))
+    totals_short_price_min_adjusted_probability: float = Field(default=0.66, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_MIN_ADJUSTED_PROBABILITY"))
+    totals_short_price_min_context_confidence: float = Field(default=70.0, validation_alias=AliasChoices("TOTALS_SHORT_PRICE_MIN_CONTEXT_CONFIDENCE"))
 
     risky_totals_min_edge_pct: float = Field(default=8.0, validation_alias=AliasChoices("RISKY_TOTALS_MIN_EDGE_PCT"))
     risky_totals_min_ev_pct: float = Field(default=6.0, validation_alias=AliasChoices("RISKY_TOTALS_MIN_EV_PCT"))

@@ -473,7 +473,7 @@ class SStatsContextProvider:
             if best_score < min_score:
                 stats["unmatched_rows"] += 1
                 continue
-            context = self._row_to_bzzoiro_context(row)
+            context = self._row_to_bzzoiro_context(row, best_quality)
             if context.expected_home is None or context.expected_away is None:
                 stats["unmatched_rows"] += 1
                 continue
@@ -505,7 +505,7 @@ class SStatsContextProvider:
         stats["contexts_built"] = len(contexts)
         return contexts, stats, preview
 
-    def _row_to_bzzoiro_context(self, row: dict[str, Any]) -> MatchContext:
+    def _row_to_bzzoiro_context(self, row: dict[str, Any], match_quality: str | None) -> MatchContext:
         def pct(value: Any) -> float | None:
             try:
                 if value is None or value == "":
@@ -522,14 +522,52 @@ class SStatsContextProvider:
         home_prob = pct(row.get("prob_home_win"))
         away_prob = pct(row.get("prob_away_win"))
         draw_prob = pct(row.get("prob_draw"))
+        prob_over_15 = pct(row.get("prob_over_15"))
+        prob_over_25 = pct(row.get("prob_over_25"))
+        prob_over_35 = pct(row.get("prob_over_35"))
+        prob_btts_yes = pct(row.get("prob_btts_yes"))
+        favorite_prob = pct(row.get("favorite_prob"))
+
         raw_conf = row.get("confidence")
+        raw_conf_pct: float | None = None
+        confidence = 56.0
         try:
-            confidence_value = float(raw_conf) if raw_conf not in (None, "") else 0.62
+            raw_value = float(raw_conf)
+            raw_conf_pct = raw_value * 100.0 if raw_value <= 1.0 else raw_value
+            confidence = 56.0 + ((raw_conf_pct - 50.0) * 0.30)
+            if raw_conf_pct < 50.0:
+                confidence -= min(4.0, (50.0 - raw_conf_pct) * 0.12)
         except Exception:
-            confidence_value = 0.62
-        if confidence_value > 1.0:
-            confidence_value /= 100.0
-        confidence = clamp(55.0 + confidence_value * 18.0, 56.0, 73.0)
+            pass
+
+        prediction_age_hours: float | None = None
+        created_at_raw = row.get("created_at") or row.get("updated_at")
+        if created_at_raw:
+            try:
+                created_at = parse_datetime(created_at_raw)
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=UTC)
+                prediction_age_hours = max(
+                    0.0,
+                    (datetime.now(UTC) - created_at.astimezone(UTC)).total_seconds() / 3600.0,
+                )
+                if prediction_age_hours > 72.0:
+                    confidence -= min(8.0, ((prediction_age_hours - 72.0) / 24.0) * 1.5)
+                elif prediction_age_hours > 36.0:
+                    confidence -= min(3.0, (prediction_age_hours - 36.0) / 24.0)
+            except Exception:
+                prediction_age_hours = None
+
+        if match_quality == "fuzzy":
+            confidence -= 5.0
+        elif match_quality == "loose":
+            confidence -= 2.0
+        elif match_quality is None:
+            confidence -= 4.0
+
+        if prob_over_25 is not None and prob_btts_yes is not None and raw_conf_pct is not None and raw_conf_pct >= 55.0:
+            confidence += 1.0
+        confidence = clamp(confidence, 48.0, 74.0)
 
         return MatchContext(
             source="bzzoiro_predictions",
@@ -542,15 +580,19 @@ class SStatsContextProvider:
             details={
                 "sstats_mode": "bzzoiro_prediction",
                 "prob_draw": draw_prob,
-                "prob_over_1_5": pct(row.get("prob_over_15")),
-                "prob_over_2_5": pct(row.get("prob_over_25")),
-                "prob_over_3_5": pct(row.get("prob_over_35")),
-                "prob_btts_yes": pct(row.get("prob_btts_yes")),
+                "prob_over_1_5": prob_over_15,
+                "prob_over_2_5": prob_over_25,
+                "prob_over_3_5": prob_over_35,
+                "prob_btts_yes": prob_btts_yes,
                 "favorite": row.get("favorite"),
-                "favorite_prob": pct(row.get("favorite_prob")),
+                "favorite_prob": favorite_prob,
                 "most_likely_score": row.get("most_likely_score"),
                 "model_version": row.get("model_version"),
-                "provider_confidence": confidence_value,
+                "provider_confidence": raw_conf_pct / 100.0 if raw_conf_pct is not None else None,
+                "provider_confidence_pct": round(raw_conf_pct, 3) if raw_conf_pct is not None else None,
+                "prediction_created_at": created_at_raw,
+                "prediction_age_hours": round(prediction_age_hours, 1) if prediction_age_hours is not None else None,
+                "match_quality": match_quality,
             },
         )
 

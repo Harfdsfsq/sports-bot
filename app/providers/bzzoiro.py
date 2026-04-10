@@ -89,7 +89,7 @@ class BzzoiroContextProvider:
             if prediction is None:
                 stats["unmatched_predictions"] += 1
                 continue
-            context = self._prediction_to_context(prediction, event)
+            context = self._prediction_to_context(prediction, event, quality)
             contexts[match.match_key] = context
             stats["contexts_built"] += 1
             if quality == "exact":
@@ -185,7 +185,12 @@ class BzzoiroContextProvider:
                 best_score = score
         return best if best_score >= 54.0 else None
 
-    def _prediction_to_context(self, prediction: dict[str, Any], event: dict[str, Any] | None) -> MatchContext:
+    def _prediction_to_context(
+        self,
+        prediction: dict[str, Any],
+        event: dict[str, Any] | None,
+        match_quality: str | None,
+    ) -> MatchContext:
         home_prob = normalize_probability_percent(prediction.get("prob_home_win"))
         away_prob = normalize_probability_percent(prediction.get("prob_away_win"))
         draw_prob = normalize_probability_percent(prediction.get("prob_draw"))
@@ -203,17 +208,45 @@ class BzzoiroContextProvider:
             expected_away = round(clamp(expected_total - expected_home, 0.25, 3.75), 3)
 
         raw_conf = prediction.get("confidence")
-        confidence = 60.0
+        raw_conf_pct: float | None = None
+        confidence = 56.0
         try:
             raw_value = float(raw_conf)
-            confidence = 56.0 + (raw_value * 0.22 if raw_value > 1.0 else raw_value * 22.0)
+            raw_conf_pct = raw_value * 100.0 if raw_value <= 1.0 else raw_value
+            confidence = 56.0 + ((raw_conf_pct - 50.0) * 0.30)
+            if raw_conf_pct < 50.0:
+                confidence -= min(4.0, (50.0 - raw_conf_pct) * 0.12)
         except Exception:
             pass
-        if over25 is not None:
-            confidence += 2.0
-        if btts_yes is not None:
+
+        prediction_age_hours: float | None = None
+        created_at_raw = prediction.get("created_at") or prediction.get("updated_at")
+        if created_at_raw:
+            try:
+                created_at = parse_datetime(created_at_raw)
+                if created_at.tzinfo is None:
+                    created_at = created_at.replace(tzinfo=UTC)
+                prediction_age_hours = max(
+                    0.0,
+                    (datetime.now(UTC) - created_at.astimezone(UTC)).total_seconds() / 3600.0,
+                )
+                if prediction_age_hours > 72.0:
+                    confidence -= min(8.0, ((prediction_age_hours - 72.0) / 24.0) * 1.5)
+                elif prediction_age_hours > 36.0:
+                    confidence -= min(3.0, (prediction_age_hours - 36.0) / 24.0)
+            except Exception:
+                prediction_age_hours = None
+
+        if match_quality == "fuzzy":
+            confidence -= 5.0
+        elif match_quality == "loose":
+            confidence -= 2.0
+        elif match_quality is None:
+            confidence -= 4.0
+
+        if over25 is not None and btts_yes is not None and raw_conf_pct is not None and raw_conf_pct >= 55.0:
             confidence += 1.0
-        confidence = clamp(confidence, 56.0, 78.0)
+        confidence = clamp(confidence, 48.0, 74.0)
 
         return MatchContext(
             source="bzzoiro",
@@ -227,6 +260,10 @@ class BzzoiroContextProvider:
                 "bzzoiro_draw_probability": draw_prob,
                 "bzzoiro_over25_probability": over25,
                 "bzzoiro_btts_yes_probability": btts_yes,
+                "bzzoiro_raw_confidence": round(raw_conf_pct, 3) if raw_conf_pct is not None else None,
+                "bzzoiro_prediction_created_at": created_at_raw,
+                "bzzoiro_prediction_age_hours": round(prediction_age_hours, 1) if prediction_age_hours is not None else None,
+                "bzzoiro_match_quality": match_quality,
                 "bzzoiro_model_version": prediction.get("model_version"),
             },
         )
