@@ -149,6 +149,21 @@ class PredictionRunner:
             quality_export_paths = self.quality.export_quality_report(self.settings.storage_export_dir, quality_report)
             daily_report_due, daily_report_date, daily_report_skip_reason = self.state.daily_report_due(self.settings, now_utc)
             daily_report = self.state.build_daily_report(self.settings, daily_report_date) if daily_report_due else None
+            daily_report_refresh_reason: str | None = None
+            if (
+                daily_report is None
+                and daily_report_skip_reason == 'already_sent'
+                and bool(getattr(self.settings, 'daily_report_resend_on_change', True))
+            ):
+                candidate_report = self.state.build_daily_report(self.settings, daily_report_date)
+                refresh_due, refresh_reason = self.state.daily_report_refresh_due(daily_report_date, candidate_report)
+                daily_report_refresh_reason = refresh_reason
+                if refresh_due:
+                    daily_report_due = True
+                    daily_report_skip_reason = 'refresh_after_settlement'
+                    daily_report = candidate_report
+                    daily_report['is_revision'] = True
+                    daily_report['refresh_reason'] = refresh_reason
             if daily_report is not None:
                 daily_report['quality_analysis'] = self.quality.analyze_daily_report(daily_report)
             daily_report_messages_sent = 0
@@ -451,6 +466,8 @@ class PredictionRunner:
                     'due': daily_report_due,
                     'report_date': daily_report_date,
                     'skip_reason': daily_report_skip_reason,
+                    'refresh_reason': daily_report_refresh_reason,
+                    'is_revision': bool((daily_report or {}).get('is_revision')) if daily_report is not None else False,
                     'telegram_messages_sent': daily_report_messages_sent,
                     'summary': (daily_report or {}).get('summary') if daily_report is not None else {},
                     'exports': daily_report_export_paths,

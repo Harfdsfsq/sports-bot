@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import csv
+import hashlib
 import json
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
@@ -289,10 +290,22 @@ class JsonStateStore:
         skipped_reason: str | None = None,
     ) -> None:
         reports = self._state.setdefault('daily_reports', {})
+        existing = reports.get(str(report_date)) if isinstance(reports, dict) else None
+        previous_revision = 0
+        if isinstance(existing, dict):
+            try:
+                previous_revision = int(existing.get('revision') or 0)
+            except Exception:
+                previous_revision = 0
+            if previous_revision <= 0 and existing.get('sent_at'):
+                previous_revision = 1
         reports[str(report_date)] = {
             'sent_at': datetime.now(UTC).isoformat(),
             'telegram_sent': bool(telegram_sent),
             'skipped_reason': skipped_reason,
+            'report_hash': self._daily_report_hash(report),
+            'revision': max(1, previous_revision + 1),
+            'is_revision': previous_revision > 0,
             'summary': dict((report or {}).get('summary') or {}),
         }
         self._save()
@@ -312,6 +325,39 @@ class JsonStateStore:
             'summary': summary,
             'rows': rows,
         }
+
+    def daily_report_refresh_due(self, report_date: str, report: dict[str, Any] | None) -> tuple[bool, str | None]:
+        reports = self._state.setdefault('daily_reports', {})
+        report_state = reports.get(str(report_date)) if isinstance(reports, dict) else None
+        if not isinstance(report_state, dict) or not report_state.get('sent_at'):
+            return False, 'not_sent'
+        current_hash = self._daily_report_hash(report)
+        previous_hash = str(report_state.get('report_hash') or '')
+        if previous_hash:
+            if current_hash == previous_hash:
+                return False, 'unchanged'
+            return True, 'report_changed'
+        previous_summary = dict(report_state.get('summary') or {})
+        current_summary = dict((report or {}).get('summary') or {})
+        keys = {
+            'total_bets',
+            'settled_bets',
+            'pending_bets',
+            'won',
+            'lost',
+            'push',
+            'void',
+            'stake_total',
+            'settled_stake',
+            'pending_stake',
+            'revenue',
+            'pnl',
+            'roi_pct',
+            'hit_rate_pct',
+        }
+        if any(previous_summary.get(key) != current_summary.get(key) for key in keys):
+            return True, 'legacy_summary_changed'
+        return False, 'legacy_hash_missing'
 
     def prediction_ledger(self, settings: Any | None = None) -> list[dict[str, Any]]:
         rows = [self._accounting_row_for_bet(item, settings) for item in self._tracked_bets()]
@@ -334,6 +380,31 @@ class JsonStateStore:
             'latest_daily_summary_json': str(self._write_json(root / 'latest-daily-summary.json', summary)),
             'latest_daily_summary_csv': str(self._write_csv(root / 'latest-daily-summary.csv', [summary])),
         }
+
+    @staticmethod
+    def _daily_report_hash(report: dict[str, Any] | None) -> str:
+        payload = report or {}
+        rows = [dict(item) for item in (payload.get('rows') or []) if isinstance(item, dict)]
+        compact_rows = []
+        for row in rows:
+            compact_rows.append({
+                'fingerprint': row.get('fingerprint') or '',
+                'status': row.get('status') or '',
+                'result': row.get('result') or '',
+                'is_hit': row.get('is_hit') if row.get('is_hit') in {True, False} else '',
+                'pnl': row.get('pnl') if row.get('pnl') not in (None, '') else '',
+                'roi_pct': row.get('roi_pct') if row.get('roi_pct') not in (None, '') else '',
+                'final_score': row.get('final_score') or '',
+                'settlement_source': row.get('settlement_source') or '',
+                'settlement_note': row.get('settlement_note') or '',
+            })
+        signature = {
+            'report_date': payload.get('report_date') or dict(payload.get('summary') or {}).get('report_date') or '',
+            'summary': dict(payload.get('summary') or {}),
+            'rows': sorted(compact_rows, key=lambda item: str(item.get('fingerprint') or '')),
+        }
+        raw = json.dumps(signature, ensure_ascii=False, sort_keys=True, separators=(',', ':'))
+        return hashlib.sha256(raw.encode('utf-8')).hexdigest()
 
     @staticmethod
     def _compact_settlement_attempt(item: dict[str, Any], attempted_at: str) -> dict[str, Any]:

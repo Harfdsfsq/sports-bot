@@ -56,6 +56,7 @@ class Settings(BaseSettings):
     daily_report_hour_local: int = Field(default=8, validation_alias=AliasChoices("DAILY_REPORT_HOUR_LOCAL"))
     daily_report_target_offset_days: int = Field(default=1, validation_alias=AliasChoices("DAILY_REPORT_TARGET_OFFSET_DAYS"))
     daily_report_min_bets: int = Field(default=1, validation_alias=AliasChoices("DAILY_REPORT_MIN_BETS"))
+    daily_report_resend_on_change: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_RESEND_ON_CHANGE", "DAILY_REPORT_REFRESH_ON_CHANGE"))
 
     run_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("RUN_SPORTS"))
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
