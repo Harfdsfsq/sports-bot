@@ -2139,6 +2139,39 @@ class CandidateFactory:
             return 'draw'
         return 'other'
 
+    def _totals_short_price_guard_reason(self, item: CandidateBet) -> str | None:
+        if not bool(getattr(self.settings, 'totals_short_price_guard_enabled', True)):
+            return None
+        selection_kind = self._candidate_selection_kind(item)
+        if selection_kind not in {'under', 'over'}:
+            return None
+        odds_value = self._to_float_safe(getattr(item, 'odds', None))
+        if odds_value is None:
+            return None
+        if float(odds_value) > float(getattr(self.settings, 'totals_short_price_max_odds', 1.70) or 1.70):
+            return None
+
+        source_summary = dict(getattr(item, 'source_summary', {}) or {})
+        short_price_min_conf = float(getattr(self.settings, 'totals_short_price_min_confidence', 70.0) or 70.0)
+        short_price_min_edge = float(getattr(self.settings, 'totals_short_price_min_edge_pct', 6.5) or 6.5)
+        short_price_min_ev = float(getattr(self.settings, 'totals_short_price_min_ev_pct', 4.0) or 4.0)
+        short_price_min_adjusted = float(getattr(self.settings, 'totals_short_price_min_adjusted_probability', 0.66) or 0.66)
+        short_price_min_context = float(getattr(self.settings, 'totals_short_price_min_context_confidence', 70.0) or 70.0)
+        context_confidence = self._to_float_safe(source_summary.get('context_confidence'))
+        if float(item.confidence) < short_price_min_conf:
+            return 'totals_short_price_confidence_guard'
+        if float(item.edge_pct) < short_price_min_edge:
+            return 'totals_short_price_edge_guard'
+        if float(item.ev_pct) < short_price_min_ev:
+            return 'totals_short_price_ev_guard'
+        if float(item.adjusted_probability) < short_price_min_adjusted:
+            return 'totals_short_price_probability_guard'
+        if short_price_min_context > 0.0 and (
+            context_confidence is None or float(context_confidence) < short_price_min_context
+        ):
+            return 'totals_short_price_context_guard'
+        return None
+
     def _is_risky_totals_candidate(self, item: CandidateBet) -> bool:
         source_summary = dict(getattr(item, 'source_summary', {}) or {})
         parts = [
@@ -2597,6 +2630,9 @@ class CandidateFactory:
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
         for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
             if item.family not in allowed_families:
+                continue
+            if item.family == 'totals' and self._totals_short_price_guard_reason(item):
+                rejections['fallback_blocked_totals_short_price_guard'] += 1
                 continue
             if self._league_bucket(item) not in {'preferred', 'secondary'}:
                 continue

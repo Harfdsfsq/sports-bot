@@ -361,7 +361,7 @@ class Settings(BaseSettings):
     thesportsdb_partial_match_threshold: float = Field(default=0.52, validation_alias=AliasChoices("THESPORTSDB_PARTIAL_MATCH_THRESHOLD"))
     thesportsdb_league_match_threshold: float = Field(default=0.60, validation_alias=AliasChoices("THESPORTSDB_LEAGUE_MATCH_THRESHOLD"))
 
-    fallback_publish_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices("FALLBACK_PUBLISH_MODE_ENABLED"))
+    fallback_publish_mode_enabled: bool = Field(default=False, validation_alias=AliasChoices("FALLBACK_PUBLISH_MODE_ENABLED"))
     fallback_publish_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_EV_PCT"))
     fallback_publish_min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_EDGE_PCT"))
     fallback_publish_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_CONFIDENCE"))
