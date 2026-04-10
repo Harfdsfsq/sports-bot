@@ -44,6 +44,13 @@ class Settings(BaseSettings):
     settlement_lookback_days: int = Field(default=5, validation_alias=AliasChoices("SETTLEMENT_LOOKBACK_DAYS"))
     settlement_send_telegram_summary: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_SEND_TELEGRAM_SUMMARY"))
     manual_settlement_path: str = Field(default=".data/manual-settlements.json", validation_alias=AliasChoices("MANUAL_SETTLEMENT_PATH", "SETTLEMENT_OVERRIDES_PATH"))
+    settlement_match_score_threshold: float = Field(default=70.0, validation_alias=AliasChoices("SETTLEMENT_MATCH_SCORE_THRESHOLD"))
+    settlement_api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_ENABLED"))
+    settlement_api_football_max_days: int = Field(default=6, validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_MAX_DAYS"))
+    settlement_api_football_statuses: CsvList = Field(
+        default_factory=lambda: ["FT", "AET", "PEN"],
+        validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_STATUSES"),
+    )
     daily_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_ENABLED"))
     daily_report_send_telegram: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_SEND_TELEGRAM"))
     daily_report_hour_local: int = Field(default=8, validation_alias=AliasChoices("DAILY_REPORT_HOUR_LOCAL"))
@@ -593,6 +600,7 @@ class Settings(BaseSettings):
         "risky_totals_league_terms",
         "risky_totals_team_terms",
         "quarantine_league_buckets",
+        "settlement_api_football_statuses",
         mode="before",
     )
     @classmethod

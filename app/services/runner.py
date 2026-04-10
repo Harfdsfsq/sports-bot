@@ -141,6 +141,7 @@ class PredictionRunner:
             now_local = now_utc.astimezone(self.settings.tzinfo)
 
             settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
+            settlement_attempts_recorded = self.state.record_settlement_attempts(settlement_probe)
             settlement_summary = self.state.apply_settlements(list(settlement_probe.get('items') or []), self.settings)
             bankroll_summary = self.state.bankroll_summary(self.settings)
             quality_clv_rows = self.market_monitor.resolved_clv_rows() if self.market_monitor is not None else []
@@ -442,6 +443,8 @@ class PredictionRunner:
                     'manual_overrides_invalid': settlement_probe.get('manual_overrides_invalid', 0),
                     'manual_overrides_matched': settlement_probe.get('manual_overrides_matched', 0),
                     'reasons': settlement_probe.get('reasons', {}),
+                    'unsettled_count': settlement_probe.get('unsettled_count', 0),
+                    'attempts_recorded': settlement_attempts_recorded,
                     'sample': settlement_probe.get('sample', []),
                 },
                 'daily_report': {

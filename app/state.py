@@ -120,6 +120,31 @@ class JsonStateStore:
     def pending_bets(self) -> list[dict[str, Any]]:
         return [dict(item) for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
 
+    def record_settlement_attempts(self, probe: dict[str, Any]) -> int:
+        attempts = [dict(item) for item in (probe.get('bets') or []) if isinstance(item, dict)]
+        if not attempts:
+            return 0
+        attempted_at = str(probe.get('checked_at') or datetime.now(UTC).isoformat())
+        by_id: dict[str, dict[str, Any]] = {}
+        for item in attempts:
+            compact = self._compact_settlement_attempt(item, attempted_at)
+            for key in ('prediction_id', 'fingerprint'):
+                value = str(item.get(key) or '').strip()
+                if value:
+                    by_id[value] = compact
+        changed = 0
+        for bet in self._state.get('bets') or []:
+            if not isinstance(bet, dict):
+                continue
+            attempt = by_id.get(str(bet.get('prediction_id') or '').strip()) or by_id.get(str(bet.get('fingerprint') or '').strip())
+            if not attempt:
+                continue
+            bet['last_settlement_attempt'] = attempt
+            changed += 1
+        if changed:
+            self._save()
+        return changed
+
     def annotate_candidates_with_stakes(self, candidates: list[CandidateBet], settings: Any) -> list[CandidateBet]:
         self._sync_bankroll_defaults(settings)
         bank = self._state['bankroll']
@@ -310,6 +335,31 @@ class JsonStateStore:
             'latest_daily_summary_csv': str(self._write_csv(root / 'latest-daily-summary.csv', [summary])),
         }
 
+    @staticmethod
+    def _compact_settlement_attempt(item: dict[str, Any], attempted_at: str) -> dict[str, Any]:
+        top_candidates = item.get('top_candidates')
+        if isinstance(top_candidates, list):
+            top_candidates = top_candidates[:3]
+        else:
+            top_candidates = []
+        return {
+            'attempted_at': attempted_at,
+            'reason': item.get('reason') or '',
+            'grade_issue': item.get('grade_issue') or '',
+            'match_failure': item.get('match_failure') or '',
+            'match_threshold': item.get('match_threshold') or '',
+            'best_score': item.get('best_score') or '',
+            'best_source': item.get('best_source') or '',
+            'best_status': item.get('best_status') or '',
+            'best_event': item.get('best_event') or '',
+            'best_scoreline': item.get('best_scoreline') or '',
+            'result_orientation': item.get('result_orientation') or '',
+            'matched_via': item.get('matched_via') or '',
+            'manual_override_match_mode': item.get('manual_override_match_mode') or '',
+            'manual_override_note': item.get('manual_override_note') or '',
+            'top_candidates': top_candidates,
+        }
+
     def _tracked_bets(self) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         for item in self._state.get('bets') or []:
@@ -330,6 +380,7 @@ class JsonStateStore:
 
     def _accounting_row_for_bet(self, bet: dict[str, Any], settings: Any | None = None) -> dict[str, Any]:
         settlement = dict(bet.get('settlement') or {})
+        settlement_attempt = dict(bet.get('last_settlement_attempt') or {})
         source_summary = dict(bet.get('source_summary') or {})
         status = str(bet.get('status') or 'pending')
         outcome = str(settlement.get('outcome') or status)
@@ -385,6 +436,7 @@ class JsonStateStore:
 
         return {
             'report_date': report_date,
+            'prediction_id': bet.get('prediction_id') or bet.get('fingerprint') or '',
             'fingerprint': bet.get('fingerprint') or '',
             'published_at': bet.get('published_at') or '',
             'published_at_local': published_at_local,
@@ -415,6 +467,19 @@ class JsonStateStore:
             'settled_at': settlement.get('settled_at') or '',
             'settlement_source': settlement.get('source') or '',
             'settlement_note': settlement.get('note') or '',
+            'settlement_result_orientation': settlement.get('result_orientation') or settlement_attempt.get('result_orientation') or '',
+            'settlement_attempt_at': settlement_attempt.get('attempted_at') or '',
+            'settlement_attempt_reason': settlement_attempt.get('reason') or '',
+            'settlement_grade_issue': settlement_attempt.get('grade_issue') or '',
+            'settlement_match_failure': settlement_attempt.get('match_failure') or '',
+            'settlement_match_threshold': settlement_attempt.get('match_threshold') or '',
+            'settlement_best_score': settlement_attempt.get('best_score') or '',
+            'settlement_best_source': settlement_attempt.get('best_source') or '',
+            'settlement_best_status': settlement_attempt.get('best_status') or '',
+            'settlement_best_event': settlement_attempt.get('best_event') or '',
+            'settlement_best_scoreline': settlement_attempt.get('best_scoreline') or '',
+            'settlement_matched_via': settlement_attempt.get('matched_via') or '',
+            'settlement_manual_note': settlement_attempt.get('manual_override_note') or '',
             'model_probability_pct': self._pct_value(bet.get('model_probability')),
             'adjusted_probability_pct': self._pct_value(bet.get('adjusted_probability')),
             'market_probability_pct': self._pct_value(bet.get('market_probability')),
@@ -739,6 +804,7 @@ class JsonStateStore:
         row = asdict(candidate)
         row['commence_time'] = candidate.commence_time.isoformat()
         row['fingerprint'] = JsonStateStore._fingerprint_from_candidate(candidate)
+        row['prediction_id'] = row['fingerprint']
         return row
 
     @staticmethod
