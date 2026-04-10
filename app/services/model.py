@@ -84,30 +84,76 @@ class CandidateFactory:
             if match_candidates:
                 picked = match_candidates[0]
                 candidates.append(picked)
-                debug_rows.append(
-                    {
-                        'match_key': match_key,
-                        'selection': picked.selection,
-                        'family': picked.family,
-                        'count': len(match_candidates),
-                        'context_source': picked.source_summary.get('context_source'),
-                        'context_mode': picked.source_summary.get('context_mode'),
-                        'selected_bookmaker': picked.source_summary.get('selected_bookmaker'),
-                        'selected_source': picked.source_summary.get('selected_source'),
-                        'market_movement': picked.source_summary.get('market_movement'),
-                        'market_probability': round(float(picked.market_probability), 4),
-                        'model_probability': round(float(picked.model_probability), 4),
-                        'adjusted_probability': round(float(picked.adjusted_probability), 4),
-                        'confidence': round(float(picked.confidence), 2),
-                        'expected_home': picked.expected_home,
-                        'expected_away': picked.expected_away,
-                    }
-                )
+                debug_rows.append(self._debug_row_for_candidate(picked, len(match_candidates)))
             else:
                 rejections['no_candidate_for_match'] += 1
 
+        pre_filter_rows = list(debug_rows)
         candidates = self._filter_and_rank(candidates, rejections)
-        return candidates, dict(rejections), {'matches': debug_rows[:200]}
+        passed_keys = {self._debug_candidate_key(item) for item in candidates}
+        for row in pre_filter_rows:
+            row['model_filter_status'] = 'passed' if self._debug_row_key(row) in passed_keys else 'rejected_by_model_filters'
+        return candidates, dict(rejections), {'matches': debug_rows}
+
+    def _debug_row_for_candidate(self, picked: CandidateBet, count: int) -> dict[str, Any]:
+        source_summary = dict(getattr(picked, 'source_summary', {}) or {})
+        analysis = dict(getattr(picked, 'analysis', {}) or {})
+        return {
+            'match_key': picked.match_key,
+            'sport_key': picked.sport_key,
+            'league_name': picked.league_name,
+            'home_team': picked.home_team,
+            'away_team': picked.away_team,
+            'commence_time': picked.commence_time.isoformat(),
+            'selection': picked.selection,
+            'selection_key': picked.selection_key,
+            'team_side': picked.team_side,
+            'family': picked.family,
+            'point': picked.point,
+            'odds': picked.odds,
+            'fair_odds': picked.fair_odds,
+            'implied_probability': round(float(picked.implied_probability), 4),
+            'market_probability': round(float(picked.market_probability), 4),
+            'consensus_probability': round(float(picked.consensus_probability), 4),
+            'model_probability': round(float(picked.model_probability), 4),
+            'final_probability': round(float(picked.final_probability), 4),
+            'adjusted_probability': round(float(picked.adjusted_probability), 4),
+            'edge_pct': round(float(picked.edge_pct), 3),
+            'ev_pct': round(float(picked.ev_pct), 3),
+            'confidence': round(float(picked.confidence), 2),
+            'books_count': picked.books_count,
+            'sources_count': picked.sources_count,
+            'model_mode': picked.model_mode,
+            'publication_score': round(float(getattr(picked, 'publication_score', 0.0) or 0.0), 3),
+            'expected_home': picked.expected_home,
+            'expected_away': picked.expected_away,
+            'total_xg': (
+                round(float(picked.expected_home) + float(picked.expected_away), 3)
+                if picked.expected_home is not None and picked.expected_away is not None
+                else None
+            ),
+            'candidate_count_for_match': count,
+            'context_source': source_summary.get('context_source'),
+            'context_mode': source_summary.get('context_mode'),
+            'context_confidence': source_summary.get('context_confidence'),
+            'context_sources': source_summary.get('context_sources'),
+            'selected_bookmaker': source_summary.get('selected_bookmaker'),
+            'selected_source': source_summary.get('selected_source'),
+            'selected_price': source_summary.get('selected_price'),
+            'market_movement': source_summary.get('market_movement'),
+            'best_vs_consensus_edge_pct': source_summary.get('best_vs_consensus_edge_pct'),
+            'consensus_dispersion_pct': source_summary.get('consensus_dispersion_pct'),
+            'reasons': list(getattr(picked, 'reasons', []) or []),
+            'analysis_points': list(analysis.get('summary_points') or []),
+        }
+
+    @staticmethod
+    def _debug_candidate_key(item: CandidateBet) -> tuple[Any, ...]:
+        return (item.match_key, item.family, item.selection_key, item.point, item.team_side)
+
+    @staticmethod
+    def _debug_row_key(row: dict[str, Any]) -> tuple[Any, ...]:
+        return (row.get('match_key'), row.get('family'), row.get('selection_key'), row.get('point'), row.get('team_side'))
 
     def _build_totals_candidates(
         self,

@@ -282,7 +282,19 @@ class PredictionRunner:
             sent_messages += settlement_messages_sent
             telegram_payloads = list(settlement_payloads) + list(telegram_payloads)
             clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
-            export_paths = self.state.export_payloads(self.settings.storage_export_dir, filtered_matches, publishable_candidates)
+            forecast_rows = self._forecast_rows_for_export(
+                model_debug,
+                candidates=candidates,
+                publishable_candidates=publishable_candidates,
+                zero_stake_candidates=zero_stake_candidates,
+                reused_candidates=reused_candidates,
+            )
+            export_paths = self.state.export_payloads(
+                self.settings.storage_export_dir,
+                filtered_matches,
+                publishable_candidates,
+                forecast_rows=forecast_rows,
+            )
             bankroll_summary = self.state.bankroll_summary(self.settings)
 
             source_stats = {
@@ -396,7 +408,12 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
-            sheet_export_result = self.sheet_export.write(publishable_candidates, matches=filtered_matches, summary=summary)
+            sheet_export_result = self.sheet_export.write(
+                publishable_candidates,
+                matches=filtered_matches,
+                forecast_rows=forecast_rows,
+                summary=summary,
+            )
             summary['sheet_export'] = sheet_export_result
 
             self.state.write_debug(
@@ -439,6 +456,7 @@ class PredictionRunner:
                     'sample_offers': self._serialize_offers(merged_offers, limit=25),
                     'sample_contexts': [self._serialize_context(item) for item in list(contexts.values())[:25]],
                     'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
+                    'forecast_rows': forecast_rows[:200],
                     'model_debug': model_debug,
                     'candidates': [self._serialize_candidate(item) for item in publishable_candidates[:25]],
                     'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates[:25]],
@@ -954,6 +972,34 @@ class PredictionRunner:
             'confidence': item.confidence,
             'details': item.details,
         }
+
+    def _forecast_rows_for_export(
+        self,
+        model_debug: dict[str, Any],
+        *,
+        candidates: list[CandidateBet],
+        publishable_candidates: list[CandidateBet],
+        zero_stake_candidates: list[CandidateBet],
+        reused_candidates: list[CandidateBet],
+    ) -> list[dict[str, Any]]:
+        rows = [dict(item) for item in (model_debug.get('matches') or []) if isinstance(item, dict)]
+        status_by_match: dict[str, str] = {}
+
+        for candidate in candidates:
+            status_by_match[str(candidate.match_key)] = 'publishable'
+        for candidate in zero_stake_candidates:
+            status_by_match[str(candidate.match_key)] = 'zero_stake'
+        for candidate in reused_candidates:
+            status_by_match[str(candidate.match_key)] = 'reused_already_in_state'
+
+        published_status = 'publishable_dry_run' if self.settings.publish_dry_run else 'published'
+        for candidate in publishable_candidates:
+            status_by_match[str(candidate.match_key)] = published_status
+
+        for row in rows:
+            match_key = str(row.get('match_key') or '')
+            row['forecast_status'] = status_by_match.get(match_key) or row.get('model_filter_status') or ''
+        return rows
 
     @staticmethod
     def _serialize_offers(offers_by_match: dict[str, list[Offer]], limit: int = 25) -> list[dict[str, Any]]:

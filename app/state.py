@@ -237,12 +237,19 @@ class JsonStateStore:
         self._save()
         return {'settled_count': len(settled_items), 'items': settled_items, 'bankroll': self.bankroll_summary(settings)}
 
-    def export_payloads(self, export_dir: str, matches: list[Match], candidates: list[CandidateBet]) -> dict[str, str]:
+    def export_payloads(
+        self,
+        export_dir: str,
+        matches: list[Match],
+        candidates: list[CandidateBet],
+        forecast_rows: list[dict[str, Any]] | None = None,
+    ) -> dict[str, str]:
         root = Path(export_dir)
         dated = root / datetime.now(UTC).strftime('%Y-%m-%d')
         dated.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(UTC).strftime('%H%M%S')
-        match_rows = [self._serialize_match(item) for item in matches]
+        forecasts_by_match = self._forecast_rows_by_match(forecast_rows or [])
+        match_rows = [self._serialize_match(item, forecasts_by_match.get(item.match_key)) for item in matches]
         pick_rows = [self._serialize_candidate(item) for item in candidates]
         pending = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
         settled = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') not in {'pending', 'generated'}]
@@ -294,8 +301,44 @@ class JsonStateStore:
         return value
 
     @staticmethod
-    def _serialize_match(match: Match) -> dict[str, Any]:
-        return {
+    def _forecast_rows_by_match(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        ranked: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            match_key = str(row.get('match_key') or '')
+            if not match_key:
+                continue
+            existing = ranked.get(match_key)
+            if existing is None or JsonStateStore._forecast_rank(row) > JsonStateStore._forecast_rank(existing):
+                ranked[match_key] = row
+        return ranked
+
+    @staticmethod
+    def _forecast_rank(row: dict[str, Any]) -> tuple[int, float, float]:
+        status = str(row.get('forecast_status') or row.get('model_filter_status') or '')
+        priority = {
+            'published': 5,
+            'publishable_dry_run': 4,
+            'publishable': 4,
+            'passed': 3,
+            'reused_already_in_state': 3,
+            'zero_stake': 2,
+            'rejected_by_model_filters': 1,
+        }.get(status, 0)
+        try:
+            score = float(row.get('publication_score') or 0.0)
+        except Exception:
+            score = 0.0
+        try:
+            ev = float(row.get('ev_pct') or 0.0)
+        except Exception:
+            ev = 0.0
+        return (priority, score, ev)
+
+    @staticmethod
+    def _serialize_match(match: Match, forecast: dict[str, Any] | None = None) -> dict[str, Any]:
+        row = {
             'match_key': match.match_key,
             'source': match.source,
             'source_event_id': match.source_event_id,
@@ -307,6 +350,93 @@ class JsonStateStore:
             'tier': match.tier,
             'metadata': match.metadata,
         }
+        row.update(JsonStateStore._forecast_columns(forecast))
+        return row
+
+    @staticmethod
+    def _forecast_columns(forecast: dict[str, Any] | None) -> dict[str, Any]:
+        keys = {
+            'forecast_status': '',
+            'forecast_family': '',
+            'forecast_selection': '',
+            'forecast_selection_key': '',
+            'forecast_team_side': '',
+            'forecast_line': '',
+            'forecast_odds': '',
+            'forecast_bookmaker': '',
+            'forecast_odds_source': '',
+            'forecast_model_probability_pct': '',
+            'forecast_adjusted_probability_pct': '',
+            'forecast_market_probability_pct': '',
+            'forecast_edge_pct': '',
+            'forecast_ev_pct': '',
+            'forecast_confidence': '',
+            'forecast_books_count': '',
+            'forecast_sources_count': '',
+            'forecast_model_mode': '',
+            'forecast_publication_score': '',
+            'forecast_expected_home': '',
+            'forecast_expected_away': '',
+            'forecast_total_xg': '',
+            'forecast_context_source': '',
+            'forecast_context_confidence': '',
+            'forecast_market_movement': '',
+            'forecast_reasons': '',
+            'forecast_analysis_points': '',
+        }
+        if not forecast:
+            return keys
+        keys.update({
+            'forecast_status': forecast.get('forecast_status') or forecast.get('model_filter_status') or '',
+            'forecast_family': forecast.get('family') or '',
+            'forecast_selection': forecast.get('selection') or '',
+            'forecast_selection_key': forecast.get('selection_key') or '',
+            'forecast_team_side': forecast.get('team_side') or '',
+            'forecast_line': forecast.get('point') if forecast.get('point') is not None else '',
+            'forecast_odds': JsonStateStore._round_value(forecast.get('odds'), 3),
+            'forecast_bookmaker': forecast.get('selected_bookmaker') or '',
+            'forecast_odds_source': forecast.get('selected_source') or '',
+            'forecast_model_probability_pct': JsonStateStore._pct_value(forecast.get('model_probability')),
+            'forecast_adjusted_probability_pct': JsonStateStore._pct_value(forecast.get('adjusted_probability')),
+            'forecast_market_probability_pct': JsonStateStore._pct_value(forecast.get('market_probability')),
+            'forecast_edge_pct': JsonStateStore._round_value(forecast.get('edge_pct'), 3),
+            'forecast_ev_pct': JsonStateStore._round_value(forecast.get('ev_pct'), 3),
+            'forecast_confidence': JsonStateStore._round_value(forecast.get('confidence'), 2),
+            'forecast_books_count': forecast.get('books_count') or '',
+            'forecast_sources_count': forecast.get('sources_count') or '',
+            'forecast_model_mode': forecast.get('model_mode') or '',
+            'forecast_publication_score': JsonStateStore._round_value(forecast.get('publication_score'), 3),
+            'forecast_expected_home': JsonStateStore._round_value(forecast.get('expected_home'), 3),
+            'forecast_expected_away': JsonStateStore._round_value(forecast.get('expected_away'), 3),
+            'forecast_total_xg': JsonStateStore._round_value(forecast.get('total_xg'), 3),
+            'forecast_context_source': forecast.get('context_source') or '',
+            'forecast_context_confidence': JsonStateStore._round_value(forecast.get('context_confidence'), 2),
+            'forecast_market_movement': forecast.get('market_movement') or '',
+            'forecast_reasons': forecast.get('reasons') or '',
+            'forecast_analysis_points': forecast.get('analysis_points') or '',
+        })
+        return keys
+
+    @staticmethod
+    def _round_value(value: Any, digits: int) -> Any:
+        try:
+            if value is None or value == '':
+                return ''
+            return round(float(value), digits)
+        except Exception:
+            return value or ''
+
+    @staticmethod
+    def _pct_value(value: Any) -> Any:
+        try:
+            if value is None or value == '':
+                return ''
+            number = float(value)
+            if number <= 1.0:
+                number *= 100.0
+            return round(number, 2)
+        except Exception:
+            return value or ''
 
     @staticmethod
     def _serialize_candidate(candidate: CandidateBet) -> dict[str, Any]:

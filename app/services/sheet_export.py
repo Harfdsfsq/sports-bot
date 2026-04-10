@@ -45,6 +45,31 @@ MATCH_HEADERS = [
     "home",
     "away",
     "commence_time_utc",
+    "forecast_status",
+    "forecast_family",
+    "forecast_selection",
+    "forecast_line",
+    "forecast_odds",
+    "forecast_bookmaker",
+    "forecast_odds_source",
+    "forecast_model_probability_pct",
+    "forecast_adjusted_probability_pct",
+    "forecast_market_probability_pct",
+    "forecast_edge_pct",
+    "forecast_ev_pct",
+    "forecast_confidence",
+    "forecast_books_count",
+    "forecast_sources_count",
+    "forecast_model_mode",
+    "forecast_publication_score",
+    "forecast_expected_home",
+    "forecast_expected_away",
+    "forecast_total_xg",
+    "forecast_context_source",
+    "forecast_context_confidence",
+    "forecast_market_movement",
+    "forecast_reasons",
+    "forecast_analysis_points",
 ]
 
 
@@ -66,10 +91,12 @@ class SheetExportService:
         candidates: list[Any],
         *,
         matches: list[Any] | None = None,
+        forecast_rows: list[dict[str, Any]] | None = None,
         summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         rows = [self._row_for_candidate(item) for item in candidates]
-        match_rows = [self._row_for_match(item) for item in (matches or [])]
+        forecasts_by_match = self._forecast_rows_by_match(forecast_rows or [])
+        match_rows = [self._row_for_match(item, forecasts_by_match.get(getattr(item, "match_key", ""))) for item in (matches or [])]
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -183,9 +210,9 @@ class SheetExportService:
             "Факторы": "; ".join(factors_list[:6]),
         }
 
-    def _row_for_match(self, match: Any) -> dict[str, Any]:
+    def _row_for_match(self, match: Any, forecast: dict[str, Any] | None = None) -> dict[str, Any]:
         commence_time = getattr(match, "commence_time", None)
-        return {
+        row = {
             "match_key": getattr(match, "match_key", ""),
             "sport": getattr(match, "sport_key", ""),
             "league": getattr(match, "league_name", ""),
@@ -193,6 +220,78 @@ class SheetExportService:
             "away": getattr(match, "away_team", ""),
             "commence_time_utc": commence_time.isoformat() if commence_time else "",
         }
+        row.update(self._forecast_columns(forecast))
+        return row
+
+    @staticmethod
+    def _forecast_rows_by_match(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+        ranked: dict[str, dict[str, Any]] = {}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            match_key = str(row.get("match_key") or "")
+            if not match_key:
+                continue
+            existing = ranked.get(match_key)
+            if existing is None or SheetExportService._forecast_rank(row) > SheetExportService._forecast_rank(existing):
+                ranked[match_key] = row
+        return ranked
+
+    @staticmethod
+    def _forecast_rank(row: dict[str, Any]) -> tuple[int, float, float]:
+        status = str(row.get("forecast_status") or row.get("model_filter_status") or "")
+        priority = {
+            "published": 5,
+            "publishable_dry_run": 4,
+            "publishable": 4,
+            "passed": 3,
+            "reused_already_in_state": 3,
+            "zero_stake": 2,
+            "rejected_by_model_filters": 1,
+        }.get(status, 0)
+        try:
+            score = float(row.get("publication_score") or 0.0)
+        except Exception:
+            score = 0.0
+        try:
+            ev = float(row.get("ev_pct") or 0.0)
+        except Exception:
+            ev = 0.0
+        return (priority, score, ev)
+
+    @staticmethod
+    def _forecast_columns(forecast: dict[str, Any] | None) -> dict[str, Any]:
+        row = {key: "" for key in MATCH_HEADERS if key.startswith("forecast_")}
+        if not forecast:
+            return row
+        row.update({
+            "forecast_status": forecast.get("forecast_status") or forecast.get("model_filter_status") or "",
+            "forecast_family": forecast.get("family") or "",
+            "forecast_selection": forecast.get("selection") or "",
+            "forecast_line": forecast.get("point") if forecast.get("point") is not None else "",
+            "forecast_odds": SheetExportService._fmt(forecast.get("odds")),
+            "forecast_bookmaker": forecast.get("selected_bookmaker") or "",
+            "forecast_odds_source": forecast.get("selected_source") or "",
+            "forecast_model_probability_pct": SheetExportService._pct(forecast.get("model_probability")),
+            "forecast_adjusted_probability_pct": SheetExportService._pct(forecast.get("adjusted_probability")),
+            "forecast_market_probability_pct": SheetExportService._pct(forecast.get("market_probability")),
+            "forecast_edge_pct": SheetExportService._fmt(forecast.get("edge_pct")),
+            "forecast_ev_pct": SheetExportService._fmt(forecast.get("ev_pct")),
+            "forecast_confidence": SheetExportService._fmt(forecast.get("confidence")),
+            "forecast_books_count": forecast.get("books_count") or "",
+            "forecast_sources_count": forecast.get("sources_count") or "",
+            "forecast_model_mode": forecast.get("model_mode") or "",
+            "forecast_publication_score": SheetExportService._fmt(forecast.get("publication_score")),
+            "forecast_expected_home": SheetExportService._fmt(forecast.get("expected_home")),
+            "forecast_expected_away": SheetExportService._fmt(forecast.get("expected_away")),
+            "forecast_total_xg": SheetExportService._fmt(forecast.get("total_xg")),
+            "forecast_context_source": forecast.get("context_source") or "",
+            "forecast_context_confidence": SheetExportService._fmt(forecast.get("context_confidence")),
+            "forecast_market_movement": forecast.get("market_movement") or "",
+            "forecast_reasons": "; ".join(str(item) for item in (forecast.get("reasons") or [])[:8]),
+            "forecast_analysis_points": "; ".join(str(item) for item in (forecast.get("analysis_points") or [])[:4]),
+        })
+        return row
 
     @staticmethod
     def _write_csv(path: Path, headers: list[str], rows: list[dict[str, Any]]) -> None:
