@@ -9,7 +9,10 @@ on:
         default: false
         type: boolean
   schedule:
-    - cron: '0 */5 * * *'
+    # 08:00, 12:00, 16:00, 20:00 MSK for forecasts.
+    - cron: '0 5,9,13,17 * * *'
+    # 22:00 MSK for the daily report.
+    - cron: '0 19 * * *'
 
 permissions:
   contents: write
@@ -25,6 +28,7 @@ env:
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   SHEET_ID: ${{ secrets.SHEET_ID }}
   PUBLISH_DRY_RUN: 'false'
+  PREDICTION_PUBLICATION_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
 
   BANKROLL_CURRENCY: 'units'
   BANKROLL_ENABLED: 'true'
@@ -46,8 +50,8 @@ env:
   SETTLEMENT_API_FOOTBALL_STATUSES: 'FT,AET,PEN'
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
-  DAILY_REPORT_HOUR_LOCAL: '8'
-  DAILY_REPORT_TARGET_OFFSET_DAYS: '1'
+  DAILY_REPORT_HOUR_LOCAL: '22'
+  DAILY_REPORT_TARGET_OFFSET_DAYS: '0'
   DAILY_REPORT_MIN_BETS: '1'
   DAILY_REPORT_RESEND_ON_CHANGE: 'true'
   QUALITY_LAYER_ENABLED: 'true'
@@ -190,7 +194,7 @@ env:
   PUBLISH_WINDOW_HOURS: '5'
   MIN_KICKOFF_LEAD_MINUTES: '45'
   MAX_MATCHES_FOR_ODDS_FETCH: '120'
-  MAX_PICKS_PER_RUN: '3'
+  MAX_PICKS_PER_RUN: '2'
   MAX_PICKS_PER_FAMILY: '2'
   MAX_PICKS_PER_LEAGUE: '2'
   MAX_SAME_REASON_SIGNATURE: '2'

@@ -27,6 +27,7 @@ class Settings(BaseSettings):
     debug_path: str = Field(default=".data/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
     storage_export_dir: str = Field(default=".data/exports", validation_alias=AliasChoices("STORAGE_EXPORT_DIR", "EXPORT_DIR"))
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
+    prediction_publication_enabled: bool = Field(default=True, validation_alias=AliasChoices("PREDICTION_PUBLICATION_ENABLED", "PICKS_PUBLICATION_ENABLED"))
 
     bankroll_enabled: bool = Field(default=True, validation_alias=AliasChoices("BANKROLL_ENABLED"))
     bankroll_starting_balance: float = Field(default=1000.0, validation_alias=AliasChoices("BANKROLL_STARTING_BALANCE", "BANKROLL_INITIAL"))

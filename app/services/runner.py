@@ -322,6 +322,9 @@ class PredictionRunner:
                 if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0
             ]
             publishable_candidates = self._filter_publishable_candidates(candidates)
+            prediction_publication_enabled = bool(getattr(self.settings, 'prediction_publication_enabled', True))
+            if not prediction_publication_enabled:
+                publishable_candidates = []
             bankroll_preview = self._project_bankroll_summary(publishable_candidates)
             settlement_messages_sent, settlement_payloads = await self.telegram.publish_settlement_summary(settlement_summary)
             sent_messages, telegram_payloads = await self.telegram.publish(publishable_candidates, bankroll_summary=bankroll_preview)
@@ -410,6 +413,7 @@ class PredictionRunner:
                 'reused_already_in_state': reused_already_in_state,
                 'published': telegram_picks_sent,
                 'published_to_telegram': telegram_picks_sent,
+                'prediction_publication_enabled': prediction_publication_enabled,
                 'telegram_messages_sent': sent_messages,
                 'published_unique_state': published_count,
                 'dry_run': self.settings.publish_dry_run,
