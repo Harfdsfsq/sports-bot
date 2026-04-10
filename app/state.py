@@ -330,6 +330,7 @@ class JsonStateStore:
 
     def _accounting_row_for_bet(self, bet: dict[str, Any], settings: Any | None = None) -> dict[str, Any]:
         settlement = dict(bet.get('settlement') or {})
+        source_summary = dict(bet.get('source_summary') or {})
         status = str(bet.get('status') or 'pending')
         outcome = str(settlement.get('outcome') or status)
         stake = self._safe_float(bet.get('stake_amount'))
@@ -423,6 +424,26 @@ class JsonStateStore:
             'books_count': bet.get('books_count') or '',
             'sources_count': bet.get('sources_count') or '',
             'model_mode': bet.get('model_mode') or '',
+            'publication_score': self._round_value(bet.get('publication_score'), 3),
+            'expected_home': self._round_value(bet.get('expected_home'), 3),
+            'expected_away': self._round_value(bet.get('expected_away'), 3),
+            'total_xg': self._round_value(
+                self._safe_float(bet.get('expected_home')) + self._safe_float(bet.get('expected_away')),
+                3,
+            ) if bet.get('expected_home') not in (None, '') and bet.get('expected_away') not in (None, '') else '',
+            'selected_bookmaker': source_summary.get('selected_bookmaker') or '',
+            'selected_source': source_summary.get('selected_source') or '',
+            'context_source': source_summary.get('context_source') or '',
+            'context_sources': source_summary.get('context_sources') or '',
+            'context_confidence': self._round_value(source_summary.get('context_confidence'), 2),
+            'context_mode': source_summary.get('context_mode') or '',
+            'market_movement': source_summary.get('market_movement') or '',
+            'best_vs_consensus_edge_pct': self._round_value(source_summary.get('best_vs_consensus_edge_pct'), 3),
+            'consensus_dispersion_pct': self._round_value(source_summary.get('consensus_dispersion_pct'), 3),
+            'match_tier': source_summary.get('match_tier') or '',
+            'quality_status': source_summary.get('quality_status') or '',
+            'quality_score': self._round_value(source_summary.get('quality_score'), 3),
+            'quality_reasons': source_summary.get('quality_reasons') or '',
         }
 
     def _daily_summary(self, rows: list[dict[str, Any]], settings: Any, report_date: str) -> dict[str, Any]:
@@ -648,6 +669,10 @@ class JsonStateStore:
             'forecast_context_source': '',
             'forecast_context_confidence': '',
             'forecast_market_movement': '',
+            'forecast_quality_status': '',
+            'forecast_quality_score': '',
+            'forecast_quality_reasons': '',
+            'forecast_quality_calibration': '',
             'forecast_reasons': '',
             'forecast_analysis_points': '',
         }
@@ -679,6 +704,10 @@ class JsonStateStore:
             'forecast_context_source': forecast.get('context_source') or '',
             'forecast_context_confidence': JsonStateStore._round_value(forecast.get('context_confidence'), 2),
             'forecast_market_movement': forecast.get('market_movement') or '',
+            'forecast_quality_status': forecast.get('quality_status') or '',
+            'forecast_quality_score': JsonStateStore._round_value(forecast.get('quality_score'), 3),
+            'forecast_quality_reasons': forecast.get('quality_reasons') or '',
+            'forecast_quality_calibration': forecast.get('quality_calibration') or '',
             'forecast_reasons': forecast.get('reasons') or '',
             'forecast_analysis_points': forecast.get('analysis_points') or '',
         })

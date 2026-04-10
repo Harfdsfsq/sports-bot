@@ -90,6 +90,10 @@ class MarketMonitor:
         self._write_json(self.pending_clv_path, rows)
         return {'tracked': added}
 
+    def resolved_clv_rows(self) -> list[dict[str, Any]]:
+        payload = self._load_json(self.clv_results_path, default=[])
+        return [dict(item) for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+
     def _update_pending_clv(self, now_utc: datetime, snapshot: dict[str, Any]) -> dict[str, Any]:
         payload = self._load_json(self.pending_clv_path, default=[])
         rows = payload if isinstance(payload, list) else []

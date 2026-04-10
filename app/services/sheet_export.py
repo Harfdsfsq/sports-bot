@@ -68,6 +68,10 @@ MATCH_HEADERS = [
     "forecast_context_source",
     "forecast_context_confidence",
     "forecast_market_movement",
+    "forecast_quality_status",
+    "forecast_quality_score",
+    "forecast_quality_reasons",
+    "forecast_quality_calibration",
     "forecast_reasons",
     "forecast_analysis_points",
 ]
@@ -97,6 +101,7 @@ class SheetExportService:
         forecast_rows: list[dict[str, Any]] | None = None,
         bet_rows: list[dict[str, Any]] | None = None,
         daily_report: dict[str, Any] | None = None,
+        quality_report: dict[str, Any] | None = None,
         summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         rows = [self._row_for_candidate(item) for item in candidates]
@@ -116,6 +121,7 @@ class SheetExportService:
             "matches": match_rows,
             "bet_ledger": ledger_rows,
             "daily_report": daily_report or {},
+            "quality_report": quality_report or {},
             "summary": summary or {},
         }
         self.json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -305,6 +311,10 @@ class SheetExportService:
             "forecast_context_source": forecast.get("context_source") or "",
             "forecast_context_confidence": SheetExportService._fmt(forecast.get("context_confidence")),
             "forecast_market_movement": forecast.get("market_movement") or "",
+            "forecast_quality_status": forecast.get("quality_status") or "",
+            "forecast_quality_score": SheetExportService._fmt(forecast.get("quality_score")),
+            "forecast_quality_reasons": "; ".join(str(item) for item in (forecast.get("quality_reasons") or [])[:8]),
+            "forecast_quality_calibration": json.dumps(forecast.get("quality_calibration") or {}, ensure_ascii=False, sort_keys=True),
             "forecast_reasons": "; ".join(str(item) for item in (forecast.get("reasons") or [])[:8]),
             "forecast_analysis_points": "; ".join(str(item) for item in (forecast.get("analysis_points") or [])[:4]),
         })

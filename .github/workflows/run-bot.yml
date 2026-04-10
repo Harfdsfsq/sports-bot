@@ -45,6 +45,22 @@ env:
   DAILY_REPORT_HOUR_LOCAL: '8'
   DAILY_REPORT_TARGET_OFFSET_DAYS: '1'
   DAILY_REPORT_MIN_BETS: '1'
+  QUALITY_LAYER_ENABLED: 'true'
+  QUALITY_MIN_HISTORY_BETS: '12'
+  CALIBRATION_ENABLED: 'true'
+  CALIBRATION_MIN_SAMPLE: '8'
+  CALIBRATION_STRENGTH: '0.55'
+  MARKET_SANITY_GUARD_ENABLED: 'true'
+  MARKET_SANITY_TOTALS_XG_MARGIN: '0.58'
+  MARKET_SANITY_UNDER15_XG_MARGIN: '0.45'
+  CLV_QUALITY_GUARD_ENABLED: 'true'
+  HISTORICAL_SEGMENT_GUARD_ENABLED: 'true'
+  QUARANTINE_SHADOW_MODE_ENABLED: 'true'
+  QUARANTINE_LEAGUE_BUCKETS: 'low'
+  QUALITY_HIGH_ODDS_GUARD_ENABLED: 'true'
+  NO_BET_QUALITY_SCORE_ENABLED: 'true'
+  MIN_QUALITY_SCORE_PUBLISH: '60'
+  DIXON_COLES_ENABLED: 'true'
 
   ODDS_API_IO_ENABLED: 'true'
   ODDS_API_IO_BOOTSTRAP_ENABLED: 'true'
@@ -298,11 +314,11 @@ jobs:
 
       - name: Smoke import check
         run: |
-          python -c "from app.config import Settings; Settings(); import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.futrixmetrics; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
+          python -c "from app.config import Settings; Settings(); import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.services.quality; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.futrixmetrics; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
 
       - name: Compile key modules
         run: |
-          python -m py_compile             app/config.py             app/schemas.py             app/providers/odds_api_io.py             app/providers/oddspapi.py             app/providers/allsportsapi.py             app/providers/futrixmetrics.py             app/providers/football_data.py             app/providers/openfootball.py             app/providers/newsapi.py             app/providers/gnews.py             app/services/runner.py             app/services/model.py             app/services/market_monitor.py             app/services/sheet_export.py             app/services/settlement.py             app/services/telegram.py             app/state.py
+          python -m py_compile             app/config.py             app/schemas.py             app/providers/odds_api_io.py             app/providers/oddspapi.py             app/providers/allsportsapi.py             app/providers/futrixmetrics.py             app/providers/football_data.py             app/providers/openfootball.py             app/providers/newsapi.py             app/providers/gnews.py             app/services/runner.py             app/services/model.py             app/services/market_monitor.py             app/services/quality.py             app/services/sheet_export.py             app/services/settlement.py             app/services/telegram.py             app/state.py
 
       - name: Prepare local state folders
         run: mkdir -p .data .data/exports
@@ -331,6 +347,8 @@ jobs:
             .data/exports/latest-daily-report.csv
             .data/exports/latest-daily-summary.json
             .data/exports/latest-daily-summary.csv
+            .data/exports/latest-quality-report.json
+            .data/exports/latest-quality-segments.csv
             .data/sheet-export.json
             .data/sheet-export.csv
             .data/sheet-run-summary.json

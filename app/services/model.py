@@ -1692,17 +1692,21 @@ class CandidateFactory:
         xg = self._enriched_expected_goals(match, context)
         if xg is not None:
             expected_home, expected_away = xg
-            denom = max(expected_home + expected_away, 0.1)
-            xg_home = clamp(expected_home / denom, 0.08, 0.80)
-            xg_away = clamp(expected_away / denom, 0.08, 0.80)
-            gap = abs(expected_home - expected_away)
-            xg_draw = clamp(0.28 - gap * 0.06, 0.10, 0.30)
-            weighted_parts.append((self._normalize_probabilities({
-                match.home_team: xg_home,
-                match.away_team: xg_away,
-                'draw': xg_draw,
-                'Draw': xg_draw,
-            }), float(getattr(self.settings, 'signal_weight_xg', 0.34) or 0.34)))
+            dc_probs = self._dixon_coles_h2h_probabilities(match, expected_home, expected_away)
+            if dc_probs is not None and bool(getattr(self.settings, 'dixon_coles_enabled', True)):
+                weighted_parts.append((dc_probs, float(getattr(self.settings, 'dixon_coles_h2h_weight', 0.42) or 0.42)))
+            else:
+                denom = max(expected_home + expected_away, 0.1)
+                xg_home = clamp(expected_home / denom, 0.08, 0.80)
+                xg_away = clamp(expected_away / denom, 0.08, 0.80)
+                gap = abs(expected_home - expected_away)
+                xg_draw = clamp(0.28 - gap * 0.06, 0.10, 0.30)
+                weighted_parts.append((self._normalize_probabilities({
+                    match.home_team: xg_home,
+                    match.away_team: xg_away,
+                    'draw': xg_draw,
+                    'Draw': xg_draw,
+                }), float(getattr(self.settings, 'signal_weight_xg', 0.34) or 0.34)))
         explicit = self._explicit_h2h_probabilities(match, context)
         if explicit is not None:
             source = str(context.source or '')
@@ -1732,6 +1736,51 @@ class CandidateFactory:
         for key in list(aggregate):
             aggregate[key] /= total_weight
         return self._normalize_probabilities(dict(aggregate))
+
+    def _dixon_coles_h2h_probabilities(self, match: Match, expected_home: float, expected_away: float) -> dict[str, float] | None:
+        try:
+            home_lam = clamp(float(expected_home), 0.05, 6.0)
+            away_lam = clamp(float(expected_away), 0.05, 6.0)
+        except Exception:
+            return None
+        max_goals = max(6, int(getattr(self.settings, 'dixon_coles_max_goals', 10) or 10))
+        rho = float(getattr(self.settings, 'dixon_coles_rho', -0.08) or -0.08)
+        home_probs = [self._poisson_pmf(home_lam, goals) for goals in range(max_goals + 1)]
+        away_probs = [self._poisson_pmf(away_lam, goals) for goals in range(max_goals + 1)]
+        home_win = 0.0
+        away_win = 0.0
+        draw = 0.0
+        for home_goals, home_prob in enumerate(home_probs):
+            for away_goals, away_prob in enumerate(away_probs):
+                prob = home_prob * away_prob * self._dixon_coles_tau(home_goals, away_goals, home_lam, away_lam, rho)
+                if home_goals > away_goals:
+                    home_win += prob
+                elif away_goals > home_goals:
+                    away_win += prob
+                else:
+                    draw += prob
+        return self._normalize_probabilities({
+            match.home_team: home_win,
+            match.away_team: away_win,
+            'draw': draw,
+            'Draw': draw,
+        })
+
+    @staticmethod
+    def _poisson_pmf(lam: float, goals: int) -> float:
+        return math.exp(-lam) * (lam ** goals) / max(1.0, math.factorial(goals))
+
+    @staticmethod
+    def _dixon_coles_tau(home_goals: int, away_goals: int, home_lam: float, away_lam: float, rho: float) -> float:
+        if home_goals == 0 and away_goals == 0:
+            return max(0.05, 1.0 - home_lam * away_lam * rho)
+        if home_goals == 0 and away_goals == 1:
+            return max(0.05, 1.0 + home_lam * rho)
+        if home_goals == 1 and away_goals == 0:
+            return max(0.05, 1.0 + away_lam * rho)
+        if home_goals == 1 and away_goals == 1:
+            return max(0.05, 1.0 - rho)
+        return 1.0
 
     def _explicit_h2h_probabilities(self, match: Match, context: MatchContext) -> dict[str, float] | None:
         home = self._safe_probability(context.home_win_probability)

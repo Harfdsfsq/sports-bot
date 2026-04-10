@@ -13,6 +13,7 @@ from app.config import Settings
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
+from app.services.quality import PredictionQualityService
 from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
@@ -41,6 +42,7 @@ class PredictionRunner:
         self.newsapi = self._safe_provider('app.providers.newsapi', 'NewsApiContextProvider')
         self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')
         self.factory = CandidateFactory(settings)
+        self.quality = PredictionQualityService(settings)
         self.market_monitor = MarketMonitor(settings) if getattr(settings, 'market_monitor_enabled', True) else None
         self.sheet_export = SheetExportService(settings)
         self.telegram = TelegramPublisher(settings)
@@ -141,8 +143,13 @@ class PredictionRunner:
             settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
             settlement_summary = self.state.apply_settlements(list(settlement_probe.get('items') or []), self.settings)
             bankroll_summary = self.state.bankroll_summary(self.settings)
+            quality_clv_rows = self.market_monitor.resolved_clv_rows() if self.market_monitor is not None else []
+            quality_report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings), quality_clv_rows)
+            quality_export_paths = self.quality.export_quality_report(self.settings.storage_export_dir, quality_report)
             daily_report_due, daily_report_date, daily_report_skip_reason = self.state.daily_report_due(self.settings, now_utc)
             daily_report = self.state.build_daily_report(self.settings, daily_report_date) if daily_report_due else None
+            if daily_report is not None:
+                daily_report['quality_analysis'] = self.quality.analyze_daily_report(daily_report)
             daily_report_messages_sent = 0
             daily_report_payloads: list[str] = []
             if daily_report is not None:
@@ -275,6 +282,10 @@ class PredictionRunner:
             contexts = self._merge_context_maps(*context_maps.values())
 
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
+            candidates_before_quality = list(raw_candidates)
+            raw_candidates, quality_rejections, quality_debug = self.quality.apply_to_candidates(raw_candidates, quality_report, now_utc)
+            for reason, count in quality_rejections.items():
+                rejections[f'quality_{reason}'] = rejections.get(f'quality_{reason}', 0) + count
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
             candidates: list[CandidateBet] = []
@@ -309,6 +320,7 @@ class PredictionRunner:
                 publishable_candidates=publishable_candidates,
                 zero_stake_candidates=zero_stake_candidates,
                 reused_candidates=reused_candidates,
+                quality_decisions=quality_debug.get('decisions', []),
             )
             export_paths = self.state.export_payloads(
                 self.settings.storage_export_dir,
@@ -319,6 +331,7 @@ class PredictionRunner:
             )
             daily_report_export_paths = self.state.export_daily_report(self.settings.storage_export_dir, daily_report) if daily_report is not None else {}
             export_paths.update(daily_report_export_paths)
+            export_paths.update(quality_export_paths)
             bet_ledger_rows = self.state.prediction_ledger(self.settings)
             bankroll_summary = self.state.bankroll_summary(self.settings)
 
@@ -375,6 +388,8 @@ class PredictionRunner:
                 'candidates_publishable': len(publishable_candidates),
                 'candidates_zero_stake': len(zero_stake_candidates),
                 'candidates_raw': len(raw_candidates),
+                'candidates_before_quality': len(candidates_before_quality),
+                'candidates_rejected_by_quality': max(0, len(candidates_before_quality) - len(raw_candidates)),
                 'skipped_already_in_state': reused_already_in_state,
                 'reused_already_in_state': reused_already_in_state,
                 'published': telegram_picks_sent,
@@ -437,6 +452,17 @@ class PredictionRunner:
                     'summary': (daily_report or {}).get('summary') if daily_report is not None else {},
                     'exports': daily_report_export_paths,
                 },
+                'quality': {
+                    'summary': quality_report.get('summary', {}),
+                    'backtest': quality_report.get('backtest', {}),
+                    'error_analysis': quality_report.get('error_analysis', {}),
+                    'decisions': {
+                        'passed': quality_debug.get('passed', 0),
+                        'rejected': quality_debug.get('rejected', 0),
+                        'enough_history': quality_debug.get('enough_history', False),
+                    },
+                    'exports': quality_export_paths,
+                },
                 'bankroll': bankroll_summary,
                 'exports': export_paths,
             }
@@ -447,6 +473,7 @@ class PredictionRunner:
                 forecast_rows=forecast_rows,
                 bet_rows=bet_ledger_rows,
                 daily_report=daily_report,
+                quality_report=quality_report,
                 summary=summary,
             )
             summary['sheet_export'] = sheet_export_result
@@ -493,7 +520,10 @@ class PredictionRunner:
                     'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
                     'forecast_rows': forecast_rows[:200],
                     'model_debug': model_debug,
+                    'quality_report': quality_report,
+                    'quality_debug': quality_debug,
                     'candidates': [self._serialize_candidate(item) for item in publishable_candidates[:25]],
+                    'candidates_before_quality': [self._serialize_candidate(item) for item in candidates_before_quality[:25]],
                     'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates[:25]],
                     'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates[:25]],
                     'telegram_messages': telegram_payloads,
@@ -1018,9 +1048,21 @@ class PredictionRunner:
         publishable_candidates: list[CandidateBet],
         zero_stake_candidates: list[CandidateBet],
         reused_candidates: list[CandidateBet],
+        quality_decisions: list[dict[str, Any]] | None = None,
     ) -> list[dict[str, Any]]:
         rows = [dict(item) for item in (model_debug.get('matches') or []) if isinstance(item, dict)]
         status_by_match: dict[str, str] = {}
+        quality_by_key = {
+            (
+                item.get('match_key'),
+                item.get('family'),
+                item.get('selection_key'),
+                item.get('point'),
+                item.get('team_side'),
+            ): item
+            for item in (quality_decisions or [])
+            if isinstance(item, dict)
+        }
 
         for candidate in candidates:
             status_by_match[str(candidate.match_key)] = 'publishable'
@@ -1035,6 +1077,22 @@ class PredictionRunner:
 
         for row in rows:
             match_key = str(row.get('match_key') or '')
+            key = (
+                row.get('match_key'),
+                row.get('family'),
+                row.get('selection_key'),
+                row.get('point'),
+                row.get('team_side'),
+            )
+            quality = quality_by_key.get(key)
+            if quality:
+                row['quality_status'] = quality.get('status') or ''
+                row['quality_score'] = quality.get('quality_score') or ''
+                row['quality_reasons'] = quality.get('reasons') or []
+                row['quality_calibration'] = quality.get('calibration') or {}
+                if quality.get('status') in {'rejected_by_quality_filters', 'quarantined_shadow'}:
+                    row['forecast_status'] = quality.get('status')
+                    continue
             row['forecast_status'] = status_by_match.get(match_key) or row.get('model_filter_status') or ''
         return rows
 

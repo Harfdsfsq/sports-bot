@@ -338,6 +338,12 @@ class TelegramPublisher:
         if pending_stake > 0:
             lines.append(f"Открытый остаток за день: {self._format_money(pending_stake, bankroll_summary=bankroll)}")
 
+        quality_analysis = dict(daily_report.get("quality_analysis") or {})
+        failure_tags = dict(quality_analysis.get("top_failure_tags") or {})
+        if failure_tags:
+            top_tags = ", ".join(f"{name}: {count}" for name, count in list(failure_tags.items())[:4])
+            lines.append(f"Разбор ошибок: {top_tags}")
+
         result_emoji = {
             "won": "✅",
             "lost": "❌",
