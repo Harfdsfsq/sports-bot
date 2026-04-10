@@ -85,6 +85,9 @@ class SheetExportService:
         self.summary_json_path = Path(os.getenv("SHEET_RUN_SUMMARY_PATH") or default_dir / "sheet-run-summary.json")
         self.picks_csv_path = Path(os.getenv("SHEET_PICKS_CSV_PATH") or default_dir / "sheet-picks.csv")
         self.matches_csv_path = Path(os.getenv("SHEET_MATCHES_CSV_PATH") or default_dir / "sheet-matches.csv")
+        self.bet_ledger_csv_path = Path(os.getenv("SHEET_BET_LEDGER_CSV_PATH") or default_dir / "sheet-bet-ledger.csv")
+        self.daily_report_csv_path = Path(os.getenv("SHEET_DAILY_REPORT_CSV_PATH") or default_dir / "sheet-daily-report.csv")
+        self.daily_summary_csv_path = Path(os.getenv("SHEET_DAILY_SUMMARY_CSV_PATH") or default_dir / "sheet-daily-summary.csv")
 
     def write(
         self,
@@ -92,11 +95,16 @@ class SheetExportService:
         *,
         matches: list[Any] | None = None,
         forecast_rows: list[dict[str, Any]] | None = None,
+        bet_rows: list[dict[str, Any]] | None = None,
+        daily_report: dict[str, Any] | None = None,
         summary: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         rows = [self._row_for_candidate(item) for item in candidates]
         forecasts_by_match = self._forecast_rows_by_match(forecast_rows or [])
         match_rows = [self._row_for_match(item, forecasts_by_match.get(getattr(item, "match_key", ""))) for item in (matches or [])]
+        ledger_rows = [dict(item) for item in (bet_rows or []) if isinstance(item, dict)]
+        daily_rows = [dict(item) for item in ((daily_report or {}).get("rows") or []) if isinstance(item, dict)]
+        daily_summary_rows = [dict((daily_report or {}).get("summary") or {})] if daily_report else []
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -106,12 +114,18 @@ class SheetExportService:
             "rows": rows,
             "match_headers": MATCH_HEADERS,
             "matches": match_rows,
+            "bet_ledger": ledger_rows,
+            "daily_report": daily_report or {},
             "summary": summary or {},
         }
         self.json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
         self._write_csv(self.csv_path, SHEET_HEADERS, rows)
         self._write_csv(self.picks_csv_path, SHEET_HEADERS, rows)
         self._write_csv(self.matches_csv_path, MATCH_HEADERS, match_rows)
+        self._write_dynamic_csv(self.bet_ledger_csv_path, ledger_rows)
+        if daily_report:
+            self._write_dynamic_csv(self.daily_report_csv_path, daily_rows)
+            self._write_dynamic_csv(self.daily_summary_csv_path, daily_summary_rows)
         self.summary_json_path.write_text(json.dumps(summary or {}, ensure_ascii=False, indent=2), encoding="utf-8")
 
         webhook_result = self._push_webhook(payload)
@@ -122,6 +136,9 @@ class SheetExportService:
             "summary_json_path": str(self.summary_json_path),
             "picks_csv_path": str(self.picks_csv_path),
             "matches_csv_path": str(self.matches_csv_path),
+            "bet_ledger_csv_path": str(self.bet_ledger_csv_path),
+            "daily_report_csv_path": str(self.daily_report_csv_path) if daily_report else "",
+            "daily_summary_csv_path": str(self.daily_summary_csv_path) if daily_report else "",
             "sheet_id_present": bool(self.sheet_id),
             "apps_script_sync_required": not bool(self.webhook_url),
             "webhook_configured": bool(self.webhook_url),
@@ -295,10 +312,36 @@ class SheetExportService:
 
     @staticmethod
     def _write_csv(path: Path, headers: list[str], rows: list[dict[str, Any]]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
         with path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.writer(handle)
             writer.writerow(headers)
             writer.writerows([[row.get(col, "") for col in headers] for row in rows])
+
+    @staticmethod
+    def _write_dynamic_csv(path: Path, rows: list[dict[str, Any]]) -> None:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        headers: list[str] = []
+        for row in rows:
+            for key in row.keys():
+                if key not in headers:
+                    headers.append(key)
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            if not headers:
+                handle.write("")
+                return
+            writer = csv.DictWriter(handle, fieldnames=headers)
+            writer.writeheader()
+            for row in rows:
+                writer.writerow({key: SheetExportService._csv_value(row.get(key)) for key in headers})
+
+    @staticmethod
+    def _csv_value(value: Any) -> Any:
+        if value is None:
+            return ""
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, ensure_ascii=False, sort_keys=True)
+        return value
 
     @staticmethod
     def _fmt(value: Any) -> str:

@@ -3,12 +3,12 @@ from __future__ import annotations
 import csv
 import json
 from dataclasses import asdict
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
 from app.schemas import CandidateBet, Match
-from app.utils import candidate_selection_key
+from app.utils import candidate_selection_key, parse_datetime
 
 
 class JsonStateStore:
@@ -43,6 +43,7 @@ class JsonStateStore:
             },
             'bets': [],
             'published_candidates': [],
+            'daily_reports': {},
         }
 
     def _load_state(self) -> dict[str, Any]:
@@ -54,9 +55,11 @@ class JsonStateStore:
             return self._default_state()
         state = self._default_state()
         if isinstance(payload, dict):
-            state.update({k: v for k, v in payload.items() if k in {'version', 'updated_at', 'last_run', 'bets', 'published_candidates', 'bankroll'}})
+            state.update({k: v for k, v in payload.items() if k in {'version', 'updated_at', 'last_run', 'bets', 'published_candidates', 'bankroll', 'daily_reports'}})
             if isinstance(payload.get('bankroll'), dict):
                 state['bankroll'].update(payload['bankroll'])
+            if not isinstance(state.get('daily_reports'), dict):
+                state['daily_reports'] = {}
         return state
 
     def _save(self) -> None:
@@ -237,12 +240,271 @@ class JsonStateStore:
         self._save()
         return {'settled_count': len(settled_items), 'items': settled_items, 'bankroll': self.bankroll_summary(settings)}
 
+    def daily_report_due(self, settings: Any, now_utc: datetime) -> tuple[bool, str, str | None]:
+        offset_days = max(0, int(getattr(settings, 'daily_report_target_offset_days', 1) or 1))
+        local_now = now_utc.astimezone(getattr(settings, 'tzinfo', UTC))
+        report_date = (local_now.date() - timedelta(days=offset_days)).isoformat()
+        if not bool(getattr(settings, 'daily_report_enabled', True)):
+            return False, report_date, 'disabled'
+        report_hour = min(23, max(0, int(getattr(settings, 'daily_report_hour_local', 8) or 8)))
+        if local_now.hour < report_hour:
+            return False, report_date, 'before_report_hour'
+        reports = self._state.setdefault('daily_reports', {})
+        report_state = reports.get(report_date) if isinstance(reports, dict) else None
+        if isinstance(report_state, dict) and report_state.get('sent_at'):
+            return False, report_date, 'already_sent'
+        return True, report_date, None
+
+    def mark_daily_report_sent(
+        self,
+        report_date: str,
+        report: dict[str, Any] | None,
+        *,
+        telegram_sent: bool = False,
+        skipped_reason: str | None = None,
+    ) -> None:
+        reports = self._state.setdefault('daily_reports', {})
+        reports[str(report_date)] = {
+            'sent_at': datetime.now(UTC).isoformat(),
+            'telegram_sent': bool(telegram_sent),
+            'skipped_reason': skipped_reason,
+            'summary': dict((report or {}).get('summary') or {}),
+        }
+        self._save()
+
+    def build_daily_report(self, settings: Any, report_date: str) -> dict[str, Any]:
+        rows = [
+            self._accounting_row_for_bet(item, settings)
+            for item in self._tracked_bets()
+            if self._local_date_for_bet(item, settings) == str(report_date)
+        ]
+        rows.sort(key=lambda item: (str(item.get('commence_time_local') or ''), str(item.get('home_team') or '')))
+        summary = self._daily_summary(rows, settings, report_date)
+        return {
+            'created_at': datetime.now(UTC).isoformat(),
+            'report_date': str(report_date),
+            'timezone': str(getattr(settings, 'app_timezone', 'UTC') or 'UTC'),
+            'summary': summary,
+            'rows': rows,
+        }
+
+    def prediction_ledger(self, settings: Any | None = None) -> list[dict[str, Any]]:
+        rows = [self._accounting_row_for_bet(item, settings) for item in self._tracked_bets()]
+        rows.sort(key=lambda item: (str(item.get('commence_time_utc') or ''), str(item.get('home_team') or '')))
+        return rows
+
+    def export_daily_report(self, export_dir: str, report: dict[str, Any]) -> dict[str, str]:
+        root = Path(export_dir)
+        report_date = str(report.get('report_date') or datetime.now(UTC).date().isoformat())
+        dated = root / report_date
+        rows = [dict(item) for item in (report.get('rows') or []) if isinstance(item, dict)]
+        summary = dict(report.get('summary') or {})
+        return {
+            'daily_report_json': str(self._write_json(dated / 'daily-report.json', report)),
+            'daily_report_csv': str(self._write_csv(dated / 'daily-report.csv', rows)),
+            'daily_summary_json': str(self._write_json(dated / 'daily-summary.json', summary)),
+            'daily_summary_csv': str(self._write_csv(dated / 'daily-summary.csv', [summary])),
+            'latest_daily_report_json': str(self._write_json(root / 'latest-daily-report.json', report)),
+            'latest_daily_report_csv': str(self._write_csv(root / 'latest-daily-report.csv', rows)),
+            'latest_daily_summary_json': str(self._write_json(root / 'latest-daily-summary.json', summary)),
+            'latest_daily_summary_csv': str(self._write_csv(root / 'latest-daily-summary.csv', [summary])),
+        }
+
+    def _tracked_bets(self) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        for item in self._state.get('bets') or []:
+            if not isinstance(item, dict):
+                continue
+            status = str(item.get('status') or '')
+            if status == 'generated' and not bool(item.get('telegram_sent')):
+                continue
+            rows.append(dict(item))
+        return rows
+
+    def _local_date_for_bet(self, bet: dict[str, Any], settings: Any) -> str | None:
+        try:
+            tzinfo = getattr(settings, 'tzinfo', UTC)
+            return parse_datetime(str(bet.get('commence_time') or '')).astimezone(tzinfo).date().isoformat()
+        except Exception:
+            return None
+
+    def _accounting_row_for_bet(self, bet: dict[str, Any], settings: Any | None = None) -> dict[str, Any]:
+        settlement = dict(bet.get('settlement') or {})
+        status = str(bet.get('status') or 'pending')
+        outcome = str(settlement.get('outcome') or status)
+        stake = self._safe_float(bet.get('stake_amount'))
+        pnl = self._settled_pnl(status, settlement)
+        roi_pct = round((pnl / stake * 100.0), 2) if pnl is not None and stake > 0 else ''
+        commence_utc = ''
+        commence_local = ''
+        report_date = ''
+        published_at_local = ''
+        published_date_local = ''
+        try:
+            parsed = parse_datetime(str(bet.get('commence_time') or ''))
+            commence_utc = parsed.astimezone(UTC).isoformat()
+            if settings is not None:
+                local = parsed.astimezone(getattr(settings, 'tzinfo', UTC))
+                commence_local = local.isoformat()
+                report_date = local.date().isoformat()
+        except Exception:
+            commence_utc = str(bet.get('commence_time') or '')
+        try:
+            published = parse_datetime(str(bet.get('published_at') or ''))
+            if settings is not None:
+                published_local = published.astimezone(getattr(settings, 'tzinfo', UTC))
+                published_at_local = published_local.isoformat()
+                published_date_local = published_local.date().isoformat()
+        except Exception:
+            pass
+
+        final_home = settlement.get('final_home_goals')
+        final_away = settlement.get('final_away_goals')
+        final_score = ''
+        if final_home not in (None, '') and final_away not in (None, ''):
+            try:
+                final_score = f"{int(float(final_home))}:{int(float(final_away))}"
+            except Exception:
+                final_score = f"{final_home}:{final_away}"
+
+        family = str(bet.get('family') or '')
+        selection = str(bet.get('selection') or '')
+        point = bet.get('point')
+        selection_key = str(
+            bet.get('selection_key')
+            or candidate_selection_key(
+                family,
+                selection,
+                point=point,
+                team_side=bet.get('team_side'),
+                home_team=str(bet.get('home_team') or ''),
+                away_team=str(bet.get('away_team') or ''),
+            )
+        )
+
+        return {
+            'report_date': report_date,
+            'fingerprint': bet.get('fingerprint') or '',
+            'published_at': bet.get('published_at') or '',
+            'published_at_local': published_at_local,
+            'published_date_local': published_date_local,
+            'telegram_sent': bool(bet.get('telegram_sent')),
+            'match_key': bet.get('match_key') or '',
+            'sport_key': bet.get('sport_key') or '',
+            'league_name': bet.get('league_name') or '',
+            'home_team': bet.get('home_team') or '',
+            'away_team': bet.get('away_team') or '',
+            'commence_time_utc': commence_utc,
+            'commence_time_local': commence_local,
+            'family': family,
+            'selection': selection,
+            'selection_key': selection_key,
+            'team_side': bet.get('team_side') or '',
+            'point': '' if point in (None, '') else point,
+            'odds': self._round_value(bet.get('odds'), 3),
+            'stake_amount': round(stake, 2),
+            'status': status,
+            'result': self._result_label(status, outcome),
+            'is_hit': self._is_hit_value(status, outcome),
+            'pnl': '' if pnl is None else round(pnl, 2),
+            'roi_pct': roi_pct,
+            'final_score': final_score,
+            'final_home_goals': '' if final_home in (None, '') else final_home,
+            'final_away_goals': '' if final_away in (None, '') else final_away,
+            'settled_at': settlement.get('settled_at') or '',
+            'settlement_source': settlement.get('source') or '',
+            'settlement_note': settlement.get('note') or '',
+            'model_probability_pct': self._pct_value(bet.get('model_probability')),
+            'adjusted_probability_pct': self._pct_value(bet.get('adjusted_probability')),
+            'market_probability_pct': self._pct_value(bet.get('market_probability')),
+            'edge_pct': self._round_value(bet.get('edge_pct'), 3),
+            'ev_pct': self._round_value(bet.get('ev_pct'), 3),
+            'confidence': self._round_value(bet.get('confidence'), 2),
+            'books_count': bet.get('books_count') or '',
+            'sources_count': bet.get('sources_count') or '',
+            'model_mode': bet.get('model_mode') or '',
+        }
+
+    def _daily_summary(self, rows: list[dict[str, Any]], settings: Any, report_date: str) -> dict[str, Any]:
+        settled_rows = [row for row in rows if str(row.get('status') or '') in {'won', 'lost', 'half_won', 'half_lost', 'push', 'void'}]
+        pending_rows = [row for row in rows if str(row.get('status') or '') == 'pending']
+        win_rows = [row for row in rows if str(row.get('status') or '') in {'won', 'half_won'}]
+        loss_rows = [row for row in rows if str(row.get('status') or '') in {'lost', 'half_lost'}]
+        push_rows = [row for row in rows if str(row.get('status') or '') == 'push']
+        void_rows = [row for row in rows if str(row.get('status') or '') == 'void']
+        stake_total = sum(self._safe_float(row.get('stake_amount')) for row in rows)
+        settled_stake = sum(self._safe_float(row.get('stake_amount')) for row in settled_rows)
+        pending_stake = sum(self._safe_float(row.get('stake_amount')) for row in pending_rows)
+        pnl = sum(self._safe_float(row.get('pnl')) for row in settled_rows if row.get('pnl') not in (None, ''))
+        roi_pct = (pnl / settled_stake * 100.0) if settled_stake > 0 else 0.0
+        hit_denominator = len(win_rows) + len(loss_rows)
+        hit_rate_pct = (len(win_rows) / hit_denominator * 100.0) if hit_denominator else 0.0
+        return {
+            'report_date': str(report_date),
+            'timezone': str(getattr(settings, 'app_timezone', 'UTC') or 'UTC'),
+            'currency': str(getattr(settings, 'bankroll_currency', 'units') or 'units'),
+            'total_bets': len(rows),
+            'settled_bets': len(settled_rows),
+            'pending_bets': len(pending_rows),
+            'won': len(win_rows),
+            'lost': len(loss_rows),
+            'push': len(push_rows),
+            'void': len(void_rows),
+            'stake_total': round(stake_total, 2),
+            'settled_stake': round(settled_stake, 2),
+            'pending_stake': round(pending_stake, 2),
+            'revenue': round(pnl, 2),
+            'pnl': round(pnl, 2),
+            'roi_pct': round(roi_pct, 2),
+            'hit_rate_pct': round(hit_rate_pct, 2),
+        }
+
+    @staticmethod
+    def _settled_pnl(status: str, settlement: dict[str, Any]) -> float | None:
+        if status not in {'won', 'lost', 'half_won', 'half_lost', 'push', 'void'}:
+            return None
+        return JsonStateStore._safe_float(settlement.get('pnl'))
+
+    @staticmethod
+    def _result_label(status: str, outcome: str) -> str:
+        value = str(outcome or status or '').strip().lower()
+        if value in {'won', 'half_won'}:
+            return 'won'
+        if value in {'lost', 'half_lost'}:
+            return 'lost'
+        if value == 'push':
+            return 'push'
+        if value == 'void':
+            return 'void'
+        if value == 'pending':
+            return 'pending'
+        return value or 'unknown'
+
+    @staticmethod
+    def _is_hit_value(status: str, outcome: str) -> Any:
+        value = str(outcome or status or '').strip().lower()
+        if value in {'won', 'half_won'}:
+            return True
+        if value in {'lost', 'half_lost'}:
+            return False
+        return ''
+
+    @staticmethod
+    def _safe_float(value: Any) -> float:
+        try:
+            if value in (None, ''):
+                return 0.0
+            return float(value)
+        except Exception:
+            return 0.0
+
     def export_payloads(
         self,
         export_dir: str,
         matches: list[Match],
         candidates: list[CandidateBet],
         forecast_rows: list[dict[str, Any]] | None = None,
+        settings: Any | None = None,
     ) -> dict[str, str]:
         root = Path(export_dir)
         dated = root / datetime.now(UTC).strftime('%Y-%m-%d')
@@ -251,21 +513,26 @@ class JsonStateStore:
         forecasts_by_match = self._forecast_rows_by_match(forecast_rows or [])
         match_rows = [self._serialize_match(item, forecasts_by_match.get(item.match_key)) for item in matches]
         pick_rows = [self._serialize_candidate(item) for item in candidates]
+        bet_rows = self.prediction_ledger(settings)
         pending = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
         settled = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') not in {'pending', 'generated'}]
         bank = self.bankroll_summary()
         return {
             'matches_json': str(self._write_json(dated / f'{stamp}-matches.json', match_rows)),
             'picks_json': str(self._write_json(dated / f'{stamp}-picks.json', pick_rows)),
+            'bets_json': str(self._write_json(dated / f'{stamp}-bets.json', bet_rows)),
             'matches_csv': str(self._write_csv(dated / f'{stamp}-matches.csv', match_rows)),
             'picks_csv': str(self._write_csv(dated / f'{stamp}-picks.csv', pick_rows)),
+            'bets_csv': str(self._write_csv(dated / f'{stamp}-bets.csv', bet_rows)),
             'bankroll_json': str(self._write_json(dated / f'{stamp}-bankroll.json', bank)),
             'pending_bets_json': str(self._write_json(dated / f'{stamp}-pending-bets.json', pending)),
             'settled_bets_json': str(self._write_json(dated / f'{stamp}-settled-bets.json', settled)),
             'latest_matches_json': str(self._write_json(root / 'latest-matches.json', match_rows)),
             'latest_picks_json': str(self._write_json(root / 'latest-picks.json', pick_rows)),
+            'latest_bets_json': str(self._write_json(root / 'latest-bets.json', bet_rows)),
             'latest_matches_csv': str(self._write_csv(root / 'latest-matches.csv', match_rows)),
             'latest_picks_csv': str(self._write_csv(root / 'latest-picks.csv', pick_rows)),
+            'latest_bets_csv': str(self._write_csv(root / 'latest-bets.csv', bet_rows)),
             'latest_bankroll_json': str(self._write_json(root / 'latest-bankroll.json', bank)),
             'latest_pending_bets_json': str(self._write_json(root / 'latest-pending-bets.json', pending)),
             'latest_settled_bets_json': str(self._write_json(root / 'latest-settled-bets.json', settled)),

@@ -44,6 +44,11 @@ class Settings(BaseSettings):
     settlement_lookback_days: int = Field(default=5, validation_alias=AliasChoices("SETTLEMENT_LOOKBACK_DAYS"))
     settlement_send_telegram_summary: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_SEND_TELEGRAM_SUMMARY"))
     manual_settlement_path: str = Field(default=".data/manual-settlements.json", validation_alias=AliasChoices("MANUAL_SETTLEMENT_PATH", "SETTLEMENT_OVERRIDES_PATH"))
+    daily_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_ENABLED"))
+    daily_report_send_telegram: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_SEND_TELEGRAM"))
+    daily_report_hour_local: int = Field(default=8, validation_alias=AliasChoices("DAILY_REPORT_HOUR_LOCAL"))
+    daily_report_target_offset_days: int = Field(default=1, validation_alias=AliasChoices("DAILY_REPORT_TARGET_OFFSET_DAYS"))
+    daily_report_min_bets: int = Field(default=1, validation_alias=AliasChoices("DAILY_REPORT_MIN_BETS"))
 
     run_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("RUN_SPORTS"))
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))

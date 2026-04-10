@@ -141,6 +141,27 @@ class PredictionRunner:
             settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
             settlement_summary = self.state.apply_settlements(list(settlement_probe.get('items') or []), self.settings)
             bankroll_summary = self.state.bankroll_summary(self.settings)
+            daily_report_due, daily_report_date, daily_report_skip_reason = self.state.daily_report_due(self.settings, now_utc)
+            daily_report = self.state.build_daily_report(self.settings, daily_report_date) if daily_report_due else None
+            daily_report_messages_sent = 0
+            daily_report_payloads: list[str] = []
+            if daily_report is not None:
+                daily_total_bets = int((daily_report.get('summary') or {}).get('total_bets') or 0)
+                daily_min_bets = max(0, int(getattr(self.settings, 'daily_report_min_bets', 1) or 1))
+                if daily_total_bets >= daily_min_bets:
+                    daily_report_messages_sent, daily_report_payloads = await self.telegram.publish_daily_report(daily_report)
+                    self.state.mark_daily_report_sent(
+                        daily_report_date,
+                        daily_report,
+                        telegram_sent=daily_report_messages_sent > 0,
+                    )
+                else:
+                    daily_report_skip_reason = 'not_enough_bets'
+                    self.state.mark_daily_report_sent(
+                        daily_report_date,
+                        daily_report,
+                        skipped_reason=daily_report_skip_reason,
+                    )
 
             bootstrap_matches, bootstrap_meta = await self._fetch_matches()
             deduped_matches = self._dedupe_matches(bootstrap_matches)
@@ -279,8 +300,8 @@ class PredictionRunner:
             sent_messages, telegram_payloads = await self.telegram.publish(publishable_candidates, bankroll_summary=bankroll_preview)
             published_count = self.state.store_candidates(publishable_candidates, telegram_sent=sent_messages > 0)
             telegram_picks_sent = len(publishable_candidates) if sent_messages > 0 else 0
-            sent_messages += settlement_messages_sent
-            telegram_payloads = list(settlement_payloads) + list(telegram_payloads)
+            sent_messages += settlement_messages_sent + daily_report_messages_sent
+            telegram_payloads = list(settlement_payloads) + list(daily_report_payloads) + list(telegram_payloads)
             clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
             forecast_rows = self._forecast_rows_for_export(
                 model_debug,
@@ -294,7 +315,11 @@ class PredictionRunner:
                 filtered_matches,
                 publishable_candidates,
                 forecast_rows=forecast_rows,
+                settings=self.settings,
             )
+            daily_report_export_paths = self.state.export_daily_report(self.settings.storage_export_dir, daily_report) if daily_report is not None else {}
+            export_paths.update(daily_report_export_paths)
+            bet_ledger_rows = self.state.prediction_ledger(self.settings)
             bankroll_summary = self.state.bankroll_summary(self.settings)
 
             source_stats = {
@@ -404,6 +429,14 @@ class PredictionRunner:
                     'reasons': settlement_probe.get('reasons', {}),
                     'sample': settlement_probe.get('sample', []),
                 },
+                'daily_report': {
+                    'due': daily_report_due,
+                    'report_date': daily_report_date,
+                    'skip_reason': daily_report_skip_reason,
+                    'telegram_messages_sent': daily_report_messages_sent,
+                    'summary': (daily_report or {}).get('summary') if daily_report is not None else {},
+                    'exports': daily_report_export_paths,
+                },
                 'bankroll': bankroll_summary,
                 'exports': export_paths,
             }
@@ -412,6 +445,8 @@ class PredictionRunner:
                 publishable_candidates,
                 matches=filtered_matches,
                 forecast_rows=forecast_rows,
+                bet_rows=bet_ledger_rows,
+                daily_report=daily_report,
                 summary=summary,
             )
             summary['sheet_export'] = sheet_export_result
@@ -466,6 +501,8 @@ class PredictionRunner:
                         'probe': settlement_probe,
                         'summary': settlement_summary,
                     },
+                    'daily_report': daily_report or {},
+                    'bet_ledger_sample': bet_ledger_rows[:25],
                     'bankroll': bankroll_summary,
                     'sheet_export': sheet_export_result,
                 }

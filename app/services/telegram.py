@@ -298,6 +298,93 @@ class TelegramPublisher:
             response.raise_for_status()
             return 1, [message]
 
+    def render_daily_report(self, daily_report: dict[str, Any]) -> str | None:
+        summary = dict(daily_report.get("summary") or {})
+        rows = [dict(item) for item in (daily_report.get("rows") or []) if isinstance(item, dict)]
+        if int(summary.get("total_bets") or 0) <= 0:
+            return None
+
+        bankroll = {"currency": summary.get("currency") or getattr(self.settings, "bankroll_currency", "units")}
+        report_date = str(summary.get("report_date") or daily_report.get("report_date") or "")
+        date_text = report_date
+        try:
+            year, month, day = report_date.split("-")
+            date_text = f"{day}.{month}.{year}"
+        except Exception:
+            pass
+
+        revenue = float(summary.get("revenue") or summary.get("pnl") or 0.0)
+        roi_pct = float(summary.get("roi_pct") or 0.0)
+        hit_rate_pct = float(summary.get("hit_rate_pct") or 0.0)
+        lines = [
+            f"📊 Итоги прогнозов за {date_text}",
+            (
+                f"Ставок: {int(summary.get('total_bets') or 0)} | "
+                f"Закрыто: {int(summary.get('settled_bets') or 0)} | "
+                f"В ожидании: {int(summary.get('pending_bets') or 0)}"
+            ),
+            (
+                f"Зашло: {int(summary.get('won') or 0)} | "
+                f"Не зашло: {int(summary.get('lost') or 0)} | "
+                f"Возвраты: {int(summary.get('push') or 0) + int(summary.get('void') or 0)}"
+            ),
+            (
+                f"Ставки: {self._format_money(float(summary.get('settled_stake') or 0.0), bankroll_summary=bankroll)} | "
+                f"Выручка: {revenue:+.2f}{self._money_suffix(bankroll_summary=bankroll)} | "
+                f"ROI: {roi_pct:+.2f}% | Проходимость: {hit_rate_pct:.1f}%"
+            ),
+        ]
+        pending_stake = float(summary.get("pending_stake") or 0.0)
+        if pending_stake > 0:
+            lines.append(f"Открытый остаток за день: {self._format_money(pending_stake, bankroll_summary=bankroll)}")
+
+        result_emoji = {
+            "won": "✅",
+            "lost": "❌",
+            "push": "➖",
+            "void": "➖",
+            "pending": "⏳",
+        }
+        item_lines: list[str] = []
+        for idx, row in enumerate(rows[:8], start=1):
+            result = str(row.get("result") or row.get("status") or "pending")
+            emoji = result_emoji.get(result, "•")
+            point = row.get("point")
+            point_suffix = f" ({float(point):g})" if point not in (None, "") else ""
+            score = str(row.get("final_score") or "н/д")
+            pnl_raw = row.get("pnl")
+            pnl_text = "ожидание" if pnl_raw in (None, "") else f"{float(pnl_raw):+.2f}{self._money_suffix(bankroll_summary=bankroll)}"
+            family = str(row.get("family") or "")
+            selection = str(row.get("selection") or "")
+            item_lines.append(
+                f"{idx}. {row.get('home_team')} — {row.get('away_team')}\n"
+                f"{emoji} {russian_market_name(family)} — {russian_selection(family, selection, point)}{point_suffix} "
+                f"@ {float(row.get('odds') or 0.0):.2f} | Счет: {score} | P&L: {pnl_text}"
+            )
+        if item_lines:
+            lines.append("\n".join(item_lines))
+        return "\n\n".join(lines)
+
+    async def publish_daily_report(self, daily_report: dict[str, Any]) -> tuple[int, list[str]]:
+        if not getattr(self.settings, "daily_report_send_telegram", True):
+            return 0, []
+        message = self.render_daily_report(daily_report)
+        if not message:
+            return 0, []
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, [message]
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
+            response.raise_for_status()
+            return 1, [message]
+
     async def publish(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> tuple[int, list[str]]:
         if not bets:
             return 0, []

@@ -40,6 +40,11 @@ env:
   SETTLEMENT_GRACE_MINUTES: '180'
   SETTLEMENT_LOOKBACK_DAYS: '5'
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'true'
+  DAILY_REPORT_ENABLED: 'true'
+  DAILY_REPORT_SEND_TELEGRAM: 'true'
+  DAILY_REPORT_HOUR_LOCAL: '8'
+  DAILY_REPORT_TARGET_OFFSET_DAYS: '1'
+  DAILY_REPORT_MIN_BETS: '1'
 
   ODDS_API_IO_ENABLED: 'true'
   ODDS_API_IO_BOOTSTRAP_ENABLED: 'true'
@@ -320,11 +325,20 @@ jobs:
             .data/exports/latest-matches.csv
             .data/exports/latest-picks.json
             .data/exports/latest-picks.csv
+            .data/exports/latest-bets.json
+            .data/exports/latest-bets.csv
+            .data/exports/latest-daily-report.json
+            .data/exports/latest-daily-report.csv
+            .data/exports/latest-daily-summary.json
+            .data/exports/latest-daily-summary.csv
             .data/sheet-export.json
             .data/sheet-export.csv
             .data/sheet-run-summary.json
             .data/sheet-picks.csv
             .data/sheet-matches.csv
+            .data/sheet-bet-ledger.csv
+            .data/sheet-daily-report.csv
+            .data/sheet-daily-summary.csv
           if-no-files-found: ignore
           retention-days: 7
 
@@ -333,7 +347,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add .data/state.json .data/debug-last-run.json .data/exports .data/sheet-export.json .data/sheet-export.csv .data/sheet-run-summary.json .data/sheet-picks.csv .data/sheet-matches.csv || true
+          git add .data/state.json .data/debug-last-run.json .data/exports .data/sheet-export.json .data/sheet-export.csv .data/sheet-run-summary.json .data/sheet-picks.csv .data/sheet-matches.csv .data/sheet-bet-ledger.csv .data/sheet-daily-report.csv .data/sheet-daily-summary.csv || true
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
