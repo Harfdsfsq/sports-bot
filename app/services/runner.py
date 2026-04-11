@@ -201,8 +201,6 @@ class PredictionRunner:
             (
                 (odds_api_io_offers, odds_io_stats, odds_io_preview),
                 (bookies_api_offers, bookies_stats, bookies_preview),
-                (oddspapi_offers, oddspapi_stats, oddspapi_preview),
-                (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
             ) = await asyncio.gather(
                 self._fetch_provider(
                     self.odds_api_io,
@@ -216,19 +214,34 @@ class PredictionRunner:
                     filtered_matches,
                     empty_data={},
                 ),
-                self._fetch_provider(
-                    self.oddspapi,
-                    'fetch_offers',
-                    filtered_matches,
-                    empty_data={},
-                ),
-                self._fetch_provider(
-                    self.allsportsapi,
-                    'fetch_offers',
-                    filtered_matches,
-                    empty_data={},
-                ),
             )
+
+            secondary_offer_plan = self._secondary_offer_fetch_plan(filtered_matches, odds_api_io_offers, odds_io_stats)
+            if secondary_offer_plan['skip']:
+                oddspapi_offers = {}
+                oddspapi_stats = self._skipped_offer_provider_stats(self.oddspapi, secondary_offer_plan)
+                oddspapi_preview = {'skip_reason': secondary_offer_plan['reason']}
+                allsportsapi_offers = {}
+                allsportsapi_stats = self._skipped_offer_provider_stats(self.allsportsapi, secondary_offer_plan)
+                allsportsapi_preview = {'skip_reason': secondary_offer_plan['reason']}
+            else:
+                (
+                    (oddspapi_offers, oddspapi_stats, oddspapi_preview),
+                    (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
+                ) = await asyncio.gather(
+                    self._fetch_provider(
+                        self.oddspapi,
+                        'fetch_offers',
+                        filtered_matches,
+                        empty_data={},
+                    ),
+                    self._fetch_provider(
+                        self.allsportsapi,
+                        'fetch_offers',
+                        filtered_matches,
+                        empty_data={},
+                    ),
+                )
 
             offer_maps = {
                 'odds_api_io': odds_api_io_offers,
@@ -595,46 +608,20 @@ class PredictionRunner:
         strategy = str(getattr(self.settings, 'match_bootstrap_provider', 'odds_api_io') or 'odds_api_io').strip().lower()
         allow_fallback = bool(getattr(self.settings, 'bootstrap_fallback_to_bookies', True))
 
-        provider_specs: dict[str, tuple[Any | None, bool]] = {
-            'odds_api_io': (
-                self.odds_api_io,
-                bool(getattr(self.settings, 'enable_odds_api_io', True)) and bool(getattr(self.settings, 'odds_api_io_bootstrap_enabled', True)),
-            ),
-            'oddspapi': (
-                self.oddspapi,
-                bool(getattr(self.settings, 'enable_oddspapi', False)),
-            ),
-            'allsportsapi': (
-                self.allsportsapi,
-                bool(getattr(self.settings, 'enable_allsportsapi', False)),
-            ),
-            'bookies_bootstrap': (
-                self.bookies_bootstrap,
-                bool(getattr(self.settings, 'bookies_bootstrap_enabled', True)),
-            ),
-        }
-
-        default_order = ['odds_api_io', 'oddspapi', 'allsportsapi', 'bookies_bootstrap']
-        if strategy == 'auto':
-            provider_order = list(default_order)
-        elif strategy in provider_specs:
-            provider_order = [strategy]
+        provider_order: list[tuple[str, Any]]
+        if strategy == 'bookies_bootstrap':
+            provider_order = [('bookies_bootstrap', self.bookies_bootstrap)]
             if allow_fallback:
-                provider_order.extend(name for name in default_order if name != strategy)
+                provider_order.append(('odds_api_io', self.odds_api_io))
+        elif strategy == 'auto':
+            provider_order = [('odds_api_io', self.odds_api_io), ('bookies_bootstrap', self.bookies_bootstrap)]
         else:
-            provider_order = list(default_order)
+            provider_order = [('odds_api_io', self.odds_api_io)]
+            if allow_fallback:
+                provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
 
         attempts: dict[str, dict[str, Any]] = {}
-        for provider_name in provider_order:
-            provider, bootstrap_enabled = provider_specs.get(provider_name, (None, False))
-            if not bootstrap_enabled:
-                attempts[provider_name] = {
-                    'matches': 0,
-                    'stats': {'enabled': False, 'reason': 'disabled_for_bootstrap'},
-                    'preview': {},
-                }
-                continue
-
+        for provider_name, provider in provider_order:
             matches, stats, preview = await self._fetch_provider(
                 provider,
                 'fetch_matches',
@@ -679,6 +666,51 @@ class PredictionRunner:
             if len(result) == 1:
                 return result[0], {}, {}
         return result, {}, {}
+
+    def _secondary_offer_fetch_plan(
+        self,
+        matches: list[Match],
+        primary_offers: dict[str, list[Offer]],
+        primary_stats: dict[str, Any],
+    ) -> dict[str, Any]:
+        total_matches = len(matches)
+        matches_with_data = sum(1 for _match_key, offers in (primary_offers or {}).items() if offers)
+        coverage_ratio = (matches_with_data / total_matches) if total_matches > 0 else 0.0
+        bookmakers_seen = int(primary_stats.get('bookmakers_seen') or 0)
+        min_matches = max(1, int(getattr(self.settings, 'secondary_offer_skip_min_matches', 18) or 18))
+        min_ratio = float(getattr(self.settings, 'secondary_offer_skip_coverage_ratio', 0.45) or 0.45)
+        min_bookmakers_seen = max(1, int(getattr(self.settings, 'secondary_offer_skip_min_bookmakers_seen', 2) or 2))
+        enabled = bool(getattr(self.settings, 'secondary_offer_skip_when_primary_sufficient', True))
+        skip = bool(
+            enabled
+            and total_matches > 0
+            and matches_with_data >= min_matches
+            and coverage_ratio >= min_ratio
+            and bookmakers_seen >= min_bookmakers_seen
+        )
+        reason = 'primary_offer_coverage_sufficient' if skip else None
+        return {
+            'skip': skip,
+            'reason': reason,
+            'matches_total': total_matches,
+            'matches_with_data': matches_with_data,
+            'coverage_ratio': round(coverage_ratio, 4),
+            'bookmakers_seen': bookmakers_seen,
+        }
+
+    def _skipped_offer_provider_stats(self, provider: Any | None, plan: dict[str, Any]) -> dict[str, Any]:
+        provider_enabled = provider is not None
+        return {
+            'enabled': provider_enabled,
+            'skipped': provider_enabled,
+            'skip_reason': plan.get('reason') or 'skipped',
+            'skip_plan': {
+                'matches_total': int(plan.get('matches_total') or 0),
+                'matches_with_primary_data': int(plan.get('matches_with_data') or 0),
+                'primary_coverage_ratio': float(plan.get('coverage_ratio') or 0.0),
+                'primary_bookmakers_seen': int(plan.get('bookmakers_seen') or 0),
+            },
+        }
 
     def _filter_matches(self, matches: list[Match], now_utc: datetime) -> tuple[list[Match], dict[str, Any]]:
         def apply_filter(min_lead: timedelta) -> tuple[list[Match], int, int, int]:

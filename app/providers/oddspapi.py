@@ -13,7 +13,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match, Offer
-from app.utils import is_simulated_or_esports_event, normalize_bookmaker_name, parse_datetime, score_event_match
+from app.utils import normalize_bookmaker_name, parse_datetime, score_event_match
 
 
 class OddsPapiProvider:
@@ -26,71 +26,6 @@ class OddsPapiProvider:
         self.match_limit = max(1, int(getattr(settings, "oddspapi_match_limit", 16) or 16))
         self.tournament_limit = max(1, int(getattr(settings, "oddspapi_tournament_limit", 4) or 4))
         self.max_tournament_ids_per_request = 5
-
-    async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
-        stats: dict[str, Any] = {
-            "enabled": bool(self.api_key),
-            "api_key_present": bool(self.api_key),
-            "requests": 0,
-            "rate_limit_retries": 0,
-            "response_errors": 0,
-            "fixtures_fetched": 0,
-            "matches_built": 0,
-            "low_tier_skipped": 0,
-            "simulated_skipped": 0,
-            "http_statuses": [],
-            "last_body_preview": None,
-        }
-        preview: dict[str, Any] = {"sample_fixtures": [], "sample_matches": []}
-        if not self.api_key:
-            return [], stats, preview
-
-        now = datetime.now(UTC)
-        from_ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-        to_ts = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))).replace(microsecond=0).isoformat().replace("+00:00", "Z")
-
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            fixtures = await self._get_json(
-                client,
-                "/fixtures",
-                stats,
-                params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
-            )
-        rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
-        stats["fixtures_fetched"] = len(rows)
-        preview["sample_fixtures"] = rows[:3]
-
-        matches: list[Match] = []
-        seen_ids: set[str] = set()
-        for row in rows:
-            match = self._build_match(row)
-            if match is None:
-                league_name = str(row.get("tournamentName") or "")
-                home = str(row.get("participant1Name") or "")
-                away = str(row.get("participant2Name") or "")
-                if is_simulated_or_esports_event(home, away, league_name):
-                    stats["simulated_skipped"] += 1
-                continue
-            if match.source_event_id in seen_ids:
-                continue
-            seen_ids.add(match.source_event_id)
-            if match.tier == "low" and not bool(getattr(self.settings, "allow_low_tier", False)):
-                stats["low_tier_skipped"] += 1
-                continue
-            matches.append(match)
-        stats["matches_built"] = len(matches)
-        preview["sample_matches"] = [
-            {
-                "match_key": item.match_key,
-                "league_name": item.league_name,
-                "home_team": item.home_team,
-                "away_team": item.away_team,
-                "commence_time": item.commence_time.isoformat(),
-                "tier": item.tier,
-            }
-            for item in matches[:5]
-        ]
-        return matches, stats, preview
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -110,9 +45,10 @@ class OddsPapiProvider:
             "tournament_batches": 0,
             "http_statuses": [],
             "last_body_preview": None,
+            "rate_limited": False,
+            "aborted_on_rate_limit": False,
             "families_supported": ["h2h"],
             "bookmakers_requested": [],
-            "bootstrap_fixtures_reused": 0,
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_odds": []}
         if not self.api_key:
@@ -137,32 +73,16 @@ class OddsPapiProvider:
         if not bookmakers:
             return {}, stats, preview
 
-        reused_rows: list[dict[str, Any]] = []
-        seen_fixture_ids: set[str] = set()
-        for match in prioritized:
-            raw_fixture = match.metadata.get("oddspapi_raw_fixture") if isinstance(match.metadata, dict) else None
-            fixture_id = str(raw_fixture.get("fixtureId") or "") if isinstance(raw_fixture, dict) else ""
-            if match.source != "oddspapi" or not fixture_id or fixture_id in seen_fixture_ids:
-                continue
-            seen_fixture_ids.add(fixture_id)
-            reused_rows.append(raw_fixture)
-        if reused_rows:
-            stats["fixtures_fetched"] = len(reused_rows)
-            stats["bootstrap_fixtures_reused"] = len(reused_rows)
-            preview["sample_fixtures"] = reused_rows[:3]
-
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            rows = reused_rows
-            if not rows:
-                fixtures = await self._get_json(
-                    client,
-                    "/fixtures",
-                    stats,
-                    params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
-                )
-                rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
-                stats["fixtures_fetched"] = len(rows)
-                preview["sample_fixtures"] = rows[:3]
+            fixtures = await self._get_json(
+                client,
+                "/fixtures",
+                stats,
+                params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
+            )
+            rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+            stats["fixtures_fetched"] = len(rows)
+            preview["sample_fixtures"] = rows[:3]
 
             matched: dict[str, dict[str, Any]] = {}
             for row in rows:
@@ -208,6 +128,9 @@ class OddsPapiProvider:
                             "apiKey": self.api_key,
                         },
                     )
+                    if bool(stats.get("rate_limited")):
+                        stats["aborted_on_rate_limit"] = True
+                        break
                     rows = [row for row in odds_rows if isinstance(row, dict)] if isinstance(odds_rows, list) else []
                     if rows and len(preview["sample_odds"]) < 3:
                         preview["sample_odds"].append(rows[0])
@@ -221,6 +144,8 @@ class OddsPapiProvider:
                             continue
                         offers_by_match[match.match_key].extend(offers)
                         stats["offers_parsed"] += len(offers)
+                if bool(stats.get("rate_limited")):
+                    break
 
         output = {k: v for k, v in offers_by_match.items() if v}
         self._write_cache(output)
@@ -241,6 +166,8 @@ class OddsPapiProvider:
                 stats["rate_limit_retries"] = int(stats.get("rate_limit_retries", 0) or 0) + 1
                 await asyncio.sleep(self._retry_delay_seconds(response))
                 continue
+            if response.status_code == 429:
+                stats["rate_limited"] = True
             if response.status_code != 200:
                 stats["response_errors"] += 1
                 return None
@@ -373,39 +300,6 @@ class OddsPapiProvider:
             return "Draw"
         return None
 
-    def _build_match(self, row: dict[str, Any]) -> Match | None:
-        home = str(row.get("participant1Name") or "").strip()
-        away = str(row.get("participant2Name") or "").strip()
-        league = str(row.get("tournamentName") or "").strip()
-        fixture_id = str(row.get("fixtureId") or "").strip()
-        if not home or not away or not fixture_id:
-            return None
-        if is_simulated_or_esports_event(home, away, league):
-            return None
-        try:
-            start = parse_datetime(row.get("startTime"))
-        except Exception:
-            return None
-        tier = "low" if self._looks_low_tier(league) else "mid"
-        return Match(
-            source="oddspapi",
-            source_event_id=fixture_id,
-            sport_key="soccer",
-            league_name=league,
-            home_team=home,
-            away_team=away,
-            commence_time=start,
-            home_team_norm="",
-            away_team_norm="",
-            league_key="",
-            tier=tier,
-            metadata={
-                "oddspapi_fixture_id": fixture_id,
-                "oddspapi_tournament_id": str(row.get("tournamentId") or ""),
-                "oddspapi_raw_fixture": row,
-            },
-        )
-
     def _match_fixture(self, row: dict[str, Any], matches: list[Match]) -> tuple[Match, str] | None:
         home = str(row.get("participant1Name") or "").strip()
         away = str(row.get("participant2Name") or "").strip()
@@ -445,12 +339,10 @@ class OddsPapiProvider:
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
         now = datetime.now(UTC)
-
         def key(match: Match) -> tuple[int, float, str]:
             tier_rank = 0 if getattr(match, "tier", "mid") == "top" else 1 if getattr(match, "tier", "mid") == "mid" else 2
             kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
             return (tier_rank, kickoff_distance, match.league_name.lower())
-
         return sorted(matches, key=key)
 
     def _bookmaker_slugs(self) -> list[str]:
@@ -479,12 +371,6 @@ class OddsPapiProvider:
     def _chunked(values: list[str], size: int) -> list[list[str]]:
         size = max(1, int(size or 1))
         return [values[index:index + size] for index in range(0, len(values), size)]
-
-    @staticmethod
-    def _looks_low_tier(league_name: str) -> bool:
-        text = str(league_name or "").lower()
-        markers = ("u17", "u18", "u19", "u20", "u21", "u23", "women", "reserve", "friendly", "esports")
-        return any(marker in text for marker in markers)
 
     def _cache_path(self) -> Path:
         return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "oddspapi_offers.json"

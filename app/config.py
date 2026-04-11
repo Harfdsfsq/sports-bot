@@ -93,7 +93,6 @@ class Settings(BaseSettings):
 
     bookies_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("BOOKIES_BOOTSTRAP_ENABLED"))
     enable_odds_api_io: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_ODDS_API_IO", "ODDS_API_IO_ENABLED"))
-    odds_api_io_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("ODDS_API_IO_BOOTSTRAP_ENABLED", "ENABLE_ODDS_API_IO_BOOTSTRAP"))
     sstats_enabled: bool = Field(default=True, validation_alias=AliasChoices("SSTATS_ENABLED"))
     enable_sstats_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_SSTATS_CONTEXT"))
     api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices("API_FOOTBALL_ENABLED"))
@@ -358,6 +357,11 @@ class Settings(BaseSettings):
     source_weight_sstats: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_SSTATS"))
     source_weight_oddspapi: float = Field(default=1.00, validation_alias=AliasChoices("SOURCE_WEIGHT_ODDSPAPI"))
     source_weight_allsportsapi: float = Field(default=0.99, validation_alias=AliasChoices("SOURCE_WEIGHT_ALLSPORTSAPI"))
+
+    secondary_offer_skip_when_primary_sufficient: bool = Field(default=True, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_WHEN_PRIMARY_SUFFICIENT"))
+    secondary_offer_skip_min_matches: int = Field(default=18, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_MIN_MATCHES"))
+    secondary_offer_skip_coverage_ratio: float = Field(default=0.45, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_COVERAGE_RATIO"))
+    secondary_offer_skip_min_bookmakers_seen: int = Field(default=2, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_MIN_BOOKMAKERS_SEEN"))
     source_weight_futrixmetrics: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_FUTRIXMETRICS"))
 
     bookmaker_weight_pinnacle: float = Field(default=1.16, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_PINNACLE"))
@@ -426,6 +430,11 @@ class Settings(BaseSettings):
     historical_segment_min_sample: int = Field(default=10, validation_alias=AliasChoices("HISTORICAL_SEGMENT_MIN_SAMPLE"))
     historical_segment_min_roi_pct: float = Field(default=-18.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_MIN_ROI_PCT"))
     historical_segment_min_calibration_delta_pct: float = Field(default=-9.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_MIN_CALIBRATION_DELTA_PCT"))
+    historical_segment_hard_min_roi_pct: float = Field(default=-30.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_ROI_PCT"))
+    historical_segment_hard_min_calibration_delta_pct: float = Field(default=-14.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_CALIBRATION_DELTA_PCT"))
+    historical_segment_soft_penalty_enabled: bool = Field(default=True, validation_alias=AliasChoices("HISTORICAL_SEGMENT_SOFT_PENALTY_ENABLED"))
+    historical_segment_soft_penalty_score: float = Field(default=6.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_SOFT_PENALTY_SCORE"))
+    historical_segment_soft_penalty_per_extra_segment: float = Field(default=1.5, validation_alias=AliasChoices("HISTORICAL_SEGMENT_SOFT_PENALTY_PER_EXTRA_SEGMENT"))
     quarantine_shadow_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices("QUARANTINE_SHADOW_MODE_ENABLED"))
     quarantine_min_segment_sample: int = Field(default=16, validation_alias=AliasChoices("QUARANTINE_MIN_SEGMENT_SAMPLE"))
     quarantine_league_buckets: CsvList = Field(default_factory=lambda: ["low"], validation_alias=AliasChoices("QUARANTINE_LEAGUE_BUCKETS"))
@@ -669,16 +678,9 @@ class Settings(BaseSettings):
             "oddsapiio": "odds_api_io",
             "odds_apiio": "odds_api_io",
             "odds-api-io": "odds_api_io",
-            "oddspapiio": "oddspapi",
-            "odds_papi": "oddspapi",
-            "odds-papi": "oddspapi",
-            "allsports": "allsportsapi",
-            "allsports": "allsportsapi",
-            "allsports_api": "allsportsapi",
-            "all-sports-api": "allsportsapi",
         }
         text = aliases.get(text, text)
-        return text if text in {"odds_api_io", "oddspapi", "allsportsapi", "bookies_bootstrap", "auto"} else "odds_api_io"
+        return text if text in {"odds_api_io", "bookies_bootstrap", "auto"} else "odds_api_io"
 
     @field_validator("bookies_api_timeout_seconds", mode="before")
     @classmethod
