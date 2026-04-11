@@ -35,6 +35,32 @@ FOOTBALL_DATA_LEAGUE_HINTS = (
     'mls',
 )
 
+FOOTBALL_DATA_CODE_ALIASES: dict[str, tuple[str, ...]] = {
+    'PL': ('premier league', 'english premier league', 'epl'),
+    'ELC': ('championship', 'english league championship'),
+    'EL1': ('league one', 'english league one'),
+    'EL2': ('league two', 'english league two'),
+    'BL1': ('bundesliga', 'german bundesliga'),
+    'BL2': ('bundesliga 2', 'german bundesliga 2'),
+    'PD': ('la liga', 'spanish la liga', 'laliga'),
+    'SA': ('serie a', 'italian serie a'),
+    'SB': ('serie b', 'italian serie b'),
+    'FL1': ('ligue 1', 'french ligue 1'),
+    'FL2': ('ligue 2', 'french ligue 2'),
+    'DED': ('eredivisie', 'dutch eredivisie'),
+    'PPL': ('primeira liga', 'portuguese primeira liga'),
+    'BSA': ('brazil serie a', 'campeonato brasileiro serie a', 'serie a brazil'),
+    'CLI': ('libertadores', 'copa libertadores', 'conmebol libertadores'),
+    'CSA': ('sudamericana', 'copa sudamericana', 'conmebol sudamericana'),
+    'CL': ('champions league', 'uefa champions league'),
+    'EL': ('europa league', 'uefa europa league'),
+    'ECL': ('conference league', 'uefa europa conference league'),
+    'WC': ('world cup',),
+    'EC': ('european championship', 'euro'),
+    'UNL': ('nations league',),
+    'MLS': ('major league soccer', 'mls'),
+}
+
 
 class FootballDataContextProvider:
     def __init__(self, settings: Settings) -> None:
@@ -46,12 +72,15 @@ class FootballDataContextProvider:
         stats: dict[str, Any] = {
             'enabled': bool(getattr(self.settings, 'enable_football_data_context', True)),
             'api_key_present': bool(getattr(self.settings, 'football_data_api_key', None)),
+            'target_matches': 0,
             'requests': 0,
             'response_errors': 0,
             'matches_fetched': 0,
             'history_rows_fetched': 0,
             'events_matched': 0,
             'contexts_built': 0,
+            'best_near_miss_score': 0.0,
+            'near_miss_count': 0,
             'standings_requests': 0,
             'standings_loaded': 0,
             'history_requests': 0,
@@ -69,6 +98,7 @@ class FootballDataContextProvider:
             'matched_examples': [],
             'sample_contexts': [],
             'sample_tables': [],
+            'near_miss_examples': [],
         }
 
         if not stats['enabled'] or not stats['api_key_present']:
@@ -79,6 +109,7 @@ class FootballDataContextProvider:
             return {}, stats, preview
         match_limit = max(1, int(getattr(self.settings, 'football_data_match_limit', 36) or 36))
         soccer_matches = soccer_matches[:match_limit]
+        stats['target_matches'] = len(soccer_matches)
 
         start_date = min(item.commence_time for item in soccer_matches).astimezone(UTC).date()
         end_date = max(item.commence_time for item in soccer_matches).astimezone(UTC).date()
@@ -114,9 +145,14 @@ class FootballDataContextProvider:
                 if event is None:
                     stats['unmatched_rows'] += 1
                     continue
-                matched, score, quality = self._match_event(event, soccer_matches)
+                matched, score, quality, near_miss = self._match_event(event, soccer_matches)
                 if matched is None:
                     stats['unmatched_rows'] += 1
+                    if near_miss is not None:
+                        stats['near_miss_count'] += 1
+                        stats['best_near_miss_score'] = max(float(stats.get('best_near_miss_score') or 0.0), float(near_miss.get('score') or 0.0))
+                        if len(preview['near_miss_examples']) < 8:
+                            preview['near_miss_examples'].append(near_miss)
                     continue
                 existing = mapping.get(matched.match_key)
                 if existing is None or score > float(existing['score']):
@@ -238,7 +274,7 @@ class FootballDataContextProvider:
             return False
         if any(token in league_key for token in ('women', 'youth', 'reserve', 'reserves', 'friendly')):
             return False
-        return any(hint in league_key for hint in FOOTBALL_DATA_LEAGUE_HINTS)
+        return True
 
     async def _fetch_json(
         self,
@@ -320,6 +356,7 @@ class FootballDataContextProvider:
             'away_team_id': away_team.get('id'),
             'commence_time': dt,
             'league': str((competition.get('name') or '')).strip(),
+            'league_aliases': self._league_aliases(competition),
             'competition_code': code,
             'competition_ref': comp_ref,
             'competition_type': str((competition.get('type') or '')).strip().upper(),
@@ -328,34 +365,50 @@ class FootballDataContextProvider:
             'group': str(row.get('group') or '').strip().upper(),
         }
 
-    def _match_event(self, event: dict[str, Any], matches: list[Match]) -> tuple[Match | None, float, str | None]:
+    def _match_event(self, event: dict[str, Any], matches: list[Match]) -> tuple[Match | None, float, str | None, dict[str, Any] | None]:
         best_match: Match | None = None
         best_score = 0.0
         best_quality: str | None = None
+        best_league_alias = str(event.get('league') or '')
         exact_tol = float(getattr(self.settings, 'match_start_tolerance_hours', 12) or 12)
         fuzzy_tol = float(getattr(self.settings, 'fallback_match_start_tolerance_hours', 8) or 8)
         for match in matches:
-            score, quality, _, _ = score_event_match_variants(
-                sport=match.sport_key,
-                match_home=match.home_team,
-                match_away=match.away_team,
-                match_start=match.commence_time,
-                match_league=match.league_name,
-                event_home_candidates=event.get('home_aliases') or [event['home']],
-                event_away_candidates=event.get('away_aliases') or [event['away']],
-                event_start=event['commence_time'],
-                event_league=event['league'],
-                exact_tolerance_hours=exact_tol,
-                fuzzy_tolerance_hours=fuzzy_tol,
-            )
-            if score > best_score:
-                best_score = score
-                best_quality = quality
-                best_match = match
+            for event_league in event.get('league_aliases') or [event['league']]:
+                score, quality, _, _ = score_event_match_variants(
+                    sport=match.sport_key,
+                    match_home=match.home_team,
+                    match_away=match.away_team,
+                    match_start=match.commence_time,
+                    match_league=match.league_name,
+                    event_home_candidates=event.get('home_aliases') or [event['home']],
+                    event_away_candidates=event.get('away_aliases') or [event['away']],
+                    event_start=event['commence_time'],
+                    event_league=event_league,
+                    exact_tolerance_hours=exact_tol,
+                    fuzzy_tolerance_hours=fuzzy_tol,
+                )
+                if score > best_score:
+                    best_score = score
+                    best_quality = quality
+                    best_match = match
+                    best_league_alias = str(event_league or '')
         threshold = float(getattr(self.settings, 'football_data_match_score_threshold', 42.0) or 42.0)
         if best_match is None or best_score < threshold:
-            return None, 0.0, None
-        return best_match, best_score, best_quality
+            near_miss = None
+            if best_match is not None and best_score >= max(18.0, threshold - 12.0):
+                near_miss = {
+                    'match_key': best_match.match_key,
+                    'home_team': best_match.home_team,
+                    'away_team': best_match.away_team,
+                    'league_name': best_match.league_name,
+                    'event_home': event.get('home'),
+                    'event_away': event.get('away'),
+                    'event_league': best_league_alias,
+                    'score': round(best_score, 2),
+                    'quality': best_quality,
+                }
+            return None, 0.0, None, near_miss
+        return best_match, best_score, best_quality, None
 
     def _build_context_from_standings(self, match: Match, row: dict[str, Any], table: list[dict[str, Any]]) -> MatchContext | None:
         home_row = self._find_team_row(match.home_team, table, ((row.get('homeTeam') or {}).get('id')))
@@ -611,6 +664,20 @@ class FootballDataContextProvider:
         ]
         aliases: list[str] = []
         for value in values:
+            if value and value not in aliases:
+                aliases.append(value)
+        return aliases
+
+    @staticmethod
+    def _league_aliases(payload: dict[str, Any]) -> list[str]:
+        aliases: list[str] = []
+        name = str(payload.get('name') or '').strip()
+        code = str(payload.get('code') or '').strip().upper()
+        comp_id = payload.get('id')
+        for value in (name, code, str(comp_id).strip() if comp_id is not None else ''):
+            if value and value not in aliases:
+                aliases.append(value)
+        for value in FOOTBALL_DATA_CODE_ALIASES.get(code, ()):
             if value and value not in aliases:
                 aliases.append(value)
         return aliases
