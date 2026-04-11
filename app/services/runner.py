@@ -203,7 +203,32 @@ class PredictionRunner:
                 (bookies_api_offers, bookies_stats, bookies_preview),
                 (oddspapi_offers, oddspapi_stats, oddspapi_preview),
                 (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
-            ) = await self._fetch_offers_with_adaptive_fallback(filtered_matches)
+            ) = await asyncio.gather(
+                self._fetch_provider(
+                    self.odds_api_io,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
+                self._fetch_provider(
+                    self.bookies_api,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
+                self._fetch_provider(
+                    self.oddspapi,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
+                self._fetch_provider(
+                    self.allsportsapi,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
+            )
 
             offer_maps = {
                 'odds_api_io': odds_api_io_offers,
@@ -570,39 +595,15 @@ class PredictionRunner:
         strategy = str(getattr(self.settings, 'match_bootstrap_provider', 'odds_api_io') or 'odds_api_io').strip().lower()
         allow_fallback = bool(getattr(self.settings, 'bootstrap_fallback_to_bookies', True))
 
-        provider_order: list[tuple[str, Any]] = []
+        provider_order: list[tuple[str, Any]]
         if strategy == 'bookies_bootstrap':
-            provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
+            provider_order = [('bookies_bootstrap', self.bookies_bootstrap)]
             if allow_fallback:
-                if bool(getattr(self.settings, 'odds_api_io_bootstrap_enabled', True)):
-                    provider_order.append(('odds_api_io', self.odds_api_io))
-                if bool(getattr(self.settings, 'oddspapi_bootstrap_enabled', True)):
-                    provider_order.append(('oddspapi', self.oddspapi))
-                if bool(getattr(self.settings, 'allsportsapi_bootstrap_enabled', True)):
-                    provider_order.append(('allsportsapi', self.allsportsapi))
-        elif strategy == 'oddspapi':
-            provider_order.append(('oddspapi', self.oddspapi))
-            if bool(getattr(self.settings, 'odds_api_io_bootstrap_enabled', True)):
                 provider_order.append(('odds_api_io', self.odds_api_io))
-            if bool(getattr(self.settings, 'allsportsapi_bootstrap_enabled', True)):
-                provider_order.append(('allsportsapi', self.allsportsapi))
-            if allow_fallback:
-                provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
-        elif strategy == 'allsportsapi':
-            provider_order.append(('allsportsapi', self.allsportsapi))
-            if bool(getattr(self.settings, 'odds_api_io_bootstrap_enabled', True)):
-                provider_order.append(('odds_api_io', self.odds_api_io))
-            if bool(getattr(self.settings, 'oddspapi_bootstrap_enabled', True)):
-                provider_order.append(('oddspapi', self.oddspapi))
-            if allow_fallback:
-                provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
+        elif strategy == 'auto':
+            provider_order = [('odds_api_io', self.odds_api_io), ('bookies_bootstrap', self.bookies_bootstrap)]
         else:
-            if bool(getattr(self.settings, 'odds_api_io_bootstrap_enabled', True)):
-                provider_order.append(('odds_api_io', self.odds_api_io))
-            if bool(getattr(self.settings, 'oddspapi_bootstrap_enabled', True)):
-                provider_order.append(('oddspapi', self.oddspapi))
-            if bool(getattr(self.settings, 'allsportsapi_bootstrap_enabled', True)):
-                provider_order.append(('allsportsapi', self.allsportsapi))
+            provider_order = [('odds_api_io', self.odds_api_io)]
             if allow_fallback:
                 provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
 
@@ -632,79 +633,6 @@ class PredictionRunner:
             'preview': {},
             'attempts': attempts,
         }
-
-    def _offer_map_coverage(self, matches: list[Match], offers_by_match: dict[str, list[Any]]) -> tuple[int, float]:
-        total_matches = max(1, len(matches))
-        matches_with_offers = sum(1 for items in offers_by_match.values() if items)
-        return matches_with_offers, matches_with_offers / float(total_matches)
-
-    async def _fetch_offers_with_adaptive_fallback(self, filtered_matches: list[Match]) -> tuple[
-        tuple[dict[str, list[Any]], dict[str, Any], dict[str, Any]],
-        tuple[dict[str, list[Any]], dict[str, Any], dict[str, Any]],
-        tuple[dict[str, list[Any]], dict[str, Any], dict[str, Any]],
-        tuple[dict[str, list[Any]], dict[str, Any], dict[str, Any]],
-    ]:
-        odds_result, bookies_result = await asyncio.gather(
-            self._fetch_provider(self.odds_api_io, 'fetch_offers', filtered_matches, empty_data={}),
-            self._fetch_provider(self.bookies_api, 'fetch_offers', filtered_matches, empty_data={}),
-        )
-        odds_api_io_offers, odds_io_stats, odds_io_preview = odds_result
-        bookies_api_offers, bookies_stats, bookies_preview = bookies_result
-
-        primary_merged = self._merge_offers(odds_api_io_offers, bookies_api_offers)
-        primary_matches, coverage_ratio = self._offer_map_coverage(filtered_matches, primary_merged)
-        skip_secondary = bool(getattr(self.settings, 'adaptive_secondary_offer_skip_enabled', True)) and (
-            primary_matches >= max(1, int(getattr(self.settings, 'adaptive_secondary_offer_skip_min_matches', 16) or 16))
-            or coverage_ratio >= (float(getattr(self.settings, 'adaptive_secondary_offer_skip_coverage_pct', 35.0) or 35.0) / 100.0)
-        )
-
-        oddspapi_stats: dict[str, Any] = {'enabled': bool(self.oddspapi is not None)}
-        oddspapi_preview: dict[str, Any] = {}
-        oddspapi_offers: dict[str, list[Any]] = {}
-        if skip_secondary:
-            oddspapi_stats.update({
-                'skipped_due_to_primary_coverage': True,
-                'primary_matches_with_offers': primary_matches,
-                'primary_coverage_ratio': round(coverage_ratio, 4),
-            })
-        else:
-            oddspapi_offers, oddspapi_stats, oddspapi_preview = await self._fetch_provider(
-                self.oddspapi,
-                'fetch_offers',
-                filtered_matches,
-                empty_data={},
-            )
-
-        current_merged = self._merge_offers(primary_merged, oddspapi_offers)
-        current_matches, current_ratio = self._offer_map_coverage(filtered_matches, current_merged)
-        skip_allsportsapi = bool(getattr(self.settings, 'adaptive_secondary_offer_skip_enabled', True)) and (
-            current_matches >= max(1, int(getattr(self.settings, 'adaptive_secondary_offer_skip_min_matches', 16) or 16))
-            or current_ratio >= (float(getattr(self.settings, 'adaptive_secondary_offer_skip_coverage_pct', 35.0) or 35.0) / 100.0)
-        )
-
-        allsportsapi_stats: dict[str, Any] = {'enabled': bool(self.allsportsapi is not None)}
-        allsportsapi_preview: dict[str, Any] = {}
-        allsportsapi_offers: dict[str, list[Any]] = {}
-        if skip_allsportsapi:
-            allsportsapi_stats.update({
-                'skipped_due_to_primary_coverage': True,
-                'primary_matches_with_offers': current_matches,
-                'primary_coverage_ratio': round(current_ratio, 4),
-            })
-        else:
-            allsportsapi_offers, allsportsapi_stats, allsportsapi_preview = await self._fetch_provider(
-                self.allsportsapi,
-                'fetch_offers',
-                filtered_matches,
-                empty_data={},
-            )
-
-        return (
-            (odds_api_io_offers, odds_io_stats, odds_io_preview),
-            (bookies_api_offers, bookies_stats, bookies_preview),
-            (oddspapi_offers, oddspapi_stats, oddspapi_preview),
-            (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
-        )
 
     async def _fetch_provider(self, provider: Any | None, method_name: str, *args: Any, empty_data: Any) -> tuple[Any, dict[str, Any], dict[str, Any]]:
         if provider is None or not hasattr(provider, method_name):
@@ -746,13 +674,42 @@ class PredictionRunner:
                 local_filtered.append(match)
             return local_filtered, local_skipped_started, local_skipped_too_soon, local_skipped_outside_window
 
+        def lead_stats_for(min_lead_minutes: int) -> dict[str, Any]:
+            future_in_window: list[float] = []
+            too_soon_in_window: list[float] = []
+            min_lead_delta = timedelta(minutes=max(0, min_lead_minutes))
+            for match in matches:
+                commence = ensure_utc(match.commence_time)
+                if commence <= now_utc or commence > horizon:
+                    continue
+                delta_minutes = max((commence - now_utc).total_seconds() / 60.0, 0.0)
+                future_in_window.append(delta_minutes)
+                if commence - now_utc < min_lead_delta:
+                    too_soon_in_window.append(delta_minutes)
+
+            def summary(values: list[float]) -> dict[str, float | int | None]:
+                if not values:
+                    return {'count': 0, 'nearest_minutes': None, 'farthest_minutes': None}
+                ordered = sorted(values)
+                return {
+                    'count': len(ordered),
+                    'nearest_minutes': round(ordered[0], 1),
+                    'farthest_minutes': round(ordered[-1], 1),
+                }
+
+            return {
+                'future_matches_in_window': summary(future_in_window),
+                'too_soon_matches_in_window': summary(too_soon_in_window),
+            }
+
         horizon = now_utc + timedelta(hours=self.settings.publish_window_hours)
         configured_min_lead_minutes = max(0, int(self.settings.min_kickoff_lead_minutes or 0))
-        min_lead = timedelta(minutes=configured_min_lead_minutes)
+        effective_min_lead_minutes = configured_min_lead_minutes
+        min_lead = timedelta(minutes=effective_min_lead_minutes)
         filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
 
         fallback_applied = False
-        effective_min_lead_minutes = configured_min_lead_minutes
+        emergency_fallback_applied = False
         fallback_min_lead_minutes = min(
             configured_min_lead_minutes,
             max(0, int(getattr(self.settings, 'adaptive_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0)),
@@ -763,10 +720,29 @@ class PredictionRunner:
             and getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True)
             and fallback_min_lead_minutes < configured_min_lead_minutes
         ):
-            min_lead = timedelta(minutes=fallback_min_lead_minutes)
+            effective_min_lead_minutes = fallback_min_lead_minutes
+            min_lead = timedelta(minutes=effective_min_lead_minutes)
             filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
             fallback_applied = True
-            effective_min_lead_minutes = fallback_min_lead_minutes
+
+        emergency_min_lead_minutes = min(
+            effective_min_lead_minutes,
+            max(0, int(getattr(self.settings, 'emergency_min_kickoff_lead_minutes', effective_min_lead_minutes) or 0)),
+        )
+        future_in_scope = max(len(matches) - skipped_started - skipped_outside_window, 0)
+        too_soon_ratio = (skipped_too_soon / future_in_scope) if future_in_scope else 0.0
+        emergency_activation_ratio = float(getattr(self.settings, 'emergency_min_kickoff_activation_ratio', 0.85) or 0.85)
+        if (
+            not filtered
+            and skipped_too_soon > 0
+            and getattr(self.settings, 'emergency_min_kickoff_lead_enabled', True)
+            and emergency_min_lead_minutes < effective_min_lead_minutes
+            and too_soon_ratio >= max(0.0, min(emergency_activation_ratio, 1.0))
+        ):
+            effective_min_lead_minutes = emergency_min_lead_minutes
+            min_lead = timedelta(minutes=effective_min_lead_minutes)
+            filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
+            emergency_fallback_applied = True
 
         filtering = {
             'total_before': len(matches),
@@ -780,6 +756,12 @@ class PredictionRunner:
             'adaptive_min_kickoff_lead_enabled': getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True),
             'adaptive_min_kickoff_lead_minutes': fallback_min_lead_minutes,
             'adaptive_min_kickoff_lead_applied': fallback_applied,
+            'emergency_min_kickoff_lead_enabled': getattr(self.settings, 'emergency_min_kickoff_lead_enabled', True),
+            'emergency_min_kickoff_lead_minutes': emergency_min_lead_minutes,
+            'emergency_min_kickoff_activation_ratio': round(emergency_activation_ratio, 3),
+            'emergency_min_kickoff_lead_applied': emergency_fallback_applied,
+            'too_soon_share_of_future_in_window': round(too_soon_ratio, 3),
+            'lead_time_snapshot': lead_stats_for(effective_min_lead_minutes),
             'now_utc': now_utc.isoformat(),
             'now_local': now_utc.astimezone(self.settings.tzinfo).isoformat(),
         }
