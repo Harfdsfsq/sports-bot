@@ -643,25 +643,46 @@ class PredictionRunner:
         return result, {}, {}
 
     def _filter_matches(self, matches: list[Match], now_utc: datetime) -> tuple[list[Match], dict[str, Any]]:
-        filtered: list[Match] = []
-        skipped_started = 0
-        skipped_too_soon = 0
-        skipped_outside_window = 0
-        horizon = now_utc + timedelta(hours=self.settings.publish_window_hours)
-        min_lead = timedelta(minutes=self.settings.min_kickoff_lead_minutes)
+        def apply_filter(min_lead: timedelta) -> tuple[list[Match], int, int, int]:
+            local_filtered: list[Match] = []
+            local_skipped_started = 0
+            local_skipped_too_soon = 0
+            local_skipped_outside_window = 0
+            for match in matches:
+                commence = ensure_utc(match.commence_time)
+                if commence <= now_utc:
+                    local_skipped_started += 1
+                    continue
+                if commence - now_utc < min_lead:
+                    local_skipped_too_soon += 1
+                    continue
+                if commence > horizon:
+                    local_skipped_outside_window += 1
+                    continue
+                local_filtered.append(match)
+            return local_filtered, local_skipped_started, local_skipped_too_soon, local_skipped_outside_window
 
-        for match in matches:
-            commence = ensure_utc(match.commence_time)
-            if commence <= now_utc:
-                skipped_started += 1
-                continue
-            if commence - now_utc < min_lead:
-                skipped_too_soon += 1
-                continue
-            if commence > horizon:
-                skipped_outside_window += 1
-                continue
-            filtered.append(match)
+        horizon = now_utc + timedelta(hours=self.settings.publish_window_hours)
+        configured_min_lead_minutes = max(0, int(self.settings.min_kickoff_lead_minutes or 0))
+        min_lead = timedelta(minutes=configured_min_lead_minutes)
+        filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
+
+        fallback_applied = False
+        effective_min_lead_minutes = configured_min_lead_minutes
+        fallback_min_lead_minutes = min(
+            configured_min_lead_minutes,
+            max(0, int(getattr(self.settings, 'adaptive_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0)),
+        )
+        if (
+            not filtered
+            and skipped_too_soon > 0
+            and getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True)
+            and fallback_min_lead_minutes < configured_min_lead_minutes
+        ):
+            min_lead = timedelta(minutes=fallback_min_lead_minutes)
+            filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
+            fallback_applied = True
+            effective_min_lead_minutes = fallback_min_lead_minutes
 
         filtering = {
             'total_before': len(matches),
@@ -670,7 +691,11 @@ class PredictionRunner:
             'skipped_too_soon': skipped_too_soon,
             'skipped_outside_window': skipped_outside_window,
             'publish_window_hours': self.settings.publish_window_hours,
-            'min_kickoff_lead_minutes': self.settings.min_kickoff_lead_minutes,
+            'min_kickoff_lead_minutes': effective_min_lead_minutes,
+            'configured_min_kickoff_lead_minutes': configured_min_lead_minutes,
+            'adaptive_min_kickoff_lead_enabled': getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True),
+            'adaptive_min_kickoff_lead_minutes': fallback_min_lead_minutes,
+            'adaptive_min_kickoff_lead_applied': fallback_applied,
             'now_utc': now_utc.isoformat(),
             'now_local': now_utc.astimezone(self.settings.tzinfo).isoformat(),
         }

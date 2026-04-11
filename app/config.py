@@ -63,6 +63,8 @@ class Settings(BaseSettings):
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
     publish_window_hours: int = Field(default=5, validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"))
     min_kickoff_lead_minutes: int = Field(default=30, validation_alias=AliasChoices("MIN_KICKOFF_LEAD_MINUTES"))
+    adaptive_min_kickoff_lead_enabled: bool = Field(default=True, validation_alias=AliasChoices("ADAPTIVE_MIN_KICKOFF_LEAD_ENABLED"))
+    adaptive_min_kickoff_lead_minutes: int = Field(default=20, validation_alias=AliasChoices("ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES"))
     max_picks_per_run: int = Field(default=3, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
 
     target_bookmakers: CsvList = Field(default_factory=lambda: ["Bet365", "Unibet"], validation_alias=AliasChoices("TARGET_BOOKMAKERS"))
