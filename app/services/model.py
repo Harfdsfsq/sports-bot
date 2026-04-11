@@ -2245,9 +2245,29 @@ class CandidateFactory:
         return any(self._norm_book(offer.bookmaker) in sharp for offer in offers)
 
 
+    def _allow_single_book_candidate(self, family: str, offers: list[Offer], context: MatchContext | None) -> bool:
+        if family not in {'totals', 'h2h'}:
+            return False
+        if not bool(getattr(self.settings, 'single_book_candidate_enabled', True)):
+            return False
+        norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
+        if len(norm_books) != 1:
+            return False
+        weighted_books = self._weighted_unique_books(offers)
+        min_weighted = float(getattr(self.settings, 'single_book_candidate_min_weighted_books', 1.0) or 1.0)
+        has_target_book = bool(norm_books & self.target_books)
+        has_sharp = self._has_sharp_book(offers)
+        if weighted_books < min_weighted and not has_target_book and not has_sharp:
+            return False
+        if context is None:
+            return has_target_book or has_sharp
+        return True
+
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
         base = self.settings.min_books_for_family(family)
         if family in {'totals', 'h2h'}:
+            if self._allow_single_book_candidate(family, offers, context):
+                return 1
             return max(2, base)
         if base <= 1:
             return 1
@@ -2386,8 +2406,6 @@ class CandidateFactory:
         books_count = int(getattr(item, 'books_count', 0) or 0)
         if books_count >= 2:
             return 2
-        if item.family in {'totals', 'h2h'}:
-            return max(2, base)
         if bucket in {'other', 'low'}:
             return non_core_base
         if not self._has_core_context(item):
@@ -2420,10 +2438,23 @@ class CandidateFactory:
 
         return max(2, base)
 
+    def _effective_min_confidence(self, item: CandidateBet) -> float:
+        base = float(self.settings.min_model_confidence_for_family(item.family))
+        relax = 0.0
+        if str(getattr(item, 'model_mode', '') or '').startswith('market_simple'):
+            relax += float(getattr(self.settings, 'market_simple_model_confidence_relax', 0.02) or 0.02)
+        if (
+            item.family in {'totals', 'h2h'}
+            and int(getattr(item, 'books_count', 0) or 0) <= 1
+            and self._has_core_context(item)
+        ):
+            relax += float(getattr(self.settings, 'single_book_model_confidence_relax', 0.015) or 0.015)
+        return max(0.50, base - relax)
+
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
         for item in candidates:
-            min_conf = float(self.settings.min_model_confidence_for_family(item.family))
+            min_conf = self._effective_min_confidence(item)
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
             if item.model_probability < min_conf:

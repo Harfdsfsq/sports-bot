@@ -20,6 +20,7 @@ class OddsApiIoProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.base_url = "https://api.odds-api.io/v3"
+        self._bootstrap_events_cache: list[dict[str, Any]] = []
 
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
@@ -50,6 +51,7 @@ class OddsApiIoProvider:
         page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
         matches: list[Match] = []
         seen_ids: set[int] = set()
+        cached_events: list[dict[str, Any]] = []
         async with httpx.AsyncClient(timeout=timeout) as client:
             for page in range(1, max_pages + 1):
                 params = {
@@ -70,11 +72,12 @@ class OddsApiIoProvider:
                     continue
                 stats["event_http_statuses"].append(response.status_code)
                 stats["last_body_preview"] = response.text[:1500]
+                if response.status_code == 429:
+                    stats["response_errors"] += 1
+                    stats["rate_limited"] = True
+                    break
                 if response.status_code != 200:
                     stats["response_errors"] += 1
-                    if response.status_code == 429:
-                        stats["rate_limited"] = True
-                        break
                     continue
                 payload = self._safe_json(response)
                 if payload is None:
@@ -88,6 +91,7 @@ class OddsApiIoProvider:
                     preview["sample_events"] = items[:3]
                 if not items:
                     break
+                cached_events.extend(items)
                 before = len(seen_ids)
                 for raw in items:
                     event = self._parse_event(raw)
@@ -107,7 +111,7 @@ class OddsApiIoProvider:
                     if tier == "low" and not bool(getattr(self.settings, "allow_low_tier", False)):
                         stats["low_tier_skipped"] += 1
                         continue
-                    matches.append(Match(
+                    match = Match(
                         source="odds_api_io",
                         source_event_id=str(event_id),
                         sport_key="soccer",
@@ -124,11 +128,13 @@ class OddsApiIoProvider:
                             "competition": event.get("league"),
                             "raw_event": raw,
                         },
-                    ))
+                    )
+                    matches.append(match)
                 stats["events_fetched"] = len(seen_ids)
                 stats["matches_built"] = len(matches)
                 if len(seen_ids) == before or len(items) < page_limit:
                     break
+        self._bootstrap_events_cache = list(cached_events)
         preview["sample_matches"] = [
             {
                 "match_key": item.match_key,
@@ -189,24 +195,19 @@ class OddsApiIoProvider:
 
         events: list[dict[str, Any]] = []
         seen_event_ids: set[int] = set()
-        for match in soccer_matches:
-            raw_event = match.metadata.get("raw_event") if isinstance(match.metadata, dict) else None
-            event_id = raw_event.get("id") if isinstance(raw_event, dict) else None
-            if match.source != "odds_api_io" or not isinstance(event_id, int) or event_id in seen_event_ids:
-                continue
-            seen_event_ids.add(event_id)
-            events.append(raw_event)
-        if events:
-            stats["events_fetched"] = len(events)
-            stats["bootstrap_events_reused"] = len(events)
-            preview["sample_events"] = events[:3]
-
         timeout = float(getattr(self.settings, "odds_api_io_timeout_seconds", 25.0) or 25.0)
         max_pages = max(1, int(getattr(self.settings, "odds_api_io_max_pages_per_sport", 4) or 4))
         page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
 
         async with httpx.AsyncClient(timeout=timeout) as client:
-            if not events:
+            if self._bootstrap_events_cache:
+                events = [row for row in self._bootstrap_events_cache if isinstance(row, dict)]
+                seen_event_ids = {int(row.get("id") or 0) for row in events if int(row.get("id") or 0)}
+                stats["bootstrap_events_reused"] = len(seen_event_ids)
+                stats["events_fetched"] = len(seen_event_ids)
+                if events:
+                    preview["sample_events"] = events[:3]
+            else:
                 for page in range(1, max_pages + 1):
                     params = {
                         "apiKey": api_key,
@@ -227,11 +228,12 @@ class OddsApiIoProvider:
 
                     stats["event_http_statuses"].append(response.status_code)
                     stats["last_body_preview"] = response.text[:1500]
+                    if response.status_code == 429:
+                        stats["response_errors"] += 1
+                        stats["rate_limited"] = True
+                        break
                     if response.status_code != 200:
                         stats["response_errors"] += 1
-                        if response.status_code == 429:
-                            stats["rate_limited"] = True
-                            break
                         continue
 
                     payload = self._safe_json(response)
@@ -258,9 +260,10 @@ class OddsApiIoProvider:
                         seen_event_ids.add(event_id)
                         events.append(item)
                     stats["events_fetched"] = len(events)
-                    if len(seen_event_ids) == before or len(items) < page_limit:
+                    if len(seen_event_ids) == before:
                         break
-
+                    if len(items) < page_limit:
+                        break
             mapping: dict[str, dict[str, Any]] = {}
             for raw_event in events:
                 event = self._parse_event(raw_event)
@@ -299,7 +302,6 @@ class OddsApiIoProvider:
 
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             bookmakers_seen: set[str] = set()
-            stop_fetching_odds = False
             for start in range(0, len(matched_items), 10):
                 chunk = matched_items[start : start + 10]
                 if not chunk:
@@ -320,12 +322,12 @@ class OddsApiIoProvider:
 
                 stats["odds_http_statuses"].append(response.status_code)
                 stats["last_body_preview"] = response.text[:2000]
+                if response.status_code == 429:
+                    stats["response_errors"] += 1
+                    stats["rate_limited"] = True
+                    break
                 if response.status_code != 200:
                     stats["response_errors"] += 1
-                    if response.status_code == 429:
-                        stats["rate_limited"] = True
-                        stop_fetching_odds = True
-                        break
                     continue
 
                 payload = self._safe_json(response)
@@ -351,8 +353,6 @@ class OddsApiIoProvider:
                     stats["offers_parsed"] += len(parsed)
                     stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
                     bookmakers_seen.update(offer.bookmaker for offer in parsed)
-                if stop_fetching_odds:
-                    break
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
             return dict(offers_by_match), stats, preview

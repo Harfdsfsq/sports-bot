@@ -93,6 +93,7 @@ class Settings(BaseSettings):
 
     bookies_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("BOOKIES_BOOTSTRAP_ENABLED"))
     enable_odds_api_io: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_ODDS_API_IO", "ODDS_API_IO_ENABLED"))
+    odds_api_io_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("ODDS_API_IO_BOOTSTRAP_ENABLED"))
     sstats_enabled: bool = Field(default=True, validation_alias=AliasChoices("SSTATS_ENABLED"))
     enable_sstats_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_SSTATS_CONTEXT"))
     api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices("API_FOOTBALL_ENABLED"))
@@ -117,6 +118,7 @@ class Settings(BaseSettings):
     simple_market_h2h_min_ev_pct: float = Field(default=3.6, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EV_PCT"))
     simple_market_h2h_min_edge_pct: float = Field(default=4.4, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EDGE_PCT"))
     simple_market_h2h_min_confidence: float = Field(default=62.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_CONFIDENCE"))
+    market_simple_model_confidence_relax: float = Field(default=0.02, validation_alias=AliasChoices("MARKET_SIMPLE_MODEL_CONFIDENCE_RELAX"))
     simple_market_min_signal_boost_pct: float = Field(default=0.9, validation_alias=AliasChoices("SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT"))
 
     analysis_match_cap_per_run: int = Field(default=150, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
@@ -219,15 +221,18 @@ class Settings(BaseSettings):
     gnews_lookback_hours: int = Field(default=72, validation_alias=AliasChoices("GNEWS_LOOKBACK_HOURS"))
 
     enable_oddspapi: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_ODDSPAPI", "ODDSPAPI_ENABLED"))
+    oddspapi_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("ODDSPAPI_BOOTSTRAP_ENABLED"))
     oddspapi_api_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDSPAPI_API_KEY"))
     oddspapi_base_url: str = Field(default="https://api.oddspapi.io/v4", validation_alias=AliasChoices("ODDSPAPI_BASE_URL"))
     oddspapi_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("ODDSPAPI_TIMEOUT_SECONDS"))
     oddspapi_min_fetch_interval_minutes: int = Field(default=180, validation_alias=AliasChoices("ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES"))
+    oddspapi_abort_after_rate_limit_retries: int = Field(default=2, validation_alias=AliasChoices("ODDSPAPI_ABORT_AFTER_RATE_LIMIT_RETRIES"))
     oddspapi_match_limit: int = Field(default=24, validation_alias=AliasChoices("ODDSPAPI_MATCH_LIMIT"))
     oddspapi_tournament_limit: int = Field(default=12, validation_alias=AliasChoices("ODDSPAPI_TOURNAMENT_LIMIT"))
     oddspapi_bookmakers: CsvList = Field(default_factory=lambda: ["bet365", "unibet"], validation_alias=AliasChoices("ODDSPAPI_BOOKMAKERS"))
 
     enable_allsportsapi: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_ALLSPORTSAPI", "ALLSPORTSAPI_ENABLED"))
+    allsportsapi_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("ALLSPORTSAPI_BOOTSTRAP_ENABLED"))
     allsportsapi_api_key: str | None = Field(default=None, validation_alias=AliasChoices("ALLSPORTSAPI_API_KEY"))
     allsportsapi_base_url: str = Field(default="https://apiv2.allsportsapi.com/football/", validation_alias=AliasChoices("ALLSPORTSAPI_BASE_URL"))
     allsportsapi_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("ALLSPORTSAPI_TIMEOUT_SECONDS"))
@@ -350,6 +355,9 @@ class Settings(BaseSettings):
     max_matches_for_odds_fetch: int = Field(default=150, validation_alias=AliasChoices("MAX_MATCHES_FOR_ODDS_FETCH", "MAX_MATCHES_FOR_PRICING"))
     match_bootstrap_provider: str = Field(default="odds_api_io", validation_alias=AliasChoices("MATCH_BOOTSTRAP_PROVIDER"))
     bootstrap_fallback_to_bookies: bool = Field(default=True, validation_alias=AliasChoices("BOOTSTRAP_FALLBACK_TO_BOOKIES"))
+    adaptive_secondary_offer_skip_enabled: bool = Field(default=True, validation_alias=AliasChoices("ADAPTIVE_SECONDARY_OFFER_SKIP_ENABLED"))
+    adaptive_secondary_offer_skip_coverage_pct: float = Field(default=35.0, validation_alias=AliasChoices("ADAPTIVE_SECONDARY_OFFER_SKIP_COVERAGE_PCT"))
+    adaptive_secondary_offer_skip_min_matches: int = Field(default=16, validation_alias=AliasChoices("ADAPTIVE_SECONDARY_OFFER_SKIP_MIN_MATCHES"))
 
     source_weight_theodds: float = Field(default=1.04, validation_alias=AliasChoices("SOURCE_WEIGHT_THEODDS"))
     source_weight_oddsapiio: float = Field(default=1.00, validation_alias=AliasChoices("SOURCE_WEIGHT_ODDSAPIIO"))
@@ -357,11 +365,6 @@ class Settings(BaseSettings):
     source_weight_sstats: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_SSTATS"))
     source_weight_oddspapi: float = Field(default=1.00, validation_alias=AliasChoices("SOURCE_WEIGHT_ODDSPAPI"))
     source_weight_allsportsapi: float = Field(default=0.99, validation_alias=AliasChoices("SOURCE_WEIGHT_ALLSPORTSAPI"))
-
-    secondary_offer_skip_when_primary_sufficient: bool = Field(default=True, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_WHEN_PRIMARY_SUFFICIENT"))
-    secondary_offer_skip_min_matches: int = Field(default=18, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_MIN_MATCHES"))
-    secondary_offer_skip_coverage_ratio: float = Field(default=0.45, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_COVERAGE_RATIO"))
-    secondary_offer_skip_min_bookmakers_seen: int = Field(default=2, validation_alias=AliasChoices("SECONDARY_OFFER_SKIP_MIN_BOOKMAKERS_SEEN"))
     source_weight_futrixmetrics: float = Field(default=0.90, validation_alias=AliasChoices("SOURCE_WEIGHT_FUTRIXMETRICS"))
 
     bookmaker_weight_pinnacle: float = Field(default=1.16, validation_alias=AliasChoices("BOOKMAKER_WEIGHT_PINNACLE"))
@@ -430,11 +433,9 @@ class Settings(BaseSettings):
     historical_segment_min_sample: int = Field(default=10, validation_alias=AliasChoices("HISTORICAL_SEGMENT_MIN_SAMPLE"))
     historical_segment_min_roi_pct: float = Field(default=-18.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_MIN_ROI_PCT"))
     historical_segment_min_calibration_delta_pct: float = Field(default=-9.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_MIN_CALIBRATION_DELTA_PCT"))
-    historical_segment_hard_min_roi_pct: float = Field(default=-30.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_ROI_PCT"))
-    historical_segment_hard_min_calibration_delta_pct: float = Field(default=-14.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_CALIBRATION_DELTA_PCT"))
-    historical_segment_soft_penalty_enabled: bool = Field(default=True, validation_alias=AliasChoices("HISTORICAL_SEGMENT_SOFT_PENALTY_ENABLED"))
-    historical_segment_soft_penalty_score: float = Field(default=6.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_SOFT_PENALTY_SCORE"))
-    historical_segment_soft_penalty_per_extra_segment: float = Field(default=1.5, validation_alias=AliasChoices("HISTORICAL_SEGMENT_SOFT_PENALTY_PER_EXTRA_SEGMENT"))
+    historical_segment_hard_min_roi_pct: float = Field(default=-26.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_ROI_PCT"))
+    historical_segment_hard_min_calibration_delta_pct: float = Field(default=-12.0, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_CALIBRATION_DELTA_PCT"))
+    historical_segment_hard_min_bad_segments: int = Field(default=2, validation_alias=AliasChoices("HISTORICAL_SEGMENT_HARD_MIN_BAD_SEGMENTS"))
     quarantine_shadow_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices("QUARANTINE_SHADOW_MODE_ENABLED"))
     quarantine_min_segment_sample: int = Field(default=16, validation_alias=AliasChoices("QUARANTINE_MIN_SEGMENT_SAMPLE"))
     quarantine_league_buckets: CsvList = Field(default_factory=lambda: ["low"], validation_alias=AliasChoices("QUARANTINE_LEAGUE_BUCKETS"))
@@ -596,6 +597,9 @@ class Settings(BaseSettings):
 
     bookmaker_alias_relaxed: bool = Field(default=True, validation_alias=AliasChoices("BOOKMAKER_ALIAS_RELAXED"))
     allow_single_sharp_book: bool = Field(default=True, validation_alias=AliasChoices("ALLOW_SINGLE_SHARP_BOOK"))
+    single_book_candidate_enabled: bool = Field(default=True, validation_alias=AliasChoices("SINGLE_BOOK_CANDIDATE_ENABLED"))
+    single_book_candidate_min_weighted_books: float = Field(default=1.0, validation_alias=AliasChoices("SINGLE_BOOK_CANDIDATE_MIN_WEIGHTED_BOOKS"))
+    single_book_model_confidence_relax: float = Field(default=0.015, validation_alias=AliasChoices("SINGLE_BOOK_MODEL_CONFIDENCE_RELAX"))
     single_sharp_min_confidence: float = Field(default=64.0, validation_alias=AliasChoices("SINGLE_SHARP_MIN_CONFIDENCE"))
     single_sharp_min_edge_pct: float = Field(default=4.0, validation_alias=AliasChoices("SINGLE_SHARP_MIN_EDGE_PCT"))
     preferred_single_book_min_confidence: float = Field(default=71.0, validation_alias=AliasChoices("PREFERRED_SINGLE_BOOK_MIN_CONFIDENCE"))
@@ -678,9 +682,13 @@ class Settings(BaseSettings):
             "oddsapiio": "odds_api_io",
             "odds_apiio": "odds_api_io",
             "odds-api-io": "odds_api_io",
+            "oddspapiio": "oddspapi",
+            "oddsp_api": "oddspapi",
+            "allsports": "allsportsapi",
+            "allsports": "allsportsapi",
         }
         text = aliases.get(text, text)
-        return text if text in {"odds_api_io", "bookies_bootstrap", "auto"} else "odds_api_io"
+        return text if text in {"odds_api_io", "oddspapi", "allsportsapi", "bookies_bootstrap", "auto"} else "odds_api_io"
 
     @field_validator("bookies_api_timeout_seconds", mode="before")
     @classmethod

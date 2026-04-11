@@ -72,12 +72,6 @@ class PredictionQualityService:
                 self._apply_probability_adjustment(candidate, float(calibration['delta_probability']))
 
             quality_score = self._candidate_quality_score(candidate, segments, profile, enough_history)
-            historical_penalty = self._historical_segment_soft_penalty(segments, profile, enough_history)
-            if historical_penalty['applied']:
-                quality_score = clamp(quality_score - float(historical_penalty['score_penalty']), 0.0, 100.0)
-                candidate.reasons.append(
-                    f"historical_segment_soft_penalty=-{float(historical_penalty['score_penalty']):.2f}qs"
-                )
             status = 'passed_quality'
             reasons: list[str] = []
 
@@ -111,7 +105,6 @@ class PredictionQualityService:
                 'quality_score': round(quality_score, 3),
                 'reasons': reasons,
                 'calibration': calibration,
-                'historical_penalty': historical_penalty,
                 'segments': segments,
                 'original_adjusted_probability': round(original_probability, 5),
                 'final_adjusted_probability': round(float(candidate.adjusted_probability), 5),
@@ -416,42 +409,12 @@ class PredictionQualityService:
             return None
         stats = dict(profile.get('segments') or {})
         min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 10) or 10))
-        hard_min_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -30.0) or -30.0)
-        hard_min_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -14.0) or -14.0) / 100.0
-        severe_hits = 0
-        for segment in segments:
-            if segment.startswith('prob:'):
-                continue
-            item = stats.get(segment)
-            if not isinstance(item, dict) or int(item.get('count') or 0) < min_sample:
-                continue
-            roi = self._to_float(item.get('roi_pct')) or 0.0
-            delta = self._to_float(item.get('calibration_delta_probability')) or 0.0
-            if roi < hard_min_roi and delta < hard_min_delta:
-                severe_hits += 1
-                if severe_hits >= 2:
-                    return 'bad_historical_segment_guard'
-        return None
-
-    def _historical_segment_soft_penalty(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> dict[str, Any]:
-        result = {
-            'applied': False,
-            'matched_segments': [],
-            'score_penalty': 0.0,
-            'worst_roi_pct': None,
-            'worst_calibration_delta_probability': None,
-        }
-        if not enough_history or not bool(getattr(self.settings, 'historical_segment_soft_penalty_enabled', True)):
-            return result
-        stats = dict(profile.get('segments') or {})
-        min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 10) or 10))
         min_roi = float(getattr(self.settings, 'historical_segment_min_roi_pct', -18.0) or -18.0)
         min_delta = float(getattr(self.settings, 'historical_segment_min_calibration_delta_pct', -9.0) or -9.0) / 100.0
-        hard_min_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -30.0) or -30.0)
-        hard_min_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -14.0) or -14.0) / 100.0
-        worst_roi = None
-        worst_delta = None
-        matched_segments: list[str] = []
+        hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)
+        hard_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
+        hard_bad_segments = max(1, int(getattr(self.settings, 'historical_segment_hard_min_bad_segments', 2) or 2))
+        bad_segments = 0
         for segment in segments:
             if segment.startswith('prob:'):
                 continue
@@ -460,25 +423,13 @@ class PredictionQualityService:
                 continue
             roi = self._to_float(item.get('roi_pct')) or 0.0
             delta = self._to_float(item.get('calibration_delta_probability')) or 0.0
-            if roi < hard_min_roi and delta < hard_min_delta:
-                continue
             if roi < min_roi and delta < min_delta:
-                matched_segments.append(segment)
-                worst_roi = roi if worst_roi is None else min(worst_roi, roi)
-                worst_delta = delta if worst_delta is None else min(worst_delta, delta)
-        if not matched_segments:
-            return result
-        base_penalty = float(getattr(self.settings, 'historical_segment_soft_penalty_score', 6.0) or 6.0)
-        extra_penalty = float(getattr(self.settings, 'historical_segment_soft_penalty_per_extra_segment', 1.5) or 1.5)
-        penalty = base_penalty + max(0, len(matched_segments) - 1) * extra_penalty
-        result.update({
-            'applied': True,
-            'matched_segments': matched_segments,
-            'score_penalty': round(penalty, 3),
-            'worst_roi_pct': worst_roi,
-            'worst_calibration_delta_probability': worst_delta,
-        })
-        return result
+                bad_segments += 1
+                if roi < hard_roi and delta < hard_delta:
+                    return 'bad_historical_segment_guard'
+        if bad_segments >= hard_bad_segments:
+            return 'bad_historical_segment_guard'
+        return None
 
     def _quarantine_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(getattr(self.settings, 'quarantine_shadow_mode_enabled', True)):

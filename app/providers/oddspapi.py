@@ -26,6 +26,89 @@ class OddsPapiProvider:
         self.match_limit = max(1, int(getattr(settings, "oddspapi_match_limit", 16) or 16))
         self.tournament_limit = max(1, int(getattr(settings, "oddspapi_tournament_limit", 4) or 4))
         self.max_tournament_ids_per_request = 5
+        self._bootstrap_fixtures_cache: list[dict[str, Any]] = []
+
+    async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
+        stats: dict[str, Any] = {
+            "enabled": bool(self.api_key),
+            "api_key_present": bool(self.api_key),
+            "requests": 0,
+            "rate_limit_retries": 0,
+            "response_errors": 0,
+            "fixtures_fetched": 0,
+            "matches_built": 0,
+            "matched_exact": 0,
+            "matched_loose": 0,
+            "matched_fuzzy": 0,
+            "http_statuses": [],
+            "last_body_preview": None,
+            "rate_limited": False,
+            "aborted_on_rate_limit": False,
+        }
+        preview: dict[str, Any] = {"sample_fixtures": [], "sample_matches": []}
+        if not self.api_key:
+            return [], stats, preview
+
+        now = datetime.now(UTC)
+        from_ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        to_ts = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            fixtures = await self._get_json(
+                client,
+                "/fixtures",
+                stats,
+                params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
+            )
+        rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+        self._bootstrap_fixtures_cache = list(rows)
+        stats["fixtures_fetched"] = len(rows)
+        preview["sample_fixtures"] = rows[:3]
+
+        matches: list[Match] = []
+        seen: set[str] = set()
+        for row in rows:
+            home = str(row.get("homeTeam") or row.get("home_name") or row.get("home") or "").strip()
+            away = str(row.get("awayTeam") or row.get("away_name") or row.get("away") or "").strip()
+            league = str(row.get("tournamentName") or row.get("leagueName") or row.get("league") or "").strip()
+            raw_time = row.get("startsAt") or row.get("startTime") or row.get("date")
+            if not home or not away or not raw_time:
+                continue
+            try:
+                commence = parse_datetime(str(raw_time))
+            except Exception:
+                continue
+            fixture_id = str(row.get("fixtureId") or row.get("id") or "")
+            match_key = f"{home.lower()}::{away.lower()}::{commence.isoformat()}"
+            if match_key in seen:
+                continue
+            seen.add(match_key)
+            matches.append(Match(
+                source="oddspapi",
+                source_event_id=fixture_id,
+                sport_key="soccer",
+                league_name=league,
+                home_team=home,
+                away_team=away,
+                commence_time=commence,
+                home_team_norm="",
+                away_team_norm="",
+                league_key="",
+                tier="mid",
+                metadata={"oddspapi_fixture": row},
+            ))
+        matches = self._prioritize_matches(matches)[: self.match_limit]
+        stats["matches_built"] = len(matches)
+        preview["sample_matches"] = [
+            {
+                "match_key": item.match_key,
+                "league_name": item.league_name,
+                "home_team": item.home_team,
+                "away_team": item.away_team,
+                "commence_time": item.commence_time.isoformat(),
+            }
+            for item in matches[:5]
+        ]
+        return matches, stats, preview
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -45,10 +128,10 @@ class OddsPapiProvider:
             "tournament_batches": 0,
             "http_statuses": [],
             "last_body_preview": None,
-            "rate_limited": False,
-            "aborted_on_rate_limit": False,
             "families_supported": ["h2h"],
             "bookmakers_requested": [],
+            "rate_limited": False,
+            "aborted_on_rate_limit": False,
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_odds": []}
         if not self.api_key:
@@ -74,13 +157,16 @@ class OddsPapiProvider:
             return {}, stats, preview
 
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            fixtures = await self._get_json(
-                client,
-                "/fixtures",
-                stats,
-                params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
-            )
-            rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+            fixtures_source = self._bootstrap_fixtures_cache if self._bootstrap_fixtures_cache else None
+            if fixtures_source is None:
+                fixtures = await self._get_json(
+                    client,
+                    "/fixtures",
+                    stats,
+                    params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
+                )
+                fixtures_source = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+            rows = list(fixtures_source)
             stats["fixtures_fetched"] = len(rows)
             preview["sample_fixtures"] = rows[:3]
 
@@ -116,7 +202,11 @@ class OddsPapiProvider:
 
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             for bookmaker_slug in bookmakers:
+                if bool(stats.get("aborted_on_rate_limit")):
+                    break
                 for tournament_batch in self._chunked(tournament_ids, self.max_tournament_ids_per_request):
+                    if bool(stats.get("aborted_on_rate_limit")):
+                        break
                     stats["tournament_batches"] = int(stats.get("tournament_batches", 0) or 0) + 1
                     odds_rows = await self._get_json(
                         client,
@@ -128,8 +218,7 @@ class OddsPapiProvider:
                             "apiKey": self.api_key,
                         },
                     )
-                    if bool(stats.get("rate_limited")):
-                        stats["aborted_on_rate_limit"] = True
+                    if bool(stats.get("aborted_on_rate_limit")):
                         break
                     rows = [row for row in odds_rows if isinstance(row, dict)] if isinstance(odds_rows, list) else []
                     if rows and len(preview["sample_odds"]) < 3:
@@ -144,8 +233,6 @@ class OddsPapiProvider:
                             continue
                         offers_by_match[match.match_key].extend(offers)
                         stats["offers_parsed"] += len(offers)
-                if bool(stats.get("rate_limited")):
-                    break
 
         output = {k: v for k, v in offers_by_match.items() if v}
         self._write_cache(output)
@@ -162,12 +249,16 @@ class OddsPapiProvider:
                 return None
             stats["http_statuses"].append(response.status_code)
             stats["last_body_preview"] = response.text[:1800]
-            if response.status_code == 429 and attempt == 0:
-                stats["rate_limit_retries"] = int(stats.get("rate_limit_retries", 0) or 0) + 1
-                await asyncio.sleep(self._retry_delay_seconds(response))
-                continue
             if response.status_code == 429:
+                stats["rate_limit_retries"] = int(stats.get("rate_limit_retries", 0) or 0) + 1
                 stats["rate_limited"] = True
+                max_retries = max(1, int(getattr(self.settings, "oddspapi_abort_after_rate_limit_retries", 2) or 2))
+                if attempt == 0 and int(stats.get("rate_limit_retries", 0) or 0) <= max_retries:
+                    await asyncio.sleep(self._retry_delay_seconds(response))
+                    continue
+                stats["aborted_on_rate_limit"] = True
+                stats["response_errors"] += 1
+                return None
             if response.status_code != 200:
                 stats["response_errors"] += 1
                 return None
