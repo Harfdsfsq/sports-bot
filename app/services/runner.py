@@ -38,6 +38,7 @@ class PredictionRunner:
         self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
         self.thesportsdb = self._safe_provider('app.providers.thesportsdb', 'TheSportsDbContextProvider')
         self.football_data = self._safe_provider('app.providers.football_data', 'FootballDataContextProvider')
+        self.openligadb = self._safe_provider('app.providers.openligadb', 'OpenLigaDbContextProvider')
         self.openfootball = self._safe_provider('app.providers.openfootball', 'OpenFootballContextProvider')
         self.newsapi = self._safe_provider('app.providers.newsapi', 'NewsApiContextProvider')
         self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')
@@ -106,6 +107,9 @@ class PredictionRunner:
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('football_data') and not getattr(self.settings, 'enable_football_data_context', True):
+            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
+            return None
+        if module_name.endswith('openligadb') and not getattr(self.settings, 'enable_openligadb_context', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('openfootball') and not getattr(self.settings, 'enable_openfootball_context', True):
@@ -246,16 +250,17 @@ class PredictionRunner:
                 market_signals,
             )
             provider_targets = {
-                'sstats': self._select_provider_context_matches(context_target_matches, 'sstats'),
-                'bzzoiro': self._select_provider_context_matches(context_target_matches, 'bzzoiro'),
-                'api_football': self._select_provider_context_matches(context_target_matches, 'api_football'),
-                'espn': self._select_provider_context_matches(context_target_matches, 'espn'),
-                'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb'),
-                'football_data': self._select_provider_context_matches(context_target_matches, 'football_data'),
-                'futrixmetrics': self._select_provider_context_matches(context_target_matches, 'futrixmetrics'),
-                'openfootball': self._select_provider_context_matches(context_target_matches, 'openfootball'),
-                'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi'),
-                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews'),
+                'sstats': self._select_provider_context_matches(context_target_matches, 'sstats', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'bzzoiro': self._select_provider_context_matches(context_target_matches, 'bzzoiro', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'api_football': self._select_provider_context_matches(context_target_matches, 'api_football', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'espn': self._select_provider_context_matches(context_target_matches, 'espn', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'thesportsdb': self._select_provider_context_matches(context_target_matches, 'thesportsdb', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'football_data': self._select_provider_context_matches(context_target_matches, 'football_data', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'openligadb': self._select_provider_context_matches(context_target_matches, 'openligadb', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'futrixmetrics': self._select_provider_context_matches(context_target_matches, 'futrixmetrics', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'openfootball': self._select_provider_context_matches(context_target_matches, 'openfootball', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),
             }
             provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
 
@@ -266,6 +271,7 @@ class PredictionRunner:
                 (espn_contexts, espn_stats, espn_preview),
                 (thesportsdb_contexts, thesportsdb_stats, thesportsdb_preview),
                 (football_data_contexts, football_data_stats, football_data_preview),
+                (openligadb_contexts, openligadb_stats, openligadb_preview),
                 (futrixmetrics_contexts, futrixmetrics_stats, futrixmetrics_preview),
                 (openfootball_contexts, openfootball_stats, openfootball_preview),
                 (newsapi_contexts, newsapi_stats, newsapi_preview),
@@ -277,6 +283,7 @@ class PredictionRunner:
                 self._fetch_provider(self.espn, 'fetch_context', provider_targets['espn'], empty_data={}),
                 self._fetch_provider(self.thesportsdb, 'fetch_context', provider_targets['thesportsdb'], empty_data={}),
                 self._fetch_provider(self.football_data, 'fetch_context', provider_targets['football_data'], empty_data={}),
+                self._fetch_provider(self.openligadb, 'fetch_context', provider_targets['openligadb'], empty_data={}),
                 self._fetch_provider(self.futrixmetrics, 'fetch_context', provider_targets['futrixmetrics'], empty_data={}),
                 self._fetch_provider(self.openfootball, 'fetch_context', provider_targets['openfootball'], empty_data={}),
                 self._fetch_provider(self.newsapi, 'fetch_context', provider_targets['newsapi'], empty_data={}),
@@ -291,6 +298,7 @@ class PredictionRunner:
                 'espn': espn_contexts,
                 'thesportsdb': thesportsdb_contexts,
                 'football_data': football_data_contexts,
+                'openligadb': openligadb_contexts,
                 'openfootball': openfootball_contexts,
                 'newsapi': newsapi_contexts,
                 'gnews': gnews_contexts,
@@ -373,6 +381,7 @@ class PredictionRunner:
                 'espn': espn_stats,
                 'thesportsdb': thesportsdb_stats,
                 'football_data': football_data_stats,
+                'openligadb': openligadb_stats,
                 'openfootball': openfootball_stats,
                 'newsapi': newsapi_stats,
                 'gnews': gnews_stats,
@@ -443,6 +452,7 @@ class PredictionRunner:
                     'espn_loose': espn_stats.get('matched_loose', 0),
                     'espn_fuzzy': espn_stats.get('matched_fuzzy', 0),
                     'thesportsdb_contexts': thesportsdb_stats.get('contexts_built', 0),
+                    'openligadb_contexts': openligadb_stats.get('contexts_built', 0),
                 },
                 'rejections': rejections,
                 'candidate_modes': dict(mode_counts),
@@ -666,7 +676,14 @@ class PredictionRunner:
         }
         return filtered, filtering
 
-    def _select_provider_context_matches(self, matches: list[Match], provider_name: str) -> list[Match]:
+    def _select_provider_context_matches(
+        self,
+        matches: list[Match],
+        provider_name: str,
+        *,
+        fallback_matches: list[Match] | None = None,
+        offers_by_match: dict[str, list[Offer]] | None = None,
+    ) -> list[Match]:
         limit_map = {
             'sstats': 0,
             'bzzoiro': int(getattr(self.settings, 'bzzoiro_context_match_limit', 80) or 80),
@@ -674,6 +691,7 @@ class PredictionRunner:
             'espn': int(getattr(self.settings, 'espn_context_match_limit', 24) or 24),
             'thesportsdb': int(getattr(self.settings, 'thesportsdb_context_match_limit', 80) or 80),
             'football_data': int(getattr(self.settings, 'football_data_context_match_limit', 80) or 80),
+            'openligadb': int(getattr(self.settings, 'openligadb_context_match_limit', 24) or 24),
             'futrixmetrics': int(getattr(self.settings, 'futrixmetrics_context_match_limit', 6) or 6),
             'openfootball': int(getattr(self.settings, 'openfootball_context_match_limit', 120) or 120),
             'newsapi': int(getattr(self.settings, 'newsapi_context_match_limit', 12) or 12),
@@ -693,11 +711,105 @@ class PredictionRunner:
                 limit = min(limit, max(premium_limit * 2, premium_limit))
             elif provider_key in {'football_data'}:
                 limit = min(limit, max(premium_limit * 3, premium_limit))
+            elif provider_key in {'openligadb'}:
+                limit = min(limit, max(premium_limit * 2, premium_limit))
             elif provider_key in {'futrixmetrics'}:
                 limit = min(limit, max(4, premium_limit // 2))
-        if len(matches) <= limit:
-            return matches
-        return matches[:limit]
+        primary_ranked = self._rank_provider_context_matches(matches, provider_key, offers_by_match)
+        selected: list[Match] = []
+        seen: set[str] = set()
+        for match in primary_ranked:
+            if match.match_key in seen:
+                continue
+            selected.append(match)
+            seen.add(match.match_key)
+            if len(selected) >= limit:
+                return selected
+        for match in self._rank_provider_context_matches(fallback_matches or [], provider_key, offers_by_match):
+            if match.match_key in seen:
+                continue
+            selected.append(match)
+            seen.add(match.match_key)
+            if len(selected) >= limit:
+                break
+        return selected
+
+    def _rank_provider_context_matches(
+        self,
+        matches: list[Match],
+        provider_key: str,
+        offers_by_match: dict[str, list[Offer]] | None = None,
+    ) -> list[Match]:
+        if not matches:
+            return []
+        offers_by_match = offers_by_match or {}
+        requires_offers = bool(getattr(self.settings, 'context_enrichment_requires_offers', True))
+        target_bookmakers = {str(name).strip().lower() for name in (self.settings.target_bookmakers or []) if str(name).strip()}
+        ranked: list[tuple[tuple[float, ...], Match]] = []
+        for match in matches:
+            if str(getattr(match, 'sport_key', '') or '') != 'soccer':
+                continue
+            offers = list(offers_by_match.get(match.match_key) or [])
+            if requires_offers and not offers:
+                continue
+            support_score = self._provider_context_support_score(provider_key, match)
+            if support_score <= 0.0:
+                continue
+            unique_books = {str(item.bookmaker or '').strip().lower() for item in offers if str(item.bookmaker or '').strip()}
+            supported_books = len(unique_books & target_bookmakers) if target_bookmakers else len(unique_books)
+            families = {str(item.family or '').strip().lower() for item in offers if str(item.family or '').strip()}
+            rich_offer_bonus = 1.0 if {'h2h', 'totals', 'btts'} & families else 0.0
+            league_priority = float(self.settings.league_priority_score(match.league_name))
+            low_tier_penalty = -0.75 if self.settings.is_low_tier_league(match.league_name) else 0.0
+            kickoff_weight = -abs(ensure_utc(match.commence_time).timestamp())
+            rank_key = (
+                support_score,
+                league_priority,
+                float(supported_books),
+                rich_offer_bonus,
+                float(len(families)),
+                float(len(unique_books)),
+                float(len(offers)),
+                low_tier_penalty,
+                kickoff_weight,
+            )
+            ranked.append((rank_key, match))
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        return [match for _, match in ranked]
+
+    def _provider_context_support_score(self, provider_key: str, match: Match) -> float:
+        provider_key = str(provider_key or '').strip().lower()
+        league_priority = float(self.settings.league_priority_score(match.league_name))
+        if provider_key == 'api_football':
+            return 1.0 if not self.settings.is_low_tier_league(match.league_name) else 0.82
+        if provider_key == 'espn':
+            checker = getattr(self.espn, 'supports_match', None)
+            return 1.0 if callable(checker) and checker(match) else 0.0
+        if provider_key == 'openfootball':
+            checker = getattr(self.openfootball, 'supports_match', None)
+            return 0.96 if callable(checker) and checker(match) else 0.0
+        if provider_key == 'openligadb':
+            checker = getattr(self.openligadb, 'supports_match', None)
+            return 0.95 if callable(checker) and checker(match) else 0.0
+        if provider_key == 'football_data':
+            checker = getattr(self.football_data, 'supports_match', None)
+            return 0.94 if callable(checker) and checker(match) else 0.0
+        if provider_key == 'thesportsdb':
+            checker = getattr(self.thesportsdb, 'supports_match', None)
+            if callable(checker) and checker(match):
+                return 0.9 if league_priority >= 1.0 else 0.7
+            return 0.0
+        if provider_key == 'sstats':
+            return 0.92 if league_priority >= 1.0 else 0.74
+        if provider_key == 'bzzoiro':
+            return 0.88 if league_priority >= 2.0 else 0.62 if league_priority >= 1.0 else 0.0
+        if provider_key == 'futrixmetrics':
+            return 0.84 if league_priority >= 1.0 else 0.58
+        if provider_key == 'newsapi':
+            return 1.0 if league_priority >= 2.0 else 0.55 if league_priority >= 1.0 else 0.0
+        if provider_key == 'gnews':
+            return 1.0 if league_priority >= 2.0 else 0.4 if league_priority >= 1.0 else 0.0
+        return 0.5
 
     def _select_context_enrichment_matches(
         self,

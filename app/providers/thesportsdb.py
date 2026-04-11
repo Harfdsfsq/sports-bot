@@ -160,6 +160,14 @@ class TheSportsDbContextProvider:
 
         return contexts, stats, preview
 
+    def supports_match(self, match: Match) -> bool:
+        if str(getattr(match, 'sport_key', '') or '') != 'soccer':
+            return False
+        key = self._normalize_league_key(match.league_name)
+        if not key:
+            return False
+        return not any(token in key for token in ('women', 'youth', 'reserve', 'reserves', 'friendly'))
+
     async def _fetch_json(self, client: httpx.AsyncClient, path: str, stats: dict[str, Any], params: dict[str, Any] | None = None) -> Any | None:
         stats['requests'] += 1
         try:

@@ -10,6 +10,31 @@ from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import canonicalize_team_name, clamp, parse_datetime, score_event_match_variants, soft_contains_team, team_similarity
 
+FOOTBALL_DATA_LEAGUE_HINTS = (
+    'epl',
+    'premier league',
+    'league championship',
+    'laliga',
+    'la liga',
+    'bundesliga',
+    'ligue 1',
+    'ligue 2',
+    'serie a',
+    'serie b',
+    'eredivisie',
+    'primeira liga',
+    'champions league',
+    'europa league',
+    'conference league',
+    'libertadores',
+    'sudamericana',
+    'world cup',
+    'european championship',
+    'nations league',
+    'major league soccer',
+    'mls',
+)
+
 
 class FootballDataContextProvider:
     def __init__(self, settings: Settings) -> None:
@@ -204,6 +229,16 @@ class FootballDataContextProvider:
                 })
 
         return contexts, stats, preview
+
+    def supports_match(self, match: Match) -> bool:
+        if str(getattr(match, 'sport_key', '') or '') != 'soccer':
+            return False
+        league_key = self._league_key(match.league_name)
+        if not league_key:
+            return False
+        if any(token in league_key for token in ('women', 'youth', 'reserve', 'reserves', 'friendly')):
+            return False
+        return any(hint in league_key for hint in FOOTBALL_DATA_LEAGUE_HINTS)
 
     async def _fetch_json(
         self,
@@ -579,6 +614,10 @@ class FootballDataContextProvider:
             if value and value not in aliases:
                 aliases.append(value)
         return aliases
+
+    @staticmethod
+    def _league_key(value: str) -> str:
+        return ' '.join(str(value or '').strip().lower().replace('-', ' ').replace('/', ' ').split())
 
     @staticmethod
     def _team_match_score(a: str, b: str) -> float:

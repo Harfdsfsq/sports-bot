@@ -201,6 +201,9 @@ class EspnContextProvider:
 
         return contexts, stats, preview
 
+    def supports_match(self, match: Match) -> bool:
+        return bool(self._league_slug(match.league_name))
+
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
         counts = Counter(match.league_name for match in matches)
         return sorted(

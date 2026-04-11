@@ -122,6 +122,9 @@ class OpenFootballContextProvider:
                     preview['sample_contexts'].append({'match_key': match.match_key, 'season': season, 'expected_home': context.expected_home, 'expected_away': context.expected_away})
         return contexts, stats, preview
 
+    def supports_match(self, match: Match) -> bool:
+        return str(getattr(match, 'sport_key', '') or '') == 'soccer' and bool(self._competition_key(match.league_name))
+
     async def _fetch_json(self, client: httpx.AsyncClient, path: str, stats: dict[str, Any]) -> Any | None:
         stats['requests'] += 1
         try:

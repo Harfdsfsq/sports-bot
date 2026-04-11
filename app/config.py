@@ -97,6 +97,7 @@ class Settings(BaseSettings):
     enable_espn_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_ESPN_CONTEXT", "ESPN_CONTEXT_ENABLED"))
     enable_thesportsdb_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_THESPORTSDB_CONTEXT", "THESPORTSDB_CONTEXT_ENABLED"))
     enable_football_data_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_FOOTBALL_DATA_CONTEXT", "FOOTBALL_DATA_ENABLED"))
+    enable_openligadb_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_OPENLIGADB_CONTEXT", "OPENLIGADB_ENABLED"))
     enable_openfootball_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_OPENFOOTBALL_CONTEXT", "OPENFOOTBALL_ENABLED"))
     enable_newsapi_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_NEWSAPI_CONTEXT", "NEWSAPI_ENABLED"))
     enable_gnews_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_GNEWS_CONTEXT", "GNEWS_ENABLED"))
@@ -137,6 +138,8 @@ class Settings(BaseSettings):
     api_football_key: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_KEY"))
     api_football_base_url: str = Field(default="https://v3.football.api-sports.io", validation_alias=AliasChoices("API_FOOTBALL_BASE_URL"))
     api_football_rapidapi_host: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_RAPIDAPI_HOST"))
+    api_football_fetch_match_dates_only: bool = Field(default=True, validation_alias=AliasChoices("API_FOOTBALL_FETCH_MATCH_DATES_ONLY"))
+    api_football_free_days_ahead: int = Field(default=1, validation_alias=AliasChoices("API_FOOTBALL_FREE_DAYS_AHEAD"))
 
     football_data_api_key: str | None = Field(default=None, validation_alias=AliasChoices("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY"))
     football_data_base_url: str = Field(default="https://api.football-data.org/v4", validation_alias=AliasChoices("FOOTBALL_DATA_BASE_URL"))
@@ -156,6 +159,7 @@ class Settings(BaseSettings):
     espn_context_match_limit: int = Field(default=24, validation_alias=AliasChoices("ESPN_CONTEXT_MATCH_LIMIT"))
     thesportsdb_context_match_limit: int = Field(default=80, validation_alias=AliasChoices("THESPORTSDB_CONTEXT_MATCH_LIMIT"))
     football_data_context_match_limit: int = Field(default=80, validation_alias=AliasChoices("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT"))
+    openligadb_context_match_limit: int = Field(default=24, validation_alias=AliasChoices("OPENLIGADB_CONTEXT_MATCH_LIMIT"))
     openfootball_context_match_limit: int = Field(default=120, validation_alias=AliasChoices("OPENFOOTBALL_CONTEXT_MATCH_LIMIT"))
     newsapi_context_match_limit: int = Field(default=12, validation_alias=AliasChoices("NEWSAPI_CONTEXT_MATCH_LIMIT"))
     gnews_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("GNEWS_CONTEXT_MATCH_LIMIT"))
@@ -279,6 +283,28 @@ class Settings(BaseSettings):
             "norway - 1st division=no.2",
         ],
         validation_alias=AliasChoices("OPENFOOTBALL_COMPETITION_MAP"),
+    )
+
+    openligadb_base_url: str = Field(default="https://api.openligadb.de", validation_alias=AliasChoices("OPENLIGADB_BASE_URL"))
+    openligadb_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("OPENLIGADB_TIMEOUT_SECONDS"))
+    openligadb_dataset_limit: int = Field(default=8, validation_alias=AliasChoices("OPENLIGADB_DATASET_LIMIT"))
+    openligadb_match_limit: int = Field(default=24, validation_alias=AliasChoices("OPENLIGADB_MATCH_LIMIT"))
+    openligadb_competition_map: CsvList = Field(
+        default_factory=lambda: [
+            "german bundesliga=bl1",
+            "germany bundesliga=bl1",
+            "1. bundesliga=bl1",
+            "german bundesliga 2=bl2",
+            "germany bundesliga 2=bl2",
+            "2. bundesliga=bl2",
+            "german 3 liga=bl3",
+            "germany 3 liga=bl3",
+            "3. liga=bl3",
+            "uefa champions league=ucl",
+            "champions league=ucl",
+            "dfb pokal=dfb",
+        ],
+        validation_alias=AliasChoices("OPENLIGADB_COMPETITION_MAP"),
     )
 
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices("BZZOIRO_API_KEY"))

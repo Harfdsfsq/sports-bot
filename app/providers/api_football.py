@@ -141,12 +141,19 @@ class ApiFootballContextProvider:
 
     def _prediction_limit(self, days: int) -> int:
         raw = os.getenv("API_FOOTBALL_PREDICTIONS_LIMIT") or getattr(self.settings, "api_football_predictions_limit", None)
+        configured_cap = max(1, int(getattr(self.settings, "api_football_context_match_limit", 18) or 18))
         safe_default = max(1, 10 - (days + 1))
         try:
             value = int(raw) if raw not in (None, "") else safe_default
         except Exception:
             value = safe_default
-        return max(1, min(value, safe_default))
+        if raw not in (None, ""):
+            return max(1, min(value, configured_cap))
+        return max(1, min(safe_default, configured_cap))
+
+    @staticmethod
+    def supports_match(match: Match) -> bool:
+        return str(getattr(match, "sport_key", "") or "") == "soccer"
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
         now = datetime.now(UTC)
