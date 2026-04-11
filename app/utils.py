@@ -145,6 +145,68 @@ TEAM_STOP_WORDS = {
     "sd",
 }
 
+TEAM_REGION_SUFFIXES = {
+    "sp",
+    "mg",
+    "pr",
+    "rs",
+    "rj",
+    "sc",
+    "ba",
+    "go",
+    "df",
+    "mt",
+    "ms",
+    "pb",
+    "pe",
+    "pi",
+    "rn",
+    "ro",
+    "rr",
+    "se",
+    "to",
+    "ce",
+    "pa",
+    "ma",
+    "al",
+    "am",
+    "ap",
+    "es",
+}
+
+LEAGUE_NOISE_TOKENS = {
+    "association",
+    "club",
+    "clubs",
+    "competition",
+    "current",
+    "division",
+    "football",
+    "group",
+    "international",
+    "league",
+    "premier",
+    "professional",
+    "regular",
+    "round",
+    "season",
+    "soccer",
+    "stage",
+    "super",
+    "tournament",
+}
+
+LEAGUE_SPONSOR_TOKENS = {
+    "trendyol",
+    "betano",
+    "betclic",
+    "viaplay",
+    "cinch",
+    "fortuna",
+    "efbet",
+    "admiral",
+}
+
 LOW_TIER_PATTERNS = [
     r"\bu17\b",
     r"\bu18\b",
@@ -257,11 +319,92 @@ def canonicalize_league_name(name: str) -> str:
     text = unicodedata.normalize("NFD", text)
     text = "".join(ch for ch in text if unicodedata.category(ch) != "Mn")
     text = text.lower()
+    replacements = {
+        r"\binternational clubs?\b": " ",
+        r"\bcopa libertadores\b": " libertadores ",
+        r"\bconmebol libertadores\b": " libertadores ",
+        r"\bcopa sudamericana\b": " sudamericana ",
+        r"\bconmebol sudamericana\b": " sudamericana ",
+        r"\buefa champions league\b": " champions league ",
+        r"\buefa europa league\b": " europa league ",
+        r"\buefa europa conference league\b": " conference league ",
+        r"\buefa conference league\b": " conference league ",
+        r"\bparva liga\b": " first league ",
+        r"\bsuper lig\b": " super league ",
+        r"\b1st\b": " first ",
+        r"\b2nd\b": " second ",
+        r"\b3rd\b": " third ",
+    }
+    for pattern, replacement in replacements.items():
+        text = re.sub(pattern, replacement, text)
     text = re.sub(r"[^a-z0-9]+", " ", text)
     text = re.sub(r"\s+", " ", text).strip()
     text = re.sub(r"\benglish premier league\b", "epl", text)
     text = re.sub(r"\bla liga\b", "laliga", text)
-    return text
+    tokens = [token for token in text.split() if token and token not in LEAGUE_SPONSOR_TOKENS]
+    return " ".join(tokens).strip()
+
+
+def _league_tokens(name: str) -> set[str]:
+    canonical = canonicalize_league_name(name)
+    return {token for token in canonical.split() if token and token not in LEAGUE_NOISE_TOKENS}
+
+
+def league_similarity(a: str, b: str) -> float:
+    left = canonicalize_league_name(a)
+    right = canonicalize_league_name(b)
+    if not left or not right:
+        return 0.0
+    if left == right:
+        return 1.0
+    if left in right or right in left:
+        return 0.94
+
+    left_tokens = _league_tokens(left)
+    right_tokens = _league_tokens(right)
+    overlap_score = 0.0
+    jaccard_score = 0.0
+    shared_tokens: set[str] = set()
+    if left_tokens and right_tokens:
+        shared_tokens = left_tokens & right_tokens
+        overlap = len(shared_tokens)
+        overlap_score = overlap / min(len(left_tokens), len(right_tokens))
+        jaccard_score = overlap / len(left_tokens | right_tokens)
+    text_score = SequenceMatcher(None, left, right).ratio()
+    if left_tokens and right_tokens and not shared_tokens:
+        text_score *= 0.45
+    return max(text_score, overlap_score * 0.92, jaccard_score)
+
+
+def leagues_related(a: str, b: str, *, min_score: float = 0.52) -> bool:
+    return league_similarity(a, b) >= min_score
+
+
+def _team_match_variants(name: str) -> list[str]:
+    canonical = canonicalize_team_name(name)
+    if not canonical:
+        return []
+
+    variants: list[str] = []
+
+    def add(value: str) -> None:
+        compact = " ".join(str(value or "").split()).strip()
+        if compact and compact not in variants:
+            variants.append(compact)
+
+    add(canonical)
+    tokens = canonical.split()
+    if len(tokens) >= 3:
+        without_digits = [token for token in tokens if not token.isdigit()]
+        if len(without_digits) >= 2:
+            add(" ".join(without_digits))
+    if len(tokens) >= 2 and tokens[-1] in TEAM_REGION_SUFFIXES:
+        add(" ".join(tokens[:-1]))
+    if len(tokens) >= 3:
+        trimmed = [token for token in tokens if not token.isdigit()]
+        if len(trimmed) >= 2 and trimmed[-1] in TEAM_REGION_SUFFIXES:
+            add(" ".join(trimmed[:-1]))
+    return variants
 
 
 def normalize_bookmaker_name(name: str) -> str:
@@ -314,13 +457,13 @@ def build_loose_match_key(sport: str, home: str, away: str) -> str:
 
 
 def soft_contains_team(a: str, b: str) -> bool:
-    ca = canonicalize_team_name(a)
-    cb = canonicalize_team_name(b)
-    if not ca or not cb:
-        return False
-    if ca == cb:
-        return True
-    return ca in cb or cb in ca
+    for left in _team_match_variants(a):
+        for right in _team_match_variants(b):
+            if left == right:
+                return True
+            if left in right or right in left:
+                return True
+    return False
 
 
 def token_similarity(a: str, b: str) -> float:
@@ -373,18 +516,20 @@ def _phonetic_token(value: str) -> str:
 
 
 def team_similarity(a: str, b: str) -> float:
-    ca = canonicalize_team_name(a)
-    cb = canonicalize_team_name(b)
-    if not ca or not cb:
-        return 0.0
-    if ca == cb:
-        return 1.0
-    if ca in cb or cb in ca:
-        return 0.96
-    token_score = token_similarity(ca, cb)
-    text_score = SequenceMatcher(None, ca, cb).ratio()
-    phonetic_score = SequenceMatcher(None, _phonetic_token(ca), _phonetic_token(cb)).ratio()
-    return max(token_score, text_score, phonetic_score)
+    best = 0.0
+    for left in _team_match_variants(a):
+        for right in _team_match_variants(b):
+            if not left or not right:
+                continue
+            if left == right:
+                return 1.0
+            if left in right or right in left:
+                best = max(best, 0.96)
+            token_score = token_similarity(left, right)
+            text_score = SequenceMatcher(None, left, right).ratio()
+            phonetic_score = SequenceMatcher(None, _phonetic_token(left), _phonetic_token(right)).ratio()
+            best = max(best, token_score, text_score, phonetic_score)
+    return best
 
 
 def fuzzy_teams_equivalent(home_a: str, away_a: str, home_b: str, away_b: str) -> bool:
@@ -447,8 +592,9 @@ def score_event_match(
 
     league_match = canonicalize_league_name(match_league)
     league_event = canonicalize_league_name(event_league)
+    league_score = league_similarity(league_match, league_event)
     league_same = league_match == league_event
-    league_related = bool(league_match and league_event and (league_match in league_event or league_event in league_match))
+    league_related = league_score >= 0.52
 
     if build_match_key(sport, match_home, match_away, match_start) == build_match_key(sport, event_home, event_away, event_start):
         if diff <= exact_tolerance_hours:
@@ -483,10 +629,58 @@ def score_event_match(
     if league_same:
         score += 10.0
     elif league_related:
-        score += 4.0
+        score += 4.0 + min(4.0, league_score * 4.0)
     if score < 54.0:
         return 0.0, None
     return score, "fuzzy"
+
+
+def score_event_match_variants(
+    *,
+    sport: str,
+    match_home: str,
+    match_away: str,
+    match_start: datetime,
+    match_league: str,
+    event_home_candidates: Iterable[str],
+    event_away_candidates: Iterable[str],
+    event_start: datetime,
+    event_league: str,
+    exact_tolerance_hours: float,
+    fuzzy_tolerance_hours: float,
+) -> tuple[float, str | None, str, str]:
+    best_score = 0.0
+    best_quality: str | None = None
+    best_home = ""
+    best_away = ""
+
+    home_candidates = [str(item or "").strip() for item in event_home_candidates if str(item or "").strip()]
+    away_candidates = [str(item or "").strip() for item in event_away_candidates if str(item or "").strip()]
+    if not home_candidates or not away_candidates:
+        return 0.0, None, "", ""
+
+    for event_home in home_candidates:
+        for event_away in away_candidates:
+            score, quality = score_event_match(
+                sport=sport,
+                match_home=match_home,
+                match_away=match_away,
+                match_start=match_start,
+                match_league=match_league,
+                event_home=event_home,
+                event_away=event_away,
+                event_start=event_start,
+                event_league=event_league,
+                exact_tolerance_hours=exact_tolerance_hours,
+                fuzzy_tolerance_hours=fuzzy_tolerance_hours,
+            )
+            if score > best_score:
+                best_score = score
+                best_quality = quality
+                best_home = event_home
+                best_away = event_away
+
+    return best_score, best_quality, best_home, best_away
 
 
 def implied_probability(decimal_odds: float) -> float:

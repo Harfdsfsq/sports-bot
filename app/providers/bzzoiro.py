@@ -8,7 +8,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
-from app.utils import clamp, normalize_probability_percent, parse_datetime, score_event_match
+from app.utils import clamp, normalize_probability_percent, parse_datetime, score_event_match_variants
 from app.utils import over_probability_from_lambda
 
 
@@ -45,50 +45,43 @@ class BzzoiroContextProvider:
             return {}, stats, preview
 
         headers = {"Authorization": f"Token {self.api_key}"}
-        now = datetime.now(UTC)
-        date_from = now.date().isoformat()
-        date_to = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4)))).date().isoformat()
+        min_dt = min(match.commence_time for match in soccer_matches).astimezone(UTC)
+        max_dt = max(match.commence_time for match in soccer_matches).astimezone(UTC)
+        date_from = min_dt.date().isoformat()
+        date_to = max_dt.date().isoformat()
 
         async with httpx.AsyncClient(timeout=25.0) as client:
-            stats["requests"] += 1
-            events_resp = await self._safe_get(client, f"{self.base_url}/events/", headers=headers, params={"date_from": date_from, "date_to": date_to})
-            if events_resp is None:
-                stats["response_errors"] += 1
-                return {}, stats, preview
-            stats["http_statuses"].append(events_resp.status_code)
-            stats["last_body_preview"] = events_resp.text[:1500]
-            if events_resp.status_code != 200:
-                stats["response_errors"] += 1
-                return {}, stats, preview
-            events_payload = self._safe_json(events_resp)
-            events = self._results(events_payload)
+            events = await self._fetch_paginated_rows(
+                client,
+                "/events/",
+                headers=headers,
+                params={"date_from": date_from, "date_to": date_to, "tz": "UTC"},
+                stats=stats,
+            )
             stats["events_fetched"] = len(events)
             if events:
                 preview["sample_events"] = events[:3]
 
-            stats["requests"] += 1
-            preds_resp = await self._safe_get(client, f"{self.base_url}/predictions/", headers=headers, params={"upcoming": "true"})
-            if preds_resp is None:
-                stats["response_errors"] += 1
-                return {}, stats, preview
-            stats["http_statuses"].append(preds_resp.status_code)
-            stats["last_body_preview"] = preds_resp.text[:1500]
-            if preds_resp.status_code != 200:
-                stats["response_errors"] += 1
-                return {}, stats, preview
-            preds_payload = self._safe_json(preds_resp)
-            predictions = self._results(preds_payload)
+            predictions = await self._fetch_paginated_rows(
+                client,
+                "/predictions/",
+                headers=headers,
+                params={"upcoming": "true", "date_from": date_from, "date_to": date_to, "tz": "UTC"},
+                stats=stats,
+            )
             stats["predictions_fetched"] = len(predictions)
             if predictions:
                 preview["sample_predictions"] = predictions[:3]
 
         contexts: dict[str, MatchContext] = {}
         for match in soccer_matches:
-            event, quality = self._match_event(match, events)
-            prediction = self._match_prediction(match, predictions)
+            prediction, quality = self._match_prediction(match, predictions)
             if prediction is None:
                 stats["unmatched_predictions"] += 1
                 continue
+            event = self._prediction_event(prediction, events)
+            if event is None:
+                event, _ = self._match_event(match, events)
             context = self._prediction_to_context(prediction, event, quality)
             contexts[match.match_key] = context
             stats["contexts_built"] += 1
@@ -114,6 +107,43 @@ class BzzoiroContextProvider:
         except Exception:
             return None
 
+    async def _fetch_paginated_rows(
+        self,
+        client: httpx.AsyncClient,
+        path: str,
+        *,
+        headers: dict[str, str],
+        params: dict[str, Any],
+        stats: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        max_pages = max(1, int(getattr(self.settings, "bzzoiro_max_pages", 8) or 8))
+        page = 1
+
+        while page <= max_pages:
+            request_params = {**params, "page": page}
+            stats["requests"] += 1
+            response = await self._safe_get(client, f"{self.base_url}{path}", headers=headers, params=request_params)
+            if response is None:
+                stats["response_errors"] += 1
+                break
+            stats["http_statuses"].append(response.status_code)
+            stats["last_body_preview"] = response.text[:1500]
+            if response.status_code != 200:
+                stats["response_errors"] += 1
+                break
+            payload = self._safe_json(response)
+            batch = self._results(payload)
+            if not batch:
+                break
+            rows.extend(batch)
+            next_url = payload.get("next") if isinstance(payload, dict) else None
+            if not next_url:
+                break
+            page += 1
+
+        return rows
+
     @staticmethod
     def _results(payload: Any) -> list[dict[str, Any]]:
         if isinstance(payload, dict):
@@ -131,19 +161,29 @@ class BzzoiroContextProvider:
         for event in events:
             home = str(event.get("home_team") or "")
             away = str(event.get("away_team") or "")
+            home_obj = event.get("home_team_obj") or {}
+            away_obj = event.get("away_team_obj") or {}
             league = str((event.get("league") or {}).get("name") or "")
             try:
                 start = parse_datetime(event.get("event_date"))
             except Exception:
                 continue
-            score, quality = score_event_match(
+            score, quality, _, _ = score_event_match_variants(
                 sport="soccer",
                 match_home=match.home_team,
                 match_away=match.away_team,
                 match_start=match.commence_time,
                 match_league=match.league_name,
-                event_home=home,
-                event_away=away,
+                event_home_candidates=[
+                    home,
+                    str(home_obj.get("name") or "").strip() if isinstance(home_obj, dict) else "",
+                    str(home_obj.get("short_name") or "").strip() if isinstance(home_obj, dict) else "",
+                ],
+                event_away_candidates=[
+                    away,
+                    str(away_obj.get("name") or "").strip() if isinstance(away_obj, dict) else "",
+                    str(away_obj.get("short_name") or "").strip() if isinstance(away_obj, dict) else "",
+                ],
                 event_start=start,
                 event_league=league,
                 exact_tolerance_hours=float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12),
@@ -157,33 +197,86 @@ class BzzoiroContextProvider:
             return None, None
         return best, best_quality
 
-    def _match_prediction(self, match: Match, predictions: list[dict[str, Any]]) -> dict[str, Any] | None:
+    def _match_prediction(self, match: Match, predictions: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str | None]:
         best: dict[str, Any] | None = None
+        best_quality: str | None = None
         best_score = 0.0
         for pred in predictions:
             event = pred.get("event") or {}
             home = str(event.get("home_team") or pred.get("home_team") or "")
             away = str(event.get("away_team") or pred.get("away_team") or "")
+            home_obj = event.get("home_team_obj") or {}
+            away_obj = event.get("away_team_obj") or {}
             if not home or not away:
                 continue
-            # Predictions endpoint example doesn't expose date/league, so match on teams.
-            score, _ = score_event_match(
+            event_league = str((event.get("league") or {}).get("name") or pred.get("league") or "")
+            event_date_raw = event.get("event_date") or pred.get("event_date") or pred.get("date")
+            if event_date_raw not in (None, ""):
+                try:
+                    event_start = parse_datetime(event_date_raw)
+                    exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)
+                    fuzzy_tol = float(getattr(self.settings, "fallback_match_start_tolerance_hours", 8) or 8)
+                except Exception:
+                    event_start = match.commence_time
+                    exact_tol = 1.0
+                    fuzzy_tol = 24.0
+            else:
+                event_start = match.commence_time
+                exact_tol = 1.0
+                fuzzy_tol = 24.0
+
+            score, quality, _, _ = score_event_match_variants(
                 sport="soccer",
                 match_home=match.home_team,
                 match_away=match.away_team,
                 match_start=match.commence_time,
                 match_league=match.league_name,
-                event_home=home,
-                event_away=away,
-                event_start=match.commence_time,
-                event_league=match.league_name,
-                exact_tolerance_hours=1.0,
-                fuzzy_tolerance_hours=24.0,
+                event_home_candidates=[
+                    home,
+                    str(home_obj.get("name") or "").strip() if isinstance(home_obj, dict) else "",
+                    str(home_obj.get("short_name") or "").strip() if isinstance(home_obj, dict) else "",
+                ],
+                event_away_candidates=[
+                    away,
+                    str(away_obj.get("name") or "").strip() if isinstance(away_obj, dict) else "",
+                    str(away_obj.get("short_name") or "").strip() if isinstance(away_obj, dict) else "",
+                ],
+                event_start=event_start,
+                event_league=event_league or match.league_name,
+                exact_tolerance_hours=exact_tol,
+                fuzzy_tolerance_hours=fuzzy_tol,
             )
+            if event_date_raw in (None, ""):
+                score -= 4.0
+            if not event_league:
+                score -= 2.0
             if score > best_score:
                 best = pred
                 best_score = score
-        return best if best_score >= 54.0 else None
+                best_quality = quality
+        return (best, best_quality) if best_score >= 50.0 else (None, None)
+
+    @staticmethod
+    def _prediction_event(prediction: dict[str, Any], events: list[dict[str, Any]]) -> dict[str, Any] | None:
+        event = prediction.get("event") or {}
+        if not isinstance(event, dict) or not events:
+            return event if isinstance(event, dict) and event else None
+
+        prediction_ids = {
+            str(value).strip()
+            for value in (event.get("id"), event.get("api_id"))
+            if value not in (None, "")
+        }
+        if prediction_ids:
+            for candidate in events:
+                candidate_ids = {
+                    str(value).strip()
+                    for value in (candidate.get("id"), candidate.get("api_id"))
+                    if value not in (None, "")
+                }
+                if prediction_ids & candidate_ids:
+                    return candidate
+        return event if event else None
 
     def _prediction_to_context(
         self,

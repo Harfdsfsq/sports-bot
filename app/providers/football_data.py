@@ -8,7 +8,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match, MatchContext
-from app.utils import canonicalize_team_name, clamp, parse_datetime, score_event_match, soft_contains_team, team_similarity
+from app.utils import canonicalize_team_name, clamp, parse_datetime, score_event_match_variants, soft_contains_team, team_similarity
 
 
 class FootballDataContextProvider:
@@ -279,6 +279,8 @@ class FootballDataContextProvider:
         return {
             'home': home,
             'away': away,
+            'home_aliases': self._team_aliases(home_team),
+            'away_aliases': self._team_aliases(away_team),
             'home_team_id': home_team.get('id'),
             'away_team_id': away_team.get('id'),
             'commence_time': dt,
@@ -298,14 +300,14 @@ class FootballDataContextProvider:
         exact_tol = float(getattr(self.settings, 'match_start_tolerance_hours', 12) or 12)
         fuzzy_tol = float(getattr(self.settings, 'fallback_match_start_tolerance_hours', 8) or 8)
         for match in matches:
-            score, quality = score_event_match(
+            score, quality, _, _ = score_event_match_variants(
                 sport=match.sport_key,
                 match_home=match.home_team,
                 match_away=match.away_team,
                 match_start=match.commence_time,
                 match_league=match.league_name,
-                event_home=event['home'],
-                event_away=event['away'],
+                event_home_candidates=event.get('home_aliases') or [event['home']],
+                event_away_candidates=event.get('away_aliases') or [event['away']],
                 event_start=event['commence_time'],
                 event_league=event['league'],
                 exact_tolerance_hours=exact_tol,
@@ -552,17 +554,31 @@ class FootballDataContextProvider:
         best_score = 0.0
         for row in rows:
             row_team = row.get('team') or {}
-            row_name = str((row_team.get('name')) or row.get('name') or '').strip()
-            if not row_name:
+            aliases = self._team_aliases(row_team if isinstance(row_team, dict) else row)
+            if not aliases:
                 continue
             row_id = row_team.get('id') if isinstance(row_team, dict) else None
             if team_id is not None and row_id is not None and str(team_id) == str(row_id):
                 return row
-            score = self._team_match_score(team_name, row_name)
+            score = max(self._team_match_score(team_name, alias) for alias in aliases)
             if score > best_score:
                 best_score = score
                 best_row = row
-        return best_row if best_score >= 0.66 else None
+        threshold = float(getattr(self.settings, 'football_data_team_match_threshold', 0.68) or 0.68)
+        return best_row if best_score >= threshold else None
+
+    @staticmethod
+    def _team_aliases(payload: dict[str, Any]) -> list[str]:
+        values = [
+            str(payload.get('name') or '').strip(),
+            str(payload.get('shortName') or '').strip(),
+            str(payload.get('tla') or '').strip(),
+        ]
+        aliases: list[str] = []
+        for value in values:
+            if value and value not in aliases:
+                aliases.append(value)
+        return aliases
 
     @staticmethod
     def _team_match_score(a: str, b: str) -> float:

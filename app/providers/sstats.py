@@ -12,8 +12,10 @@ from app.utils import (
     canonicalize_league_name,
     canonicalize_team_name,
     clamp,
+    leagues_related,
     parse_datetime,
     score_event_match,
+    score_event_match_variants,
     team_similarity,
 )
 
@@ -238,7 +240,7 @@ class SStatsContextProvider:
         stats["team_form_contexts_built"] = added_fallback
 
         bzz_preview: list[dict[str, Any]] = []
-        if getattr(self.settings, "bzzoiro_api_key", None) and not bool(getattr(self.settings, "enable_bzzoiro_context", True)):
+        if getattr(self.settings, "bzzoiro_api_key", None) and bool(getattr(self.settings, "enable_bzzoiro_context", True)):
             timeout = float(getattr(self.settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
             async with httpx.AsyncClient(timeout=timeout) as client:
                 bzz_contexts, bzz_stats, bzz_preview = await self._fetch_bzzoiro_contexts(client, soccer_matches)
@@ -352,7 +354,10 @@ class SStatsContextProvider:
                 break
 
             offset += len(batch)
-            if total_count is not None and offset >= total_count:
+            # SStats frequently reports `count == batch_size` for the current page,
+            # not for the whole date window. Trust explicit totals only when they
+            # are clearly larger than one page.
+            if total_count is not None and total_count > limit and offset >= total_count:
                 break
 
         return rows
@@ -429,6 +434,18 @@ class SStatsContextProvider:
                 continue
             event_home = str(event.get("home_team") or "").strip()
             event_away = str(event.get("away_team") or "").strip()
+            home_obj = event.get("home_team_obj") or {}
+            away_obj = event.get("away_team_obj") or {}
+            home_candidates = [
+                event_home,
+                str(home_obj.get("name") or "").strip() if isinstance(home_obj, dict) else "",
+                str(home_obj.get("short_name") or "").strip() if isinstance(home_obj, dict) else "",
+            ]
+            away_candidates = [
+                event_away,
+                str(away_obj.get("name") or "").strip() if isinstance(away_obj, dict) else "",
+                str(away_obj.get("short_name") or "").strip() if isinstance(away_obj, dict) else "",
+            ]
             event_league = str((event.get("league") or {}).get("name") or "").strip() if isinstance(event.get("league"), dict) else str(event.get("league") or "").strip()
             if not event_home or not event_away:
                 stats["unmatched_rows"] += 1
@@ -443,14 +460,14 @@ class SStatsContextProvider:
             best_score = 0.0
             best_quality: str | None = None
             for match in matches:
-                score, quality = score_event_match(
+                score, quality, matched_home, matched_away = score_event_match_variants(
                     sport=match.sport_key,
                     match_home=match.home_team,
                     match_away=match.away_team,
                     match_start=match.commence_time,
                     match_league=match.league_name,
-                    event_home=event_home,
-                    event_away=event_away,
+                    event_home_candidates=home_candidates,
+                    event_away_candidates=away_candidates,
                     event_start=event_start,
                     event_league=event_league,
                     exact_tolerance_hours=self.settings.match_start_tolerance_hours,
@@ -460,14 +477,16 @@ class SStatsContextProvider:
                     best_match = match
                     best_score = score
                     best_quality = quality
+                    event_home = matched_home or event_home
+                    event_away = matched_away or event_away
             if best_match is None:
                 stats["unmatched_rows"] += 1
                 continue
             league_match = canonicalize_league_name(best_match.league_name)
             league_event_norm = canonicalize_league_name(event_league)
-            leagues_related = bool(league_match and league_event_norm and (league_match == league_event_norm or league_match in league_event_norm or league_event_norm in league_match))
+            related_leagues = leagues_related(league_match, league_event_norm)
             min_score = 69.0 if best_quality == "fuzzy" else 64.0
-            if best_quality == "fuzzy" and not leagues_related:
+            if best_quality == "fuzzy" and not related_leagues:
                 stats["unmatched_rows"] += 1
                 continue
             if best_score < min_score:
@@ -500,7 +519,7 @@ class SStatsContextProvider:
                     "source": context.source,
                     "quality": best_quality,
                     "score": round(best_score, 2),
-                    "leagues_related": leagues_related,
+                    "leagues_related": related_leagues,
                 })
         stats["contexts_built"] = len(contexts)
         return contexts, stats, preview
@@ -864,11 +883,7 @@ class SStatsContextProvider:
 
     @staticmethod
     def _league_related(a: str, b: str) -> bool:
-        left = canonicalize_league_name(a)
-        right = canonicalize_league_name(b)
-        if not left or not right:
-            return False
-        return left == right or left in right or right in left
+        return leagues_related(a, b)
 
     def _row_to_context(self, row: dict[str, Any]) -> MatchContext:
         expected_home = self._first_float(
