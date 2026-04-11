@@ -934,6 +934,7 @@ class CandidateFactory:
                 'adjusted_probability': round(float(adjusted), 4),
                 'market_probability': round(float(market_prob), 4),
                 'market_signal_key': market_signal_key,
+                'market_signal_derived': bool((market_signal or {}).get('derived_from_bucket')) if isinstance(market_signal, dict) else False,
                 'market_movement': movement_label,
                 'line_move_pp': round(float(steam_delta), 3) if steam_delta is not None else None,
                 'consensus_dispersion_pct': round(float(dispersion_pct), 3) if dispersion_pct is not None else None,
@@ -1360,13 +1361,60 @@ class CandidateFactory:
     def _market_signal_for_bucket(self, match_key: str, family: str, offers: list[Offer], point: float | None) -> dict[str, Any] | None:
         mapping = self._market_signals_by_match.get(str(match_key)) or {}
         if not mapping or not offers:
-            return None
+            return self._derived_market_signal_for_bucket(offers)
         first = offers[0]
         key = self._market_signal_key(family, str(getattr(first, 'selection', '') or ''), point, str(getattr(first, 'team_side', '') or ''))
         signal = mapping.get(key)
         if isinstance(signal, dict):
             return signal
-        return None
+        return self._derived_market_signal_for_bucket(offers)
+
+    def _derived_market_signal_for_bucket(self, offers: list[Offer]) -> dict[str, Any] | None:
+        by_book: dict[str, Offer] = {}
+        for offer in offers:
+            book_key = self._norm_book(offer.bookmaker)
+            if not book_key or float(offer.price) <= 1.0:
+                continue
+            existing = by_book.get(book_key)
+            if existing is None or float(offer.price) > float(existing.price):
+                by_book[book_key] = offer
+
+        unique_offers = list(by_book.values())
+        if len(unique_offers) < 2:
+            return None
+
+        prices = sorted((float(item.price) for item in unique_offers if float(item.price) > 1.0), reverse=True)
+        if len(prices) < 2:
+            return None
+
+        best_price = prices[0]
+        reference_prices = prices[1:] or prices
+        reference_price = mean(reference_prices)
+        if reference_price <= 1.0:
+            return None
+
+        best_vs_consensus_edge_pct = ((best_price / reference_price) - 1.0) * 100.0
+        if best_vs_consensus_edge_pct < 0.35:
+            return None
+
+        mean_price = mean(prices)
+        if mean_price <= 1.0:
+            return None
+
+        dispersion_pct = ((max(prices) - min(prices)) / mean_price) * 100.0
+        delta_prob_pp = max(0.0, ((1.0 / reference_price) - (1.0 / best_price)) * 100.0)
+        sources = {str(item.source or '').strip() for item in unique_offers if str(item.source or '').strip()}
+        return {
+            'best_vs_consensus_edge_pct': round(best_vs_consensus_edge_pct, 3),
+            'consensus_dispersion_pct': round(dispersion_pct, 3),
+            'delta_prob_pp': round(delta_prob_pp, 3),
+            'movement_label': None,
+            'history_ready': False,
+            'observation_count': 1,
+            'books_count': len(unique_offers),
+            'sources_count': len(sources),
+            'derived_from_bucket': True,
+        }
 
 
     @staticmethod
@@ -2132,6 +2180,16 @@ class CandidateFactory:
         nearest = min(allowed, key=lambda item: abs(item - raw_point))
         if abs(nearest - raw_point) <= tolerance:
             return round(float(nearest), 2)
+        snapped_quarter = round(raw_point * 4.0) / 4.0
+        min_allowed = min(allowed)
+        max_allowed = max(allowed)
+        max_extension = 1.0 if family == 'totals' else 0.5
+        if (
+            abs(snapped_quarter - raw_point) <= tolerance
+            and snapped_quarter >= max(0.0, min_allowed - 0.25)
+            and snapped_quarter <= (max_allowed + max_extension)
+        ):
+            return round(float(snapped_quarter), 2)
         return None
 
     def _poisson_line_probability(self, lam: float | None, point: float | None) -> float | None:
