@@ -41,6 +41,12 @@ class BzzoiroContextProvider:
             "prediction_links": 0,
             "fallback_prediction_matches": 0,
             "unmatched_predictions": 0,
+            "event_rejected_low_score": 0,
+            "event_rejected_league_mismatch": 0,
+            "event_rejected_no_quality": 0,
+            "prediction_rejected_low_score": 0,
+            "prediction_rejected_league_mismatch": 0,
+            "prediction_rejected_no_quality": 0,
             "http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
@@ -49,6 +55,7 @@ class BzzoiroContextProvider:
             "sample_events": [],
             "sample_predictions": [],
             "matched_examples": [],
+            "unmatched_examples": [],
         }
 
         if not self.api_key:
@@ -94,7 +101,7 @@ class BzzoiroContextProvider:
         used_prediction_ids: set[str] = set()
 
         for match in soccer_matches:
-            event, event_quality, event_score = self._match_event(match, events)
+            event, event_quality, event_score, event_diag = self._match_event(match, events)
             prediction: dict[str, Any] | None = None
             quality = event_quality
             linked_from_event = False
@@ -106,14 +113,32 @@ class BzzoiroContextProvider:
                     stats["prediction_links"] = int(stats.get("prediction_links", 0) or 0) + 1
                     linked_from_event = True
 
+            prediction_diag: dict[str, Any] | None = None
             if prediction is None:
-                prediction, quality, _ = self._match_prediction(match, predictions, used_prediction_ids)
+                prediction, quality, prediction_score, prediction_diag = self._match_prediction(match, predictions, used_prediction_ids)
                 if prediction is not None:
                     stats["fallback_prediction_matches"] = int(stats.get("fallback_prediction_matches", 0) or 0) + 1
                     event = self._prediction_event(prediction, events) or event
+                else:
+                    prediction_score = 0.0
+            else:
+                prediction_score = self._prediction_confidence_score(prediction)
 
             if prediction is None:
                 stats["unmatched_predictions"] = int(stats.get("unmatched_predictions", 0) or 0) + 1
+                self._record_rejection(stats, "event", event_diag)
+                self._record_rejection(stats, "prediction", prediction_diag)
+                if len(preview["unmatched_examples"]) < 10:
+                    preview["unmatched_examples"].append(
+                        {
+                            "match_key": match.match_key,
+                            "match_home": match.home_team,
+                            "match_away": match.away_team,
+                            "match_league": match.league_name,
+                            "event_best": event_diag,
+                            "prediction_best": prediction_diag,
+                        }
+                    )
                 continue
 
             prediction_id = self._prediction_identity(prediction)
@@ -138,6 +163,7 @@ class BzzoiroContextProvider:
                         "match_away": match.away_team,
                         "quality": quality,
                         "event_score": round(event_score, 2) if event is not None else None,
+                        "prediction_score": round(prediction_score, 2) if prediction is not None else None,
                         "linked_from_event": linked_from_event,
                         "prediction_id": prediction.get("id"),
                         "event_id": (event or {}).get("id"),
@@ -218,10 +244,11 @@ class BzzoiroContextProvider:
             return [row for row in payload if isinstance(row, dict)]
         return []
 
-    def _match_event(self, match: Match, events: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str | None, float]:
+    def _match_event(self, match: Match, events: list[dict[str, Any]]) -> tuple[dict[str, Any] | None, str | None, float, dict[str, Any] | None]:
         best: dict[str, Any] | None = None
         best_quality: str | None = None
         best_score = 0.0
+        best_diag: dict[str, Any] | None = None
         exact_tol, fuzzy_tol = self._matching_tolerances()
 
         for event in events:
@@ -250,22 +277,39 @@ class BzzoiroContextProvider:
                 best = event
                 best_score = score
                 best_quality = quality
+                best_diag = self._candidate_diagnostic(
+                    match=match,
+                    provider_type="event",
+                    payload=event,
+                    provider_home_candidates=home_candidates,
+                    provider_away_candidates=away_candidates,
+                    provider_league=league,
+                    provider_start=start,
+                    score=score,
+                    quality=quality,
+                )
 
         if best is None or best_quality is None:
-            return None, None, 0.0
-        if not self._acceptable_match(match, self._event_league_name(best), best_quality, best_score):
-            return None, None, 0.0
-        return best, best_quality, best_score
+            return None, None, 0.0, best_diag
+        accepted, rejection_reason, required_score = self._acceptance_diagnostic(match, self._event_league_name(best), best_quality, best_score)
+        if best_diag is not None:
+            best_diag["accepted"] = accepted
+            best_diag["rejection_reason"] = rejection_reason
+            best_diag["required_score"] = round(required_score, 2)
+        if not accepted:
+            return None, None, 0.0, best_diag
+        return best, best_quality, best_score, best_diag
 
     def _match_prediction(
         self,
         match: Match,
         predictions: list[dict[str, Any]],
         used_prediction_ids: set[str],
-    ) -> tuple[dict[str, Any] | None, str | None, float]:
+    ) -> tuple[dict[str, Any] | None, str | None, float, dict[str, Any] | None]:
         best: dict[str, Any] | None = None
         best_quality: str | None = None
         best_score = 0.0
+        best_diag: dict[str, Any] | None = None
         default_exact_tol, default_fuzzy_tol = self._matching_tolerances()
 
         for pred in predictions:
@@ -316,24 +360,50 @@ class BzzoiroContextProvider:
                 score -= 4.0
             if not event_league:
                 score -= 2.0
-            if not self._acceptable_match(match, event_league, quality, score):
-                continue
             if score > best_score:
                 best = pred
                 best_score = score
                 best_quality = quality
+                best_diag = self._candidate_diagnostic(
+                    match=match,
+                    provider_type="prediction",
+                    payload=pred,
+                    provider_home_candidates=home_candidates,
+                    provider_away_candidates=away_candidates,
+                    provider_league=event_league,
+                    provider_start=event_start,
+                    score=score,
+                    quality=quality,
+                )
 
-        return best, best_quality, best_score
+        if best is None or best_quality is None:
+            return None, None, 0.0, best_diag
+        accepted, rejection_reason, required_score = self._acceptance_diagnostic(match, self._event_league_name(best.get("event") or {}, best), best_quality, best_score)
+        if best_diag is not None:
+            best_diag["accepted"] = accepted
+            best_diag["rejection_reason"] = rejection_reason
+            best_diag["required_score"] = round(required_score, 2)
+            best_diag["prediction_id"] = best.get("id")
+            best_diag["raw_confidence"] = self._prediction_confidence_score(best)
+        if not accepted:
+            return None, None, 0.0, best_diag
+        return best, best_quality, best_score, best_diag
 
     def _acceptable_match(self, match: Match, event_league: str, quality: str | None, score: float) -> bool:
+        accepted, _, _ = self._acceptance_diagnostic(match, event_league, quality, score)
+        return accepted
+
+    def _acceptance_diagnostic(self, match: Match, event_league: str, quality: str | None, score: float) -> tuple[bool, str, float]:
         if quality is None:
-            return False
+            return False, "no_quality", 0.0
         min_score = 69.0 if quality == "fuzzy" else 64.0
         if quality == "fuzzy" and event_league and not leagues_related(match.league_name, event_league):
-            return False
+            return False, "league_mismatch", min_score
         if not event_league:
             min_score += 4.0
-        return score >= min_score
+        if score < min_score:
+            return False, "low_score", min_score
+        return True, "accepted", min_score
 
     def _prediction_for_event(
         self,
@@ -518,6 +588,48 @@ class BzzoiroContextProvider:
         exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)
         fuzzy_tol = float(getattr(self.settings, "fallback_match_start_tolerance_hours", 8) or 8)
         return exact_tol, max(fuzzy_tol, 24.0)
+
+    def _candidate_diagnostic(
+        self,
+        *,
+        match: Match,
+        provider_type: str,
+        payload: dict[str, Any],
+        provider_home_candidates: list[str],
+        provider_away_candidates: list[str],
+        provider_league: str,
+        provider_start: datetime,
+        score: float,
+        quality: str | None,
+    ) -> dict[str, Any]:
+        event = payload.get("event") if provider_type == "prediction" and isinstance(payload.get("event"), dict) else payload
+        return {
+            "provider_type": provider_type,
+            "provider_id": payload.get("id"),
+            "event_id": event.get("id") if isinstance(event, dict) else None,
+            "event_api_id": event.get("api_id") if isinstance(event, dict) else None,
+            "provider_home": provider_home_candidates[0] if provider_home_candidates else None,
+            "provider_away": provider_away_candidates[0] if provider_away_candidates else None,
+            "provider_league": provider_league or None,
+            "provider_start": provider_start.isoformat(),
+            "match_start": match.commence_time.isoformat(),
+            "time_diff_hours": round(abs((match.commence_time - provider_start).total_seconds()) / 3600.0, 2),
+            "league_related": leagues_related(match.league_name, provider_league) if provider_league else None,
+            "score": round(score, 2),
+            "quality": quality,
+        }
+
+    @staticmethod
+    def _record_rejection(stats: dict[str, Any], prefix: str, diagnostic: dict[str, Any] | None) -> None:
+        if not diagnostic:
+            return
+        reason = str(diagnostic.get("rejection_reason") or "").strip().lower()
+        if not reason or reason == "accepted":
+            return
+        key = f"{prefix}_rejected_{reason}"
+        if key not in stats:
+            stats[key] = 0
+        stats[key] = int(stats.get(key, 0) or 0) + 1
 
     @staticmethod
     def _entity_ids(payload: dict[str, Any]) -> set[str]:
