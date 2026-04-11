@@ -25,6 +25,7 @@ class OddsPapiProvider:
         self.min_interval = max(30, int(getattr(settings, "oddspapi_min_fetch_interval_minutes", 360) or 360))
         self.match_limit = max(1, int(getattr(settings, "oddspapi_match_limit", 16) or 16))
         self.tournament_limit = max(1, int(getattr(settings, "oddspapi_tournament_limit", 4) or 4))
+        self.max_tournament_ids_per_request = 5
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -40,6 +41,8 @@ class OddsPapiProvider:
             "matched_exact": 0,
             "matched_loose": 0,
             "matched_fuzzy": 0,
+            "tournament_ids_selected": 0,
+            "tournament_batches": 0,
             "http_statuses": [],
             "last_body_preview": None,
             "families_supported": ["h2h"],
@@ -103,6 +106,7 @@ class OddsPapiProvider:
                 if tid and tid not in tournament_ids:
                     tournament_ids.append(tid)
             tournament_ids = tournament_ids[: self.tournament_limit]
+            stats["tournament_ids_selected"] = len(tournament_ids)
             if not tournament_ids:
                 output: dict[str, list[Offer]] = {}
                 self._write_cache(output)
@@ -110,29 +114,31 @@ class OddsPapiProvider:
 
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             for bookmaker_slug in bookmakers:
-                odds_rows = await self._get_json(
-                    client,
-                    "/odds-by-tournaments",
-                    stats,
-                    params={
-                        "tournamentIds": ",".join(tournament_ids),
-                        "bookmaker": bookmaker_slug,
-                        "apiKey": self.api_key,
-                    },
-                )
-                rows = [row for row in odds_rows if isinstance(row, dict)] if isinstance(odds_rows, list) else []
-                if rows and len(preview["sample_odds"]) < 2:
-                    preview["sample_odds"].append(rows[0])
-                for row in rows:
-                    fixture_id = str(row.get("fixtureId") or "")
-                    match = fixture_to_match.get(fixture_id)
-                    if match is None:
-                        continue
-                    offers = self._parse_fixture_odds(row, match, bookmaker_slug)
-                    if not offers:
-                        continue
-                    offers_by_match[match.match_key].extend(offers)
-                    stats["offers_parsed"] += len(offers)
+                for tournament_batch in self._chunked(tournament_ids, self.max_tournament_ids_per_request):
+                    stats["tournament_batches"] = int(stats.get("tournament_batches", 0) or 0) + 1
+                    odds_rows = await self._get_json(
+                        client,
+                        "/odds-by-tournaments",
+                        stats,
+                        params={
+                            "tournamentIds": ",".join(tournament_batch),
+                            "bookmaker": bookmaker_slug,
+                            "apiKey": self.api_key,
+                        },
+                    )
+                    rows = [row for row in odds_rows if isinstance(row, dict)] if isinstance(odds_rows, list) else []
+                    if rows and len(preview["sample_odds"]) < 3:
+                        preview["sample_odds"].append(rows[0])
+                    for row in rows:
+                        fixture_id = str(row.get("fixtureId") or "")
+                        match = fixture_to_match.get(fixture_id)
+                        if match is None:
+                            continue
+                        offers = self._parse_fixture_odds(row, match, bookmaker_slug)
+                        if not offers:
+                            continue
+                        offers_by_match[match.match_key].extend(offers)
+                        stats["offers_parsed"] += len(offers)
 
         output = {k: v for k, v in offers_by_match.items() if v}
         self._write_cache(output)
@@ -351,6 +357,11 @@ class OddsPapiProvider:
         if norm.startswith("unibet"):
             return "Unibet"
         return str(name or "Unknown")
+
+    @staticmethod
+    def _chunked(values: list[str], size: int) -> list[list[str]]:
+        size = max(1, int(size or 1))
+        return [values[index:index + size] for index in range(0, len(values), size)]
 
     def _cache_path(self) -> Path:
         return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "oddspapi_offers.json"

@@ -215,7 +215,7 @@ class Settings(BaseSettings):
     oddspapi_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("ODDSPAPI_TIMEOUT_SECONDS"))
     oddspapi_min_fetch_interval_minutes: int = Field(default=180, validation_alias=AliasChoices("ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES"))
     oddspapi_match_limit: int = Field(default=24, validation_alias=AliasChoices("ODDSPAPI_MATCH_LIMIT"))
-    oddspapi_tournament_limit: int = Field(default=6, validation_alias=AliasChoices("ODDSPAPI_TOURNAMENT_LIMIT"))
+    oddspapi_tournament_limit: int = Field(default=12, validation_alias=AliasChoices("ODDSPAPI_TOURNAMENT_LIMIT"))
     oddspapi_bookmakers: CsvList = Field(default_factory=lambda: ["bet365", "unibet"], validation_alias=AliasChoices("ODDSPAPI_BOOKMAKERS"))
 
     enable_allsportsapi: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_ALLSPORTSAPI", "ALLSPORTSAPI_ENABLED"))
