@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import os
 from datetime import UTC, datetime
 from typing import Any
@@ -10,11 +11,14 @@ from app.config import Settings
 from app.schemas import Match, MatchContext
 from app.utils import (
     clamp,
+    implied_probability,
     leagues_related,
     normalize_probability_percent,
     over_probability_from_lambda,
     parse_datetime,
     score_event_match_variants,
+    strip_vig_three_way,
+    strip_vig_two_way,
 )
 
 
@@ -31,6 +35,7 @@ class BzzoiroContextProvider:
             "api_key_present": bool(self.api_key),
             "requests": 0,
             "response_errors": 0,
+            "retry_attempts": 0,
             "events_fetched": 0,
             "predictions_fetched": 0,
             "contexts_built": 0,
@@ -40,6 +45,8 @@ class BzzoiroContextProvider:
             "event_matches": 0,
             "prediction_links": 0,
             "fallback_prediction_matches": 0,
+            "prediction_param_fallbacks": 0,
+            "event_context_fallbacks": 0,
             "unmatched_predictions": 0,
             "event_rejected_low_score": 0,
             "event_rejected_league_mismatch": 0,
@@ -50,6 +57,8 @@ class BzzoiroContextProvider:
             "http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
+            "last_error": None,
+            "last_url": None,
         }
         preview: dict[str, Any] = {
             "sample_events": [],
@@ -93,6 +102,15 @@ class BzzoiroContextProvider:
                 params={"upcoming": "true", "date_from": date_from, "date_to": date_to, "tz": "UTC"},
                 stats=stats,
             )
+            if not predictions:
+                stats["prediction_param_fallbacks"] = int(stats.get("prediction_param_fallbacks", 0) or 0) + 1
+                predictions = await self._fetch_paginated_rows(
+                    client,
+                    "/predictions/",
+                    headers=headers,
+                    params={"date_from": date_from, "date_to": date_to, "tz": "UTC"},
+                    stats=stats,
+                )
             stats["predictions_fetched"] = len(predictions)
             if predictions:
                 preview["sample_predictions"] = predictions[:3]
@@ -124,7 +142,19 @@ class BzzoiroContextProvider:
             else:
                 prediction_score = self._prediction_confidence_score(prediction)
 
-            if prediction is None:
+            if prediction is not None:
+                prediction_id = self._prediction_identity(prediction)
+                if prediction_id:
+                    used_prediction_ids.add(prediction_id)
+                context = self._prediction_to_context(prediction, event, quality)
+                event_only_context = False
+            else:
+                context = self._event_to_context(event, quality)
+                event_only_context = context is not None
+                if event_only_context:
+                    stats["event_context_fallbacks"] = int(stats.get("event_context_fallbacks", 0) or 0) + 1
+
+            if context is None:
                 stats["unmatched_predictions"] = int(stats.get("unmatched_predictions", 0) or 0) + 1
                 self._record_rejection(stats, "event", event_diag)
                 self._record_rejection(stats, "prediction", prediction_diag)
@@ -141,11 +171,6 @@ class BzzoiroContextProvider:
                     )
                 continue
 
-            prediction_id = self._prediction_identity(prediction)
-            if prediction_id:
-                used_prediction_ids.add(prediction_id)
-
-            context = self._prediction_to_context(prediction, event, quality)
             contexts[match.match_key] = context
             stats["contexts_built"] = len(contexts)
             if quality == "exact":
@@ -165,10 +190,12 @@ class BzzoiroContextProvider:
                         "event_score": round(event_score, 2) if event is not None else None,
                         "prediction_score": round(prediction_score, 2) if prediction is not None else None,
                         "linked_from_event": linked_from_event,
-                        "prediction_id": prediction.get("id"),
+                        "event_only_context": event_only_context,
+                        "prediction_id": prediction.get("id") if prediction is not None else None,
                         "event_id": (event or {}).get("id"),
                         "expected_home": context.expected_home,
                         "expected_away": context.expected_away,
+                        "source": context.source,
                     }
                 )
 
@@ -183,12 +210,6 @@ class BzzoiroContextProvider:
             return (tier_rank, kickoff_distance, match.league_name.lower())
 
         return sorted(matches, key=key)
-
-    async def _safe_get(self, client: httpx.AsyncClient, url: str, *, headers: dict[str, str], params: dict[str, Any]) -> httpx.Response | None:
-        try:
-            return await client.get(url, headers=headers, params=params)
-        except Exception:
-            return None
 
     @staticmethod
     def _safe_json(response: httpx.Response) -> Any | None:
@@ -212,15 +233,14 @@ class BzzoiroContextProvider:
 
         while page <= max_pages:
             request_params = {**params, "page": page}
-            stats["requests"] = int(stats.get("requests", 0) or 0) + 1
-            response = await self._safe_get(client, f"{self.base_url}{path}", headers=headers, params=request_params)
+            response = await self._request_with_retries(
+                client,
+                f"{self.base_url}{path}",
+                headers=headers,
+                params=request_params,
+                stats=stats,
+            )
             if response is None:
-                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
-                break
-            stats["http_statuses"].append(response.status_code)
-            stats["last_body_preview"] = response.text[:1500]
-            if response.status_code != 200:
-                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
                 break
             payload = self._safe_json(response)
             batch = self._results(payload)
@@ -233,6 +253,64 @@ class BzzoiroContextProvider:
             page += 1
 
         return rows
+
+    async def _request_with_retries(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        *,
+        headers: dict[str, str],
+        params: dict[str, Any],
+        stats: dict[str, Any],
+        preview_limit: int = 1500,
+    ) -> httpx.Response | None:
+        retries = max(0, int(getattr(self.settings, "bzzoiro_request_retries", 2) or 2))
+        backoff = max(0.0, float(getattr(self.settings, "bzzoiro_retry_backoff_seconds", 1.0) or 1.0))
+
+        for attempt in range(retries + 1):
+            if attempt > 0:
+                stats["retry_attempts"] = int(stats.get("retry_attempts", 0) or 0) + 1
+
+            stats["requests"] = int(stats.get("requests", 0) or 0) + 1
+            stats["last_url"] = url
+            try:
+                response = await client.get(url, headers=headers, params=params)
+            except Exception as exc:
+                error_text = self._format_exception(exc)
+                stats["last_error"] = error_text
+                stats["last_body_preview"] = f"request failed: {error_text}"
+                if attempt >= retries:
+                    stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                    return None
+                if backoff > 0:
+                    await asyncio.sleep(backoff * attempt if attempt > 0 else backoff)
+                continue
+
+            stats["http_statuses"].append(response.status_code)
+            stats["last_body_preview"] = response.text[:preview_limit]
+            if response.status_code == 200:
+                stats["last_error"] = None
+                return response
+
+            stats["last_error"] = f"http_status={response.status_code}"
+            if attempt >= retries or not self._retryable_status(response.status_code):
+                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                return None
+            if backoff > 0:
+                await asyncio.sleep(backoff * attempt if attempt > 0 else backoff)
+
+        return None
+
+    @staticmethod
+    def _retryable_status(status_code: int) -> bool:
+        return status_code in {408, 409, 425, 429} or 500 <= status_code < 600
+
+    @staticmethod
+    def _format_exception(exc: Exception) -> str:
+        message = str(exc).strip()
+        if message:
+            return f"{exc.__class__.__name__}: {message}"
+        return exc.__class__.__name__
 
     @staticmethod
     def _results(payload: Any) -> list[dict[str, Any]]:
@@ -583,6 +661,127 @@ class BzzoiroContextProvider:
                 "bzzoiro_model_version": prediction.get("model_version"),
             },
         )
+
+    def _event_to_context(self, event: dict[str, Any] | None, match_quality: str | None) -> MatchContext | None:
+        if not isinstance(event, dict) or not event:
+            return None
+
+        home_price = self._to_float(event.get("odds_home"))
+        draw_price = self._to_float(event.get("odds_draw"))
+        away_price = self._to_float(event.get("odds_away"))
+
+        home_prob: float | None = None
+        draw_prob: float | None = None
+        away_prob: float | None = None
+
+        if home_price is not None and away_price is not None:
+            normalized = strip_vig_three_way(home_price, draw_price or 0.0, away_price)
+            if normalized is not None:
+                home_prob, draw_prob, away_prob = normalized
+
+        if home_prob is None or away_prob is None:
+            raw_home = implied_probability(home_price) if home_price is not None and home_price > 1.0 else None
+            raw_draw = implied_probability(draw_price) if draw_price is not None and draw_price > 1.0 else None
+            raw_away = implied_probability(away_price) if away_price is not None and away_price > 1.0 else None
+            total_prob = sum(value for value in (raw_home, raw_draw, raw_away) if value is not None)
+            if total_prob > 0:
+                if raw_home is not None:
+                    home_prob = clamp(raw_home / total_prob, 0.01, 0.95)
+                if raw_draw is not None:
+                    draw_prob = clamp(raw_draw / total_prob, 0.01, 0.6)
+                if raw_away is not None:
+                    away_prob = clamp(raw_away / total_prob, 0.01, 0.95)
+
+        total_line: float | None = None
+        over_prob: float | None = None
+        for line, over_key, under_key in (
+            (2.5, "odds_over_25", "odds_under_25"),
+            (1.5, "odds_over_15", "odds_under_15"),
+            (3.5, "odds_over_35", "odds_under_35"),
+        ):
+            over_price = self._to_float(event.get(over_key))
+            under_price = self._to_float(event.get(under_key))
+            normalized_two_way = None
+            if over_price is not None and under_price is not None:
+                normalized_two_way = strip_vig_two_way(over_price, under_price)
+            if normalized_two_way is not None:
+                over_prob = normalized_two_way[0]
+                total_line = line
+                break
+            if over_price is not None and over_price > 1.0:
+                over_prob = clamp(implied_probability(over_price), 0.01, 0.99)
+                total_line = line
+                break
+
+        expected_total = self._infer_total_lambda_from_market(over_prob, total_line)
+        expected_home: float | None = None
+        expected_away: float | None = None
+        if expected_total is not None:
+            share = 0.5
+            if home_prob is not None and away_prob is not None and (home_prob + away_prob) > 0:
+                share = home_prob / (home_prob + away_prob)
+            share = clamp(share, 0.28, 0.72)
+            expected_home = round(clamp(expected_total * share, 0.25, 3.75), 3)
+            expected_away = round(clamp(expected_total - (expected_home or 0.0), 0.25, 3.75), 3)
+
+        if expected_home is None and expected_away is None and home_prob is None and away_prob is None:
+            return None
+
+        confidence = 49.0
+        if home_prob is not None and away_prob is not None:
+            confidence += 4.0
+        if draw_prob is not None:
+            confidence += 1.0
+        if over_prob is not None:
+            confidence += 4.0
+        if expected_total is not None:
+            confidence += 2.0
+        if match_quality == "fuzzy":
+            confidence -= 5.0
+        elif match_quality == "loose":
+            confidence -= 2.0
+        elif match_quality is None:
+            confidence -= 4.0
+        confidence = clamp(confidence, 47.0, 62.0)
+
+        return MatchContext(
+            source="bzzoiro_event_odds",
+            payload={"event": event},
+            expected_home=expected_home,
+            expected_away=expected_away,
+            home_win_probability=home_prob,
+            away_win_probability=away_prob,
+            confidence=confidence,
+            details={
+                "bzzoiro_event_only_context": True,
+                "bzzoiro_event_id": event.get("id"),
+                "bzzoiro_event_api_id": event.get("api_id"),
+                "bzzoiro_match_quality": match_quality,
+                "bzzoiro_odds_home": home_price,
+                "bzzoiro_odds_draw": draw_price,
+                "bzzoiro_odds_away": away_price,
+                "bzzoiro_over_probability": round(over_prob, 4) if over_prob is not None else None,
+                "bzzoiro_total_line_used": total_line,
+                "bzzoiro_expected_total": round(expected_total, 3) if expected_total is not None else None,
+                "bzzoiro_draw_probability": round(draw_prob, 4) if draw_prob is not None else None,
+            },
+        )
+
+    def _infer_total_lambda_from_market(self, over_probability: float | None, line: float | None) -> float | None:
+        if over_probability is None or line is None:
+            return None
+        target = clamp(float(over_probability), 0.08, 0.92)
+        lo, hi = 0.45, 6.5
+        for _ in range(30):
+            mid = (lo + hi) / 2.0
+            value = over_probability_from_lambda(mid, line)
+            if value is None:
+                return None
+            if value < target:
+                lo = mid
+            else:
+                hi = mid
+        return round((lo + hi) / 2.0, 3)
 
     def _matching_tolerances(self) -> tuple[float, float]:
         exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)

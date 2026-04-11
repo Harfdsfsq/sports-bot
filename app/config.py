@@ -132,6 +132,9 @@ class Settings(BaseSettings):
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices("SSTATS_API_KEY"))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))
+    sstats_request_retries: int = Field(default=2, validation_alias=AliasChoices("SSTATS_REQUEST_RETRIES"))
+    sstats_retry_backoff_seconds: float = Field(default=1.0, validation_alias=AliasChoices("SSTATS_RETRY_BACKOFF_SECONDS"))
+    sstats_request_chunk_days: int = Field(default=7, validation_alias=AliasChoices("SSTATS_REQUEST_CHUNK_DAYS"))
     sstats_lookback_days: int = Field(default=21, validation_alias=AliasChoices("SSTATS_LOOKBACK_DAYS"))
     sstats_recent_matches: int = Field(default=6, validation_alias=AliasChoices("SSTATS_RECENT_MATCHES"))
     sstats_form_min_sample_per_team: int = Field(default=3, validation_alias=AliasChoices("SSTATS_FORM_MIN_SAMPLE_PER_TEAM"))
@@ -312,6 +315,8 @@ class Settings(BaseSettings):
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices("BZZOIRO_API_KEY"))
     bzzoiro_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("BZZOIRO_TIMEOUT_SECONDS"))
     bzzoiro_max_pages: int = Field(default=8, validation_alias=AliasChoices("BZZOIRO_MAX_PAGES"))
+    bzzoiro_request_retries: int = Field(default=2, validation_alias=AliasChoices("BZZOIRO_REQUEST_RETRIES"))
+    bzzoiro_retry_backoff_seconds: float = Field(default=1.0, validation_alias=AliasChoices("BZZOIRO_RETRY_BACKOFF_SECONDS"))
 
     signal_weight_explicit: float = Field(default=0.40, validation_alias=AliasChoices("SIGNAL_WEIGHT_EXPLICIT"))
     signal_weight_xg: float = Field(default=0.34, validation_alias=AliasChoices("SIGNAL_WEIGHT_XG"))

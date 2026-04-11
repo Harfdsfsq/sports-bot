@@ -341,6 +341,16 @@ class PredictionRunner:
             sent_messages += settlement_messages_sent + daily_report_messages_sent
             telegram_payloads = list(settlement_payloads) + list(daily_report_payloads) + list(telegram_payloads)
             clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
+            derived_market_candidates_before_quality = sum(
+                1
+                for item in candidates_before_quality
+                if bool((getattr(item, 'source_summary', {}) or {}).get('market_signal_derived'))
+            )
+            derived_market_publishable = sum(
+                1
+                for item in publishable_candidates
+                if bool((getattr(item, 'source_summary', {}) or {}).get('market_signal_derived'))
+            )
             forecast_rows = self._forecast_rows_for_export(
                 model_debug,
                 candidates=candidates,
@@ -418,6 +428,8 @@ class PredictionRunner:
                 'candidates_raw': len(raw_candidates),
                 'candidates_before_quality': len(candidates_before_quality),
                 'candidates_rejected_by_quality': max(0, len(candidates_before_quality) - len(raw_candidates)),
+                'candidates_before_quality_with_derived_market_signal': derived_market_candidates_before_quality,
+                'publishable_with_derived_market_signal': derived_market_publishable,
                 'skipped_already_in_state': reused_already_in_state,
                 'reused_already_in_state': reused_already_in_state,
                 'published': telegram_picks_sent,
@@ -1298,17 +1310,23 @@ class PredictionRunner:
         raw_by_match = Counter(str(item.match_key) for item in raw_candidates)
         published_by_match = Counter(str(item.match_key) for item in published_candidates)
         raw_modes_by_match: dict[str, list[str]] = defaultdict(list)
+        raw_derived_by_match: Counter[str] = Counter()
         for item in raw_candidates:
             key = str(item.match_key)
             mode = str(item.model_mode)
             if mode not in raw_modes_by_match[key]:
                 raw_modes_by_match[key].append(mode)
+            if bool((getattr(item, 'source_summary', {}) or {}).get('market_signal_derived')):
+                raw_derived_by_match[key] += 1
         published_modes_by_match: dict[str, list[str]] = defaultdict(list)
+        published_derived_by_match: Counter[str] = Counter()
         for item in published_candidates:
             key = str(item.match_key)
             mode = str(item.model_mode)
             if mode not in published_modes_by_match[key]:
                 published_modes_by_match[key].append(mode)
+            if bool((getattr(item, 'source_summary', {}) or {}).get('market_signal_derived')):
+                published_derived_by_match[key] += 1
 
         matches_payload: list[dict[str, Any]] = []
         context_combo_counter: Counter[str] = Counter()
@@ -1376,6 +1394,8 @@ class PredictionRunner:
                 'published_candidate_count': published_by_match.get(match.match_key, 0),
                 'raw_candidate_modes': raw_modes_by_match.get(match.match_key, []),
                 'published_candidate_modes': published_modes_by_match.get(match.match_key, []),
+                'raw_candidate_market_signal_derived_count': raw_derived_by_match.get(match.match_key, 0),
+                'published_candidate_market_signal_derived_count': published_derived_by_match.get(match.match_key, 0),
             })
 
         provider_summary: dict[str, Any] = {}
@@ -1401,6 +1421,10 @@ class PredictionRunner:
             'matches_with_any_offer_source': sum(1 for match in filtered_matches if any((mapping.get(match.match_key) or []) for mapping in offer_maps.values())),
             'matches_with_any_context_source': sum(1 for match in filtered_matches if any(mapping.get(match.match_key) is not None for mapping in context_maps.values())),
             'matches_with_merged_context': sum(1 for match in filtered_matches if merged_contexts.get(match.match_key) is not None),
+            'raw_candidates_with_derived_market_signal': sum(raw_derived_by_match.values()),
+            'published_candidates_with_derived_market_signal': sum(published_derived_by_match.values()),
+            'matches_with_raw_derived_market_signal': len(raw_derived_by_match),
+            'matches_with_published_derived_market_signal': len(published_derived_by_match),
             'context_source_combinations': dict(context_combo_counter),
             'offer_source_combinations': dict(offer_combo_counter),
         }

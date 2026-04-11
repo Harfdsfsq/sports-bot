@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections import defaultdict
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -34,7 +35,9 @@ class SStatsContextProvider:
             "api_key_present": bool(self.settings.sstats_api_key),
             "requests": 0,
             "response_errors": 0,
+            "retry_attempts": 0,
             "days_requested": 0,
+            "chunk_windows_requested": 0,
             "rows_fetched": 0,
             "contexts_built": 0,
             "matched_exact": 0,
@@ -54,6 +57,7 @@ class SStatsContextProvider:
             "http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
+            "last_error": None,
             "last_url": self.url,
         }
         preview: dict[str, Any] = {
@@ -92,8 +96,6 @@ class SStatsContextProvider:
         stats["rows_fetched"] = len(rows)
         if rows:
             preview["sample_rows"] = rows[:3]
-        else:
-            return {}, stats, preview
 
         contexts: dict[str, MatchContext] = {}
         best_scores: dict[str, float] = {}
@@ -269,11 +271,39 @@ class SStatsContextProvider:
         to_date: str,
         stats: dict[str, Any],
     ) -> list[dict[str, Any]]:
+        chunk_days = max(1, int(getattr(self.settings, "sstats_request_chunk_days", 7) or 7))
+        rows: list[dict[str, Any]] = []
+        seen_signatures: set[tuple[Any, ...]] = set()
+
+        for window_from, window_to in self._date_windows(from_date, to_date, chunk_days):
+            stats["chunk_windows_requested"] = int(stats.get("chunk_windows_requested", 0) or 0) + 1
+            batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
+            for row in batch_rows:
+                signature = (
+                    row.get("id"),
+                    row.get("flashId"),
+                    row.get("date"),
+                    self._extract_team_name(row, "home"),
+                    self._extract_team_name(row, "away"),
+                )
+                if signature in seen_signatures:
+                    continue
+                seen_signatures.add(signature)
+                rows.append(row)
+
+        return rows
+
+    async def _fetch_rows_window(
+        self,
+        client: httpx.AsyncClient,
+        from_date: str,
+        to_date: str,
+        stats: dict[str, Any],
+    ) -> list[dict[str, Any]]:
         limit = 1000
         offset = 0
         total_count: int | None = None
         rows: list[dict[str, Any]] = []
-        seen_signatures: set[tuple[Any, ...]] = set()
 
         while True:
             params = {
@@ -284,25 +314,16 @@ class SStatsContextProvider:
                 "apikey": self.settings.sstats_api_key,
             }
 
-            stats["requests"] += 1
-            try:
-                response = await client.get(self.url, params=params)
-            except Exception as exc:
-                stats["response_errors"] += 1
-                stats["last_body_preview"] = f"request failed: {exc}"
-                break
-
-            stats["http_statuses"].append(response.status_code)
-            stats["last_body_preview"] = response.text[:2000]
-
-            if response.status_code != 200:
-                stats["response_errors"] += 1
+            response = await self._request_with_retries(client, self.url, params=params, stats=stats)
+            if response is None:
                 break
 
             try:
                 payload = response.json()
-            except Exception:
+            except Exception as exc:
                 stats["response_errors"] += 1
+                stats["last_error"] = self._format_exception(exc)
+                stats["last_body_preview"] = f"json parse failed: {stats['last_error']}"
                 break
 
             if isinstance(payload, dict):
@@ -333,24 +354,9 @@ class SStatsContextProvider:
             if not batch:
                 break
 
-            added = 0
-            for row in batch:
-                signature = (
-                    row.get("id"),
-                    row.get("flashId"),
-                    row.get("date"),
-                    self._extract_team_name(row, "home"),
-                    self._extract_team_name(row, "away"),
-                )
-                if signature in seen_signatures:
-                    continue
-                seen_signatures.add(signature)
-                rows.append(row)
-                added += 1
+            rows.extend(batch)
 
             if len(batch) < limit:
-                break
-            if added == 0:
                 break
 
             offset += len(batch)
@@ -361,6 +367,79 @@ class SStatsContextProvider:
                 break
 
         return rows
+
+    async def _request_with_retries(
+        self,
+        client: httpx.AsyncClient,
+        url: str,
+        *,
+        params: dict[str, Any],
+        stats: dict[str, Any],
+        headers: dict[str, str] | None = None,
+        preview_limit: int = 2000,
+    ) -> httpx.Response | None:
+        retries = max(0, int(getattr(self.settings, "sstats_request_retries", 2) or 2))
+        backoff = max(0.0, float(getattr(self.settings, "sstats_retry_backoff_seconds", 1.0) or 1.0))
+
+        for attempt in range(retries + 1):
+            if attempt > 0:
+                stats["retry_attempts"] = int(stats.get("retry_attempts", 0) or 0) + 1
+
+            stats["requests"] = int(stats.get("requests", 0) or 0) + 1
+            stats["last_url"] = url
+            try:
+                response = await client.get(url, params=params, headers=headers)
+            except Exception as exc:
+                error_text = self._format_exception(exc)
+                stats["last_error"] = error_text
+                stats["last_body_preview"] = f"request failed: {error_text}"
+                if attempt >= retries:
+                    stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                    return None
+                if backoff > 0:
+                    await asyncio.sleep(backoff * attempt if attempt > 0 else backoff)
+                continue
+
+            http_statuses = stats.get("http_statuses")
+            if isinstance(http_statuses, list):
+                http_statuses.append(response.status_code)
+            stats["last_body_preview"] = response.text[:preview_limit]
+            if response.status_code == 200:
+                stats["last_error"] = None
+                return response
+
+            stats["last_error"] = f"http_status={response.status_code}"
+            if attempt >= retries or not self._retryable_status(response.status_code):
+                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                return None
+            if backoff > 0:
+                await asyncio.sleep(backoff * attempt if attempt > 0 else backoff)
+
+        return None
+
+    @staticmethod
+    def _retryable_status(status_code: int) -> bool:
+        return status_code in {408, 409, 425, 429} or 500 <= status_code < 600
+
+    @staticmethod
+    def _format_exception(exc: Exception) -> str:
+        message = str(exc).strip()
+        if message:
+            return f"{exc.__class__.__name__}: {message}"
+        return exc.__class__.__name__
+
+    @staticmethod
+    def _date_windows(from_date: str, to_date: str, chunk_days: int) -> list[tuple[str, str]]:
+        start = parse_datetime(from_date).date()
+        end = parse_datetime(to_date).date()
+        windows: list[tuple[str, str]] = []
+
+        while start <= end:
+            window_end = min(end, start + timedelta(days=chunk_days - 1))
+            windows.append((start.isoformat(), window_end.isoformat()))
+            start = window_end + timedelta(days=1)
+
+        return windows
 
     async def _fetch_bzzoiro_contexts(
         self,
@@ -399,14 +478,15 @@ class SStatsContextProvider:
                 "tz": "UTC",
                 "page": next_page,
             }
-            stats["requests"] += 1
-            try:
-                response = await client.get("https://sports.bzzoiro.com/api/predictions/", params=params, headers=headers)
-            except Exception:
-                stats["response_errors"] += 1
-                break
-            if response.status_code != 200:
-                stats["response_errors"] += 1
+            response = await self._request_with_retries(
+                client,
+                "https://sports.bzzoiro.com/api/predictions/",
+                params=params,
+                headers=headers,
+                stats=stats,
+                preview_limit=1500,
+            )
+            if response is None:
                 break
             try:
                 payload = response.json()
