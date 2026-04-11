@@ -35,6 +35,7 @@ class OddsApiIoProvider:
             "event_http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
+            "rate_limited": False,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_matches": []}
         api_key = getattr(self.settings, "odds_api_io_key", None)
@@ -71,6 +72,9 @@ class OddsApiIoProvider:
                 stats["last_body_preview"] = response.text[:1500]
                 if response.status_code != 200:
                     stats["response_errors"] += 1
+                    if response.status_code == 429:
+                        stats["rate_limited"] = True
+                        break
                     continue
                 payload = self._safe_json(response)
                 if payload is None:
@@ -103,7 +107,7 @@ class OddsApiIoProvider:
                     if tier == "low" and not bool(getattr(self.settings, "allow_low_tier", False)):
                         stats["low_tier_skipped"] += 1
                         continue
-                    match = Match(
+                    matches.append(Match(
                         source="odds_api_io",
                         source_event_id=str(event_id),
                         sport_key="soccer",
@@ -120,8 +124,7 @@ class OddsApiIoProvider:
                             "competition": event.get("league"),
                             "raw_event": raw,
                         },
-                    )
-                    matches.append(match)
+                    ))
                 stats["events_fetched"] = len(seen_ids)
                 stats["matches_built"] = len(matches)
                 if len(seen_ids) == before or len(items) < page_limit:
@@ -161,6 +164,8 @@ class OddsApiIoProvider:
             "last_body_preview": None,
             "simulated_skipped": 0,
             "requested_bookmakers": None,
+            "bootstrap_events_reused": 0,
+            "rate_limited": False,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
@@ -184,63 +189,77 @@ class OddsApiIoProvider:
 
         events: list[dict[str, Any]] = []
         seen_event_ids: set[int] = set()
+        for match in soccer_matches:
+            raw_event = match.metadata.get("raw_event") if isinstance(match.metadata, dict) else None
+            event_id = raw_event.get("id") if isinstance(raw_event, dict) else None
+            if match.source != "odds_api_io" or not isinstance(event_id, int) or event_id in seen_event_ids:
+                continue
+            seen_event_ids.add(event_id)
+            events.append(raw_event)
+        if events:
+            stats["events_fetched"] = len(events)
+            stats["bootstrap_events_reused"] = len(events)
+            preview["sample_events"] = events[:3]
+
         timeout = float(getattr(self.settings, "odds_api_io_timeout_seconds", 25.0) or 25.0)
         max_pages = max(1, int(getattr(self.settings, "odds_api_io_max_pages_per_sport", 4) or 4))
         page_limit = max(1, int(getattr(self.settings, "odds_api_io_page_limit", 100) or 100))
 
         async with httpx.AsyncClient(timeout=timeout) as client:
-            for page in range(1, max_pages + 1):
-                params = {
-                    "apiKey": api_key,
-                    "sport": "football",
-                    "status": "pending,live",
-                    "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-                    "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
-                    "limit": page_limit,
-                    "page": page,
-                }
-                stats["event_requests"] += 1
-                try:
-                    response = await client.get(f"{self.base_url}/events", params=params)
-                except Exception as exc:
-                    stats["response_errors"] += 1
-                    stats["last_body_preview"] = f"events request failed: {exc}"
-                    continue
-
-                stats["event_http_statuses"].append(response.status_code)
-                stats["last_body_preview"] = response.text[:1500]
-                if response.status_code != 200:
-                    stats["response_errors"] += 1
-                    continue
-
-                payload = self._safe_json(response)
-                if payload is None:
-                    stats["response_errors"] += 1
-                    continue
-                shape = self._payload_shape(payload)
-                if shape not in stats["payload_shapes"]:
-                    stats["payload_shapes"].append(shape)
-
-                items = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
-                if page == 1 and items:
-                    preview["sample_events"] = items[:3]
-                if not items:
-                    break
-
-                before = len(seen_event_ids)
-                for item in items:
-                    event_id = item.get("id")
-                    if not isinstance(event_id, int):
+            if not events:
+                for page in range(1, max_pages + 1):
+                    params = {
+                        "apiKey": api_key,
+                        "sport": "football",
+                        "status": "pending,live",
+                        "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                        "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+                        "limit": page_limit,
+                        "page": page,
+                    }
+                    stats["event_requests"] += 1
+                    try:
+                        response = await client.get(f"{self.base_url}/events", params=params)
+                    except Exception as exc:
+                        stats["response_errors"] += 1
+                        stats["last_body_preview"] = f"events request failed: {exc}"
                         continue
-                    if event_id in seen_event_ids:
+
+                    stats["event_http_statuses"].append(response.status_code)
+                    stats["last_body_preview"] = response.text[:1500]
+                    if response.status_code != 200:
+                        stats["response_errors"] += 1
+                        if response.status_code == 429:
+                            stats["rate_limited"] = True
+                            break
                         continue
-                    seen_event_ids.add(event_id)
-                    events.append(item)
-                stats["events_fetched"] = len(events)
-                if len(seen_event_ids) == before:
-                    break
-                if len(items) < page_limit:
-                    break
+
+                    payload = self._safe_json(response)
+                    if payload is None:
+                        stats["response_errors"] += 1
+                        continue
+                    shape = self._payload_shape(payload)
+                    if shape not in stats["payload_shapes"]:
+                        stats["payload_shapes"].append(shape)
+
+                    items = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                    if page == 1 and items:
+                        preview["sample_events"] = items[:3]
+                    if not items:
+                        break
+
+                    before = len(seen_event_ids)
+                    for item in items:
+                        event_id = item.get("id")
+                        if not isinstance(event_id, int):
+                            continue
+                        if event_id in seen_event_ids:
+                            continue
+                        seen_event_ids.add(event_id)
+                        events.append(item)
+                    stats["events_fetched"] = len(events)
+                    if len(seen_event_ids) == before or len(items) < page_limit:
+                        break
 
             mapping: dict[str, dict[str, Any]] = {}
             for raw_event in events:
@@ -280,6 +299,7 @@ class OddsApiIoProvider:
 
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             bookmakers_seen: set[str] = set()
+            stop_fetching_odds = False
             for start in range(0, len(matched_items), 10):
                 chunk = matched_items[start : start + 10]
                 if not chunk:
@@ -302,6 +322,10 @@ class OddsApiIoProvider:
                 stats["last_body_preview"] = response.text[:2000]
                 if response.status_code != 200:
                     stats["response_errors"] += 1
+                    if response.status_code == 429:
+                        stats["rate_limited"] = True
+                        stop_fetching_odds = True
+                        break
                     continue
 
                 payload = self._safe_json(response)
@@ -327,6 +351,8 @@ class OddsApiIoProvider:
                     stats["offers_parsed"] += len(parsed)
                     stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
                     bookmakers_seen.update(offer.bookmaker for offer in parsed)
+                if stop_fetching_odds:
+                    break
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
             return dict(offers_by_match), stats, preview

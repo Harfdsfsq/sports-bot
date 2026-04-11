@@ -12,7 +12,7 @@ import httpx
 
 from app.config import Settings
 from app.schemas import Match, Offer
-from app.utils import normalize_bookmaker_name, parse_datetime, score_event_match
+from app.utils import is_simulated_or_esports_event, normalize_bookmaker_name, parse_datetime, score_event_match
 
 
 class AllSportsApiOddsProvider:
@@ -23,6 +23,69 @@ class AllSportsApiOddsProvider:
         self.timeout = float(getattr(settings, "allsportsapi_timeout_seconds", 12.0) or 12.0)
         self.min_interval = max(30, int(getattr(settings, "allsportsapi_min_fetch_interval_minutes", 120) or 120))
         self.match_limit = max(1, int(getattr(settings, "allsportsapi_match_limit", 12) or 12))
+
+    async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
+        stats: dict[str, Any] = {
+            "enabled": bool(self.api_key),
+            "api_key_present": bool(self.api_key),
+            "requests": 0,
+            "response_errors": 0,
+            "fixtures_fetched": 0,
+            "matches_built": 0,
+            "low_tier_skipped": 0,
+            "simulated_skipped": 0,
+            "http_statuses": [],
+            "last_body_preview": None,
+        }
+        preview: dict[str, Any] = {"sample_fixtures": [], "sample_matches": []}
+        if not self.api_key:
+            return [], stats, preview
+
+        now = datetime.now(UTC)
+        from_date = now.date().isoformat()
+        to_date = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))).date().isoformat()
+
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            fixtures_payload = await self._get_json(
+                client,
+                {"met": "Fixtures", "APIkey": self.api_key, "from": from_date, "to": to_date, "timezone": "UTC"},
+                stats,
+            )
+        rows = self._result_rows(fixtures_payload)
+        stats["fixtures_fetched"] = len(rows)
+        preview["sample_fixtures"] = rows[:3]
+
+        matches: list[Match] = []
+        seen_ids: set[str] = set()
+        for row in rows:
+            match = self._build_match(row)
+            if match is None:
+                league_name = str(row.get("league_name") or "")
+                home = str(row.get("event_home_team") or "")
+                away = str(row.get("event_away_team") or "")
+                if is_simulated_or_esports_event(home, away, league_name):
+                    stats["simulated_skipped"] += 1
+                continue
+            if match.source_event_id in seen_ids:
+                continue
+            seen_ids.add(match.source_event_id)
+            if match.tier == "low" and not bool(getattr(self.settings, "allow_low_tier", False)):
+                stats["low_tier_skipped"] += 1
+                continue
+            matches.append(match)
+        stats["matches_built"] = len(matches)
+        preview["sample_matches"] = [
+            {
+                "match_key": item.match_key,
+                "league_name": item.league_name,
+                "home_team": item.home_team,
+                "away_team": item.away_team,
+                "commence_time": item.commence_time.isoformat(),
+                "tier": item.tier,
+            }
+            for item in matches[:5]
+        ]
+        return matches, stats, preview
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -39,6 +102,7 @@ class AllSportsApiOddsProvider:
             "matched_fuzzy": 0,
             "http_statuses": [],
             "last_body_preview": None,
+            "bootstrap_fixtures_reused": 0,
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_odds": []}
         if not self.api_key:
@@ -57,15 +121,31 @@ class AllSportsApiOddsProvider:
         from_date = min(m.commence_time for m in prioritized).astimezone(UTC).date().isoformat()
         to_date = max(m.commence_time for m in prioritized).astimezone(UTC).date().isoformat()
 
+        reused_rows: list[dict[str, Any]] = []
+        seen_fixture_ids: set[str] = set()
+        for match in prioritized:
+            raw_fixture = match.metadata.get("allsportsapi_raw_fixture") if isinstance(match.metadata, dict) else None
+            fixture_id = str((raw_fixture or {}).get("event_key") or (raw_fixture or {}).get("match_id") or "") if isinstance(raw_fixture, dict) else ""
+            if match.source != "allsportsapi" or not fixture_id or fixture_id in seen_fixture_ids:
+                continue
+            seen_fixture_ids.add(fixture_id)
+            reused_rows.append(raw_fixture)
+        if reused_rows:
+            stats["fixtures_fetched"] = len(reused_rows)
+            stats["bootstrap_fixtures_reused"] = len(reused_rows)
+            preview["sample_fixtures"] = reused_rows[:3]
+
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            fixtures_payload = await self._get_json(
-                client,
-                {"met": "Fixtures", "APIkey": self.api_key, "from": from_date, "to": to_date, "timezone": "UTC"},
-                stats,
-            )
-            fixtures = self._result_rows(fixtures_payload)
-            stats["fixtures_fetched"] = len(fixtures)
-            preview["sample_fixtures"] = fixtures[:3]
+            fixtures = reused_rows
+            if not fixtures:
+                fixtures_payload = await self._get_json(
+                    client,
+                    {"met": "Fixtures", "APIkey": self.api_key, "from": from_date, "to": to_date, "timezone": "UTC"},
+                    stats,
+                )
+                fixtures = self._result_rows(fixtures_payload)
+                stats["fixtures_fetched"] = len(fixtures)
+                preview["sample_fixtures"] = fixtures[:3]
 
             mapping: dict[str, dict[str, Any]] = {}
             exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)
@@ -174,6 +254,38 @@ class AllSportsApiOddsProvider:
                 return [row for row in rows if isinstance(row, dict)]
         return []
 
+    def _build_match(self, row: dict[str, Any]) -> Match | None:
+        home = str(row.get("event_home_team") or "").strip()
+        away = str(row.get("event_away_team") or "").strip()
+        league = str(row.get("league_name") or "").strip()
+        event_id = str(row.get("event_key") or row.get("match_id") or "").strip()
+        if not home or not away or not event_id:
+            return None
+        if is_simulated_or_esports_event(home, away, league):
+            return None
+        try:
+            start = parse_datetime(f"{row.get('event_date')}T{row.get('event_time')}:00+00:00")
+        except Exception:
+            return None
+        tier = "low" if self._looks_low_tier(league) else "mid"
+        return Match(
+            source="allsportsapi",
+            source_event_id=event_id,
+            sport_key="soccer",
+            league_name=league,
+            home_team=home,
+            away_team=away,
+            commence_time=start,
+            home_team_norm="",
+            away_team_norm="",
+            league_key="",
+            tier=tier,
+            metadata={
+                "allsportsapi_match_id": event_id,
+                "allsportsapi_raw_fixture": row,
+            },
+        )
+
     def _parse_odds_rows(self, rows: list[dict[str, Any]], match: Match, event_id: str) -> list[Offer]:
         offers: list[Offer] = []
         seen: set[tuple[str, str, str, float | None]] = set()
@@ -236,10 +348,12 @@ class AllSportsApiOddsProvider:
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:
         now = datetime.now(UTC)
+
         def key(match: Match) -> tuple[int, float, str]:
             tier_rank = 0 if getattr(match, "tier", "mid") == "top" else 1 if getattr(match, "tier", "mid") == "mid" else 2
             kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
             return (tier_rank, kickoff_distance, match.league_name.lower())
+
         return sorted(matches, key=key)
 
     @staticmethod
@@ -250,6 +364,12 @@ class AllSportsApiOddsProvider:
         if norm.startswith("unibet"):
             return "Unibet"
         return str(name or "Unknown")
+
+    @staticmethod
+    def _looks_low_tier(league_name: str) -> bool:
+        text = str(league_name or "").lower()
+        markers = ("u17", "u18", "u19", "u20", "u21", "u23", "women", "reserve", "friendly", "esports")
+        return any(marker in text for marker in markers)
 
     def _cache_path(self) -> Path:
         return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "allsportsapi_offers.json"

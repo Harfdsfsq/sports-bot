@@ -93,6 +93,7 @@ class Settings(BaseSettings):
 
     bookies_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("BOOKIES_BOOTSTRAP_ENABLED"))
     enable_odds_api_io: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_ODDS_API_IO", "ODDS_API_IO_ENABLED"))
+    odds_api_io_bootstrap_enabled: bool = Field(default=True, validation_alias=AliasChoices("ODDS_API_IO_BOOTSTRAP_ENABLED", "ENABLE_ODDS_API_IO_BOOTSTRAP"))
     sstats_enabled: bool = Field(default=True, validation_alias=AliasChoices("SSTATS_ENABLED"))
     enable_sstats_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_SSTATS_CONTEXT"))
     api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices("API_FOOTBALL_ENABLED"))
@@ -668,9 +669,16 @@ class Settings(BaseSettings):
             "oddsapiio": "odds_api_io",
             "odds_apiio": "odds_api_io",
             "odds-api-io": "odds_api_io",
+            "oddspapiio": "oddspapi",
+            "odds_papi": "oddspapi",
+            "odds-papi": "oddspapi",
+            "allsports": "allsportsapi",
+            "allsports": "allsportsapi",
+            "allsports_api": "allsportsapi",
+            "all-sports-api": "allsportsapi",
         }
         text = aliases.get(text, text)
-        return text if text in {"odds_api_io", "bookies_bootstrap", "auto"} else "odds_api_io"
+        return text if text in {"odds_api_io", "oddspapi", "allsportsapi", "bookies_bootstrap", "auto"} else "odds_api_io"
 
     @field_validator("bookies_api_timeout_seconds", mode="before")
     @classmethod

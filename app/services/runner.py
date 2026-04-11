@@ -595,20 +595,46 @@ class PredictionRunner:
         strategy = str(getattr(self.settings, 'match_bootstrap_provider', 'odds_api_io') or 'odds_api_io').strip().lower()
         allow_fallback = bool(getattr(self.settings, 'bootstrap_fallback_to_bookies', True))
 
-        provider_order: list[tuple[str, Any]]
-        if strategy == 'bookies_bootstrap':
-            provider_order = [('bookies_bootstrap', self.bookies_bootstrap)]
+        provider_specs: dict[str, tuple[Any | None, bool]] = {
+            'odds_api_io': (
+                self.odds_api_io,
+                bool(getattr(self.settings, 'enable_odds_api_io', True)) and bool(getattr(self.settings, 'odds_api_io_bootstrap_enabled', True)),
+            ),
+            'oddspapi': (
+                self.oddspapi,
+                bool(getattr(self.settings, 'enable_oddspapi', False)),
+            ),
+            'allsportsapi': (
+                self.allsportsapi,
+                bool(getattr(self.settings, 'enable_allsportsapi', False)),
+            ),
+            'bookies_bootstrap': (
+                self.bookies_bootstrap,
+                bool(getattr(self.settings, 'bookies_bootstrap_enabled', True)),
+            ),
+        }
+
+        default_order = ['odds_api_io', 'oddspapi', 'allsportsapi', 'bookies_bootstrap']
+        if strategy == 'auto':
+            provider_order = list(default_order)
+        elif strategy in provider_specs:
+            provider_order = [strategy]
             if allow_fallback:
-                provider_order.append(('odds_api_io', self.odds_api_io))
-        elif strategy == 'auto':
-            provider_order = [('odds_api_io', self.odds_api_io), ('bookies_bootstrap', self.bookies_bootstrap)]
+                provider_order.extend(name for name in default_order if name != strategy)
         else:
-            provider_order = [('odds_api_io', self.odds_api_io)]
-            if allow_fallback:
-                provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
+            provider_order = list(default_order)
 
         attempts: dict[str, dict[str, Any]] = {}
-        for provider_name, provider in provider_order:
+        for provider_name in provider_order:
+            provider, bootstrap_enabled = provider_specs.get(provider_name, (None, False))
+            if not bootstrap_enabled:
+                attempts[provider_name] = {
+                    'matches': 0,
+                    'stats': {'enabled': False, 'reason': 'disabled_for_bootstrap'},
+                    'preview': {},
+                }
+                continue
+
             matches, stats, preview = await self._fetch_provider(
                 provider,
                 'fetch_matches',
