@@ -84,76 +84,30 @@ class CandidateFactory:
             if match_candidates:
                 picked = match_candidates[0]
                 candidates.append(picked)
-                debug_rows.append(self._debug_row_for_candidate(picked, len(match_candidates)))
+                debug_rows.append(
+                    {
+                        'match_key': match_key,
+                        'selection': picked.selection,
+                        'family': picked.family,
+                        'count': len(match_candidates),
+                        'context_source': picked.source_summary.get('context_source'),
+                        'context_mode': picked.source_summary.get('context_mode'),
+                        'selected_bookmaker': picked.source_summary.get('selected_bookmaker'),
+                        'selected_source': picked.source_summary.get('selected_source'),
+                        'market_movement': picked.source_summary.get('market_movement'),
+                        'market_probability': round(float(picked.market_probability), 4),
+                        'model_probability': round(float(picked.model_probability), 4),
+                        'adjusted_probability': round(float(picked.adjusted_probability), 4),
+                        'confidence': round(float(picked.confidence), 2),
+                        'expected_home': picked.expected_home,
+                        'expected_away': picked.expected_away,
+                    }
+                )
             else:
                 rejections['no_candidate_for_match'] += 1
 
-        pre_filter_rows = list(debug_rows)
         candidates = self._filter_and_rank(candidates, rejections)
-        passed_keys = {self._debug_candidate_key(item) for item in candidates}
-        for row in pre_filter_rows:
-            row['model_filter_status'] = 'passed' if self._debug_row_key(row) in passed_keys else 'rejected_by_model_filters'
-        return candidates, dict(rejections), {'matches': debug_rows}
-
-    def _debug_row_for_candidate(self, picked: CandidateBet, count: int) -> dict[str, Any]:
-        source_summary = dict(getattr(picked, 'source_summary', {}) or {})
-        analysis = dict(getattr(picked, 'analysis', {}) or {})
-        return {
-            'match_key': picked.match_key,
-            'sport_key': picked.sport_key,
-            'league_name': picked.league_name,
-            'home_team': picked.home_team,
-            'away_team': picked.away_team,
-            'commence_time': picked.commence_time.isoformat(),
-            'selection': picked.selection,
-            'selection_key': picked.selection_key,
-            'team_side': picked.team_side,
-            'family': picked.family,
-            'point': picked.point,
-            'odds': picked.odds,
-            'fair_odds': picked.fair_odds,
-            'implied_probability': round(float(picked.implied_probability), 4),
-            'market_probability': round(float(picked.market_probability), 4),
-            'consensus_probability': round(float(picked.consensus_probability), 4),
-            'model_probability': round(float(picked.model_probability), 4),
-            'final_probability': round(float(picked.final_probability), 4),
-            'adjusted_probability': round(float(picked.adjusted_probability), 4),
-            'edge_pct': round(float(picked.edge_pct), 3),
-            'ev_pct': round(float(picked.ev_pct), 3),
-            'confidence': round(float(picked.confidence), 2),
-            'books_count': picked.books_count,
-            'sources_count': picked.sources_count,
-            'model_mode': picked.model_mode,
-            'publication_score': round(float(getattr(picked, 'publication_score', 0.0) or 0.0), 3),
-            'expected_home': picked.expected_home,
-            'expected_away': picked.expected_away,
-            'total_xg': (
-                round(float(picked.expected_home) + float(picked.expected_away), 3)
-                if picked.expected_home is not None and picked.expected_away is not None
-                else None
-            ),
-            'candidate_count_for_match': count,
-            'context_source': source_summary.get('context_source'),
-            'context_mode': source_summary.get('context_mode'),
-            'context_confidence': source_summary.get('context_confidence'),
-            'context_sources': source_summary.get('context_sources'),
-            'selected_bookmaker': source_summary.get('selected_bookmaker'),
-            'selected_source': source_summary.get('selected_source'),
-            'selected_price': source_summary.get('selected_price'),
-            'market_movement': source_summary.get('market_movement'),
-            'best_vs_consensus_edge_pct': source_summary.get('best_vs_consensus_edge_pct'),
-            'consensus_dispersion_pct': source_summary.get('consensus_dispersion_pct'),
-            'reasons': list(getattr(picked, 'reasons', []) or []),
-            'analysis_points': list(analysis.get('summary_points') or []),
-        }
-
-    @staticmethod
-    def _debug_candidate_key(item: CandidateBet) -> tuple[Any, ...]:
-        return (item.match_key, item.family, item.selection_key, item.point, item.team_side)
-
-    @staticmethod
-    def _debug_row_key(row: dict[str, Any]) -> tuple[Any, ...]:
-        return (row.get('match_key'), row.get('family'), row.get('selection_key'), row.get('point'), row.get('team_side'))
+        return candidates, dict(rejections), {'matches': debug_rows[:200]}
 
     def _build_totals_candidates(
         self,
@@ -925,7 +879,6 @@ class CandidateFactory:
                 'selected_price': best_offer.price,
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
-                'context_sources': list(context_details.get('merged_sources') or ([context_source] if context_source else [])),
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode'),
                 'home_recent_count': context_details.get('home_recent_count'),
@@ -934,7 +887,6 @@ class CandidateFactory:
                 'adjusted_probability': round(float(adjusted), 4),
                 'market_probability': round(float(market_prob), 4),
                 'market_signal_key': market_signal_key,
-                'market_signal_derived': bool((market_signal or {}).get('derived_from_bucket')) if isinstance(market_signal, dict) else False,
                 'market_movement': movement_label,
                 'line_move_pp': round(float(steam_delta), 3) if steam_delta is not None else None,
                 'consensus_dispersion_pct': round(float(dispersion_pct), 3) if dispersion_pct is not None else None,
@@ -988,27 +940,16 @@ class CandidateFactory:
             points.append(market_line)
 
             if total_xg is not None and point is not None:
-                xg_gap = float(total_xg) - float(point)
+                pace_word = 'низовой' if is_under else 'результативный'
                 pressure_side = None
                 if expected_home is not None and expected_away is not None:
                     if float(expected_home) > float(expected_away) + 0.18:
                         pressure_side = match.home_team
                     elif float(expected_away) > float(expected_home) + 0.18:
                         pressure_side = match.away_team
-                if abs(xg_gap) <= 0.18:
-                    profile_text = f'По сумме xG матч идёт почти вровень с линией {point:g}, так что здесь нет яркого перекоса по одной только сумме xG.'
-                elif is_under and xg_gap < 0:
-                    profile_text = f'Для линии {point:g} это уже профиль в пользу низового сценария.'
-                elif (not is_under) and xg_gap > 0:
-                    profile_text = f'Для линии {point:g} это уже профиль в пользу результативного сценария.'
-                else:
-                    profile_text = (
-                        f'Но по сумме xG это скорее не поддерживает {label}, поэтому ставка здесь держится не на одном только xG, '
-                        f'а на дополнительном тотальном сигнале из контекста.'
-                    )
                 xg_text = (
                     f'По ожидаемым голам матч тянет к {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}). '
-                    f'{profile_text}'
+                    f'Для линии {point:g} это уже профиль в пользу {pace_word} сценария.'
                 )
                 if pressure_side:
                     xg_text += f' Основной вклад в темп модель ждёт от {pressure_side}.'
@@ -1111,6 +1052,17 @@ class CandidateFactory:
 
 
     
+
+    @staticmethod
+    def _weighted_average(values: list[float | None]) -> float | None:
+        clean = [float(v) for v in values if v is not None]
+        if not clean:
+            return None
+        weights = [1.0 / (index + 1) ** 0.6 for index in range(len(clean))]
+        total_weight = sum(weights)
+        if total_weight <= 0:
+            return None
+        return sum(value * weight for value, weight in zip(clean, weights, strict=False)) / total_weight
 
     def _build_venue_split_summary(
         self,
@@ -1344,6 +1296,8 @@ class CandidateFactory:
         if home_abs is not None and away_abs is not None and abs(home_abs - away_abs) >= 0.6:
             affected = match.home_team if home_abs > away_abs else match.away_team
             return f'По кадрам и новостям больше потерь сейчас у {affected}, это тоже смещает сценарий матча.'
+        if article_count is not None and article_count >= 2:
+            return 'По матчу дополнительно просмотрены свежие новости и кадровый фон; явных противоречий ставке там нет.'
         return None
 
     
@@ -1361,60 +1315,13 @@ class CandidateFactory:
     def _market_signal_for_bucket(self, match_key: str, family: str, offers: list[Offer], point: float | None) -> dict[str, Any] | None:
         mapping = self._market_signals_by_match.get(str(match_key)) or {}
         if not mapping or not offers:
-            return self._derived_market_signal_for_bucket(offers)
+            return None
         first = offers[0]
         key = self._market_signal_key(family, str(getattr(first, 'selection', '') or ''), point, str(getattr(first, 'team_side', '') or ''))
         signal = mapping.get(key)
         if isinstance(signal, dict):
             return signal
-        return self._derived_market_signal_for_bucket(offers)
-
-    def _derived_market_signal_for_bucket(self, offers: list[Offer]) -> dict[str, Any] | None:
-        by_book: dict[str, Offer] = {}
-        for offer in offers:
-            book_key = self._norm_book(offer.bookmaker)
-            if not book_key or float(offer.price) <= 1.0:
-                continue
-            existing = by_book.get(book_key)
-            if existing is None or float(offer.price) > float(existing.price):
-                by_book[book_key] = offer
-
-        unique_offers = list(by_book.values())
-        if len(unique_offers) < 2:
-            return None
-
-        prices = sorted((float(item.price) for item in unique_offers if float(item.price) > 1.0), reverse=True)
-        if len(prices) < 2:
-            return None
-
-        best_price = prices[0]
-        reference_prices = prices[1:] or prices
-        reference_price = mean(reference_prices)
-        if reference_price <= 1.0:
-            return None
-
-        best_vs_consensus_edge_pct = ((best_price / reference_price) - 1.0) * 100.0
-        if best_vs_consensus_edge_pct < 0.35:
-            return None
-
-        mean_price = mean(prices)
-        if mean_price <= 1.0:
-            return None
-
-        dispersion_pct = ((max(prices) - min(prices)) / mean_price) * 100.0
-        delta_prob_pp = max(0.0, ((1.0 / reference_price) - (1.0 / best_price)) * 100.0)
-        sources = {str(item.source or '').strip() for item in unique_offers if str(item.source or '').strip()}
-        return {
-            'best_vs_consensus_edge_pct': round(best_vs_consensus_edge_pct, 3),
-            'consensus_dispersion_pct': round(dispersion_pct, 3),
-            'delta_prob_pp': round(delta_prob_pp, 3),
-            'movement_label': None,
-            'history_ready': False,
-            'observation_count': 1,
-            'books_count': len(unique_offers),
-            'sources_count': len(sources),
-            'derived_from_bucket': True,
-        }
+        return None
 
 
     @staticmethod
@@ -1740,26 +1647,22 @@ class CandidateFactory:
         xg = self._enriched_expected_goals(match, context)
         if xg is not None:
             expected_home, expected_away = xg
-            dc_probs = self._dixon_coles_h2h_probabilities(match, expected_home, expected_away)
-            if dc_probs is not None and bool(getattr(self.settings, 'dixon_coles_enabled', True)):
-                weighted_parts.append((dc_probs, float(getattr(self.settings, 'dixon_coles_h2h_weight', 0.42) or 0.42)))
-            else:
-                denom = max(expected_home + expected_away, 0.1)
-                xg_home = clamp(expected_home / denom, 0.08, 0.80)
-                xg_away = clamp(expected_away / denom, 0.08, 0.80)
-                gap = abs(expected_home - expected_away)
-                xg_draw = clamp(0.28 - gap * 0.06, 0.10, 0.30)
-                weighted_parts.append((self._normalize_probabilities({
-                    match.home_team: xg_home,
-                    match.away_team: xg_away,
-                    'draw': xg_draw,
-                    'Draw': xg_draw,
-                }), float(getattr(self.settings, 'signal_weight_xg', 0.34) or 0.34)))
+            denom = max(expected_home + expected_away, 0.1)
+            xg_home = clamp(expected_home / denom, 0.08, 0.80)
+            xg_away = clamp(expected_away / denom, 0.08, 0.80)
+            gap = abs(expected_home - expected_away)
+            xg_draw = clamp(0.28 - gap * 0.06, 0.10, 0.30)
+            weighted_parts.append((self._normalize_probabilities({
+                match.home_team: xg_home,
+                match.away_team: xg_away,
+                'draw': xg_draw,
+                'Draw': xg_draw,
+            }), float(getattr(self.settings, 'signal_weight_xg', 0.34) or 0.34)))
         explicit = self._explicit_h2h_probabilities(match, context)
         if explicit is not None:
             source = str(context.source or '')
             explicit_weight = float(getattr(self.settings, 'signal_weight_explicit', 0.40) or 0.40)
-            if source in {'api_football', 'espn', 'thesportsdb', 'football_data', 'openfootball'}:
+            if source in {'api_football', 'espn', 'ensemble', 'thesportsdb', 'football_data', 'openfootball', 'newsapi', 'gnews'}:
                 explicit_weight += 0.05
             weighted_parts.append((explicit, explicit_weight))
         strength = self._strength_probabilities(match, context)
@@ -1784,51 +1687,6 @@ class CandidateFactory:
         for key in list(aggregate):
             aggregate[key] /= total_weight
         return self._normalize_probabilities(dict(aggregate))
-
-    def _dixon_coles_h2h_probabilities(self, match: Match, expected_home: float, expected_away: float) -> dict[str, float] | None:
-        try:
-            home_lam = clamp(float(expected_home), 0.05, 6.0)
-            away_lam = clamp(float(expected_away), 0.05, 6.0)
-        except Exception:
-            return None
-        max_goals = max(6, int(getattr(self.settings, 'dixon_coles_max_goals', 10) or 10))
-        rho = float(getattr(self.settings, 'dixon_coles_rho', -0.08) or -0.08)
-        home_probs = [self._poisson_pmf(home_lam, goals) for goals in range(max_goals + 1)]
-        away_probs = [self._poisson_pmf(away_lam, goals) for goals in range(max_goals + 1)]
-        home_win = 0.0
-        away_win = 0.0
-        draw = 0.0
-        for home_goals, home_prob in enumerate(home_probs):
-            for away_goals, away_prob in enumerate(away_probs):
-                prob = home_prob * away_prob * self._dixon_coles_tau(home_goals, away_goals, home_lam, away_lam, rho)
-                if home_goals > away_goals:
-                    home_win += prob
-                elif away_goals > home_goals:
-                    away_win += prob
-                else:
-                    draw += prob
-        return self._normalize_probabilities({
-            match.home_team: home_win,
-            match.away_team: away_win,
-            'draw': draw,
-            'Draw': draw,
-        })
-
-    @staticmethod
-    def _poisson_pmf(lam: float, goals: int) -> float:
-        return math.exp(-lam) * (lam ** goals) / max(1.0, math.factorial(goals))
-
-    @staticmethod
-    def _dixon_coles_tau(home_goals: int, away_goals: int, home_lam: float, away_lam: float, rho: float) -> float:
-        if home_goals == 0 and away_goals == 0:
-            return max(0.05, 1.0 - home_lam * away_lam * rho)
-        if home_goals == 0 and away_goals == 1:
-            return max(0.05, 1.0 + home_lam * rho)
-        if home_goals == 1 and away_goals == 0:
-            return max(0.05, 1.0 + away_lam * rho)
-        if home_goals == 1 and away_goals == 1:
-            return max(0.05, 1.0 - rho)
-        return 1.0
 
     def _explicit_h2h_probabilities(self, match: Match, context: MatchContext) -> dict[str, float] | None:
         home = self._safe_probability(context.home_win_probability)
@@ -2180,16 +2038,6 @@ class CandidateFactory:
         nearest = min(allowed, key=lambda item: abs(item - raw_point))
         if abs(nearest - raw_point) <= tolerance:
             return round(float(nearest), 2)
-        snapped_quarter = round(raw_point * 4.0) / 4.0
-        min_allowed = min(allowed)
-        max_allowed = max(allowed)
-        max_extension = 1.0 if family == 'totals' else 0.5
-        if (
-            abs(snapped_quarter - raw_point) <= tolerance
-            and snapped_quarter >= max(0.0, min_allowed - 0.25)
-            and snapped_quarter <= (max_allowed + max_extension)
-        ):
-            return round(float(snapped_quarter), 2)
         return None
 
     def _poisson_line_probability(self, lam: float | None, point: float | None) -> float | None:
@@ -2245,30 +2093,8 @@ class CandidateFactory:
         return any(self._norm_book(offer.bookmaker) in sharp for offer in offers)
 
 
-    def _allow_single_book_candidate(self, family: str, offers: list[Offer], context: MatchContext | None) -> bool:
-        if family not in {'totals', 'h2h'}:
-            return False
-        if not bool(getattr(self.settings, 'single_book_candidate_enabled', True)):
-            return False
-        norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
-        if len(norm_books) != 1:
-            return False
-        weighted_books = self._weighted_unique_books(offers)
-        min_weighted = float(getattr(self.settings, 'single_book_candidate_min_weighted_books', 1.0) or 1.0)
-        has_target_book = bool(norm_books & self.target_books)
-        has_sharp = self._has_sharp_book(offers)
-        if weighted_books < min_weighted and not has_target_book and not has_sharp:
-            return False
-        if context is None:
-            return has_target_book or has_sharp
-        return True
-
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
         base = self.settings.min_books_for_family(family)
-        if family in {'totals', 'h2h'}:
-            if self._allow_single_book_candidate(family, offers, context):
-                return 1
-            return max(2, base)
         if base <= 1:
             return 1
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
@@ -2312,39 +2138,6 @@ class CandidateFactory:
             return 'draw'
         return 'other'
 
-    def _totals_short_price_guard_reason(self, item: CandidateBet) -> str | None:
-        if not bool(getattr(self.settings, 'totals_short_price_guard_enabled', True)):
-            return None
-        selection_kind = self._candidate_selection_kind(item)
-        if selection_kind not in {'under', 'over'}:
-            return None
-        odds_value = self._to_float_safe(getattr(item, 'odds', None))
-        if odds_value is None:
-            return None
-        if float(odds_value) > float(getattr(self.settings, 'totals_short_price_max_odds', 1.70) or 1.70):
-            return None
-
-        source_summary = dict(getattr(item, 'source_summary', {}) or {})
-        short_price_min_conf = float(getattr(self.settings, 'totals_short_price_min_confidence', 70.0) or 70.0)
-        short_price_min_edge = float(getattr(self.settings, 'totals_short_price_min_edge_pct', 6.5) or 6.5)
-        short_price_min_ev = float(getattr(self.settings, 'totals_short_price_min_ev_pct', 4.0) or 4.0)
-        short_price_min_adjusted = float(getattr(self.settings, 'totals_short_price_min_adjusted_probability', 0.66) or 0.66)
-        short_price_min_context = float(getattr(self.settings, 'totals_short_price_min_context_confidence', 70.0) or 70.0)
-        context_confidence = self._to_float_safe(source_summary.get('context_confidence'))
-        if float(item.confidence) < short_price_min_conf:
-            return 'totals_short_price_confidence_guard'
-        if float(item.edge_pct) < short_price_min_edge:
-            return 'totals_short_price_edge_guard'
-        if float(item.ev_pct) < short_price_min_ev:
-            return 'totals_short_price_ev_guard'
-        if float(item.adjusted_probability) < short_price_min_adjusted:
-            return 'totals_short_price_probability_guard'
-        if short_price_min_context > 0.0 and (
-            context_confidence is None or float(context_confidence) < short_price_min_context
-        ):
-            return 'totals_short_price_context_guard'
-        return None
-
     def _is_risky_totals_candidate(self, item: CandidateBet) -> bool:
         source_summary = dict(getattr(item, 'source_summary', {}) or {})
         parts = [
@@ -2379,17 +2172,10 @@ class CandidateFactory:
     def _has_core_context(self, item: CandidateBet) -> bool:
         source_summary = dict(getattr(item, 'source_summary', {}) or {})
         context_source = str(source_summary.get('context_source') or '').lower()
-        context_sources = {
-            str(value or '').strip().lower()
-            for value in (source_summary.get('context_sources') or [])
-            if str(value or '').strip()
-        }
         details = dict(getattr(item, 'analysis', {}) or {})
         flags = {str(v).lower() for v in (details.get('flags') or [])}
         core_names = ('api_football', 'football_data', 'thesportsdb', 'espn', 'ensemble')
         if any(name in context_source for name in core_names):
-            return True
-        if context_sources & {'api_football', 'football_data', 'thesportsdb', 'espn', 'openfootball'}:
             return True
         if any(flag in {'injuries', 'table'} for flag in flags):
             return True
@@ -2438,23 +2224,10 @@ class CandidateFactory:
 
         return max(2, base)
 
-    def _effective_min_confidence(self, item: CandidateBet) -> float:
-        base = float(self.settings.min_model_confidence_for_family(item.family))
-        relax = 0.0
-        if str(getattr(item, 'model_mode', '') or '').startswith('market_simple'):
-            relax += float(getattr(self.settings, 'market_simple_model_confidence_relax', 0.02) or 0.02)
-        if (
-            item.family in {'totals', 'h2h'}
-            and int(getattr(item, 'books_count', 0) or 0) <= 1
-            and self._has_core_context(item)
-        ):
-            relax += float(getattr(self.settings, 'single_book_model_confidence_relax', 0.015) or 0.015)
-        return max(0.50, base - relax)
-
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
         for item in candidates:
-            min_conf = self._effective_min_confidence(item)
+            min_conf = float(self.settings.min_model_confidence_for_family(item.family))
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
             if item.model_probability < min_conf:
@@ -2470,39 +2243,7 @@ class CandidateFactory:
             if item.edge_pct < min_edge:
                 rejections['edge_below_threshold'] += 1
                 continue
-            source_summary = dict(getattr(item, 'source_summary', {}) or {})
-            context_source = str(source_summary.get('context_source') or '')
-            context_mode = str(source_summary.get('context_mode') or '')
-            home_recent_count = int(self._to_float_safe(source_summary.get('home_recent_count')) or 0)
-            away_recent_count = int(self._to_float_safe(source_summary.get('away_recent_count')) or 0)
-            if context_mode == 'team_form' and home_recent_count > 0 and away_recent_count > 0:
-                min_sample = max(2, int(getattr(self.settings, 'sstats_form_min_sample_per_team', 3) or 3))
-                risky_min_sample = max(min_sample, int(getattr(self.settings, 'sstats_form_risky_min_sample_per_team', 4) or 4))
-                sample_floor = min(home_recent_count, away_recent_count)
-                if sample_floor < min_sample:
-                    rejections['sstats_form_sample_guard'] += 1
-                    continue
-                item_point = self._to_float_safe(getattr(item, 'point', None))
-                item_selection_kind = self._candidate_selection_kind(item)
-                risky_totals = (
-                    item.family == 'totals'
-                    and item_selection_kind == 'over'
-                    and item_point is not None
-                    and float(item_point) >= 2.5
-                )
-                risky_h2h = (
-                    item.family == 'h2h'
-                    and item_selection_kind != 'draw'
-                    and (
-                        float(getattr(item, 'market_probability', 0.0) or 0.0)
-                        <= float(getattr(self.settings, 'sstats_form_h2h_underdog_market_max_prob', 0.42) or 0.42)
-                        or float(getattr(item, 'odds', 0.0) or 0.0)
-                        >= float(getattr(self.settings, 'sstats_form_h2h_underdog_min_odds', 2.3) or 2.3)
-                    )
-                )
-                if (risky_totals or risky_h2h) and sample_floor < risky_min_sample:
-                    rejections['sstats_form_risky_sample_guard'] += 1
-                    continue
+            context_source = str((item.source_summary or {}).get('context_source') or '')
             league_bucket = self._league_bucket(item)
             min_pub_score = float({
                 'preferred': getattr(self.settings, 'min_publication_score', 12.0),
@@ -2555,42 +2296,6 @@ class CandidateFactory:
                 total_xg = None
                 if item.expected_home is not None and item.expected_away is not None:
                     total_xg = float(item.expected_home) + float(item.expected_away)
-                if selection_kind in {'under', 'over'} and point is not None and total_xg is not None:
-                    conflict_buffer = float(getattr(self.settings, 'totals_xg_conflict_buffer', 0.75) or 0.75)
-                    if selection_kind == 'under' and total_xg > point + conflict_buffer:
-                        rejections['totals_under_xg_conflict_guard'] += 1
-                        continue
-                    if selection_kind == 'over' and total_xg < point - conflict_buffer:
-                        rejections['totals_over_xg_conflict_guard'] += 1
-                        continue
-                if (
-                    bool(getattr(self.settings, 'totals_short_price_guard_enabled', True))
-                    and selection_kind in {'under', 'over'}
-                    and float(getattr(item, 'odds', 0.0) or 0.0) <= float(getattr(self.settings, 'totals_short_price_max_odds', 1.70) or 1.70)
-                ):
-                    short_price_min_conf = float(getattr(self.settings, 'totals_short_price_min_confidence', 70.0) or 70.0)
-                    short_price_min_edge = float(getattr(self.settings, 'totals_short_price_min_edge_pct', 6.5) or 6.5)
-                    short_price_min_ev = float(getattr(self.settings, 'totals_short_price_min_ev_pct', 4.0) or 4.0)
-                    short_price_min_adjusted = float(getattr(self.settings, 'totals_short_price_min_adjusted_probability', 0.66) or 0.66)
-                    short_price_min_context = float(getattr(self.settings, 'totals_short_price_min_context_confidence', 70.0) or 70.0)
-                    context_confidence = self._to_float_safe(source_summary.get('context_confidence'))
-                    if float(item.confidence) < short_price_min_conf:
-                        rejections['totals_short_price_confidence_guard'] += 1
-                        continue
-                    if float(item.edge_pct) < short_price_min_edge:
-                        rejections['totals_short_price_edge_guard'] += 1
-                        continue
-                    if float(item.ev_pct) < short_price_min_ev:
-                        rejections['totals_short_price_ev_guard'] += 1
-                        continue
-                    if float(item.adjusted_probability) < short_price_min_adjusted:
-                        rejections['totals_short_price_probability_guard'] += 1
-                        continue
-                    if short_price_min_context > 0.0 and (
-                        context_confidence is None or float(context_confidence) < short_price_min_context
-                    ):
-                        rejections['totals_short_price_context_guard'] += 1
-                        continue
                 if selection_kind == 'over' and point is not None and abs(float(point) - 2.5) <= 0.01:
                     if bool(getattr(self.settings, 'totals_over25_dual_threat_guard_enabled', True)) and item.expected_home is not None and item.expected_away is not None:
                         weaker_xg = min(float(item.expected_home), float(item.expected_away))
@@ -2692,45 +2397,6 @@ class CandidateFactory:
                         if float(item.ev_pct) < float(getattr(self.settings, 'h2h_single_source_min_ev_pct', 3.0) or 3.0):
                             rejections['h2h_single_source_ev_guard'] += 1
                             continue
-                    context_sources = {
-                        str(value or '').strip().lower()
-                        for value in (source_summary.get('context_sources') or [])
-                        if str(value or '').strip()
-                    }
-                    if not context_sources and context_source:
-                        context_sources = {context_source.lower()}
-                    high_odds = (
-                        float(item.market_probability) <= float(getattr(self.settings, 'h2h_high_odds_market_max_prob', 0.30) or 0.30)
-                        or float(item.odds) >= float(getattr(self.settings, 'h2h_high_odds_min_odds', 3.60) or 3.60)
-                    )
-                    if high_odds:
-                        if float(item.confidence) < float(getattr(self.settings, 'h2h_high_odds_min_confidence', 68.0) or 68.0):
-                            rejections['h2h_high_odds_confidence_guard'] += 1
-                            continue
-                        if float(item.edge_pct) < float(getattr(self.settings, 'h2h_high_odds_min_edge_pct', 5.0) or 5.0):
-                            rejections['h2h_high_odds_edge_guard'] += 1
-                            continue
-                        if float(item.ev_pct) < float(getattr(self.settings, 'h2h_high_odds_min_ev_pct', 2.8) or 2.8):
-                            rejections['h2h_high_odds_ev_guard'] += 1
-                            continue
-                        predictive_contexts = context_sources & {'api_football', 'football_data', 'thesportsdb', 'espn', 'openfootball', 'bzzoiro', 'sstats', 'sstats_form'}
-                        if len(predictive_contexts) < max(1, int(getattr(self.settings, 'h2h_high_odds_min_context_sources', 2) or 2)):
-                            rejections['h2h_high_odds_context_guard'] += 1
-                            continue
-                        expected_home = item.expected_home
-                        expected_away = item.expected_away
-                        if expected_home is None or expected_away is None:
-                            rejections['h2h_high_odds_xg_missing_guard'] += 1
-                            continue
-                        xg_diff = float(expected_home) - float(expected_away)
-                        min_xg_diff = float(getattr(self.settings, 'h2h_high_odds_min_xg_diff', 0.35) or 0.35)
-                        selected_side = 'home' if item.selection == item.home_team else ('away' if item.selection == item.away_team else None)
-                        if selected_side == 'home' and xg_diff < min_xg_diff:
-                            rejections['h2h_high_odds_xg_guard'] += 1
-                            continue
-                        if selected_side == 'away' and (-xg_diff) < min_xg_diff:
-                            rejections['h2h_high_odds_xg_guard'] += 1
-                            continue
                     if bool(getattr(self.settings, 'h2h_xg_dislocation_guard_enabled', True)):
                         expected_home = item.expected_home
                         expected_away = item.expected_away
@@ -2814,9 +2480,6 @@ class CandidateFactory:
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
         for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
             if item.family not in allowed_families:
-                continue
-            if item.family == 'totals' and self._totals_short_price_guard_reason(item):
-                rejections['fallback_blocked_totals_short_price_guard'] += 1
                 continue
             if self._league_bucket(item) not in {'preferred', 'secondary'}:
                 continue
