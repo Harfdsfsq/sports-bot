@@ -674,75 +674,76 @@ class PredictionRunner:
                 local_filtered.append(match)
             return local_filtered, local_skipped_started, local_skipped_too_soon, local_skipped_outside_window
 
-        def lead_stats_for(min_lead_minutes: int) -> dict[str, Any]:
-            future_in_window: list[float] = []
-            too_soon_in_window: list[float] = []
-            min_lead_delta = timedelta(minutes=max(0, min_lead_minutes))
-            for match in matches:
-                commence = ensure_utc(match.commence_time)
-                if commence <= now_utc or commence > horizon:
-                    continue
-                delta_minutes = max((commence - now_utc).total_seconds() / 60.0, 0.0)
-                future_in_window.append(delta_minutes)
-                if commence - now_utc < min_lead_delta:
-                    too_soon_in_window.append(delta_minutes)
-
-            def summary(values: list[float]) -> dict[str, float | int | None]:
-                if not values:
-                    return {'count': 0, 'nearest_minutes': None, 'farthest_minutes': None}
-                ordered = sorted(values)
-                return {
-                    'count': len(ordered),
-                    'nearest_minutes': round(ordered[0], 1),
-                    'farthest_minutes': round(ordered[-1], 1),
-                }
-
-            return {
-                'future_matches_in_window': summary(future_in_window),
-                'too_soon_matches_in_window': summary(too_soon_in_window),
-            }
-
         horizon = now_utc + timedelta(hours=self.settings.publish_window_hours)
         configured_min_lead_minutes = max(0, int(self.settings.min_kickoff_lead_minutes or 0))
-        effective_min_lead_minutes = configured_min_lead_minutes
-        min_lead = timedelta(minutes=effective_min_lead_minutes)
-        filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
-
-        fallback_applied = False
-        emergency_fallback_applied = False
-        fallback_min_lead_minutes = min(
+        adaptive_min_lead_minutes = min(
             configured_min_lead_minutes,
             max(0, int(getattr(self.settings, 'adaptive_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0)),
         )
+        manual_late_mode_applied = False
+        if bool(getattr(self.settings, 'manual_late_mode_enabled', False)):
+            configured_min_lead_minutes = min(
+                configured_min_lead_minutes,
+                max(0, int(getattr(self.settings, 'manual_late_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0)),
+            )
+            adaptive_min_lead_minutes = min(
+                configured_min_lead_minutes,
+                max(0, int(getattr(self.settings, 'manual_late_adaptive_min_kickoff_lead_minutes', adaptive_min_lead_minutes) or 0)),
+            )
+            manual_late_mode_applied = True
+        min_lead = timedelta(minutes=configured_min_lead_minutes)
+        filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
+
+        fallback_applied = False
+        emergency_applied = False
+        effective_min_lead_minutes = configured_min_lead_minutes
         if (
             not filtered
             and skipped_too_soon > 0
             and getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True)
-            and fallback_min_lead_minutes < configured_min_lead_minutes
+            and adaptive_min_lead_minutes < configured_min_lead_minutes
         ):
-            effective_min_lead_minutes = fallback_min_lead_minutes
-            min_lead = timedelta(minutes=effective_min_lead_minutes)
+            min_lead = timedelta(minutes=adaptive_min_lead_minutes)
             filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
             fallback_applied = True
+            effective_min_lead_minutes = adaptive_min_lead_minutes
 
+        future_matches_in_window = [
+            match for match in matches
+            if now_utc < ensure_utc(match.commence_time) <= horizon
+        ]
+        future_lead_minutes = sorted(
+            round((ensure_utc(match.commence_time) - now_utc).total_seconds() / 60.0, 1)
+            for match in future_matches_in_window
+        )
+        too_soon_share = (
+            (skipped_too_soon / len(future_matches_in_window))
+            if future_matches_in_window
+            else 0.0
+        )
         emergency_min_lead_minutes = min(
             effective_min_lead_minutes,
             max(0, int(getattr(self.settings, 'emergency_min_kickoff_lead_minutes', effective_min_lead_minutes) or 0)),
         )
-        future_in_scope = max(len(matches) - skipped_started - skipped_outside_window, 0)
-        too_soon_ratio = (skipped_too_soon / future_in_scope) if future_in_scope else 0.0
-        emergency_activation_ratio = float(getattr(self.settings, 'emergency_min_kickoff_activation_ratio', 0.85) or 0.85)
         if (
             not filtered
-            and skipped_too_soon > 0
+            and future_matches_in_window
             and getattr(self.settings, 'emergency_min_kickoff_lead_enabled', True)
+            and too_soon_share >= float(getattr(self.settings, 'emergency_min_kickoff_activation_ratio', 0.85) or 0.85)
             and emergency_min_lead_minutes < effective_min_lead_minutes
-            and too_soon_ratio >= max(0.0, min(emergency_activation_ratio, 1.0))
         ):
-            effective_min_lead_minutes = emergency_min_lead_minutes
-            min_lead = timedelta(minutes=effective_min_lead_minutes)
+            min_lead = timedelta(minutes=emergency_min_lead_minutes)
             filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
-            emergency_fallback_applied = True
+            emergency_applied = True
+            effective_min_lead_minutes = emergency_min_lead_minutes
+
+        lead_time_snapshot = {}
+        if future_lead_minutes:
+            lead_time_snapshot = {
+                'nearest_minutes': future_lead_minutes[0],
+                'farthest_minutes': future_lead_minutes[-1],
+                'sample_minutes': future_lead_minutes[:8],
+            }
 
         filtering = {
             'total_before': len(matches),
@@ -752,16 +753,22 @@ class PredictionRunner:
             'skipped_outside_window': skipped_outside_window,
             'publish_window_hours': self.settings.publish_window_hours,
             'min_kickoff_lead_minutes': effective_min_lead_minutes,
-            'configured_min_kickoff_lead_minutes': configured_min_lead_minutes,
+            'configured_min_kickoff_lead_minutes': max(0, int(self.settings.min_kickoff_lead_minutes or 0)),
             'adaptive_min_kickoff_lead_enabled': getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True),
-            'adaptive_min_kickoff_lead_minutes': fallback_min_lead_minutes,
+            'adaptive_min_kickoff_lead_minutes': adaptive_min_lead_minutes,
             'adaptive_min_kickoff_lead_applied': fallback_applied,
             'emergency_min_kickoff_lead_enabled': getattr(self.settings, 'emergency_min_kickoff_lead_enabled', True),
             'emergency_min_kickoff_lead_minutes': emergency_min_lead_minutes,
-            'emergency_min_kickoff_activation_ratio': round(emergency_activation_ratio, 3),
-            'emergency_min_kickoff_lead_applied': emergency_fallback_applied,
-            'too_soon_share_of_future_in_window': round(too_soon_ratio, 3),
-            'lead_time_snapshot': lead_stats_for(effective_min_lead_minutes),
+            'emergency_min_kickoff_activation_ratio': float(getattr(self.settings, 'emergency_min_kickoff_activation_ratio', 0.85) or 0.85),
+            'emergency_min_kickoff_lead_applied': emergency_applied,
+            'manual_late_mode_enabled': bool(getattr(self.settings, 'manual_late_mode_enabled', False)),
+            'manual_late_mode_applied': manual_late_mode_applied,
+            'manual_late_min_kickoff_lead_minutes': int(getattr(self.settings, 'manual_late_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0),
+            'manual_late_adaptive_min_kickoff_lead_minutes': int(getattr(self.settings, 'manual_late_adaptive_min_kickoff_lead_minutes', adaptive_min_lead_minutes) or 0),
+            'future_matches_in_window': {'count': len(future_matches_in_window)},
+            'too_soon_matches_in_window': {'count': skipped_too_soon},
+            'too_soon_share_of_future_in_window': round(too_soon_share, 4),
+            'lead_time_snapshot': lead_time_snapshot,
             'now_utc': now_utc.isoformat(),
             'now_local': now_utc.astimezone(self.settings.tzinfo).isoformat(),
         }
