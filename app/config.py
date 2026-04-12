@@ -43,6 +43,12 @@ class Settings(BaseSettings):
     settlement_grace_minutes: int = Field(default=180, validation_alias=AliasChoices("SETTLEMENT_GRACE_MINUTES"))
     settlement_lookback_days: int = Field(default=5, validation_alias=AliasChoices("SETTLEMENT_LOOKBACK_DAYS"))
     settlement_send_telegram_summary: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_SEND_TELEGRAM_SUMMARY"))
+    settlement_api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_ENABLED"))
+    settlement_api_football_max_days: int = Field(default=6, validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_MAX_DAYS"))
+    settlement_api_football_statuses: CsvList = Field(
+        default_factory=lambda: ["FT", "AET", "PEN"],
+        validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_STATUSES"),
+    )
 
     run_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("RUN_SPORTS"))
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
@@ -366,6 +372,9 @@ class Settings(BaseSettings):
     min_publication_score_secondary_league: float = Field(default=14.5, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_SECONDARY_LEAGUE"))
     min_publication_score_other_league: float = Field(default=18.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_OTHER_LEAGUE"))
     min_publication_score_low_tier: float = Field(default=22.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_LOW_TIER"))
+    quarantine_shadow_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices("QUARANTINE_SHADOW_MODE_ENABLED"))
+    quarantine_min_segment_sample: int = Field(default=16, validation_alias=AliasChoices("QUARANTINE_MIN_SEGMENT_SAMPLE"))
+    quarantine_league_buckets: CsvList = Field(default_factory=lambda: ["low"], validation_alias=AliasChoices("QUARANTINE_LEAGUE_BUCKETS"))
     non_core_league_min_books: int = Field(default=2, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_BOOKS"))
     non_core_league_min_confidence: float = Field(default=68.0, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_CONFIDENCE"))
     non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
@@ -513,17 +522,22 @@ class Settings(BaseSettings):
         "odds_api_io_bookmakers",
         "bookies_api_sports",
         "espn_soccer_leagues",
+        "oddspapi_bookmakers",
+        "allsportsapi_bookmakers",
+        "preferred_league_terms",
+        "secondary_league_terms",
         "espn_soft_fail_statuses",
         "supported_total_lines",
         "supported_team_total_lines",
         "openfootball_competition_map",
-        "openligadb_leagues",
-        "openligadb_seasons",
         "sharp_bookmakers",
         "consensus_alias_groups",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
+        "quarantine_league_buckets",
+        "settlement_api_football_statuses",
         mode="before",
+        check_fields=False,
     )
     @classmethod
     def split_csv(cls, value: Any) -> list[str]:
