@@ -8,6 +8,11 @@ on:
         required: false
         default: false
         type: boolean
+      late_manual_mode:
+        description: Allow very late manual runs with a smaller kickoff lead window
+        required: false
+        default: true
+        type: boolean
   schedule:
     # 08:00, 12:00, 16:00, 20:00 MSK for forecasts.
     - cron: '0 5,9,13,17 * * *'
@@ -201,6 +206,12 @@ env:
   MIN_KICKOFF_LEAD_MINUTES: '30'
   ADAPTIVE_MIN_KICKOFF_LEAD_ENABLED: 'true'
   ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES: '20'
+  EMERGENCY_MIN_KICKOFF_LEAD_ENABLED: 'true'
+  EMERGENCY_MIN_KICKOFF_LEAD_MINUTES: '10'
+  EMERGENCY_MIN_KICKOFF_ACTIVATION_RATIO: '0.85'
+  MANUAL_LATE_MODE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.late_manual_mode && 'true' || 'false' }}
+  MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES: '5'
+  MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES: '2'
   MAX_MATCHES_FOR_ODDS_FETCH: '120'
   MAX_PICKS_PER_RUN: '2'
   MAX_PICKS_PER_FAMILY: '2'
