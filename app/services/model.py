@@ -2461,54 +2461,110 @@ class CandidateFactory:
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
                 break
-        short_window_fallback = (
-            not getattr(self.settings, 'fallback_publish_mode_enabled', True)
-            and max(1, int(getattr(self.settings, 'publish_window_hours', 48) or 48)) <= 6
-        )
-        if deduped:
-            return deduped
-        if not getattr(self.settings, 'fallback_publish_mode_enabled', True) and not short_window_fallback:
-            return deduped
+        publish_window_hours = float(getattr(self.settings, 'publish_window_hours', 24.0) or 24.0)
+        fallback_mode_enabled = bool(getattr(self.settings, 'fallback_publish_mode_enabled', True))
         fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
         fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
         fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
         fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+
+        if deduped:
+            return deduped
+
+        sorted_candidates = sorted(candidates, key=self._candidate_rank_key, reverse=True)
+        if fallback_mode_enabled:
+            for item in sorted_candidates:
+                if item.family not in allowed_families:
+                    continue
+                if self._league_bucket(item) not in {'preferred', 'secondary'}:
+                    continue
+                if float(item.confidence) < fallback_min_conf:
+                    continue
+                if float(item.ev_pct) < fallback_min_ev or float(item.edge_pct) < fallback_min_edge:
+                    continue
+                if int(getattr(item, 'books_count', 0) or 0) < fallback_min_books:
+                    continue
+                if item.expected_home is not None and float(item.expected_home) < 0:
+                    continue
+                if item.expected_away is not None and float(item.expected_away) < 0:
+                    continue
+                try:
+                    item.reasons.append('fallback_publish_mode=enabled')
+                    if isinstance(item.source_summary, dict):
+                        item.source_summary['fallback_publish_mode'] = True
+                except Exception:
+                    pass
+                rejections['fallback_publish_mode_used'] += 1
+                return [item]
+            rejections['fallback_publish_no_candidate'] += 1
+
+        short_window_enabled = publish_window_hours <= 6.0
+        if not short_window_enabled:
+            return deduped
+
+        relaxed_conf_floor = max(50.0, fallback_min_conf - 3.0)
+        relaxed_ev_floor = max(0.8, fallback_min_ev - 1.2)
+        relaxed_edge_floor = max(1.0, fallback_min_edge - 1.3)
+        relaxed_books_floor = max(1, fallback_min_books - 1)
+        soft_margin_conf = 1.75
+        soft_margin_ev = 0.75
+        soft_margin_edge = 0.9
+
+        for item in sorted_candidates:
             if item.family not in allowed_families:
                 continue
             if self._league_bucket(item) not in {'preferred', 'secondary'}:
-                continue
-            if float(item.confidence) < fallback_min_conf:
-                continue
-            if float(item.ev_pct) < fallback_min_ev or float(item.edge_pct) < fallback_min_edge:
-                continue
-            if int(getattr(item, 'books_count', 0) or 0) < fallback_min_books:
                 continue
             if item.expected_home is not None and float(item.expected_home) < 0:
                 continue
             if item.expected_away is not None and float(item.expected_away) < 0:
                 continue
+            if item.family == 'totals' and self._is_risky_totals_candidate(item):
+                continue
+
+            books_count = int(getattr(item, 'books_count', 0) or 0)
+            confidence = float(item.confidence)
+            ev_pct = float(item.ev_pct)
+            edge_pct = float(item.edge_pct)
+            misses = 0
+            if confidence < relaxed_conf_floor:
+                continue
+            if ev_pct < relaxed_ev_floor:
+                continue
+            if edge_pct < relaxed_edge_floor:
+                continue
+            if books_count < relaxed_books_floor:
+                continue
+            if confidence < fallback_min_conf:
+                if confidence < (fallback_min_conf - soft_margin_conf):
+                    continue
+                misses += 1
+            if ev_pct < fallback_min_ev:
+                if ev_pct < (fallback_min_ev - soft_margin_ev):
+                    continue
+                misses += 1
+            if edge_pct < fallback_min_edge:
+                if edge_pct < (fallback_min_edge - soft_margin_edge):
+                    continue
+                misses += 1
+            if books_count < fallback_min_books:
+                misses += 1
+            if misses > 2:
+                continue
             try:
-                if short_window_fallback:
-                    item.reasons.append('short_window_fallback=enabled')
-                else:
-                    item.reasons.append('fallback_publish_mode=enabled')
+                item.reasons.append('short_window_fallback=enabled')
+                item.reasons.append('short_window_relaxed_thresholds=enabled')
                 if isinstance(item.source_summary, dict):
-                    item.source_summary['fallback_publish_mode'] = True
-                    if short_window_fallback:
-                        item.source_summary['short_window_fallback'] = True
+                    item.source_summary['short_window_fallback'] = True
+                    item.source_summary['short_window_relaxed_thresholds'] = True
+                    item.source_summary['short_window_threshold_misses'] = misses
             except Exception:
                 pass
-            if short_window_fallback:
-                rejections['short_window_fallback_used'] += 1
-            else:
-                rejections['fallback_publish_mode_used'] += 1
+            rejections['short_window_fallback_used'] += 1
             return [item]
-        if short_window_fallback:
-            rejections['short_window_fallback_no_candidate'] += 1
-        else:
-            rejections['fallback_publish_no_candidate'] += 1
+
+        rejections['short_window_fallback_no_candidate'] += 1
         return deduped
 
     @staticmethod
