@@ -44,7 +44,6 @@ class PredictionQualityService:
             'error_analysis': self.analyze_rows(rows),
         }
         report['profile'] = self._profile_from_stats(segments, clv)
-        report['profile']['summary'] = dict(report.get('summary') or {})
         return report
 
     def apply_to_candidates(
@@ -60,8 +59,7 @@ class PredictionQualityService:
         summary = dict(quality_report.get('summary') or {})
         settled_count = int(summary.get('settled_binary_bets') or 0)
         min_history = max(0, int(getattr(self.settings, 'quality_min_history_bets', 12) or 12))
-        strong_history = max(min_history, int(getattr(self.settings, 'quality_strong_history_bets', 24) or 24))
-        enough_history = settled_count >= strong_history
+        enough_history = settled_count >= min_history
 
         passed: list[CandidateBet] = []
         rejections: Counter[str] = Counter()
@@ -86,6 +84,10 @@ class PredictionQualityService:
                 self._post_calibration_threshold_guard,
             ):
                 reason = guard(candidate)
+                if reason == 'post_calibration_probability_guard' and self._allow_short_window_fallback_probability_override(candidate, original_probability):
+                    candidate.source_summary['short_window_quality_probability_override'] = True
+                    candidate.reasons.append('quality_short_window_probability_override=enabled')
+                    continue
                 if reason:
                     status = 'quarantined_shadow' if reason.startswith('quarantine_') else 'rejected_by_quality_filters'
                     reasons.append(reason)
@@ -410,11 +412,7 @@ class PredictionQualityService:
         if not enough_history or not bool(getattr(self.settings, 'historical_segment_guard_enabled', True)):
             return None
         stats = dict(profile.get('segments') or {})
-        min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 12) or 12))
-        min_total_settled = max(min_sample, int(getattr(self.settings, 'historical_segment_min_total_settled_bets', 24) or 24))
-        profile_total = int((profile.get('summary') or {}).get('settled_binary_bets') or 0)
-        if profile_total and profile_total < min_total_settled:
-            return None
+        min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 10) or 10))
         min_roi = float(getattr(self.settings, 'historical_segment_min_roi_pct', -18.0) or -18.0)
         min_delta = float(getattr(self.settings, 'historical_segment_min_calibration_delta_pct', -9.0) or -9.0) / 100.0
         hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)
@@ -480,6 +478,32 @@ class PredictionQualityService:
         if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
             return 'post_calibration_ev_guard'
         return None
+
+    def _allow_short_window_fallback_probability_override(self, candidate: CandidateBet, original_probability: float) -> bool:
+        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
+        reasons = {str(item) for item in (getattr(candidate, 'reasons', []) or [])}
+        if not source_summary.get('short_window_fallback') and 'short_window_fallback=enabled' not in reasons:
+            return False
+        min_probability = float(self.settings.min_model_confidence_for_family(candidate.family))
+        if float(original_probability) < min_probability:
+            return False
+        miss_tolerance = float(getattr(self.settings, 'quality_short_window_probability_tolerance_pct', 1.5) or 1.5) / 100.0
+        calibration_cap = float(getattr(self.settings, 'quality_short_window_probability_calibration_cap_pct', 3.0) or 3.0) / 100.0
+        calibrated_drop = max(0.0, float(original_probability) - float(candidate.adjusted_probability))
+        if calibrated_drop <= 0.0 or calibrated_drop > calibration_cap:
+            return False
+        if float(candidate.adjusted_probability) < (min_probability - miss_tolerance):
+            return False
+        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
+        fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 1.6) or 1.6)
+        fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 1.0) or 1.0)
+        fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 51.0) or 51.0)
+        return (
+            int(candidate.books_count) >= fallback_min_books
+            and float(candidate.edge_pct) >= fallback_min_edge
+            and float(candidate.ev_pct) >= fallback_min_ev
+            and float(candidate.confidence) >= fallback_min_conf
+        )
 
     def _clv_segment_stats(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
         grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
