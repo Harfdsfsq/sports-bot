@@ -95,6 +95,7 @@ class CandidateBet:
     expected_away: float | None = None
     reasons: list[str] = field(default_factory=list)
     source_summary: dict[str, Any] = field(default_factory=dict)
+    bookmaker: str | None = None
     diagnostics: dict[str, Any] = field(default_factory=dict)
     analysis: dict[str, Any] = field(default_factory=dict)
     publication_score: float = 0.0
