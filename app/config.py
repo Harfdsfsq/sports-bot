@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     settlement_grace_minutes: int = Field(default=180, validation_alias=AliasChoices("SETTLEMENT_GRACE_MINUTES"))
     settlement_lookback_days: int = Field(default=5, validation_alias=AliasChoices("SETTLEMENT_LOOKBACK_DAYS"))
     settlement_send_telegram_summary: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_SEND_TELEGRAM_SUMMARY"))
+    run_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ENABLED"))
+    run_report_only_when_no_predictions: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS"))
+    run_report_top_reasons: int = Field(default=4, validation_alias=AliasChoices("RUN_REPORT_TOP_REASONS"))
 
     run_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("RUN_SPORTS"))
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
@@ -542,10 +545,6 @@ class Settings(BaseSettings):
         "openligadb_competition_map",
         "sharp_bookmakers",
         "consensus_alias_groups",
-        "oddspapi_bookmakers",
-        "allsportsapi_bookmakers",
-        "preferred_league_terms",
-        "secondary_league_terms",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
         mode="before",
