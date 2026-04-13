@@ -547,6 +547,10 @@ class Settings(BaseSettings):
         "consensus_alias_groups",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
+        "oddspapi_bookmakers",
+        "allsportsapi_bookmakers",
+        "preferred_league_terms",
+        "secondary_league_terms",
         mode="before",
     )
     @classmethod
