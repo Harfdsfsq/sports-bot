@@ -941,16 +941,30 @@ class CandidateFactory:
             points.append(market_line)
 
             if total_xg is not None and point is not None:
-                pace_word = 'низовой' if is_under else 'результативный'
                 pressure_side = None
                 if expected_home is not None and expected_away is not None:
                     if float(expected_home) > float(expected_away) + 0.18:
                         pressure_side = match.home_team
                     elif float(expected_away) > float(expected_home) + 0.18:
                         pressure_side = match.away_team
+                delta_to_line = float(total_xg) - float(point)
+                if is_under:
+                    if delta_to_line <= -0.18:
+                        profile_text = 'Для линии {point:g} это уже профиль в пользу более низового сценария.'
+                    elif delta_to_line >= 0.18:
+                        profile_text = 'Для линии {point:g} это уже не выглядит выраженно низовым профилем, так что основной перевес здесь даёт не только xG, но и цена рынка.'
+                    else:
+                        profile_text = 'Для линии {point:g} профиль получается пограничным, поэтому решающим остаётся общий перевес модели над рынком.'
+                else:
+                    if delta_to_line >= 0.18:
+                        profile_text = 'Для линии {point:g} это уже профиль в пользу более результативного сценария.'
+                    elif delta_to_line <= -0.18:
+                        profile_text = 'Для линии {point:g} это уже не выглядит выраженно результативным профилем, так что ставка больше опирается на цену и форму линии.'
+                    else:
+                        profile_text = 'Для линии {point:g} профиль получается пограничным, поэтому решающим остаётся общий перевес модели над рынком.'
                 xg_text = (
                     f'По ожидаемым голам матч тянет к {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}). '
-                    f'Для линии {point:g} это уже профиль в пользу {pace_word} сценария.'
+                    + profile_text.format(point=point)
                 )
                 if pressure_side:
                     xg_text += f' Основной вклад в темп модель ждёт от {pressure_side}.'
@@ -2089,15 +2103,15 @@ class CandidateFactory:
             return 1
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
         weighted_books = self._weighted_unique_books(offers)
+        has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
+        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
         if family == 'totals' and point in {2.5, 3.5, 4.5}:
             base = max(base, 2)
         if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
             return min(base, 2)
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
-            # Build the candidate first, then let publish-stage guards decide
-            # whether a single sharp bookmaker is strong enough to survive.
-            return 1
+            return min(base, 2)
         return base
 
     @staticmethod
@@ -2220,8 +2234,7 @@ class CandidateFactory:
             min_conf = float(self.settings.min_model_confidence_for_family(item.family))
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
-            threshold_probability = float(getattr(item, 'adjusted_probability', item.model_probability) or 0.0)
-            if threshold_probability < min_conf:
+            if item.model_probability < min_conf:
                 rejections['confidence_below_threshold'] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
