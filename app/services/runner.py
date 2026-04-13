@@ -197,6 +197,8 @@ class PredictionRunner:
             bootstrap_stats = dict(bootstrap_meta.get('stats') or {})
             bootstrap_preview = dict(bootstrap_meta.get('preview') or {})
             filtered_matches, filtering = self._filter_matches(deduped_matches, now_utc)
+            filtered_matches, analysis_scope = self._limit_matches_for_analysis(filtered_matches, now_utc)
+            filtering['analysis_scope'] = analysis_scope
 
             (
                 (odds_api_io_offers, odds_io_stats, odds_io_preview),
@@ -415,7 +417,6 @@ class PredictionRunner:
                 'current_time_utc': now_utc.isoformat(),
                 'current_time_local': now_local.isoformat(),
                 'app_timezone': self.settings.app_timezone,
-                'publish_window_hours': self.settings.publish_window_hours,
                 'matches_seen': len(filtered_matches),
                 'matches_before_publish_window': len(deduped_matches),
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
@@ -468,6 +469,7 @@ class PredictionRunner:
                     'openligadb_contexts': openligadb_stats.get('contexts_built', 0),
                 },
                 'rejections': rejections,
+                'quality_rejections': dict(quality_rejections),
                 'candidate_modes': dict(mode_counts),
                 'provider_diagnostics': provider_diagnostics['summary'],
                 'market_monitor': {
@@ -514,27 +516,6 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
-            run_report_messages_sent = 0
-            run_report_payloads: list[str] = []
-            run_report_should_send = bool(getattr(self.settings, 'run_report_enabled', True)) and (
-                not bool(getattr(self.settings, 'run_report_only_when_no_predictions', True))
-                or telegram_picks_sent <= 0
-            )
-            if run_report_should_send:
-                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
-            summary['run_report'] = {
-                'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
-                'only_when_no_predictions': bool(getattr(self.settings, 'run_report_only_when_no_predictions', True)),
-                'should_send': run_report_should_send,
-                'sent': run_report_messages_sent,
-                'sent_when_no_predictions': telegram_picks_sent <= 0 and run_report_messages_sent > 0,
-            }
-            if run_report_payloads:
-                summary['run_report']['preview'] = run_report_payloads[0]
-            sent_messages += run_report_messages_sent
-            telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
-            summary['telegram_messages_sent'] = sent_messages
-
             sheet_export_result = self.sheet_export.write(
                 publishable_candidates,
                 matches=filtered_matches,
@@ -545,6 +526,25 @@ class PredictionRunner:
                 summary=summary,
             )
             summary['sheet_export'] = sheet_export_result
+
+            run_report_messages_sent = 0
+            run_report_payloads: list[str] = []
+            if bool(getattr(self.settings, 'run_report_enabled', True)):
+                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report({
+                    'metrics': summary,
+                    'filtering': filtering,
+                    'rejections': rejections,
+                    'quality_rejections': dict(quality_rejections),
+                    'bankroll': bankroll_summary,
+                })
+                if run_report_messages_sent or run_report_payloads:
+                    summary['telegram_messages_sent'] = int(summary.get('telegram_messages_sent') or 0) + run_report_messages_sent
+                    telegram_payloads.extend(run_report_payloads)
+                    summary['run_report'] = {
+                        'enabled': True,
+                        'messages_sent': run_report_messages_sent,
+                        'payloads': list(run_report_payloads),
+                    }
 
             self.state.write_debug(
                 {
@@ -930,6 +930,21 @@ class PredictionRunner:
         if provider_key == 'gnews':
             return 1.0 if league_priority >= 2.0 else 0.4 if league_priority >= 1.0 else 0.0
         return 0.5
+
+    def _limit_matches_for_analysis(self, matches: list[Match], now_utc: datetime) -> tuple[list[Match], dict[str, Any]]:
+        cap = max(int(getattr(self.settings, 'analysis_match_cap_per_run', 150) or 150), 0)
+        if cap <= 0 or len(matches) <= cap:
+            return list(matches), {'analysis_match_cap_per_run': cap, 'trimmed_matches': 0, 'kept_matches': len(matches)}
+
+        ranked: list[tuple[tuple[float, float], Match]] = []
+        for match in matches:
+            league_priority = float(self.settings.league_priority_score(match.league_name))
+            kickoff_delta = max((ensure_utc(match.commence_time) - now_utc).total_seconds(), 0.0)
+            rank_key = (league_priority, -kickoff_delta)
+            ranked.append((rank_key, match))
+        ranked.sort(key=lambda item: item[0], reverse=True)
+        limited = [match for _, match in ranked[:cap]]
+        return limited, {'analysis_match_cap_per_run': cap, 'trimmed_matches': max(0, len(matches) - len(limited)), 'kept_matches': len(limited)}
 
     def _select_context_enrichment_matches(
         self,
