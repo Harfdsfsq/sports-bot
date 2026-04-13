@@ -44,6 +44,7 @@ class PredictionQualityService:
             'error_analysis': self.analyze_rows(rows),
         }
         report['profile'] = self._profile_from_stats(segments, clv)
+        report['profile']['summary'] = dict(report.get('summary') or {})
         return report
 
     def apply_to_candidates(
@@ -59,7 +60,8 @@ class PredictionQualityService:
         summary = dict(quality_report.get('summary') or {})
         settled_count = int(summary.get('settled_binary_bets') or 0)
         min_history = max(0, int(getattr(self.settings, 'quality_min_history_bets', 12) or 12))
-        enough_history = settled_count >= min_history
+        strong_history = max(min_history, int(getattr(self.settings, 'quality_strong_history_bets', 24) or 24))
+        enough_history = settled_count >= strong_history
 
         passed: list[CandidateBet] = []
         rejections: Counter[str] = Counter()
@@ -408,7 +410,11 @@ class PredictionQualityService:
         if not enough_history or not bool(getattr(self.settings, 'historical_segment_guard_enabled', True)):
             return None
         stats = dict(profile.get('segments') or {})
-        min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 10) or 10))
+        min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 12) or 12))
+        min_total_settled = max(min_sample, int(getattr(self.settings, 'historical_segment_min_total_settled_bets', 24) or 24))
+        profile_total = int((profile.get('summary') or {}).get('settled_binary_bets') or 0)
+        if profile_total and profile_total < min_total_settled:
+            return None
         min_roi = float(getattr(self.settings, 'historical_segment_min_roi_pct', -18.0) or -18.0)
         min_delta = float(getattr(self.settings, 'historical_segment_min_calibration_delta_pct', -9.0) or -9.0) / 100.0
         hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)

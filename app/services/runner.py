@@ -1193,6 +1193,30 @@ class PredictionRunner:
                 return None
             return sum(value * weight for value, weight in pairs) / total_weight
 
+        def blend_probability(a: Any, b: Any) -> float | None:
+            value = blend(a, b)
+            if value is None:
+                return None
+            return clamp(float(value), 0.01, 0.99)
+
+        def blend_expected_goals(a: Any, b: Any) -> float | None:
+            pairs: list[tuple[float, float]] = []
+            for raw_value, raw_weight in ((a, base_weight), (b, new_weight)):
+                try:
+                    value = float(raw_value)
+                except Exception:
+                    continue
+                if not (0.15 <= value <= 4.8):
+                    continue
+                pairs.append((value, raw_weight))
+            if not pairs:
+                return None
+            total_weight = sum(weight for _, weight in pairs)
+            if total_weight <= 0:
+                return None
+            value = sum(item * weight for item, weight in pairs) / total_weight
+            return clamp(value, 0.15, 4.8)
+
         base_sources = self._context_source_names(base)
         new_sources = self._context_source_names(new)
         merged_sources: list[str] = []
@@ -1230,10 +1254,10 @@ class PredictionRunner:
         return MatchContext(
             source='ensemble' if len(merged_sources) > 1 else (merged_sources[0] if merged_sources else str(base.source or new.source or 'unknown')),
             payload=merged_payload,
-            expected_home=blend(base.expected_home, new.expected_home),
-            expected_away=blend(base.expected_away, new.expected_away),
-            home_win_probability=blend(base.home_win_probability, new.home_win_probability),
-            away_win_probability=blend(base.away_win_probability, new.away_win_probability),
+            expected_home=blend_expected_goals(base.expected_home, new.expected_home),
+            expected_away=blend_expected_goals(base.expected_away, new.expected_away),
+            home_win_probability=blend_probability(base.home_win_probability, new.home_win_probability),
+            away_win_probability=blend_probability(base.away_win_probability, new.away_win_probability),
             home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
             away_starting=int(round(blend(base.away_starting, new.away_starting))) if blend(base.away_starting, new.away_starting) is not None else (new.away_starting or base.away_starting),
             confidence=clamp(merged_confidence, 50.0, confidence_cap),
