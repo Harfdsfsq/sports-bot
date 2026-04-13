@@ -941,30 +941,16 @@ class CandidateFactory:
             points.append(market_line)
 
             if total_xg is not None and point is not None:
+                pace_word = 'низовой' if is_under else 'результативный'
                 pressure_side = None
                 if expected_home is not None and expected_away is not None:
                     if float(expected_home) > float(expected_away) + 0.18:
                         pressure_side = match.home_team
                     elif float(expected_away) > float(expected_home) + 0.18:
                         pressure_side = match.away_team
-                delta_to_line = float(total_xg) - float(point)
-                if is_under:
-                    if delta_to_line <= -0.18:
-                        profile_text = 'Для линии {point:g} это уже профиль в пользу более низового сценария.'
-                    elif delta_to_line >= 0.18:
-                        profile_text = 'Для линии {point:g} это уже не выглядит выраженно низовым профилем, так что основной перевес здесь даёт не только xG, но и цена рынка.'
-                    else:
-                        profile_text = 'Для линии {point:g} профиль получается пограничным, поэтому решающим остаётся общий перевес модели над рынком.'
-                else:
-                    if delta_to_line >= 0.18:
-                        profile_text = 'Для линии {point:g} это уже профиль в пользу более результативного сценария.'
-                    elif delta_to_line <= -0.18:
-                        profile_text = 'Для линии {point:g} это уже не выглядит выраженно результативным профилем, так что ставка больше опирается на цену и форму линии.'
-                    else:
-                        profile_text = 'Для линии {point:g} профиль получается пограничным, поэтому решающим остаётся общий перевес модели над рынком.'
                 xg_text = (
                     f'По ожидаемым голам матч тянет к {total_xg:.2f} ({float(expected_home or 0):.2f} : {float(expected_away or 0):.2f}). '
-                    + profile_text.format(point=point)
+                    f'Для линии {point:g} это уже профиль в пользу {pace_word} сценария.'
                 )
                 if pressure_side:
                     xg_text += f' Основной вклад в темп модель ждёт от {pressure_side}.'
@@ -2475,7 +2461,13 @@ class CandidateFactory:
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
                 break
-        if deduped or not getattr(self.settings, 'fallback_publish_mode_enabled', True):
+        short_window_fallback = (
+            not getattr(self.settings, 'fallback_publish_mode_enabled', True)
+            and max(1, int(getattr(self.settings, 'publish_window_hours', 48) or 48)) <= 6
+        )
+        if deduped:
+            return deduped
+        if not getattr(self.settings, 'fallback_publish_mode_enabled', True) and not short_window_fallback:
             return deduped
         fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
         fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
@@ -2498,14 +2490,25 @@ class CandidateFactory:
             if item.expected_away is not None and float(item.expected_away) < 0:
                 continue
             try:
-                item.reasons.append('fallback_publish_mode=enabled')
+                if short_window_fallback:
+                    item.reasons.append('short_window_fallback=enabled')
+                else:
+                    item.reasons.append('fallback_publish_mode=enabled')
                 if isinstance(item.source_summary, dict):
                     item.source_summary['fallback_publish_mode'] = True
+                    if short_window_fallback:
+                        item.source_summary['short_window_fallback'] = True
             except Exception:
                 pass
-            rejections['fallback_publish_mode_used'] += 1
+            if short_window_fallback:
+                rejections['short_window_fallback_used'] += 1
+            else:
+                rejections['fallback_publish_mode_used'] += 1
             return [item]
-        rejections['fallback_publish_no_candidate'] += 1
+        if short_window_fallback:
+            rejections['short_window_fallback_no_candidate'] += 1
+        else:
+            rejections['fallback_publish_no_candidate'] += 1
         return deduped
 
     @staticmethod
