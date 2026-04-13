@@ -43,12 +43,6 @@ class Settings(BaseSettings):
     settlement_grace_minutes: int = Field(default=180, validation_alias=AliasChoices("SETTLEMENT_GRACE_MINUTES"))
     settlement_lookback_days: int = Field(default=5, validation_alias=AliasChoices("SETTLEMENT_LOOKBACK_DAYS"))
     settlement_send_telegram_summary: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_SEND_TELEGRAM_SUMMARY"))
-    settlement_api_football_enabled: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_ENABLED"))
-    settlement_api_football_max_days: int = Field(default=6, validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_MAX_DAYS"))
-    settlement_api_football_statuses: CsvList = Field(
-        default_factory=lambda: ["FT", "AET", "PEN"],
-        validation_alias=AliasChoices("SETTLEMENT_API_FOOTBALL_STATUSES"),
-    )
 
     run_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("RUN_SPORTS"))
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
@@ -268,6 +262,28 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("OPENFOOTBALL_COMPETITION_MAP"),
     )
 
+    openligadb_base_url: str = Field(default="https://api.openligadb.de", validation_alias=AliasChoices("OPENLIGADB_BASE_URL"))
+    openligadb_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("OPENLIGADB_TIMEOUT_SECONDS"))
+    openligadb_dataset_limit: int = Field(default=8, validation_alias=AliasChoices("OPENLIGADB_DATASET_LIMIT"))
+    openligadb_match_limit: int = Field(default=24, validation_alias=AliasChoices("OPENLIGADB_MATCH_LIMIT"))
+    openligadb_competition_map: CsvList = Field(
+        default_factory=lambda: [
+            "german bundesliga=bl1",
+            "germany bundesliga=bl1",
+            "1. bundesliga=bl1",
+            "german bundesliga 2=bl2",
+            "germany bundesliga 2=bl2",
+            "2. bundesliga=bl2",
+            "german 3 liga=bl3",
+            "germany 3 liga=bl3",
+            "3. liga=bl3",
+            "uefa champions league=ucl",
+            "champions league=ucl",
+            "dfb pokal=dfb",
+        ],
+        validation_alias=AliasChoices("OPENLIGADB_COMPETITION_MAP"),
+    )
+
     bzzoiro_api_key: str | None = Field(default=None, validation_alias=AliasChoices("BZZOIRO_API_KEY"))
     bzzoiro_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("BZZOIRO_TIMEOUT_SECONDS"))
     bzzoiro_max_pages: int = Field(default=8, validation_alias=AliasChoices("BZZOIRO_MAX_PAGES"))
@@ -372,9 +388,6 @@ class Settings(BaseSettings):
     min_publication_score_secondary_league: float = Field(default=14.5, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_SECONDARY_LEAGUE"))
     min_publication_score_other_league: float = Field(default=18.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_OTHER_LEAGUE"))
     min_publication_score_low_tier: float = Field(default=22.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_LOW_TIER"))
-    quarantine_shadow_mode_enabled: bool = Field(default=True, validation_alias=AliasChoices("QUARANTINE_SHADOW_MODE_ENABLED"))
-    quarantine_min_segment_sample: int = Field(default=16, validation_alias=AliasChoices("QUARANTINE_MIN_SEGMENT_SAMPLE"))
-    quarantine_league_buckets: CsvList = Field(default_factory=lambda: ["low"], validation_alias=AliasChoices("QUARANTINE_LEAGUE_BUCKETS"))
     non_core_league_min_books: int = Field(default=2, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_BOOKS"))
     non_core_league_min_confidence: float = Field(default=68.0, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_CONFIDENCE"))
     non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
@@ -522,22 +535,16 @@ class Settings(BaseSettings):
         "odds_api_io_bookmakers",
         "bookies_api_sports",
         "espn_soccer_leagues",
-        "oddspapi_bookmakers",
-        "allsportsapi_bookmakers",
-        "preferred_league_terms",
-        "secondary_league_terms",
         "espn_soft_fail_statuses",
         "supported_total_lines",
         "supported_team_total_lines",
         "openfootball_competition_map",
+        "openligadb_competition_map",
         "sharp_bookmakers",
         "consensus_alias_groups",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
-        "quarantine_league_buckets",
-        "settlement_api_football_statuses",
         mode="before",
-        check_fields=False,
     )
     @classmethod
     def split_csv(cls, value: Any) -> list[str]:
