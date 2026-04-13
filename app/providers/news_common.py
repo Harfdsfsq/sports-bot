@@ -35,10 +35,27 @@ GENERIC_SPORT_TERMS = ('football', 'soccer', 'match', 'team', 'cup', 'league')
 
 
 def build_match_news_query(match: Match) -> str:
-    home_terms = _team_query_terms(match.home_team)
-    away_terms = _team_query_terms(match.away_team)
-    team_clause = " OR ".join(f'"{term}"' for term in [*home_terms, *away_terms])
-    return f'({team_clause}) AND (football OR soccer OR match OR team OR lineup OR injury OR suspension)'
+    extras = 'football OR soccer OR match OR lineup OR injury OR suspension'
+    max_len = 180
+    preferred_terms: list[str] = []
+    for bucket in (_team_query_terms(match.home_team), _team_query_terms(match.away_team)):
+        for term in bucket[:2]:
+            cleaned = str(term or '').replace('"', '').strip()
+            if cleaned and cleaned not in preferred_terms:
+                preferred_terms.append(cleaned)
+    if not preferred_terms:
+        preferred_terms = [str(match.home_team or '').strip(), str(match.away_team or '').strip()]
+    quoted = [f'"{term}"' for term in preferred_terms if term]
+    while quoted:
+        team_clause = " OR ".join(quoted)
+        query = f'({team_clause}) AND ({extras})'
+        if len(query) <= max_len:
+            return query
+        quoted.pop()
+    fallback_terms = [str(match.home_team or '').strip(), str(match.away_team or '').strip()]
+    fallback_clause = ' AND '.join(f'"{term}"' for term in fallback_terms if term)
+    query = f'{fallback_clause} AND football'
+    return query[:max_len].strip()
 
 
 def article_text(article: dict[str, Any]) -> str:
