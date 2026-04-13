@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections import Counter, defaultdict
 import json
+import math
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -1193,29 +1194,23 @@ class PredictionRunner:
                 return None
             return sum(value * weight for value, weight in pairs) / total_weight
 
-        def blend_probability(a: Any, b: Any) -> float | None:
-            value = blend(a, b)
-            if value is None:
-                return None
-            return clamp(float(value), 0.01, 0.99)
-
         def blend_expected_goals(a: Any, b: Any) -> float | None:
-            pairs: list[tuple[float, float]] = []
-            for raw_value, raw_weight in ((a, base_weight), (b, new_weight)):
+            def normalize(value: Any) -> float | None:
                 try:
-                    value = float(raw_value)
+                    if value is None:
+                        return None
+                    number = float(value)
                 except Exception:
-                    continue
-                if not (0.15 <= value <= 4.8):
-                    continue
-                pairs.append((value, raw_weight))
-            if not pairs:
-                return None
-            total_weight = sum(weight for _, weight in pairs)
-            if total_weight <= 0:
-                return None
-            value = sum(item * weight for item, weight in pairs) / total_weight
-            return clamp(value, 0.15, 4.8)
+                    return None
+                if not math.isfinite(number) or number < 0:
+                    return None
+                min_goal = float(getattr(self.settings, 'min_expected_goals_value', 0.15) or 0.15)
+                max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
+                if number < min_goal or number > max_goal:
+                    return None
+                return number
+
+            return blend(normalize(a), normalize(b))
 
         base_sources = self._context_source_names(base)
         new_sources = self._context_source_names(new)
@@ -1256,8 +1251,8 @@ class PredictionRunner:
             payload=merged_payload,
             expected_home=blend_expected_goals(base.expected_home, new.expected_home),
             expected_away=blend_expected_goals(base.expected_away, new.expected_away),
-            home_win_probability=blend_probability(base.home_win_probability, new.home_win_probability),
-            away_win_probability=blend_probability(base.away_win_probability, new.away_win_probability),
+            home_win_probability=blend(base.home_win_probability, new.home_win_probability),
+            away_win_probability=blend(base.away_win_probability, new.away_win_probability),
             home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
             away_starting=int(round(blend(base.away_starting, new.away_starting))) if blend(base.away_starting, new.away_starting) is not None else (new.away_starting or base.away_starting),
             confidence=clamp(merged_confidence, 50.0, confidence_cap),

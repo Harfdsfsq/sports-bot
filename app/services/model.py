@@ -2089,15 +2089,15 @@ class CandidateFactory:
             return 1
         norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
         weighted_books = self._weighted_unique_books(offers)
-        has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
-        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
         if family == 'totals' and point in {2.5, 3.5, 4.5}:
             base = max(base, 2)
         if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
             return min(base, 2)
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
-            return min(base, 2)
+            # Build the candidate first, then let publish-stage guards decide
+            # whether a single sharp bookmaker is strong enough to survive.
+            return 1
         return base
 
     @staticmethod
@@ -2220,7 +2220,8 @@ class CandidateFactory:
             min_conf = float(self.settings.min_model_confidence_for_family(item.family))
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
-            if item.model_probability < min_conf:
+            threshold_probability = float(getattr(item, 'adjusted_probability', item.model_probability) or 0.0)
+            if threshold_probability < min_conf:
                 rejections['confidence_below_threshold'] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
@@ -2468,16 +2469,10 @@ class CandidateFactory:
         fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
         fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-        strong_other_min_conf = float(getattr(self.settings, 'fallback_publish_other_min_confidence', 66.0) or 66.0)
-        strong_other_min_ev = float(getattr(self.settings, 'fallback_publish_other_min_ev_pct', 3.0) or 3.0)
-        strong_other_min_edge = float(getattr(self.settings, 'fallback_publish_other_min_edge_pct', 4.5) or 4.5)
-        strong_other_max_odds = float(getattr(self.settings, 'fallback_publish_other_max_odds', 3.6) or 3.6)
-        strong_other_min_pub = float(getattr(self.settings, 'fallback_publish_other_min_publication_score', 18.0) or 18.0)
         for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
             if item.family not in allowed_families:
                 continue
-            league_bucket = self._league_bucket(item)
-            if league_bucket not in {'preferred', 'secondary', 'other'}:
+            if self._league_bucket(item) not in {'preferred', 'secondary'}:
                 continue
             if float(item.confidence) < fallback_min_conf:
                 continue
@@ -2489,19 +2484,6 @@ class CandidateFactory:
                 continue
             if item.expected_away is not None and float(item.expected_away) < 0:
                 continue
-            if league_bucket == 'other':
-                if not self._has_core_context(item):
-                    continue
-                if float(item.odds) > strong_other_max_odds:
-                    continue
-                if float(item.confidence) < strong_other_min_conf:
-                    continue
-                if float(item.ev_pct) < strong_other_min_ev or float(item.edge_pct) < strong_other_min_edge:
-                    continue
-                if float(getattr(item, 'publication_score', 0.0) or 0.0) < strong_other_min_pub:
-                    continue
-                if int(getattr(item, 'books_count', 0) or 0) < max(2, fallback_min_books):
-                    continue
             try:
                 item.reasons.append('fallback_publish_mode=enabled')
                 if isinstance(item.source_summary, dict):
