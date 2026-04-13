@@ -340,6 +340,8 @@ class PredictionRunner:
             telegram_picks_sent = len(publishable_candidates) if sent_messages > 0 else 0
             sent_messages += settlement_messages_sent + daily_report_messages_sent
             telegram_payloads = list(settlement_payloads) + list(daily_report_payloads) + list(telegram_payloads)
+            run_report_messages_sent = 0
+            run_report_payloads: list[str] = []
             clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
             derived_market_candidates_before_quality = sum(
                 1
@@ -524,18 +526,6 @@ class PredictionRunner:
             )
             summary['sheet_export'] = sheet_export_result
 
-            run_report_messages_sent = 0
-            run_report_payloads: list[str] = []
-            if int(summary.get('published_to_telegram') or 0) <= 0:
-                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
-            summary['run_report'] = {
-                'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
-                'messages_sent': run_report_messages_sent,
-                'payloads': run_report_payloads,
-            }
-            summary['telegram_messages_sent'] = int(summary.get('telegram_messages_sent') or 0) + run_report_messages_sent
-            telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
-
             self.state.write_debug(
                 {
                     'created_at': datetime.now(UTC).isoformat(),
@@ -595,6 +585,21 @@ class PredictionRunner:
                     'sheet_export': sheet_export_result,
                 }
             )
+            if bool(getattr(self.settings, 'run_report_enabled', True)) and (not publishable_candidates or not bool(getattr(self.settings, 'run_report_only_when_no_predictions', True))):
+                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
+                sent_messages += run_report_messages_sent
+                telegram_payloads.extend(run_report_payloads)
+                summary['run_report'] = {
+                    'enabled': True,
+                    'messages_sent': run_report_messages_sent,
+                    'payloads': run_report_payloads[:1],
+                }
+            else:
+                summary['run_report'] = {'enabled': bool(getattr(self.settings, 'run_report_enabled', True)), 'messages_sent': 0, 'payloads': []}
+            summary['telegram_messages_sent'] = sent_messages
+            debug_payload['summary'] = summary
+            debug_payload['telegram_messages'] = telegram_payloads
+            self.state.write_debug(debug_payload)
             self.state.save_run('ok', summary=summary)
             return summary
         except Exception as exc:
@@ -686,10 +691,9 @@ class PredictionRunner:
                 local_filtered.append(match)
             return local_filtered, local_skipped_started, local_skipped_too_soon, local_skipped_outside_window
 
-        configured_window_hours = max(1, int(self.settings.publish_window_hours or 0))
-        effective_window_hours = min(configured_window_hours, 12)
-        horizon = now_utc + timedelta(hours=effective_window_hours)
-        configured_min_lead_minutes = max(30, int(self.settings.min_kickoff_lead_minutes or 0))
+        horizon_hours = max(1, min(12, int(getattr(self.settings, 'publish_window_hours', 12) or 12)))
+        horizon = now_utc + timedelta(hours=horizon_hours)
+        configured_min_lead_minutes = max(30, int(getattr(self.settings, 'min_kickoff_lead_minutes', 30) or 30))
         adaptive_min_lead_minutes = configured_min_lead_minutes
         manual_late_mode_applied = False
         min_lead = timedelta(minutes=configured_min_lead_minutes)
@@ -722,7 +726,7 @@ class PredictionRunner:
             if future_matches_in_window
             else 0.0
         )
-        emergency_min_lead_minutes = max(30, int(getattr(self.settings, 'emergency_min_kickoff_lead_minutes', effective_min_lead_minutes) or effective_min_lead_minutes))
+        emergency_min_lead_minutes = effective_min_lead_minutes
         if (
             not filtered
             and future_matches_in_window
@@ -749,10 +753,9 @@ class PredictionRunner:
             'skipped_started': skipped_started,
             'skipped_too_soon': skipped_too_soon,
             'skipped_outside_window': skipped_outside_window,
-            'publish_window_hours': effective_window_hours,
-            'configured_publish_window_hours': configured_window_hours,
+            'publish_window_hours': horizon_hours,
             'min_kickoff_lead_minutes': effective_min_lead_minutes,
-            'configured_min_kickoff_lead_minutes': max(0, int(self.settings.min_kickoff_lead_minutes or 0)),
+            'configured_min_kickoff_lead_minutes': configured_min_lead_minutes,
             'adaptive_min_kickoff_lead_enabled': getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True),
             'adaptive_min_kickoff_lead_minutes': adaptive_min_lead_minutes,
             'adaptive_min_kickoff_lead_applied': fallback_applied,

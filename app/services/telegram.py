@@ -17,7 +17,59 @@ from app.utils import russian_market_name, russian_selection
 class TelegramPublisher:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self._dedupe_path = Path(getattr(settings, "debug_path", ".data/debug-last-run.json")).with_name("telegram-dedupe.json")
+        state_path = Path(getattr(settings, 'state_path', '.data/state.json'))
+        self._dedupe_path = state_path.parent / 'telegram-dedupe.json'
+
+    def _message_hash(self, message: str) -> str:
+        return hashlib.sha256(message.encode('utf-8')).hexdigest()
+
+    def _load_dedupe_cache(self) -> dict[str, str]:
+        if not self._dedupe_path.exists():
+            return {}
+        try:
+            payload = json.loads(self._dedupe_path.read_text(encoding='utf-8'))
+        except Exception:
+            return {}
+        if not isinstance(payload, dict):
+            return {}
+        return {str(k): str(v) for k, v in payload.items()}
+
+    def _save_dedupe_cache(self, payload: dict[str, str]) -> None:
+        self._dedupe_path.parent.mkdir(parents=True, exist_ok=True)
+        self._dedupe_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    def _is_duplicate_message(self, message: str) -> bool:
+        if not bool(getattr(self.settings, 'telegram_dedupe_enabled', True)):
+            return False
+        cache = self._load_dedupe_cache()
+        window_minutes = max(1, int(getattr(self.settings, 'telegram_dedupe_window_minutes', 120) or 120))
+        now = datetime.now(UTC)
+        cutoff = now - timedelta(minutes=window_minutes)
+        msg_hash = self._message_hash(message)
+        fresh: dict[str, str] = {}
+        duplicate = False
+        for key, value in cache.items():
+            try:
+                seen_at = datetime.fromisoformat(value)
+            except Exception:
+                continue
+            if seen_at.tzinfo is None:
+                seen_at = seen_at.replace(tzinfo=UTC)
+            if seen_at >= cutoff:
+                fresh[key] = seen_at.isoformat()
+            if key == msg_hash and seen_at >= cutoff:
+                duplicate = True
+        if not duplicate:
+            fresh[msg_hash] = now.isoformat()
+        self._save_dedupe_cache(fresh)
+        return duplicate
+
+    async def _send_message(self, message: str) -> tuple[int, list[str]]:
+        if not message:
+            return 0, []
+        if self._is_duplicate_message(message):
+            return 0, []
+        return await self._send_message(message)
 
     def _timezone_label(self, value: Any) -> str:
         try:
@@ -58,122 +110,6 @@ class TelegramPublisher:
             "void": "возврат",
         }
         return mapping.get(str(value or "").strip().lower(), str(value or "н/д"))
-
-    def _dedupe_fingerprint(self, message: str) -> str:
-        return hashlib.sha256(message.strip().encode("utf-8")).hexdigest()
-
-    def _load_dedupe_cache(self) -> dict[str, Any]:
-        try:
-            return json.loads(self._dedupe_path.read_text(encoding="utf-8"))
-        except Exception:
-            return {}
-
-    def _save_dedupe_cache(self, payload: dict[str, Any]) -> None:
-        try:
-            self._dedupe_path.parent.mkdir(parents=True, exist_ok=True)
-            self._dedupe_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            return
-
-    def _is_duplicate_message(self, message: str) -> bool:
-        if not bool(getattr(self.settings, "telegram_dedupe_enabled", True)):
-            return False
-        cache = self._load_dedupe_cache()
-        if not isinstance(cache, dict):
-            return False
-        last_hash = str(cache.get("fingerprint") or "").strip()
-        sent_at_text = str(cache.get("sent_at") or "").strip()
-        if not last_hash or not sent_at_text:
-            return False
-        try:
-            sent_at = datetime.fromisoformat(sent_at_text)
-            if sent_at.tzinfo is None:
-                sent_at = sent_at.replace(tzinfo=UTC)
-        except Exception:
-            return False
-        window_minutes = max(1, int(getattr(self.settings, "telegram_dedupe_window_minutes", 90) or 90))
-        return last_hash == self._dedupe_fingerprint(message) and (datetime.now(UTC) - sent_at) <= timedelta(minutes=window_minutes)
-
-    async def _send_message(self, message: str) -> tuple[int, list[str]]:
-        if not message:
-            return 0, []
-        if self._is_duplicate_message(message):
-            return 0, [message]
-        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
-            return 0, [message]
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(
-                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
-                json={
-                    "chat_id": self.settings.telegram_chat_id,
-                    "text": message,
-                    "disable_web_page_preview": True,
-                },
-            )
-            response.raise_for_status()
-        self._save_dedupe_cache({
-            "fingerprint": self._dedupe_fingerprint(message),
-            "sent_at": datetime.now(UTC).isoformat(),
-            "preview": message[:280],
-        })
-        return 1, [message]
-
-    def render_run_report(self, summary: dict[str, Any]) -> str | None:
-        if not bool(getattr(self.settings, "run_report_enabled", True)):
-            return None
-        if bool(getattr(self.settings, "run_report_only_when_no_predictions", True)) and int(summary.get("published_to_telegram") or 0) > 0:
-            return None
-        filtering = dict(summary.get("filtering") or {})
-        rejections = dict(summary.get("rejections") or {})
-        bankroll = dict(summary.get("bankroll") or {})
-        quality_reasons = {k: v for k, v in rejections.items() if str(k).startswith("quality_")}
-        top_n = max(1, int(getattr(self.settings, "run_report_top_reasons", 4) or 4))
-        top_items = sorted(
-            ((k, int(v or 0)) for k, v in rejections.items() if int(v or 0) > 0 and not str(k).startswith("quality_")),
-            key=lambda item: item[1],
-            reverse=True,
-        )[:top_n]
-        lines = [
-            "🧾 Отчёт по запуску бота",
-            f"🕒 Время запуска: {summary.get('current_time_local') or summary.get('started_at') or ''}",
-            f"📅 Окно публикации: {int(filtering.get('publish_window_hours') or 0)} ч | Мин. запас до матча: {int(filtering.get('min_kickoff_lead_minutes') or 0)} мин",
-            f"⚽ Матчей в окне: {int(summary.get('matches_seen') or 0)} | С офферами: {int(summary.get('matches_with_offers') or 0)} | Контекстов: {int(summary.get('contexts_built') or 0)}",
-            f"🧠 Кандидаты: до quality {int(summary.get('candidates_before_quality') or 0)} | после quality {int(summary.get('candidates_raw') or 0)} | к публикации {int(summary.get('published_to_telegram') or 0)}",
-        ]
-        if bankroll:
-            lines.append(f"💼 Банк: {float(bankroll.get('current_balance') or 0.0):.2f} | Открытый риск: {float(bankroll.get('open_exposure') or 0.0):.2f}")
-        if int(summary.get('published_to_telegram') or 0) <= 0:
-            lines.append("❌ В этот запуск прогнозов не было.")
-            if top_items:
-                lines.append("Почему нет прогноза:")
-                rename = {
-                    'insufficient_books': 'мало подтверждённых котировок',
-                    'confidence_below_threshold': 'недобор по уверенности модели',
-                    'ev_below_threshold': 'недобор по EV',
-                    'missing_context_totals': 'не хватает контекста по тоталам',
-                    'missing_context_h2h': 'не хватает контекста по исходам',
-                    'missing_context_spreads': 'не хватает контекста по форам',
-                    'unsupported_total_line': 'unsupported total line',
-                    'short_window_fallback_no_candidate': 'не найден late-window fallback',
-                }
-                for key, count in top_items:
-                    lines.append(f"• {rename.get(key, key.replace('_', ' '))} — {count}")
-            if quality_reasons:
-                lines.append("Quality стопоры:")
-                rename_q = {
-                    'quality_bad_historical_segment_guard': 'quality: historical guard',
-                    'quality_post_calibration_probability_guard': 'quality: post-calibration probability',
-                    'quality_negative_clv_segment_guard': 'quality: negative clv segment',
-                }
-                for key, count in sorted(((k, int(v or 0)) for k, v in quality_reasons.items()), key=lambda item: item[1], reverse=True)[:3]:
-                    lines.append(f"• {rename_q.get(key, key.replace('_', ' '))} — {count}")
-        return "\n".join(lines)
-
-    async def publish_run_report(self, summary: dict[str, Any]) -> tuple[int, list[str]]:
-        message = self.render_run_report(summary)
-        if not message:
-            return 0, []
-        return await self._send_message(message)
 
     def render_message(
         self,
@@ -490,8 +426,84 @@ class TelegramPublisher:
             return 0, []
         return await self._send_message(message)
 
+    def render_run_report(self, summary: dict[str, Any]) -> str | None:
+        if not summary:
+            return None
+        published = int(summary.get('published_to_telegram') or summary.get('published') or 0)
+        if bool(getattr(self.settings, 'run_report_only_when_no_predictions', True)) and published > 0:
+            return None
+        filtering = dict(summary.get('filtering') or {})
+        bankroll = dict(summary.get('bankroll') or {})
+        rejections = dict(summary.get('rejections') or {})
+        top_n = max(1, int(getattr(self.settings, 'run_report_top_reasons', 4) or 4))
+        candidates_before = int(summary.get('candidates_before_quality') or summary.get('candidates_raw_before_quality') or 0)
+        candidates_after = int(summary.get('candidates_raw') or 0)
+        candidates_publish = int(summary.get('published') or 0)
+        quality_pairs = [(k, int(v or 0)) for k, v in rejections.items() if str(k).startswith('quality_') and int(v or 0) > 0]
+        reason_pairs = [(k, int(v or 0)) for k, v in rejections.items() if not str(k).startswith('quality_') and int(v or 0) > 0]
+        reason_pairs.sort(key=lambda item: (-item[1], item[0]))
+        quality_pairs.sort(key=lambda item: (-item[1], item[0]))
+        reason_labels = {
+            'insufficient_books': 'мало подтверждённых котировок',
+            'unsupported_total_line': 'unsupported total line',
+            'confidence_below_threshold': 'недобор по уверенности модели',
+            'missing_context_totals': 'не хватает контекста по тоталам',
+            'missing_context_h2h': 'не хватает контекста по исходам',
+            'missing_context_spreads': 'не хватает контекста по форам',
+            'publish_books_guard': 'не прошёл publish books guard',
+        }
+        quality_labels = {
+            'quality_historical_guard': 'quality: historical guard',
+            'quality_bad_historical_segment_guard': 'quality: historical segment guard',
+            'quality_post_calibration_probability_guard': 'quality: probability guard',
+        }
+        lines = [
+            '🧾 Отчёт по запуску бота',
+            f"🕒 Время запуска: {summary.get('current_time_local') or summary.get('current_time_utc') or ''}",
+            f"📅 Окно публикации: {int(filtering.get('publish_window_hours') or getattr(self.settings, 'publish_window_hours', 12))} ч | Мин. запас до матча: {int(filtering.get('min_kickoff_lead_minutes') or getattr(self.settings, 'min_kickoff_lead_minutes', 30))} мин",
+            f"⚽ Матчей в окне: {int(summary.get('matches_seen') or 0)} | С офферами: {int(summary.get('matches_with_offers') or 0)} | Контекстов: {int(summary.get('contexts_built') or 0)}",
+            f"🧠 Кандидаты: до quality {candidates_before} | после quality {candidates_after} | к публикации {candidates_publish}",
+        ]
+        if bankroll:
+            lines.append(
+                f"💼 Банк: {float(bankroll.get('current_balance') or 0.0):.2f} | Открытый риск: {float(bankroll.get('open_exposure') or 0.0):.2f}"
+            )
+        if published <= 0:
+            lines.append('❌ В этот запуск прогнозов не было.')
+        if reason_pairs:
+            lines.append('Почему нет прогноза:')
+            for key, count in reason_pairs[:top_n]:
+                lines.append(f"• {reason_labels.get(key, key.replace('_', ' '))} — {count}")
+        if quality_pairs:
+            lines.append('Quality стопоры:')
+            for key, count in quality_pairs[:top_n]:
+                lines.append(f"• {quality_labels.get(key, key.replace('_', ' '))} — {count}")
+        return '\n'.join(lines)
+
+    async def publish_run_report(self, summary: dict[str, Any]) -> tuple[int, list[str]]:
+        if not bool(getattr(self.settings, 'run_report_enabled', True)):
+            return 0, []
+        message = self.render_run_report(summary)
+        if not message:
+            return 0, []
+        return await self._send_message(message)
+
     async def publish(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> tuple[int, list[str]]:
         if not bets:
             return 0, []
+
         message = self.render_message(bets, bankroll_summary=bankroll_summary)
-        return await self._send_message(message)
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, [message]
+
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
+            response.raise_for_status()
+            return 1, [message]

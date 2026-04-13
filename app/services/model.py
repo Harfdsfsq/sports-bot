@@ -140,7 +140,7 @@ class CandidateFactory:
                 continue
             point = normalized_point
             required_books = self._required_books_for_bucket('totals', point, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('totals', point, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
@@ -202,7 +202,7 @@ class CandidateFactory:
         signal_label = self._signal_stack_label(context)
         for selection, bucket in buckets.items():
             required_books = self._required_books_for_bucket('h2h', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('h2h', None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             raw_model_prob = probs.get(selection)
@@ -414,7 +414,7 @@ class CandidateFactory:
             seen_keys.add(key)
             books = [item for item in offers if item.selection == offer.selection and item.point == offer.point]
             required_books = self._required_books_for_bucket('spreads', offer.point, books, context)
-            if len({self._norm_book(item.bookmaker) for item in books}) < required_books:
+            if not self._meets_book_requirement('spreads', offer.point if 'spreads'=='spreads' else point if 'spreads'=='teamTotals' else None, books, context):
                 rejections['insufficient_books'] += 1
                 continue
             team_side = (offer.team_side or '').lower()
@@ -466,7 +466,7 @@ class CandidateFactory:
         signal_label = self._signal_stack_label(context)
         for key, bucket in buckets.items():
             required_books = self._required_books_for_bucket('btts', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('totals', point, bucket, None):
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_yes_no(bucket, offers, key, selector=self._yes_no_key)
@@ -525,7 +525,7 @@ class CandidateFactory:
                 continue
             point = normalized_point
             required_books = self._required_books_for_bucket('teamTotals', point, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('h2h', None, bucket, None):
                 rejections['insufficient_books'] += 1
                 continue
             lam = expected_home if team_side == 'home' else expected_away
@@ -575,7 +575,7 @@ class CandidateFactory:
         result: list[CandidateBet] = []
         for key, bucket in grouped.items():
             required_books = self._required_books_for_bucket('doubleChance', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('btts', None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             if key == 'home_draw':
@@ -627,7 +627,7 @@ class CandidateFactory:
         result: list[CandidateBet] = []
         for key, bucket in grouped.items():
             required_books = self._required_books_for_bucket('dnb', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('teamTotals', offer.point if 'teamTotals'=='spreads' else point if 'teamTotals'=='teamTotals' else None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             if key == 'home':
@@ -678,7 +678,8 @@ class CandidateFactory:
         books = {offer.bookmaker for offer in offers}
         sources = {offer.source for offer in offers}
         required_books = self._required_books_for_bucket(family, point, offers, context)
-        if len(books) < required_books:
+        book_support = self._book_support_summary(offers)
+        if not self._meets_book_requirement(family, point, offers, context):
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
@@ -874,6 +875,10 @@ class CandidateFactory:
                 'sources': sorted(sources),
                 'offers_seen': len(offers),
                 'required_books': required_books,
+                'weighted_books_count': round(float(book_support.get('weighted_books') or 0.0), 3),
+                'has_sharp_book': bool(book_support.get('has_sharp_book')),
+                'effective_book_support': float(book_support.get('effective_books') or len(books)),
+                'book_support_reason': book_support.get('reason'),
                 'selected_bookmaker': best_offer.bookmaker,
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
@@ -2180,7 +2185,9 @@ class CandidateFactory:
         base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
         non_core_base = max(base, int(getattr(self.settings, 'non_core_league_min_books', 2) or 2))
         books_count = int(getattr(item, 'books_count', 0) or 0)
-        if books_count >= 2:
+        source_summary = dict(getattr(item, 'source_summary', {}) or {})
+        effective_books = float(source_summary.get('effective_book_support') or books_count or 0.0)
+        if effective_books >= 2.0 or books_count >= 2:
             return 2
         if bucket in {'other', 'low'}:
             return non_core_base
@@ -2224,7 +2231,7 @@ class CandidateFactory:
                 rejections['confidence_below_threshold'] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
-            if int(getattr(item, 'books_count', 0) or 0) < min_publish_books:
+            if not self._candidate_meets_publish_books(item, min_publish_books):
                 rejections['publish_books_guard'] += 1
                 continue
             if item.ev_pct < min_ev:
@@ -2245,7 +2252,7 @@ class CandidateFactory:
                 rejections['publication_score_guard'] += 1
                 continue
             if league_bucket in {'other', 'low'}:
-                if int(getattr(item, 'books_count', 0) or 0) < int(getattr(self.settings, 'non_core_league_min_books', 2) or 2):
+                if not self._candidate_meets_publish_books(item, int(getattr(self.settings, 'non_core_league_min_books', 2) or 2)):
                     rejections['non_core_books_guard'] += 1
                     continue
                 if float(item.confidence) < float(getattr(self.settings, 'non_core_league_min_confidence', 65.0) or 68.0):
@@ -2461,90 +2468,37 @@ class CandidateFactory:
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
                 break
-        if deduped:
+        if deduped or not getattr(self.settings, 'fallback_publish_mode_enabled', True):
             return deduped
-
         fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
         fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
         fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
         fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
-        publish_window_hours = float(getattr(self.settings, 'publish_window_hours', 24) or 24)
-        short_window_enabled = publish_window_hours <= 6.0
-        fallback_enabled = bool(getattr(self.settings, 'fallback_publish_mode_enabled', True))
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-
-        def _annotate(item: CandidateBet, reason: str) -> CandidateBet:
-            try:
-                item.reasons.append(reason)
-                if isinstance(item.source_summary, dict):
-                    item.source_summary[reason] = True
-            except Exception:
-                pass
-            return item
-
-        if fallback_enabled:
-            for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
-                if item.family not in allowed_families:
-                    continue
-                if self._league_bucket(item) not in {'preferred', 'secondary'}:
-                    continue
-                if float(item.confidence) < fallback_min_conf:
-                    continue
-                if float(item.ev_pct) < fallback_min_ev or float(item.edge_pct) < fallback_min_edge:
-                    continue
-                if int(getattr(item, 'books_count', 0) or 0) < fallback_min_books:
-                    continue
-                if item.expected_home is not None and float(item.expected_home) < 0:
-                    continue
-                if item.expected_away is not None and float(item.expected_away) < 0:
-                    continue
-                rejections['fallback_publish_mode_used'] += 1
-                return [_annotate(item, 'fallback_publish_mode=enabled')]
-            rejections['fallback_publish_no_candidate'] += 1
-
-        if not short_window_enabled:
-            return deduped
-
-        near_miss_candidates: list[tuple[float, CandidateBet]] = []
-        max_conf_delta = 4.0
-        max_ev_delta = 1.2
-        max_edge_delta = 1.6
-        max_books_delta = 1
-        min_publication_floor = max(8.5, float(getattr(self.settings, 'min_publication_score', 9.5) or 9.5) - 1.5)
         for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
             if item.family not in allowed_families:
                 continue
             if self._league_bucket(item) not in {'preferred', 'secondary'}:
                 continue
+            if float(item.confidence) < fallback_min_conf:
+                continue
+            if float(item.ev_pct) < fallback_min_ev or float(item.edge_pct) < fallback_min_edge:
+                continue
+            if not self._candidate_meets_publish_books(item, fallback_min_books):
+                continue
             if item.expected_home is not None and float(item.expected_home) < 0:
                 continue
             if item.expected_away is not None and float(item.expected_away) < 0:
                 continue
-            conf_delta = max(0.0, fallback_min_conf - float(item.confidence))
-            ev_delta = max(0.0, fallback_min_ev - float(item.ev_pct))
-            edge_delta = max(0.0, fallback_min_edge - float(item.edge_pct))
-            books_delta = max(0, fallback_min_books - int(getattr(item, 'books_count', 0) or 0))
-            publication_score = float(getattr(item, 'publication_score', 0.0) or 0.0)
-            if conf_delta > max_conf_delta or ev_delta > max_ev_delta or edge_delta > max_edge_delta or books_delta > max_books_delta:
-                continue
-            if publication_score < min_publication_floor:
-                continue
-            miss_count = sum(1 for value in (conf_delta > 0.0, ev_delta > 0.0, edge_delta > 0.0, books_delta > 0) if value)
-            if miss_count > 2:
-                continue
-            if item.family == 'totals' and float(item.odds) <= 1.70 and float(item.edge_pct) < max(fallback_min_edge, 4.0):
-                continue
-            penalty = (conf_delta * 1.3) + (ev_delta * 1.8) + (edge_delta * 1.2) + (books_delta * 1.5) + (miss_count * 0.75)
-            score = float(item.publication_score) + float(item.confidence) * 0.08 + float(item.ev_pct) * 0.7 + float(item.edge_pct) * 0.55 - penalty
-            near_miss_candidates.append((score, item))
-
-        if near_miss_candidates:
-            near_miss_candidates.sort(key=lambda pair: (pair[0],) + self._candidate_rank_key(pair[1]), reverse=True)
-            rejections['short_window_fallback_used'] += 1
-            winner = _annotate(near_miss_candidates[0][1], 'short_window_fallback=enabled')
-            return [_annotate(winner, 'short_window_nearmiss=enabled')]
-
-        rejections['short_window_fallback_no_candidate'] += 1
+            try:
+                item.reasons.append('fallback_publish_mode=enabled')
+                if isinstance(item.source_summary, dict):
+                    item.source_summary['fallback_publish_mode'] = True
+            except Exception:
+                pass
+            rejections['fallback_publish_mode_used'] += 1
+            return [item]
+        rejections['fallback_publish_no_candidate'] += 1
         return deduped
 
     @staticmethod
