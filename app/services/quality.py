@@ -78,7 +78,7 @@ class PredictionQualityService:
             for guard in (
                 self._market_sanity_guard,
                 lambda item: self._clv_guard(segments, profile, enough_history),
-                lambda item: self._historical_segment_guard(segments, profile, enough_history),
+                lambda item: self._historical_segment_guard(item, segments, profile, enough_history),
                 lambda item: self._quarantine_guard(item, segments, profile, enough_history),
                 lambda item: self._high_odds_guard(item, quality_score),
                 self._post_calibration_threshold_guard,
@@ -404,7 +404,7 @@ class PredictionQualityService:
                     return 'negative_clv_segment_guard'
         return None
 
-    def _historical_segment_guard(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
+    def _historical_segment_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(getattr(self.settings, 'historical_segment_guard_enabled', True)):
             return None
         stats = dict(profile.get('segments') or {})
@@ -414,7 +414,16 @@ class PredictionQualityService:
         hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)
         hard_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
         hard_bad_segments = max(1, int(getattr(self.settings, 'historical_segment_hard_min_bad_segments', 2) or 2))
+
+        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
+        short_window_fallback = bool(source_summary.get('short_window_fallback'))
+        fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
+        fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
+        fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
+        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
+
         bad_segments = 0
+        hard_hits = 0
         for segment in segments:
             if segment.startswith('prob:'):
                 continue
@@ -426,10 +435,31 @@ class PredictionQualityService:
             if roi < min_roi and delta < min_delta:
                 bad_segments += 1
                 if roi < hard_roi and delta < hard_delta:
-                    return 'bad_historical_segment_guard'
-        if bad_segments >= hard_bad_segments:
-            return 'bad_historical_segment_guard'
-        return None
+                    hard_hits += 1
+
+        if bad_segments < hard_bad_segments and hard_hits == 0:
+            return None
+
+        if short_window_fallback:
+            books_count = int(getattr(candidate, 'books_count', 0) or 0)
+            weighted_books = self._to_float(source_summary.get('weighted_books_count')) or float(books_count)
+            effective_support = max(float(books_count), weighted_books)
+            strong_candidate = (
+                float(candidate.confidence) >= max(fallback_min_conf, 54.0)
+                and float(candidate.edge_pct) >= max(fallback_min_edge, 2.0)
+                and float(candidate.ev_pct) >= max(fallback_min_ev, 1.6)
+                and effective_support >= max(1.0, float(fallback_min_books) - 1.0)
+            )
+            soft_only = hard_hits == 0 and bad_segments <= hard_bad_segments
+            if strong_candidate and soft_only:
+                source_summary['historical_segment_guard_override'] = 'short_window_fallback'
+                source_summary['historical_segment_bad_segments'] = bad_segments
+                source_summary['historical_segment_hard_hits'] = hard_hits
+                candidate.source_summary = source_summary
+                candidate.reasons.append('quality=historical_segment_guard_short_window_override')
+                return None
+
+        return 'bad_historical_segment_guard'
 
     def _quarantine_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(getattr(self.settings, 'quarantine_shadow_mode_enabled', True)):
