@@ -11,6 +11,23 @@ from app.utils import russian_market_name, russian_selection
 
 
 class TelegramPublisher:
+    _REJECTION_LABELS = {
+        "insufficient_books": "мало подтверждённых котировок",
+        "confidence_below_threshold": "недобор по уверенности модели",
+        "ev_below_threshold": "недобор по EV",
+        "edge_below_threshold": "недобор по перевесу над линией",
+        "missing_context_totals": "не хватает контекста по тоталам",
+        "missing_context_h2h": "не хватает контекста по исходам",
+        "missing_context_spreads": "не хватает контекста по форам",
+        "quality_bad_historical_segment_guard": "historical guard режет поздние сигналы",
+        "quality_post_calibration_probability_guard": "кандидат проседает после калибровки вероятности",
+        "short_window_fallback_no_candidate": "не найден аккуратный late-window fallback",
+        "non_core_league_publish_guard": "отсекается нецелевая лига",
+        "odds_out_of_range": "коэффициент вне целевого диапазона",
+        "market_probability_guard": "линия слишком близка к модели",
+        "duplicate_match": "на матч уже есть другой кандидат",
+    }
+
     def __init__(self, settings: Settings):
         self.settings = settings
 
@@ -53,6 +70,85 @@ class TelegramPublisher:
             "void": "возврат",
         }
         return mapping.get(str(value or "").strip().lower(), str(value or "н/д"))
+
+    async def _send_message(self, message: str) -> tuple[int, list[str]]:
+        if not message:
+            return 0, []
+        return await self._send_message(message)
+
+    def _rejection_label(self, key: str) -> str:
+        normalized = str(key or "").strip()
+        if normalized in self._REJECTION_LABELS:
+            return self._REJECTION_LABELS[normalized]
+        return normalized.replace("quality_", "quality: ").replace("_", " ")
+
+    def _top_rejection_lines(self, summary: dict[str, Any]) -> list[str]:
+        rejections = dict(summary.get("rejections") or {})
+        if not rejections:
+            return []
+        limit = max(1, int(getattr(self.settings, "run_report_top_reasons", 4) or 4))
+        ranked = sorted(
+            ((str(key), int(value or 0)) for key, value in rejections.items() if int(value or 0) > 0),
+            key=lambda item: (-item[1], item[0]),
+        )
+        return [f"• {self._rejection_label(key)} — {count}" for key, count in ranked[:limit]]
+
+    def render_run_report(self, summary: dict[str, Any]) -> str | None:
+        if not bool(getattr(self.settings, "run_report_enabled", True)):
+            return None
+        only_when_no_predictions = bool(getattr(self.settings, "run_report_only_when_no_predictions", True))
+        published = int(summary.get("published_to_telegram") or summary.get("published") or 0)
+        if only_when_no_predictions and published > 0:
+            return None
+
+        local_time_raw = summary.get("current_time_local") or summary.get("current_time_utc")
+        local_time_text = str(local_time_raw or "")
+        try:
+            local_time_text = str(local_time_raw).replace("T", " ")[:16]
+        except Exception:
+            pass
+
+        lines = [
+            "🧾 Отчёт по запуску бота",
+            f"Время: {local_time_text} | Окно: {int(summary.get('filtering', {}).get('publish_window_hours') or getattr(self.settings, 'publish_window_hours', 0) or 0)} ч",
+            (
+                f"Матчей в окне: {int(summary.get('matches_seen') or 0)} | "
+                f"С офферами: {int(summary.get('matches_with_offers') or 0)} | "
+                f"Контекстов: {int(summary.get('contexts_built') or 0)}"
+            ),
+            (
+                f"Кандидаты: до quality {int(summary.get('candidates_before_quality') or 0)} | "
+                f"после quality {int(summary.get('candidates_raw') or 0)} | "
+                f"к публикации {int(summary.get('candidates_publishable') or 0)}"
+            ),
+        ]
+
+        prediction_publication_enabled = bool(summary.get("prediction_publication_enabled", True))
+        if not prediction_publication_enabled:
+            lines.append("⚠️ Публикация прогнозов сейчас отключена настройками.")
+        elif published > 0:
+            lines.append(f"✅ Прогноз отправлен в Telegram: {published} шт.")
+        else:
+            lines.append("❌ Прогнозов в этот запуск не было.")
+            top_reasons = self._top_rejection_lines(summary)
+            if top_reasons:
+                lines.append("Почему нет прогноза:")
+                lines.extend(top_reasons)
+
+        bankroll = dict(summary.get("bankroll") or {})
+        if bankroll:
+            lines.append(
+                f"💼 Банк: {self._format_money(float(bankroll.get('current_balance') or 0.0), bankroll_summary=bankroll)} | "
+                f"Открытый риск: {self._format_money(float(bankroll.get('open_exposure') or 0.0), bankroll_summary=bankroll)}"
+            )
+
+        return "\n\n".join(lines)
+
+    async def publish_run_report(self, summary: dict[str, Any]) -> tuple[int, list[str]]:
+        message = self.render_run_report(summary)
+        if not message:
+            return 0, []
+        return await self._send_message(message)
 
     def render_message(
         self,
@@ -284,19 +380,7 @@ class TelegramPublisher:
         message = self.render_settlement_summary(settlement_summary)
         if not message:
             return 0, []
-        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
-            return 0, [message]
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(
-                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
-                json={
-                    "chat_id": self.settings.telegram_chat_id,
-                    "text": message,
-                    "disable_web_page_preview": True,
-                },
-            )
-            response.raise_for_status()
-            return 1, [message]
+        return await self._send_message(message)
 
     def render_daily_report(self, daily_report: dict[str, Any]) -> str | None:
         summary = dict(daily_report.get("summary") or {})
@@ -379,19 +463,7 @@ class TelegramPublisher:
         message = self.render_daily_report(daily_report)
         if not message:
             return 0, []
-        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
-            return 0, [message]
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(
-                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
-                json={
-                    "chat_id": self.settings.telegram_chat_id,
-                    "text": message,
-                    "disable_web_page_preview": True,
-                },
-            )
-            response.raise_for_status()
-            return 1, [message]
+        return await self._send_message(message)
 
     async def publish(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> tuple[int, list[str]]:
         if not bets:
