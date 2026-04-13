@@ -542,6 +542,8 @@ class Settings(BaseSettings):
         "openligadb_competition_map",
         "sharp_bookmakers",
         "consensus_alias_groups",
+        "oddspapi_bookmakers",
+        "allsportsapi_bookmakers",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
         mode="before",
