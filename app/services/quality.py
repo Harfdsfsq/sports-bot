@@ -66,10 +66,6 @@ class PredictionQualityService:
         decisions: list[dict[str, Any]] = []
         for candidate in candidates:
             original_probability = float(candidate.adjusted_probability)
-            try:
-                candidate.source_summary['quality_original_adjusted_probability'] = round(original_probability, 5)
-            except Exception:
-                pass
             segments = self._candidate_segments(candidate)
             calibration = self._candidate_calibration(segments, profile, enough_history)
             if calibration['applied']:
@@ -471,33 +467,32 @@ class PredictionQualityService:
         return None
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
-        min_probability = float(self.settings.min_model_confidence_for_family(candidate.family))
-        if float(candidate.adjusted_probability) < min_probability:
-            source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
-            if bool(source_summary.get('short_window_quality_override_allowed')):
-                original_probability = self._to_float(source_summary.get('quality_original_adjusted_probability'))
-                weighted_books = self._to_float(source_summary.get('weighted_books_count')) or 0.0
-                has_sharp_book = bool(source_summary.get('has_sharp_book'))
-                weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75)
-                if (
-                    original_probability is not None
-                    and original_probability >= min_probability
-                    and (min_probability - float(candidate.adjusted_probability)) <= 0.0125
-                    and float(candidate.confidence) >= float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
-                    and float(candidate.edge_pct) >= float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
-                    and float(candidate.ev_pct) >= float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
-                    and (
-                        int(getattr(candidate, 'books_count', 0) or 0) >= 2
-                        or weighted_books >= weighted_threshold
-                        or has_sharp_book
-                    )
-                ):
-                    return None
-            return 'post_calibration_probability_guard'
-        if float(candidate.edge_pct) < float(self.settings.min_edge_pct_for_family(candidate.family)):
-            return 'post_calibration_edge_guard'
-        if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
-            return 'post_calibration_ev_guard'
+        min_prob = float(self.settings.min_model_confidence_for_family(candidate.family))
+        min_edge = float(self.settings.min_edge_pct_for_family(candidate.family))
+        min_ev = float(self.settings.min_ev_pct_for_family(candidate.family))
+        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
+        quality = dict(getattr(candidate, 'diagnostics', {}).get('quality') or {})
+        original_prob = self._to_float(quality.get('original_adjusted_probability'))
+        short_window_fallback = bool(source_summary.get('short_window_fallback'))
+        small_prob_drop = False
+        if original_prob is not None:
+            small_prob_drop = original_prob >= min_prob and (original_prob - float(candidate.adjusted_probability)) <= 0.025
+        if float(candidate.adjusted_probability) < min_prob:
+            if not (
+                short_window_fallback
+                and small_prob_drop
+                and float(candidate.edge_pct) >= max(min_edge - 1.0, 0.0)
+                and float(candidate.ev_pct) >= max(min_ev - 0.9, 0.0)
+                and float(candidate.confidence) >= max(54.0, min_prob * 100.0 - 4.0)
+                and int(getattr(candidate, 'books_count', 0) or 0) >= 1
+            ):
+                return 'post_calibration_probability_guard'
+        if float(candidate.edge_pct) < min_edge:
+            if not (short_window_fallback and float(candidate.edge_pct) >= max(min_edge - 1.0, 0.0)):
+                return 'post_calibration_edge_guard'
+        if float(candidate.ev_pct) < min_ev:
+            if not (short_window_fallback and float(candidate.ev_pct) >= max(min_ev - 0.9, 0.0)):
+                return 'post_calibration_ev_guard'
         return None
 
     def _clv_segment_stats(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
