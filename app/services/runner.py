@@ -415,6 +415,7 @@ class PredictionRunner:
                 'current_time_utc': now_utc.isoformat(),
                 'current_time_local': now_local.isoformat(),
                 'app_timezone': self.settings.app_timezone,
+                'publish_window_hours': self.settings.publish_window_hours,
                 'matches_seen': len(filtered_matches),
                 'matches_before_publish_window': len(deduped_matches),
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
@@ -513,18 +514,26 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
-            run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
-            sent_messages += run_report_messages_sent
-            if run_report_payloads:
-                telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
-            summary['telegram_messages_sent'] = sent_messages
+            run_report_messages_sent = 0
+            run_report_payloads: list[str] = []
+            run_report_should_send = bool(getattr(self.settings, 'run_report_enabled', True)) and (
+                not bool(getattr(self.settings, 'run_report_only_when_no_predictions', True))
+                or telegram_picks_sent <= 0
+            )
+            if run_report_should_send:
+                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
             summary['run_report'] = {
                 'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
                 'only_when_no_predictions': bool(getattr(self.settings, 'run_report_only_when_no_predictions', True)),
-                'telegram_messages_sent': run_report_messages_sent,
-                'sent': run_report_messages_sent > 0,
-                'preview': run_report_payloads[0] if run_report_payloads else '',
+                'should_send': run_report_should_send,
+                'sent': run_report_messages_sent,
+                'sent_when_no_predictions': telegram_picks_sent <= 0 and run_report_messages_sent > 0,
             }
+            if run_report_payloads:
+                summary['run_report']['preview'] = run_report_payloads[0]
+            sent_messages += run_report_messages_sent
+            telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
+            summary['telegram_messages_sent'] = sent_messages
 
             sheet_export_result = self.sheet_export.write(
                 publishable_candidates,
