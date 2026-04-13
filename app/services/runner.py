@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 from collections import Counter, defaultdict
 import json
-import math
 from dataclasses import asdict
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -312,17 +311,27 @@ class PredictionRunner:
             for reason, count in quality_rejections.items():
                 rejections[f'quality_{reason}'] = rejections.get(f'quality_{reason}', 0) + count
 
-            seen_fingerprints = self._load_seen_candidate_fingerprints()
+            seen_candidate_rows = self._load_seen_candidate_rows()
             candidates: list[CandidateBet] = []
             reused_candidates: list[CandidateBet] = []
             reused_already_in_state = 0
+            duplicate_realerted = 0
             for candidate in raw_candidates:
                 fingerprint = self._candidate_fingerprint(candidate)
-                if fingerprint and fingerprint in seen_fingerprints:
+                previous = seen_candidate_rows.get(fingerprint) if fingerprint else None
+                if fingerprint and previous and not self._should_realert_duplicate_candidate(candidate, previous):
                     reused_already_in_state += 1
                     candidate.already_used = True
                     reused_candidates.append(candidate)
                     continue
+                if fingerprint and previous:
+                    duplicate_realerted += 1
+                    candidate.analysis.setdefault('duplicate_realert', {
+                        'enabled': True,
+                        'previous_odds': previous.get('odds'),
+                        'previous_edge_pct': previous.get('edge_pct'),
+                        'previous_created_at': previous.get('created_at') or previous.get('commence_time'),
+                    })
                 candidates.append(candidate)
 
             candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
@@ -433,6 +442,7 @@ class PredictionRunner:
                 'publishable_with_derived_market_signal': derived_market_publishable,
                 'skipped_already_in_state': reused_already_in_state,
                 'reused_already_in_state': reused_already_in_state,
+                'duplicate_realerted': duplicate_realerted,
                 'published': telegram_picks_sent,
                 'published_to_telegram': telegram_picks_sent,
                 'prediction_publication_enabled': prediction_publication_enabled,
@@ -989,13 +999,13 @@ class PredictionRunner:
             unique.setdefault(match.match_key, match)
         return list(unique.values())
 
-    def _load_seen_candidate_fingerprints(self) -> set[str]:
+    def _load_seen_candidate_rows(self) -> dict[str, dict[str, Any]]:
         paths = [Path(self.settings.state_path)]
         latest_picks = Path(self.settings.storage_export_dir) / 'latest-picks.json'
         if latest_picks not in paths:
             paths.append(latest_picks)
 
-        seen: set[str] = set()
+        seen: dict[str, dict[str, Any]] = {}
         for path in paths:
             if not path.exists() or not path.is_file():
                 continue
@@ -1003,7 +1013,7 @@ class PredictionRunner:
                 payload = json.loads(path.read_text(encoding='utf-8'))
             except Exception:
                 continue
-            self._collect_candidate_fingerprints(payload, seen)
+            self._collect_candidate_rows(payload, seen)
         return seen
 
     def _project_bankroll_summary(self, candidates: list[CandidateBet]) -> dict[str, Any]:
@@ -1039,17 +1049,72 @@ class PredictionRunner:
             if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) > 0.0
         ]
 
-    def _collect_candidate_fingerprints(self, value: Any, seen: set[str]) -> None:
+    def _collect_candidate_rows(self, value: Any, seen: dict[str, dict[str, Any]]) -> None:
         if isinstance(value, dict):
             fingerprint = self._candidate_fingerprint(value)
             if fingerprint:
-                seen.add(fingerprint)
+                current = seen.get(fingerprint)
+                current_created = self._coerce_datetime(current.get('created_at') if current else None)
+                value_created = self._coerce_datetime(value.get('created_at'))
+                if current is None or (value_created and (current_created is None or value_created >= current_created)):
+                    seen[fingerprint] = dict(value)
             for item in value.values():
-                self._collect_candidate_fingerprints(item, seen)
+                self._collect_candidate_rows(item, seen)
             return
         if isinstance(value, list):
             for item in value:
-                self._collect_candidate_fingerprints(item, seen)
+                self._collect_candidate_rows(item, seen)
+
+    def _should_realert_duplicate_candidate(self, candidate: CandidateBet, previous: dict[str, Any]) -> bool:
+        if not getattr(self.settings, 'duplicate_realert_enabled', True):
+            return False
+        previous_odds = self._coerce_float(previous.get('odds'))
+        previous_edge = self._coerce_float(previous.get('edge_pct'))
+        odds_improvement = None
+        edge_improvement = None
+        if previous_odds is not None:
+            odds_improvement = float(candidate.odds or 0.0) - previous_odds
+        if previous_edge is not None:
+            edge_improvement = float(candidate.edge_pct or 0.0) - previous_edge
+        min_odds = float(getattr(self.settings, 'duplicate_realert_min_odds_improvement', 0.08) or 0.08)
+        min_edge = float(getattr(self.settings, 'duplicate_realert_min_edge_improvement_pct', 1.25) or 1.25)
+        min_minutes = int(getattr(self.settings, 'duplicate_realert_min_minutes_since_last', 45) or 45)
+        created_at = self._coerce_datetime(previous.get('created_at'))
+        if created_at is None:
+            created_at = self._coerce_datetime(previous.get('telegram_sent_at'))
+        if created_at is None:
+            created_at = self._coerce_datetime(previous.get('commence_time'))
+        minutes_elapsed = None
+        if created_at is not None:
+            minutes_elapsed = max(0.0, (datetime.now(UTC) - created_at).total_seconds() / 60.0)
+        improved = False
+        if odds_improvement is not None and odds_improvement >= min_odds:
+            improved = True
+        if edge_improvement is not None and edge_improvement >= min_edge:
+            improved = True
+        if not improved:
+            return False
+        if minutes_elapsed is not None and minutes_elapsed < min_minutes:
+            return False
+        return True
+
+    @staticmethod
+    def _coerce_float(value: Any) -> float | None:
+        try:
+            if value in (None, ''):
+                return None
+            return float(value)
+        except Exception:
+            return None
+
+    @staticmethod
+    def _coerce_datetime(value: Any) -> datetime | None:
+        if value in (None, ''):
+            return None
+        try:
+            return ensure_utc(value)
+        except Exception:
+            return None
 
     @staticmethod
     def _candidate_fingerprint(candidate: CandidateBet | dict[str, Any]) -> str | None:
@@ -1194,24 +1259,6 @@ class PredictionRunner:
                 return None
             return sum(value * weight for value, weight in pairs) / total_weight
 
-        def blend_expected_goals(a: Any, b: Any) -> float | None:
-            def normalize(value: Any) -> float | None:
-                try:
-                    if value is None:
-                        return None
-                    number = float(value)
-                except Exception:
-                    return None
-                if not math.isfinite(number) or number < 0:
-                    return None
-                min_goal = float(getattr(self.settings, 'min_expected_goals_value', 0.15) or 0.15)
-                max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
-                if number < min_goal or number > max_goal:
-                    return None
-                return number
-
-            return blend(normalize(a), normalize(b))
-
         base_sources = self._context_source_names(base)
         new_sources = self._context_source_names(new)
         merged_sources: list[str] = []
@@ -1249,8 +1296,8 @@ class PredictionRunner:
         return MatchContext(
             source='ensemble' if len(merged_sources) > 1 else (merged_sources[0] if merged_sources else str(base.source or new.source or 'unknown')),
             payload=merged_payload,
-            expected_home=blend_expected_goals(base.expected_home, new.expected_home),
-            expected_away=blend_expected_goals(base.expected_away, new.expected_away),
+            expected_home=blend(base.expected_home, new.expected_home),
+            expected_away=blend(base.expected_away, new.expected_away),
             home_win_probability=blend(base.home_win_probability, new.home_win_probability),
             away_win_probability=blend(base.away_win_probability, new.away_win_probability),
             home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
