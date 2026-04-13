@@ -258,8 +258,7 @@ class CandidateFactory:
             if normalized_point is None:
                 continue
             point = normalized_point
-            required_books = self._required_books_for_bucket('totals', point, bucket, None)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('totals', point, bucket, None):
                 continue
             market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
             market_signal = self._market_signal_for_bucket(match.match_key, 'totals', bucket, point)
@@ -311,8 +310,7 @@ class CandidateFactory:
             selection_key = self._h2h_selection_key(match, selection)
             if selection_key not in {'home', 'away'}:
                 continue
-            required_books = self._required_books_for_bucket('h2h', None, bucket, None)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('h2h', None, bucket, None):
                 continue
             best_offer = self._select_best_offer(bucket)
             if float(best_offer.price) >= 3.35:
@@ -2080,8 +2078,45 @@ class CandidateFactory:
         return any(self._norm_book(offer.bookmaker) in sharp for offer in offers)
 
     def _book_support_summary(self, offers: list[Offer]) -> dict[str, Any]:
+        unique_books = {self._norm_book(offer.bookmaker) for offer in offers if self._norm_book(offer.bookmaker)}
+        weighted_books = self._weighted_unique_books(offers)
+        has_sharp_book = self._has_sharp_book(offers)
+        return {
+            'unique_books': len(unique_books),
+            'weighted_books': round(float(weighted_books), 3),
+            'has_sharp_book': has_sharp_book,
+        }
+
+    def _meets_book_requirement(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> bool:
+        required_books = self._required_books_for_bucket(family, point, offers, context)
+        support = self._book_support_summary(offers)
+        unique_books = int(support.get('unique_books') or 0)
+        if unique_books >= required_books:
+            return True
+        if required_books <= 2:
+            weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75)
+            if float(support.get('weighted_books') or 0.0) >= weighted_threshold:
+                return True
+            if bool(getattr(self.settings, 'allow_single_sharp_book', True)) and bool(support.get('has_sharp_book')):
+                return True
+        return False
+
+
+    def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
+        base = self.settings.min_books_for_family(family)
+        if base <= 1:
+            return 1
+        norm_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
+        weighted_books = self._weighted_unique_books(offers)
+        has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
+        has_sharp = self._has_sharp_book(offers)
+        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
         if family == 'totals' and point in {2.5, 3.5, 4.5}:
             base = max(base, 2)
+        if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
+            return min(base, 2)
+        if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
+            return min(base, 2)
         return base
 
     @staticmethod
@@ -2168,7 +2203,7 @@ class CandidateFactory:
         weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75)
         if required_books <= 2 and weighted_books >= weighted_threshold:
             return True
-        if required_books <= 2 and getattr(self.settings, 'allow_single_sharp_book', True) and bool(source_summary.get('has_sharp_book')):
+        if required_books <= 2 and bool(getattr(self.settings, 'allow_single_sharp_book', True)) and bool(source_summary.get('has_sharp_book')):
             return True
         return False
 
