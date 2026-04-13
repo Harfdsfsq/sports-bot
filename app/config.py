@@ -104,11 +104,6 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
-    run_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ENABLED"))
-    run_report_only_when_no_predictions: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS"))
-    run_report_top_reasons: int = Field(default=4, validation_alias=AliasChoices("RUN_REPORT_TOP_REASONS"))
-    telegram_dedupe_enabled: bool = Field(default=True, validation_alias=AliasChoices("TELEGRAM_DEDUPE_ENABLED"))
-    telegram_dedupe_window_minutes: int = Field(default=90, validation_alias=AliasChoices("TELEGRAM_DEDUPE_WINDOW_MINUTES"))
     sheet_id: str | None = Field(default=None, validation_alias=AliasChoices("SHEET_ID"))
 
     odds_api_io_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDS_API_IO_KEY"))
@@ -540,8 +535,6 @@ class Settings(BaseSettings):
         "odds_api_io_bookmakers",
         "oddspapi_bookmakers",
         "allsportsapi_bookmakers",
-        "preferred_league_terms",
-        "secondary_league_terms",
         "bookies_api_sports",
         "espn_soccer_leagues",
         "espn_soft_fail_statuses",
@@ -553,6 +546,8 @@ class Settings(BaseSettings):
         "consensus_alias_groups",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
+        "preferred_league_terms",
+        "secondary_league_terms",
         mode="before",
     )
     @classmethod
