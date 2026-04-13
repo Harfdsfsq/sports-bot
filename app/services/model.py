@@ -43,7 +43,6 @@ class CandidateFactory:
         candidates: list[CandidateBet] = []
         rejections: dict[str, int] = defaultdict(int)
         debug_rows: list[dict[str, Any]] = []
-        rejected_debug_rows: list[dict[str, Any]] = []
         self._market_signals_by_match = market_signals_by_match or {}
         matches_by_key = {m.match_key: m for m in matches}
 
@@ -107,9 +106,8 @@ class CandidateFactory:
             else:
                 rejections['no_candidate_for_match'] += 1
 
-        candidates, rejected_quality_rows = self._filter_and_rank(candidates, rejections)
-        rejected_debug_rows.extend(rejected_quality_rows)
-        return candidates, dict(rejections), {'matches': debug_rows[:200], 'rejected_candidates': rejected_debug_rows[:200]}
+        candidates = self._filter_and_rank(candidates, rejections)
+        return candidates, dict(rejections), {'matches': debug_rows[:200]}
 
     def _build_totals_candidates(
         self,
@@ -897,6 +895,7 @@ class CandidateFactory:
                 'analysis_flags': list(analysis.get('flags') or []),
                 'probability_gap_pp': analysis.get('probability_gap_pp'),
             },
+            bookmaker=best_offer.bookmaker,
         )
 
     
@@ -2215,47 +2214,24 @@ class CandidateFactory:
 
         return max(2, base)
 
-    def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> tuple[list[CandidateBet], list[dict[str, Any]]]:
+    def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
-        rejected_rows: list[dict[str, Any]] = []
-
-        def reject(item: CandidateBet, reason: str) -> None:
-            rejections[reason] += 1
-            rejected_rows.append({
-                'match_key': item.match_key,
-                'selection': item.selection,
-                'family': item.family,
-                'reason': reason,
-                'league': item.league_name,
-                'bookmaker': item.bookmaker,
-                'odds': round(float(item.odds), 4),
-                'market_probability': round(float(item.market_probability), 4),
-                'model_probability': round(float(item.model_probability), 4),
-                'adjusted_probability': round(float(item.adjusted_probability), 4),
-                'confidence': round(float(item.confidence), 2),
-                'edge_pct': round(float(item.edge_pct), 2),
-                'ev_pct': round(float(item.ev_pct), 2),
-                'publication_score': round(float(getattr(item, 'publication_score', 0.0) or 0.0), 2),
-                'books_count': int(getattr(item, 'books_count', 0) or 0),
-                'sources_count': int(getattr(item, 'sources_count', 0) or 0),
-                'model_mode': getattr(item, 'model_mode', None),
-            })
         for item in candidates:
             min_conf = float(self.settings.min_model_confidence_for_family(item.family))
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
             if item.model_probability < min_conf:
-                reject(item, 'confidence_below_threshold')
+                rejections['confidence_below_threshold'] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
             if int(getattr(item, 'books_count', 0) or 0) < min_publish_books:
-                reject(item, 'publish_books_guard')
+                rejections['publish_books_guard'] += 1
                 continue
             if item.ev_pct < min_ev:
-                reject(item, 'ev_below_threshold')
+                rejections['ev_below_threshold'] += 1
                 continue
             if item.edge_pct < min_edge:
-                reject(item, 'edge_below_threshold')
+                rejections['edge_below_threshold'] += 1
                 continue
             context_source = str((item.source_summary or {}).get('context_source') or '')
             league_bucket = self._league_bucket(item)
@@ -2266,7 +2242,7 @@ class CandidateFactory:
                 'low': getattr(self.settings, 'min_publication_score_low_tier', 22.0),
             }.get(league_bucket, getattr(self.settings, 'min_publication_score', 12.0)) or 0.0)
             if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_pub_score:
-                reject(item, 'publication_score_guard')
+                rejections['publication_score_guard'] += 1
                 continue
             if league_bucket in {'other', 'low'}:
                 if int(getattr(item, 'books_count', 0) or 0) < int(getattr(self.settings, 'non_core_league_min_books', 2) or 2):
@@ -2324,19 +2300,19 @@ class CandidateFactory:
                     min_sum_xg_guard = float(getattr(self.settings, 'totals_over25_min_sum_xg', 3.15) or 3.15)
                     min_adjusted_guard = float(getattr(self.settings, 'totals_over25_min_adjusted_probability', 0.51) or 0.51)
                     if float(item.confidence) < min_conf_guard:
-                        reject(item, 'totals_over25_confidence_guard')
+                        rejections['totals_over25_confidence_guard'] += 1
                         continue
                     if float(item.edge_pct) < min_edge_guard:
-                        reject(item, 'totals_over25_edge_guard')
+                        rejections['totals_over25_edge_guard'] += 1
                         continue
                     if float(item.ev_pct) < min_ev_guard:
-                        reject(item, 'totals_over25_ev_guard')
+                        rejections['totals_over25_ev_guard'] += 1
                         continue
                     if float(item.adjusted_probability) < min_adjusted_guard:
-                        reject(item, 'totals_over25_probability_guard')
+                        rejections['totals_over25_probability_guard'] += 1
                         continue
                     if total_xg is None or total_xg < min_sum_xg_guard:
-                        reject(item, 'totals_over25_xg_guard')
+                        rejections['totals_over25_xg_guard'] += 1
                         continue
                     if self._is_risky_totals_candidate(item):
                         risky_min_conf = float(getattr(self.settings, 'risky_totals_min_confidence', 70.0) or 70.0)
