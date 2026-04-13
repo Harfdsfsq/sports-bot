@@ -416,7 +416,9 @@ class PredictionQualityService:
         hard_bad_segments = max(1, int(getattr(self.settings, 'historical_segment_hard_min_bad_segments', 2) or 2))
         bad_segments = 0
         hard_fail = False
+        hard_segment_hits = 0
         matched_segments: list[dict[str, Any]] = []
+        hard_segments_matched: list[dict[str, Any]] = []
         for segment in segments:
             if segment.startswith('prob:'):
                 continue
@@ -435,7 +437,21 @@ class PredictionQualityService:
                 })
                 if roi < hard_roi and delta < hard_delta:
                     hard_fail = True
+                    hard_segment_hits += 1
+                    hard_segments_matched.append(matched_segments[-1])
         if hard_fail:
+            if self._allow_late_window_hard_historical_override(candidate, hard_segment_hits, hard_segments_matched):
+                candidate.source_summary['historical_segment_override'] = 'late_window_hard_single_segment'
+                candidate.source_summary['historical_bad_segments'] = bad_segments
+                candidate.diagnostics.setdefault('quality_historical_override', {
+                    'applied': True,
+                    'reason': 'late_window_hard_single_segment',
+                    'bad_segments': bad_segments,
+                    'hard_bad_segments': hard_segment_hits,
+                    'segments': hard_segments_matched[:4],
+                })
+                candidate.reasons.append('quality_historical_override=late_window_hard_single_segment')
+                return None
             return 'bad_historical_segment_guard'
         if bad_segments >= hard_bad_segments:
             if self._allow_late_window_historical_override(candidate, bad_segments, hard_bad_segments):
@@ -477,6 +493,55 @@ class PredictionQualityService:
         if float(getattr(candidate, 'adjusted_probability', 0.0) or 0.0) < max(0.50, min_conf / 100.0 - 0.04):
             return False
         if float(getattr(candidate, 'publication_score', 0.0) or 0.0) < 55.0:
+            return False
+        return True
+
+    def _allow_late_window_hard_historical_override(
+        self,
+        candidate: CandidateBet,
+        hard_segment_hits: int,
+        hard_segments: list[dict[str, Any]],
+    ) -> bool:
+        if hard_segment_hits != 1 or len(hard_segments) != 1:
+            return False
+        segment = hard_segments[0] if hard_segments else {}
+        roi = self._to_float(segment.get('roi_pct'))
+        delta = self._to_float(segment.get('calibration_delta_probability'))
+        if roi is None or delta is None:
+            return False
+        hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)
+        hard_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
+        if roi < hard_roi - 6.0:
+            return False
+        if delta < hard_delta - 0.03:
+            return False
+        if self._candidate_league_bucket(candidate) not in {'preferred', 'secondary'}:
+            return False
+        if str(candidate.family or '') not in {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}:
+            return False
+        commence_time = getattr(candidate, 'commence_time', None)
+        if not isinstance(commence_time, datetime):
+            return False
+        now_utc = datetime.now(UTC)
+        hours_to_start = (commence_time - now_utc).total_seconds() / 3600.0
+        late_window_hours = min(6.0, float(getattr(self.settings, 'publish_window_hours', 48) or 48))
+        if hours_to_start < -0.25 or hours_to_start > late_window_hours + 0.25:
+            return False
+        min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
+        min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
+        min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
+        min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
+        if float(candidate.confidence) < min_conf + 4.0:
+            return False
+        if float(candidate.ev_pct) < min_ev + 0.5:
+            return False
+        if float(candidate.edge_pct) < min_edge + 0.5:
+            return False
+        if int(getattr(candidate, 'books_count', 0) or 0) < min_books:
+            return False
+        if float(getattr(candidate, 'adjusted_probability', 0.0) or 0.0) < max(0.53, min_conf / 100.0 - 0.02):
+            return False
+        if float(getattr(candidate, 'publication_score', 0.0) or 0.0) < 58.0:
             return False
         return True
 
