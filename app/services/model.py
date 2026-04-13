@@ -2207,6 +2207,99 @@ class CandidateFactory:
             return True
         return False
 
+
+    def _is_short_window_mode(self) -> bool:
+        try:
+            return int(getattr(self.settings, 'publish_window_hours', 48) or 48) <= 6
+        except Exception:
+            return False
+
+    def _short_window_fallback_candidate(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> CandidateBet | None:
+        if not self._is_short_window_mode() or not candidates:
+            return None
+        fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
+        fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
+        fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        publication_grace = float(getattr(self.settings, 'short_window_publication_score_grace', 2.5) or 2.5)
+        confidence_grace = float(getattr(self.settings, 'short_window_confidence_grace', 3.0) or 3.0)
+        edge_grace = float(getattr(self.settings, 'short_window_edge_grace_pct', 1.0) or 1.0)
+        ev_grace = float(getattr(self.settings, 'short_window_ev_grace_pct', 1.0) or 1.0)
+        best_item: CandidateBet | None = None
+        best_rank: tuple[float, float, float, float, float] | None = None
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if self._league_bucket(item) not in {'preferred', 'secondary'}:
+                continue
+            if item.expected_home is not None and float(item.expected_home) < 0:
+                continue
+            if item.expected_away is not None and float(item.expected_away) < 0:
+                continue
+            min_publish_books = self._required_publish_books(item)
+            books_ok = self._candidate_meets_publish_books(item, min_publish_books)
+            books_soft_ok = books_ok or self._candidate_meets_publish_books(item, max(1, min_publish_books - 1))
+            if not books_soft_ok:
+                continue
+            if item.family == 'totals' and not books_ok and int(getattr(item, 'books_count', 0) or 0) <= 1:
+                continue
+            min_conf = float(self.settings.min_model_confidence_for_family(item.family))
+            min_ev = float(self.settings.min_ev_pct_for_family(item.family))
+            min_edge = float(self.settings.min_edge_pct_for_family(item.family))
+            bucket = self._league_bucket(item)
+            min_pub_score = float({
+                'preferred': getattr(self.settings, 'min_publication_score', 12.0),
+                'secondary': getattr(self.settings, 'min_publication_score_secondary_league', 14.5),
+                'other': getattr(self.settings, 'min_publication_score_other_league', 18.0),
+                'low': getattr(self.settings, 'min_publication_score_low_tier', 22.0),
+            }.get(bucket, getattr(self.settings, 'min_publication_score', 12.0)) or 0.0)
+            confidence_value = float(getattr(item, 'confidence', 0.0) or 0.0)
+            edge_value = float(getattr(item, 'edge_pct', 0.0) or 0.0)
+            ev_value = float(getattr(item, 'ev_pct', 0.0) or 0.0)
+            publication_score = float(getattr(item, 'publication_score', 0.0) or 0.0)
+            confidence_deficit = max(0.0, min_conf - float(item.model_probability), fallback_min_conf - confidence_value)
+            edge_deficit = max(0.0, min_edge - edge_value, fallback_min_edge - edge_value)
+            ev_deficit = max(0.0, min_ev - ev_value, fallback_min_ev - ev_value)
+            publication_deficit = max(0.0, min_pub_score - publication_score)
+            if confidence_deficit > confidence_grace or edge_deficit > edge_grace or ev_deficit > ev_grace:
+                continue
+            if publication_deficit > publication_grace:
+                continue
+            miss_count = sum((
+                1 if not books_ok else 0,
+                1 if confidence_deficit > 0 else 0,
+                1 if edge_deficit > 0 else 0,
+                1 if ev_deficit > 0 else 0,
+                1 if publication_deficit > 0 else 0,
+            ))
+            if miss_count > 2:
+                continue
+            rank = (
+                -miss_count,
+                publication_score,
+                confidence_value,
+                ev_value,
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+            )
+            if best_rank is None or rank > best_rank:
+                best_rank = rank
+                best_item = item
+        if best_item is None:
+            rejections['short_window_fallback_no_candidate'] += 1
+            return None
+        try:
+            best_item.reasons.append('short_window_fallback=enabled')
+            best_item.reasons.append('short_window_fallback_mode=near_miss')
+            if isinstance(best_item.source_summary, dict):
+                best_item.source_summary['short_window_fallback'] = True
+                best_item.source_summary['short_window_fallback_mode'] = 'near_miss'
+                best_item.source_summary['short_window_publish_window_hours'] = int(getattr(self.settings, 'publish_window_hours', 48) or 48)
+                best_item.source_summary['short_window_quality_override_allowed'] = True
+        except Exception:
+            pass
+        rejections['short_window_fallback_used'] += 1
+        return best_item
+
     def _required_publish_books(self, item: CandidateBet) -> int:
         bucket = self._league_bucket(item)
         base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
@@ -2493,7 +2586,12 @@ class CandidateFactory:
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
                 break
-        if deduped or not getattr(self.settings, 'fallback_publish_mode_enabled', True):
+        if deduped:
+            return deduped
+        if not getattr(self.settings, 'fallback_publish_mode_enabled', True):
+            short_window_candidate = self._short_window_fallback_candidate(candidates, rejections)
+            if short_window_candidate is not None:
+                return [short_window_candidate]
             return deduped
         fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
         fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
@@ -2524,6 +2622,9 @@ class CandidateFactory:
             rejections['fallback_publish_mode_used'] += 1
             return [item]
         rejections['fallback_publish_no_candidate'] += 1
+        short_window_candidate = self._short_window_fallback_candidate(candidates, rejections)
+        if short_window_candidate is not None:
+            return [short_window_candidate]
         return deduped
 
     @staticmethod

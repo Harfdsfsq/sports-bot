@@ -66,6 +66,10 @@ class PredictionQualityService:
         decisions: list[dict[str, Any]] = []
         for candidate in candidates:
             original_probability = float(candidate.adjusted_probability)
+            try:
+                candidate.source_summary['quality_original_adjusted_probability'] = round(original_probability, 5)
+            except Exception:
+                pass
             segments = self._candidate_segments(candidate)
             calibration = self._candidate_calibration(segments, profile, enough_history)
             if calibration['applied']:
@@ -84,10 +88,6 @@ class PredictionQualityService:
                 self._post_calibration_threshold_guard,
             ):
                 reason = guard(candidate)
-                if reason == 'post_calibration_probability_guard' and self._allow_short_window_fallback_probability_override(candidate, original_probability):
-                    candidate.source_summary['short_window_quality_probability_override'] = True
-                    candidate.reasons.append('quality_short_window_probability_override=enabled')
-                    continue
                 if reason:
                     status = 'quarantined_shadow' if reason.startswith('quarantine_') else 'rejected_by_quality_filters'
                     reasons.append(reason)
@@ -471,39 +471,34 @@ class PredictionQualityService:
         return None
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
-        if float(candidate.adjusted_probability) < float(self.settings.min_model_confidence_for_family(candidate.family)):
+        min_probability = float(self.settings.min_model_confidence_for_family(candidate.family))
+        if float(candidate.adjusted_probability) < min_probability:
+            source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
+            if bool(source_summary.get('short_window_quality_override_allowed')):
+                original_probability = self._to_float(source_summary.get('quality_original_adjusted_probability'))
+                weighted_books = self._to_float(source_summary.get('weighted_books_count')) or 0.0
+                has_sharp_book = bool(source_summary.get('has_sharp_book'))
+                weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75)
+                if (
+                    original_probability is not None
+                    and original_probability >= min_probability
+                    and (min_probability - float(candidate.adjusted_probability)) <= 0.0125
+                    and float(candidate.confidence) >= float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
+                    and float(candidate.edge_pct) >= float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
+                    and float(candidate.ev_pct) >= float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
+                    and (
+                        int(getattr(candidate, 'books_count', 0) or 0) >= 2
+                        or weighted_books >= weighted_threshold
+                        or has_sharp_book
+                    )
+                ):
+                    return None
             return 'post_calibration_probability_guard'
         if float(candidate.edge_pct) < float(self.settings.min_edge_pct_for_family(candidate.family)):
             return 'post_calibration_edge_guard'
         if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
             return 'post_calibration_ev_guard'
         return None
-
-    def _allow_short_window_fallback_probability_override(self, candidate: CandidateBet, original_probability: float) -> bool:
-        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
-        reasons = {str(item) for item in (getattr(candidate, 'reasons', []) or [])}
-        if not source_summary.get('short_window_fallback') and 'short_window_fallback=enabled' not in reasons:
-            return False
-        min_probability = float(self.settings.min_model_confidence_for_family(candidate.family))
-        if float(original_probability) < min_probability:
-            return False
-        miss_tolerance = float(getattr(self.settings, 'quality_short_window_probability_tolerance_pct', 1.5) or 1.5) / 100.0
-        calibration_cap = float(getattr(self.settings, 'quality_short_window_probability_calibration_cap_pct', 3.0) or 3.0) / 100.0
-        calibrated_drop = max(0.0, float(original_probability) - float(candidate.adjusted_probability))
-        if calibrated_drop <= 0.0 or calibrated_drop > calibration_cap:
-            return False
-        if float(candidate.adjusted_probability) < (min_probability - miss_tolerance):
-            return False
-        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
-        fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 1.6) or 1.6)
-        fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 1.0) or 1.0)
-        fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 51.0) or 51.0)
-        return (
-            int(candidate.books_count) >= fallback_min_books
-            and float(candidate.edge_pct) >= fallback_min_edge
-            and float(candidate.ev_pct) >= fallback_min_ev
-            and float(candidate.confidence) >= fallback_min_conf
-        )
 
     def _clv_segment_stats(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
         grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
