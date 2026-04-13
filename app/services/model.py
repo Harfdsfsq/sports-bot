@@ -140,7 +140,7 @@ class CandidateFactory:
                 continue
             point = normalized_point
             required_books = self._required_books_for_bucket('totals', point, bucket, context)
-            if not self._meets_book_requirement('totals', point, bucket, context):
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
@@ -202,7 +202,7 @@ class CandidateFactory:
         signal_label = self._signal_stack_label(context)
         for selection, bucket in buckets.items():
             required_books = self._required_books_for_bucket('h2h', None, bucket, context)
-            if not self._meets_book_requirement('h2h', None, bucket, context):
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             raw_model_prob = probs.get(selection)
@@ -414,7 +414,7 @@ class CandidateFactory:
             seen_keys.add(key)
             books = [item for item in offers if item.selection == offer.selection and item.point == offer.point]
             required_books = self._required_books_for_bucket('spreads', offer.point, books, context)
-            if not self._meets_book_requirement('spreads', offer.point if 'spreads'=='spreads' else point if 'spreads'=='teamTotals' else None, books, context):
+            if len({self._norm_book(item.bookmaker) for item in books}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             team_side = (offer.team_side or '').lower()
@@ -466,7 +466,7 @@ class CandidateFactory:
         signal_label = self._signal_stack_label(context)
         for key, bucket in buckets.items():
             required_books = self._required_books_for_bucket('btts', None, bucket, context)
-            if not self._meets_book_requirement('totals', point, bucket, None):
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_yes_no(bucket, offers, key, selector=self._yes_no_key)
@@ -525,7 +525,7 @@ class CandidateFactory:
                 continue
             point = normalized_point
             required_books = self._required_books_for_bucket('teamTotals', point, bucket, context)
-            if not self._meets_book_requirement('h2h', None, bucket, None):
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             lam = expected_home if team_side == 'home' else expected_away
@@ -575,7 +575,7 @@ class CandidateFactory:
         result: list[CandidateBet] = []
         for key, bucket in grouped.items():
             required_books = self._required_books_for_bucket('doubleChance', None, bucket, context)
-            if not self._meets_book_requirement('btts', None, bucket, context):
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             if key == 'home_draw':
@@ -627,7 +627,7 @@ class CandidateFactory:
         result: list[CandidateBet] = []
         for key, bucket in grouped.items():
             required_books = self._required_books_for_bucket('dnb', None, bucket, context)
-            if not self._meets_book_requirement('teamTotals', offer.point if 'teamTotals'=='spreads' else point if 'teamTotals'=='teamTotals' else None, bucket, context):
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 rejections['insufficient_books'] += 1
                 continue
             if key == 'home':
@@ -676,10 +676,10 @@ class CandidateFactory:
             return None
 
         books = {offer.bookmaker for offer in offers}
+        book_support = self._book_support_summary(family, point, offers, context)
         sources = {offer.source for offer in offers}
-        required_books = self._required_books_for_bucket(family, point, offers, context)
-        book_support = self._book_support_summary(offers)
-        if not self._meets_book_requirement(family, point, offers, context):
+        required_books = int(book_support.get('required_books') or self._required_books_for_bucket(family, point, offers, context))
+        if not bool(book_support.get('passes')):
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
@@ -875,11 +875,11 @@ class CandidateFactory:
                 'sources': sorted(sources),
                 'offers_seen': len(offers),
                 'required_books': required_books,
-                'weighted_books_count': round(float(book_support.get('weighted_books') or 0.0), 3),
-                'has_sharp_book': bool(book_support.get('has_sharp_book')),
-                'effective_book_support': float(book_support.get('effective_books') or len(books)),
-                'book_support_reason': book_support.get('reason'),
                 'selected_bookmaker': best_offer.bookmaker,
+            'weighted_books_count': book_support.get('weighted_books_count'),
+            'has_sharp_book': book_support.get('has_sharp_book'),
+            'effective_book_support': book_support.get('effective_book_support'),
+            'book_support_reason': book_support.get('book_support_reason'),
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
                 'match_tier': getattr(match, 'tier', None),
@@ -2088,6 +2088,45 @@ class CandidateFactory:
         return any(self._norm_book(offer.bookmaker) in sharp for offer in offers)
 
 
+    def _book_support_summary(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> dict[str, Any]:
+        unique_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
+        weighted_books = self._weighted_unique_books(offers)
+        has_sharp = self._has_sharp_book(offers)
+        required_books = self._required_books_for_bucket(family, point, offers, context)
+        unique_count = len(unique_books)
+        weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75)
+        allow_single_sharp = bool(getattr(self.settings, 'allow_single_sharp_book', True))
+
+        passes_unique = unique_count >= required_books
+        passes_weighted = required_books > 1 and weighted_books >= weighted_threshold
+        passes_single_sharp = required_books > 1 and allow_single_sharp and has_sharp
+
+        reason = 'raw_unique_books'
+        effective_support = float(unique_count)
+        if passes_weighted and weighted_books >= effective_support:
+            reason = 'weighted_consensus'
+            effective_support = float(weighted_books)
+        elif passes_single_sharp and effective_support < 1.05:
+            reason = 'single_sharp_book'
+            effective_support = 1.05
+
+        return {
+            'required_books': required_books,
+            'unique_books_count': unique_count,
+            'weighted_books_count': round(float(weighted_books), 3),
+            'weighted_threshold': weighted_threshold,
+            'has_sharp_book': has_sharp,
+            'passes': passes_unique or passes_weighted or passes_single_sharp,
+            'effective_book_support': round(float(effective_support), 3),
+            'book_support_reason': reason,
+        }
+
+    def _meets_book_requirement(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> bool:
+        return bool(self._book_support_summary(family, point, offers, context).get('passes'))
+
+    def _candidate_meets_publish_books(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> bool:
+        return self._meets_book_requirement(family, point, offers, context)
+
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
         base = self.settings.min_books_for_family(family)
         if base <= 1:
@@ -2185,9 +2224,7 @@ class CandidateFactory:
         base = max(1, int(getattr(self.settings, 'min_books_publish', 1) or 1))
         non_core_base = max(base, int(getattr(self.settings, 'non_core_league_min_books', 2) or 2))
         books_count = int(getattr(item, 'books_count', 0) or 0)
-        source_summary = dict(getattr(item, 'source_summary', {}) or {})
-        effective_books = float(source_summary.get('effective_book_support') or books_count or 0.0)
-        if effective_books >= 2.0 or books_count >= 2:
+        if books_count >= 2:
             return 2
         if bucket in {'other', 'low'}:
             return non_core_base
@@ -2231,7 +2268,7 @@ class CandidateFactory:
                 rejections['confidence_below_threshold'] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
-            if not self._candidate_meets_publish_books(item, min_publish_books):
+            if int(getattr(item, 'books_count', 0) or 0) < min_publish_books:
                 rejections['publish_books_guard'] += 1
                 continue
             if item.ev_pct < min_ev:
@@ -2252,7 +2289,7 @@ class CandidateFactory:
                 rejections['publication_score_guard'] += 1
                 continue
             if league_bucket in {'other', 'low'}:
-                if not self._candidate_meets_publish_books(item, int(getattr(self.settings, 'non_core_league_min_books', 2) or 2)):
+                if int(getattr(item, 'books_count', 0) or 0) < int(getattr(self.settings, 'non_core_league_min_books', 2) or 2):
                     rejections['non_core_books_guard'] += 1
                     continue
                 if float(item.confidence) < float(getattr(self.settings, 'non_core_league_min_confidence', 65.0) or 68.0):
@@ -2484,7 +2521,7 @@ class CandidateFactory:
                 continue
             if float(item.ev_pct) < fallback_min_ev or float(item.edge_pct) < fallback_min_edge:
                 continue
-            if not self._candidate_meets_publish_books(item, fallback_min_books):
+            if int(getattr(item, 'books_count', 0) or 0) < fallback_min_books:
                 continue
             if item.expected_home is not None and float(item.expected_home) < 0:
                 continue
