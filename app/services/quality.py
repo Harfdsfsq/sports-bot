@@ -429,16 +429,17 @@ class PredictionQualityService:
             delta = self._to_float(item.get('calibration_delta_probability')) or 0.0
             if roi < min_roi and delta < min_delta:
                 bad_segments += 1
-                matched_segments.append({
+                matched = {
                     'segment': segment,
                     'count': int(item.get('count') or 0),
                     'roi_pct': round(roi, 3),
                     'calibration_delta_probability': round(delta, 4),
-                })
+                }
+                matched_segments.append(matched)
                 if roi < hard_roi and delta < hard_delta:
                     hard_fail = True
                     hard_segment_hits += 1
-                    hard_segments_matched.append(matched_segments[-1])
+                    hard_segments_matched.append(matched)
         if hard_fail:
             if self._allow_late_window_hard_historical_override(candidate, hard_segment_hits, hard_segments_matched):
                 candidate.source_summary['historical_segment_override'] = 'late_window_hard_single_segment'
