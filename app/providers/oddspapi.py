@@ -49,6 +49,14 @@ class OddsPapiProvider:
         if not self.api_key:
             return [], stats, preview
 
+        cooldown_until = self._cooldown_until()
+        if cooldown_until is not None:
+            stats["rate_limited"] = True
+            stats["aborted_on_rate_limit"] = True
+            stats["cooldown_until"] = cooldown_until.isoformat()
+            stats["last_body_preview"] = f"cooldown active until {cooldown_until.isoformat()}"
+            return [], stats, preview
+
         now = datetime.now(UTC)
         from_ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
         to_ts = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))).replace(microsecond=0).isoformat().replace("+00:00", "Z")
@@ -135,6 +143,14 @@ class OddsPapiProvider:
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_odds": []}
         if not self.api_key:
+            return {}, stats, preview
+
+        cooldown_until = self._cooldown_until()
+        if cooldown_until is not None:
+            stats["rate_limited"] = True
+            stats["aborted_on_rate_limit"] = True
+            stats["cooldown_until"] = cooldown_until.isoformat()
+            stats["last_body_preview"] = f"cooldown active until {cooldown_until.isoformat()}"
             return {}, stats, preview
 
         soccer_matches = [m for m in matches if m.sport_key == "soccer"]
@@ -258,6 +274,7 @@ class OddsPapiProvider:
                     continue
                 stats["aborted_on_rate_limit"] = True
                 stats["response_errors"] += 1
+                self._activate_rate_limit_cooldown(response)
                 return None
             if response.status_code != 200:
                 stats["response_errors"] += 1
@@ -269,6 +286,57 @@ class OddsPapiProvider:
                 return None
         stats["response_errors"] += 1
         return None
+
+    def _cooldown_path(self) -> Path:
+        return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "oddspapi_rate_limit.json"
+
+    def _cooldown_until(self) -> datetime | None:
+        path = self._cooldown_path()
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+        raw_until = payload.get("cooldown_until")
+        if not raw_until:
+            return None
+        try:
+            dt = parse_datetime(raw_until)
+        except Exception:
+            return None
+        if dt <= datetime.now(UTC):
+            try:
+                path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return None
+        return dt
+
+    def _activate_rate_limit_cooldown(self, response: httpx.Response) -> None:
+        hours = max(1, int(getattr(self.settings, "oddspapi_rate_limit_cooldown_hours", 8) or 8))
+        until = datetime.now(UTC) + timedelta(hours=hours)
+        try:
+            payload = response.json()
+        except Exception:
+            payload = None
+        details = ""
+        if isinstance(payload, dict):
+            error = payload.get("error")
+            if isinstance(error, dict):
+                details = str(error.get("details") or error.get("message") or "")
+        retry_after_hours = self._retry_delay_seconds(response) / 3600.0
+        if retry_after_hours > hours:
+            until = datetime.now(UTC) + timedelta(hours=retry_after_hours)
+        path = self._cooldown_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        data = {
+            "cooldown_until": until.isoformat(),
+            "created_at": datetime.now(UTC).isoformat(),
+            "details": details[:400],
+        }
+        try:
+            path.write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            return
 
     @staticmethod
     def _retry_delay_seconds(response: httpx.Response) -> float:

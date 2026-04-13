@@ -1,8 +1,9 @@
 from __future__ import annotations
 
-import math
+import json
 import os
 from datetime import UTC, datetime, timedelta
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -37,6 +38,13 @@ class ApiFootballContextProvider:
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_predictions": []}
         if not self.api_key:
+            return {}, stats, preview
+
+        cooldown_until = self._cooldown_until()
+        if cooldown_until is not None:
+            stats["rate_limited"] = True
+            stats["cooldown_until"] = cooldown_until.isoformat()
+            stats["last_body_preview"] = f"cooldown active until {cooldown_until.isoformat()}"
             return {}, stats, preview
 
         soccer_matches = [match for match in matches if match.sport_key == "soccer"]
@@ -79,6 +87,16 @@ class ApiFootballContextProvider:
                     continue
                 stats["http_statuses"].append(response.status_code)
                 stats["last_body_preview"] = response.text[:1200]
+                if response.status_code == 429:
+                    stats["response_errors"] += 1
+                    stats["rate_limited"] = True
+                    self._activate_cooldown(minutes=max(2, int(getattr(self.settings, "api_football_rate_limit_cooldown_minutes", 12) or 12)))
+                    break
+                if response.status_code == 429:
+                    stats["response_errors"] += 1
+                    stats["rate_limited"] = True
+                    self._activate_cooldown(minutes=max(2, int(getattr(self.settings, "api_football_rate_limit_cooldown_minutes", 12) or 12)))
+                    break
                 if response.status_code != 200:
                     stats["response_errors"] += 1
                     continue
@@ -139,6 +157,40 @@ class ApiFootballContextProvider:
                     stats["matched_fuzzy"] += 1
 
         return contexts, stats, preview
+
+    def _cooldown_path(self) -> Path:
+        return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "api_football_rate_limit.json"
+
+    def _cooldown_until(self) -> datetime | None:
+        path = self._cooldown_path()
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            return None
+        raw_until = payload.get("cooldown_until")
+        if not raw_until:
+            return None
+        try:
+            dt = parse_datetime(raw_until)
+        except Exception:
+            return None
+        if dt <= datetime.now(UTC):
+            try:
+                path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return None
+        return dt
+
+    def _activate_cooldown(self, *, minutes: int) -> None:
+        path = self._cooldown_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        until = datetime.now(UTC) + timedelta(minutes=max(1, minutes))
+        payload = {"cooldown_until": until.isoformat(), "created_at": datetime.now(UTC).isoformat()}
+        try:
+            path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+        except Exception:
+            return
 
     def _prediction_limit(self, days: int) -> int:
         raw = os.getenv("API_FOOTBALL_PREDICTIONS_LIMIT") or getattr(self.settings, "api_football_predictions_limit", None)
@@ -246,10 +298,8 @@ class ApiFootballContextProvider:
         home_prob = normalize_probability_percent(percent.get("home") or percent.get("Home"))
         draw_prob = normalize_probability_percent(percent.get("draw") or percent.get("Draw"))
         away_prob = normalize_probability_percent(percent.get("away") or percent.get("Away"))
-        raw_expected_home = self._to_float(goals.get("home") or goals.get("home_goals"))
-        raw_expected_away = self._to_float(goals.get("away") or goals.get("away_goals"))
-        expected_home = self._sanitize_expected_goals(raw_expected_home)
-        expected_away = self._sanitize_expected_goals(raw_expected_away)
+        expected_home = self._to_float(goals.get("home") or goals.get("home_goals"))
+        expected_away = self._to_float(goals.get("away") or goals.get("away_goals"))
         confidence = 59.0
         if home_prob is not None and away_prob is not None:
             confidence += 5.0
@@ -268,11 +318,6 @@ class ApiFootballContextProvider:
                 "api_football_draw_probability": draw_prob,
                 "api_football_advice": preds.get("advice"),
                 "api_football_under_over": preds.get("under_over"),
-                "api_football_raw_expected_home": raw_expected_home,
-                "api_football_raw_expected_away": raw_expected_away,
-                "api_football_expected_goals_sanitized": (
-                    raw_expected_home != expected_home or raw_expected_away != expected_away
-                ),
             },
         )
 
@@ -284,21 +329,3 @@ class ApiFootballContextProvider:
             return float(str(value).replace(",", "."))
         except Exception:
             return None
-
-    @staticmethod
-    def _sanitize_expected_goals(value: float | None) -> float | None:
-        if value is None:
-            return None
-        try:
-            number = float(value)
-        except Exception:
-            return None
-        if not math.isfinite(number):
-            return None
-        if number < 0:
-            return None
-        # API-Football free predictions occasionally return extreme placeholders.
-        # Keep explicit win percentages but drop broken xG so one provider does not poison the ensemble.
-        if number > 6.0:
-            return None
-        return number
