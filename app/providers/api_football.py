@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 import os
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -245,16 +246,10 @@ class ApiFootballContextProvider:
         home_prob = normalize_probability_percent(percent.get("home") or percent.get("Home"))
         draw_prob = normalize_probability_percent(percent.get("draw") or percent.get("Draw"))
         away_prob = normalize_probability_percent(percent.get("away") or percent.get("Away"))
-        expected_home = self._to_float(goals.get("home") or goals.get("home_goals"))
-        expected_away = self._to_float(goals.get("away") or goals.get("away_goals"))
-        expected_home, expected_away = self._sanitize_expected_goals(
-            expected_home,
-            expected_away,
-            home_prob=home_prob,
-            away_prob=away_prob,
-            draw_prob=draw_prob,
-            under_over=preds.get("under_over"),
-        )
+        raw_expected_home = self._to_float(goals.get("home") or goals.get("home_goals"))
+        raw_expected_away = self._to_float(goals.get("away") or goals.get("away_goals"))
+        expected_home = self._sanitize_expected_goals(raw_expected_home)
+        expected_away = self._sanitize_expected_goals(raw_expected_away)
         confidence = 59.0
         if home_prob is not None and away_prob is not None:
             confidence += 5.0
@@ -273,53 +268,13 @@ class ApiFootballContextProvider:
                 "api_football_draw_probability": draw_prob,
                 "api_football_advice": preds.get("advice"),
                 "api_football_under_over": preds.get("under_over"),
-                "api_football_xg_sanitized": expected_home is not None and expected_away is not None,
+                "api_football_raw_expected_home": raw_expected_home,
+                "api_football_raw_expected_away": raw_expected_away,
+                "api_football_expected_goals_sanitized": (
+                    raw_expected_home != expected_home or raw_expected_away != expected_away
+                ),
             },
         )
-
-    def _sanitize_expected_goals(
-        self,
-        home: float | None,
-        away: float | None,
-        *,
-        home_prob: float | None,
-        away_prob: float | None,
-        draw_prob: float | None,
-        under_over: Any,
-    ) -> tuple[float | None, float | None]:
-        values = [home, away]
-        if all(v is not None for v in values):
-            safe_home = float(home)
-            safe_away = float(away)
-            if safe_home >= 0.15 and safe_away >= 0.15:
-                return clamp(safe_home, 0.15, 4.5), clamp(safe_away, 0.15, 4.5)
-
-        if home_prob is None or away_prob is None:
-            return None, None
-
-        total_goals = 2.55
-        try:
-            text = str(under_over or '').strip().lower().replace(',', '.')
-            sign = -1.0 if text.startswith('-') else 1.0 if text.startswith('+') else 0.0
-            line = float(text.lstrip('+-')) if text else None
-            if line is not None:
-                if sign < 0:
-                    total_goals = max(1.8, min(3.2, line - 0.20))
-                elif sign > 0:
-                    total_goals = max(1.9, min(3.6, line + 0.18))
-                else:
-                    total_goals = max(1.9, min(3.4, line))
-        except Exception:
-            pass
-
-        safe_draw = draw_prob if draw_prob is not None else max(0.12, min(0.34, 1.0 - float(home_prob) - float(away_prob)))
-        safe_home_prob = clamp(float(home_prob), 0.05, 0.90)
-        safe_away_prob = clamp(float(away_prob), 0.05, 0.90)
-        safe_draw = clamp(float(safe_draw), 0.06, 0.35)
-        balance = clamp((safe_home_prob - safe_away_prob) * 1.35 + (0.5 - safe_draw) * 0.16, -1.25, 1.25)
-        derived_home = clamp((total_goals / 2.0) + balance / 2.0 + 0.06, 0.25, 3.4)
-        derived_away = clamp(total_goals - derived_home, 0.20, 3.2)
-        return derived_home, derived_away
 
     @staticmethod
     def _to_float(value: Any) -> float | None:
@@ -329,3 +284,21 @@ class ApiFootballContextProvider:
             return float(str(value).replace(",", "."))
         except Exception:
             return None
+
+    @staticmethod
+    def _sanitize_expected_goals(value: float | None) -> float | None:
+        if value is None:
+            return None
+        try:
+            number = float(value)
+        except Exception:
+            return None
+        if not math.isfinite(number):
+            return None
+        if number < 0:
+            return None
+        # API-Football free predictions occasionally return extreme placeholders.
+        # Keep explicit win percentages but drop broken xG so one provider does not poison the ensemble.
+        if number > 6.0:
+            return None
+        return number
