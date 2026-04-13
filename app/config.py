@@ -346,6 +346,11 @@ class Settings(BaseSettings):
     max_picks_per_family: int = Field(default=3, validation_alias=AliasChoices("MAX_PICKS_PER_FAMILY"))
     max_same_reason_signature: int = Field(default=2, validation_alias=AliasChoices("MAX_SAME_REASON_SIGNATURE"))
 
+    duplicate_realert_enabled: bool = Field(default=True, validation_alias=AliasChoices("DUPLICATE_REALERT_ENABLED"))
+    duplicate_realert_min_odds_improvement: float = Field(default=0.08, validation_alias=AliasChoices("DUPLICATE_REALERT_MIN_ODDS_IMPROVEMENT"))
+    duplicate_realert_min_edge_improvement_pct: float = Field(default=1.25, validation_alias=AliasChoices("DUPLICATE_REALERT_MIN_EDGE_IMPROVEMENT_PCT"))
+    duplicate_realert_min_minutes_since_last: int = Field(default=45, validation_alias=AliasChoices("DUPLICATE_REALERT_MIN_MINUTES_SINCE_LAST"))
+
     reject_negative_expected_goals: bool = Field(default=True, validation_alias=AliasChoices("REJECT_NEGATIVE_EXPECTED_GOALS"))
     min_expected_goals_value: float = Field(default=0.15, validation_alias=AliasChoices("MIN_EXPECTED_GOALS_VALUE"))
     max_expected_goals_value: float = Field(default=4.80, validation_alias=AliasChoices("MAX_EXPECTED_GOALS_VALUE"))
@@ -542,8 +547,6 @@ class Settings(BaseSettings):
         "openligadb_competition_map",
         "sharp_bookmakers",
         "consensus_alias_groups",
-        "oddspapi_bookmakers",
-        "allsportsapi_bookmakers",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
         mode="before",
