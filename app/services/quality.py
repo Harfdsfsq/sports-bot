@@ -414,16 +414,9 @@ class PredictionQualityService:
         hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)
         hard_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
         hard_bad_segments = max(1, int(getattr(self.settings, 'historical_segment_hard_min_bad_segments', 2) or 2))
-
-        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
-        short_window_fallback = bool(source_summary.get('short_window_fallback'))
-        fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
-        fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
-        fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
-        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
-
         bad_segments = 0
-        hard_hits = 0
+        hard_fail = False
+        matched_segments: list[dict[str, Any]] = []
         for segment in segments:
             if segment.startswith('prob:'):
                 continue
@@ -434,32 +427,58 @@ class PredictionQualityService:
             delta = self._to_float(item.get('calibration_delta_probability')) or 0.0
             if roi < min_roi and delta < min_delta:
                 bad_segments += 1
+                matched_segments.append({
+                    'segment': segment,
+                    'count': int(item.get('count') or 0),
+                    'roi_pct': round(roi, 3),
+                    'calibration_delta_probability': round(delta, 4),
+                })
                 if roi < hard_roi and delta < hard_delta:
-                    hard_hits += 1
-
-        if bad_segments < hard_bad_segments and hard_hits == 0:
-            return None
-
-        if short_window_fallback:
-            books_count = int(getattr(candidate, 'books_count', 0) or 0)
-            weighted_books = self._to_float(source_summary.get('weighted_books_count')) or float(books_count)
-            effective_support = max(float(books_count), weighted_books)
-            strong_candidate = (
-                float(candidate.confidence) >= max(fallback_min_conf, 54.0)
-                and float(candidate.edge_pct) >= max(fallback_min_edge, 2.0)
-                and float(candidate.ev_pct) >= max(fallback_min_ev, 1.6)
-                and effective_support >= max(1.0, float(fallback_min_books) - 1.0)
-            )
-            soft_only = hard_hits == 0 and bad_segments <= hard_bad_segments
-            if strong_candidate and soft_only:
-                source_summary['historical_segment_guard_override'] = 'short_window_fallback'
-                source_summary['historical_segment_bad_segments'] = bad_segments
-                source_summary['historical_segment_hard_hits'] = hard_hits
-                candidate.source_summary = source_summary
-                candidate.reasons.append('quality=historical_segment_guard_short_window_override')
+                    hard_fail = True
+        if hard_fail:
+            return 'bad_historical_segment_guard'
+        if bad_segments >= hard_bad_segments:
+            if self._allow_late_window_historical_override(candidate, bad_segments, hard_bad_segments):
+                candidate.source_summary['historical_segment_override'] = 'late_window_soft'
+                candidate.source_summary['historical_bad_segments'] = bad_segments
+                candidate.diagnostics.setdefault('quality_historical_override', {
+                    'applied': True,
+                    'reason': 'late_window_soft',
+                    'bad_segments': bad_segments,
+                    'threshold': hard_bad_segments,
+                    'segments': matched_segments[:6],
+                })
+                candidate.reasons.append('quality_historical_override=late_window_soft')
                 return None
+            return 'bad_historical_segment_guard'
+        return None
 
-        return 'bad_historical_segment_guard'
+    def _allow_late_window_historical_override(self, candidate: CandidateBet, bad_segments: int, hard_bad_segments: int) -> bool:
+        if bad_segments <= 0 or bad_segments > hard_bad_segments + 1:
+            return False
+        commence_time = getattr(candidate, 'commence_time', None)
+        if not isinstance(commence_time, datetime):
+            return False
+        now_utc = datetime.now(UTC)
+        hours_to_start = (commence_time - now_utc).total_seconds() / 3600.0
+        late_window_hours = min(6.0, float(getattr(self.settings, 'publish_window_hours', 48) or 48))
+        if hours_to_start < -0.25 or hours_to_start > late_window_hours + 0.25:
+            return False
+        min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
+        min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
+        min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
+        min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2) - 1)
+        if float(candidate.confidence) < min_conf + 2.0:
+            return False
+        if float(candidate.ev_pct) < min_ev or float(candidate.edge_pct) < min_edge:
+            return False
+        if int(getattr(candidate, 'books_count', 0) or 0) < min_books:
+            return False
+        if float(getattr(candidate, 'adjusted_probability', 0.0) or 0.0) < max(0.50, min_conf / 100.0 - 0.04):
+            return False
+        if float(getattr(candidate, 'publication_score', 0.0) or 0.0) < 55.0:
+            return False
+        return True
 
     def _quarantine_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(getattr(self.settings, 'quarantine_shadow_mode_enabled', True)):
@@ -497,32 +516,12 @@ class PredictionQualityService:
         return None
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
-        min_prob = float(self.settings.min_model_confidence_for_family(candidate.family))
-        min_edge = float(self.settings.min_edge_pct_for_family(candidate.family))
-        min_ev = float(self.settings.min_ev_pct_for_family(candidate.family))
-        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
-        quality = dict(getattr(candidate, 'diagnostics', {}).get('quality') or {})
-        original_prob = self._to_float(quality.get('original_adjusted_probability'))
-        short_window_fallback = bool(source_summary.get('short_window_fallback'))
-        small_prob_drop = False
-        if original_prob is not None:
-            small_prob_drop = original_prob >= min_prob and (original_prob - float(candidate.adjusted_probability)) <= 0.025
-        if float(candidate.adjusted_probability) < min_prob:
-            if not (
-                short_window_fallback
-                and small_prob_drop
-                and float(candidate.edge_pct) >= max(min_edge - 1.0, 0.0)
-                and float(candidate.ev_pct) >= max(min_ev - 0.9, 0.0)
-                and float(candidate.confidence) >= max(54.0, min_prob * 100.0 - 4.0)
-                and int(getattr(candidate, 'books_count', 0) or 0) >= 1
-            ):
-                return 'post_calibration_probability_guard'
-        if float(candidate.edge_pct) < min_edge:
-            if not (short_window_fallback and float(candidate.edge_pct) >= max(min_edge - 1.0, 0.0)):
-                return 'post_calibration_edge_guard'
-        if float(candidate.ev_pct) < min_ev:
-            if not (short_window_fallback and float(candidate.ev_pct) >= max(min_ev - 0.9, 0.0)):
-                return 'post_calibration_ev_guard'
+        if float(candidate.adjusted_probability) < float(self.settings.min_model_confidence_for_family(candidate.family)):
+            return 'post_calibration_probability_guard'
+        if float(candidate.edge_pct) < float(self.settings.min_edge_pct_for_family(candidate.family)):
+            return 'post_calibration_edge_guard'
+        if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
+            return 'post_calibration_ev_guard'
         return None
 
     def _clv_segment_stats(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
