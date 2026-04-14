@@ -102,10 +102,6 @@ class Settings(BaseSettings):
 
     analysis_match_cap_per_run: int = Field(default=150, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
 
-    run_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ENABLED"))
-    run_report_only_when_no_predictions: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS"))
-    run_report_top_reasons: int = Field(default=4, validation_alias=AliasChoices("RUN_REPORT_TOP_REASONS"))
-
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
     sheet_id: str | None = Field(default=None, validation_alias=AliasChoices("SHEET_ID"))
@@ -548,6 +544,10 @@ class Settings(BaseSettings):
         "consensus_alias_groups",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
+        "oddspapi_bookmakers",
+        "allsportsapi_bookmakers",
+        "preferred_league_terms",
+        "secondary_league_terms",
         mode="before",
     )
     @classmethod
