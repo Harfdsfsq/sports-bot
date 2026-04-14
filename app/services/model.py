@@ -139,8 +139,7 @@ class CandidateFactory:
                 rejections['unsupported_total_line'] += 1
                 continue
             point = normalized_point
-            required_books = self._required_books_for_bucket('totals', point, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('totals', point, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
@@ -201,8 +200,7 @@ class CandidateFactory:
         result: list[CandidateBet] = []
         signal_label = self._signal_stack_label(context)
         for selection, bucket in buckets.items():
-            required_books = self._required_books_for_bucket('h2h', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('h2h', None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             raw_model_prob = probs.get(selection)
@@ -260,8 +258,7 @@ class CandidateFactory:
             if normalized_point is None:
                 continue
             point = normalized_point
-            required_books = self._required_books_for_bucket('totals', point, bucket, None)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('totals', point, bucket, None):
                 continue
             market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
             market_signal = self._market_signal_for_bucket(match.match_key, 'totals', bucket, point)
@@ -313,8 +310,7 @@ class CandidateFactory:
             selection_key = self._h2h_selection_key(match, selection)
             if selection_key not in {'home', 'away'}:
                 continue
-            required_books = self._required_books_for_bucket('h2h', None, bucket, None)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('h2h', None, bucket, None):
                 continue
             best_offer = self._select_best_offer(bucket)
             if float(best_offer.price) >= 3.35:
@@ -413,8 +409,7 @@ class CandidateFactory:
                 continue
             seen_keys.add(key)
             books = [item for item in offers if item.selection == offer.selection and item.point == offer.point]
-            required_books = self._required_books_for_bucket('spreads', offer.point, books, context)
-            if len({self._norm_book(item.bookmaker) for item in books}) < required_books:
+            if not self._meets_book_requirement('spreads', offer.point, books, context):
                 rejections['insufficient_books'] += 1
                 continue
             team_side = (offer.team_side or '').lower()
@@ -465,8 +460,7 @@ class CandidateFactory:
         result: list[CandidateBet] = []
         signal_label = self._signal_stack_label(context)
         for key, bucket in buckets.items():
-            required_books = self._required_books_for_bucket('btts', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('btts', None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             market_prob = self._fair_market_probability_yes_no(bucket, offers, key, selector=self._yes_no_key)
@@ -524,8 +518,7 @@ class CandidateFactory:
                 rejections['unsupported_team_total_line'] += 1
                 continue
             point = normalized_point
-            required_books = self._required_books_for_bucket('teamTotals', point, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('teamTotals', point, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             lam = expected_home if team_side == 'home' else expected_away
@@ -574,8 +567,7 @@ class CandidateFactory:
                 grouped[key].append(offer)
         result: list[CandidateBet] = []
         for key, bucket in grouped.items():
-            required_books = self._required_books_for_bucket('doubleChance', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('doubleChance', None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             if key == 'home_draw':
@@ -626,8 +618,7 @@ class CandidateFactory:
                 grouped[key].append(offer)
         result: list[CandidateBet] = []
         for key, bucket in grouped.items():
-            required_books = self._required_books_for_bucket('dnb', None, bucket, context)
-            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+            if not self._meets_book_requirement('dnb', None, bucket, context):
                 rejections['insufficient_books'] += 1
                 continue
             if key == 'home':
@@ -655,6 +646,75 @@ class CandidateFactory:
                 result.append(candidate)
         return result
 
+    def _book_support_summary(
+        self,
+        family: str,
+        point: float | None,
+        offers: list[Offer],
+        context: MatchContext | None,
+    ) -> dict[str, Any]:
+        unique_books = sorted({self._norm_book(item.bookmaker) for item in offers if self._norm_book(item.bookmaker)})
+        weighted_books = round(sum(self._bookmaker_weight(book) for book in unique_books), 2)
+        has_sharp_book = any(self._bookmaker_weight(book) >= 1.05 for book in unique_books)
+        required_books = self._required_books_for_bucket(family, point, offers, context)
+        weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 0.0) or 0.0)
+        allow_single_sharp = bool(getattr(self.settings, 'allow_single_sharp_book', True))
+
+        passed = False
+        reason = 'raw_books'
+        if len(unique_books) >= required_books:
+            passed = True
+            reason = 'raw_books'
+        elif weighted_threshold > 0 and weighted_books >= weighted_threshold:
+            passed = True
+            reason = 'weighted_books'
+        elif allow_single_sharp and len(unique_books) == 1 and has_sharp_book:
+            passed = True
+            reason = 'single_sharp_book'
+
+        return {
+            'unique_books': unique_books,
+            'unique_books_count': len(unique_books),
+            'weighted_books_count': weighted_books,
+            'has_sharp_book': has_sharp_book,
+            'required_books': required_books,
+            'effective_book_support': passed,
+            'book_support_reason': reason if passed else 'insufficient_books',
+        }
+
+    def _meets_book_requirement(
+        self,
+        family: str,
+        point: float | None,
+        offers: list[Offer],
+        context: MatchContext | None,
+    ) -> bool:
+        summary = self._book_support_summary(family, point, offers, context)
+        return bool(summary.get('effective_book_support'))
+
+    def _candidate_meets_publish_books(self, candidate: CandidateBet) -> bool:
+        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
+        effective = source_summary.get('effective_book_support')
+        if effective is not None:
+            return bool(effective)
+        books = source_summary.get('books') or []
+        books_count = int(getattr(candidate, 'books_count', 0) or 0)
+        if isinstance(books, list) and books:
+            weighted_books = round(sum(self._bookmaker_weight(str(book)) for book in books), 2)
+            has_sharp_book = any(self._bookmaker_weight(str(book)) >= 1.05 for book in books)
+        else:
+            weighted_books = float(books_count)
+            has_sharp_book = books_count == 1
+        weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 0.0) or 0.0)
+        required_books = max(1, int(getattr(self.settings, 'min_books_publish', 2) or 2))
+        if books_count >= required_books:
+            return True
+        if weighted_threshold > 0 and weighted_books >= weighted_threshold:
+            return True
+        if bool(getattr(self.settings, 'allow_single_sharp_book', True)) and books_count == 1 and has_sharp_book:
+            return True
+        return False
+
     def _candidate_from_bucket(
         self,
         *,
@@ -677,8 +737,8 @@ class CandidateFactory:
 
         books = {offer.bookmaker for offer in offers}
         sources = {offer.source for offer in offers}
-        required_books = self._required_books_for_bucket(family, point, offers, context)
-        if len(books) < required_books:
+        book_support = self._book_support_summary(family, point, offers, context)
+        if not bool(book_support.get('effective_book_support')):
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
@@ -872,6 +932,10 @@ class CandidateFactory:
             source_summary={
                 'books': sorted(books),
                 'sources': sorted(sources),
+                'weighted_books_count': book_support.get('weighted_books_count'),
+                'has_sharp_book': book_support.get('has_sharp_book'),
+                'effective_book_support': book_support.get('effective_book_support'),
+                'book_support_reason': book_support.get('book_support_reason'),
                 'offers_seen': len(offers),
                 'required_books': required_books,
                 'selected_bookmaker': best_offer.bookmaker,
@@ -1313,23 +1377,6 @@ class CandidateFactory:
             return signal
         return None
 
-
-
-    @staticmethod
-    def _weighted_average(values: list[float | None]) -> float | None:
-        cleaned = [float(v) for v in values if v is not None and not math.isnan(float(v)) and not math.isinf(float(v))]
-        if not cleaned:
-            return None
-        total_weight = 0.0
-        weighted_sum = 0.0
-        count = len(cleaned)
-        for idx, value in enumerate(cleaned):
-            weight = float(count - idx)
-            total_weight += weight
-            weighted_sum += value * weight
-        if total_weight <= 0:
-            return None
-        return weighted_sum / total_weight
 
     @staticmethod
     def _to_float_safe(value: Any) -> float | None:

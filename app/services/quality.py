@@ -78,10 +78,10 @@ class PredictionQualityService:
             for guard in (
                 self._market_sanity_guard,
                 lambda item: self._clv_guard(segments, profile, enough_history),
-                lambda item: self._historical_segment_guard(segments, profile, enough_history),
+                lambda item: self._historical_segment_guard(item, segments, profile, enough_history),
                 lambda item: self._quarantine_guard(item, segments, profile, enough_history),
                 lambda item: self._high_odds_guard(item, quality_score),
-                lambda item: self._post_calibration_threshold_guard(item, original_probability),
+                self._post_calibration_threshold_guard,
             ):
                 reason = guard(candidate)
                 if reason:
@@ -404,7 +404,7 @@ class PredictionQualityService:
                     return 'negative_clv_segment_guard'
         return None
 
-    def _historical_segment_guard(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
+    def _historical_segment_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(getattr(self.settings, 'historical_segment_guard_enabled', True)):
             return None
         stats = dict(profile.get('segments') or {})
@@ -415,6 +415,7 @@ class PredictionQualityService:
         hard_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
         hard_bad_segments = max(1, int(getattr(self.settings, 'historical_segment_hard_min_bad_segments', 2) or 2))
         bad_segments = 0
+        hard_hits: list[tuple[str, float, float]] = []
         for segment in segments:
             if segment.startswith('prob:'):
                 continue
@@ -426,10 +427,53 @@ class PredictionQualityService:
             if roi < min_roi and delta < min_delta:
                 bad_segments += 1
                 if roi < hard_roi and delta < hard_delta:
-                    return 'bad_historical_segment_guard'
+                    hard_hits.append((segment, roi, delta))
+        if self._allow_late_window_historical_override(candidate, bad_segments, hard_hits):
+            candidate.source_summary['historical_segment_override'] = 'late_window_soft' if not hard_hits else 'late_window_single_hard'
+            candidate.source_summary['historical_bad_segments'] = [item[0] for item in hard_hits] if hard_hits else bad_segments
+            candidate.diagnostics.setdefault('quality_historical_override', {
+                'enabled': True,
+                'bad_segments': bad_segments,
+                'hard_segments': [item[0] for item in hard_hits],
+            })
+            return None
+        if hard_hits:
+            return 'bad_historical_segment_guard'
         if bad_segments >= hard_bad_segments:
             return 'bad_historical_segment_guard'
         return None
+
+    def _allow_late_window_historical_override(self, candidate: CandidateBet, bad_segments: int, hard_hits: list[tuple[str, float, float]]) -> bool:
+        hours_to_start = max(0.0, (candidate.commence_time - datetime.now(UTC)).total_seconds() / 3600.0)
+        publish_window_hours = float(getattr(self.settings, 'publish_window_hours', 12) or 12)
+        late_window_limit = min(6.0, max(3.0, publish_window_hours))
+        if hours_to_start > late_window_limit:
+            return False
+        league_bucket = self._candidate_league_bucket(candidate)
+        if league_bucket not in {'preferred', 'secondary'}:
+            return False
+        if (self._to_float(getattr(candidate, 'confidence', None)) or 0.0) < 59.0:
+            return False
+        if (self._to_float(getattr(candidate, 'ev_pct', None)) or 0.0) < 1.5:
+            return False
+        if (self._to_float(getattr(candidate, 'edge_pct', None)) or 0.0) < 1.5:
+            return False
+        if (self._to_float(getattr(candidate, 'adjusted_probability', None)) or 0.0) < 0.52:
+            return False
+        if (self._to_float(getattr(candidate, 'quality_score', None)) or 100.0) < 55.0:
+            return False
+        books_count = int(self._to_float(getattr(candidate, 'books_count', None)) or 0)
+        if books_count <= 0:
+            books_count = int(bool((getattr(candidate, 'source_summary', {}) or {}).get('effective_book_support')))
+        if books_count <= 0:
+            return False
+        if not hard_hits and bad_segments <= 1:
+            return True
+        if len(hard_hits) == 1:
+            _, roi, delta = hard_hits[0]
+            if roi >= (float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0) - 4.0) and delta >= ((float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) - 2.0) / 100.0):
+                return True
+        return False
 
     def _quarantine_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(getattr(self.settings, 'quarantine_shadow_mode_enabled', True)):
@@ -466,44 +510,8 @@ class PredictionQualityService:
             return 'quality_high_odds_ev_guard'
         return None
 
-    def _post_calibration_threshold_guard(self, candidate: CandidateBet, original_probability: float | None = None) -> str | None:
-        min_prob = float(self.settings.min_model_confidence_for_family(candidate.family))
-        current_prob = float(candidate.adjusted_probability)
-        if current_prob < min_prob:
-            league_name = str(getattr(candidate, 'league_name', '') or '').lower()
-            preferred_terms = {str(v).strip().lower() for v in (getattr(self.settings, 'preferred_league_terms', []) or []) if str(v).strip()}
-            secondary_terms = {str(v).strip().lower() for v in (getattr(self.settings, 'secondary_league_terms', []) or []) if str(v).strip()}
-            league_bucket = 'other'
-            if any(term in league_name for term in preferred_terms):
-                league_bucket = 'preferred'
-            elif any(term in league_name for term in secondary_terms):
-                league_bucket = 'secondary'
-            starts_at = getattr(candidate, 'starts_at', None)
-            hours_to_start = None
-            try:
-                if starts_at is not None:
-                    starts_dt = starts_at if starts_at.tzinfo is not None else starts_at.replace(tzinfo=UTC)
-                    hours_to_start = max(0.0, (starts_dt - datetime.now(UTC)).total_seconds() / 3600.0)
-            except Exception:
-                hours_to_start = None
-            allow_late_window = (
-                original_probability is not None
-                and float(original_probability) >= min_prob
-                and float(original_probability) - current_prob <= 0.035
-                and float(getattr(candidate, 'confidence', 0.0) or 0.0) >= 58.0
-                and float(getattr(candidate, 'edge_pct', 0.0) or 0.0) >= 2.0
-                and float(getattr(candidate, 'ev_pct', 0.0) or 0.0) >= 1.5
-                and int(getattr(candidate, 'books_count', 0) or 0) >= 1
-                and float(getattr(candidate, 'publication_score', 0.0) or 0.0) >= 10.0
-                and league_bucket in {'preferred', 'secondary'}
-                and (hours_to_start is None or hours_to_start <= max(12.0, float(getattr(self.settings, 'publish_window_hours', 12) or 12)))
-            )
-            if allow_late_window:
-                try:
-                    candidate.source_summary['quality_post_calibration_override'] = 'late_window_narrow'
-                except Exception:
-                    pass
-                return None
+    def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
+        if float(candidate.adjusted_probability) < float(self.settings.min_model_confidence_for_family(candidate.family)):
             return 'post_calibration_probability_guard'
         if float(candidate.edge_pct) < float(self.settings.min_edge_pct_for_family(candidate.family)):
             return 'post_calibration_edge_guard'
