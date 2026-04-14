@@ -676,10 +676,9 @@ class CandidateFactory:
             return None
 
         books = {offer.bookmaker for offer in offers}
-        book_support = self._book_support_summary(family, point, offers, context)
         sources = {offer.source for offer in offers}
-        required_books = int(book_support.get('required_books') or self._required_books_for_bucket(family, point, offers, context))
-        if not bool(book_support.get('passes')):
+        required_books = self._required_books_for_bucket(family, point, offers, context)
+        if len(books) < required_books:
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
@@ -876,10 +875,6 @@ class CandidateFactory:
                 'offers_seen': len(offers),
                 'required_books': required_books,
                 'selected_bookmaker': best_offer.bookmaker,
-            'weighted_books_count': book_support.get('weighted_books_count'),
-            'has_sharp_book': book_support.get('has_sharp_book'),
-            'effective_book_support': book_support.get('effective_book_support'),
-            'book_support_reason': book_support.get('book_support_reason'),
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
                 'match_tier': getattr(match, 'tier', None),
@@ -1318,6 +1313,23 @@ class CandidateFactory:
             return signal
         return None
 
+
+
+    @staticmethod
+    def _weighted_average(values: list[float | None]) -> float | None:
+        cleaned = [float(v) for v in values if v is not None and not math.isnan(float(v)) and not math.isinf(float(v))]
+        if not cleaned:
+            return None
+        total_weight = 0.0
+        weighted_sum = 0.0
+        count = len(cleaned)
+        for idx, value in enumerate(cleaned):
+            weight = float(count - idx)
+            total_weight += weight
+            weighted_sum += value * weight
+        if total_weight <= 0:
+            return None
+        return weighted_sum / total_weight
 
     @staticmethod
     def _to_float_safe(value: Any) -> float | None:
@@ -2087,45 +2099,6 @@ class CandidateFactory:
         sharp = {self._norm_book(item) for item in getattr(self.settings, 'sharp_bookmakers', []) or []}
         return any(self._norm_book(offer.bookmaker) in sharp for offer in offers)
 
-
-    def _book_support_summary(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> dict[str, Any]:
-        unique_books = {self._norm_book(offer.bookmaker) for offer in offers if str(offer.bookmaker or '').strip()}
-        weighted_books = self._weighted_unique_books(offers)
-        has_sharp = self._has_sharp_book(offers)
-        required_books = self._required_books_for_bucket(family, point, offers, context)
-        unique_count = len(unique_books)
-        weighted_threshold = float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75)
-        allow_single_sharp = bool(getattr(self.settings, 'allow_single_sharp_book', True))
-
-        passes_unique = unique_count >= required_books
-        passes_weighted = required_books > 1 and weighted_books >= weighted_threshold
-        passes_single_sharp = required_books > 1 and allow_single_sharp and has_sharp
-
-        reason = 'raw_unique_books'
-        effective_support = float(unique_count)
-        if passes_weighted and weighted_books >= effective_support:
-            reason = 'weighted_consensus'
-            effective_support = float(weighted_books)
-        elif passes_single_sharp and effective_support < 1.05:
-            reason = 'single_sharp_book'
-            effective_support = 1.05
-
-        return {
-            'required_books': required_books,
-            'unique_books_count': unique_count,
-            'weighted_books_count': round(float(weighted_books), 3),
-            'weighted_threshold': weighted_threshold,
-            'has_sharp_book': has_sharp,
-            'passes': passes_unique or passes_weighted or passes_single_sharp,
-            'effective_book_support': round(float(effective_support), 3),
-            'book_support_reason': reason,
-        }
-
-    def _meets_book_requirement(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> bool:
-        return bool(self._book_support_summary(family, point, offers, context).get('passes'))
-
-    def _candidate_meets_publish_books(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> bool:
-        return self._meets_book_requirement(family, point, offers, context)
 
     def _required_books_for_bucket(self, family: str, point: float | None, offers: list[Offer], context: MatchContext | None) -> int:
         base = self.settings.min_books_for_family(family)
