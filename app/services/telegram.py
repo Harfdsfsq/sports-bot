@@ -339,6 +339,31 @@ class TelegramPublisher:
         bankroll = dict(summary.get("bankroll") or {})
         top_n = max(1, int(getattr(self.settings, "run_report_top_reasons", 4) or 4))
 
+        def _first_int(*values: Any) -> int:
+            for value in values:
+                if value in (None, ""):
+                    continue
+                try:
+                    return int(value)
+                except Exception:
+                    continue
+            return 0
+
+        matches_seen = _first_int(summary.get("matches_seen"), source_stats.get("matches_seen"))
+        matches_with_offers = _first_int(summary.get("matches_with_offers"), source_stats.get("matches_with_offers"))
+        contexts_built = _first_int(summary.get("contexts_built"), source_stats.get("contexts_built"))
+        candidates_before_quality = _first_int(
+            summary.get("candidates_before_quality"), source_stats.get("candidates_before_quality")
+        )
+        candidates_after_quality = _first_int(summary.get("candidates_raw"), source_stats.get("candidates_raw"))
+        candidates_publishable = _first_int(
+            summary.get("candidates_publishable"),
+            summary.get("published"),
+            source_stats.get("candidates_publishable"),
+            source_stats.get("published"),
+            source_stats.get("published_to_telegram"),
+        )
+
         lines = [
             "🧾 Отчёт по запуску бота",
             f"🕒 Время запуска: {summary.get('current_time_local') or summary.get('current_time_utc') or 'н/д'}",
@@ -347,14 +372,14 @@ class TelegramPublisher:
                 f"Мин. запас до матча: {int(filtering.get('min_kickoff_lead_minutes') or getattr(self.settings, 'min_kickoff_lead_minutes', 0) or 0)} мин"
             ),
             (
-                f"⚽ Матчей в окне: {int(summary.get('matches_seen') or 0)} | "
-                f"С офферами: {int(source_stats.get('matches_with_offers') or 0)} | "
-                f"Контекстов: {int(source_stats.get('contexts_built') or 0)}"
+                f"⚽ Матчей в окне: {matches_seen} | "
+                f"С офферами: {matches_with_offers} | "
+                f"Контекстов: {contexts_built}"
             ),
             (
-                f"🧠 Кандидаты: до quality {int(source_stats.get('candidates_before_quality') or 0)} | "
-                f"после quality {int(source_stats.get('candidates_raw') or 0)} | "
-                f"к публикации {int(source_stats.get('candidates_publishable') or 0)}"
+                f"🧠 Кандидаты: до quality {candidates_before_quality} | "
+                f"после quality {candidates_after_quality} | "
+                f"к публикации {candidates_publishable}"
             ),
         ]
         if bankroll:
