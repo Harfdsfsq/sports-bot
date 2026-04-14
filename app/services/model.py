@@ -837,10 +837,6 @@ class CandidateFactory:
             3,
         )
 
-        required_books_snapshot = locals().get('required_books')
-        if required_books_snapshot is None:
-            required_books_snapshot = self._required_books_for_bucket(family, point, offers, context)
-
         return CandidateBet(
             match_key=match.match_key,
             sport_key=match.sport_key,
@@ -877,7 +873,7 @@ class CandidateFactory:
                 'books': sorted(books),
                 'sources': sorted(sources),
                 'offers_seen': len(offers),
-                'required_books': required_books_snapshot,
+                'required_books': required_books,
                 'selected_bookmaker': best_offer.bookmaker,
                 'selected_source': best_offer.source,
                 'selected_price': best_offer.price,
