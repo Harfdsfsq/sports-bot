@@ -112,7 +112,19 @@ class TelegramPublisher:
             return 0, []
         if self._should_skip_duplicate(message):
             return 0, [message]
-        return await self._send_message(message)
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, [message]
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
+            response.raise_for_status()
+            return 1, [message]
 
     def _format_outcome(self, value: str) -> str:
         mapping = {
