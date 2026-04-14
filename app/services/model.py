@@ -1315,6 +1315,27 @@ class CandidateFactory:
 
 
     @staticmethod
+    def _weighted_average(values: list[float | None]) -> float | None:
+        cleaned: list[float] = []
+        for value in values:
+            if value is None:
+                continue
+            try:
+                number = float(value)
+            except Exception:
+                continue
+            if math.isnan(number) or math.isinf(number):
+                continue
+            cleaned.append(number)
+        if not cleaned:
+            return None
+        weights = list(range(1, len(cleaned) + 1))
+        total_weight = float(sum(weights))
+        if total_weight <= 0:
+            return mean(cleaned)
+        return sum(v * w for v, w in zip(cleaned, weights)) / total_weight
+
+    @staticmethod
     def _to_float_safe(value: Any) -> float | None:
         try:
             if value in (None, ''):
