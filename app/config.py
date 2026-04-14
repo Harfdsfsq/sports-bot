@@ -102,6 +102,10 @@ class Settings(BaseSettings):
 
     analysis_match_cap_per_run: int = Field(default=150, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
 
+    run_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ENABLED"))
+    run_report_only_when_no_predictions: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS"))
+    run_report_top_reasons: int = Field(default=4, validation_alias=AliasChoices("RUN_REPORT_TOP_REASONS"))
+
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
     sheet_id: str | None = Field(default=None, validation_alias=AliasChoices("SHEET_ID"))
@@ -145,11 +149,6 @@ class Settings(BaseSettings):
     premium_context_shortlist_limit: int = Field(default=18, validation_alias=AliasChoices("PREMIUM_CONTEXT_SHORTLIST_LIMIT"))
     premium_news_shortlist_limit: int = Field(default=3, validation_alias=AliasChoices("PREMIUM_NEWS_SHORTLIST_LIMIT"))
     value_hint_min_edge_pct: float = Field(default=1.0, validation_alias=AliasChoices("VALUE_HINT_MIN_EDGE_PCT"))
-    run_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ENABLED"))
-    run_report_only_when_no_predictions: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS"))
-    run_report_top_reasons: int = Field(default=4, validation_alias=AliasChoices("RUN_REPORT_TOP_REASONS"))
-    telegram_dedupe_enabled: bool = Field(default=True, validation_alias=AliasChoices("TELEGRAM_DEDUPE_ENABLED"))
-    telegram_dedupe_window_minutes: int = Field(default=120, validation_alias=AliasChoices("TELEGRAM_DEDUPE_WINDOW_MINUTES"))
     detailed_telegram_writeup: bool = Field(default=True, validation_alias=AliasChoices("DETAILED_TELEGRAM_WRITEUP"))
     telegram_writeup_max_points: int = Field(default=5, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MAX_POINTS"))
     telegram_writeup_min_recent_sample: int = Field(default=3, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_RECENT_SAMPLE"))
@@ -538,8 +537,6 @@ class Settings(BaseSettings):
         "target_bookmakers",
         "consensus_bookmakers",
         "odds_api_io_bookmakers",
-        "oddspapi_bookmakers",
-        "allsportsapi_bookmakers",
         "bookies_api_sports",
         "espn_soccer_leagues",
         "espn_soft_fail_statuses",
@@ -549,8 +546,6 @@ class Settings(BaseSettings):
         "openligadb_competition_map",
         "sharp_bookmakers",
         "consensus_alias_groups",
-        "preferred_league_terms",
-        "secondary_league_terms",
         "risky_totals_league_terms",
         "risky_totals_team_terms",
         mode="before",
