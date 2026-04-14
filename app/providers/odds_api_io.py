@@ -306,41 +306,12 @@ class OddsApiIoProvider:
                 chunk = matched_items[start : start + 10]
                 if not chunk:
                     continue
-                event_ids = ",".join(str(item["event"]["id"]) for item in chunk)
-                params = {
-                    "apiKey": api_key,
-                    "eventIds": event_ids,
-                    "bookmakers": target_books,
-                }
-                stats["odds_requests"] += 1
-                try:
-                    response = await client.get(f"{self.base_url}/odds/multi", params=params)
-                except Exception as exc:
-                    stats["response_errors"] += 1
-                    stats["last_body_preview"] = f"odds request failed: {exc}"
-                    continue
-
-                stats["odds_http_statuses"].append(response.status_code)
-                stats["last_body_preview"] = response.text[:2000]
-                if response.status_code == 429:
-                    stats["response_errors"] += 1
-                    stats["rate_limited"] = True
+                event_id_list = [int(item["event"]["id"]) for item in chunk]
+                event_list = await self._fetch_odds_multi_chunk(client, api_key, event_id_list, target_books, stats)
+                if stats.get("rate_limited"):
                     break
-                if response.status_code != 200:
-                    stats["response_errors"] += 1
-                    continue
-
-                payload = self._safe_json(response)
-                if payload is None:
-                    stats["response_errors"] += 1
-                    continue
-                shape = self._payload_shape(payload)
-                if shape not in stats["payload_shapes"]:
-                    stats["payload_shapes"].append(shape)
-                if len(preview["sample_odds"]) < 2:
-                    preview["sample_odds"].append(payload)
-
-                event_list = [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+                if len(preview["sample_odds"]) < 2 and event_list:
+                    preview["sample_odds"].append(event_list[:2])
                 for event_payload in event_list:
                     event_id = int(event_payload.get("id") or 0)
                     row = next((item for item in chunk if int(item["event"]["id"]) == event_id), None)
@@ -356,6 +327,68 @@ class OddsApiIoProvider:
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
             return dict(offers_by_match), stats, preview
+
+
+    async def _request_odds_multi(
+        self,
+        client: httpx.AsyncClient,
+        api_key: str,
+        event_ids: list[int],
+        target_books: str,
+    ) -> httpx.Response | None:
+        params = {
+            "apiKey": api_key,
+            "eventIds": ",".join(str(item) for item in event_ids),
+            "bookmakers": target_books,
+        }
+        return await client.get(f"{self.base_url}/odds/multi", params=params)
+
+    async def _fetch_odds_multi_chunk(
+        self,
+        client: httpx.AsyncClient,
+        api_key: str,
+        event_ids: list[int],
+        target_books: str,
+        stats: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        if not event_ids:
+            return []
+        attempts = 0
+        while attempts < 2:
+            attempts += 1
+            stats["odds_requests"] += 1
+            try:
+                response = await self._request_odds_multi(client, api_key, event_ids, target_books)
+            except Exception as exc:
+                stats["response_errors"] += 1
+                stats["last_body_preview"] = f"odds request failed: {exc}"
+                response = None
+            if response is None:
+                continue
+            stats["odds_http_statuses"].append(response.status_code)
+            stats["last_body_preview"] = response.text[:2000]
+            if response.status_code == 429:
+                stats["response_errors"] += 1
+                stats["rate_limited"] = True
+                return []
+            if response.status_code == 200:
+                payload = self._safe_json(response)
+                if payload is None:
+                    stats["response_errors"] += 1
+                    continue
+                shape = self._payload_shape(payload)
+                if shape not in stats["payload_shapes"]:
+                    stats["payload_shapes"].append(shape)
+                return [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
+            if response.status_code >= 500 and len(event_ids) > 1:
+                mid = max(1, len(event_ids) // 2)
+                left = await self._fetch_odds_multi_chunk(client, api_key, event_ids[:mid], target_books, stats)
+                right = await self._fetch_odds_multi_chunk(client, api_key, event_ids[mid:], target_books, stats)
+                return left + right
+            stats["response_errors"] += 1
+            if response.status_code < 500:
+                return []
+        return []
 
     def _bookmakers_param(self) -> str:
         """Restrict odds-api.io requests to Bet365 and Unibet only.
