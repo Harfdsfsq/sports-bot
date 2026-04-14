@@ -513,6 +513,16 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
+            run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
+            sent_messages += run_report_messages_sent
+            telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
+            summary['telegram_messages_sent'] = sent_messages
+            summary['run_report'] = {
+                'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
+                'telegram_messages_sent': run_report_messages_sent,
+                'payloads': run_report_payloads if self.settings.publish_dry_run else [],
+            }
+
             sheet_export_result = self.sheet_export.write(
                 publishable_candidates,
                 matches=filtered_matches,
@@ -523,16 +533,6 @@ class PredictionRunner:
                 summary=summary,
             )
             summary['sheet_export'] = sheet_export_result
-
-            run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
-            sent_messages += run_report_messages_sent
-            telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
-            summary['telegram_messages_sent'] = sent_messages
-            summary['run_report'] = {
-                'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
-                'telegram_messages_sent': run_report_messages_sent,
-                'sent': run_report_messages_sent > 0,
-            }
 
             self.state.write_debug(
                 {
@@ -684,14 +684,22 @@ class PredictionRunner:
                 local_filtered.append(match)
             return local_filtered, local_skipped_started, local_skipped_too_soon, local_skipped_outside_window
 
-        publish_window_hours = min(12, max(1, int(getattr(self.settings, "publish_window_hours", 12) or 12)))
-        horizon = now_utc + timedelta(hours=publish_window_hours)
-        configured_min_lead_minutes = max(30, int(getattr(self.settings, "min_kickoff_lead_minutes", 30) or 30))
-        adaptive_min_lead_minutes = max(30, int(getattr(self.settings, 'adaptive_min_kickoff_lead_minutes', configured_min_lead_minutes) or configured_min_lead_minutes))
+        horizon = now_utc + timedelta(hours=self.settings.publish_window_hours)
+        configured_min_lead_minutes = max(0, int(self.settings.min_kickoff_lead_minutes or 0))
+        adaptive_min_lead_minutes = min(
+            configured_min_lead_minutes,
+            max(0, int(getattr(self.settings, 'adaptive_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0)),
+        )
         manual_late_mode_applied = False
         if bool(getattr(self.settings, 'manual_late_mode_enabled', False)):
-            configured_min_lead_minutes = max(30, int(getattr(self.settings, 'manual_late_min_kickoff_lead_minutes', configured_min_lead_minutes) or configured_min_lead_minutes))
-            adaptive_min_lead_minutes = max(30, int(getattr(self.settings, 'manual_late_adaptive_min_kickoff_lead_minutes', adaptive_min_lead_minutes) or adaptive_min_lead_minutes))
+            configured_min_lead_minutes = min(
+                configured_min_lead_minutes,
+                max(0, int(getattr(self.settings, 'manual_late_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0)),
+            )
+            adaptive_min_lead_minutes = min(
+                configured_min_lead_minutes,
+                max(0, int(getattr(self.settings, 'manual_late_adaptive_min_kickoff_lead_minutes', adaptive_min_lead_minutes) or 0)),
+            )
             manual_late_mode_applied = True
         min_lead = timedelta(minutes=configured_min_lead_minutes)
         filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
@@ -723,7 +731,10 @@ class PredictionRunner:
             if future_matches_in_window
             else 0.0
         )
-        emergency_min_lead_minutes = max(30, int(getattr(self.settings, 'emergency_min_kickoff_lead_minutes', effective_min_lead_minutes) or effective_min_lead_minutes))
+        emergency_min_lead_minutes = min(
+            effective_min_lead_minutes,
+            max(0, int(getattr(self.settings, 'emergency_min_kickoff_lead_minutes', effective_min_lead_minutes) or 0)),
+        )
         if (
             not filtered
             and future_matches_in_window
@@ -750,9 +761,9 @@ class PredictionRunner:
             'skipped_started': skipped_started,
             'skipped_too_soon': skipped_too_soon,
             'skipped_outside_window': skipped_outside_window,
-            'publish_window_hours': publish_window_hours,
+            'publish_window_hours': self.settings.publish_window_hours,
             'min_kickoff_lead_minutes': effective_min_lead_minutes,
-            'configured_min_kickoff_lead_minutes': max(30, int(getattr(self.settings, 'min_kickoff_lead_minutes', 30) or 30)),
+            'configured_min_kickoff_lead_minutes': max(0, int(self.settings.min_kickoff_lead_minutes or 0)),
             'adaptive_min_kickoff_lead_enabled': getattr(self.settings, 'adaptive_min_kickoff_lead_enabled', True),
             'adaptive_min_kickoff_lead_minutes': adaptive_min_lead_minutes,
             'adaptive_min_kickoff_lead_applied': fallback_applied,
