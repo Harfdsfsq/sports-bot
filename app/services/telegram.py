@@ -1,10 +1,6 @@
 from __future__ import annotations
 
-import hashlib
-import json
 import re
-from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 import httpx
@@ -17,6 +13,11 @@ from app.utils import russian_market_name, russian_selection
 class TelegramPublisher:
     def __init__(self, settings: Settings):
         self.settings = settings
+
+    async def _send_message(self, message: str) -> tuple[int, list[str]]:
+        if not str(message or "").strip():
+            return 0, []
+        return await self._send_message(message)
 
     def _timezone_label(self, value: Any) -> str:
         try:
@@ -248,180 +249,6 @@ class TelegramPublisher:
             cleaned.append(key)
         return "\n\n".join(cleaned[:3])
 
-
-    def _dedupe_path(self) -> Path:
-        state_path = Path(getattr(self.settings, "state_path", ".data/state.json"))
-        return state_path.with_name("telegram-dedupe.json")
-
-    def _message_fingerprint(self, message: str) -> str:
-        return hashlib.sha256((message or "").encode("utf-8")).hexdigest()
-
-    def _can_send_message(self, message: str) -> bool:
-        if not getattr(self.settings, "telegram_dedupe_enabled", True):
-            return True
-        if not message:
-            return False
-        path = self._dedupe_path()
-        now = datetime.now(UTC)
-        window = max(1, int(getattr(self.settings, "telegram_dedupe_window_minutes", 90) or 90))
-        data: dict[str, str] = {}
-        if path.exists():
-            try:
-                raw = json.loads(path.read_text(encoding="utf-8"))
-                if isinstance(raw, dict):
-                    data = {str(k): str(v) for k, v in raw.items()}
-            except Exception:
-                data = {}
-        cutoff = now - timedelta(minutes=window)
-        kept: dict[str, str] = {}
-        for fp, ts in data.items():
-            try:
-                parsed = datetime.fromisoformat(ts)
-            except Exception:
-                continue
-            if parsed.tzinfo is None:
-                parsed = parsed.replace(tzinfo=UTC)
-            if parsed >= cutoff:
-                kept[fp] = parsed.astimezone(UTC).isoformat()
-        fp = self._message_fingerprint(message)
-        if fp in kept:
-            try:
-                path.parent.mkdir(parents=True, exist_ok=True)
-                path.write_text(json.dumps(kept, ensure_ascii=False, indent=2), encoding="utf-8")
-            except Exception:
-                pass
-            return False
-        kept[fp] = now.isoformat()
-        try:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(json.dumps(kept, ensure_ascii=False, indent=2), encoding="utf-8")
-        except Exception:
-            pass
-        return True
-
-    async def _send_message(self, message: str) -> tuple[int, list[str]]:
-        if not message:
-            return 0, []
-        if not self._can_send_message(message):
-            return 0, [message]
-        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
-            return 0, [message]
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(
-                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
-                json={
-                    "chat_id": self.settings.telegram_chat_id,
-                    "text": message,
-                    "disable_web_page_preview": True,
-                },
-            )
-            response.raise_for_status()
-            return 1, [message]
-
-    def _quality_stop_reason(self, summary: dict[str, Any]) -> list[str]:
-        rejections = dict(summary.get("rejections") or {})
-        items = []
-        for key, count in sorted(rejections.items(), key=lambda item: item[1], reverse=True):
-            if not str(key).startswith("quality_") or int(count or 0) <= 0:
-                continue
-            label = str(key)[8:].replace("_", " ")
-            if "historical" in label:
-                label = "historical guard"
-            items.append(f"• quality: {label} — {int(count)}")
-        return items[: max(1, int(getattr(self.settings, "run_report_top_reasons", 4) or 4))]
-
-    def render_run_report(self, summary: dict[str, Any]) -> str | None:
-        if not summary:
-            return None
-        source_stats = dict(summary.get("source_stats") or {})
-        filtering = dict(summary.get("filtering") or {})
-        rejections = dict(summary.get("rejections") or {})
-        bankroll = dict(summary.get("bankroll") or {})
-        top_n = max(1, int(getattr(self.settings, "run_report_top_reasons", 4) or 4))
-
-        def _first_int(*values: Any) -> int:
-            for value in values:
-                if value in (None, ""):
-                    continue
-                try:
-                    return int(value)
-                except Exception:
-                    continue
-            return 0
-
-        matches_seen = _first_int(summary.get("matches_seen"), source_stats.get("matches_seen"))
-        matches_with_offers = _first_int(summary.get("matches_with_offers"), source_stats.get("matches_with_offers"))
-        contexts_built = _first_int(summary.get("contexts_built"), source_stats.get("contexts_built"))
-        candidates_before_quality = _first_int(
-            summary.get("candidates_before_quality"), source_stats.get("candidates_before_quality")
-        )
-        candidates_after_quality = _first_int(summary.get("candidates_raw"), source_stats.get("candidates_raw"))
-        candidates_publishable = _first_int(
-            summary.get("candidates_publishable"),
-            summary.get("published"),
-            source_stats.get("candidates_publishable"),
-            source_stats.get("published"),
-            source_stats.get("published_to_telegram"),
-        )
-
-        lines = [
-            "🧾 Отчёт по запуску бота",
-            f"🕒 Время запуска: {summary.get('current_time_local') or summary.get('current_time_utc') or 'н/д'}",
-            (
-                f"📅 Окно публикации: {int(filtering.get('publish_window_hours') or getattr(self.settings, 'publish_window_hours', 0) or 0)} ч | "
-                f"Мин. запас до матча: {int(filtering.get('min_kickoff_lead_minutes') or getattr(self.settings, 'min_kickoff_lead_minutes', 0) or 0)} мин"
-            ),
-            (
-                f"⚽ Матчей в окне: {matches_seen} | "
-                f"С офферами: {matches_with_offers} | "
-                f"Контекстов: {contexts_built}"
-            ),
-            (
-                f"🧠 Кандидаты: до quality {candidates_before_quality} | "
-                f"после quality {candidates_after_quality} | "
-                f"к публикации {candidates_publishable}"
-            ),
-        ]
-        if bankroll:
-            lines.append(
-                f"💼 Банк: {self._format_money(float(bankroll.get('current_balance') or 0.0), bankroll_summary=bankroll)} | "
-                f"Открытый риск: {self._format_money(float(bankroll.get('open_exposure') or 0.0), bankroll_summary=bankroll)}"
-            )
-        lines.append("❌ В этот запуск прогнозов не было.")
-
-        human = {
-            "insufficient_books": "мало подтверждённых котировок",
-            "unsupported_total_line": "unsupported total line",
-            "confidence_below_threshold": "недобор по уверенности модели",
-            "ev_below_threshold": "недобор по EV",
-            "missing_context_totals": "не хватает контекста по тоталам",
-            "missing_context_h2h": "не хватает контекста по исходам",
-            "missing_context_spreads": "не хватает контекста по форам",
-            "no_candidate_for_match": "no candidate for match",
-            "short_window_fallback_no_candidate": "short-window fallback не нашёл кандидата",
-        }
-        top = []
-        for key, count in sorted(rejections.items(), key=lambda item: item[1], reverse=True):
-            if str(key).startswith("quality_") or int(count or 0) <= 0:
-                continue
-            top.append((human.get(str(key), str(key).replace("_", " ")), int(count)))
-        if top:
-            lines.append("Почему нет прогноза:")
-            lines.extend([f"• {label} — {count}" for label, count in top[:top_n]])
-        quality_lines = self._quality_stop_reason(summary)
-        if quality_lines:
-            lines.append("Quality стопоры:")
-            lines.extend(quality_lines)
-        return "\n".join(lines)
-
-    async def publish_run_report(self, summary: dict[str, Any]) -> tuple[int, list[str]]:
-        if not getattr(self.settings, "run_report_enabled", True):
-            return 0, []
-        if getattr(self.settings, "run_report_only_when_no_predictions", True) and int((summary.get("source_stats") or {}).get("published_to_telegram") or 0) > 0:
-            return 0, []
-        message = self.render_run_report(summary)
-        return await self._send_message(message)
-
     def render_settlement_summary(self, settlement_summary: dict[str, Any]) -> str | None:
         items = list(settlement_summary.get("items") or [])
         if not items:
@@ -460,6 +287,8 @@ class TelegramPublisher:
         if not getattr(self.settings, "settlement_send_telegram_summary", True):
             return 0, []
         message = self.render_settlement_summary(settlement_summary)
+        if not message:
+            return 0, []
         return await self._send_message(message)
 
     def render_daily_report(self, daily_report: dict[str, Any]) -> str | None:
@@ -541,10 +370,111 @@ class TelegramPublisher:
         if not getattr(self.settings, "daily_report_send_telegram", True):
             return 0, []
         message = self.render_daily_report(daily_report)
+        if not message:
+            return 0, []
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, [message]
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
+            response.raise_for_status()
+            return 1, [message]
+
+    def render_run_report(self, summary: dict[str, Any]) -> str | None:
+        if not bool(getattr(self.settings, "run_report_enabled", True)):
+            return None
+
+        summary = dict(summary or {})
+        source_stats = dict(summary.get("source_stats") or {})
+        filtering = dict(summary.get("filtering") or {})
+        bankroll = dict(summary.get("bankroll") or {})
+        rejections = dict(summary.get("rejections") or {})
+
+        def pick(*keys: str, default: Any = 0) -> Any:
+            for key in keys:
+                if summary.get(key) is not None:
+                    return summary.get(key)
+            for key in keys:
+                if source_stats.get(key) is not None:
+                    return source_stats.get(key)
+            return default
+
+        published = int(pick("published_to_telegram", "published", default=0) or 0)
+        if bool(getattr(self.settings, "run_report_only_when_no_predictions", True)) and published > 0:
+            return None
+
+        matches_seen = int(pick("matches_seen", default=0) or 0)
+        matches_with_offers = int(pick("matches_with_offers", default=0) or 0)
+        contexts_built = int(pick("contexts_built", default=0) or 0)
+        candidates_before_quality = int(pick("candidates_before_quality", default=0) or 0)
+        candidates_raw = int(pick("candidates_raw", default=0) or 0)
+        candidates_publishable = int(pick("candidates_publishable", default=0) or 0)
+
+        labels = {
+            "insufficient_books": "мало подтверждённых котировок",
+            "unsupported_total_line": "unsupported total line",
+            "missing_context_totals": "не хватает контекста по тоталам",
+            "missing_context_h2h": "не хватает контекста по исходам",
+            "missing_context_spreads": "не хватает контекста по форам",
+            "confidence_below_threshold": "недобор по уверенности модели",
+            "ev_below_threshold": "недобор по EV",
+            "no_candidate_for_match": "no candidate for match",
+        }
+        quality_labels = {
+            "bad_historical_segment_guard": "historical guard",
+            "historical_guard": "historical guard",
+            "post_calibration_probability_guard": "post-calibration probability guard",
+        }
+
+        top_reasons: list[tuple[str, int]] = []
+        quality_reasons: list[tuple[str, int]] = []
+        for key, value in sorted(rejections.items(), key=lambda item: int(item[1] or 0), reverse=True):
+            count = int(value or 0)
+            if count <= 0:
+                continue
+            if str(key).startswith("quality_"):
+                quality_reasons.append((str(key)[8:], count))
+                continue
+            top_reasons.append((str(key), count))
+
+        top_limit = max(1, int(getattr(self.settings, "run_report_top_reasons", 4) or 4))
+        lines = [
+            "🧾 Отчёт по запуску бота",
+            f"🕒 Время запуска: {summary.get('current_time_local') or summary.get('current_time_utc') or 'н/д'}",
+            f"📅 Окно публикации: {filtering.get('publish_window_hours', getattr(self.settings, 'publish_window_hours', 'н/д'))} ч | Мин. запас до матча: {filtering.get('min_kickoff_lead_minutes', getattr(self.settings, 'min_kickoff_lead_minutes', 'н/д'))} мин",
+            f"⚽ Матчей в окне: {matches_seen} | С офферами: {matches_with_offers} | Контекстов: {contexts_built}",
+            f"🧠 Кандидаты: до quality {candidates_before_quality} | после quality {candidates_raw} | к публикации {candidates_publishable}",
+        ]
+        if bankroll:
+            lines.append(
+                f"💼 Банк: {self._format_money(float(bankroll.get('current_balance') or 0.0), bankroll_summary=bankroll)} | Открытый риск: {self._format_money(float(bankroll.get('open_exposure') or 0.0), bankroll_summary=bankroll)}"
+            )
+        lines.append("❌ В этот запуск прогнозов не было." if published <= 0 else f"✅ В этот запуск опубликовано прогнозов: {published}")
+        if top_reasons:
+            lines.append("Почему нет прогноза:")
+            for key, count in top_reasons[:top_limit]:
+                lines.append(f"• {labels.get(key, key.replace('_', ' '))} — {count}")
+        if quality_reasons:
+            lines.append("Quality стопоры:")
+            for key, count in quality_reasons[:4]:
+                lines.append(f"• quality: {quality_labels.get(key, key.replace('_', ' '))} — {count}")
+        return "\n".join(lines)
+
+    async def publish_run_report(self, summary: dict[str, Any]) -> tuple[int, list[str]]:
+        message = self.render_run_report(summary)
+        if not message:
+            return 0, []
         return await self._send_message(message)
 
     async def publish(self, bets: list[CandidateBet], bankroll_summary: dict[str, Any] | None = None) -> tuple[int, list[str]]:
         if not bets:
             return 0, []
+
         message = self.render_message(bets, bankroll_summary=bankroll_summary)
         return await self._send_message(message)

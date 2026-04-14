@@ -513,19 +513,15 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
-
-            run_report_messages_sent = 0
-            run_report_payloads: list[str] = []
-            if getattr(self.settings, 'run_report_enabled', True):
-                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
-                sent_messages += run_report_messages_sent
-                telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
-                summary['source_stats']['telegram_messages_sent'] = sent_messages
+            run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
             summary['run_report'] = {
                 'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
-                'messages_sent': run_report_messages_sent,
-                'payload_preview': run_report_payloads[:1],
+                'only_when_no_predictions': bool(getattr(self.settings, 'run_report_only_when_no_predictions', True)),
+                'telegram_messages_sent': run_report_messages_sent,
             }
+            sent_messages += run_report_messages_sent
+            telegram_payloads = list(telegram_payloads) + list(run_report_payloads)
+            summary['telegram_messages_sent'] = sent_messages
 
             sheet_export_result = self.sheet_export.write(
                 publishable_candidates,
