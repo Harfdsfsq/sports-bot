@@ -3,7 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
-from dataclasses import asdict
+from dataclasses import fields
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
@@ -872,11 +872,60 @@ class JsonStateStore:
 
     @staticmethod
     def _serialize_candidate(candidate: CandidateBet) -> dict[str, Any]:
-        row = asdict(candidate)
+        row: dict[str, Any] = {}
+        for field in fields(candidate):
+            row[field.name] = JsonStateStore._safe_serialize_value(getattr(candidate, field.name))
         row['commence_time'] = candidate.commence_time.isoformat()
         row['fingerprint'] = JsonStateStore._fingerprint_from_candidate(candidate)
         row['prediction_id'] = row['fingerprint']
         return row
+
+    @staticmethod
+    def _safe_serialize_value(
+        value: Any,
+        *,
+        _seen: set[int] | None = None,
+        _depth: int = 0,
+        _max_depth: int = 12,
+    ) -> Any:
+        if _seen is None:
+            _seen = set()
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if _depth >= _max_depth:
+            return '<max-depth>'
+
+        if isinstance(value, dict):
+            marker = id(value)
+            if marker in _seen:
+                return '<recursive-ref>'
+            _seen.add(marker)
+            return {
+                str(key): JsonStateStore._safe_serialize_value(
+                    raw,
+                    _seen=_seen,
+                    _depth=_depth + 1,
+                    _max_depth=_max_depth,
+                )
+                for key, raw in value.items()
+            }
+        if isinstance(value, (list, tuple, set)):
+            marker = id(value)
+            if marker in _seen:
+                return '<recursive-ref>'
+            _seen.add(marker)
+            return [
+                JsonStateStore._safe_serialize_value(
+                    raw,
+                    _seen=_seen,
+                    _depth=_depth + 1,
+                    _max_depth=_max_depth,
+                )
+                for raw in value
+            ]
+        return str(value)
 
     @staticmethod
     def _fingerprint_from_candidate(candidate: CandidateBet) -> str:

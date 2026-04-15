@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections import Counter, defaultdict
 import json
-from dataclasses import asdict
+from dataclasses import fields
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from importlib import import_module
@@ -1253,9 +1253,59 @@ class PredictionRunner:
 
     @staticmethod
     def _serialize_candidate(item: CandidateBet) -> dict[str, Any]:
-        row = asdict(item)
+        row: dict[str, Any] = {}
+        for field in fields(item):
+            value = getattr(item, field.name)
+            row[field.name] = PredictionRunner._safe_serialize_value(value)
         row['commence_time'] = item.commence_time.isoformat()
         return row
+
+    @staticmethod
+    def _safe_serialize_value(
+        value: Any,
+        *,
+        _seen: set[int] | None = None,
+        _depth: int = 0,
+        _max_depth: int = 12,
+    ) -> Any:
+        if _seen is None:
+            _seen = set()
+        if value is None or isinstance(value, (str, int, float, bool)):
+            return value
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if _depth >= _max_depth:
+            return '<max-depth>'
+
+        if isinstance(value, dict):
+            marker = id(value)
+            if marker in _seen:
+                return '<recursive-ref>'
+            _seen.add(marker)
+            return {
+                str(key): PredictionRunner._safe_serialize_value(
+                    raw,
+                    _seen=_seen,
+                    _depth=_depth + 1,
+                    _max_depth=_max_depth,
+                )
+                for key, raw in value.items()
+            }
+        if isinstance(value, (list, tuple, set)):
+            marker = id(value)
+            if marker in _seen:
+                return '<recursive-ref>'
+            _seen.add(marker)
+            return [
+                PredictionRunner._safe_serialize_value(
+                    raw,
+                    _seen=_seen,
+                    _depth=_depth + 1,
+                    _max_depth=_max_depth,
+                )
+                for raw in value
+            ]
+        return str(value)
 
     @staticmethod
     def _serialize_match(match: Match) -> dict[str, Any]:
