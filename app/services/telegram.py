@@ -17,7 +17,19 @@ class TelegramPublisher:
     async def _send_message(self, message: str) -> tuple[int, list[str]]:
         if not str(message or "").strip():
             return 0, []
-        return await self._send_message(message)
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, [message]
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            response = await client.post(
+                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                json={
+                    "chat_id": self.settings.telegram_chat_id,
+                    "text": message,
+                    "disable_web_page_preview": True,
+                },
+            )
+            response.raise_for_status()
+            return 1, [message]
 
     def _timezone_label(self, value: Any) -> str:
         try:
