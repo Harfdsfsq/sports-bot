@@ -201,10 +201,11 @@ class PredictionQualityService:
         if not offenders:
             return None
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-        min_conf = float(getattr(self.settings, 'historical_segment_relief_min_confidence', 61.0) or 61.0)
-        min_ev = float(getattr(self.settings, 'historical_segment_relief_min_ev_pct', 1.6) or 1.6)
-        min_edge = float(getattr(self.settings, 'historical_segment_relief_min_edge_pct', 1.8) or 1.8)
+        min_conf = float(getattr(self.settings, 'historical_segment_relief_min_confidence', 58.0) or 58.0)
+        min_ev = float(getattr(self.settings, 'historical_segment_relief_min_ev_pct', 0.8) or 0.8)
+        min_edge = float(getattr(self.settings, 'historical_segment_relief_min_edge_pct', 1.0) or 1.0)
         min_books = max(1, int(getattr(self.settings, 'historical_segment_relief_min_books', 1) or 1))
+        min_publication_score = float(getattr(self.settings, 'historical_segment_relief_min_publication_score', 16.0) or 16.0)
         ranked = sorted(
             candidates,
             key=lambda item: (
@@ -224,6 +225,8 @@ class PredictionQualityService:
             if float(item.confidence) < min_conf:
                 continue
             if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+                continue
+            if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_publication_score:
                 continue
             if int(getattr(item, 'books_count', 0) or 0) < min_books:
                 continue

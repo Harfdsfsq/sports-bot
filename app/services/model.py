@@ -2150,10 +2150,10 @@ class CandidateFactory:
         has_expected = expected_home is not None and expected_away is not None
         if family in {'totals', 'teamTotals', 'btts'} and not has_expected:
             return False
-        if has_sharp and context_confidence >= 64.0:
+        if has_sharp and context_confidence >= 60.0:
             return True
-        trusted_sources = {'ensemble', 'api_football', 'espn', 'thesportsdb', 'sstats'}
-        if has_preferred_book and context_confidence >= 70.0 and context_source in trusted_sources:
+        trusted_sources = {'ensemble', 'api_football', 'espn', 'thesportsdb', 'sstats', 'bzzoiro_predictions'}
+        if has_preferred_book and context_confidence >= 66.0 and context_source in trusted_sources:
             return True
         return False
 
@@ -2559,6 +2559,16 @@ class CandidateFactory:
                     pass
                 rejections['model_relaxed_fallback_used'] += 1
                 return [relaxed]
+        historical_relief = self._select_historical_quality_relief_candidate(candidates)
+        if historical_relief is not None:
+            try:
+                historical_relief.reasons.append('fallback_publish_mode=historical_quality_relief')
+                if isinstance(historical_relief.source_summary, dict):
+                    historical_relief.source_summary['fallback_publish_mode'] = 'historical_quality_relief'
+            except Exception:
+                pass
+            rejections['historical_quality_relief_used'] += 1
+            return [historical_relief]
         rejections['fallback_publish_no_candidate'] += 1
         return deduped
 
@@ -2578,6 +2588,31 @@ class CandidateFactory:
             if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
                 continue
             if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            return item
+        return None
+
+    def _select_historical_quality_relief_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        min_conf = float(getattr(self.settings, 'historical_quality_relief_min_confidence', 57.0) or 57.0)
+        min_ev = float(getattr(self.settings, 'historical_quality_relief_min_ev_pct', 0.2) or 0.2)
+        min_edge = float(getattr(self.settings, 'historical_quality_relief_min_edge_pct', 0.8) or 0.8)
+        min_books = max(1, int(getattr(self.settings, 'historical_quality_relief_min_books', 1) or 1))
+        min_pub_score = float(getattr(self.settings, 'historical_quality_relief_min_publication_score', 16.0) or 16.0)
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if self._league_bucket(item) not in {'preferred', 'secondary'}:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            if float(getattr(item, 'confidence', 0.0) or 0.0) < min_conf:
+                continue
+            if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_pub_score:
                 continue
             return item
         return None
