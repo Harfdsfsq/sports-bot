@@ -2127,6 +2127,13 @@ class CandidateFactory:
             return min(base, 2)
         if self._allow_single_book_with_context(family, context, has_sharp=has_sharp, has_preferred_book=has_preferred_book):
             return 1
+        if (
+            bool(getattr(self.settings, 'allow_single_target_book', True))
+            and has_preferred_book
+            and family in {'h2h', 'totals', 'btts', 'doubleChance', 'dnb', 'teamTotals'}
+            and weighted_books >= 0.95
+        ):
+            return 1
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
             return min(base, 2)
         return base
@@ -2569,6 +2576,17 @@ class CandidateFactory:
                 pass
             rejections['historical_quality_relief_used'] += 1
             return [historical_relief]
+        if bool(getattr(self.settings, 'force_publish_when_empty_enabled', True)):
+            emergency_pick = self._select_force_publish_candidate(candidates)
+            if emergency_pick is not None:
+                try:
+                    emergency_pick.reasons.append('fallback_publish_mode=forced_non_empty')
+                    if isinstance(emergency_pick.source_summary, dict):
+                        emergency_pick.source_summary['fallback_publish_mode'] = 'forced_non_empty'
+                except Exception:
+                    pass
+                rejections['force_publish_when_empty_used'] += 1
+                return [emergency_pick]
         rejections['fallback_publish_no_candidate'] += 1
         return deduped
 
@@ -2613,6 +2631,26 @@ class CandidateFactory:
             if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
                 continue
             if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_pub_score:
+                continue
+            return item
+        return None
+
+    def _select_force_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        min_conf = float(getattr(self.settings, 'force_publish_when_empty_min_confidence', 49.0) or 49.0)
+        min_ev = float(getattr(self.settings, 'force_publish_when_empty_min_ev_pct', 0.0) or 0.0)
+        min_edge = float(getattr(self.settings, 'force_publish_when_empty_min_edge_pct', 0.0) or 0.0)
+        min_books = max(1, int(getattr(self.settings, 'force_publish_when_empty_min_books', 1) or 1))
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals', 'spreads'}
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            if float(getattr(item, 'confidence', 0.0) or 0.0) < min_conf:
+                continue
+            if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
                 continue
             return item
         return None
