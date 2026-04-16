@@ -2548,8 +2548,39 @@ class CandidateFactory:
                 pass
             rejections['fallback_publish_mode_used'] += 1
             return [item]
+        if bool(getattr(self.settings, 'model_relaxed_fallback_enabled', True)):
+            relaxed = self._select_relaxed_fallback_candidate(candidates)
+            if relaxed is not None:
+                try:
+                    relaxed.reasons.append('fallback_publish_mode=model_relaxed')
+                    if isinstance(relaxed.source_summary, dict):
+                        relaxed.source_summary['fallback_publish_mode'] = 'model_relaxed'
+                except Exception:
+                    pass
+                rejections['model_relaxed_fallback_used'] += 1
+                return [relaxed]
         rejections['fallback_publish_no_candidate'] += 1
         return deduped
+
+    def _select_relaxed_fallback_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        min_confidence = float(getattr(self.settings, 'model_relaxed_fallback_min_confidence', 52.0) or 52.0)
+        min_ev = float(getattr(self.settings, 'model_relaxed_fallback_min_ev_pct', 0.6) or 0.6)
+        min_edge = float(getattr(self.settings, 'model_relaxed_fallback_min_edge_pct', 0.8) or 0.8)
+        min_books = max(1, int(getattr(self.settings, 'model_relaxed_fallback_min_books', 1) or 1))
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals', 'spreads'}
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            if float(getattr(item, 'confidence', 0.0) or 0.0) < min_confidence:
+                continue
+            if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            return item
+        return None
 
     @staticmethod
     def _is_valid_probability(value: Any) -> bool:

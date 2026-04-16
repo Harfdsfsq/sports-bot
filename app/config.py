@@ -386,6 +386,11 @@ class Settings(BaseSettings):
     fallback_publish_min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_EDGE_PCT"))
     fallback_publish_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_CONFIDENCE"))
     fallback_publish_min_books: int = Field(default=1, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_BOOKS"))
+    model_relaxed_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices("MODEL_RELAXED_FALLBACK_ENABLED"))
+    model_relaxed_fallback_min_ev_pct: float = Field(default=0.6, validation_alias=AliasChoices("MODEL_RELAXED_FALLBACK_MIN_EV_PCT"))
+    model_relaxed_fallback_min_edge_pct: float = Field(default=0.8, validation_alias=AliasChoices("MODEL_RELAXED_FALLBACK_MIN_EDGE_PCT"))
+    model_relaxed_fallback_min_confidence: float = Field(default=52.0, validation_alias=AliasChoices("MODEL_RELAXED_FALLBACK_MIN_CONFIDENCE"))
+    model_relaxed_fallback_min_books: int = Field(default=1, validation_alias=AliasChoices("MODEL_RELAXED_FALLBACK_MIN_BOOKS"))
 
     min_publication_score: float = Field(default=12.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE"))
     min_publication_score_secondary_league: float = Field(default=14.5, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_SECONDARY_LEAGUE"))
