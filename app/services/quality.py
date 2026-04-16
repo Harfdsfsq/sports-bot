@@ -189,11 +189,17 @@ class PredictionQualityService:
             return None
         if any((item.get('status') == 'passed_quality') for item in decisions):
             return None
-        bad_key = 'bad_historical_segment_guard'
+        bad_keys = {'bad_historical_segment_guard', 'historical_guard'}
+        offenders: set[tuple[str, str]] = set()
         for item in decisions:
             reasons = list(item.get('reasons') or [])
-            if not reasons or reasons[0] != bad_key:
-                return None
+            top_reason = reasons[0] if reasons else ''
+            if top_reason in bad_keys:
+                offenders.add((str(item.get('match_key') or ''), str(item.get('selection_key') or '')))
+                continue
+            return None
+        if not offenders:
+            return None
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
         min_conf = float(getattr(self.settings, 'historical_segment_relief_min_confidence', 61.0) or 61.0)
         min_ev = float(getattr(self.settings, 'historical_segment_relief_min_ev_pct', 1.6) or 1.6)
@@ -210,6 +216,9 @@ class PredictionQualityService:
             reverse=True,
         )
         for item in ranked:
+            selection_key = candidate_selection_key(item.selection, item.point)
+            if (str(item.match_key or ''), selection_key) not in offenders:
+                continue
             if item.family not in allowed_families:
                 continue
             if float(item.confidence) < min_conf:
@@ -223,9 +232,9 @@ class PredictionQualityService:
 
     def _select_emergency_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
         families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 52.0) or 52.0)
-        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.8) or 0.8)
-        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 1.2) or 1.2)
+        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 50.0) or 50.0)
+        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.4) or 0.4)
+        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 0.6) or 0.6)
         min_books = max(1, int(getattr(self.settings, 'quality_emergency_min_books', 1) or 1))
         ranked = sorted(
             candidates,
