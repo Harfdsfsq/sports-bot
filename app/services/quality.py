@@ -125,6 +125,26 @@ class PredictionQualityService:
                 **payload,
             })
 
+        if not passed and candidates and bool(getattr(self.settings, 'quality_emergency_publish_enabled', True)):
+            fallback_candidate = self._select_emergency_publish_candidate(candidates)
+            if fallback_candidate is not None:
+                passed = [fallback_candidate]
+                rejections['quality_emergency_publish_used'] += 1
+                for decision in decisions:
+                    if decision.get('match_key') == fallback_candidate.match_key and decision.get('selection_key') == fallback_candidate.selection_key:
+                        decision['status'] = 'passed_quality_emergency'
+                        reasons = list(decision.get('reasons') or [])
+                        reasons.append('quality_emergency_publish')
+                        decision['reasons'] = reasons
+                        decision['quality_score'] = round(float(decision.get('quality_score') or 0.0), 3)
+                        break
+                fallback_candidate.source_summary['quality_status'] = 'passed_quality_emergency'
+                fallback_candidate.source_summary['quality_reasons'] = ['quality_emergency_publish']
+                fallback_candidate.reasons.append('quality=quality_emergency_publish')
+                fallback_candidate.diagnostics.setdefault('quality', {})
+                fallback_candidate.diagnostics['quality']['status'] = 'passed_quality_emergency'
+                fallback_candidate.diagnostics['quality']['reasons'] = ['quality_emergency_publish']
+
         passed.sort(key=lambda item: (
             float(getattr(item, 'publication_score', 0.0) or 0.0),
             float(getattr(item, 'ev_pct', 0.0) or 0.0),
@@ -138,6 +158,34 @@ class PredictionQualityService:
             'passed': len(passed),
             'rejected': len(candidates) - len(passed),
         }
+
+    def _select_emergency_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 52.0) or 52.0)
+        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.8) or 0.8)
+        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 1.2) or 1.2)
+        min_books = max(1, int(getattr(self.settings, 'quality_emergency_min_books', 1) or 1))
+        ranked = sorted(
+            candidates,
+            key=lambda item: (
+                float(getattr(item, 'publication_score', 0.0) or 0.0),
+                float(getattr(item, 'confidence', 0.0) or 0.0),
+                float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        for item in ranked:
+            if item.family not in families:
+                continue
+            if float(item.confidence) < min_conf:
+                continue
+            if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            return item
+        return None
 
     def analyze_daily_report(self, daily_report: dict[str, Any]) -> dict[str, Any]:
         rows = [dict(item) for item in (daily_report.get('rows') or []) if isinstance(item, dict)]
