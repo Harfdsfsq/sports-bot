@@ -447,6 +447,7 @@ class TelegramPublisher:
             "missing_context_spreads": "не хватает контекста по форам",
             "confidence_below_threshold": "недобор по уверенности модели",
             "ev_below_threshold": "недобор по EV",
+            "totals_over25_edge_guard": "жёсткий фильтр edge на тоталах ТБ2.5",
             "no_candidate_for_match": "no candidate for match",
             "publish_books_guard": "не пройден порог по числу подтверждённых офферов",
             "publication_score_guard": "недобор по publication score",
@@ -469,9 +470,13 @@ class TelegramPublisher:
             "missing_context_h2h": "пополнить контекст по исходам (форма, мотивация, кадровые новости)",
             "confidence_below_threshold": (
                 "проверить калибровку модели или временно ослабить порог confidence "
-                "(например, MIN_CONFIDENCE_TOTALS/H2H/SPREADS)"
+                "(например, TOTALS_OVER25_MIN_CONFIDENCE, H2H_SIDE_MIN_CONFIDENCE, SPREADS_MIN_MODEL_CONFIDENCE)"
             ),
             "ev_below_threshold": "пересмотреть порог EV либо расширить пул рынков с валидными офферами",
+            "totals_over25_edge_guard": (
+                "смягчить фильтр для тоталов ТБ2.5: TOTALS_OVER25_MIN_EDGE_PCT "
+                f"(сейчас {float(getattr(self.settings, 'totals_over25_min_edge_pct', 6.0) or 6.0):.2f})"
+            ),
             "quality_historical_guard": (
                 "ослабить historical guard или накопить больше исторических данных для сегмента "
                 f"(QUALITY_MIN_HISTORY_BETS={int(getattr(self.settings, 'quality_min_history_bets', 12) or 12)})"
