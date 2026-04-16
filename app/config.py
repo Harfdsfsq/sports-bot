@@ -65,7 +65,7 @@ class Settings(BaseSettings):
     match_start_tolerance_hours: float = Field(default=12.0, validation_alias=AliasChoices("MATCH_START_TOLERANCE_HOURS"))
     fallback_match_start_tolerance_hours: float = Field(default=8.0, validation_alias=AliasChoices("FALLBACK_MATCH_START_TOLERANCE_HOURS"))
     min_books_for_consensus: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"))
-    min_books_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
+    min_books_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
     min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
 
     min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
@@ -88,7 +88,7 @@ class Settings(BaseSettings):
     enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_PROVIDER_DIAGNOSTICS"))
 
     diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices("DIAGNOSTICS_MATCH_LIMIT"))
-    context_enrichment_match_limit: int = Field(default=260, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_MATCH_LIMIT"))
+    context_enrichment_match_limit: int = Field(default=320, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_MATCH_LIMIT"))
     context_enrichment_requires_offers: bool = Field(default=True, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_REQUIRES_OFFERS"))
 
     simple_market_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices("SIMPLE_MARKET_FALLBACK_ENABLED"))
@@ -116,8 +116,8 @@ class Settings(BaseSettings):
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices("SSTATS_API_KEY"))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))
-    sstats_lookback_days: int = Field(default=21, validation_alias=AliasChoices("SSTATS_LOOKBACK_DAYS"))
-    sstats_recent_matches: int = Field(default=6, validation_alias=AliasChoices("SSTATS_RECENT_MATCHES"))
+    sstats_lookback_days: int = Field(default=30, validation_alias=AliasChoices("SSTATS_LOOKBACK_DAYS"))
+    sstats_recent_matches: int = Field(default=8, validation_alias=AliasChoices("SSTATS_RECENT_MATCHES"))
 
     api_football_key: str | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_KEY"))
     api_football_base_url: str = Field(default="https://v3.football.api-sports.io", validation_alias=AliasChoices("API_FOOTBALL_BASE_URL"))
@@ -136,11 +136,11 @@ class Settings(BaseSettings):
     football_data_team_match_threshold: float = Field(default=0.68, validation_alias=AliasChoices("FOOTBALL_DATA_TEAM_MATCH_THRESHOLD"))
 
     api_football_predictions_limit: int | None = Field(default=None, validation_alias=AliasChoices("API_FOOTBALL_PREDICTIONS_LIMIT"))
-    api_football_context_match_limit: int = Field(default=18, validation_alias=AliasChoices("API_FOOTBALL_CONTEXT_MATCH_LIMIT"))
-    espn_context_match_limit: int = Field(default=24, validation_alias=AliasChoices("ESPN_CONTEXT_MATCH_LIMIT"))
+    api_football_context_match_limit: int = Field(default=28, validation_alias=AliasChoices("API_FOOTBALL_CONTEXT_MATCH_LIMIT"))
+    espn_context_match_limit: int = Field(default=36, validation_alias=AliasChoices("ESPN_CONTEXT_MATCH_LIMIT"))
     thesportsdb_context_match_limit: int = Field(default=80, validation_alias=AliasChoices("THESPORTSDB_CONTEXT_MATCH_LIMIT"))
-    football_data_context_match_limit: int = Field(default=80, validation_alias=AliasChoices("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT"))
-    openfootball_context_match_limit: int = Field(default=120, validation_alias=AliasChoices("OPENFOOTBALL_CONTEXT_MATCH_LIMIT"))
+    football_data_context_match_limit: int = Field(default=120, validation_alias=AliasChoices("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT"))
+    openfootball_context_match_limit: int = Field(default=180, validation_alias=AliasChoices("OPENFOOTBALL_CONTEXT_MATCH_LIMIT"))
     newsapi_context_match_limit: int = Field(default=12, validation_alias=AliasChoices("NEWSAPI_CONTEXT_MATCH_LIMIT"))
     gnews_context_match_limit: int = Field(default=8, validation_alias=AliasChoices("GNEWS_CONTEXT_MATCH_LIMIT"))
     futrixmetrics_context_match_limit: int = Field(default=6, validation_alias=AliasChoices("FUTRIXMETRICS_CONTEXT_MATCH_LIMIT"))
@@ -385,13 +385,13 @@ class Settings(BaseSettings):
     fallback_publish_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_EV_PCT"))
     fallback_publish_min_edge_pct: float = Field(default=2.5, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_EDGE_PCT"))
     fallback_publish_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_CONFIDENCE"))
-    fallback_publish_min_books: int = Field(default=2, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_BOOKS"))
+    fallback_publish_min_books: int = Field(default=1, validation_alias=AliasChoices("FALLBACK_PUBLISH_MIN_BOOKS"))
 
     min_publication_score: float = Field(default=12.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE"))
     min_publication_score_secondary_league: float = Field(default=14.5, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_SECONDARY_LEAGUE"))
     min_publication_score_other_league: float = Field(default=18.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_OTHER_LEAGUE"))
     min_publication_score_low_tier: float = Field(default=22.0, validation_alias=AliasChoices("MIN_PUBLICATION_SCORE_LOW_TIER"))
-    non_core_league_min_books: int = Field(default=2, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_BOOKS"))
+    non_core_league_min_books: int = Field(default=1, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_BOOKS"))
     non_core_league_min_confidence: float = Field(default=68.0, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_CONFIDENCE"))
     non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
     non_core_league_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EV_PCT"))
@@ -424,7 +424,7 @@ class Settings(BaseSettings):
     totals_min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("TOTALS_MIN_EDGE_PCT"))
     totals_min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("TOTALS_MIN_EV_PCT"))
     totals_min_model_confidence: float = Field(default=0.54, validation_alias=AliasChoices("TOTALS_MIN_MODEL_CONFIDENCE"))
-    totals_min_books: int = Field(default=2, validation_alias=AliasChoices("TOTALS_MIN_BOOKS"))
+    totals_min_books: int = Field(default=1, validation_alias=AliasChoices("TOTALS_MIN_BOOKS"))
     totals_over25_min_edge_pct: float = Field(default=6.0, validation_alias=AliasChoices("TOTALS_OVER25_MIN_EDGE_PCT"))
     totals_over25_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices("TOTALS_OVER25_MIN_EV_PCT"))
     totals_over25_min_confidence: float = Field(default=66.0, validation_alias=AliasChoices("TOTALS_OVER25_MIN_CONFIDENCE"))
@@ -470,7 +470,7 @@ class Settings(BaseSettings):
     spreads_min_edge_pct: float = Field(default=2.2, validation_alias=AliasChoices("SPREADS_MIN_EDGE_PCT"))
     spreads_min_ev_pct: float = Field(default=1.7, validation_alias=AliasChoices("SPREADS_MIN_EV_PCT"))
     spreads_min_model_confidence: float = Field(default=0.55, validation_alias=AliasChoices("SPREADS_MIN_MODEL_CONFIDENCE"))
-    spreads_min_books: int = Field(default=2, validation_alias=AliasChoices("SPREADS_MIN_BOOKS"))
+    spreads_min_books: int = Field(default=1, validation_alias=AliasChoices("SPREADS_MIN_BOOKS"))
 
     dnb_min_edge_pct: float = Field(default=1.8, validation_alias=AliasChoices("DNB_MIN_EDGE_PCT"))
     dnb_min_ev_pct: float = Field(default=1.3, validation_alias=AliasChoices("DNB_MIN_EV_PCT"))
@@ -512,7 +512,7 @@ class Settings(BaseSettings):
     secondary_single_book_min_edge_pct: float = Field(default=7.2, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EDGE_PCT"))
     secondary_single_book_min_ev_pct: float = Field(default=4.0, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_EV_PCT"))
     secondary_single_book_min_publication_score: float = Field(default=15.5, validation_alias=AliasChoices("SECONDARY_SINGLE_BOOK_MIN_PUBLICATION_SCORE"))
-    min_weighted_books_for_consensus: float = Field(default=1.75, validation_alias=AliasChoices("MIN_WEIGHTED_BOOKS_FOR_CONSENSUS"))
+    min_weighted_books_for_consensus: float = Field(default=1.45, validation_alias=AliasChoices("MIN_WEIGHTED_BOOKS_FOR_CONSENSUS"))
     sharp_bookmakers: CsvList = Field(
         default_factory=lambda: ["Pinnacle", "Betfair", "SBOBET", "Marathonbet", "Bet365", "Unibet"],
         validation_alias=AliasChoices("SHARP_BOOKMAKERS"),
