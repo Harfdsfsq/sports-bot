@@ -448,6 +448,9 @@ class TelegramPublisher:
             "confidence_below_threshold": "недобор по уверенности модели",
             "ev_below_threshold": "недобор по EV",
             "no_candidate_for_match": "no candidate for match",
+            "publish_books_guard": "не пройден порог по числу подтверждённых офферов",
+            "publication_score_guard": "недобор по publication score",
+            "edge_below_threshold": "недобор по edge",
         }
         quality_labels = {
             "bad_historical_segment_guard": "historical guard",
@@ -456,12 +459,27 @@ class TelegramPublisher:
         }
         guidance_labels = {
             "insufficient_books": "расширить покрытие линий у букмекеров или снизить минимальное число подтверждённых офферов в настройках",
+            "publish_books_guard": (
+                "ослабить publish books guard: MIN_BOOKS_PUBLISH "
+                f"(сейчас {int(getattr(self.settings, 'min_books_publish', 1) or 1)}) и "
+                f"NON_CORE_LEAGUE_MIN_BOOKS (сейчас {int(getattr(self.settings, 'non_core_league_min_books', 1) or 1)})"
+            ),
             "missing_context_totals": "увеличить глубину статистики по тоталам (форма, xG, темп) для матчей в текущем окне",
             "missing_context_spreads": "добавить контекст по форам (рейтинги силы, травмы, составы) перед запуском",
             "missing_context_h2h": "пополнить контекст по исходам (форма, мотивация, кадровые новости)",
-            "confidence_below_threshold": "проверить калибровку модели или временно ослабить порог confidence",
+            "confidence_below_threshold": (
+                "проверить калибровку модели или временно ослабить порог confidence "
+                "(например, MIN_CONFIDENCE_TOTALS/H2H/SPREADS)"
+            ),
             "ev_below_threshold": "пересмотреть порог EV либо расширить пул рынков с валидными офферами",
-            "quality_historical_guard": "ослабить historical guard или накопить больше исторических данных для сегмента",
+            "quality_historical_guard": (
+                "ослабить historical guard или накопить больше исторических данных для сегмента "
+                f"(QUALITY_MIN_HISTORY_BETS={int(getattr(self.settings, 'quality_min_history_bets', 12) or 12)})"
+            ),
+            "quality_bad_historical_segment_guard": (
+                "ослабить historical guard или накопить больше исторических данных для сегмента "
+                f"(QUALITY_MIN_HISTORY_BETS={int(getattr(self.settings, 'quality_min_history_bets', 12) or 12)})"
+            ),
             "quality_post_calibration_probability_guard": "перепроверить калибровку вероятностей после quality-фильтров",
         }
 
@@ -493,6 +511,7 @@ class TelegramPublisher:
             lines.append("Почему нет прогноза:")
             for key, count in top_reasons[:top_limit]:
                 lines.append(f"• {labels.get(key, key.replace('_', ' '))} — {count}")
+            lines.append("ℹ️ Числа выше — это срабатывания фильтров, один матч может попасть сразу в несколько причин.")
         if quality_reasons:
             lines.append("Quality стопоры:")
             for key, count in quality_reasons[:4]:
