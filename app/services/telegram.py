@@ -15,9 +15,60 @@ class TelegramPublisher:
         self.settings = settings
 
     async def _send_message(self, message: str) -> tuple[int, list[str]]:
-        if not str(message or "").strip():
+        text = str(message or "").strip()
+        if not text:
             return 0, []
-        return await self._send_message(message)
+        parts = self._split_message(text)
+        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
+            return 0, parts
+
+        sent = 0
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            for part in parts:
+                response = await client.post(
+                    f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
+                    json={
+                        "chat_id": self.settings.telegram_chat_id,
+                        "text": part,
+                        "disable_web_page_preview": True,
+                    },
+                )
+                response.raise_for_status()
+                sent += 1
+        return sent, parts
+
+    def _split_message(self, message: str, limit: int = 3900) -> list[str]:
+        text = str(message or "").strip()
+        if len(text) <= limit:
+            return [text]
+
+        chunks: list[str] = []
+        current = ""
+        for block in text.split("\n\n"):
+            candidate = block.strip()
+            if not candidate:
+                continue
+            if not current:
+                current = candidate
+                continue
+            merged = f"{current}\n\n{candidate}"
+            if len(merged) <= limit:
+                current = merged
+                continue
+            chunks.append(current)
+            current = candidate
+
+        if current:
+            chunks.append(current)
+
+        final_chunks: list[str] = []
+        for chunk in chunks:
+            if len(chunk) <= limit:
+                final_chunks.append(chunk)
+                continue
+            for i in range(0, len(chunk), limit):
+                final_chunks.append(chunk[i:i + limit])
+        return final_chunks
 
     def _timezone_label(self, value: Any) -> str:
         try:
@@ -59,6 +110,34 @@ class TelegramPublisher:
         }
         return mapping.get(str(value or "").strip().lower(), str(value or "н/д"))
 
+    def _consensus_probability(self, bet: CandidateBet) -> float:
+        consensus = float(getattr(bet, "consensus_probability", 0.0) or 0.0)
+        market = float(getattr(bet, "market_probability", 0.0) or 0.0)
+        return consensus if consensus > 0 else market
+
+    def _bookmakers_text(self, bet: CandidateBet) -> str:
+        summary = dict(getattr(bet, "source_summary", {}) or {})
+        candidates = (
+            summary.get("selected_bookmakers")
+            or summary.get("consensus_bookmakers")
+            or summary.get("bookmakers")
+            or []
+        )
+        names = [str(item).strip() for item in candidates if str(item).strip()]
+        if names:
+            return ", ".join(names[:4])
+        single = str(summary.get("selected_bookmaker") or getattr(bet, "bookmaker", "") or "").strip()
+        return single
+
+    def _price_premium_pct(self, bet: CandidateBet) -> float | None:
+        consensus_prob = self._consensus_probability(bet)
+        if consensus_prob <= 0 or consensus_prob >= 1:
+            return None
+        fair_price = 1.0 / consensus_prob
+        if fair_price <= 1.0 or float(bet.odds) <= 1.0:
+            return None
+        return (float(bet.odds) - fair_price) * 100.0 / fair_price
+
     def render_message(
         self,
         bets: list[CandidateBet],
@@ -66,12 +145,12 @@ class TelegramPublisher:
     ) -> str:
         count = len(bets)
         single_book_count = sum(1 for bet in bets if int(getattr(bet, "books_count", 0) or 0) <= 1)
-        min_books = 1 if single_book_count else 2
         publish_window_hours = max(1, int(getattr(self.settings, "publish_window_hours", 48) or 48))
         books_note = (
-            "есть рыночное подтверждение; приоритет — совпадение как минимум у двух котировок, а исключения допускаются только при очень сильном сигнале и глубоком контексте."
-            if min_books <= 1
-            else "есть подтверждение как минимум по двум котировкам."
+            "есть подтверждение по рыночным котировкам; приоритет — варианты с подтверждением у 2+ букмекеров, "
+            "а одиночные линии допускаются только при сильном сигнале модели и глубоком контексте."
+            if single_book_count
+            else "есть подтверждение как минимум у двух букмекеров."
         )
 
         bank_line = ""
@@ -85,14 +164,13 @@ class TelegramPublisher:
                 f"Доступно: {self._format_money(available, bankroll_summary=bankroll_summary)}\n\n"
             )
 
-        header = f"🔥 {count} лучших ставок на ближайшие {publish_window_hours} часов\n\n" + bank_line
+        header = f"🔥 {count} лучшая ставка на ближайшие {publish_window_hours} часов\n\n" if count == 1 else f"🔥 {count} лучшие ставки на ближайшие {publish_window_hours} часов\n\n"
+        header += bank_line
         notes = (
             "Показываем только одиночные ставки. "
             "На один матч — не больше одной рекомендации. "
             f"В список попадают варианты, где модель видит перевес над линией и {books_note}"
         )
-        if single_book_count:
-            notes += " Допускаем одиночные линии, когда free-tier не дает полного консенсуса, но сигнал модели остается рабочим."
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
@@ -116,12 +194,13 @@ class TelegramPublisher:
                 if bet.already_used and bool(getattr(self.settings, "telegram_writeup_show_used_marker", False))
                 else ""
             )
+            consensus_probability = self._consensus_probability(bet)
             explanation = self._build_explanation(bet, selection_text)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
                 f"💸 Коэффициент: {bet.odds:.2f}\n"
-                f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии: {bet.market_probability * 100:.1f}%\n"
+                f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии (консенсус): {consensus_probability * 100:.1f}%\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"🏆 Турнир: {bet.league_name}\n"
                 f"🕒 Начало: {start_text}"
@@ -190,7 +269,6 @@ class TelegramPublisher:
         if summary_points:
             return "\n\n".join(summary_points)
 
-        raw_reasons = " ".join(bet.reasons).lower()
         parts: list[str] = []
         kind = self._selection_kind(
             bet.family,
@@ -198,46 +276,58 @@ class TelegramPublisher:
             selection_text,
             getattr(bet, "selection_key", None),
         )
+        model_pct = float(bet.adjusted_probability) * 100.0
+        consensus_pct = self._consensus_probability(bet) * 100.0
+        edge_pp = model_pct - consensus_pct
 
         if bet.family == "totals":
-            if kind == "over":
-                parts.append("Модель ждёт более результативный матч, чем это предполагает текущий коэффициент.")
-            elif kind == "under":
-                parts.append("Модель ждёт более осторожный матч и более низкий тотал, чем сейчас закладывает линия.")
-            else:
-                parts.append("По тоталу модель видит перевес над текущим коэффициентом.")
+            parts.append(
+                f"На {selection_text}{f' {bet.point:g}' if bet.point is not None else ''} линия сейчас даёт около {consensus_pct:.1f}%, "
+                f"а модель оценивает вероятность в {model_pct:.1f}%. "
+                f"Запас {edge_pp:+.1f} п.п. делает этот вариант интереснее рынка."
+            )
         elif bet.family == "h2h":
-            if kind == "home":
-                parts.append(f"По нашим данным у {bet.home_team} есть перевес, а коэффициент всё ещё выглядит интересным.")
-            elif kind == "away":
-                parts.append(f"По нашим данным у {bet.away_team} есть перевес, а коэффициент всё ещё выглядит интересным.")
-            elif kind == "draw":
-                parts.append("Модель допускает более равный матч, чем это видно по линии.")
-            else:
-                parts.append("По исходу модель видит перевес над текущим коэффициентом.")
-        elif bet.family == "btts":
-            if kind == "yes":
-                parts.append("Обе команды создают достаточно моментов, чтобы сценарий с голами с двух сторон был вероятнее рынка.")
-            elif kind == "no":
-                parts.append("Модель ждёт менее открытый матч, чем предполагает рынок, и снижает шанс обмена голами.")
-            else:
-                parts.append("По рынку обе забьют модель видит перевес над текущей ценой.")
+            target_team = bet.home_team if kind == "home" else bet.away_team if kind == "away" else "исход"
+            parts.append(
+                f"По рынку этот вариант оценивается примерно в {consensus_pct:.1f}%, "
+                f"а модель поднимает вероятность до {model_pct:.1f}%. "
+                f"Перевес {edge_pp:+.1f} п.п. даёт преимущество в пользу {target_team}."
+            )
         else:
-            parts.append("По модели этот вариант выглядит сильнее, чем его сейчас оценивает рынок.")
+            parts.append(
+                f"Линия сейчас закладывает около {consensus_pct:.1f}%, а модель видит {model_pct:.1f}%. "
+                f"Разница {edge_pp:+.1f} п.п. говорит в пользу этой ставки."
+            )
 
         if bet.expected_home is not None and bet.expected_away is not None:
-            total_xg = bet.expected_home + bet.expected_away
-            if bet.family == "totals" and kind == "over" and total_xg >= 2.6:
-                parts.append("По ожидаемым голам матч тянет на открытую игру с моментами у обеих сторон.")
-            elif bet.family == "totals" and kind == "under" and total_xg <= 2.2:
-                parts.append("По ожидаемым голам матч больше похож на осторожную игру с небольшим числом моментов.")
+            total_xg = float(bet.expected_home) + float(bet.expected_away)
+            stronger = bet.home_team if float(bet.expected_home) >= float(bet.expected_away) else bet.away_team
+            if bet.family == "totals" and kind == "under":
+                parts.append(
+                    f"По ожидаемым голам матч тянет к {total_xg:.2f} ({bet.expected_home:.2f} : {bet.expected_away:.2f}). "
+                    f"Для линии {bet.point:g} это профиль в пользу более низового сценария. "
+                    f"Основной вклад в темп модель ждёт от {stronger}."
+                )
+            elif bet.family == "totals" and kind == "over":
+                parts.append(
+                    f"По ожидаемым голам матч тянет к {total_xg:.2f} ({bet.expected_home:.2f} : {bet.expected_away:.2f}), "
+                    f"что поддерживает более результативный сценарий относительно линии {bet.point:g}."
+                )
+            else:
+                parts.append(
+                    f"Ожидаемые голы по модели — {bet.expected_home:.2f} : {bet.expected_away:.2f}, "
+                    f"что не противоречит выбранному сценарию."
+                )
 
-        if "injuries" in raw_reasons:
-            parts.append("Есть кадровые новости, которые могут заметно повлиять на рисунок игры.")
-        if "form" in raw_reasons:
-            parts.append("Текущая форма команд не противоречит этому сценарию.")
-        if "table" in raw_reasons:
-            parts.append("Положение команд в таблице тоже поддерживает такой сценарий матча.")
+        bookmakers = self._bookmakers_text(bet)
+        premium_pct = self._price_premium_pct(bet)
+        market_line = f"Рынок идею подтверждает: линию держат уже {int(getattr(bet, 'books_count', 0) or 0)} букмекеров"
+        if bookmakers:
+            market_line += f" ({bookmakers})"
+        market_line += "."
+        if premium_pct is not None and premium_pct > 0.2:
+            market_line += f" Лучшая доступная цена сейчас примерно на {premium_pct:.1f}% выше fair-цены консенсуса."
+        parts.append(market_line)
 
         cleaned: list[str] = []
         seen: set[str] = set()
@@ -328,7 +418,7 @@ class TelegramPublisher:
             ),
         ]
         if bool(daily_report.get("is_revision")):
-            lines.insert(1, "\U0001f501 \u041e\u0431\u043d\u043e\u0432\u043b\u0435\u043d\u043e: \u0437\u0430\u043a\u0440\u044b\u043b\u0438\u0441\u044c \u0441\u0442\u0430\u0432\u043a\u0438, \u043a\u043e\u0442\u043e\u0440\u044b\u0435 \u0440\u0430\u043d\u044c\u0448\u0435 \u0431\u044b\u043b\u0438 \u0432 \u043e\u0436\u0438\u0434\u0430\u043d\u0438\u0438.")
+            lines.insert(1, "🔁 Обновлено: закрылись ставки, которые раньше были в ожидании.")
         pending_stake = float(summary.get("pending_stake") or 0.0)
         if pending_stake > 0:
             lines.append(f"Открытый остаток за день: {self._format_money(pending_stake, bankroll_summary=bankroll)}")
@@ -372,19 +462,7 @@ class TelegramPublisher:
         message = self.render_daily_report(daily_report)
         if not message:
             return 0, []
-        if self.settings.publish_dry_run or not self.settings.telegram_token or not self.settings.telegram_chat_id:
-            return 0, [message]
-        async with httpx.AsyncClient(timeout=20.0) as client:
-            response = await client.post(
-                f"https://api.telegram.org/bot{self.settings.telegram_token}/sendMessage",
-                json={
-                    "chat_id": self.settings.telegram_chat_id,
-                    "text": message,
-                    "disable_web_page_preview": True,
-                },
-            )
-            response.raise_for_status()
-            return 1, [message]
+        return await self._send_message(message)
 
     def render_run_report(self, summary: dict[str, Any]) -> str | None:
         if not bool(getattr(self.settings, "run_report_enabled", True)):
