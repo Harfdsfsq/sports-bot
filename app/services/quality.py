@@ -125,6 +125,45 @@ class PredictionQualityService:
                 **payload,
             })
 
+        if not passed and candidates and bool(getattr(self.settings, 'quality_emergency_publish_enabled', True)):
+            fallback_candidate = self._select_emergency_publish_candidate(candidates)
+            if fallback_candidate is not None:
+                passed = [fallback_candidate]
+                rejections['quality_emergency_publish_used'] += 1
+                for decision in decisions:
+                    if decision.get('match_key') == fallback_candidate.match_key and decision.get('selection_key') == fallback_candidate.selection_key:
+                        decision['status'] = 'passed_quality_emergency'
+                        reasons = list(decision.get('reasons') or [])
+                        reasons.append('quality_emergency_publish')
+                        decision['reasons'] = reasons
+                        decision['quality_score'] = round(float(decision.get('quality_score') or 0.0), 3)
+                        break
+                fallback_candidate.source_summary['quality_status'] = 'passed_quality_emergency'
+                fallback_candidate.source_summary['quality_reasons'] = ['quality_emergency_publish']
+                fallback_candidate.reasons.append('quality=quality_emergency_publish')
+                fallback_candidate.diagnostics.setdefault('quality', {})
+                fallback_candidate.diagnostics['quality']['status'] = 'passed_quality_emergency'
+                fallback_candidate.diagnostics['quality']['reasons'] = ['quality_emergency_publish']
+
+        if not passed and candidates:
+            historical_relief = self._select_historical_guard_relief_candidate(candidates, decisions)
+            if historical_relief is not None:
+                passed = [historical_relief]
+                rejections['quality_historical_guard_relief_used'] += 1
+                for decision in decisions:
+                    if decision.get('match_key') == historical_relief.match_key and decision.get('selection_key') == historical_relief.selection_key:
+                        decision['status'] = 'passed_quality_historical_relief'
+                        reasons = list(decision.get('reasons') or [])
+                        reasons.append('quality_historical_guard_relief')
+                        decision['reasons'] = reasons
+                        break
+                historical_relief.source_summary['quality_status'] = 'passed_quality_historical_relief'
+                historical_relief.source_summary['quality_reasons'] = ['quality_historical_guard_relief']
+                historical_relief.reasons.append('quality=quality_historical_guard_relief')
+                historical_relief.diagnostics.setdefault('quality', {})
+                historical_relief.diagnostics['quality']['status'] = 'passed_quality_historical_relief'
+                historical_relief.diagnostics['quality']['reasons'] = ['quality_historical_guard_relief']
+
         passed.sort(key=lambda item: (
             float(getattr(item, 'publication_score', 0.0) or 0.0),
             float(getattr(item, 'ev_pct', 0.0) or 0.0),
@@ -138,6 +177,89 @@ class PredictionQualityService:
             'passed': len(passed),
             'rejected': len(candidates) - len(passed),
         }
+
+    def _select_historical_guard_relief_candidate(
+        self,
+        candidates: list[CandidateBet],
+        decisions: list[dict[str, Any]],
+    ) -> CandidateBet | None:
+        if not bool(getattr(self.settings, 'historical_segment_relief_enabled', True)):
+            return None
+        if not decisions:
+            return None
+        if any((item.get('status') == 'passed_quality') for item in decisions):
+            return None
+        bad_keys = {'bad_historical_segment_guard', 'historical_guard'}
+        offenders: set[tuple[str, str]] = set()
+        for item in decisions:
+            reasons = list(item.get('reasons') or [])
+            top_reason = reasons[0] if reasons else ''
+            if top_reason in bad_keys:
+                offenders.add((str(item.get('match_key') or ''), str(item.get('selection_key') or '')))
+                continue
+            return None
+        if not offenders:
+            return None
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        min_conf = float(getattr(self.settings, 'historical_segment_relief_min_confidence', 58.0) or 58.0)
+        min_ev = float(getattr(self.settings, 'historical_segment_relief_min_ev_pct', 0.8) or 0.8)
+        min_edge = float(getattr(self.settings, 'historical_segment_relief_min_edge_pct', 1.0) or 1.0)
+        min_books = max(1, int(getattr(self.settings, 'historical_segment_relief_min_books', 1) or 1))
+        min_publication_score = float(getattr(self.settings, 'historical_segment_relief_min_publication_score', 16.0) or 16.0)
+        ranked = sorted(
+            candidates,
+            key=lambda item: (
+                float(getattr(item, 'publication_score', 0.0) or 0.0),
+                float(getattr(item, 'confidence', 0.0) or 0.0),
+                float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        for item in ranked:
+            selection_key = candidate_selection_key(item.selection, item.point)
+            if (str(item.match_key or ''), selection_key) not in offenders:
+                continue
+            if item.family not in allowed_families:
+                continue
+            if float(item.confidence) < min_conf:
+                continue
+            if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+                continue
+            if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_publication_score:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            return item
+        return None
+
+    def _select_emergency_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 50.0) or 50.0)
+        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.4) or 0.4)
+        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 0.6) or 0.6)
+        min_books = max(1, int(getattr(self.settings, 'quality_emergency_min_books', 1) or 1))
+        ranked = sorted(
+            candidates,
+            key=lambda item: (
+                float(getattr(item, 'publication_score', 0.0) or 0.0),
+                float(getattr(item, 'confidence', 0.0) or 0.0),
+                float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        for item in ranked:
+            if item.family not in families:
+                continue
+            if float(item.confidence) < min_conf:
+                continue
+            if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            return item
+        return None
 
     def analyze_daily_report(self, daily_report: dict[str, Any]) -> dict[str, Any]:
         rows = [dict(item) for item in (daily_report.get('rows') or []) if isinstance(item, dict)]
