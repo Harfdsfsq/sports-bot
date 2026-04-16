@@ -198,9 +198,13 @@ class TelegramPublisher:
 
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
         analysis = dict(getattr(bet, "analysis", {}) or {})
+        source_summary = dict(getattr(bet, "source_summary", {}) or {})
         summary_points = [str(item).strip() for item in (analysis.get("summary_points") or []) if str(item).strip()]
+        if not summary_points:
+            summary_points = [str(item).strip() for item in (source_summary.get("analysis_points") or []) if str(item).strip()]
         if summary_points:
-            return "\n\n".join(summary_points)
+            max_points = max(3, int(getattr(self.settings, "telegram_writeup_max_points", 5) or 5))
+            return "\n\n".join(summary_points[:max_points])
 
         raw_reasons = " ".join(bet.reasons).lower()
         parts: list[str] = []
