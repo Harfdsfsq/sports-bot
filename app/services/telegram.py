@@ -97,7 +97,7 @@ class TelegramPublisher:
                 f"Доступно: {self._format_money(available, bankroll_summary=bankroll_summary)}\n\n"
             )
 
-        header = f"🔥 {count} лучших ставок на ближайшие {publish_window_hours} часов\n\n" + bank_line
+        header = f"🔥 {self._best_bets_title(count, publish_window_hours)}\n\n" + bank_line
         notes = (
             "Показываем только одиночные ставки. "
             "На один матч — не больше одной рекомендации. "
@@ -133,7 +133,7 @@ class TelegramPublisher:
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
                 f"💸 Коэффициент: {bet.odds:.2f}\n"
-                f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии: {bet.market_probability * 100:.1f}%\n"
+                f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии (консенсус): {bet.market_probability * 100:.1f}%\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"🏆 Турнир: {bet.league_name}\n"
                 f"🕒 Начало: {start_text}"
@@ -294,6 +294,17 @@ class TelegramPublisher:
                 f"ROI: {float(bankroll.get('roi_pct') or 0.0):+.2f}%"
             )
         return "\n\n".join(lines)
+
+    def _best_bets_title(self, count: int, publish_window_hours: int) -> str:
+        mod10 = count % 10
+        mod100 = count % 100
+        if mod10 == 1 and mod100 != 11:
+            noun = "лучшая ставка"
+        elif mod10 in {2, 3, 4} and mod100 not in {12, 13, 14}:
+            noun = "лучшие ставки"
+        else:
+            noun = "лучших ставок"
+        return f"{count} {noun} на ближайшие {publish_window_hours} часов"
 
     async def publish_settlement_summary(self, settlement_summary: dict[str, Any]) -> tuple[int, list[str]]:
         if not getattr(self.settings, "settlement_send_telegram_summary", True):
