@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import json
 import math
+import os
 from collections import Counter, defaultdict
 from datetime import UTC, datetime
 from pathlib import Path
@@ -17,6 +18,30 @@ class PredictionQualityService:
     def __init__(self, settings: Any) -> None:
         self.settings = settings
 
+
+    def _setting(self, name: str, default: Any) -> Any:
+        value = getattr(self.settings, name, None)
+        if value is not None:
+            return value
+        env_value = os.getenv(str(name or '').upper())
+        if env_value is None:
+            return default
+        if isinstance(default, bool):
+            return str(env_value).strip().lower() in {'1', 'true', 'yes', 'on'}
+        if isinstance(default, int) and not isinstance(default, bool):
+            try:
+                return int(float(env_value))
+            except Exception:
+                return default
+        if isinstance(default, float):
+            try:
+                return float(env_value)
+            except Exception:
+                return default
+        if isinstance(default, (list, tuple, set)):
+            return [item.strip() for item in str(env_value).split(',') if item.strip()]
+        return env_value
+
     def build_quality_report(
         self,
         ledger_rows: list[dict[str, Any]],
@@ -28,7 +53,7 @@ class PredictionQualityService:
         clv = self._clv_segment_stats(clv_rows or [])
         report = {
             'created_at': datetime.now(UTC).isoformat(),
-            'enabled': bool(getattr(self.settings, 'quality_layer_enabled', True)),
+            'enabled': bool(self._setting('quality_layer_enabled', True)),
             'summary': {
                 'total_tracked_bets': len(rows),
                 'settled_binary_bets': len(settled),
@@ -52,13 +77,13 @@ class PredictionQualityService:
         quality_report: dict[str, Any],
         now_utc: datetime,
     ) -> tuple[list[CandidateBet], dict[str, int], dict[str, Any]]:
-        if not bool(getattr(self.settings, 'quality_layer_enabled', True)):
+        if not bool(self._setting('quality_layer_enabled', True)):
             return candidates, {}, {'enabled': False, 'decisions': []}
 
         profile = dict(quality_report.get('profile') or {})
         summary = dict(quality_report.get('summary') or {})
         settled_count = int(summary.get('settled_binary_bets') or 0)
-        min_history = max(0, int(getattr(self.settings, 'quality_min_history_bets', 12) or 12))
+        min_history = max(0, int(self._setting('quality_min_history_bets', 12) or 12))
         enough_history = settled_count >= min_history
 
         passed: list[CandidateBet] = []
@@ -89,8 +114,8 @@ class PredictionQualityService:
                     reasons.append(reason)
                     break
 
-            if status == 'passed_quality' and bool(getattr(self.settings, 'no_bet_quality_score_enabled', True)):
-                min_score = float(getattr(self.settings, 'min_quality_score_publish', 60.0) or 60.0)
+            if status == 'passed_quality' and bool(self._setting('no_bet_quality_score_enabled', True)):
+                min_score = float(self._setting('min_quality_score_publish', 60.0) or 60.0)
                 if quality_score < min_score:
                     status = 'rejected_by_quality_filters'
                     reasons.append('no_bet_quality_score_guard')
@@ -125,7 +150,7 @@ class PredictionQualityService:
                 **payload,
             })
 
-        if not passed and candidates and bool(getattr(self.settings, 'quality_emergency_publish_enabled', True)):
+        if not passed and candidates and bool(self._setting('quality_emergency_publish_enabled', True)):
             fallback_candidate = self._select_emergency_publish_candidate(candidates)
             if fallback_candidate is not None:
                 passed = [fallback_candidate]
@@ -202,7 +227,7 @@ class PredictionQualityService:
         candidates: list[CandidateBet],
         decisions: list[dict[str, Any]],
     ) -> CandidateBet | None:
-        if not bool(getattr(self.settings, 'historical_segment_relief_enabled', True)):
+        if not bool(self._setting('historical_segment_relief_enabled', True)):
             return None
         if not decisions:
             return None
@@ -220,11 +245,11 @@ class PredictionQualityService:
         if not offenders:
             return None
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-        min_conf = float(getattr(self.settings, 'historical_segment_relief_min_confidence', 58.0) or 58.0)
-        min_ev = float(getattr(self.settings, 'historical_segment_relief_min_ev_pct', 0.8) or 0.8)
-        min_edge = float(getattr(self.settings, 'historical_segment_relief_min_edge_pct', 1.0) or 1.0)
-        min_books = max(1, int(getattr(self.settings, 'historical_segment_relief_min_books', 1) or 1))
-        min_publication_score = float(getattr(self.settings, 'historical_segment_relief_min_publication_score', 16.0) or 16.0)
+        min_conf = float(self._setting('historical_segment_relief_min_confidence', 58.0) or 58.0)
+        min_ev = float(self._setting('historical_segment_relief_min_ev_pct', 0.8) or 0.8)
+        min_edge = float(self._setting('historical_segment_relief_min_edge_pct', 1.0) or 1.0)
+        min_books = max(1, int(self._setting('historical_segment_relief_min_books', 1) or 1))
+        min_publication_score = float(self._setting('historical_segment_relief_min_publication_score', 16.0) or 16.0)
         ranked = sorted(
             candidates,
             key=lambda item: (
@@ -264,10 +289,10 @@ class PredictionQualityService:
 
     def _select_emergency_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
         families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
-        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 50.0) or 50.0)
-        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.4) or 0.4)
-        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 0.6) or 0.6)
-        min_books = max(1, int(getattr(self.settings, 'quality_emergency_min_books', 1) or 1))
+        min_conf = float(self._setting('quality_emergency_min_confidence', 50.0) or 50.0)
+        min_ev = float(self._setting('quality_emergency_min_ev_pct', 0.4) or 0.4)
+        min_edge = float(self._setting('quality_emergency_min_edge_pct', 0.6) or 0.6)
+        min_books = max(1, int(self._setting('quality_emergency_min_books', 1) or 1))
         ranked = sorted(
             candidates,
             key=lambda item: (
@@ -322,10 +347,10 @@ class PredictionQualityService:
             ),
             reverse=True,
         )
-        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 47.0) or 47.0)
-        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.2) or 0.2)
-        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 0.4) or 0.4)
-        min_books = max(1, int(getattr(self.settings, 'quality_emergency_min_books', 1) or 1))
+        min_conf = float(self._setting('quality_emergency_min_confidence', 47.0) or 47.0)
+        min_ev = float(self._setting('quality_emergency_min_ev_pct', 0.2) or 0.2)
+        min_edge = float(self._setting('quality_emergency_min_edge_pct', 0.4) or 0.4)
+        min_books = max(1, int(self._setting('quality_emergency_min_books', 1) or 1))
         for item in ranked:
             selection_key = str(
                 item.selection_key
@@ -400,7 +425,7 @@ class PredictionQualityService:
         return {key: self._segment_summary(value) for key, value in sorted(grouped.items())}
 
     def _profile_from_stats(self, segment_stats: dict[str, dict[str, Any]], clv_stats: dict[str, Any]) -> dict[str, Any]:
-        min_sample = max(1, int(getattr(self.settings, 'calibration_min_sample', 8) or 8))
+        min_sample = max(1, int(self._setting('calibration_min_sample', 8) or 8))
         return {
             'min_sample': min_sample,
             'segments': {
@@ -465,20 +490,20 @@ class PredictionQualityService:
     def _historical_policy_reject_reason(self, row: dict[str, Any]) -> str | None:
         if self._row_totals_contradiction(row):
             return 'market_sanity_contradiction'
-        if (self._to_float(row.get('odds')) or 0.0) >= float(getattr(self.settings, 'quality_high_odds_min_odds', 3.40) or 3.40):
-            if (self._to_float(row.get('confidence')) or 0.0) < float(getattr(self.settings, 'quality_high_odds_min_confidence', 68.0) or 68.0):
+        if (self._to_float(row.get('odds')) or 0.0) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40):
+            if (self._to_float(row.get('confidence')) or 0.0) < float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0):
                 return 'high_odds_low_confidence'
-        if (self._to_float(row.get('edge_pct')) or 0.0) < float(getattr(self.settings, 'quality_backtest_min_edge_pct', 2.0) or 2.0):
+        if (self._to_float(row.get('edge_pct')) or 0.0) < float(self._setting('quality_backtest_min_edge_pct', 2.0) or 2.0):
             return 'thin_edge'
-        if (self._to_float(row.get('ev_pct')) or 0.0) < float(getattr(self.settings, 'quality_backtest_min_ev_pct', 1.0) or 1.0):
+        if (self._to_float(row.get('ev_pct')) or 0.0) < float(self._setting('quality_backtest_min_ev_pct', 1.0) or 1.0):
             return 'thin_ev'
         return None
 
     def _candidate_calibration(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> dict[str, Any]:
-        if not enough_history or not bool(getattr(self.settings, 'calibration_enabled', True)):
+        if not enough_history or not bool(self._setting('calibration_enabled', True)):
             return {'applied': False, 'delta_probability': 0.0, 'segments_used': []}
         stats = dict(profile.get('segments') or {})
-        min_sample = int(profile.get('min_sample') or getattr(self.settings, 'calibration_min_sample', 8) or 8)
+        min_sample = int(profile.get('min_sample') or self._setting('calibration_min_sample', 8) or 8)
         weighted: list[tuple[float, float, str]] = []
         for segment in segments:
             item = stats.get(segment)
@@ -496,9 +521,9 @@ class PredictionQualityService:
         if not weighted:
             return {'applied': False, 'delta_probability': 0.0, 'segments_used': []}
         raw_delta = sum(delta * weight for delta, weight, _ in weighted) / max(sum(weight for _, weight, _ in weighted), 0.01)
-        strength = float(getattr(self.settings, 'calibration_strength', 0.55) or 0.55)
-        down_cap = float(getattr(self.settings, 'calibration_max_down_pct', 8.0) or 8.0) / 100.0
-        up_cap = float(getattr(self.settings, 'calibration_max_up_pct', 1.5) or 1.5) / 100.0
+        strength = float(self._setting('calibration_strength', 0.55) or 0.55)
+        down_cap = float(self._setting('calibration_max_down_pct', 8.0) or 8.0) / 100.0
+        up_cap = float(self._setting('calibration_max_up_pct', 1.5) or 1.5) / 100.0
         delta = clamp(raw_delta * strength, -down_cap, up_cap)
         return {
             'applied': abs(delta) >= 0.0025,
@@ -530,7 +555,7 @@ class PredictionQualityService:
         score += {'preferred': 4.0, 'secondary': 2.0, 'other': -2.0, 'low': -5.0}.get(self._candidate_league_bucket(candidate), 0.0)
         if self._candidate_market_contradiction(candidate):
             score -= 11.0
-        if float(candidate.odds) >= float(getattr(self.settings, 'quality_high_odds_min_odds', 3.40) or 3.40):
+        if float(candidate.odds) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40):
             score -= 4.0
         if int(candidate.books_count) <= 1:
             score -= 3.0
@@ -556,7 +581,7 @@ class PredictionQualityService:
         return clamp(score, 0.0, 100.0)
 
     def _market_sanity_guard(self, candidate: CandidateBet) -> str | None:
-        if not bool(getattr(self.settings, 'market_sanity_guard_enabled', True)):
+        if not bool(self._setting('market_sanity_guard_enabled', True)):
             return None
         if candidate.family == 'totals' and self._candidate_market_contradiction(candidate):
             if not self._allow_market_sanity_override(candidate):
@@ -567,20 +592,20 @@ class PredictionQualityService:
                 return None
             home_xg, away_xg = expected
             selection_key = str(candidate.selection_key or '').lower()
-            if selection_key == 'yes' and min(home_xg, away_xg) < float(getattr(self.settings, 'market_sanity_btts_yes_min_side_xg', 0.62) or 0.62):
+            if selection_key == 'yes' and min(home_xg, away_xg) < float(self._setting('market_sanity_btts_yes_min_side_xg', 0.62) or 0.62):
                 return 'market_sanity_btts_yes_side_xg_guard'
-            if selection_key == 'no' and min(home_xg, away_xg) >= float(getattr(self.settings, 'market_sanity_btts_no_max_side_xg', 0.92) or 0.92):
+            if selection_key == 'no' and min(home_xg, away_xg) >= float(self._setting('market_sanity_btts_no_max_side_xg', 0.92) or 0.92):
                 return 'market_sanity_btts_no_side_xg_guard'
         return None
 
     def _allow_market_sanity_override(self, candidate: CandidateBet) -> bool:
-        if not bool(getattr(self.settings, 'market_sanity_override_enabled', False)):
+        if not bool(self._setting('market_sanity_override_enabled', False)):
             return False
         return (
-            float(candidate.confidence) >= float(getattr(self.settings, 'market_sanity_override_min_confidence', 76.0) or 76.0)
-            and float(candidate.edge_pct) >= float(getattr(self.settings, 'market_sanity_override_min_edge_pct', 10.0) or 10.0)
-            and float(candidate.ev_pct) >= float(getattr(self.settings, 'market_sanity_override_min_ev_pct', 7.0) or 7.0)
-            and int(candidate.books_count) >= int(getattr(self.settings, 'market_sanity_override_min_books', 3) or 3)
+            float(candidate.confidence) >= float(self._setting('market_sanity_override_min_confidence', 76.0) or 76.0)
+            and float(candidate.edge_pct) >= float(self._setting('market_sanity_override_min_edge_pct', 10.0) or 10.0)
+            and float(candidate.ev_pct) >= float(self._setting('market_sanity_override_min_ev_pct', 7.0) or 7.0)
+            and int(candidate.books_count) >= int(self._setting('market_sanity_override_min_books', 3) or 3)
         )
 
     def _candidate_market_contradiction(self, candidate: CandidateBet) -> bool:
@@ -592,9 +617,9 @@ class PredictionQualityService:
             return False
         total_xg = expected[0] + expected[1]
         kind = self._selection_kind(candidate.family, candidate.selection_key, candidate.selection)
-        margin = float(getattr(self.settings, 'market_sanity_totals_xg_margin', 0.58) or 0.58)
+        margin = float(self._setting('market_sanity_totals_xg_margin', 0.58) or 0.58)
         if kind == 'under' and point <= 1.5:
-            margin = min(margin, float(getattr(self.settings, 'market_sanity_under15_xg_margin', 0.45) or 0.45))
+            margin = min(margin, float(self._setting('market_sanity_under15_xg_margin', 0.45) or 0.45))
         if kind == 'under':
             return total_xg >= point + margin
         if kind == 'over':
@@ -602,11 +627,11 @@ class PredictionQualityService:
         return False
 
     def _clv_guard(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
-        if not enough_history or not bool(getattr(self.settings, 'clv_quality_guard_enabled', True)):
+        if not enough_history or not bool(self._setting('clv_quality_guard_enabled', True)):
             return None
         clv_segments = dict(profile.get('clv_segments') or {})
-        min_sample = max(1, int(getattr(self.settings, 'clv_quality_min_sample', 8) or 8))
-        min_clv = float(getattr(self.settings, 'clv_quality_min_avg_pct', -2.0) or -2.0)
+        min_sample = max(1, int(self._setting('clv_quality_min_sample', 8) or 8))
+        min_clv = float(self._setting('clv_quality_min_avg_pct', -2.0) or -2.0)
         for segment in segments:
             item = clv_segments.get(segment)
             if isinstance(item, dict) and int(item.get('count') or 0) >= min_sample:
@@ -615,15 +640,15 @@ class PredictionQualityService:
         return None
 
     def _historical_segment_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
-        if not enough_history or not bool(getattr(self.settings, 'historical_segment_guard_enabled', True)):
+        if not enough_history or not bool(self._setting('historical_segment_guard_enabled', True)):
             return None
         stats = dict(profile.get('segments') or {})
-        min_sample = max(1, int(getattr(self.settings, 'historical_segment_min_sample', 10) or 10))
-        min_roi = float(getattr(self.settings, 'historical_segment_min_roi_pct', -18.0) or -18.0)
-        min_delta = float(getattr(self.settings, 'historical_segment_min_calibration_delta_pct', -9.0) or -9.0) / 100.0
-        hard_roi = float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0)
-        hard_delta = float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
-        hard_bad_segments = max(1, int(getattr(self.settings, 'historical_segment_hard_min_bad_segments', 2) or 2))
+        min_sample = max(1, int(self._setting('historical_segment_min_sample', 10) or 10))
+        min_roi = float(self._setting('historical_segment_min_roi_pct', -18.0) or -18.0)
+        min_delta = float(self._setting('historical_segment_min_calibration_delta_pct', -9.0) or -9.0) / 100.0
+        hard_roi = float(self._setting('historical_segment_hard_min_roi_pct', -26.0) or -26.0)
+        hard_delta = float(self._setting('historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) / 100.0
+        hard_bad_segments = max(1, int(self._setting('historical_segment_hard_min_bad_segments', 2) or 2))
         bad_segments = 0
         hard_hits: list[tuple[str, float, float]] = []
         for segment in segments:
@@ -655,7 +680,7 @@ class PredictionQualityService:
 
     def _allow_late_window_historical_override(self, candidate: CandidateBet, bad_segments: int, hard_hits: list[tuple[str, float, float]]) -> bool:
         hours_to_start = max(0.0, (candidate.commence_time - datetime.now(UTC)).total_seconds() / 3600.0)
-        publish_window_hours = float(getattr(self.settings, 'publish_window_hours', 12) or 12)
+        publish_window_hours = float(self._setting('publish_window_hours', 12) or 12)
         late_window_limit = min(6.0, max(3.0, publish_window_hours))
         if hours_to_start > late_window_limit:
             return False
@@ -681,19 +706,19 @@ class PredictionQualityService:
             return True
         if len(hard_hits) == 1:
             _, roi, delta = hard_hits[0]
-            if roi >= (float(getattr(self.settings, 'historical_segment_hard_min_roi_pct', -26.0) or -26.0) - 4.0) and delta >= ((float(getattr(self.settings, 'historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) - 2.0) / 100.0):
+            if roi >= (float(self._setting('historical_segment_hard_min_roi_pct', -26.0) or -26.0) - 4.0) and delta >= ((float(self._setting('historical_segment_hard_min_calibration_delta_pct', -12.0) or -12.0) - 2.0) / 100.0):
                 return True
         return False
 
     def _quarantine_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
-        if not enough_history or not bool(getattr(self.settings, 'quarantine_shadow_mode_enabled', True)):
+        if not enough_history or not bool(self._setting('quarantine_shadow_mode_enabled', True)):
             return None
         league_bucket = self._candidate_league_bucket(candidate)
-        buckets = {str(item).strip().lower() for item in (getattr(self.settings, 'quarantine_league_buckets', []) or [])}
+        buckets = {str(item).strip().lower() for item in (self._setting('quarantine_league_buckets', []) or [])}
         if league_bucket not in buckets and not str(candidate.model_mode or '').startswith('market_simple'):
             return None
         stats = dict(profile.get('segments') or {})
-        min_sample = max(1, int(getattr(self.settings, 'quarantine_min_segment_sample', 16) or 16))
+        min_sample = max(1, int(self._setting('quarantine_min_segment_sample', 16) or 16))
         for segment in segments:
             if segment.startswith(('family:', 'market:', 'league:', 'context:')):
                 item = stats.get(segment)
@@ -702,21 +727,21 @@ class PredictionQualityService:
         return 'quarantine_shadow_insufficient_history'
 
     def _high_odds_guard(self, candidate: CandidateBet, quality_score: float) -> str | None:
-        if not bool(getattr(self.settings, 'quality_high_odds_guard_enabled', True)):
+        if not bool(self._setting('quality_high_odds_guard_enabled', True)):
             return None
-        min_odds = float(getattr(self.settings, 'quality_high_odds_min_odds', 3.40) or 3.40)
-        market_max = float(getattr(self.settings, 'quality_high_odds_market_max_prob', 0.31) or 0.31)
+        min_odds = float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40)
+        market_max = float(self._setting('quality_high_odds_market_max_prob', 0.31) or 0.31)
         if float(candidate.odds) < min_odds and float(candidate.market_probability) > market_max:
             return None
-        if quality_score < float(getattr(self.settings, 'quality_high_odds_min_score', 68.0) or 68.0):
+        if quality_score < float(self._setting('quality_high_odds_min_score', 68.0) or 68.0):
             return 'quality_high_odds_score_guard'
-        if float(candidate.confidence) < float(getattr(self.settings, 'quality_high_odds_min_confidence', 68.0) or 68.0):
+        if float(candidate.confidence) < float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0):
             return 'quality_high_odds_confidence_guard'
-        if int(candidate.books_count) < int(getattr(self.settings, 'quality_high_odds_min_books', 2) or 2):
+        if int(candidate.books_count) < int(self._setting('quality_high_odds_min_books', 2) or 2):
             return 'quality_high_odds_books_guard'
-        if float(candidate.edge_pct) < float(getattr(self.settings, 'quality_high_odds_min_edge_pct', 6.0) or 6.0):
+        if float(candidate.edge_pct) < float(self._setting('quality_high_odds_min_edge_pct', 6.0) or 6.0):
             return 'quality_high_odds_edge_guard'
-        if float(candidate.ev_pct) < float(getattr(self.settings, 'quality_high_odds_min_ev_pct', 4.0) or 4.0):
+        if float(candidate.ev_pct) < float(self._setting('quality_high_odds_min_ev_pct', 4.0) or 4.0):
             return 'quality_high_odds_ev_guard'
         return None
 
@@ -806,9 +831,9 @@ class PredictionQualityService:
         if str(tier).lower() == 'low':
             return 'low'
         league = str(league_name or '').lower()
-        if any(str(term).lower() in league for term in (getattr(self.settings, 'preferred_league_terms', []) or [])):
+        if any(str(term).lower() in league for term in (self._setting('preferred_league_terms', []) or [])):
             return 'preferred'
-        if any(str(term).lower() in league for term in (getattr(self.settings, 'secondary_league_terms', []) or [])):
+        if any(str(term).lower() in league for term in (self._setting('secondary_league_terms', []) or [])):
             return 'secondary'
         if any(term in league for term in ('u17', 'u19', 'u20', 'u21', 'u23', 'reserve', 'youth', 'women', 'amateur', 'regional')):
             return 'low'
@@ -818,7 +843,7 @@ class PredictionQualityService:
         tags: list[str] = []
         if self._row_totals_contradiction(row):
             tags.append('xg_contradiction')
-        if (self._to_float(row.get('odds')) or 0.0) >= float(getattr(self.settings, 'quality_high_odds_min_odds', 3.40) or 3.40):
+        if (self._to_float(row.get('odds')) or 0.0) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40):
             tags.append('high_odds')
         if int(self._to_float(row.get('books_count')) or 0) <= 1:
             tags.append('single_book')
@@ -846,9 +871,9 @@ class PredictionQualityService:
         if point is None:
             return False
         kind = self._selection_kind(str(row.get('family') or ''), str(row.get('selection_key') or ''), str(row.get('selection') or ''))
-        margin = float(getattr(self.settings, 'market_sanity_totals_xg_margin', 0.58) or 0.58)
+        margin = float(self._setting('market_sanity_totals_xg_margin', 0.58) or 0.58)
         if kind == 'under' and point <= 1.5:
-            margin = min(margin, float(getattr(self.settings, 'market_sanity_under15_xg_margin', 0.45) or 0.45))
+            margin = min(margin, float(self._setting('market_sanity_under15_xg_margin', 0.45) or 0.45))
         if kind == 'under':
             return total_xg >= point + margin
         if kind == 'over':
