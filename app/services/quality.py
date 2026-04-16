@@ -145,6 +145,25 @@ class PredictionQualityService:
                 fallback_candidate.diagnostics['quality']['status'] = 'passed_quality_emergency'
                 fallback_candidate.diagnostics['quality']['reasons'] = ['quality_emergency_publish']
 
+        if not passed and candidates:
+            historical_relief = self._select_historical_guard_relief_candidate(candidates, decisions)
+            if historical_relief is not None:
+                passed = [historical_relief]
+                rejections['quality_historical_guard_relief_used'] += 1
+                for decision in decisions:
+                    if decision.get('match_key') == historical_relief.match_key and decision.get('selection_key') == historical_relief.selection_key:
+                        decision['status'] = 'passed_quality_historical_relief'
+                        reasons = list(decision.get('reasons') or [])
+                        reasons.append('quality_historical_guard_relief')
+                        decision['reasons'] = reasons
+                        break
+                historical_relief.source_summary['quality_status'] = 'passed_quality_historical_relief'
+                historical_relief.source_summary['quality_reasons'] = ['quality_historical_guard_relief']
+                historical_relief.reasons.append('quality=quality_historical_guard_relief')
+                historical_relief.diagnostics.setdefault('quality', {})
+                historical_relief.diagnostics['quality']['status'] = 'passed_quality_historical_relief'
+                historical_relief.diagnostics['quality']['reasons'] = ['quality_historical_guard_relief']
+
         passed.sort(key=lambda item: (
             float(getattr(item, 'publication_score', 0.0) or 0.0),
             float(getattr(item, 'ev_pct', 0.0) or 0.0),
@@ -158,6 +177,49 @@ class PredictionQualityService:
             'passed': len(passed),
             'rejected': len(candidates) - len(passed),
         }
+
+    def _select_historical_guard_relief_candidate(
+        self,
+        candidates: list[CandidateBet],
+        decisions: list[dict[str, Any]],
+    ) -> CandidateBet | None:
+        if not bool(getattr(self.settings, 'historical_segment_relief_enabled', True)):
+            return None
+        if not decisions:
+            return None
+        if any((item.get('status') == 'passed_quality') for item in decisions):
+            return None
+        bad_key = 'bad_historical_segment_guard'
+        for item in decisions:
+            reasons = list(item.get('reasons') or [])
+            if not reasons or reasons[0] != bad_key:
+                return None
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        min_conf = float(getattr(self.settings, 'historical_segment_relief_min_confidence', 61.0) or 61.0)
+        min_ev = float(getattr(self.settings, 'historical_segment_relief_min_ev_pct', 1.6) or 1.6)
+        min_edge = float(getattr(self.settings, 'historical_segment_relief_min_edge_pct', 1.8) or 1.8)
+        min_books = max(1, int(getattr(self.settings, 'historical_segment_relief_min_books', 1) or 1))
+        ranked = sorted(
+            candidates,
+            key=lambda item: (
+                float(getattr(item, 'publication_score', 0.0) or 0.0),
+                float(getattr(item, 'confidence', 0.0) or 0.0),
+                float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        for item in ranked:
+            if item.family not in allowed_families:
+                continue
+            if float(item.confidence) < min_conf:
+                continue
+            if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            return item
+        return None
 
     def _select_emergency_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
         families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}

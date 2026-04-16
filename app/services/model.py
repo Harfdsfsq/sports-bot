@@ -2112,14 +2112,41 @@ class CandidateFactory:
         weighted_books = self._weighted_unique_books(offers)
         has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
-        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
         if family == 'totals' and point in {2.5, 3.5, 4.5}:
             base = max(base, 2)
         if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
             return min(base, 2)
+        if self._allow_single_book_with_context(family, context, has_sharp=has_sharp, has_preferred_book=has_preferred_book):
+            return 1
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
             return min(base, 2)
         return base
+
+    def _allow_single_book_with_context(
+        self,
+        family: str,
+        context: MatchContext | None,
+        *,
+        has_sharp: bool,
+        has_preferred_book: bool,
+    ) -> bool:
+        if context is None:
+            return False
+        if family not in {'h2h', 'totals', 'dnb', 'doubleChance', 'btts', 'teamTotals'}:
+            return False
+        context_confidence = float(getattr(context, 'confidence', 0.0) or 0.0)
+        context_source = str(getattr(context, 'source', '') or '').strip().lower()
+        expected_home = self._to_float_safe(getattr(context, 'expected_home', None))
+        expected_away = self._to_float_safe(getattr(context, 'expected_away', None))
+        has_expected = expected_home is not None and expected_away is not None
+        if family in {'totals', 'teamTotals', 'btts'} and not has_expected:
+            return False
+        if has_sharp and context_confidence >= 64.0:
+            return True
+        trusted_sources = {'ensemble', 'api_football', 'espn', 'thesportsdb', 'sstats'}
+        if has_preferred_book and context_confidence >= 70.0 and context_source in trusted_sources:
+            return True
+        return False
 
     @staticmethod
     def _select_best_offer(offers: list[Offer]) -> Offer:
