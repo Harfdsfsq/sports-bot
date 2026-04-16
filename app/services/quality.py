@@ -217,7 +217,17 @@ class PredictionQualityService:
             reverse=True,
         )
         for item in ranked:
-            selection_key = candidate_selection_key(item.selection, item.point)
+            selection_key = str(
+                item.selection_key
+                or candidate_selection_key(
+                    str(item.family or ''),
+                    str(item.selection or ''),
+                    point=item.point,
+                    team_side=getattr(item, 'team_side', None),
+                    home_team=str(getattr(item, 'home_team', '') or ''),
+                    away_team=str(getattr(item, 'away_team', '') or ''),
+                )
+            )
             if (str(item.match_key or ''), selection_key) not in offenders:
                 continue
             if item.family not in allowed_families:
