@@ -454,6 +454,16 @@ class TelegramPublisher:
             "historical_guard": "historical guard",
             "post_calibration_probability_guard": "post-calibration probability guard",
         }
+        guidance_labels = {
+            "insufficient_books": "расширить покрытие линий у букмекеров или снизить минимальное число подтверждённых офферов в настройках",
+            "missing_context_totals": "увеличить глубину статистики по тоталам (форма, xG, темп) для матчей в текущем окне",
+            "missing_context_spreads": "добавить контекст по форам (рейтинги силы, травмы, составы) перед запуском",
+            "missing_context_h2h": "пополнить контекст по исходам (форма, мотивация, кадровые новости)",
+            "confidence_below_threshold": "проверить калибровку модели или временно ослабить порог confidence",
+            "ev_below_threshold": "пересмотреть порог EV либо расширить пул рынков с валидными офферами",
+            "quality_historical_guard": "ослабить historical guard или накопить больше исторических данных для сегмента",
+            "quality_post_calibration_probability_guard": "перепроверить калибровку вероятностей после quality-фильтров",
+        }
 
         top_reasons: list[tuple[str, int]] = []
         quality_reasons: list[tuple[str, int]] = []
@@ -487,6 +497,20 @@ class TelegramPublisher:
             lines.append("Quality стопоры:")
             for key, count in quality_reasons[:4]:
                 lines.append(f"• quality: {quality_labels.get(key, key.replace('_', ' '))} — {count}")
+        if published <= 0:
+            guidance: list[str] = []
+            for key, _ in top_reasons[:top_limit]:
+                tip = guidance_labels.get(key)
+                if tip:
+                    guidance.append(tip)
+            for key, _ in quality_reasons[:4]:
+                tip = guidance_labels.get(f"quality_{key}")
+                if tip:
+                    guidance.append(tip)
+            if guidance:
+                lines.append("Что можно улучшить к следующему запуску:")
+                for tip in list(dict.fromkeys(guidance))[:3]:
+                    lines.append(f"• {tip}")
         return "\n".join(lines)
 
     async def publish_run_report(self, summary: dict[str, Any]) -> tuple[int, list[str]]:
