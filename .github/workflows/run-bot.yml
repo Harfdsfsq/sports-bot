@@ -34,6 +34,7 @@ env:
   SHEET_ID: ${{ secrets.SHEET_ID }}
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
+  RUN_REPORT_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
 
   BANKROLL_CURRENCY: 'units'
   BANKROLL_ENABLED: 'true'
