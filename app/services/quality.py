@@ -164,6 +164,25 @@ class PredictionQualityService:
                 historical_relief.diagnostics['quality']['status'] = 'passed_quality_historical_relief'
                 historical_relief.diagnostics['quality']['reasons'] = ['quality_historical_guard_relief']
 
+        if not passed and candidates:
+            last_resort = self._select_last_resort_quality_candidate(candidates, decisions)
+            if last_resort is not None:
+                passed = [last_resort]
+                rejections['quality_last_resort_publish_used'] += 1
+                for decision in decisions:
+                    if decision.get('match_key') == last_resort.match_key and decision.get('selection_key') == last_resort.selection_key:
+                        decision['status'] = 'passed_quality_last_resort'
+                        reasons = list(decision.get('reasons') or [])
+                        reasons.append('quality_last_resort_publish')
+                        decision['reasons'] = reasons
+                        break
+                last_resort.source_summary['quality_status'] = 'passed_quality_last_resort'
+                last_resort.source_summary['quality_reasons'] = ['quality_last_resort_publish']
+                last_resort.reasons.append('quality=quality_last_resort_publish')
+                last_resort.diagnostics.setdefault('quality', {})
+                last_resort.diagnostics['quality']['status'] = 'passed_quality_last_resort'
+                last_resort.diagnostics['quality']['reasons'] = ['quality_last_resort_publish']
+
         passed.sort(key=lambda item: (
             float(getattr(item, 'publication_score', 0.0) or 0.0),
             float(getattr(item, 'ev_pct', 0.0) or 0.0),
@@ -217,7 +236,17 @@ class PredictionQualityService:
             reverse=True,
         )
         for item in ranked:
-            selection_key = candidate_selection_key(item.selection, item.point)
+            selection_key = str(
+                item.selection_key
+                or candidate_selection_key(
+                    str(item.family or ''),
+                    str(item.selection or ''),
+                    point=item.point,
+                    team_side=getattr(item, 'team_side', None),
+                    home_team=str(getattr(item, 'home_team', '') or ''),
+                    away_team=str(getattr(item, 'away_team', '') or ''),
+                )
+            )
             if (str(item.match_key or ''), selection_key) not in offenders:
                 continue
             if item.family not in allowed_families:
@@ -251,6 +280,65 @@ class PredictionQualityService:
         )
         for item in ranked:
             if item.family not in families:
+                continue
+            if float(item.confidence) < min_conf:
+                continue
+            if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            return item
+        return None
+
+    def _select_last_resort_quality_candidate(
+        self,
+        candidates: list[CandidateBet],
+        decisions: list[dict[str, Any]],
+    ) -> CandidateBet | None:
+        if not candidates or not decisions:
+            return None
+        allowed_reasons = {
+            'bad_historical_segment_guard',
+            'no_bet_quality_score_guard',
+            'post_calibration_probability_guard',
+            'post_calibration_edge_guard',
+            'post_calibration_ev_guard',
+        }
+        offenders: set[tuple[str, str]] = set()
+        for item in decisions:
+            reasons = list(item.get('reasons') or [])
+            if not reasons:
+                return None
+            if reasons[0] not in allowed_reasons:
+                return None
+            offenders.add((str(item.get('match_key') or ''), str(item.get('selection_key') or '')))
+        ranked = sorted(
+            candidates,
+            key=lambda item: (
+                float(getattr(item, 'publication_score', 0.0) or 0.0),
+                float(getattr(item, 'confidence', 0.0) or 0.0),
+                float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        min_conf = float(getattr(self.settings, 'quality_emergency_min_confidence', 47.0) or 47.0)
+        min_ev = float(getattr(self.settings, 'quality_emergency_min_ev_pct', 0.2) or 0.2)
+        min_edge = float(getattr(self.settings, 'quality_emergency_min_edge_pct', 0.4) or 0.4)
+        min_books = max(1, int(getattr(self.settings, 'quality_emergency_min_books', 1) or 1))
+        for item in ranked:
+            selection_key = str(
+                item.selection_key
+                or candidate_selection_key(
+                    str(item.family or ''),
+                    str(item.selection or ''),
+                    point=item.point,
+                    team_side=getattr(item, 'team_side', None),
+                    home_team=str(getattr(item, 'home_team', '') or ''),
+                    away_team=str(getattr(item, 'away_team', '') or ''),
+                )
+            )
+            if (str(item.match_key or ''), selection_key) not in offenders:
                 continue
             if float(item.confidence) < min_conf:
                 continue
