@@ -2049,6 +2049,15 @@ class CandidateFactory:
         nearest = min(allowed, key=lambda item: abs(item - raw_point))
         if abs(nearest - raw_point) <= tolerance:
             return round(float(nearest), 2)
+        # Fallback for common Asian totals/team totals lines that may appear
+        # outside the explicit configured list (e.g. 1.25, 4.75, 5.5).
+        # We keep this bounded and only accept quarter-step lines.
+        if family in {'totals', 'teamTotals'}:
+            min_line = min(allowed) - 0.5
+            max_line = max(allowed) + 1.0
+            frac = round(raw_point - math.floor(raw_point), 2)
+            if min_line <= raw_point <= max_line and frac in {0.0, 0.25, 0.5, 0.75}:
+                return raw_point
         return None
 
     def _poisson_line_probability(self, lam: float | None, point: float | None) -> float | None:
