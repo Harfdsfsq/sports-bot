@@ -2049,6 +2049,15 @@ class CandidateFactory:
         nearest = min(allowed, key=lambda item: abs(item - raw_point))
         if abs(nearest - raw_point) <= tolerance:
             return round(float(nearest), 2)
+        # Fallback for common Asian totals/team totals lines that may appear
+        # outside the explicit configured list (e.g. 1.25, 4.75, 5.5).
+        # We keep this bounded and only accept quarter-step lines.
+        if family in {'totals', 'teamTotals'}:
+            min_line = min(allowed) - 0.5
+            max_line = max(allowed) + 1.0
+            frac = round(raw_point - math.floor(raw_point), 2)
+            if min_line <= raw_point <= max_line and frac in {0.0, 0.25, 0.5, 0.75}:
+                return raw_point
         return None
 
     def _poisson_line_probability(self, lam: float | None, point: float | None) -> float | None:
@@ -2112,14 +2121,48 @@ class CandidateFactory:
         weighted_books = self._weighted_unique_books(offers)
         has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
-        context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
         if family == 'totals' and point in {2.5, 3.5, 4.5}:
             base = max(base, 2)
         if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
             return min(base, 2)
+        if self._allow_single_book_with_context(family, context, has_sharp=has_sharp, has_preferred_book=has_preferred_book):
+            return 1
+        if (
+            bool(getattr(self.settings, 'allow_single_target_book', True))
+            and has_preferred_book
+            and family in {'h2h', 'totals', 'btts', 'doubleChance', 'dnb', 'teamTotals'}
+            and weighted_books >= 0.95
+        ):
+            return 1
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
             return min(base, 2)
         return base
+
+    def _allow_single_book_with_context(
+        self,
+        family: str,
+        context: MatchContext | None,
+        *,
+        has_sharp: bool,
+        has_preferred_book: bool,
+    ) -> bool:
+        if context is None:
+            return False
+        if family not in {'h2h', 'totals', 'dnb', 'doubleChance', 'btts', 'teamTotals'}:
+            return False
+        context_confidence = float(getattr(context, 'confidence', 0.0) or 0.0)
+        context_source = str(getattr(context, 'source', '') or '').strip().lower()
+        expected_home = self._to_float_safe(getattr(context, 'expected_home', None))
+        expected_away = self._to_float_safe(getattr(context, 'expected_away', None))
+        has_expected = expected_home is not None and expected_away is not None
+        if family in {'totals', 'teamTotals', 'btts'} and not has_expected:
+            return False
+        if has_sharp and context_confidence >= 60.0:
+            return True
+        trusted_sources = {'ensemble', 'api_football', 'espn', 'thesportsdb', 'sstats', 'bzzoiro_predictions'}
+        if has_preferred_book and context_confidence >= 66.0 and context_source in trusted_sources:
+            return True
+        return False
 
     @staticmethod
     def _select_best_offer(offers: list[Offer]) -> Offer:
@@ -2512,8 +2555,105 @@ class CandidateFactory:
                 pass
             rejections['fallback_publish_mode_used'] += 1
             return [item]
+        if bool(getattr(self.settings, 'model_relaxed_fallback_enabled', True)):
+            relaxed = self._select_relaxed_fallback_candidate(candidates)
+            if relaxed is not None:
+                try:
+                    relaxed.reasons.append('fallback_publish_mode=model_relaxed')
+                    if isinstance(relaxed.source_summary, dict):
+                        relaxed.source_summary['fallback_publish_mode'] = 'model_relaxed'
+                except Exception:
+                    pass
+                rejections['model_relaxed_fallback_used'] += 1
+                return [relaxed]
+        historical_relief = self._select_historical_quality_relief_candidate(candidates)
+        if historical_relief is not None:
+            try:
+                historical_relief.reasons.append('fallback_publish_mode=historical_quality_relief')
+                if isinstance(historical_relief.source_summary, dict):
+                    historical_relief.source_summary['fallback_publish_mode'] = 'historical_quality_relief'
+            except Exception:
+                pass
+            rejections['historical_quality_relief_used'] += 1
+            return [historical_relief]
+        if bool(getattr(self.settings, 'force_publish_when_empty_enabled', True)):
+            emergency_pick = self._select_force_publish_candidate(candidates)
+            if emergency_pick is not None:
+                try:
+                    emergency_pick.reasons.append('fallback_publish_mode=forced_non_empty')
+                    if isinstance(emergency_pick.source_summary, dict):
+                        emergency_pick.source_summary['fallback_publish_mode'] = 'forced_non_empty'
+                except Exception:
+                    pass
+                rejections['force_publish_when_empty_used'] += 1
+                return [emergency_pick]
         rejections['fallback_publish_no_candidate'] += 1
         return deduped
+
+    def _select_relaxed_fallback_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        min_confidence = float(getattr(self.settings, 'model_relaxed_fallback_min_confidence', 52.0) or 52.0)
+        min_ev = float(getattr(self.settings, 'model_relaxed_fallback_min_ev_pct', 0.6) or 0.6)
+        min_edge = float(getattr(self.settings, 'model_relaxed_fallback_min_edge_pct', 0.8) or 0.8)
+        min_books = max(1, int(getattr(self.settings, 'model_relaxed_fallback_min_books', 1) or 1))
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals', 'spreads'}
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            if float(getattr(item, 'confidence', 0.0) or 0.0) < min_confidence:
+                continue
+            if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            return item
+        return None
+
+    def _select_historical_quality_relief_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        min_conf = float(getattr(self.settings, 'historical_quality_relief_min_confidence', 57.0) or 57.0)
+        min_ev = float(getattr(self.settings, 'historical_quality_relief_min_ev_pct', 0.2) or 0.2)
+        min_edge = float(getattr(self.settings, 'historical_quality_relief_min_edge_pct', 0.8) or 0.8)
+        min_books = max(1, int(getattr(self.settings, 'historical_quality_relief_min_books', 1) or 1))
+        min_pub_score = float(getattr(self.settings, 'historical_quality_relief_min_publication_score', 16.0) or 16.0)
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if self._league_bucket(item) not in {'preferred', 'secondary'}:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            if float(getattr(item, 'confidence', 0.0) or 0.0) < min_conf:
+                continue
+            if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_pub_score:
+                continue
+            return item
+        return None
+
+    def _select_force_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
+        min_conf = float(getattr(self.settings, 'force_publish_when_empty_min_confidence', 49.0) or 49.0)
+        min_ev = float(getattr(self.settings, 'force_publish_when_empty_min_ev_pct', 0.0) or 0.0)
+        min_edge = float(getattr(self.settings, 'force_publish_when_empty_min_edge_pct', 0.0) or 0.0)
+        min_books = max(1, int(getattr(self.settings, 'force_publish_when_empty_min_books', 1) or 1))
+        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals', 'spreads'}
+        for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
+            if item.family not in allowed_families:
+                continue
+            if int(getattr(item, 'books_count', 0) or 0) < min_books:
+                continue
+            if float(getattr(item, 'confidence', 0.0) or 0.0) < min_conf:
+                continue
+            if float(getattr(item, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            return item
+        return None
 
     @staticmethod
     def _is_valid_probability(value: Any) -> bool:

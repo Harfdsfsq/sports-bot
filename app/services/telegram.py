@@ -113,30 +113,87 @@ class TelegramPublisher:
     def _consensus_probability(self, bet: CandidateBet) -> float:
         consensus = float(getattr(bet, "consensus_probability", 0.0) or 0.0)
         market = float(getattr(bet, "market_probability", 0.0) or 0.0)
-        return consensus if consensus > 0 else market
+        return consensus if 0.0 < consensus < 1.0 else market
 
     def _bookmakers_text(self, bet: CandidateBet) -> str:
         summary = dict(getattr(bet, "source_summary", {}) or {})
-        candidates = (
+        raw = (
             summary.get("selected_bookmakers")
             or summary.get("consensus_bookmakers")
             or summary.get("bookmakers")
             or []
         )
-        names = [str(item).strip() for item in candidates if str(item).strip()]
+        names = [str(item).strip() for item in raw if str(item).strip()]
         if names:
             return ", ".join(names[:4])
-        single = str(summary.get("selected_bookmaker") or getattr(bet, "bookmaker", "") or "").strip()
-        return single
+        fallback = str(summary.get("selected_bookmaker") or getattr(bet, "bookmaker", "") or "").strip()
+        return fallback
 
-    def _price_premium_pct(self, bet: CandidateBet) -> float | None:
+    def _fair_consensus_odds(self, bet: CandidateBet) -> float | None:
         consensus_prob = self._consensus_probability(bet)
-        if consensus_prob <= 0 or consensus_prob >= 1:
+        if consensus_prob <= 0.0 or consensus_prob >= 1.0:
             return None
-        fair_price = 1.0 / consensus_prob
-        if fair_price <= 1.0 or float(bet.odds) <= 1.0:
+        fair_odds = 1.0 / consensus_prob
+        if fair_odds <= 1.0:
             return None
-        return (float(bet.odds) - fair_price) * 100.0 / fair_price
+        return fair_odds
+
+    def _price_vs_consensus_pct(self, bet: CandidateBet) -> float | None:
+        fair_odds = self._fair_consensus_odds(bet)
+        if fair_odds is None or float(bet.odds) <= 1.0:
+            return None
+        return (float(bet.odds) - fair_odds) * 100.0 / fair_odds
+
+    def _normalize_selection(self, value: str | None) -> str:
+        text = (value or "").strip().lower()
+        text = text.replace("ё", "е")
+        text = re.sub(r"[^a-zа-я0-9+\-. ]+", " ", text)
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
+
+    def _selection_kind(
+        self,
+        family: str,
+        selection: str | None,
+        selection_text: str | None = None,
+        selection_key: str | None = None,
+    ) -> str:
+        raw_key = str(selection_key or "").strip().lower()
+        if family == "totals" and raw_key in {"over", "under"}:
+            return raw_key
+        if family == "btts" and raw_key in {"yes", "no"}:
+            return raw_key
+        if family in {"h2h", "spreads", "dnb"} and raw_key in {"home", "away", "draw"}:
+            return raw_key
+
+        raw = " ".join(
+            part for part in [self._normalize_selection(selection), self._normalize_selection(selection_text)] if part
+        )
+
+        if family == "totals":
+            if any(token in raw for token in ["over", "больше", "+", "tb", "тб"]):
+                return "over"
+            if any(token in raw for token in ["under", "меньше", "tm", "тм"]):
+                return "under"
+            return "unknown_total"
+
+        if family == "btts":
+            if any(token in raw for token in ["yes", "обе забьют да", "обе забьют", "да"]):
+                return "yes"
+            if any(token in raw for token in ["no", "обе забьют нет", "нет"]):
+                return "no"
+            return "unknown_btts"
+
+        if family in {"h2h", "spreads", "dnb"}:
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["home", "1", "п1"]):
+                return "home"
+            if any(token == raw or f" {token} " in f" {raw} " for token in ["away", "2", "п2"]):
+                return "away"
+            if family == "h2h" and any(token == raw or f" {token} " in f" {raw} " for token in ["draw", "x", "ничья"]):
+                return "draw"
+            return "unknown_side"
+
+        return "unknown"
 
     def render_message(
         self,
@@ -147,8 +204,8 @@ class TelegramPublisher:
         single_book_count = sum(1 for bet in bets if int(getattr(bet, "books_count", 0) or 0) <= 1)
         publish_window_hours = max(1, int(getattr(self.settings, "publish_window_hours", 48) or 48))
         books_note = (
-            "есть подтверждение по рыночным котировкам; приоритет — варианты с подтверждением у 2+ букмекеров, "
-            "а одиночные линии допускаются только при сильном сигнале модели и глубоком контексте."
+            "есть подтверждение по рыночным котировкам; приоритет — варианты с 2+ букмекерами, "
+            "а одиночные линии допускаются только при сильном сигнале модели и хорошем контексте."
             if single_book_count
             else "есть подтверждение как минимум у двух букмекеров."
         )
@@ -212,63 +269,8 @@ class TelegramPublisher:
 
         return "\n\n".join(blocks)
 
-    def _normalize_selection(self, value: str | None) -> str:
-        text = (value or "").strip().lower()
-        text = text.replace("ё", "е")
-        text = re.sub(r"[^a-zа-я0-9+\-. ]+", " ", text)
-        text = re.sub(r"\s+", " ", text).strip()
-        return text
-
-    def _selection_kind(
-        self,
-        family: str,
-        selection: str | None,
-        selection_text: str | None = None,
-        selection_key: str | None = None,
-    ) -> str:
-        raw_key = str(selection_key or "").strip().lower()
-        if family == "totals" and raw_key in {"over", "under"}:
-            return raw_key
-        if family == "btts" and raw_key in {"yes", "no"}:
-            return raw_key
-        if family in {"h2h", "spreads", "dnb"} and raw_key in {"home", "away", "draw"}:
-            return raw_key
-
-        raw = " ".join(
-            part for part in [self._normalize_selection(selection), self._normalize_selection(selection_text)] if part
-        )
-
-        if family == "totals":
-            if any(token in raw for token in ["over", "больше", "+", "tb", "тб"]):
-                return "over"
-            if any(token in raw for token in ["under", "меньше", "tm", "тм"]):
-                return "under"
-            return "unknown_total"
-
-        if family == "btts":
-            if any(token in raw for token in ["yes", "обе забьют да", "обе забьют", "да"]):
-                return "yes"
-            if any(token in raw for token in ["no", "обе забьют нет", "нет"]):
-                return "no"
-            return "unknown_btts"
-
-        if family in {"h2h", "spreads", "dnb"}:
-            if any(token == raw or f" {token} " in f" {raw} " for token in ["home", "1", "п1"]):
-                return "home"
-            if any(token == raw or f" {token} " in f" {raw} " for token in ["away", "2", "п2"]):
-                return "away"
-            if family == "h2h" and any(token == raw or f" {token} " in f" {raw} " for token in ["draw", "x", "ничья"]):
-                return "draw"
-            return "unknown_side"
-
-        return "unknown"
-
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
-        analysis = dict(getattr(bet, "analysis", {}) or {})
-        summary_points = [str(item).strip() for item in (analysis.get("summary_points") or []) if str(item).strip()]
-        if summary_points:
-            return "\n\n".join(summary_points)
-
+        # Не берем сырые summary_points из analysis: они часто конфликтуют с итоговыми цифрами карточки.
         parts: list[str] = []
         kind = self._selection_kind(
             bet.family,
@@ -276,20 +278,22 @@ class TelegramPublisher:
             selection_text,
             getattr(bet, "selection_key", None),
         )
+
         model_pct = float(bet.adjusted_probability) * 100.0
         consensus_pct = self._consensus_probability(bet) * 100.0
         edge_pp = model_pct - consensus_pct
 
         if bet.family == "totals":
+            line_label = f"{selection_text} {bet.point:g}" if bet.point is not None else selection_text
             parts.append(
-                f"На {selection_text}{f' {bet.point:g}' if bet.point is not None else ''} линия сейчас даёт около {consensus_pct:.1f}%, "
+                f"На {line_label} линия сейчас даёт около {consensus_pct:.1f}%, "
                 f"а модель оценивает вероятность в {model_pct:.1f}%. "
                 f"Запас {edge_pp:+.1f} п.п. делает этот вариант интереснее рынка."
             )
         elif bet.family == "h2h":
-            target_team = bet.home_team if kind == "home" else bet.away_team if kind == "away" else "исход"
+            target_team = bet.home_team if kind == "home" else bet.away_team if kind == "away" else "этот исход"
             parts.append(
-                f"По рынку этот вариант оценивается примерно в {consensus_pct:.1f}%, "
+                f"По линии этот вариант оценивается примерно в {consensus_pct:.1f}%, "
                 f"а модель поднимает вероятность до {model_pct:.1f}%. "
                 f"Перевес {edge_pp:+.1f} п.п. даёт преимущество в пользу {target_team}."
             )
@@ -300,33 +304,41 @@ class TelegramPublisher:
             )
 
         if bet.expected_home is not None and bet.expected_away is not None:
-            total_xg = float(bet.expected_home) + float(bet.expected_away)
-            stronger = bet.home_team if float(bet.expected_home) >= float(bet.expected_away) else bet.away_team
-            if bet.family == "totals" and kind == "under":
+            expected_home = float(bet.expected_home)
+            expected_away = float(bet.expected_away)
+            total_xg = expected_home + expected_away
+            stronger = bet.home_team if expected_home >= expected_away else bet.away_team
+            if bet.family == "totals" and kind == "under" and bet.point is not None:
                 parts.append(
-                    f"По ожидаемым голам матч тянет к {total_xg:.2f} ({bet.expected_home:.2f} : {bet.expected_away:.2f}). "
+                    f"По ожидаемым голам матч тянет к {total_xg:.2f} ({expected_home:.2f} : {expected_away:.2f}). "
                     f"Для линии {bet.point:g} это профиль в пользу более низового сценария. "
                     f"Основной вклад в темп модель ждёт от {stronger}."
                 )
-            elif bet.family == "totals" and kind == "over":
+            elif bet.family == "totals" and kind == "over" and bet.point is not None:
                 parts.append(
-                    f"По ожидаемым голам матч тянет к {total_xg:.2f} ({bet.expected_home:.2f} : {bet.expected_away:.2f}), "
+                    f"По ожидаемым голам матч тянет к {total_xg:.2f} ({expected_home:.2f} : {expected_away:.2f}), "
                     f"что поддерживает более результативный сценарий относительно линии {bet.point:g}."
                 )
             else:
                 parts.append(
-                    f"Ожидаемые голы по модели — {bet.expected_home:.2f} : {bet.expected_away:.2f}, "
+                    f"Ожидаемые голы по модели — {expected_home:.2f} : {expected_away:.2f}, "
                     f"что не противоречит выбранному сценарию."
                 )
 
         bookmakers = self._bookmakers_text(bet)
-        premium_pct = self._price_premium_pct(bet)
+        premium_pct = self._price_vs_consensus_pct(bet)
         market_line = f"Рынок идею подтверждает: линию держат уже {int(getattr(bet, 'books_count', 0) or 0)} букмекеров"
         if bookmakers:
             market_line += f" ({bookmakers})"
         market_line += "."
-        if premium_pct is not None and premium_pct > 0.2:
-            market_line += f" Лучшая доступная цена сейчас примерно на {premium_pct:.1f}% выше fair-цены консенсуса."
+
+        if premium_pct is not None:
+            if premium_pct >= 0.5:
+                market_line += f" Лучшая доступная цена сейчас примерно на {premium_pct:.1f}% выше fair-цены консенсуса."
+            elif premium_pct <= -0.5:
+                market_line += f" Текущая цена уже чуть ниже fair-цены консенсуса примерно на {abs(premium_pct):.1f}%."
+            else:
+                market_line += " Текущая цена близка к fair-цене консенсуса."
         parts.append(market_line)
 
         cleaned: list[str] = []
