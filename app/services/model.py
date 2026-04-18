@@ -675,10 +675,20 @@ class CandidateFactory:
         if not self._is_valid_probability(model_prob) or not self._is_valid_probability(market_prob):
             return None
 
-        books = {offer.bookmaker for offer in offers}
+        normalized_books = {
+            self._norm_book(offer.bookmaker)
+            for offer in offers
+            if str(getattr(offer, 'bookmaker', '') or '').strip()
+        }
+        books = {
+            str(offer.bookmaker).strip()
+            for offer in offers
+            if str(getattr(offer, 'bookmaker', '') or '').strip()
+            and self._norm_book(offer.bookmaker) in normalized_books
+        }
         sources = {offer.source for offer in offers}
         required_books = self._required_books_for_bucket(family, point, offers, context)
-        if len(books) < required_books:
+        if len(normalized_books) < required_books:
             return None
         if len(sources) < self.settings.min_sources_publish:
             return None
@@ -703,13 +713,13 @@ class CandidateFactory:
             dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
             best_vs_consensus_edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct'))
 
-        base_confidence = clamp(48 + len(books) * 4 + len(sources) * 5, 0, 100)
+        base_confidence = clamp(48 + len(normalized_books) * 4 + len(sources) * 5, 0, 100)
         context_confidence = float(getattr(context, 'confidence', 58.0) or 58.0) if context is not None else base_confidence
         confidence = (base_confidence * 0.56) + (context_confidence * 0.44)
         shrink_min = 0.18
         shrink_max = 0.55
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
-        if len(books) == 1:
+        if len(normalized_books) == 1:
             confidence -= 6.0
             shrink_min = min(shrink_min, 0.10)
             shrink_max = min(shrink_max, 0.24)
@@ -729,7 +739,7 @@ class CandidateFactory:
             confidence = min(confidence + 2.0, 76.0)
         history_ready = bool((market_signal or {}).get('history_ready')) if isinstance(market_signal, dict) else False
         observation_count = int((market_signal or {}).get('observation_count') or (2 if steam_delta is not None else 1)) if isinstance(market_signal, dict) else (2 if steam_delta is not None else 1)
-        books_signal_count = int((market_signal or {}).get('books_count') or len(books)) if isinstance(market_signal, dict) else len(books)
+        books_signal_count = int((market_signal or {}).get('books_count') or len(normalized_books)) if isinstance(market_signal, dict) else len(normalized_books)
         sources_signal_count = int((market_signal or {}).get('sources_count') or len(sources)) if isinstance(market_signal, dict) else len(sources)
         if getattr(self.settings, 'line_movement_signal_enabled', True) and steam_delta is not None:
             threshold = float(getattr(self.settings, 'line_movement_min_delta_pct', 1.75) or 1.75)
@@ -752,7 +762,7 @@ class CandidateFactory:
         price_premium_pct = max(0.0, ((best_price / max(consensus_fair_odds, 1.01)) - 1.0) * 100.0)
 
         confidence += min(4.0, raw_gap_pct * float(getattr(self.settings, 'confidence_gap_bonus_weight', 0.10) or 0.10))
-        confidence += max(0.0, len(books) - 1) * float(getattr(self.settings, 'confidence_books_bonus', 0.90) or 0.90)
+        confidence += max(0.0, len(normalized_books) - 1) * float(getattr(self.settings, 'confidence_books_bonus', 0.90) or 0.90)
         confidence += max(0.0, len(sources) - 1) * float(getattr(self.settings, 'confidence_sources_bonus', 1.10) or 1.10)
         confidence += min(2.0, price_premium_pct * float(getattr(self.settings, 'confidence_price_premium_bonus', 0.08) or 0.08))
 
@@ -785,7 +795,7 @@ class CandidateFactory:
         reasons.append(f'family_weight={self.settings.score_weight_for_family(family):.2f}')
         if context_source:
             reasons.append(f'context_confidence={context_confidence:.1f}')
-        if len(books) == 1:
+        if len(normalized_books) == 1:
             reasons.append('single_book_guard=enabled')
         if movement_label:
             reasons.append(f'market_move={movement_label}')
@@ -829,7 +839,7 @@ class CandidateFactory:
             (ev_pct * 1.18)
             + (edge_pct * 0.98)
             + (confidence * 0.18)
-            + (len(books) * 1.35)
+            + (len(normalized_books) * 1.35)
             + (len(sources) * 1.10)
             + context_depth
             + league_bonus
@@ -859,7 +869,7 @@ class CandidateFactory:
             edge_pct=edge_pct,
             ev_pct=ev_pct,
             confidence=confidence,
-            books_count=len(books),
+            books_count=len(normalized_books),
             sources_count=len(sources),
             model_mode=model_mode,
             expected_home=expected_home,

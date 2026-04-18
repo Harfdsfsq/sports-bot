@@ -120,10 +120,19 @@ class TelegramPublisher:
         raw = (
             summary.get("selected_bookmakers")
             or summary.get("consensus_bookmakers")
+            or summary.get("books")
             or summary.get("bookmakers")
             or []
         )
-        names = [str(item).strip() for item in raw if str(item).strip()]
+        names: list[str] = []
+        seen: set[str] = set()
+        for item in raw:
+            text = str(item).strip()
+            key = text.lower()
+            if not text or key in seen:
+                continue
+            seen.add(key)
+            names.append(text)
         if names:
             return ", ".join(names[:4])
         fallback = str(summary.get("selected_bookmaker") or getattr(bet, "bookmaker", "") or "").strip()
