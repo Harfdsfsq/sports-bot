@@ -50,6 +50,14 @@ class Settings(BaseSettings):
     run_days_ahead: int = Field(default=4, validation_alias=AliasChoices("RUN_DAYS_AHEAD", "DAYS_AHEAD"))
     publish_window_hours: int = Field(default=48, validation_alias=AliasChoices("PUBLISH_WINDOW_HOURS"))
     min_kickoff_lead_minutes: int = Field(default=30, validation_alias=AliasChoices("MIN_KICKOFF_LEAD_MINUTES"))
+    adaptive_min_kickoff_lead_enabled: bool = Field(default=True, validation_alias=AliasChoices("ADAPTIVE_MIN_KICKOFF_LEAD_ENABLED"))
+    adaptive_min_kickoff_lead_minutes: int = Field(default=20, validation_alias=AliasChoices("ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES"))
+    emergency_min_kickoff_lead_enabled: bool = Field(default=True, validation_alias=AliasChoices("EMERGENCY_MIN_KICKOFF_LEAD_ENABLED"))
+    emergency_min_kickoff_lead_minutes: int = Field(default=10, validation_alias=AliasChoices("EMERGENCY_MIN_KICKOFF_LEAD_MINUTES"))
+    emergency_min_kickoff_activation_ratio: float = Field(default=0.85, validation_alias=AliasChoices("EMERGENCY_MIN_KICKOFF_ACTIVATION_RATIO"))
+    manual_late_mode_enabled: bool = Field(default=False, validation_alias=AliasChoices("MANUAL_LATE_MODE_ENABLED"))
+    manual_late_min_kickoff_lead_minutes: int = Field(default=20, validation_alias=AliasChoices("MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES"))
+    manual_late_adaptive_min_kickoff_lead_minutes: int = Field(default=10, validation_alias=AliasChoices("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES"))
     max_picks_per_run: int = Field(default=7, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
 
     target_bookmakers: CsvList = Field(
