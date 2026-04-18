@@ -347,10 +347,10 @@ class PredictionQualityService:
             ),
             reverse=True,
         )
-        min_conf = float(self._setting('quality_emergency_min_confidence', 47.0) or 47.0)
-        min_ev = float(self._setting('quality_emergency_min_ev_pct', 0.2) or 0.2)
-        min_edge = float(self._setting('quality_emergency_min_edge_pct', 0.4) or 0.4)
-        min_books = max(1, int(self._setting('quality_emergency_min_books', 1) or 1))
+        min_conf = float(self._setting('quality_last_resort_min_confidence', 45.0) or 45.0)
+        min_ev = float(self._setting('quality_last_resort_min_ev_pct', 0.0) or 0.0)
+        min_edge = float(self._setting('quality_last_resort_min_edge_pct', 0.0) or 0.0)
+        min_books = max(1, int(self._setting('quality_last_resort_min_books', 1) or 1))
         for item in ranked:
             selection_key = str(
                 item.selection_key
