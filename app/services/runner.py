@@ -72,6 +72,27 @@ class PredictionRunner:
             return self._provider_name_from_module(module_name)
         return provider.__class__.__name__.lower()
 
+    def _provider_enabled(self, provider_name: str, default: bool = True) -> bool:
+        if provider_name == 'bookies_api':
+            explicit = bool(getattr(self.settings, 'bookies_api_enabled', default))
+            if explicit:
+                return True
+            return bool(
+                getattr(self.settings, 'bookies_api_key', None)
+                or getattr(self.settings, 'bookies_api_token', None)
+                or (
+                    getattr(self.settings, 'bookies_api_login', None)
+                    and getattr(self.settings, 'bookies_api_password', None)
+                )
+            )
+        if provider_name == 'oddspapi':
+            explicit = bool(getattr(self.settings, 'enable_oddspapi', default))
+            return explicit or bool(getattr(self.settings, 'oddspapi_api_key', None))
+        if provider_name == 'allsportsapi':
+            explicit = bool(getattr(self.settings, 'enable_allsportsapi', default))
+            return explicit or bool(getattr(self.settings, 'allsportsapi_api_key', None))
+        return bool(default)
+
     def _safe_provider(self, module_name: str, class_name: str) -> Any | None:
         provider_name = self._provider_name_from_module(module_name)
         if module_name.endswith('bookies_bootstrap') and not getattr(self.settings, 'bookies_bootstrap_enabled', True):
@@ -80,13 +101,13 @@ class PredictionRunner:
         if module_name.endswith('odds_api_io') and not getattr(self.settings, 'enable_odds_api_io', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('bookies_api') and not getattr(self.settings, 'bookies_api_enabled', False):
+        if module_name.endswith('bookies_api') and not self._provider_enabled('bookies_api', default=False):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('oddspapi') and not getattr(self.settings, 'enable_oddspapi', False):
+        if module_name.endswith('oddspapi') and not self._provider_enabled('oddspapi', default=False):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('allsportsapi') and not getattr(self.settings, 'enable_allsportsapi', False):
+        if module_name.endswith('allsportsapi') and not self._provider_enabled('allsportsapi', default=False):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('futrixmetrics') and not getattr(self.settings, 'enable_futrixmetrics_context', False):
