@@ -812,8 +812,31 @@ class PredictionQualityService:
         return None
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
-        if float(candidate.adjusted_probability) < float(self.settings.min_model_confidence_for_family(candidate.family)):
-            return 'post_calibration_probability_guard'
+        min_probability = float(self.settings.min_model_confidence_for_family(candidate.family))
+        adjusted_probability = float(candidate.adjusted_probability)
+        if adjusted_probability < min_probability:
+            probability_gap = min_probability - adjusted_probability
+            max_gap_relief = float(self._setting('post_calibration_probability_relief_max_gap', 0.09) or 0.09)
+            min_conf_relief = float(self._setting('post_calibration_probability_relief_min_confidence', 58.0) or 58.0)
+            min_edge_relief = float(self._setting('post_calibration_probability_relief_min_edge_pct', 6.5) or 6.5)
+            min_ev_relief = float(self._setting('post_calibration_probability_relief_min_ev_pct', 5.0) or 5.0)
+            min_books_relief = max(1, int(self._setting('post_calibration_probability_relief_min_books', 1) or 1))
+            if not (
+                probability_gap <= max_gap_relief
+                and float(candidate.confidence) >= min_conf_relief
+                and float(candidate.edge_pct) >= min_edge_relief
+                and float(candidate.ev_pct) >= min_ev_relief
+                and int(candidate.books_count) >= min_books_relief
+            ):
+                return 'post_calibration_probability_guard'
+            candidate.reasons.append(
+                f'quality=post_calibration_probability_relief(gap={probability_gap * 100.0:.1f}pp)'
+            )
+            candidate.source_summary['post_calibration_probability_relief'] = {
+                'gap_pp': round(probability_gap * 100.0, 3),
+                'min_probability': round(min_probability, 4),
+                'adjusted_probability': round(adjusted_probability, 4),
+            }
         if float(candidate.edge_pct) < float(self.settings.min_edge_pct_for_family(candidate.family)):
             return 'post_calibration_edge_guard'
         if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
