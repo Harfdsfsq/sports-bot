@@ -5,7 +5,8 @@ import json
 import math
 import os
 from collections import Counter, defaultdict
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+UTC = timezone.utc
 from pathlib import Path
 from statistics import mean
 from typing import Any
