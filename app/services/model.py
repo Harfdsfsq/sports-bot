@@ -765,7 +765,6 @@ class CandidateFactory:
         confidence += max(0.0, len(normalized_books) - 1) * float(getattr(self.settings, 'confidence_books_bonus', 0.90) or 0.90)
         confidence += max(0.0, len(sources) - 1) * float(getattr(self.settings, 'confidence_sources_bonus', 1.10) or 1.10)
         confidence += min(2.0, price_premium_pct * float(getattr(self.settings, 'confidence_price_premium_bonus', 0.08) or 0.08))
-
         if dispersion_pct is not None and dispersion_pct > consensus_dispersion_cap:
             confidence -= min(
                 2.5,
@@ -779,6 +778,18 @@ class CandidateFactory:
         fair_odds = 1.0 / max(adjusted, 0.01)
         ev_pct = (adjusted * best_price - 1.0) * 100.0
         edge_pct = (adjusted - market_prob) * 100.0
+        # Single-book matches can be underconfident even with a large model/market gap.
+        # Add a small, bounded uplift for clearly positive EV situations to reduce "no pick" runs.
+        if len(normalized_books) == 1:
+            single_book_gap_floor = float(getattr(self.settings, 'single_book_confidence_relief_min_gap_pct', 6.0) or 6.0)
+            single_book_ev_floor = float(getattr(self.settings, 'single_book_confidence_relief_min_ev_pct', 5.0) or 5.0)
+            single_book_edge_floor = float(getattr(self.settings, 'single_book_confidence_relief_min_edge_pct', 4.0) or 4.0)
+            if raw_gap_pct >= single_book_gap_floor and ev_pct >= single_book_ev_floor and edge_pct >= single_book_edge_floor:
+                confidence = clamp(
+                    confidence + float(getattr(self.settings, 'single_book_confidence_relief_bonus', 2.4) or 2.4),
+                    0,
+                    100,
+                )
 
         context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         selection_key = candidate_selection_key(
