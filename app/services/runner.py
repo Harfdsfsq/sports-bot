@@ -999,6 +999,9 @@ class PredictionRunner:
         return list(unique.values())
 
     def _load_seen_candidate_fingerprints(self) -> set[str]:
+        now_utc = datetime.now(UTC)
+        lookback_hours = max(0.0, float(getattr(self.settings, 'seen_candidate_lookback_hours', 36.0) or 36.0))
+        cutoff = now_utc - timedelta(hours=lookback_hours) if lookback_hours > 0 else None
         paths = [Path(self.settings.state_path)]
         latest_picks = Path(self.settings.storage_export_dir) / 'latest-picks.json'
         if latest_picks not in paths:
@@ -1012,7 +1015,7 @@ class PredictionRunner:
                 payload = json.loads(path.read_text(encoding='utf-8'))
             except Exception:
                 continue
-            self._collect_candidate_fingerprints(payload, seen)
+            self._collect_candidate_fingerprints(payload, seen, cutoff)
         return seen
 
     def _project_bankroll_summary(self, candidates: list[CandidateBet]) -> dict[str, Any]:
@@ -1048,17 +1051,43 @@ class PredictionRunner:
             if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) > 0.0
         ]
 
-    def _collect_candidate_fingerprints(self, value: Any, seen: set[str]) -> None:
+    def _collect_candidate_fingerprints(
+        self,
+        value: Any,
+        seen: set[str],
+        cutoff: datetime | None,
+    ) -> None:
         if isinstance(value, dict):
             fingerprint = self._candidate_fingerprint(value)
-            if fingerprint:
+            if fingerprint and self._should_block_fingerprint(value, cutoff):
                 seen.add(fingerprint)
             for item in value.values():
-                self._collect_candidate_fingerprints(item, seen)
+                self._collect_candidate_fingerprints(item, seen, cutoff)
             return
         if isinstance(value, list):
             for item in value:
-                self._collect_candidate_fingerprints(item, seen)
+                self._collect_candidate_fingerprints(item, seen, cutoff)
+
+    @staticmethod
+    def _should_block_fingerprint(candidate: dict[str, Any], cutoff: datetime | None) -> bool:
+        status = str(candidate.get('status') or '').strip().lower()
+        active_statuses = {'pending', 'open', 'published', 'new', 'active'}
+        settled_statuses = {'won', 'lost', 'push', 'void', 'cancelled', 'canceled', 'settled'}
+        if status in settled_statuses:
+            return False
+        if status and status not in active_statuses:
+            return False
+
+        event_time_raw = candidate.get('commence_time') or candidate.get('published_at') or candidate.get('created_at')
+        if cutoff is None:
+            return True
+        if not event_time_raw:
+            return True
+        try:
+            event_time = ensure_utc(event_time_raw)
+        except Exception:
+            return True
+        return event_time >= cutoff
 
     @staticmethod
     def _candidate_fingerprint(candidate: CandidateBet | dict[str, Any]) -> str | None:

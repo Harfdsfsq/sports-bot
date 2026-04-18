@@ -735,7 +735,18 @@ class PredictionQualityService:
             return None
         if quality_score < float(self._setting('quality_high_odds_min_score', 68.0) or 68.0):
             return 'quality_high_odds_score_guard'
-        if float(candidate.confidence) < float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0):
+        min_confidence = float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0)
+        confidence_relief = 0.0
+        if float(candidate.ev_pct) >= float(self._setting('quality_high_odds_relief_min_ev_pct', 12.0) or 12.0):
+            confidence_relief += float(self._setting('quality_high_odds_relief_ev_points', 3.0) or 3.0)
+        if float(candidate.edge_pct) >= float(self._setting('quality_high_odds_relief_min_edge_pct', 8.0) or 8.0):
+            confidence_relief += float(self._setting('quality_high_odds_relief_edge_points', 2.0) or 2.0)
+        if int(candidate.books_count) >= int(self._setting('quality_high_odds_relief_min_books', 3) or 3):
+            confidence_relief += float(self._setting('quality_high_odds_relief_books_points', 2.0) or 2.0)
+        if quality_score >= float(self._setting('quality_high_odds_relief_min_quality_score', 70.0) or 70.0):
+            confidence_relief += float(self._setting('quality_high_odds_relief_quality_points', 1.0) or 1.0)
+
+        if float(candidate.confidence) + confidence_relief < min_confidence:
             return 'quality_high_odds_confidence_guard'
         if int(candidate.books_count) < int(self._setting('quality_high_odds_min_books', 2) or 2):
             return 'quality_high_odds_books_guard'
