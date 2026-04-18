@@ -509,13 +509,21 @@ class OddsPapiProvider:
         mapping = {
             "bet365": "bet365",
             "unibet": "unibet",
+            "pinnacle": "pinnacle",
+            "betfair": "betfair",
+            "williamhill": "williamhill",
+            "1xbet": "1xbet",
+            "bwin": "bwin",
         }
         values: list[str] = []
         for item in source:
-            slug = mapping.get(normalize_bookmaker_name(str(item or "")))
+            normalized = normalize_bookmaker_name(str(item or ""))
+            slug = mapping.get(normalized)
+            if not slug and normalized:
+                slug = normalized
             if slug and slug not in values:
                 values.append(slug)
-        return values or ["bet365", "unibet"]
+        return values or ["bet365", "unibet", "pinnacle", "betfair", "williamhill", "1xbet", "bwin"]
 
     @staticmethod
     def _canonical_bookmaker(name: str) -> str:
@@ -524,6 +532,16 @@ class OddsPapiProvider:
             return "Bet365"
         if norm.startswith("unibet"):
             return "Unibet"
+        if norm == "pinnacle":
+            return "Pinnacle"
+        if norm == "betfair":
+            return "Betfair"
+        if norm in {"williamhill", "williamhillsportsbook"}:
+            return "William Hill"
+        if norm in {"1xbet", "xbet"}:
+            return "1xBet"
+        if norm == "bwin":
+            return "Bwin"
         return str(name or "Unknown")
 
     @staticmethod

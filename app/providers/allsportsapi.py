@@ -252,7 +252,13 @@ class AllSportsApiOddsProvider:
     def _parse_odds_rows(self, rows: list[dict[str, Any]], match: Match, event_id: str) -> list[Offer]:
         offers: list[Offer] = []
         seen: set[tuple[str, str, str, float | None]] = set()
-        allowed = {self._canonical_bookmaker(x) for x in (getattr(self.settings, "allsportsapi_bookmakers", []) or ["Bet365", "Unibet"])}
+        allowed = {
+            self._canonical_bookmaker(x)
+            for x in (
+                getattr(self.settings, "allsportsapi_bookmakers", [])
+                or ["Bet365", "Unibet", "Pinnacle", "Betfair", "William Hill", "1xBet", "Bwin"]
+            )
+        }
 
         def add(book: str, family: str, selection: str, price: Any, point: float | None = None, team_side: str | None = None) -> None:
             try:
@@ -324,6 +330,16 @@ class AllSportsApiOddsProvider:
             return "Bet365"
         if norm.startswith("unibet"):
             return "Unibet"
+        if norm == "pinnacle":
+            return "Pinnacle"
+        if norm == "betfair":
+            return "Betfair"
+        if norm in {"williamhill", "williamhillsportsbook"}:
+            return "William Hill"
+        if norm in {"1xbet", "xbet"}:
+            return "1xBet"
+        if norm == "bwin":
+            return "Bwin"
         return str(name or "Unknown")
 
     def _cache_path(self) -> Path:

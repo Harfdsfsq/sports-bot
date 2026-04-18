@@ -51,15 +51,15 @@ class Settings(BaseSettings):
     max_picks_per_run: int = Field(default=7, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
 
     target_bookmakers: CsvList = Field(
-        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"],
+        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet", "William Hill", "1xBet", "Bwin"],
         validation_alias=AliasChoices("TARGET_BOOKMAKERS"),
     )
     consensus_bookmakers: CsvList = Field(
-        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"],
+        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet", "William Hill", "1xBet", "Bwin"],
         validation_alias=AliasChoices("CONSENSUS_BOOKMAKERS"),
     )
     odds_api_io_bookmakers: CsvList = Field(
-        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"],
+        default_factory=lambda: ["Bet365", "Unibet"],
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS"),
     )
     bookies_api_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("BOOKIES_API_SPORTS"))
@@ -203,7 +203,10 @@ class Settings(BaseSettings):
     oddspapi_min_fetch_interval_minutes: int = Field(default=360, validation_alias=AliasChoices("ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES"))
     oddspapi_match_limit: int = Field(default=16, validation_alias=AliasChoices("ODDSPAPI_MATCH_LIMIT"))
     oddspapi_tournament_limit: int = Field(default=4, validation_alias=AliasChoices("ODDSPAPI_TOURNAMENT_LIMIT"))
-    oddspapi_bookmakers: CsvList = Field(default_factory=lambda: ["bet365", "unibet"], validation_alias=AliasChoices("ODDSPAPI_BOOKMAKERS"))
+    oddspapi_bookmakers: CsvList = Field(
+        default_factory=lambda: ["bet365", "unibet", "pinnacle", "betfair", "williamhill", "1xbet", "bwin"],
+        validation_alias=AliasChoices("ODDSPAPI_BOOKMAKERS"),
+    )
 
     enable_allsportsapi: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_ALLSPORTSAPI", "ALLSPORTSAPI_ENABLED"))
     allsportsapi_api_key: str | None = Field(default=None, validation_alias=AliasChoices("ALLSPORTSAPI_API_KEY"))
@@ -211,7 +214,10 @@ class Settings(BaseSettings):
     allsportsapi_timeout_seconds: float = Field(default=12.0, validation_alias=AliasChoices("ALLSPORTSAPI_TIMEOUT_SECONDS"))
     allsportsapi_min_fetch_interval_minutes: int = Field(default=120, validation_alias=AliasChoices("ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES"))
     allsportsapi_match_limit: int = Field(default=12, validation_alias=AliasChoices("ALLSPORTSAPI_MATCH_LIMIT"))
-    allsportsapi_bookmakers: CsvList = Field(default_factory=lambda: ["Bet365", "Unibet"], validation_alias=AliasChoices("ALLSPORTSAPI_BOOKMAKERS"))
+    allsportsapi_bookmakers: CsvList = Field(
+        default_factory=lambda: ["Bet365", "Unibet", "Pinnacle", "Betfair", "William Hill", "1xBet", "Bwin"],
+        validation_alias=AliasChoices("ALLSPORTSAPI_BOOKMAKERS"),
+    )
 
     enable_futrixmetrics_context: bool = Field(default=False, validation_alias=AliasChoices("ENABLE_FUTRIXMETRICS_CONTEXT", "FUTRIXMETRICS_ENABLED"))
     futrixmetrics_api_key: str | None = Field(default=None, validation_alias=AliasChoices("FUTRIXMETRICS_API_KEY"))
