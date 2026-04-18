@@ -5,7 +5,8 @@ import json
 import re
 from collections import defaultdict
 from dataclasses import asdict
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
+UTC = timezone.utc
 from pathlib import Path
 from typing import Any
 

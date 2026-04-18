@@ -4,7 +4,8 @@ import math
 import re
 import unicodedata
 from difflib import SequenceMatcher
-from datetime import UTC, datetime
+from datetime import datetime, timezone
+UTC = timezone.utc
 from statistics import median
 from typing import Iterable
 
