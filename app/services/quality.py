@@ -809,6 +809,18 @@ class PredictionQualityService:
             return 'quality_high_odds_edge_guard'
         if float(candidate.ev_pct) < float(self._setting('quality_high_odds_min_ev_pct', 4.0) or 4.0):
             return 'quality_high_odds_ev_guard'
+        if candidate.family == 'totals':
+            expected = self._candidate_xg(candidate)
+            point = self._to_float(candidate.point)
+            if expected is None or point is None:
+                return 'quality_high_odds_totals_xg_missing_guard'
+            total_xg = float(expected[0]) + float(expected[1])
+            kind = self._selection_kind(candidate.family, candidate.selection_key, candidate.selection)
+            min_headroom = float(self._setting('quality_high_odds_totals_min_xg_headroom', 0.18) or 0.18)
+            if kind == 'under' and (point - total_xg) < min_headroom:
+                return 'quality_high_odds_totals_xg_headroom_guard'
+            if kind == 'over' and (total_xg - point) < min_headroom:
+                return 'quality_high_odds_totals_xg_headroom_guard'
         return None
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
