@@ -69,6 +69,7 @@ class PredictionQualityService:
             'error_analysis': self.analyze_rows(rows),
         }
         report['profile'] = self._profile_from_stats(segments, clv)
+        report['learning'] = self._learning_summary(report['profile'])
         return report
 
     def apply_to_candidates(
@@ -406,11 +407,14 @@ class PredictionQualityService:
         root = Path(export_dir)
         dated = root / datetime.now(UTC).strftime('%Y-%m-%d')
         rows = self._segment_rows_for_csv(report)
+        learning_rows = self.learning_rows_for_csv(report)
         return {
             'quality_report_json': str(self._write_json(dated / 'quality-report.json', report)),
             'quality_segments_csv': str(self._write_csv(dated / 'quality-segments.csv', rows)),
+            'quality_learning_csv': str(self._write_csv(dated / 'quality-learning.csv', learning_rows)),
             'latest_quality_report_json': str(self._write_json(root / 'latest-quality-report.json', report)),
             'latest_quality_segments_csv': str(self._write_csv(root / 'latest-quality-segments.csv', rows)),
+            'latest_quality_learning_csv': str(self._write_csv(root / 'latest-quality-learning.csv', learning_rows)),
         }
 
     def _segment_stats(self, rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
@@ -434,6 +438,56 @@ class PredictionQualityService:
                 if int(value.get('count') or 0) >= min_sample
             },
             'clv_segments': dict(clv_stats.get('segments') or {}),
+        }
+
+    def _learning_summary(self, profile: dict[str, Any]) -> dict[str, Any]:
+        min_sample = int(profile.get('min_sample') or self._setting('calibration_min_sample', 8) or 8)
+        segments = dict(profile.get('segments') or {})
+        positive: list[dict[str, Any]] = []
+        negative: list[dict[str, Any]] = []
+        for segment, stats in segments.items():
+            if not isinstance(stats, dict):
+                continue
+            count = int(stats.get('count') or 0)
+            if count < min_sample:
+                continue
+            delta = self._to_float(stats.get('calibration_delta_probability'))
+            roi = self._to_float(stats.get('roi_pct'))
+            if delta is None and roi is None:
+                continue
+            row = {
+                'segment': str(segment),
+                'count': count,
+                'calibration_delta_probability': None if delta is None else round(float(delta), 4),
+                'roi_pct': None if roi is None else round(float(roi), 2),
+                'hit_rate_pct': self._to_float(stats.get('hit_rate_pct')),
+                'avg_predicted_probability': self._to_float(stats.get('avg_predicted_probability')),
+            }
+            if (delta or 0.0) >= 0:
+                positive.append(row)
+            else:
+                negative.append(row)
+        positive.sort(
+            key=lambda item: (
+                float(item.get('calibration_delta_probability') or 0.0),
+                float(item.get('roi_pct') or 0.0),
+                int(item.get('count') or 0),
+            ),
+            reverse=True,
+        )
+        negative.sort(
+            key=lambda item: (
+                float(item.get('calibration_delta_probability') or 0.0),
+                float(item.get('roi_pct') or 0.0),
+                -int(item.get('count') or 0),
+            ),
+        )
+        return {
+            'enabled': bool(self._setting('quality_layer_enabled', True) and self._setting('calibration_enabled', True)),
+            'min_sample': min_sample,
+            'segments_tracked': len(segments),
+            'positive_segments': positive[:15],
+            'negative_segments': negative[:15],
         }
 
     def _segment_summary(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -1022,4 +1076,14 @@ class PredictionQualityService:
         for name, stats in dict(report.get('segments') or {}).items():
             if isinstance(stats, dict):
                 rows.append({'segment': name, **stats})
+        return rows
+
+    @staticmethod
+    def learning_rows_for_csv(report: dict[str, Any]) -> list[dict[str, Any]]:
+        learning = dict(report.get('learning') or {})
+        rows: list[dict[str, Any]] = []
+        for polarity, key in (('positive', 'positive_segments'), ('negative', 'negative_segments')):
+            for item in (learning.get(key) or []):
+                if isinstance(item, dict):
+                    rows.append({'polarity': polarity, **item})
         return rows

@@ -92,6 +92,7 @@ class SheetExportService:
         self.bet_ledger_csv_path = Path(os.getenv("SHEET_BET_LEDGER_CSV_PATH") or default_dir / "sheet-bet-ledger.csv")
         self.daily_report_csv_path = Path(os.getenv("SHEET_DAILY_REPORT_CSV_PATH") or default_dir / "sheet-daily-report.csv")
         self.daily_summary_csv_path = Path(os.getenv("SHEET_DAILY_SUMMARY_CSV_PATH") or default_dir / "sheet-daily-summary.csv")
+        self.learning_csv_path = Path(os.getenv("SHEET_LEARNING_CSV_PATH") or default_dir / "sheet-learning.csv")
 
     def write(
         self,
@@ -110,6 +111,7 @@ class SheetExportService:
         ledger_rows = [dict(item) for item in (bet_rows or []) if isinstance(item, dict)]
         daily_rows = [dict(item) for item in ((daily_report or {}).get("rows") or []) if isinstance(item, dict)]
         daily_summary_rows = [dict((daily_report or {}).get("summary") or {})] if daily_report else []
+        learning_rows = self._learning_rows(quality_report or {})
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -122,6 +124,7 @@ class SheetExportService:
             "bet_ledger": ledger_rows,
             "daily_report": daily_report or {},
             "quality_report": quality_report or {},
+            "learning_rows": learning_rows,
             "summary": summary or {},
         }
         self.json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
@@ -132,6 +135,7 @@ class SheetExportService:
         if daily_report:
             self._write_dynamic_csv(self.daily_report_csv_path, daily_rows)
             self._write_dynamic_csv(self.daily_summary_csv_path, daily_summary_rows)
+        self._write_dynamic_csv(self.learning_csv_path, learning_rows)
         self.summary_json_path.write_text(json.dumps(summary or {}, ensure_ascii=False, indent=2), encoding="utf-8")
 
         webhook_result = self._push_webhook(payload)
@@ -145,6 +149,7 @@ class SheetExportService:
             "bet_ledger_csv_path": str(self.bet_ledger_csv_path),
             "daily_report_csv_path": str(self.daily_report_csv_path) if daily_report else "",
             "daily_summary_csv_path": str(self.daily_summary_csv_path) if daily_report else "",
+            "learning_csv_path": str(self.learning_csv_path),
             "sheet_id_present": bool(self.sheet_id),
             "apps_script_sync_required": not bool(self.webhook_url),
             "webhook_configured": bool(self.webhook_url),
@@ -245,6 +250,25 @@ class SheetExportService:
         }
         row.update(self._forecast_columns(forecast))
         return row
+
+    @staticmethod
+    def _learning_rows(quality_report: dict[str, Any]) -> list[dict[str, Any]]:
+        learning = dict((quality_report or {}).get("learning") or {})
+        rows: list[dict[str, Any]] = []
+        for polarity, key in (("positive", "positive_segments"), ("negative", "negative_segments")):
+            for item in (learning.get(key) or []):
+                if not isinstance(item, dict):
+                    continue
+                rows.append({
+                    "polarity": polarity,
+                    "segment": item.get("segment") or "",
+                    "count": item.get("count") or "",
+                    "calibration_delta_probability": item.get("calibration_delta_probability") if item.get("calibration_delta_probability") is not None else "",
+                    "roi_pct": item.get("roi_pct") if item.get("roi_pct") is not None else "",
+                    "hit_rate_pct": item.get("hit_rate_pct") if item.get("hit_rate_pct") is not None else "",
+                    "avg_predicted_probability": item.get("avg_predicted_probability") if item.get("avg_predicted_probability") is not None else "",
+                })
+        return rows
 
     @staticmethod
     def _forecast_rows_by_match(rows: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:

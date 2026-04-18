@@ -90,8 +90,8 @@ class Settings(BaseSettings):
     enable_gnews_context: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_GNEWS_CONTEXT", "GNEWS_ENABLED"))
     enable_provider_diagnostics: bool = Field(default=True, validation_alias=AliasChoices("ENABLE_PROVIDER_DIAGNOSTICS"))
 
-    diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices("DIAGNOSTICS_MATCH_LIMIT"))
-    context_enrichment_match_limit: int = Field(default=320, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_MATCH_LIMIT"))
+    diagnostics_match_limit: int = Field(default=240, validation_alias=AliasChoices("DIAGNOSTICS_MATCH_LIMIT"))
+    context_enrichment_match_limit: int = Field(default=420, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_MATCH_LIMIT"))
     context_enrichment_requires_offers: bool = Field(default=False, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_REQUIRES_OFFERS"))
     seen_candidate_lookback_hours: float = Field(default=36.0, validation_alias=AliasChoices("SEEN_CANDIDATE_LOOKBACK_HOURS"))
 
@@ -104,7 +104,7 @@ class Settings(BaseSettings):
     simple_market_h2h_min_confidence: float = Field(default=62.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_CONFIDENCE"))
     simple_market_min_signal_boost_pct: float = Field(default=0.9, validation_alias=AliasChoices("SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT"))
 
-    analysis_match_cap_per_run: int = Field(default=150, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
+    analysis_match_cap_per_run: int = Field(default=260, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
@@ -172,7 +172,7 @@ class Settings(BaseSettings):
         ],
         validation_alias=AliasChoices("ESPN_SOCCER_LEAGUES"),
     )
-    espn_max_matches: int = Field(default=60, validation_alias=AliasChoices("ESPN_MAX_MATCHES"))
+    espn_max_matches: int = Field(default=100, validation_alias=AliasChoices("ESPN_MAX_MATCHES"))
     espn_event_match_threshold: float = Field(default=44.0, validation_alias=AliasChoices("ESPN_EVENT_MATCH_THRESHOLD"))
     espn_slugs_per_run_limit: int = Field(default=10, validation_alias=AliasChoices("ESPN_SLUGS_PER_RUN_LIMIT"))
     espn_form_only_context_confidence: float = Field(default=53.0, validation_alias=AliasChoices("ESPN_FORM_ONLY_CONTEXT_CONFIDENCE"))
@@ -324,7 +324,7 @@ class Settings(BaseSettings):
     bookies_api_use_for_backfill_only: bool = Field(default=True, validation_alias=AliasChoices("BOOKIES_API_USE_FOR_BACKFILL_ONLY"))
     bookies_api_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("BOOKIES_API_TIMEOUT_SECONDS", "BOOKIES_API_TIMEOUT_MS"))
 
-    max_matches_for_odds_fetch: int = Field(default=150, validation_alias=AliasChoices("MAX_MATCHES_FOR_ODDS_FETCH", "MAX_MATCHES_FOR_PRICING"))
+    max_matches_for_odds_fetch: int = Field(default=260, validation_alias=AliasChoices("MAX_MATCHES_FOR_ODDS_FETCH", "MAX_MATCHES_FOR_PRICING"))
     match_bootstrap_provider: str = Field(default="odds_api_io", validation_alias=AliasChoices("MATCH_BOOTSTRAP_PROVIDER"))
     bootstrap_fallback_to_bookies: bool = Field(default=True, validation_alias=AliasChoices("BOOTSTRAP_FALLBACK_TO_BOOKIES"))
 
@@ -437,11 +437,11 @@ class Settings(BaseSettings):
     api_football_free_days_ahead: int = Field(default=1, validation_alias=AliasChoices("API_FOOTBALL_FREE_DAYS_AHEAD"))
 
     supported_total_lines: CsvList = Field(
-        default_factory=lambda: ["1.5", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25", "3.5", "3.75", "4.0", "4.25", "4.5"],
+        default_factory=lambda: ["1.5", "2.0", "2.5", "3.0", "3.5", "4.0", "4.5"],
         validation_alias=AliasChoices("SUPPORTED_TOTAL_LINES"),
     )
     supported_team_total_lines: CsvList = Field(
-        default_factory=lambda: ["0.5", "0.75", "1.0", "1.25", "1.5", "1.75", "2.0", "2.25", "2.5", "2.75", "3.0", "3.25", "3.5"],
+        default_factory=lambda: ["0.5", "1.0", "1.5", "2.0", "2.5", "3.0", "3.5"],
         validation_alias=AliasChoices("SUPPORTED_TEAM_TOTAL_LINES"),
     )
     line_support_tolerance: float = Field(default=0.06, validation_alias=AliasChoices("LINE_SUPPORT_TOLERANCE"))
