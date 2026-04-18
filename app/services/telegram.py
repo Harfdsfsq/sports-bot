@@ -336,7 +336,11 @@ class TelegramPublisher:
 
         bookmakers = self._bookmakers_text(bet)
         premium_pct = self._price_vs_consensus_pct(bet)
-        market_line = f"Рынок идею подтверждает: линию держат уже {int(getattr(bet, 'books_count', 0) or 0)} букмекеров"
+        books_count = int(getattr(bet, "books_count", 0) or 0)
+        market_line = (
+            "Рынок идею подтверждает: "
+            f"{self._books_confirmation_phrase(books_count)}"
+        )
         if bookmakers:
             market_line += f" ({bookmakers})"
         market_line += "."
@@ -359,6 +363,21 @@ class TelegramPublisher:
             seen.add(key)
             cleaned.append(key)
         return "\n\n".join(cleaned[:3])
+
+    def _books_confirmation_phrase(self, books_count: int) -> str:
+        abs_count = abs(int(books_count))
+        last_two = abs_count % 100
+        last = abs_count % 10
+        if 11 <= last_two <= 14:
+            noun = "букмекеров"
+        elif last == 1:
+            noun = "букмекер"
+        elif last in {2, 3, 4}:
+            noun = "букмекера"
+        else:
+            noun = "букмекеров"
+        verb = "держит" if abs_count == 1 else "держат"
+        return f"линию {verb} уже {books_count} {noun}"
 
     def render_settlement_summary(self, settlement_summary: dict[str, Any]) -> str | None:
         items = list(settlement_summary.get("items") or [])
