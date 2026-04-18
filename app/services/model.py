@@ -2540,7 +2540,7 @@ class CandidateFactory:
         fallback_min_ev = float(getattr(self.settings, 'fallback_publish_min_ev_pct', 2.0) or 2.0)
         fallback_min_edge = float(getattr(self.settings, 'fallback_publish_min_edge_pct', 2.5) or 2.5)
         fallback_min_conf = float(getattr(self.settings, 'fallback_publish_min_confidence', 54.0) or 54.0)
-        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 2) or 2))
+        fallback_min_books = max(1, int(getattr(self.settings, 'fallback_publish_min_books', 1) or 1))
         allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
         for item in sorted(candidates, key=self._candidate_rank_key, reverse=True):
             if item.family not in allowed_families:
