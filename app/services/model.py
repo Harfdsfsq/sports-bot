@@ -2617,6 +2617,8 @@ class CandidateFactory:
                 continue
             if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
                 continue
+            if not self._passes_single_book_fallback_guard(item):
+                continue
             return item
         return None
 
@@ -2642,6 +2644,8 @@ class CandidateFactory:
                 continue
             if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_pub_score:
                 continue
+            if not self._passes_single_book_fallback_guard(item):
+                continue
             return item
         return None
 
@@ -2662,8 +2666,31 @@ class CandidateFactory:
                 continue
             if float(getattr(item, 'edge_pct', 0.0) or 0.0) < min_edge:
                 continue
+            if not self._passes_single_book_fallback_guard(item):
+                continue
             return item
         return None
+
+    def _passes_single_book_fallback_guard(self, item: CandidateBet) -> bool:
+        books_count = int(getattr(item, 'books_count', 0) or 0)
+        if books_count >= 2:
+            return True
+        if books_count <= 0:
+            return False
+        if self._league_bucket(item) not in {'preferred', 'secondary'}:
+            return False
+        if not self._has_core_context(item):
+            return False
+        confidence = float(getattr(item, 'confidence', 0.0) or 0.0)
+        edge_pct = float(getattr(item, 'edge_pct', 0.0) or 0.0)
+        ev_pct = float(getattr(item, 'ev_pct', 0.0) or 0.0)
+        publication_score = float(getattr(item, 'publication_score', 0.0) or 0.0)
+        return (
+            confidence >= float(getattr(self.settings, 'preferred_single_book_min_confidence', 71.0) or 71.0)
+            and edge_pct >= float(getattr(self.settings, 'preferred_single_book_min_edge_pct', 6.5) or 6.5)
+            and ev_pct >= float(getattr(self.settings, 'preferred_single_book_min_ev_pct', 3.6) or 3.6)
+            and publication_score >= float(getattr(self.settings, 'preferred_single_book_min_publication_score', 13.5) or 13.5)
+        )
 
     @staticmethod
     def _is_valid_probability(value: Any) -> bool:
