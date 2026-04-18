@@ -55,6 +55,8 @@ class Settings(BaseSettings):
     emergency_min_kickoff_lead_enabled: bool = Field(default=True, validation_alias=AliasChoices("EMERGENCY_MIN_KICKOFF_LEAD_ENABLED"))
     emergency_min_kickoff_lead_minutes: int = Field(default=10, validation_alias=AliasChoices("EMERGENCY_MIN_KICKOFF_LEAD_MINUTES"))
     emergency_min_kickoff_activation_ratio: float = Field(default=0.85, validation_alias=AliasChoices("EMERGENCY_MIN_KICKOFF_ACTIVATION_RATIO"))
+    force_relaxed_min_kickoff_lead_enabled: bool = Field(default=True, validation_alias=AliasChoices("FORCE_RELAXED_MIN_KICKOFF_LEAD_ENABLED"))
+    force_relaxed_min_kickoff_lead_minutes: int = Field(default=10, validation_alias=AliasChoices("FORCE_RELAXED_MIN_KICKOFF_LEAD_MINUTES"))
     manual_late_mode_enabled: bool = Field(default=False, validation_alias=AliasChoices("MANUAL_LATE_MODE_ENABLED"))
     manual_late_min_kickoff_lead_minutes: int = Field(default=20, validation_alias=AliasChoices("MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES"))
     manual_late_adaptive_min_kickoff_lead_minutes: int = Field(default=10, validation_alias=AliasChoices("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES"))
