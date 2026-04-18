@@ -50,13 +50,16 @@ class Settings(BaseSettings):
     min_kickoff_lead_minutes: int = Field(default=30, validation_alias=AliasChoices("MIN_KICKOFF_LEAD_MINUTES"))
     max_picks_per_run: int = Field(default=7, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
 
-    target_bookmakers: CsvList = Field(default_factory=lambda: ["Bet365", "Unibet"], validation_alias=AliasChoices("TARGET_BOOKMAKERS"))
+    target_bookmakers: CsvList = Field(
+        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"],
+        validation_alias=AliasChoices("TARGET_BOOKMAKERS"),
+    )
     consensus_bookmakers: CsvList = Field(
         default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"],
         validation_alias=AliasChoices("CONSENSUS_BOOKMAKERS"),
     )
     odds_api_io_bookmakers: CsvList = Field(
-        default_factory=lambda: ["Bet365", "Unibet"],
+        default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet"],
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS"),
     )
     bookies_api_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("BOOKIES_API_SPORTS"))
@@ -89,7 +92,8 @@ class Settings(BaseSettings):
 
     diagnostics_match_limit: int = Field(default=150, validation_alias=AliasChoices("DIAGNOSTICS_MATCH_LIMIT"))
     context_enrichment_match_limit: int = Field(default=320, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_MATCH_LIMIT"))
-    context_enrichment_requires_offers: bool = Field(default=True, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_REQUIRES_OFFERS"))
+    context_enrichment_requires_offers: bool = Field(default=False, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_REQUIRES_OFFERS"))
+    seen_candidate_lookback_hours: float = Field(default=36.0, validation_alias=AliasChoices("SEEN_CANDIDATE_LOOKBACK_HOURS"))
 
     simple_market_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices("SIMPLE_MARKET_FALLBACK_ENABLED"))
     simple_market_totals_min_ev_pct: float = Field(default=2.2, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_EV_PCT"))
