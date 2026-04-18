@@ -178,6 +178,32 @@ class JsonStateStore:
             candidate.bankroll_snapshot = round(current, 2)
             candidate.bankroll_currency = str(bank.get('currency') or 'u')
             candidate.risk_label = 'high' if pct >= 5.0 else 'medium' if pct >= 3.0 else 'low'
+
+        if (
+            candidates
+            and bool(getattr(settings, 'bankroll_force_min_stake_when_empty_enabled', True))
+            and not any(float(getattr(item, 'stake_amount', 0.0) or 0.0) > 0.0 for item in candidates)
+        ):
+            min_amt = float(getattr(settings, 'bankroll_min_stake_amount', 10.0) or 10.0)
+            max_pct = max(0.0, float(getattr(settings, 'bankroll_force_min_stake_max_pct', 1.2) or 1.2))
+            forced_cap = current * max_pct / 100.0 if max_pct > 0 else min_amt
+            forced_stake = max(min_amt, forced_cap)
+            forced_stake = self._round_stake(forced_stake, float(getattr(settings, 'bankroll_round_to', 1.0) or 1.0))
+            if forced_stake >= min_amt and current > 0:
+                best = max(
+                    candidates,
+                    key=lambda item: (
+                        float(getattr(item, 'publication_score', 0.0) or 0.0),
+                        float(getattr(item, 'confidence', 0.0) or 0.0),
+                        float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                    ),
+                )
+                best.stake_amount = round(forced_stake, 2)
+                best.stake_pct = round(forced_stake / current * 100.0, 2)
+                best.risk_label = 'forced'
+                best.source_summary = dict(getattr(best, 'source_summary', {}) or {})
+                best.source_summary['forced_stake_when_empty'] = True
+                best.reasons.append('bankroll=forced_min_stake_when_empty')
         return candidates
 
     @staticmethod
