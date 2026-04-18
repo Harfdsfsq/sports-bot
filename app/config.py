@@ -39,6 +39,8 @@ class Settings(BaseSettings):
     bankroll_min_stake_amount: float = Field(default=10.0, validation_alias=AliasChoices("BANKROLL_MIN_STAKE_AMOUNT"))
     bankroll_max_open_exposure_pct: float = Field(default=18.0, validation_alias=AliasChoices("BANKROLL_MAX_OPEN_EXPOSURE_PCT"))
     bankroll_round_to: float = Field(default=1.0, validation_alias=AliasChoices("BANKROLL_ROUND_TO"))
+    bankroll_force_min_stake_when_empty_enabled: bool = Field(default=True, validation_alias=AliasChoices("BANKROLL_FORCE_MIN_STAKE_WHEN_EMPTY_ENABLED"))
+    bankroll_force_min_stake_max_pct: float = Field(default=1.2, validation_alias=AliasChoices("BANKROLL_FORCE_MIN_STAKE_MAX_PCT"))
     settlement_enabled: bool = Field(default=True, validation_alias=AliasChoices("SETTLEMENT_ENABLED"))
     settlement_grace_minutes: int = Field(default=180, validation_alias=AliasChoices("SETTLEMENT_GRACE_MINUTES"))
     settlement_lookback_days: int = Field(default=5, validation_alias=AliasChoices("SETTLEMENT_LOOKBACK_DAYS"))
