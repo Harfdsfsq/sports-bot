@@ -14,17 +14,18 @@ on:
         default: true
         type: boolean
   schedule:
-    # 08:00, 12:00, 16:00, 20:00 MSK for forecasts.
-    - cron: '0 5,9,13,17 * * *'
-    # 22:00 MSK for the daily report.
-    - cron: '0 19 * * *'
+    # 08:07, 12:07, 16:07, 20:07 MSK for forecasts (07 to reduce top-of-hour scheduler delays).
+    - cron: '7 5,9,13,17 * * *'
+    # 22:07 MSK for the daily report.
+    - cron: '7 19 * * *'
 
 permissions:
   contents: write
 
 concurrency:
   group: run-bot
-  cancel-in-progress: false
+  # Do not accumulate a queue of stale runs: keep the latest schedule slot on time.
+  cancel-in-progress: true
 
 env:
   TZ: Europe/Moscow
@@ -33,8 +34,8 @@ env:
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   SHEET_ID: ${{ secrets.SHEET_ID }}
   PUBLISH_DRY_RUN: 'false'
-  PREDICTION_PUBLICATION_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
-  RUN_REPORT_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
+  PREDICTION_PUBLICATION_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '7 19 * * *' && 'false' || 'true' }}
+  RUN_REPORT_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '7 19 * * *' && 'false' || 'true' }}
 
   BANKROLL_CURRENCY: 'units'
   BANKROLL_ENABLED: 'true'
