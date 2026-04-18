@@ -726,6 +726,7 @@ class PredictionRunner:
 
         fallback_applied = False
         emergency_applied = False
+        force_relaxed_applied = False
         effective_min_lead_minutes = configured_min_lead_minutes
         if (
             not filtered
@@ -767,6 +768,22 @@ class PredictionRunner:
             emergency_applied = True
             effective_min_lead_minutes = emergency_min_lead_minutes
 
+        force_relaxed_min_lead_minutes = min(
+            effective_min_lead_minutes,
+            max(0, int(getattr(self.settings, 'force_relaxed_min_kickoff_lead_minutes', 10) or 0)),
+        )
+        if (
+            not filtered
+            and future_matches_in_window
+            and getattr(self.settings, 'force_relaxed_min_kickoff_lead_enabled', True)
+            and skipped_too_soon >= len(future_matches_in_window)
+            and force_relaxed_min_lead_minutes < effective_min_lead_minutes
+        ):
+            min_lead = timedelta(minutes=force_relaxed_min_lead_minutes)
+            filtered, skipped_started, skipped_too_soon, skipped_outside_window = apply_filter(min_lead)
+            force_relaxed_applied = True
+            effective_min_lead_minutes = force_relaxed_min_lead_minutes
+
         lead_time_snapshot = {}
         if future_lead_minutes:
             lead_time_snapshot = {
@@ -791,6 +808,9 @@ class PredictionRunner:
             'emergency_min_kickoff_lead_minutes': emergency_min_lead_minutes,
             'emergency_min_kickoff_activation_ratio': float(getattr(self.settings, 'emergency_min_kickoff_activation_ratio', 0.85) or 0.85),
             'emergency_min_kickoff_lead_applied': emergency_applied,
+            'force_relaxed_min_kickoff_lead_enabled': getattr(self.settings, 'force_relaxed_min_kickoff_lead_enabled', True),
+            'force_relaxed_min_kickoff_lead_minutes': force_relaxed_min_lead_minutes,
+            'force_relaxed_min_kickoff_lead_applied': force_relaxed_applied,
             'manual_late_mode_enabled': bool(getattr(self.settings, 'manual_late_mode_enabled', False)),
             'manual_late_mode_applied': manual_late_mode_applied,
             'manual_late_min_kickoff_lead_minutes': int(getattr(self.settings, 'manual_late_min_kickoff_lead_minutes', configured_min_lead_minutes) or 0),
