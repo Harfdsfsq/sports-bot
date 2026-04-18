@@ -96,6 +96,14 @@ class Settings(BaseSettings):
     context_enrichment_match_limit: int = Field(default=420, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_MATCH_LIMIT"))
     context_enrichment_requires_offers: bool = Field(default=False, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_REQUIRES_OFFERS"))
     seen_candidate_lookback_hours: float = Field(default=36.0, validation_alias=AliasChoices("SEEN_CANDIDATE_LOOKBACK_HOURS"))
+    republish_seen_candidates_when_empty: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY"),
+    )
+    republish_seen_candidates_limit: int = Field(
+        default=1,
+        validation_alias=AliasChoices("REPUBLISH_SEEN_CANDIDATES_LIMIT"),
+    )
 
     simple_market_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices("SIMPLE_MARKET_FALLBACK_ENABLED"))
     simple_market_totals_min_ev_pct: float = Field(default=2.2, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_EV_PCT"))
