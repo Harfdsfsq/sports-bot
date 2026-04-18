@@ -324,6 +324,25 @@ class PredictionRunner:
                     reused_candidates.append(candidate)
                     continue
                 candidates.append(candidate)
+            if (
+                not candidates
+                and reused_candidates
+                and bool(getattr(self.settings, 'republish_seen_candidates_when_empty', True))
+            ):
+                republish_limit = max(1, int(getattr(self.settings, 'republish_seen_candidates_limit', 1) or 1))
+                reused_candidates.sort(
+                    key=lambda item: (
+                        float(getattr(item, 'publication_score', 0.0) or 0.0),
+                        float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                        float(getattr(item, 'edge_pct', 0.0) or 0.0),
+                    ),
+                    reverse=True,
+                )
+                republished_candidates = reused_candidates[:republish_limit]
+                for candidate in republished_candidates:
+                    candidate.reasons.append('republish=seen_candidate_pool_empty')
+                    candidate.source_summary['republish_reason'] = 'seen_candidate_pool_empty'
+                candidates = republished_candidates
 
             candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
             zero_stake_candidates = [
