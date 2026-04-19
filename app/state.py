@@ -101,6 +101,10 @@ class JsonStateStore:
         }
         self._save()
 
+    def learning_state_snapshot(self) -> dict[str, Any]:
+        snapshot = self._state.get('learning_state') or {}
+        return dict(snapshot) if isinstance(snapshot, dict) else {}
+
     def write_debug(self, payload: dict[str, Any]) -> None:
         self.debug_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
 
@@ -158,11 +162,24 @@ class JsonStateStore:
         self._state['message_history'] = message_history[-250:]
 
         quality_report = dict(archived_payload.get('quality_report') or {})
+        daily_report = dict(archived_payload.get('daily_report') or {})
+        existing_learning_state = dict(self._state.get('learning_state') or {})
         self._state['learning_state'] = {
             'updated_at': created_at,
             'summary': dict(quality_report.get('summary') or {}),
             'learning': dict(quality_report.get('learning') or {}),
             'error_analysis': dict(quality_report.get('error_analysis') or {}),
+            'daily_quality_analysis': dict(
+                daily_report.get('quality_analysis')
+                or existing_learning_state.get('daily_quality_analysis')
+                or {}
+            ),
+            'next_day_adjustments': dict(
+                daily_report.get('next_day_adjustments')
+                or existing_learning_state.get('next_day_adjustments')
+                or {}
+            ),
+            'report_date': str(daily_report.get('report_date') or existing_learning_state.get('report_date') or ''),
             'archive_path': str(archive_path),
         }
         self._save()

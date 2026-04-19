@@ -177,6 +177,14 @@ class PredictionRunner:
         try:
             now_utc = datetime.now(UTC)
             now_local = now_utc.astimezone(self.settings.tzinfo)
+            recent_learning_state = self.state.learning_state_snapshot()
+            report_hour_local = min(23, max(0, int(getattr(self.settings, 'daily_report_hour_local', 22) or 22)))
+            report_only_mode = bool(getattr(self.settings, 'nightly_review_report_only_enabled', True)) and bool(
+                getattr(self.settings, 'daily_report_enabled', True)
+            ) and (
+                not bool(getattr(self.settings, 'prediction_publication_enabled', True))
+                or int(now_local.hour) == report_hour_local
+            )
 
             settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
             settlement_attempts_recorded = self.state.record_settlement_attempts(settlement_probe)
@@ -184,6 +192,7 @@ class PredictionRunner:
             bankroll_summary = self.state.bankroll_summary(self.settings)
             quality_clv_rows = self.market_monitor.resolved_clv_rows() if self.market_monitor is not None else []
             quality_report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings), quality_clv_rows)
+            quality_report['recent_learning_state'] = recent_learning_state
             quality_export_paths = self.quality.export_quality_report(self.settings.storage_export_dir, quality_report)
             daily_report_due, daily_report_date, daily_report_skip_reason = self.state.daily_report_due(self.settings, now_utc)
             daily_report = self.state.build_daily_report(self.settings, daily_report_date) if daily_report_due else None
@@ -204,6 +213,7 @@ class PredictionRunner:
                     daily_report['refresh_reason'] = refresh_reason
             if daily_report is not None:
                 daily_report['quality_analysis'] = self.quality.analyze_daily_report(daily_report)
+                daily_report['next_day_adjustments'] = self.quality.build_next_day_adjustments(daily_report)
             daily_report_messages_sent = 0
             daily_report_payloads: list[str] = []
             if daily_report is not None:
@@ -383,7 +393,7 @@ class PredictionRunner:
                 if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0
             ]
             publishable_candidates = self._filter_publishable_candidates(candidates)
-            prediction_publication_enabled = bool(getattr(self.settings, 'prediction_publication_enabled', True))
+            prediction_publication_enabled = bool(getattr(self.settings, 'prediction_publication_enabled', True)) and not report_only_mode
             if not prediction_publication_enabled:
                 publishable_candidates = []
             bankroll_preview = self._project_bankroll_summary(publishable_candidates)
@@ -468,6 +478,7 @@ class PredictionRunner:
                 'current_time_utc': now_utc.isoformat(),
                 'current_time_local': now_local.isoformat(),
                 'app_timezone': self.settings.app_timezone,
+                'schedule_mode': 'nightly_review' if report_only_mode else 'forecast',
                 'matches_seen': len(filtered_matches),
                 'matches_before_publish_window': len(deduped_matches),
                 'matches_with_offers': sum(1 for match in filtered_matches if merged_offers.get(match.match_key)),
@@ -549,6 +560,8 @@ class PredictionRunner:
                     'is_revision': bool((daily_report or {}).get('is_revision')) if daily_report is not None else False,
                     'telegram_messages_sent': daily_report_messages_sent,
                     'summary': (daily_report or {}).get('summary') if daily_report is not None else {},
+                    'quality_analysis': (daily_report or {}).get('quality_analysis') if daily_report is not None else {},
+                    'next_day_adjustments': (daily_report or {}).get('next_day_adjustments') if daily_report is not None else {},
                     'exports': daily_report_export_paths,
                 },
                 'quality': {
@@ -566,9 +579,12 @@ class PredictionRunner:
                 'exports': export_paths,
             }
 
-            run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
+            run_report_messages_sent = 0
+            run_report_payloads: list[str] = []
+            if not report_only_mode:
+                run_report_messages_sent, run_report_payloads = await self.telegram.publish_run_report(summary)
             summary['run_report'] = {
-                'enabled': bool(getattr(self.settings, 'run_report_enabled', True)),
+                'enabled': bool(getattr(self.settings, 'run_report_enabled', True)) and not report_only_mode,
                 'only_when_no_predictions': bool(getattr(self.settings, 'run_report_only_when_no_predictions', True)),
                 'telegram_messages_sent': run_report_messages_sent,
             }
@@ -603,6 +619,9 @@ class PredictionRunner:
                     'bootstrap_fallback_to_context': bool(getattr(self.settings, 'bootstrap_fallback_to_context', True)),
                     'context_enrichment_match_limit': self.settings.context_enrichment_match_limit,
                     'context_enrichment_requires_offers': self.settings.context_enrichment_requires_offers,
+                    'max_picks_per_run': self.settings.max_picks_per_run,
+                    'prediction_publication_enabled': bool(getattr(self.settings, 'prediction_publication_enabled', True)),
+                    'report_only_mode': report_only_mode,
                 },
                 'source_previews': {
                     'match_bootstrap': bootstrap_preview,

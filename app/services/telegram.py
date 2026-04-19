@@ -501,6 +501,21 @@ class TelegramPublisher:
             top_tags = ", ".join(f"{name}: {count}" for name, count in list(failure_tags.items())[:4])
             lines.append(f"Разбор ошибок: {top_tags}")
 
+        next_day_adjustments = dict(daily_report.get("next_day_adjustments") or {})
+        actions = [dict(item) for item in (next_day_adjustments.get("actions") or []) if isinstance(item, dict)]
+        if actions:
+            action_parts: list[str] = []
+            for item in actions[:4]:
+                scope = str(item.get("scope") or "")
+                key = str(item.get("key") or "")
+                delta = float(item.get("score_delta") or 0.0)
+                if not key:
+                    continue
+                prefix = "Р С‹РЅРѕРє" if scope == "family" else "Р›РёРіР°"
+                action_parts.append(f"{prefix} {key}: {delta:+.2f}")
+            if action_parts:
+                lines.append(f"РљРѕСЂСЂРµРєС†РёСЏ РЅР° Р·Р°РІС‚СЂР°: {', '.join(action_parts)}")
+
         result_emoji = {
             "won": "✅",
             "lost": "❌",

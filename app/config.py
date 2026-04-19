@@ -61,7 +61,7 @@ class Settings(BaseSettings):
     manual_late_mode_enabled: bool = Field(default=False, validation_alias=AliasChoices("MANUAL_LATE_MODE_ENABLED"))
     manual_late_min_kickoff_lead_minutes: int = Field(default=20, validation_alias=AliasChoices("MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES"))
     manual_late_adaptive_min_kickoff_lead_minutes: int = Field(default=10, validation_alias=AliasChoices("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES"))
-    max_picks_per_run: int = Field(default=7, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
+    max_picks_per_run: int = Field(default=2, validation_alias=AliasChoices("MAX_PICKS_PER_RUN", "TELEGRAM_TOP_LIMIT"))
 
     target_bookmakers: CsvList = Field(
         default_factory=lambda: ["Pinnacle", "Betfair", "Bet365", "Unibet", "William Hill", "1xBet", "Bwin"],
@@ -134,9 +134,18 @@ class Settings(BaseSettings):
 
     telegram_bot_token: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_TOKEN", "TELEGRAM_BOT_TOKEN"))
     telegram_chat_id: str | None = Field(default=None, validation_alias=AliasChoices("TELEGRAM_CHAT_ID"))
+    prediction_publication_enabled: bool = Field(default=True, validation_alias=AliasChoices("PREDICTION_PUBLICATION_ENABLED"))
     run_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ENABLED"))
     run_report_only_when_no_predictions: bool = Field(default=True, validation_alias=AliasChoices("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS"))
     run_report_top_reasons: int = Field(default=4, validation_alias=AliasChoices("RUN_REPORT_TOP_REASONS"))
+    daily_report_enabled: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_ENABLED"))
+    daily_report_send_telegram: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_SEND_TELEGRAM"))
+    daily_report_hour_local: int = Field(default=22, validation_alias=AliasChoices("DAILY_REPORT_HOUR_LOCAL"))
+    daily_report_target_offset_days: int = Field(default=0, validation_alias=AliasChoices("DAILY_REPORT_TARGET_OFFSET_DAYS"))
+    daily_report_min_bets: int = Field(default=1, validation_alias=AliasChoices("DAILY_REPORT_MIN_BETS"))
+    daily_report_resend_on_change: bool = Field(default=True, validation_alias=AliasChoices("DAILY_REPORT_RESEND_ON_CHANGE"))
+    nightly_review_report_only_enabled: bool = Field(default=True, validation_alias=AliasChoices("NIGHTLY_REVIEW_REPORT_ONLY_ENABLED"))
+    nightly_review_store_adjustments_enabled: bool = Field(default=True, validation_alias=AliasChoices("NIGHTLY_REVIEW_STORE_ADJUSTMENTS_ENABLED"))
     sheet_id: str | None = Field(default=None, validation_alias=AliasChoices("SHEET_ID"))
 
     odds_api_io_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDS_API_IO_KEY"))

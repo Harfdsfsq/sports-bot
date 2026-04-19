@@ -87,6 +87,7 @@ class PredictionQualityService:
         settled_count = int(summary.get('settled_binary_bets') or 0)
         min_history = max(0, int(self._setting('quality_min_history_bets', 12) or 12))
         enough_history = settled_count >= min_history
+        recent_learning_state = dict(quality_report.get('recent_learning_state') or {})
 
         passed: list[CandidateBet] = []
         rejections: Counter[str] = Counter()
@@ -109,6 +110,17 @@ class PredictionQualityService:
                     candidate.reasons.append(
                         f"learning=score_delta({float(learning_adjustment['score_delta']):+.2f})"
                     )
+            recent_adjustment = self._candidate_recent_adjustment(candidate, recent_learning_state)
+            if recent_adjustment['applied']:
+                candidate.publication_score = round(
+                    float(getattr(candidate, 'publication_score', 0.0) or 0.0)
+                    + float(recent_adjustment['score_delta']),
+                    3,
+                )
+                candidate.source_summary['nightly_review_adjustment'] = recent_adjustment
+                candidate.reasons.append(
+                    f"nightly_review=score_delta({float(recent_adjustment['score_delta']):+.2f})"
+                )
 
             quality_score = self._candidate_quality_score(candidate, segments, profile, enough_history)
             status = 'passed_quality'
@@ -145,6 +157,7 @@ class PredictionQualityService:
                 'reasons': reasons,
                 'calibration': calibration,
                 'learning_adjustment': learning_adjustment,
+                'nightly_review_adjustment': recent_adjustment,
                 'segments': segments,
                 'original_adjusted_probability': round(original_probability, 5),
                 'final_adjusted_probability': round(float(candidate.adjusted_probability), 5),
@@ -415,6 +428,86 @@ class PredictionQualityService:
         rows = [dict(item) for item in (daily_report.get('rows') or []) if isinstance(item, dict)]
         return self.analyze_rows(rows)
 
+    def build_next_day_adjustments(self, daily_report: dict[str, Any]) -> dict[str, Any]:
+        rows = [dict(item) for item in (daily_report.get('rows') or []) if isinstance(item, dict)]
+        settled = [row for row in rows if self._binary_result(row) is not None]
+        family_adjustments: dict[str, dict[str, Any]] = {}
+        league_adjustments: dict[str, dict[str, Any]] = {}
+        actions: list[dict[str, Any]] = []
+
+        for family, group in self._group_rows(settled, lambda row: str(row.get('family') or 'unknown')).items():
+            summary = self._portfolio_summary(group)
+            count = int(summary.get('count') or 0)
+            if count < 2:
+                continue
+            roi = float(summary.get('roi_pct') or 0.0)
+            hit = float(summary.get('hit_rate_pct') or 0.0)
+            score_delta = 0.0
+            reason = ''
+            if roi <= -18.0 or (count >= 3 and hit < 35.0):
+                score_delta = -1.6
+                reason = 'cooldown_after_bad_day'
+            elif roi >= 8.0 and hit >= 52.0:
+                score_delta = 0.8
+                reason = 'reinforce_after_good_day'
+            if abs(score_delta) < 0.01:
+                continue
+            family_adjustments[family] = {
+                'score_delta': round(score_delta, 3),
+                'count': count,
+                'roi_pct': round(roi, 2),
+                'hit_rate_pct': round(hit, 2),
+                'reason': reason,
+            }
+            actions.append({
+                'scope': 'family',
+                'key': family,
+                'score_delta': round(score_delta, 3),
+                'reason': reason,
+            })
+
+        for bucket, group in self._group_rows(
+            settled,
+            lambda row: self._league_bucket_from_text(str(row.get('league_name') or ''), str(row.get('match_tier') or '')),
+        ).items():
+            summary = self._portfolio_summary(group)
+            count = int(summary.get('count') or 0)
+            if count < 2:
+                continue
+            roi = float(summary.get('roi_pct') or 0.0)
+            score_delta = 0.0
+            reason = ''
+            if bucket in {'other', 'low'} and roi <= -12.0:
+                score_delta = -0.9
+                reason = 'trim_non_core_after_losses'
+            elif bucket in {'preferred', 'secondary'} and roi >= 6.0:
+                score_delta = 0.45
+                reason = 'trust_core_bucket_after_profit'
+            if abs(score_delta) < 0.01:
+                continue
+            league_adjustments[bucket] = {
+                'score_delta': round(score_delta, 3),
+                'count': count,
+                'roi_pct': round(roi, 2),
+                'reason': reason,
+            }
+            actions.append({
+                'scope': 'league_bucket',
+                'key': bucket,
+                'score_delta': round(score_delta, 3),
+                'reason': reason,
+            })
+
+        actions.sort(key=lambda item: abs(float(item.get('score_delta') or 0.0)), reverse=True)
+        return {
+            'enabled': bool(self._setting('nightly_review_store_adjustments_enabled', True)),
+            'report_date': str(daily_report.get('report_date') or ''),
+            'settled_bets': len(settled),
+            'family_adjustments': family_adjustments,
+            'league_bucket_adjustments': league_adjustments,
+            'actions': actions[:12],
+        }
+
     def analyze_rows(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
         settled = [row for row in rows if self._binary_result(row) is not None]
         lost = [row for row in settled if self._binary_result(row) == 0.0]
@@ -661,6 +754,40 @@ class PredictionQualityService:
             'score_delta': round(score_delta, 3),
             'raw_score_delta': round(raw_delta, 3),
             'segments_used': [segment for _, _, segment in weighted[:8]],
+        }
+
+    def _candidate_recent_adjustment(self, candidate: CandidateBet, recent_learning_state: dict[str, Any]) -> dict[str, Any]:
+        if not bool(self._setting('nightly_review_store_adjustments_enabled', True)):
+            return {'applied': False, 'score_delta': 0.0, 'sources': []}
+        payload = dict((recent_learning_state or {}).get('next_day_adjustments') or {})
+        if not payload or not bool(payload.get('enabled', True)):
+            return {'applied': False, 'score_delta': 0.0, 'sources': []}
+
+        family_adjustments = dict(payload.get('family_adjustments') or {})
+        league_adjustments = dict(payload.get('league_bucket_adjustments') or {})
+        sources: list[str] = []
+        score_delta = 0.0
+
+        family_key = str(getattr(candidate, 'family', '') or '')
+        family_payload = dict(family_adjustments.get(family_key) or {})
+        family_delta = float(family_payload.get('score_delta') or 0.0)
+        if abs(family_delta) >= 0.01:
+            score_delta += family_delta
+            sources.append(f'family:{family_key}')
+
+        league_bucket = self._candidate_league_bucket(candidate)
+        league_payload = dict(league_adjustments.get(league_bucket) or {})
+        league_delta = float(league_payload.get('score_delta') or 0.0)
+        if abs(league_delta) >= 0.01:
+            score_delta += league_delta
+            sources.append(f'league:{league_bucket}')
+
+        score_delta = clamp(score_delta, -3.0, 2.0)
+        return {
+            'applied': abs(score_delta) >= 0.25,
+            'score_delta': round(score_delta, 3),
+            'sources': sources,
+            'report_date': str(payload.get('report_date') or recent_learning_state.get('report_date') or ''),
         }
 
     def _apply_probability_adjustment(self, candidate: CandidateBet, delta: float) -> None:
