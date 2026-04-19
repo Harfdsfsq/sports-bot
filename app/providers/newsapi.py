@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -27,9 +29,16 @@ class NewsApiContextProvider:
             'articles_seen': 0,
             'http_statuses': [],
             'last_body_preview': None,
+            'rate_limited': False,
         }
         preview: dict[str, Any] = {'sample_articles': [], 'sample_contexts': []}
         if not stats['enabled'] or not stats['api_key_present']:
+            return {}, stats, preview
+        cooldown_until = self._cooldown_until()
+        if cooldown_until is not None:
+            stats['rate_limited'] = True
+            stats['cooldown_until'] = cooldown_until.isoformat()
+            stats['last_body_preview'] = f'cooldown active until {cooldown_until.isoformat()}'
             return {}, stats, preview
         soccer_matches = [item for item in matches if item.sport_key == 'soccer']
         if not soccer_matches:
@@ -60,6 +69,11 @@ class NewsApiContextProvider:
                     continue
                 stats['http_statuses'].append(response.status_code)
                 stats['last_body_preview'] = response.text[:1200]
+                if response.status_code == 429:
+                    stats['response_errors'] += 1
+                    stats['rate_limited'] = True
+                    self._activate_cooldown(minutes=max(5, int(getattr(self.settings, 'newsapi_rate_limit_cooldown_minutes', 180) or 180)))
+                    break
                 if response.status_code != 200:
                     stats['response_errors'] += 1
                     continue
@@ -85,3 +99,37 @@ class NewsApiContextProvider:
                         'away_win_probability': context.away_win_probability,
                     })
         return contexts, stats, preview
+
+    def _cooldown_path(self) -> Path:
+        return Path(getattr(self.settings, 'state_path', '.data/state.json')).resolve().parent / 'provider_cache' / 'newsapi_rate_limit.json'
+
+    def _cooldown_until(self) -> datetime | None:
+        path = self._cooldown_path()
+        try:
+            payload = json.loads(path.read_text(encoding='utf-8'))
+        except Exception:
+            return None
+        raw_until = payload.get('cooldown_until')
+        if not raw_until:
+            return None
+        try:
+            dt = datetime.fromisoformat(str(raw_until).replace('Z', '+00:00'))
+        except Exception:
+            return None
+        if dt <= datetime.now(UTC):
+            try:
+                path.unlink(missing_ok=True)
+            except Exception:
+                pass
+            return None
+        return dt
+
+    def _activate_cooldown(self, *, minutes: int) -> None:
+        path = self._cooldown_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        until = datetime.now(UTC) + timedelta(minutes=max(1, minutes))
+        payload = {'cooldown_until': until.isoformat(), 'created_at': datetime.now(UTC).isoformat()}
+        try:
+            path.write_text(json.dumps(payload, ensure_ascii=False), encoding='utf-8')
+        except Exception:
+            return

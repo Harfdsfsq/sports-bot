@@ -93,11 +93,6 @@ class ApiFootballContextProvider:
                     stats["rate_limited"] = True
                     self._activate_cooldown(minutes=max(2, int(getattr(self.settings, "api_football_rate_limit_cooldown_minutes", 12) or 12)))
                     break
-                if response.status_code == 429:
-                    stats["response_errors"] += 1
-                    stats["rate_limited"] = True
-                    self._activate_cooldown(minutes=max(2, int(getattr(self.settings, "api_football_rate_limit_cooldown_minutes", 12) or 12)))
-                    break
                 if response.status_code != 200:
                     stats["response_errors"] += 1
                     continue
@@ -105,6 +100,9 @@ class ApiFootballContextProvider:
                 if self._has_auth_error(payload) or self._has_plan_error(payload):
                     stats["response_errors"] += 1
                     stats["auth_failed"] = True
+                    self._activate_cooldown(
+                        minutes=max(30, int(getattr(self.settings, "api_football_auth_error_cooldown_minutes", 720) or 720))
+                    )
                     break
                 rows = self._response_rows(payload)
                 fixtures.extend(rows)
@@ -138,10 +136,14 @@ class ApiFootballContextProvider:
                 if self._has_auth_error(payload):
                     stats["response_errors"] += 1
                     stats["auth_failed"] = True
+                    self._activate_cooldown(
+                        minutes=max(30, int(getattr(self.settings, "api_football_auth_error_cooldown_minutes", 720) or 720))
+                    )
                     break
                 if self._has_rate_limit_error(payload):
                     stats["response_errors"] += 1
                     stats["rate_limited"] = True
+                    self._activate_cooldown(minutes=max(2, int(getattr(self.settings, "api_football_rate_limit_cooldown_minutes", 12) or 12)))
                     break
                 rows = self._response_rows(payload)
                 if not rows:
