@@ -24,7 +24,7 @@ class JsonStateStore:
     def _default_state(self) -> dict[str, Any]:
         now = datetime.now(UTC).isoformat()
         return {
-            'version': 3,
+            'version': 4,
             'updated_at': now,
             'last_run': {},
             'bankroll': {
@@ -44,6 +44,7 @@ class JsonStateStore:
                 'voids': 0,
             },
             'bets': [],
+            'shadow_bets': [],
             'published_candidates': [],
             'daily_reports': {},
             'run_history': [],
@@ -68,6 +69,7 @@ class JsonStateStore:
                     'updated_at',
                     'last_run',
                     'bets',
+                    'shadow_bets',
                     'published_candidates',
                     'bankroll',
                     'daily_reports',
@@ -80,6 +82,8 @@ class JsonStateStore:
                 state['bankroll'].update(payload['bankroll'])
             if not isinstance(state.get('daily_reports'), dict):
                 state['daily_reports'] = {}
+            if not isinstance(state.get('shadow_bets'), list):
+                state['shadow_bets'] = []
             if not isinstance(state.get('run_history'), list):
                 state['run_history'] = []
             if not isinstance(state.get('message_history'), list):
@@ -228,8 +232,15 @@ class JsonStateStore:
         bank['yield_pct'] = round(yield_pct, 2)
         return bank
 
-    def pending_bets(self) -> list[dict[str, Any]]:
-        return [dict(item) for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
+    def pending_bets(self, include_shadow: bool = False) -> list[dict[str, Any]]:
+        rows = [dict(item) for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
+        if include_shadow:
+            rows.extend(
+                dict(item)
+                for item in (self._state.get('shadow_bets') or [])
+                if str(item.get('status') or '') == 'shadow_pending'
+            )
+        return rows
 
     def record_settlement_attempts(self, probe: dict[str, Any]) -> int:
         attempts = [dict(item) for item in (probe.get('bets') or []) if isinstance(item, dict)]
@@ -244,14 +255,15 @@ class JsonStateStore:
                 if value:
                     by_id[value] = compact
         changed = 0
-        for bet in self._state.get('bets') or []:
-            if not isinstance(bet, dict):
-                continue
-            attempt = by_id.get(str(bet.get('prediction_id') or '').strip()) or by_id.get(str(bet.get('fingerprint') or '').strip())
-            if not attempt:
-                continue
-            bet['last_settlement_attempt'] = attempt
-            changed += 1
+        for collection_name in ('bets', 'shadow_bets'):
+            for bet in self._state.get(collection_name) or []:
+                if not isinstance(bet, dict):
+                    continue
+                attempt = by_id.get(str(bet.get('prediction_id') or '').strip()) or by_id.get(str(bet.get('fingerprint') or '').strip())
+                if not attempt:
+                    continue
+                bet['last_settlement_attempt'] = attempt
+                changed += 1
         if changed:
             self._save()
         return changed
@@ -343,6 +355,7 @@ class JsonStateStore:
 
     def store_candidates(self, candidates: list[CandidateBet], telegram_sent: bool = False) -> int:
         bets = self._state.setdefault('bets', [])
+        shadow_bets = self._state.setdefault('shadow_bets', [])
         published = self._state.setdefault('published_candidates', [])
         existing = {item.get('fingerprint') for item in bets if isinstance(item, dict)}
         bank = self._state.setdefault('bankroll', self._default_state()['bankroll'])
@@ -352,6 +365,11 @@ class JsonStateStore:
             fp = row['fingerprint']
             if fp in existing:
                 continue
+            if shadow_bets:
+                shadow_bets[:] = [
+                    item for item in shadow_bets
+                    if not (isinstance(item, dict) and str(item.get('fingerprint') or '') == str(fp))
+                ]
             row['published_at'] = datetime.now(UTC).isoformat()
             row['status'] = 'pending' if telegram_sent else 'generated'
             row['settlement'] = None
@@ -367,6 +385,48 @@ class JsonStateStore:
         self._save()
         return added
 
+    def store_shadow_candidates(self, candidates: list[CandidateBet], tracking_reason: str = 'shadow_tracking') -> int:
+        shadow_bets = self._state.setdefault('shadow_bets', [])
+        existing = {
+            item.get('fingerprint')
+            for item in ([*(self._state.get('bets') or []), *shadow_bets])
+            if isinstance(item, dict)
+        }
+        added = 0
+        for candidate in candidates:
+            row = self._serialize_candidate(candidate)
+            fp = row['fingerprint']
+            if fp in existing:
+                continue
+            source_summary = dict(row.get('source_summary') or {})
+            diagnostics = dict(row.get('diagnostics') or {})
+            row['published_at'] = datetime.now(UTC).isoformat()
+            row['status'] = 'shadow_pending'
+            row['settlement'] = None
+            row['telegram_sent'] = False
+            row['stake_amount'] = 1.0
+            row['stake_pct'] = 0.0
+            row['bankroll_snapshot'] = 0.0
+            row['risk_label'] = 'shadow'
+            row['shadow_tracked'] = True
+            row['tracking_mode'] = 'shadow'
+            row['tracking_reason'] = str(tracking_reason or 'shadow_tracking')
+            source_summary['tracking_mode'] = 'shadow'
+            source_summary['tracking_reason'] = row['tracking_reason']
+            row['source_summary'] = source_summary
+            diagnostics['shadow_tracking'] = {
+                'enabled': True,
+                'tracking_reason': row['tracking_reason'],
+                'tracked_at': row['published_at'],
+            }
+            row['diagnostics'] = diagnostics
+            shadow_bets.append(row)
+            existing.add(fp)
+            added += 1
+        if added:
+            self._save()
+        return added
+
     def apply_settlements(self, settlements: list[dict[str, Any]], settings: Any | None = None) -> dict[str, Any]:
         if settings is not None:
             self._sync_bankroll_defaults(settings)
@@ -375,32 +435,42 @@ class JsonStateStore:
         by_fp = {str(item.get('fingerprint')): item for item in settlements if item.get('fingerprint')}
         bank = self._state.setdefault('bankroll', self._default_state()['bankroll'])
         settled_items: list[dict[str, Any]] = []
-        for bet in self._state.get('bets') or []:
-            fp = str(bet.get('fingerprint') or '')
-            settlement = by_fp.get(fp)
-            if not settlement or str(bet.get('status') or '') != 'pending':
-                continue
-            bet['status'] = settlement['outcome']
-            bet['settlement'] = settlement
-            stake = float(bet.get('stake_amount') or 0.0)
-            pnl = float(settlement.get('pnl') or 0.0)
-            bank['current_balance'] = round(float(bank.get('current_balance') or 0.0) + pnl, 2)
-            bank['peak_balance'] = max(float(bank.get('peak_balance') or 0.0), float(bank['current_balance']))
-            bank['open_exposure'] = round(max(0.0, float(bank.get('open_exposure') or 0.0) - stake), 2)
-            bank['closed_pnl'] = round(float(bank.get('closed_pnl') or 0.0) + pnl, 2)
-            bank['bets_settled'] = int(bank.get('bets_settled') or 0) + 1
-            outcome = str(settlement.get('outcome') or '')
-            if outcome in {'won', 'half_won'}:
-                bank['wins'] = int(bank.get('wins') or 0) + 1
-            elif outcome in {'lost', 'half_lost'}:
-                bank['losses'] = int(bank.get('losses') or 0) + 1
-            elif outcome == 'push':
-                bank['pushes'] = int(bank.get('pushes') or 0) + 1
-            else:
-                bank['voids'] = int(bank.get('voids') or 0) + 1
-            settled_items.append(dict(bet))
+        shadow_settled_count = 0
+        for collection_name, pending_status in (('bets', 'pending'), ('shadow_bets', 'shadow_pending')):
+            for bet in self._state.get(collection_name) or []:
+                fp = str(bet.get('fingerprint') or '')
+                settlement = by_fp.get(fp)
+                if not settlement or str(bet.get('status') or '') != pending_status:
+                    continue
+                bet['status'] = settlement['outcome']
+                bet['settlement'] = settlement
+                if collection_name == 'bets':
+                    stake = float(bet.get('stake_amount') or 0.0)
+                    pnl = float(settlement.get('pnl') or 0.0)
+                    bank['current_balance'] = round(float(bank.get('current_balance') or 0.0) + pnl, 2)
+                    bank['peak_balance'] = max(float(bank.get('peak_balance') or 0.0), float(bank['current_balance']))
+                    bank['open_exposure'] = round(max(0.0, float(bank.get('open_exposure') or 0.0) - stake), 2)
+                    bank['closed_pnl'] = round(float(bank.get('closed_pnl') or 0.0) + pnl, 2)
+                    bank['bets_settled'] = int(bank.get('bets_settled') or 0) + 1
+                    outcome = str(settlement.get('outcome') or '')
+                    if outcome in {'won', 'half_won'}:
+                        bank['wins'] = int(bank.get('wins') or 0) + 1
+                    elif outcome in {'lost', 'half_lost'}:
+                        bank['losses'] = int(bank.get('losses') or 0) + 1
+                    elif outcome == 'push':
+                        bank['pushes'] = int(bank.get('pushes') or 0) + 1
+                    else:
+                        bank['voids'] = int(bank.get('voids') or 0) + 1
+                    settled_items.append(dict(bet))
+                else:
+                    shadow_settled_count += 1
         self._save()
-        return {'settled_count': len(settled_items), 'items': settled_items, 'bankroll': self.bankroll_summary(settings)}
+        return {
+            'settled_count': len(settled_items),
+            'shadow_settled_count': shadow_settled_count,
+            'items': settled_items,
+            'bankroll': self.bankroll_summary(settings),
+        }
 
     def daily_report_due(self, settings: Any, now_utc: datetime) -> tuple[bool, str, str | None]:
         offset_days = max(0, int(getattr(settings, 'daily_report_target_offset_days', 1) or 1))
@@ -495,8 +565,8 @@ class JsonStateStore:
             return True, 'legacy_summary_changed'
         return False, 'legacy_hash_missing'
 
-    def prediction_ledger(self, settings: Any | None = None) -> list[dict[str, Any]]:
-        rows = [self._accounting_row_for_bet(item, settings) for item in self._tracked_bets()]
+    def prediction_ledger(self, settings: Any | None = None, include_shadow: bool = False) -> list[dict[str, Any]]:
+        rows = [self._accounting_row_for_bet(item, settings) for item in self._tracked_bets(include_shadow=include_shadow)]
         rows.sort(key=lambda item: (str(item.get('commence_time_utc') or ''), str(item.get('home_team') or '')))
         return rows
 
@@ -567,7 +637,7 @@ class JsonStateStore:
             'top_candidates': top_candidates,
         }
 
-    def _tracked_bets(self) -> list[dict[str, Any]]:
+    def _tracked_bets(self, include_shadow: bool = False) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
         for item in self._state.get('bets') or []:
             if not isinstance(item, dict):
@@ -576,6 +646,14 @@ class JsonStateStore:
             if status == 'generated' and not bool(item.get('telegram_sent')):
                 continue
             rows.append(dict(item))
+        if include_shadow:
+            for item in self._state.get('shadow_bets') or []:
+                if not isinstance(item, dict):
+                    continue
+                status = str(item.get('status') or '')
+                if status == 'generated' and not bool(item.get('telegram_sent')):
+                    continue
+                rows.append(dict(item))
         return rows
 
     def _local_date_for_bet(self, bet: dict[str, Any], settings: Any) -> str | None:
@@ -649,6 +727,9 @@ class JsonStateStore:
             'published_at_local': published_at_local,
             'published_date_local': published_date_local,
             'telegram_sent': bool(bet.get('telegram_sent')),
+            'tracking_mode': bet.get('tracking_mode') or '',
+            'tracking_reason': bet.get('tracking_reason') or '',
+            'shadow_tracked': bool(bet.get('shadow_tracked')),
             'match_key': bet.get('match_key') or '',
             'sport_key': bet.get('sport_key') or '',
             'league_name': bet.get('league_name') or '',
@@ -769,7 +850,7 @@ class JsonStateStore:
             return 'push'
         if value == 'void':
             return 'void'
-        if value == 'pending':
+        if value in {'pending', 'shadow_pending'}:
             return 'pending'
         return value or 'unknown'
 

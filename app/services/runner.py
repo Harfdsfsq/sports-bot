@@ -190,12 +190,15 @@ class PredictionRunner:
             recent_learning_state = self.state.learning_state_snapshot()
             report_only_mode = self._is_report_only_mode(now_utc)
 
-            settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
+            settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(include_shadow=True), now_utc)
             settlement_attempts_recorded = self.state.record_settlement_attempts(settlement_probe)
             settlement_summary = self.state.apply_settlements(list(settlement_probe.get('items') or []), self.settings)
             bankroll_summary = self.state.bankroll_summary(self.settings)
             quality_clv_rows = self.market_monitor.resolved_clv_rows() if self.market_monitor is not None else []
-            quality_report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings), quality_clv_rows)
+            quality_report = self.quality.build_quality_report(
+                self.state.prediction_ledger(self.settings, include_shadow=True),
+                quality_clv_rows,
+            )
             quality_report['recent_learning_state'] = recent_learning_state
             quality_export_paths = self.quality.export_quality_report(self.settings.storage_export_dir, quality_report)
             daily_report_due = False
@@ -319,6 +322,8 @@ class PredictionRunner:
                 'newsapi': newsapi_contexts,
                 'gnews': gnews_contexts,
             }
+            self_history_contexts, self_history_stats, self_history_preview = self._build_self_history_contexts(filtered_matches, now_utc)
+            context_maps['self_history'] = self_history_contexts
             contexts = self._merge_context_maps(*context_maps.values())
 
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
@@ -402,14 +407,24 @@ class PredictionRunner:
                         daily_report,
                         skipped_reason=daily_report_skip_reason,
                     )
-            publishable_candidates = self._filter_publishable_candidates(candidates)
+            publishable_pool = self._filter_publishable_candidates(candidates)
+            publishable_candidates = self._select_publishable_candidates(publishable_pool)
             prediction_publication_enabled = bool(getattr(self.settings, 'prediction_publication_enabled', True)) and not report_only_mode
             if not prediction_publication_enabled:
                 publishable_candidates = []
+            shadow_candidates = self._select_shadow_candidates(
+                candidates_before_quality=candidates_before_quality,
+                passed_candidates=candidates,
+                publishable_candidates=publishable_candidates,
+                reused_candidates=reused_candidates,
+                zero_stake_candidates=zero_stake_candidates,
+                quality_decisions=quality_debug.get('decisions', []),
+            )
             bankroll_preview = self._project_bankroll_summary(publishable_candidates)
             settlement_messages_sent, settlement_payloads = await self.telegram.publish_settlement_summary(settlement_summary)
             sent_messages, telegram_payloads = await self.telegram.publish(publishable_candidates, bankroll_summary=bankroll_preview)
             published_count = self.state.store_candidates(publishable_candidates, telegram_sent=sent_messages > 0)
+            shadow_tracked_count = self.state.store_shadow_candidates(shadow_candidates, tracking_reason='shadow_learning')
             telegram_picks_sent = len(publishable_candidates) if sent_messages > 0 else 0
             sent_messages += settlement_messages_sent + daily_report_messages_sent
             telegram_payloads = list(settlement_payloads) + list(daily_report_payloads) + list(telegram_payloads)
@@ -468,6 +483,7 @@ class PredictionRunner:
                 'openfootball': openfootball_stats,
                 'newsapi': newsapi_stats,
                 'gnews': gnews_stats,
+                'self_history': self_history_stats,
                 'market_monitor': market_monitor_stats,
             }
             mode_counts: dict[str, int] = defaultdict(int)
@@ -498,12 +514,14 @@ class PredictionRunner:
                 'context_enrichment': context_enrichment,
                 'provider_context_targets': provider_target_counts,
                 'contexts_built': len(contexts),
+                'self_history_contexts_built': len(self_history_contexts),
                 'candidates': len(candidates),
                 'candidates_publishable': len(publishable_candidates),
                 'candidates_zero_stake': len(zero_stake_candidates),
                 'candidates_raw': len(raw_candidates),
                 'candidates_before_quality': len(candidates_before_quality),
                 'candidates_rejected_by_quality': max(0, len(candidates_before_quality) - len(raw_candidates)),
+                'shadow_candidates_tracked': shadow_tracked_count,
                 'candidates_before_quality_with_derived_market_signal': derived_market_candidates_before_quality,
                 'publishable_with_derived_market_signal': derived_market_publishable,
                 'skipped_already_in_state': reused_already_in_state,
@@ -552,6 +570,7 @@ class PredictionRunner:
                 'settlement': {
                     'checked': settlement_probe.get('checked', 0),
                     'settled_count': settlement_summary.get('settled_count', 0),
+                    'shadow_settled_count': settlement_summary.get('shadow_settled_count', 0),
                     'rows_fetched': settlement_probe.get('rows_fetched', 0),
                     'rows_by_source': settlement_probe.get('rows_by_source', {}),
                     'manual_overrides_loaded': settlement_probe.get('manual_overrides_loaded', 0),
@@ -654,6 +673,7 @@ class PredictionRunner:
                     'openfootball': openfootball_preview,
                     'newsapi': newsapi_preview,
                     'gnews': gnews_preview,
+                    'self_history': self_history_preview,
                     'market_monitor': market_monitor_preview,
                 },
                 'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
@@ -681,6 +701,7 @@ class PredictionRunner:
                     'candidates_before_quality': [self._serialize_candidate(item) for item in candidates_before_quality[:25]],
                     'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates[:25]],
                     'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates[:25]],
+                    'shadow_candidates': [self._serialize_candidate(item) for item in shadow_candidates[:25]],
                     'bet_ledger_sample': bet_ledger_rows[:25],
                 }
             )
@@ -695,6 +716,7 @@ class PredictionRunner:
                     'candidates_before_quality': [self._serialize_candidate(item) for item in candidates_before_quality],
                     'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates],
                     'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates],
+                    'shadow_candidates': [self._serialize_candidate(item) for item in shadow_candidates],
                     'bet_ledger': bet_ledger_rows,
                 },
                 settings=self.settings,
@@ -1301,6 +1323,341 @@ class PredictionRunner:
                     merged[match_key].append(offer)
         return dict(merged)
 
+    def _select_publishable_candidates(self, candidates: list[CandidateBet]) -> list[CandidateBet]:
+        if not candidates:
+            return []
+        limit = max(1, int(getattr(self.settings, 'max_picks_per_run', 2) or 2))
+        selected: list[CandidateBet] = []
+        used_matches: set[str] = set()
+        for candidate in candidates:
+            if candidate.match_key in used_matches:
+                continue
+            selected.append(candidate)
+            used_matches.add(candidate.match_key)
+            if len(selected) >= limit:
+                break
+        return selected
+
+    def _select_shadow_candidates(
+        self,
+        *,
+        candidates_before_quality: list[CandidateBet],
+        passed_candidates: list[CandidateBet],
+        publishable_candidates: list[CandidateBet],
+        reused_candidates: list[CandidateBet],
+        zero_stake_candidates: list[CandidateBet],
+        quality_decisions: list[dict[str, Any]] | None = None,
+    ) -> list[CandidateBet]:
+        if not bool(getattr(self.settings, 'shadow_tracking_enabled', True)):
+            return []
+        max_count = max(0, int(getattr(self.settings, 'shadow_tracking_max_per_run', 6) or 6))
+        if max_count <= 0:
+            return []
+        published_fingerprints = {self._candidate_fingerprint(item) for item in publishable_candidates}
+        published_fingerprints.discard(None)
+        passed_fingerprints = {self._candidate_fingerprint(item) for item in passed_candidates}
+        passed_fingerprints.discard(None)
+        reused_fingerprints = {self._candidate_fingerprint(item) for item in reused_candidates}
+        reused_fingerprints.discard(None)
+        zero_stake_fingerprints = {self._candidate_fingerprint(item) for item in zero_stake_candidates}
+        zero_stake_fingerprints.discard(None)
+        decision_by_key = {
+            (
+                str(item.get('match_key') or ''),
+                str(item.get('family') or ''),
+                str(item.get('selection_key') or ''),
+                item.get('point'),
+                str(item.get('team_side') or ''),
+            ): item
+            for item in (quality_decisions or [])
+            if isinstance(item, dict)
+        }
+        ranked: list[CandidateBet] = []
+        seen_fingerprints: set[str] = set()
+        min_publication_score = float(getattr(self.settings, 'shadow_tracking_min_publication_score', 12.0) or 12.0)
+        min_ev = float(getattr(self.settings, 'shadow_tracking_min_ev_pct', 0.8) or 0.8)
+        min_edge = float(getattr(self.settings, 'shadow_tracking_min_edge_pct', 1.2) or 1.2)
+        min_conf = float(getattr(self.settings, 'shadow_tracking_min_confidence', 50.0) or 50.0)
+
+        for candidate in candidates_before_quality:
+            fingerprint = self._candidate_fingerprint(candidate)
+            if not fingerprint or fingerprint in seen_fingerprints or fingerprint in published_fingerprints or fingerprint in reused_fingerprints:
+                continue
+            seen_fingerprints.add(fingerprint)
+            if float(getattr(candidate, 'publication_score', 0.0) or 0.0) < min_publication_score:
+                continue
+            if float(getattr(candidate, 'ev_pct', 0.0) or 0.0) < min_ev:
+                continue
+            if float(getattr(candidate, 'edge_pct', 0.0) or 0.0) < min_edge:
+                continue
+            if float(getattr(candidate, 'confidence', 0.0) or 0.0) < min_conf:
+                continue
+            reason = 'publish_limit'
+            if fingerprint not in passed_fingerprints:
+                if not bool(getattr(self.settings, 'shadow_tracking_store_quality_rejections', True)):
+                    continue
+                reason = 'quality_rejected'
+            elif fingerprint in zero_stake_fingerprints:
+                reason = 'bankroll_zero_stake'
+            decision = decision_by_key.get(
+                (
+                    str(candidate.match_key or ''),
+                    str(candidate.family or ''),
+                    str(candidate.selection_key or ''),
+                    candidate.point,
+                    str(candidate.team_side or ''),
+                )
+            )
+            candidate.source_summary['shadow_tracking_reason'] = reason
+            if isinstance(decision, dict) and decision.get('reasons'):
+                candidate.source_summary['shadow_quality_reasons'] = list(decision.get('reasons') or [])
+            candidate.reasons.append(f'shadow={reason}')
+            ranked.append(candidate)
+
+        ranked.sort(
+            key=lambda item: (
+                float(getattr(item, 'publication_score', 0.0) or 0.0),
+                float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                float(getattr(item, 'edge_pct', 0.0) or 0.0),
+                float(getattr(item, 'confidence', 0.0) or 0.0),
+            ),
+            reverse=True,
+        )
+        return ranked[:max_count]
+
+    def _build_self_history_contexts(
+        self,
+        matches: list[Match],
+        now_utc: datetime,
+    ) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+        if not bool(getattr(self.settings, 'self_history_context_enabled', True)):
+            return {}, {'enabled': False, 'reason': 'disabled'}, {}
+
+        history_root = Path(self.settings.state_path).parent / 'history' / 'runs'
+        if not history_root.exists():
+            return {}, {'enabled': True, 'archives_scanned': 0, 'history_matches_used': 0, 'contexts_built': 0}, {}
+
+        max_runs = max(1, int(getattr(self.settings, 'self_history_context_max_runs', 48) or 48))
+        max_age_days = max(1, int(getattr(self.settings, 'self_history_context_max_age_days', 45) or 45))
+        min_team_samples = max(1, int(getattr(self.settings, 'self_history_context_min_team_samples', 2) or 2))
+        archive_paths = sorted(history_root.glob('*/*-run.json'), reverse=True)
+
+        team_history: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: {'home': [], 'away': []})
+        archives_scanned = 0
+        history_matches_used = 0
+        cutoff_utc = now_utc - timedelta(days=max_age_days)
+
+        for archive_path in archive_paths:
+            if archives_scanned >= max_runs:
+                break
+            try:
+                payload = json.loads(archive_path.read_text(encoding='utf-8'))
+            except Exception:
+                continue
+            created_at_raw = str(payload.get('created_at') or '')
+            try:
+                created_at = ensure_utc(created_at_raw)
+            except Exception:
+                created_at = None
+            if created_at is not None and created_at < cutoff_utc:
+                continue
+            matches_payload = list((((payload.get('provider_diagnostics') or {}).get('matches')) or []))
+            if not matches_payload:
+                continue
+            archives_scanned += 1
+            for row in matches_payload:
+                if not isinstance(row, dict):
+                    continue
+                try:
+                    commence_time = ensure_utc(row.get('commence_time'))
+                except Exception:
+                    continue
+                if commence_time >= now_utc:
+                    continue
+                best_context = self._best_self_history_archive_context(row.get('contexts'))
+                if best_context is None:
+                    continue
+                expected_home = self._to_float_safe(best_context.get('expected_home'))
+                expected_away = self._to_float_safe(best_context.get('expected_away'))
+                home_win_probability = self._to_float_safe(best_context.get('home_win_probability'))
+                away_win_probability = self._to_float_safe(best_context.get('away_win_probability'))
+                if expected_home is None and expected_away is None and home_win_probability is None and away_win_probability is None:
+                    continue
+                age_days = max(0.0, (now_utc - commence_time).total_seconds() / 86400.0)
+                league_name = str(row.get('league_name') or '')
+                home_key = self._team_history_key(str(row.get('home_team') or ''))
+                away_key = self._team_history_key(str(row.get('away_team') or ''))
+                if not home_key or not away_key:
+                    continue
+                sample_weight = 1.0 / max(1.0, age_days / 14.0 + 1.0)
+                home_sample = {
+                    'league_name': league_name,
+                    'age_days': age_days,
+                    'weight': sample_weight,
+                    'expected_for': expected_home,
+                    'expected_against': expected_away,
+                    'win_probability': home_win_probability,
+                    'confidence': self._to_float_safe(best_context.get('confidence')) or 0.0,
+                }
+                away_sample = {
+                    'league_name': league_name,
+                    'age_days': age_days,
+                    'weight': sample_weight,
+                    'expected_for': expected_away,
+                    'expected_against': expected_home,
+                    'win_probability': away_win_probability,
+                    'confidence': self._to_float_safe(best_context.get('confidence')) or 0.0,
+                }
+                team_history[home_key]['home'].append(home_sample)
+                team_history[away_key]['away'].append(away_sample)
+                history_matches_used += 1
+
+        contexts: dict[str, MatchContext] = {}
+        preview_matches: list[dict[str, Any]] = []
+        base_conf = float(getattr(self.settings, 'self_history_context_confidence_base', 50.0) or 50.0)
+        step_conf = float(getattr(self.settings, 'self_history_context_confidence_step', 1.8) or 1.8)
+        cap_conf = float(getattr(self.settings, 'self_history_context_confidence_cap', 60.0) or 60.0)
+
+        for match in matches:
+            home_key = self._team_history_key(match.home_team)
+            away_key = self._team_history_key(match.away_team)
+            home_samples = list((team_history.get(home_key) or {}).get('home') or [])
+            away_samples = list((team_history.get(away_key) or {}).get('away') or [])
+            if len(home_samples) < 1 or len(away_samples) < 1:
+                continue
+            if len(home_samples) + len(away_samples) < max(2, min_team_samples * 2 - 1):
+                continue
+            expected_home = self._combine_self_history_metric(home_samples, away_samples, 'expected_for', 'expected_against', match.league_name)
+            expected_away = self._combine_self_history_metric(away_samples, home_samples, 'expected_for', 'expected_against', match.league_name)
+            home_win_probability = self._weighted_team_history_metric(home_samples, 'win_probability', match.league_name)
+            away_win_probability = self._weighted_team_history_metric(away_samples, 'win_probability', match.league_name)
+            if expected_home is None and expected_away is None and home_win_probability is None and away_win_probability is None:
+                continue
+            sample_total = len(home_samples) + len(away_samples)
+            confidence = clamp(base_conf + sample_total * step_conf, base_conf, cap_conf)
+            context = MatchContext(
+                source='self_history',
+                payload={
+                    'home_team': match.home_team,
+                    'away_team': match.away_team,
+                    'home_samples': home_samples[:5],
+                    'away_samples': away_samples[:5],
+                },
+                expected_home=expected_home,
+                expected_away=expected_away,
+                home_win_probability=home_win_probability,
+                away_win_probability=away_win_probability,
+                confidence=confidence,
+                details={
+                    'context_mode': 'self_history',
+                    'home_recent_count': len(home_samples),
+                    'away_recent_count': len(away_samples),
+                    'history_archives_scanned': archives_scanned,
+                    'history_matches_used': history_matches_used,
+                },
+            )
+            contexts[match.match_key] = context
+            if len(preview_matches) < 8:
+                preview_matches.append({
+                    'match_key': match.match_key,
+                    'home_team': match.home_team,
+                    'away_team': match.away_team,
+                    'home_samples': len(home_samples),
+                    'away_samples': len(away_samples),
+                    'expected_home': expected_home,
+                    'expected_away': expected_away,
+                    'home_win_probability': home_win_probability,
+                    'away_win_probability': away_win_probability,
+                    'confidence': confidence,
+                })
+
+        stats = {
+            'enabled': True,
+            'archives_scanned': archives_scanned,
+            'history_matches_used': history_matches_used,
+            'contexts_built': len(contexts),
+        }
+        preview = {
+            'archives_scanned': archives_scanned,
+            'contexts_built': len(contexts),
+            'matches': preview_matches,
+        }
+        return contexts, stats, preview
+
+    @staticmethod
+    def _best_self_history_archive_context(raw_contexts: Any) -> dict[str, Any] | None:
+        rows = [dict(item) for item in (raw_contexts or []) if isinstance(item, dict)]
+        if not rows:
+            return None
+        rows.sort(
+            key=lambda item: (
+                1 if item.get('expected_home') is not None or item.get('expected_away') is not None else 0,
+                1 if item.get('home_win_probability') is not None or item.get('away_win_probability') is not None else 0,
+                float(item.get('confidence') or 0.0),
+            ),
+            reverse=True,
+        )
+        return rows[0]
+
+    @staticmethod
+    def _team_history_key(name: str) -> str:
+        cleaned = ''.join(char.lower() if char.isalnum() else ' ' for char in str(name or '').strip())
+        tokens = [
+            token
+            for token in cleaned.split()
+            if token not in {'fc', 'sc', 'cf', 'club', 'fk', 'ac', 'de', 'cd'}
+        ]
+        return ' '.join(tokens)
+
+    def _weighted_team_history_metric(
+        self,
+        samples: list[dict[str, Any]],
+        key: str,
+        league_name: str,
+    ) -> float | None:
+        weighted_total = 0.0
+        total_weight = 0.0
+        target_league = str(league_name or '').strip().lower()
+        for sample in samples:
+            value = self._to_float_safe(sample.get(key))
+            if value is None:
+                continue
+            weight = float(sample.get('weight') or 1.0)
+            if target_league and str(sample.get('league_name') or '').strip().lower() == target_league:
+                weight *= 1.2
+            weighted_total += value * weight
+            total_weight += weight
+        if total_weight <= 0:
+            return None
+        return weighted_total / total_weight
+
+    def _combine_self_history_metric(
+        self,
+        primary_samples: list[dict[str, Any]],
+        opponent_samples: list[dict[str, Any]],
+        primary_key: str,
+        opponent_key: str,
+        league_name: str,
+    ) -> float | None:
+        primary_value = self._weighted_team_history_metric(primary_samples, primary_key, league_name)
+        opponent_value = self._weighted_team_history_metric(opponent_samples, opponent_key, league_name)
+        if primary_value is None and opponent_value is None:
+            return None
+        if primary_value is None:
+            return opponent_value
+        if opponent_value is None:
+            return primary_value
+        return (primary_value * 0.58) + (opponent_value * 0.42)
+
+    @staticmethod
+    def _to_float_safe(value: Any) -> float | None:
+        try:
+            if value in (None, ''):
+                return None
+            return float(value)
+        except Exception:
+            return None
+
     def _merge_context_maps(self, *maps: dict[str, Any]) -> dict[str, MatchContext]:
         merged: dict[str, MatchContext] = {}
         for mapping in maps:
@@ -1394,7 +1751,7 @@ class PredictionRunner:
         weighted_confidence = ((base_weight * max(len(base_sources), 1)) + (new_weight * max(len(new_sources), 1))) / max(source_count, 1)
         merged_confidence = weighted_confidence + min(2.5, max(0, len(merged_sources) - 1) * 0.75)
         structural_sources = {'api_football', 'espn', 'football_data', 'thesportsdb', 'openfootball'}
-        predictive_sources = structural_sources | {'sstats', 'sstats_form', 'bzzoiro', 'futrixmetrics'}
+        predictive_sources = structural_sources | {'sstats', 'sstats_form', 'bzzoiro', 'futrixmetrics', 'self_history'}
         news_sources = {'newsapi', 'gnews'}
         normalized_sources = {str(source or '').strip().lower() for source in merged_sources if str(source or '').strip()}
         if normalized_sources and normalized_sources.issubset(news_sources):

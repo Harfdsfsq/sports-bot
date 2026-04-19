@@ -146,7 +146,7 @@ class SettlementService:
         }
 
     def _eligible(self, bet: dict[str, Any], now_utc: datetime) -> bool:
-        if str(bet.get('status') or '') != 'pending':
+        if str(bet.get('status') or '') not in {'pending', 'shadow_pending'}:
             return False
         try:
             commence = parse_datetime(str(bet.get('commence_time'))).astimezone(UTC)

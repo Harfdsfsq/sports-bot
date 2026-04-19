@@ -74,6 +74,11 @@ class CandidateFactory:
                 match_candidates.extend(self._build_btts_candidates(match, families['btts'], context, rejections))
             if families.get('teamTotals'):
                 match_candidates.extend(self._build_team_totals_candidates(match, families['teamTotals'], context, rejections))
+            weak_context = context is None or float(getattr(context, 'confidence', 0.0) or 0.0) <= float(
+                getattr(self.settings, 'market_derived_context_confidence_cap', 60.0) or 60.0
+            )
+            if weak_context and bool(getattr(self.settings, 'market_derived_candidates_enabled', True)):
+                match_candidates.extend(self._build_market_derived_candidates(match, families, rejections))
             if not match_candidates and getattr(self.settings, 'simple_market_fallback_enabled', True):
                 if families.get('totals'):
                     match_candidates.extend(self._build_simple_market_totals_candidates(match, families['totals'], rejections))
@@ -92,7 +97,10 @@ class CandidateFactory:
                         {
                             'match_key': match_key,
                             'selection': picked.selection,
+                            'selection_key': picked.selection_key,
                             'family': picked.family,
+                            'point': picked.point,
+                            'team_side': picked.team_side,
                             'count': len(match_candidates),
                             'context_source': picked.source_summary.get('context_source'),
                             'context_mode': picked.source_summary.get('context_mode'),
@@ -107,6 +115,7 @@ class CandidateFactory:
                             'expected_away': picked.expected_away,
                             'publication_score': round(float(getattr(picked, 'publication_score', 0.0) or 0.0), 3),
                             'model_mode': str(getattr(picked, 'model_mode', '') or ''),
+                            'market_signal_derived': bool((picked.source_summary or {}).get('market_signal_derived')),
                         }
                     )
             else:
@@ -251,6 +260,190 @@ class CandidateFactory:
                 result.append(candidate)
         return result
 
+    def _build_market_derived_candidates(
+        self,
+        match: Match,
+        families: dict[str, list[Offer]],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        if not bool(getattr(self.settings, 'market_derived_candidates_enabled', True)):
+            return []
+        result: list[CandidateBet] = []
+        if families.get('totals'):
+            result.extend(self._build_market_derived_totals_candidates(match, families['totals'], rejections))
+        if families.get('h2h'):
+            result.extend(self._build_market_derived_h2h_candidates(match, families['h2h'], rejections))
+        if families.get('spreads'):
+            result.extend(self._build_market_derived_spread_candidates(match, families['spreads'], rejections))
+        return result
+
+    def _build_market_derived_totals_candidates(
+        self,
+        match: Match,
+        offers: list[Offer],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        buckets: dict[tuple[str, float | None], list[Offer]] = defaultdict(list)
+        for offer in offers:
+            buckets[(offer.selection, offer.point)].append(offer)
+        result: list[CandidateBet] = []
+        for (selection, point), bucket in buckets.items():
+            low = str(selection or '').lower()
+            if point is None or not (low.startswith('over') or low.startswith('under')):
+                continue
+            normalized_point = self._normalize_supported_line(point, 'totals')
+            if normalized_point is None:
+                continue
+            point = normalized_point
+            market_signal = self._market_signal_for_bucket(match.match_key, 'totals', bucket, point)
+            if not self._market_signal_ready_for_derived('totals', market_signal, bucket):
+                rejections['market_derived_signal_guard_totals'] += 1
+                continue
+            market_prob = self._fair_market_probability_totals(bucket, offers, selection, point)
+            model_prob = self._market_derived_model_probability(
+                family='totals',
+                market_prob=market_prob,
+                market_signal=market_signal,
+                books_count=len({self._norm_book(item.bookmaker) for item in bucket}),
+                sources_count=len({str(item.source or '').strip().lower() for item in bucket if str(item.source or '').strip()}),
+            )
+            if model_prob is None:
+                rejections['market_derived_probability_guard_totals'] += 1
+                continue
+            candidate = self._candidate_from_bucket(
+                match=match,
+                family='totals',
+                selection=russian_selection('totals', selection, point),
+                point=point,
+                offers=bucket,
+                market_prob=market_prob,
+                model_prob=model_prob,
+                reasons=[
+                    'mode=market_derived',
+                    'model=market_signal_history_ready',
+                    'signals=market_monitor+consensus',
+                    f'line={point:g}',
+                    'context=market_signal',
+                ],
+                expected_home=None,
+                expected_away=None,
+                model_mode='market_derived_totals',
+                context=None,
+                market_signal=market_signal,
+            )
+            if candidate:
+                result.append(candidate)
+        return result
+
+    def _build_market_derived_h2h_candidates(
+        self,
+        match: Match,
+        offers: list[Offer],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        buckets: dict[str, list[Offer]] = defaultdict(list)
+        for offer in offers:
+            buckets[offer.selection].append(offer)
+        result: list[CandidateBet] = []
+        for selection, bucket in buckets.items():
+            selection_key = self._h2h_selection_key(match, selection)
+            if selection_key not in {'home', 'away'}:
+                continue
+            best_offer = self._select_best_offer(bucket)
+            if float(best_offer.price) > float(getattr(self.settings, 'market_derived_max_h2h_odds', 4.4) or 4.4):
+                rejections['market_derived_h2h_high_odds_guard'] += 1
+                continue
+            market_signal = self._market_signal_for_bucket(match.match_key, 'h2h', bucket, None)
+            if not self._market_signal_ready_for_derived('h2h', market_signal, bucket):
+                rejections['market_derived_signal_guard_h2h'] += 1
+                continue
+            market_prob = self._fair_market_probability_h2h(match, offers, selection)
+            model_prob = self._market_derived_model_probability(
+                family='h2h',
+                market_prob=market_prob,
+                market_signal=market_signal,
+                books_count=len({self._norm_book(item.bookmaker) for item in bucket}),
+                sources_count=len({str(item.source or '').strip().lower() for item in bucket if str(item.source or '').strip()}),
+            )
+            if model_prob is None:
+                rejections['market_derived_probability_guard_h2h'] += 1
+                continue
+            candidate = self._candidate_from_bucket(
+                match=match,
+                family='h2h',
+                selection=russian_selection('h2h', selection),
+                point=None,
+                offers=bucket,
+                market_prob=market_prob,
+                model_prob=model_prob,
+                reasons=[
+                    'mode=market_derived',
+                    'model=market_signal_history_ready',
+                    'signals=market_monitor+consensus',
+                    'context=market_signal',
+                ],
+                expected_home=None,
+                expected_away=None,
+                model_mode='market_derived_h2h',
+                context=None,
+                market_signal=market_signal,
+            )
+            if candidate:
+                result.append(candidate)
+        return result
+
+    def _build_market_derived_spread_candidates(
+        self,
+        match: Match,
+        offers: list[Offer],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        buckets: dict[tuple[str, float | None, str], list[Offer]] = defaultdict(list)
+        for offer in offers:
+            buckets[(offer.selection, offer.point, str(offer.team_side or '').lower())].append(offer)
+        result: list[CandidateBet] = []
+        for (selection, point, team_side), bucket in buckets.items():
+            if point is None or team_side not in {'home', 'away'}:
+                continue
+            market_signal = self._market_signal_for_bucket(match.match_key, 'spreads', bucket, point)
+            if not self._market_signal_ready_for_derived('spreads', market_signal, bucket):
+                rejections['market_derived_signal_guard_spreads'] += 1
+                continue
+            market_prob = self._fair_market_probability_spreads(bucket, offers, selection, point, team_side)
+            model_prob = self._market_derived_model_probability(
+                family='spreads',
+                market_prob=market_prob,
+                market_signal=market_signal,
+                books_count=len({self._norm_book(item.bookmaker) for item in bucket}),
+                sources_count=len({str(item.source or '').strip().lower() for item in bucket if str(item.source or '').strip()}),
+            )
+            if model_prob is None:
+                rejections['market_derived_probability_guard_spreads'] += 1
+                continue
+            candidate = self._candidate_from_bucket(
+                match=match,
+                family='spreads',
+                selection=selection,
+                point=point,
+                offers=bucket,
+                market_prob=market_prob,
+                model_prob=model_prob,
+                reasons=[
+                    'mode=market_derived',
+                    'model=market_signal_history_ready',
+                    'signals=market_monitor+consensus',
+                    f'line={float(point):g}',
+                    'context=market_signal',
+                ],
+                expected_home=None,
+                expected_away=None,
+                model_mode='market_derived_spreads',
+                context=None,
+                market_signal=market_signal,
+            )
+            if candidate:
+                result.append(candidate)
+        return result
 
     def _build_simple_market_totals_candidates(
         self,
@@ -453,6 +646,69 @@ class CandidateFactory:
         family_cap = 4.2 if family == 'totals' else 3.6 if family == 'h2h' else 3.4
         boost_prob = min(family_cap, signal_boost_pct) / 100.0
         return clamp(market_prob + boost_prob, 0.02, 0.98)
+
+    def _market_derived_model_probability(
+        self,
+        *,
+        family: str,
+        market_prob: float,
+        market_signal: dict[str, Any] | None,
+        books_count: int,
+        sources_count: int,
+    ) -> float | None:
+        if not self._market_signal_ready_for_derived(family, market_signal, None):
+            return None
+        market_prob = clamp(float(market_prob), 0.02, 0.98)
+        edge_pct = self._to_float_safe((market_signal or {}).get('best_vs_consensus_edge_pct')) or 0.0
+        steam_delta = self._to_float_safe((market_signal or {}).get('delta_prob_pp')) or 0.0
+        dispersion_pct = self._to_float_safe((market_signal or {}).get('consensus_dispersion_pct')) or 0.0
+        max_dispersion = float(getattr(self.settings, 'market_derived_max_dispersion_pct', 7.0) or 7.0)
+        signal_boost_pct = min(4.8, max(0.0, edge_pct) * 0.95)
+        signal_boost_pct += min(2.8, max(0.0, steam_delta) * 0.60)
+        if dispersion_pct <= max_dispersion:
+            signal_boost_pct += 0.65
+        if books_count >= 2:
+            signal_boost_pct += 0.55
+        if sources_count >= 2:
+            signal_boost_pct += 0.35
+        family_cap = 4.8 if family == 'totals' else 4.1 if family == 'h2h' else 3.8
+        return clamp(market_prob + min(family_cap, signal_boost_pct) / 100.0, 0.02, 0.98)
+
+    def _market_signal_ready_for_derived(
+        self,
+        family: str,
+        market_signal: dict[str, Any] | None,
+        offers: list[Offer] | None,
+    ) -> bool:
+        if not isinstance(market_signal, dict):
+            return False
+        if bool(market_signal.get('history_ready')) is False:
+            return False
+        observation_count = int(market_signal.get('observation_count') or 0)
+        books_count = int(market_signal.get('books_count') or 0)
+        sources_count = int(market_signal.get('sources_count') or 0)
+        if offers is not None:
+            books_count = max(books_count, len({self._norm_book(item.bookmaker) for item in offers if str(item.bookmaker or '').strip()}))
+            sources_count = max(sources_count, len({str(item.source or '').strip().lower() for item in offers if str(item.source or '').strip()}))
+        if observation_count < max(1, int(getattr(self.settings, 'market_derived_min_observations', 2) or 2)):
+            return False
+        if books_count < max(1, int(getattr(self.settings, 'market_derived_min_books', 2) or 2)):
+            return False
+        if sources_count < max(1, int(getattr(self.settings, 'market_derived_min_sources', 1) or 1)):
+            return False
+        edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
+        if edge_pct < float(getattr(self.settings, 'market_derived_min_edge_pct', 1.2) or 1.2):
+            return False
+        delta_prob_pp = self._to_float_safe(market_signal.get('delta_prob_pp')) or 0.0
+        if delta_prob_pp < float(getattr(self.settings, 'market_derived_min_delta_prob_pp', 0.0) or 0.0):
+            return False
+        dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
+        max_dispersion = float(getattr(self.settings, 'market_derived_max_dispersion_pct', 7.0) or 7.0)
+        if dispersion_pct is not None and dispersion_pct > max_dispersion:
+            return False
+        if family == 'h2h' and str(market_signal.get('selection_key') or '').strip().lower() == 'draw':
+            return False
+        return True
 
     def _build_spread_candidates(
         self,
@@ -785,6 +1041,9 @@ class CandidateFactory:
         shrink_min = 0.18
         shrink_max = 0.55
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
+        market_signal_derived = str(model_mode or '').startswith('market_')
+        if not context_source and market_signal_derived:
+            context_source = 'market_signal'
         if len(normalized_books) == 1:
             confidence -= 6.0
             shrink_min = min(shrink_min, 0.10)
@@ -967,13 +1226,16 @@ class CandidateFactory:
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
-                'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode'),
+                'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
                 'home_recent_count': context_details.get('home_recent_count'),
                 'away_recent_count': context_details.get('away_recent_count'),
                 'raw_model_probability': round(float(model_prob), 4),
                 'adjusted_probability': round(float(adjusted), 4),
                 'market_probability': round(float(market_prob), 4),
                 'market_signal_key': market_signal_key,
+                'market_signal_derived': market_signal_derived,
+                'market_signal_history_ready': history_ready,
+                'market_signal_observation_count': observation_count,
                 'market_movement': movement_label,
                 'line_move_pp': round(float(steam_delta), 3) if steam_delta is not None else None,
                 'consensus_dispersion_pct': round(float(dispersion_pct), 3) if dispersion_pct is not None else None,
@@ -2669,6 +2931,10 @@ class CandidateFactory:
         max_per_family = max(1, int(getattr(self.settings, 'max_picks_per_family', 2) or 2))
         max_same_reason = max(1, int(getattr(self.settings, 'max_same_reason_signature', 2) or 2))
         max_non_core = max(0, int(getattr(self.settings, 'max_non_core_picks_per_run', 1) or 1))
+        max_internal = max(
+            int(getattr(self.settings, 'max_picks_per_run', 2) or 2),
+            int(getattr(self.settings, 'max_internal_candidates_per_run', 8) or 8),
+        )
 
         for item in filtered:
             league_bucket = self._league_bucket(item)
@@ -2695,7 +2961,7 @@ class CandidateFactory:
             if is_non_core:
                 non_core_count += 1
             deduped.append(item)
-            if len(deduped) >= self.settings.max_picks_per_run:
+            if len(deduped) >= max_internal:
                 break
         if deduped or not getattr(self.settings, 'fallback_publish_mode_enabled', True):
             return deduped
