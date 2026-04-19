@@ -64,6 +64,87 @@ class PredictionRunner:
         current.update(payload)
         self.provider_status[provider_name] = current
 
+    def _provider_instance_by_key(self, provider_key: str) -> Any | None:
+        return {
+            'sstats': self.sstats,
+            'bzzoiro': self.bzzoiro,
+            'api_football': self.api_football,
+            'espn': self.espn,
+            'thesportsdb': self.thesportsdb,
+            'football_data': self.football_data,
+            'openligadb': self.openligadb,
+            'futrixmetrics': self.futrixmetrics,
+            'openfootball': self.openfootball,
+            'newsapi': self.newsapi,
+            'gnews': self.gnews,
+            'odds_api_io': self.odds_api_io,
+            'bookies_api': self.bookies_api,
+            'oddspapi': self.oddspapi,
+            'allsportsapi': self.allsportsapi,
+            'bookies_bootstrap': self.bookies_bootstrap,
+        }.get(str(provider_key or '').strip().lower())
+
+    def _provider_has_required_auth(self, provider_key: str) -> bool:
+        key = str(provider_key or '').strip().lower()
+        if key == 'api_football':
+            return bool(getattr(self.settings, 'api_football_key', None))
+        if key == 'football_data':
+            return bool(getattr(self.settings, 'football_data_api_key', None))
+        if key == 'newsapi':
+            return bool(getattr(self.settings, 'newsapi_key', None))
+        if key == 'gnews':
+            return bool(getattr(self.settings, 'gnews_key', None))
+        if key == 'sstats':
+            return bool(getattr(self.settings, 'sstats_api_key', None))
+        if key == 'bzzoiro':
+            return bool(getattr(self.settings, 'bzzoiro_api_key', None))
+        if key == 'futrixmetrics':
+            return bool(getattr(self.settings, 'futrixmetrics_api_key', None))
+        return True
+
+    def _provider_cooldown_until(self, provider_key: str) -> datetime | None:
+        provider = self._provider_instance_by_key(provider_key)
+        if provider is None:
+            return None
+        checker = getattr(provider, '_cooldown_until', None)
+        if not callable(checker):
+            return None
+        try:
+            cooldown_until = checker()
+        except Exception as exc:
+            self.provider_runtime_errors[str(provider_key or 'unknown')].append(self._format_exception(exc))
+            return None
+        return cooldown_until if isinstance(cooldown_until, datetime) else None
+
+    def _provider_availability_multiplier(self, provider_key: str) -> float:
+        key = str(provider_key or '').strip().lower()
+        provider = self._provider_instance_by_key(key)
+        if provider is None:
+            return 0.0
+        status = dict(self.provider_status.get(key, {}))
+        if status.get('enabled') is False or status.get('loaded') is False:
+            return 0.0
+        if not self._provider_has_required_auth(key):
+            self._mark_provider_status(key, api_key_present=False, targeting_ready=False)
+            return 0.0
+        cooldown_until = self._provider_cooldown_until(key)
+        if cooldown_until is not None:
+            self._mark_provider_status(
+                key,
+                rate_limited=True,
+                cooldown_until=cooldown_until.isoformat(),
+                targeting_ready=False,
+            )
+            return 0.0
+        if status.get('runtime_error'):
+            self._mark_provider_status(key, targeting_ready=True, degraded=True)
+            return 0.25
+        if status.get('rate_limited'):
+            self._mark_provider_status(key, targeting_ready=True, degraded=True)
+            return 0.15
+        self._mark_provider_status(key, targeting_ready=True)
+        return 1.0
+
     def _provider_name(self, provider: Any | None) -> str:
         if provider is None:
             return 'unknown'
@@ -799,12 +880,46 @@ class PredictionRunner:
             return empty_data, {'enabled': True, 'runtime_error': error_text}, {'error': error_text}
         if isinstance(result, tuple):
             if len(result) == 3:
-                return result[0], result[1] or {}, result[2] or {}
+                stats = result[1] or {}
+                preview = result[2] or {}
+                self._record_provider_fetch_status(provider_name, method_name, stats)
+                return result[0], stats, preview
             if len(result) == 2:
-                return result[0], result[1] or {}, {}
+                stats = result[1] or {}
+                self._record_provider_fetch_status(provider_name, method_name, stats)
+                return result[0], stats, {}
             if len(result) == 1:
+                self._record_provider_fetch_status(provider_name, method_name, {})
                 return result[0], {}, {}
+        self._record_provider_fetch_status(provider_name, method_name, {})
         return result, {}, {}
+
+    def _record_provider_fetch_status(self, provider_name: str, method_name: str, stats: dict[str, Any]) -> None:
+        if not isinstance(stats, dict):
+            self._mark_provider_status(provider_name, last_method=method_name)
+            return
+        payload: dict[str, Any] = {
+            'last_method': method_name,
+            'last_fetch_enabled': stats.get('enabled'),
+            'api_key_present': stats.get('api_key_present'),
+            'rate_limited': bool(stats.get('rate_limited')) if 'rate_limited' in stats else self.provider_status.get(provider_name, {}).get('rate_limited'),
+            'cooldown_until': stats.get('cooldown_until') or self.provider_status.get(provider_name, {}).get('cooldown_until'),
+            'requests': stats.get('requests'),
+            'response_errors': stats.get('response_errors'),
+        }
+        for key in (
+            'contexts_built',
+            'matches_built',
+            'fixtures_fetched',
+            'datasets_loaded',
+            'articles_seen',
+            'scoreboard_requests',
+            'probability_requests',
+            'summary_requests',
+        ):
+            if key in stats:
+                payload[key] = stats.get(key)
+        self._mark_provider_status(provider_name, **payload)
 
     def _filter_matches(self, matches: list[Match], now_utc: datetime) -> tuple[list[Match], dict[str, Any]]:
         def apply_filter(min_lead: timedelta) -> tuple[list[Match], int, int, int]:
@@ -969,22 +1084,31 @@ class PredictionRunner:
         }
         provider_key = str(provider_name or '').strip().lower()
         limit = max(0, int(limit_map.get(provider_key, 0) or 0))
+
+        availability_multiplier = self._provider_availability_multiplier(provider_key)
+        if availability_multiplier <= 0.0:
+            return []
         if limit <= 0:
             return matches
 
         staged = bool(getattr(self.settings, 'enable_context_staging', True))
         premium_limit = max(0, int(getattr(self.settings, 'premium_context_shortlist_limit', 18) or 18))
+        premium_news_limit = max(0, int(getattr(self.settings, 'premium_news_shortlist_limit', 3) or 3))
         if staged:
-            if provider_key in {'espn', 'api_football', 'newsapi', 'gnews', 'openfootball'}:
+            if provider_key in {'api_football'}:
                 limit = min(limit, premium_limit)
-            elif provider_key in {'thesportsdb'}:
+            elif provider_key in {'newsapi', 'gnews'}:
+                limit = min(limit, premium_news_limit)
+            elif provider_key in {'espn'}:
                 limit = min(limit, max(premium_limit * 2, premium_limit))
+            elif provider_key in {'thesportsdb', 'openfootball', 'openligadb'}:
+                limit = min(limit, max(premium_limit * 4, premium_limit))
             elif provider_key in {'football_data'}:
                 limit = min(limit, max(premium_limit * 3, premium_limit))
-            elif provider_key in {'openligadb'}:
-                limit = min(limit, max(premium_limit * 2, premium_limit))
             elif provider_key in {'futrixmetrics'}:
                 limit = min(limit, max(4, premium_limit // 2))
+        if availability_multiplier < 1.0:
+            limit = min(limit, max(1, int(round(limit * availability_multiplier))))
         primary_ranked = self._rank_provider_context_matches(matches, provider_key, offers_by_match)
         selected: list[Match] = []
         seen: set[str] = set()
@@ -1049,37 +1173,44 @@ class PredictionRunner:
 
     def _provider_context_support_score(self, provider_key: str, match: Match) -> float:
         provider_key = str(provider_key or '').strip().lower()
+        availability_multiplier = self._provider_availability_multiplier(provider_key)
+        if availability_multiplier <= 0.0:
+            return 0.0
         league_priority = float(self.settings.league_priority_score(match.league_name))
+        base_score = 0.0
         if provider_key == 'api_football':
-            return 1.0 if not self.settings.is_low_tier_league(match.league_name) else 0.82
-        if provider_key == 'espn':
+            base_score = 1.0 if not self.settings.is_low_tier_league(match.league_name) else 0.82
+        elif provider_key == 'espn':
             checker = getattr(self.espn, 'supports_match', None)
-            return 1.0 if callable(checker) and checker(match) else 0.0
-        if provider_key == 'openfootball':
+            base_score = 1.02 if callable(checker) and checker(match) else 0.0
+        elif provider_key == 'openfootball':
             checker = getattr(self.openfootball, 'supports_match', None)
-            return 0.96 if callable(checker) and checker(match) else 0.0
-        if provider_key == 'openligadb':
+            base_score = 1.0 if callable(checker) and checker(match) else 0.0
+        elif provider_key == 'openligadb':
             checker = getattr(self.openligadb, 'supports_match', None)
-            return 0.95 if callable(checker) and checker(match) else 0.0
-        if provider_key == 'football_data':
+            base_score = 0.98 if callable(checker) and checker(match) else 0.0
+        elif provider_key == 'football_data':
             checker = getattr(self.football_data, 'supports_match', None)
-            return 0.94 if callable(checker) and checker(match) else 0.0
-        if provider_key == 'thesportsdb':
+            base_score = 0.99 if callable(checker) and checker(match) else 0.0
+        elif provider_key == 'thesportsdb':
             checker = getattr(self.thesportsdb, 'supports_match', None)
             if callable(checker) and checker(match):
-                return 0.9 if league_priority >= 1.0 else 0.7
-            return 0.0
-        if provider_key == 'sstats':
-            return 0.92 if league_priority >= 1.0 else 0.74
-        if provider_key == 'bzzoiro':
-            return 0.88 if league_priority >= 2.0 else 0.62 if league_priority >= 1.0 else 0.0
-        if provider_key == 'futrixmetrics':
-            return 0.84 if league_priority >= 1.0 else 0.58
-        if provider_key == 'newsapi':
-            return 1.0 if league_priority >= 2.0 else 0.55 if league_priority >= 1.0 else 0.0
-        if provider_key == 'gnews':
-            return 1.0 if league_priority >= 2.0 else 0.4 if league_priority >= 1.0 else 0.0
-        return 0.5
+                base_score = 0.9 if league_priority >= 1.0 else 0.7
+            else:
+                base_score = 0.0
+        elif provider_key == 'sstats':
+            base_score = 0.92 if league_priority >= 1.0 else 0.74
+        elif provider_key == 'bzzoiro':
+            base_score = 0.9 if league_priority >= 2.0 else 0.64 if league_priority >= 1.0 else 0.0
+        elif provider_key == 'futrixmetrics':
+            base_score = 0.84 if league_priority >= 1.0 else 0.58
+        elif provider_key == 'newsapi':
+            base_score = 0.7 if league_priority >= 2.0 else 0.35 if league_priority >= 1.0 else 0.0
+        elif provider_key == 'gnews':
+            base_score = 0.66 if league_priority >= 2.0 else 0.32 if league_priority >= 1.0 else 0.0
+        else:
+            base_score = 0.5
+        return base_score * availability_multiplier
 
     def _select_context_enrichment_matches(
         self,
@@ -1534,7 +1665,17 @@ class PredictionRunner:
             if expected_home is None and expected_away is None and home_win_probability is None and away_win_probability is None:
                 continue
             sample_total = len(home_samples) + len(away_samples)
-            confidence = clamp(base_conf + sample_total * step_conf, base_conf, cap_conf)
+            confidence_values = [
+                self._to_float_safe(sample.get('confidence'))
+                for sample in [*home_samples, *away_samples]
+            ]
+            confidence_values = [value for value in confidence_values if value is not None]
+            avg_sample_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0.0
+            confidence = clamp(
+                base_conf + sample_total * step_conf + max(0.0, avg_sample_confidence - 55.0) * 0.08,
+                base_conf,
+                cap_conf,
+            )
             context = MatchContext(
                 source='self_history',
                 payload={
@@ -1552,6 +1693,7 @@ class PredictionRunner:
                     'context_mode': 'self_history',
                     'home_recent_count': len(home_samples),
                     'away_recent_count': len(away_samples),
+                    'avg_sample_confidence': round(avg_sample_confidence, 2),
                     'history_archives_scanned': archives_scanned,
                     'history_matches_used': history_matches_used,
                 },
@@ -1623,6 +1765,9 @@ class PredictionRunner:
             if value is None:
                 continue
             weight = float(sample.get('weight') or 1.0)
+            sample_confidence = clamp(float(sample.get('confidence') or 0.0), 0.0, 100.0)
+            if sample_confidence > 0.0:
+                weight *= 0.7 + (sample_confidence / 100.0) * 0.6
             if target_league and str(sample.get('league_name') or '').strip().lower() == target_league:
                 weight *= 1.2
             weighted_total += value * weight
@@ -1707,8 +1852,8 @@ class PredictionRunner:
         return [source] if source else []
 
     def _blend_contexts(self, base: MatchContext, new: MatchContext) -> MatchContext:
-        base_weight = max(float(getattr(base, 'confidence', 0.0) or 0.0), 1.0)
-        new_weight = max(float(getattr(new, 'confidence', 0.0) or 0.0), 1.0)
+        base_weight = max(float(getattr(base, 'confidence', 0.0) or 0.0), 1.0) * self._context_blend_weight(base)
+        new_weight = max(float(getattr(new, 'confidence', 0.0) or 0.0), 1.0) * self._context_blend_weight(new)
 
         def blend(a: Any, b: Any) -> float | None:
             pairs: list[tuple[float, float]] = []
@@ -1746,6 +1891,10 @@ class PredictionRunner:
         merged_details.update(dict(new.details or {}))
         merged_details['merged_sources'] = merged_sources
         merged_details['context_mode'] = 'ensemble' if len(merged_sources) > 1 else merged_sources[0] if merged_sources else 'unknown'
+        merged_details['blend_weights'] = {
+            str(base.source or 'base'): round(base_weight, 3),
+            str(new.source or 'new'): round(new_weight, 3),
+        }
 
         source_count = max(len(base_sources), 1) + max(len(new_sources), 1)
         weighted_confidence = ((base_weight * max(len(base_sources), 1)) + (new_weight * max(len(new_sources), 1))) / max(source_count, 1)
@@ -1776,6 +1925,47 @@ class PredictionRunner:
             profits={**dict(base.profits or {}), **dict(new.profits or {})},
             details=merged_details,
         )
+
+    def _context_blend_weight(self, context: MatchContext) -> float:
+        source_name = str(getattr(context, 'source', '') or '').strip().lower()
+        reliability = self._context_source_weight(source_name)
+        completeness = 0.78
+        if getattr(context, 'expected_home', None) is not None or getattr(context, 'expected_away', None) is not None:
+            completeness += 0.18
+        if getattr(context, 'home_win_probability', None) is not None or getattr(context, 'away_win_probability', None) is not None:
+            completeness += 0.16
+        if getattr(context, 'home_starting', None) is not None or getattr(context, 'away_starting', None) is not None:
+            completeness += 0.06
+        details = dict(getattr(context, 'details', {}) or {})
+        if details.get('home_recent_count') or details.get('away_recent_count'):
+            completeness += 0.05
+        if details.get('history_matches_used'):
+            completeness += 0.04
+        if source_name in {'newsapi', 'gnews'}:
+            completeness = min(completeness, 0.92)
+        return reliability * completeness
+
+    def _context_source_weight(self, source_name: str) -> float:
+        key = str(source_name or '').strip().lower()
+        mapped = {
+            'api_football': 1.06,
+            'espn': 1.05,
+            'football_data': 1.05,
+            'openfootball': 1.02,
+            'openligadb': 1.01,
+            'thesportsdb': 0.96,
+            'sstats': 0.92,
+            'sstats_form': 0.88,
+            'bzzoiro': 0.95,
+            'bzzoiro_predictions': 0.95,
+            'futrixmetrics': 0.94,
+            'self_history': 0.98,
+            'newsapi': 0.58,
+            'gnews': 0.56,
+        }
+        if key in mapped:
+            return mapped[key]
+        return clamp(float(self.settings.source_weight(key)), 0.55, 1.08)
 
     @staticmethod
     def _serialize_candidate(item: CandidateBet) -> dict[str, Any]:
