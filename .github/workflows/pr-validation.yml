@@ -1,0 +1,80 @@
+name: PR validation
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+  PUBLISH_DRY_RUN: "true"
+  RUN_REPORT_ENABLED: "false"
+  DAILY_REPORT_ENABLED: "false"
+  SETTLEMENT_ENABLED: "false"
+  BOOKIES_BOOTSTRAP_ENABLED: "false"
+  ODDS_API_IO_ENABLED: "false"
+  BOOKIES_API_ENABLED: "false"
+  ODDSPAPI_ENABLED: "false"
+  ALLSPORTSAPI_ENABLED: "false"
+  FUTRIXMETRICS_ENABLED: "false"
+  SSTATS_ENABLED: "false"
+  ENABLE_SSTATS_CONTEXT: "false"
+  API_FOOTBALL_ENABLED: "false"
+  ENABLE_BZZOIRO_CONTEXT: "false"
+  ENABLE_ESPN_CONTEXT: "false"
+  ENABLE_THESPORTSDB_CONTEXT: "false"
+  ENABLE_FOOTBALL_DATA_CONTEXT: "false"
+  ENABLE_OPENLIGADB_CONTEXT: "false"
+  ENABLE_OPENFOOTBALL_CONTEXT: "false"
+  ENABLE_NEWSAPI_CONTEXT: "false"
+  ENABLE_GNEWS_CONTEXT: "false"
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Smoke import check
+        run: |
+          python -c "from app.config import Settings; Settings(); import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.services.quality; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.futrixmetrics; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
+
+      - name: Compile key modules
+        run: |
+          python -m py_compile \
+            app/config.py \
+            app/schemas.py \
+            app/providers/odds_api_io.py \
+            app/providers/oddspapi.py \
+            app/providers/allsportsapi.py \
+            app/providers/futrixmetrics.py \
+            app/providers/football_data.py \
+            app/providers/openfootball.py \
+            app/providers/newsapi.py \
+            app/providers/gnews.py \
+            app/services/runner.py \
+            app/services/model.py \
+            app/services/market_monitor.py \
+            app/services/quality.py \
+            app/services/sheet_export.py \
+            app/services/settlement.py \
+            app/services/telegram.py \
+            app/state.py
+
+      - name: Run dry smoke pass
+        run: python -m app.cli run-once

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import timezone
 from functools import lru_cache
 from typing import Annotated, Any
 from zoneinfo import ZoneInfo
@@ -655,7 +656,7 @@ class Settings(BaseSettings):
         try:
             return ZoneInfo(self.app_timezone)
         except Exception:
-            return ZoneInfo("UTC")
+            return timezone.utc
 
     @property
     def telegram_token(self) -> str | None:
