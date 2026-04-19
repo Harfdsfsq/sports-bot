@@ -160,6 +160,46 @@ class TelegramPublisher:
         text = re.sub(r"\s+", " ", text).strip()
         return text
 
+    def _team_side_label(self, team_side: str | None, home_team: str | None = None, away_team: str | None = None) -> str:
+        side = str(team_side or "").strip().lower()
+        if side == "home":
+            return str(home_team or "Хозяева").strip()
+        if side == "away":
+            return str(away_team or "Гости").strip()
+        return ""
+
+    def _selection_display(
+        self,
+        family: str,
+        selection: str | None,
+        point: float | None = None,
+        team_side: str | None = None,
+        home_team: str | None = None,
+        away_team: str | None = None,
+    ) -> str:
+        family_key = str(family or "").strip()
+        raw = str(selection or "").strip()
+        if family_key == "teamTotals":
+            side_label = self._team_side_label(team_side, home_team, away_team)
+            total_label = russian_selection("totals", raw, point)
+            return f"{side_label}: {total_label}" if side_label else total_label
+        if family_key == "doubleChance":
+            normalized = self._normalize_selection(raw).replace(" ", "")
+            if normalized in {"1x", "x1", "homeordraw"}:
+                return "1X"
+            if normalized in {"x2", "2x", "awayordraw"}:
+                return "X2"
+            if normalized in {"12", "nodraw"}:
+                return "12"
+            home = self._normalize_selection(home_team)
+            away = self._normalize_selection(away_team)
+            if home and home in normalized and "draw" in normalized:
+                return "1X"
+            if away and away in normalized and "draw" in normalized:
+                return "X2"
+            return raw
+        return russian_selection(family_key, raw, point)
+
     def _selection_kind(
         self,
         family: str,
@@ -270,7 +310,7 @@ class TelegramPublisher:
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
-            selection_text = russian_selection(bet.family, bet.selection, bet.point)
+            selection_text = self._selection_display(bet.family, bet.selection, bet.point, getattr(bet, "team_side", None), bet.home_team, bet.away_team)
             point_suffix = f" ({bet.point:g})" if bet.point is not None else ""
             start_text = (
                 f"{bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M')} "
@@ -381,7 +421,7 @@ class TelegramPublisher:
             if premium_pct >= 0.5:
                 market_line += f" Лучшая доступная цена сейчас примерно на {premium_pct:.1f}% выше fair-цены консенсуса."
             elif premium_pct <= -0.5:
-                market_line += f" Текущая цена уже чуть ниже fair-цены консенсуса примерно на {abs(premium_pct):.1f}%."
+                market_line += f" Цена уже просела относительно fair-цены консенсуса примерно на {abs(premium_pct):.1f}%, поэтому value хуже, чем в пике, но перевес модели пока сохраняется."
             else:
                 market_line += " Текущая цена близка к fair-цене консенсуса."
         parts.append(market_line)
@@ -536,7 +576,7 @@ class TelegramPublisher:
             selection = str(row.get("selection") or "")
             item_lines.append(
                 f"{idx}. {row.get('home_team')} — {row.get('away_team')}\n"
-                f"{emoji} {russian_market_name(family)} — {russian_selection(family, selection, point)}{point_suffix} "
+                f"{emoji} {russian_market_name(family)} — {self._selection_display(family, selection, point, row.get('team_side'), row.get('home_team'), row.get('away_team'))}{point_suffix} "
                 f"@ {float(row.get('odds') or 0.0):.2f} | Счет: {score} | P&L: {pnl_text}"
             )
         if item_lines:

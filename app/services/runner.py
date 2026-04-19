@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 from pathlib import Path
 from importlib import import_module
+import math
 from typing import Any
 
 from app.config import Settings
@@ -1912,19 +1913,41 @@ class PredictionRunner:
         else:
             confidence_cap = 64.0
 
+        base_expected_home = self._sanitize_expected_goal_value(base.expected_home)
+        new_expected_home = self._sanitize_expected_goal_value(new.expected_home)
+        base_expected_away = self._sanitize_expected_goal_value(base.expected_away)
+        new_expected_away = self._sanitize_expected_goal_value(new.expected_away)
+        blended_home_starting = blend(base.home_starting, new.home_starting)
+        blended_away_starting = blend(base.away_starting, new.away_starting)
+
         return MatchContext(
             source='ensemble' if len(merged_sources) > 1 else (merged_sources[0] if merged_sources else str(base.source or new.source or 'unknown')),
             payload=merged_payload,
-            expected_home=blend(base.expected_home, new.expected_home),
-            expected_away=blend(base.expected_away, new.expected_away),
+            expected_home=blend(base_expected_home, new_expected_home),
+            expected_away=blend(base_expected_away, new_expected_away),
             home_win_probability=blend(base.home_win_probability, new.home_win_probability),
             away_win_probability=blend(base.away_win_probability, new.away_win_probability),
-            home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
-            away_starting=int(round(blend(base.away_starting, new.away_starting))) if blend(base.away_starting, new.away_starting) is not None else (new.away_starting or base.away_starting),
+            home_starting=int(round(blended_home_starting)) if blended_home_starting is not None else (new.home_starting or base.home_starting),
+            away_starting=int(round(blended_away_starting)) if blended_away_starting is not None else (new.away_starting or base.away_starting),
             confidence=clamp(merged_confidence, 50.0, confidence_cap),
             profits={**dict(base.profits or {}), **dict(new.profits or {})},
             details=merged_details,
         )
+
+    def _sanitize_expected_goal_value(self, value: Any) -> float | None:
+        try:
+            if value in (None, ''):
+                return None
+            number = float(value)
+        except Exception:
+            return None
+        if not math.isfinite(number):
+            return None
+        min_goal = float(getattr(self.settings, 'min_expected_goals_value', 0.15) or 0.15)
+        max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
+        if number < min_goal or number > max_goal:
+            return None
+        return number
 
     def _context_blend_weight(self, context: MatchContext) -> float:
         source_name = str(getattr(context, 'source', '') or '').strip().lower()

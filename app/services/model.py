@@ -1874,14 +1874,24 @@ class CandidateFactory:
     @staticmethod
     def _double_chance_key(match: Match, selection: str) -> str | None:
         text = str(selection or '').strip().lower()
+        compact = ''.join(ch for ch in text if ch.isalnum())
+        if compact == '1x':
+            return 'home_draw'
+        if compact == 'x2':
+            return 'away_draw'
+        if compact == '12':
+            return 'home_away'
         has_draw = any(token in text for token in ['draw', 'нич', 'x'])
-        has_home = CandidateFactory._canonical_team(match.home_team) in CandidateFactory._canonical_team(text) or CandidateFactory._canonical_team(match.home_team) in text
-        has_away = CandidateFactory._canonical_team(match.away_team) in CandidateFactory._canonical_team(text) or CandidateFactory._canonical_team(match.away_team) in text
+        home_key = CandidateFactory._canonical_team(match.home_team)
+        away_key = CandidateFactory._canonical_team(match.away_team)
+        text_key = CandidateFactory._canonical_team(text)
+        has_home = bool(home_key) and (home_key in text_key or home_key in text)
+        has_away = bool(away_key) and (away_key in text_key or away_key in text)
         if has_draw and has_home:
             return 'home_draw'
         if has_draw and has_away:
             return 'away_draw'
-        if (has_home and has_away) or '12' == text.replace(' ', '') or 'no draw' in text or 'без нич' in text:
+        if (has_home and has_away) or 'no draw' in text or 'без нич' in text:
             return 'home_away'
         return None
 

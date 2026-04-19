@@ -498,13 +498,22 @@ class OddsApiIoProvider:
             except Exception:
                 return None
 
-        def add_offer(bookmaker: str, family: str, selection: str, price_value: Any, point: Any = None, market_name: str = "") -> None:
+        def add_offer(
+            bookmaker: str,
+            family: str,
+            selection: str,
+            price_value: Any,
+            point: Any = None,
+            market_name: str = "",
+            team_side: str | None = None,
+        ) -> None:
             price = to_float(price_value)
             if price is None or price <= 1.0:
                 return
             point_value = to_float(point)
             book = self._canonical_bookmaker(bookmaker)
-            key = (book, family, selection, point_value)
+            normalized_team_side = str(team_side or "").strip().lower() or None
+            key = (book, family, selection, point_value, normalized_team_side)
             if key in seen:
                 return
             seen.add(key)
@@ -516,6 +525,7 @@ class OddsApiIoProvider:
                     selection=selection,
                     price=price,
                     point=point_value,
+                    team_side=normalized_team_side,
                     market_name=market_name,
                     market_key=family,
                     metadata={"odds_api_io": True},
@@ -528,31 +538,55 @@ class OddsApiIoProvider:
             family = self._family_for_market(market_key)
             if family is None:
                 return
+            default_team_side = self._infer_team_total_side(market_key, None, match)
             for row in outcomes:
                 if not isinstance(row, dict):
                     continue
                 name = str(row.get("name") or row.get("label") or row.get("selection") or "").strip()
-                point = (
+                point = self._line_from_value(
                     row.get("point")
                     or row.get("line")
                     or row.get("handicap")
                     or row.get("hdp")
                     or row.get("max")
                 )
+                price_value = row.get("price") or row.get("odds") or row.get("decimal") or row.get("value")
                 if family == "h2h":
                     selection = self._map_h2h_selection(name, match)
-                elif family == "totals":
+                    add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+                if family == "totals":
                     selection = "Over" if name.lower().startswith("over") else "Under" if name.lower().startswith("under") else name
-                elif family == "spreads":
+                    add_offer(bookmaker_name, family, selection, price_value, point, market_key)
+                    continue
+                if family == "spreads":
                     selection = match.home_team if name.lower() in {"home", match.home_team.lower(), "1"} else match.away_team if name.lower() in {"away", match.away_team.lower(), "2"} else name
-                    if selection == match.away_team and point not in (None, ""):
-                        try:
-                            point = -float(str(point).replace(",", "."))
-                        except Exception:
-                            pass
-                else:
-                    selection = name
-                add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), point, market_key)
+                    team_side = "home" if selection == match.home_team else "away" if selection == match.away_team else None
+                    if team_side == "away" and point is not None:
+                        point = -float(point)
+                    add_offer(bookmaker_name, family, selection, price_value, point, market_key, team_side=team_side)
+                    continue
+                if family == "btts":
+                    selection = self._normalize_yes_no(name)
+                    if selection is not None:
+                        add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+                if family == "doubleChance":
+                    selection = self._normalize_double_chance_selection(name, match)
+                    if selection is not None:
+                        add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+                if family == "dnb":
+                    selection = self._normalize_dnb_selection(name, match)
+                    if selection is not None:
+                        add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+                if family == "teamTotals":
+                    selection = "Over" if name.lower().startswith("over") else "Under" if name.lower().startswith("under") else name
+                    team_side = self._infer_team_total_side(market_key, name, match) or default_team_side
+                    if team_side is not None:
+                        add_offer(bookmaker_name, family, selection, price_value, point, market_key, team_side=team_side)
+                    continue
 
         def parse_market_rows(bookmaker_name: str, market_key: str, rows: list[dict[str, Any]]) -> None:
             if not self._is_supported_market(market_key):
@@ -564,7 +598,7 @@ class OddsApiIoProvider:
                 if not isinstance(row, dict):
                     continue
 
-                point = (
+                point = self._line_from_value(
                     row.get("point")
                     or row.get("line")
                     or row.get("handicap")
@@ -572,6 +606,7 @@ class OddsApiIoProvider:
                     or row.get("max")
                 )
                 label = str(row.get("label") or row.get("name") or row.get("selection") or "").strip()
+                price_value = row.get("price") or row.get("odds") or row.get("decimal") or row.get("value")
 
                 if family == "h2h":
                     added = False
@@ -582,7 +617,7 @@ class OddsApiIoProvider:
                             added = True
                     if not added and label:
                         selection = self._map_h2h_selection(label, match)
-                        add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), None, market_key)
+                        add_offer(bookmaker_name, family, selection, price_value, None, market_key)
                     continue
 
                 if family == "totals":
@@ -597,27 +632,85 @@ class OddsApiIoProvider:
                         added = True
                     if not added and label:
                         selection = "Over" if label.lower().startswith("over") else "Under" if label.lower().startswith("under") else label
-                        add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), point, market_key)
+                        add_offer(bookmaker_name, family, selection, price_value, point, market_key)
                     continue
 
                 if family == "spreads":
                     added = False
                     home_price = row.get("home") or row.get("home_od")
                     away_price = row.get("away") or row.get("away_od")
-                    point_value = to_float(point)
                     if home_price not in (None, ""):
-                        add_offer(bookmaker_name, family, match.home_team, home_price, point_value, market_key)
+                        add_offer(bookmaker_name, family, match.home_team, home_price, point, market_key, team_side="home")
                         added = True
                     if away_price not in (None, ""):
-                        away_point = -point_value if point_value is not None else point
-                        add_offer(bookmaker_name, family, match.away_team, away_price, away_point, market_key)
+                        away_point = -point if point is not None else None
+                        add_offer(bookmaker_name, family, match.away_team, away_price, away_point, market_key, team_side="away")
                         added = True
                     if not added and label:
                         selection = match.home_team if label.lower() in {"home", match.home_team.lower(), "1"} else match.away_team if label.lower() in {"away", match.away_team.lower(), "2"} else label
-                        normalized_point = point_value
-                        if selection == match.away_team and normalized_point is not None:
+                        team_side = "home" if selection == match.home_team else "away" if selection == match.away_team else None
+                        normalized_point = point
+                        if team_side == "away" and normalized_point is not None:
                             normalized_point = -normalized_point
-                        add_offer(bookmaker_name, family, selection, row.get("price") or row.get("odds") or row.get("decimal") or row.get("value"), normalized_point, market_key)
+                        add_offer(bookmaker_name, family, selection, price_value, normalized_point, market_key, team_side=team_side)
+                    continue
+
+                if family == "btts":
+                    added = False
+                    for selection, field in (("Yes", "yes"), ("No", "no")):
+                        price = row.get(field) or row.get(f"{field}_od")
+                        if price not in (None, ""):
+                            add_offer(bookmaker_name, family, selection, price, None, market_key)
+                            added = True
+                    if not added and label:
+                        selection = self._normalize_yes_no(label)
+                        if selection is not None:
+                            add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+
+                if family == "doubleChance":
+                    added = False
+                    mapping = (("Home or Draw", "home_draw"), ("Away or Draw", "away_draw"), ("No Draw", "home_away"))
+                    for selection, field in mapping:
+                        price = row.get(field) or row.get(f"{field}_od")
+                        if price not in (None, ""):
+                            add_offer(bookmaker_name, family, selection, price, None, market_key)
+                            added = True
+                    if not added and label:
+                        selection = self._normalize_double_chance_selection(label, match)
+                        if selection is not None:
+                            add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+
+                if family == "dnb":
+                    added = False
+                    for selection, field in ((match.home_team, "home"), (match.away_team, "away")):
+                        price = row.get(field) or row.get(f"{field}_od")
+                        if price not in (None, ""):
+                            add_offer(bookmaker_name, family, selection, price, None, market_key)
+                            added = True
+                    if not added and label:
+                        selection = self._normalize_dnb_selection(label, match)
+                        if selection is not None:
+                            add_offer(bookmaker_name, family, selection, price_value, None, market_key)
+                    continue
+
+                if family == "teamTotals":
+                    added = False
+                    team_side = self._infer_team_total_side(market_key, label, match)
+                    over_price = row.get("over") or row.get("over_od")
+                    under_price = row.get("under") or row.get("under_od")
+                    if over_price not in (None, "") and team_side is not None:
+                        add_offer(bookmaker_name, family, "Over", over_price, point, market_key, team_side=team_side)
+                        added = True
+                    if under_price not in (None, "") and team_side is not None:
+                        add_offer(bookmaker_name, family, "Under", under_price, point, market_key, team_side=team_side)
+                        added = True
+                    if not added and label:
+                        selection = "Over" if label.lower().startswith("over") else "Under" if label.lower().startswith("under") else label
+                        inferred_side = self._infer_team_total_side(market_key, label, match)
+                        if inferred_side is not None:
+                            add_offer(bookmaker_name, family, selection, price_value, point, market_key, team_side=inferred_side)
 
         if isinstance(bookmakers, dict):
             iterator = bookmakers.items()
@@ -676,9 +769,8 @@ class OddsApiIoProvider:
         banned_terms = (
             '1st half', 'first half', '2nd half', 'second half', 'half time', 'halftime', 'ht',
             'corner', 'corners', 'booking', 'bookings', 'card', 'cards', 'throw', 'throws',
-            'offside', 'offsides', 'shot', 'shots', 'foul', 'fouls', 'team total', 'home total',
-            'away total', 'player', 'next goal', 'correct score', 'double chance', 'draw no bet',
-            'btts', 'both teams to score', 'alternative', 'alternate', 'alt ', 'race to', 'odd/even',
+            'offside', 'offsides', 'shot', 'shots', 'foul', 'fouls', 'player', 'next goal',
+            'correct score', 'alternative', 'alternate', 'alt ', 'race to', 'odd/even',
             'clean sheet', 'win to nil', 'to qualify', 'penalty', 'minute', 'asian corners',
         )
         if any(term in key for term in banned_terms):
@@ -690,6 +782,14 @@ class OddsApiIoProvider:
         key = str(market_key or "").lower().strip()
         if key in {"h2h", "1x2", "moneyline", "ml", "match winner", "match result", "full time result"} or "moneyline" in key:
             return "h2h"
+        if 'draw no bet' in key or key in {'dnb', 'pk'}:
+            return 'dnb'
+        if 'double chance' in key or key in {'1x x2 12', 'doublechance'}:
+            return 'doubleChance'
+        if key in {'btts', 'both teams to score', 'both teams score', 'gg/ng'} or 'both teams to score' in key:
+            return 'btts'
+        if 'team total' in key or 'team totals' in key or key.startswith('home total') or key.startswith('away total') or 'goals over/under - home' in key or 'goals over/under - away' in key:
+            return 'teamTotals'
         if key in {"totals", "goals over/under", "goal line", "over/under", "over under", "ou", "o/u"} or key.startswith("totals ") or key.startswith("goals over/under"):
             return "totals"
         if key in {"spread", "spreads", "handicap", "asian handicap"} or key.startswith("spread ") or key.startswith("handicap "):
@@ -710,6 +810,15 @@ class OddsApiIoProvider:
         return str(name or "Unknown")
 
     @staticmethod
+    def _line_from_value(value: Any) -> float | None:
+        try:
+            if value in (None, ''):
+                return None
+            return float(str(value).replace(',', '.'))
+        except Exception:
+            return None
+
+    @staticmethod
     def _map_h2h_selection(raw_name: str, match: Match) -> str:
         name = str(raw_name or "").strip().lower()
         if name in {"home", "1", match.home_team.lower()}:
@@ -719,6 +828,57 @@ class OddsApiIoProvider:
         if name in {"draw", "x", "tie"}:
             return "Draw"
         return raw_name or ""
+
+    @staticmethod
+    def _normalize_yes_no(raw_name: str) -> str | None:
+        name = str(raw_name or '').strip().lower().replace('-', ' ')
+        if name in {'yes', 'да', 'btts yes', 'both teams to score yes', 'both teams score yes', 'gg'} or name.endswith(' yes'):
+            return 'Yes'
+        if name in {'no', 'нет', 'btts no', 'both teams to score no', 'both teams score no', 'ng'} or name.endswith(' no'):
+            return 'No'
+        return None
+
+    @staticmethod
+    def _normalize_double_chance_selection(raw_name: str, match: Match) -> str | None:
+        text = str(raw_name or '').strip().lower().replace(' ', '')
+        if text in {'1x', 'homeordraw'}:
+            return f'{match.home_team} or Draw'
+        if text in {'x2', 'awayordraw'}:
+            return f'{match.away_team} or Draw'
+        if text in {'12', 'nodraw'}:
+            return 'No Draw'
+        normalized = str(raw_name or '').strip()
+        if normalized:
+            return normalized
+        return None
+
+    @staticmethod
+    def _normalize_dnb_selection(raw_name: str, match: Match) -> str | None:
+        name = str(raw_name or '').strip().lower()
+        if name in {'home', '1', match.home_team.lower()}:
+            return match.home_team
+        if name in {'away', '2', match.away_team.lower()}:
+            return match.away_team
+        return None
+
+    @staticmethod
+    def _infer_team_total_side(market_key: str, label: str | None, match: Match) -> str | None:
+        key = str(market_key or '').strip().lower()
+        raw_label = str(label or '').strip().lower()
+        label_text = raw_label.replace('team total', '').replace('total', '').replace('goals', '').strip()
+        if any(token in key for token in ('home total', 'team total home', 'goals over/under - home')):
+            return 'home'
+        if any(token in key for token in ('away total', 'team total away', 'goals over/under - away')):
+            return 'away'
+        if raw_label in {'home', '1'} or label_text in {match.home_team.lower(), 'home', '1'}:
+            return 'home'
+        if raw_label in {'away', '2'} or label_text in {match.away_team.lower(), 'away', '2'}:
+            return 'away'
+        if match.home_team.lower() in raw_label:
+            return 'home'
+        if match.away_team.lower() in raw_label:
+            return 'away'
+        return None
 
 
     def _looks_low_tier(self, league_name: str) -> bool:

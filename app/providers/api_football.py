@@ -297,17 +297,25 @@ class ApiFootballContextProvider:
     def _prediction_to_context(self, row: dict[str, Any], fixture: dict[str, Any]) -> MatchContext:
         preds = row.get("predictions") or row.get("prediction") or {}
         percent = preds.get("percent") or {}
-        goals = preds.get("goals") or {}
         home_prob = normalize_probability_percent(percent.get("home") or percent.get("Home"))
         draw_prob = normalize_probability_percent(percent.get("draw") or percent.get("Draw"))
         away_prob = normalize_probability_percent(percent.get("away") or percent.get("Away"))
-        expected_home = self._to_float(goals.get("home") or goals.get("home_goals"))
-        expected_away = self._to_float(goals.get("away") or goals.get("away_goals"))
+        expected_home, expected_away, xg_source = self._derive_expected_goals(row, preds, home_prob, draw_prob, away_prob)
+
+        home_form = self._team_percent(row, "home", "form")
+        away_form = self._team_percent(row, "away", "form")
+        home_att = self._team_percent(row, "home", "att")
+        away_att = self._team_percent(row, "away", "att")
+        home_def = self._team_percent(row, "home", "def")
+        away_def = self._team_percent(row, "away", "def")
+
         confidence = 59.0
         if home_prob is not None and away_prob is not None:
             confidence += 5.0
         if expected_home is not None and expected_away is not None:
             confidence += 4.0
+        if home_form is not None and away_form is not None:
+            confidence += 1.0
         confidence = clamp(confidence, 58.0, 76.0)
         return MatchContext(
             source="api_football",
@@ -321,8 +329,155 @@ class ApiFootballContextProvider:
                 "api_football_draw_probability": draw_prob,
                 "api_football_advice": preds.get("advice"),
                 "api_football_under_over": preds.get("under_over"),
+                "api_football_expected_goals_source": xg_source,
+                "api_football_home_form": home_form,
+                "api_football_away_form": away_form,
+                "api_football_home_attack": home_att,
+                "api_football_away_attack": away_att,
+                "api_football_home_defense": home_def,
+                "api_football_away_defense": away_def,
+                "home_form": home_form,
+                "away_form": away_form,
+                "home_attack": home_att,
+                "away_attack": away_att,
+                "home_defense": home_def,
+                "away_defense": away_def,
+                "home_gf_pg": self._team_goal_average(row, "home", "for", "home"),
+                "away_gf_pg": self._team_goal_average(row, "away", "for", "away"),
+                "home_ga_pg": self._team_goal_average(row, "home", "against", "home"),
+                "away_ga_pg": self._team_goal_average(row, "away", "against", "away"),
             },
         )
+
+    def _derive_expected_goals(
+        self,
+        row: dict[str, Any],
+        preds: dict[str, Any],
+        home_prob: float | None,
+        draw_prob: float | None,
+        away_prob: float | None,
+    ) -> tuple[float | None, float | None, str]:
+        goals = preds.get("goals") or {}
+        explicit_home = self._to_positive_goal(goals.get("home") or goals.get("home_goals"))
+        explicit_away = self._to_positive_goal(goals.get("away") or goals.get("away_goals"))
+        if explicit_home is not None and explicit_away is not None:
+            return explicit_home, explicit_away, "predictions_goals"
+
+        home_for = self._team_goal_average(row, "home", "for", "home")
+        home_against = self._team_goal_average(row, "home", "against", "home")
+        away_for = self._team_goal_average(row, "away", "for", "away")
+        away_against = self._team_goal_average(row, "away", "against", "away")
+        home_last_for = self._team_last5_goal_average(row, "home", "for")
+        home_last_against = self._team_last5_goal_average(row, "home", "against")
+        away_last_for = self._team_last5_goal_average(row, "away", "for")
+        away_last_against = self._team_last5_goal_average(row, "away", "against")
+
+        home_base = self._weighted_mean(
+            [
+                (home_for, 0.42),
+                (away_against, 0.30),
+                (home_last_for, 0.18),
+                (away_last_against, 0.10),
+            ]
+        )
+        away_base = self._weighted_mean(
+            [
+                (away_for, 0.42),
+                (home_against, 0.30),
+                (away_last_for, 0.18),
+                (home_last_against, 0.10),
+            ]
+        )
+        if home_base is None or away_base is None:
+            return None, None, "missing"
+
+        total = clamp(home_base + away_base, 1.1, 4.6)
+        hinted_total = self._under_over_total_hint(preds.get("under_over"))
+        if hinted_total is not None:
+            total = clamp(total * 0.65 + hinted_total * 0.35, 1.1, 4.6)
+
+        if home_prob is not None and away_prob is not None:
+            prob_gap = clamp(home_prob - away_prob, -0.55, 0.55)
+            target_share = clamp(0.50 + prob_gap * 0.38, 0.22, 0.78)
+        else:
+            base_sum = max(home_base + away_base, 0.1)
+            target_share = clamp(home_base / base_sum, 0.22, 0.78)
+        if draw_prob is not None:
+            draw_adjust = clamp((0.27 - draw_prob) * 0.35, -0.06, 0.06)
+            target_share = clamp(target_share + draw_adjust, 0.20, 0.80)
+        expected_home = clamp(total * target_share, 0.25, 3.4)
+        expected_away = clamp(total - expected_home, 0.25, 3.2)
+        return expected_home, expected_away, "team_stats_blend"
+
+    def _team_goal_average(self, row: dict[str, Any], side: str, goal_type: str, venue: str) -> float | None:
+        team = ((row.get("teams") or {}).get(side) or {}) if isinstance(row, dict) else {}
+        league = (team.get("league") or {}) if isinstance(team, dict) else {}
+        goals = ((league.get("goals") or {}).get(goal_type) or {}) if isinstance(league, dict) else {}
+        average = goals.get("average") if isinstance(goals, dict) else None
+        if isinstance(average, dict):
+            return self._to_positive_goal(average.get(venue) or average.get("total"))
+        return self._to_positive_goal(average)
+
+    def _team_last5_goal_average(self, row: dict[str, Any], side: str, goal_type: str) -> float | None:
+        team = ((row.get("teams") or {}).get(side) or {}) if isinstance(row, dict) else {}
+        last5 = (team.get("last_5") or {}) if isinstance(team, dict) else {}
+        goals = (last5.get("goals") or {}) if isinstance(last5, dict) else {}
+        target = goals.get(goal_type) if isinstance(goals, dict) else None
+        if isinstance(target, dict):
+            return self._to_positive_goal(target.get("average"))
+        return None
+
+    def _team_percent(self, row: dict[str, Any], side: str, key: str) -> float | None:
+        team = ((row.get("teams") or {}).get(side) or {}) if isinstance(row, dict) else {}
+        last5 = (team.get("last_5") or {}) if isinstance(team, dict) else {}
+        return self._to_unit_percent(last5.get(key) if isinstance(last5, dict) else None)
+
+    @staticmethod
+    def _weighted_mean(pairs: list[tuple[float | None, float]]) -> float | None:
+        values = [(float(value), float(weight)) for value, weight in pairs if value is not None and weight > 0]
+        if not values:
+            return None
+        total_weight = sum(weight for _, weight in values)
+        if total_weight <= 0:
+            return None
+        return sum(value * weight for value, weight in values) / total_weight
+
+    def _to_positive_goal(self, value: Any) -> float | None:
+        number = self._to_float(value)
+        if number is None:
+            return None
+        if number <= 0.0 or number > 5.5:
+            return None
+        return number
+
+    @staticmethod
+    def _to_unit_percent(value: Any) -> float | None:
+        if value in (None, ''):
+            return None
+        text = str(value).strip().replace('%', '').replace(',', '.')
+        try:
+            number = float(text)
+        except Exception:
+            return None
+        if number > 1.0:
+            number /= 100.0
+        return clamp(number, 0.0, 1.0)
+
+    def _under_over_total_hint(self, value: Any) -> float | None:
+        if value in (None, ''):
+            return None
+        text = str(value).strip()
+        sign = text[0] if text and text[0] in {'+', '-'} else ''
+        if sign:
+            text = text[1:]
+        line = self._to_float(text)
+        if line is None:
+            return None
+        if sign == '+':
+            return clamp(line + 0.35, 1.1, 4.8)
+        if sign == '-':
+            return clamp(max(1.0, line - 0.25), 1.1, 4.8)
+        return clamp(line, 1.1, 4.8)
 
     @staticmethod
     def _to_float(value: Any) -> float | None:
