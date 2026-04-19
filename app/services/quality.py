@@ -1126,7 +1126,7 @@ class PredictionQualityService:
         return None
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
-        min_probability = float(self.settings.min_model_confidence_for_family(candidate.family))
+        min_probability = float(self._post_calibration_probability_threshold(candidate))
         adjusted_probability = float(candidate.adjusted_probability)
         if adjusted_probability < min_probability:
             probability_gap = min_probability - adjusted_probability
@@ -1168,6 +1168,27 @@ class PredictionQualityService:
         if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
             return 'post_calibration_ev_guard'
         return None
+
+    def _post_calibration_probability_threshold(self, candidate: CandidateBet) -> float:
+        family = str(getattr(candidate, 'family', '') or '')
+        if family == 'h2h':
+            selection_kind = self._candidate_selection_kind(candidate)
+            if selection_kind == 'draw':
+                return float(self._setting('h2h_draw_min_probability', 0.20) or 0.20)
+            return float(self._setting('h2h_side_min_probability', 0.24) or 0.24)
+        if family == 'doubleChance':
+            return float(self._setting('double_chance_min_probability', 0.46) or 0.46)
+        if family == 'dnb':
+            return float(self._setting('dnb_min_probability', 0.38) or 0.38)
+        if family == 'spreads':
+            return float(self._setting('spreads_min_probability', 0.49) or 0.49)
+        if family == 'totals':
+            return float(self._setting('totals_min_probability', 0.49) or 0.49)
+        if family == 'teamTotals':
+            return float(self._setting('team_totals_min_probability', 0.50) or 0.50)
+        if family == 'btts':
+            return float(self._setting('btts_min_probability', 0.50) or 0.50)
+        return float(self.settings.min_model_confidence_for_family(family))
 
     def _passes_post_calibration_core_relief(self, candidate: CandidateBet, probability_gap: float) -> bool:
         if not bool(self._setting('post_calibration_core_relief_enabled', True)):
