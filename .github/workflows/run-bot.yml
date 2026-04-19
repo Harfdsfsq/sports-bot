@@ -23,8 +23,9 @@ permissions:
   contents: write
 
 concurrency:
-  group: run-bot
-  # Do not accumulate a queue of stale runs: keep the latest schedule slot on time.
+  group: run-bot-${{ github.event.schedule || github.event_name }}
+  # Keep stale runs from piling up inside the same cadence, but do not let
+  # the 22:00 nightly review cancel a forecast run from a different slot.
   cancel-in-progress: true
 
 env:

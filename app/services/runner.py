@@ -111,6 +111,16 @@ class PredictionRunner:
             return explicit or bool(getattr(self.settings, 'gnews_key', None))
         return bool(default)
 
+    def _is_report_only_mode(self, now_utc: datetime) -> bool:
+        local_now = now_utc.astimezone(self.settings.tzinfo)
+        report_hour_local = min(23, max(0, int(getattr(self.settings, 'daily_report_hour_local', 22) or 22)))
+        return bool(getattr(self.settings, 'nightly_review_report_only_enabled', True)) and bool(
+            getattr(self.settings, 'daily_report_enabled', True)
+        ) and (
+            not bool(getattr(self.settings, 'prediction_publication_enabled', True))
+            or int(local_now.hour) >= report_hour_local
+        )
+
     def _safe_provider(self, module_name: str, class_name: str) -> Any | None:
         provider_name = self._provider_name_from_module(module_name)
         if module_name.endswith('bookies_bootstrap') and not getattr(self.settings, 'bookies_bootstrap_enabled', True):
@@ -178,13 +188,7 @@ class PredictionRunner:
             now_utc = datetime.now(UTC)
             now_local = now_utc.astimezone(self.settings.tzinfo)
             recent_learning_state = self.state.learning_state_snapshot()
-            report_hour_local = min(23, max(0, int(getattr(self.settings, 'daily_report_hour_local', 22) or 22)))
-            report_only_mode = bool(getattr(self.settings, 'nightly_review_report_only_enabled', True)) and bool(
-                getattr(self.settings, 'daily_report_enabled', True)
-            ) and (
-                not bool(getattr(self.settings, 'prediction_publication_enabled', True))
-                or int(now_local.hour) == report_hour_local
-            )
+            report_only_mode = self._is_report_only_mode(now_utc)
 
             settlement_probe = await self.settlement.settle_pending_bets(self.state.pending_bets(), now_utc)
             settlement_attempts_recorded = self.state.record_settlement_attempts(settlement_probe)
@@ -194,45 +198,13 @@ class PredictionRunner:
             quality_report = self.quality.build_quality_report(self.state.prediction_ledger(self.settings), quality_clv_rows)
             quality_report['recent_learning_state'] = recent_learning_state
             quality_export_paths = self.quality.export_quality_report(self.settings.storage_export_dir, quality_report)
-            daily_report_due, daily_report_date, daily_report_skip_reason = self.state.daily_report_due(self.settings, now_utc)
-            daily_report = self.state.build_daily_report(self.settings, daily_report_date) if daily_report_due else None
+            daily_report_due = False
+            daily_report_date = ''
+            daily_report_skip_reason: str | None = None
+            daily_report = None
             daily_report_refresh_reason: str | None = None
-            if (
-                daily_report is None
-                and daily_report_skip_reason == 'already_sent'
-                and bool(getattr(self.settings, 'daily_report_resend_on_change', True))
-            ):
-                candidate_report = self.state.build_daily_report(self.settings, daily_report_date)
-                refresh_due, refresh_reason = self.state.daily_report_refresh_due(daily_report_date, candidate_report)
-                daily_report_refresh_reason = refresh_reason
-                if refresh_due:
-                    daily_report_due = True
-                    daily_report_skip_reason = 'refresh_after_settlement'
-                    daily_report = candidate_report
-                    daily_report['is_revision'] = True
-                    daily_report['refresh_reason'] = refresh_reason
-            if daily_report is not None:
-                daily_report['quality_analysis'] = self.quality.analyze_daily_report(daily_report)
-                daily_report['next_day_adjustments'] = self.quality.build_next_day_adjustments(daily_report)
             daily_report_messages_sent = 0
             daily_report_payloads: list[str] = []
-            if daily_report is not None:
-                daily_total_bets = int((daily_report.get('summary') or {}).get('total_bets') or 0)
-                daily_min_bets = max(0, int(getattr(self.settings, 'daily_report_min_bets', 1) or 1))
-                if daily_total_bets >= daily_min_bets:
-                    daily_report_messages_sent, daily_report_payloads = await self.telegram.publish_daily_report(daily_report)
-                    self.state.mark_daily_report_sent(
-                        daily_report_date,
-                        daily_report,
-                        telegram_sent=daily_report_messages_sent > 0,
-                    )
-                else:
-                    daily_report_skip_reason = 'not_enough_bets'
-                    self.state.mark_daily_report_sent(
-                        daily_report_date,
-                        daily_report,
-                        skipped_reason=daily_report_skip_reason,
-                    )
 
             bootstrap_matches, bootstrap_meta = await self._fetch_matches()
             deduped_matches = self._dedupe_matches(bootstrap_matches)
@@ -392,6 +364,44 @@ class PredictionRunner:
                 candidate for candidate in candidates
                 if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0
             ]
+            decision_now_utc = datetime.now(UTC)
+            decision_now_local = decision_now_utc.astimezone(self.settings.tzinfo)
+            report_only_mode = self._is_report_only_mode(decision_now_utc)
+            daily_report_due, daily_report_date, daily_report_skip_reason = self.state.daily_report_due(self.settings, decision_now_utc)
+            daily_report = self.state.build_daily_report(self.settings, daily_report_date) if daily_report_due else None
+            if (
+                daily_report is None
+                and daily_report_skip_reason == 'already_sent'
+                and bool(getattr(self.settings, 'daily_report_resend_on_change', True))
+            ):
+                candidate_report = self.state.build_daily_report(self.settings, daily_report_date)
+                refresh_due, refresh_reason = self.state.daily_report_refresh_due(daily_report_date, candidate_report)
+                daily_report_refresh_reason = refresh_reason
+                if refresh_due:
+                    daily_report_due = True
+                    daily_report_skip_reason = 'refresh_after_settlement'
+                    daily_report = candidate_report
+                    daily_report['is_revision'] = True
+                    daily_report['refresh_reason'] = refresh_reason
+            if daily_report is not None:
+                daily_report['quality_analysis'] = self.quality.analyze_daily_report(daily_report)
+                daily_report['next_day_adjustments'] = self.quality.build_next_day_adjustments(daily_report)
+                daily_total_bets = int((daily_report.get('summary') or {}).get('total_bets') or 0)
+                daily_min_bets = max(0, int(getattr(self.settings, 'daily_report_min_bets', 1) or 1))
+                if daily_total_bets >= daily_min_bets:
+                    daily_report_messages_sent, daily_report_payloads = await self.telegram.publish_daily_report(daily_report)
+                    self.state.mark_daily_report_sent(
+                        daily_report_date,
+                        daily_report,
+                        telegram_sent=daily_report_messages_sent > 0,
+                    )
+                else:
+                    daily_report_skip_reason = 'not_enough_bets'
+                    self.state.mark_daily_report_sent(
+                        daily_report_date,
+                        daily_report,
+                        skipped_reason=daily_report_skip_reason,
+                    )
             publishable_candidates = self._filter_publishable_candidates(candidates)
             prediction_publication_enabled = bool(getattr(self.settings, 'prediction_publication_enabled', True)) and not report_only_mode
             if not prediction_publication_enabled:
@@ -403,7 +413,7 @@ class PredictionRunner:
             telegram_picks_sent = len(publishable_candidates) if sent_messages > 0 else 0
             sent_messages += settlement_messages_sent + daily_report_messages_sent
             telegram_payloads = list(settlement_payloads) + list(daily_report_payloads) + list(telegram_payloads)
-            clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, now_utc) if self.market_monitor is not None else {'tracked': 0}
+            clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, decision_now_utc) if self.market_monitor is not None else {'tracked': 0}
             derived_market_candidates_before_quality = sum(
                 1
                 for item in candidates_before_quality
@@ -475,8 +485,10 @@ class PredictionRunner:
             )
 
             summary = {
-                'current_time_utc': now_utc.isoformat(),
-                'current_time_local': now_local.isoformat(),
+                'current_time_utc': decision_now_utc.isoformat(),
+                'current_time_local': decision_now_local.isoformat(),
+                'started_time_utc': now_utc.isoformat(),
+                'started_time_local': now_local.isoformat(),
                 'app_timezone': self.settings.app_timezone,
                 'schedule_mode': 'nightly_review' if report_only_mode else 'forecast',
                 'matches_seen': len(filtered_matches),
