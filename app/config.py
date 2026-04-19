@@ -85,7 +85,7 @@ class Settings(BaseSettings):
 
     min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
     min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EV_PCT"))
-    min_model_confidence: float = Field(default=0.55, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
+    min_model_confidence: float = Field(default=0.53, validation_alias=AliasChoices("MIN_MODEL_CONFIDENCE"))
     odds_min: float = Field(default=1.50, validation_alias=AliasChoices("TARGET_ODDS_HARD_MIN", "ODDS_MIN"))
     odds_max: float = Field(default=4.50, validation_alias=AliasChoices("TARGET_ODDS_HARD_MAX", "ODDS_MAX"))
 
@@ -119,9 +119,9 @@ class Settings(BaseSettings):
     simple_market_totals_min_ev_pct: float = Field(default=2.2, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_EV_PCT"))
     simple_market_totals_min_edge_pct: float = Field(default=2.8, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_EDGE_PCT"))
     simple_market_totals_min_confidence: float = Field(default=58.0, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_CONFIDENCE"))
-    simple_market_h2h_min_ev_pct: float = Field(default=3.6, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EV_PCT"))
-    simple_market_h2h_min_edge_pct: float = Field(default=4.4, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EDGE_PCT"))
-    simple_market_h2h_min_confidence: float = Field(default=62.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_CONFIDENCE"))
+    simple_market_h2h_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EV_PCT"))
+    simple_market_h2h_min_edge_pct: float = Field(default=2.4, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EDGE_PCT"))
+    simple_market_h2h_min_confidence: float = Field(default=56.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_CONFIDENCE"))
     simple_market_min_signal_boost_pct: float = Field(default=0.9, validation_alias=AliasChoices("SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT"))
 
     analysis_match_cap_per_run: int = Field(default=260, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
@@ -496,16 +496,16 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("RISKY_TOTALS_TEAM_TERMS"),
     )
 
-    h2h_min_edge_pct: float = Field(default=2.2, validation_alias=AliasChoices("H2H_MIN_EDGE_PCT"))
-    h2h_min_ev_pct: float = Field(default=1.6, validation_alias=AliasChoices("H2H_MIN_EV_PCT"))
-    h2h_min_model_confidence: float = Field(default=0.55, validation_alias=AliasChoices("H2H_MIN_MODEL_CONFIDENCE"))
+    h2h_min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("H2H_MIN_EDGE_PCT"))
+    h2h_min_ev_pct: float = Field(default=1.3, validation_alias=AliasChoices("H2H_MIN_EV_PCT"))
+    h2h_min_model_confidence: float = Field(default=0.54, validation_alias=AliasChoices("H2H_MIN_MODEL_CONFIDENCE"))
     h2h_min_books: int = Field(default=1, validation_alias=AliasChoices("H2H_MIN_BOOKS"))
     h2h_draw_min_edge_pct: float = Field(default=3.2, validation_alias=AliasChoices("H2H_DRAW_MIN_EDGE_PCT"))
     h2h_draw_min_ev_pct: float = Field(default=2.4, validation_alias=AliasChoices("H2H_DRAW_MIN_EV_PCT"))
     h2h_draw_min_confidence: float = Field(default=61.0, validation_alias=AliasChoices("H2H_DRAW_MIN_CONFIDENCE"))
     h2h_side_min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("H2H_SIDE_MIN_EDGE_PCT"))
     h2h_side_min_ev_pct: float = Field(default=1.4, validation_alias=AliasChoices("H2H_SIDE_MIN_EV_PCT"))
-    h2h_side_min_confidence: float = Field(default=56.0, validation_alias=AliasChoices("H2H_SIDE_MIN_CONFIDENCE"))
+    h2h_side_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("H2H_SIDE_MIN_CONFIDENCE"))
     h2h_single_source_min_edge_pct: float = Field(default=4.2, validation_alias=AliasChoices("H2H_SINGLE_SOURCE_MIN_EDGE_PCT"))
     h2h_single_source_min_ev_pct: float = Field(default=3.0, validation_alias=AliasChoices("H2H_SINGLE_SOURCE_MIN_EV_PCT"))
     h2h_single_source_min_confidence: float = Field(default=62.0, validation_alias=AliasChoices("H2H_SINGLE_SOURCE_MIN_CONFIDENCE"))
