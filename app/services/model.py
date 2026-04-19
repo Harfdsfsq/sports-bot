@@ -79,30 +79,36 @@ class CandidateFactory:
                     match_candidates.extend(self._build_simple_market_totals_candidates(match, families['totals'], rejections))
                 if not match_candidates and families.get('h2h'):
                     match_candidates.extend(self._build_simple_market_h2h_candidates(match, families['h2h'], rejections))
+                if not match_candidates and families.get('spreads'):
+                    match_candidates.extend(self._build_simple_market_spread_candidates(match, families['spreads'], rejections))
 
             match_candidates.sort(key=lambda item: self._candidate_rank_key(item), reverse=True)
             if match_candidates:
-                picked = match_candidates[0]
-                candidates.append(picked)
-                debug_rows.append(
-                    {
-                        'match_key': match_key,
-                        'selection': picked.selection,
-                        'family': picked.family,
-                        'count': len(match_candidates),
-                        'context_source': picked.source_summary.get('context_source'),
-                        'context_mode': picked.source_summary.get('context_mode'),
-                        'selected_bookmaker': picked.source_summary.get('selected_bookmaker'),
-                        'selected_source': picked.source_summary.get('selected_source'),
-                        'market_movement': picked.source_summary.get('market_movement'),
-                        'market_probability': round(float(picked.market_probability), 4),
-                        'model_probability': round(float(picked.model_probability), 4),
-                        'adjusted_probability': round(float(picked.adjusted_probability), 4),
-                        'confidence': round(float(picked.confidence), 2),
-                        'expected_home': picked.expected_home,
-                        'expected_away': picked.expected_away,
-                    }
-                )
+                keep_count = max(1, int(getattr(self.settings, 'max_candidates_per_match_pre_filter', 3) or 3))
+                kept_candidates = match_candidates[:keep_count]
+                candidates.extend(kept_candidates)
+                for picked in kept_candidates:
+                    debug_rows.append(
+                        {
+                            'match_key': match_key,
+                            'selection': picked.selection,
+                            'family': picked.family,
+                            'count': len(match_candidates),
+                            'context_source': picked.source_summary.get('context_source'),
+                            'context_mode': picked.source_summary.get('context_mode'),
+                            'selected_bookmaker': picked.source_summary.get('selected_bookmaker'),
+                            'selected_source': picked.source_summary.get('selected_source'),
+                            'market_movement': picked.source_summary.get('market_movement'),
+                            'market_probability': round(float(picked.market_probability), 4),
+                            'model_probability': round(float(picked.model_probability), 4),
+                            'adjusted_probability': round(float(picked.adjusted_probability), 4),
+                            'confidence': round(float(picked.confidence), 2),
+                            'expected_home': picked.expected_home,
+                            'expected_away': picked.expected_away,
+                            'publication_score': round(float(getattr(picked, 'publication_score', 0.0) or 0.0), 3),
+                            'model_mode': str(getattr(picked, 'model_mode', '') or ''),
+                        }
+                    )
             else:
                 rejections['no_candidate_for_match'] += 1
 
@@ -119,6 +125,8 @@ class CandidateFactory:
         xg = self._enriched_expected_goals(match, context)
         if xg is None:
             rejections['missing_context_totals'] += 1
+            if bool(getattr(self.settings, 'partial_context_market_fallback_enabled', True)):
+                return self._build_simple_market_totals_candidates(match, offers, rejections)
             return []
         expected_home, expected_away = xg
 
@@ -191,6 +199,8 @@ class CandidateFactory:
         probs = self._derive_h2h_probabilities(match, context)
         if probs is None:
             rejections['missing_context_h2h'] += 1
+            if bool(getattr(self.settings, 'partial_context_market_fallback_enabled', True)):
+                return self._build_simple_market_h2h_candidates(match, offers, rejections)
             return []
         xg = self._enriched_expected_goals(match, context)
 
@@ -355,6 +365,58 @@ class CandidateFactory:
                 result.append(candidate)
         return result
 
+    def _build_simple_market_spread_candidates(
+        self,
+        match: Match,
+        offers: list[Offer],
+        rejections: dict[str, int],
+    ) -> list[CandidateBet]:
+        buckets: dict[tuple[str, float | None, str], list[Offer]] = defaultdict(list)
+        for offer in offers:
+            buckets[(offer.selection, offer.point, str(offer.team_side or '').lower())].append(offer)
+        result: list[CandidateBet] = []
+        for (selection, point, team_side), bucket in buckets.items():
+            if point is None or team_side not in {'home', 'away'}:
+                continue
+            required_books = self._required_books_for_bucket('spreads', point, bucket, None)
+            if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
+                continue
+            market_prob = self._fair_market_probability_spreads(bucket, offers, selection, point, team_side)
+            market_signal = self._market_signal_for_bucket(match.match_key, 'spreads', bucket, point)
+            model_prob = self._simple_market_model_probability(
+                family='spreads',
+                market_prob=market_prob,
+                market_signal=market_signal,
+                books_count=len({self._norm_book(item.bookmaker) for item in bucket}),
+            )
+            if model_prob is None:
+                rejections['simple_market_signal_missing_spreads'] += 1
+                continue
+            candidate = self._candidate_from_bucket(
+                match=match,
+                family='spreads',
+                selection=selection,
+                point=point,
+                offers=bucket,
+                market_prob=market_prob,
+                model_prob=model_prob,
+                reasons=[
+                    'mode=market_fallback',
+                    'model=market_signal_consensus',
+                    'signals=market+consensus',
+                    f'line={float(point):g}',
+                    'context=none',
+                ],
+                expected_home=None,
+                expected_away=None,
+                model_mode='market_simple_spreads',
+                context=None,
+                market_signal=market_signal,
+            )
+            if candidate:
+                result.append(candidate)
+        return result
+
     def _simple_market_model_probability(
         self,
         *,
@@ -384,9 +446,11 @@ class CandidateFactory:
             min_signal = max(0.25, min_signal - 0.25)
         elif family == 'h2h':
             min_signal = max(0.35, min_signal - 0.15)
+        elif family == 'spreads':
+            min_signal = max(0.30, min_signal - 0.20)
         if signal_boost_pct < min_signal:
             return None
-        family_cap = 4.2 if family == 'totals' else 3.6
+        family_cap = 4.2 if family == 'totals' else 3.6 if family == 'h2h' else 3.4
         boost_prob = min(family_cap, signal_boost_pct) / 100.0
         return clamp(market_prob + boost_prob, 0.02, 0.98)
 
@@ -400,6 +464,8 @@ class CandidateFactory:
         xg = self._enriched_expected_goals(match, context)
         if xg is None:
             rejections['missing_context_spreads'] += 1
+            if bool(getattr(self.settings, 'partial_context_market_fallback_enabled', True)):
+                return self._build_simple_market_spread_candidates(match, offers, rejections)
             return []
         expected_home, expected_away = xg
         diff = expected_home - expected_away
@@ -2306,13 +2372,66 @@ class CandidateFactory:
 
         return max(2, base)
 
+    def _candidate_probability_threshold(self, item: CandidateBet) -> float:
+        family = str(getattr(item, 'family', '') or '')
+        if family == 'h2h':
+            selection_text = str(getattr(item, 'selection', '') or '').lower()
+            is_draw = 'ничья' in selection_text or selection_text == 'draw'
+            if is_draw:
+                return float(getattr(self.settings, 'h2h_draw_min_probability', 0.20) or 0.20)
+            return float(getattr(self.settings, 'h2h_side_min_probability', 0.24) or 0.24)
+        if family == 'doubleChance':
+            return float(getattr(self.settings, 'double_chance_min_probability', 0.46) or 0.46)
+        if family == 'dnb':
+            return float(getattr(self.settings, 'dnb_min_probability', 0.38) or 0.38)
+        if family == 'spreads':
+            return float(getattr(self.settings, 'spreads_min_probability', 0.49) or 0.49)
+        if family == 'totals':
+            return float(getattr(self.settings, 'totals_min_probability', 0.49) or 0.49)
+        if family == 'teamTotals':
+            return float(getattr(self.settings, 'team_totals_min_probability', 0.50) or 0.50)
+        if family == 'btts':
+            return float(getattr(self.settings, 'btts_min_probability', 0.50) or 0.50)
+        return float(self.settings.min_model_confidence_for_family(family))
+
+    def _passes_probability_gate(self, item: CandidateBet) -> bool:
+        threshold = self._candidate_probability_threshold(item)
+        probability = max(
+            float(getattr(item, 'adjusted_probability', 0.0) or 0.0),
+            float(getattr(item, 'model_probability', 0.0) or 0.0),
+        )
+        if probability >= threshold:
+            return True
+        gap = threshold - probability
+        max_gap = float(getattr(self.settings, 'probability_gate_relief_max_gap', 0.035) or 0.035)
+        min_conf = float(getattr(self.settings, 'probability_gate_relief_min_confidence', 58.0) or 58.0)
+        min_edge = float(getattr(self.settings, 'probability_gate_relief_min_edge_pct', 4.0) or 4.0)
+        min_ev = float(getattr(self.settings, 'probability_gate_relief_min_ev_pct', 2.0) or 2.0)
+        if (
+            gap <= max_gap
+            and float(getattr(item, 'confidence', 0.0) or 0.0) >= min_conf
+            and float(getattr(item, 'edge_pct', 0.0) or 0.0) >= min_edge
+            and float(getattr(item, 'ev_pct', 0.0) or 0.0) >= min_ev
+        ):
+            try:
+                item.reasons.append(f'probability_gate_relief={gap * 100.0:.2f}pp')
+                if isinstance(item.source_summary, dict):
+                    item.source_summary['probability_gate_relief'] = {
+                        'gap_pp': round(gap * 100.0, 3),
+                        'threshold': round(threshold, 4),
+                        'probability': round(probability, 4),
+                    }
+            except Exception:
+                pass
+            return True
+        return False
+
     def _filter_and_rank(self, candidates: list[CandidateBet], rejections: dict[str, int]) -> list[CandidateBet]:
         filtered: list[CandidateBet] = []
         for item in candidates:
-            min_conf = float(self.settings.min_model_confidence_for_family(item.family))
             min_ev = float(self.settings.min_ev_pct_for_family(item.family))
             min_edge = float(self.settings.min_edge_pct_for_family(item.family))
-            if item.model_probability < min_conf:
+            if not self._passes_probability_gate(item):
                 rejections['confidence_below_threshold'] += 1
                 continue
             min_publish_books = self._required_publish_books(item)
@@ -2363,14 +2482,24 @@ class CandidateFactory:
                     rejections['simple_market_totals_edge_guard'] += 1
                     continue
             if item.model_mode == 'market_simple_h2h':
-                if float(item.confidence) < float(getattr(self.settings, 'simple_market_h2h_min_confidence', 60.0) or 62.0):
+                if float(item.confidence) < float(getattr(self.settings, 'simple_market_h2h_min_confidence', 54.0) or 54.0):
                     rejections['simple_market_h2h_confidence_guard'] += 1
                     continue
-                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_h2h_min_ev_pct', 3.0) or 3.6):
+                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_h2h_min_ev_pct', 2.0) or 2.0):
                     rejections['simple_market_h2h_ev_guard'] += 1
                     continue
-                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_h2h_min_edge_pct', 3.8) or 4.4):
+                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_h2h_min_edge_pct', 2.4) or 2.4):
                     rejections['simple_market_h2h_edge_guard'] += 1
+                    continue
+            if item.model_mode == 'market_simple_spreads':
+                if float(item.confidence) < float(getattr(self.settings, 'simple_market_spreads_min_confidence', 53.0) or 53.0):
+                    rejections['simple_market_spreads_confidence_guard'] += 1
+                    continue
+                if float(item.ev_pct) < float(getattr(self.settings, 'simple_market_spreads_min_ev_pct', 1.6) or 1.6):
+                    rejections['simple_market_spreads_ev_guard'] += 1
+                    continue
+                if float(item.edge_pct) < float(getattr(self.settings, 'simple_market_spreads_min_edge_pct', 2.2) or 2.2):
+                    rejections['simple_market_spreads_edge_guard'] += 1
                     continue
             if item.family == 'totals':
                 selection_kind = self._candidate_selection_kind(item)

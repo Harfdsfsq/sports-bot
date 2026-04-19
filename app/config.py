@@ -117,13 +117,18 @@ class Settings(BaseSettings):
     )
 
     simple_market_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices("SIMPLE_MARKET_FALLBACK_ENABLED"))
+    partial_context_market_fallback_enabled: bool = Field(default=True, validation_alias=AliasChoices("PARTIAL_CONTEXT_MARKET_FALLBACK_ENABLED"))
     simple_market_totals_min_ev_pct: float = Field(default=2.2, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_EV_PCT"))
     simple_market_totals_min_edge_pct: float = Field(default=2.8, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_EDGE_PCT"))
-    simple_market_totals_min_confidence: float = Field(default=58.0, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_CONFIDENCE"))
+    simple_market_totals_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("SIMPLE_MARKET_TOTALS_MIN_CONFIDENCE"))
     simple_market_h2h_min_ev_pct: float = Field(default=2.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EV_PCT"))
     simple_market_h2h_min_edge_pct: float = Field(default=2.4, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_EDGE_PCT"))
-    simple_market_h2h_min_confidence: float = Field(default=56.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_CONFIDENCE"))
-    simple_market_min_signal_boost_pct: float = Field(default=0.9, validation_alias=AliasChoices("SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT"))
+    simple_market_h2h_min_confidence: float = Field(default=54.0, validation_alias=AliasChoices("SIMPLE_MARKET_H2H_MIN_CONFIDENCE"))
+    simple_market_spreads_min_ev_pct: float = Field(default=1.6, validation_alias=AliasChoices("SIMPLE_MARKET_SPREADS_MIN_EV_PCT"))
+    simple_market_spreads_min_edge_pct: float = Field(default=2.2, validation_alias=AliasChoices("SIMPLE_MARKET_SPREADS_MIN_EDGE_PCT"))
+    simple_market_spreads_min_confidence: float = Field(default=53.0, validation_alias=AliasChoices("SIMPLE_MARKET_SPREADS_MIN_CONFIDENCE"))
+    simple_market_min_signal_boost_pct: float = Field(default=0.65, validation_alias=AliasChoices("SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT"))
+    max_candidates_per_match_pre_filter: int = Field(default=3, validation_alias=AliasChoices("MAX_CANDIDATES_PER_MATCH_PRE_FILTER"))
 
     analysis_match_cap_per_run: int = Field(default=260, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
 
