@@ -1,50 +1,50 @@
 {
   "version": 3,
-  "updated_at": "2026-04-19T19:41:15.284834+00:00",
+  "updated_at": "2026-04-19T20:08:23.788013+00:00",
   "last_run": {
     "status": "ok",
-    "at": "2026-04-19T19:41:15.284824+00:00",
+    "at": "2026-04-19T20:08:23.788004+00:00",
     "summary": {
-      "current_time_utc": "2026-04-19T19:05:00+00:00",
-      "current_time_local": "2026-04-19T22:05:00+03:00",
-      "started_time_utc": "2026-04-19T19:05:00+00:00",
-      "started_time_local": "2026-04-19T22:05:00+03:00",
+      "current_time_utc": "2026-04-19T20:08:23.490284+00:00",
+      "current_time_local": "2026-04-19T23:08:23.490284+03:00",
+      "started_time_utc": "2026-04-19T19:55:06.504336+00:00",
+      "started_time_local": "2026-04-19T22:55:06.504336+03:00",
       "app_timezone": "Europe/Moscow",
       "schedule_mode": "nightly_review",
-      "matches_seen": 0,
-      "matches_before_publish_window": 0,
-      "matches_with_offers": 0,
-      "context_matches_requested": 0,
+      "matches_seen": 74,
+      "matches_before_publish_window": 95,
+      "matches_with_offers": 56,
+      "context_matches_requested": 74,
       "context_enrichment": {
         "requires_offers": false,
-        "limit": 420,
-        "eligible_matches": 0,
-        "selected_matches": 0,
+        "limit": 0,
+        "eligible_matches": 74,
+        "selected_matches": 74,
         "trimmed_matches": 0,
         "skipped_without_offers": 0,
-        "premium_shortlist_limit": 18,
-        "matches_with_value_hint": 0
+        "premium_shortlist_limit": 48,
+        "matches_with_value_hint": 38
       },
       "provider_context_targets": {
-        "sstats": 0,
-        "bzzoiro": 0,
-        "api_football": 0,
-        "espn": 0,
-        "thesportsdb": 0,
-        "football_data": 0,
+        "sstats": 74,
+        "bzzoiro": 74,
+        "api_football": 74,
+        "espn": 22,
+        "thesportsdb": 74,
+        "football_data": 74,
         "openligadb": 0,
-        "futrixmetrics": 0,
+        "futrixmetrics": 12,
         "openfootball": 0,
-        "newsapi": 0,
-        "gnews": 0
+        "newsapi": 10,
+        "gnews": 6
       },
-      "contexts_built": 0,
-      "candidates": 0,
+      "contexts_built": 49,
+      "candidates": 1,
       "candidates_publishable": 0,
       "candidates_zero_stake": 0,
-      "candidates_raw": 0,
-      "candidates_before_quality": 0,
-      "candidates_rejected_by_quality": 0,
+      "candidates_raw": 1,
+      "candidates_before_quality": 2,
+      "candidates_rejected_by_quality": 1,
       "candidates_before_quality_with_derived_market_signal": 0,
       "publishable_with_derived_market_signal": 0,
       "skipped_already_in_state": 0,
@@ -54,97 +54,561 @@
       "prediction_publication_enabled": false,
       "telegram_messages_sent": 0,
       "published_unique_state": 0,
-      "dry_run": true,
+      "dry_run": false,
       "state_path": ".data/state.json",
       "debug_path": ".data/debug-last-run.json",
       "storage_export_dir": ".data/exports",
       "filtering": {
-        "now_utc": "2026-04-19T19:05:00+00:00",
-        "now_local": "2026-04-19T22:05:00+03:00"
+        "total_before": 95,
+        "total_after": 74,
+        "skipped_started": 0,
+        "skipped_too_soon": 15,
+        "skipped_outside_window": 6,
+        "publish_window_hours": 12,
+        "min_kickoff_lead_minutes": 30,
+        "configured_min_kickoff_lead_minutes": 30,
+        "adaptive_min_kickoff_lead_enabled": true,
+        "adaptive_min_kickoff_lead_minutes": 30,
+        "adaptive_min_kickoff_lead_applied": false,
+        "emergency_min_kickoff_lead_enabled": true,
+        "emergency_min_kickoff_lead_minutes": 30,
+        "emergency_min_kickoff_activation_ratio": 0.85,
+        "emergency_min_kickoff_lead_applied": false,
+        "force_relaxed_min_kickoff_lead_enabled": true,
+        "force_relaxed_min_kickoff_lead_minutes": 10,
+        "force_relaxed_min_kickoff_lead_applied": false,
+        "manual_late_mode_enabled": true,
+        "manual_late_mode_applied": true,
+        "manual_late_min_kickoff_lead_minutes": 30,
+        "manual_late_adaptive_min_kickoff_lead_minutes": 30,
+        "future_matches_in_window": {
+          "count": 89
+        },
+        "too_soon_matches_in_window": {
+          "count": 15
+        },
+        "too_soon_share_of_future_in_window": 0.1685,
+        "lead_time_snapshot": {
+          "nearest_minutes": 4.9,
+          "farthest_minutes": 664.9,
+          "sample_minutes": [
+            4.9,
+            4.9,
+            4.9,
+            4.9,
+            4.9,
+            4.9,
+            4.9,
+            4.9
+          ]
+        },
+        "now_utc": "2026-04-19T19:55:06.504336+00:00",
+        "now_local": "2026-04-19T22:55:06.504336+03:00"
       },
-      "bootstrap_provider": "synthetic",
+      "bootstrap_provider": "odds_api_io",
       "source_stats": {
         "match_bootstrap": {
-          "provider": "synthetic",
-          "stats": {},
-          "attempts": {}
+          "provider": "odds_api_io",
+          "stats": {
+            "enabled": true,
+            "api_key_present": true,
+            "event_requests": 2,
+            "response_errors": 0,
+            "events_fetched": 100,
+            "matches_built": 95,
+            "low_tier_skipped": 5,
+            "simulated_skipped": 0,
+            "event_http_statuses": [
+              200,
+              200
+            ],
+            "payload_shapes": [
+              "list"
+            ],
+            "last_body_preview": "[{\"id\":68156512,\"home\":\"Portland Timbers II\",\"away\":\"North Texas SC\",\"homeId\":206007,\"awayId\":538323,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68156524,\"home\":\"Los Angeles FC 2\",\"away\":\"San Jose Earthquakes II\",\"homeId\":999243,\"awayId\":885975,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70319950,\"home\":\"Primavera AC MT\",\"away\":\"SE Gama DF\",\"homeId\":689755,\"awayId\":1978,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie D\",\"slug\":\"brazil-brasileiro-serie-d\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70320566,\"home\":\"Aguia de Maraba FC PA\",\"away\":\"SD Imperatriz MA\",\"homeId\":33998,\"awayId\":21852,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie D\",\"slug\":\"brazil-brasileiro-serie-d\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70879832,\"home\":\"Ecuador\",\"away\":\"Brazil\",\"homeId\":48835,\"awayId\":22586,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International Youth - U17 CONMEBOL Championship\",\"slug\":\"international-youth-u17-conmebol-championship\"},\"status\":\"pending\",\"scores\":",
+            "rate_limited": false
+          },
+          "attempts": {
+            "odds_api_io": {
+              "enabled": true,
+              "api_key_present": true,
+              "event_requests": 2,
+              "response_errors": 0,
+              "events_fetched": 100,
+              "matches_built": 95,
+              "low_tier_skipped": 5,
+              "simulated_skipped": 0,
+              "event_http_statuses": [
+                200,
+                200
+              ],
+              "payload_shapes": [
+                "list"
+              ],
+              "last_body_preview": "[{\"id\":68156512,\"home\":\"Portland Timbers II\",\"away\":\"North Texas SC\",\"homeId\":206007,\"awayId\":538323,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68156524,\"home\":\"Los Angeles FC 2\",\"away\":\"San Jose Earthquakes II\",\"homeId\":999243,\"awayId\":885975,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70319950,\"home\":\"Primavera AC MT\",\"away\":\"SE Gama DF\",\"homeId\":689755,\"awayId\":1978,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie D\",\"slug\":\"brazil-brasileiro-serie-d\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70320566,\"home\":\"Aguia de Maraba FC PA\",\"away\":\"SD Imperatriz MA\",\"homeId\":33998,\"awayId\":21852,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie D\",\"slug\":\"brazil-brasileiro-serie-d\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70879832,\"home\":\"Ecuador\",\"away\":\"Brazil\",\"homeId\":48835,\"awayId\":22586,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International Youth - U17 CONMEBOL Championship\",\"slug\":\"international-youth-u17-conmebol-championship\"},\"status\":\"pending\",\"scores\":",
+              "rate_limited": false
+            }
+          }
         },
         "bookies_bootstrap": {
           "enabled": false
         },
         "odds_api_io": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "event_requests": 0,
+          "odds_requests": 8,
+          "response_errors": 0,
+          "events_fetched": 100,
+          "events_matched": 74,
+          "matched_exact": 73,
+          "matched_loose": 0,
+          "matched_fuzzy": 1,
+          "unmatched_offer_events": 42,
+          "markets_parsed": 504,
+          "offers_parsed": 973,
+          "event_http_statuses": [],
+          "odds_http_statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ],
+          "payload_shapes": [
+            "list"
+          ],
+          "bookmakers_seen": 2,
+          "last_body_preview": "[{\"id\":67698088,\"home\":\"America de Cali\",\"away\":\"Millonarios FC\",\"date\":\"2026-04-20T01:30:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Colombia - Primera A, Apertura\",\"slug\":\"colombia-primera-a-apertura\"},\"urls\":{\"Bet365\":\"https://www.bet365.com/#/AC/B1/C1/D8/E192608282/F3/I1/\",\"Unibet\":\"https://www.unibet.com/betting/sports/event/1026257890\"},\"bookmakerIds\":{\"Bet365\":\"192608282\",\"Bet365_4\":\"192608282-bot365\",\"Unibet\":\"1026257890\"},\"bookmakers\":{\"Bet365\":[{\"name\":\"ML\",\"updatedAt\":\"2026-04-19T19:18:25.969Z\",\"odds\":[{\"home\":\"2.100\",\"draw\":\"3.200\",\"away\":\"3.600\"}]},{\"name\":\"Draw No Bet\",\"updatedAt\":\"2026-04-19T19:07:52.14Z\",\"odds\":[{\"home\":\"1.400\",\"away\":\"2.750\"}]},{\"name\":\"Double Chance\",\"updatedAt\":\"2026-04-19T19:26:38.8Z\",\"odds\":[{\"label\":\"America de Cali or Draw\",\"under\":\"1.222\"},{\"label\":\"Draw or Millonarios\",\"under\":\"1.800\"},{\"label\":\"America de Cali or Millonarios\",\"under\":\"1.333\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-04-19T19:22:57.149Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.800\",\"away\":\"2.000\"}]},{\"name\":\"Totals\",\"updatedAt\":\"2026-04-19T17:20:44.99Z\",\"odds\":[{\"hdp\":2.25,\"over\":\"1.975\",\"under\":\"1.825\"}]},{\"name\":\"Goals Over/Under\",\"updatedAt\":\"2026-04-15T03:27:42.241Z\",\"odds\":[{\"hdp\":2.5,\"over\":\"2.250\",\"under\":\"1.615\"}]},{\"name\":\"Both Teams To Score\",\"updatedAt\":\"2026-04-13T19:13:25.312Z\",\"odds\":[{\"yes\":\"1.909\",\"no\":\"1.800\"}]},{\"name\":\"Spread HT\",\"updatedAt\":\"2026-04-19T19:40:47.575Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"2.250\",\"away\":\"1.625\"}]},{\"name\":\"Totals HT\",\"updatedAt\":\"2026-04-15T06:52:55.866Z\",\"odds\":[{\"hdp\":1,\"over\":\"2.100\",\"under\":\"1.700\"}]},{\"name\":\"European Handicap\",\"updatedAt\":\"2026-04-19T19:54:58.749Z\",\"odds\":[{\"hdp\":1,\"draw\":\"3.750\",\"away\":\"1.700\"},{\"hdp\":-3,\"home\":\"23.000\"},{\"hdp\":-2,\"home\":\"9.500\",\"draw\":\"12.000\",\"away\":\"23.000\"},{\"hdp\":3,\"draw\":\"13.000\",\"away\":\"1.050\"},{\"hdp\":-1,\"draw\":\"5.500\",\"away\":\"8.500\"}]},{\"name\":\"Corners Spread\",\"updatedAt\":\"2026-04-14T19:13:41.969Z\",\"odds\":[{\"hdp\":-1,\"home\":\"1.800\",\"away\"",
+          "simulated_skipped": 0,
+          "requested_bookmakers": "Bet365,Unibet",
+          "bootstrap_events_reused": 100,
+          "rate_limited": false
         },
         "odds_api_io_bootstrap": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "event_requests": 2,
+          "response_errors": 0,
+          "events_fetched": 100,
+          "matches_built": 95,
+          "low_tier_skipped": 5,
+          "simulated_skipped": 0,
+          "event_http_statuses": [
+            200,
+            200
+          ],
+          "payload_shapes": [
+            "list"
+          ],
+          "last_body_preview": "[{\"id\":68156512,\"home\":\"Portland Timbers II\",\"away\":\"North Texas SC\",\"homeId\":206007,\"awayId\":538323,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68156524,\"home\":\"Los Angeles FC 2\",\"away\":\"San Jose Earthquakes II\",\"homeId\":999243,\"awayId\":885975,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70319950,\"home\":\"Primavera AC MT\",\"away\":\"SE Gama DF\",\"homeId\":689755,\"awayId\":1978,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie D\",\"slug\":\"brazil-brasileiro-serie-d\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70320566,\"home\":\"Aguia de Maraba FC PA\",\"away\":\"SD Imperatriz MA\",\"homeId\":33998,\"awayId\":21852,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie D\",\"slug\":\"brazil-brasileiro-serie-d\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70879832,\"home\":\"Ecuador\",\"away\":\"Brazil\",\"homeId\":48835,\"awayId\":22586,\"date\":\"2026-04-19T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International Youth - U17 CONMEBOL Championship\",\"slug\":\"international-youth-u17-conmebol-championship\"},\"status\":\"pending\",\"scores\":",
+          "rate_limited": false
         },
         "bookies_api": {
-          "enabled": false
+          "enabled": false,
+          "candidate_matches": 0,
+          "event_requests": 0,
+          "odds_requests": 0,
+          "events_fetched": 0,
+          "events_matched": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "unmatched_offer_events": 0,
+          "markets_parsed": 0,
+          "offers_parsed": 0,
+          "response_errors": 0,
+          "empty_offer_payloads": 0,
+          "event_http_statuses": [],
+          "odds_http_statuses": [],
+          "payload_shapes": [],
+          "bookmakers_seen": 0,
+          "last_body_preview": null,
+          "simulated_skipped": 0,
+          "task_used": ""
         },
         "oddspapi": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "cache_hit": false,
+          "requests": 0,
+          "rate_limit_retries": 0,
+          "response_errors": 0,
+          "fixtures_fetched": 0,
+          "events_matched": 0,
+          "offers_parsed": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "tournament_ids_selected": 0,
+          "tournament_batches": 0,
+          "http_statuses": [],
+          "last_body_preview": "cooldown active until 2026-04-19T23:04:45.180674+00:00",
+          "families_supported": [
+            "h2h"
+          ],
+          "bookmakers_requested": [],
+          "rate_limited": true,
+          "aborted_on_rate_limit": true,
+          "cooldown_until": "2026-04-19T23:04:45.180674+00:00"
         },
         "allsportsapi": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "cache_hit": false,
+          "requests": 1,
+          "response_errors": 0,
+          "fixtures_fetched": 1,
+          "events_matched": 0,
+          "offers_parsed": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "http_statuses": [
+            200
+          ],
+          "last_body_preview": "{\"success\":1,\"result\":[{\"event_key\":1702462,\"event_date\":\"2026-04-19\",\"event_time\":\"15:00\",\"event_home_team\":\"Asante Kotoko\",\"home_team_key\":4284,\"event_away_team\":\"Hohoe United\",\"away_team_key\":34135,\"event_halftime_result\":\" - \",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"Not Started\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 30\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Baba Yara Stadium\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4284_asante-kotoko.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/34135_hohoe-united.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[],\"substitutes\":[],\"cards\":[],\"vars\":{\"home_team\":[],\"away_team\":[]},\"lineups\":{\"home_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":null,\"player_key\":null,\"info_time\":\"\"}],\"substitutes\":[],\"coaches\":[{\"coache\":\"S. Zerbo\",\"coache_country\":null}],\"missing_players\":[]},\"away_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":null,\"player_key\":null,\"info_time\":\"\"}],\"substitutes\":[],\"coaches\":[],\"missing_players\":[]}},\"statistics\":[]}]}"
         },
         "futrixmetrics": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 0,
+          "response_errors": 0,
+          "team_cache_hits": 24,
+          "contexts_built": 0,
+          "http_statuses": [],
+          "last_body_preview": null
         },
         "sstats": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 17,
+          "response_errors": 0,
+          "retry_attempts": 0,
+          "days_requested": 37,
+          "chunk_windows_requested": 6,
+          "rows_fetched": 13704,
+          "contexts_built": 49,
+          "matched_exact": 5,
+          "matched_loose": 0,
+          "matched_fuzzy": 9,
+          "unmatched_rows": 13687,
+          "team_form_contexts_built": 36,
+          "bzzoiro_enabled": true,
+          "bzzoiro_requests": 2,
+          "bzzoiro_response_errors": 0,
+          "bzzoiro_events_fetched": 79,
+          "bzzoiro_contexts_built": 9,
+          "bzzoiro_matched_exact": 0,
+          "bzzoiro_matched_loose": 0,
+          "bzzoiro_matched_fuzzy": 9,
+          "bzzoiro_unmatched_rows": 70,
+          "http_statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ],
+          "payload_shapes": [
+            "count,data,offset,status,traceId"
+          ],
+          "last_body_preview": "{\"status\":\"OK\",\"count\":237,\"data\":[{\"id\":1536767,\"flashId\":null,\"date\":\"2026-04-19T15:00:00+00:00\",\"dateUtc\":1776610800,\"status\":8,\"periods\":[\"2026-04-19T15:00:00+00:00\",\"2026-04-19T16:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":5,\"homeResult\":2,\"awayResult\":1,\"homeHTResult\":0,\"awayHTResult\":1,\"homeFTResult\":2,\"awayFTResult\":1,\"homeTeam\":{\"id\":16858,\"name\":\"Khimik Dzerzhinsk\",\"flashId\":\"khimik/MwqG7c0C\",\"country\":{\"code\":\"RU\",\"name\":\"Russia\"}},\"awayTeam\":{\"id\":14140,\"name\":\"Krylya Sovetov II\",\"flashId\":null,\"country\":{\"code\":\"RU\",\"name\":\"Russia\"}},\"season\":{\"uid\":\"6b7dab5a-277e-11f1-9833-3cecef730a49\",\"year\":2026,\"league\":{\"id\":653,\"name\":\"Second League - Group 4\",\"country\":{\"code\":\"RU\",\"name\":\"Russia\"},\"flashScoreId\":\"russia/fnl-2-group-4\"}},\"roundName\":\"Division B - Group 4 - 3\"},{\"id\":1537123,\"flashId\":\"nF8kOx54\",\"date\":\"2026-04-19T15:00:00+00:00\",\"dateUtc\":1776610800,\"status\":8,\"periods\":[\"2026-04-19T15:00:00+00:00\",\"2026-04-19T16:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"homeResult\":3,\"awayResult\":0,\"homeHTResult\":1,\"awayHTResult\":0,\"homeFTResult\":3,\"awayFTResult\":0,\"homeTeam\":{\"id\":575,\"name\":\"AEK Athens FC\",\"flashId\":\"aek/ANpZncAM\",\"country\":{\"code\":\"GR\",\"name\":\"Greece\"}},\"awayTeam\":{\"id\":619,\"name\":\"PAOK\",\"flashId\":\"paok/Kry6HxA9\",\"country\":{\"code\":\"GR\",\"name\":\"Greece\"}},\"season\":{\"uid\":\"639e8f7e-5fe7-11f0-982a-3cecef730a49\",\"year\":2025,\"league\":{\"id\":197,\"name\":\"Super League 1\",\"country\":{\"code\":\"GR\",\"name\":\"Greece\"},\"flashScoreId\":\"greece/super-league\"}},\"roundName\":\"Championship Group - 2\",\"odds\":[{\"marketId\":1,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":2.05,\"openingValue\":null},{\"name\":\"Away\",\"value\":4,\"openingValue\":null},{\"name\":\"Draw\",\"value\":3.1,\"openingValue\":null}]},{\"marketId\":2,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.5,\"openingValue\":null},{\"name\":\"Away\",\"value\":2.5,\"openingValue\":null}]},{\"marketId\":12,\"marketName\":null,\"odds\":[{\"name\":\"Home/Draw\",\"value\":1.28,\"openingValue\":null},{\"name\":\"Home/Aw",
+          "last_error": null,
+          "last_url": "https://api.sstats.net/Games/list"
         },
         "bzzoiro": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 10,
+          "response_errors": 0,
+          "retry_attempts": 0,
+          "events_fetched": 400,
+          "predictions_fetched": 79,
+          "contexts_built": 9,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 9,
+          "event_matches": 0,
+          "prediction_links": 0,
+          "fallback_prediction_matches": 9,
+          "prediction_param_fallbacks": 0,
+          "event_context_fallbacks": 0,
+          "unmatched_predictions": 65,
+          "event_rejected_low_score": 1,
+          "event_rejected_league_mismatch": 5,
+          "event_rejected_no_quality": 0,
+          "prediction_rejected_low_score": 1,
+          "prediction_rejected_league_mismatch": 12,
+          "prediction_rejected_no_quality": 0,
+          "http_statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ],
+          "payload_shapes": [],
+          "last_body_preview": "{\"count\":79,\"next\":null,\"previous\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-04-19&date_to=2026-04-20&tz=UTC&upcoming=true\",\"results\":[{\"id\":2858,\"event\":{\"id\":653,\"league\":{\"id\":2,\"name\":\"Liga Portugal Betclic\",\"country\":\"Portugal\",\"is_women\":false,\"current_season\":{\"id\":305,\"name\":\"Liga Portugal 25/26\",\"year\":2025,\"start_date\":\"2025-07-01\",\"end_date\":\"2026-06-30\"}},\"season\":{\"id\":305,\"name\":\"Liga Portugal 25/26\",\"year\":2025},\"home_team\":\"Sporting CP\",\"away_team\":\"Benfica\",\"home_team_obj\":{\"id\":22,\"name\":\"Sporting CP\",\"short_name\":\"Sporting\",\"country\":\"Portugal\",\"coach\":{\"name\":\"Rui Borges\",\"shortName\":\"R. Borges\"}},\"away_team_obj\":{\"id\":37,\"name\":\"Benfica\",\"short_name\":\"Benfica\",\"country\":\"Portugal\",\"coach\":{\"name\":\"José Mourinho\",\"shortName\":\"J. Mourinho\"}},\"event_date\":\"2026-04-19T17:00:00Z\",\"round_number\":30,\"status\":\"finished\",\"home_score\":1,\"away_score\":2,\"home_score_ht\":0,\"away_score_ht\":1,\"current_minute\":90,\"period\":\"FT\",\"odds_home\":2.1,\"odds_draw\":3.5,\"odds_away\":3.2,\"odds_over_15\":1.22,\"odds_over_25\":1.73,\"odds_over_35\":2.75,\"odds_under_15\":4.0,\"odds_under_25\":2.08,\"odds_under_35\":1.4,\"odds_btts_yes\":1.62,\"odds_btts_no\":2.2,\"odds_dc_12\":null,\"actual_home_xg\":null,\"actual_away_xg\":null,\"home_xg_live\":1.65,\"away_xg_live\":2.08,\"penalty_shootout\":null,\"referee\":{\"name\":\"Joao Pedro Pinheiro\",\"country\":\"Portugal\",\"redCards\":46,\"yellowCards\":1771},\"home_coach\":{\"id\":2,\"name\":\"Rui Borges\",\"short_name\":\"R. Borges\",\"country\":\"Portugal\",\"profile\":\"attacking",
+          "last_error": null,
+          "last_url": "https://sports.bzzoiro.com/api/predictions/"
         },
         "api_football": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 1,
+          "response_errors": 0,
+          "fixtures_fetched": 0,
+          "contexts_built": 0,
+          "prediction_requests_limited_to": 32,
+          "rate_limited": false,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "http_statuses": [
+            200
+          ],
+          "last_body_preview": "{\"get\":\"fixtures\",\"parameters\":{\"date\":\"2026-04-19\",\"timezone\":\"UTC\"},\"errors\":{\"access\":\"Your account is suspended, check on https:\\/\\/dashboard.api-football.com.\"},\"results\":0,\"paging\":{\"current\":1,\"total\":1},\"response\":[]}"
         },
         "espn": {
-          "enabled": false
+          "enabled": true,
+          "scoreboard_requests": 60,
+          "probability_requests": 0,
+          "summary_requests": 0,
+          "response_errors": 0,
+          "events_fetched": 82,
+          "events_matched": 0,
+          "contexts_built": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "league_slugs_used": [
+            "eng.1",
+            "usa.1",
+            "ita.2",
+            "esp.1",
+            "ita.1",
+            "eng.2",
+            "esp.2",
+            "ger.1",
+            "ger.2",
+            "fra.1",
+            "ned.1",
+            "bel.1"
+          ],
+          "injury_counts_seen": 0,
+          "soft_failures": 0,
+          "partial_contexts_built": 0,
+          "last_body_preview": "{\"leagues\":[{\"id\":\"3901\",\"uid\":\"s:600~l:3901\",\"name\":\"Belgian Pro League\",\"abbreviation\":\"Belgian Pro League\",\"midsizeName\":\"BEL.1\",\"slug\":\"bel.1\",\"season\":{\"year\":2025,\"startDate\":\"2025-07-01T04:00Z\",\"endDate\":\"2026-07-01T03:59Z\",\"displayName\":\"2025-26 Belgian Pro League\",\"type\":{\"id\":\"2\",\"type\":13498,\"name\":\"Playoff Round\",\"abbreviation\":\"Playoff Round\"}},\"logos\":[{\"href\":\"https://a.espncdn.com/i/leaguelogos/soccer/500/6.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"default\"],\"lastUpdated\":\"2019-05-08T16:07Z\"},{\"href\":\"https://a.espncdn.com/i/leaguelogos/soccer/500-dark/6.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"dark\"],\"lastUpdated\":\"2019-05-08T16:07Z\"}],\"calendarType\":\"day\",\"calendarIsWhitelist\":true,\"calendarStartDate\":\"2025-07-01T04:00Z\",\"calendarEndDate\":\"2026-07-01T03:59Z\",\"calendar\":[\"2025-07-25T07:00Z\",\"2025-07-26T07:00Z\",\"2025-07-27T07:00Z\",\"2025-08-01T07:00Z\",\"2025-08-02T07:00Z\",\"2025-08-03T07:00Z\",\"2025-08-08T07:00Z\",\"2025-08-09T07:00Z\",\"2025-08-10T07:00Z\",\"2025-08-15T07:00Z\",\"2025-08-16T07:00Z\",\"2025-08-17T07:00Z\",\"2025-08-23T07:00Z\",\"2025-08-24T07:00Z\",\"2025-08-29T07:00Z\",\"2025-08-30T07:00Z\",\"2025-08-31T07:00Z\",\"2025-09-12T07:00Z\",\"2025-09-13T07:0",
+          "http_statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200
+          ]
         },
         "thesportsdb": {
-          "enabled": false
+          "enabled": true,
+          "requests": 1,
+          "response_errors": 1,
+          "leagues_resolved": 0,
+          "tables_fetched": 0,
+          "contexts_built": 0,
+          "missing_table_rows": 0,
+          "partial_contexts_built": 0,
+          "last_body_preview": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\">\r\n<HTML><HEAD><TITLE>Service Unavailable</TITLE>\r\n<META HTTP-EQUIV=\"Content-Type\" Content=\"text/html; charset=us-ascii\"></HEAD>\r\n<BODY><h2>Service Unavailable</h2>\r\n<hr><p>HTTP Error 503. The service is unavailable.</p>\r\n</BODY></HTML>\r\n",
+          "http_statuses": [
+            503
+          ],
+          "league_limit_applied": 24
         },
         "football_data": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "target_matches": 74,
+          "requests": 3,
+          "response_errors": 0,
+          "matches_fetched": 19,
+          "history_rows_fetched": 380,
+          "events_matched": 3,
+          "contexts_built": 3,
+          "best_near_miss_score": 0.0,
+          "near_miss_count": 0,
+          "standings_requests": 1,
+          "standings_loaded": 1,
+          "history_requests": 1,
+          "history_contexts_built": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 3,
+          "unmatched_rows": 16,
+          "http_statuses": [
+            200,
+            200,
+            200
+          ],
+          "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":380,\"first\":\"2026-01-28\",\"last\":\"2026-12-02\",\"played\":111},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554740,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-18T20:20:47Z\",\"homeTeam\":{\"id\":1766,\"name\":\"CA Mineiro\",\"shortName\":\"Mineiro\",\"tla\":\"CAM\",\"crest\":\"https://crests.football-data.org/1766.png\"},\"awayTeam\":{\"id\":1769,\"name\":\"SE Palmeiras\",\"shortName\":\"Palmeiras\",\"tla\":\"PAL\",\"crest\":\"https://crests.football-data.org/1769.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":2},\"halfTime\":{\"home\":1,\"away\":1}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206800,\"name\":\"Bruno de Araújo\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554744,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-18T20:20:47"
         },
         "openligadb": {
-          "enabled": false
+          "enabled": true,
+          "requests": 0,
+          "response_errors": 0,
+          "datasets_loaded": 0,
+          "tables_loaded": 0,
+          "contexts_built": 0,
+          "history_contexts_built": 0,
+          "standings_contexts_built": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "http_statuses": [],
+          "last_body_preview": null
         },
         "openfootball": {
-          "enabled": false
+          "enabled": true,
+          "requests": 0,
+          "response_errors": 0,
+          "datasets_loaded": 0,
+          "contexts_built": 0,
+          "matched_exact": 0,
+          "matched_loose": 0,
+          "matched_fuzzy": 0,
+          "http_statuses": [],
+          "last_body_preview": null
         },
         "newsapi": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 6,
+          "response_errors": 6,
+          "contexts_built": 0,
+          "articles_seen": 0,
+          "http_statuses": [
+            429,
+            429,
+            429,
+            429,
+            429,
+            429
+          ],
+          "last_body_preview": "{\"status\":\"error\",\"code\":\"rateLimited\",\"message\":\"You have made too many requests recently. Developer accounts are limited to 100 requests over a 24 hour period (50 requests available every 12 hours). Please upgrade to a paid plan if you need more requests.\"}"
         },
         "gnews": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 4,
+          "response_errors": 0,
+          "contexts_built": 0,
+          "articles_seen": 0,
+          "http_statuses": [
+            200,
+            200,
+            200,
+            200
+          ],
+          "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":0,\"articles\":[]}"
         },
         "market_monitor": {
           "enabled": true,
           "snapshots_written": 1,
-          "matches_snapshotted": 0,
-          "markets_snapshotted": 0,
-          "signals_built": 0,
-          "clv_pending": 2,
-          "clv_resolved": 0,
-          "avg_open_clv_pct": null,
+          "matches_snapshotted": 56,
+          "markets_snapshotted": 776,
+          "signals_built": 776,
+          "clv_pending": 1,
+          "clv_resolved": 1,
+          "avg_open_clv_pct": 0.0,
           "avg_resolved_clv_pct": null
         }
       },
       "mapping": {
-        "matched_exact": 0,
+        "matched_exact": 73,
         "matched_loose": 0,
-        "matched_fuzzy": 0,
-        "unmatched_offer_events": 0,
-        "sstats_exact": 0,
+        "matched_fuzzy": 1,
+        "unmatched_offer_events": 42,
+        "sstats_exact": 5,
         "sstats_loose": 0,
-        "sstats_fuzzy": 0,
-        "sstats_unmatched_rows": 0,
+        "sstats_fuzzy": 9,
+        "sstats_unmatched_rows": 13687,
         "bzzoiro_exact": 0,
         "bzzoiro_loose": 0,
-        "bzzoiro_fuzzy": 0,
-        "bzzoiro_contexts": 0,
+        "bzzoiro_fuzzy": 9,
+        "bzzoiro_contexts": 9,
         "api_football_exact": 0,
         "api_football_loose": 0,
         "api_football_fuzzy": 0,
@@ -155,17 +619,61 @@
         "openligadb_contexts": 0
       },
       "rejections": {
-        "fallback_publish_no_candidate": 1
+        "missing_context_totals": 16,
+        "missing_context_spreads": 16,
+        "missing_context_h2h": 14,
+        "simple_market_h2h_high_odds_skip": 8,
+        "unsupported_total_line": 1,
+        "publish_books_guard": 66,
+        "confidence_below_threshold": 33,
+        "ev_below_threshold": 44,
+        "single_book_total_guard": 1,
+        "non_core_edge_guard": 7,
+        "edge_below_threshold": 4,
+        "totals_over25_confidence_guard": 1,
+        "quality_quality_high_odds_edge_guard": 1
       },
       "candidate_modes": {},
       "provider_diagnostics": {
         "providers": {
           "odds_api_io": {
             "type": "offers",
-            "matches_with_data": 0,
-            "items_total": 0,
+            "matches_with_data": 56,
+            "items_total": 973,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "event_requests": 0,
+              "odds_requests": 8,
+              "response_errors": 0,
+              "events_fetched": 100,
+              "events_matched": 74,
+              "matched_exact": 73,
+              "matched_loose": 0,
+              "matched_fuzzy": 1,
+              "unmatched_offer_events": 42,
+              "markets_parsed": 504,
+              "offers_parsed": 973,
+              "event_http_statuses": [],
+              "odds_http_statuses": [
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200
+              ],
+              "payload_shapes": [
+                "list"
+              ],
+              "bookmakers_seen": 2,
+              "last_body_preview": "[{\"id\":67698088,\"home\":\"America de Cali\",\"away\":\"Millonarios FC\",\"date\":\"2026-04-20T01:30:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Colombia - Primera A, Apertura\",\"slug\":\"colombia-primera-a-apertura\"},\"urls\":{\"Bet365\":\"https://www.bet365.com/#/AC/B1/C1/D8/E192608282/F3/I1/\",\"Unibet\":\"https://www.unibet.com/betting/sports/event/1026257890\"},\"bookmakerIds\":{\"Bet365\":\"192608282\",\"Bet365_4\":\"192608282-bot365\",\"Unibet\":\"1026257890\"},\"bookmakers\":{\"Bet365\":[{\"name\":\"ML\",\"updatedAt\":\"2026-04-19T19:18:25.969Z\",\"odds\":[{\"home\":\"2.100\",\"draw\":\"3.200\",\"away\":\"3.600\"}]},{\"name\":\"Draw No Bet\",\"updatedAt\":\"2026-04-19T19:07:52.14Z\",\"odds\":[{\"home\":\"1.400\",\"away\":\"2.750\"}]},{\"name\":\"Double Chance\",\"updatedAt\":\"2026-04-19T19:26:38.8Z\",\"odds\":[{\"label\":\"America de Cali or Draw\",\"under\":\"1.222\"},{\"label\":\"Draw or Millonarios\",\"under\":\"1.800\"},{\"label\":\"America de Cali or Millonarios\",\"under\":\"1.333\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-04-19T19:22:57.149Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.800\",\"away\":\"2.000\"}]},{\"name\":\"Totals\",\"updatedAt\":\"2026-04-19T17:20:44.99Z\",\"odds\":[{\"hdp\":2.25,\"over\":\"1.975\",\"under\":\"1.825\"}]},{\"name\":\"Goals Over/Under\",\"updatedAt\":\"2026-04-15T03:27:42.241Z\",\"odds\":[{\"hdp\":2.5,\"over\":\"2.250\",\"under\":\"1.615\"}]},{\"name\":\"Both Teams To Score\",\"updatedAt\":\"2026-04-13T19:13:25.312Z\",\"odds\":[{\"yes\":\"1.909\",\"no\":\"1.800\"}]},{\"name\":\"Spread HT\",\"updatedAt\":\"2026-04-19T19:40:47.575Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"2.250\",\"away\":\"1.625\"}]},{\"name\":\"Totals HT\",\"updatedAt\":\"2026-04-15T06:52:55.866Z\",\"odds\":[{\"hdp\":1,\"over\":\"2.100\",\"under\":\"1.700\"}]},{\"name\":\"European Handicap\",\"updatedAt\":\"2026-04-19T19:54:58.749Z\",\"odds\":[{\"hdp\":1,\"draw\":\"3.750\",\"away\":\"1.700\"},{\"hdp\":-3,\"home\":\"23.000\"},{\"hdp\":-2,\"home\":\"9.500\",\"draw\":\"12.000\",\"away\":\"23.000\"},{\"hdp\":3,\"draw\":\"13.000\",\"away\":\"1.050\"},{\"hdp\":-1,\"draw\":\"5.500\",\"away\":\"8.500\"}]},{\"name\":\"Corners Spread\",\"updatedAt\":\"2026-04-14T19:13:41.969Z\",\"odds\":[{\"hdp\":-1,\"home\":\"1.800\",\"away\"",
+              "simulated_skipped": 0,
+              "requested_bookmakers": "Bet365,Unibet",
+              "bootstrap_events_reused": 100,
+              "rate_limited": false
             }
           },
           "bookies_api": {
@@ -173,7 +681,27 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": false,
+              "candidate_matches": 0,
+              "event_requests": 0,
+              "odds_requests": 0,
+              "events_fetched": 0,
+              "events_matched": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "unmatched_offer_events": 0,
+              "markets_parsed": 0,
+              "offers_parsed": 0,
+              "response_errors": 0,
+              "empty_offer_payloads": 0,
+              "event_http_statuses": [],
+              "odds_http_statuses": [],
+              "payload_shapes": [],
+              "bookmakers_seen": 0,
+              "last_body_preview": null,
+              "simulated_skipped": 0,
+              "task_used": ""
             }
           },
           "oddspapi": {
@@ -181,7 +709,29 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "cache_hit": false,
+              "requests": 0,
+              "rate_limit_retries": 0,
+              "response_errors": 0,
+              "fixtures_fetched": 0,
+              "events_matched": 0,
+              "offers_parsed": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "tournament_ids_selected": 0,
+              "tournament_batches": 0,
+              "http_statuses": [],
+              "last_body_preview": "cooldown active until 2026-04-19T23:04:45.180674+00:00",
+              "families_supported": [
+                "h2h"
+              ],
+              "bookmakers_requested": [],
+              "rate_limited": true,
+              "aborted_on_rate_limit": true,
+              "cooldown_until": "2026-04-19T23:04:45.180674+00:00"
             }
           },
           "allsportsapi": {
@@ -189,7 +739,21 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "cache_hit": false,
+              "requests": 1,
+              "response_errors": 0,
+              "fixtures_fetched": 1,
+              "events_matched": 0,
+              "offers_parsed": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "http_statuses": [
+                200
+              ],
+              "last_body_preview": "{\"success\":1,\"result\":[{\"event_key\":1702462,\"event_date\":\"2026-04-19\",\"event_time\":\"15:00\",\"event_home_team\":\"Asante Kotoko\",\"home_team_key\":4284,\"event_away_team\":\"Hohoe United\",\"away_team_key\":34135,\"event_halftime_result\":\" - \",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"Not Started\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 30\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Baba Yara Stadium\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4284_asante-kotoko.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/34135_hohoe-united.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[],\"substitutes\":[],\"cards\":[],\"vars\":{\"home_team\":[],\"away_team\":[]},\"lineups\":{\"home_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":null,\"player_key\":null,\"info_time\":\"\"}],\"substitutes\":[],\"coaches\":[{\"coache\":\"S. Zerbo\",\"coache_country\":null}],\"missing_players\":[]},\"away_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":null,\"player_key\":null,\"info_time\":\"\"}],\"substitutes\":[],\"coaches\":[],\"missing_players\":[]}},\"statistics\":[]}]}"
             }
           },
           "futrixmetrics": {
@@ -197,23 +761,115 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 0,
+              "response_errors": 0,
+              "team_cache_hits": 24,
+              "contexts_built": 0,
+              "http_statuses": [],
+              "last_body_preview": null
             }
           },
           "sstats": {
             "type": "context",
-            "matches_with_data": 0,
-            "items_total": 0,
+            "matches_with_data": 49,
+            "items_total": 49,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 17,
+              "response_errors": 0,
+              "retry_attempts": 0,
+              "days_requested": 37,
+              "chunk_windows_requested": 6,
+              "rows_fetched": 13704,
+              "contexts_built": 49,
+              "matched_exact": 5,
+              "matched_loose": 0,
+              "matched_fuzzy": 9,
+              "unmatched_rows": 13687,
+              "team_form_contexts_built": 36,
+              "bzzoiro_enabled": true,
+              "bzzoiro_requests": 2,
+              "bzzoiro_response_errors": 0,
+              "bzzoiro_events_fetched": 79,
+              "bzzoiro_contexts_built": 9,
+              "bzzoiro_matched_exact": 0,
+              "bzzoiro_matched_loose": 0,
+              "bzzoiro_matched_fuzzy": 9,
+              "bzzoiro_unmatched_rows": 70,
+              "http_statuses": [
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200
+              ],
+              "payload_shapes": [
+                "count,data,offset,status,traceId"
+              ],
+              "last_body_preview": "{\"status\":\"OK\",\"count\":237,\"data\":[{\"id\":1536767,\"flashId\":null,\"date\":\"2026-04-19T15:00:00+00:00\",\"dateUtc\":1776610800,\"status\":8,\"periods\":[\"2026-04-19T15:00:00+00:00\",\"2026-04-19T16:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":5,\"homeResult\":2,\"awayResult\":1,\"homeHTResult\":0,\"awayHTResult\":1,\"homeFTResult\":2,\"awayFTResult\":1,\"homeTeam\":{\"id\":16858,\"name\":\"Khimik Dzerzhinsk\",\"flashId\":\"khimik/MwqG7c0C\",\"country\":{\"code\":\"RU\",\"name\":\"Russia\"}},\"awayTeam\":{\"id\":14140,\"name\":\"Krylya Sovetov II\",\"flashId\":null,\"country\":{\"code\":\"RU\",\"name\":\"Russia\"}},\"season\":{\"uid\":\"6b7dab5a-277e-11f1-9833-3cecef730a49\",\"year\":2026,\"league\":{\"id\":653,\"name\":\"Second League - Group 4\",\"country\":{\"code\":\"RU\",\"name\":\"Russia\"},\"flashScoreId\":\"russia/fnl-2-group-4\"}},\"roundName\":\"Division B - Group 4 - 3\"},{\"id\":1537123,\"flashId\":\"nF8kOx54\",\"date\":\"2026-04-19T15:00:00+00:00\",\"dateUtc\":1776610800,\"status\":8,\"periods\":[\"2026-04-19T15:00:00+00:00\",\"2026-04-19T16:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"homeResult\":3,\"awayResult\":0,\"homeHTResult\":1,\"awayHTResult\":0,\"homeFTResult\":3,\"awayFTResult\":0,\"homeTeam\":{\"id\":575,\"name\":\"AEK Athens FC\",\"flashId\":\"aek/ANpZncAM\",\"country\":{\"code\":\"GR\",\"name\":\"Greece\"}},\"awayTeam\":{\"id\":619,\"name\":\"PAOK\",\"flashId\":\"paok/Kry6HxA9\",\"country\":{\"code\":\"GR\",\"name\":\"Greece\"}},\"season\":{\"uid\":\"639e8f7e-5fe7-11f0-982a-3cecef730a49\",\"year\":2025,\"league\":{\"id\":197,\"name\":\"Super League 1\",\"country\":{\"code\":\"GR\",\"name\":\"Greece\"},\"flashScoreId\":\"greece/super-league\"}},\"roundName\":\"Championship Group - 2\",\"odds\":[{\"marketId\":1,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":2.05,\"openingValue\":null},{\"name\":\"Away\",\"value\":4,\"openingValue\":null},{\"name\":\"Draw\",\"value\":3.1,\"openingValue\":null}]},{\"marketId\":2,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.5,\"openingValue\":null},{\"name\":\"Away\",\"value\":2.5,\"openingValue\":null}]},{\"marketId\":12,\"marketName\":null,\"odds\":[{\"name\":\"Home/Draw\",\"value\":1.28,\"openingValue\":null},{\"name\":\"Home/Aw",
+              "last_error": null,
+              "last_url": "https://api.sstats.net/Games/list"
             }
           },
           "bzzoiro": {
             "type": "context",
-            "matches_with_data": 0,
-            "items_total": 0,
+            "matches_with_data": 9,
+            "items_total": 9,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 10,
+              "response_errors": 0,
+              "retry_attempts": 0,
+              "events_fetched": 400,
+              "predictions_fetched": 79,
+              "contexts_built": 9,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 9,
+              "event_matches": 0,
+              "prediction_links": 0,
+              "fallback_prediction_matches": 9,
+              "prediction_param_fallbacks": 0,
+              "event_context_fallbacks": 0,
+              "unmatched_predictions": 65,
+              "event_rejected_low_score": 1,
+              "event_rejected_league_mismatch": 5,
+              "event_rejected_no_quality": 0,
+              "prediction_rejected_low_score": 1,
+              "prediction_rejected_league_mismatch": 12,
+              "prediction_rejected_no_quality": 0,
+              "http_statuses": [
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200
+              ],
+              "payload_shapes": [],
+              "last_body_preview": "{\"count\":79,\"next\":null,\"previous\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-04-19&date_to=2026-04-20&tz=UTC&upcoming=true\",\"results\":[{\"id\":2858,\"event\":{\"id\":653,\"league\":{\"id\":2,\"name\":\"Liga Portugal Betclic\",\"country\":\"Portugal\",\"is_women\":false,\"current_season\":{\"id\":305,\"name\":\"Liga Portugal 25/26\",\"year\":2025,\"start_date\":\"2025-07-01\",\"end_date\":\"2026-06-30\"}},\"season\":{\"id\":305,\"name\":\"Liga Portugal 25/26\",\"year\":2025},\"home_team\":\"Sporting CP\",\"away_team\":\"Benfica\",\"home_team_obj\":{\"id\":22,\"name\":\"Sporting CP\",\"short_name\":\"Sporting\",\"country\":\"Portugal\",\"coach\":{\"name\":\"Rui Borges\",\"shortName\":\"R. Borges\"}},\"away_team_obj\":{\"id\":37,\"name\":\"Benfica\",\"short_name\":\"Benfica\",\"country\":\"Portugal\",\"coach\":{\"name\":\"José Mourinho\",\"shortName\":\"J. Mourinho\"}},\"event_date\":\"2026-04-19T17:00:00Z\",\"round_number\":30,\"status\":\"finished\",\"home_score\":1,\"away_score\":2,\"home_score_ht\":0,\"away_score_ht\":1,\"current_minute\":90,\"period\":\"FT\",\"odds_home\":2.1,\"odds_draw\":3.5,\"odds_away\":3.2,\"odds_over_15\":1.22,\"odds_over_25\":1.73,\"odds_over_35\":2.75,\"odds_under_15\":4.0,\"odds_under_25\":2.08,\"odds_under_35\":1.4,\"odds_btts_yes\":1.62,\"odds_btts_no\":2.2,\"odds_dc_12\":null,\"actual_home_xg\":null,\"actual_away_xg\":null,\"home_xg_live\":1.65,\"away_xg_live\":2.08,\"penalty_shootout\":null,\"referee\":{\"name\":\"Joao Pedro Pinheiro\",\"country\":\"Portugal\",\"redCards\":46,\"yellowCards\":1771},\"home_coach\":{\"id\":2,\"name\":\"Rui Borges\",\"short_name\":\"R. Borges\",\"country\":\"Portugal\",\"profile\":\"attacking",
+              "last_error": null,
+              "last_url": "https://sports.bzzoiro.com/api/predictions/"
             }
           },
           "api_football": {
@@ -221,7 +877,21 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 1,
+              "response_errors": 0,
+              "fixtures_fetched": 0,
+              "contexts_built": 0,
+              "prediction_requests_limited_to": 32,
+              "rate_limited": false,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "http_statuses": [
+                200
+              ],
+              "last_body_preview": "{\"get\":\"fixtures\",\"parameters\":{\"date\":\"2026-04-19\",\"timezone\":\"UTC\"},\"errors\":{\"access\":\"Your account is suspended, check on https:\\/\\/dashboard.api-football.com.\"},\"results\":0,\"paging\":{\"current\":1,\"total\":1},\"response\":[]}"
             }
           },
           "espn": {
@@ -229,7 +899,97 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "scoreboard_requests": 60,
+              "probability_requests": 0,
+              "summary_requests": 0,
+              "response_errors": 0,
+              "events_fetched": 82,
+              "events_matched": 0,
+              "contexts_built": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "league_slugs_used": [
+                "eng.1",
+                "usa.1",
+                "ita.2",
+                "esp.1",
+                "ita.1",
+                "eng.2",
+                "esp.2",
+                "ger.1",
+                "ger.2",
+                "fra.1",
+                "ned.1",
+                "bel.1"
+              ],
+              "injury_counts_seen": 0,
+              "soft_failures": 0,
+              "partial_contexts_built": 0,
+              "last_body_preview": "{\"leagues\":[{\"id\":\"3901\",\"uid\":\"s:600~l:3901\",\"name\":\"Belgian Pro League\",\"abbreviation\":\"Belgian Pro League\",\"midsizeName\":\"BEL.1\",\"slug\":\"bel.1\",\"season\":{\"year\":2025,\"startDate\":\"2025-07-01T04:00Z\",\"endDate\":\"2026-07-01T03:59Z\",\"displayName\":\"2025-26 Belgian Pro League\",\"type\":{\"id\":\"2\",\"type\":13498,\"name\":\"Playoff Round\",\"abbreviation\":\"Playoff Round\"}},\"logos\":[{\"href\":\"https://a.espncdn.com/i/leaguelogos/soccer/500/6.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"default\"],\"lastUpdated\":\"2019-05-08T16:07Z\"},{\"href\":\"https://a.espncdn.com/i/leaguelogos/soccer/500-dark/6.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"dark\"],\"lastUpdated\":\"2019-05-08T16:07Z\"}],\"calendarType\":\"day\",\"calendarIsWhitelist\":true,\"calendarStartDate\":\"2025-07-01T04:00Z\",\"calendarEndDate\":\"2026-07-01T03:59Z\",\"calendar\":[\"2025-07-25T07:00Z\",\"2025-07-26T07:00Z\",\"2025-07-27T07:00Z\",\"2025-08-01T07:00Z\",\"2025-08-02T07:00Z\",\"2025-08-03T07:00Z\",\"2025-08-08T07:00Z\",\"2025-08-09T07:00Z\",\"2025-08-10T07:00Z\",\"2025-08-15T07:00Z\",\"2025-08-16T07:00Z\",\"2025-08-17T07:00Z\",\"2025-08-23T07:00Z\",\"2025-08-24T07:00Z\",\"2025-08-29T07:00Z\",\"2025-08-30T07:00Z\",\"2025-08-31T07:00Z\",\"2025-09-12T07:00Z\",\"2025-09-13T07:0",
+              "http_statuses": [
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200
+              ]
             }
           },
           "thesportsdb": {
@@ -237,15 +997,51 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "requests": 1,
+              "response_errors": 1,
+              "leagues_resolved": 0,
+              "tables_fetched": 0,
+              "contexts_built": 0,
+              "missing_table_rows": 0,
+              "partial_contexts_built": 0,
+              "last_body_preview": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01//EN\"\"http://www.w3.org/TR/html4/strict.dtd\">\r\n<HTML><HEAD><TITLE>Service Unavailable</TITLE>\r\n<META HTTP-EQUIV=\"Content-Type\" Content=\"text/html; charset=us-ascii\"></HEAD>\r\n<BODY><h2>Service Unavailable</h2>\r\n<hr><p>HTTP Error 503. The service is unavailable.</p>\r\n</BODY></HTML>\r\n",
+              "http_statuses": [
+                503
+              ],
+              "league_limit_applied": 24
             }
           },
           "football_data": {
             "type": "context",
-            "matches_with_data": 0,
-            "items_total": 0,
+            "matches_with_data": 3,
+            "items_total": 3,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "target_matches": 74,
+              "requests": 3,
+              "response_errors": 0,
+              "matches_fetched": 19,
+              "history_rows_fetched": 380,
+              "events_matched": 3,
+              "contexts_built": 3,
+              "best_near_miss_score": 0.0,
+              "near_miss_count": 0,
+              "standings_requests": 1,
+              "standings_loaded": 1,
+              "history_requests": 1,
+              "history_contexts_built": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 3,
+              "unmatched_rows": 16,
+              "http_statuses": [
+                200,
+                200,
+                200
+              ],
+              "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":380,\"first\":\"2026-01-28\",\"last\":\"2026-12-02\",\"played\":111},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554740,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-18T20:20:47Z\",\"homeTeam\":{\"id\":1766,\"name\":\"CA Mineiro\",\"shortName\":\"Mineiro\",\"tla\":\"CAM\",\"crest\":\"https://crests.football-data.org/1766.png\"},\"awayTeam\":{\"id\":1769,\"name\":\"SE Palmeiras\",\"shortName\":\"Palmeiras\",\"tla\":\"PAL\",\"crest\":\"https://crests.football-data.org/1769.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":2},\"halfTime\":{\"home\":1,\"away\":1}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206800,\"name\":\"Bruno de Araújo\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554744,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-18T20:20:47"
             }
           },
           "openligadb": {
@@ -253,7 +1049,19 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "requests": 0,
+              "response_errors": 0,
+              "datasets_loaded": 0,
+              "tables_loaded": 0,
+              "contexts_built": 0,
+              "history_contexts_built": 0,
+              "standings_contexts_built": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "http_statuses": [],
+              "last_body_preview": null
             }
           },
           "openfootball": {
@@ -261,7 +1069,16 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "requests": 0,
+              "response_errors": 0,
+              "datasets_loaded": 0,
+              "contexts_built": 0,
+              "matched_exact": 0,
+              "matched_loose": 0,
+              "matched_fuzzy": 0,
+              "http_statuses": [],
+              "last_body_preview": null
             }
           },
           "newsapi": {
@@ -269,7 +1086,21 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 6,
+              "response_errors": 6,
+              "contexts_built": 0,
+              "articles_seen": 0,
+              "http_statuses": [
+                429,
+                429,
+                429,
+                429,
+                429,
+                429
+              ],
+              "last_body_preview": "{\"status\":\"error\",\"code\":\"rateLimited\",\"message\":\"You have made too many requests recently. Developer accounts are limited to 100 requests over a 24 hour period (50 requests available every 12 hours). Please upgrade to a paid plan if you need more requests.\"}"
             }
           },
           "gnews": {
@@ -277,7 +1108,19 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 4,
+              "response_errors": 0,
+              "contexts_built": 0,
+              "articles_seen": 0,
+              "http_statuses": [
+                200,
+                200,
+                200,
+                200
+              ],
+              "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":0,\"articles\":[]}"
             }
           }
         },
@@ -293,24 +1136,24 @@
             "class_name": "OddsApiIoProvider"
           },
           "bookies_api": {
-            "enabled": false,
-            "loaded": false,
-            "reason": "disabled_by_config"
+            "enabled": true,
+            "loaded": true,
+            "class_name": "BookiesApiProvider"
           },
           "oddspapi": {
-            "enabled": false,
-            "loaded": false,
-            "reason": "disabled_by_config"
+            "enabled": true,
+            "loaded": true,
+            "class_name": "OddsPapiProvider"
           },
           "allsportsapi": {
-            "enabled": false,
-            "loaded": false,
-            "reason": "disabled_by_config"
+            "enabled": true,
+            "loaded": true,
+            "class_name": "AllSportsApiOddsProvider"
           },
           "futrixmetrics": {
-            "enabled": false,
-            "loaded": false,
-            "reason": "disabled_by_config"
+            "enabled": true,
+            "loaded": true,
+            "class_name": "FutrixMetricsContextProvider"
           },
           "sstats": {
             "enabled": true,
@@ -364,94 +1207,85 @@
           }
         },
         "provider_runtime_errors": {},
-        "matches_with_any_offer_source": 0,
-        "matches_with_any_context_source": 0,
-        "matches_with_merged_context": 0,
+        "matches_with_any_offer_source": 56,
+        "matches_with_any_context_source": 49,
+        "matches_with_merged_context": 49,
         "raw_candidates_with_derived_market_signal": 0,
         "published_candidates_with_derived_market_signal": 0,
         "matches_with_raw_derived_market_signal": 0,
         "matches_with_published_derived_market_signal": 0,
-        "context_source_combinations": {},
-        "offer_source_combinations": {}
+        "context_source_combinations": {
+          "sstats": 40,
+          "none": 25,
+          "sstats+bzzoiro": 6,
+          "sstats+bzzoiro+football_data": 3
+        },
+        "offer_source_combinations": {
+          "odds_api_io": 56,
+          "none": 18
+        }
       },
       "market_monitor": {
         "enabled": true,
         "snapshots_written": 1,
-        "matches_snapshotted": 0,
-        "markets_snapshotted": 0,
-        "signals_built": 0,
-        "clv_pending": 2,
-        "clv_resolved": 0,
-        "avg_open_clv_pct": null,
+        "matches_snapshotted": 56,
+        "markets_snapshotted": 776,
+        "signals_built": 776,
+        "clv_pending": 1,
+        "clv_resolved": 1,
+        "avg_open_clv_pct": 0.0,
         "avg_resolved_clv_pct": null,
         "clv_tracked_now": 0
       },
       "settlement": {
-        "checked": 0,
+        "checked": 1,
         "settled_count": 0,
-        "rows_fetched": 0,
-        "rows_by_source": {},
-        "manual_overrides_loaded": 0,
-        "manual_overrides_valid": 0,
+        "rows_fetched": 1033,
+        "rows_by_source": {
+          "sstats": 1000,
+          "football_data": 33
+        },
+        "manual_overrides_loaded": 1,
+        "manual_overrides_valid": 1,
         "manual_overrides_disabled": 0,
         "manual_overrides_invalid": 0,
         "manual_overrides_matched": 0,
-        "reasons": {},
-        "unsettled_count": 0,
-        "attempts_recorded": 0,
-        "sample": []
+        "reasons": {
+          "no_match": 1
+        },
+        "unsettled_count": 1,
+        "attempts_recorded": 1,
+        "sample": [
+          {
+            "prediction_id": "soccer|genoa cfc|pisa|2026-04-19|h2h|away|||2026-04-19T16:00:00+00:00",
+            "home_team": "Pisa SC",
+            "away_team": "Genoa CFC",
+            "family": "h2h",
+            "selection": "Genoa CFC",
+            "point": null,
+            "reason": "no_match",
+            "best_score": 0.0,
+            "best_source": null,
+            "best_status": null,
+            "best_event": null,
+            "best_scoreline": null,
+            "match_failure": "no_positive_candidate",
+            "match_threshold": 70.0,
+            "grade_issue": null
+          }
+        ]
       },
       "daily_report": {
-        "due": true,
+        "due": false,
         "report_date": "2026-04-18",
-        "skip_reason": "not_enough_bets",
-        "refresh_reason": null,
+        "skip_reason": "already_sent",
+        "refresh_reason": "unchanged",
         "is_revision": false,
         "telegram_messages_sent": 0,
-        "summary": {
-          "report_date": "2026-04-18",
-          "timezone": "Europe/Moscow",
-          "currency": "units",
-          "total_bets": 0,
-          "settled_bets": 0,
-          "pending_bets": 0,
-          "won": 0,
-          "lost": 0,
-          "push": 0,
-          "void": 0,
-          "stake_total": 0,
-          "settled_stake": 0,
-          "pending_stake": 0,
-          "revenue": 0,
-          "pnl": 0,
-          "roi_pct": 0.0,
-          "hit_rate_pct": 0.0
-        },
-        "quality_analysis": {
-          "settled_bets": 0,
-          "lost_bets": 0,
-          "top_failure_tags": {},
-          "by_family": {},
-          "by_league_bucket": {}
-        },
-        "next_day_adjustments": {
-          "enabled": true,
-          "report_date": "2026-04-18",
-          "settled_bets": 0,
-          "family_adjustments": {},
-          "league_bucket_adjustments": {},
-          "actions": []
-        },
-        "exports": {
-          "daily_report_json": ".data\\exports\\2026-04-18\\daily-report.json",
-          "daily_report_csv": ".data\\exports\\2026-04-18\\daily-report.csv",
-          "daily_summary_json": ".data\\exports\\2026-04-18\\daily-summary.json",
-          "daily_summary_csv": ".data\\exports\\2026-04-18\\daily-summary.csv",
-          "latest_daily_report_json": ".data\\exports\\latest-daily-report.json",
-          "latest_daily_report_csv": ".data\\exports\\latest-daily-report.csv",
-          "latest_daily_summary_json": ".data\\exports\\latest-daily-summary.json",
-          "latest_daily_summary_csv": ".data\\exports\\latest-daily-summary.csv"
-        }
+        "summary": {},
+        "quality_analysis": {},
+        "next_day_adjustments": {},
+        "exports": {}
       },
       "quality": {
         "summary": {
@@ -500,17 +1334,17 @@
           "by_league_bucket": {}
         },
         "decisions": {
-          "passed": 0,
-          "rejected": 0,
+          "passed": 1,
+          "rejected": 1,
           "enough_history": false
         },
         "exports": {
-          "quality_report_json": ".data\\exports\\2026-04-19\\quality-report.json",
-          "quality_segments_csv": ".data\\exports\\2026-04-19\\quality-segments.csv",
-          "quality_learning_csv": ".data\\exports\\2026-04-19\\quality-learning.csv",
-          "latest_quality_report_json": ".data\\exports\\latest-quality-report.json",
-          "latest_quality_segments_csv": ".data\\exports\\latest-quality-segments.csv",
-          "latest_quality_learning_csv": ".data\\exports\\latest-quality-learning.csv"
+          "quality_report_json": ".data/exports/2026-04-19/quality-report.json",
+          "quality_segments_csv": ".data/exports/2026-04-19/quality-segments.csv",
+          "quality_learning_csv": ".data/exports/2026-04-19/quality-learning.csv",
+          "latest_quality_report_json": ".data/exports/latest-quality-report.json",
+          "latest_quality_segments_csv": ".data/exports/latest-quality-segments.csv",
+          "latest_quality_learning_csv": ".data/exports/latest-quality-learning.csv"
         }
       },
       "bankroll": {
@@ -533,38 +1367,30 @@
         "yield_pct": 0.0
       },
       "exports": {
-        "matches_json": ".data\\exports\\2026-04-19\\194115-matches.json",
-        "picks_json": ".data\\exports\\2026-04-19\\194115-picks.json",
-        "bets_json": ".data\\exports\\2026-04-19\\194115-bets.json",
-        "matches_csv": ".data\\exports\\2026-04-19\\194115-matches.csv",
-        "picks_csv": ".data\\exports\\2026-04-19\\194115-picks.csv",
-        "bets_csv": ".data\\exports\\2026-04-19\\194115-bets.csv",
-        "bankroll_json": ".data\\exports\\2026-04-19\\194115-bankroll.json",
-        "pending_bets_json": ".data\\exports\\2026-04-19\\194115-pending-bets.json",
-        "settled_bets_json": ".data\\exports\\2026-04-19\\194115-settled-bets.json",
-        "latest_matches_json": ".data\\exports\\latest-matches.json",
-        "latest_picks_json": ".data\\exports\\latest-picks.json",
-        "latest_bets_json": ".data\\exports\\latest-bets.json",
-        "latest_matches_csv": ".data\\exports\\latest-matches.csv",
-        "latest_picks_csv": ".data\\exports\\latest-picks.csv",
-        "latest_bets_csv": ".data\\exports\\latest-bets.csv",
-        "latest_bankroll_json": ".data\\exports\\latest-bankroll.json",
-        "latest_pending_bets_json": ".data\\exports\\latest-pending-bets.json",
-        "latest_settled_bets_json": ".data\\exports\\latest-settled-bets.json",
-        "daily_report_json": ".data\\exports\\2026-04-18\\daily-report.json",
-        "daily_report_csv": ".data\\exports\\2026-04-18\\daily-report.csv",
-        "daily_summary_json": ".data\\exports\\2026-04-18\\daily-summary.json",
-        "daily_summary_csv": ".data\\exports\\2026-04-18\\daily-summary.csv",
-        "latest_daily_report_json": ".data\\exports\\latest-daily-report.json",
-        "latest_daily_report_csv": ".data\\exports\\latest-daily-report.csv",
-        "latest_daily_summary_json": ".data\\exports\\latest-daily-summary.json",
-        "latest_daily_summary_csv": ".data\\exports\\latest-daily-summary.csv",
-        "quality_report_json": ".data\\exports\\2026-04-19\\quality-report.json",
-        "quality_segments_csv": ".data\\exports\\2026-04-19\\quality-segments.csv",
-        "quality_learning_csv": ".data\\exports\\2026-04-19\\quality-learning.csv",
-        "latest_quality_report_json": ".data\\exports\\latest-quality-report.json",
-        "latest_quality_segments_csv": ".data\\exports\\latest-quality-segments.csv",
-        "latest_quality_learning_csv": ".data\\exports\\latest-quality-learning.csv"
+        "matches_json": ".data/exports/2026-04-19/200823-matches.json",
+        "picks_json": ".data/exports/2026-04-19/200823-picks.json",
+        "bets_json": ".data/exports/2026-04-19/200823-bets.json",
+        "matches_csv": ".data/exports/2026-04-19/200823-matches.csv",
+        "picks_csv": ".data/exports/2026-04-19/200823-picks.csv",
+        "bets_csv": ".data/exports/2026-04-19/200823-bets.csv",
+        "bankroll_json": ".data/exports/2026-04-19/200823-bankroll.json",
+        "pending_bets_json": ".data/exports/2026-04-19/200823-pending-bets.json",
+        "settled_bets_json": ".data/exports/2026-04-19/200823-settled-bets.json",
+        "latest_matches_json": ".data/exports/latest-matches.json",
+        "latest_picks_json": ".data/exports/latest-picks.json",
+        "latest_bets_json": ".data/exports/latest-bets.json",
+        "latest_matches_csv": ".data/exports/latest-matches.csv",
+        "latest_picks_csv": ".data/exports/latest-picks.csv",
+        "latest_bets_csv": ".data/exports/latest-bets.csv",
+        "latest_bankroll_json": ".data/exports/latest-bankroll.json",
+        "latest_pending_bets_json": ".data/exports/latest-pending-bets.json",
+        "latest_settled_bets_json": ".data/exports/latest-settled-bets.json",
+        "quality_report_json": ".data/exports/2026-04-19/quality-report.json",
+        "quality_segments_csv": ".data/exports/2026-04-19/quality-segments.csv",
+        "quality_learning_csv": ".data/exports/2026-04-19/quality-learning.csv",
+        "latest_quality_report_json": ".data/exports/latest-quality-report.json",
+        "latest_quality_segments_csv": ".data/exports/latest-quality-segments.csv",
+        "latest_quality_learning_csv": ".data/exports/latest-quality-learning.csv"
       },
       "run_report": {
         "enabled": false,
@@ -572,11 +1398,26 @@
         "telegram_messages_sent": 0
       },
       "sheet_export": {
-        "enabled": false
+        "rows": 0,
+        "json_path": ".data/sheet-export.json",
+        "csv_path": ".data/sheet-export.csv",
+        "summary_json_path": ".data/sheet-run-summary.json",
+        "picks_csv_path": ".data/sheet-picks.csv",
+        "matches_csv_path": ".data/sheet-matches.csv",
+        "bet_ledger_csv_path": ".data/sheet-bet-ledger.csv",
+        "daily_report_csv_path": "",
+        "daily_summary_csv_path": "",
+        "learning_csv_path": ".data/sheet-learning.csv",
+        "sheet_id_present": false,
+        "apps_script_sync_required": true,
+        "webhook_configured": false,
+        "webhook_synced": false,
+        "webhook_status": null,
+        "webhook_error": null
       },
       "history": {
-        "run_archive_path": ".data\\history\\runs\\2026-04-19\\190500-run.json",
-        "run_history_count": 8,
+        "run_archive_path": ".data/history/runs/2026-04-19/200823-run.json",
+        "run_history_count": 9,
         "message_history_count": 7
       }
     },
@@ -760,7 +1601,24 @@
       "published_at": "2026-04-19T15:32:51.531342+00:00",
       "status": "pending",
       "settlement": null,
-      "telegram_sent": true
+      "telegram_sent": true,
+      "last_settlement_attempt": {
+        "attempted_at": "2026-04-19T19:55:06.504336+00:00",
+        "reason": "no_match",
+        "grade_issue": "",
+        "match_failure": "no_positive_candidate",
+        "match_threshold": 70.0,
+        "best_score": "",
+        "best_source": "",
+        "best_status": "",
+        "best_event": "",
+        "best_scoreline": "",
+        "result_orientation": "",
+        "matched_via": "",
+        "manual_override_match_mode": "",
+        "manual_override_note": "",
+        "top_candidates": []
+      }
     },
     {
       "match_key": "soccer|olympique lyon|paris saint germain|2026-04-19",
@@ -1971,6 +2829,17 @@
       "published": 0,
       "telegram_messages_sent": 0,
       "forecast_rows": 0
+    },
+    {
+      "created_at": "2026-04-19T20:08:23.720704+00:00",
+      "path": ".data/history/runs/2026-04-19/200823-run.json",
+      "status": "ok",
+      "matches_seen": 74,
+      "contexts_built": 49,
+      "candidates": 1,
+      "published": 0,
+      "telegram_messages_sent": 0,
+      "forecast_rows": 168
     }
   ],
   "message_history": [
@@ -2018,7 +2887,7 @@
     }
   ],
   "learning_state": {
-    "updated_at": "2026-04-19T19:05:00+00:00",
+    "updated_at": "2026-04-19T20:08:23.720704+00:00",
     "summary": {
       "total_tracked_bets": 4,
       "settled_binary_bets": 0,
@@ -2061,6 +2930,6 @@
       "actions": []
     },
     "report_date": "2026-04-18",
-    "archive_path": ".data\\history\\runs\\2026-04-19\\190500-run.json"
+    "archive_path": ".data/history/runs/2026-04-19/200823-run.json"
   }
 }
