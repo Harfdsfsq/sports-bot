@@ -99,6 +99,16 @@ class TelegramPublisher:
     ) -> str:
         return f"{float(value or 0.0):.2f}{self._money_suffix(bankroll_summary=bankroll_summary, candidate=candidate)}"
 
+    @staticmethod
+    def _format_display_odds(value: Any, *, precise: bool = False) -> str:
+        try:
+            odds = float(value or 0.0)
+        except (TypeError, ValueError):
+            odds = 0.0
+        if precise and abs(odds - round(odds, 2)) >= 0.0045:
+            return f"{odds:.3f}"
+        return f"{odds:.2f}"
+
     def _format_outcome(self, value: str) -> str:
         mapping = {
             "won": "выигрыш",
@@ -336,7 +346,7 @@ class TelegramPublisher:
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
-                f"💸 Коэффициент: {bet.odds:.2f}\n"
+                f"💸 Коэффициент: {self._format_display_odds(bet.odds)}\n"
                 f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии (консенсус): {consensus_probability * 100:.1f}%\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"{quality_text + chr(10) if quality_text else ''}"
@@ -472,7 +482,7 @@ class TelegramPublisher:
                 f"{emoji} Итог: {self._format_outcome(outcome)} | Счёт: {score or 'н/д'}\n"
                 f"Ставка: {russian_market_name(str(item.get('family') or ''))} — "
                 f"{russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} "
-                f"@ {float(item.get('odds') or 0.0):.2f}\n"
+                f"@ {self._format_display_odds(item.get('odds'), precise=True)}\n"
                 f"Сумма: {self._format_money(float(item.get('stake_amount') or 0.0), bankroll_summary=bankroll)} | "
                 f"P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
             )
@@ -577,7 +587,7 @@ class TelegramPublisher:
             item_lines.append(
                 f"{idx}. {row.get('home_team')} — {row.get('away_team')}\n"
                 f"{emoji} {russian_market_name(family)} — {self._selection_display(family, selection, point, row.get('team_side'), row.get('home_team'), row.get('away_team'))}{point_suffix} "
-                f"@ {float(row.get('odds') or 0.0):.2f} | Счет: {score} | P&L: {pnl_text}"
+                f"@ {self._format_display_odds(row.get('odds'), precise=True)} | Счет: {score} | P&L: {pnl_text}"
             )
         if item_lines:
             lines.append("\n".join(item_lines))
