@@ -343,11 +343,16 @@ class TelegramPublisher:
             )
             consensus_probability = self._consensus_probability(bet)
             explanation = self._build_explanation(bet, selection_text)
+            probability_label = "Вероятность по модели"
+            consensus_label = "по линии (консенсус)"
+            if bet.family in {"spreads", "dnb"}:
+                probability_label = "Оценка по модели"
+                consensus_label = "по линии (с учётом возврата)"
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
                 f"💸 Коэффициент: {self._format_display_odds(bet.odds)}\n"
-                f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии (консенсус): {consensus_probability * 100:.1f}%\n"
+                f"📊 {probability_label}: {bet.adjusted_probability * 100:.1f}% | {consensus_label}: {consensus_probability * 100:.1f}%\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"{quality_text + chr(10) if quality_text else ''}"
                 f"🏆 Турнир: {bet.league_name}\n"
@@ -387,6 +392,11 @@ class TelegramPublisher:
                 f"По линии этот вариант оценивается примерно в {consensus_pct:.1f}%, "
                 f"а модель поднимает вероятность до {model_pct:.1f}%. "
                 f"Перевес {edge_pp:+.1f} п.п. даёт преимущество в пользу {target_team}."
+            )
+        elif bet.family in {"spreads", "dnb"}:
+            parts.append(
+                f"В пересчёте на цену с учётом возврата линия даёт около {consensus_pct:.1f}%, а модель — {model_pct:.1f}%. "
+                f"Разница {edge_pp:+.1f} п.п. объясняет интерес к этой форе."
             )
         else:
             parts.append(

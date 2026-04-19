@@ -575,9 +575,6 @@ class CandidateFactory:
             required_books = self._required_books_for_bucket('spreads', point, bucket, None)
             if len({self._norm_book(item.bookmaker) for item in bucket}) < required_books:
                 continue
-            if self._is_suspicious_zero_handicap_offer(match, offers, selection, point, team_side, bucket):
-                rejections['suspicious_zero_handicap_mapping'] += 1
-                continue
             market_prob = self._fair_market_probability_spreads(bucket, offers, selection, point, team_side)
             market_signal = self._market_signal_for_bucket(match.match_key, 'spreads', bucket, point)
             model_prob = self._simple_market_model_probability(
@@ -728,7 +725,6 @@ class CandidateFactory:
                 return self._build_simple_market_spread_candidates(match, offers, rejections)
             return []
         expected_home, expected_away = xg
-        diff = expected_home - expected_away
         result: list[CandidateBet] = []
         seen_keys: set[tuple[str, float]] = set()
         for offer in offers:
@@ -746,10 +742,10 @@ class CandidateFactory:
             team_side = (offer.team_side or '').lower()
             if team_side not in {'home', 'away'}:
                 continue
-            if self._is_suspicious_zero_handicap_offer(match, offers, offer.selection, offer.point, team_side, books):
-                rejections['suspicious_zero_handicap_mapping'] += 1
+            model_prob = self._spread_price_equivalent_probability(expected_home, expected_away, float(offer.point), team_side)
+            if model_prob is None:
+                rejections['missing_model_probability_spreads'] += 1
                 continue
-            model_prob = self._asian_spread_model_probability(expected_home, expected_away, float(offer.point), team_side)
             market_prob = self._fair_market_probability_spreads(books, offers, offer.selection, offer.point, team_side)
             candidate = self._candidate_from_bucket(
                 match=match,
@@ -984,6 +980,67 @@ class CandidateFactory:
                 result.append(candidate)
         return result
 
+
+    def _margin_outcome_weights(self, margin: float) -> tuple[float, float]:
+        frac = round(abs(margin - int(margin)), 2)
+        if frac in {0.25, 0.75}:
+            left_win, left_loss = self._margin_outcome_weights(margin - 0.25)
+            right_win, right_loss = self._margin_outcome_weights(margin + 0.25)
+            return ((left_win + right_win) / 2.0, (left_loss + right_loss) / 2.0)
+        if margin > 0:
+            return (1.0, 0.0)
+        if abs(margin) <= 1e-9:
+            return (0.0, 0.0)
+        return (0.0, 1.0)
+
+    def _asian_side_equivalent_components(
+        self,
+        home_lambda: float,
+        away_lambda: float,
+        line: float,
+        team_side: str,
+        max_goals: int = 10,
+    ) -> dict[str, float] | None:
+        side = str(team_side or '').strip().lower()
+        if side not in {'home', 'away'}:
+            return None
+        if not all(math.isfinite(value) for value in (home_lambda, away_lambda, line)):
+            return None
+        win_mass = 0.0
+        loss_mass = 0.0
+        for home_goals in range(max_goals + 1):
+            p_home = poisson_pmf(home_lambda, home_goals)
+            for away_goals in range(max_goals + 1):
+                probability = p_home * poisson_pmf(away_lambda, away_goals)
+                margin = (home_goals - away_goals) if side == 'home' else (away_goals - home_goals)
+                win_weight, loss_weight = self._margin_outcome_weights(margin + line)
+                win_mass += probability * win_weight
+                loss_mass += probability * loss_weight
+        decisive_mass = max(0.0, win_mass + loss_mass)
+        if decisive_mass <= 1e-9:
+            return None
+        price_equivalent_probability = clamp(win_mass / decisive_mass, 0.02, 0.98)
+        fair_odds = 1.0 + (loss_mass / max(win_mass, 1e-9))
+        return {
+            'win_mass': max(0.0, win_mass),
+            'loss_mass': max(0.0, loss_mass),
+            'decisive_mass': decisive_mass,
+            'price_equivalent_probability': price_equivalent_probability,
+            'fair_odds': max(1.01, fair_odds),
+        }
+
+    def _spread_price_equivalent_probability(
+        self,
+        expected_home: float,
+        expected_away: float,
+        line: float,
+        team_side: str,
+    ) -> float | None:
+        components = self._asian_side_equivalent_components(expected_home, expected_away, line, team_side)
+        if components is None:
+            return None
+        return float(components['price_equivalent_probability'])
+
     def _candidate_from_bucket(
         self,
         *,
@@ -1110,6 +1167,20 @@ class CandidateFactory:
         fair_odds = 1.0 / max(adjusted, 0.01)
         ev_pct = (adjusted * best_price - 1.0) * 100.0
         edge_pct = (adjusted - market_prob) * 100.0
+        pricing_components: dict[str, float] | None = None
+        if family == 'spreads' and point is not None and expected_home is not None and expected_away is not None and str(getattr(best_offer, 'team_side', '') or '').lower() in {'home', 'away'}:
+            pricing_components = self._asian_side_equivalent_components(
+                float(expected_home),
+                float(expected_away),
+                float(point),
+                str(getattr(best_offer, 'team_side', '') or '').lower(),
+            )
+            if pricing_components is not None:
+                decisive_mass = float(pricing_components.get('decisive_mass') or 0.0)
+                adjusted_win_mass = decisive_mass * adjusted
+                adjusted_loss_mass = decisive_mass * max(0.0, 1.0 - adjusted)
+                fair_odds = 1.0 + (adjusted_loss_mass / max(adjusted_win_mass, 1e-9))
+                ev_pct = ((adjusted_win_mass * (best_price - 1.0)) - adjusted_loss_mass) * 100.0
         # Single-book matches can be underconfident even with a large model/market gap.
         # Add a small, bounded uplift for clearly positive EV situations to reduce "no pick" runs.
         if len(normalized_books) == 1:
@@ -1766,89 +1837,6 @@ class CandidateFactory:
             other_key=other_side,
             key_resolver=lambda offer: str(offer.team_side or '').lower() if offer.point is not None and round(float(offer.point), 2) == round(float(point), 2) else None,
         )
-
-    def _asian_spread_model_probability(self, expected_home: float, expected_away: float, point: float, team_side: str, max_goals: int = 10) -> float:
-        selection_side = str(team_side or '').strip().lower()
-        if selection_side not in {'home', 'away'}:
-            return 0.50
-        win_equiv = 0.0
-        loss_equiv = 0.0
-
-        def settle(margin: float) -> tuple[float, float]:
-            rounded = round(margin, 6)
-            quarter = round(abs(rounded - math.trunc(rounded)), 2)
-            quarter = 0.0 if abs(quarter - 1.0) < 1e-9 else quarter
-            if quarter in {0.0, 0.5}:
-                if rounded > 0.0:
-                    return 1.0, 0.0
-                if rounded < 0.0:
-                    return 0.0, 1.0
-                return 0.0, 0.0
-            if quarter == 0.25:
-                left = settle(rounded - 0.25)
-                right = settle(rounded + 0.25)
-                return ((left[0] + right[0]) / 2.0, (left[1] + right[1]) / 2.0)
-            if quarter == 0.75:
-                left = settle(rounded - 0.25)
-                right = settle(rounded + 0.25)
-                return ((left[0] + right[0]) / 2.0, (left[1] + right[1]) / 2.0)
-            if rounded > 0.0:
-                return 1.0, 0.0
-            if rounded < 0.0:
-                return 0.0, 1.0
-            return 0.0, 0.0
-
-        for home_goals in range(max_goals + 1):
-            p_home = poisson_pmf(expected_home, home_goals)
-            for away_goals in range(max_goals + 1):
-                p = p_home * poisson_pmf(expected_away, away_goals)
-                if selection_side == 'home':
-                    margin = (home_goals - away_goals) + point
-                else:
-                    margin = (away_goals - home_goals) + point
-                win_part, loss_part = settle(margin)
-                win_equiv += p * win_part
-                loss_equiv += p * loss_part
-
-        total = win_equiv + loss_equiv
-        if total <= 0.0:
-            return 0.50
-        return clamp(win_equiv / total, 0.02, 0.98)
-
-    def _is_suspicious_zero_handicap_offer(
-        self,
-        match: Match,
-        offers: list[Offer],
-        selection: str,
-        point: float | None,
-        team_side: str,
-        bucket: list[Offer],
-    ) -> bool:
-        if point is None or abs(float(point)) > 1e-9:
-            return False
-        selection_key = self._h2h_selection_key(match, selection)
-        if selection_key not in {'home', 'away'}:
-            return False
-        target_books = {self._norm_book(item.bookmaker): float(item.price) for item in bucket if float(item.price or 0.0) > 1.0}
-        if not target_books:
-            return False
-        comparable_h2h: list[tuple[float, float]] = []
-        for offer in offers:
-            if offer.family != 'h2h':
-                continue
-            if self._h2h_selection_key(match, offer.selection) != selection_key:
-                continue
-            norm_book = self._norm_book(offer.bookmaker)
-            if norm_book not in target_books:
-                continue
-            price = float(getattr(offer, 'price', 0.0) or 0.0)
-            if price <= 1.0:
-                continue
-            comparable_h2h.append((target_books[norm_book], price))
-        if not comparable_h2h:
-            return False
-        return any(spread_price >= (h2h_price - 0.03) for spread_price, h2h_price in comparable_h2h)
-
 
     def _fair_market_probability_team_totals(self, bucket: list[Offer], offers: list[Offer], selection: str, point: float, team_side: str) -> float:
         current_side = 'over' if str(selection).lower().startswith('over') else 'under'
