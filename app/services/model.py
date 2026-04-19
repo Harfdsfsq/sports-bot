@@ -2655,17 +2655,28 @@ class CandidateFactory:
             filtered.append(item)
 
         filtered.sort(key=self._candidate_rank_key, reverse=True)
+        if bool(getattr(self.settings, 'prefer_core_leagues_in_shortlist', True)):
+            core_filtered = [item for item in filtered if self._league_bucket(item) in {'preferred', 'secondary'}]
+            non_core_filtered = [item for item in filtered if self._league_bucket(item) not in {'preferred', 'secondary'}]
+            filtered = core_filtered + non_core_filtered
         deduped: list[CandidateBet] = []
         used_matches: set[str] = set()
         league_counts: Counter[str] = Counter()
         family_counts: Counter[str] = Counter()
         seen_reason_signatures: Counter[tuple[str, str]] = Counter()
+        non_core_count = 0
         max_per_league = max(1, int(getattr(self.settings, 'max_picks_per_league', 2) or 2))
         max_per_family = max(1, int(getattr(self.settings, 'max_picks_per_family', 2) or 2))
         max_same_reason = max(1, int(getattr(self.settings, 'max_same_reason_signature', 2) or 2))
+        max_non_core = max(0, int(getattr(self.settings, 'max_non_core_picks_per_run', 1) or 1))
 
         for item in filtered:
+            league_bucket = self._league_bucket(item)
+            is_non_core = league_bucket not in {'preferred', 'secondary'}
             if item.match_key in used_matches:
+                continue
+            if is_non_core and non_core_count >= max_non_core:
+                rejections['non_core_shortlist_cap_guard'] += 1
                 continue
             if league_counts[item.league_name] >= max_per_league:
                 rejections['league_diversity_guard'] += 1
@@ -2681,6 +2692,8 @@ class CandidateFactory:
             league_counts[item.league_name] += 1
             family_counts[item.family] += 1
             seen_reason_signatures[signature] += 1
+            if is_non_core:
+                non_core_count += 1
             deduped.append(item)
             if len(deduped) >= self.settings.max_picks_per_run:
                 break

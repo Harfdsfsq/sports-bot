@@ -489,6 +489,8 @@ class Settings(BaseSettings):
     non_core_league_min_edge_pct: float = Field(default=7.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EDGE_PCT"))
     non_core_league_min_ev_pct: float = Field(default=4.5, validation_alias=AliasChoices("NON_CORE_LEAGUE_MIN_EV_PCT"))
     non_core_league_require_core_context: bool = Field(default=True, validation_alias=AliasChoices("NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT"))
+    prefer_core_leagues_in_shortlist: bool = Field(default=True, validation_alias=AliasChoices("PREFER_CORE_LEAGUES_IN_SHORTLIST"))
+    max_non_core_picks_per_run: int = Field(default=1, validation_alias=AliasChoices("MAX_NON_CORE_PICKS_PER_RUN"))
     preferred_league_terms: CsvList = Field(
         default_factory=lambda: ["champions league", "europa league", "conference league", "premier league", "la liga", "laliga", "serie a", "bundesliga", "ligue 1", "eredivisie", "primeira liga", "championship", "world cup", "euro", "nations league"],
         validation_alias=AliasChoices("PREFERRED_LEAGUE_TERMS"),
