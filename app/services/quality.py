@@ -246,7 +246,7 @@ class PredictionQualityService:
             return None
         if not offenders:
             return None
-        allowed_families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        allowed_families = {'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
         min_conf = float(self._setting('historical_segment_relief_min_confidence', 58.0) or 58.0)
         min_ev = float(self._setting('historical_segment_relief_min_ev_pct', 0.8) or 0.8)
         min_edge = float(self._setting('historical_segment_relief_min_edge_pct', 1.0) or 1.0)
@@ -278,6 +278,8 @@ class PredictionQualityService:
                 continue
             if item.family not in allowed_families:
                 continue
+            if not self._passes_quality_fallback_profile(item):
+                continue
             if float(item.confidence) < min_conf:
                 continue
             if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
@@ -290,7 +292,7 @@ class PredictionQualityService:
         return None
 
     def _select_emergency_publish_candidate(self, candidates: list[CandidateBet]) -> CandidateBet | None:
-        families = {'totals', 'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        families = {'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
         min_conf = float(self._setting('quality_emergency_min_confidence', 50.0) or 50.0)
         min_ev = float(self._setting('quality_emergency_min_ev_pct', 0.4) or 0.4)
         min_edge = float(self._setting('quality_emergency_min_edge_pct', 0.6) or 0.6)
@@ -307,6 +309,8 @@ class PredictionQualityService:
         )
         for item in ranked:
             if item.family not in families:
+                continue
+            if not self._passes_quality_fallback_profile(item):
                 continue
             if float(item.confidence) < min_conf:
                 continue
@@ -367,6 +371,8 @@ class PredictionQualityService:
             )
             if (str(item.match_key or ''), selection_key) not in offenders:
                 continue
+            if not self._passes_quality_fallback_profile(item):
+                continue
             if float(item.confidence) < min_conf:
                 continue
             if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
@@ -375,6 +381,21 @@ class PredictionQualityService:
                 continue
             return item
         return None
+
+    def _passes_quality_fallback_profile(self, candidate: CandidateBet) -> bool:
+        if candidate.family == 'totals':
+            return False
+        if not self._is_core_league_candidate(candidate):
+            return False
+        if int(getattr(candidate, 'books_count', 0) or 0) < max(2, int(self._setting('quality_fallback_min_books_strict', 2) or 2)):
+            return False
+        if self._candidate_context_source(candidate) == 'sstats_form':
+            return False
+        if self._candidate_market_contradiction(candidate):
+            return False
+        if float(candidate.odds) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40) and float(candidate.confidence) < 68.0:
+            return False
+        return True
 
     def analyze_daily_report(self, daily_report: dict[str, Any]) -> dict[str, Any]:
         rows = [dict(item) for item in (daily_report.get('rows') or []) if isinstance(item, dict)]
@@ -614,6 +635,17 @@ class PredictionQualityService:
             score -= 4.0
         if int(candidate.books_count) <= 1:
             score -= 3.0
+        context_source = self._candidate_context_source(candidate)
+        if context_source == 'sstats_form':
+            score -= 6.0
+        if candidate.family == 'totals':
+            score -= 6.0
+            if self._candidate_selection_kind(candidate) == 'over':
+                score -= 8.0
+            if self._odds_bucket(float(candidate.odds)) == '2.05-2.74':
+                score -= 5.0
+            if int(candidate.books_count) <= 1:
+                score -= 4.0
         if enough_history:
             segment_stats = dict(profile.get('segments') or {})
             roi_values = [
@@ -698,6 +730,25 @@ class PredictionQualityService:
         if not enough_history or not bool(self._setting('historical_segment_guard_enabled', True)):
             return None
         stats = dict(profile.get('segments') or {})
+        if candidate.family == 'totals':
+            selection_kind = self._candidate_selection_kind(candidate)
+            context_source = self._candidate_context_source(candidate)
+            odds_bucket = self._odds_bucket(float(candidate.odds))
+            if (
+                selection_kind == 'over'
+                and self._segment_is_deep_negative(stats.get('market:totals:over'), min_count=5, max_roi=-80.0, max_delta=-0.30)
+            ):
+                return 'historical_totals_over_guard'
+            if (
+                context_source == 'sstats_form'
+                and self._segment_is_deep_negative(stats.get('context:sstats_form'), min_count=6, max_roi=-45.0, max_delta=-0.20)
+            ):
+                return 'historical_context_sstats_form_guard'
+            if (
+                odds_bucket == '2.05-2.74'
+                and self._segment_is_deep_negative(stats.get('odds:2.05-2.74'), min_count=6, max_roi=-80.0, max_delta=-0.30)
+            ):
+                return 'historical_mid_odds_totals_guard'
         min_sample = max(1, int(self._setting('historical_segment_min_sample', 10) or 10))
         min_roi = float(self._setting('historical_segment_min_roi_pct', -18.0) or -18.0)
         min_delta = float(self._setting('historical_segment_min_calibration_delta_pct', -9.0) or -9.0) / 100.0
@@ -732,6 +783,24 @@ class PredictionQualityService:
         if bad_segments >= hard_bad_segments:
             return 'bad_historical_segment_guard'
         return None
+
+    def _segment_is_deep_negative(
+        self,
+        stats: dict[str, Any] | None,
+        *,
+        min_count: int,
+        max_roi: float,
+        max_delta: float,
+    ) -> bool:
+        if not isinstance(stats, dict):
+            return False
+        if int(stats.get('count') or 0) < min_count:
+            return False
+        roi = self._to_float(stats.get('roi_pct'))
+        delta = self._to_float(stats.get('calibration_delta_probability'))
+        if roi is None or delta is None:
+            return False
+        return roi <= max_roi and delta <= max_delta
 
     def _allow_late_window_historical_override(self, candidate: CandidateBet, bad_segments: int, hard_hits: list[tuple[str, float, float]]) -> bool:
         hours_to_start = max(0.0, (candidate.commence_time - datetime.now(UTC)).total_seconds() / 3600.0)
@@ -865,7 +934,11 @@ class PredictionQualityService:
             if open_clv is not None:
                 values.append(open_clv)
             family = str(row.get('family') or 'unknown')
-            key = str(row.get('selection_key') or row.get('selection') or 'unknown').lower()
+            key = self._selection_kind(
+                family,
+                str(row.get('selection_key') or ''),
+                str(row.get('selection') or ''),
+            ) or 'unknown'
             context = str(row.get('context_source') or 'unknown')
             for segment in (f'family:{family}', f'market:{family}:{key}', f'context:{context}'):
                 grouped[segment].append(row)
@@ -885,7 +958,11 @@ class PredictionQualityService:
 
     def _row_segments(self, row: dict[str, Any]) -> list[str]:
         family = str(row.get('family') or 'unknown')
-        selection_key = str(row.get('selection_key') or row.get('selection') or 'unknown').lower()
+        selection_key = self._selection_kind(
+            family,
+            str(row.get('selection_key') or ''),
+            str(row.get('selection') or ''),
+        ) or 'unknown'
         context = str(row.get('context_source') or 'unknown')
         bookmaker = str(row.get('selected_bookmaker') or 'unknown').lower()
         league_bucket = self._league_bucket_from_text(str(row.get('league_name') or ''), str(row.get('match_tier') or ''))
@@ -901,7 +978,7 @@ class PredictionQualityService:
 
     def _candidate_segments(self, candidate: CandidateBet) -> list[str]:
         source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
-        context = str(source_summary.get('context_source') or 'unknown')
+        context = self._candidate_context_source(candidate)
         bookmaker = str(source_summary.get('selected_bookmaker') or 'unknown').lower()
         selection_key = str(
             candidate.selection_key
@@ -924,6 +1001,20 @@ class PredictionQualityService:
             f'prob:{self._probability_bucket(float(candidate.adjusted_probability))}',
         ]
 
+    def _candidate_context_source(self, candidate: CandidateBet) -> str:
+        source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
+        return str(source_summary.get('context_source') or 'unknown')
+
+    def _candidate_selection_kind(self, candidate: CandidateBet) -> str:
+        return self._selection_kind(
+            str(candidate.family or ''),
+            str(candidate.selection_key or ''),
+            str(candidate.selection or ''),
+        )
+
+    def _is_core_league_candidate(self, candidate: CandidateBet) -> bool:
+        return self._candidate_league_bucket(candidate) in {'preferred', 'secondary'}
+
     def _candidate_league_bucket(self, candidate: CandidateBet) -> str:
         source_summary = dict(getattr(candidate, 'source_summary', {}) or {})
         return self._league_bucket_from_text(str(candidate.league_name or ''), str(source_summary.get('match_tier') or ''))
@@ -942,12 +1033,28 @@ class PredictionQualityService:
 
     def _failure_tags(self, row: dict[str, Any]) -> list[str]:
         tags: list[str] = []
+        source_summary = dict(row.get('source_summary') or {})
+        quality_status = str(row.get('quality_status') or source_summary.get('quality_status') or '').strip().lower()
+        quality_reasons = [str(item).strip().lower() for item in (row.get('quality_reasons') or source_summary.get('quality_reasons') or [])]
+        context_source = str(row.get('context_source') or source_summary.get('context_source') or '').strip().lower()
+        family = str(row.get('family') or '').strip().lower()
+        selection_kind = self._selection_kind(family, str(row.get('selection_key') or ''), str(row.get('selection') or ''))
         if self._row_totals_contradiction(row):
             tags.append('xg_contradiction')
         if (self._to_float(row.get('odds')) or 0.0) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40):
             tags.append('high_odds')
         if int(self._to_float(row.get('books_count')) or 0) <= 1:
             tags.append('single_book')
+        if family == 'totals' and selection_kind == 'over':
+            tags.append('totals_over')
+        if context_source == 'sstats_form':
+            tags.append('sstats_form')
+        if 'emergency' in quality_status or 'quality_emergency_publish' in quality_reasons:
+            tags.append('quality_emergency')
+        if 'last_resort' in quality_status or 'quality_last_resort_publish' in quality_reasons:
+            tags.append('quality_last_resort')
+        if 'historical_relief' in quality_status or 'quality_historical_guard_relief' in quality_reasons:
+            tags.append('historical_relief')
         if self._league_bucket_from_text(str(row.get('league_name') or ''), str(row.get('match_tier') or '')) in {'other', 'low'}:
             tags.append('non_core_league')
         if (self._to_float(row.get('confidence')) or 0.0) < 60.0:

@@ -204,6 +204,36 @@ class TelegramPublisher:
 
         return "unknown"
 
+    def _league_bucket(self, league_name: str | None) -> str:
+        if self.settings.is_preferred_league(league_name):
+            return "preferred"
+        if self.settings.is_secondary_league(league_name):
+            return "secondary"
+        if self.settings.is_low_tier_league(league_name):
+            return "low"
+        return "other"
+
+    def _quality_notes(self, bet: CandidateBet) -> str:
+        summary = dict(getattr(bet, "source_summary", {}) or {})
+        status = str(summary.get("quality_status") or "").strip().lower()
+        reasons = [str(item).strip().lower() for item in (summary.get("quality_reasons") or [])]
+        notes: list[str] = []
+
+        if status == "passed_quality_emergency" or "quality_emergency_publish" in reasons:
+            notes.append("⚠️ Режим качества: аварийная публикация, сигнал пограничный.")
+        elif status == "passed_quality_historical_relief" or "quality_historical_guard_relief" in reasons:
+            notes.append("⚠️ Режим качества: публикация с послаблением по историческому фильтру.")
+        elif status == "passed_quality_last_resort" or "quality_last_resort_publish" in reasons:
+            notes.append("⚠️ Режим качества: запасной проход после quality-стопоров.")
+
+        if int(getattr(bet, "books_count", 0) or 0) <= 1:
+            notes.append("⚠️ Рыночное подтверждение слабое: линия только у одного букмекера.")
+
+        if self._league_bucket(getattr(bet, "league_name", None)) in {"other", "low"}:
+            notes.append("⚠️ Лига вне core-пула, для таких матчей риск ошибки выше.")
+
+        return "\n".join(notes[:2])
+
     def render_message(
         self,
         bets: list[CandidateBet],
@@ -246,6 +276,7 @@ class TelegramPublisher:
                 f"{bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M')} "
                 f"{self._timezone_label(bet.commence_time)}"
             )
+            quality_text = self._quality_notes(bet)
             xg_text = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
@@ -268,6 +299,7 @@ class TelegramPublisher:
                 f"💸 Коэффициент: {bet.odds:.2f}\n"
                 f"📊 Вероятность по модели: {bet.adjusted_probability * 100:.1f}% | по линии (консенсус): {consensus_probability * 100:.1f}%\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
+                f"{quality_text + chr(10) if quality_text else ''}"
                 f"🏆 Турнир: {bet.league_name}\n"
                 f"🕒 Начало: {start_text}"
                 f"{stake_text}"
@@ -338,8 +370,8 @@ class TelegramPublisher:
         premium_pct = self._price_vs_consensus_pct(bet)
         books_count = int(getattr(bet, "books_count", 0) or 0)
         market_line = (
-            "Рынок идею подтверждает: "
-            f"{self._books_confirmation_phrase(books_count)}"
+            ("Рынок идею подтверждает: " if books_count >= 2 else "Рыночное подтверждение слабее: ")
+            + f"{self._books_confirmation_phrase(books_count)}"
         )
         if bookmakers:
             market_line += f" ({bookmakers})"
