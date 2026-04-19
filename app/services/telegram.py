@@ -99,16 +99,6 @@ class TelegramPublisher:
     ) -> str:
         return f"{float(value or 0.0):.2f}{self._money_suffix(bankroll_summary=bankroll_summary, candidate=candidate)}"
 
-    @staticmethod
-    def _format_display_odds(value: Any, *, precise: bool = False) -> str:
-        try:
-            odds = float(value or 0.0)
-        except (TypeError, ValueError):
-            odds = 0.0
-        if precise and abs(odds - round(odds, 2)) >= 0.0045:
-            return f"{odds:.3f}"
-        return f"{odds:.2f}"
-
     def _format_outcome(self, value: str) -> str:
         mapping = {
             "won": "выигрыш",
@@ -124,6 +114,19 @@ class TelegramPublisher:
         consensus = float(getattr(bet, "consensus_probability", 0.0) or 0.0)
         market = float(getattr(bet, "market_probability", 0.0) or 0.0)
         return consensus if 0.0 < consensus < 1.0 else market
+
+    def _raw_model_probability(self, bet: CandidateBet) -> float:
+        raw = float(getattr(bet, "model_probability", 0.0) or 0.0)
+        adjusted = float(getattr(bet, "adjusted_probability", 0.0) or 0.0)
+        return raw if 0.0 < raw < 1.0 else adjusted
+
+    def _show_probability_breakdown(self, bet: CandidateBet) -> bool:
+        raw = self._raw_model_probability(bet)
+        adjusted = float(getattr(bet, "adjusted_probability", 0.0) or 0.0)
+        family = str(getattr(bet, "family", "") or "").strip().lower()
+        if family in {"spreads", "dnb"}:
+            return True
+        return abs(raw - adjusted) >= 0.04
 
     def _bookmakers_text(self, bet: CandidateBet) -> str:
         summary = dict(getattr(bet, "source_summary", {}) or {})
@@ -169,46 +172,6 @@ class TelegramPublisher:
         text = re.sub(r"[^a-zа-я0-9+\-. ]+", " ", text)
         text = re.sub(r"\s+", " ", text).strip()
         return text
-
-    def _team_side_label(self, team_side: str | None, home_team: str | None = None, away_team: str | None = None) -> str:
-        side = str(team_side or "").strip().lower()
-        if side == "home":
-            return str(home_team or "Хозяева").strip()
-        if side == "away":
-            return str(away_team or "Гости").strip()
-        return ""
-
-    def _selection_display(
-        self,
-        family: str,
-        selection: str | None,
-        point: float | None = None,
-        team_side: str | None = None,
-        home_team: str | None = None,
-        away_team: str | None = None,
-    ) -> str:
-        family_key = str(family or "").strip()
-        raw = str(selection or "").strip()
-        if family_key == "teamTotals":
-            side_label = self._team_side_label(team_side, home_team, away_team)
-            total_label = russian_selection("totals", raw, point)
-            return f"{side_label}: {total_label}" if side_label else total_label
-        if family_key == "doubleChance":
-            normalized = self._normalize_selection(raw).replace(" ", "")
-            if normalized in {"1x", "x1", "homeordraw"}:
-                return "1X"
-            if normalized in {"x2", "2x", "awayordraw"}:
-                return "X2"
-            if normalized in {"12", "nodraw"}:
-                return "12"
-            home = self._normalize_selection(home_team)
-            away = self._normalize_selection(away_team)
-            if home and home in normalized and "draw" in normalized:
-                return "1X"
-            if away and away in normalized and "draw" in normalized:
-                return "X2"
-            return raw
-        return russian_selection(family_key, raw, point)
 
     def _selection_kind(
         self,
@@ -320,7 +283,7 @@ class TelegramPublisher:
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
-            selection_text = self._selection_display(bet.family, bet.selection, bet.point, getattr(bet, "team_side", None), bet.home_team, bet.away_team)
+            selection_text = russian_selection(bet.family, bet.selection, bet.point)
             point_suffix = f" ({bet.point:g})" if bet.point is not None else ""
             start_text = (
                 f"{bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M')} "
@@ -342,17 +305,30 @@ class TelegramPublisher:
                 else ""
             )
             consensus_probability = self._consensus_probability(bet)
+            raw_model_probability = self._raw_model_probability(bet)
             explanation = self._build_explanation(bet, selection_text)
-            probability_label = "Вероятность по модели"
             consensus_label = "по линии (консенсус)"
             if bet.family in {"spreads", "dnb"}:
-                probability_label = "Оценка по модели"
                 consensus_label = "по линии (с учётом возврата)"
+            probability_lines: list[str] = []
+            if self._show_probability_breakdown(bet):
+                probability_lines.append(
+                    f"📊 Сырая модель: {raw_model_probability * 100:.1f}% | Скорректированная оценка: {bet.adjusted_probability * 100:.1f}%"
+                )
+                probability_lines.append(f"📉 {consensus_label}: {consensus_probability * 100:.1f}%")
+            else:
+                probability_label = "Вероятность по модели"
+                if bet.family in {"spreads", "dnb"}:
+                    probability_label = "Оценка по модели"
+                probability_lines.append(
+                    f"📊 {probability_label}: {bet.adjusted_probability * 100:.1f}% | {consensus_label}: {consensus_probability * 100:.1f}%"
+                )
+            probability_block = "\n".join(probability_lines)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
                 f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
-                f"💸 Коэффициент: {self._format_display_odds(bet.odds)}\n"
-                f"📊 {probability_label}: {bet.adjusted_probability * 100:.1f}% | {consensus_label}: {consensus_probability * 100:.1f}%\n"
+                f"💸 Коэффициент: {bet.odds:.2f}\n"
+                f"{probability_block}\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
                 f"{quality_text + chr(10) if quality_text else ''}"
                 f"🏆 Турнир: {bet.league_name}\n"
@@ -375,33 +351,42 @@ class TelegramPublisher:
             getattr(bet, "selection_key", None),
         )
 
-        model_pct = float(bet.adjusted_probability) * 100.0
+        raw_model_pct = self._raw_model_probability(bet) * 100.0
+        adjusted_model_pct = float(bet.adjusted_probability) * 100.0
         consensus_pct = self._consensus_probability(bet) * 100.0
-        edge_pp = model_pct - consensus_pct
+        edge_pp = adjusted_model_pct - consensus_pct
 
         if bet.family == "totals":
             line_label = f"{selection_text} {bet.point:g}" if bet.point is not None else selection_text
             parts.append(
                 f"На {line_label} линия сейчас даёт около {consensus_pct:.1f}%, "
-                f"а модель оценивает вероятность в {model_pct:.1f}%. "
+                f"а модель оценивает вероятность в {adjusted_model_pct:.1f}%. "
                 f"Запас {edge_pp:+.1f} п.п. делает этот вариант интереснее рынка."
             )
         elif bet.family == "h2h":
             target_team = bet.home_team if kind == "home" else bet.away_team if kind == "away" else "этот исход"
             parts.append(
                 f"По линии этот вариант оценивается примерно в {consensus_pct:.1f}%, "
-                f"а модель поднимает вероятность до {model_pct:.1f}%. "
+                f"а модель поднимает вероятность до {adjusted_model_pct:.1f}%. "
                 f"Перевес {edge_pp:+.1f} п.п. даёт преимущество в пользу {target_team}."
             )
         elif bet.family in {"spreads", "dnb"}:
             parts.append(
-                f"В пересчёте на цену с учётом возврата линия даёт около {consensus_pct:.1f}%, а модель — {model_pct:.1f}%. "
+                f"В пересчёте на цену с учётом возврата линия даёт около {consensus_pct:.1f}%, а скорректированная оценка модели — {adjusted_model_pct:.1f}%. "
                 f"Разница {edge_pp:+.1f} п.п. объясняет интерес к этой форе."
             )
         else:
             parts.append(
-                f"Линия сейчас закладывает около {consensus_pct:.1f}%, а модель видит {model_pct:.1f}%. "
+                f"Линия сейчас закладывает около {consensus_pct:.1f}%, а модель видит {adjusted_model_pct:.1f}%. "
                 f"Разница {edge_pp:+.1f} п.п. говорит в пользу этой ставки."
+            )
+
+        adjustment_delta = raw_model_pct - adjusted_model_pct
+        if self._show_probability_breakdown(bet):
+            direction = "снижена" if adjustment_delta >= 0 else "поднята"
+            parts.append(
+                f"Сырая модельная оценка была {raw_model_pct:.1f}%, но для публикации она {direction} до {adjusted_model_pct:.1f}% "
+                f"с учётом качества контекста, подтверждения линии и защитного shrink к рынку."
             )
 
         if bet.expected_home is not None and bet.expected_away is not None:
@@ -492,7 +477,7 @@ class TelegramPublisher:
                 f"{emoji} Итог: {self._format_outcome(outcome)} | Счёт: {score or 'н/д'}\n"
                 f"Ставка: {russian_market_name(str(item.get('family') or ''))} — "
                 f"{russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} "
-                f"@ {self._format_display_odds(item.get('odds'), precise=True)}\n"
+                f"@ {float(item.get('odds') or 0.0):.2f}\n"
                 f"Сумма: {self._format_money(float(item.get('stake_amount') or 0.0), bankroll_summary=bankroll)} | "
                 f"P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
             )
@@ -596,8 +581,8 @@ class TelegramPublisher:
             selection = str(row.get("selection") or "")
             item_lines.append(
                 f"{idx}. {row.get('home_team')} — {row.get('away_team')}\n"
-                f"{emoji} {russian_market_name(family)} — {self._selection_display(family, selection, point, row.get('team_side'), row.get('home_team'), row.get('away_team'))}{point_suffix} "
-                f"@ {self._format_display_odds(row.get('odds'), precise=True)} | Счет: {score} | P&L: {pnl_text}"
+                f"{emoji} {russian_market_name(family)} — {russian_selection(family, selection, point)}{point_suffix} "
+                f"@ {float(row.get('odds') or 0.0):.2f} | Счет: {score} | P&L: {pnl_text}"
             )
         if item_lines:
             lines.append("\n".join(item_lines))
