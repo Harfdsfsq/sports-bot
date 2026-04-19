@@ -2340,6 +2340,8 @@ class CandidateFactory:
         books_count = int(getattr(item, 'books_count', 0) or 0)
         if books_count >= 2:
             return 2
+        if self._passes_single_book_fallback_guard(item):
+            return 1
         if bucket in {'other', 'low'}:
             return non_core_base
         if not self._has_core_context(item):
@@ -2403,10 +2405,10 @@ class CandidateFactory:
         if probability >= threshold:
             return True
         gap = threshold - probability
-        max_gap = float(getattr(self.settings, 'probability_gate_relief_max_gap', 0.035) or 0.035)
-        min_conf = float(getattr(self.settings, 'probability_gate_relief_min_confidence', 58.0) or 58.0)
-        min_edge = float(getattr(self.settings, 'probability_gate_relief_min_edge_pct', 4.0) or 4.0)
-        min_ev = float(getattr(self.settings, 'probability_gate_relief_min_ev_pct', 2.0) or 2.0)
+        max_gap = float(getattr(self.settings, 'probability_gate_relief_max_gap', 0.05) or 0.05)
+        min_conf = float(getattr(self.settings, 'probability_gate_relief_min_confidence', 55.0) or 55.0)
+        min_edge = float(getattr(self.settings, 'probability_gate_relief_min_edge_pct', 2.8) or 2.8)
+        min_ev = float(getattr(self.settings, 'probability_gate_relief_min_ev_pct', 1.2) or 1.2)
         if (
             gap <= max_gap
             and float(getattr(item, 'confidence', 0.0) or 0.0) >= min_conf
@@ -2824,7 +2826,8 @@ class CandidateFactory:
             return True
         if books_count <= 0:
             return False
-        if self._league_bucket(item) not in {'preferred', 'secondary'}:
+        bucket = self._league_bucket(item)
+        if bucket not in {'preferred', 'secondary'}:
             return False
         if not self._has_core_context(item):
             return False
@@ -2832,11 +2835,21 @@ class CandidateFactory:
         edge_pct = float(getattr(item, 'edge_pct', 0.0) or 0.0)
         ev_pct = float(getattr(item, 'ev_pct', 0.0) or 0.0)
         publication_score = float(getattr(item, 'publication_score', 0.0) or 0.0)
+        if bucket == 'secondary':
+            min_conf = float(getattr(self.settings, 'secondary_single_book_min_confidence', 62.0) or 62.0)
+            min_edge = float(getattr(self.settings, 'secondary_single_book_min_edge_pct', 3.4) or 3.4)
+            min_ev = float(getattr(self.settings, 'secondary_single_book_min_ev_pct', 1.6) or 1.6)
+            min_pub = float(getattr(self.settings, 'secondary_single_book_min_publication_score', 10.5) or 10.5)
+        else:
+            min_conf = float(getattr(self.settings, 'preferred_single_book_min_confidence', 60.0) or 60.0)
+            min_edge = float(getattr(self.settings, 'preferred_single_book_min_edge_pct', 3.2) or 3.2)
+            min_ev = float(getattr(self.settings, 'preferred_single_book_min_ev_pct', 1.4) or 1.4)
+            min_pub = float(getattr(self.settings, 'preferred_single_book_min_publication_score', 9.5) or 9.5)
         return (
-            confidence >= float(getattr(self.settings, 'preferred_single_book_min_confidence', 71.0) or 71.0)
-            and edge_pct >= float(getattr(self.settings, 'preferred_single_book_min_edge_pct', 6.5) or 6.5)
-            and ev_pct >= float(getattr(self.settings, 'preferred_single_book_min_ev_pct', 3.6) or 3.6)
-            and publication_score >= float(getattr(self.settings, 'preferred_single_book_min_publication_score', 13.5) or 13.5)
+            confidence >= min_conf
+            and edge_pct >= min_edge
+            and ev_pct >= min_ev
+            and publication_score >= min_pub
         )
 
     @staticmethod
