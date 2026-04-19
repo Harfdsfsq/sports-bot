@@ -410,8 +410,6 @@ class PredictionQualityService:
         return None
 
     def _passes_quality_fallback_profile(self, candidate: CandidateBet) -> bool:
-        if candidate.family == 'totals':
-            return False
         if not self._is_core_league_candidate(candidate):
             return False
         if int(getattr(candidate, 'books_count', 0) or 0) < max(2, int(self._setting('quality_fallback_min_books_strict', 2) or 2)):
@@ -421,6 +419,38 @@ class PredictionQualityService:
         if self._candidate_market_contradiction(candidate):
             return False
         if float(candidate.odds) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40) and float(candidate.confidence) < 68.0:
+            return False
+        if candidate.family == 'totals':
+            return self._passes_totals_quality_fallback_profile(candidate)
+        return True
+
+    def _passes_totals_quality_fallback_profile(self, candidate: CandidateBet) -> bool:
+        if not bool(self._setting('quality_totals_fallback_enabled', True)):
+            return False
+        if int(getattr(candidate, 'books_count', 0) or 0) < max(2, int(self._setting('quality_totals_fallback_min_books', 2) or 2)):
+            return False
+        if float(candidate.confidence) < float(self._setting('quality_totals_fallback_min_confidence', 58.0) or 58.0):
+            return False
+        if float(candidate.ev_pct) < float(self._setting('quality_totals_fallback_min_ev_pct', 1.0) or 1.0):
+            return False
+        if float(candidate.edge_pct) < float(self._setting('quality_totals_fallback_min_edge_pct', 1.5) or 1.5):
+            return False
+        headroom = self._totals_xg_headroom(candidate)
+        if headroom is None:
+            return False
+        selection_kind = self._candidate_selection_kind(candidate)
+        min_headroom = float(
+            self._setting(
+                'quality_totals_fallback_under_min_xg_headroom' if selection_kind == 'under' else 'quality_totals_fallback_over_min_xg_headroom',
+                0.06 if selection_kind == 'under' else 0.16,
+            ) or (0.06 if selection_kind == 'under' else 0.16)
+        )
+        if headroom < min_headroom:
+            return False
+        if selection_kind == 'over' and float(candidate.confidence) < max(
+            float(self._setting('quality_totals_fallback_min_confidence', 58.0) or 58.0),
+            61.0,
+        ):
             return False
         return True
 
@@ -821,13 +851,19 @@ class PredictionQualityService:
         if context_source == 'sstats_form':
             score -= 6.0
         if candidate.family == 'totals':
-            score -= 6.0
-            if self._candidate_selection_kind(candidate) == 'over':
-                score -= 8.0
+            selection_kind = self._candidate_selection_kind(candidate)
+            headroom = self._totals_xg_headroom(candidate)
+            score -= 4.0
+            if selection_kind == 'over':
+                score -= 6.0
+            elif headroom is not None and headroom > 0.0:
+                score += clamp(headroom * 8.0, 0.0, 3.5)
             if self._odds_bucket(float(candidate.odds)) == '2.05-2.74':
-                score -= 5.0
+                score -= 2.5 if selection_kind == 'under' else 4.0
             if int(candidate.books_count) <= 1:
-                score -= 4.0
+                score -= 3.0
+            elif selection_kind == 'under':
+                score += 1.5
         if enough_history:
             segment_stats = dict(profile.get('segments') or {})
             roi_values = [
@@ -894,6 +930,21 @@ class PredictionQualityService:
         if kind == 'over':
             return total_xg <= point - margin
         return False
+
+    def _totals_xg_headroom(self, candidate: CandidateBet) -> float | None:
+        if candidate.family != 'totals':
+            return None
+        expected = self._candidate_xg(candidate)
+        point = self._to_float(candidate.point)
+        if expected is None or point is None:
+            return None
+        total_xg = float(expected[0]) + float(expected[1])
+        kind = self._candidate_selection_kind(candidate)
+        if kind == 'under':
+            return point - total_xg
+        if kind == 'over':
+            return total_xg - point
+        return None
 
     def _clv_guard(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(self._setting('clv_quality_guard_enabled', True)):
@@ -1084,27 +1135,77 @@ class PredictionQualityService:
             min_edge_relief = float(self._setting('post_calibration_probability_relief_min_edge_pct', 6.5) or 6.5)
             min_ev_relief = float(self._setting('post_calibration_probability_relief_min_ev_pct', 5.0) or 5.0)
             min_books_relief = max(1, int(self._setting('post_calibration_probability_relief_min_books', 1) or 1))
-            if not (
+            if (
                 probability_gap <= max_gap_relief
                 and float(candidate.confidence) >= min_conf_relief
                 and float(candidate.edge_pct) >= min_edge_relief
                 and float(candidate.ev_pct) >= min_ev_relief
                 and int(candidate.books_count) >= min_books_relief
             ):
+                candidate.reasons.append(
+                    f'quality=post_calibration_probability_relief(gap={probability_gap * 100.0:.1f}pp)'
+                )
+                candidate.source_summary['post_calibration_probability_relief'] = {
+                    'gap_pp': round(probability_gap * 100.0, 3),
+                    'min_probability': round(min_probability, 4),
+                    'adjusted_probability': round(adjusted_probability, 4),
+                    'profile': 'standard',
+                }
+            elif self._passes_post_calibration_core_relief(candidate, probability_gap):
+                candidate.reasons.append(
+                    f'quality=post_calibration_core_relief(gap={probability_gap * 100.0:.1f}pp)'
+                )
+                candidate.source_summary['post_calibration_probability_relief'] = {
+                    'gap_pp': round(probability_gap * 100.0, 3),
+                    'min_probability': round(min_probability, 4),
+                    'adjusted_probability': round(adjusted_probability, 4),
+                    'profile': 'core_market',
+                }
+            else:
                 return 'post_calibration_probability_guard'
-            candidate.reasons.append(
-                f'quality=post_calibration_probability_relief(gap={probability_gap * 100.0:.1f}pp)'
-            )
-            candidate.source_summary['post_calibration_probability_relief'] = {
-                'gap_pp': round(probability_gap * 100.0, 3),
-                'min_probability': round(min_probability, 4),
-                'adjusted_probability': round(adjusted_probability, 4),
-            }
         if float(candidate.edge_pct) < float(self.settings.min_edge_pct_for_family(candidate.family)):
             return 'post_calibration_edge_guard'
         if float(candidate.ev_pct) < float(self.settings.min_ev_pct_for_family(candidate.family)):
             return 'post_calibration_ev_guard'
         return None
+
+    def _passes_post_calibration_core_relief(self, candidate: CandidateBet, probability_gap: float) -> bool:
+        if not bool(self._setting('post_calibration_core_relief_enabled', True)):
+            return False
+        if probability_gap > float(self._setting('post_calibration_core_relief_max_gap', 0.12) or 0.12):
+            return False
+        if not self._is_core_league_candidate(candidate):
+            return False
+        if int(candidate.books_count) < max(2, int(self._setting('post_calibration_core_relief_min_books', 2) or 2)):
+            return False
+        if self._candidate_context_source(candidate) == 'sstats_form':
+            return False
+        if self._candidate_market_contradiction(candidate):
+            return False
+        if float(candidate.confidence) < float(self._setting('post_calibration_core_relief_min_confidence', 58.0) or 58.0):
+            return False
+        if float(candidate.edge_pct) < float(self._setting('post_calibration_core_relief_min_edge_pct', 2.8) or 2.8):
+            return False
+        if float(candidate.ev_pct) < float(self._setting('post_calibration_core_relief_min_ev_pct', 1.1) or 1.1):
+            return False
+        if float(candidate.odds) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40) and float(candidate.confidence) < 66.0:
+            return False
+        if candidate.family == 'totals':
+            headroom = self._totals_xg_headroom(candidate)
+            if headroom is None:
+                return False
+            selection_kind = self._candidate_selection_kind(candidate)
+            min_headroom = float(
+                self._setting(
+                    'post_calibration_core_relief_totals_under_min_xg_headroom' if selection_kind == 'under' else 'post_calibration_core_relief_totals_over_min_xg_headroom',
+                    0.06 if selection_kind == 'under' else 0.16,
+                ) or (0.06 if selection_kind == 'under' else 0.16)
+            )
+            if headroom < min_headroom:
+                return False
+            if selection_kind == 'over' and float(candidate.confidence) < 61.0:
+                return False
+        return True
 
     def _clv_segment_stats(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
         grouped: dict[str, list[dict[str, Any]]] = defaultdict(list)
