@@ -2142,18 +2142,25 @@ class CandidateFactory:
         weighted_books = self._weighted_unique_books(offers)
         has_preferred_book = bool(norm_books & self.target_books) or bool(norm_books & {'bet365', 'unibet', 'pinnacle', 'betfair'})
         has_sharp = self._has_sharp_book(offers)
-        if family == 'totals' and point in {2.5, 3.5, 4.5}:
-            base = max(base, 2)
-        if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
-            return min(base, 2)
-        if self._allow_single_book_with_context(family, context, has_sharp=has_sharp, has_preferred_book=has_preferred_book):
-            return 1
-        if (
+        allow_context_single = self._allow_single_book_with_context(
+            family,
+            context,
+            has_sharp=has_sharp,
+            has_preferred_book=has_preferred_book,
+        )
+        allow_target_single = (
             bool(getattr(self.settings, 'allow_single_target_book', True))
             and has_preferred_book
             and family in {'h2h', 'totals', 'btts', 'doubleChance', 'dnb', 'teamTotals'}
             and weighted_books >= 0.95
-        ):
+        )
+        if family == 'totals' and point in {2.5, 3.5, 4.5} and not (allow_context_single or allow_target_single):
+            base = max(base, 2)
+        if weighted_books >= float(getattr(self.settings, 'min_weighted_books_for_consensus', 1.75) or 1.75):
+            return min(base, 2)
+        if allow_context_single:
+            return 1
+        if allow_target_single:
             return 1
         if getattr(self.settings, 'allow_single_sharp_book', True) and has_sharp:
             return min(base, 2)
