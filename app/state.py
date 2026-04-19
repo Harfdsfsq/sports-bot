@@ -24,7 +24,7 @@ class JsonStateStore:
     def _default_state(self) -> dict[str, Any]:
         now = datetime.now(UTC).isoformat()
         return {
-            'version': 2,
+            'version': 3,
             'updated_at': now,
             'last_run': {},
             'bankroll': {
@@ -46,6 +46,9 @@ class JsonStateStore:
             'bets': [],
             'published_candidates': [],
             'daily_reports': {},
+            'run_history': [],
+            'message_history': [],
+            'learning_state': {},
         }
 
     def _load_state(self) -> dict[str, Any]:
@@ -57,11 +60,32 @@ class JsonStateStore:
             return self._default_state()
         state = self._default_state()
         if isinstance(payload, dict):
-            state.update({k: v for k, v in payload.items() if k in {'version', 'updated_at', 'last_run', 'bets', 'published_candidates', 'bankroll', 'daily_reports'}})
+            state.update({
+                k: v
+                for k, v in payload.items()
+                if k in {
+                    'version',
+                    'updated_at',
+                    'last_run',
+                    'bets',
+                    'published_candidates',
+                    'bankroll',
+                    'daily_reports',
+                    'run_history',
+                    'message_history',
+                    'learning_state',
+                }
+            })
             if isinstance(payload.get('bankroll'), dict):
                 state['bankroll'].update(payload['bankroll'])
             if not isinstance(state.get('daily_reports'), dict):
                 state['daily_reports'] = {}
+            if not isinstance(state.get('run_history'), list):
+                state['run_history'] = []
+            if not isinstance(state.get('message_history'), list):
+                state['message_history'] = []
+            if not isinstance(state.get('learning_state'), dict):
+                state['learning_state'] = {}
         return state
 
     def _save(self) -> None:
@@ -79,6 +103,74 @@ class JsonStateStore:
 
     def write_debug(self, payload: dict[str, Any]) -> None:
         self.debug_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding='utf-8')
+
+    def archive_run_payload(self, payload: dict[str, Any], settings: Any | None = None) -> dict[str, Any]:
+        created_at = str(payload.get('created_at') or datetime.now(UTC).isoformat())
+        try:
+            created_dt = parse_datetime(created_at)
+        except Exception:
+            created_dt = datetime.now(UTC)
+            created_at = created_dt.isoformat()
+        history_root = self.state_path.parent / 'history' / 'runs'
+        dated_dir = history_root / created_dt.strftime('%Y-%m-%d')
+        stamp = created_dt.strftime('%H%M%S')
+        archive_path = dated_dir / f'{stamp}-run.json'
+        archived_payload = dict(payload)
+        archived_payload['created_at'] = created_at
+        self._write_json(archive_path, archived_payload)
+
+        summary = dict(archived_payload.get('summary') or {})
+        forecast_rows = [dict(item) for item in (archived_payload.get('forecast_rows') or []) if isinstance(item, dict)]
+        telegram_messages = [
+            str(item).strip()
+            for item in (archived_payload.get('telegram_messages') or [])
+            if str(item).strip()
+        ]
+        compact_record = {
+            'created_at': created_at,
+            'path': str(archive_path),
+            'status': str(
+                summary.get('run_status')
+                or summary.get('status')
+                or ('error' if archived_payload.get('error') else 'ok')
+            ),
+            'matches_seen': int(summary.get('matches_seen') or 0),
+            'contexts_built': int(summary.get('contexts_built') or 0),
+            'candidates': int(summary.get('candidates') or 0),
+            'published': int(summary.get('published') or 0),
+            'telegram_messages_sent': int(summary.get('telegram_messages_sent') or 0),
+            'forecast_rows': len(forecast_rows),
+        }
+
+        run_history = [dict(item) for item in (self._state.get('run_history') or []) if isinstance(item, dict)]
+        run_history.append(compact_record)
+        run_history = run_history[-60:]
+        self._state['run_history'] = run_history
+
+        message_history = [dict(item) for item in (self._state.get('message_history') or []) if isinstance(item, dict)]
+        for index, message in enumerate(telegram_messages, start=1):
+            message_history.append({
+                'created_at': created_at,
+                'run_path': str(archive_path),
+                'message_index': index,
+                'message': message,
+            })
+        self._state['message_history'] = message_history[-250:]
+
+        quality_report = dict(archived_payload.get('quality_report') or {})
+        self._state['learning_state'] = {
+            'updated_at': created_at,
+            'summary': dict(quality_report.get('summary') or {}),
+            'learning': dict(quality_report.get('learning') or {}),
+            'error_analysis': dict(quality_report.get('error_analysis') or {}),
+            'archive_path': str(archive_path),
+        }
+        self._save()
+        return {
+            'run_archive_path': str(archive_path),
+            'run_history_count': len(run_history),
+            'message_history_count': len(self._state.get('message_history') or []),
+        }
 
     def _sync_bankroll_defaults(self, settings: Any) -> None:
         bank = self._state.setdefault('bankroll', {})

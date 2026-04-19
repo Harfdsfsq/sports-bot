@@ -91,6 +91,24 @@ class PredictionRunner:
         if provider_name == 'allsportsapi':
             explicit = bool(getattr(self.settings, 'enable_allsportsapi', default))
             return explicit or bool(getattr(self.settings, 'allsportsapi_api_key', None))
+        if provider_name == 'odds_api_io':
+            explicit = bool(getattr(self.settings, 'enable_odds_api_io', default))
+            return explicit or bool(getattr(self.settings, 'odds_api_io_key', None))
+        if provider_name == 'sstats':
+            explicit = bool(getattr(self.settings, 'sstats_enabled', default)) and bool(getattr(self.settings, 'enable_sstats_context', default))
+            return explicit or bool(getattr(self.settings, 'sstats_api_key', None))
+        if provider_name == 'api_football':
+            explicit = bool(getattr(self.settings, 'api_football_enabled', default))
+            return explicit or bool(getattr(self.settings, 'api_football_key', None))
+        if provider_name == 'football_data':
+            explicit = bool(getattr(self.settings, 'enable_football_data_context', default))
+            return explicit or bool(getattr(self.settings, 'football_data_api_key', None))
+        if provider_name == 'newsapi':
+            explicit = bool(getattr(self.settings, 'enable_newsapi_context', default))
+            return explicit or bool(getattr(self.settings, 'newsapi_key', None))
+        if provider_name == 'gnews':
+            explicit = bool(getattr(self.settings, 'enable_gnews_context', default))
+            return explicit or bool(getattr(self.settings, 'gnews_key', None))
         return bool(default)
 
     def _safe_provider(self, module_name: str, class_name: str) -> Any | None:
@@ -98,7 +116,7 @@ class PredictionRunner:
         if module_name.endswith('bookies_bootstrap') and not getattr(self.settings, 'bookies_bootstrap_enabled', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('odds_api_io') and not getattr(self.settings, 'enable_odds_api_io', True):
+        if module_name.endswith('odds_api_io') and not self._provider_enabled('odds_api_io', default=True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('bookies_api') and not self._provider_enabled('bookies_api', default=False):
@@ -116,10 +134,10 @@ class PredictionRunner:
         if module_name.endswith('bzzoiro') and not getattr(self.settings, 'enable_bzzoiro_context', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('sstats') and (not getattr(self.settings, 'sstats_enabled', True) or not getattr(self.settings, 'enable_sstats_context', True)):
+        if module_name.endswith('sstats') and not self._provider_enabled('sstats', default=True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('api_football') and not getattr(self.settings, 'api_football_enabled', True):
+        if module_name.endswith('api_football') and not self._provider_enabled('api_football', default=True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('espn') and not getattr(self.settings, 'enable_espn_context', True):
@@ -128,19 +146,13 @@ class PredictionRunner:
         if module_name.endswith('thesportsdb') and not getattr(self.settings, 'enable_thesportsdb_context', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('football_data') and not getattr(self.settings, 'enable_football_data_context', True):
+        if module_name.endswith('football_data') and not self._provider_enabled('football_data', default=True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('openligadb') and not getattr(self.settings, 'enable_openligadb_context', True):
+        if module_name.endswith('newsapi') and not self._provider_enabled('newsapi', default=True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('openfootball') and not getattr(self.settings, 'enable_openfootball_context', True):
-            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
-            return None
-        if module_name.endswith('newsapi') and not getattr(self.settings, 'enable_newsapi_context', True):
-            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
-            return None
-        if module_name.endswith('gnews') and not getattr(self.settings, 'enable_gnews_context', True):
+        if module_name.endswith('gnews') and not self._provider_enabled('gnews', default=True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         try:
@@ -575,76 +587,102 @@ class PredictionRunner:
             )
             summary['sheet_export'] = sheet_export_result
 
+            run_created_at = datetime.now(UTC).isoformat()
+            base_run_payload = {
+                'created_at': run_created_at,
+                'summary': summary,
+                'settings': {
+                    'run_sports': self.settings.run_sports,
+                    'run_days_ahead': self.settings.run_days_ahead,
+                    'target_bookmakers': self.settings.target_bookmakers,
+                    'consensus_bookmakers': self.settings.consensus_bookmakers,
+                    'publish_dry_run': self.settings.publish_dry_run,
+                    'app_timezone': self.settings.app_timezone,
+                    'match_bootstrap_provider': self.settings.match_bootstrap_provider,
+                    'bootstrap_fallback_to_bookies': self.settings.bootstrap_fallback_to_bookies,
+                    'bootstrap_fallback_to_context': bool(getattr(self.settings, 'bootstrap_fallback_to_context', True)),
+                    'context_enrichment_match_limit': self.settings.context_enrichment_match_limit,
+                    'context_enrichment_requires_offers': self.settings.context_enrichment_requires_offers,
+                },
+                'source_previews': {
+                    'match_bootstrap': bootstrap_preview,
+                    'bookies_bootstrap': (bootstrap_attempts.get('bookies_bootstrap', {}).get('preview') or {}),
+                    'odds_api_io_bootstrap': (bootstrap_attempts.get('odds_api_io', {}).get('preview') or {}),
+                    'odds_api_io': odds_io_preview,
+                    'bookies_api': bookies_preview,
+                    'oddspapi': oddspapi_preview,
+                    'allsportsapi': allsportsapi_preview,
+                    'futrixmetrics': futrixmetrics_preview,
+                    'sstats': sstats_preview,
+                    'bzzoiro': bzzoiro_preview,
+                    'api_football': api_football_preview,
+                    'espn': espn_preview,
+                    'thesportsdb': thesportsdb_preview,
+                    'football_data': football_data_preview,
+                    'openligadb': openligadb_preview,
+                    'openfootball': openfootball_preview,
+                    'newsapi': newsapi_preview,
+                    'gnews': gnews_preview,
+                    'market_monitor': market_monitor_preview,
+                },
+                'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
+                'model_debug': model_debug,
+                'quality_report': quality_report,
+                'quality_debug': quality_debug,
+                'telegram_messages': telegram_payloads,
+                'settlement': {
+                    'probe': settlement_probe,
+                    'summary': settlement_summary,
+                },
+                'daily_report': daily_report or {},
+                'bankroll': bankroll_summary,
+                'sheet_export': sheet_export_result,
+                'exports': export_paths,
+            }
             self.state.write_debug(
                 {
-                    'created_at': datetime.now(UTC).isoformat(),
-                    'summary': summary,
-                    'settings': {
-                        'run_sports': self.settings.run_sports,
-                        'run_days_ahead': self.settings.run_days_ahead,
-                        'target_bookmakers': self.settings.target_bookmakers,
-                        'consensus_bookmakers': self.settings.consensus_bookmakers,
-                        'publish_dry_run': self.settings.publish_dry_run,
-                        'app_timezone': self.settings.app_timezone,
-                        'match_bootstrap_provider': self.settings.match_bootstrap_provider,
-                        'bootstrap_fallback_to_bookies': self.settings.bootstrap_fallback_to_bookies,
-                        'context_enrichment_match_limit': self.settings.context_enrichment_match_limit,
-                        'context_enrichment_requires_offers': self.settings.context_enrichment_requires_offers,
-                    },
-                    'source_previews': {
-                        'match_bootstrap': bootstrap_preview,
-                        'bookies_bootstrap': (bootstrap_attempts.get('bookies_bootstrap', {}).get('preview') or {}),
-                        'odds_api_io_bootstrap': (bootstrap_attempts.get('odds_api_io', {}).get('preview') or {}),
-                        'odds_api_io': odds_io_preview,
-                        'bookies_api': bookies_preview,
-                        'oddspapi': oddspapi_preview,
-                        'allsportsapi': allsportsapi_preview,
-                        'futrixmetrics': futrixmetrics_preview,
-                        'sstats': sstats_preview,
-                        'bzzoiro': bzzoiro_preview,
-                        'api_football': api_football_preview,
-                        'espn': espn_preview,
-                        'thesportsdb': thesportsdb_preview,
-                        'football_data': football_data_preview,
-                        'openfootball': openfootball_preview,
-                        'newsapi': newsapi_preview,
-                        'gnews': gnews_preview,
-                        'market_monitor': market_monitor_preview,
-                    },
+                    **base_run_payload,
                     'sample_matches': [self._serialize_match(item) for item in filtered_matches[:25]],
                     'sample_offers': self._serialize_offers(merged_offers, limit=25),
                     'sample_contexts': [self._serialize_context(item) for item in list(contexts.values())[:25]],
-                    'provider_diagnostics': provider_diagnostics if self.settings.enable_provider_diagnostics else {'enabled': False},
                     'forecast_rows': forecast_rows[:200],
-                    'model_debug': model_debug,
-                    'quality_report': quality_report,
-                    'quality_debug': quality_debug,
                     'candidates': [self._serialize_candidate(item) for item in publishable_candidates[:25]],
                     'candidates_before_quality': [self._serialize_candidate(item) for item in candidates_before_quality[:25]],
                     'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates[:25]],
                     'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates[:25]],
-                    'telegram_messages': telegram_payloads,
-                    'settlement': {
-                        'probe': settlement_probe,
-                        'summary': settlement_summary,
-                    },
-                    'daily_report': daily_report or {},
                     'bet_ledger_sample': bet_ledger_rows[:25],
-                    'bankroll': bankroll_summary,
-                    'sheet_export': sheet_export_result,
                 }
             )
+            history_result = self.state.archive_run_payload(
+                {
+                    **base_run_payload,
+                    'matches': [self._serialize_match(item) for item in filtered_matches],
+                    'offers': self._serialize_offers(merged_offers, limit=max(200, len(filtered_matches) * 8)),
+                    'contexts': [self._serialize_context(item) for item in list(contexts.values())],
+                    'forecast_rows': forecast_rows,
+                    'candidates': [self._serialize_candidate(item) for item in publishable_candidates],
+                    'candidates_before_quality': [self._serialize_candidate(item) for item in candidates_before_quality],
+                    'candidates_zero_stake': [self._serialize_candidate(item) for item in zero_stake_candidates],
+                    'reused_candidates': [self._serialize_candidate(item) for item in reused_candidates],
+                    'bet_ledger': bet_ledger_rows,
+                },
+                settings=self.settings,
+            )
+            summary['history'] = history_result
             self.state.save_run('ok', summary=summary)
             return summary
         except Exception as exc:
             error_text = f'{type(exc).__name__}: {exc}'
             self.state.save_run('error', error_text=error_text)
-            self.state.write_debug({'created_at': datetime.now(UTC).isoformat(), 'error': error_text})
+            error_payload = {'created_at': datetime.now(UTC).isoformat(), 'error': error_text}
+            self.state.write_debug(error_payload)
+            self.state.archive_run_payload(error_payload, settings=self.settings)
             raise
 
     async def _fetch_matches(self) -> tuple[list[Match], dict[str, Any]]:
         strategy = str(getattr(self.settings, 'match_bootstrap_provider', 'odds_api_io') or 'odds_api_io').strip().lower()
         allow_fallback = bool(getattr(self.settings, 'bootstrap_fallback_to_bookies', True))
+        allow_context_fallback = bool(getattr(self.settings, 'bootstrap_fallback_to_context', True))
 
         provider_order: list[tuple[str, Any]]
         if strategy == 'bookies_bootstrap':
@@ -657,6 +695,16 @@ class PredictionRunner:
             provider_order = [('odds_api_io', self.odds_api_io)]
             if allow_fallback:
                 provider_order.append(('bookies_bootstrap', self.bookies_bootstrap))
+        if allow_context_fallback:
+            for provider_name, provider in (
+                ('openfootball', self.openfootball),
+                ('openligadb', self.openligadb),
+            ):
+                if any(existing_name == provider_name for existing_name, _ in provider_order):
+                    continue
+                if provider is None or not hasattr(provider, 'fetch_matches'):
+                    continue
+                provider_order.append((provider_name, provider))
 
         attempts: dict[str, dict[str, Any]] = {}
         for provider_name, provider in provider_order:

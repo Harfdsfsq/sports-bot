@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 from typing import Any
 
@@ -129,6 +129,72 @@ class OpenLigaDbContextProvider:
                     })
         return contexts, stats, preview
 
+    async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
+        stats: dict[str, Any] = {
+            'enabled': True,
+            'requests': 0,
+            'response_errors': 0,
+            'datasets_loaded': 0,
+            'fixtures_scanned': 0,
+            'matches_built': 0,
+            'http_statuses': [],
+            'last_body_preview': None,
+        }
+        preview: dict[str, Any] = {'sample_datasets': [], 'sample_matches': []}
+
+        now_utc = datetime.now(UTC)
+        horizon = now_utc + timedelta(days=max(1, int(getattr(self.settings, 'run_days_ahead', 4) or 4)))
+        dataset_limit = max(1, int(getattr(self.settings, 'openligadb_dataset_limit', 8) or 8))
+        competition_keys = self._bootstrap_competition_keys()[:dataset_limit]
+        if not competition_keys:
+            return [], stats, preview
+
+        matches: list[Match] = []
+        seen: set[str] = set()
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            for comp_key in competition_keys:
+                loaded_rows: list[dict[str, Any]] | None = None
+                used_season: int | None = None
+                for season in self._season_candidates(now_utc):
+                    payload = await self._fetch_json(client, f'/getmatchdata/{comp_key}/{season}', stats)
+                    rows = [row for row in (payload or []) if isinstance(row, dict)] if isinstance(payload, list) else []
+                    if not rows:
+                        continue
+                    loaded_rows = rows
+                    used_season = season
+                    break
+                if not loaded_rows:
+                    continue
+                stats['datasets_loaded'] += 1
+                stats['fixtures_scanned'] += len(loaded_rows)
+                if len(preview['sample_datasets']) < 4:
+                    preview['sample_datasets'].append({'competition_key': comp_key, 'season': used_season or 'unknown', 'rows': loaded_rows[:2]})
+                for row in loaded_rows:
+                    match = self._row_to_match(row, comp_key=comp_key)
+                    if match is None:
+                        continue
+                    commence_time = match.commence_time.astimezone(UTC)
+                    if commence_time < now_utc or commence_time > horizon:
+                        continue
+                    key = match.match_key
+                    if key in seen:
+                        continue
+                    seen.add(key)
+                    matches.append(match)
+
+        stats['matches_built'] = len(matches)
+        preview['sample_matches'] = [
+            {
+                'match_key': item.match_key,
+                'league_name': item.league_name,
+                'home_team': item.home_team,
+                'away_team': item.away_team,
+                'commence_time': item.commence_time.isoformat(),
+            }
+            for item in matches[:6]
+        ]
+        return matches, stats, preview
+
     def supports_match(self, match: Match) -> bool:
         return str(getattr(match, 'sport_key', '') or '') == 'soccer' and bool(self._competition_key(match.league_name))
 
@@ -185,6 +251,14 @@ class OpenLigaDbContextProvider:
                     return right
         return None
 
+    def _competition_label(self, comp_key: str) -> str:
+        key = str(comp_key or '').strip()
+        for mapping in (self.league_map, self.alias_map):
+            for name, value in mapping.items():
+                if str(value or '').strip().lower() == key.lower():
+                    return str(name or '').strip().title()
+        return key
+
     @staticmethod
     def _normalize_league_name(name: str) -> str:
         text = ' '.join(str(name or '').lower().replace('_', ' ').replace('/', ' ').replace('.', ' ').split())
@@ -204,6 +278,52 @@ class OpenLigaDbContextProvider:
             if value > 2000 and value not in seen:
                 seen.append(value)
         return seen
+
+    def _bootstrap_competition_keys(self) -> list[str]:
+        ordered: list[str] = []
+        for source in (self.league_map, self.alias_map):
+            for value in source.values():
+                comp_key = str(value or '').strip()
+                if comp_key and comp_key not in ordered:
+                    ordered.append(comp_key)
+        return ordered
+
+    def _row_to_match(self, row: dict[str, Any], *, comp_key: str) -> Match | None:
+        home_payload = row.get('Team1') if isinstance(row.get('Team1'), dict) else {}
+        away_payload = row.get('Team2') if isinstance(row.get('Team2'), dict) else {}
+        home_team = str(home_payload.get('TeamName') or row.get('Team1Name') or '').strip()
+        away_team = str(away_payload.get('TeamName') or row.get('Team2Name') or '').strip()
+        if not home_team or not away_team:
+            return None
+        commence_raw = str(row.get('MatchDateTimeUTC') or row.get('MatchDateTime') or '').strip()
+        if not commence_raw:
+            return None
+        if '+' not in commence_raw and not commence_raw.endswith('Z'):
+            commence_raw = f'{commence_raw}+00:00'
+        try:
+            commence_time = parse_datetime(commence_raw)
+        except Exception:
+            return None
+        league_name = str(row.get('LeagueName') or self._competition_label(comp_key)).strip()
+        metadata = {
+            'openligadb_competition_key': comp_key,
+            'group': row.get('Group') or {},
+            'raw_row': row,
+        }
+        return Match(
+            source='openligadb',
+            source_event_id=str(row.get('MatchID') or f'{comp_key}:{home_team}:{away_team}:{commence_time.isoformat()}'),
+            sport_key='soccer',
+            league_name=league_name or self._competition_label(comp_key),
+            home_team=home_team,
+            away_team=away_team,
+            commence_time=commence_time,
+            home_team_norm='',
+            away_team_norm='',
+            league_key=comp_key,
+            tier='mid',
+            metadata=metadata,
+        )
 
     @staticmethod
     def _team_aliases(payload: dict[str, Any]) -> list[str]:

@@ -354,6 +354,7 @@ class Settings(BaseSettings):
     max_matches_for_odds_fetch: int = Field(default=260, validation_alias=AliasChoices("MAX_MATCHES_FOR_ODDS_FETCH", "MAX_MATCHES_FOR_PRICING"))
     match_bootstrap_provider: str = Field(default="odds_api_io", validation_alias=AliasChoices("MATCH_BOOTSTRAP_PROVIDER"))
     bootstrap_fallback_to_bookies: bool = Field(default=True, validation_alias=AliasChoices("BOOTSTRAP_FALLBACK_TO_BOOKIES"))
+    bootstrap_fallback_to_context: bool = Field(default=True, validation_alias=AliasChoices("BOOTSTRAP_FALLBACK_TO_CONTEXT"))
 
     source_weight_theodds: float = Field(default=1.04, validation_alias=AliasChoices("SOURCE_WEIGHT_THEODDS"))
     source_weight_oddsapiio: float = Field(default=1.00, validation_alias=AliasChoices("SOURCE_WEIGHT_ODDSAPIIO"))

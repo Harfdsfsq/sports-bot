@@ -97,6 +97,18 @@ class PredictionQualityService:
             calibration = self._candidate_calibration(segments, profile, enough_history)
             if calibration['applied']:
                 self._apply_probability_adjustment(candidate, float(calibration['delta_probability']))
+            learning_adjustment = self._candidate_learning_adjustment(segments, profile, enough_history)
+            if learning_adjustment['applied']:
+                candidate.publication_score = round(
+                    float(getattr(candidate, 'publication_score', 0.0) or 0.0)
+                    + float(learning_adjustment['score_delta']),
+                    3,
+                )
+                candidate.source_summary['learning_adjustment'] = learning_adjustment
+                if abs(float(learning_adjustment['score_delta'])) >= 1.0:
+                    candidate.reasons.append(
+                        f"learning=score_delta({float(learning_adjustment['score_delta']):+.2f})"
+                    )
 
             quality_score = self._candidate_quality_score(candidate, segments, profile, enough_history)
             status = 'passed_quality'
@@ -132,9 +144,11 @@ class PredictionQualityService:
                 'quality_score': round(quality_score, 3),
                 'reasons': reasons,
                 'calibration': calibration,
+                'learning_adjustment': learning_adjustment,
                 'segments': segments,
                 'original_adjusted_probability': round(original_probability, 5),
                 'final_adjusted_probability': round(float(candidate.adjusted_probability), 5),
+                'publication_score': round(float(getattr(candidate, 'publication_score', 0.0) or 0.0), 3),
                 'evaluated_at': now_utc.isoformat(),
             }
             candidate.diagnostics.setdefault('quality', payload)
@@ -605,6 +619,47 @@ class PredictionQualityService:
             'applied': abs(delta) >= 0.0025,
             'delta_probability': round(delta, 5),
             'raw_delta_probability': round(raw_delta, 5),
+            'segments_used': [segment for _, _, segment in weighted[:8]],
+        }
+
+    def _candidate_learning_adjustment(self, segments: list[str], profile: dict[str, Any], enough_history: bool) -> dict[str, Any]:
+        if not enough_history or not bool(self._setting('learning_score_adjustment_enabled', True)):
+            return {'applied': False, 'score_delta': 0.0, 'segments_used': []}
+        stats = dict(profile.get('segments') or {})
+        clv_segments = dict(profile.get('clv_segments') or {})
+        min_sample = max(1, int(self._setting('learning_score_min_sample', 10) or 10))
+        weighted: list[tuple[float, float, str]] = []
+        for segment in segments:
+            item = stats.get(segment)
+            if not isinstance(item, dict) or int(item.get('count') or 0) < min_sample:
+                continue
+            roi = self._to_float(item.get('roi_pct'))
+            delta = self._to_float(item.get('calibration_delta_probability'))
+            if roi is None and delta is None:
+                continue
+            segment_delta = 0.0
+            if roi is not None:
+                segment_delta += clamp(float(roi) * 0.08, -4.5, 2.5)
+            if delta is not None:
+                segment_delta += clamp(float(delta) * 26.0, -4.0, 1.8)
+            clv_value = self._to_float((clv_segments.get(segment) or {}).get('avg_open_clv_pct'))
+            if clv_value is not None:
+                segment_delta += clamp(float(clv_value) * 0.45, -1.2, 1.2)
+            weight = min(40.0, float(item.get('count') or 0)) ** 0.5
+            if segment.startswith('family:'):
+                weight *= 1.25
+            elif segment.startswith(('market:', 'league:')):
+                weight *= 1.1
+            weighted.append((segment_delta, weight, segment))
+        if not weighted:
+            return {'applied': False, 'score_delta': 0.0, 'segments_used': []}
+        raw_delta = sum(delta * weight for delta, weight, _ in weighted) / max(sum(weight for _, weight, _ in weighted), 0.01)
+        strength = float(self._setting('learning_score_strength', 0.7) or 0.7)
+        score_delta = clamp(raw_delta * strength, -8.0, 5.0)
+        return {
+            'applied': abs(score_delta) >= 0.35,
+            'score_delta': round(score_delta, 3),
+            'raw_score_delta': round(raw_delta, 3),
             'segments_used': [segment for _, _, segment in weighted[:8]],
         }
 
