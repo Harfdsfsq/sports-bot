@@ -226,6 +226,48 @@ class TelegramPublisher:
             return "low"
         return "other"
 
+
+    def _trust_profile(self, bet: CandidateBet) -> dict[str, Any]:
+        summary = dict(getattr(bet, "source_summary", {}) or {})
+        quality_score = float(summary.get("quality_score") or 0.0)
+        books_count = int(getattr(bet, "books_count", 0) or 0)
+        sources_count = int(getattr(bet, "sources_count", 0) or 0)
+        confidence = float(getattr(bet, "confidence", 0.0) or 0.0)
+        score = quality_score + min(15.0, books_count * 6.0) + min(8.0, max(0, sources_count - 1) * 4.0)
+        score += max(0.0, min(12.0, (confidence - 55.0) * 0.4))
+        score = max(0.0, min(100.0, round(score, 1)))
+        grade = "A" if score >= 80 else "B" if score >= 65 else "C"
+        risk_flags: list[str] = []
+        if books_count <= 1:
+            risk_flags.append("single-book")
+        if sources_count <= 1:
+            risk_flags.append("single-source")
+        if quality_score < 60:
+            risk_flags.append("quality<threshold")
+        return {
+            "grade": grade,
+            "score": score,
+            "quality_score": round(quality_score, 1),
+            "books_count": books_count,
+            "sources_count": sources_count,
+            "risk_flags": risk_flags,
+        }
+
+
+    def _trust_profile_text(self, bet: CandidateBet) -> str:
+        if not bool(getattr(self.settings, "telegram_writeup_show_trust_profile", True)):
+            return ""
+        trust = self._trust_profile(bet)
+        parts = [
+            f"🛡 Профиль сигнала: {trust['grade']} {trust['score']:.1f}/100",
+            f"quality {trust['quality_score']:.1f}",
+            f"линии {trust['books_count']}",
+            f"источники {trust['sources_count']}",
+        ]
+        text = " | ".join(parts)
+        if trust["risk_flags"]:
+            text += f" | риск: {', '.join(trust['risk_flags'][:2])}"
+        return text
     def _quality_notes(self, bet: CandidateBet) -> str:
         summary = dict(getattr(bet, "source_summary", {}) or {})
         status = str(summary.get("quality_status") or "").strip().lower()
@@ -290,6 +332,7 @@ class TelegramPublisher:
                 f"{self._timezone_label(bet.commence_time)}"
             )
             quality_text = self._quality_notes(bet)
+            trust_text = self._trust_profile_text(bet)
             xg_text = ""
             if bet.expected_home is not None and bet.expected_away is not None:
                 xg_text = f"\n📈 Ожидаемые голы: {bet.expected_home:.2f} : {bet.expected_away:.2f}"
@@ -330,6 +373,7 @@ class TelegramPublisher:
                 f"💸 Коэффициент: {bet.odds:.2f}\n"
                 f"{probability_block}\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
+                f"{trust_text + chr(10) if trust_text else ''}"
                 f"{quality_text + chr(10) if quality_text else ''}"
                 f"🏆 Турнир: {bet.league_name}\n"
                 f"🕒 Начало: {start_text}"
@@ -556,10 +600,10 @@ class TelegramPublisher:
                 delta = float(item.get("score_delta") or 0.0)
                 if not key:
                     continue
-                prefix = "Р С‹РЅРѕРє" if scope == "family" else "Р›РёРіР°"
+                prefix = "Рынок" if scope == "family" else "Лига"
                 action_parts.append(f"{prefix} {key}: {delta:+.2f}")
             if action_parts:
-                lines.append(f"РљРѕСЂСЂРµРєС†РёСЏ РЅР° Р·Р°РІС‚СЂР°: {', '.join(action_parts)}")
+                lines.append(f"Коррекция на завтра: {', '.join(action_parts)}")
 
         result_emoji = {
             "won": "✅",

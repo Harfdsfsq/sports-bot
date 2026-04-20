@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+from pathlib import Path
 import sys
 from typing import Any
 
 from app.config import get_settings
+from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
 from app.services.runner import PredictionRunner
 
 
@@ -53,12 +55,34 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
 
 async def _main() -> int:
     settings = _apply_runtime_env_overrides(get_settings())
-    runner = PredictionRunner(settings)
-    if len(sys.argv) >= 2 and sys.argv[1] == "run-once":
+    command = sys.argv[1] if len(sys.argv) >= 2 else ""
+
+    if command == "run-once":
+        runner = PredictionRunner(settings)
         summary = await runner.run_once()
         print(json.dumps(summary, ensure_ascii=False, indent=2))
         return 0
-    print("Usage: python -m app.cli run-once")
+
+    if command == "coverage-audit":
+        report = CoverageAuditService(settings.coverage_report_path).build(debug_path=settings.debug_path)
+        print(json.dumps(report, ensure_ascii=False, indent=2))
+        return 0
+
+    if command == "reporting-sqlite":
+        history_root = str(Path(settings.state_path).parent / "history" / "runs")
+        result = ReportingSQLiteExporter(settings.reporting_sqlite_path).export(
+            state_path=settings.state_path,
+            history_root=history_root,
+        )
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    if command == "training-dataset":
+        result = TrainingDatasetExporter(settings.training_dataset_path).export(state_path=settings.state_path)
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+        return 0
+
+    print("Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset")
     return 1
 
 

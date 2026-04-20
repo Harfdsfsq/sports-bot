@@ -26,6 +26,9 @@ class Settings(BaseSettings):
     app_timezone: str = Field(default="Europe/Moscow", validation_alias=AliasChoices("APP_TIMEZONE", "TIMEZONE", "TZ"))
     state_path: str = Field(default=".data/state.json", validation_alias=AliasChoices("STATE_PATH"))
     debug_path: str = Field(default=".data/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
+    reporting_sqlite_path: str = Field(default=".data/reporting/reporting.sqlite3", validation_alias=AliasChoices("REPORTING_SQLITE_PATH"))
+    coverage_report_path: str = Field(default=".data/reporting/coverage-report.json", validation_alias=AliasChoices("COVERAGE_REPORT_PATH"))
+    training_dataset_path: str = Field(default=".data/reporting/training-dataset.csv", validation_alias=AliasChoices("TRAINING_DATASET_PATH"))
     storage_export_dir: str = Field(default=".data/exports", validation_alias=AliasChoices("STORAGE_EXPORT_DIR", "EXPORT_DIR"))
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
 
@@ -232,6 +235,7 @@ class Settings(BaseSettings):
     telegram_writeup_min_form_diff_pct: float = Field(default=6.0, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_FORM_DIFF_PCT"))
     telegram_writeup_min_table_gap: float = Field(default=0.22, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_TABLE_GAP"))
     telegram_writeup_show_used_marker: bool = Field(default=False, validation_alias=AliasChoices("TELEGRAM_WRITEUP_SHOW_USED_MARKER"))
+    telegram_writeup_show_trust_profile: bool = Field(default=True, validation_alias=AliasChoices("TELEGRAM_WRITEUP_SHOW_TRUST_PROFILE"))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("ESPN_TIMEOUT_SECONDS"))
     espn_base_site_url: str = Field(default="https://site.api.espn.com/apis/site/v2", validation_alias=AliasChoices("ESPN_BASE_SITE_URL"))
