@@ -2,97 +2,62 @@ from __future__ import annotations
 
 import csv
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+UTC = timezone.utc
+
 
 class TrainingDatasetExporter:
-    def __init__(self, output_path: str):
+    def __init__(self, output_path: str) -> None:
         self.output_path = Path(output_path)
+        self.output_path.parent.mkdir(parents=True, exist_ok=True)
 
     def export(self, *, state_path: str) -> dict[str, Any]:
-        state = json.loads(Path(state_path).read_text(encoding="utf-8"))
-        rows = []
-        for tracking_mode, items in (("published", state.get("bets") or []), ("shadow", state.get("shadow_bets") or [])):
-            for item in items:
-                rows.append(self._flatten(item, tracking_mode=tracking_mode))
-        rows.sort(key=lambda row: (row.get("published_at") or "", row.get("prediction_id") or ""))
-        self.output_path.parent.mkdir(parents=True, exist_ok=True)
-        fieldnames = self._fieldnames(rows)
-        with self.output_path.open("w", encoding="utf-8", newline="") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        state_file = Path(state_path)
+        state = json.loads(state_file.read_text(encoding='utf-8')) if state_file.exists() else {}
+        rows: list[dict[str, Any]] = []
+        for collection_name in ('bets', 'shadow_bets', 'published_candidates'):
+            for item in [dict(row) for row in (state.get(collection_name) or []) if isinstance(row, dict)]:
+                rows.append({
+                    'collection': collection_name,
+                    'prediction_id': str(item.get('prediction_id') or item.get('fingerprint') or ''),
+                    'match_key': str(item.get('match_key') or ''),
+                    'league_name': str(item.get('league_name') or ''),
+                    'family': str(item.get('family') or ''),
+                    'selection': str(item.get('selection') or ''),
+                    'odds': float(item.get('odds') or 0.0),
+                    'market_probability': float(item.get('market_probability') or item.get('consensus_probability') or 0.0),
+                    'model_probability': float(item.get('model_probability') or 0.0),
+                    'adjusted_probability': float(item.get('adjusted_probability') or item.get('final_probability') or 0.0),
+                    'confidence': float(item.get('confidence') or 0.0),
+                    'books_count': int(item.get('books_count') or 0),
+                    'sources_count': int(item.get('sources_count') or 0),
+                    'publication_score': float(item.get('publication_score') or 0.0),
+                    'expected_home': item.get('expected_home'),
+                    'expected_away': item.get('expected_away'),
+                    'status': str(item.get('status') or ''),
+                    'profit': float(item.get('profit') or item.get('pnl') or 0.0),
+                    'result': str(item.get('result') or item.get('settlement_result') or ''),
+                })
+        fieldnames = list(rows[0].keys()) if rows else [
+            'collection','prediction_id','match_key','league_name','family','selection','odds','market_probability','model_probability','adjusted_probability','confidence','books_count','sources_count','publication_score','expected_home','expected_away','status','profit','result'
+        ]
+        with self.output_path.open('w', encoding='utf-8', newline='') as handle:
+            writer = csv.DictWriter(handle, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
-        jsonl_path = self.output_path.with_suffix(".jsonl")
-        with jsonl_path.open("w", encoding="utf-8") as fh:
+        jsonl_path = self.output_path.with_suffix('.jsonl')
+        with jsonl_path.open('w', encoding='utf-8') as handle:
             for row in rows:
-                fh.write(json.dumps(row, ensure_ascii=False) + "\n")
-        settled = sum(1 for row in rows if bool(row.get("is_settled")))
-        return {"state_path": str(state_path), "csv_path": str(self.output_path), "jsonl_path": str(jsonl_path), "rows": len(rows), "settled_rows": settled, "pending_rows": len(rows) - settled}
-
-    def _flatten(self, item: dict[str, Any], *, tracking_mode: str) -> dict[str, Any]:
-        settlement = dict(item.get("settlement") or {})
-        status = str(item.get("status") or tracking_mode)
-        settled_statuses = {"won", "lost", "push", "void", "half_won", "half_lost"}
-        source_summary = dict(item.get("source_summary") or {})
+                handle.write(json.dumps(row, ensure_ascii=False) + '\n')
+        settled = sum(1 for row in rows if str(row.get('result') or '').strip())
         return {
-            "tracking_mode": tracking_mode,
-            "prediction_id": item.get("prediction_id"),
-            "fingerprint": item.get("fingerprint"),
-            "published_at": item.get("published_at"),
-            "match_key": item.get("match_key"),
-            "league_name": item.get("league_name"),
-            "home_team": item.get("home_team"),
-            "away_team": item.get("away_team"),
-            "family": item.get("family"),
-            "selection": item.get("selection"),
-            "selection_key": item.get("selection_key"),
-            "team_side": item.get("team_side"),
-            "point": self._float(item.get("point")),
-            "odds": self._float(item.get("odds")),
-            "books_count": int(item.get("books_count") or 0),
-            "sources_count": int(item.get("sources_count") or 0),
-            "market_probability": self._float(item.get("market_probability")),
-            "consensus_probability": self._float(item.get("consensus_probability")),
-            "model_probability": self._float(item.get("model_probability")),
-            "adjusted_probability": self._float(item.get("adjusted_probability")),
-            "edge_pct": self._float(item.get("edge_pct")),
-            "ev_pct": self._float(item.get("ev_pct")),
-            "confidence": self._float(item.get("confidence")),
-            "publication_score": self._float(item.get("publication_score")),
-            "expected_home": self._float(item.get("expected_home")),
-            "expected_away": self._float(item.get("expected_away")),
-            "stake_amount": self._float(item.get("stake_amount")),
-            "stake_pct": self._float(item.get("stake_pct")),
-            "bankroll_snapshot": self._float(item.get("bankroll_snapshot")),
-            "bookmaker": item.get("bookmaker"),
-            "selected_source": source_summary.get("selected_source"),
-            "selected_bookmaker": source_summary.get("selected_bookmaker"),
-            "quality_status": source_summary.get("quality_status"),
-            "quality_score": self._float(source_summary.get("quality_score")),
-            "status": status,
-            "is_settled": status in settled_statuses,
-            "result": settlement.get("result") or status,
-            "pnl": self._float(settlement.get("pnl")),
-            "final_home_goals": self._float(settlement.get("final_home_goals")),
-            "final_away_goals": self._float(settlement.get("final_away_goals")),
-            "settled_at": settlement.get("settled_at"),
+            'created_at': datetime.now(UTC).isoformat(),
+            'csv_path': str(self.output_path),
+            'jsonl_path': str(jsonl_path),
+            'rows': len(rows),
+            'settled_rows': settled,
+            'pending_rows': len(rows) - settled,
         }
-
-    @staticmethod
-    def _fieldnames(rows: list[dict[str, Any]]) -> list[str]:
-        seen: list[str] = []
-        for row in rows:
-            for key in row.keys():
-                if key not in seen:
-                    seen.append(key)
-        return seen
-
-    @staticmethod
-    def _float(value: Any) -> float | None:
-        if value in (None, ""):
-            return None
-        try:
-            return float(value)
-        except Exception:
-            return None

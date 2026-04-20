@@ -862,7 +862,12 @@ class CandidateFactory:
                 return False
             min_books = max(1, int(getattr(self.settings, 'market_derived_consensus_min_books', 2) or 2))
             min_edge = float(getattr(self.settings, 'market_derived_consensus_min_edge_pct', 1.6) or 1.6)
-            if books_count < min_books or edge_pct < min_edge:
+            relaxed_edge = float(getattr(self.settings, 'market_derived_consensus_relaxed_min_edge_pct', 0.7) or 0.7)
+            relaxed_dispersion = float(getattr(self.settings, 'market_derived_consensus_relaxed_max_dispersion_pct', 4.0) or 4.0)
+            stable_two_book_market = books_count >= min_books and dispersion_pct is not None and dispersion_pct <= relaxed_dispersion
+            strong_consensus = edge_pct >= min_edge
+            relaxed_consensus = stable_two_book_market and edge_pct >= relaxed_edge
+            if not (strong_consensus or relaxed_consensus):
                 return False
             if family == 'h2h' and str(market_signal.get('selection_key') or '').strip().lower() == 'draw':
                 return False

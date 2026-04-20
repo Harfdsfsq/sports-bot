@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-from pathlib import Path
 import sys
-from typing import Any
+from pathlib import Path
+from typing import Any, Sequence
 
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
@@ -13,7 +13,7 @@ from app.services.runner import PredictionRunner
 
 
 def _parse_bool(value: str) -> bool:
-    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
+    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
 def _parse_int(value: str) -> int:
@@ -21,70 +21,75 @@ def _parse_int(value: str) -> int:
 
 
 def _apply_runtime_env_overrides(settings: Any) -> Any:
-    """
-    Runtime safety net for schedule-specific env vars from GitHub Actions.
-
-    This makes the CLI respect the workflow contract:
-    - forecasts at 08:00 / 12:00 / 16:00 / 20:00 MSK
-    - daily report at 22:00 MSK
-    """
-
     overrides: list[tuple[str, str, Any]] = [
-        ("prediction_publication_enabled", "PREDICTION_PUBLICATION_ENABLED", _parse_bool),
-        ("run_report_enabled", "RUN_REPORT_ENABLED", _parse_bool),
-        ("daily_report_enabled", "DAILY_REPORT_ENABLED", _parse_bool),
-        ("daily_report_send_telegram", "DAILY_REPORT_SEND_TELEGRAM", _parse_bool),
-        ("daily_report_hour_local", "DAILY_REPORT_HOUR_LOCAL", _parse_int),
-        ("daily_report_target_offset_days", "DAILY_REPORT_TARGET_OFFSET_DAYS", _parse_int),
-        ("daily_report_min_bets", "DAILY_REPORT_MIN_BETS", _parse_int),
-        ("daily_report_resend_on_change", "DAILY_REPORT_RESEND_ON_CHANGE", _parse_bool),
+        ('prediction_publication_enabled', 'PREDICTION_PUBLICATION_ENABLED', _parse_bool),
+        ('run_report_enabled', 'RUN_REPORT_ENABLED', _parse_bool),
+        ('daily_report_enabled', 'DAILY_REPORT_ENABLED', _parse_bool),
+        ('daily_report_send_telegram', 'DAILY_REPORT_SEND_TELEGRAM', _parse_bool),
+        ('daily_report_hour_local', 'DAILY_REPORT_HOUR_LOCAL', _parse_int),
+        ('daily_report_target_offset_days', 'DAILY_REPORT_TARGET_OFFSET_DAYS', _parse_int),
+        ('daily_report_min_bets', 'DAILY_REPORT_MIN_BETS', _parse_int),
+        ('daily_report_resend_on_change', 'DAILY_REPORT_RESEND_ON_CHANGE', _parse_bool),
     ]
-
     for attr_name, env_name, parser in overrides:
         raw = os.getenv(env_name)
-        if raw is None or str(raw).strip() == "":
+        if raw is None or str(raw).strip() == '':
             continue
         try:
             value = parser(raw)
         except Exception:
             continue
         object.__setattr__(settings, attr_name, value)
-
     return settings
 
 
-async def _main() -> int:
-    settings = _apply_runtime_env_overrides(get_settings())
-    command = sys.argv[1] if len(sys.argv) >= 2 else ""
-
-    if command == "run-once":
+async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
+    if command == 'run-once':
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
-        print(json.dumps(summary, ensure_ascii=False, indent=2))
-        return 0
+        return 0, summary
+    return 1, None
 
-    if command == "coverage-audit":
+
+def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
+    if command == 'coverage-audit':
         report = CoverageAuditService(settings.coverage_report_path).build(debug_path=settings.debug_path)
-        print(json.dumps(report, ensure_ascii=False, indent=2))
-        return 0
-
-    if command == "reporting-sqlite":
-        history_root = str(Path(settings.state_path).parent / "history" / "runs")
+        return 0, report
+    if command == 'reporting-sqlite':
+        history_root = str(Path(settings.state_path).parent / 'history' / 'runs')
         result = ReportingSQLiteExporter(settings.reporting_sqlite_path).export(
             state_path=settings.state_path,
             history_root=history_root,
         )
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 0
-
-    if command == "training-dataset":
+        return 0, result
+    if command == 'training-dataset':
         result = TrainingDatasetExporter(settings.training_dataset_path).export(state_path=settings.state_path)
-        print(json.dumps(result, ensure_ascii=False, indent=2))
-        return 0
+        return 0, result
+    return 1, None
 
-    print("Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset")
+
+async def _main(argv: Sequence[str] | None = None) -> int:
+    args = list(argv if argv is not None else sys.argv[1:])
+    settings = _apply_runtime_env_overrides(get_settings())
+    command = args[0] if args else ''
+
+    exit_code, payload = _dispatch_sync(command, settings)
+    if payload is not None:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return exit_code
+
+    exit_code, payload = await _dispatch_async(command, settings)
+    if payload is not None:
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return exit_code
+
+    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset')
     return 1
 
 
-if __name__ == "__main__":
-    raise SystemExit(asyncio.run(_main()))
+def main_sync(argv: Sequence[str] | None = None) -> int:
+    return asyncio.run(_main(argv))
+
+
+if __name__ == '__main__':
+    raise SystemExit(main_sync())

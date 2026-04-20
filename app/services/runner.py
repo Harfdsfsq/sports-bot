@@ -1622,12 +1622,14 @@ class PredictionRunner:
                 best_context = self._best_self_history_archive_context(row.get('contexts'))
                 if best_context is None:
                     continue
-                expected_home = self._to_float_safe(best_context.get('expected_home'))
-                expected_away = self._to_float_safe(best_context.get('expected_away'))
+                expected_home = self._sanitize_self_history_expected(best_context.get('expected_home'))
+                expected_away = self._sanitize_self_history_expected(best_context.get('expected_away'))
                 home_win_probability = self._to_float_safe(best_context.get('home_win_probability'))
                 away_win_probability = self._to_float_safe(best_context.get('away_win_probability'))
-                if expected_home is None and expected_away is None and home_win_probability is None and away_win_probability is None:
-                    continue
+                probability_only_enabled = bool(getattr(self.settings, 'self_history_probability_only_enabled', True))
+                if expected_home is None and expected_away is None:
+                    if not probability_only_enabled or (home_win_probability is None and away_win_probability is None):
+                        continue
                 age_days = max(0.0, (now_utc - commence_time).total_seconds() / 86400.0)
                 league_name = str(row.get('league_name') or '')
                 home_key = self._team_history_key(str(row.get('home_team') or ''))
@@ -1686,9 +1688,9 @@ class PredictionRunner:
                     continue
                 if commence_time >= now_utc or commence_time < cutoff_utc:
                     continue
-                expected_home = self._to_float_safe(row.get('expected_home'))
-                expected_away = self._to_float_safe(row.get('expected_away'))
-                if expected_home is None and expected_away is None:
+                expected_home = self._sanitize_self_history_expected(row.get('expected_home'))
+                expected_away = self._sanitize_self_history_expected(row.get('expected_away'))
+                if expected_home is None and expected_away is None and not bool(getattr(self.settings, 'self_history_probability_only_enabled', True)):
                     continue
                 home_key = self._team_history_key(str(row.get('home_team') or ''))
                 away_key = self._team_history_key(str(row.get('away_team') or ''))
@@ -1840,14 +1842,27 @@ class PredictionRunner:
         rows = [dict(item) for item in (raw_contexts or []) if isinstance(item, dict)]
         if not rows:
             return None
-        rows.sort(
-            key=lambda item: (
-                1 if item.get('expected_home') is not None or item.get('expected_away') is not None else 0,
-                1 if item.get('home_win_probability') is not None or item.get('away_win_probability') is not None else 0,
+
+        def _rank(item: dict[str, Any]) -> tuple[int, int, int, float]:
+            expected_home = item.get('expected_home')
+            expected_away = item.get('expected_away')
+            has_expected = expected_home is not None or expected_away is not None
+            negative_expected = False
+            for value in (expected_home, expected_away):
+                try:
+                    if value is not None and float(value) < 0:
+                        negative_expected = True
+                except Exception:
+                    continue
+            has_probability = item.get('home_win_probability') is not None or item.get('away_win_probability') is not None
+            return (
+                1 if has_expected and not negative_expected else 0,
+                1 if has_probability else 0,
+                1 if has_expected else 0,
                 float(item.get('confidence') or 0.0),
-            ),
-            reverse=True,
-        )
+            )
+
+        rows.sort(key=_rank, reverse=True)
         return rows[0]
 
     @staticmethod
@@ -1860,6 +1875,16 @@ class PredictionRunner:
         ]
         return ' '.join(tokens)
 
+    def _sanitize_self_history_expected(self, value: Any) -> float | None:
+        numeric = self._to_float_safe(value)
+        if numeric is None:
+            return None
+        if bool(getattr(self.settings, 'self_history_sanitize_negative_expected_goals', True)) and numeric < 0:
+            return None
+        min_value = float(getattr(self.settings, 'min_expected_goals_value', 0.35) or 0.35)
+        max_value = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
+        return clamp(numeric, min_value, max_value)
+
     def _weighted_team_history_metric(
         self,
         samples: list[dict[str, Any]],
@@ -1871,6 +1896,8 @@ class PredictionRunner:
         target_league = str(league_name or '').strip().lower()
         for sample in samples:
             value = self._to_float_safe(sample.get(key))
+            if key.startswith('expected'):
+                value = self._sanitize_self_history_expected(value)
             if value is None:
                 continue
             weight = float(sample.get('weight') or 1.0)
@@ -2332,10 +2359,17 @@ class PredictionRunner:
                 'stats': source_stats.get(source_name, {}),
             }
 
+        runtime_errors = {name: list(errors) for name, errors in self.provider_runtime_errors.items()}
+        rate_limit_providers = {
+            name: len([msg for msg in errors if '429' in str(msg) or 'rate limit' in str(msg).lower()])
+            for name, errors in runtime_errors.items()
+            if any('429' in str(msg) or 'rate limit' in str(msg).lower() for msg in errors)
+        }
         summary = {
             'providers': provider_summary,
             'provider_status': dict(self.provider_status),
-            'provider_runtime_errors': {name: list(errors) for name, errors in self.provider_runtime_errors.items()},
+            'provider_runtime_errors': runtime_errors,
+            'provider_rate_limits': rate_limit_providers,
             'matches_with_any_offer_source': sum(1 for match in filtered_matches if any((mapping.get(match.match_key) or []) for mapping in offer_maps.values())),
             'matches_with_any_context_source': sum(1 for match in filtered_matches if any(mapping.get(match.match_key) is not None for mapping in context_maps.values())),
             'matches_with_merged_context': sum(1 for match in filtered_matches if merged_contexts.get(match.match_key) is not None),
@@ -2343,6 +2377,7 @@ class PredictionRunner:
             'published_candidates_with_derived_market_signal': sum(published_derived_by_match.values()),
             'matches_with_raw_derived_market_signal': len(raw_derived_by_match),
             'matches_with_published_derived_market_signal': len(published_derived_by_match),
+            'published_candidates_single_source_context': sum(1 for item in published_candidates if int(getattr(item, 'sources_count', 0) or 0) <= 1),
             'context_source_combinations': dict(context_combo_counter),
             'offer_source_combinations': dict(offer_combo_counter),
         }

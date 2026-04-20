@@ -26,10 +26,10 @@ class Settings(BaseSettings):
     app_timezone: str = Field(default="Europe/Moscow", validation_alias=AliasChoices("APP_TIMEZONE", "TIMEZONE", "TZ"))
     state_path: str = Field(default=".data/state.json", validation_alias=AliasChoices("STATE_PATH"))
     debug_path: str = Field(default=".data/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
-    reporting_sqlite_path: str = Field(default=".data/reporting/reporting.sqlite3", validation_alias=AliasChoices("REPORTING_SQLITE_PATH"))
-    coverage_report_path: str = Field(default=".data/reporting/coverage-report.json", validation_alias=AliasChoices("COVERAGE_REPORT_PATH"))
-    training_dataset_path: str = Field(default=".data/reporting/training-dataset.csv", validation_alias=AliasChoices("TRAINING_DATASET_PATH"))
     storage_export_dir: str = Field(default=".data/exports", validation_alias=AliasChoices("STORAGE_EXPORT_DIR", "EXPORT_DIR"))
+    coverage_report_path: str = Field(default=".data/reports/coverage-audit.json", validation_alias=AliasChoices("COVERAGE_REPORT_PATH"))
+    reporting_sqlite_path: str = Field(default=".data/reporting/reporting.sqlite", validation_alias=AliasChoices("REPORTING_SQLITE_PATH"))
+    training_dataset_path: str = Field(default=".data/reporting/training-dataset.csv", validation_alias=AliasChoices("TRAINING_DATASET_PATH"))
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
 
     bankroll_enabled: bool = Field(default=True, validation_alias=AliasChoices("BANKROLL_ENABLED"))
@@ -164,6 +164,8 @@ class Settings(BaseSettings):
     self_history_context_state_max_samples: int = Field(default=160, validation_alias=AliasChoices("SELF_HISTORY_CONTEXT_STATE_MAX_SAMPLES"))
     self_history_context_cross_venue_weight: float = Field(default=0.74, validation_alias=AliasChoices("SELF_HISTORY_CONTEXT_CROSS_VENUE_WEIGHT"))
     self_history_context_state_sample_weight: float = Field(default=0.88, validation_alias=AliasChoices("SELF_HISTORY_CONTEXT_STATE_SAMPLE_WEIGHT"))
+    self_history_sanitize_negative_expected_goals: bool = Field(default=True, validation_alias=AliasChoices("SELF_HISTORY_SANITIZE_NEGATIVE_EXPECTED_GOALS"))
+    self_history_probability_only_enabled: bool = Field(default=True, validation_alias=AliasChoices("SELF_HISTORY_PROBABILITY_ONLY_ENABLED"))
 
     analysis_match_cap_per_run: int = Field(default=260, validation_alias=AliasChoices("ANALYSIS_MATCH_CAP_PER_RUN", "DAILY_ANALYSIS_MATCH_LIMIT"))
 
@@ -235,7 +237,6 @@ class Settings(BaseSettings):
     telegram_writeup_min_form_diff_pct: float = Field(default=6.0, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_FORM_DIFF_PCT"))
     telegram_writeup_min_table_gap: float = Field(default=0.22, validation_alias=AliasChoices("TELEGRAM_WRITEUP_MIN_TABLE_GAP"))
     telegram_writeup_show_used_marker: bool = Field(default=False, validation_alias=AliasChoices("TELEGRAM_WRITEUP_SHOW_USED_MARKER"))
-    telegram_writeup_show_trust_profile: bool = Field(default=True, validation_alias=AliasChoices("TELEGRAM_WRITEUP_SHOW_TRUST_PROFILE"))
 
     espn_timeout_seconds: float = Field(default=20.0, validation_alias=AliasChoices("ESPN_TIMEOUT_SECONDS"))
     espn_base_site_url: str = Field(default="https://site.api.espn.com/apis/site/v2", validation_alias=AliasChoices("ESPN_BASE_SITE_URL"))
@@ -637,6 +638,8 @@ class Settings(BaseSettings):
     market_derived_allow_consensus_without_history: bool = Field(default=True, validation_alias=AliasChoices("MARKET_DERIVED_ALLOW_CONSENSUS_WITHOUT_HISTORY"))
     market_derived_consensus_min_books: int = Field(default=2, validation_alias=AliasChoices("MARKET_DERIVED_CONSENSUS_MIN_BOOKS"))
     market_derived_consensus_min_edge_pct: float = Field(default=1.6, validation_alias=AliasChoices("MARKET_DERIVED_CONSENSUS_MIN_EDGE_PCT"))
+    market_derived_consensus_relaxed_min_edge_pct: float = Field(default=0.7, validation_alias=AliasChoices("MARKET_DERIVED_CONSENSUS_RELAXED_MIN_EDGE_PCT"))
+    market_derived_consensus_relaxed_max_dispersion_pct: float = Field(default=4.0, validation_alias=AliasChoices("MARKET_DERIVED_CONSENSUS_RELAXED_MAX_DISPERSION_PCT"))
     market_derived_consensus_min_publication_score: float = Field(default=9.0, validation_alias=AliasChoices("MARKET_DERIVED_CONSENSUS_MIN_PUBLICATION_SCORE"))
     allow_single_sharp_book: bool = Field(default=True, validation_alias=AliasChoices("ALLOW_SINGLE_SHARP_BOOK"))
     allow_single_target_book: bool = Field(default=True, validation_alias=AliasChoices("ALLOW_SINGLE_TARGET_BOOK"))
