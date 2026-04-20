@@ -463,70 +463,98 @@ class PredictionQualityService:
         settled = [row for row in rows if self._binary_result(row) is not None]
         family_adjustments: dict[str, dict[str, Any]] = {}
         league_adjustments: dict[str, dict[str, Any]] = {}
+        context_adjustments: dict[str, dict[str, Any]] = {}
+        model_mode_adjustments: dict[str, dict[str, Any]] = {}
         actions: list[dict[str, Any]] = []
 
-        for family, group in self._group_rows(settled, lambda row: str(row.get('family') or 'unknown')).items():
-            summary = self._portfolio_summary(group)
-            count = int(summary.get('count') or 0)
-            if count < 2:
-                continue
-            roi = float(summary.get('roi_pct') or 0.0)
-            hit = float(summary.get('hit_rate_pct') or 0.0)
-            score_delta = 0.0
-            reason = ''
-            if roi <= -18.0 or (count >= 3 and hit < 35.0):
-                score_delta = -1.6
-                reason = 'cooldown_after_bad_day'
-            elif roi >= 8.0 and hit >= 52.0:
-                score_delta = 0.8
-                reason = 'reinforce_after_good_day'
-            if abs(score_delta) < 0.01:
-                continue
-            family_adjustments[family] = {
-                'score_delta': round(score_delta, 3),
-                'count': count,
-                'roi_pct': round(roi, 2),
-                'hit_rate_pct': round(hit, 2),
-                'reason': reason,
-            }
-            actions.append({
-                'scope': 'family',
-                'key': family,
-                'score_delta': round(score_delta, 3),
-                'reason': reason,
-            })
+        def add_adjustments(
+            grouped: dict[str, list[dict[str, Any]]],
+            target: dict[str, dict[str, Any]],
+            *,
+            scope: str,
+            min_count: int,
+            positive_delta: float,
+            negative_delta: float,
+            positive_roi: float,
+            negative_roi: float,
+        ) -> None:
+            for key, group in grouped.items():
+                summary = self._portfolio_summary(group)
+                count = int(summary.get('count') or 0)
+                if count < min_count:
+                    continue
+                roi = float(summary.get('roi_pct') or 0.0)
+                hit = float(summary.get('hit_rate_pct') or 0.0)
+                score_delta = 0.0
+                reason = ''
+                if roi <= negative_roi:
+                    score_delta = negative_delta
+                    reason = 'cooldown_after_losses'
+                elif roi >= positive_roi:
+                    score_delta = positive_delta
+                    reason = 'reinforce_after_profit'
+                if abs(score_delta) < 0.01:
+                    continue
+                target[str(key)] = {
+                    'score_delta': round(score_delta, 3),
+                    'count': count,
+                    'roi_pct': round(roi, 2),
+                    'hit_rate_pct': round(hit, 2),
+                    'reason': reason,
+                }
+                actions.append({
+                    'scope': scope,
+                    'key': str(key),
+                    'score_delta': round(score_delta, 3),
+                    'reason': reason,
+                })
 
-        for bucket, group in self._group_rows(
-            settled,
-            lambda row: self._league_bucket_from_text(str(row.get('league_name') or ''), str(row.get('match_tier') or '')),
-        ).items():
-            summary = self._portfolio_summary(group)
-            count = int(summary.get('count') or 0)
-            if count < 2:
-                continue
-            roi = float(summary.get('roi_pct') or 0.0)
-            score_delta = 0.0
-            reason = ''
-            if bucket in {'other', 'low'} and roi <= -12.0:
-                score_delta = -0.9
-                reason = 'trim_non_core_after_losses'
-            elif bucket in {'preferred', 'secondary'} and roi >= 6.0:
-                score_delta = 0.45
-                reason = 'trust_core_bucket_after_profit'
-            if abs(score_delta) < 0.01:
-                continue
-            league_adjustments[bucket] = {
-                'score_delta': round(score_delta, 3),
-                'count': count,
-                'roi_pct': round(roi, 2),
-                'reason': reason,
-            }
-            actions.append({
-                'scope': 'league_bucket',
-                'key': bucket,
-                'score_delta': round(score_delta, 3),
-                'reason': reason,
-            })
+        add_adjustments(
+            self._group_rows(settled, lambda row: str(row.get('family') or 'unknown')),
+            family_adjustments,
+            scope='family',
+            min_count=2,
+            positive_delta=0.8,
+            negative_delta=-1.6,
+            positive_roi=8.0,
+            negative_roi=-18.0,
+        )
+
+        add_adjustments(
+            self._group_rows(
+                settled,
+                lambda row: self._league_bucket_from_text(str(row.get('league_name') or ''), str(row.get('match_tier') or '')),
+            ),
+            league_adjustments,
+            scope='league_bucket',
+            min_count=2,
+            positive_delta=0.45,
+            negative_delta=-0.9,
+            positive_roi=6.0,
+            negative_roi=-12.0,
+        )
+
+        add_adjustments(
+            self._group_rows(settled, lambda row: str(row.get('context_source') or 'unknown')),
+            context_adjustments,
+            scope='context_source',
+            min_count=2,
+            positive_delta=0.35,
+            negative_delta=-0.65,
+            positive_roi=6.0,
+            negative_roi=-10.0,
+        )
+
+        add_adjustments(
+            self._group_rows(settled, lambda row: str(row.get('model_mode') or 'unknown')),
+            model_mode_adjustments,
+            scope='model_mode',
+            min_count=2,
+            positive_delta=0.30,
+            negative_delta=-0.70,
+            positive_roi=6.0,
+            negative_roi=-10.0,
+        )
 
         actions.sort(key=lambda item: abs(float(item.get('score_delta') or 0.0)), reverse=True)
         return {
@@ -535,7 +563,9 @@ class PredictionQualityService:
             'settled_bets': len(settled),
             'family_adjustments': family_adjustments,
             'league_bucket_adjustments': league_adjustments,
-            'actions': actions[:12],
+            'context_source_adjustments': context_adjustments,
+            'model_mode_adjustments': model_mode_adjustments,
+            'actions': actions[:16],
         }
 
     def analyze_rows(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -795,6 +825,8 @@ class PredictionQualityService:
 
         family_adjustments = dict(payload.get('family_adjustments') or {})
         league_adjustments = dict(payload.get('league_bucket_adjustments') or {})
+        context_adjustments = dict(payload.get('context_source_adjustments') or {})
+        model_mode_adjustments = dict(payload.get('model_mode_adjustments') or {})
         sources: list[str] = []
         score_delta = 0.0
 
@@ -812,7 +844,21 @@ class PredictionQualityService:
             score_delta += league_delta
             sources.append(f'league:{league_bucket}')
 
-        score_delta = clamp(score_delta, -3.0, 2.0)
+        context_key = self._candidate_context_source(candidate)
+        context_payload = dict(context_adjustments.get(context_key) or {})
+        context_delta = float(context_payload.get('score_delta') or 0.0)
+        if abs(context_delta) >= 0.01:
+            score_delta += context_delta
+            sources.append(f'context:{context_key}')
+
+        model_mode_key = str(getattr(candidate, 'model_mode', '') or '')
+        model_mode_payload = dict(model_mode_adjustments.get(model_mode_key) or {})
+        model_mode_delta = float(model_mode_payload.get('score_delta') or 0.0)
+        if abs(model_mode_delta) >= 0.01:
+            score_delta += model_mode_delta
+            sources.append(f'model_mode:{model_mode_key}')
+
+        score_delta = clamp(score_delta, -3.25, 2.25)
         return {
             'applied': abs(score_delta) >= 0.25,
             'score_delta': round(score_delta, 3),

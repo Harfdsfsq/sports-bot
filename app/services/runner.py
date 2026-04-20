@@ -1566,18 +1566,31 @@ class PredictionRunner:
             return {}, {'enabled': False, 'reason': 'disabled'}, {}
 
         history_root = Path(self.settings.state_path).parent / 'history' / 'runs'
-        if not history_root.exists():
-            return {}, {'enabled': True, 'archives_scanned': 0, 'history_matches_used': 0, 'contexts_built': 0}, {}
-
         max_runs = max(1, int(getattr(self.settings, 'self_history_context_max_runs', 48) or 48))
         max_age_days = max(1, int(getattr(self.settings, 'self_history_context_max_age_days', 45) or 45))
         min_team_samples = max(1, int(getattr(self.settings, 'self_history_context_min_team_samples', 2) or 2))
-        archive_paths = sorted(history_root.glob('*/*-run.json'), reverse=True)
+        include_state = bool(getattr(self.settings, 'self_history_context_include_state', True))
+        state_max_samples = max(1, int(getattr(self.settings, 'self_history_context_state_max_samples', 160) or 160))
+        cross_venue_weight = clamp(float(getattr(self.settings, 'self_history_context_cross_venue_weight', 0.74) or 0.74), 0.35, 0.98)
+        state_sample_weight = clamp(float(getattr(self.settings, 'self_history_context_state_sample_weight', 0.88) or 0.88), 0.45, 1.05)
+        archive_paths = sorted(history_root.glob('*/*-run.json'), reverse=True) if history_root.exists() else []
 
-        team_history: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: {'home': [], 'away': []})
+        team_history: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: {'home': [], 'away': [], 'all': []})
         archives_scanned = 0
         history_matches_used = 0
+        state_rows_scanned = 0
+        state_matches_used = 0
         cutoff_utc = now_utc - timedelta(days=max_age_days)
+
+        def append_sample(team_key: str, venue: str, sample: dict[str, Any]) -> None:
+            if not team_key or venue not in {'home', 'away'}:
+                return
+            team_history[team_key][venue].append(sample)
+            cross_sample = dict(sample)
+            cross_sample['weight'] = float(cross_sample.get('weight') or 1.0) * cross_venue_weight
+            cross_sample['venue_origin'] = venue
+            cross_sample['cross_venue'] = True
+            team_history[team_key]['all'].append(cross_sample)
 
         for archive_path in archive_paths:
             if archives_scanned >= max_runs:
@@ -1604,7 +1617,7 @@ class PredictionRunner:
                     commence_time = ensure_utc(row.get('commence_time'))
                 except Exception:
                     continue
-                if commence_time >= now_utc:
+                if commence_time >= now_utc or commence_time < cutoff_utc:
                     continue
                 best_context = self._best_self_history_archive_context(row.get('contexts'))
                 if best_context is None:
@@ -1622,27 +1635,95 @@ class PredictionRunner:
                 if not home_key or not away_key:
                     continue
                 sample_weight = 1.0 / max(1.0, age_days / 14.0 + 1.0)
-                home_sample = {
+                confidence_value = self._to_float_safe(best_context.get('confidence')) or 0.0
+                append_sample(home_key, 'home', {
                     'league_name': league_name,
                     'age_days': age_days,
                     'weight': sample_weight,
                     'expected_for': expected_home,
                     'expected_against': expected_away,
                     'win_probability': home_win_probability,
-                    'confidence': self._to_float_safe(best_context.get('confidence')) or 0.0,
-                }
-                away_sample = {
+                    'confidence': confidence_value,
+                    'sample_source': 'archive',
+                })
+                append_sample(away_key, 'away', {
                     'league_name': league_name,
                     'age_days': age_days,
                     'weight': sample_weight,
                     'expected_for': expected_away,
                     'expected_against': expected_home,
                     'win_probability': away_win_probability,
-                    'confidence': self._to_float_safe(best_context.get('confidence')) or 0.0,
-                }
-                team_history[home_key]['home'].append(home_sample)
-                team_history[away_key]['away'].append(away_sample)
+                    'confidence': confidence_value,
+                    'sample_source': 'archive',
+                })
                 history_matches_used += 1
+
+        if include_state:
+            seen_state: set[str] = set()
+            collections = []
+            try:
+                collections = [
+                    *(self.state._state.get('bets') or []),
+                    *(self.state._state.get('shadow_bets') or []),
+                    *(self.state._state.get('published_candidates') or []),
+                ]
+            except Exception:
+                collections = []
+            for row in collections:
+                if state_rows_scanned >= state_max_samples:
+                    break
+                if not isinstance(row, dict):
+                    continue
+                fingerprint = str(row.get('fingerprint') or '')
+                if fingerprint and fingerprint in seen_state:
+                    continue
+                if fingerprint:
+                    seen_state.add(fingerprint)
+                state_rows_scanned += 1
+                try:
+                    commence_time = ensure_utc(row.get('commence_time'))
+                except Exception:
+                    continue
+                if commence_time >= now_utc or commence_time < cutoff_utc:
+                    continue
+                expected_home = self._to_float_safe(row.get('expected_home'))
+                expected_away = self._to_float_safe(row.get('expected_away'))
+                if expected_home is None and expected_away is None:
+                    continue
+                home_key = self._team_history_key(str(row.get('home_team') or ''))
+                away_key = self._team_history_key(str(row.get('away_team') or ''))
+                if not home_key or not away_key:
+                    continue
+                age_days = max(0.0, (now_utc - commence_time).total_seconds() / 86400.0)
+                base_weight = (1.0 / max(1.0, age_days / 12.0 + 1.0)) * state_sample_weight
+                if str(row.get('tracking_mode') or '').lower() == 'shadow':
+                    base_weight *= 0.86
+                source_summary = dict(row.get('source_summary') or {})
+                context_conf = self._to_float_safe(source_summary.get('context_confidence'))
+                confidence_value = self._to_float_safe(row.get('confidence')) or context_conf or 0.0
+                append_sample(home_key, 'home', {
+                    'league_name': str(row.get('league_name') or ''),
+                    'age_days': age_days,
+                    'weight': base_weight,
+                    'expected_for': expected_home,
+                    'expected_against': expected_away,
+                    'win_probability': None,
+                    'confidence': confidence_value,
+                    'sample_source': 'state',
+                    'sample_family': str(row.get('family') or ''),
+                })
+                append_sample(away_key, 'away', {
+                    'league_name': str(row.get('league_name') or ''),
+                    'age_days': age_days,
+                    'weight': base_weight,
+                    'expected_for': expected_away,
+                    'expected_against': expected_home,
+                    'win_probability': None,
+                    'confidence': confidence_value,
+                    'sample_source': 'state',
+                    'sample_family': str(row.get('family') or ''),
+                })
+                state_matches_used += 1
 
         contexts: dict[str, MatchContext] = {}
         preview_matches: list[dict[str, Any]] = []
@@ -1653,8 +1734,20 @@ class PredictionRunner:
         for match in matches:
             home_key = self._team_history_key(match.home_team)
             away_key = self._team_history_key(match.away_team)
-            home_samples = list((team_history.get(home_key) or {}).get('home') or [])
-            away_samples = list((team_history.get(away_key) or {}).get('away') or [])
+            home_pack = dict(team_history.get(home_key) or {})
+            away_pack = dict(team_history.get(away_key) or {})
+            strict_home_samples = list(home_pack.get('home') or [])
+            strict_away_samples = list(away_pack.get('away') or [])
+            home_samples = list(strict_home_samples)
+            away_samples = list(strict_away_samples)
+            if len(home_samples) < min_team_samples:
+                home_samples.extend(list(home_pack.get('all') or []))
+            if len(away_samples) < min_team_samples:
+                away_samples.extend(list(away_pack.get('all') or []))
+            home_samples.sort(key=lambda item: (float(item.get('weight') or 0.0), float(item.get('confidence') or 0.0)), reverse=True)
+            away_samples.sort(key=lambda item: (float(item.get('weight') or 0.0), float(item.get('confidence') or 0.0)), reverse=True)
+            home_samples = home_samples[: max(4, min_team_samples + 3)]
+            away_samples = away_samples[: max(4, min_team_samples + 3)]
             if len(home_samples) < 1 or len(away_samples) < 1:
                 continue
             if len(home_samples) + len(away_samples) < max(2, min_team_samples * 2 - 1):
@@ -1672,8 +1765,12 @@ class PredictionRunner:
             ]
             confidence_values = [value for value in confidence_values if value is not None]
             avg_sample_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0.0
+            cross_venue_count = sum(1 for sample in [*home_samples, *away_samples] if bool(sample.get('cross_venue')))
             confidence = clamp(
-                base_conf + sample_total * step_conf + max(0.0, avg_sample_confidence - 55.0) * 0.08,
+                base_conf
+                + sample_total * step_conf
+                + max(0.0, avg_sample_confidence - 55.0) * 0.08
+                - cross_venue_count * 0.15,
                 base_conf,
                 cap_conf,
             )
@@ -1694,9 +1791,14 @@ class PredictionRunner:
                     'context_mode': 'self_history',
                     'home_recent_count': len(home_samples),
                     'away_recent_count': len(away_samples),
+                    'home_strict_count': len(strict_home_samples),
+                    'away_strict_count': len(strict_away_samples),
+                    'cross_venue_count': cross_venue_count,
                     'avg_sample_confidence': round(avg_sample_confidence, 2),
                     'history_archives_scanned': archives_scanned,
                     'history_matches_used': history_matches_used,
+                    'history_state_rows_scanned': state_rows_scanned,
+                    'history_state_matches_used': state_matches_used,
                 },
             )
             contexts[match.match_key] = context
@@ -1707,6 +1809,9 @@ class PredictionRunner:
                     'away_team': match.away_team,
                     'home_samples': len(home_samples),
                     'away_samples': len(away_samples),
+                    'home_strict_samples': len(strict_home_samples),
+                    'away_strict_samples': len(strict_away_samples),
+                    'cross_venue_samples': cross_venue_count,
                     'expected_home': expected_home,
                     'expected_away': expected_away,
                     'home_win_probability': home_win_probability,
@@ -1718,10 +1823,13 @@ class PredictionRunner:
             'enabled': True,
             'archives_scanned': archives_scanned,
             'history_matches_used': history_matches_used,
+            'state_rows_scanned': state_rows_scanned,
+            'state_matches_used': state_matches_used,
             'contexts_built': len(contexts),
         }
         preview = {
             'archives_scanned': archives_scanned,
+            'state_rows_scanned': state_rows_scanned,
             'contexts_built': len(contexts),
             'matches': preview_matches,
         }

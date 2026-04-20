@@ -10,9 +10,9 @@ from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.utils import (
     candidate_selection_key,
     clamp,
+    home_cover_probability_from_lambdas,
     implied_probability,
     poisson_over_probability,
-    poisson_pmf,
     russian_selection,
     shrink_probability,
     strip_vig_three_way,
@@ -60,6 +60,7 @@ class CandidateFactory:
                     continue
                 families[offer.family].append(offer)
 
+            context = self._augment_context_with_market_synthetic(match, context, families)
             match_candidates: list[CandidateBet] = []
             if families.get('totals'):
                 match_candidates.extend(self._build_totals_candidates(match, families['totals'], context, rejections))
@@ -77,7 +78,7 @@ class CandidateFactory:
                 match_candidates.extend(self._build_team_totals_candidates(match, families['teamTotals'], context, rejections))
             weak_context = context is None or float(getattr(context, 'confidence', 0.0) or 0.0) <= float(
                 getattr(self.settings, 'market_derived_context_confidence_cap', 60.0) or 60.0
-            )
+            ) or str(getattr(context, 'source', '') or '').startswith('market_synthetic')
             if weak_context and bool(getattr(self.settings, 'market_derived_candidates_enabled', True)):
                 match_candidates.extend(self._build_market_derived_candidates(match, families, rejections))
             if not match_candidates and getattr(self.settings, 'simple_market_fallback_enabled', True):
@@ -124,6 +125,167 @@ class CandidateFactory:
 
         candidates = self._filter_and_rank(candidates, rejections)
         return candidates, dict(rejections), {'matches': debug_rows[:200]}
+
+    def _augment_context_with_market_synthetic(
+        self,
+        match: Match,
+        context: MatchContext | None,
+        families: dict[str, list[Offer]],
+    ) -> MatchContext | None:
+        synthetic = self._build_market_synthetic_context(match, families)
+        if synthetic is None:
+            return context
+        base_xg = self._validated_expected_goals(context)
+        if context is None:
+            return synthetic
+        if base_xg is not None:
+            return context
+        details = dict(getattr(context, 'details', {}) or {})
+        synthetic_details = dict(getattr(synthetic, 'details', {}) or {})
+        details.update({
+            'market_synthetic_used': True,
+            'market_synthetic_expected_home': synthetic.expected_home,
+            'market_synthetic_expected_away': synthetic.expected_away,
+            'market_synthetic_confidence': synthetic.confidence,
+            'market_synthetic_mode': synthetic_details.get('context_mode') or 'market_synthetic',
+        })
+        return MatchContext(
+            source=f"{str(getattr(context, 'source', '') or 'context')}+market_synthetic",
+            payload={**dict(getattr(context, 'payload', {}) or {}), 'market_synthetic': dict(getattr(synthetic, 'payload', {}) or {})},
+            expected_home=synthetic.expected_home,
+            expected_away=synthetic.expected_away,
+            home_win_probability=(
+                context.home_win_probability if getattr(context, 'home_win_probability', None) is not None else synthetic.home_win_probability
+            ),
+            away_win_probability=(
+                context.away_win_probability if getattr(context, 'away_win_probability', None) is not None else synthetic.away_win_probability
+            ),
+            home_starting=getattr(context, 'home_starting', None),
+            away_starting=getattr(context, 'away_starting', None),
+            confidence=clamp(
+                max(float(getattr(context, 'confidence', 0.0) or 0.0), float(getattr(synthetic, 'confidence', 0.0) or 0.0) - 2.0),
+                38.0,
+                78.0,
+            ),
+            profits=dict(getattr(context, 'profits', {}) or {}),
+            details=details,
+        )
+
+    def _build_market_synthetic_context(
+        self,
+        match: Match,
+        families: dict[str, list[Offer]],
+    ) -> MatchContext | None:
+        if not bool(getattr(self.settings, 'market_synthetic_context_enabled', True)):
+            return None
+        total_goals = self._synthetic_total_goals_from_market(families)
+        goal_diff = self._synthetic_goal_diff_from_market(match, families)
+        if total_goals is None and goal_diff is None:
+            return None
+        if total_goals is None:
+            total_goals = float(getattr(self.settings, 'market_synthetic_total_default', 2.55) or 2.55)
+        if goal_diff is None:
+            goal_diff = 0.0
+        max_diff = max(0.18, float(total_goals) - 0.30)
+        goal_diff = clamp(float(goal_diff), -max_diff, max_diff)
+        min_goal = float(getattr(self.settings, 'min_expected_goals_value', 0.15) or 0.15)
+        max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
+        home = clamp((float(total_goals) + float(goal_diff)) / 2.0, min_goal, max_goal)
+        away = clamp((float(total_goals) - float(goal_diff)) / 2.0, min_goal, max_goal)
+        if home < min_goal or away < min_goal:
+            return None
+        total_prob = max(home + away, 0.10)
+        draw_prob = clamp(0.27 - abs(home - away) * 0.06, 0.12, 0.30)
+        home_prob = clamp(home / total_prob, 0.10, 0.80)
+        away_prob = clamp(away / total_prob, 0.10, 0.80)
+        probs = self._normalize_probabilities({match.home_team: home_prob, match.away_team: away_prob, 'draw': draw_prob, 'Draw': draw_prob})
+        confidence = clamp(float(getattr(self.settings, 'market_synthetic_context_confidence', 47.0) or 47.0), 34.0, 65.0)
+        return MatchContext(
+            source='market_synthetic',
+            payload={
+                'home_team': match.home_team,
+                'away_team': match.away_team,
+                'families_seen': sorted(str(key) for key, rows in (families or {}).items() if rows),
+            },
+            expected_home=home,
+            expected_away=away,
+            home_win_probability=self._to_float_safe(probs.get(match.home_team)),
+            away_win_probability=self._to_float_safe(probs.get(match.away_team)),
+            confidence=confidence,
+            details={
+                'context_mode': 'market_synthetic',
+                'market_synthetic_used': True,
+                'synthetic_total_goals': round(float(total_goals), 3),
+                'synthetic_goal_diff': round(float(goal_diff), 3),
+                'home_recent_count': 0,
+                'away_recent_count': 0,
+            },
+        )
+
+    def _synthetic_total_goals_from_market(self, families: dict[str, list[Offer]]) -> float | None:
+        totals_offers = list((families or {}).get('totals') or [])
+        if not totals_offers:
+            return None
+        line_scores: list[tuple[float, float]] = []
+        grouped: dict[float, dict[str, list[Offer]]] = defaultdict(lambda: {'over': [], 'under': []})
+        for offer in totals_offers:
+            point = self._normalize_supported_line(getattr(offer, 'point', None), 'totals')
+            selection_key = self._over_under_key(str(getattr(offer, 'selection', '') or ''))
+            if point is None or selection_key not in {'over', 'under'}:
+                continue
+            grouped[float(point)][selection_key].append(offer)
+        min_books = max(1, int(getattr(self.settings, 'market_synthetic_min_books', 2) or 2))
+        edge_scale = float(getattr(self.settings, 'market_synthetic_total_edge_scale', 1.35) or 1.35)
+        for point, bucket in grouped.items():
+            if not bucket['over'] or not bucket['under']:
+                continue
+            books = {
+                self._norm_book(item.bookmaker)
+                for item in [*bucket['over'], *bucket['under']]
+                if str(getattr(item, 'bookmaker', '') or '').strip()
+            }
+            if len(books) < min_books:
+                continue
+            over_prob = self._fair_market_probability_yes_no(bucket['over'], [*bucket['over'], *bucket['under']], 'over', selector=self._over_under_key)
+            weight = 1.0 / (1.0 + abs(float(point) - 2.5))
+            estimate = float(point) + (float(over_prob) - 0.5) * edge_scale
+            line_scores.append((estimate, weight))
+        if not line_scores:
+            return None
+        total_weight = sum(weight for _, weight in line_scores)
+        if total_weight <= 0:
+            return None
+        return clamp(sum(value * weight for value, weight in line_scores) / total_weight, 1.2, 4.8)
+
+    def _synthetic_goal_diff_from_market(self, match: Match, families: dict[str, list[Offer]]) -> float | None:
+        h2h_offers = list((families or {}).get('h2h') or [])
+        if h2h_offers:
+            home_prob = self._fair_market_probability_h2h(match, h2h_offers, match.home_team)
+            away_prob = self._fair_market_probability_h2h(match, h2h_offers, match.away_team)
+            if self._is_valid_probability(home_prob) and self._is_valid_probability(away_prob):
+                scale = float(getattr(self.settings, 'market_synthetic_diff_scale', 1.55) or 1.55)
+                return clamp((float(home_prob) - float(away_prob)) * scale, -2.0, 2.0)
+        spread_offers = list((families or {}).get('spreads') or [])
+        best_line: tuple[float, float] | None = None
+        for offer in spread_offers:
+            point = self._to_float_safe(getattr(offer, 'point', None))
+            team_side = str(getattr(offer, 'team_side', '') or '').lower()
+            if point is None or team_side not in {'home', 'away'}:
+                continue
+            bucket = [
+                item for item in spread_offers
+                if self._to_float_safe(getattr(item, 'point', None)) == point and str(getattr(item, 'team_side', '') or '').lower() == team_side
+            ]
+            if not bucket:
+                continue
+            if best_line is None or abs(point) < abs(best_line[0]):
+                market_prob = self._fair_market_probability_spreads(bucket, spread_offers, str(getattr(offer, 'selection', '') or ''), point, team_side)
+                adj_line = -float(point) if team_side == 'home' else float(point)
+                diff_est = adj_line + (float(market_prob) - 0.5) * 1.15
+                best_line = (point, diff_est)
+        if best_line is not None:
+            return clamp(float(best_line[1]), -2.0, 2.0)
+        return None
 
     def _build_totals_candidates(
         self,
@@ -683,29 +845,38 @@ class CandidateFactory:
     ) -> bool:
         if not isinstance(market_signal, dict):
             return False
-        if bool(market_signal.get('history_ready')) is False:
-            return False
         observation_count = int(market_signal.get('observation_count') or 0)
         books_count = int(market_signal.get('books_count') or 0)
         sources_count = int(market_signal.get('sources_count') or 0)
         if offers is not None:
             books_count = max(books_count, len({self._norm_book(item.bookmaker) for item in offers if str(item.bookmaker or '').strip()}))
             sources_count = max(sources_count, len({str(item.source or '').strip().lower() for item in offers if str(item.source or '').strip()}))
+        edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
+        dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
+        max_dispersion = float(getattr(self.settings, 'market_derived_max_dispersion_pct', 7.0) or 7.0)
+        if dispersion_pct is not None and dispersion_pct > max_dispersion:
+            return False
+        history_ready = bool(market_signal.get('history_ready'))
+        if not history_ready:
+            if not bool(getattr(self.settings, 'market_derived_allow_consensus_without_history', True)):
+                return False
+            min_books = max(1, int(getattr(self.settings, 'market_derived_consensus_min_books', 2) or 2))
+            min_edge = float(getattr(self.settings, 'market_derived_consensus_min_edge_pct', 1.6) or 1.6)
+            if books_count < min_books or edge_pct < min_edge:
+                return False
+            if family == 'h2h' and str(market_signal.get('selection_key') or '').strip().lower() == 'draw':
+                return False
+            return True
         if observation_count < max(1, int(getattr(self.settings, 'market_derived_min_observations', 2) or 2)):
             return False
         if books_count < max(1, int(getattr(self.settings, 'market_derived_min_books', 2) or 2)):
             return False
         if sources_count < max(1, int(getattr(self.settings, 'market_derived_min_sources', 1) or 1)):
             return False
-        edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
         if edge_pct < float(getattr(self.settings, 'market_derived_min_edge_pct', 1.2) or 1.2):
             return False
         delta_prob_pp = self._to_float_safe(market_signal.get('delta_prob_pp')) or 0.0
         if delta_prob_pp < float(getattr(self.settings, 'market_derived_min_delta_prob_pp', 0.0) or 0.0):
-            return False
-        dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
-        max_dispersion = float(getattr(self.settings, 'market_derived_max_dispersion_pct', 7.0) or 7.0)
-        if dispersion_pct is not None and dispersion_pct > max_dispersion:
             return False
         if family == 'h2h' and str(market_signal.get('selection_key') or '').strip().lower() == 'draw':
             return False
@@ -726,23 +897,30 @@ class CandidateFactory:
             return []
         expected_home, expected_away = xg
         result: list[CandidateBet] = []
-        seen_keys: set[tuple[str, float]] = set()
+        seen_keys: set[tuple[str, float, str]] = set()
         for offer in offers:
             if offer.point is None:
-                continue
-            key = (str(offer.selection), float(offer.point))
-            if key in seen_keys:
-                continue
-            seen_keys.add(key)
-            books = [item for item in offers if item.selection == offer.selection and item.point == offer.point]
-            required_books = self._required_books_for_bucket('spreads', offer.point, books, context)
-            if len({self._norm_book(item.bookmaker) for item in books}) < required_books:
-                rejections['insufficient_books'] += 1
                 continue
             team_side = (offer.team_side or '').lower()
             if team_side not in {'home', 'away'}:
                 continue
-            model_prob = self._spread_price_equivalent_probability(expected_home, expected_away, float(offer.point), team_side)
+            key = (str(offer.selection), float(offer.point), team_side)
+            if key in seen_keys:
+                continue
+            seen_keys.add(key)
+            books = [
+                item for item in offers
+                if item.selection == offer.selection and item.point == offer.point and str(item.team_side or '').lower() == team_side
+            ]
+            required_books = self._required_books_for_bucket('spreads', offer.point, books, context)
+            if len({self._norm_book(item.bookmaker) for item in books}) < required_books:
+                rejections['insufficient_books'] += 1
+                continue
+            if team_side == 'home':
+                model_prob = home_cover_probability_from_lambdas(float(expected_home), float(expected_away), float(offer.point))
+            else:
+                home_cover = home_cover_probability_from_lambdas(float(expected_home), float(expected_away), -float(offer.point))
+                model_prob = None if home_cover is None else clamp(1.0 - float(home_cover), 0.02, 0.98)
             if model_prob is None:
                 rejections['missing_model_probability_spreads'] += 1
                 continue
@@ -755,7 +933,7 @@ class CandidateFactory:
                 offers=books,
                 market_prob=market_prob,
                 model_prob=model_prob,
-                reasons=['mode=xg_spread', 'model=xg_spread_stack', f'signals={self._signal_stack_label(context)}', f'context={self._context_label(context)}'],
+                reasons=['mode=xg_spread', 'model=poisson_cover_probability', f'line={float(offer.point):g}', f'signals={self._signal_stack_label(context)}', f'context={self._context_label(context)}'],
                 expected_home=expected_home,
                 expected_away=expected_away,
                 model_mode='xg_spread',
@@ -980,67 +1158,6 @@ class CandidateFactory:
                 result.append(candidate)
         return result
 
-
-    def _margin_outcome_weights(self, margin: float) -> tuple[float, float]:
-        frac = round(abs(margin - int(margin)), 2)
-        if frac in {0.25, 0.75}:
-            left_win, left_loss = self._margin_outcome_weights(margin - 0.25)
-            right_win, right_loss = self._margin_outcome_weights(margin + 0.25)
-            return ((left_win + right_win) / 2.0, (left_loss + right_loss) / 2.0)
-        if margin > 0:
-            return (1.0, 0.0)
-        if abs(margin) <= 1e-9:
-            return (0.0, 0.0)
-        return (0.0, 1.0)
-
-    def _asian_side_equivalent_components(
-        self,
-        home_lambda: float,
-        away_lambda: float,
-        line: float,
-        team_side: str,
-        max_goals: int = 10,
-    ) -> dict[str, float] | None:
-        side = str(team_side or '').strip().lower()
-        if side not in {'home', 'away'}:
-            return None
-        if not all(math.isfinite(value) for value in (home_lambda, away_lambda, line)):
-            return None
-        win_mass = 0.0
-        loss_mass = 0.0
-        for home_goals in range(max_goals + 1):
-            p_home = poisson_pmf(home_lambda, home_goals)
-            for away_goals in range(max_goals + 1):
-                probability = p_home * poisson_pmf(away_lambda, away_goals)
-                margin = (home_goals - away_goals) if side == 'home' else (away_goals - home_goals)
-                win_weight, loss_weight = self._margin_outcome_weights(margin + line)
-                win_mass += probability * win_weight
-                loss_mass += probability * loss_weight
-        decisive_mass = max(0.0, win_mass + loss_mass)
-        if decisive_mass <= 1e-9:
-            return None
-        price_equivalent_probability = clamp(win_mass / decisive_mass, 0.02, 0.98)
-        fair_odds = 1.0 + (loss_mass / max(win_mass, 1e-9))
-        return {
-            'win_mass': max(0.0, win_mass),
-            'loss_mass': max(0.0, loss_mass),
-            'decisive_mass': decisive_mass,
-            'price_equivalent_probability': price_equivalent_probability,
-            'fair_odds': max(1.01, fair_odds),
-        }
-
-    def _spread_price_equivalent_probability(
-        self,
-        expected_home: float,
-        expected_away: float,
-        line: float,
-        team_side: str,
-    ) -> float | None:
-        components = self._asian_side_equivalent_components(expected_home, expected_away, line, team_side)
-        if components is None:
-            return None
-        return float(components['price_equivalent_probability'])
-
     def _candidate_from_bucket(
         self,
         *,
@@ -1105,7 +1222,12 @@ class CandidateFactory:
         shrink_min = 0.18
         shrink_max = 0.55
         context_source = str(getattr(context, 'source', '') or '') if context is not None else ''
-        market_signal_derived = str(model_mode or '').startswith('market_')
+        context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        market_signal_derived = (
+            str(model_mode or '').startswith('market_')
+            or context_source.startswith('market_synthetic')
+            or bool(context_details.get('market_synthetic_used'))
+        )
         if not context_source and market_signal_derived:
             context_source = 'market_signal'
         if len(normalized_books) == 1:
@@ -1167,20 +1289,6 @@ class CandidateFactory:
         fair_odds = 1.0 / max(adjusted, 0.01)
         ev_pct = (adjusted * best_price - 1.0) * 100.0
         edge_pct = (adjusted - market_prob) * 100.0
-        pricing_components: dict[str, float] | None = None
-        if family == 'spreads' and point is not None and expected_home is not None and expected_away is not None and str(getattr(best_offer, 'team_side', '') or '').lower() in {'home', 'away'}:
-            pricing_components = self._asian_side_equivalent_components(
-                float(expected_home),
-                float(expected_away),
-                float(point),
-                str(getattr(best_offer, 'team_side', '') or '').lower(),
-            )
-            if pricing_components is not None:
-                decisive_mass = float(pricing_components.get('decisive_mass') or 0.0)
-                adjusted_win_mass = decisive_mass * adjusted
-                adjusted_loss_mass = decisive_mass * max(0.0, 1.0 - adjusted)
-                fair_odds = 1.0 + (adjusted_loss_mass / max(adjusted_win_mass, 1e-9))
-                ev_pct = ((adjusted_win_mass * (best_price - 1.0)) - adjusted_loss_mass) * 100.0
         # Single-book matches can be underconfident even with a large model/market gap.
         # Add a small, bounded uplift for clearly positive EV situations to reduce "no pick" runs.
         if len(normalized_books) == 1:
@@ -1194,7 +1302,6 @@ class CandidateFactory:
                     100,
                 )
 
-        context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         selection_key = candidate_selection_key(
             family,
             selection,
@@ -1982,6 +2089,15 @@ class CandidateFactory:
         return None
 
     @staticmethod
+    def _over_under_key(selection: str) -> str | None:
+        text = str(selection or '').strip().lower()
+        if text.startswith('over') or text in {'больше', 'тб'} or ' over' in text or 'больше' in text:
+            return 'over'
+        if text.startswith('under') or text in {'меньше', 'тм'} or ' under' in text or 'меньше' in text:
+            return 'under'
+        return None
+
+    @staticmethod
     def _yes_no_key(selection: str) -> str | None:
         text = str(selection or '').strip().lower()
         if text in {'yes', 'да', 'btts yes', 'both teams to score yes'} or text.endswith(' yes'):
@@ -2681,6 +2797,8 @@ class CandidateFactory:
         # Treat it as core only when it brings match-shape information, not just a loose mapping.
         if 'sstats' in context_source and any(flag in {'xg', 'form', 'recent_form', 'recent_profile', 'history'} for flag in flags):
             return True
+        if 'self_history' in context_source and any(flag in {'xg', 'recent_profile', 'history'} for flag in flags):
+            return True
         return False
 
     def _required_publish_books(self, item: CandidateBet) -> int:
@@ -2821,8 +2939,15 @@ class CandidateFactory:
                     rejections['non_core_ev_guard'] += 1
                     continue
                 if bool(getattr(self.settings, 'non_core_league_require_core_context', True)) and not self._has_core_context(item):
-                    rejections['non_core_context_guard'] += 1
-                    continue
+                    context_source = str((item.source_summary or {}).get('context_source') or '').lower()
+                    market_synthetic_relief = (
+                        context_source.startswith('market_synthetic')
+                        and int(getattr(item, 'books_count', 0) or 0) >= int(getattr(self.settings, 'market_derived_consensus_min_books', 2) or 2)
+                        and float(getattr(item, 'publication_score', 0.0) or 0.0) >= float(getattr(self.settings, 'market_derived_consensus_min_publication_score', 9.0) or 9.0)
+                    )
+                    if not market_synthetic_relief:
+                        rejections['non_core_context_guard'] += 1
+                        continue
             if item.model_mode == 'market_simple_totals':
                 if float(item.confidence) < float(getattr(self.settings, 'simple_market_totals_min_confidence', 55.0) or 58.0):
                     rejections['simple_market_totals_confidence_guard'] += 1
