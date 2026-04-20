@@ -1,8 +1,8 @@
 {
-  "created_at": "2026-04-20T19:58:17.109365+00:00",
+  "created_at": "2026-04-20T22:22:36.405694+00:00",
   "enabled": true,
   "summary": {
-    "total_tracked_bets": 34,
+    "total_tracked_bets": 35,
     "settled_binary_bets": 20,
     "count": 20,
     "wins": 10,
@@ -581,15 +581,15 @@
     "brier_score": 0.2546
   },
   "clv": {
-    "count": 70,
-    "avg_open_clv_pct": -0.035,
+    "count": 71,
+    "avg_open_clv_pct": -0.034,
     "segments": {
       "family:totals": {
-        "count": 41,
-        "avg_open_clv_pct": -0.214
+        "count": 42,
+        "avg_open_clv_pct": -0.206
       },
       "market:totals:under": {
-        "count": 29,
+        "count": 30,
         "avg_open_clv_pct": -0.011
       },
       "context:bzzoiro_predictions": {
@@ -617,8 +617,8 @@
         "avg_open_clv_pct": 2.001
       },
       "context:ensemble": {
-        "count": 34,
-        "avg_open_clv_pct": -0.365
+        "count": 35,
+        "avg_open_clv_pct": -0.348
       },
       "market:h2h:liverpool fc": {
         "count": 1,
@@ -873,11 +873,11 @@
     },
     "clv_segments": {
       "family:totals": {
-        "count": 41,
-        "avg_open_clv_pct": -0.214
+        "count": 42,
+        "avg_open_clv_pct": -0.206
       },
       "market:totals:under": {
-        "count": 29,
+        "count": 30,
         "avg_open_clv_pct": -0.011
       },
       "context:bzzoiro_predictions": {
@@ -905,8 +905,8 @@
         "avg_open_clv_pct": 2.001
       },
       "context:ensemble": {
-        "count": 34,
-        "avg_open_clv_pct": -0.365
+        "count": 35,
+        "avg_open_clv_pct": -0.348
       },
       "market:h2h:liverpool fc": {
         "count": 1,
@@ -1028,7 +1028,7 @@
     ]
   },
   "recent_learning_state": {
-    "updated_at": "2026-04-20T18:18:53.882703+00:00",
+    "updated_at": "2026-04-20T20:00:01.190750+00:00",
     "summary": {
       "total_tracked_bets": 34,
       "settled_binary_bets": 20,
@@ -1168,21 +1168,81 @@
       }
     },
     "daily_quality_analysis": {
-      "settled_bets": 0,
-      "lost_bets": 0,
-      "top_failure_tags": {},
-      "by_family": {},
-      "by_league_bucket": {}
+      "settled_bets": 3,
+      "lost_bets": 1,
+      "top_failure_tags": {
+        "high_odds": 1,
+        "sstats_form": 1,
+        "non_core_league": 1
+      },
+      "by_family": {
+        "h2h": {
+          "count": 2,
+          "wins": 1,
+          "losses": 1,
+          "stake": 22.0,
+          "pnl": 3.5,
+          "roi_pct": 15.91,
+          "hit_rate_pct": 50.0,
+          "avg_odds": 3.025
+        },
+        "totals": {
+          "count": 1,
+          "wins": 1,
+          "losses": 0,
+          "stake": 24.0,
+          "pnl": 12.3,
+          "roi_pct": 51.25,
+          "hit_rate_pct": 100.0,
+          "avg_odds": 2.025
+        }
+      },
+      "by_league_bucket": {
+        "preferred": {
+          "count": 2,
+          "wins": 2,
+          "losses": 0,
+          "stake": 34.0,
+          "pnl": 27.8,
+          "roi_pct": 81.76,
+          "hit_rate_pct": 100.0,
+          "avg_odds": 2.287
+        },
+        "other": {
+          "count": 1,
+          "wins": 0,
+          "losses": 1,
+          "stake": 12.0,
+          "pnl": -12.0,
+          "roi_pct": -100.0,
+          "hit_rate_pct": 0.0,
+          "avg_odds": 3.5
+        }
+      }
     },
     "next_day_adjustments": {
       "enabled": true,
-      "report_date": "2026-04-18",
-      "settled_bets": 0,
+      "report_date": "2026-04-19",
+      "settled_bets": 3,
       "family_adjustments": {},
-      "league_bucket_adjustments": {},
-      "actions": []
+      "league_bucket_adjustments": {
+        "preferred": {
+          "score_delta": 0.45,
+          "count": 2,
+          "roi_pct": 81.76,
+          "reason": "trust_core_bucket_after_profit"
+        }
+      },
+      "actions": [
+        {
+          "scope": "league_bucket",
+          "key": "preferred",
+          "score_delta": 0.45,
+          "reason": "trust_core_bucket_after_profit"
+        }
+      ]
     },
-    "report_date": "2026-04-18",
-    "archive_path": ".data/history/runs/2026-04-20/181853-run.json"
+    "report_date": "2026-04-19",
+    "archive_path": ".data/history/runs/2026-04-20/200001-run.json"
   }
 }
