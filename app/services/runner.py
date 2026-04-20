@@ -8,7 +8,6 @@ from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 from pathlib import Path
 from importlib import import_module
-import math
 from typing import Any
 
 from app.config import Settings
@@ -20,7 +19,7 @@ from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
 from app.state import JsonStateStore
-from app.utils import candidate_selection_key, clamp, ensure_utc
+from app.utils import candidate_selection_key, clamp, ensure_utc, parse_datetime
 
 
 class PredictionRunner:
@@ -1557,6 +1556,22 @@ class PredictionRunner:
         )
         return ranked[:max_count]
 
+
+    def _collect_provider_rate_limits(self, source_stats: dict[str, Any]) -> dict[str, Any]:
+        limits: dict[str, Any] = {}
+        for name, stats in (source_stats or {}).items():
+            if not isinstance(stats, dict):
+                continue
+            statuses = [int(code) for code in (stats.get('http_statuses') or []) if str(code).isdigit()]
+            cooldown = self._to_float_safe(stats.get('cooldown_remaining_seconds'))
+            if 429 in statuses or bool(stats.get('rate_limited')) or (cooldown is not None and cooldown > 0):
+                limits[name] = {
+                    'http_429_seen': 429 in statuses,
+                    'rate_limited': bool(stats.get('rate_limited')),
+                    'cooldown_remaining_seconds': cooldown,
+                }
+        return limits
+
     def _build_self_history_contexts(
         self,
         matches: list[Match],
@@ -1566,31 +1581,20 @@ class PredictionRunner:
             return {}, {'enabled': False, 'reason': 'disabled'}, {}
 
         history_root = Path(self.settings.state_path).parent / 'history' / 'runs'
+        if not history_root.exists():
+            return {}, {'enabled': True, 'archives_scanned': 0, 'history_matches_used': 0, 'contexts_built': 0}, {}
+
         max_runs = max(1, int(getattr(self.settings, 'self_history_context_max_runs', 48) or 48))
         max_age_days = max(1, int(getattr(self.settings, 'self_history_context_max_age_days', 45) or 45))
         min_team_samples = max(1, int(getattr(self.settings, 'self_history_context_min_team_samples', 2) or 2))
-        include_state = bool(getattr(self.settings, 'self_history_context_include_state', True))
-        state_max_samples = max(1, int(getattr(self.settings, 'self_history_context_state_max_samples', 160) or 160))
-        cross_venue_weight = clamp(float(getattr(self.settings, 'self_history_context_cross_venue_weight', 0.74) or 0.74), 0.35, 0.98)
-        state_sample_weight = clamp(float(getattr(self.settings, 'self_history_context_state_sample_weight', 0.88) or 0.88), 0.45, 1.05)
-        archive_paths = sorted(history_root.glob('*/*-run.json'), reverse=True) if history_root.exists() else []
+        archive_paths = sorted(history_root.glob('*/*-run.json'), reverse=True)
 
-        team_history: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: {'home': [], 'away': [], 'all': []})
+        team_history: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: {'home': [], 'away': []})
         archives_scanned = 0
         history_matches_used = 0
         state_rows_scanned = 0
         state_matches_used = 0
         cutoff_utc = now_utc - timedelta(days=max_age_days)
-
-        def append_sample(team_key: str, venue: str, sample: dict[str, Any]) -> None:
-            if not team_key or venue not in {'home', 'away'}:
-                return
-            team_history[team_key][venue].append(sample)
-            cross_sample = dict(sample)
-            cross_sample['weight'] = float(cross_sample.get('weight') or 1.0) * cross_venue_weight
-            cross_sample['venue_origin'] = venue
-            cross_sample['cross_venue'] = True
-            team_history[team_key]['all'].append(cross_sample)
 
         for archive_path in archive_paths:
             if archives_scanned >= max_runs:
@@ -1614,22 +1618,20 @@ class PredictionRunner:
                 if not isinstance(row, dict):
                     continue
                 try:
-                    commence_time = ensure_utc(row.get('commence_time'))
+                    commence_time = ensure_utc(parse_datetime(row.get('commence_time')))
                 except Exception:
                     continue
-                if commence_time >= now_utc or commence_time < cutoff_utc:
+                if commence_time >= now_utc:
                     continue
                 best_context = self._best_self_history_archive_context(row.get('contexts'))
                 if best_context is None:
                     continue
-                expected_home = self._sanitize_self_history_expected(best_context.get('expected_home'))
-                expected_away = self._sanitize_self_history_expected(best_context.get('expected_away'))
+                expected_home = self._to_float_safe(best_context.get('expected_home'))
+                expected_away = self._to_float_safe(best_context.get('expected_away'))
                 home_win_probability = self._to_float_safe(best_context.get('home_win_probability'))
                 away_win_probability = self._to_float_safe(best_context.get('away_win_probability'))
-                probability_only_enabled = bool(getattr(self.settings, 'self_history_probability_only_enabled', True))
-                if expected_home is None and expected_away is None:
-                    if not probability_only_enabled or (home_win_probability is None and away_win_probability is None):
-                        continue
+                if expected_home is None and expected_away is None and home_win_probability is None and away_win_probability is None:
+                    continue
                 age_days = max(0.0, (now_utc - commence_time).total_seconds() / 86400.0)
                 league_name = str(row.get('league_name') or '')
                 home_key = self._team_history_key(str(row.get('home_team') or ''))
@@ -1637,95 +1639,70 @@ class PredictionRunner:
                 if not home_key or not away_key:
                     continue
                 sample_weight = 1.0 / max(1.0, age_days / 14.0 + 1.0)
-                confidence_value = self._to_float_safe(best_context.get('confidence')) or 0.0
-                append_sample(home_key, 'home', {
+                home_sample = {
                     'league_name': league_name,
                     'age_days': age_days,
                     'weight': sample_weight,
                     'expected_for': expected_home,
                     'expected_against': expected_away,
                     'win_probability': home_win_probability,
-                    'confidence': confidence_value,
-                    'sample_source': 'archive',
-                })
-                append_sample(away_key, 'away', {
+                    'confidence': self._to_float_safe(best_context.get('confidence')) or 0.0,
+                }
+                away_sample = {
                     'league_name': league_name,
                     'age_days': age_days,
                     'weight': sample_weight,
                     'expected_for': expected_away,
                     'expected_against': expected_home,
                     'win_probability': away_win_probability,
-                    'confidence': confidence_value,
-                    'sample_source': 'archive',
-                })
+                    'confidence': self._to_float_safe(best_context.get('confidence')) or 0.0,
+                }
+                team_history[home_key]['home'].append(home_sample)
+                team_history[away_key]['away'].append(away_sample)
                 history_matches_used += 1
 
-        if include_state:
-            seen_state: set[str] = set()
-            collections = []
-            try:
-                collections = [
-                    *(self.state._state.get('bets') or []),
-                    *(self.state._state.get('shadow_bets') or []),
-                    *(self.state._state.get('published_candidates') or []),
-                ]
-            except Exception:
-                collections = []
-            for row in collections:
-                if state_rows_scanned >= state_max_samples:
-                    break
-                if not isinstance(row, dict):
-                    continue
-                fingerprint = str(row.get('fingerprint') or '')
-                if fingerprint and fingerprint in seen_state:
-                    continue
-                if fingerprint:
-                    seen_state.add(fingerprint)
-                state_rows_scanned += 1
-                try:
-                    commence_time = ensure_utc(row.get('commence_time'))
-                except Exception:
-                    continue
-                if commence_time >= now_utc or commence_time < cutoff_utc:
-                    continue
-                expected_home = self._sanitize_self_history_expected(row.get('expected_home'))
-                expected_away = self._sanitize_self_history_expected(row.get('expected_away'))
-                if expected_home is None and expected_away is None and not bool(getattr(self.settings, 'self_history_probability_only_enabled', True)):
-                    continue
-                home_key = self._team_history_key(str(row.get('home_team') or ''))
-                away_key = self._team_history_key(str(row.get('away_team') or ''))
-                if not home_key or not away_key:
-                    continue
-                age_days = max(0.0, (now_utc - commence_time).total_seconds() / 86400.0)
-                base_weight = (1.0 / max(1.0, age_days / 12.0 + 1.0)) * state_sample_weight
-                if str(row.get('tracking_mode') or '').lower() == 'shadow':
-                    base_weight *= 0.86
-                source_summary = dict(row.get('source_summary') or {})
-                context_conf = self._to_float_safe(source_summary.get('context_confidence'))
-                confidence_value = self._to_float_safe(row.get('confidence')) or context_conf or 0.0
-                append_sample(home_key, 'home', {
-                    'league_name': str(row.get('league_name') or ''),
-                    'age_days': age_days,
-                    'weight': base_weight,
-                    'expected_for': expected_home,
-                    'expected_against': expected_away,
-                    'win_probability': None,
-                    'confidence': confidence_value,
-                    'sample_source': 'state',
-                    'sample_family': str(row.get('family') or ''),
-                })
-                append_sample(away_key, 'away', {
-                    'league_name': str(row.get('league_name') or ''),
-                    'age_days': age_days,
-                    'weight': base_weight,
-                    'expected_for': expected_away,
-                    'expected_against': expected_home,
-                    'win_probability': None,
-                    'confidence': confidence_value,
-                    'sample_source': 'state',
-                    'sample_family': str(row.get('family') or ''),
-                })
-                state_matches_used += 1
+
+        state_rows, state_stats = self._iter_self_history_state_rows(now_utc)
+        state_rows_scanned = int(state_stats.get('state_rows_scanned') or 0)
+        state_weight_factor = float(getattr(self.settings, 'self_history_context_state_weight_factor', 0.72) or 0.72)
+        for row in state_rows:
+            commence_time = row.get('commence_time')
+            if not isinstance(commence_time, datetime):
+                continue
+            age_days = max(0.0, (now_utc - commence_time).total_seconds() / 86400.0)
+            league_name = str(row.get('league_name') or '')
+            home_key = self._team_history_key(str(row.get('home_team') or ''))
+            away_key = self._team_history_key(str(row.get('away_team') or ''))
+            if not home_key or not away_key:
+                continue
+            expected_home = self._to_float_safe(row.get('expected_home'))
+            expected_away = self._to_float_safe(row.get('expected_away'))
+            home_win_probability = self._to_float_safe(row.get('home_win_probability'))
+            away_win_probability = self._to_float_safe(row.get('away_win_probability'))
+            sample_weight = (1.0 / max(1.0, age_days / 14.0 + 1.0)) * state_weight_factor
+            home_sample = {
+                'league_name': league_name,
+                'age_days': age_days,
+                'weight': sample_weight,
+                'expected_for': expected_home,
+                'expected_against': expected_away,
+                'win_probability': home_win_probability,
+                'confidence': self._to_float_safe(row.get('confidence')) or 0.0,
+                'source': row.get('source') or 'state',
+            }
+            away_sample = {
+                'league_name': league_name,
+                'age_days': age_days,
+                'weight': sample_weight,
+                'expected_for': expected_away,
+                'expected_against': expected_home,
+                'win_probability': away_win_probability,
+                'confidence': self._to_float_safe(row.get('confidence')) or 0.0,
+                'source': row.get('source') or 'state',
+            }
+            team_history[home_key]['home'].append(home_sample)
+            team_history[away_key]['away'].append(away_sample)
+            state_matches_used += 1
 
         contexts: dict[str, MatchContext] = {}
         preview_matches: list[dict[str, Any]] = []
@@ -1736,20 +1713,8 @@ class PredictionRunner:
         for match in matches:
             home_key = self._team_history_key(match.home_team)
             away_key = self._team_history_key(match.away_team)
-            home_pack = dict(team_history.get(home_key) or {})
-            away_pack = dict(team_history.get(away_key) or {})
-            strict_home_samples = list(home_pack.get('home') or [])
-            strict_away_samples = list(away_pack.get('away') or [])
-            home_samples = list(strict_home_samples)
-            away_samples = list(strict_away_samples)
-            if len(home_samples) < min_team_samples:
-                home_samples.extend(list(home_pack.get('all') or []))
-            if len(away_samples) < min_team_samples:
-                away_samples.extend(list(away_pack.get('all') or []))
-            home_samples.sort(key=lambda item: (float(item.get('weight') or 0.0), float(item.get('confidence') or 0.0)), reverse=True)
-            away_samples.sort(key=lambda item: (float(item.get('weight') or 0.0), float(item.get('confidence') or 0.0)), reverse=True)
-            home_samples = home_samples[: max(4, min_team_samples + 3)]
-            away_samples = away_samples[: max(4, min_team_samples + 3)]
+            home_samples = list((team_history.get(home_key) or {}).get('home') or [])
+            away_samples = list((team_history.get(away_key) or {}).get('away') or [])
             if len(home_samples) < 1 or len(away_samples) < 1:
                 continue
             if len(home_samples) + len(away_samples) < max(2, min_team_samples * 2 - 1):
@@ -1767,12 +1732,8 @@ class PredictionRunner:
             ]
             confidence_values = [value for value in confidence_values if value is not None]
             avg_sample_confidence = sum(confidence_values) / len(confidence_values) if confidence_values else 0.0
-            cross_venue_count = sum(1 for sample in [*home_samples, *away_samples] if bool(sample.get('cross_venue')))
             confidence = clamp(
-                base_conf
-                + sample_total * step_conf
-                + max(0.0, avg_sample_confidence - 55.0) * 0.08
-                - cross_venue_count * 0.15,
+                base_conf + sample_total * step_conf + max(0.0, avg_sample_confidence - 55.0) * 0.08,
                 base_conf,
                 cap_conf,
             )
@@ -1793,14 +1754,11 @@ class PredictionRunner:
                     'context_mode': 'self_history',
                     'home_recent_count': len(home_samples),
                     'away_recent_count': len(away_samples),
-                    'home_strict_count': len(strict_home_samples),
-                    'away_strict_count': len(strict_away_samples),
-                    'cross_venue_count': cross_venue_count,
                     'avg_sample_confidence': round(avg_sample_confidence, 2),
                     'history_archives_scanned': archives_scanned,
                     'history_matches_used': history_matches_used,
-                    'history_state_rows_scanned': state_rows_scanned,
-                    'history_state_matches_used': state_matches_used,
+                    'state_rows_scanned': state_rows_scanned,
+                    'state_matches_used': state_matches_used,
                 },
             )
             contexts[match.match_key] = context
@@ -1811,9 +1769,6 @@ class PredictionRunner:
                     'away_team': match.away_team,
                     'home_samples': len(home_samples),
                     'away_samples': len(away_samples),
-                    'home_strict_samples': len(strict_home_samples),
-                    'away_strict_samples': len(strict_away_samples),
-                    'cross_venue_samples': cross_venue_count,
                     'expected_home': expected_home,
                     'expected_away': expected_away,
                     'home_win_probability': home_win_probability,
@@ -1832,6 +1787,7 @@ class PredictionRunner:
         preview = {
             'archives_scanned': archives_scanned,
             'state_rows_scanned': state_rows_scanned,
+            'state_matches_used': state_matches_used,
             'contexts_built': len(contexts),
             'matches': preview_matches,
         }
@@ -1842,28 +1798,64 @@ class PredictionRunner:
         rows = [dict(item) for item in (raw_contexts or []) if isinstance(item, dict)]
         if not rows:
             return None
+        rows.sort(
+            key=lambda item: (
+                1 if item.get('expected_home') is not None or item.get('expected_away') is not None else 0,
+                1 if item.get('home_win_probability') is not None or item.get('away_win_probability') is not None else 0,
+                float(item.get('confidence') or 0.0),
+            ),
+            reverse=True,
+        )
+        return rows[0]
 
-        def _rank(item: dict[str, Any]) -> tuple[int, int, int, float]:
-            expected_home = item.get('expected_home')
-            expected_away = item.get('expected_away')
-            has_expected = expected_home is not None or expected_away is not None
-            negative_expected = False
-            for value in (expected_home, expected_away):
+
+    def _iter_self_history_state_rows(self, now_utc: datetime) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+        if not bool(getattr(self.settings, 'self_history_context_use_state_fallback', True)):
+            return [], {'enabled': False, 'state_rows_scanned': 0, 'state_matches_used': 0}
+        state = dict(getattr(self.state, "_state", {}) or {})
+        max_rows = max(1, int(getattr(self.settings, 'self_history_context_state_max_rows', 160) or 160))
+        rows: list[dict[str, Any]] = []
+        seen: set[tuple[str, str]] = set()
+        scanned = 0
+        for key in ('bets', 'published_candidates', 'shadow_bets'):
+            for raw in list(state.get(key) or []):
+                if not isinstance(raw, dict):
+                    continue
+                scanned += 1
+                match_key = str(raw.get('match_key') or '')
+                selection_key = str(raw.get('selection_key') or raw.get('selection') or '')
+                dedupe_key = (match_key, selection_key)
+                if dedupe_key in seen:
+                    continue
                 try:
-                    if value is not None and float(value) < 0:
-                        negative_expected = True
+                    commence_time = ensure_utc(parse_datetime(raw.get('commence_time')))
                 except Exception:
                     continue
-            has_probability = item.get('home_win_probability') is not None or item.get('away_win_probability') is not None
-            return (
-                1 if has_expected and not negative_expected else 0,
-                1 if has_probability else 0,
-                1 if has_expected else 0,
-                float(item.get('confidence') or 0.0),
-            )
-
-        rows.sort(key=_rank, reverse=True)
-        return rows[0]
+                if commence_time >= now_utc:
+                    continue
+                expected_home = self._to_float_safe(raw.get('expected_home'))
+                expected_away = self._to_float_safe(raw.get('expected_away'))
+                home_win_probability = self._to_float_safe(raw.get('home_win_probability'))
+                away_win_probability = self._to_float_safe(raw.get('away_win_probability'))
+                if expected_home is None and expected_away is None and home_win_probability is None and away_win_probability is None:
+                    continue
+                row = {
+                    'league_name': str(raw.get('league_name') or ''),
+                    'home_team': str(raw.get('home_team') or ''),
+                    'away_team': str(raw.get('away_team') or ''),
+                    'commence_time': commence_time,
+                    'expected_home': expected_home,
+                    'expected_away': expected_away,
+                    'home_win_probability': home_win_probability,
+                    'away_win_probability': away_win_probability,
+                    'confidence': self._to_float_safe(raw.get('confidence')) or self._to_float_safe(((raw.get('source_summary') or {}).get('context_confidence'))) or 0.0,
+                    'source': str((raw.get('source_summary') or {}).get('context_source') or key),
+                }
+                seen.add(dedupe_key)
+                rows.append(row)
+                if len(rows) >= max_rows:
+                    return rows, {'enabled': True, 'state_rows_scanned': scanned, 'state_matches_used': len(rows)}
+        return rows, {'enabled': True, 'state_rows_scanned': scanned, 'state_matches_used': len(rows)}
 
     @staticmethod
     def _team_history_key(name: str) -> str:
@@ -1874,16 +1866,6 @@ class PredictionRunner:
             if token not in {'fc', 'sc', 'cf', 'club', 'fk', 'ac', 'de', 'cd'}
         ]
         return ' '.join(tokens)
-
-    def _sanitize_self_history_expected(self, value: Any) -> float | None:
-        numeric = self._to_float_safe(value)
-        if numeric is None:
-            return None
-        if bool(getattr(self.settings, 'self_history_sanitize_negative_expected_goals', True)) and numeric < 0:
-            return None
-        min_value = float(getattr(self.settings, 'min_expected_goals_value', 0.35) or 0.35)
-        max_value = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
-        return clamp(numeric, min_value, max_value)
 
     def _weighted_team_history_metric(
         self,
@@ -1896,8 +1878,6 @@ class PredictionRunner:
         target_league = str(league_name or '').strip().lower()
         for sample in samples:
             value = self._to_float_safe(sample.get(key))
-            if key.startswith('expected'):
-                value = self._sanitize_self_history_expected(value)
             if value is None:
                 continue
             weight = float(sample.get('weight') or 1.0)
@@ -2048,41 +2028,19 @@ class PredictionRunner:
         else:
             confidence_cap = 64.0
 
-        base_expected_home = self._sanitize_expected_goal_value(base.expected_home)
-        new_expected_home = self._sanitize_expected_goal_value(new.expected_home)
-        base_expected_away = self._sanitize_expected_goal_value(base.expected_away)
-        new_expected_away = self._sanitize_expected_goal_value(new.expected_away)
-        blended_home_starting = blend(base.home_starting, new.home_starting)
-        blended_away_starting = blend(base.away_starting, new.away_starting)
-
         return MatchContext(
             source='ensemble' if len(merged_sources) > 1 else (merged_sources[0] if merged_sources else str(base.source or new.source or 'unknown')),
             payload=merged_payload,
-            expected_home=blend(base_expected_home, new_expected_home),
-            expected_away=blend(base_expected_away, new_expected_away),
+            expected_home=blend(base.expected_home, new.expected_home),
+            expected_away=blend(base.expected_away, new.expected_away),
             home_win_probability=blend(base.home_win_probability, new.home_win_probability),
             away_win_probability=blend(base.away_win_probability, new.away_win_probability),
-            home_starting=int(round(blended_home_starting)) if blended_home_starting is not None else (new.home_starting or base.home_starting),
-            away_starting=int(round(blended_away_starting)) if blended_away_starting is not None else (new.away_starting or base.away_starting),
+            home_starting=int(round(blend(base.home_starting, new.home_starting))) if blend(base.home_starting, new.home_starting) is not None else (new.home_starting or base.home_starting),
+            away_starting=int(round(blend(base.away_starting, new.away_starting))) if blend(base.away_starting, new.away_starting) is not None else (new.away_starting or base.away_starting),
             confidence=clamp(merged_confidence, 50.0, confidence_cap),
             profits={**dict(base.profits or {}), **dict(new.profits or {})},
             details=merged_details,
         )
-
-    def _sanitize_expected_goal_value(self, value: Any) -> float | None:
-        try:
-            if value in (None, ''):
-                return None
-            number = float(value)
-        except Exception:
-            return None
-        if not math.isfinite(number):
-            return None
-        min_goal = float(getattr(self.settings, 'min_expected_goals_value', 0.15) or 0.15)
-        max_goal = float(getattr(self.settings, 'max_expected_goals_value', 4.8) or 4.8)
-        if number < min_goal or number > max_goal:
-            return None
-        return number
 
     def _context_blend_weight(self, context: MatchContext) -> float:
         source_name = str(getattr(context, 'source', '') or '').strip().lower()
@@ -2359,17 +2317,11 @@ class PredictionRunner:
                 'stats': source_stats.get(source_name, {}),
             }
 
-        runtime_errors = {name: list(errors) for name, errors in self.provider_runtime_errors.items()}
-        rate_limit_providers = {
-            name: len([msg for msg in errors if '429' in str(msg) or 'rate limit' in str(msg).lower()])
-            for name, errors in runtime_errors.items()
-            if any('429' in str(msg) or 'rate limit' in str(msg).lower() for msg in errors)
-        }
         summary = {
             'providers': provider_summary,
             'provider_status': dict(self.provider_status),
-            'provider_runtime_errors': runtime_errors,
-            'provider_rate_limits': rate_limit_providers,
+            'provider_runtime_errors': {name: list(errors) for name, errors in self.provider_runtime_errors.items()},
+            'provider_rate_limits': self._collect_provider_rate_limits(source_stats),
             'matches_with_any_offer_source': sum(1 for match in filtered_matches if any((mapping.get(match.match_key) or []) for mapping in offer_maps.values())),
             'matches_with_any_context_source': sum(1 for match in filtered_matches if any(mapping.get(match.match_key) is not None for mapping in context_maps.values())),
             'matches_with_merged_context': sum(1 for match in filtered_matches if merged_contexts.get(match.match_key) is not None),
@@ -2377,7 +2329,6 @@ class PredictionRunner:
             'published_candidates_with_derived_market_signal': sum(published_derived_by_match.values()),
             'matches_with_raw_derived_market_signal': len(raw_derived_by_match),
             'matches_with_published_derived_market_signal': len(published_derived_by_match),
-            'published_candidates_single_source_context': sum(1 for item in published_candidates if int(getattr(item, 'sources_count', 0) or 0) <= 1),
             'context_source_combinations': dict(context_combo_counter),
             'offer_source_combinations': dict(offer_combo_counter),
         }
