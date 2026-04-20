@@ -20,17 +20,18 @@ class CoverageAuditService:
         summary = dict(payload.get('summary') or {})
         provider_summary = dict(((payload.get('provider_diagnostics') or {}).get('summary')) or {})
         provider_runtime_errors = dict(provider_summary.get('provider_runtime_errors') or {})
+        provider_rate_limits = dict(provider_summary.get('provider_rate_limits') or {})
         providers = dict(provider_summary.get('providers') or {})
         rejections = dict(summary.get('rejections') or {})
         top_rejections = dict(sorted(rejections.items(), key=lambda kv: (-int(kv[1] or 0), kv[0]))[:12])
 
         provider_rows: list[dict[str, Any]] = []
-        rate_limit_counter: Counter[str] = Counter()
+        rate_limit_counter: Counter[str] = Counter({str(k): int(v.get('http_429_seen') or v.get('rate_limited') or 0) if isinstance(v, dict) else int(v or 0) for k, v in provider_rate_limits.items()})
         for provider_name, provider_payload in providers.items():
             stats = dict((provider_payload or {}).get('stats') or {})
             errors = [str(item) for item in (provider_runtime_errors.get(provider_name) or []) if str(item).strip()]
             error_blob = ' | '.join(errors).lower()
-            if '429' in error_blob or 'rate limit' in error_blob:
+            if provider_name not in rate_limit_counter and ('429' in error_blob or 'rate limit' in error_blob):
                 rate_limit_counter[provider_name] += 1
             provider_rows.append({
                 'provider': provider_name,
@@ -59,6 +60,8 @@ class CoverageAuditService:
             },
             'top_rejections': top_rejections,
             'provider_rate_limits': dict(rate_limit_counter),
+            'published_candidates_single_source_context': int(provider_summary.get('published_candidates_single_source_context') or 0),
+            'published_candidates_low_book_support': int(provider_summary.get('published_candidates_low_book_support') or 0),
             'providers': provider_rows,
         }
         self.report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')

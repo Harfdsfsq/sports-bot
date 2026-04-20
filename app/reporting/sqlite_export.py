@@ -38,6 +38,7 @@ class ReportingSQLiteExporter:
                 payload = json.loads(run_path.read_text(encoding='utf-8'))
                 run_id = str(run_path)
                 summary = dict(payload.get('summary') or {})
+                run_status = str(summary.get('run_status') or summary.get('status') or ('error' if payload.get('error') else 'ok'))
                 conn.execute(
                     """
                     INSERT OR REPLACE INTO runs(run_id, created_at, status, matches_seen, matches_with_offers, contexts_built, candidates_before_quality, published)
@@ -46,7 +47,7 @@ class ReportingSQLiteExporter:
                     (
                         run_id,
                         str(payload.get('created_at') or ''),
-                        str(summary.get('run_status') or summary.get('status') or 'ok'),
+                        run_status,
                         int(summary.get('matches_seen') or 0),
                         int(summary.get('matches_with_offers') or 0),
                         int(summary.get('contexts_built') or 0),
@@ -81,6 +82,7 @@ class ReportingSQLiteExporter:
                     rejection_rows += 1
                 for row in [dict(item) for item in (payload.get('forecast_rows') or []) if isinstance(item, dict)]:
                     prediction_id = str(row.get('fingerprint') or row.get('prediction_id') or f"{run_id}:{forecast_rows}")
+                    status = str(row.get('forecast_status') or row.get('status') or row.get('model_filter_status') or '')
                     conn.execute(
                         """
                         INSERT OR REPLACE INTO forecasts(prediction_id, run_id, match_key, league_name, family, selection, odds, adjusted_probability, confidence, publication_score, status)
@@ -97,7 +99,7 @@ class ReportingSQLiteExporter:
                             float(row.get('adjusted_probability') or row.get('final_probability') or 0.0),
                             float(row.get('confidence') or 0.0),
                             float(row.get('publication_score') or 0.0),
-                            str(row.get('status') or ''),
+                            status,
                         ),
                     )
                     forecast_rows += 1

@@ -372,7 +372,12 @@ jobs:
       - name: Compile key modules
         run: |
           python -m py_compile \
+            app/cli.py \
             app/config.py \
+            app/reporting/__init__.py \
+            app/reporting/coverage.py \
+            app/reporting/sqlite_export.py \
+            app/reporting/training_dataset.py \
             app/schemas.py \
             app/providers/odds_api_io.py \
             app/providers/oddspapi.py \
@@ -401,6 +406,12 @@ jobs:
       - name: Run bot once
         run: python -m app.cli run-once
 
+      - name: Smoke offline reporting commands
+        run: |
+          python -m app.cli coverage-audit
+          python -m app.cli training-dataset
+          python -m app.cli reporting-sqlite
+
       - name: Upload latest debug artifacts
         if: always()
         uses: actions/upload-artifact@v5
@@ -420,6 +431,9 @@ jobs:
             .data/exports/latest-daily-summary.csv
             .data/exports/latest-quality-report.json
             .data/exports/latest-quality-segments.csv
+            .data/exports/coverage-audit.json
+            .data/exports/training-dataset.csv
+            .data/exports/reporting.sqlite
             .data/sheet-export.json
             .data/sheet-export.csv
             .data/sheet-run-summary.json

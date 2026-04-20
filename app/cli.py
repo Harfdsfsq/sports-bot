@@ -20,6 +20,19 @@ def _parse_int(value: str) -> int:
     return int(float(str(value).strip()))
 
 
+def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
+    value = getattr(settings, attr_name, None)
+    if str(value or '').strip():
+        return str(value)
+    env_value = os.getenv(attr_name.upper())
+    if str(env_value or '').strip():
+        return str(env_value)
+    state_path = Path(getattr(settings, 'state_path', '.data/state.json'))
+    export_root = Path(getattr(settings, 'storage_export_dir', state_path.parent / 'exports'))
+    export_root.mkdir(parents=True, exist_ok=True)
+    return str(export_root / default_name)
+
+
 def _apply_runtime_env_overrides(settings: Any) -> Any:
     overrides: list[tuple[str, str, Any]] = [
         ('prediction_publication_enabled', 'PREDICTION_PUBLICATION_ENABLED', _parse_bool),
@@ -53,17 +66,17 @@ async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, A
 
 def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'coverage-audit':
-        report = CoverageAuditService(settings.coverage_report_path).build(debug_path=settings.debug_path)
+        report = CoverageAuditService(_reporting_path(settings, 'coverage_report_path', 'coverage-audit.json')).build(debug_path=settings.debug_path)
         return 0, report
     if command == 'reporting-sqlite':
         history_root = str(Path(settings.state_path).parent / 'history' / 'runs')
-        result = ReportingSQLiteExporter(settings.reporting_sqlite_path).export(
+        result = ReportingSQLiteExporter(_reporting_path(settings, 'reporting_sqlite_path', 'reporting.sqlite')).export(
             state_path=settings.state_path,
             history_root=history_root,
         )
         return 0, result
     if command == 'training-dataset':
-        result = TrainingDatasetExporter(settings.training_dataset_path).export(state_path=settings.state_path)
+        result = TrainingDatasetExporter(_reporting_path(settings, 'training_dataset_path', 'training-dataset.csv')).export(state_path=settings.state_path)
         return 0, result
     return 1, None
 
