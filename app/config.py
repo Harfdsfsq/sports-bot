@@ -25,7 +25,8 @@ class Settings(BaseSettings):
     app_env: str = Field(default="production", validation_alias=AliasChoices("APP_ENV", "ENV"))
     app_timezone: str = Field(default="Europe/Moscow", validation_alias=AliasChoices("APP_TIMEZONE", "TIMEZONE", "TZ"))
     state_path: str = Field(default=".data/state.json", validation_alias=AliasChoices("STATE_PATH"))
-    debug_path: str = Field(default=".data/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
+    debug_path: str = Field(default=".logs/debug-last-run.json", validation_alias=AliasChoices("DEBUG_PATH"))
+    run_logs_dir: str = Field(default=".logs/runs", validation_alias=AliasChoices("RUN_LOGS_DIR"))
     storage_export_dir: str = Field(default=".data/exports", validation_alias=AliasChoices("STORAGE_EXPORT_DIR", "EXPORT_DIR"))
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
 

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from collections.abc import Sequence
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -9,10 +10,23 @@ from typing import Any
 UTC = timezone.utc
 
 
-def _iter_run_files(history_root: Path):
-    for path in sorted(history_root.glob('*/*-run.json')):
-        if path.is_file():
-            yield path
+def _iter_run_files(history_root: str | Path | Sequence[str | Path]):
+    if isinstance(history_root, (str, Path)):
+        roots: Sequence[str | Path] = [history_root]
+    else:
+        roots = history_root
+
+    run_files: dict[str, Path] = {}
+    for raw_root in roots:
+        root = Path(raw_root)
+        if not root.exists():
+            continue
+        for path in root.glob('*/*-run.json'):
+            if path.is_file():
+                run_files.setdefault(str(path), path)
+
+    for path in sorted(run_files.values(), key=lambda item: (item.parent.name, item.name, str(item))):
+        yield path
 
 
 class ReportingSQLiteExporter:
@@ -20,9 +34,8 @@ class ReportingSQLiteExporter:
         self.db_path = Path(db_path)
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
 
-    def export(self, *, state_path: str, history_root: str) -> dict[str, Any]:
+    def export(self, *, state_path: str, history_root: str | Sequence[str | Path]) -> dict[str, Any]:
         state_file = Path(state_path)
-        history_dir = Path(history_root)
         state = json.loads(state_file.read_text(encoding='utf-8')) if state_file.exists() else {}
 
         conn = sqlite3.connect(self.db_path)
@@ -34,7 +47,7 @@ class ReportingSQLiteExporter:
             forecast_rows = 0
             settlement_rows = 0
             ledger_rows = 0
-            for run_path in _iter_run_files(history_dir):
+            for run_path in _iter_run_files(history_root):
                 payload = json.loads(run_path.read_text(encoding='utf-8'))
                 run_id = str(run_path)
                 summary = dict(payload.get('summary') or {})

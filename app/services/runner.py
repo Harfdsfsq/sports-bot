@@ -19,7 +19,7 @@ from app.services.quality import PredictionQualityService
 from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
-from app.state import JsonStateStore
+from app.state import JsonStateStore, collect_run_archive_paths, resolve_run_history_roots, resolve_run_logs_dir
 from app.utils import candidate_selection_key, clamp, ensure_utc
 
 
@@ -616,6 +616,7 @@ class PredictionRunner:
                 'dry_run': self.settings.publish_dry_run,
                 'state_path': self.settings.state_path,
                 'debug_path': self.settings.debug_path,
+                'run_logs_dir': str(resolve_run_logs_dir(self.settings)),
                 'storage_export_dir': self.settings.storage_export_dir,
                 'filtering': filtering,
                 'bootstrap_provider': bootstrap_provider,
@@ -1565,7 +1566,7 @@ class PredictionRunner:
         if not bool(getattr(self.settings, 'self_history_context_enabled', True)):
             return {}, {'enabled': False, 'reason': 'disabled'}, {}
 
-        history_root = Path(self.settings.state_path).parent / 'history' / 'runs'
+        history_roots = resolve_run_history_roots(self.settings)
         max_runs = max(1, int(getattr(self.settings, 'self_history_context_max_runs', 48) or 48))
         max_age_days = max(1, int(getattr(self.settings, 'self_history_context_max_age_days', 45) or 45))
         min_team_samples = max(1, int(getattr(self.settings, 'self_history_context_min_team_samples', 2) or 2))
@@ -1573,7 +1574,7 @@ class PredictionRunner:
         state_max_samples = max(1, int(getattr(self.settings, 'self_history_context_state_max_samples', 160) or 160))
         cross_venue_weight = clamp(float(getattr(self.settings, 'self_history_context_cross_venue_weight', 0.74) or 0.74), 0.35, 0.98)
         state_sample_weight = clamp(float(getattr(self.settings, 'self_history_context_state_sample_weight', 0.88) or 0.88), 0.45, 1.05)
-        archive_paths = sorted(history_root.glob('*/*-run.json'), reverse=True) if history_root.exists() else []
+        archive_paths = collect_run_archive_paths(history_roots, newest_first=True)
 
         team_history: dict[str, dict[str, list[dict[str, Any]]]] = defaultdict(lambda: {'home': [], 'away': [], 'all': []})
         archives_scanned = 0

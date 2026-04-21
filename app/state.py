@@ -3,6 +3,7 @@ from __future__ import annotations
 import csv
 import hashlib
 import json
+from collections.abc import Sequence
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
@@ -11,6 +12,63 @@ from typing import Any
 
 from app.schemas import CandidateBet, Match
 from app.utils import candidate_selection_key, parse_datetime
+
+
+def legacy_run_logs_dir(state_path: str | Path) -> Path:
+    return Path(state_path).parent / 'history' / 'runs'
+
+
+def resolve_run_logs_dir(settings: Any | None = None, state_path: str | Path | None = None) -> Path:
+    configured = str(getattr(settings, 'run_logs_dir', '') or '').strip() if settings is not None else ''
+    if configured:
+        return Path(configured)
+    fallback_state_path = state_path if state_path is not None else getattr(settings, 'state_path', '.data/state.json')
+    return legacy_run_logs_dir(fallback_state_path)
+
+
+def resolve_run_history_roots(settings: Any | None = None, state_path: str | Path | None = None) -> list[Path]:
+    fallback_state_path = state_path if state_path is not None else getattr(settings, 'state_path', '.data/state.json')
+    primary_root = resolve_run_logs_dir(settings=settings, state_path=fallback_state_path)
+    roots = [primary_root]
+    legacy_root = legacy_run_logs_dir(fallback_state_path)
+    if legacy_root != primary_root:
+        roots.append(legacy_root)
+    return roots
+
+
+def collect_run_archive_paths(
+    history_root: str | Path | Sequence[str | Path],
+    *,
+    newest_first: bool = False,
+) -> list[Path]:
+    if isinstance(history_root, (str, Path)):
+        raw_roots: Sequence[str | Path] = [history_root]
+    else:
+        raw_roots = history_root
+
+    roots: list[Path] = []
+    seen_roots: set[str] = set()
+    for raw_root in raw_roots:
+        root = Path(raw_root)
+        key = str(root)
+        if key in seen_roots:
+            continue
+        seen_roots.add(key)
+        roots.append(root)
+
+    archive_paths: dict[str, Path] = {}
+    for root in roots:
+        if not root.exists():
+            continue
+        for path in root.glob('*/*-run.json'):
+            if path.is_file():
+                archive_paths.setdefault(str(path), path)
+
+    return sorted(
+        archive_paths.values(),
+        key=lambda item: (item.parent.name, item.name, str(item)),
+        reverse=newest_first,
+    )
 
 
 class JsonStateStore:
@@ -119,7 +177,7 @@ class JsonStateStore:
         except Exception:
             created_dt = datetime.now(UTC)
             created_at = created_dt.isoformat()
-        history_root = self.state_path.parent / 'history' / 'runs'
+        history_root = resolve_run_logs_dir(settings=settings, state_path=self.state_path)
         dated_dir = history_root / created_dt.strftime('%Y-%m-%d')
         stamp = created_dt.strftime('%H%M%S')
         archive_path = dated_dir / f'{stamp}-run.json'
