@@ -647,6 +647,36 @@ class CandidateFactory:
         boost_prob = min(family_cap, signal_boost_pct) / 100.0
         return clamp(market_prob + boost_prob, 0.02, 0.98)
 
+    def _market_derived_consensus_relief_ready(
+        self,
+        family: str,
+        market_signal: dict[str, Any] | None,
+        books_count: int,
+        sources_count: int,
+        observation_count: int,
+    ) -> bool:
+        if not bool(getattr(self.settings, 'market_derived_consensus_relief_enabled', True)):
+            return False
+        if not isinstance(market_signal, dict):
+            return False
+        if bool(market_signal.get('history_ready')):
+            return False
+        if family == 'h2h' and str(market_signal.get('selection_key') or '').strip().lower() == 'draw':
+            return False
+        min_books = max(1, int(getattr(self.settings, 'market_derived_consensus_relief_min_books', 2) or 2))
+        min_sources = max(1, int(getattr(self.settings, 'market_derived_consensus_relief_min_sources', 1) or 1))
+        min_observations = max(1, int(getattr(self.settings, 'market_derived_consensus_relief_min_observations', 1) or 1))
+        if books_count < min_books or sources_count < min_sources or observation_count < min_observations:
+            return False
+        edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
+        if edge_pct < float(getattr(self.settings, 'market_derived_consensus_relief_min_edge_pct', 2.1) or 2.1):
+            return False
+        dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
+        max_dispersion = float(getattr(self.settings, 'market_derived_consensus_relief_max_dispersion_pct', 4.8) or 4.8)
+        if dispersion_pct is not None and dispersion_pct > max_dispersion:
+            return False
+        return True
+
     def _market_derived_model_probability(
         self,
         *,
@@ -671,6 +701,9 @@ class CandidateFactory:
             signal_boost_pct += 0.55
         if sources_count >= 2:
             signal_boost_pct += 0.35
+        observation_count = int((market_signal or {}).get('observation_count') or 0)
+        if self._market_derived_consensus_relief_ready(family, market_signal, books_count, sources_count, observation_count):
+            signal_boost_pct += float(getattr(self.settings, 'market_derived_consensus_relief_probability_boost_pct', 0.85) or 0.85)
         family_cap = 4.8 if family == 'totals' else 4.1 if family == 'h2h' else 3.8
         return clamp(market_prob + min(family_cap, signal_boost_pct) / 100.0, 0.02, 0.98)
 
@@ -689,69 +722,28 @@ class CandidateFactory:
         if offers is not None:
             books_count = max(books_count, len({self._norm_book(item.bookmaker) for item in offers if str(item.bookmaker or '').strip()}))
             sources_count = max(sources_count, len({str(item.source or '').strip().lower() for item in offers if str(item.source or '').strip()}))
-        edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
-        delta_prob_pp = self._to_float_safe(market_signal.get('delta_prob_pp')) or 0.0
-        dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
-        max_dispersion = float(getattr(self.settings, 'market_derived_max_dispersion_pct', 7.0) or 7.0)
+        if history_ready:
+            if observation_count < max(1, int(getattr(self.settings, 'market_derived_min_observations', 2) or 2)):
+                return False
+        elif not self._market_derived_consensus_relief_ready(family, market_signal, books_count, sources_count, observation_count):
+            return False
         if books_count < max(1, int(getattr(self.settings, 'market_derived_min_books', 2) or 2)):
             return False
         if sources_count < max(1, int(getattr(self.settings, 'market_derived_min_sources', 1) or 1)):
             return False
+        edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
+        if edge_pct < float(getattr(self.settings, 'market_derived_min_edge_pct', 1.2) or 1.2):
+            return False
+        delta_prob_pp = self._to_float_safe(market_signal.get('delta_prob_pp')) or 0.0
+        if delta_prob_pp < float(getattr(self.settings, 'market_derived_min_delta_prob_pp', 0.0) or 0.0):
+            return False
+        dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
+        max_dispersion = float(getattr(self.settings, 'market_derived_max_dispersion_pct', 7.0) or 7.0)
         if dispersion_pct is not None and dispersion_pct > max_dispersion:
             return False
-        if history_ready and observation_count >= max(1, int(getattr(self.settings, 'market_derived_min_observations', 2) or 2)):
-            if edge_pct < float(getattr(self.settings, 'market_derived_min_edge_pct', 1.2) or 1.2):
-                return False
-            if delta_prob_pp < float(getattr(self.settings, 'market_derived_min_delta_prob_pp', 0.0) or 0.0):
-                return False
-        else:
-            if not bool(getattr(self.settings, 'market_derived_consensus_relief_enabled', True)):
-                return False
-            if books_count < max(1, int(getattr(self.settings, 'market_derived_consensus_relief_min_books', 2) or 2)):
-                return False
-            if sources_count < max(1, int(getattr(self.settings, 'market_derived_consensus_relief_min_sources', 1) or 1)):
-                return False
-            if edge_pct < float(getattr(self.settings, 'market_derived_consensus_relief_min_edge_pct', 2.1) or 2.1):
-                return False
-            relief_max_disp = float(getattr(self.settings, 'market_derived_consensus_relief_max_dispersion_pct', 4.8) or 4.8)
-            if dispersion_pct is not None and dispersion_pct > relief_max_disp:
-                return False
         if family == 'h2h' and str(market_signal.get('selection_key') or '').strip().lower() == 'draw':
             return False
         return True
-
-
-    def _candidate_side_xg_contradiction(
-        self,
-        *,
-        family: str,
-        selection_key: str | None,
-        team_side: str | None,
-        point: float | None,
-        expected_home: float | None,
-        expected_away: float | None,
-    ) -> bool:
-        if not bool(getattr(self.settings, 'xg_side_sanity_guard_enabled', True)):
-            return False
-        if expected_home is None or expected_away is None:
-            return False
-        diff = float(expected_home) - float(expected_away)
-        min_diff = float(getattr(self.settings, 'xg_side_sanity_min_diff', 0.52) or 0.52)
-        if abs(diff) < min_diff:
-            return False
-        selected_side = str(team_side or '').strip().lower() or str(selection_key or '').strip().lower()
-        if selected_side not in {'home', 'away'}:
-            return False
-        stronger_side = 'home' if diff > 0 else 'away'
-        if stronger_side == selected_side:
-            return False
-        if family == 'dnb':
-            return True
-        if family == 'spreads':
-            if bool(getattr(self.settings, 'xg_side_sanity_zero_line_only', True)):
-                return point is None or abs(float(point or 0.0)) <= 0.01
-            return True
-        return False
 
     def _build_spread_candidates(
         self,
@@ -1168,15 +1160,6 @@ class CandidateFactory:
             home_team=match.home_team,
             away_team=match.away_team,
         )
-        if self._candidate_side_xg_contradiction(
-            family=family,
-            selection_key=selection_key,
-            team_side=getattr(best_offer, 'team_side', None),
-            point=point,
-            expected_home=expected_home,
-            expected_away=expected_away,
-        ):
-            return None
         reasons = list(reasons)
         reasons.append(f'selected_book={best_offer.bookmaker}')
         reasons.append(f'selected_source={best_offer.source}')
@@ -1279,8 +1262,6 @@ class CandidateFactory:
                 'context_source': context_source or None,
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
-                'context_sources': list(context_details.get('merged_sources') or ([context_source] if context_source else [])),
-                'context_sources_count': len(list(context_details.get('merged_sources') or ([context_source] if context_source else []))),
                 'home_recent_count': context_details.get('home_recent_count'),
                 'away_recent_count': context_details.get('away_recent_count'),
                 'raw_model_probability': round(float(model_prob), 4),
@@ -2712,6 +2693,26 @@ class CandidateFactory:
             return float(getattr(self.settings, 'btts_min_probability', 0.50) or 0.50)
         return float(self.settings.min_model_confidence_for_family(family))
 
+    def _market_derived_probability_relief_ready(self, item: CandidateBet, gap: float) -> bool:
+        source_summary = dict(getattr(item, 'source_summary', {}) or {})
+        if not bool(source_summary.get('market_signal_derived')):
+            return False
+        books_count = int(getattr(item, 'books_count', 0) or 0)
+        if books_count < max(1, int(getattr(self.settings, 'market_derived_consensus_relief_min_books', 2) or 2)):
+            return False
+        if bool(source_summary.get('market_signal_history_ready')):
+            return False
+        dispersion_pct = self._to_float_safe(source_summary.get('consensus_dispersion_pct'))
+        max_dispersion = float(getattr(self.settings, 'market_derived_consensus_relief_max_dispersion_pct', 4.8) or 4.8)
+        if dispersion_pct is not None and dispersion_pct > max_dispersion:
+            return False
+        best_vs_consensus = self._to_float_safe(source_summary.get('best_vs_consensus_edge_pct')) or 0.0
+        if best_vs_consensus < float(getattr(self.settings, 'market_derived_consensus_relief_min_edge_pct', 2.1) or 2.1):
+            return False
+        if gap > float(getattr(self.settings, 'market_derived_consensus_relief_probability_gap_max', 0.03) or 0.03):
+            return False
+        return True
+
     def _passes_probability_gate(self, item: CandidateBet) -> bool:
         threshold = self._candidate_probability_threshold(item)
         probability = max(
@@ -2735,6 +2736,18 @@ class CandidateFactory:
                 item.reasons.append(f'probability_gate_relief={gap * 100.0:.2f}pp')
                 if isinstance(item.source_summary, dict):
                     item.source_summary['probability_gate_relief'] = {
+                        'gap_pp': round(gap * 100.0, 3),
+                        'threshold': round(threshold, 4),
+                        'probability': round(probability, 4),
+                    }
+            except Exception:
+                pass
+            return True
+        if self._market_derived_probability_relief_ready(item, gap):
+            try:
+                item.reasons.append(f'market_derived_probability_relief={gap * 100.0:.2f}pp')
+                if isinstance(item.source_summary, dict):
+                    item.source_summary['market_derived_probability_relief'] = {
                         'gap_pp': round(gap * 100.0, 3),
                         'threshold': round(threshold, 4),
                         'probability': round(probability, 4),

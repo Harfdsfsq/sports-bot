@@ -128,6 +128,99 @@ class TelegramPublisher:
             return True
         return abs(raw - adjusted) >= 0.04
 
+    def _market_name_display(self, family: str) -> str:
+        family_key = str(family or "").strip()
+        if family_key in {"spreads", "dnb"}:
+            return "Фора"
+        return russian_market_name(family_key)
+
+    def _format_signed_point(self, point: float | None, default: float = 0.0) -> str:
+        value = default if point in (None, "") else float(point)
+        if abs(value) < 1e-9:
+            return "0"
+        text = f"{value:g}"
+        return text if text.startswith("-") else f"+{text}"
+
+    def _compact_selection_display(
+        self,
+        family: str,
+        selection: str | None,
+        point: float | None = None,
+        team_side: str | None = None,
+        home_team: str | None = None,
+        away_team: str | None = None,
+        selection_key: str | None = None,
+    ) -> str:
+        family_key = str(family or "").strip()
+        kind = self._selection_kind(family_key, selection, str(selection or ""), selection_key)
+
+        if family_key == "h2h":
+            if kind == "home":
+                return "П1"
+            if kind == "away":
+                return "П2"
+            if kind == "draw":
+                return "Ничья"
+            return str(selection or "").strip()
+
+        if family_key in {"spreads", "dnb"}:
+            side = str(team_side or "").strip().lower()
+            if not side:
+                side = kind if kind in {"home", "away"} else ""
+            side_code = "1" if side == "home" else "2" if side == "away" else ""
+            if side_code:
+                return f"Ф{side_code}({self._format_signed_point(point, default=0.0)})"
+            return str(selection or "").strip()
+
+        if family_key == "totals":
+            if kind == "over":
+                return f"ТБ({float(point):g})" if point not in (None, "") else "ТБ"
+            if kind == "under":
+                return f"ТМ({float(point):g})" if point not in (None, "") else "ТМ"
+            return str(selection or "").strip()
+
+        if family_key == "teamTotals":
+            side = str(team_side or "").strip().lower()
+            if not side:
+                side = "home" if self._team_side_label(team_side, home_team, away_team) == str(home_team or "").strip() else "away"
+            side_code = "1" if side == "home" else "2" if side == "away" else ""
+            if kind == "over" and side_code:
+                return f"ИТБ{side_code}({float(point):g})" if point not in (None, "") else f"ИТБ{side_code}"
+            if kind == "under" and side_code:
+                return f"ИТМ{side_code}({float(point):g})" if point not in (None, "") else f"ИТМ{side_code}"
+            return str(selection or "").strip()
+
+        if family_key == "doubleChance":
+            normalized = self._normalize_selection(selection).replace(" ", "")
+            if normalized in {"1x", "x1", "homeordraw"}:
+                return "1X"
+            if normalized in {"x2", "2x", "awayordraw"}:
+                return "X2"
+            if normalized in {"12", "nodraw"}:
+                return "12"
+            return str(selection or "").strip()
+
+        if family_key == "btts":
+            if kind == "yes":
+                return "Да"
+            if kind == "no":
+                return "Нет"
+        return str(selection or "").strip()
+
+    def _row_selection_display(self, row: dict[str, Any]) -> str:
+        return self._compact_selection_display(
+            str(row.get("family") or ""),
+            str(row.get("selection") or ""),
+            row.get("point"),
+            row.get("team_side"),
+            row.get("home_team"),
+            row.get("away_team"),
+            str(row.get("selection_key") or ""),
+        )
+
+    def _shrink_delta_pp(self, bet: CandidateBet) -> float:
+        return abs(self._raw_model_probability(bet) - float(getattr(bet, "adjusted_probability", 0.0) or 0.0)) * 100.0
+
     def _bookmakers_text(self, bet: CandidateBet) -> str:
         summary = dict(getattr(bet, "source_summary", {}) or {})
         raw = (
@@ -173,6 +266,14 @@ class TelegramPublisher:
         text = re.sub(r"\s+", " ", text).strip()
         return text
 
+    def _team_side_label(self, team_side: str | None, home_team: str | None = None, away_team: str | None = None) -> str:
+        side = str(team_side or "").strip().lower()
+        if side == "home":
+            return str(home_team or "Хозяева").strip()
+        if side == "away":
+            return str(away_team or "Гости").strip()
+        return ""
+
     def _selection_kind(
         self,
         family: str,
@@ -181,7 +282,7 @@ class TelegramPublisher:
         selection_key: str | None = None,
     ) -> str:
         raw_key = str(selection_key or "").strip().lower()
-        if family == "totals" and raw_key in {"over", "under"}:
+        if family in {"totals", "teamTotals"} and raw_key in {"over", "under"}:
             return raw_key
         if family == "btts" and raw_key in {"yes", "no"}:
             return raw_key
@@ -192,7 +293,7 @@ class TelegramPublisher:
             part for part in [self._normalize_selection(selection), self._normalize_selection(selection_text)] if part
         )
 
-        if family == "totals":
+        if family in {"totals", "teamTotals"}:
             if any(token in raw for token in ["over", "больше", "+", "tb", "тб"]):
                 return "over"
             if any(token in raw for token in ["under", "меньше", "tm", "тм"]):
@@ -226,24 +327,45 @@ class TelegramPublisher:
             return "low"
         return "other"
 
-
     def _trust_profile(self, bet: CandidateBet) -> dict[str, Any]:
         summary = dict(getattr(bet, "source_summary", {}) or {})
         quality_score = float(summary.get("quality_score") or 0.0)
         books_count = int(getattr(bet, "books_count", 0) or 0)
         sources_count = int(getattr(bet, "sources_count", 0) or 0)
         confidence = float(getattr(bet, "confidence", 0.0) or 0.0)
-        score = quality_score + min(15.0, books_count * 6.0) + min(8.0, max(0, sources_count - 1) * 4.0)
-        score += max(0.0, min(12.0, (confidence - 55.0) * 0.4))
-        score = max(0.0, min(100.0, round(score, 1)))
-        grade = "A" if score >= 80 else "B" if score >= 65 else "C"
+        league_bucket = self._league_bucket(getattr(bet, "league_name", None))
+        shrink_pp = self._shrink_delta_pp(bet)
+
+        score = quality_score * 0.90
+        score += min(10.0, max(0, books_count - 1) * 5.0)
+        score += min(6.0, max(0, sources_count - 1) * 3.0)
+        score += max(0.0, min(8.0, (confidence - 60.0) * 0.30))
+
         risk_flags: list[str] = []
         if books_count <= 1:
+            score -= 6.0
             risk_flags.append("single-book")
         if sources_count <= 1:
+            score -= 10.0
             risk_flags.append("single-source")
-        if quality_score < 60:
-            risk_flags.append("quality<threshold")
+        if league_bucket in {"other", "low"}:
+            score -= 4.0
+            risk_flags.append("non-core")
+        if shrink_pp >= 12.0:
+            score -= min(8.0, (shrink_pp - 12.0) * 0.6 + 1.5)
+            risk_flags.append("heavy-shrink")
+
+        score = max(0.0, min(100.0, round(score, 1)))
+        if sources_count <= 1:
+            score = min(score, 82.0)
+        if sources_count <= 1 and league_bucket in {"other", "low"}:
+            score = min(score, 74.0)
+        if books_count <= 1 and sources_count <= 1:
+            score = min(score, 74.0)
+        if shrink_pp >= 16.0:
+            score = min(score, 78.0)
+
+        grade = "A" if score >= 82 else "B" if score >= 64 else "C"
         return {
             "grade": grade,
             "score": score,
@@ -252,7 +374,6 @@ class TelegramPublisher:
             "sources_count": sources_count,
             "risk_flags": risk_flags,
         }
-
 
     def _trust_profile_text(self, bet: CandidateBet) -> str:
         if not bool(getattr(self.settings, "telegram_writeup_show_trust_profile", True)):
@@ -266,8 +387,9 @@ class TelegramPublisher:
         ]
         text = " | ".join(parts)
         if trust["risk_flags"]:
-            text += f" | риск: {', '.join(trust['risk_flags'][:2])}"
+            text += f" | риск: {', '.join(trust['risk_flags'][:3])}"
         return text
+
     def _quality_notes(self, bet: CandidateBet) -> str:
         summary = dict(getattr(bet, "source_summary", {}) or {})
         status = str(summary.get("quality_status") or "").strip().lower()
@@ -315,7 +437,11 @@ class TelegramPublisher:
                 f"Доступно: {self._format_money(available, bankroll_summary=bankroll_summary)}\n\n"
             )
 
-        header = f"🔥 {count} лучшая ставка на ближайшие {publish_window_hours} часов\n\n" if count == 1 else f"🔥 {count} лучшие ставки на ближайшие {publish_window_hours} часов\n\n"
+        header = (
+            f"🔥 {count} лучшая ставка на ближайшие {publish_window_hours} часов\n\n"
+            if count == 1
+            else f"🔥 {count} лучшие ставки на ближайшие {publish_window_hours} часов\n\n"
+        )
         header += bank_line
         notes = (
             "Показываем только одиночные ставки. "
@@ -325,8 +451,15 @@ class TelegramPublisher:
         blocks: list[str] = [header + notes]
 
         for idx, bet in enumerate(bets, start=1):
-            selection_text = russian_selection(bet.family, bet.selection, bet.point)
-            point_suffix = f" ({bet.point:g})" if bet.point is not None else ""
+            selection_text = self._compact_selection_display(
+                bet.family,
+                bet.selection,
+                bet.point,
+                getattr(bet, "team_side", None),
+                bet.home_team,
+                bet.away_team,
+                getattr(bet, "selection_key", None),
+            )
             start_text = (
                 f"{bet.commence_time.astimezone(self.settings.tzinfo).strftime('%d.%m.%Y %H:%M')} "
                 f"{self._timezone_label(bet.commence_time)}"
@@ -369,7 +502,7 @@ class TelegramPublisher:
             probability_block = "\n".join(probability_lines)
             blocks.append(
                 f"{idx}. {bet.home_team} — {bet.away_team}\n"
-                f"🎯 Ставка: {russian_market_name(bet.family)} — {selection_text}{point_suffix}\n"
+                f"🎯 Ставка: {self._market_name_display(bet.family)} — {selection_text}\n"
                 f"💸 Коэффициент: {bet.odds:.2f}\n"
                 f"{probability_block}\n"
                 f"✅ Уверенность: {bet.confidence:.1f}% | Букмекеров: {bet.books_count}\n"
@@ -386,7 +519,6 @@ class TelegramPublisher:
         return "\n\n".join(blocks)
 
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
-        # Не берем сырые summary_points из analysis: они часто конфликтуют с итоговыми цифрами карточки.
         parts: list[str] = []
         kind = self._selection_kind(
             bet.family,
@@ -401,7 +533,7 @@ class TelegramPublisher:
         edge_pp = adjusted_model_pct - consensus_pct
 
         if bet.family == "totals":
-            line_label = f"{selection_text} {bet.point:g}" if bet.point is not None else selection_text
+            line_label = selection_text
             parts.append(
                 f"На {line_label} линия сейчас даёт около {consensus_pct:.1f}%, "
                 f"а модель оценивает вероятность в {adjusted_model_pct:.1f}%. "
@@ -515,12 +647,11 @@ class TelegramPublisher:
             if settlement.get("final_home_goals") is not None and settlement.get("final_away_goals") is not None:
                 score = f"{int(float(settlement['final_home_goals']))}:{int(float(settlement['final_away_goals']))}"
             point = item.get("point")
-            point_suffix = f" ({float(point):g})" if point not in (None, "") else ""
+            selection_text = self._row_selection_display(dict(item))
             lines.append(
                 f"{idx}. {item.get('home_team')} — {item.get('away_team')}\n"
                 f"{emoji} Итог: {self._format_outcome(outcome)} | Счёт: {score or 'н/д'}\n"
-                f"Ставка: {russian_market_name(str(item.get('family') or ''))} — "
-                f"{russian_selection(str(item.get('family') or ''), str(item.get('selection') or ''), point)}{point_suffix} "
+                f"Ставка: {self._market_name_display(str(item.get('family') or ''))} — {selection_text} "
                 f"@ {float(item.get('odds') or 0.0):.2f}\n"
                 f"Сумма: {self._format_money(float(item.get('stake_amount') or 0.0), bankroll_summary=bankroll)} | "
                 f"P&L: {float(settlement.get('pnl') or 0.0):+.2f}"
@@ -617,15 +748,13 @@ class TelegramPublisher:
             result = str(row.get("result") or row.get("status") or "pending")
             emoji = result_emoji.get(result, "•")
             point = row.get("point")
-            point_suffix = f" ({float(point):g})" if point not in (None, "") else ""
             score = str(row.get("final_score") or "н/д")
             pnl_raw = row.get("pnl")
             pnl_text = "ожидание" if pnl_raw in (None, "") else f"{float(pnl_raw):+.2f}{self._money_suffix(bankroll_summary=bankroll)}"
             family = str(row.get("family") or "")
-            selection = str(row.get("selection") or "")
             item_lines.append(
                 f"{idx}. {row.get('home_team')} — {row.get('away_team')}\n"
-                f"{emoji} {russian_market_name(family)} — {russian_selection(family, selection, point)}{point_suffix} "
+                f"{emoji} {self._market_name_display(family)} — {self._row_selection_display(row)} "
                 f"@ {float(row.get('odds') or 0.0):.2f} | Счет: {score} | P&L: {pnl_text}"
             )
         if item_lines:
