@@ -3,9 +3,10 @@ from __future__ import annotations
 from fastapi import FastAPI
 
 from app.config import get_settings
+from app.runtime_settings_patch import apply_api_runtime_overrides
 from app.services.runner import PredictionRunner
 
-settings = get_settings()
+settings = apply_api_runtime_overrides(get_settings())
 app = FastAPI(title=settings.app_name)
 
 

@@ -9,6 +9,7 @@ from typing import Any, Sequence
 
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
+from app.runtime_settings_patch import apply_api_runtime_overrides
 from app.services.runner import PredictionRunner
 
 
@@ -83,7 +84,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
 
 async def _main(argv: Sequence[str] | None = None) -> int:
     args = list(argv if argv is not None else sys.argv[1:])
-    settings = _apply_runtime_env_overrides(get_settings())
+    settings = apply_api_runtime_overrides(_apply_runtime_env_overrides(get_settings()))
     command = args[0] if args else ''
 
     exit_code, payload = _dispatch_sync(command, settings)

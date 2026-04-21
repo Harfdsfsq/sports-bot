@@ -10,6 +10,7 @@ from typing import Any
 import httpx
 
 from app.config import Settings
+from app.providers.weather_common import WeatherContextEnricher
 from app.schemas import Match, MatchContext
 from app.utils import clamp, normalize_probability_percent, parse_datetime, score_event_match
 
@@ -20,6 +21,7 @@ class ApiFootballContextProvider:
         self.api_key = str(os.getenv("API_FOOTBALL_KEY") or getattr(settings, "api_football_key", None) or "").strip()
         self.base_url = os.getenv("API_FOOTBALL_BASE_URL") or getattr(settings, "api_football_base_url", None) or "https://v3.football.api-sports.io"
         self.rapidapi_host = str(getattr(settings, "api_football_rapidapi_host", None) or os.getenv("API_FOOTBALL_RAPIDAPI_HOST") or "").strip()
+        self.weather_enricher = WeatherContextEnricher(settings)
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -36,8 +38,12 @@ class ApiFootballContextProvider:
             "matched_fuzzy": 0,
             "http_statuses": [],
             "last_body_preview": None,
+            "weather_requests": 0,
+            "weather_cache_hits": 0,
+            "weather_enriched": 0,
+            "weather_provider_hits": {},
         }
-        preview: dict[str, Any] = {"sample_fixtures": [], "sample_predictions": []}
+        preview: dict[str, Any] = {"sample_fixtures": [], "sample_predictions": [], "sample_weather": []}
         if not self.api_key:
             return {}, stats, preview
 
@@ -77,6 +83,8 @@ class ApiFootballContextProvider:
         else:
             date_list = [(now + timedelta(days=offset)).date().isoformat() for offset in range(days + 1)]
 
+        weather_limit = max(0, int(os.getenv("WEATHER_CONTEXT_MATCH_LIMIT") or getattr(self.settings, "weather_context_match_limit", 6) or 6))
+
         async with httpx.AsyncClient(timeout=25.0) as client:
             for idx, day in enumerate(date_list):
                 stats["requests"] += 1
@@ -111,7 +119,7 @@ class ApiFootballContextProvider:
             stats["fixtures_fetched"] = len(fixtures)
 
             contexts: dict[str, MatchContext] = {}
-            for match in soccer_matches:
+            for index, match in enumerate(soccer_matches):
                 if stats.get("rate_limited"):
                     break
                 fixture, quality = self._match_fixture(match, fixtures)
@@ -150,7 +158,31 @@ class ApiFootballContextProvider:
                     continue
                 if len(preview["sample_predictions"]) < 3:
                     preview["sample_predictions"].append(rows[0])
-                contexts[match.match_key] = self._prediction_to_context(rows[0], fixture)
+                context = self._prediction_to_context(rows[0], fixture)
+
+                if index < weather_limit:
+                    context, weather_stats = await self.weather_enricher.enrich_context(client, match, fixture, context)
+                    stats["weather_requests"] += int(weather_stats.get("requests", 0) or 0)
+                    if bool(weather_stats.get("cache_hit")):
+                        stats["weather_cache_hits"] += 1
+                    if bool(weather_stats.get("enriched")):
+                        stats["weather_enriched"] += 1
+                        provider_name = str(weather_stats.get("provider") or "unknown")
+                        stats["weather_provider_hits"][provider_name] = int(stats["weather_provider_hits"].get(provider_name, 0) or 0) + 1
+                        if len(preview["sample_weather"]) < 4:
+                            preview["sample_weather"].append(
+                                {
+                                    "match_key": match.match_key,
+                                    "provider": provider_name,
+                                    "condition": (context.details or {}).get("weather_condition"),
+                                    "temp_c": (context.details or {}).get("weather_temp_c"),
+                                    "wind_kph": (context.details or {}).get("weather_wind_kph"),
+                                    "precip_mm": (context.details or {}).get("weather_precip_mm"),
+                                    "factor": (context.details or {}).get("weather_total_factor"),
+                                }
+                            )
+
+                contexts[match.match_key] = context
                 stats["contexts_built"] += 1
                 if quality == "exact":
                     stats["matched_exact"] += 1
