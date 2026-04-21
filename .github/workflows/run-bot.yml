@@ -26,157 +26,30 @@ concurrency:
 env:
   TZ: Europe/Moscow
   APP_TIMEZONE: Europe/Moscow
-  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-  PUBLISH_DRY_RUN: 'false'
-  PREDICTION_PUBLICATION_ENABLED: 'true'
-  RUN_REPORT_ENABLED: 'true'
-
-  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
-  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
-  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
-
-  TARGET_BOOKMAKERS: 'Bet365,Unibet'
-  CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
-  SHARP_BOOKMAKERS: 'Bet365,Unibet'
-  MIN_BOOKS_PUBLISH: '2'
   MIN_SOURCES_PUBLISH: '1'
-  ENABLE_CONTEXT_STAGING: 'true'
-  CONTEXT_ENRICHMENT_REQUIRES_OFFERS: 'false'
-  CONTEXT_ENRICHMENT_MATCH_LIMIT: '220'
-  PREMIUM_CONTEXT_SHORTLIST_LIMIT: '24'
-  PREMIUM_NEWS_SHORTLIST_LIMIT: '4'
-
-  DAILY_COVERAGE_CACHE_ENABLED: 'true'
-  DAILY_COVERAGE_CACHE_PATH: '.data/provider_cache/daily-coverage'
-  DAILY_COVERAGE_MATCH_TTL_MINUTES: '120'
-  DAILY_COVERAGE_OFFERS_TTL_MINUTES: '60'
-  DAILY_COVERAGE_BACKUP_OFFERS_TTL_MINUTES: '180'
-  DAILY_COVERAGE_CONTEXT_TTL_MINUTES: '240'
-  DAILY_COVERAGE_PREMIUM_CONTEXT_TTL_MINUTES: '180'
-  DAILY_COVERAGE_NEWS_CONTEXT_TTL_MINUTES: '90'
-  DAILY_COVERAGE_EMPTY_MATCHES_TTL_MINUTES: '20'
-  DAILY_COVERAGE_EMPTY_OFFERS_TTL_MINUTES: '25'
-  DAILY_COVERAGE_EMPTY_CONTEXT_TTL_MINUTES: '45'
-
-  DAY_SHORTLIST_ENABLED: 'true'
-  DAY_SHORTLIST_MAX_ITEMS: '40'
-  DAY_SHORTLIST_KEEP_PER_MATCH: '3'
-  DAY_SHORTLIST_CARRYOVER_ENABLED: 'true'
-  DAY_SHORTLIST_CARRYOVER_MAX_AGE_HOURS: '12'
-
-  ODDSPAPI_ENABLED: 'true'
-  ODDSPAPI_BOOKMAKERS: 'bet365,unibet'
-  ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES: '180'
-  ODDSPAPI_MATCH_LIMIT: '12'
-  ODDSPAPI_TOURNAMENT_LIMIT: '6'
-
-  ALLSPORTSAPI_ENABLED: 'true'
-  ALLSPORTSAPI_BOOKMAKERS: 'Bet365,Unibet'
-  ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES: '180'
-  ALLSPORTSAPI_MATCH_LIMIT: '16'
-
-  API_FOOTBALL_ENABLED: 'true'
-  API_FOOTBALL_CONTEXT_MATCH_LIMIT: '24'
-  API_FOOTBALL_PREDICTIONS_LIMIT: '14'
-
-  ENABLE_BZZOIRO_CONTEXT: 'true'
-  BZZOIRO_CONTEXT_MATCH_LIMIT: '220'
-  ENABLE_ESPN_CONTEXT: 'true'
-  ESPN_CONTEXT_MATCH_LIMIT: '160'
-  ENABLE_THESPORTSDB_CONTEXT: 'true'
-  THESPORTSDB_CONTEXT_MATCH_LIMIT: '220'
-  ENABLE_FOOTBALL_DATA_CONTEXT: 'true'
-  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: '220'
-  ENABLE_OPENLIGADB_CONTEXT: 'true'
-  OPENLIGADB_CONTEXT_MATCH_LIMIT: '140'
-  ENABLE_OPENFOOTBALL_CONTEXT: 'true'
-  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: '240'
-  FUTRIXMETRICS_ENABLED: 'true'
-  FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: '8'
-  ENABLE_NEWSAPI_CONTEXT: 'true'
-  NEWSAPI_CONTEXT_MATCH_LIMIT: '10'
-  ENABLE_GNEWS_CONTEXT: 'true'
-  GNEWS_CONTEXT_MATCH_LIMIT: '8'
-
-  MARKET_DERIVED_MAX_DISPERSION_PCT: '10.0'
-  MARKET_DERIVED_CONSENSUS_RELIEF_MIN_EDGE_PCT: '0.9'
-  MARKET_DERIVED_CONSENSUS_RELIEF_MAX_DISPERSION_PCT: '10.0'
-  MARKET_DERIVED_CONSENSUS_RELIEF_PROBABILITY_BOOST_PCT: '1.10'
-  SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT: '0.08'
-  SIMPLE_MARKET_TOTALS_MIN_CONFIDENCE: '49'
-  SIMPLE_MARKET_TOTALS_MIN_EV_PCT: '0.6'
-  SIMPLE_MARKET_TOTALS_MIN_EDGE_PCT: '0.9'
-  SIMPLE_MARKET_SPREADS_MIN_CONFIDENCE: '50'
-  SIMPLE_MARKET_SPREADS_MIN_EV_PCT: '0.7'
-  SIMPLE_MARKET_SPREADS_MIN_EDGE_PCT: '1.0'
-  SIMPLE_MARKET_H2H_HIGH_ODDS_SKIP_MAX: '3.75'
-
-  MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
-  PUBLISH_WINDOW_HOURS: '12'
-  MIN_KICKOFF_LEAD_MINUTES: '30'
-  MANUAL_LATE_MODE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.late_manual_mode && 'true' || 'false' }}
-  MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES: '20'
-  MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES: '10'
-  MAX_PICKS_PER_RUN: '2'
+  DAY_PREDICTIONS_REPORT_ENABLED: 'true'
+  POSTFILTER_SINGLE_SOURCE_HEAVY_SHRINK_MIN_PP: '10.0'
+  POSTFILTER_SINGLE_SOURCE_HEAVY_SHRINK_MIN_QUALITY: '80.0'
+  POSTFILTER_SINGLE_SOURCE_HEAVY_SHRINK_MIN_CONFIDENCE: '70.0'
+  POSTFILTER_SINGLE_SOURCE_HEAVY_SHRINK_MIN_EV_PCT: '14.0'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: '3.12'
           cache: 'pip'
-
       - name: Install dependencies
         run: pip install -r requirements.txt
-
       - name: Prepare local state folders
         run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs
-
       - name: Reset state for manual republish
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
         run: rm -f .data/state.json
-
       - name: Run bot once
         run: python -m app.cli run-once
-
-      - name: Upload latest debug artifacts
-        if: always()
-        uses: actions/upload-artifact@v5
-        with:
-          name: bot-debug-${{ github.run_id }}
-          path: |
-            .logs/debug-last-run.json
-            .data/exports/latest-*.json
-            .data/exports/latest-*.csv
-            .data/provider_cache/daily-coverage
-            .data/provider_cache/day-shortlist
-          if-no-files-found: ignore
-          retention-days: 7
-
-      - name: Commit updated bot state
-        if: always()
-        run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-          git add -A .data .logs app/__init__.py app/runtime_bot_fix.py app/runtime_extra_hotfix.py app/runtime_consolidated_fix.py .github/workflows/run-bot.yml
-          git diff --cached --quiet && exit 0
-          git commit -m "Update bot state"
-          git push
