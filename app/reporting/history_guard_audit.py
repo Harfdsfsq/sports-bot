@@ -28,7 +28,7 @@ class HistoryGuardAuditService:
     """Audit archived run payloads for risky publish patterns.
 
     This is a direct answer to the PDF recommendation to build stronger historical
-    regression checks around `.data/history/runs` and publication decisions.
+    regression checks around archived run logs in `.logs/runs` with legacy fallback.
     """
 
     def __init__(self, output_path: str) -> None:
