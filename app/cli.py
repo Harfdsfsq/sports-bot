@@ -7,11 +7,12 @@ import sys
 from pathlib import Path
 from typing import Any, Sequence
 
+from app import runtime_bot_fix
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
-from app.reporting.history_guard_audit import HistoryGuardAuditService
 from app.services.runner import PredictionRunner
-from app.state import resolve_run_history_roots
+
+runtime_bot_fix.apply_runtime_fixes()
 
 
 def _parse_bool(value: str) -> bool:
@@ -71,7 +72,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
         report = CoverageAuditService(_reporting_path(settings, 'coverage_report_path', 'coverage-audit.json')).build(debug_path=settings.debug_path)
         return 0, report
     if command == 'reporting-sqlite':
-        history_root = resolve_run_history_roots(settings)
+        history_root = str(Path(settings.state_path).parent / 'history' / 'runs')
         result = ReportingSQLiteExporter(_reporting_path(settings, 'reporting_sqlite_path', 'reporting.sqlite')).export(
             state_path=settings.state_path,
             history_root=history_root,
@@ -79,12 +80,6 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
         return 0, result
     if command == 'training-dataset':
         result = TrainingDatasetExporter(_reporting_path(settings, 'training_dataset_path', 'training-dataset.csv')).export(state_path=settings.state_path)
-        return 0, result
-    if command == 'history-guard-audit':
-        history_root = resolve_run_history_roots(settings)
-        result = HistoryGuardAuditService(
-            _reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')
-        ).build(history_root=history_root)
         return 0, result
     return 1, None
 
@@ -104,7 +99,7 @@ async def _main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return exit_code
 
-    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset | history-guard-audit')
+    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset')
     return 1
 
 

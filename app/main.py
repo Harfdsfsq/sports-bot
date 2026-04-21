@@ -2,11 +2,12 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 
+from app import runtime_bot_fix
 from app.config import get_settings
-from app.runtime_settings_patch import apply_api_runtime_overrides
 from app.services.runner import PredictionRunner
 
-settings = apply_api_runtime_overrides(get_settings())
+runtime_bot_fix.apply_runtime_fixes()
+settings = get_settings()
 app = FastAPI(title=settings.app_name)
 
 
