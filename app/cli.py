@@ -9,7 +9,7 @@ from typing import Any, Sequence
 
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
-from app.runtime_settings_patch import apply_api_runtime_overrides
+from app.reporting.history_guard_audit import HistoryGuardAuditService
 from app.services.runner import PredictionRunner
 
 
@@ -79,12 +79,18 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
     if command == 'training-dataset':
         result = TrainingDatasetExporter(_reporting_path(settings, 'training_dataset_path', 'training-dataset.csv')).export(state_path=settings.state_path)
         return 0, result
+    if command == 'history-guard-audit':
+        history_root = str(Path(settings.state_path).parent / 'history' / 'runs')
+        result = HistoryGuardAuditService(
+            _reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')
+        ).build(history_root=history_root)
+        return 0, result
     return 1, None
 
 
 async def _main(argv: Sequence[str] | None = None) -> int:
     args = list(argv if argv is not None else sys.argv[1:])
-    settings = apply_api_runtime_overrides(_apply_runtime_env_overrides(get_settings()))
+    settings = _apply_runtime_env_overrides(get_settings())
     command = args[0] if args else ''
 
     exit_code, payload = _dispatch_sync(command, settings)
@@ -97,7 +103,7 @@ async def _main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return exit_code
 
-    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset')
+    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset | history-guard-audit')
     return 1
 
 

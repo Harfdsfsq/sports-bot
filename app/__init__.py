@@ -1,52 +1,16 @@
-"""Application package initialization and startup compatibility patches."""
+from __future__ import annotations
 
-__all__ = []
+"""Runtime entry hooks for the sports bot.
 
-import math
-import re
-
-
-def _patched_normalize_probability_percent(value):
-    if value is None:
-        return None
-
-    if isinstance(value, str):
-        cleaned = value.strip()
-        if not cleaned:
-            return None
-        if cleaned.lower() in {"n/a", "na", "none", "null", "-", "--"}:
-            return None
-        cleaned = cleaned.replace(",", ".")
-        cleaned = re.sub(r"\s+", "", cleaned)
-        if cleaned.endswith("%"):
-            cleaned = cleaned[:-1]
-            if not cleaned:
-                return None
-            try:
-                return float(cleaned) / 100.0
-            except ValueError:
-                return None
-        try:
-            number = float(cleaned)
-        except ValueError:
-            return None
-    else:
-        try:
-            number = float(value)
-        except (TypeError, ValueError):
-            return None
-
-    if math.isnan(number) or math.isinf(number):
-        return None
-    if number > 1.0:
-        number = number / 100.0
-    if number < 0.0 or number > 1.0:
-        return None
-    return number
-
+This package-level hook applies safety guardrails early for every normal entrypoint
+(`python -m app.cli`, FastAPI import, etc.) without forcing a large invasive patch
+inside the existing production modules.
+"""
 
 try:
-    from app import utils as _app_utils
-    _app_utils.normalize_probability_percent = _patched_normalize_probability_percent
+    from app.runtime_bot_fix import apply_runtime_fixes
+
+    apply_runtime_fixes()
 except Exception:
+    # Never break package import because of an optional runtime guardrail patch.
     pass
