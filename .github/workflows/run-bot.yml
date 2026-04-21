@@ -14,7 +14,9 @@ on:
         default: true
         type: boolean
   schedule:
-    - cron: '0 5,9,13,17 * * *'
+    # 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00 MSK
+    - cron: '0 3,5,7,9,11,13,15,17 * * *'
+    # 22:00 MSK daily report / nightly review
     - cron: '0 19 * * *'
 
 permissions:
@@ -34,251 +36,100 @@ env:
   PREDICTION_PUBLICATION_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
   RUN_REPORT_ENABLED: ${{ github.event_name == 'schedule' && github.event.schedule == '0 19 * * *' && 'false' || 'true' }}
 
-  BANKROLL_CURRENCY: 'units'
-  BANKROLL_ENABLED: 'true'
-  BANKROLL_STARTING_BALANCE: '1000'
-  BANKROLL_FLAT_STAKE_PCT: '2.0'
-  BANKROLL_KELLY_ENABLED: 'true'
-  BANKROLL_KELLY_FRACTION: '0.20'
-  BANKROLL_MIN_STAKE_PCT: '1.0'
-  BANKROLL_MAX_STAKE_PCT: '3.0'
-  BANKROLL_MIN_STAKE_AMOUNT: '10'
-  BANKROLL_MAX_OPEN_EXPOSURE_PCT: '100.0'
-  SETTLEMENT_ENABLED: 'true'
-  SETTLEMENT_GRACE_MINUTES: '180'
-  SETTLEMENT_LOOKBACK_DAYS: '5'
-  SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'true'
-  DAILY_REPORT_ENABLED: 'true'
-  DAILY_REPORT_SEND_TELEGRAM: 'true'
-  DAILY_REPORT_HOUR_LOCAL: '22'
-  DAILY_REPORT_TARGET_OFFSET_DAYS: '0'
-  DAILY_REPORT_MIN_BETS: '1'
-  DAILY_REPORT_RESEND_ON_CHANGE: 'true'
-  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'true'
-  NIGHTLY_REVIEW_STORE_ADJUSTMENTS_ENABLED: 'true'
-
-  QUALITY_LAYER_ENABLED: 'true'
-  QUALITY_MIN_HISTORY_BETS: '12'
-  CALIBRATION_ENABLED: 'true'
-  CALIBRATION_MIN_SAMPLE: '8'
-  CALIBRATION_STRENGTH: '0.55'
-  MARKET_SANITY_GUARD_ENABLED: 'true'
-  CLV_QUALITY_GUARD_ENABLED: 'true'
-  HISTORICAL_SEGMENT_GUARD_ENABLED: 'true'
-  QUARANTINE_SHADOW_MODE_ENABLED: 'true'
-  QUARANTINE_LEAGUE_BUCKETS: 'low'
-  QUALITY_HIGH_ODDS_GUARD_ENABLED: 'true'
-  NO_BET_QUALITY_SCORE_ENABLED: 'true'
-  QUALITY_EMERGENCY_PUBLISH_ENABLED: 'false'
-  HISTORICAL_SEGMENT_RELIEF_ENABLED: 'true'
-  MIN_QUALITY_SCORE_PUBLISH: '60'
-  DIXON_COLES_ENABLED: 'true'
-
-  ODDS_API_IO_ENABLED: 'true'
-  ODDS_API_IO_BOOTSTRAP_ENABLED: 'true'
   ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-  ODDS_API_IO_BOOKMAKERS: 'Bet365,Unibet'
-
-  ODDSPAPI_ENABLED: 'true'
   ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
-  ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES: '420'
-  ODDSPAPI_MATCH_LIMIT: '8'
-  ODDSPAPI_TOURNAMENT_LIMIT: '3'
-  ODDSPAPI_BOOKMAKERS: 'bet365,unibet'
-  ODDSPAPI_TIMEOUT_SECONDS: '10'
-
-  ALLSPORTSAPI_ENABLED: 'true'
   ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-  ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES: '240'
-  ALLSPORTSAPI_MATCH_LIMIT: '12'
-  ALLSPORTSAPI_BOOKMAKERS: 'Bet365,Unibet'
-  ALLSPORTSAPI_TIMEOUT_SECONDS: '10'
-
-  FUTRIXMETRICS_ENABLED: 'true'
   FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
-  FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: '8'
-  FUTRIXMETRICS_LIMIT_PER_TEAM: '60'
-  FUTRIXMETRICS_TIMEOUT_SECONDS: '10'
-  FUTRIXMETRICS_TEAM_CACHE_TTL_HOURS: '168'
-
-  TARGET_BOOKMAKERS: 'Bet365,Unibet'
-  CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
-  SHARP_BOOKMAKERS: 'Bet365,Unibet'
-  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '1.05'
-  MIN_BOOKS_PUBLISH: '2'
-  MIN_SOURCES_PUBLISH: '2'
-
-  BOOKIES_API_ENABLED: 'false'
-  BOOKIES_API_USE_FOR_BACKFILL_ONLY: 'true'
-  BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
-  BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
-  BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
-  BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
-  BOOKIES_API_ODDS_FETCH_LIMIT: '0'
-  BOOKIES_API_ODDS_TASK: ${{ secrets.BOOKIES_API_ODDS_TASK }}
-
   SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
   BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-  ENABLE_BZZOIRO_CONTEXT: 'true'
-  BZZOIRO_CONTEXT_MATCH_LIMIT: '60'
   API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
   FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
   THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
   NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
   GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
 
-  ENABLE_PROVIDER_DIAGNOSTICS: 'true'
-  DIAGNOSTICS_MATCH_LIMIT: '150'
-
-  ENABLE_ESPN_CONTEXT: 'true'
-  ESPN_ENABLE_NEWS_CONTEXT: 'true'
-  ESPN_TIMEOUT_SECONDS: '6'
-  ESPN_CONTEXT_MATCH_LIMIT: '48'
-  ESPN_MAX_MATCHES: '40'
-  ESPN_SLUGS_PER_RUN_LIMIT: '12'
-  ESPN_SOCCER_LEAGUES: 'eng.1,eng.2,esp.1,esp.2,ita.1,ita.2,ger.1,ger.2,fra.1,ned.1,bel.1,por.1,sco.1,tur.1,usa.1,uefa.champions,uefa.europa,uefa.europa.conf,conmebol.libertadores,conmebol.sudamericana'
-
-  ENABLE_THESPORTSDB_CONTEXT: 'true'
-  THESPORTSDB_MAX_LEAGUES: '24'
-  THESPORTSDB_CONTEXT_MATCH_LIMIT: '60'
-  THESPORTSDB_TIMEOUT_SECONDS: '8'
-  THESPORTSDB_TEAM_ALIAS_RELAXED: 'true'
-
-  ENABLE_FOOTBALL_DATA_CONTEXT: 'true'
-  FOOTBALL_DATA_TIMEOUT_SECONDS: '12'
-  FOOTBALL_DATA_MATCH_LIMIT: '160'
-  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: '80'
-  FOOTBALL_DATA_STANDINGS_LIMIT: '8'
-  FOOTBALL_DATA_HISTORY_COMPETITIONS_LIMIT: '8'
-  FOOTBALL_DATA_COMPETITION_MATCH_LIMIT: '220'
-  FOOTBALL_DATA_MATCH_SCORE_THRESHOLD: '34'
-  FOOTBALL_DATA_DAYS_AHEAD: '3'
-
-  ENABLE_OPENLIGADB_CONTEXT: 'true'
-  OPENLIGADB_TIMEOUT_SECONDS: '8'
-  OPENLIGADB_CONTEXT_MATCH_LIMIT: '48'
-  OPENLIGADB_DATASET_LIMIT: '6'
-  OPENLIGADB_MATCH_LIMIT: '80'
-
-  API_FOOTBALL_ENABLED: 'true'
-  API_FOOTBALL_CONTEXT_MATCH_LIMIT: '18'
-  API_FOOTBALL_PREDICTIONS_LIMIT: '10'
-  API_FOOTBALL_FETCH_MATCH_DATES_ONLY: 'true'
-  API_FOOTBALL_FREE_DAYS_AHEAD: '1'
-
-  ENABLE_OPENFOOTBALL_CONTEXT: 'true'
-  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: '120'
-  OPENFOOTBALL_MATCH_LIMIT: '120'
-
-  ENABLE_NEWSAPI_CONTEXT: 'true'
-  NEWSAPI_CONTEXT_MATCH_LIMIT: '3'
-  NEWSAPI_MATCH_LIMIT: '3'
-  NEWSAPI_ARTICLES_PER_MATCH: '3'
-  NEWSAPI_LOOKBACK_HOURS: '48'
-
-  ENABLE_GNEWS_CONTEXT: 'true'
-  GNEWS_TIMEOUT_SECONDS: '8'
-  GNEWS_CONTEXT_MATCH_LIMIT: '2'
-  GNEWS_MATCH_LIMIT: '2'
-  GNEWS_ARTICLES_PER_MATCH: '2'
-  GNEWS_LOOKBACK_HOURS: '48'
-
-  ENABLE_CONTEXT_STAGING: 'true'
-  PREMIUM_CONTEXT_SHORTLIST_LIMIT: '24'
-  PREMIUM_NEWS_SHORTLIST_LIMIT: '3'
-  VALUE_HINT_MIN_EDGE_PCT: '1.00'
-
-  DETAILED_TELEGRAM_WRITEUP: 'true'
-  TELEGRAM_WRITEUP_MAX_POINTS: '6'
-  TELEGRAM_WRITEUP_MIN_RECENT_SAMPLE: '3'
-  TELEGRAM_WRITEUP_MIN_SPLIT_SAMPLE: '3'
-
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
-  CONTEXT_ENRICHMENT_MATCH_LIMIT: '48'
   PUBLISH_WINDOW_HOURS: '12'
   MIN_KICKOFF_LEAD_MINUTES: '30'
-  ADAPTIVE_MIN_KICKOFF_LEAD_ENABLED: 'true'
-  ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES: '30'
-  EMERGENCY_MIN_KICKOFF_LEAD_ENABLED: 'true'
-  EMERGENCY_MIN_KICKOFF_LEAD_MINUTES: '30'
-  EMERGENCY_MIN_KICKOFF_ACTIVATION_RATIO: '0.85'
   MANUAL_LATE_MODE_ENABLED: ${{ github.event_name == 'workflow_dispatch' && inputs.late_manual_mode && 'true' || 'false' }}
-  MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES: '30'
-  MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES: '30'
-  MAX_MATCHES_FOR_ODDS_FETCH: '220'
   MAX_PICKS_PER_RUN: '2'
-  MAX_PICKS_PER_FAMILY: '2'
-  MAX_PICKS_PER_LEAGUE: '2'
-  MAX_SAME_REASON_SIGNATURE: '2'
-  ALLOW_LOW_TIER: 'false'
-  ALLOW_SINGLE_SHARP_BOOK: 'false'
-  BOOKMAKER_ALIAS_RELAXED: 'true'
-  CONSENSUS_ALIAS_GROUPS: 'bet365|bet365_4|bet 365,unibet|uni bet|uni-bet,pinnacle|pinnaclesports|pinny,betfair|bet fair|betfair exchange'
+  MIN_BOOKS_PUBLISH: '2'
+  MIN_SOURCES_PUBLISH: '2'
+  MIN_WEIGHTED_BOOKS_FOR_CONSENSUS: '1.05'
 
-  MIN_MODEL_CONFIDENCE: '0.52'
-  REJECT_NEGATIVE_EXPECTED_GOALS: 'true'
-  MIN_EXPECTED_GOALS_VALUE: '0.35'
-  MAX_EXPECTED_GOALS_VALUE: '4.8'
+  TARGET_BOOKMAKERS: 'Bet365,Unibet'
+  CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
+  SHARP_BOOKMAKERS: 'Bet365,Unibet'
+  ODDS_API_IO_BOOKMAKERS: 'Bet365,Unibet'
+  ODDSPAPI_BOOKMAKERS: 'bet365,unibet'
+  ALLSPORTSAPI_BOOKMAKERS: 'Bet365,Unibet'
 
-  H2H_MIN_BOOKS: '1'
-  H2H_MIN_EDGE_PCT: '2.0'
-  H2H_MIN_EV_PCT: '1.2'
-  H2H_MIN_MODEL_CONFIDENCE: '0.55'
-  H2H_SINGLE_SOURCE_MIN_CONFIDENCE: '60'
-  H2H_SINGLE_SOURCE_MIN_EDGE_PCT: '4.0'
-  H2H_SINGLE_SOURCE_MIN_EV_PCT: '2.2'
-  H2H_XG_DISLOCATION_GUARD_ENABLED: 'true'
-  H2H_XG_DISLOCATION_MIN_SOURCES: '2'
-  H2H_HIGH_ODDS_MIN_ODDS: '3.40'
-  H2H_HIGH_ODDS_MARKET_MAX_PROB: '0.30'
-  H2H_HIGH_ODDS_MIN_CONFIDENCE: '68.0'
-  H2H_HIGH_ODDS_MIN_EDGE_PCT: '5.0'
-  H2H_HIGH_ODDS_MIN_EV_PCT: '2.8'
-  H2H_HIGH_ODDS_MIN_XG_DIFF: '0.35'
-  H2H_HIGH_ODDS_MIN_CONTEXT_SOURCES: '2'
+  ODDS_API_IO_ENABLED: 'true'
+  ODDSPAPI_ENABLED: 'true'
+  ALLSPORTSAPI_ENABLED: 'true'
+  FUTRIXMETRICS_ENABLED: 'true'
+  BOOKIES_API_ENABLED: 'false'
+  ENABLE_BZZOIRO_CONTEXT: 'true'
+  ENABLE_ESPN_CONTEXT: 'true'
+  ENABLE_THESPORTSDB_CONTEXT: 'true'
+  ENABLE_FOOTBALL_DATA_CONTEXT: 'true'
+  ENABLE_OPENLIGADB_CONTEXT: 'true'
+  API_FOOTBALL_ENABLED: 'true'
+  ENABLE_OPENFOOTBALL_CONTEXT: 'true'
+  ENABLE_NEWSAPI_CONTEXT: 'true'
+  ENABLE_GNEWS_CONTEXT: 'true'
+  ENABLE_PROVIDER_DIAGNOSTICS: 'true'
 
-  TOTALS_MIN_BOOKS: '1'
-  TOTALS_MIN_EDGE_PCT: '3.2'
-  TOTALS_MIN_EV_PCT: '2.4'
-  TOTALS_MIN_MODEL_CONFIDENCE: '0.58'
-  TOTALS_OVER25_MIN_CONFIDENCE: '66'
-  TOTALS_OVER25_MIN_EDGE_PCT: '8.0'
-  TOTALS_OVER25_MIN_EV_PCT: '5.5'
+  ENABLE_CONTEXT_STAGING: 'true'
+  CONTEXT_ENRICHMENT_REQUIRES_OFFERS: 'false'
+  CONTEXT_ENRICHMENT_MATCH_LIMIT: '220'
+  PREMIUM_CONTEXT_SHORTLIST_LIMIT: '24'
+  PREMIUM_NEWS_SHORTLIST_LIMIT: '4'
 
-  SPREADS_MIN_BOOKS: '1'
-  SPREADS_MIN_EDGE_PCT: '2.4'
-  SPREADS_MIN_EV_PCT: '1.4'
-  SPREADS_MIN_MODEL_CONFIDENCE: '0.55'
+  BZZOIRO_CONTEXT_MATCH_LIMIT: '220'
+  ESPN_CONTEXT_MATCH_LIMIT: '160'
+  THESPORTSDB_CONTEXT_MATCH_LIMIT: '220'
+  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: '220'
+  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: '240'
+  OPENLIGADB_CONTEXT_MATCH_LIMIT: '140'
+  API_FOOTBALL_CONTEXT_MATCH_LIMIT: '24'
+  API_FOOTBALL_PREDICTIONS_LIMIT: '14'
+  FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: '8'
+  NEWSAPI_CONTEXT_MATCH_LIMIT: '10'
+  GNEWS_CONTEXT_MATCH_LIMIT: '8'
 
-  TEAM_TOTALS_MIN_BOOKS: '1'
-  TEAM_TOTALS_MIN_EDGE_PCT: '2.6'
-  TEAM_TOTALS_MIN_EV_PCT: '1.6'
-  TEAM_TOTALS_MIN_MODEL_CONFIDENCE: '0.57'
+  ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES: '240'
+  ODDSPAPI_MATCH_LIMIT: '10'
+  ODDSPAPI_TOURNAMENT_LIMIT: '4'
+  ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES: '240'
+  ALLSPORTSAPI_MATCH_LIMIT: '14'
 
-  BTTS_MIN_BOOKS: '1'
-  BTTS_MIN_EDGE_PCT: '2.3'
-  BTTS_MIN_EV_PCT: '1.4'
-  BTTS_MIN_MODEL_CONFIDENCE: '0.56'
-
-  FALLBACK_PUBLISH_MODE_ENABLED: 'false'
-  MODEL_RELAXED_FALLBACK_ENABLED: 'false'
-  FORCE_PUBLISH_WHEN_EMPTY_ENABLED: 'false'
-  MIN_PUBLICATION_SCORE: '12.5'
-  MIN_PUBLICATION_SCORE_SECONDARY_LEAGUE: '14.5'
-  MIN_PUBLICATION_SCORE_OTHER_LEAGUE: '18.0'
-  MIN_PUBLICATION_SCORE_LOW_TIER: '24.0'
+  DAILY_COVERAGE_CACHE_ENABLED: 'true'
+  DAILY_COVERAGE_CACHE_PATH: '.data/provider_cache/daily-coverage'
+  DAILY_COVERAGE_MATCH_TTL_MINUTES: '120'
+  DAILY_COVERAGE_OFFERS_TTL_MINUTES: '75'
+  DAILY_COVERAGE_BACKUP_OFFERS_TTL_MINUTES: '240'
+  DAILY_COVERAGE_CONTEXT_TTL_MINUTES: '360'
+  DAILY_COVERAGE_PREMIUM_CONTEXT_TTL_MINUTES: '300'
+  DAILY_COVERAGE_NEWS_CONTEXT_TTL_MINUTES: '120'
+  DAILY_COVERAGE_EMPTY_MATCHES_TTL_MINUTES: '60'
+  DAILY_COVERAGE_EMPTY_OFFERS_TTL_MINUTES: '90'
+  DAILY_COVERAGE_EMPTY_CONTEXT_TTL_MINUTES: '180'
 
   NON_CORE_LEAGUE_MIN_BOOKS: '2'
-  NON_CORE_LEAGUE_MIN_CONFIDENCE: '66.0'
-  NON_CORE_LEAGUE_MIN_EDGE_PCT: '6.0'
-  NON_CORE_LEAGUE_MIN_EV_PCT: '4.0'
   NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT: 'true'
-  MAX_NON_CORE_PICKS_PER_RUN: '0'
+  QUALITY_LAYER_ENABLED: 'true'
+  CLV_QUALITY_GUARD_ENABLED: 'true'
+  HISTORICAL_SEGMENT_GUARD_ENABLED: 'true'
+  QUALITY_HIGH_ODDS_GUARD_ENABLED: 'true'
+  NO_BET_QUALITY_SCORE_ENABLED: 'true'
+  MIN_QUALITY_SCORE_PUBLISH: '60'
+  DIXON_COLES_ENABLED: 'true'
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -296,40 +147,14 @@ jobs:
 
       - name: Smoke import check
         run: |
-          python -c "import app; from app.config import Settings; Settings(); import app.cli; import app.services.runner; import app.services.model; import app.services.market_monitor; import app.services.quality; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.futrixmetrics; import app.providers.football_data; import app.providers.openfootball; import app.providers.newsapi; import app.providers.gnews"
+          python -c "from app.config import Settings; Settings(); import app.cli; import app.services.runner; import app.providers.odds_api_io; import app.providers.oddspapi; import app.providers.allsportsapi; import app.providers.api_football"
 
       - name: Compile key modules
         run: |
-          python -m py_compile \
-            app/__init__.py \
-            app/runtime_bot_fix.py \
-            app/cli.py \
-            app/config.py \
-            app/reporting/__init__.py \
-            app/reporting/coverage.py \
-            app/reporting/history_guard_audit.py \
-            app/reporting/sqlite_export.py \
-            app/reporting/training_dataset.py \
-            app/schemas.py \
-            app/providers/odds_api_io.py \
-            app/providers/oddspapi.py \
-            app/providers/allsportsapi.py \
-            app/providers/futrixmetrics.py \
-            app/providers/football_data.py \
-            app/providers/openfootball.py \
-            app/providers/newsapi.py \
-            app/providers/gnews.py \
-            app/services/runner.py \
-            app/services/model.py \
-            app/services/market_monitor.py \
-            app/services/quality.py \
-            app/services/sheet_export.py \
-            app/services/settlement.py \
-            app/services/telegram.py \
-            app/state.py
+          python -m py_compile             app/__init__.py             app/runtime_bot_fix.py             app/cli.py             app/config.py             app/schemas.py             app/state.py             app/services/runner.py
 
       - name: Prepare local state folders
-        run: mkdir -p .data .data/exports .data/history/runs
+        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage
 
       - name: Reset state for manual republish
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
@@ -343,7 +168,6 @@ jobs:
           python -m app.cli coverage-audit
           python -m app.cli training-dataset
           python -m app.cli reporting-sqlite
-          python -m app.cli history-guard-audit
 
       - name: Upload latest debug artifacts
         if: always()
@@ -353,29 +177,9 @@ jobs:
           path: |
             .data/debug-last-run.json
             .data/exports/latest-matches.json
-            .data/exports/latest-matches.csv
             .data/exports/latest-picks.json
-            .data/exports/latest-picks.csv
             .data/exports/latest-bets.json
-            .data/exports/latest-bets.csv
-            .data/exports/latest-daily-report.json
-            .data/exports/latest-daily-report.csv
-            .data/exports/latest-daily-summary.json
-            .data/exports/latest-daily-summary.csv
-            .data/exports/latest-quality-report.json
-            .data/exports/latest-quality-segments.csv
-            .data/exports/coverage-audit.json
-            .data/exports/history-guard-audit.json
-            .data/exports/training-dataset.csv
-            .data/exports/reporting.sqlite
-            .data/sheet-export.json
-            .data/sheet-export.csv
-            .data/sheet-run-summary.json
-            .data/sheet-picks.csv
-            .data/sheet-matches.csv
-            .data/sheet-bet-ledger.csv
-            .data/sheet-daily-report.csv
-            .data/sheet-daily-summary.csv
+            .data/provider_cache/daily-coverage
           if-no-files-found: ignore
           retention-days: 7
 
