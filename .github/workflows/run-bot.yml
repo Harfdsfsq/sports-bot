@@ -48,7 +48,7 @@ env:
   CONSENSUS_BOOKMAKERS: 'Bet365,Unibet'
   SHARP_BOOKMAKERS: 'Bet365,Unibet'
   MIN_BOOKS_PUBLISH: '2'
-  MIN_SOURCES_PUBLISH: '2'
+  MIN_SOURCES_PUBLISH: '1'
   ENABLE_CONTEXT_STAGING: 'true'
   CONTEXT_ENRICHMENT_REQUIRES_OFFERS: 'false'
   CONTEXT_ENRICHMENT_MATCH_LIMIT: '220'
@@ -176,7 +176,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A .data .logs app/__init__.py app/runtime_bot_fix.py .github/workflows/run-bot.yml
+          git add -A .data .logs app/__init__.py app/runtime_bot_fix.py app/runtime_extra_hotfix.py app/runtime_consolidated_fix.py .github/workflows/run-bot.yml
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
