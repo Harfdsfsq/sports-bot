@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from typing import Annotated
 
 from fastapi import FastAPI, Header, HTTPException, status
@@ -25,7 +26,7 @@ def health() -> dict[str, str | bool]:
 async def run_now(
     x_admin_token: Annotated[str | None, Header()] = None,
 ) -> dict:
-    expected = getattr(settings, "admin_run_token", None)
+    expected = os.getenv("ADMIN_RUN_TOKEN")
     if expected and x_admin_token != expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
