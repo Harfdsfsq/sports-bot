@@ -329,7 +329,7 @@ jobs:
             app/state.py
 
       - name: Prepare local state folders
-        run: mkdir -p .data .data/exports .data/history/runs
+        run: mkdir -p .data .data/exports .data/history/runs .logs .logs/runs
 
       - name: Reset state for manual republish
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
@@ -352,7 +352,8 @@ jobs:
         with:
           name: bot-debug-${{ github.run_id }}
           path: |
-            .data/debug-last-run.json
+            .logs/debug-last-run.json
+            .logs/runs
             .data/exports/latest-matches.json
             .data/exports/latest-matches.csv
             .data/exports/latest-picks.json
@@ -386,7 +387,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A .data
+          git add -A .data .logs
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push

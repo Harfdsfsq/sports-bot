@@ -76,8 +76,63 @@ def _harden_settings(settings: Any) -> None:
 
 
 def _is_draw_selection(item: Any) -> bool:
+    selection_key = str(getattr(item, 'selection_key', '') or '').strip().lower()
+    if selection_key == 'draw':
+        return True
     text = str(getattr(item, 'selection', '') or '').strip().lower()
-    return text in {'draw', 'x', 'ничья'}
+    return text in {'draw', 'x'}
+
+
+def _setting(settings: Any, name: str, default: Any) -> Any:
+    try:
+        value = getattr(settings, name)
+    except Exception:
+        return default
+    return default if value in (None, '') else value
+
+
+def _float_attr(item: Any, name: str, default: float = 0.0) -> float:
+    try:
+        return float(getattr(item, name, default) or default)
+    except Exception:
+        return default
+
+
+def _high_odds_h2h_single_source_shrink_guard(settings: Any, item: Any) -> bool:
+    if not bool(_setting(settings, 'quality_high_odds_h2h_single_source_guard_enabled', True)):
+        return False
+    if str(getattr(item, 'family', '') or '') != 'h2h' or _is_draw_selection(item):
+        return False
+
+    odds = _float_attr(item, 'odds')
+    if odds < float(_setting(settings, 'quality_high_odds_h2h_single_source_min_odds', 2.80) or 2.80):
+        return False
+
+    try:
+        sources_count = int(float(getattr(item, 'sources_count', 0) or 0))
+    except Exception:
+        sources_count = 0
+    if sources_count > int(_setting(settings, 'quality_high_odds_h2h_single_source_max_sources', 1) or 1):
+        return False
+
+    try:
+        books_count = int(float(getattr(item, 'books_count', 0) or 0))
+    except Exception:
+        books_count = 0
+    if books_count > int(_setting(settings, 'quality_high_odds_h2h_single_source_max_books', 2) or 2):
+        return False
+
+    adjusted_probability = getattr(item, 'adjusted_probability', None)
+    if adjusted_probability in (None, ''):
+        adjusted_probability = getattr(item, 'final_probability', None)
+    try:
+        raw_probability = float(getattr(item, 'model_probability', 0.0) or 0.0)
+        final_probability = float(adjusted_probability or 0.0)
+    except Exception:
+        return False
+
+    shrink_pp = max(0.0, (raw_probability - final_probability) * 100.0)
+    return shrink_pp >= float(_setting(settings, 'quality_high_odds_h2h_single_source_min_shrink_pp', 9.0) or 9.0)
 
 
 def _extra_publish_guard(self: Any, item: Any, rejections: dict[str, int]) -> bool:
@@ -87,6 +142,7 @@ def _extra_publish_guard(self: Any, item: Any, rejections: dict[str, int]) -> bo
     except Exception:
         league_bucket = 'other'
     is_non_core = league_bucket not in {'preferred', 'secondary'}
+    settings = getattr(self, 'settings', None)
 
     try:
         books_count = int(getattr(item, 'books_count', 0) or 0)
@@ -117,6 +173,12 @@ def _extra_publish_guard(self: Any, item: Any, rejections: dict[str, int]) -> bo
     source_summary = dict(getattr(item, 'source_summary', {}) or {})
     context_source = str(source_summary.get('context_source') or '').strip().lower()
     analysis_flags = {str(v).strip().lower() for v in ((getattr(item, 'analysis', {}) or {}).get('flags') or [])}
+
+    # Mirror the quality-layer guard here so the runtime monkey-patch cannot
+    # accidentally re-open a risky profile after policy changes.
+    if _high_odds_h2h_single_source_shrink_guard(settings, item):
+        rejections['runtime_guard_quality_high_odds_h2h_single_source_shrink'] = rejections.get('runtime_guard_quality_high_odds_h2h_single_source_shrink', 0) + 1
+        return True
 
     # No single-source H2H publishes in non-core leagues.
     if is_non_core and family == 'h2h' and not _is_draw_selection(item) and sources_count < 2:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from collections import Counter, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
@@ -34,11 +35,12 @@ class HistoryGuardAuditService:
     def __init__(self, output_path: str) -> None:
         self.output_path = str(output_path)
 
-    def build(self, *, history_root: str) -> dict[str, Any]:
-        root = Path(history_root)
-        run_files = sorted(root.glob('*/*-run.json')) if root.exists() else []
+    def build(self, *, history_root: str | Path | Sequence[str | Path]) -> dict[str, Any]:
+        roots = self._history_roots(history_root)
+        run_files = self._iter_run_files(roots)
         summary = {
-            'history_root': str(root),
+            'history_root': str(roots[0]) if len(roots) == 1 else '',
+            'history_roots': [str(root) for root in roots],
             'run_files_seen': len(run_files),
             'runs_with_published_candidates': 0,
             'published_candidates_seen': 0,
@@ -90,6 +92,34 @@ class HistoryGuardAuditService:
         summary['examples'] = [example.__dict__ for example in examples]
         self._write_json(summary)
         return summary
+
+    @staticmethod
+    def _history_roots(history_root: str | Path | Sequence[str | Path]) -> list[Path]:
+        if isinstance(history_root, (str, Path)):
+            raw_roots: Sequence[str | Path] = [history_root]
+        else:
+            raw_roots = history_root
+        roots: list[Path] = []
+        seen: set[str] = set()
+        for raw_root in raw_roots:
+            root = Path(raw_root)
+            key = str(root)
+            if key in seen:
+                continue
+            seen.add(key)
+            roots.append(root)
+        return roots
+
+    @classmethod
+    def _iter_run_files(cls, history_root: str | Path | Sequence[str | Path]) -> list[Path]:
+        run_files: dict[str, Path] = {}
+        for root in cls._history_roots(history_root):
+            if not root.exists():
+                continue
+            for path in root.glob('*/*-run.json'):
+                if path.is_file():
+                    run_files.setdefault(str(path), path)
+        return sorted(run_files.values(), key=lambda item: (item.parent.name, item.name, str(item)))
 
     @staticmethod
     def _load_json(path: Path) -> Any:

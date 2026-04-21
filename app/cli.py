@@ -11,6 +11,7 @@ from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
 from app.reporting.history_guard_audit import HistoryGuardAuditService
 from app.services.runner import PredictionRunner
+from app.state import resolve_run_history_roots
 
 
 def _parse_bool(value: str) -> bool:
@@ -70,7 +71,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
         report = CoverageAuditService(_reporting_path(settings, 'coverage_report_path', 'coverage-audit.json')).build(debug_path=settings.debug_path)
         return 0, report
     if command == 'reporting-sqlite':
-        history_root = str(Path(settings.state_path).parent / 'history' / 'runs')
+        history_root = resolve_run_history_roots(settings)
         result = ReportingSQLiteExporter(_reporting_path(settings, 'reporting_sqlite_path', 'reporting.sqlite')).export(
             state_path=settings.state_path,
             history_root=history_root,
@@ -80,7 +81,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
         result = TrainingDatasetExporter(_reporting_path(settings, 'training_dataset_path', 'training-dataset.csv')).export(state_path=settings.state_path)
         return 0, result
     if command == 'history-guard-audit':
-        history_root = str(Path(settings.state_path).parent / 'history' / 'runs')
+        history_root = resolve_run_history_roots(settings)
         result = HistoryGuardAuditService(
             _reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')
         ).build(history_root=history_root)
