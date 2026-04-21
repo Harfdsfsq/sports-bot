@@ -11,6 +11,7 @@ for _name in [
     'runtime_current_cycle_fix',
     'runtime_books_relief_fix',
     'runtime_publish_books_stage2_fix',
+    'runtime_directional_guard_fix',
 ]:
     try:
         importlib.import_module(f'{__name__}.{_name}')
