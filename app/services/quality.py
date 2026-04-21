@@ -703,6 +703,9 @@ class PredictionQualityService:
     def _historical_policy_reject_reason(self, row: dict[str, Any]) -> str | None:
         if self._row_totals_contradiction(row):
             return 'market_sanity_contradiction'
+        h2h_high_odds_reason = self._historical_high_odds_h2h_single_source_reason(row)
+        if h2h_high_odds_reason:
+            return h2h_high_odds_reason
         if (self._to_float(row.get('odds')) or 0.0) >= float(self._setting('quality_high_odds_min_odds', 3.40) or 3.40):
             if (self._to_float(row.get('confidence')) or 0.0) < float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0):
                 return 'high_odds_low_confidence'
@@ -1074,6 +1077,35 @@ class PredictionQualityService:
                 return True
         return False
 
+    def _historical_high_odds_h2h_single_source_reason(self, row: dict[str, Any]) -> str | None:
+        if not bool(self._setting('quality_high_odds_h2h_single_source_guard_enabled', True)):
+            return None
+        if str(row.get('family') or '') != 'h2h':
+            return None
+        selection_kind = self._selection_kind(
+            str(row.get('family') or ''),
+            str(row.get('selection_key') or ''),
+            str(row.get('selection') or ''),
+        )
+        if selection_kind == 'draw':
+            return None
+        if (self._to_float(row.get('odds')) or 0.0) < float(self._setting('quality_high_odds_h2h_single_source_min_odds', 2.80) or 2.80):
+            return None
+        if int(self._to_float(row.get('sources_count')) or 0) > int(self._setting('quality_high_odds_h2h_single_source_max_sources', 1) or 1):
+            return None
+        if int(self._to_float(row.get('books_count')) or 0) > int(self._setting('quality_high_odds_h2h_single_source_max_books', 2) or 2):
+            return None
+        model_probability = self._to_float(row.get('model_probability'))
+        adjusted_probability = self._to_float(row.get('adjusted_probability'))
+        if adjusted_probability is None:
+            adjusted_probability = self._to_float(row.get('final_probability'))
+        if model_probability is None or adjusted_probability is None:
+            return None
+        shrink_pp = max(0.0, (float(model_probability) - float(adjusted_probability)) * 100.0)
+        if shrink_pp < float(self._setting('quality_high_odds_h2h_single_source_min_shrink_pp', 9.0) or 9.0):
+            return None
+        return 'high_odds_h2h_single_source_shrink'
+
     def _quarantine_guard(self, candidate: CandidateBet, segments: list[str], profile: dict[str, Any], enough_history: bool) -> str | None:
         if not enough_history or not bool(self._setting('quarantine_shadow_mode_enabled', True)):
             return None
@@ -1090,6 +1122,24 @@ class PredictionQualityService:
                     return None
         return 'quarantine_shadow_insufficient_history'
 
+    def _high_odds_h2h_single_source_guard(self, candidate: CandidateBet) -> str | None:
+        if not bool(self._setting('quality_high_odds_h2h_single_source_guard_enabled', True)):
+            return None
+        if str(candidate.family or '') != 'h2h':
+            return None
+        if self._candidate_selection_kind(candidate) == 'draw':
+            return None
+        if float(candidate.odds) < float(self._setting('quality_high_odds_h2h_single_source_min_odds', 2.80) or 2.80):
+            return None
+        if int(candidate.sources_count) > int(self._setting('quality_high_odds_h2h_single_source_max_sources', 1) or 1):
+            return None
+        if int(candidate.books_count) > int(self._setting('quality_high_odds_h2h_single_source_max_books', 2) or 2):
+            return None
+        shrink_pp = max(0.0, (float(candidate.model_probability) - float(candidate.adjusted_probability)) * 100.0)
+        if shrink_pp < float(self._setting('quality_high_odds_h2h_single_source_min_shrink_pp', 9.0) or 9.0):
+            return None
+        return 'quality_high_odds_h2h_single_source_shrink_guard'
+
     def _high_odds_guard(self, candidate: CandidateBet, quality_score: float) -> str | None:
         if not bool(self._setting('quality_high_odds_guard_enabled', True)):
             return None
@@ -1097,6 +1147,9 @@ class PredictionQualityService:
         market_max = float(self._setting('quality_high_odds_market_max_prob', 0.31) or 0.31)
         if float(candidate.odds) < min_odds and float(candidate.market_probability) > market_max:
             return None
+        h2h_single_source_reason = self._high_odds_h2h_single_source_guard(candidate)
+        if h2h_single_source_reason:
+            return h2h_single_source_reason
         if quality_score < float(self._setting('quality_high_odds_min_score', 68.0) or 68.0):
             return 'quality_high_odds_score_guard'
         min_confidence = float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0)
