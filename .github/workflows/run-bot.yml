@@ -116,6 +116,13 @@ env:
   DAILY_COVERAGE_EMPTY_OFFERS_TTL_MINUTES: '90'
   DAILY_COVERAGE_EMPTY_CONTEXT_TTL_MINUTES: '180'
 
+  DAY_SHORTLIST_ENABLED: 'true'
+  DAY_SHORTLIST_MAX_ITEMS: '40'
+  DAY_SHORTLIST_KEEP_PER_MATCH: '3'
+  DAY_SHORTLIST_CARRYOVER_ENABLED: 'true'
+  DAY_SHORTLIST_CARRYOVER_INCLUDE_SHADOW: 'false'
+  DAY_SHORTLIST_CARRYOVER_MAX_AGE_HOURS: '12'
+
   NON_CORE_LEAGUE_MIN_BOOKS: '2'
   NON_CORE_LEAGUE_REQUIRE_CORE_CONTEXT: 'true'
   QUALITY_LAYER_ENABLED: 'true'
@@ -154,7 +161,7 @@ jobs:
           python -m py_compile             app/__init__.py             app/runtime_bot_fix.py             app/cli.py             app/config.py             app/schemas.py             app/state.py             app/services/runner.py
 
       - name: Prepare local state folders
-        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage
+        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist
 
       - name: Reset state for manual republish
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
@@ -179,7 +186,12 @@ jobs:
             .data/exports/latest-matches.json
             .data/exports/latest-picks.json
             .data/exports/latest-bets.json
+            .data/exports/latest-day-shortlist.json
+            .data/exports/latest-day-shortlist.csv
+            .data/exports/latest-day-shortlist-compare.json
+            .data/exports/latest-day-coverage-summary.json
             .data/provider_cache/daily-coverage
+            .data/provider_cache/day-shortlist
           if-no-files-found: ignore
           retention-days: 7
 
