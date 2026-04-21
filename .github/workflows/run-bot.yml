@@ -14,7 +14,19 @@ on:
         default: true
         type: boolean
   schedule:
-    - cron: '0 3,5,7,9,11,13,15,17,19 * * *'
+    # MSK daytime accumulation waves. Cron is UTC in GitHub Actions.
+    - cron: '7 5 * * *'   # 08:07 MSK
+    - cron: '17 6 * * *'  # 09:17 MSK
+    - cron: '27 7 * * *'  # 10:27 MSK
+    - cron: '37 8 * * *'  # 11:37 MSK
+    - cron: '47 9 * * *'  # 12:47 MSK
+    - cron: '7 11 * * *'  # 14:07 MSK
+    - cron: '17 12 * * *' # 15:17 MSK
+    - cron: '27 13 * * *' # 16:27 MSK
+    - cron: '7 15 * * *'  # 18:07 MSK
+    - cron: '17 16 * * *' # 19:17 MSK
+    # Night review / self-analysis wave
+    - cron: '7 19 * * *'  # 22:07 MSK
 
 permissions:
   contents: write
@@ -26,11 +38,18 @@ concurrency:
 env:
   TZ: Europe/Moscow
   APP_TIMEZONE: Europe/Moscow
+
   TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'true'
   RUN_REPORT_ENABLED: 'true'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  DAILY_REPORT_ENABLED: 'true'
+  DAILY_REPORT_SEND_TELEGRAM: 'true'
+  DAILY_REPORT_HOUR_LOCAL: '22'
+  DAILY_REPORT_TARGET_OFFSET_DAYS: '0'
+  DAILY_REPORT_RESEND_ON_CHANGE: 'true'
 
   ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
   ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
@@ -74,6 +93,7 @@ env:
   DAY_SHORTLIST_CARRYOVER_ENABLED: 'true'
   DAY_SHORTLIST_CARRYOVER_MAX_AGE_HOURS: '12'
   DAY_PREDICTIONS_REPORT_ENABLED: 'true'
+  DAY_CYCLE_SHORTLIST_MAX_ITEMS: '10'
 
   ODDSPAPI_ENABLED: 'true'
   ODDSPAPI_BOOKMAKERS: 'bet365,unibet'
@@ -200,7 +220,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A .data .logs app/__init__.py app/runtime_bot_fix.py app/runtime_extra_hotfix.py app/runtime_consolidated_fix.py app/runtime_stage_next_fix.py app/runtime_run_analysis_fix.py app/runtime_current_cycle_fix.py app/runtime_books_relief_fix.py .github/workflows/run-bot.yml
+          git add -A .data .logs app/__init__.py app/runtime_bot_fix.py app/runtime_extra_hotfix.py app/runtime_consolidated_fix.py app/runtime_stage_next_fix.py app/runtime_run_analysis_fix.py app/runtime_current_cycle_fix.py app/runtime_books_relief_fix.py app/runtime_publish_books_stage2_fix.py app/runtime_directional_guard_fix.py app/runtime_day_cycle_fix.py .github/workflows/run-bot.yml
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
