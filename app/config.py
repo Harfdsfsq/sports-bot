@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     run_logs_dir: str = Field(default=".logs/runs", validation_alias=AliasChoices("RUN_LOGS_DIR"))
     storage_export_dir: str = Field(default=".data/exports", validation_alias=AliasChoices("STORAGE_EXPORT_DIR", "EXPORT_DIR"))
     publish_dry_run: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_DRY_RUN"))
+    admin_run_token: str | None = Field(default=None, validation_alias=AliasChoices("ADMIN_RUN_TOKEN"))
 
     bankroll_enabled: bool = Field(default=True, validation_alias=AliasChoices("BANKROLL_ENABLED"))
     bankroll_starting_balance: float = Field(default=1000.0, validation_alias=AliasChoices("BANKROLL_STARTING_BALANCE", "BANKROLL_INITIAL"))

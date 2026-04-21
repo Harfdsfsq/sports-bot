@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from fastapi import FastAPI
+from typing import Annotated
 
-from app import runtime_bot_fix
+from fastapi import FastAPI, Header, HTTPException, status
+
 from app.config import get_settings
 from app.services.runner import PredictionRunner
 
-runtime_bot_fix.apply_runtime_fixes()
 settings = get_settings()
 app = FastAPI(title=settings.app_name)
 
@@ -22,7 +22,15 @@ def health() -> dict[str, str | bool]:
 
 
 @app.post("/run")
-async def run_now() -> dict:
+async def run_now(
+    x_admin_token: Annotated[str | None, Header()] = None,
+) -> dict:
+    expected = getattr(settings, "admin_run_token", None)
+    if expected and x_admin_token != expected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="unauthorized",
+        )
     runner = PredictionRunner(settings)
     summary = await runner.run_once()
     return {"ok": True, "summary": summary}
