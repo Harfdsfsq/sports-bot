@@ -518,7 +518,40 @@ class TelegramPublisher:
 
         return "\n\n".join(blocks)
 
-    def _analysis_breakdown(self, bet: CandidateBet) -> str | None:
+    def _current_edge_analysis_text(self, bet: CandidateBet, selection_text: str) -> str:
+        kind = self._selection_kind(
+            bet.family,
+            bet.selection,
+            selection_text,
+            getattr(bet, "selection_key", None),
+        )
+        adjusted_model_pct = float(getattr(bet, "adjusted_probability", 0.0) or 0.0) * 100.0
+        consensus_pct = self._consensus_probability(bet) * 100.0
+        edge_pp = adjusted_model_pct - consensus_pct
+
+        if bet.family == "totals":
+            line_label = selection_text
+            return (
+                f"Модель даёт {adjusted_model_pct:.1f}% против {consensus_pct:.1f}% по линии, "
+                f"что даёт запас {edge_pp:+.1f} п.п. и объясняет интерес к ставке на {line_label}."
+            )
+        if bet.family == "h2h":
+            target_team = bet.home_team if kind == "home" else bet.away_team if kind == "away" else "этот исход"
+            return (
+                f"Модель даёт {adjusted_model_pct:.1f}% против {consensus_pct:.1f}% по линии, "
+                f"что даёт запас {edge_pp:+.1f} п.п. в пользу {target_team}."
+            )
+        if bet.family in {"spreads", "dnb"}:
+            return (
+                f"Модель даёт {adjusted_model_pct:.1f}% против {consensus_pct:.1f}% по линии, "
+                f"что даёт запас {edge_pp:+.1f} п.п. и объясняет интерес к этой форе."
+            )
+        return (
+            f"Модель даёт {adjusted_model_pct:.1f}% против {consensus_pct:.1f}% по линии, "
+            f"что даёт запас {edge_pp:+.1f} п.п. и объясняет интерес к ставке."
+        )
+
+    def _analysis_breakdown(self, bet: CandidateBet, selection_text: str) -> str | None:
         if not bool(getattr(self.settings, "detailed_telegram_writeup", True)):
             return None
         analysis = dict(getattr(bet, "analysis", {}) or {})
@@ -526,7 +559,6 @@ class TelegramPublisher:
         if not isinstance(sections, dict):
             sections = {}
         order = [
-            ("edge", "Линия и value"),
             ("xg", "xG"),
             ("profile", "Профиль атаки/обороны"),
             ("splits", "Дом/выезд"),
@@ -538,6 +570,13 @@ class TelegramPublisher:
         ]
         lines: list[str] = []
         seen: set[str] = set()
+
+        edge_text = self._current_edge_analysis_text(bet, selection_text)
+        if edge_text:
+            normalized_edge = " ".join(edge_text.split())
+            seen.add(normalized_edge)
+            lines.append(f"• Линия и value: {edge_text}")
+
         for key, label in order:
             text = str(sections.get(key) or "").strip()
             normalized = " ".join(text.split())
@@ -545,16 +584,26 @@ class TelegramPublisher:
                 continue
             seen.add(normalized)
             lines.append(f"• {label}: {text}")
-        if lines:
-            return "\n".join(lines)
 
         summary_points = [str(item).strip() for item in (analysis.get("summary_points") or []) if str(item).strip()]
-        if not summary_points:
-            return None
-        return "\n".join(f"• {item}" for item in summary_points)
+        for item in summary_points:
+            normalized = " ".join(item.split())
+            lower = normalized.lower()
+            if (
+                ("линия" in lower or "рын" in lower)
+                and "модел" in lower
+                and "%" in lower
+            ):
+                continue
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            lines.append(f"• {normalized}")
+
+        return "\n".join(lines) if lines else None
 
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
-        detailed = self._analysis_breakdown(bet)
+        detailed = self._analysis_breakdown(bet, selection_text)
         if detailed:
             return detailed
 
@@ -877,11 +926,11 @@ class TelegramPublisher:
             )
         lines.append("❌ В этот запуск прогнозов не было." if published <= 0 else f"✅ В этот запуск опубликовано прогнозов: {published}")
         if top_reasons:
-            lines.append("Почему нет прогноза:")
+            lines.append("Почему нет прогноза:" if published <= 0 else "Что ещё отсеялось:")
             for key, count in top_reasons[:top_limit]:
                 lines.append(f"• {labels.get(key, key.replace('_', ' '))} — {count}")
         if quality_reasons:
-            lines.append("Quality стопоры:")
+            lines.append("Quality стопоры:" if published <= 0 else "Quality стопоры по остальным кандидатам:")
             for key, count in quality_reasons[:4]:
                 lines.append(f"• quality: {quality_labels.get(key, key.replace('_', ' '))} — {count}")
         return "\n".join(lines)

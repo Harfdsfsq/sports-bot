@@ -75,7 +75,7 @@ def test_oddspapi_splits_fixture_windows_under_limit():
     assert all((window_end - window_start) <= timedelta(hours=provider.fixture_window_hours) for window_start, window_end in windows)
 
 
-def test_telegram_uses_structured_analysis_breakdown():
+def test_telegram_uses_live_edge_values_and_keeps_structured_sections():
     publisher = TelegramPublisher(Settings(_env_file=None))
     bet = CandidateBet(
         match_key="soccer::home::away::2026-04-22T12:00:00+00:00",
@@ -94,9 +94,9 @@ def test_telegram_uses_structured_analysis_breakdown():
         consensus_probability=0.465,
         model_probability=0.54,
         final_probability=0.54,
-        adjusted_probability=0.54,
-        edge_pct=7.5,
-        ev_pct=16.1,
+        adjusted_probability=0.50,
+        edge_pct=3.5,
+        ev_pct=7.5,
         confidence=64.0,
         books_count=2,
         sources_count=2,
@@ -116,7 +116,8 @@ def test_telegram_uses_structured_analysis_breakdown():
 
     message = publisher.render_message([bet])
 
-    assert "• Линия и value: Линия недооценивает хозяев." in message
+    assert "• Линия и value: Модель даёт 50.0% против 46.5% по линии" in message
+    assert "• Линия и value: Линия недооценивает хозяев." not in message
     assert "• xG: По xG матч тянет к 1.62 : 0.94." in message
     assert "• Форма: По форме хозяева выглядят лучше." in message
     assert "• Таблица: По таблице Home FC идёт выше." in message
@@ -134,7 +135,7 @@ def test_run_report_renders_even_if_predictions_were_already_sent_when_allowed_b
         "candidates_before_quality": 2,
         "candidates_raw": 1,
         "candidates_publishable": 1,
-        "rejections": {},
+        "rejections": {"publish_books_guard": 3},
         "filtering": {"publish_window_hours": 12, "min_kickoff_lead_minutes": 30},
     }
 
@@ -143,6 +144,8 @@ def test_run_report_renders_even_if_predictions_were_already_sent_when_allowed_b
     assert message is not None
     assert "Отчёт по запуску бота" in message
     assert "опубликовано прогнозов: 1" in message
+    assert "Что ещё отсеялось:" in message
+    assert "Почему нет прогноза:" not in message
 
 
 def test_run_report_renders_when_it_is_the_only_message_for_empty_run():
@@ -165,4 +168,5 @@ def test_run_report_renders_when_it_is_the_only_message_for_empty_run():
 
     assert message is not None
     assert "Отчёт по запуску бота" in message
+    assert "Почему нет прогноза:" in message
     assert "publish books guard" in message
