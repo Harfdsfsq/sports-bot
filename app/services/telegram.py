@@ -518,7 +518,46 @@ class TelegramPublisher:
 
         return "\n\n".join(blocks)
 
+    def _analysis_breakdown(self, bet: CandidateBet) -> str | None:
+        if not bool(getattr(self.settings, "detailed_telegram_writeup", True)):
+            return None
+        analysis = dict(getattr(bet, "analysis", {}) or {})
+        sections = analysis.get("sections") or {}
+        if not isinstance(sections, dict):
+            sections = {}
+        order = [
+            ("edge", "Линия и value"),
+            ("xg", "xG"),
+            ("profile", "Профиль атаки/обороны"),
+            ("splits", "Дом/выезд"),
+            ("recent", "Свежая выборка"),
+            ("form", "Форма"),
+            ("table", "Таблица"),
+            ("injuries", "Кадры и новости"),
+            ("market", "Рынок"),
+        ]
+        lines: list[str] = []
+        seen: set[str] = set()
+        for key, label in order:
+            text = str(sections.get(key) or "").strip()
+            normalized = " ".join(text.split())
+            if not normalized or normalized in seen:
+                continue
+            seen.add(normalized)
+            lines.append(f"• {label}: {text}")
+        if lines:
+            return "\n".join(lines)
+
+        summary_points = [str(item).strip() for item in (analysis.get("summary_points") or []) if str(item).strip()]
+        if not summary_points:
+            return None
+        return "\n".join(f"• {item}" for item in summary_points)
+
     def _build_explanation(self, bet: CandidateBet, selection_text: str) -> str:
+        detailed = self._analysis_breakdown(bet)
+        if detailed:
+            return detailed
+
         parts: list[str] = []
         kind = self._selection_kind(
             bet.family,

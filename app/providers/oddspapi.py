@@ -27,6 +27,8 @@ class OddsPapiProvider:
         self.match_limit = max(1, int(getattr(settings, "oddspapi_match_limit", 16) or 16))
         self.tournament_limit = max(1, int(getattr(settings, "oddspapi_tournament_limit", 4) or 4))
         self.max_tournament_ids_per_request = 5
+        self.fixture_window_hours = max(1, int(getattr(settings, "oddspapi_fixture_window_hours", 47) or 47))
+        self.stale_cache_hours = max(1, int(getattr(settings, "oddspapi_stale_cache_hours", 24) or 24))
         self._bootstrap_fixtures_cache: list[dict[str, Any]] = []
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
@@ -59,16 +61,9 @@ class OddsPapiProvider:
             return [], stats, preview
 
         now = datetime.now(UTC)
-        from_ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-        to_ts = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        horizon = now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))
         async with httpx.AsyncClient(timeout=self.timeout) as client:
-            fixtures = await self._get_json(
-                client,
-                "/fixtures",
-                stats,
-                params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
-            )
-        rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+            rows = await self._fetch_fixture_rows(client, stats, now, horizon)
         self._bootstrap_fixtures_cache = list(rows)
         stats["fixtures_fetched"] = len(rows)
         preview["sample_fixtures"] = rows[:3]
@@ -147,6 +142,19 @@ class OddsPapiProvider:
             return {}, stats, preview
 
         cooldown_until = self._cooldown_until()
+        soccer_matches = [m for m in matches if m.sport_key == "soccer"]
+        if not soccer_matches:
+            return {}, stats, preview
+
+        cached = self._load_cached_offers(soccer_matches, allow_stale=bool(cooldown_until))
+        if cached is not None:
+            stats["cache_hit"] = True
+            if cooldown_until is not None:
+                stats["rate_limited"] = True
+                stats["cooldown_until"] = cooldown_until.isoformat()
+                stats["last_body_preview"] = f"using cached offers while cooldown is active until {cooldown_until.isoformat()}"
+            return cached, stats, preview
+
         if cooldown_until is not None:
             stats["rate_limited"] = True
             stats["aborted_on_rate_limit"] = True
@@ -154,19 +162,9 @@ class OddsPapiProvider:
             stats["last_body_preview"] = f"cooldown active until {cooldown_until.isoformat()}"
             return {}, stats, preview
 
-        soccer_matches = [m for m in matches if m.sport_key == "soccer"]
-        if not soccer_matches:
-            return {}, stats, preview
-
-        cached = self._load_cached_offers(soccer_matches)
-        if cached is not None:
-            stats["cache_hit"] = True
-            return cached, stats, preview
-
         prioritized = self._prioritize_matches(soccer_matches)[: self.match_limit]
         now = datetime.now(UTC)
-        from_ts = now.replace(microsecond=0).isoformat().replace("+00:00", "Z")
-        to_ts = (now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+        horizon = now + timedelta(days=max(1, int(getattr(self.settings, "run_days_ahead", 2) or 2)))
 
         bookmakers = self._bookmaker_slugs()
         stats["bookmakers_requested"] = bookmakers
@@ -176,13 +174,7 @@ class OddsPapiProvider:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             fixtures_source = self._bootstrap_fixtures_cache if self._bootstrap_fixtures_cache else None
             if fixtures_source is None:
-                fixtures = await self._get_json(
-                    client,
-                    "/fixtures",
-                    stats,
-                    params={"sportId": 10, "from": from_ts, "to": to_ts, "statusId": 0, "hasOdds": "true", "apiKey": self.api_key},
-                )
-                fixtures_source = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+                fixtures_source = await self._fetch_fixture_rows(client, stats, now, horizon)
             rows = list(fixtures_source)
             stats["fixtures_fetched"] = len(rows)
             preview["sample_fixtures"] = rows[:3]
@@ -206,7 +198,9 @@ class OddsPapiProvider:
             fixture_to_match: dict[str, Match] = {}
             for item in matched.values():
                 row = item["row"]
-                fixture_to_match[str(row.get("fixtureId") or "")] = item["match"]
+                fixture_id = str(row.get("fixtureId") or row.get("id") or "")
+                if fixture_id:
+                    fixture_to_match[fixture_id] = item["match"]
                 tid = str(row.get("tournamentId") or "")
                 if tid and tid not in tournament_ids:
                     tournament_ids.append(tid)
@@ -288,6 +282,70 @@ class OddsPapiProvider:
         stats["response_errors"] += 1
         return None
 
+    async def _fetch_fixture_rows(
+        self,
+        client: httpx.AsyncClient,
+        stats: dict[str, Any],
+        start_dt: datetime,
+        end_dt: datetime,
+    ) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        seen_fixture_ids: set[str] = set()
+        for window_start, window_end in self._fixture_windows(start_dt, end_dt):
+            if bool(stats.get("aborted_on_rate_limit")):
+                break
+            fixtures = await self._get_json(
+                client,
+                "/fixtures",
+                stats,
+                params=self._fixture_params(window_start, window_end),
+            )
+            if bool(stats.get("aborted_on_rate_limit")):
+                break
+            payload_rows = [row for row in fixtures if isinstance(row, dict)] if isinstance(fixtures, list) else []
+            for row in payload_rows:
+                fixture_id = str(row.get("fixtureId") or row.get("id") or "")
+                dedupe_key = fixture_id or json.dumps(
+                    {
+                        "home": row.get("homeTeam") or row.get("participant1Name"),
+                        "away": row.get("awayTeam") or row.get("participant2Name"),
+                        "start": row.get("startsAt") or row.get("startTime") or row.get("date"),
+                    },
+                    ensure_ascii=False,
+                    sort_keys=True,
+                )
+                if dedupe_key in seen_fixture_ids:
+                    continue
+                seen_fixture_ids.add(dedupe_key)
+                rows.append(row)
+        return rows
+
+    def _fixture_params(self, start_dt: datetime, end_dt: datetime) -> dict[str, Any]:
+        return {
+            "sportId": 10,
+            "from": start_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "to": end_dt.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "statusId": 0,
+            "hasOdds": "true",
+            "apiKey": self.api_key,
+        }
+
+    def _fixture_windows(self, start_dt: datetime, end_dt: datetime) -> list[tuple[datetime, datetime]]:
+        start = start_dt.astimezone(UTC)
+        end = end_dt.astimezone(UTC)
+        if end <= start:
+            return [(start, start + timedelta(hours=1))]
+        max_window = timedelta(hours=self.fixture_window_hours)
+        windows: list[tuple[datetime, datetime]] = []
+        cursor = start
+        while cursor < end:
+            window_end = min(end, cursor + max_window)
+            windows.append((cursor, window_end))
+            if window_end >= end:
+                break
+            cursor = window_end + timedelta(seconds=1)
+        return windows or [(start, end)]
+
     def _cooldown_path(self) -> Path:
         return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "oddspapi_rate_limit.json"
 
@@ -313,8 +371,8 @@ class OddsPapiProvider:
         return dt
 
     def _activate_rate_limit_cooldown(self, response: httpx.Response) -> None:
-        hours = max(1, int(getattr(self.settings, "oddspapi_rate_limit_cooldown_hours", 8) or 8))
-        until = datetime.now(UTC) + timedelta(hours=hours)
+        default_minutes = max(2, int(getattr(self.settings, "oddspapi_rate_limit_cooldown_minutes", 15) or 15))
+        until = datetime.now(UTC) + timedelta(minutes=default_minutes)
         try:
             payload = response.json()
         except Exception:
@@ -324,9 +382,12 @@ class OddsPapiProvider:
             error = payload.get("error")
             if isinstance(error, dict):
                 details = str(error.get("details") or error.get("message") or "")
-        retry_after_hours = self._retry_delay_seconds(response) / 3600.0
-        if retry_after_hours > hours:
-            until = datetime.now(UTC) + timedelta(hours=retry_after_hours)
+        retry_after_seconds = self._retry_after_seconds(response)
+        if retry_after_seconds is not None:
+            until = datetime.now(UTC) + timedelta(seconds=max(60.0, retry_after_seconds))
+        if any(token in details.lower() for token in ["quota", "limit reached", "daily", "plan"]):
+            quota_hours = max(1, int(getattr(self.settings, "oddspapi_rate_limit_cooldown_hours", 8) or 8))
+            until = max(until, datetime.now(UTC) + timedelta(hours=quota_hours))
         path = self._cooldown_path()
         path.parent.mkdir(parents=True, exist_ok=True)
         data = {
@@ -340,7 +401,7 @@ class OddsPapiProvider:
             return
 
     @staticmethod
-    def _retry_delay_seconds(response: httpx.Response) -> float:
+    def _retry_after_seconds(response: httpx.Response) -> float | None:
         raw_values = [response.headers.get("Retry-After")]
         try:
             payload = response.json()
@@ -353,7 +414,7 @@ class OddsPapiProvider:
                 retry_ms = error.get("retryMs")
                 if retry_ms not in (None, ""):
                     try:
-                        return max(0.25, min(float(retry_ms) / 1000.0, 2.0))
+                        return max(0.0, float(retry_ms) / 1000.0)
                     except Exception:
                         pass
         for raw in raw_values:
@@ -361,15 +422,22 @@ class OddsPapiProvider:
                 continue
             text = str(raw).strip()
             try:
-                return max(0.25, min(float(text), 2.0))
+                return max(0.0, float(text))
             except Exception:
                 match = re.search(r"([0-9]+(?:\.[0-9]+)?)", text)
                 if match:
                     try:
-                        return max(0.25, min(float(match.group(1)), 2.0))
+                        return max(0.0, float(match.group(1)))
                     except Exception:
                         continue
-        return 1.0
+        return None
+
+    @classmethod
+    def _retry_delay_seconds(cls, response: httpx.Response) -> float:
+        retry_after = cls._retry_after_seconds(response)
+        if retry_after is None:
+            return 1.0
+        return max(0.25, min(retry_after, 5.0))
 
     def _parse_fixture_odds(self, row: dict[str, Any], match: Match, bookmaker_slug: str) -> list[Offer]:
         bookmaker_odds = row.get("bookmakerOdds") or {}
@@ -399,7 +467,7 @@ class OddsPapiProvider:
                 point=point,
                 market_name="oddspapi",
                 market_key=family,
-                source_event_id=str(row.get("fixtureId") or ""),
+                source_event_id=str(row.get("fixtureId") or row.get("id") or ""),
                 metadata={"oddspapi_bookmaker": bookmaker_slug},
             ))
 
@@ -461,13 +529,25 @@ class OddsPapiProvider:
         return None
 
     def _match_fixture(self, row: dict[str, Any], matches: list[Match]) -> tuple[Match, str] | None:
-        home = str(row.get("participant1Name") or "").strip()
-        away = str(row.get("participant2Name") or "").strip()
-        league = str(row.get("tournamentName") or "").strip()
+        home = str(
+            row.get("participant1Name")
+            or row.get("homeTeam")
+            or row.get("home_name")
+            or row.get("home")
+            or ""
+        ).strip()
+        away = str(
+            row.get("participant2Name")
+            or row.get("awayTeam")
+            or row.get("away_name")
+            or row.get("away")
+            or ""
+        ).strip()
+        league = str(row.get("tournamentName") or row.get("leagueName") or row.get("league") or "").strip()
         if not home or not away:
             return None
         try:
-            start = parse_datetime(row.get("startTime"))
+            start = parse_datetime(row.get("startsAt") or row.get("startTime") or row.get("date"))
         except Exception:
             return None
         best_match = None
@@ -553,7 +633,7 @@ class OddsPapiProvider:
     def _cache_path(self) -> Path:
         return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "oddspapi_offers.json"
 
-    def _load_cached_offers(self, matches: list[Match]) -> dict[str, list[Offer]] | None:
+    def _load_cached_offers(self, matches: list[Match], *, allow_stale: bool = False) -> dict[str, list[Offer]] | None:
         path = self._cache_path()
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
@@ -564,7 +644,12 @@ class OddsPapiProvider:
             fetched_dt = parse_datetime(fetched_at)
         except Exception:
             return None
-        if datetime.now(UTC) - fetched_dt > timedelta(minutes=self.min_interval):
+        max_age = timedelta(hours=self.stale_cache_hours if allow_stale else 0)
+        freshness_limit = timedelta(minutes=self.min_interval)
+        if allow_stale:
+            if datetime.now(UTC) - fetched_dt > max(freshness_limit, max_age):
+                return None
+        elif datetime.now(UTC) - fetched_dt > freshness_limit:
             return None
         wanted = {m.match_key for m in matches}
         out: dict[str, list[Offer]] = {}

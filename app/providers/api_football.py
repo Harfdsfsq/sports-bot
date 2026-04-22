@@ -516,6 +516,6 @@ class ApiFootballContextProvider:
         try:
             if value in (None, ""):
                 return None
-            return float(str(value).replace(",", "."))
+            return float(str(value).strip().replace("%", "").replace(",", "."))
         except Exception:
             return None

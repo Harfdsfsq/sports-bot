@@ -157,16 +157,16 @@ class PredictionRunner:
     def _provider_enabled(self, provider_name: str, default: bool = True) -> bool:
         if provider_name == 'bookies_api':
             explicit = bool(getattr(self.settings, 'bookies_api_enabled', default))
-            if explicit:
-                return True
-            return bool(
-                getattr(self.settings, 'bookies_api_key', None)
-                or getattr(self.settings, 'bookies_api_token', None)
-                or (
-                    getattr(self.settings, 'bookies_api_login', None)
-                    and getattr(self.settings, 'bookies_api_password', None)
+            credentials_ready = bool(
+                getattr(self.settings, 'bookies_api_login', None)
+                and (
+                    getattr(self.settings, 'bookies_api_token', None)
+                    or getattr(self.settings, 'bookies_api_key', None)
                 )
             )
+            if explicit:
+                return True
+            return credentials_ready
         if provider_name == 'oddspapi':
             explicit = bool(getattr(self.settings, 'enable_oddspapi', default))
             return explicit or bool(getattr(self.settings, 'oddspapi_api_key', None))

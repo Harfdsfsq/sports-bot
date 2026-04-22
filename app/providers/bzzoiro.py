@@ -912,7 +912,7 @@ class BzzoiroContextProvider:
         try:
             if value in (None, ""):
                 return None
-            return float(value)
+            return float(str(value).strip().replace("%", "").replace(",", "."))
         except Exception:
             return None
 

@@ -1312,6 +1312,7 @@ class CandidateFactory:
 
         points: list[str] = []
         flags: list[str] = []
+        sections: dict[str, str] = {}
         selection_low = str(selection or '').lower()
 
         if family == 'totals':
@@ -1323,6 +1324,7 @@ class CandidateFactory:
                 f'Запас {probability_gap_pp:+.1f} п.п. делает ставку на {label} интереснее рынка.'
             )
             points.append(market_line)
+            sections['edge'] = market_line
 
             if total_xg is not None and point is not None:
                 pace_word = 'низовой' if is_under else 'результативный'
@@ -1340,79 +1342,120 @@ class CandidateFactory:
                     xg_text += f' Основной вклад в темп модель ждёт от {pressure_side}.'
                 points.append(xg_text)
                 flags.append('xg')
+                sections['xg'] = xg_text
 
             venue_text = self._build_venue_split_summary(match, context, context_details, family, point)
             if venue_text:
                 points.append(venue_text)
                 flags.append('venue')
+                sections['splits'] = venue_text
 
             recent_text = self._build_recent_summary(match, context_details, family, point=point, context=context)
             if recent_text:
                 points.append(recent_text)
                 flags.append('recent')
+                sections['recent'] = recent_text
 
             market_text = self._build_market_confirmation_summary(books, sources, movement_label, steam_delta, best_vs_consensus_edge_pct)
             if market_text:
                 points.append(market_text)
                 flags.append('market')
+                sections['market'] = market_text
 
             form_text = self._build_form_summary(match, context_details, family=family)
             if form_text:
                 points.append(form_text)
                 flags.append('form')
+                sections['form'] = form_text
 
         elif family == 'h2h':
             team = match.home_team if str(selection).strip() == match.home_team else match.away_team if str(selection).strip() == match.away_team else str(selection)
-            points.append(
+            edge_text = (
                 f'По исходу на {team} линия держит около {market_probability * 100:.1f}%, а модель поднимает оценку до {adjusted_probability * 100:.1f}%. '
                 f'Это даёт запас {probability_gap_pp:+.1f} п.п. против рынка.'
             )
+            points.append(edge_text)
+            sections['edge'] = edge_text
             if total_xg is not None:
                 stronger = match.home_team if float(expected_home or 0) >= float(expected_away or 0) else match.away_team
-                points.append(
+                xg_text = (
                     f'По качеству моментов матч выглядит как {float(expected_home or 0):.2f} : {float(expected_away or 0):.2f} по xG, '
                     f'так что игровое преимущество модель видит у {stronger}.'
                 )
+                points.append(xg_text)
                 flags.append('xg')
+                sections['xg'] = xg_text
 
             venue_text = self._build_venue_split_summary(match, context, context_details, family, point)
             if venue_text:
                 points.append(venue_text)
                 flags.append('venue')
+                sections['splits'] = venue_text
 
             form_text = self._build_form_summary(match, context_details, family=family)
             if form_text:
                 points.append(form_text)
                 flags.append('form')
+                sections['form'] = form_text
 
             table_text = self._build_table_summary(match, context_details, family=family)
             if table_text:
                 points.append(table_text)
                 flags.append('table')
+                sections['table'] = table_text
 
             market_text = self._build_market_confirmation_summary(books, sources, movement_label, steam_delta, best_vs_consensus_edge_pct)
             if market_text:
                 points.append(market_text)
                 flags.append('market')
+                sections['market'] = market_text
 
         else:
-            points.append(
+            edge_text = (
                 f'Модель даёт {adjusted_probability * 100:.1f}% против {market_probability * 100:.1f}% по линии, '
                 f'что даёт запас {probability_gap_pp:+.1f} п.п. и объясняет интерес к ставке.'
             )
+            points.append(edge_text)
+            sections['edge'] = edge_text
+            if total_xg is not None and expected_home is not None and expected_away is not None:
+                xg_text = (
+                    f'По ожидаемым голам матч выглядит как {float(expected_home):.2f} : {float(expected_away):.2f} '
+                    f'при суммарном xG около {float(total_xg):.2f}.'
+                )
+                points.append(xg_text)
+                flags.append('xg')
+                sections['xg'] = xg_text
             profile_text = self._build_profile_summary(match, context_details, family, point, expected_home, expected_away)
             if profile_text:
                 points.append(profile_text)
                 flags.append('profile')
+                sections['profile'] = profile_text
+            recent_text = self._build_recent_summary(match, context_details, family, point=point, context=context)
+            if recent_text:
+                points.append(recent_text)
+                flags.append('recent')
+                sections['recent'] = recent_text
+            form_text = self._build_form_summary(match, context_details, family=family)
+            if form_text:
+                points.append(form_text)
+                flags.append('form')
+                sections['form'] = form_text
+            table_text = self._build_table_summary(match, context_details, family=family)
+            if table_text:
+                points.append(table_text)
+                flags.append('table')
+                sections['table'] = table_text
             market_text = self._build_market_confirmation_summary(books, sources, movement_label, steam_delta, best_vs_consensus_edge_pct)
             if market_text:
                 points.append(market_text)
                 flags.append('market')
+                sections['market'] = market_text
 
         injuries_text = self._build_injuries_summary(match, context_details)
         if injuries_text and family != 'totals':
             points.append(injuries_text)
             flags.append('injuries')
+            sections['injuries'] = injuries_text
 
         clean_points: list[str] = []
         seen: set[str] = set()
@@ -1428,6 +1471,7 @@ class CandidateFactory:
         return {
             'summary_points': clean_points,
             'flags': flags[:max_points + 1],
+            'sections': {key: value for key, value in sections.items() if str(value or '').strip()},
             'probability_gap_pp': probability_gap_pp,
             'total_xg': total_xg,
             'context_source': str(getattr(context, 'source', '') or '') if context is not None else None,

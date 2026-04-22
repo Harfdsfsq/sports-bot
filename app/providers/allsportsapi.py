@@ -294,6 +294,11 @@ class AllSportsApiOddsProvider:
             add(book, "h2h", match.home_team, row.get("odd_1"))
             add(book, "h2h", "Draw", row.get("odd_x"))
             add(book, "h2h", match.away_team, row.get("odd_2"))
+            add(book, "doubleChance", "1X", row.get("odd_1x"))
+            add(book, "doubleChance", "X2", row.get("odd_x2"))
+            add(book, "doubleChance", "12", row.get("odd_12"))
+            add(book, "btts", "Yes", row.get("bts_yes"))
+            add(book, "btts", "No", row.get("bts_no"))
 
             for key, value in row.items():
                 if value in (None, "", "null"):
@@ -311,9 +316,15 @@ class AllSportsApiOddsProvider:
                     handicap = float(m_ah.group(1))
                     side = m_ah.group(2)
                     if side == "1":
-                        add(book, "spreads", match.home_team, value, handicap, "home")
+                        if abs(handicap) < 1e-9:
+                            add(book, "dnb", match.home_team, value, 0.0, "home")
+                        else:
+                            add(book, "spreads", match.home_team, value, handicap, "home")
                     else:
-                        add(book, "spreads", match.away_team, value, -handicap, "away")
+                        if abs(handicap) < 1e-9:
+                            add(book, "dnb", match.away_team, value, 0.0, "away")
+                        else:
+                            add(book, "spreads", match.away_team, value, -handicap, "away")
         return offers
 
     def _prioritize_matches(self, matches: list[Match]) -> list[Match]:

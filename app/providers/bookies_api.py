@@ -46,8 +46,17 @@ class BookiesApiProvider:
         matches: list[Match],
         existing_offer_maps: dict[str, dict[str, list[Offer]]] | None = None,
     ) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
+        credentials_present = bool(
+            getattr(self.settings, "bookies_api_login", None)
+            and (
+                getattr(self.settings, "bookies_api_token", None)
+                or getattr(self.settings, "bookies_api_key", None)
+            )
+        )
+        enabled = bool(getattr(self.settings, "bookies_api_enabled", False)) or credentials_present
         stats: dict[str, Any] = {
-            "enabled": bool(self.settings.bookies_api_enabled),
+            "enabled": enabled,
+            "credentials_present": credentials_present,
             "candidate_matches": 0,
             "event_requests": 0,
             "odds_requests": 0,
@@ -71,7 +80,7 @@ class BookiesApiProvider:
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
-        if not self.settings.bookies_api_enabled:
+        if not enabled:
             return {}, stats, preview
 
         token = self.settings.bookies_api_token or self.settings.bookies_api_key
@@ -764,7 +773,7 @@ class BookiesApiProvider:
         try:
             if value is None or value == "":
                 return None
-            return float(value)
+            return float(str(value).strip().replace("%", "").replace(",", "."))
         except Exception:
             return None
 

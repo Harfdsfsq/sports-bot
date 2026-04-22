@@ -1054,19 +1054,36 @@ def candidate_selection_key(
     return raw
 
 
-def normalize_probability_percent(value: float | None) -> float | None:
+def _coerce_numeric_probability(value: object | None) -> float | None:
     if value is None:
         return None
-    number = float(value)
+    if isinstance(value, str):
+        text = value.strip().replace("%", "").replace(",", ".")
+        if not text:
+            return None
+        try:
+            return float(text)
+        except Exception:
+            return None
+    try:
+        return float(value)
+    except Exception:
+        return None
+
+
+def normalize_probability_percent(value: object | None) -> float | None:
+    number = _coerce_numeric_probability(value)
+    if number is None:
+        return None
     if 0.0 <= number <= 1.0:
         return number * 100.0
     return number
 
 
-def to_decimal_probability(value: float | None) -> float | None:
-    if value is None:
+def to_decimal_probability(value: object | None) -> float | None:
+    number = _coerce_numeric_probability(value)
+    if number is None:
         return None
-    number = float(value)
     if number > 1.0:
         return number / 100.0
     return number
