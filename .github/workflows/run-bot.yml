@@ -44,7 +44,7 @@ env:
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'true'
   RUN_REPORT_ENABLED: 'true'
-  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
   DAILY_REPORT_HOUR_LOCAL: '22'
@@ -220,7 +220,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A .data .logs
+          git add -A -f .data .logs
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push

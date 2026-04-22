@@ -685,7 +685,6 @@ class TelegramPublisher:
             score = None
             if settlement.get("final_home_goals") is not None and settlement.get("final_away_goals") is not None:
                 score = f"{int(float(settlement['final_home_goals']))}:{int(float(settlement['final_away_goals']))}"
-            point = item.get("point")
             selection_text = self._row_selection_display(dict(item))
             lines.append(
                 f"{idx}. {item.get('home_team')} — {item.get('away_team')}\n"
@@ -786,7 +785,6 @@ class TelegramPublisher:
         for idx, row in enumerate(rows[:8], start=1):
             result = str(row.get("result") or row.get("status") or "pending")
             emoji = result_emoji.get(result, "•")
-            point = row.get("point")
             score = str(row.get("final_score") or "н/д")
             pnl_raw = row.get("pnl")
             pnl_text = "ожидание" if pnl_raw in (None, "") else f"{float(pnl_raw):+.2f}{self._money_suffix(bankroll_summary=bankroll)}"
@@ -817,6 +815,10 @@ class TelegramPublisher:
         filtering = dict(summary.get("filtering") or {})
         bankroll = dict(summary.get("bankroll") or {})
         rejections = dict(summary.get("rejections") or {})
+
+        prior_telegram_messages = int(summary.get("telegram_messages_sent") or 0)
+        if prior_telegram_messages > 0:
+            return None
 
         def pick(*keys: str, default: Any = 0) -> Any:
             for key in keys:

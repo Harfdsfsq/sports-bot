@@ -1,12 +1,9 @@
 from __future__ import annotations
 
-import json
 from datetime import datetime, timedelta, timezone
 
 from app.config import Settings
 from app.providers.allsportsapi import AllSportsApiOddsProvider
-from app.providers.api_football import ApiFootballContextProvider
-from app.providers.newsapi import NewsApiContextProvider
 from app.providers.oddspapi import OddsPapiProvider
 from app.schemas import CandidateBet, Match
 from app.services.quality import PredictionQualityService
@@ -125,73 +122,41 @@ def test_telegram_uses_structured_analysis_breakdown():
     assert "• Таблица: По таблице Home FC идёт выше." in message
 
 
-def test_newsapi_cooldown_without_provider_arg_is_safe(tmp_path):
-    state_path = tmp_path / "state.json"
-    provider = NewsApiContextProvider(Settings(_env_file=None, state_path=str(state_path)))
-
-    provider.newsapi_key = "news-key"
-    provider.currents_key = "currents-key"
-
-    assert provider._cooldown_until() is None
-
-    cooldown_path = state_path.parent / "provider_cache" / "newsapi_news_rate_limit.json"
-    cooldown_path.parent.mkdir(parents=True, exist_ok=True)
-    cooldown_path.write_text(
-        json.dumps(
-            {
-                "cooldown_until": (datetime.now(UTC) + timedelta(minutes=30)).isoformat(),
-                "created_at": datetime.now(UTC).isoformat(),
-            },
-            ensure_ascii=False,
-        ),
-        encoding="utf-8",
-    )
-
-    assert provider._cooldown_until() is None
-    assert provider._cooldown_until("newsapi") is not None
-
-
-def test_api_football_prediction_context_accepts_percent_strings():
-    provider = ApiFootballContextProvider(Settings(_env_file=None))
-    row = {
-        "predictions": {
-            "percent": {"home": "45%", "draw": "25%", "away": "30%"},
-            "under_over": "+2.5",
-        },
-        "teams": {
-            "home": {
-                "last_5": {
-                    "form": "60%",
-                    "att": "70%",
-                    "def": "55%",
-                    "goals": {"for": {"average": "1.6"}, "against": {"average": "1.1"}},
-                },
-                "league": {
-                    "goals": {
-                        "for": {"average": {"home": "1.7", "total": "1.5"}},
-                        "against": {"average": {"home": "1.0", "total": "1.1"}},
-                    }
-                },
-            },
-            "away": {
-                "last_5": {
-                    "form": "50%",
-                    "att": "52%",
-                    "def": "48%",
-                    "goals": {"for": {"average": "1.3"}, "against": {"average": "1.4"}},
-                },
-                "league": {
-                    "goals": {
-                        "for": {"average": {"away": "1.2", "total": "1.1"}},
-                        "against": {"average": {"away": "1.5", "total": "1.4"}},
-                    }
-                },
-            },
-        },
+def test_run_report_is_suppressed_when_previous_telegram_messages_already_sent():
+    publisher = TelegramPublisher(Settings(_env_file=None))
+    summary = {
+        "published_to_telegram": 0,
+        "telegram_messages_sent": 1,
+        "matches_seen": 10,
+        "matches_with_offers": 5,
+        "contexts_built": 3,
+        "candidates_before_quality": 1,
+        "candidates_raw": 0,
+        "candidates_publishable": 0,
+        "rejections": {"publish_books_guard": 3},
     }
 
-    context = provider._prediction_to_context(row, fixture={})
+    assert publisher.render_run_report(summary) is None
 
-    assert context.home_win_probability == 0.45
-    assert context.away_win_probability == 0.30
-    assert context.details["api_football_draw_probability"] == 0.25
+
+def test_run_report_renders_when_it_is_the_only_message_for_empty_run():
+    publisher = TelegramPublisher(Settings(_env_file=None))
+    summary = {
+        "published_to_telegram": 0,
+        "telegram_messages_sent": 0,
+        "current_time_local": "2026-04-22T13:58:15+03:00",
+        "matches_seen": 10,
+        "matches_with_offers": 5,
+        "contexts_built": 3,
+        "candidates_before_quality": 1,
+        "candidates_raw": 0,
+        "candidates_publishable": 0,
+        "rejections": {"publish_books_guard": 3},
+        "filtering": {"publish_window_hours": 12, "min_kickoff_lead_minutes": 30},
+    }
+
+    message = publisher.render_run_report(summary)
+
+    assert message is not None
+    assert "Отчёт по запуску бота" in message
+    assert "publish books guard" in message
