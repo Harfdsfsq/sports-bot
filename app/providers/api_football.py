@@ -12,7 +12,7 @@ import httpx
 from app.config import Settings
 from app.providers.weather_common import WeatherContextEnricher
 from app.schemas import Match, MatchContext
-from app.utils import clamp, normalize_probability_percent, parse_datetime, score_event_match
+from app.utils import clamp, parse_datetime, score_event_match, to_decimal_probability
 
 
 class ApiFootballContextProvider:
@@ -158,29 +158,40 @@ class ApiFootballContextProvider:
                     continue
                 if len(preview["sample_predictions"]) < 3:
                     preview["sample_predictions"].append(rows[0])
-                context = self._prediction_to_context(rows[0], fixture)
+
+                try:
+                    context = self._prediction_to_context(rows[0], fixture)
+                except Exception as exc:
+                    stats["response_errors"] += 1
+                    stats["last_body_preview"] = f"prediction parse failed for fixture {fixture_id}: {exc}"
+                    continue
 
                 if index < weather_limit:
-                    context, weather_stats = await self.weather_enricher.enrich_context(client, match, fixture, context)
-                    stats["weather_requests"] += int(weather_stats.get("requests", 0) or 0)
-                    if bool(weather_stats.get("cache_hit")):
-                        stats["weather_cache_hits"] += 1
-                    if bool(weather_stats.get("enriched")):
-                        stats["weather_enriched"] += 1
-                        provider_name = str(weather_stats.get("provider") or "unknown")
-                        stats["weather_provider_hits"][provider_name] = int(stats["weather_provider_hits"].get(provider_name, 0) or 0) + 1
-                        if len(preview["sample_weather"]) < 4:
-                            preview["sample_weather"].append(
-                                {
-                                    "match_key": match.match_key,
-                                    "provider": provider_name,
-                                    "condition": (context.details or {}).get("weather_condition"),
-                                    "temp_c": (context.details or {}).get("weather_temp_c"),
-                                    "wind_kph": (context.details or {}).get("weather_wind_kph"),
-                                    "precip_mm": (context.details or {}).get("weather_precip_mm"),
-                                    "factor": (context.details or {}).get("weather_total_factor"),
-                                }
-                            )
+                    try:
+                        context, weather_stats = await self.weather_enricher.enrich_context(client, match, fixture, context)
+                    except Exception as exc:
+                        stats["response_errors"] += 1
+                        stats["last_body_preview"] = f"weather enrichment failed for fixture {fixture_id}: {exc}"
+                    else:
+                        stats["weather_requests"] += int(weather_stats.get("requests", 0) or 0)
+                        if bool(weather_stats.get("cache_hit")):
+                            stats["weather_cache_hits"] += 1
+                        if bool(weather_stats.get("enriched")):
+                            stats["weather_enriched"] += 1
+                            provider_name = str(weather_stats.get("provider") or "unknown")
+                            stats["weather_provider_hits"][provider_name] = int(stats["weather_provider_hits"].get(provider_name, 0) or 0) + 1
+                            if len(preview["sample_weather"]) < 4:
+                                preview["sample_weather"].append(
+                                    {
+                                        "match_key": match.match_key,
+                                        "provider": provider_name,
+                                        "condition": (context.details or {}).get("weather_condition"),
+                                        "temp_c": (context.details or {}).get("weather_temp_c"),
+                                        "wind_kph": (context.details or {}).get("weather_wind_kph"),
+                                        "precip_mm": (context.details or {}).get("weather_precip_mm"),
+                                        "factor": (context.details or {}).get("weather_total_factor"),
+                                    }
+                                )
 
                 contexts[match.match_key] = context
                 stats["contexts_built"] += 1
@@ -329,9 +340,9 @@ class ApiFootballContextProvider:
     def _prediction_to_context(self, row: dict[str, Any], fixture: dict[str, Any]) -> MatchContext:
         preds = row.get("predictions") or row.get("prediction") or {}
         percent = preds.get("percent") or {}
-        home_prob = normalize_probability_percent(percent.get("home") or percent.get("Home"))
-        draw_prob = normalize_probability_percent(percent.get("draw") or percent.get("Draw"))
-        away_prob = normalize_probability_percent(percent.get("away") or percent.get("Away"))
+        home_prob = to_decimal_probability(percent.get("home") or percent.get("Home"))
+        draw_prob = to_decimal_probability(percent.get("draw") or percent.get("Draw"))
+        away_prob = to_decimal_probability(percent.get("away") or percent.get("Away"))
         expected_home, expected_away, xg_source = self._derive_expected_goals(row, preds, home_prob, draw_prob, away_prob)
 
         home_form = self._team_percent(row, "home", "form")

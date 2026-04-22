@@ -321,7 +321,7 @@ class NewsApiContextProvider:
     def _cooldown_path(self, provider: str) -> Path:
         return Path(getattr(self.settings, 'state_path', '.data/state.json')).resolve().parent / 'provider_cache' / f'{provider}_news_rate_limit.json'
 
-    def _cooldown_until(self, provider: str) -> datetime | None:
+    def _read_provider_cooldown_until(self, provider: str) -> datetime | None:
         path = self._cooldown_path(provider)
         try:
             payload = json.loads(path.read_text(encoding='utf-8'))
@@ -341,6 +341,30 @@ class NewsApiContextProvider:
                 pass
             return None
         return dt
+
+    def _cooldown_until(self, provider: str | None = None) -> datetime | None:
+        if provider:
+            return self._read_provider_cooldown_until(provider)
+
+        configured_providers: list[str] = []
+        if self.currents_key:
+            configured_providers.append('currents')
+        if self.newsapi_key:
+            configured_providers.append('newsapi')
+        if not configured_providers:
+            return None
+
+        cooldowns = {
+            provider_name: self._read_provider_cooldown_until(provider_name)
+            for provider_name in configured_providers
+        }
+        active_cooldowns = [value for value in cooldowns.values() if value is not None]
+
+        if not active_cooldowns:
+            return None
+        if len(active_cooldowns) < len(configured_providers):
+            return None
+        return min(active_cooldowns)
 
     def _activate_cooldown(self, provider: str, *, minutes: int) -> None:
         path = self._cooldown_path(provider)
