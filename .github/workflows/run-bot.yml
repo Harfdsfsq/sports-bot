@@ -14,19 +14,17 @@ on:
         default: true
         type: boolean
   schedule:
-    # MSK daytime accumulation waves. Cron is UTC in GitHub Actions.
-    - cron: '7 5 * * *'   # 08:07 MSK
-    - cron: '17 6 * * *'  # 09:17 MSK
-    - cron: '27 7 * * *'  # 10:27 MSK
-    - cron: '37 8 * * *'  # 11:37 MSK
-    - cron: '47 9 * * *'  # 12:47 MSK
-    - cron: '7 11 * * *'  # 14:07 MSK
-    - cron: '17 12 * * *' # 15:17 MSK
-    - cron: '27 13 * * *' # 16:27 MSK
-    - cron: '7 15 * * *'  # 18:07 MSK
-    - cron: '17 16 * * *' # 19:17 MSK
-    # Night review / self-analysis wave
-    - cron: '7 19 * * *'  # 22:07 MSK
+    - cron: '7 5 * * *'
+    - cron: '17 6 * * *'
+    - cron: '27 7 * * *'
+    - cron: '37 8 * * *'
+    - cron: '47 9 * * *'
+    - cron: '7 11 * * *'
+    - cron: '17 12 * * *'
+    - cron: '27 13 * * *'
+    - cron: '7 15 * * *'
+    - cron: '17 16 * * *'
+    - cron: '7 19 * * *'
 
 permissions:
   contents: write
@@ -44,12 +42,14 @@ env:
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'true'
   RUN_REPORT_ENABLED: 'true'
-  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
   DAILY_REPORT_HOUR_LOCAL: '22'
   DAILY_REPORT_TARGET_OFFSET_DAYS: '0'
-  DAILY_REPORT_RESEND_ON_CHANGE: 'true'
+  DAILY_REPORT_RESEND_ON_CHANGE: 'false'
+  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'false'
 
   ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
   ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}

@@ -122,21 +122,27 @@ def test_telegram_uses_structured_analysis_breakdown():
     assert "• Таблица: По таблице Home FC идёт выше." in message
 
 
-def test_run_report_is_suppressed_when_previous_telegram_messages_already_sent():
-    publisher = TelegramPublisher(Settings(_env_file=None))
+def test_run_report_renders_even_if_predictions_were_already_sent_when_allowed_by_settings():
+    publisher = TelegramPublisher(Settings(_env_file=None, RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=False))
     summary = {
-        "published_to_telegram": 0,
+        "published_to_telegram": 1,
         "telegram_messages_sent": 1,
+        "current_time_local": "2026-04-22T13:58:15+03:00",
         "matches_seen": 10,
         "matches_with_offers": 5,
         "contexts_built": 3,
-        "candidates_before_quality": 1,
-        "candidates_raw": 0,
-        "candidates_publishable": 0,
-        "rejections": {"publish_books_guard": 3},
+        "candidates_before_quality": 2,
+        "candidates_raw": 1,
+        "candidates_publishable": 1,
+        "rejections": {},
+        "filtering": {"publish_window_hours": 12, "min_kickoff_lead_minutes": 30},
     }
 
-    assert publisher.render_run_report(summary) is None
+    message = publisher.render_run_report(summary)
+
+    assert message is not None
+    assert "Отчёт по запуску бота" in message
+    assert "опубликовано прогнозов: 1" in message
 
 
 def test_run_report_renders_when_it_is_the_only_message_for_empty_run():

@@ -816,10 +816,6 @@ class TelegramPublisher:
         bankroll = dict(summary.get("bankroll") or {})
         rejections = dict(summary.get("rejections") or {})
 
-        prior_telegram_messages = int(summary.get("telegram_messages_sent") or 0)
-        if prior_telegram_messages > 0:
-            return None
-
         def pick(*keys: str, default: Any = 0) -> Any:
             for key in keys:
                 if summary.get(key) is not None:
