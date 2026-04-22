@@ -1150,8 +1150,19 @@ class PredictionQualityService:
         h2h_single_source_reason = self._high_odds_h2h_single_source_guard(candidate)
         if h2h_single_source_reason:
             return h2h_single_source_reason
-        if quality_score < float(self._setting('quality_high_odds_min_score', 68.0) or 68.0):
-            return 'quality_high_odds_score_guard'
+        min_score = float(self._setting('quality_high_odds_min_score', 68.0) or 68.0)
+        if quality_score < min_score:
+            if self._passes_high_odds_score_relief(candidate, quality_score, min_score):
+                candidate.reasons.append(
+                    f'quality=high_odds_score_relief(gap={max(0.0, min_score - quality_score):.1f})'
+                )
+                candidate.source_summary['high_odds_score_relief'] = {
+                    'quality_score': round(float(quality_score), 3),
+                    'min_score': round(float(min_score), 3),
+                    'gap': round(max(0.0, float(min_score) - float(quality_score)), 3),
+                }
+            else:
+                return 'quality_high_odds_score_guard'
         min_confidence = float(self._setting('quality_high_odds_min_confidence', 68.0) or 68.0)
         confidence_relief = 0.0
         if float(candidate.ev_pct) >= float(self._setting('quality_high_odds_relief_min_ev_pct', 12.0) or 12.0):
@@ -1184,6 +1195,61 @@ class PredictionQualityService:
             if kind == 'over' and (total_xg - point) < min_headroom:
                 return 'quality_high_odds_totals_xg_headroom_guard'
         return None
+
+    def _passes_high_odds_score_relief(
+        self,
+        candidate: CandidateBet,
+        quality_score: float,
+        min_score: float,
+    ) -> bool:
+        if not bool(self._setting('quality_high_odds_score_relief_enabled', True)):
+            return False
+        gap = float(min_score) - float(quality_score)
+        if gap <= 0.0:
+            return True
+        if gap > float(self._setting('quality_high_odds_score_relief_max_gap', 4.5) or 4.5):
+            return False
+        if not self._is_core_league_candidate(candidate):
+            return False
+        if self._candidate_context_source(candidate) == 'sstats_form':
+            return False
+        if self._candidate_market_contradiction(candidate):
+            return False
+        min_books = max(1, int(self._setting('quality_high_odds_score_relief_min_books', 1) or 1))
+        if int(candidate.books_count) < min_books:
+            return False
+        if float(candidate.confidence) < float(self._setting('quality_high_odds_score_relief_min_confidence', 60.0) or 60.0):
+            return False
+        if float(candidate.edge_pct) < float(self._setting('quality_high_odds_score_relief_min_edge_pct', 3.0) or 3.0):
+            return False
+        if float(candidate.ev_pct) < float(self._setting('quality_high_odds_score_relief_min_ev_pct', 1.5) or 1.5):
+            return False
+        if float(getattr(candidate, 'publication_score', 0.0) or 0.0) < float(
+            self._setting('quality_high_odds_score_relief_min_publication_score', 10.0) or 10.0
+        ):
+            return False
+        min_probability = self._post_calibration_probability_threshold(candidate)
+        if float(candidate.adjusted_probability) < max(
+            min_probability,
+            float(self._setting('quality_high_odds_score_relief_min_probability', 0.0) or 0.0),
+        ):
+            return False
+        if candidate.family == 'totals':
+            headroom = self._totals_xg_headroom(candidate)
+            if headroom is None:
+                return False
+            selection_kind = self._candidate_selection_kind(candidate)
+            min_headroom = float(
+                self._setting(
+                    'quality_high_odds_score_relief_totals_under_min_xg_headroom'
+                    if selection_kind == 'under'
+                    else 'quality_high_odds_score_relief_totals_over_min_xg_headroom',
+                    0.06 if selection_kind == 'under' else 0.16,
+                ) or (0.06 if selection_kind == 'under' else 0.16)
+            )
+            if headroom < min_headroom:
+                return False
+        return True
 
     def _post_calibration_threshold_guard(self, candidate: CandidateBet) -> str | None:
         min_probability = float(self._post_calibration_probability_threshold(candidate))

@@ -6,6 +6,7 @@ from app.config import Settings
 from app.providers.allsportsapi import AllSportsApiOddsProvider
 from app.providers.oddspapi import OddsPapiProvider
 from app.schemas import CandidateBet, Match
+from app.services.quality import PredictionQualityService
 from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
 
