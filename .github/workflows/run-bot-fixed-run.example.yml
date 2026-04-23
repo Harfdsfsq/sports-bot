@@ -1,0 +1,25 @@
+name: Run bot • fixed run
+
+on:
+  workflow_dispatch:
+
+jobs:
+  fixed-run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Load env safely
+        shell: bash
+        run: |
+          bash scripts/load_env_safe.sh config/main_clean_publish.env
+
+      - name: Run bot once
+        shell: bash
+        run: |
+          echo "placeholder: run bot here"
+
+      - name: Build fixed bundle
+        shell: bash
+        run: |
+          echo "placeholder: build fixed-run-bundle.zip here"
