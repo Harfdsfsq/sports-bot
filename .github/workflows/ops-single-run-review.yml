@@ -1,0 +1,39 @@
+name: Ops • single run review
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Summarize latest run
+        run: python scripts/summarize_latest_run.py
+
+      - name: Audit odds integrity
+        run: python scripts/audit_odds_integrity.py --latest-only
+
+      - name: Build single-run bundle
+        run: python scripts/build_single_run_bundle.py
+
+      - name: Upload review artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: single-run-review-${{ github.run_id }}
+          path: artifacts/**
+          if-no-files-found: ignore
+          retention-days: 14

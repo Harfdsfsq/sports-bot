@@ -2,9 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
 import os
-import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -15,9 +13,7 @@ def _load_json(path: Path) -> Any:
 
 
 def _iter_run_paths(runs_root: Path) -> list[Path]:
-    if not runs_root.exists():
-        return []
-    return sorted(runs_root.glob("*/*-run.json"))
+    return sorted(runs_root.glob("*/*-run.json")) if runs_root.exists() else []
 
 
 def _latest_run_path(runs_root: Path) -> Path | None:
@@ -36,11 +32,7 @@ def _selection_kind(value: Any) -> str:
     return text
 
 
-def _match_offers(
-    all_offers: list[dict[str, Any]],
-    candidate: dict[str, Any],
-    point_tol: float = 0.02,
-) -> list[dict[str, Any]]:
+def _match_offers(all_offers: list[dict[str, Any]], candidate: dict[str, Any], point_tol: float = 0.02) -> list[dict[str, Any]]:
     match_key = str(candidate.get("match_key") or "")
     family = str(candidate.get("family") or "")
     point = candidate.get("point")
@@ -70,54 +62,62 @@ def _match_offers(
     return matched
 
 
-def _safe_ratio(a: float | None, b: float | None) -> float | None:
-    if a is None or b is None:
-        return None
-    if b == 0:
-        return None
-    return a / b
-
-
 def _candidate_issues(candidate: dict[str, Any], max_gap_pp: float, max_odds_to_fair_ratio: float) -> list[str]:
     issues: list[str] = []
 
-    try:
-        odds = float(candidate.get("odds") or 0.0)
-    except Exception:
-        odds = 0.0
-    try:
-        implied_probability = float(candidate.get("implied_probability") or 0.0)
-    except Exception:
-        implied_probability = 0.0
-    try:
-        fair_odds = float(candidate.get("fair_odds") or 0.0)
-    except Exception:
-        fair_odds = 0.0
-    try:
-        market_probability = float(candidate.get("market_probability") or 0.0)
-    except Exception:
-        market_probability = 0.0
+    def _f(name: str) -> float | None:
+        try:
+            value = candidate.get(name)
+            if value in (None, ""):
+                return None
+            return float(value)
+        except Exception:
+            return None
 
-    odds_implied_probability = (1.0 / odds) if odds > 1.0 else None
-    if odds_implied_probability is not None:
-        gap_pp = abs(implied_probability - odds_implied_probability) * 100.0
+    odds = _f("odds")
+    implied_probability = _f("implied_probability")
+    fair_odds = _f("fair_odds")
+    market_probability = _f("market_probability")
+    adjusted_probability = _f("adjusted_probability")
+    final_probability = _f("final_probability")
+    edge_pct = _f("edge_pct")
+    ev_pct = _f("ev_pct")
+
+    if odds and odds > 1.0 and implied_probability is not None:
+        gap_pp = abs(implied_probability - (1.0 / odds)) * 100.0
         if gap_pp > max_gap_pp:
             issues.append(f"implied_probability_mismatch:{gap_pp:.2f}pp")
 
-    market_fair_odds = (1.0 / market_probability) if market_probability > 0 else None
-    ratio = _safe_ratio(odds, fair_odds if fair_odds > 0 else market_fair_odds)
-    if ratio is not None and ratio > max_odds_to_fair_ratio:
-        issues.append(f"odds_to_fair_ratio_high:{ratio:.3f}")
+    fair_reference = fair_odds
+    if (fair_reference is None or fair_reference <= 0) and market_probability and market_probability > 0:
+        fair_reference = 1.0 / market_probability
+    if odds and fair_reference and fair_reference > 0:
+        ratio = odds / fair_reference
+        if ratio > max_odds_to_fair_ratio:
+            issues.append(f"odds_to_fair_ratio_high:{ratio:.3f}")
 
     source_summary = dict(candidate.get("source_summary") or {})
-    selected_price = source_summary.get("selected_price")
-    if selected_price is not None:
-        try:
-            selected_price = float(selected_price)
-            if odds > 0 and abs(odds - selected_price) > 0.01:
-                issues.append(f"odds_vs_selected_price_mismatch:{abs(odds - selected_price):.3f}")
-        except Exception:
-            pass
+    try:
+        selected_price = source_summary.get("selected_price")
+        selected_price = None if selected_price in (None, "") else float(selected_price)
+    except Exception:
+        selected_price = None
+    if odds and selected_price and abs(odds - selected_price) > 0.01:
+        issues.append(f"odds_vs_selected_price_mismatch:{abs(odds - selected_price):.3f}")
+
+    try:
+        ss_adjusted = source_summary.get("adjusted_probability")
+        ss_adjusted = None if ss_adjusted in (None, "") else float(ss_adjusted)
+    except Exception:
+        ss_adjusted = None
+    if adjusted_probability is not None and ss_adjusted is not None and abs(adjusted_probability - ss_adjusted) > 0.02:
+        issues.append(f"adjusted_probability_mismatch:{abs(adjusted_probability - ss_adjusted):.4f}")
+
+    if adjusted_probability is not None and final_probability is not None and abs(adjusted_probability - final_probability) > 0.02:
+        issues.append(f"adjusted_vs_final_probability_mismatch:{abs(adjusted_probability - final_probability):.4f}")
+
+    if edge_pct is not None and ev_pct is not None and edge_pct < 0 and ev_pct > 0:
+        issues.append("edge_ev_sign_conflict")
 
     return issues
 
@@ -139,15 +139,7 @@ def _collect_candidates(run_payload: dict[str, Any]) -> list[tuple[str, dict[str
     return out
 
 
-def build_report(
-    runs_root: Path,
-    report_path: Path,
-    traces_dir: Path,
-    latest_only: bool,
-    max_gap_pp: float,
-    max_odds_to_fair_ratio: float,
-    fail_on_published: bool,
-) -> tuple[int, dict[str, Any]]:
+def build_report(runs_root: Path, report_path: Path, traces_dir: Path, latest_only: bool, max_gap_pp: float, max_odds_to_fair_ratio: float, fail_on_published: bool) -> tuple[int, dict[str, Any]]:
     run_paths = [_latest_run_path(runs_root)] if latest_only else _iter_run_paths(runs_root)
     run_paths = [path for path in run_paths if path is not None]
     traces_dir.mkdir(parents=True, exist_ok=True)
@@ -181,6 +173,10 @@ def build_report(
                 "implied_probability": candidate.get("implied_probability"),
                 "market_probability": candidate.get("market_probability"),
                 "consensus_probability": candidate.get("consensus_probability"),
+                "final_probability": candidate.get("final_probability"),
+                "adjusted_probability": candidate.get("adjusted_probability"),
+                "edge_pct": candidate.get("edge_pct"),
+                "ev_pct": candidate.get("ev_pct"),
                 "books_count": candidate.get("books_count"),
                 "sources_count": candidate.get("sources_count"),
                 "issues": issues,
@@ -190,12 +186,11 @@ def build_report(
             }
             suspicious.append(row)
             run_issues += 1
-
             trace_name = (
-                f"{Path(run_path).stem}__{candidate.get('family','unknown')}__"
-                f"{str(candidate.get('home_team','')).replace(' ','_')}__"
-                f"{str(candidate.get('away_team','')).replace(' ','_')}__"
-                f"{str(candidate.get('selection_key') or candidate.get('selection') or 'selection').replace(' ','_')}.json"
+                f"{Path(run_path).stem}__{candidate.get('family', 'unknown')}__"
+                f"{str(candidate.get('home_team', '')).replace(' ', '_')}__"
+                f"{str(candidate.get('away_team', '')).replace(' ', '_')}__"
+                f"{str(candidate.get('selection_key') or candidate.get('selection') or 'selection').replace(' ', '_')}.json"
             )
             (traces_dir / trace_name).write_text(json.dumps(row, ensure_ascii=False, indent=2), encoding="utf-8")
 
@@ -208,8 +203,8 @@ def build_report(
 
     published_issues = [
         item for item in suspicious
-        if item.get("section") in {"candidates", "bet_ledger"} or
-        str((item.get("source_summary") or {}).get("quality_status") or "").startswith("passed")
+        if item.get("section") in {"candidates", "bet_ledger"}
+        or str((item.get("source_summary") or {}).get("quality_status") or "").startswith("passed")
     ]
 
     report = {
@@ -243,9 +238,9 @@ def main() -> int:
     parser.add_argument("--latest-only", action="store_true")
     args = parser.parse_args()
 
-    max_gap_pp = float(os.getenv("ODDS_SANITY_MAX_IMPLIED_GAP_PP", "3.0"))
-    max_odds_to_fair_ratio = float(os.getenv("ODDS_SANITY_MAX_ODDS_TO_FAIR_RATIO", "1.20"))
-    fail_on_published = str(os.getenv("ODDS_SANITY_FAIL_ON_PUBLISHED", "true")).strip().lower() in {"1", "true", "yes", "on"}
+    max_gap_pp = float(os.getenv("ODDS_SANITY_MAX_IMPLIED_GAP_PP", "2.0"))
+    max_odds_to_fair_ratio = float(os.getenv("ODDS_SANITY_MAX_ODDS_TO_FAIR_RATIO", "1.15"))
+    fail_on_published = str(os.getenv("ODDS_SANITY_FAIL_ON_PUBLISHED", "false")).strip().lower() in {"1", "true", "yes", "on"}
 
     exit_code, report = build_report(
         runs_root=Path(args.runs_root),
