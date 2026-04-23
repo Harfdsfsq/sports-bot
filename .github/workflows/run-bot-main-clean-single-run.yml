@@ -1,0 +1,101 @@
+name: Run bot • main clean single run
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 15 * * *'
+    - cron: '17 16 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: run-bot-main-clean-${{ github.event.schedule || github.event_name }}
+  cancel-in-progress: true
+
+env:
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  PUBLISH_DRY_RUN: 'true'
+  PREDICTION_PUBLICATION_ENABLED: 'true'
+  RUN_REPORT_ENABLED: 'true'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  DAILY_REPORT_ENABLED: 'false'
+  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'false'
+
+  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare folders
+        run: mkdir -p .data .data/exports .logs
+
+      - name: Load strict main-publish profile
+        shell: bash
+        run: |
+          cat config/main_clean_publish.env >> "$GITHUB_ENV"
+
+      - name: Run bot once (single snapshot)
+        run: python -m app.cli run-once
+
+      - name: Strict publish gate and Telegram send
+        run: python scripts/publish_clean_pick.py
+
+      - name: Build single-run bundle
+        run: python scripts/build_single_run_bundle.py
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-main-clean-${{ github.run_id }}
+          path: |
+            artifacts/main-clean-single-run-bundle.zip
+            .data/exports/main-clean-publish-report.json
+            .data/exports/latest-*.json
+            .data/exports/latest-*.csv
+            .logs/debug-last-run.json
+            .logs/runs
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit updated state
+        if: always()
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A -f .data .logs artifacts
+          git diff --cached --quiet && exit 0
+          git commit -m "Update main clean single-run artifacts"
+          git push

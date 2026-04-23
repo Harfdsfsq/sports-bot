@@ -1,12 +1,10 @@
-# Local replace steps
+# Локальная замена
 
-1. Open the local repository folder.
-2. Unzip this overlay into the repository root.
-3. Confirm these folders changed:
-   - `.github/`
-   - `config/`
-   - `scripts/`
-   - `docs/`
-4. Commit through GitHub Desktop.
-5. Push.
-6. Run the new workflow.
+В архиве нет внешней папки-обёртки.
+Распаковывай прямо в корень проекта.
+
+После распаковки в корне репозитория должны быть папки:
+- .github
+- config
+- scripts
+- docs

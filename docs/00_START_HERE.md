@@ -1,14 +1,15 @@
-# Start here
+# Что это
 
-This overlay is for a **local replace** workflow:
+Это overlay для локальной замены поверх репозитория.
 
-1. Unzip the archive directly into the repository root.
-2. Review the diff in GitHub Desktop.
-3. Commit and push.
-4. Run **Run bot • single run integrity**.
-5. Download `single-run-bundle.zip` from Actions artifacts.
+Цель:
+- оставить single-run режим;
+- не пускать fallback-сигналы в основной канал;
+- публиковать в Telegram только чистый main-pass;
+- собирать один bundle с итогами запуска.
 
-Goal:
-- one full bot cycle in one workflow run;
-- one compact bundle for analysis;
-- early detection of odds/probability integrity mismatches.
+## Как применять
+1. Распакуй архив в корень репозитория.
+2. Проверь diff в GitHub Desktop.
+3. Commit + Push.
+4. Запусти workflow `Run bot • main clean single run`.
