@@ -1,32 +1,37 @@
-#!/usr/bin/env python3
 from __future__ import annotations
+
 import json
 import zipfile
 from pathlib import Path
 
-ART = Path("artifacts")
-ART.mkdir(parents=True, exist_ok=True)
-
-FILES = [
-    Path(".data/exports/main-clean-publish-report.json"),
-    Path(".data/exports/odds-integrity-report.json"),
-    Path(".data/exports/latest-picks.json"),
-    Path(".data/exports/latest-picks.csv"),
-    Path(".data/exports/latest-run-summary.json"),
+INCLUDE = [
     Path(".logs/debug-last-run.json"),
+    Path(".logs/runs"),
     Path(".data/state.json"),
+    Path(".data/exports"),
 ]
 
-RUNS_ROOT = Path(".logs/runs")
-ZIP_PATH = ART / "main-clean-single-run-bundle.zip"
+def main() -> int:
+    out_dir = Path("artifacts")
+    out_dir.mkdir(parents=True, exist_ok=True)
+    out_zip = out_dir / "internal-pipeline-bundle.zip"
+    count = 0
+    with zipfile.ZipFile(out_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+        for root in INCLUDE:
+            if not root.exists():
+                continue
+            if root.is_file():
+                zf.write(root, root.as_posix())
+                count += 1
+                continue
+            for path in root.rglob("*"):
+                if path.is_file():
+                    zf.write(path, path.as_posix())
+                    count += 1
+    summary = {"bundle_path": str(out_zip), "files": count}
+    (out_dir / "internal-pipeline-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    return 0
 
-with zipfile.ZipFile(ZIP_PATH, "w", compression=zipfile.ZIP_DEFLATED) as zf:
-    for path in FILES:
-        if path.exists():
-            zf.write(path, path.as_posix())
-    if RUNS_ROOT.exists():
-        for path in RUNS_ROOT.rglob("*"):
-            if path.is_file():
-                zf.write(path, path.as_posix())
-
-print(json.dumps({"bundle_path": str(ZIP_PATH)}, ensure_ascii=False, indent=2))
+if __name__ == "__main__":
+    raise SystemExit(main())

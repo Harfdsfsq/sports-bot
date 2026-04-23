@@ -1,0 +1,68 @@
+name: Run bot • internal pipeline integrity
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 15 * * *'
+
+permissions:
+  contents: write
+
+env:
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+  PUBLISH_DRY_RUN: 'true'
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Load integrity profile
+        shell: bash
+        run: |
+          grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/pipeline_integrity_hotfix.env >> "$GITHUB_ENV"
+
+      - name: Prepare folders
+        run: mkdir -p .data .data/exports .logs artifacts
+
+      - name: Run bot once
+        run: python -m app.cli run-once
+
+      - name: Audit candidate integrity
+        if: always()
+        run: python scripts/audit_candidate_integrity.py
+
+      - name: Summarize latest run
+        if: always()
+        run: python scripts/summarize_latest_run.py
+
+      - name: Build bundle
+        if: always()
+        run: python scripts/build_single_run_bundle.py
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bot-internal-pipeline-${{ github.run_id }}
+          path: |
+            artifacts/internal-pipeline-bundle.zip
+            artifacts/internal-pipeline-summary.json
+            artifacts/latest-run-summary.json
+            .data/exports/latest-candidate-integrity.json
+          if-no-files-found: ignore

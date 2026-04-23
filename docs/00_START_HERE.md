@@ -1,18 +1,16 @@
-# Что это
+# Start here
 
-Это overlay для локальной замены поверх репозитория.
+Этот пакет предназначен для локальной замены поверх репозитория.
 
-Цель:
-- оставить single-run режим;
-- не пускать fallback-сигналы в основной канал;
-- публиковать в Telegram только чистый main-pass;
-- собирать один bundle с итогами запуска.
+Что он делает:
+- включает single-run snapshot режим;
+- добавляет внутренний integrity-слой для кандидатов;
+- усиливает сохранение raw trace для odds/probability;
+- добавляет workflow для одного прогона и одного bundle.
 
-## Как применять
-1. Распакуй архив в корень репозитория.
-2. Проверь diff в GitHub Desktop.
-3. Commit + Push.
-4. Запусти workflow `Run bot • main clean single run`.
-
-
-Исправление: загрузка env в GitHub Actions теперь игнорирует комментарии и пустые строки.
+Порядок:
+1. Распаковать архив в корень репозитория.
+2. Проверить diff в GitHub Desktop.
+3. Commit и push.
+4. Запустить workflow `Run bot • internal pipeline integrity`.
+5. Скачать `internal-pipeline-bundle.zip`.
