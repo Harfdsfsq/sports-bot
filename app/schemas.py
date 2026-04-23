@@ -107,3 +107,14 @@ class CandidateBet:
     bankroll_currency: str = "u"
     risk_label: str = "standard"
     already_used: bool = False
+
+    selected_odds: float | None = None
+    selected_implied_probability: float | None = None
+    fair_odds_from_market: float | None = None
+    probability_used_for_ev: float | None = None
+    price_used_for_ev: float | None = None
+    canonical_adjusted_probability: float | None = None
+    integrity_status: str = "unknown"
+    integrity_reasons: list[str] = field(default_factory=list)
+    integrity_report: dict[str, Any] = field(default_factory=dict)
+    raw_bucket_offers: list[dict[str, Any]] = field(default_factory=list)

@@ -1,0 +1,77 @@
+name: Run bot • canonical single run
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: run-bot-canonical-single-run
+  cancel-in-progress: true
+
+env:
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Load canonical single-run profile
+        run: grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/canonical_single_run.env >> "$GITHUB_ENV"
+
+      - name: Prepare folders
+        run: mkdir -p .data .data/exports .logs artifacts
+
+      - name: Run bot once
+        run: python -m app.cli run-once
+
+      - name: Canonicalize candidate objects
+        if: always()
+        run: python scripts/canonicalize_latest_exports.py
+
+      - name: Strict canonical publish gate
+        if: always()
+        run: python scripts/publish_canonical_pick.py
+
+      - name: Build internal pipeline bundle
+        if: always()
+        run: |
+          python scripts/build_internal_pipeline_bundle.py
+          python scripts/summarize_internal_run.py
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: bot-internal-pipeline-${{ github.run_id }}
+          path: |
+            artifacts/internal-pipeline-bundle.zip
+            artifacts/internal-pipeline-summary.json
+            artifacts/latest-internal-summary.json
+            artifacts/latest-candidate-integrity.json
+            artifacts/latest-canonical-picks.json
+            artifacts/canonical-publish-report.json
+            .logs/debug-last-run.json
+            .data/exports/latest-*.json
+            .data/exports/latest-*.csv
+          if-no-files-found: ignore
+          retention-days: 7

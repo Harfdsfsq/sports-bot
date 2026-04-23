@@ -1,0 +1,34 @@
+name: Ops • canonical review
+
+on:
+  workflow_dispatch:
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Prepare folders
+        run: mkdir -p artifacts
+      - name: Rebuild summaries
+        run: |
+          python scripts/canonicalize_latest_exports.py || true
+          python scripts/summarize_internal_run.py || true
+          python scripts/build_internal_pipeline_bundle.py || true
+      - name: Upload review artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: canonical-review-${{ github.run_id }}
+          path: |
+            artifacts/internal-pipeline-bundle.zip
+            artifacts/latest-internal-summary.json
+            artifacts/latest-candidate-integrity.json
+            artifacts/canonical-publish-report.json
+          if-no-files-found: ignore
