@@ -1,31 +1,21 @@
-# HARIZON observability overlay
+# Start here
 
-## Goal
+This overlay is built for a **local replace + GitHub Desktop push** workflow.
 
-Make the bot easier to debug, audit and improve without guessing.
+What it adds:
+- a safer publication workflow focused on cleaner signals;
+- an odds/probability integrity audit;
+- a compact learning bundle for future review and iteration;
+- match-level trace files for suspicious candidates.
 
-The current state layer already stores:
-- `last_run`
-- archived run payloads
-- `run_history`
-- `message_history`
-- `learning_state`
-- prediction ledger / daily reports / bankroll state
+## Apply locally
 
-That is visible directly in `app/state.py` and is the right foundation for further improvements. fileciteturn46file0
+1. Extract this archive **directly into the repository root**.
+2. Review changes in GitHub Desktop.
+3. Commit and push.
+4. Run **Run bot • core safe** from GitHub Actions.
 
-## What this overlay adds
+## Recommended first run
 
-- a **learning bundle** generator after runs
-- a manual GitHub Actions workflow to export the latest diagnostics
-- a compact latest-run summary
-- an env profile that keeps richer traces enabled
-- docs for what to upload next time for analysis
-
-## Fast start
-
-1. Unpack this overlay into the repository root.
-2. Copy values from `config/observability_capture.env` into your active `.env` or GitHub Actions env.
-3. Run **Run bot • observability** or **Ops • Learning bundle** in GitHub Actions.
-4. Download the artifact `learning-bundle-...zip`.
-5. Share that zip in chat next time when you want deep analysis.
+Use the new workflow as-is.
+Then download the artifact from GitHub Actions and upload the resulting learning bundle in chat for the next improvement round.

@@ -3,126 +3,91 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import shutil
 import zipfile
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-UTC = timezone.utc
 
-DEFAULT_PATTERNS = [
-    ".logs/debug-last-run.json",
-    ".data/state.json",
-    ".data/exports/latest-*.json",
-    ".data/exports/latest-*.csv",
-    ".data/exports/*/quality-*.json",
-    ".data/exports/*/quality-*.csv",
-    ".data/exports/*/daily-*.json",
-    ".data/exports/*/daily-*.csv",
-    ".data/exports/market-monitor/*.json",
-]
+def _bool_env(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on"}
 
-def _iter_matches(root: Path, patterns: Iterable[str]) -> list[Path]:
-    found: dict[str, Path] = {}
+
+def _iter_paths(base: Path, patterns: Iterable[str]) -> list[Path]:
+    paths: list[Path] = []
     for pattern in patterns:
-        for path in root.glob(pattern):
-            if path.is_file():
-                found[str(path.resolve())] = path
-    return sorted(found.values())
+        paths.extend(base.glob(pattern))
+    return sorted({path for path in paths if path.exists()})
 
-def _recent_run_files(root: Path, limit: int) -> list[Path]:
-    runs_root = root / ".logs" / "runs"
-    if not runs_root.exists():
-        return []
-    files = [p for p in runs_root.glob("*/*-run.json") if p.is_file()]
-    files.sort(key=lambda p: (p.parent.name, p.name), reverse=True)
-    return files[: max(0, limit)]
 
-def _copy_files(root: Path, dest: Path, files: list[Path]) -> list[dict]:
-    manifest_rows = []
-    for src in files:
-        rel = src.relative_to(root)
-        target = dest / rel
-        target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, target)
-        manifest_rows.append({
-            "path": str(rel).replace("\\", "/"),
-            "size_bytes": src.stat().st_size,
-            "modified_at": datetime.fromtimestamp(src.stat().st_mtime, tz=UTC).isoformat(),
-        })
-    return manifest_rows
-
-def _zip_dir(source_dir: Path, zip_path: Path) -> None:
+def _write_zip(zip_path: Path, items: list[Path]) -> None:
     zip_path.parent.mkdir(parents=True, exist_ok=True)
-    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED, compresslevel=6) as zf:
-        for path in source_dir.rglob("*"):
-            if path.is_file():
-                zf.write(path, path.relative_to(source_dir))
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as handle:
+        for path in items:
+            if path.is_dir():
+                for child in sorted(path.rglob("*")):
+                    if child.is_file():
+                        handle.write(child, child.as_posix())
+            elif path.is_file():
+                handle.write(path, path.as_posix())
+
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create a compact learning/diagnostic bundle from bot state.")
-    parser.add_argument("--root", default=".", help="Repository root")
-    parser.add_argument("--work-dir", default="artifacts/learning-bundle", help="Temporary directory")
-    parser.add_argument("--output", default="artifacts/learning-bundle.zip", help="Output zip path")
-    parser.add_argument("--recent-runs", type=int, default=20, help="How many recent run archives to include")
+    parser = argparse.ArgumentParser(description="Build a compact learning bundle from local bot artifacts.")
+    parser.add_argument("--output", default="artifacts/learning-bundle.zip")
+    parser.add_argument("--runs-root", default=".logs/runs")
+    parser.add_argument("--exports-root", default=".data/exports")
+    parser.add_argument("--state", default=".data/state.json")
+    parser.add_argument("--debug", default=".logs/debug-last-run.json")
+    parser.add_argument("--report", default="artifacts/latest-run-summary.json")
     args = parser.parse_args()
 
-    root = Path(args.root).resolve()
-    work_dir = Path(args.work_dir).resolve()
-    output = Path(args.output).resolve()
+    items: list[Path] = []
+    runs_root = Path(args.runs_root)
+    exports_root = Path(args.exports_root)
 
-    if work_dir.exists():
-        shutil.rmtree(work_dir)
-    work_dir.mkdir(parents=True, exist_ok=True)
+    if _bool_env("LEARNING_BUNDLE_INCLUDE_DEBUG", True):
+        items.extend(_iter_paths(Path("."), [args.debug]))
+    if _bool_env("LEARNING_BUNDLE_INCLUDE_STATE", True):
+        items.extend(_iter_paths(Path("."), [args.state]))
+    if runs_root.exists():
+        max_runs = int(os.getenv("LEARNING_BUNDLE_MAX_RUNS", "30"))
+        run_files = sorted(runs_root.glob("*/*-run.json"))[-max_runs:]
+        items.extend(run_files)
+    if _bool_env("LEARNING_BUNDLE_INCLUDE_EXPORTS", True) and exports_root.exists():
+        items.extend(_iter_paths(exports_root, [
+            "latest-*.json",
+            "latest-*.csv",
+            "*/quality-*.json",
+            "*/quality-*.csv",
+            "*/daily-*.json",
+            "*/daily-*.csv",
+        ]))
+    items.extend(_iter_paths(Path("."), [args.report]))
+    items.extend(_iter_paths(Path("artifacts"), [
+        "odds-integrity-report.json",
+        "odds-traces/*.json",
+    ]))
 
-    files = _iter_matches(root, DEFAULT_PATTERNS)
-    files.extend(_recent_run_files(root, args.recent_runs))
+    # de-dupe, preserve order
+    seen: set[str] = set()
+    deduped: list[Path] = []
+    for item in items:
+        key = str(item.resolve())
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(item)
 
-    unique: dict[str, Path] = {}
-    for item in files:
-        unique[str(item.resolve())] = item
-    selected = sorted(unique.values())
-
-    manifest = {
-        "created_at": datetime.now(UTC).isoformat(),
-        "root": str(root),
-        "file_count": len(selected),
-        "files": _copy_files(root, work_dir, selected),
-    }
-    manifest_path = work_dir / "manifest.json"
-    manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding="utf-8")
-
-    summary_md = work_dir / "README.md"
-    summary_md.write_text(
-        "\n".join([
-            "# HARIZON learning bundle",
-            "",
-            "Use this bundle for post-run analysis.",
-            "",
-            f"- Created at: {manifest['created_at']}",
-            f"- Files included: {manifest['file_count']}",
-            f"- Recent run archives: {min(args.recent_runs, len(_recent_run_files(root, args.recent_runs)))}",
-            "",
-            "Recommended files to inspect first:",
-            "- .logs/debug-last-run.json",
-            "- .data/state.json",
-            "- latest quality report/json/csv",
-            "- latest daily report/json/csv",
-            "- recent .logs/runs/*/*-run.json",
-            "",
-        ]),
-        encoding="utf-8",
-    )
-
-    _zip_dir(work_dir, output)
-    print(json.dumps({
-        "ok": True,
-        "bundle_zip": str(output),
-        "work_dir": str(work_dir),
-        "file_count": manifest["file_count"],
-    }, ensure_ascii=False, indent=2))
+    _write_zip(Path(args.output), deduped)
+    payload = {"files_added": len(deduped), "output": str(args.output)}
+    Path(args.report).parent.mkdir(parents=True, exist_ok=True)
+    Path(args.report).write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
+
 
 if __name__ == "__main__":
     raise SystemExit(main())
