@@ -28,14 +28,18 @@ SHEET_HEADERS = [
     "Вероятность модели %",
     "Скорр. вероятность %",
     "Импл. вероятность %",
+    "Gap к рынку п.п.",
     "Edge %",
     "EV %",
     "Confidence",
+    "Value tier",
     "Книг",
     "Источников",
     "Режим модели",
+    "Derived market signal",
     "Score публикации",
     "xG / модель",
+    "Причина guard/quality",
     "Факторы",
 ]
 
@@ -56,12 +60,17 @@ MATCH_HEADERS = [
     "forecast_model_probability_pct",
     "forecast_adjusted_probability_pct",
     "forecast_market_probability_pct",
+    "forecast_probability_gap_pct",
     "forecast_edge_pct",
     "forecast_ev_pct",
     "forecast_confidence",
+    "forecast_value_tier",
     "forecast_books_count",
     "forecast_sources_count",
     "forecast_model_mode",
+    "forecast_market_signal_derived",
+    "forecast_shadow_tracked",
+    "forecast_guard_reason",
     "forecast_publication_score",
     "forecast_expected_home",
     "forecast_expected_away",
@@ -94,6 +103,8 @@ class SheetExportService:
         self.daily_report_csv_path = Path(os.getenv("SHEET_DAILY_REPORT_CSV_PATH") or default_dir / "sheet-daily-report.csv")
         self.daily_summary_csv_path = Path(os.getenv("SHEET_DAILY_SUMMARY_CSV_PATH") or default_dir / "sheet-daily-summary.csv")
         self.learning_csv_path = Path(os.getenv("SHEET_LEARNING_CSV_PATH") or default_dir / "sheet-learning.csv")
+        self.guard_report_json_path = Path(os.getenv("SHEET_GUARD_REPORT_JSON_PATH") or default_dir / "guard-report.json")
+        self.guard_report_csv_path = Path(os.getenv("SHEET_GUARD_REPORT_CSV_PATH") or default_dir / "guard-report-funnel.csv")
 
     def write(
         self,
@@ -105,6 +116,7 @@ class SheetExportService:
         daily_report: dict[str, Any] | None = None,
         quality_report: dict[str, Any] | None = None,
         summary: dict[str, Any] | None = None,
+        guard_report: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         rows = [self._row_for_candidate(item) for item in candidates]
         forecasts_by_match = self._forecast_rows_by_match(forecast_rows or [])
@@ -113,6 +125,7 @@ class SheetExportService:
         daily_rows = [dict(item) for item in ((daily_report or {}).get("rows") or []) if isinstance(item, dict)]
         daily_summary_rows = [dict((daily_report or {}).get("summary") or {})] if daily_report else []
         learning_rows = self._learning_rows(quality_report or {})
+        guard_report = dict(guard_report or {})
         self.json_path.parent.mkdir(parents=True, exist_ok=True)
 
         payload = {
@@ -125,6 +138,7 @@ class SheetExportService:
             "bet_ledger": ledger_rows,
             "daily_report": daily_report or {},
             "quality_report": quality_report or {},
+            "guard_report": guard_report,
             "learning_rows": learning_rows,
             "summary": summary or {},
         }
@@ -138,6 +152,9 @@ class SheetExportService:
             self._write_dynamic_csv(self.daily_summary_csv_path, daily_summary_rows)
         self._write_dynamic_csv(self.learning_csv_path, learning_rows)
         self.summary_json_path.write_text(json.dumps(summary or {}, ensure_ascii=False, indent=2), encoding="utf-8")
+        if guard_report:
+            self.guard_report_json_path.write_text(json.dumps(guard_report, ensure_ascii=False, indent=2), encoding='utf-8')
+            self._write_dynamic_csv(self.guard_report_csv_path, list(guard_report.get('funnel') or []))
 
         webhook_result = self._push_webhook(payload)
         return {
@@ -151,6 +168,8 @@ class SheetExportService:
             "daily_report_csv_path": str(self.daily_report_csv_path) if daily_report else "",
             "daily_summary_csv_path": str(self.daily_summary_csv_path) if daily_report else "",
             "learning_csv_path": str(self.learning_csv_path),
+            "guard_report_json_path": str(self.guard_report_json_path) if guard_report else "",
+            "guard_report_csv_path": str(self.guard_report_csv_path) if guard_report else "",
             "sheet_id_present": bool(self.sheet_id),
             "apps_script_sync_required": not bool(self.webhook_url),
             "webhook_configured": bool(self.webhook_url),
@@ -212,6 +231,24 @@ class SheetExportService:
         if getattr(bet, "expected_home", None) is not None or getattr(bet, "expected_away", None) is not None:
             xg = f"{self._fmt(getattr(bet, 'expected_home', None))} : {self._fmt(getattr(bet, 'expected_away', None))}"
 
+        market_prob = self._to_probability_pct(getattr(bet, 'market_probability', None))
+        adjusted_prob = self._to_probability_pct(getattr(bet, 'adjusted_probability', None))
+        gap_to_market = ''
+        if market_prob is not None and adjusted_prob is not None:
+            gap_to_market = self._fmt(adjusted_prob - market_prob)
+
+        value_tier = self._value_tier(
+            edge_pct=getattr(bet, 'edge_pct', None),
+            ev_pct=getattr(bet, 'ev_pct', None),
+            confidence=getattr(bet, 'confidence', None),
+        )
+
+        guard_reason = ''
+        if isinstance(source_summary, dict):
+            reasons = source_summary.get('quality_reasons') or []
+            if reasons:
+                guard_reason = str(reasons[0])
+
         return {
             "Вид спорта": getattr(bet, "sport_key", ""),
             "Дата матча UTC": getattr(getattr(bet, "commence_time", None), "strftime", lambda _f: "")("%d.%m.%Y %H:%M")
@@ -228,14 +265,18 @@ class SheetExportService:
             "Вероятность модели %": self._pct(getattr(bet, "model_probability", None)),
             "Скорр. вероятность %": self._pct(getattr(bet, "adjusted_probability", None)),
             "Импл. вероятность %": self._pct(getattr(bet, "implied_probability", None)),
+            "Gap к рынку п.п.": gap_to_market,
             "Edge %": self._fmt(getattr(bet, "edge_pct", None)),
             "EV %": self._fmt(getattr(bet, "ev_pct", None)),
             "Confidence": self._fmt(getattr(bet, "confidence", None)),
+            "Value tier": value_tier,
             "Книг": getattr(bet, "books_count", ""),
             "Источников": getattr(bet, "sources_count", ""),
             "Режим модели": getattr(bet, "model_mode", ""),
+            "Derived market signal": "yes" if bool((source_summary or {}).get('market_signal_derived')) else "no",
             "Score публикации": self._fmt(getattr(bet, "publication_score", None)),
             "xG / модель": xg,
+            "Причина guard/quality": guard_reason,
             "Факторы": "; ".join(factors_list[:6]),
         }
 
@@ -312,6 +353,21 @@ class SheetExportService:
         row = {key: "" for key in MATCH_HEADERS if key.startswith("forecast_")}
         if not forecast:
             return row
+
+        market_prob = SheetExportService._to_probability_pct(forecast.get("market_probability"))
+        adjusted_prob = SheetExportService._to_probability_pct(forecast.get("adjusted_probability"))
+        probability_gap = ''
+        if market_prob is not None and adjusted_prob is not None:
+            probability_gap = SheetExportService._fmt(adjusted_prob - market_prob)
+
+        value_tier = SheetExportService._value_tier(
+            edge_pct=forecast.get('edge_pct'),
+            ev_pct=forecast.get('ev_pct'),
+            confidence=forecast.get('confidence'),
+        )
+        quality_reasons = list(forecast.get("quality_reasons") or [])
+        guard_reason = str(quality_reasons[0]) if quality_reasons else ''
+
         row.update({
             "forecast_status": forecast.get("forecast_status") or forecast.get("model_filter_status") or "",
             "forecast_family": forecast.get("family") or "",
@@ -323,12 +379,17 @@ class SheetExportService:
             "forecast_model_probability_pct": SheetExportService._pct(forecast.get("model_probability")),
             "forecast_adjusted_probability_pct": SheetExportService._pct(forecast.get("adjusted_probability")),
             "forecast_market_probability_pct": SheetExportService._pct(forecast.get("market_probability")),
+            "forecast_probability_gap_pct": probability_gap,
             "forecast_edge_pct": SheetExportService._fmt(forecast.get("edge_pct")),
             "forecast_ev_pct": SheetExportService._fmt(forecast.get("ev_pct")),
             "forecast_confidence": SheetExportService._fmt(forecast.get("confidence")),
+            "forecast_value_tier": value_tier,
             "forecast_books_count": forecast.get("books_count") or "",
             "forecast_sources_count": forecast.get("sources_count") or "",
             "forecast_model_mode": forecast.get("model_mode") or "",
+            "forecast_market_signal_derived": bool(forecast.get("market_signal_derived")),
+            "forecast_shadow_tracked": bool(forecast.get("shadow_tracked")),
+            "forecast_guard_reason": guard_reason,
             "forecast_publication_score": SheetExportService._fmt(forecast.get("publication_score")),
             "forecast_expected_home": SheetExportService._fmt(forecast.get("expected_home")),
             "forecast_expected_away": SheetExportService._fmt(forecast.get("expected_away")),
@@ -338,7 +399,7 @@ class SheetExportService:
             "forecast_market_movement": forecast.get("market_movement") or "",
             "forecast_quality_status": forecast.get("quality_status") or "",
             "forecast_quality_score": SheetExportService._fmt(forecast.get("quality_score")),
-            "forecast_quality_reasons": "; ".join(str(item) for item in (forecast.get("quality_reasons") or [])[:8]),
+            "forecast_quality_reasons": "; ".join(str(item) for item in quality_reasons[:8]),
             "forecast_quality_calibration": json.dumps(forecast.get("quality_calibration") or {}, ensure_ascii=False, sort_keys=True),
             "forecast_reasons": "; ".join(str(item) for item in (forecast.get("reasons") or [])[:8]),
             "forecast_analysis_points": "; ".join(str(item) for item in (forecast.get("analysis_points") or [])[:4]),
@@ -398,3 +459,31 @@ class SheetExportService:
             return f"{value:.2f}"
         except Exception:
             return ""
+
+    @staticmethod
+    def _to_probability_pct(value: Any) -> float | None:
+        try:
+            if value is None or value == '':
+                return None
+            value = float(value)
+            if value <= 1.0:
+                value *= 100.0
+            return value
+        except Exception:
+            return None
+
+    @staticmethod
+    def _value_tier(edge_pct: Any, ev_pct: Any, confidence: Any) -> str:
+        try:
+            edge = float(edge_pct or 0.0)
+            ev = float(ev_pct or 0.0)
+            conf = float(confidence or 0.0)
+        except Exception:
+            return 'unknown'
+        if edge >= 3.0 and ev >= 2.0 and conf >= 60.0:
+            return 'A'
+        if edge >= 2.0 and ev >= 1.2 and conf >= 55.0:
+            return 'B'
+        if edge >= 1.0 and ev >= 0.7 and conf >= 50.0:
+            return 'C'
+        return 'D'
