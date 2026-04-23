@@ -1,20 +1,25 @@
 from __future__ import annotations
 
-from statistics import median
+import json
+from pathlib import Path
 from typing import Any
 
 
 def _to_float(value: Any) -> float | None:
     try:
-        if value is None or value == "":
+        if value in (None, ""):
             return None
         return float(value)
     except Exception:
         return None
 
 
-def _round(value: float | None, ndigits: int = 6) -> float | None:
-    return None if value is None else round(float(value), ndigits)
+def _clamp_probability(value: float | None) -> float | None:
+    if value is None:
+        return None
+    if value < 0.0 or value > 1.0:
+        return None
+    return value
 
 
 def _first_float(*values: Any) -> float | None:
@@ -32,127 +37,101 @@ def _prob_from_odds(odds: float | None) -> float | None:
 
 
 def _odds_from_prob(prob: float | None) -> float | None:
-    if prob is None or prob <= 0.0 or prob >= 1.0:
+    prob = _clamp_probability(prob)
+    if prob is None or prob <= 0.0:
         return None
     return 1.0 / prob
 
 
-def _pick_canonical_probability(row: dict[str, Any]) -> tuple[float | None, list[str], dict[str, Any]]:
-    ss = dict(row.get("source_summary") or {})
-    candidates = {
-        "adjusted_probability": _to_float(row.get("adjusted_probability")),
-        "final_probability": _to_float(row.get("final_probability")),
-        "source_summary.adjusted_probability": _to_float(ss.get("adjusted_probability")),
-        "source_summary.final_probability": _to_float(ss.get("final_probability")),
-    }
-    usable = [value for value in candidates.values() if value is not None]
-    reasons: list[str] = []
-    if not usable:
-        return None, ["missing_probability_values"], {"candidates": candidates}
-    chosen = median(usable) if len(usable) >= 2 else usable[0]
-    spread = max(usable) - min(usable) if len(usable) >= 2 else 0.0
-    if spread > 0.02:
-        reasons.append(f"probability_spread:{spread:.4f}")
-    return chosen, reasons, {"candidates": {k: _round(v) for k, v in candidates.items()}, "spread": _round(spread)}
+def _mismatch(a: float | None, b: float | None) -> float | None:
+    if a is None or b is None:
+        return None
+    return abs(a - b)
 
 
-def canonicalize_candidate_dict(row: dict[str, Any]) -> dict[str, Any]:
-    item = dict(row)
-    ss = dict(item.get("source_summary") or {})
-    diagnostics = dict(item.get("diagnostics") or {})
-    reasons: list[str] = []
+def _load_json(path: Path, default: Any) -> Any:
+    if not path.exists():
+        return default
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return default
 
-    selected_odds = _first_float(ss.get("selected_price"), item.get("odds"), ss.get("odds"))
-    market_probability = _first_float(item.get("market_probability"), item.get("consensus_probability"), ss.get("market_probability"))
-    implied_probability_old = _first_float(item.get("implied_probability"), ss.get("implied_probability"))
-    canonical_prob, prob_reasons, prob_meta = _pick_canonical_probability(item)
-    reasons.extend(prob_reasons)
 
-    selected_implied = _prob_from_odds(selected_odds)
+def canonicalize_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    source_summary = dict(candidate.get("source_summary") or {})
+    diagnostics = dict(candidate.get("diagnostics") or {})
+
+    selected_odds = _first_float(
+        source_summary.get("selected_price"),
+        candidate.get("odds"),
+    )
+    selected_implied_probability = _prob_from_odds(selected_odds)
+
+    market_probability = _clamp_probability(_first_float(
+        candidate.get("market_probability"),
+        candidate.get("consensus_probability"),
+        candidate.get("implied_probability"),
+    ))
     fair_odds_from_market = _odds_from_prob(market_probability)
 
-    price_used_for_ev = selected_odds
-    probability_used_for_ev = canonical_prob
-    edge_pct = None
-    ev_pct = None
+    canonical_adjusted_probability = _clamp_probability(_first_float(
+        candidate.get("adjusted_probability"),
+        source_summary.get("adjusted_probability"),
+        candidate.get("final_probability"),
+        candidate.get("model_probability"),
+    ))
 
-    if canonical_prob is not None and market_probability is not None:
-        edge_pct = (canonical_prob - market_probability) * 100.0
-    if canonical_prob is not None and selected_odds is not None:
-        ev_pct = ((selected_odds * canonical_prob) - 1.0) * 100.0
+    final_probability = _clamp_probability(_first_float(
+        candidate.get("final_probability"),
+        candidate.get("adjusted_probability"),
+        source_summary.get("adjusted_probability"),
+    ))
 
-    if selected_implied is not None and implied_probability_old is not None:
-        mismatch = abs(selected_implied - implied_probability_old)
-        if mismatch > 0.02:
-            reasons.append(f"implied_mismatch:{mismatch:.4f}")
+    implied_mismatch = _mismatch(selected_implied_probability, _clamp_probability(_to_float(candidate.get("implied_probability"))))
+    adjusted_mismatch = _mismatch(canonical_adjusted_probability, _clamp_probability(_to_float(source_summary.get("adjusted_probability"))))
+    final_mismatch = _mismatch(canonical_adjusted_probability, final_probability)
 
-    ss_adjusted = _to_float(ss.get("adjusted_probability"))
-    row_adjusted = _to_float(item.get("adjusted_probability"))
-    if ss_adjusted is not None and row_adjusted is not None:
-        mismatch = abs(ss_adjusted - row_adjusted)
-        if mismatch > 0.02:
-            reasons.append(f"adjusted_mismatch:{mismatch:.4f}")
-
-    if edge_pct is not None and ev_pct is not None and edge_pct < 0.0 and ev_pct > 0.0:
-        reasons.append("edge_ev_sign_conflict")
-
-    status = "ok"
-    if reasons:
-        status = "reject" if any(
-            text.startswith(("implied_mismatch", "adjusted_mismatch", "edge_ev_sign_conflict", "missing_probability_values"))
-            for text in reasons
-        ) else "warning"
-
-    item["selected_odds"] = _round(selected_odds)
-    item["selected_implied_probability"] = _round(selected_implied)
-    item["fair_odds_from_market"] = _round(fair_odds_from_market)
-    item["probability_used_for_ev"] = _round(probability_used_for_ev)
-    item["price_used_for_ev"] = _round(price_used_for_ev)
-    item["canonical_adjusted_probability"] = _round(canonical_prob)
-    if price_used_for_ev is not None:
-        item["odds"] = round(price_used_for_ev, 6)
-    if selected_implied is not None:
-        item["implied_probability"] = round(selected_implied, 6)
-    if fair_odds_from_market is not None:
-        item["fair_odds"] = round(fair_odds_from_market, 6)
-    if market_probability is not None:
-        item["market_probability"] = round(market_probability, 6)
-        item["consensus_probability"] = round(market_probability, 6)
-    if canonical_prob is not None:
-        item["adjusted_probability"] = round(canonical_prob, 6)
-        item["final_probability"] = round(canonical_prob, 6)
-
-    if edge_pct is not None:
-        item["edge_pct"] = round(edge_pct, 4)
-    if ev_pct is not None:
-        item["ev_pct"] = round(ev_pct, 4)
-
-    raw_bucket_offers = ss.get("raw_bucket_offers") or item.get("raw_bucket_offers") or []
-    item["raw_bucket_offers"] = raw_bucket_offers if isinstance(raw_bucket_offers, list) else []
+    canonical = dict(candidate)
+    canonical["canonical_selected_odds"] = selected_odds
+    canonical["canonical_selected_implied_probability"] = selected_implied_probability
+    canonical["canonical_market_probability"] = market_probability
+    canonical["canonical_fair_odds_from_market"] = fair_odds_from_market
+    canonical["canonical_adjusted_probability"] = canonical_adjusted_probability
+    canonical["canonical_final_probability"] = final_probability
 
     integrity = {
-        "status": status,
-        "reasons": reasons,
-        "selected_odds": _round(selected_odds),
-        "selected_implied_probability": _round(selected_implied),
-        "market_probability": _round(market_probability),
-        "fair_odds_from_market": _round(fair_odds_from_market),
-        "canonical_adjusted_probability": _round(canonical_prob),
-        "edge_pct": _round(edge_pct, 4),
-        "ev_pct": _round(ev_pct, 4),
-        "probability_meta": prob_meta,
+        "implied_mismatch": implied_mismatch,
+        "adjusted_mismatch": adjusted_mismatch,
+        "final_mismatch": final_mismatch,
+        "selected_price_present": _to_float(source_summary.get("selected_price")) is not None,
+        "market_probability_present": market_probability is not None,
+        "canonical_adjusted_probability_present": canonical_adjusted_probability is not None,
+        "is_suspicious": False,
+        "reasons": [],
     }
-    item["integrity_status"] = status
-    item["integrity_reasons"] = reasons
-    item["integrity_report"] = integrity
-    diagnostics["candidate_integrity"] = integrity
-    item["diagnostics"] = diagnostics
 
-    ss["selected_odds"] = item.get("selected_odds")
-    ss["selected_implied_probability"] = item.get("selected_implied_probability")
-    ss["fair_odds_from_market"] = item.get("fair_odds_from_market")
-    ss["probability_used_for_ev"] = item.get("probability_used_for_ev")
-    ss["price_used_for_ev"] = item.get("price_used_for_ev")
-    ss["canonical_adjusted_probability"] = item.get("canonical_adjusted_probability")
-    item["source_summary"] = ss
-    return item
+    if implied_mismatch is not None and implied_mismatch > 0.02:
+        integrity["is_suspicious"] = True
+        integrity["reasons"].append(f"implied_mismatch:{implied_mismatch:.4f}")
+    if adjusted_mismatch is not None and adjusted_mismatch > 0.02:
+        integrity["is_suspicious"] = True
+        integrity["reasons"].append(f"adjusted_mismatch:{adjusted_mismatch:.4f}")
+    if final_mismatch is not None and final_mismatch > 0.02:
+        integrity["is_suspicious"] = True
+        integrity["reasons"].append(f"final_mismatch:{final_mismatch:.4f}")
+
+    canonical["candidate_integrity"] = integrity
+    diagnostics["candidate_integrity"] = integrity
+    canonical["diagnostics"] = diagnostics
+    return canonical
+
+
+def load_latest_picks(repo_root: Path) -> list[dict[str, Any]]:
+    data = _load_json(repo_root / ".data/exports/latest-picks.json", [])
+    return [dict(item) for item in data if isinstance(item, dict)]
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")

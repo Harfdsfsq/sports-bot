@@ -1,72 +1,46 @@
-#!/usr/bin/env python3
 from __future__ import annotations
+
 import json
 from pathlib import Path
-from typing import Any
+import sys
 
-ROOT = Path(".data/exports")
-OUT = ROOT / "odds-integrity-report.json"
+REPO_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO_ROOT))
 
-
-def _load(path: Path, default: Any) -> Any:
-    if not path.exists():
-        return default
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return default
-
-
-def _f(v: Any, default: float = 0.0) -> float:
-    try:
-        if v in ("", None):
-            return default
-        return float(v)
-    except Exception:
-        return default
+from app.services.candidate_integrity import canonicalize_candidate, load_latest_picks, write_json  # noqa: E402
 
 
 def main() -> int:
-    picks = _load(ROOT / "latest-picks.json", [])
+    picks = [canonicalize_candidate(item) for item in load_latest_picks(REPO_ROOT)]
     suspicious = []
-    for item in picks if isinstance(picks, list) else []:
-        if not isinstance(item, dict):
-            continue
-        odds = _f(item.get("odds"))
-        implied = _f(item.get("implied_probability"))
-        adjusted = _f(item.get("adjusted_probability"))
-        final = _f(item.get("final_probability"), adjusted)
-        ss = dict(item.get("source_summary") or {})
-        ss_adjusted = _f(ss.get("adjusted_probability"), adjusted)
-        issues = []
-        if odds > 1.01:
-            calc = 1.0 / odds
-            if abs(calc - implied) > 0.02:
-                issues.append("implied_mismatch")
-        if abs(adjusted - final) > 0.02:
-            issues.append("final_probability_mismatch")
-        if abs(adjusted - ss_adjusted) > 0.02:
-            issues.append("source_summary_adjusted_mismatch")
-        if _f(item.get("edge_pct")) < 0 and _f(item.get("ev_pct")) > 0:
-            issues.append("edge_ev_conflict")
-        if issues:
-            suspicious.append({
+    passed = []
+    for item in picks:
+        integrity = dict(item.get("candidate_integrity") or {})
+        if integrity.get("is_suspicious"):
+            suspicious.append(item)
+            if str(((item.get("source_summary") or {}).get("quality_status") or "")).startswith("passed"):
+                passed.append(item)
+    report = {
+        "total_candidates": len(picks),
+        "suspicious_candidates": len(suspicious),
+        "published_or_passed_suspicious_candidates": len(passed),
+        "items": [
+            {
                 "match_key": item.get("match_key"),
-                "home_team": item.get("home_team"),
-                "away_team": item.get("away_team"),
                 "family": item.get("family"),
                 "selection": item.get("selection"),
-                "odds": odds,
-                "issues": issues,
-            })
-    report = {
-        "candidates_seen": len(picks) if isinstance(picks, list) else 0,
-        "suspicious_candidates": len(suspicious),
-        "items": suspicious,
+                "point": item.get("point"),
+                "odds": item.get("canonical_selected_odds"),
+                "selected_bookmaker": (item.get("source_summary") or {}).get("selected_bookmaker"),
+                "quality_status": (item.get("source_summary") or {}).get("quality_status"),
+                "reasons": (item.get("candidate_integrity") or {}).get("reasons") or [],
+            }
+            for item in suspicious
+        ],
     }
-    ROOT.mkdir(parents=True, exist_ok=True)
-    OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    out = REPO_ROOT / "artifacts/fixed-run/latest-odds-integrity-report.json"
+    write_json(out, report)
+    print(json.dumps(report, ensure_ascii=False))
     return 0
 
 
