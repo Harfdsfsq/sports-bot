@@ -1,24 +1,31 @@
-# Start here
+# HARIZON observability overlay
 
-## Default mode
-Use **core_daily** as the default production profile.
+## Goal
 
-## When to switch profiles
-- **core_daily**: main channel, default mode, focus on cleaner daily output.
-- **balanced_growth**: use only if `core_daily` gives 2+ empty runs in a row.
-- **research_shadow**: audit mode, data collection, no Telegram publication.
+Make the bot easier to debug, audit and improve without guessing.
 
-## Fast deployment
-1. Copy these folders into the repository root.
-2. Commit and push.
-3. Open **Actions -> Run bot profit profile -> Run workflow**.
-4. Choose `core_daily`.
-5. Review `.data/exports/latest-coverage-audit.json` and `.logs/debug-last-run.json` after the run.
+The current state layer already stores:
+- `last_run`
+- archived run payloads
+- `run_history`
+- `message_history`
+- `learning_state`
+- prediction ledger / daily reports / bankroll state
 
-## Expected behavior
-This package is designed to reduce bad publishes from combinations like:
-- single-source + heavy-shrink
-- non-core + high odds
-- cup + weak xG edge
+That is visible directly in `app/state.py` and is the right foundation for further improvements. fileciteturn46file0
 
-It will likely reduce the number of published bets before it improves quality. That tradeoff is intentional.
+## What this overlay adds
+
+- a **learning bundle** generator after runs
+- a manual GitHub Actions workflow to export the latest diagnostics
+- a compact latest-run summary
+- an env profile that keeps richer traces enabled
+- docs for what to upload next time for analysis
+
+## Fast start
+
+1. Unpack this overlay into the repository root.
+2. Copy values from `config/observability_capture.env` into your active `.env` or GitHub Actions env.
+3. Run **Run bot • observability** or **Ops • Learning bundle** in GitHub Actions.
+4. Download the artifact `learning-bundle-...zip`.
+5. Share that zip in chat next time when you want deep analysis.
