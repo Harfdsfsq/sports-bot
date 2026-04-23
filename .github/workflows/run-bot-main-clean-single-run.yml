@@ -64,7 +64,7 @@ jobs:
       - name: Load strict main-publish profile
         shell: bash
         run: |
-          cat config/main_clean_publish.env >> "$GITHUB_ENV"
+          grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/main_clean_publish.env >> "$GITHUB_ENV"
 
       - name: Run bot once (single snapshot)
         run: python -m app.cli run-once

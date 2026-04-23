@@ -13,3 +13,6 @@
 2. Проверь diff в GitHub Desktop.
 3. Commit + Push.
 4. Запусти workflow `Run bot • main clean single run`.
+
+
+Исправление: загрузка env в GitHub Actions теперь игнорирует комментарии и пустые строки.

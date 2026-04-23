@@ -8,3 +8,6 @@
 - config
 - scripts
 - docs
+
+
+После замены файлов заново запусти workflow `Run bot • main clean single run`.
