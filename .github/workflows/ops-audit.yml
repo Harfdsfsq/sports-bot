@@ -1,0 +1,72 @@
+name: Ops audit
+
+on:
+  workflow_dispatch:
+    inputs:
+      command:
+        description: Which CLI audit command to run
+        required: true
+        default: history-guard-audit
+        type: choice
+        options:
+          - coverage-audit
+          - history-guard-audit
+          - training-dataset
+          - reporting-sqlite
+
+permissions:
+  contents: write
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+
+jobs:
+  ops-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare local folders
+        run: mkdir -p .data .data/exports .logs
+
+      - name: Run selected audit command
+        shell: bash
+        run: |
+          python -m app.cli "${{ inputs.command }}" > ".data/exports/${{ inputs.command }}.json"
+
+      - name: Upload audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: ops-audit-${{ inputs.command }}-${{ github.run_id }}
+          path: |
+            .data/exports
+            .logs
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit generated audit data
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A -f .data .logs
+          git diff --cached --quiet && exit 0
+          git commit -m "Update audit artifacts"
+          git push
