@@ -1,0 +1,27 @@
+name: Odds sanity audit
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  odds-audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run odds sanity audit
+        env:
+          ODDS_AUDIT_MAX_PRICE_VS_CONSENSUS_RATIO: "1.18"
+          ODDS_AUDIT_MAX_ABS_IMPLIED_GAP_PP: "12.0"
+          ODDS_AUDIT_FAIL_ON_TOTALS: "true"
+        run: python scripts/audit_odds_sanity.py
