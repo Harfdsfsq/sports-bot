@@ -1,0 +1,211 @@
+name: Run bot profit profile
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Runtime profile for this run
+        required: true
+        default: core_daily
+        type: choice
+        options:
+          - core_daily
+          - balanced_growth
+          - research_shadow
+      dry_run:
+        description: Disable Telegram publication for this run
+        required: false
+        default: false
+        type: boolean
+      reset_state:
+        description: Delete .data/state.json before this manual run
+        required: false
+        default: false
+        type: boolean
+      late_manual_mode:
+        description: Allow late manual runs with a smaller kickoff lead window
+        required: false
+        default: true
+        type: boolean
+      publish_window_hours:
+        description: Publish window in hours for this run
+        required: false
+        default: '12'
+        type: string
+      max_picks_per_run:
+        description: Maximum picks to publish in this run
+        required: false
+        default: '2'
+        type: string
+  schedule:
+    - cron: '7 5 * * *'
+    - cron: '17 6 * * *'
+    - cron: '27 7 * * *'
+    - cron: '37 8 * * *'
+    - cron: '47 9 * * *'
+    - cron: '7 11 * * *'
+    - cron: '17 12 * * *'
+    - cron: '27 13 * * *'
+    - cron: '7 15 * * *'
+    - cron: '17 16 * * *'
+    - cron: '7 19 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: run-bot-profit-${{ github.event.schedule || github.event_name }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+
+  PUBLISH_DRY_RUN: 'false'
+  PREDICTION_PUBLICATION_ENABLED: 'true'
+  RUN_REPORT_ENABLED: 'true'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
+  DAILY_REPORT_ENABLED: 'true'
+  DAILY_REPORT_SEND_TELEGRAM: 'true'
+  DAILY_REPORT_HOUR_LOCAL: '22'
+  DAILY_REPORT_TARGET_OFFSET_DAYS: '0'
+  DAILY_REPORT_RESEND_ON_CHANGE: 'false'
+  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'false'
+
+  TARGET_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
+  CONSENSUS_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
+  SHARP_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair'
+  ENABLE_CONTEXT_STAGING: 'true'
+  CONTEXT_ENRICHMENT_REQUIRES_OFFERS: 'false'
+  CONTEXT_ENRICHMENT_MATCH_LIMIT: '220'
+  PREMIUM_CONTEXT_SHORTLIST_LIMIT: '24'
+  PREMIUM_NEWS_SHORTLIST_LIMIT: '4'
+  MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
+  PUBLISH_WINDOW_HOURS: '12'
+  MIN_KICKOFF_LEAD_MINUTES: '30'
+  MAX_PICKS_PER_RUN: '2'
+
+jobs:
+  run-bot-profit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare local state folders
+        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs
+
+      - name: Apply selected runtime profile
+        shell: bash
+        env:
+          SELECTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'core_daily' }}
+        run: |
+          set -euo pipefail
+          echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
+          case "$SELECTED_PROFILE" in
+            core_daily)
+              PROFILE_FILE="config/profit_core_daily.env"
+              ;;
+            balanced_growth)
+              PROFILE_FILE="config/profit_balanced_growth.env"
+              ;;
+            research_shadow)
+              PROFILE_FILE="config/profit_research_shadow.env"
+              ;;
+            *)
+              echo "Unknown profile: $SELECTED_PROFILE" >&2
+              exit 1
+              ;;
+          esac
+          grep -Ev '^\s*#|^\s*$' "$PROFILE_FILE" >> "$GITHUB_ENV"
+          echo "Applied profile file: $PROFILE_FILE"
+
+      - name: Apply manual dispatch overrides
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        shell: bash
+        run: |
+          echo "PUBLISH_DRY_RUN=${{ inputs.dry_run && 'true' || 'false' }}" >> "$GITHUB_ENV"
+          echo "PREDICTION_PUBLICATION_ENABLED=${{ inputs.dry_run && 'false' || 'true' }}" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MODE_ENABLED=${{ inputs.late_manual_mode && 'true' || 'false' }}" >> "$GITHUB_ENV"
+          echo "PUBLISH_WINDOW_HOURS=${{ inputs.publish_window_hours }}" >> "$GITHUB_ENV"
+          echo "MAX_PICKS_PER_RUN=${{ inputs.max_picks_per_run }}" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=20" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=10" >> "$GITHUB_ENV"
+
+      - name: Ensure calibration profile exists
+        shell: bash
+        run: |
+          mkdir -p .data
+          if [ ! -f .data/calibration-profile.json ] && [ -f config/calibration-profile.example.json ]; then
+            cp config/calibration-profile.example.json .data/calibration-profile.json
+          fi
+
+      - name: Reset state for manual republish
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
+        run: rm -f .data/state.json
+
+      - name: Run bot once
+        run: python -m app.cli run-once
+
+      - name: Generate audit payloads
+        if: always()
+        shell: bash
+        run: |
+          python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
+          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json || true
+          python -m app.cli training-dataset > .data/exports/latest-training-dataset.json || true
+          python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
+
+      - name: Upload debug artifacts
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: bot-profit-debug-${{ github.run_id }}
+          path: |
+            .logs/debug-last-run.json
+            .logs/runs
+            .data/exports
+            .data/provider_cache/daily-coverage
+            .data/provider_cache/day-shortlist
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Commit updated bot state
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A -f .data .logs
+          git diff --cached --quiet && exit 0
+          git commit -m "Update bot state"
+          git push
