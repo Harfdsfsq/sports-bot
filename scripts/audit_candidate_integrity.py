@@ -1,95 +1,112 @@
 from __future__ import annotations
 
 import json
-import math
+import os
 from pathlib import Path
 from typing import Any
 
+from app.services.candidate_integrity import CandidateIntegrityService
 
-def _to_float(value: Any) -> float | None:
+
+def load_json(path: Path, default: Any) -> Any:
     try:
-        if value is None or value == "":
-            return None
-        return float(value)
+        if path.exists():
+            text = path.read_text(encoding="utf-8")
+            if text.strip():
+                return json.loads(text)
     except Exception:
-        return None
+        pass
+    return default
 
 
-def _pct_points(a: float, b: float) -> float:
-    return abs(a - b) * 100.0
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
-def audit_candidate(candidate: dict[str, Any], *, implied_tolerance_pp: float = 2.0, adjusted_tolerance_pp: float = 2.0) -> dict[str, Any]:
-    reasons: list[str] = []
+def collect_candidates() -> list[dict[str, Any]]:
+    candidates: list[dict[str, Any]] = []
 
-    odds = _to_float(candidate.get("odds"))
-    implied = _to_float(candidate.get("implied_probability"))
-    market_prob = _to_float(candidate.get("market_probability"))
-    fair_odds = _to_float(candidate.get("fair_odds"))
-    adjusted = _to_float(candidate.get("adjusted_probability"))
-    final_prob = _to_float(candidate.get("final_probability"))
-    edge_pct = _to_float(candidate.get("edge_pct"))
-    ev_pct = _to_float(candidate.get("ev_pct"))
+    # Published picks exported by state/export layer.
+    for path in (
+        Path(".data/exports/latest-picks.json"),
+        Path(".data/exports/latest-bets.json"),
+    ):
+        payload = load_json(path, [])
+        if isinstance(payload, list):
+            candidates.extend(item for item in payload if isinstance(item, dict))
 
-    source_summary = candidate.get("source_summary") or {}
-    source_adjusted = _to_float(source_summary.get("adjusted_probability"))
-    selected_price = _to_float(source_summary.get("selected_price"))
+    # Full run archive contains before-quality and after-quality candidate pools.
+    debug = load_json(Path(".logs/debug-last-run.json"), {})
+    if isinstance(debug, dict):
+        for key in ("candidates", "candidates_before_quality", "publishable_candidates", "forecast_rows"):
+            rows = debug.get(key)
+            if isinstance(rows, list):
+                candidates.extend(item for item in rows if isinstance(item, dict))
 
-    if odds and implied:
-        expected_implied = 1.0 / odds
-        mismatch = _pct_points(expected_implied, implied)
-        if mismatch > implied_tolerance_pp:
-            reasons.append(f"implied_mismatch:{mismatch:.2f}pp")
-
-    if odds and selected_price and abs(odds - selected_price) > 1e-6:
-        reasons.append(f"selected_price_mismatch:{abs(odds - selected_price):.4f}")
-
-    if adjusted is not None and source_adjusted is not None:
-        mismatch = _pct_points(adjusted, source_adjusted)
-        if mismatch > adjusted_tolerance_pp:
-            reasons.append(f"adjusted_mismatch:{mismatch:.2f}pp")
-
-    if adjusted is not None and final_prob is not None:
-        mismatch = _pct_points(adjusted, final_prob)
-        if mismatch > adjusted_tolerance_pp:
-            reasons.append(f"final_probability_mismatch:{mismatch:.2f}pp")
-
-    if market_prob and fair_odds:
-        expected_fair = 1.0 / market_prob
-        if abs(expected_fair - fair_odds) > 0.05:
-            reasons.append(f"fair_odds_mismatch:{abs(expected_fair - fair_odds):.4f}")
-
-    if edge_pct is not None and ev_pct is not None and edge_pct < 0 and ev_pct > 0:
-        reasons.append("negative_edge_positive_ev_conflict")
-
-    return {
-        "match_key": candidate.get("match_key"),
-        "selection_key": candidate.get("selection_key"),
-        "family": candidate.get("family"),
-        "odds": odds,
-        "reasons": reasons,
-        "suspicious": bool(reasons),
-    }
+    # De-duplicate by stable identifiers when present.
+    seen: set[str] = set()
+    unique: list[dict[str, Any]] = []
+    for item in candidates:
+        key = "|".join(
+            str(item.get(name) or "")
+            for name in ("fingerprint", "match_key", "selection_key", "family", "point", "odds")
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(item)
+    return unique
 
 
 def main() -> int:
-    latest_picks = Path(".data/exports/latest-picks.json")
-    output = Path(".data/exports/latest-candidate-integrity.json")
+    implied_tolerance = float(os.getenv("PIPELINE_INTEGRITY_IMPLIED_TOLERANCE_PP", "2.0") or 2.0)
+    adjusted_tolerance = float(os.getenv("PIPELINE_INTEGRITY_ADJUSTED_TOLERANCE_PP", "2.0") or 2.0)
+    fair_ratio = float(os.getenv("PIPELINE_INTEGRITY_FAIR_ODDS_RATIO_MAX", "1.20") or 1.20)
+    reject_neg_ev = str(os.getenv("PIPELINE_INTEGRITY_REJECT_ON_NEGATIVE_EDGE_POSITIVE_EV", "true")).lower() in {
+        "1", "true", "yes", "on"
+    }
+
+    service = CandidateIntegrityService(
+        implied_tolerance_pp=implied_tolerance,
+        adjusted_tolerance_pp=adjusted_tolerance,
+        fair_odds_ratio_max=fair_ratio,
+        reject_negative_edge_positive_ev=reject_neg_ev,
+    )
+
+    candidates = collect_candidates()
     rows = []
-    if latest_picks.exists():
-        try:
-            payload = json.loads(latest_picks.read_text(encoding="utf-8"))
-            if isinstance(payload, list):
-                rows = [audit_candidate(item) for item in payload if isinstance(item, dict)]
-        except Exception as exc:
-            rows = [{"suspicious": True, "reasons": [f"read_error:{type(exc).__name__}:{exc}"]}]
-    report = {
+    suspicious = 0
+    for candidate in candidates:
+        result = service.validate(candidate)
+        if not result.ok:
+            suspicious += 1
+        rows.append(
+            {
+                "match_key": candidate.get("match_key"),
+                "home_team": candidate.get("home_team"),
+                "away_team": candidate.get("away_team"),
+                "league_name": candidate.get("league_name"),
+                "family": candidate.get("family"),
+                "selection": candidate.get("selection"),
+                "selection_key": candidate.get("selection_key"),
+                "point": candidate.get("point"),
+                "odds": candidate.get("odds"),
+                "quality_status": (candidate.get("source_summary") or {}).get("quality_status") if isinstance(candidate.get("source_summary"), dict) else None,
+                "ok": result.ok,
+                "reasons": result.reasons,
+                "integrity": result.as_dict(),
+            }
+        )
+
+    payload = {
         "count": len(rows),
-        "suspicious_candidates": sum(1 for item in rows if item.get("suspicious")),
+        "suspicious_candidates": suspicious,
+        "strict": str(os.getenv("PIPELINE_INTEGRITY_STRICT", "true")).lower() in {"1", "true", "yes", "on"},
         "rows": rows,
     }
-    output.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(json.dumps(report, ensure_ascii=False, indent=2))
+    write_json(Path(".data/exports/latest-candidate-integrity.json"), payload)
+    print(json.dumps(payload, ensure_ascii=False, indent=2))
     return 0
 
 
