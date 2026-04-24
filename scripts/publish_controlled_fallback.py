@@ -143,22 +143,55 @@ def prune_sent_index(index: dict[str, Any], hours: int) -> dict[str, Any]:
     return result
 
 
+def _is_real_published_row(row: dict[str, Any]) -> bool:
+    """Return True only for rows that represent a real published bet.
+
+    Earlier versions blocked candidates present in shadow_bets or generated rows.
+    That was too strict: shadow tracking is diagnostic, not an actual Telegram bet.
+    """
+    if bool(row.get("telegram_sent")):
+        return True
+    status = str(row.get("status") or "").strip().lower()
+    tracking_mode = str(row.get("tracking_mode") or row.get("source_summary", {}).get("tracking_mode") if isinstance(row.get("source_summary"), dict) else "").strip().lower()
+    if tracking_mode == "shadow" or status.startswith("shadow"):
+        return False
+    # pending with stake normally means it was really booked/sent by the main bot.
+    if status == "pending" and as_float(row.get("stake_amount"), 0.0) > 0:
+        return True
+    return False
+
+
 def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> str | None:
     key = dedupe_key(candidate)
     if key in sent_index:
         return "duplicate_fallback_sent_index"
+
     state = load_json(".data/state.json", {})
     if not isinstance(state, dict):
         return None
-    for collection in ("bets", "shadow_bets", "published_candidates"):
+
+    # Real bets/published candidates still block duplicates.
+    collections: list[tuple[str, bool]] = [
+        ("bets", env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_BETS", True)),
+        ("published_candidates", env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED", True)),
+        # Shadow candidates should not block by default: they were not Telegram picks.
+        ("shadow_bets", env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_SHADOW", False)),
+    ]
+
+    for collection, enabled in collections:
+        if not enabled:
+            continue
         rows = state.get(collection) or []
         if not isinstance(rows, list):
             continue
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            row_key = dedupe_key(row)
-            if row_key == key:
+            if dedupe_key(row) != key:
+                continue
+            if collection == "shadow_bets":
+                return f"duplicate_state:{collection}"
+            if _is_real_published_row(row):
                 return f"duplicate_state:{collection}"
     return None
 
@@ -243,7 +276,13 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     if metrics["odds"] > env_float(prefix + "MAX_ODDS", env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.05)):
         reasons.append(f"tier_{tier.lower()}_odds_above_max")
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
-    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
+    allowed_stops = env_set(
+        prefix + "ALLOWED_QUALITY_STOPS",
+        os.getenv(
+            "CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS",
+            "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard",
+        ),
+    )
     if q_reasons and q_reasons[0] not in allowed_stops:
         reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{q_reasons[0]}")
     if not q_reasons:
@@ -384,6 +423,13 @@ def main() -> int:
         "status": "not_started",
         "candidates_seen": 0,
         "evaluated": [],
+        "dedupe_policy": {
+            "sent_index": True,
+            "state_bets": env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_BETS", True),
+            "state_published": env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED", True),
+            "state_shadow": env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_SHADOW", False),
+            "generated_rows_block": False,
+        },
     }
     if not report["enabled"]:
         report["status"] = "disabled"
@@ -459,26 +505,28 @@ def main() -> int:
         }
         save_sent_index(sent_index)
 
-    report.update({
-        "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
-        "published": bool(sent),
-        "dry_run": bool(dry_run),
-        "selected": {
-            "dedupe_key": key,
-            "match_key": chosen.get("match_key"),
-            "home_team": chosen.get("home_team"),
-            "away_team": chosen.get("away_team"),
-            "league_name": chosen.get("league_name"),
-            "family": chosen.get("family"),
-            "selection": chosen.get("selection"),
-            "point": chosen.get("point"),
-            "odds": chosen.get("odds"),
-            "tier": tier,
-            "metrics": metrics,
-        },
-        "telegram_result": send_result,
-        "message": message,
-    })
+    report.update(
+        {
+            "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
+            "published": bool(sent),
+            "dry_run": bool(dry_run),
+            "selected": {
+                "dedupe_key": key,
+                "match_key": chosen.get("match_key"),
+                "home_team": chosen.get("home_team"),
+                "away_team": chosen.get("away_team"),
+                "league_name": chosen.get("league_name"),
+                "family": chosen.get("family"),
+                "selection": chosen.get("selection"),
+                "point": chosen.get("point"),
+                "odds": chosen.get("odds"),
+                "tier": tier,
+                "metrics": metrics,
+            },
+            "telegram_result": send_result,
+            "message": message,
+        }
+    )
     write_json("artifacts/controlled-fallback-report.json", report)
     write_json(".data/exports/latest-controlled-fallback-report.json", report)
     return 0 if (sent or dry_run) else 1
