@@ -119,19 +119,16 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Apply Russian Telegram wording patch
+      - name: Prepare local state folders
         shell: bash
         run: |
-          if [ -f scripts/apply_telegram_ru_patch.py ]; then
-            python scripts/apply_telegram_ru_patch.py
-          fi
-
-      - name: Apply rescue pre-filter candidate pool patch
-        shell: bash
-        run: python scripts/apply_rescue_prefilter_pool_patch.py
-
-      - name: Prepare local state folders
-        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
+          mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
+          # Important: never let the external reserve publisher read stale candidate files from a previous commit/run.
+          rm -f artifacts/controlled-fallback-report.json
+          rm -f artifacts/run-bot/latest-rescue-candidates.json
+          rm -f .data/exports/latest-rescue-candidates.json
+          rm -f .data/exports/latest-controlled-fallback-report.json
+          rm -f .data/exports/latest-controlled-fallback-pick.json
 
       - name: Apply selected runtime profile
         shell: bash
@@ -180,6 +177,11 @@ jobs:
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=true" >> "$GITHUB_ENV"
 
+      - name: Apply rescue prefilter runtime patch
+        shell: bash
+        run: |
+          python scripts/apply_rescue_prefilter_patch.py || true
+
       - name: Ensure calibration profile exists
         shell: bash
         run: |
@@ -215,7 +217,7 @@ jobs:
       - name: Build run-bot bundle
         if: always()
         shell: bash
-        run: bash scripts/build_run_bot_bundle.sh
+        run: bash scripts/build_run_bot_bundle.sh || true
 
       - name: Upload run-bot current artifact
         if: always()
