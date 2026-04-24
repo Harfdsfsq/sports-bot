@@ -766,6 +766,132 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     return reasons
 
 
+
+def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> list[str]:
+    """Final Telegram publication guard.
+
+    Earlier tier checks decide whether a candidate is mathematically interesting.
+    This guard decides whether it is good enough to be sent as a public Telegram forecast.
+    """
+    reasons: list[str] = []
+    fam = family_norm(candidate)
+    tier_name = tier.replace("уровень ", "").strip().upper()
+
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):
+        if int(metrics.get("books_count") or 0) < 2:
+            reasons.append("telegram_publish_books_guard")
+
+    if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", True):
+        if int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy":
+            reasons.append("proxy_single_book_guard")
+
+    if tier_name == "C" and not env_bool("CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED", False):
+        reasons.append("tier_c_watch_only")
+
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", True):
+        if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
+            reasons.append("proxy_without_market_confirmation")
+
+    if fam in {"totals", "teamtotals"} and env_bool("CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM", True):
+        xg = metrics.get("xg_sanity") or {}
+        if not bool(xg.get("enabled")):
+            reasons.append("missing_total_xg_sanity")
+        elif not bool(xg.get("xg_direction_ok", True)):
+            reasons.append("xg_direction_conflict")
+
+    if fam == "btts" and env_bool("CONTROLLED_FALLBACK_REQUIRE_BTTS_SANITY_FOR_TELEGRAM", True):
+        btts = metrics.get("btts_sanity") or {}
+        if not bool(btts.get("enabled")):
+            reasons.append("missing_btts_sanity")
+        elif not bool(btts.get("btts_direction_ok", True)):
+            reasons.append("btts_direction_conflict")
+
+    if fam == "dnb" and env_bool("CONTROLLED_FALLBACK_REQUIRE_DNB_SANITY_FOR_TELEGRAM", True):
+        dnb = metrics.get("dnb_sanity") or {}
+        if not bool(dnb.get("enabled")):
+            reasons.append("missing_dnb_sanity")
+        elif not bool(dnb.get("dnb_direction_ok", True)):
+            reasons.append("dnb_direction_conflict")
+
+    min_edge = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", 1.8)
+    min_ev = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", 4.0)
+    if float(metrics.get("canonical_edge_pp") or 0.0) < min_edge:
+        reasons.append("final_edge_below_min")
+    if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
+        reasons.append("final_ev_below_min")
+
+    return reasons
+
+
+def watch_candidate_rank(row: dict[str, Any]) -> tuple[float, float, float, float]:
+    metrics = row.get("metrics") or {}
+    return (
+        float(metrics.get("canonical_ev_pct") or 0.0),
+        float(metrics.get("canonical_edge_pp") or 0.0),
+        float(metrics.get("quality_score") or 0.0),
+        float(metrics.get("confidence") or 0.0),
+    )
+
+
+def build_watchlist(evaluated: list[dict[str, Any]], limit: int | None = None) -> list[dict[str, Any]]:
+    """Positive-value candidates that were intentionally not published.
+
+    This gives visibility without sending weak single-book/proxy picks as real forecasts.
+    """
+    max_items = limit if limit is not None else env_int("CONTROLLED_FALLBACK_WATCHLIST_MAX_ITEMS", 5)
+    interesting_reasons = {
+        "telegram_publish_books_guard",
+        "proxy_single_book_guard",
+        "proxy_without_market_confirmation",
+        "tier_c_watch_only",
+        "final_edge_below_min",
+        "final_ev_below_min",
+    }
+    rows: list[dict[str, Any]] = []
+    for row in evaluated:
+        metrics = row.get("metrics") or {}
+        if float(metrics.get("canonical_ev_pct") or 0.0) <= 0:
+            continue
+        if float(metrics.get("canonical_edge_pp") or 0.0) <= 0:
+            continue
+        reject_reasons = set(str(item) for item in row.get("reject_reasons") or [])
+        if not (reject_reasons & interesting_reasons):
+            continue
+        rows.append(row)
+
+    rows.sort(key=watch_candidate_rank, reverse=True)
+    watchlist: list[dict[str, Any]] = []
+    for row in rows[:max_items]:
+        metrics = row.get("metrics") or {}
+        watchlist.append({
+            "match_key": row.get("match_key"),
+            "home_team": row.get("home_team"),
+            "away_team": row.get("away_team"),
+            "home_team_ru": row.get("home_team_ru"),
+            "away_team_ru": row.get("away_team_ru"),
+            "league_name": row.get("league_name"),
+            "league_name_ru": row.get("league_name_ru"),
+            "family": row.get("family"),
+            "selection": row.get("selection"),
+            "point": row.get("point"),
+            "commence_time": row.get("commence_time"),
+            "commence_time_display": row.get("commence_time_display"),
+            "reject_reasons": row.get("reject_reasons") or [],
+            "reject_reasons_ru": row.get("reject_reasons_ru") or [],
+            "metrics": {
+                "odds": metrics.get("odds"),
+                "canonical_edge_pp": metrics.get("canonical_edge_pp"),
+                "canonical_ev_pct": metrics.get("canonical_ev_pct"),
+                "confidence": metrics.get("confidence"),
+                "quality_score": metrics.get("quality_score"),
+                "quality_score_source": metrics.get("quality_score_source"),
+                "books_count": metrics.get("books_count"),
+                "sources_count": metrics.get("sources_count"),
+            },
+        })
+    return watchlist
+
+
 def evaluate_candidate(candidate: dict[str, Any], sent_index: dict[str, Any]) -> tuple[bool, list[str], dict[str, Any], str | None]:
     metrics = candidate_metrics(candidate)
     hard = hard_reject_reasons(candidate, metrics, sent_index)
@@ -775,7 +901,11 @@ def evaluate_candidate(candidate: dict[str, Any], sent_index: dict[str, Any]) ->
     for tier in ("A", "B", "C"):
         reasons = tier_reasons(tier, candidate, metrics)
         if not reasons:
-            return True, [], metrics, f"уровень {tier}"
+            tier_name = f"уровень {tier}"
+            final_reasons = final_publish_guard_reasons(candidate, metrics, tier_name)
+            if final_reasons:
+                return False, final_reasons, metrics, tier_name
+            return True, [], metrics, tier_name
         all_tier_reasons.extend(reasons)
     return False, all_tier_reasons, metrics, None
 
@@ -1073,6 +1203,24 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
         lines.append("Пул кандидатов:")
         for key, count in sorted(pool_counts.items()):
             lines.append(f"• {key}: {count}")
+    watchlist = report.get("watchlist") or []
+    if watchlist:
+        lines.append("")
+        lines.append("Наблюдения без публикации:")
+        for item in watchlist[:3]:
+            metrics = item.get("metrics") or {}
+            home = item.get("home_team_ru") or translate_team_name(item.get("home_team") or "")
+            away = item.get("away_team_ru") or translate_team_name(item.get("away_team") or "")
+            family = str(item.get("family") or "")
+            selection = translate_selection_text(item.get("selection") or "", item.get("home_team") or "", item.get("away_team") or "")
+            point = item.get("point")
+            point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
+            reasons = ", ".join(translate_reject_reason(reason) for reason in (item.get("reject_reasons") or [])[:3])
+            lines.append(
+                f"• {home} — {away}: {market_title(family)} {selection}{point_text}, "
+                f"EV {float(metrics.get('canonical_ev_pct') or 0.0):+.1f}%, "
+                f"линий {int(metrics.get('books_count') or 0)} — не публикую: {reasons}"
+            )
     if counter:
         lines.append("Причины отказа:")
         for reason, count in counter.most_common(10):
@@ -1146,6 +1294,7 @@ def main() -> int:
 
     if not viable:
         report["status"] = "no_viable_controlled_fallback"
+        report["watchlist"] = build_watchlist(report.get("evaluated") or [])
         write_json("artifacts/controlled-fallback-report.json", report)
         write_json(".data/exports/latest-controlled-fallback-report.json", report)
         if env_bool("CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT", True) and not env_bool("PUBLISH_DRY_RUN", False):

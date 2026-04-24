@@ -8,6 +8,23 @@ from typing import Any
 # Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
+    "Skive IK": "Скиве",
+    "BK Fremad Amager": "Фремад Амагер",
+    "Fremad Amager": "Фремад Амагер",
+    "SV Wals-Grunau": "Вальс-Грюнау",
+    "SV Wals-Grünau": "Вальс-Грюнау",
+    "SC Imst 1933": "Имст 1933",
+    "SC Imst": "Имст",
+    "FC Helsingor": "Хельсингёр",
+    "FC Helsingør": "Хельсингёр",
+    "Hobro IK": "Хобро",
+    "Kolding IF": "Колдинг",
+    "Hillerod Fodbold": "Хиллерёд",
+    "Hillerød Fodbold": "Хиллерёд",
+    "AC Horsens": "Хорсенс",
+    "Esbjerg fB": "Эсбьерг",
+    "HB Koge": "Кёге",
+    "HB Køge": "Кёге",
     "Al-Nasr Dubai CSC": "Аль-Наср Дубай",
     "Al Nasr Dubai CSC": "Аль-Наср Дубай",
     "Al-Nasr Dubai": "Аль-Наср Дубай",
@@ -151,6 +168,10 @@ TEAM_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "Denmark - 2nd Division": "Дания - Второй дивизион",
+    "Denmark - 1st Division": "Дания - Первый дивизион",
+    "Denmark - Superliga": "Дания - Суперлига",
+    "Denmark - Danish Cup": "Дания - Кубок Дании",
     "United Arab Emirates - Arabian Gulf League": "ОАЭ - Арабская лига Залива",
     "United Arab Emirates - UAE Pro League": "ОАЭ - Про-лига",
     "United Arab Emirates - UAE League": "ОАЭ - Про-лига",
@@ -256,6 +277,8 @@ COUNTRY_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_WORDS: dict[str, str] = {
+    "2nd Division": "Второй дивизион",
+    "1st Division": "Первый дивизион",
     "Arabian Gulf League": "Арабская лига Залива",
     "Premier League": "Премьер-лига",
     "Professional League": "Профессиональная лига",
@@ -292,6 +315,21 @@ LEAGUE_WORDS: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
+    "skive": "Скиве",
+    "fremad": "Фремад",
+    "amager": "Амагер",
+    "denmark": "Дания",
+    "danish": "Датский",
+    "helsingor": "Хельсингёр",
+    "helsingør": "Хельсингёр",
+    "hobro": "Хобро",
+    "kolding": "Колдинг",
+    "hillerod": "Хиллерёд",
+    "hillerød": "Хиллерёд",
+    "horsens": "Хорсенс",
+    "esbjerg": "Эсбьерг",
+    "koge": "Кёге",
+    "køge": "Кёге",
     "csc": "",
     "nasr": "Наср",
     "jazira": "Джазира",
@@ -615,6 +653,15 @@ def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any
 
 
 _REASON_TRANSLATIONS = {
+    "final_ev_below_min": "финальный EV ниже минимума",
+    "final_edge_below_min": "финальный запас ниже минимума",
+    "missing_dnb_sanity": "нет xG-проверки DNB",
+    "missing_btts_sanity": "нет xG-проверки ОЗ",
+    "missing_total_xg_sanity": "нет xG-проверки тотала",
+    "tier_c_watch_only": "уровень C оставлен только для наблюдения",
+    "proxy_without_market_confirmation": "резервная оценка без рыночного подтверждения",
+    "proxy_single_book_guard": "одна линия + резервная оценка качества",
+    "telegram_publish_books_guard": "недостаточно подтверждения букмекерами",
     "canonical_negative_value": "отрицательная контрольная ценность",
     "match_time_outside_window": "матч вне текущего окна публикации",
     "match_already_started": "матч уже начался",
