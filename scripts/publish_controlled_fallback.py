@@ -468,6 +468,16 @@ def dnb_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -
     gap_pp = (float(adjusted_probability) - xg_prob) * 100.0
     abs_gap_pp = abs(gap_pp)
 
+    odds = as_float(candidate.get("odds"), 0.0)
+    selected_implied = 1.0 / odds if odds > 1.0 else 0.0
+    dnb_xg_no_push_edge_pp = (xg_prob - selected_implied) * 100.0 if odds > 1.0 else -999.0
+    dnb_xg_ev_no_push_pct = ((xg_prob * odds) - 1.0) * 100.0 if odds > 1.0 else -999.0
+    dnb_xg_ev_unconditional_pct = (
+        (float(payload.get("p_win") or 0.0) * (odds - 1.0) - float(payload.get("p_loss") or 0.0)) * 100.0
+        if odds > 1.0
+        else -999.0
+    )
+
     # For DNB, if xG no-push probability is much higher than model adjusted probability,
     # it is not a conflict; the model is just conservative. Conflict only when model is
     # materially more optimistic than xG.
@@ -479,6 +489,10 @@ def dnb_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -
         "dnb_model_gap_pp": round(gap_pp, 3),
         "dnb_abs_gap_pp": round(abs_gap_pp, 3),
         "dnb_model_optimism_gap_pp": round(optimism_gap_pp, 3),
+        "dnb_selected_implied_probability": round(selected_implied, 6),
+        "dnb_xg_no_push_edge_pp": round(dnb_xg_no_push_edge_pp, 3),
+        "dnb_xg_ev_no_push_pct": round(dnb_xg_ev_no_push_pct, 3),
+        "dnb_xg_ev_unconditional_pct": round(dnb_xg_ev_unconditional_pct, 3),
         "dnb_direction_ok": direction_ok,
     })
     return payload
@@ -792,6 +806,18 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
         if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
             reasons.append("proxy_without_market_confirmation")
 
+    # If all prices come from one provider, proxy signals need stronger numeric confirmation.
+    # This avoids "looks good but only one data pipeline" publications while still allowing
+    # strong 2-book signals when there is clear EV, edge and confidence.
+    if env_bool("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", True):
+        if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("sources_count") or 0) < 2:
+            if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0):
+                reasons.append("proxy_single_source_edge_below_min")
+            if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0):
+                reasons.append("proxy_single_source_ev_below_min")
+            if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0):
+                reasons.append("proxy_single_source_confidence_below_min")
+
     if fam in {"totals", "teamtotals"} and env_bool("CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM", True):
         xg = metrics.get("xg_sanity") or {}
         if not bool(xg.get("enabled")):
@@ -812,6 +838,13 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             reasons.append("missing_dnb_sanity")
         elif not bool(dnb.get("dnb_direction_ok", True)):
             reasons.append("dnb_direction_conflict")
+        else:
+            min_xg_edge = env_float("CONTROLLED_FALLBACK_DNB_MIN_XG_EDGE_PP", 3.0)
+            min_xg_ev = env_float("CONTROLLED_FALLBACK_DNB_MIN_XG_EV_UNCONDITIONAL_PCT", 4.0)
+            if float(dnb.get("dnb_xg_no_push_edge_pp") or 0.0) < min_xg_edge:
+                reasons.append("dnb_xg_edge_below_min")
+            if float(dnb.get("dnb_xg_ev_unconditional_pct") or 0.0) < min_xg_ev:
+                reasons.append("dnb_xg_ev_below_min")
 
     min_edge = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", 1.8)
     min_ev = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", 4.0)
@@ -1150,6 +1183,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
     if bool(dnb.get("enabled")):
         xg_line += (
             f"\n🔎 DNB-проверка: без ничьей {float(dnb.get('dnb_no_push_probability_pct') or 0.0):.1f}% "
+            f"| xG EV {float(dnb.get('dnb_xg_ev_unconditional_pct') or 0.0):+.1f}% "
             f"| разрыв {float(dnb.get('dnb_model_gap_pp') or 0.0):+.1f} п.п."
         )
 

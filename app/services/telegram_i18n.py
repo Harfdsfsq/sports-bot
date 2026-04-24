@@ -8,6 +8,25 @@ from typing import Any
 # Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
+    "Alemannia Aachen": "Алеманния Ахен",
+    "MSV Duisburg": "Дуйсбург",
+    "Duisburg": "Дуйсбург",
+    "Dynamo Dresden": "Динамо Дрезден",
+    "Arminia Bielefeld": "Арминия Билефельд",
+    "Rot-Weiss Essen": "Рот-Вайсс Эссен",
+    "Rot Weiss Essen": "Рот-Вайсс Эссен",
+    "Erzgebirge Aue": "Эрцгебирге Ауэ",
+    "Saarbrucken": "Саарбрюккен",
+    "Saarbrücken": "Саарбрюккен",
+    "Ingolstadt": "Ингольштадт",
+    "FC Ingolstadt": "Ингольштадт",
+    "Viktoria Koln": "Виктория Кёльн",
+    "Viktoria Köln": "Виктория Кёльн",
+    "Wehen Wiesbaden": "Веен Висбаден",
+    "Hansa Rostock": "Ганза Росток",
+    "Sandhausen": "Зандхаузен",
+    "Unterhaching": "Унтерхахинг",
+    "Verl": "Верль",
     "Skive IK": "Скиве",
     "BK Fremad Amager": "Фремад Амагер",
     "Fremad Amager": "Фремад Амагер",
@@ -168,6 +187,9 @@ TEAM_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "Germany - 3. Liga": "Германия - Третья лига",
+    "Germany - 2. Bundesliga": "Германия - Вторая Бундеслига",
+    "Germany - Regionalliga": "Германия - Региональная лига",
     "Denmark - 2nd Division": "Дания - Второй дивизион",
     "Denmark - 1st Division": "Дания - Первый дивизион",
     "Denmark - Superliga": "Дания - Суперлига",
@@ -277,6 +299,7 @@ COUNTRY_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_WORDS: dict[str, str] = {
+    "3. Liga": "Третья лига",
     "2nd Division": "Второй дивизион",
     "1st Division": "Первый дивизион",
     "Arabian Gulf League": "Арабская лига Залива",
@@ -315,6 +338,23 @@ LEAGUE_WORDS: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
+    "alemannia": "Алеманния",
+    "aachen": "Ахен",
+    "duisburg": "Дуйсбург",
+    "dresden": "Дрезден",
+    "bielefeld": "Билефельд",
+    "essen": "Эссен",
+    "aue": "Ауэ",
+    "saarbrucken": "Саарбрюккен",
+    "saarbrücken": "Саарбрюккен",
+    "ingolstadt": "Ингольштадт",
+    "koln": "Кёльн",
+    "köln": "Кёльн",
+    "wiesbaden": "Висбаден",
+    "rostock": "Росток",
+    "sandhausen": "Зандхаузен",
+    "unterhaching": "Унтерхахинг",
+    "verl": "Верль",
     "skive": "Скиве",
     "fremad": "Фремад",
     "amager": "Амагер",
@@ -653,6 +693,11 @@ def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any
 
 
 _REASON_TRANSLATIONS = {
+    "dnb_xg_ev_below_min": "DNB: xG EV ниже минимума",
+    "dnb_xg_edge_below_min": "DNB: xG-запас ниже минимума",
+    "proxy_single_source_confidence_below_min": "один источник: уверенность ниже усиленного минимума",
+    "proxy_single_source_ev_below_min": "один источник: EV ниже усиленного минимума",
+    "proxy_single_source_edge_below_min": "один источник: запас ниже усиленного минимума",
     "final_ev_below_min": "финальный EV ниже минимума",
     "final_edge_below_min": "финальный запас ниже минимума",
     "missing_dnb_sanity": "нет xG-проверки DNB",
