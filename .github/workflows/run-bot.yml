@@ -23,7 +23,7 @@ on:
         default: false
         type: boolean
       late_manual_mode:
-        description: Allow late manual runs with a smaller kickoff lead window
+        description: Allow very late manual runs with a smaller kickoff lead window
         required: false
         default: true
         type: boolean
@@ -33,7 +33,7 @@ on:
         default: '24'
         type: string
       max_picks_per_run:
-        description: Maximum normal picks to publish in this manual run
+        description: Maximum picks to publish in this manual run
         required: false
         default: '1'
         type: string
@@ -120,7 +120,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Prepare local state folders
-        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts
+        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts artifacts/run-bot
 
       - name: Apply selected runtime profile
         shell: bash
@@ -130,10 +130,19 @@ jobs:
           set -euo pipefail
           echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
           case "$SELECTED_PROFILE" in
-            balanced) PROFILE_FILE="config/balanced_output.env" ;;
-            conservative) PROFILE_FILE="config/conservative_passability.env" ;;
-            default) PROFILE_FILE="" ;;
-            *) echo "Unknown profile: $SELECTED_PROFILE" >&2; exit 1 ;;
+            balanced)
+              PROFILE_FILE="config/balanced_output.env"
+              ;;
+            conservative)
+              PROFILE_FILE="config/conservative_passability.env"
+              ;;
+            default)
+              PROFILE_FILE=""
+              ;;
+            *)
+              echo "Unknown profile: $SELECTED_PROFILE" >&2
+              exit 1
+              ;;
           esac
           if [ -n "$PROFILE_FILE" ] && [ -f "$PROFILE_FILE" ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
@@ -169,10 +178,13 @@ jobs:
       - name: Run bot once
         run: python -m app.cli run-once
 
-      - name: Publish controlled fallback if normal quality returns zero
+      - name: Publish tiered controlled fallback if normal quality returns zero
         if: always()
         shell: bash
-        run: python scripts/publish_controlled_fallback.py || true
+        run: |
+          python scripts/publish_controlled_fallback.py || true
+          echo "---- controlled fallback report ----"
+          cat artifacts/controlled-fallback-report.json || true
 
       - name: Generate audit payloads
         if: always()
@@ -186,7 +198,7 @@ jobs:
       - name: Build run-bot bundle
         if: always()
         shell: bash
-        run: bash scripts/build_run_bot_bundle.sh || true
+        run: bash scripts/build_run_bot_bundle.sh
 
       - name: Upload run-bot current artifact
         if: always()
@@ -199,11 +211,8 @@ jobs:
             artifacts/controlled-fallback-report.json
             .logs/debug-last-run.json
             .logs/runs
-            .data/exports
-            .data/provider_cache/daily-coverage
-            .data/provider_cache/day-shortlist
-            .data/*.csv
-            .data/*.json
+            .data/exports/latest-*.json
+            .data/exports/latest-*.csv
           if-no-files-found: ignore
           retention-days: 7
 
