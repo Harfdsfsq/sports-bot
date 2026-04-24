@@ -23,7 +23,7 @@ on:
         default: false
         type: boolean
       late_manual_mode:
-        description: Allow very late manual runs with a smaller kickoff lead window
+        description: Allow late manual runs with a smaller kickoff lead window
         required: false
         default: true
         type: boolean
@@ -33,7 +33,7 @@ on:
         default: '24'
         type: string
       max_picks_per_run:
-        description: Maximum picks to publish in this manual run
+        description: Maximum normal picks to publish in this manual run
         required: false
         default: '1'
         type: string
@@ -95,46 +95,6 @@ env:
   MIN_BOOKS_PUBLISH: '2'
   MIN_SOURCES_PUBLISH: '1'
 
-  ENABLE_CONTEXT_STAGING: 'true'
-  CONTEXT_ENRICHMENT_REQUIRES_OFFERS: 'false'
-  CONTEXT_ENRICHMENT_MATCH_LIMIT: '220'
-  PREMIUM_CONTEXT_SHORTLIST_LIMIT: '24'
-  PREMIUM_NEWS_SHORTLIST_LIMIT: '4'
-
-  ODDSPAPI_ENABLED: 'true'
-  ODDSPAPI_BOOKMAKERS: 'bet365,unibet,pinnacle,betfair,bwin'
-  ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES: '240'
-  ODDSPAPI_MATCH_LIMIT: '8'
-  ODDSPAPI_TOURNAMENT_LIMIT: '4'
-
-  ALLSPORTSAPI_ENABLED: 'true'
-  ALLSPORTSAPI_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
-  ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES: '180'
-  ALLSPORTSAPI_MATCH_LIMIT: '16'
-
-  API_FOOTBALL_ENABLED: 'true'
-  API_FOOTBALL_CONTEXT_MATCH_LIMIT: '18'
-  API_FOOTBALL_PREDICTIONS_LIMIT: '10'
-
-  ENABLE_BZZOIRO_CONTEXT: 'true'
-  BZZOIRO_CONTEXT_MATCH_LIMIT: '220'
-  ENABLE_ESPN_CONTEXT: 'true'
-  ESPN_CONTEXT_MATCH_LIMIT: '160'
-  ENABLE_THESPORTSDB_CONTEXT: 'true'
-  THESPORTSDB_CONTEXT_MATCH_LIMIT: '220'
-  ENABLE_FOOTBALL_DATA_CONTEXT: 'true'
-  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: '220'
-  ENABLE_OPENLIGADB_CONTEXT: 'true'
-  OPENLIGADB_CONTEXT_MATCH_LIMIT: '140'
-  ENABLE_OPENFOOTBALL_CONTEXT: 'true'
-  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: '240'
-  FUTRIXMETRICS_ENABLED: 'true'
-  FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: '8'
-  ENABLE_NEWSAPI_CONTEXT: 'true'
-  NEWSAPI_CONTEXT_MATCH_LIMIT: '4'
-  ENABLE_GNEWS_CONTEXT: 'true'
-  GNEWS_CONTEXT_MATCH_LIMIT: '4'
-
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
   PUBLISH_WINDOW_HOURS: '24'
   MIN_KICKOFF_LEAD_MINUTES: '20'
@@ -170,19 +130,10 @@ jobs:
           set -euo pipefail
           echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
           case "$SELECTED_PROFILE" in
-            balanced)
-              PROFILE_FILE="config/balanced_output.env"
-              ;;
-            conservative)
-              PROFILE_FILE="config/conservative_passability.env"
-              ;;
-            default)
-              PROFILE_FILE=""
-              ;;
-            *)
-              echo "Unknown profile: $SELECTED_PROFILE" >&2
-              exit 1
-              ;;
+            balanced) PROFILE_FILE="config/balanced_output.env" ;;
+            conservative) PROFILE_FILE="config/conservative_passability.env" ;;
+            default) PROFILE_FILE="" ;;
+            *) echo "Unknown profile: $SELECTED_PROFILE" >&2; exit 1 ;;
           esac
           if [ -n "$PROFILE_FILE" ] && [ -f "$PROFILE_FILE" ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
@@ -218,19 +169,26 @@ jobs:
       - name: Run bot once
         run: python -m app.cli run-once
 
+      - name: Publish controlled fallback if normal quality returns zero
+        if: always()
+        shell: bash
+        run: python scripts/publish_controlled_fallback.py || true
+
       - name: Generate audit payloads
         if: always()
         shell: bash
         run: |
-          python scripts/audit_candidate_integrity.py || true
-          python scripts/summarize_run_bot.py || true
           python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
           python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json || true
           python -m app.cli training-dataset > .data/exports/latest-training-dataset.json || true
           python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
-          python scripts/build_run_bot_bundle.py || true
 
-      - name: Upload debug artifacts
+      - name: Build run-bot bundle
+        if: always()
+        shell: bash
+        run: bash scripts/build_run_bot_bundle.sh || true
+
+      - name: Upload run-bot current artifact
         if: always()
         uses: actions/upload-artifact@v5
         with:
@@ -238,6 +196,7 @@ jobs:
           path: |
             artifacts/run-bot-bundle.zip
             artifacts/run-bot
+            artifacts/controlled-fallback-report.json
             .logs/debug-last-run.json
             .logs/runs
             .data/exports
@@ -246,7 +205,7 @@ jobs:
             .data/*.csv
             .data/*.json
           if-no-files-found: ignore
-          retention-days: 14
+          retention-days: 7
 
       - name: Commit updated bot state
         if: always()
@@ -254,7 +213,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A -f .data .logs
+          git add -A -f .data .logs artifacts
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
