@@ -8,6 +8,26 @@ from typing import Any
 # Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
+    "Talaea El Gaish": "Талаеа Эль-Гаиш",
+    "Tala'ea El Gaish": "Талаеа Эль-Гаиш",
+    "El Gaish": "Эль-Гаиш",
+    "Kahrabaa Ismailia": "Кахраба Исмаилия",
+    "Kahraba Ismailia": "Кахраба Исмаилия",
+    "Ismaily SC": "Исмаили",
+    "Ismaily": "Исмаили",
+    "Al Masry": "Аль-Масри",
+    "Al-Masry": "Аль-Масри",
+    "ENPPI": "ЭНППИ",
+    "Enppi": "ЭНППИ",
+    "Pyramids FC": "Пирамидс",
+    "Zamalek SC": "Замалек",
+    "Zamalek": "Замалек",
+    "Al Ahly": "Аль-Ахли",
+    "Al-Ahly": "Аль-Ахли",
+    "Ceramica Cleopatra": "Керамика Клеопатра",
+    "Future FC": "Фьючер",
+    "Modern Sport FC": "Модерн Спорт",
+    "National Bank of Egypt": "Нэшнл Банк оф Иджипт",
     "Alemannia Aachen": "Алеманния Ахен",
     "MSV Duisburg": "Дуйсбург",
     "Duisburg": "Дуйсбург",
@@ -338,6 +358,20 @@ LEAGUE_WORDS: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
+    "talaea": "Талаеа",
+    "tala'ea": "Талаеа",
+    "gaish": "Гаиш",
+    "kahrabaa": "Кахраба",
+    "kahraba": "Кахраба",
+    "ismailia": "Исмаилия",
+    "ismaily": "Исмаили",
+    "masry": "Масри",
+    "pyramids": "Пирамидс",
+    "zamalek": "Замалек",
+    "ceramica": "Керамика",
+    "cleopatra": "Клеопатра",
+    "future": "Фьючер",
+    "modern": "Модерн",
     "alemannia": "Алеманния",
     "aachen": "Ахен",
     "duisburg": "Дуйсбург",
@@ -693,6 +727,10 @@ def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any
 
 
 _REASON_TRANSLATIONS = {
+    "dnb_xg_probability_outlier": "DNB: xG-вероятность выглядит аномально высокой",
+    "dnb_xg_edge_outlier": "DNB: xG-запас выглядит аномально высоким",
+    "dnb_xg_ev_outlier": "DNB: xG EV выглядит аномально высоким",
+    "dnb_xg_model_gap_outlier": "DNB: слишком большой разрыв xG и модели",
     "dnb_xg_ev_below_min": "DNB: xG EV ниже минимума",
     "dnb_xg_edge_below_min": "DNB: xG-запас ниже минимума",
     "proxy_single_source_confidence_below_min": "один источник: уверенность ниже усиленного минимума",

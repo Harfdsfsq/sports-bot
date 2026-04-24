@@ -846,6 +846,25 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             if float(dnb.get("dnb_xg_ev_unconditional_pct") or 0.0) < min_xg_ev:
                 reasons.append("dnb_xg_ev_below_min")
 
+            # Extreme xG-vs-market/model divergence is usually not a "free money" signal.
+            # With proxy quality and one source it is more likely an xG/match mapping/outlier problem.
+            if env_bool("CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED", True):
+                quality_source = str(metrics.get("quality_score_source") or "")
+                single_source = int(metrics.get("sources_count") or 0) < 2
+                if quality_source == "proxy" and single_source:
+                    abs_gap = abs(float(dnb.get("dnb_model_gap_pp") or 0.0))
+                    xg_ev = float(dnb.get("dnb_xg_ev_unconditional_pct") or 0.0)
+                    xg_edge = float(dnb.get("dnb_xg_no_push_edge_pp") or 0.0)
+                    no_push = float(dnb.get("dnb_no_push_probability_pct") or 0.0)
+                    if abs_gap > env_float("CONTROLLED_FALLBACK_DNB_MAX_ABS_MODEL_XG_GAP_PP", 30.0):
+                        reasons.append("dnb_xg_model_gap_outlier")
+                    if xg_ev > env_float("CONTROLLED_FALLBACK_DNB_MAX_XG_EV_UNCONDITIONAL_PCT", 75.0):
+                        reasons.append("dnb_xg_ev_outlier")
+                    if xg_edge > env_float("CONTROLLED_FALLBACK_DNB_MAX_XG_EDGE_PP", 35.0):
+                        reasons.append("dnb_xg_edge_outlier")
+                    if no_push > env_float("CONTROLLED_FALLBACK_DNB_MAX_NO_PUSH_PROBABILITY_PCT", 82.0):
+                        reasons.append("dnb_xg_probability_outlier")
+
     min_edge = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", 1.8)
     min_ev = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", 4.0)
     if float(metrics.get("canonical_edge_pp") or 0.0) < min_edge:
