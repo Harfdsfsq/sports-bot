@@ -863,6 +863,75 @@ def send_telegram(text: str) -> tuple[bool, str]:
         return False, f"{type(exc).__name__}: {exc}"
 
 
+
+def clean_point_text(point: Any) -> str:
+    if point in (None, "", "null"):
+        return ""
+    try:
+        value = float(point)
+        if abs(value) < 1e-9:
+            return "0"
+        if value.is_integer():
+            return str(int(value))
+        return f"{value:g}"
+    except Exception:
+        return str(point)
+
+
+def candidate_side_code(candidate: dict[str, Any]) -> str | None:
+    raw_side = str(candidate.get("team_side") or candidate.get("side") or "").strip().lower()
+    if raw_side in {"home", "1", "team1", "home_team"}:
+        return "1"
+    if raw_side in {"away", "2", "team2", "away_team"}:
+        return "2"
+
+    selection = str(candidate.get("selection") or candidate.get("selection_key") or "").strip().lower()
+    home = str(candidate.get("home_team") or "").strip().lower()
+    away = str(candidate.get("away_team") or "").strip().lower()
+    if home and home in selection:
+        return "1"
+    if away and away in selection:
+        return "2"
+
+    # Some feeds encode DNB side in selection_key.
+    selection_key = str(candidate.get("selection_key") or "").strip().lower()
+    if any(token in selection_key for token in {"home", "team1", ":1", "_1"}):
+        return "1"
+    if any(token in selection_key for token in {"away", "team2", ":2", "_2"}):
+        return "2"
+    return None
+
+
+def handicap_market_title(candidate: dict[str, Any]) -> str | None:
+    fam = family_norm(candidate)
+    if fam not in {"dnb", "spreads"}:
+        return None
+    side = candidate_side_code(candidate)
+    point = clean_point_text(candidate.get("point"))
+    if fam == "dnb" and not point:
+        point = "0"
+    if side and point != "":
+        return f"Фора {side}({point})"
+    if side:
+        return f"Фора {side}"
+    if fam == "dnb":
+        return "Фора 0"
+    return "Фора"
+
+
+def bet_line_text(candidate: dict[str, Any], selection: str) -> str:
+    fam = family_norm(candidate)
+    handicap_title = handicap_market_title(candidate)
+    if handicap_title:
+        # Keep the selected team after dash for readability, but market name becomes Фора 1/Фора 2.
+        return f"{handicap_title} — {selection}" if selection else handicap_title
+
+    point = candidate.get("point")
+    point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
+    return f"{market_title(fam)} — {selection}{point_text}"
+
+
+
 def market_title(family: str) -> str:
     return {
         "totals": "Тотал",
@@ -935,7 +1004,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"💼 Банк: {bank:.2f} | Открытый риск: {open_exposure:.2f} | Доступно: {available:.2f}\n\n"
         f"⚠️ Режим: {risk_note}\n\n"
         f"1. {home} — {away}\n"
-        f"🎯 Ставка: {market_title(family_norm(candidate))} — {selection}{point_text}\n"
+        f"🎯 Ставка: {bet_line_text(candidate, selection)}\n"
         f"💸 Коэффициент: {metrics['odds']:.2f}\n"
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
