@@ -119,6 +119,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Apply Russian Telegram wording patch
+        shell: bash
+        run: python scripts/apply_telegram_ru_patch.py
+
       - name: Prepare local state folders
         run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
 
@@ -165,8 +169,6 @@ jobs:
       - name: Force external publisher mode
         shell: bash
         run: |
-          # The application still builds candidates and writes diagnostics.
-          # Telegram publication is handled only by scripts/publish_controlled_fallback.py.
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=true" >> "$GITHUB_ENV"
