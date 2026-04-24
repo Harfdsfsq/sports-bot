@@ -90,6 +90,52 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def effective_min_kickoff_lead_minutes() -> int:
+    base_lead = max(0, env_int("MIN_KICKOFF_LEAD_MINUTES", 20))
+    if not env_bool("CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD", True):
+        return base_lead
+    if not env_bool("MANUAL_LATE_MODE_ENABLED", False):
+        return base_lead
+    adaptive = env_int("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES", 0)
+    late = env_int("MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES", 0)
+    candidates = [base_lead]
+    if adaptive > 0:
+        candidates.append(adaptive)
+    if late > 0:
+        candidates.append(late)
+    return max(0, min(candidates))
+
+
+def quality_proxy_score(candidate: dict[str, Any], metrics: dict[str, Any], raw_quality: float) -> tuple[float, str]:
+    if raw_quality > 0:
+        return raw_quality, "raw"
+    if not env_bool("CONTROLLED_FALLBACK_USE_QUALITY_PROXY", True):
+        return raw_quality, "raw_missing"
+    source = str(candidate.get("_candidate_source") or "").strip().lower()
+    if source not in {"latest_rescue_candidates", "artifact_rescue_candidates", "debug_candidates_before_quality", "debug_candidates_after_quality"}:
+        return raw_quality, "raw_missing"
+
+    confidence = float(metrics.get("confidence") or 0.0)
+    publication = float(metrics.get("publication_score") or 0.0)
+    books = int(metrics.get("books_count") or 0)
+    sources = int(metrics.get("sources_count") or 0)
+    ev = max(0.0, float(metrics.get("canonical_ev_pct") or 0.0))
+    edge = max(0.0, float(metrics.get("canonical_edge_pp") or 0.0))
+
+    score = 38.0
+    score += min(18.0, max(0.0, confidence - 50.0) * 0.75)
+    score += min(12.0, max(0.0, publication) * 0.28)
+    score += 5.0 if books >= 2 else 1.5 if books == 1 else 0.0
+    score += 2.0 if sources >= 1 else 0.0
+    score += min(10.0, ev * 1.05)
+    score += min(7.0, edge * 1.35)
+
+    cap = env_float("CONTROLLED_FALLBACK_PROXY_MAX_QUALITY", 76.0)
+    score = max(0.0, min(cap, score))
+    return round(score, 3), "proxy"
+
+
+
 def parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
         return None
@@ -203,12 +249,23 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     books = as_int(candidate.get("books_count"), 0)
     sources = as_int(candidate.get("sources_count"), 0)
     q = quality_payload(candidate)
-    quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), 0.0))
+    raw_quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), 0.0))
     publication_score = as_float(candidate.get("publication_score"), 0.0)
     selected_implied = 1.0 / odds if odds > 1.0 else 0.0
     canonical_edge_pp = (adjusted - selected_implied) * 100.0 if odds > 1.0 else -999.0
     canonical_ev_pct = ((adjusted * odds) - 1.0) * 100.0 if odds > 1.0 else -999.0
     market_edge_pp = (adjusted - market_prob) * 100.0 if market_prob > 0 else 0.0
+
+    seed_metrics = {
+        "confidence": confidence,
+        "publication_score": publication_score,
+        "books_count": books,
+        "sources_count": sources,
+        "canonical_edge_pp": canonical_edge_pp,
+        "canonical_ev_pct": canonical_ev_pct,
+    }
+    quality_score, quality_score_source = quality_proxy_score(candidate, seed_metrics, raw_quality_score)
+
     return {
         "odds": round(odds, 4),
         "selected_implied_probability": round(selected_implied, 6),
@@ -220,6 +277,8 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "canonical_ev_pct": round(canonical_ev_pct, 3),
         "confidence": round(confidence, 3),
         "quality_score": round(quality_score, 3),
+        "quality_score_raw": round(raw_quality_score, 3),
+        "quality_score_source": quality_score_source,
         "publication_score": round(publication_score, 3),
         "books_count": books,
         "sources_count": sources,
@@ -234,7 +293,7 @@ def kickoff_window_reasons(candidate: dict[str, Any]) -> list[str]:
     if kickoff is None:
         return [] if env_bool("CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME", False) else ["missing_commence_time"]
     now = datetime.now(UTC)
-    min_lead = max(0, env_int("MIN_KICKOFF_LEAD_MINUTES", 20))
+    min_lead = effective_min_kickoff_lead_minutes()
     window_hours = max(1, env_int("PUBLISH_WINDOW_HOURS", 24))
     earliest = now + timedelta(minutes=min_lead)
     latest = now + timedelta(hours=window_hours)
@@ -451,7 +510,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"💸 Коэффициент: {metrics['odds']:.2f}\n"
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
-        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} | {tier}\n"
+        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}\n"
         f"📚 Линии: {metrics['books_count']} | Источники: {metrics['sources_count']} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
@@ -498,7 +557,10 @@ def main() -> int:
         "evaluated": [],
         "time_guard": {
             "enabled": env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True),
-            "min_kickoff_lead_minutes": env_int("MIN_KICKOFF_LEAD_MINUTES", 20),
+            "min_kickoff_lead_minutes": effective_min_kickoff_lead_minutes(),
+            "base_min_kickoff_lead_minutes": env_int("MIN_KICKOFF_LEAD_MINUTES", 20),
+            "manual_late_mode_enabled": env_bool("MANUAL_LATE_MODE_ENABLED", False),
+            "manual_late_adaptive_min_kickoff_lead_minutes": env_int("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES", 0),
             "publish_window_hours": env_int("PUBLISH_WINDOW_HOURS", 24),
         },
     }

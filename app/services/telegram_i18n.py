@@ -7,6 +7,10 @@ from typing import Any
 # The bot keeps raw provider/team names in data, but outgoing Telegram text should be readable in Russian.
 
 TEAM_ALIASES: dict[str, str] = {
+    "El Gouna FC": "Эль-Гуна",
+    "Pharco FC": "Фарко",
+    "PFC Spartak Pleven": "Спартак Плевен",
+    "FC Yantra Gabrovo": "Янтра Габрово",
     "New York City FC": "Нью-Йорк Сити",
     "New York City": "Нью-Йорк Сити",
     "FC Cincinnati": "Цинциннати",
@@ -40,6 +44,8 @@ TEAM_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "Romania - Liga III": "Румыния - Лига III",
+    "Bulgaria - Vtora Liga": "Болгария - Вторая лига",
     "USA - MLS": "США - MLS",
     "Ukraine - Premier League": "Украина - Премьер-лига",
     "Australia - Queensland Premier League 1": "Австралия - Премьер-лига Квинсленда 1",
@@ -254,7 +260,29 @@ def translate_reject_reason(reason: Any) -> str:
     text = str(reason or "").strip()
     if not text:
         return "неизвестная причина"
-    return _REASON_TRANSLATIONS.get(text, text.replace("_", " "))
+    if text in _REASON_TRANSLATIONS:
+        return _REASON_TRANSLATIONS[text]
+    market_names = {
+        "spreads": "фора",
+        "h2h": "исход",
+        "totals": "тотал",
+        "btts": "обе забьют",
+        "teamtotals": "индивидуальный тотал",
+        "teamTotals": "индивидуальный тотал",
+        "dnb": "фора 0 / DNB",
+    }
+    if text.startswith("family_not_allowed:"):
+        family = text.split(":", 1)[1]
+        return f"рынок не разрешён: {market_names.get(family, family)}"
+    if "quality_stop_not_allowed:" in text:
+        return "стоп слоя качества не разрешён для резерва"
+    if text.startswith("tier_a_"):
+        return "уровень A: " + text.removeprefix("tier_a_").replace("_", " ")
+    if text.startswith("tier_b_"):
+        return "уровень B: " + text.removeprefix("tier_b_").replace("_", " ")
+    if text.startswith("tier_c_"):
+        return "уровень C: " + text.removeprefix("tier_c_").replace("_", " ")
+    return text.replace("_", " ")
 
 
 def normalize_telegram_text(text: Any) -> str:
