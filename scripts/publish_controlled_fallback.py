@@ -356,9 +356,12 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     if isinstance(debug, dict):
         add_rows("debug_candidates_before_quality", debug.get("candidates_before_quality") or [])
         add_rows("debug_candidates_after_quality", debug.get("candidates_after_quality") or [])
-    state = load_json(".data/state.json", {})
-    if isinstance(state, dict):
-        add_rows("state_shadow_bets", state.get("shadow_bets") or [])
+    # Shadow rows are historical learning material. They are NOT a fresh publication source by default:
+    # they often contain already-started matches and can drown the current candidate pool.
+    if env_bool("CONTROLLED_FALLBACK_INCLUDE_STATE_SHADOW", False):
+        state = load_json(".data/state.json", {})
+        if isinstance(state, dict):
+            add_rows("state_shadow_bets", state.get("shadow_bets") or [])
     add_rows("latest_picks", load_json(".data/exports/latest-picks.json", []))
     return pool, dict(counts)
 
