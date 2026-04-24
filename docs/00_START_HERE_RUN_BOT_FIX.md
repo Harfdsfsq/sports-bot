@@ -1,38 +1,49 @@
-# Run bot normal fix
+# Run bot fix — latest logs/code pass
 
-Этот пакет правит обычный workflow `Run bot`, без fixed-run и без экспериментальных workflow.
+## What this patch fixes
 
-## Что исправлено
+This package keeps the normal **Run bot** workflow as the only operational entrypoint. It adds a robust integrity audit and a stable `run-bot-current` artifact after every run.
 
-1. Обычный `Run bot` теперь всегда собирает `run-bot-current` artifact.
-2. В artifact попадает `artifacts/run-bot-bundle.zip`.
-3. После каждого запуска формируется `latest-candidate-integrity.json`.
-4. Профили `balanced` и `conservative` запрещают emergency/last-resort публикации в main.
-5. Manual запуск по умолчанию использует окно 24 часа, чтобы поздний диагностический запуск не был пустым.
-6. Scheduled запуск оставлен на 12 часов.
+## Why this patch exists
 
-## Как запускать
+The latest run was technically healthy:
 
-1. Распаковать архив в корень репозитория.
-2. Commit + push через GitHub Desktop.
-3. GitHub Actions -> `Run bot`.
-4. Первый ручной запуск:
-   - profile: `balanced`
-   - dry_run: `false`
-   - publish_window_hours: `24`
-   - max_picks_per_run: `1`
+- `odds_api_io` key was present;
+- 82 matches were inside the 24h window;
+- 53 matches had offers;
+- 49 contexts were built;
+- 4 candidates reached quality.
 
-## Что присылать для анализа
+No pick was published because all 4 candidates failed quality. That was the correct decision: the historical profile is still negative and the candidate set contained high-odds / post-calibration / low-score cases.
 
-Скачай artifact `run-bot-current` и загрузи сюда:
-- `artifacts/run-bot-bundle.zip`
+## Important behavior change
 
-## Почему это нужно
+The balanced profile is now safer:
 
-Последние логи показали:
-- диагностический workflow шёл с `PUBLISH_DRY_RUN=true`;
-- поздний запуск видел 93 матча до окна, но 0 после publish-window;
-- `odds_api_io` в части запусков был без ключа;
-- обычный `Run bot` не собирал удобный единый bundle и integrity report.
+- no emergency publish;
+- no historical relief publish;
+- no last-resort publish;
+- max odds reduced;
+- only 1 pick max per run;
+- market-derived candidates disabled by default because they mostly create noisy guard counts in current logs.
 
-Этот fix делает обычный `Run bot` основной точкой работы и диагностики.
+## Artifact to upload for analysis
+
+After GitHub Actions finishes, download artifact:
+
+`run-bot-current`
+
+Inside it, upload:
+
+`artifacts/run-bot-bundle.zip`
+
+## Files changed
+
+- `.github/workflows/run-bot.yml`
+- `app/services/candidate_integrity.py`
+- `scripts/audit_candidate_integrity.py`
+- `scripts/summarize_run_bot.py`
+- `scripts/build_run_bot_bundle.py`
+- `config/balanced_output.env`
+- `config/conservative_passability.env`
+- `config/calibration-profile.example.json`

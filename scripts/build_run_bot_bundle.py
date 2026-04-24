@@ -1,65 +1,93 @@
 from __future__ import annotations
 
 import json
+import shutil
 import zipfile
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
-
-BUNDLE_DIR = Path("artifacts/run-bot")
-BUNDLE_ZIP = Path("artifacts/run-bot-bundle.zip")
+UTC = timezone.utc
 
 
-def copy_if_exists(src: Path, dst: Path) -> None:
-    if not src.exists() or not src.is_file():
-        return
+def _copy(src: Path, dst: Path) -> bool:
+    if not src.exists():
+        return False
     dst.parent.mkdir(parents=True, exist_ok=True)
-    dst.write_bytes(src.read_bytes())
+    if src.is_dir():
+        if dst.exists():
+            shutil.rmtree(dst)
+        shutil.copytree(src, dst)
+    else:
+        shutil.copy2(src, dst)
+    return True
 
 
-def iter_files(root: Path) -> Iterable[Path]:
+def _latest_run_archive() -> Path | None:
+    root = Path(".logs/runs")
     if not root.exists():
-        return []
-    return [path for path in root.rglob("*") if path.is_file()]
+        return None
+    files = [p for p in root.glob("*/*-run.json") if p.is_file()]
+    return sorted(files, key=lambda p: (p.parent.name, p.name))[-1] if files else None
+
+
+def _zip_dir(root: Path, zip_path: Path) -> None:
+    if zip_path.exists():
+        zip_path.unlink()
+    with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
+        for path in sorted(root.rglob("*")):
+            if path.is_file() and path != zip_path:
+                z.write(path, path.relative_to(root.parent))
 
 
 def main() -> int:
-    BUNDLE_DIR.mkdir(parents=True, exist_ok=True)
+    bundle = Path("artifacts/run-bot")
+    if bundle.exists():
+        shutil.rmtree(bundle)
+    bundle.mkdir(parents=True, exist_ok=True)
 
-    files = {
-        ".logs/debug-last-run.json": BUNDLE_DIR / "debug-last-run.json",
-        ".data/state.json": BUNDLE_DIR / "state.json",
-        ".data/exports/latest-picks.json": BUNDLE_DIR / "latest-picks.json",
-        ".data/exports/latest-bets.json": BUNDLE_DIR / "latest-bets.json",
-        ".data/exports/latest-matches.json": BUNDLE_DIR / "latest-matches.json",
-        ".data/exports/latest-quality-report.json": BUNDLE_DIR / "latest-quality-report.json",
-        ".data/exports/latest-candidate-integrity.json": BUNDLE_DIR / "latest-candidate-integrity.json",
-        ".data/exports/latest-coverage-audit.json": BUNDLE_DIR / "latest-coverage-audit.json",
-        ".data/exports/latest-history-guard-audit.json": BUNDLE_DIR / "latest-history-guard-audit.json",
-        "artifacts/run-bot/latest-run-summary.json": BUNDLE_DIR / "latest-run-summary.json",
-    }
-    for src, dst in files.items():
-        copy_if_exists(Path(src), dst)
+    copied: list[str] = []
+    files = [
+        Path(".logs/debug-last-run.json"),
+        Path(".data/state.json"),
+        Path(".data/exports/latest-picks.json"),
+        Path(".data/exports/latest-bets.json"),
+        Path(".data/exports/latest-matches.json"),
+        Path(".data/exports/latest-quality-report.json"),
+        Path(".data/exports/latest-quality-segments.csv"),
+        Path(".data/exports/latest-quality-learning.csv"),
+        Path(".data/exports/latest-candidate-integrity.json"),
+        Path(".data/exports/latest-candidate-integrity.csv"),
+        Path(".data/exports/latest-run-summary.json"),
+        Path(".data/exports/latest-run-summary.md"),
+        Path(".data/exports/latest-coverage-audit.json"),
+        Path(".data/exports/latest-history-guard-audit.json"),
+        Path(".data/exports/latest-training-dataset.json"),
+        Path(".data/exports/latest-reporting-sqlite.json"),
+    ]
+    latest = _latest_run_archive()
+    if latest is not None:
+        files.append(latest)
 
-    # Include the newest run archive if present.
-    run_files = sorted(Path(".logs/runs").glob("*/*-run.json")) if Path(".logs/runs").exists() else []
-    if run_files:
-        copy_if_exists(run_files[-1], BUNDLE_DIR / "latest-run.json")
+    for src in files:
+        if not src.exists():
+            continue
+        name = "latest-run.json" if latest is not None and src == latest else src.name
+        if _copy(src, bundle / name):
+            copied.append(str(src))
 
     summary = {
-        "bundle_dir": str(BUNDLE_DIR),
-        "latest_run_archive": str(run_files[-1]) if run_files else "",
-        "files": sorted(str(path.relative_to(BUNDLE_DIR)) for path in iter_files(BUNDLE_DIR)),
+        "created_at": datetime.now(UTC).isoformat(),
+        "bundle_dir": str(bundle),
+        "latest_run_archive": str(latest) if latest else None,
+        "files_copied": copied,
     }
-    (BUNDLE_DIR / "bundle-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
+    (bundle / "bundle-summary.json").write_text(json.dumps(summary, ensure_ascii=False, indent=2), encoding="utf-8")
 
-    BUNDLE_ZIP.parent.mkdir(parents=True, exist_ok=True)
-    if BUNDLE_ZIP.exists():
-        BUNDLE_ZIP.unlink()
-    with zipfile.ZipFile(BUNDLE_ZIP, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-        for path in sorted(iter_files(BUNDLE_DIR)):
-            archive.write(path, path.relative_to("artifacts"))
-    print(json.dumps({"bundle_path": str(BUNDLE_ZIP), "files": len(summary["files"])}, ensure_ascii=False, indent=2))
+    zip_path = Path("artifacts/run-bot-bundle.zip")
+    zip_path.parent.mkdir(parents=True, exist_ok=True)
+    _zip_dir(bundle, zip_path)
+    print(json.dumps({"zip_path": str(zip_path), **summary}, ensure_ascii=False, indent=2))
     return 0
 
 

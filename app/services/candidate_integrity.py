@@ -2,151 +2,147 @@ from __future__ import annotations
 
 from dataclasses import dataclass, asdict
 from typing import Any
-import math
 
 
-def to_float(value: Any, default: float | None = None) -> float | None:
-    try:
-        if value is None or value == "":
-            return default
-        number = float(value)
-        if math.isnan(number) or math.isinf(number):
-            return default
-        return number
-    except Exception:
-        return default
-
-
-def probability_from_odds(odds: float | None) -> float | None:
-    if odds is None or odds <= 1.0:
+def _to_float(value: Any) -> float | None:
+    if value is None or value == "":
         return None
-    return 1.0 / odds
+    try:
+        return float(value)
+    except Exception:
+        return None
 
 
-def pct_points(value: float | None) -> float | None:
-    return None if value is None else value * 100.0
+def _clamp_probability(value: float | None) -> float | None:
+    if value is None:
+        return None
+    return max(0.0, min(1.0, float(value)))
 
 
 @dataclass(slots=True)
 class CandidateIntegrityResult:
     ok: bool
-    reasons: list[str]
-    selected_odds: float | None
+    suspicious: bool
+    blocking: bool
+    issues: list[str]
+    odds: float | None
+    selected_price: float | None
     selected_implied_probability: float | None
-    stored_implied_probability: float | None
+    recorded_implied_probability: float | None
     market_probability: float | None
     fair_odds: float | None
+    fair_odds_from_market: float | None
     adjusted_probability: float | None
     source_summary_adjusted_probability: float | None
+    final_probability: float | None
     edge_pct: float | None
     ev_pct: float | None
-    fair_odds_ratio: float | None
+    canonical_edge_pct: float | None
+    canonical_ev_pct: float | None
 
     def as_dict(self) -> dict[str, Any]:
-        payload = asdict(self)
-        for key, value in list(payload.items()):
-            if isinstance(value, float):
-                payload[key] = round(value, 6)
-        return payload
+        return asdict(self)
 
 
-class CandidateIntegrityService:
-    """Canonical sanity checks for generated betting candidates.
+def evaluate_candidate_integrity(
+    candidate: dict[str, Any],
+    *,
+    implied_tolerance: float = 0.035,
+    adjusted_tolerance: float = 0.025,
+    fair_odds_ratio_limit: float = 1.35,
+    block_on_issue: bool = False,
+) -> CandidateIntegrityResult:
+    """Validate consistency of odds/probability fields without mutating the candidate.
 
-    This class is intentionally side-effect free. It validates candidate
-    payloads after model generation and before publication analysis.
+    The current CandidateBet schema historically stores market probability in
+    `implied_probability` in some paths. This checker makes that visible and
+    computes canonical values from the selected odds so a publish layer can
+    avoid sending dirty candidates.
     """
 
-    def __init__(
-        self,
-        *,
-        implied_tolerance_pp: float = 2.0,
-        adjusted_tolerance_pp: float = 2.0,
-        fair_odds_ratio_max: float = 1.20,
-        reject_negative_edge_positive_ev: bool = True,
-    ) -> None:
-        self.implied_tolerance = max(0.0, float(implied_tolerance_pp)) / 100.0
-        self.adjusted_tolerance = max(0.0, float(adjusted_tolerance_pp)) / 100.0
-        self.fair_odds_ratio_max = max(1.0, float(fair_odds_ratio_max))
-        self.reject_negative_edge_positive_ev = bool(reject_negative_edge_positive_ev)
+    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
 
-    def validate(self, candidate: dict[str, Any]) -> CandidateIntegrityResult:
-        source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    odds = _to_float(candidate.get("odds"))
+    selected_price = _to_float(source_summary.get("selected_price")) or odds
+    selected_implied = (1.0 / selected_price) if selected_price and selected_price > 1.0 else None
 
-        selected_odds = (
-            to_float(candidate.get("odds"))
-            or to_float(candidate.get("selected_odds"))
-            or to_float(source_summary.get("selected_price"))
-            or to_float(source_summary.get("selected_odds"))
-        )
-        selected_implied = probability_from_odds(selected_odds)
-        stored_implied = to_float(candidate.get("implied_probability"))
+    recorded_implied = _clamp_probability(_to_float(candidate.get("implied_probability")))
+    market_probability = _clamp_probability(_to_float(candidate.get("market_probability")))
+    fair_odds = _to_float(candidate.get("fair_odds"))
+    fair_odds_from_market = (1.0 / market_probability) if market_probability and market_probability > 0 else None
 
-        market_probability = to_float(candidate.get("market_probability"))
-        fair_odds = to_float(candidate.get("fair_odds"))
-        if fair_odds is None and market_probability and market_probability > 0:
-            fair_odds = 1.0 / market_probability
+    adjusted_probability = _clamp_probability(_to_float(candidate.get("adjusted_probability")))
+    source_summary_adjusted = _clamp_probability(_to_float(source_summary.get("adjusted_probability")))
+    final_probability = _clamp_probability(_to_float(candidate.get("final_probability")))
 
-        adjusted = (
-            to_float(candidate.get("adjusted_probability"))
-            or to_float(candidate.get("final_probability"))
-            or to_float(candidate.get("model_probability"))
-        )
-        source_adjusted = to_float(source_summary.get("adjusted_probability"))
+    edge_pct = _to_float(candidate.get("edge_pct"))
+    ev_pct = _to_float(candidate.get("ev_pct"))
 
-        edge_pct = to_float(candidate.get("edge_pct"))
-        ev_pct = to_float(candidate.get("ev_pct"))
+    probability_for_ev = final_probability or adjusted_probability
+    market_for_edge = market_probability or recorded_implied
+    canonical_edge_pct = None
+    canonical_ev_pct = None
+    if probability_for_ev is not None and market_for_edge is not None:
+        canonical_edge_pct = (probability_for_ev - market_for_edge) * 100.0
+    if probability_for_ev is not None and selected_price is not None:
+        canonical_ev_pct = ((probability_for_ev * selected_price) - 1.0) * 100.0
 
-        reasons: list[str] = []
+    issues: list[str] = []
 
-        if selected_odds is None:
-            reasons.append("missing_selected_odds")
-        elif selected_odds <= 1.01:
-            reasons.append("invalid_selected_odds")
+    if selected_price is None or selected_price <= 1.0:
+        issues.append("missing_or_invalid_selected_price")
 
-        if selected_implied is not None and stored_implied is not None:
-            gap = abs(selected_implied - stored_implied)
-            if gap > self.implied_tolerance:
-                reasons.append(f"implied_mismatch:{gap:.4f}")
+    if selected_implied is not None and recorded_implied is not None:
+        gap = abs(selected_implied - recorded_implied)
+        if gap > implied_tolerance:
+            issues.append(f"implied_mismatch:{gap:.4f}")
 
-        if adjusted is not None and source_adjusted is not None:
-            gap = abs(adjusted - source_adjusted)
-            if gap > self.adjusted_tolerance:
-                reasons.append(f"adjusted_mismatch:{gap:.4f}")
+    if odds is not None and selected_price is not None and abs(odds - selected_price) > 0.005:
+        issues.append(f"odds_selected_price_mismatch:{abs(odds - selected_price):.4f}")
 
-        fair_ratio = None
-        if selected_odds is not None and fair_odds is not None and fair_odds > 1.0:
-            fair_ratio = selected_odds / fair_odds
-            if fair_ratio > self.fair_odds_ratio_max:
-                reasons.append(f"odds_far_above_fair:{fair_ratio:.3f}")
+    if fair_odds is not None and fair_odds_from_market is not None:
+        ratio = max(fair_odds, fair_odds_from_market) / max(0.0001, min(fair_odds, fair_odds_from_market))
+        if ratio > fair_odds_ratio_limit:
+            issues.append(f"fair_odds_market_mismatch:{ratio:.3f}")
 
-        if self.reject_negative_edge_positive_ev:
-            if edge_pct is not None and ev_pct is not None and edge_pct < 0 and ev_pct > 0:
-                reasons.append("negative_edge_positive_ev")
+    if adjusted_probability is not None and source_summary_adjusted is not None:
+        gap = abs(adjusted_probability - source_summary_adjusted)
+        if gap > adjusted_tolerance:
+            issues.append(f"adjusted_mismatch:{gap:.4f}")
 
-        return CandidateIntegrityResult(
-            ok=not reasons,
-            reasons=reasons,
-            selected_odds=selected_odds,
-            selected_implied_probability=selected_implied,
-            stored_implied_probability=stored_implied,
-            market_probability=market_probability,
-            fair_odds=fair_odds,
-            adjusted_probability=adjusted,
-            source_summary_adjusted_probability=source_adjusted,
-            edge_pct=edge_pct,
-            ev_pct=ev_pct,
-            fair_odds_ratio=fair_ratio,
-        )
+    if adjusted_probability is not None and final_probability is not None:
+        gap = abs(adjusted_probability - final_probability)
+        if gap > adjusted_tolerance:
+            issues.append(f"final_adjusted_mismatch:{gap:.4f}")
 
-    def canonicalize(self, candidate: dict[str, Any]) -> dict[str, Any]:
-        result = self.validate(candidate)
-        payload = dict(candidate)
-        payload["selected_odds"] = result.selected_odds
-        payload["selected_implied_probability"] = result.selected_implied_probability
-        payload["canonical_adjusted_probability"] = result.adjusted_probability
-        payload["canonical_integrity"] = result.as_dict()
-        diagnostics = dict(payload.get("diagnostics") or {})
-        diagnostics["candidate_integrity"] = result.as_dict()
-        payload["diagnostics"] = diagnostics
-        return payload
+    if edge_pct is not None and ev_pct is not None and edge_pct < -0.01 and ev_pct > 0.01:
+        issues.append("negative_edge_positive_ev")
+
+    if canonical_ev_pct is not None and ev_pct is not None and abs(canonical_ev_pct - ev_pct) > 3.0:
+        issues.append(f"ev_canonical_mismatch:{abs(canonical_ev_pct - ev_pct):.2f}pp")
+
+    if canonical_edge_pct is not None and edge_pct is not None and abs(canonical_edge_pct - edge_pct) > 3.0:
+        issues.append(f"edge_canonical_mismatch:{abs(canonical_edge_pct - edge_pct):.2f}pp")
+
+    suspicious = bool(issues)
+    blocking = bool(block_on_issue and issues)
+    return CandidateIntegrityResult(
+        ok=not suspicious,
+        suspicious=suspicious,
+        blocking=blocking,
+        issues=issues,
+        odds=odds,
+        selected_price=selected_price,
+        selected_implied_probability=selected_implied,
+        recorded_implied_probability=recorded_implied,
+        market_probability=market_probability,
+        fair_odds=fair_odds,
+        fair_odds_from_market=fair_odds_from_market,
+        adjusted_probability=adjusted_probability,
+        source_summary_adjusted_probability=source_summary_adjusted,
+        final_probability=final_probability,
+        edge_pct=edge_pct,
+        ev_pct=ev_pct,
+        canonical_edge_pct=canonical_edge_pct,
+        canonical_ev_pct=canonical_ev_pct,
+    )
