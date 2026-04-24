@@ -3,10 +3,40 @@ from __future__ import annotations
 import re
 from typing import Any
 
-# Centralized Telegram text localization helpers.
-# The bot keeps raw provider/team names in data, but outgoing Telegram text should be readable in Russian.
+# Telegram-facing localization.
+# Goal: all public Telegram messages should be readable in Russian.
+# Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
+    # Saudi Arabia / Gulf
+    "Al-Fateh SC": "Аль-Фатех",
+    "Al Fateh SC": "Аль-Фатех",
+    "Al-Fateh": "Аль-Фатех",
+    "Al Fateh": "Аль-Фатех",
+    "Al-Khaleej Club": "Аль-Халидж",
+    "Al Khaleej Club": "Аль-Халидж",
+    "Al-Khaleej": "Аль-Халидж",
+    "Al Khaleej": "Аль-Халидж",
+    "Al Hilal": "Аль-Хиляль",
+    "Al-Hilal": "Аль-Хиляль",
+    "Al Nassr": "Аль-Наср",
+    "Al-Nassr": "Аль-Наср",
+    "Al Ittihad": "Аль-Иттихад",
+    "Al-Ittihad": "Аль-Иттихад",
+    "Al Ahli": "Аль-Ахли",
+    "Al-Ahli": "Аль-Ахли",
+    "Al Shabab": "Аль-Шабаб",
+    "Al-Shabab": "Аль-Шабаб",
+    "Al Taawoun": "Аль-Таавун",
+    "Al-Taawoun": "Аль-Таавун",
+    "Al Riyadh": "Аль-Рияд",
+    "Al-Riyadh": "Аль-Рияд",
+    "Al Ettifaq": "Аль-Иттифак",
+    "Al-Ettifaq": "Аль-Иттифак",
+    "Damac FC": "Дамак",
+    "Abha Club": "Абха",
+
+    # UAE
     "Dubai United FC": "Дубай Юнайтед",
     "Dubai United": "Дубай Юнайтед",
     "Gulf United": "Галф Юнайтед",
@@ -17,11 +47,8 @@ TEAM_ALIASES: dict[str, str] = {
     "Hatta Club": "Хатта",
     "Masfout": "Масфут",
     "Al Hamriyah": "Аль-Хамрия",
-    "United Arab Emirates": "ОАЭ",
-    "El Gouna FC": "Эль-Гуна",
-    "Pharco FC": "Фарко",
-    "PFC Spartak Pleven": "Спартак Плевен",
-    "FC Yantra Gabrovo": "Янтра Габрово",
+
+    # Previously seen teams
     "New York City FC": "Нью-Йорк Сити",
     "New York City": "Нью-Йорк Сити",
     "FC Cincinnati": "Цинциннати",
@@ -52,15 +79,22 @@ TEAM_ALIASES: dict[str, str] = {
     "Kingston City FC": "Кингстон Сити",
     "Spanish Town Police FC": "Спэниш Таун Полис",
     "Portmore United": "Портмор Юнайтед",
+    "El Gouna FC": "Эль-Гуна",
+    "Pharco FC": "Фарко",
+    "PFC Spartak Pleven": "Спартак Плевен",
+    "FC Yantra Gabrovo": "Янтра Габрово",
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "Saudi Arabia - Saudi Pro League": "Саудовская Аравия - Про-лига",
+    "Saudi Arabia - Pro League": "Саудовская Аравия - Про-лига",
+    "Saudi Arabia - Professional League": "Саудовская Аравия - Про-лига",
+    "Saudi Arabia - First Division": "Саудовская Аравия - Первый дивизион",
+    "Saudi Arabia - King Cup": "Саудовская Аравия - Кубок Короля",
     "United Arab Emirates - First Division": "ОАЭ - Первый дивизион",
     "United Arab Emirates - Pro League": "ОАЭ - Про-лига",
     "UAE - First Division": "ОАЭ - Первый дивизион",
     "UAE - Pro League": "ОАЭ - Про-лига",
-    "Romania - Liga III": "Румыния - Лига III",
-    "Bulgaria - Vtora Liga": "Болгария - Вторая лига",
     "USA - MLS": "США - MLS",
     "Ukraine - Premier League": "Украина - Премьер-лига",
     "Australia - Queensland Premier League 1": "Австралия - Премьер-лига Квинсленда 1",
@@ -71,95 +105,287 @@ LEAGUE_ALIASES: dict[str, str] = {
     "Netherlands - Eredivisie": "Нидерланды - Эредивизи",
     "Germany - DFB Pokal": "Германия - Кубок DFB",
     "Armenia - Premier League": "Армения - Премьер-лига",
+    "Bulgaria - Vtora Liga": "Болгария - Вторая лига",
+    "Romania - Liga III": "Румыния - Лига III",
+}
+
+COUNTRY_ALIASES: dict[str, str] = {
+    "USA": "США",
+    "United States": "США",
+    "United States of America": "США",
+    "England": "Англия",
+    "Scotland": "Шотландия",
+    "Wales": "Уэльс",
+    "Ireland": "Ирландия",
+    "Northern Ireland": "Северная Ирландия",
+    "Spain": "Испания",
+    "Italy": "Италия",
+    "Germany": "Германия",
+    "France": "Франция",
+    "Portugal": "Португалия",
+    "Netherlands": "Нидерланды",
+    "Belgium": "Бельгия",
+    "Austria": "Австрия",
+    "Switzerland": "Швейцария",
+    "Denmark": "Дания",
+    "Sweden": "Швеция",
+    "Norway": "Норвегия",
+    "Finland": "Финляндия",
+    "Iceland": "Исландия",
+    "Poland": "Польша",
+    "Czech Republic": "Чехия",
+    "Slovakia": "Словакия",
+    "Hungary": "Венгрия",
+    "Romania": "Румыния",
+    "Bulgaria": "Болгария",
+    "Greece": "Греция",
+    "Turkey": "Турция",
+    "Croatia": "Хорватия",
+    "Serbia": "Сербия",
+    "Slovenia": "Словения",
+    "Ukraine": "Украина",
+    "Armenia": "Армения",
+    "Georgia": "Грузия",
+    "Azerbaijan": "Азербайджан",
+    "Kazakhstan": "Казахстан",
+    "Saudi Arabia": "Саудовская Аравия",
+    "United Arab Emirates": "ОАЭ",
+    "UAE": "ОАЭ",
+    "Qatar": "Катар",
+    "Bahrain": "Бахрейн",
+    "Kuwait": "Кувейт",
+    "Oman": "Оман",
+    "Egypt": "Египет",
+    "Morocco": "Марокко",
+    "Tunisia": "Тунис",
+    "Algeria": "Алжир",
+    "South Africa": "ЮАР",
+    "Australia": "Австралия",
+    "New Zealand": "Новая Зеландия",
+    "Japan": "Япония",
+    "South Korea": "Южная Корея",
+    "China": "Китай",
+    "India": "Индия",
+    "Brazil": "Бразилия",
+    "Argentina": "Аргентина",
+    "Chile": "Чили",
+    "Colombia": "Колумбия",
+    "Peru": "Перу",
+    "Uruguay": "Уругвай",
+    "Mexico": "Мексика",
+    "Canada": "Канада",
+}
+
+LEAGUE_WORDS: dict[str, str] = {
+    "Premier League": "Премьер-лига",
+    "Professional League": "Профессиональная лига",
+    "Pro League": "Про-лига",
+    "Saudi Pro League": "Про-лига",
+    "First Division": "Первый дивизион",
+    "Second Division": "Второй дивизион",
+    "Third Division": "Третий дивизион",
+    "Championship": "Чемпионшип",
+    "League One": "Лига 1",
+    "League Two": "Лига 2",
+    "National League": "Национальная лига",
+    "Super League": "Суперлига",
+    "Superliga": "Суперлига",
+    "Liga I": "Лига I",
+    "Liga II": "Лига II",
+    "Liga III": "Лига III",
+    "LaLiga": "Ла Лига",
+    "Serie A": "Серия A",
+    "Serie B": "Серия B",
+    "Bundesliga": "Бундеслига",
+    "2. Bundesliga": "Вторая Бундеслига",
+    "Ligue 1": "Лига 1",
+    "Ligue 2": "Лига 2",
+    "Eredivisie": "Эредивизи",
+    "Eerste Divisie": "Первый дивизион",
+    "DFB Pokal": "Кубок DFB",
+    "Cup": "Кубок",
+    "King Cup": "Кубок Короля",
+    "MLS": "MLS",
+    "A-League": "A-Лига",
 }
 
 WORD_ALIASES: dict[str, str] = {
+    # club words
+    "fc": "",
+    "f.c.": "",
+    "sc": "",
+    "s.c.": "",
+    "cf": "",
+    "ac": "",
+    "afc": "",
+    "ud": "",
+    "pfc": "",
+    "club": "",
+    "united": "Юнайтед",
+    "city": "Сити",
+    "town": "Таун",
+    "county": "Каунти",
+    "rovers": "Роверс",
+    "wanderers": "Уондерерс",
+    "rangers": "Рейнджерс",
+    "athletic": "Атлетик",
+    "sporting": "Спортинг",
+    "real": "Реал",
+    "deportivo": "Депортиво",
+    "inter": "Интер",
+    "internacional": "Интернасьонал",
+    "olympic": "Олимпик",
+    "olympique": "Олимпик",
+    "dynamo": "Динамо",
+    "dinamo": "Динамо",
+    "lokomotiv": "Локомотив",
+    "arsenal": "Арсенал",
+    "juventus": "Ювентус",
+    "central": "Сентрал",
+    "north": "Норт",
+    "south": "Саут",
+    "east": "Ист",
+    "west": "Вест",
+    "stars": "Старз",
+    "star": "Стар",
+    "eagles": "Иглз",
+    "white": "Уайт",
+    "bulldogs": "Буллдогс",
+    "strikers": "Страйкерс",
+    "police": "Полис",
+    "bank": "Банк",
+    "national": "Нэшнл",
+
+    # geographic/common words
+    "new": "Нью",
+    "york": "Йорк",
     "dubai": "Дубай",
     "gulf": "Галф",
     "emirates": "Эмирейтс",
-    "arab": "Араб",
-    "arabic": "Арабик",
+    "uae": "ОАЭ",
+    "saudi": "Саудовская",
+    "arabia": "Аравия",
+    "egypt": "Иджипт",
+
+    # Arabic-style names
+    "al": "Аль",
+    "el": "Эль",
     "arabi": "Араби",
+    "fateh": "Фатех",
+    "khaleej": "Халидж",
+    "hilal": "Хиляль",
+    "nassr": "Наср",
+    "ittihad": "Иттихад",
+    "ahli": "Ахли",
+    "shabab": "Шабаб",
+    "taawoun": "Таавун",
+    "riyadh": "Рияд",
+    "ettifaq": "Иттифак",
+    "raed": "Раед",
+    "wehda": "Вахда",
+    "qadsiah": "Кадисия",
+    "damac": "Дамак",
+    "abha": "Абха",
+    "okhdood": "Охдуд",
     "dhafra": "Дафра",
     "dibba": "Дибба",
     "fujairah": "Фуджейра",
     "hatta": "Хатта",
     "masfout": "Масфут",
     "hamriyah": "Хамрия",
-    "uae": "ОАЭ",
-    "new": "Нью",
-    "york": "Йорк",
-    "city": "Сити",
-    "united": "Юнайтед",
-    "fc": "",
-    "f.c.": "",
-    "sc": "",
-    "s.c.": "",
-    "cf": "",
-    "ud": "",
-    "afc": "",
-    "club": "Клуб",
-    "athletic": "Атлетик",
-    "real": "Реал",
-    "deportivo": "Депортиво",
-    "sporting": "Спортинг",
-    "central": "Сентрал",
-    "north": "Норт",
-    "south": "Саут",
-    "east": "Ист",
-    "west": "Вест",
-    "bank": "Банк",
-    "national": "Нэшнл",
-    "egypt": "Иджипт",
-    "police": "Полис",
-    "town": "Таун",
-    "eagles": "Иглз",
-    "white": "Уайт",
-    "bulldogs": "Буллдогс",
-    "strikers": "Страйкерс",
-    "star": "Стар",
-    "juventus": "Ювентус",
-    "sunshine": "Саншайн",
 }
 
-# Simple fallback transliteration. It is intentionally conservative:
-# known aliases are preferred; unknown names remain recognizable, not "machine-translated" beyond repair.
 _MULTI = {
-    "sh": "ш", "ch": "ч", "zh": "ж", "ya": "я", "yu": "ю", "yo": "ё", "ye": "е", "kh": "х", "ts": "ц",
+    "sh": "ш", "ch": "ч", "zh": "ж", "ya": "я", "yu": "ю", "yo": "ё", "ye": "е",
+    "kh": "х", "ts": "ц", "th": "т", "ph": "ф", "oo": "у", "ee": "и", "ou": "у",
+    "ck": "к", "qu": "кв",
 }
 _SINGLE = {
-    "a": "а", "b": "б", "c": "к", "d": "д", "e": "е", "f": "ф", "g": "г", "h": "х", "i": "и",
-    "j": "дж", "k": "к", "l": "л", "m": "м", "n": "н", "o": "о", "p": "п", "q": "к", "r": "р",
-    "s": "с", "t": "т", "u": "у", "v": "в", "w": "в", "x": "кс", "y": "и", "z": "з",
+    "a": "а", "b": "б", "c": "к", "d": "д", "e": "е", "f": "ф", "g": "г", "h": "х",
+    "i": "и", "j": "дж", "k": "к", "l": "л", "m": "м", "n": "н", "o": "о", "p": "п",
+    "q": "к", "r": "р", "s": "с", "t": "т", "u": "у", "v": "в", "w": "в", "x": "кс",
+    "y": "и", "z": "з",
 }
+CLUB_SUFFIX_RE = re.compile(
+    r"^(FC|SC|CF|AC|AFC|PFC|UD)\s+|\s+(FC|SC|CF|AC|AFC|PFC|UD|Club|F\.C\.|S\.C\.)$",
+    flags=re.IGNORECASE,
+)
 
 
 def _squash_spaces(text: str) -> str:
     return re.sub(r"\s+", " ", str(text or "").strip())
 
 
-def _strip_club_suffixes(text: str) -> str:
-    text = _squash_spaces(text)
-    text = re.sub(r"^(FC|SC|CF|AC|AFC|UD)\s+", "", text, flags=re.IGNORECASE)
-    text = re.sub(r"\s+(FC|SC|CF|AC|AFC|UD|F\.C\.|S\.C\.)$", "", text, flags=re.IGNORECASE)
+def _norm_key(value: Any) -> str:
+    text = _squash_spaces(str(value or "")).lower()
+    text = text.replace("’", "'").replace("`", "'")
+    text = re.sub(r"[^a-zа-яё0-9]+", " ", text, flags=re.IGNORECASE)
     return _squash_spaces(text)
 
 
+def _lookup_alias(value: Any, aliases: dict[str, str]) -> str | None:
+    raw = _squash_spaces(str(value or ""))
+    if not raw:
+        return None
+    if raw in aliases:
+        return aliases[raw]
+    raw_key = _norm_key(raw)
+    for alias, translated in aliases.items():
+        if _norm_key(alias) == raw_key:
+            return translated
+    stripped = _strip_club_suffixes(raw)
+    if stripped in aliases:
+        return aliases[stripped]
+    stripped_key = _norm_key(stripped)
+    for alias, translated in aliases.items():
+        if _norm_key(alias) == stripped_key:
+            return translated
+    return None
+
+
+def _strip_club_suffixes(text: str) -> str:
+    value = _squash_spaces(text)
+    previous = None
+    while previous != value:
+        previous = value
+        value = CLUB_SUFFIX_RE.sub("", value)
+        value = _squash_spaces(value)
+    return value
+
+
+def _title_ru(text: str) -> str:
+    if not text:
+        return text
+    if text.isupper() and len(text) <= 5:
+        return text
+    return text[:1].upper() + text[1:]
+
+
 def transliterate_word(word: str) -> str:
-    src = str(word or "")
-    low = src.lower().strip()
+    src = str(word or "").strip()
+    if not src:
+        return ""
+    low = src.lower().strip(" .,'\"()[]{}")
     if not low:
         return ""
+
     if low in WORD_ALIASES:
         return WORD_ALIASES[low]
+
     if re.fullmatch(r"[A-ZА-ЯЁ0-9]+", src) and len(src) <= 5:
+        return src
+
+    # Preserve numbers, roman numerals and short league acronyms.
+    if re.fullmatch(r"[IVX]+", src.upper()):
+        return src.upper()
+    if re.fullmatch(r"\d+(\.\d+)?", src):
         return src
 
     out: list[str] = []
     i = 0
     while i < len(low):
         matched = False
-        for latin, cyr in _MULTI.items():
+        for latin, cyr in sorted(_MULTI.items(), key=lambda item: len(item[0]), reverse=True):
             if low.startswith(latin, i):
                 out.append(cyr)
                 i += len(latin)
@@ -170,88 +396,74 @@ def transliterate_word(word: str) -> str:
         ch = low[i]
         out.append(_SINGLE.get(ch, ch))
         i += 1
-    text = "".join(out)
-    return text[:1].upper() + text[1:]
+    return _title_ru("".join(out))
+
+
+def _translate_free_text_name(value: Any) -> str:
+    raw = _squash_spaces(str(value or ""))
+    if not raw:
+        return ""
+    raw = _strip_club_suffixes(raw)
+    raw = raw.replace("&", " and ")
+    tokens = re.split(r"([ \-/])", raw)
+    result: list[str] = []
+    for token in tokens:
+        if token in {" ", "-", "/"}:
+            result.append(token)
+            continue
+        if not token:
+            continue
+        if re.search(r"[А-Яа-яЁё]", token):
+            result.append(token)
+        elif re.search(r"[A-Za-z]", token):
+            result.append(transliterate_word(token))
+        else:
+            result.append(token)
+    text = _squash_spaces("".join(result))
+    # Arabic style: "Аль - Фатех" -> "Аль-Фатех"
+    text = re.sub(r"\b(Аль|Эль)\s*-\s*", r"\1-", text)
+    return text or raw
 
 
 def translate_team_name(name: Any) -> str:
     raw = _squash_spaces(str(name or ""))
     if not raw:
         return ""
-    if raw in TEAM_ALIASES:
-        return TEAM_ALIASES[raw]
-    raw_lower = raw.lower()
-    for alias, translated in TEAM_ALIASES.items():
-        if alias.lower() == raw_lower:
-            return translated
-    stripped = _strip_club_suffixes(raw)
-    if stripped in TEAM_ALIASES:
-        return TEAM_ALIASES[stripped]
-    stripped_lower = stripped.lower()
-    for alias, translated in TEAM_ALIASES.items():
-        if alias.lower() == stripped_lower:
-            return translated
-
-    tokens = re.split(r"([ \-])", stripped)
-    translated: list[str] = []
-    for token in tokens:
-        if token in {" ", "-"}:
-            translated.append(token)
-            continue
-        if not token:
-            continue
-        if re.search(r"[A-Za-z]", token):
-            translated.append(transliterate_word(token))
-        else:
-            translated.append(token)
-    result = _squash_spaces("".join(translated))
-    return result or stripped or raw
+    alias = _lookup_alias(raw, TEAM_ALIASES)
+    if alias:
+        return alias
+    return _translate_free_text_name(raw)
 
 
 def translate_league_name(name: Any) -> str:
     raw = _squash_spaces(str(name or ""))
     if not raw:
         return ""
-    if raw in LEAGUE_ALIASES:
-        return LEAGUE_ALIASES[raw]
-    raw_lower = raw.lower()
-    for alias, translated in LEAGUE_ALIASES.items():
-        if alias.lower() == raw_lower:
-            return translated
-    parts = [part.strip() for part in raw.split("-", 1)]
-    countries = {
-        "USA": "США",
-        "Ukraine": "Украина",
-        "Australia": "Австралия",
-        "Egypt": "Египет",
-        "Spain": "Испания",
-        "Netherlands": "Нидерланды",
-        "Germany": "Германия",
-        "Armenia": "Армения",
-        "England": "Англия",
-        "Italy": "Италия",
-        "France": "Франция",
-        "Portugal": "Португалия",
-        "Belgium": "Бельгия",
-        "Turkey": "Турция",
-    }
-    league_words = {
-        "Premier League": "Премьер-лига",
-        "Queensland Premier League": "Премьер-лига Квинсленда",
-        "Victoria Premier League": "Премьер-лига Виктории",
-        "LaLiga": "Ла Лига",
-        "Eredivisie": "Эредивизи",
-        "DFB Pokal": "Кубок DFB",
-        "First Division": "Первый дивизион",
-        "Pro League": "Про-лига",
-    }
-    if len(parts) == 2:
-        country = countries.get(parts[0], parts[0])
-        league = parts[1]
-        for en, ru in league_words.items():
-            league = league.replace(en, ru)
+    alias = _lookup_alias(raw, LEAGUE_ALIASES)
+    if alias:
+        return alias
+
+    if " - " in raw:
+        country_raw, league_raw = [part.strip() for part in raw.split(" - ", 1)]
+    elif "-" in raw:
+        country_raw, league_raw = [part.strip() for part in raw.split("-", 1)]
+    else:
+        country_raw, league_raw = "", raw
+
+    country = _lookup_alias(country_raw, COUNTRY_ALIASES) if country_raw else ""
+    if not country and country_raw:
+        country = _translate_free_text_name(country_raw)
+
+    league = league_raw
+    for en, ru in sorted(LEAGUE_WORDS.items(), key=lambda item: len(item[0]), reverse=True):
+        league = re.sub(re.escape(en), ru, league, flags=re.IGNORECASE)
+    if re.search(r"[A-Za-z]", league):
+        # Translate remaining unknown English words, but preserve common acronyms.
+        league = _translate_free_text_name(league)
+
+    if country:
         return f"{country} - {league}"
-    return raw
+    return league
 
 
 def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:
@@ -266,9 +478,9 @@ def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any
         "Yes": "Да",
         "No": "Нет",
     }
-    for src, dst in replacements.items():
+    for src, dst in sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True):
         if src and dst:
-            text = text.replace(src, dst)
+            text = re.sub(re.escape(src), dst, text, flags=re.IGNORECASE)
     return _squash_spaces(text)
 
 
@@ -327,6 +539,44 @@ def translate_reject_reason(reason: Any) -> str:
     return text.replace("_", " ")
 
 
+def _replace_known_aliases(text: str) -> str:
+    value = text
+    alias_pairs: list[tuple[str, str]] = []
+    alias_pairs.extend(TEAM_ALIASES.items())
+    alias_pairs.extend(LEAGUE_ALIASES.items())
+    alias_pairs.sort(key=lambda item: len(item[0]), reverse=True)
+    for src, dst in alias_pairs:
+        if not src or not dst:
+            continue
+        value = re.sub(re.escape(src), dst, value, flags=re.IGNORECASE)
+    return value
+
+
+def _normalize_match_line(line: str) -> str:
+    # Examples:
+    # 1. Team A — Team B
+    # 12. Team A - Team B
+    match = re.match(r"^(\s*\d+\.\s+)(.+?)\s+[—–-]\s+(.+?)\s*$", line)
+    if not match:
+        return line
+    prefix, home, away = match.groups()
+    return f"{prefix}{translate_team_name(home)} — {translate_team_name(away)}"
+
+
+def _normalize_tournament_line(line: str) -> str:
+    match = re.match(r"^(\s*🏆\s*Турнир:\s*)(.+?)\s*$", line)
+    if not match:
+        return line
+    prefix, league = match.groups()
+    return f"{prefix}{translate_league_name(league)}"
+
+
+def _normalize_bet_line(line: str) -> str:
+    if "🎯" not in line and "Ставка:" not in line:
+        return line
+    return _replace_known_aliases(line)
+
+
 def normalize_telegram_text(text: Any) -> str:
     value = str(text or "")
     replacements = {
@@ -347,4 +597,13 @@ def normalize_telegram_text(text: Any) -> str:
     }
     for src, dst in replacements.items():
         value = value.replace(src, dst)
-    return value
+
+    normalized_lines: list[str] = []
+    for line in value.splitlines():
+        out = _normalize_match_line(line)
+        out = _normalize_tournament_line(out)
+        out = _normalize_bet_line(out)
+        out = _replace_known_aliases(out)
+        normalized_lines.append(out.rstrip())
+
+    return "\n".join(normalized_lines).strip()
