@@ -8,11 +8,19 @@ from typing import Any
 # Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
-    "Al Riyadh SC": "Аль-Рияд",
-    "Al-Riyadh SC": "Аль-Рияд",
-    "Al-Hazm SC": "Аль-Хазм",
-    "Al Hazm": "Аль-Хазм",
-    "Al-Hazm": "Аль-Хазм",
+    "SKU Amstetten": "СКУ Амштеттен",
+    "Amstetten": "Амштеттен",
+    "First Vienna FC 1894": "Фёрст Вена 1894",
+    "First Vienna FC": "Фёрст Вена",
+    "First Vienna": "Фёрст Вена",
+    "Vienna FC": "Вена",
+    "Austria Lustenau": "Аустрия Лустенау",
+    "Admira Wacker": "Адмира Ваккер",
+    "SV Ried": "Рид",
+    "SKN St. Polten": "Санкт-Пёльтен",
+    "SKN St. Pölten": "Санкт-Пёльтен",
+    "Kapfenberger SV": "Капфенберг",
+    "Floridsdorfer AC": "Флоридсдорф",
     # Saudi Arabia / Gulf
     "Al-Fateh SC": "Аль-Фатех",
     "Al Fateh SC": "Аль-Фатех",
@@ -91,6 +99,9 @@ TEAM_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "Austria - 2. Liga": "Австрия - Вторая лига",
+    "Austria - Bundesliga": "Австрия - Бундеслига",
+    "Austria - OFB Cup": "Австрия - Кубок OFB",
     "Saudi Arabia - Saudi Pro League": "Саудовская Аравия - Про-лига",
     "Saudi Arabia - Pro League": "Саудовская Аравия - Про-лига",
     "Saudi Arabia - Professional League": "Саудовская Аравия - Про-лига",
@@ -192,6 +203,7 @@ LEAGUE_WORDS: dict[str, str] = {
     "Championship": "Чемпионшип",
     "League One": "Лига 1",
     "League Two": "Лига 2",
+    "2. Liga": "Вторая лига",
     "National League": "Национальная лига",
     "Super League": "Суперлига",
     "Superliga": "Суперлига",
@@ -215,7 +227,17 @@ LEAGUE_WORDS: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
-    "hazm": "Хазм",
+    "amstetten": "Амштеттен",
+    "first": "Фёрст",
+    "vienna": "Вена",
+    "austria": "Австрия",
+    "liga": "Лига",
+    "lustenau": "Лустенау",
+    "admira": "Адмира",
+    "wacker": "Ваккер",
+    "ried": "Рид",
+    "kapfenberger": "Капфенберг",
+    "floridsdorfer": "Флоридсдорф",
     # club words
     "fc": "",
     "f.c.": "",
@@ -580,7 +602,22 @@ def _normalize_tournament_line(line: str) -> str:
 def _normalize_bet_line(line: str) -> str:
     if "🎯" not in line and "Ставка:" not in line:
         return line
-    return _replace_known_aliases(line)
+    line = _replace_known_aliases(line)
+
+    # Translate selections like:
+    # 🎯 Ставка: Фора 0 / DNB — First Vienna FC 1894 (0)
+    match = re.match(r"^(.*?—\s*)(.+?)(\s*\([^)]*\)\s*)$", line)
+    if match:
+        prefix, selection_name, suffix = match.groups()
+        if re.search(r"[A-Za-z]", selection_name):
+            return f"{prefix}{translate_team_name(selection_name)}{suffix}"
+
+    match = re.match(r"^(.*?—\s*)(.+?)\s*$", line)
+    if match:
+        prefix, selection_name = match.groups()
+        if re.search(r"[A-Za-z]", selection_name) and len(selection_name.split()) <= 5:
+            return f"{prefix}{translate_team_name(selection_name)}"
+    return line
 
 
 def normalize_telegram_text(text: Any) -> str:

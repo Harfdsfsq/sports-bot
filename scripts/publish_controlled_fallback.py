@@ -368,6 +368,122 @@ def btts_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) 
 
 
 
+
+def poisson_goal_probs(lam: float, max_goals: int = 12) -> list[float]:
+    if lam < 0:
+        return []
+    probs = [math.exp(-lam)]
+    for goal in range(1, max_goals + 1):
+        probs.append(probs[-1] * lam / goal)
+    return probs
+
+
+def dnb_probability_from_xg(selection: Any, home_team: Any, away_team: Any, expected_home: Any, expected_away: Any) -> dict[str, Any] | None:
+    try:
+        home_xg = float(expected_home)
+        away_xg = float(expected_away)
+    except Exception:
+        return None
+    if home_xg < 0 or away_xg < 0:
+        return None
+
+    home_probs = poisson_goal_probs(home_xg, 14)
+    away_probs = poisson_goal_probs(away_xg, 14)
+    if not home_probs or not away_probs:
+        return None
+
+    p_home = 0.0
+    p_draw = 0.0
+    p_away = 0.0
+    for hg, hp in enumerate(home_probs):
+        for ag, ap in enumerate(away_probs):
+            p = hp * ap
+            if hg > ag:
+                p_home += p
+            elif hg == ag:
+                p_draw += p
+            else:
+                p_away += p
+
+    selection_text = str(selection or "").lower()
+    home_text = str(home_team or "").lower()
+    away_text = str(away_team or "").lower()
+
+    # Detect side. If team name is unavailable, use side/key hints if present in selection.
+    is_home = bool(home_text and home_text in selection_text)
+    is_away = bool(away_text and away_text in selection_text)
+    if not is_home and not is_away:
+        # Last-resort heuristic for common side markers.
+        if any(token in selection_text for token in ("home", "хозя", "п1", "1 (0)")):
+            is_home = True
+        if any(token in selection_text for token in ("away", "гост", "п2", "2 (0)")):
+            is_away = True
+
+    if is_home:
+        p_win = p_home
+        p_loss = p_away
+        side = "home"
+    elif is_away:
+        p_win = p_away
+        p_loss = p_home
+        side = "away"
+    else:
+        return None
+
+    no_push_probability = p_win / max(1e-9, (p_win + p_loss))
+    return {
+        "side": side,
+        "p_win": round(p_win, 6),
+        "p_draw": round(p_draw, 6),
+        "p_loss": round(p_loss, 6),
+        "dnb_no_push_probability": round(no_push_probability, 6),
+        "dnb_no_push_probability_pct": round(no_push_probability * 100.0, 3),
+        "dnb_fair_odds_no_push": round(1.0 / max(1e-9, no_push_probability), 4),
+    }
+
+
+def dnb_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
+    if not env_bool("CONTROLLED_FALLBACK_DNB_SANITY_ENABLED", True):
+        return {"enabled": False}
+    if family_norm(candidate) != "dnb":
+        return {"enabled": False, "reason": "family_not_dnb"}
+
+    expected_home = candidate.get("expected_home")
+    expected_away = candidate.get("expected_away")
+    if expected_home in (None, "") or expected_away in (None, ""):
+        return {"enabled": False, "reason": "missing_xg"}
+
+    payload = dnb_probability_from_xg(
+        candidate.get("selection") or "",
+        candidate.get("home_team") or "",
+        candidate.get("away_team") or "",
+        expected_home,
+        expected_away,
+    )
+    if payload is None:
+        return {"enabled": False, "reason": "unsupported_dnb_selection"}
+
+    xg_prob = float(payload["dnb_no_push_probability"])
+    gap_pp = (float(adjusted_probability) - xg_prob) * 100.0
+    abs_gap_pp = abs(gap_pp)
+
+    # For DNB, if xG no-push probability is much higher than model adjusted probability,
+    # it is not a conflict; the model is just conservative. Conflict only when model is
+    # materially more optimistic than xG.
+    optimism_gap_pp = max(0.0, gap_pp)
+    direction_ok = optimism_gap_pp <= env_float("CONTROLLED_FALLBACK_DNB_MAX_MODEL_OPTIMISM_GAP_PP", 12.0)
+
+    payload.update({
+        "enabled": True,
+        "dnb_model_gap_pp": round(gap_pp, 3),
+        "dnb_abs_gap_pp": round(abs_gap_pp, 3),
+        "dnb_model_optimism_gap_pp": round(optimism_gap_pp, 3),
+        "dnb_direction_ok": direction_ok,
+    })
+    return payload
+
+
+
 def quality_payload(candidate: dict[str, Any]) -> dict[str, Any]:
     diag = candidate.get("diagnostics") or {}
     q = diag.get("quality") if isinstance(diag, dict) else None
@@ -484,6 +600,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     quality_score, quality_score_source = quality_proxy_score(candidate, seed_metrics, raw_quality_score)
     xg_sanity = xg_sanity_metrics(candidate, adjusted)
     btts_sanity = btts_sanity_metrics(candidate, adjusted)
+    dnb_sanity = dnb_sanity_metrics(candidate, adjusted)
 
     return {
         "odds": round(odds, 4),
@@ -504,6 +621,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "quality_reasons": quality_reasons(candidate),
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
+        "dnb_sanity": dnb_sanity,
     }
 
 
@@ -566,6 +684,14 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         hard_gap = env_float("CONTROLLED_FALLBACK_BTTS_HARD_REJECT_GAP_PP", 16.0)
         if float(btts.get("btts_abs_gap_pp") or 0.0) > hard_gap:
             reasons.append("btts_probability_gap_hard_reject")
+
+    dnb = metrics.get("dnb_sanity") or {}
+    if bool(dnb.get("enabled")):
+        if not bool(dnb.get("dnb_direction_ok", True)):
+            reasons.append("dnb_direction_conflict")
+        hard_gap = env_float("CONTROLLED_FALLBACK_DNB_HARD_REJECT_OPTIMISM_GAP_PP", 16.0)
+        if float(dnb.get("dnb_model_optimism_gap_pp") or 0.0) > hard_gap:
+            reasons.append("dnb_probability_gap_hard_reject")
     return reasons
 
 
@@ -620,6 +746,18 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             if gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_BTTS_GAP_PP", 7.0):
                 reasons.append("tier_a_btts_confirmation_missing")
 
+    dnb = metrics.get("dnb_sanity") or {}
+    if bool(dnb.get("enabled")):
+        optimism_gap = float(dnb.get("dnb_model_optimism_gap_pp") or 0.0)
+        max_gap = env_float(prefix + "MAX_DNB_OPTIMISM_GAP_PP", 999.0)
+        if optimism_gap > max_gap:
+            reasons.append(f"tier_{tier.lower()}_dnb_gap_above_max")
+        if tier in {"A", "B"} and not bool(dnb.get("dnb_direction_ok", True)):
+            reasons.append(f"tier_{tier.lower()}_dnb_direction_conflict")
+        if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_DNB_SANITY", True):
+            if optimism_gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_DNB_OPTIMISM_GAP_PP", 6.0):
+                reasons.append("tier_a_dnb_confirmation_missing")
+
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
     allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
     if q_reasons and q_reasons[0] not in allowed_stops:
@@ -648,8 +786,10 @@ def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str
     xg_gap_penalty = min(10.0, float(xg.get("xg_abs_gap_pp") or 0.0) * 0.45) if bool(xg.get("enabled")) else 0.0
     btts = metrics.get("btts_sanity") or {}
     btts_gap_penalty = min(10.0, float(btts.get("btts_abs_gap_pp") or 0.0) * 0.45) if bool(btts.get("enabled")) else 0.0
+    dnb = metrics.get("dnb_sanity") or {}
+    dnb_gap_penalty = min(8.0, float(dnb.get("dnb_model_optimism_gap_pp") or 0.0) * 0.50) if bool(dnb.get("enabled")) else 0.0
     return (
-        tier_bonus + float(metrics["canonical_ev_pct"]) - proxy_penalty - xg_gap_penalty - btts_gap_penalty,
+        tier_bonus + float(metrics["canonical_ev_pct"]) - proxy_penalty - xg_gap_penalty - btts_gap_penalty - dnb_gap_penalty,
         float(metrics["canonical_edge_pp"]),
         float(metrics["quality_score"]),
         float(metrics["publication_score"]),
@@ -770,6 +910,13 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         xg_line += (
             f"\n🔎 ОЗ-проверка: ориентир {float(btts.get('btts_probability_pct') or 0.0):.1f}% "
             f"| разрыв {float(btts.get('btts_model_gap_pp') or 0.0):+.1f} п.п."
+        )
+
+    dnb = metrics.get("dnb_sanity") or {}
+    if bool(dnb.get("enabled")):
+        xg_line += (
+            f"\n🔎 DNB-проверка: без ничьей {float(dnb.get('dnb_no_push_probability_pct') or 0.0):.1f}% "
+            f"| разрыв {float(dnb.get('dnb_model_gap_pp') or 0.0):+.1f} п.п."
         )
 
     risk_note = {
