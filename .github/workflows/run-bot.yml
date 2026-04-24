@@ -35,7 +35,7 @@ on:
       max_picks_per_run:
         description: Maximum picks to publish in this manual run
         required: false
-        default: '3'
+        default: '2'
         type: string
   schedule:
     - cron: '7 5 * * *'
@@ -100,7 +100,7 @@ env:
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
   PUBLISH_WINDOW_HOURS: '12'
   MIN_KICKOFF_LEAD_MINUTES: '30'
-  MAX_PICKS_PER_RUN: '3'
+  MAX_PICKS_PER_RUN: '2'
 
 jobs:
   run-bot:
@@ -188,8 +188,8 @@ jobs:
           echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD=false" >> "$GITHUB_ENV"
-          echo "MAX_PICKS_PER_RUN=3" >> "$GITHUB_ENV"
-          echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=3" >> "$GITHUB_ENV"
+          echo "MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH=1" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_TARGET_OFFSET_DAYS=0" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_HOUR_LOCAL=22" >> "$GITHUB_ENV"
