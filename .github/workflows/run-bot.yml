@@ -182,6 +182,11 @@ jobs:
         run: |
           python scripts/apply_rescue_prefilter_patch.py || true
 
+      - name: Apply global Telegram i18n patch
+        shell: bash
+        run: |
+          python scripts/apply_global_telegram_i18n_patch.py || true
+
       - name: Ensure calibration profile exists
         shell: bash
         run: |

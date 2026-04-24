@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import hashlib
 import json
+import math
 import os
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
-from zoneinfo import ZoneInfo
 
 try:
     from app.services.telegram_i18n import (
@@ -152,39 +152,112 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def telegram_match_tz() -> Any:
-    name = (
-        os.getenv("TELEGRAM_MATCH_TIMEZONE")
-        or os.getenv("APP_TIMEZONE")
-        or os.getenv("TZ")
-        or "Europe/Moscow"
-    )
+
+def poisson_cdf(k: int, lam: float) -> float:
+    if lam < 0:
+        return 0.0
+    if k < 0:
+        return 0.0
+    term = math.exp(-lam)
+    total = term
+    for i in range(1, int(k) + 1):
+        term *= lam / i
+        total += term
+    return max(0.0, min(1.0, total))
+
+
+def total_line_probability_from_xg(selection: Any, point: Any, expected_home: Any, expected_away: Any) -> float | None:
     try:
-        return ZoneInfo(str(name))
+        line = float(point)
+        home = float(expected_home)
+        away = float(expected_away)
     except Exception:
-        return UTC
+        return None
+    if line <= 0 or home < 0 or away < 0:
+        return None
+
+    total_xg = home + away
+    selection_text = str(selection or "").lower()
+    is_over = any(token in selection_text for token in ("over", "больше", "тб"))
+    is_under = any(token in selection_text for token in ("under", "меньше", "тм"))
+    if not (is_over or is_under):
+        return None
+
+    frac = round(line - math.floor(line), 2)
+
+    def over_prob(single_line: float) -> float:
+        if abs(single_line - round(single_line)) < 1e-9:
+            return 1.0 - poisson_cdf(int(round(single_line)), total_xg)
+        return 1.0 - poisson_cdf(int(math.floor(single_line)), total_xg)
+
+    def under_prob(single_line: float) -> float:
+        if abs(single_line - round(single_line)) < 1e-9:
+            return poisson_cdf(int(round(single_line)) - 1, total_xg)
+        return poisson_cdf(int(math.floor(single_line)), total_xg)
+
+    if frac in {0.25, 0.75}:
+        low = math.floor(line) if frac == 0.25 else math.floor(line) + 0.5
+        high = math.floor(line) + 0.5 if frac == 0.25 else math.floor(line) + 1.0
+        probability = (over_prob(low) + over_prob(high)) / 2.0 if is_over else (under_prob(low) + under_prob(high)) / 2.0
+    else:
+        probability = over_prob(line) if is_over else under_prob(line)
+
+    return max(0.0, min(1.0, probability))
 
 
-def timezone_label(dt: datetime) -> str:
-    raw = dt.tzname()
-    if raw:
-        return str(raw)
-    name = str(os.getenv("TELEGRAM_MATCH_TIMEZONE") or os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "UTC")
-    if name == "Europe/Moscow":
-        return "MSK"
-    return name
+def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
+    if not env_bool("CONTROLLED_FALLBACK_XG_SANITY_ENABLED", True):
+        return {"enabled": False}
 
+    fam = family_norm(candidate)
+    if fam not in {"totals", "teamtotals"}:
+        return {"enabled": False, "reason": "family_not_total"}
 
-def format_match_time_for_telegram(value: Any) -> str:
-    kickoff = parse_dt(value)
-    if kickoff is None:
-        return str(value or "н/д")
-    local = kickoff.astimezone(telegram_match_tz())
-    label = timezone_label(local)
-    text = f"{local.strftime('%d.%m.%Y %H:%M')} {label}"
-    if env_bool("TELEGRAM_SHOW_UTC_MATCH_TIME", False):
-        text += f" / UTC {kickoff.strftime('%d.%m.%Y %H:%M')}"
-    return text
+    expected_home = candidate.get("expected_home")
+    expected_away = candidate.get("expected_away")
+    if expected_home in (None, "") or expected_away in (None, ""):
+        return {"enabled": False, "reason": "missing_xg"}
+
+    probability = total_line_probability_from_xg(
+        candidate.get("selection") or "",
+        candidate.get("point"),
+        expected_home,
+        expected_away,
+    )
+    if probability is None:
+        return {"enabled": False, "reason": "unsupported_total_selection"}
+
+    try:
+        total_xg = float(expected_home) + float(expected_away)
+        line = float(candidate.get("point"))
+    except Exception:
+        total_xg = None
+        line = None
+
+    gap_pp = (float(adjusted_probability) - float(probability)) * 100.0
+    abs_gap_pp = abs(gap_pp)
+    selection_text = str(candidate.get("selection") or "").lower()
+    is_over = any(token in selection_text for token in ("over", "больше", "тб"))
+    is_under = any(token in selection_text for token in ("under", "меньше", "тм"))
+
+    direction_ok = True
+    margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.18)
+    if total_xg is not None and line is not None:
+        if is_over and total_xg < line - margin:
+            direction_ok = False
+        if is_under and total_xg > line + margin:
+            direction_ok = False
+
+    return {
+        "enabled": True,
+        "xg_probability": round(probability, 6),
+        "xg_probability_pct": round(probability * 100.0, 3),
+        "xg_model_gap_pp": round(gap_pp, 3),
+        "xg_abs_gap_pp": round(abs_gap_pp, 3),
+        "xg_total": round(total_xg, 3) if total_xg is not None else None,
+        "xg_direction_ok": direction_ok,
+    }
+
 
 
 def quality_payload(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -301,6 +374,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "canonical_ev_pct": canonical_ev_pct,
     }
     quality_score, quality_score_source = quality_proxy_score(candidate, seed_metrics, raw_quality_score)
+    xg_sanity = xg_sanity_metrics(candidate, adjusted)
 
     return {
         "odds": round(odds, 4),
@@ -319,6 +393,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "books_count": books,
         "sources_count": sources,
         "quality_reasons": quality_reasons(candidate),
+        "xg_sanity": xg_sanity,
     }
 
 
@@ -365,6 +440,14 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         reasons.append("missing_sources")
     if fam == "h2h" and metrics["odds"] > 2.25:
         reasons.append("h2h_rescue_odds_too_high")
+
+    xg = metrics.get("xg_sanity") or {}
+    if bool(xg.get("enabled")):
+        if not bool(xg.get("xg_direction_ok", True)):
+            reasons.append("xg_direction_conflict")
+        hard_gap = env_float("CONTROLLED_FALLBACK_XG_HARD_REJECT_GAP_PP", 14.0)
+        if float(xg.get("xg_abs_gap_pp") or 0.0) > hard_gap:
+            reasons.append("xg_probability_gap_hard_reject")
     return reasons
 
 
@@ -389,6 +472,24 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         reasons.append(f"tier_{tier.lower()}_publication_score_below_min")
     if metrics["odds"] > env_float(prefix + "MAX_ODDS", env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.05)):
         reasons.append(f"tier_{tier.lower()}_odds_above_max")
+
+    # Proxy quality is useful for reserve ranking, but it must not create a false Tier A signal.
+    if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_RAW_QUALITY", True):
+        if str(metrics.get("quality_score_source") or "") == "proxy":
+            reasons.append("tier_a_proxy_quality_not_allowed")
+
+    xg = metrics.get("xg_sanity") or {}
+    if bool(xg.get("enabled")):
+        gap = float(xg.get("xg_abs_gap_pp") or 0.0)
+        max_gap = env_float(prefix + "MAX_XG_GAP_PP", 999.0)
+        if gap > max_gap:
+            reasons.append(f"tier_{tier.lower()}_xg_gap_above_max")
+        if tier in {"A", "B"} and not bool(xg.get("xg_direction_ok", True)):
+            reasons.append(f"tier_{tier.lower()}_xg_direction_conflict")
+        if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_XG_SANITY", True):
+            if gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_XG_GAP_PP", 6.5):
+                reasons.append("tier_a_xg_confirmation_missing")
+
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
     allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
     if q_reasons and q_reasons[0] not in allowed_stops:
@@ -412,14 +513,16 @@ def evaluate_candidate(candidate: dict[str, Any], sent_index: dict[str, Any]) ->
 
 def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> tuple[float, float, float, float, float]:
     tier_bonus = {"уровень A": 30.0, "уровень B": 15.0, "уровень C": 0.0}.get(tier, 0.0)
+    proxy_penalty = 5.0 if str(metrics.get("quality_score_source") or "") == "proxy" else 0.0
+    xg = metrics.get("xg_sanity") or {}
+    xg_gap_penalty = min(10.0, float(xg.get("xg_abs_gap_pp") or 0.0) * 0.45) if bool(xg.get("enabled")) else 0.0
     return (
-        tier_bonus + float(metrics["canonical_ev_pct"]),
+        tier_bonus + float(metrics["canonical_ev_pct"]) - proxy_penalty - xg_gap_penalty,
         float(metrics["canonical_edge_pp"]),
         float(metrics["quality_score"]),
         float(metrics["publication_score"]),
         float(metrics["confidence"]),
     )
-
 
 def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     pool: list[dict[str, Any]] = []
@@ -501,9 +604,10 @@ def market_title(family: str) -> str:
 
 
 def kickoff_text(candidate: dict[str, Any]) -> str:
-    return format_match_time_for_telegram(
-        candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff")
-    )
+    kickoff = parse_dt(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
+    if kickoff is None:
+        return str(candidate.get("commence_time") or "")
+    return kickoff.astimezone(UTC).isoformat()
 
 
 def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str, bankroll: dict[str, Any]) -> str:
@@ -523,6 +627,12 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
     if expected_home not in (None, "") and expected_away not in (None, ""):
         try:
             xg_line = f"\n📈 Ожидаемые голы: {float(expected_home):.2f} : {float(expected_away):.2f}"
+            xg = metrics.get("xg_sanity") or {}
+            if bool(xg.get("enabled")):
+                xg_line += (
+                    f"\n🔎 xG-проверка: ориентир {float(xg.get('xg_probability_pct') or 0.0):.1f}% "
+                    f"| разрыв {float(xg.get('xg_model_gap_pp') or 0.0):+.1f} п.п."
+                )
         except Exception:
             pass
     risk_note = {
@@ -631,7 +741,6 @@ def main() -> int:
             "league_name": candidate.get("league_name"),
             "league_name_ru": translate_league_name(candidate.get("league_name") or ""),
             "commence_time": candidate.get("commence_time"),
-            "commence_time_display": kickoff_text(candidate),
             "candidate_source": candidate.get("_candidate_source"),
             "family": candidate.get("family"),
             "selection": candidate.get("selection"),
@@ -699,7 +808,6 @@ def main() -> int:
             "odds": chosen.get("odds"),
             "tier": tier,
             "commence_time": chosen.get("commence_time"),
-            "commence_time_display": kickoff_text(chosen),
             "metrics": metrics,
         },
         "telegram_result": send_result,
