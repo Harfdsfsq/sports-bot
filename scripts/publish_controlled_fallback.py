@@ -94,13 +94,16 @@ def as_int(value: Any, default: int = 0) -> int:
 
 
 def effective_min_kickoff_lead_minutes() -> int:
-    base_lead = max(0, env_int("MIN_KICKOFF_LEAD_MINUTES", 20))
-    if not env_bool("CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD", True):
+    # Fixed publication policy: scan matches starting no sooner than MIN_KICKOFF_LEAD_MINUTES.
+    # For this bundle the intended value is 30 minutes. Late/manual adaptive lead is disabled
+    # unless explicitly re-enabled in env.
+    base_lead = max(0, env_int("MIN_KICKOFF_LEAD_MINUTES", 30))
+    if not env_bool("CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD", False):
         return base_lead
     if not env_bool("MANUAL_LATE_MODE_ENABLED", False):
         return base_lead
-    adaptive = env_int("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES", 0)
-    late = env_int("MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES", 0)
+    adaptive = env_int("MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES", base_lead)
+    late = env_int("MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES", base_lead)
     candidates = [base_lead]
     if adaptive > 0:
         candidates.append(adaptive)
@@ -1166,15 +1169,178 @@ def kickoff_text(candidate: dict[str, Any]) -> str:
         candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff")
     )
 
+
+def publish_window_label() -> str:
+    hours = max(1, env_int("PUBLISH_WINDOW_HOURS", 24))
+    if 11 <= hours % 100 <= 14:
+        word = "часов"
+    elif hours % 10 == 1:
+        word = "час"
+    elif hours % 10 in {2, 3, 4}:
+        word = "часа"
+    else:
+        word = "часов"
+    return f"{hours} {word}"
+
+
+def stake_amount_for_tier(tier: str, bankroll: dict[str, Any], used_stake: float = 0.0) -> float:
+    bank = as_float(bankroll.get("current_balance"), as_float(bankroll.get("starting_balance"), 0.0))
+    open_exposure = as_float(bankroll.get("open_exposure"), 0.0)
+    available = max(0.0, bank - open_exposure - max(0.0, used_stake))
+    stake_pct = env_float("CONTROLLED_FALLBACK_STAKE_PCT", 0.65)
+    max_stake = env_float("CONTROLLED_FALLBACK_MAX_STAKE_" + tier.replace("уровень ", "TIER_").replace(" ", "_").upper(), 5.0)
+    min_stake = env_float("CONTROLLED_FALLBACK_MIN_STAKE", 5.0)
+    total_cap_pct = env_float("CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT", 1.8)
+    total_cap = bank * total_cap_pct / 100.0 if bank > 0 else max_stake
+    remaining_cap = max(0.0, total_cap - max(0.0, used_stake))
+    raw = min(max_stake, max(min_stake, bank * stake_pct / 100.0)) if bank > 0 else max_stake
+    stake = min(raw, available, remaining_cap)
+    if stake < min_stake and env_bool("CONTROLLED_FALLBACK_SKIP_IF_STAKE_BELOW_MIN", True):
+        return 0.0
+    return max(0.0, round(stake, 2))
+
+
+def sanity_lines(metrics: dict[str, Any]) -> str:
+    lines = ""
+    xg = metrics.get("xg_sanity") or {}
+    if bool(xg.get("enabled")):
+        lines += (
+            f"\n🔎 xG-проверка: ориентир {float(xg.get('xg_probability_pct') or 0.0):.1f}% "
+            f"| разрыв {float(xg.get('xg_model_gap_pp') or 0.0):+.1f} п.п."
+        )
+    btts = metrics.get("btts_sanity") or {}
+    if bool(btts.get("enabled")):
+        lines += (
+            f"\n🔎 ОЗ-проверка: ориентир {float(btts.get('btts_probability_pct') or 0.0):.1f}% "
+            f"| разрыв {float(btts.get('btts_model_gap_pp') or 0.0):+.1f} п.п."
+        )
+    dnb = metrics.get("dnb_sanity") or {}
+    if bool(dnb.get("enabled")):
+        lines += (
+            f"\n🔎 DNB-проверка: без ничьей {float(dnb.get('dnb_no_push_probability_pct') or 0.0):.1f}% "
+            f"| xG EV {float(dnb.get('dnb_xg_ev_unconditional_pct') or 0.0):+.1f}% "
+            f"| разрыв {float(dnb.get('dnb_model_gap_pp') or 0.0):+.1f} п.п."
+        )
+    return lines
+
+
+def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], tier: str, stake: float) -> str:
+    home = translate_team_name(candidate.get("home_team") or "")
+    away = translate_team_name(candidate.get("away_team") or "")
+    league = translate_league_name(candidate.get("league_name") or "")
+    selection = translate_selection_text(candidate.get("selection") or "", candidate.get("home_team") or "", candidate.get("away_team") or "")
+
+    expected_home = candidate.get("expected_home")
+    expected_away = candidate.get("expected_away")
+    xg_line = ""
+    if expected_home not in (None, "") and expected_away not in (None, ""):
+        try:
+            xg_line = f"\n📈 Ожидаемые голы: {float(expected_home):.2f} : {float(expected_away):.2f}"
+        except Exception:
+            xg_line = ""
+    xg_line += sanity_lines(metrics)
+
+    source_note = ""
+    if int(metrics.get("sources_count") or 0) < 2:
+        source_note = " | один источник, сниженный риск"
+
+    return (
+        f"{index}. {home} — {away}\n"
+        f"🎯 Ставка: {bet_line_text(candidate, selection)}\n"
+        f"💸 Коэффициент: {metrics['odds']:.2f}\n"
+        f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
+        f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
+        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} "
+        f"({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}{source_note}\n"
+        f"📚 Линии: {metrics['books_count']} | Источники: {metrics['sources_count']} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
+        f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
+        f"🏆 Турнир: {league}\n"
+        f"🕒 Начало: {kickoff_text(candidate)}\n"
+        f"💰 Сумма ставки: {stake:.2f} (ограничение риска)"
+        f"{xg_line}"
+    )
+
+
+def select_top_picks(
+    viable: list[tuple[tuple[float, float, float, float, float], dict[str, Any], dict[str, Any], str]],
+    bankroll: dict[str, Any],
+) -> list[tuple[dict[str, Any], dict[str, Any], str, float]]:
+    max_picks = max(1, env_int("CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN", env_int("MAX_PICKS_PER_RUN", 1)))
+    max_picks = min(max_picks, env_int("CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN", 3))
+    per_match = max(1, env_int("CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH", 1))
+
+    selected: list[tuple[dict[str, Any], dict[str, Any], str, float]] = []
+    match_counts: dict[str, int] = {}
+    used_stake = 0.0
+
+    for _, candidate, metrics, tier in viable:
+        if len(selected) >= max_picks:
+            break
+
+        tier_letter = str(tier).replace("уровень ", "").strip().upper()
+        if tier_letter == "C" and not env_bool("CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED", False):
+            continue
+
+        # Extra top-bundle guard: additional picks must be materially good, not just barely pass.
+        if len(selected) > 0 and env_bool("CONTROLLED_FALLBACK_EXTRA_PICK_STRICT", True):
+            if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT", 7.0):
+                continue
+            if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP", 3.0):
+                continue
+            if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE", 67.0):
+                continue
+
+        match_key = str(candidate.get("match_key") or f"{candidate.get('home_team')}|{candidate.get('away_team')}|{candidate.get('commence_time')}")
+        if match_counts.get(match_key, 0) >= per_match:
+            continue
+
+        stake = stake_amount_for_tier(tier, bankroll, used_stake)
+        if stake <= 0:
+            continue
+
+        selected.append((candidate, metrics, tier, stake))
+        match_counts[match_key] = match_counts.get(match_key, 0) + 1
+        used_stake += stake
+
+    return selected
+
+
+def build_top_bundle_message(
+    selected: list[tuple[dict[str, Any], dict[str, Any], str, float]],
+    bankroll: dict[str, Any],
+) -> str:
+    bank = as_float(bankroll.get("current_balance"), as_float(bankroll.get("starting_balance"), 0.0))
+    open_exposure = as_float(bankroll.get("open_exposure"), 0.0)
+    available = max(0.0, bank - open_exposure)
+    total_stake = sum(item[3] for item in selected)
+    n = len(selected)
+
+    title_word = "прогноз" if n == 1 else "прогноза" if n in {2, 3, 4} else "прогнозов"
+    lines = [
+        f"🔥 {n} топовых контролируемых {title_word} на ближайшие {publish_window_label()}",
+        "",
+        f"💼 Банк: {bank:.2f} | Открытый риск: {open_exposure:.2f} | Доступно: {available:.2f}",
+        f"💰 Новый риск: {total_stake:.2f} | Режим: top-bundle, только прошедшие финальные guard’ы",
+        "",
+        f"Окно поиска: от {effective_min_kickoff_lead_minutes()} мин до {publish_window_label()}. "
+        "Публикую 1 лучший прогноз или multi-прогноз, если несколько разных матчей отдельно проходят EV, время, дубли и market/xG sanity.",
+        "",
+    ]
+    for idx, (candidate, metrics, tier, stake) in enumerate(selected, start=1):
+        lines.append(pick_block(idx, candidate, metrics, tier, stake))
+        if idx != n:
+            lines.append("")
+    lines.append("")
+    lines.append("📝 Комментарий: это не гарантия прибыли. Сумма снижена, потому что часть сигналов остаётся controlled reserve, а не clean quality-pass.")
+    return normalize_telegram_text("\n".join(lines))
+
+
+
 def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str, bankroll: dict[str, Any]) -> str:
     bank = as_float(bankroll.get("current_balance"), as_float(bankroll.get("starting_balance"), 0.0))
     open_exposure = as_float(bankroll.get("open_exposure"), 0.0)
     available = max(0.0, bank - open_exposure)
-    stake_pct = env_float("CONTROLLED_FALLBACK_STAKE_PCT", 0.65)
-    max_stake = env_float("CONTROLLED_FALLBACK_MAX_STAKE_" + tier.replace("уровень ", "TIER_").replace(" ", "_").upper(), 5.0)
-    min_stake = env_float("CONTROLLED_FALLBACK_MIN_STAKE", 5.0)
-    stake = min(max_stake, max(min_stake, bank * stake_pct / 100.0)) if bank > 0 else max_stake
-    stake = min(stake, available) if available > 0 else 0.0
+    stake = stake_amount_for_tier(tier, bankroll, 0.0)
     point = candidate.get("point")
     point_text = "" if point in (None, "", "null") else f" ({point})"
     expected_home = candidate.get("expected_home")
@@ -1218,7 +1384,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
     selection = translate_selection_text(candidate.get("selection") or "", candidate.get("home_team") or "", candidate.get("away_team") or "")
 
     return normalize_telegram_text(
-        "🔥 1 контролируемый прогноз на ближайшие 24 часа\n\n"
+        f"🔥 1 контролируемый прогноз на ближайшие {publish_window_label()}\n\n"
         f"💼 Банк: {bank:.2f} | Открытый риск: {open_exposure:.2f} | Доступно: {available:.2f}\n\n"
         f"⚠️ Режим: {risk_note}\n\n"
         f"1. {home} — {away}\n"
@@ -1289,6 +1455,12 @@ def main() -> int:
         "status": "not_started",
         "candidates_seen": 0,
         "evaluated": [],
+        "scan_policy": {
+            "min_kickoff_lead_minutes": effective_min_kickoff_lead_minutes(),
+            "publish_window_hours": env_int("PUBLISH_WINDOW_HOURS", 12),
+            "mode": "best_or_multi",
+            "max_picks_per_run": env_int("CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN", env_int("MAX_PICKS_PER_RUN", 3)),
+        },
         "time_guard": {
             "enabled": env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True),
             "min_kickoff_lead_minutes": effective_min_kickoff_lead_minutes(),
@@ -1359,49 +1531,94 @@ def main() -> int:
         return 0
 
     viable.sort(key=lambda item: item[0], reverse=True)
-    _, chosen, metrics, tier = viable[0]
-    message = build_message(chosen, metrics, tier, bankroll)
+    selected_items = select_top_picks(viable, bankroll)
+    if not selected_items:
+        report["status"] = "no_viable_after_top_bundle_stake_guard"
+        report["watchlist"] = build_watchlist(report.get("evaluated") or [])
+        write_json("artifacts/controlled-fallback-report.json", report)
+        write_json(".data/exports/latest-controlled-fallback-report.json", report)
+        if env_bool("CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT", True) and not env_bool("PUBLISH_DRY_RUN", False):
+            sent, send_result = send_telegram(build_no_pick_message(report))
+            report["no_pick_report_sent"] = sent
+            report["telegram_result"] = send_result
+            write_json("artifacts/controlled-fallback-report.json", report)
+            write_json(".data/exports/latest-controlled-fallback-report.json", report)
+        return 0
+
+    if len(selected_items) == 1:
+        chosen, metrics, tier, stake = selected_items[0]
+        message = build_message(chosen, metrics, tier, bankroll)
+    else:
+        message = build_top_bundle_message(selected_items, bankroll)
+
     dry_run = env_bool("PUBLISH_DRY_RUN", False) or not env_bool("CONTROLLED_FALLBACK_SEND_TELEGRAM", True)
     sent = False
     send_result = "dry_run"
     if not dry_run:
         sent, send_result = send_telegram(message)
 
-    key = dedupe_key(chosen)
+    selected_rows: list[dict[str, Any]] = []
     if sent or dry_run:
-        sent_index[key] = {
-            "sent_at": datetime.now(UTC).isoformat(),
-            "match_key": chosen.get("match_key"),
-            "family": chosen.get("family"),
-            "selection": chosen.get("selection"),
-            "point": chosen.get("point"),
-            "tier": tier,
-            "commence_time": chosen.get("commence_time"),
-        }
+        for chosen, metrics, tier, stake in selected_items:
+            key = dedupe_key(chosen)
+            sent_index[key] = {
+                "sent_at": datetime.now(UTC).isoformat(),
+                "match_key": chosen.get("match_key"),
+                "family": chosen.get("family"),
+                "selection": chosen.get("selection"),
+                "point": chosen.get("point"),
+                "tier": tier,
+                "commence_time": chosen.get("commence_time"),
+            }
+            selected_rows.append({
+                "dedupe_key": key,
+                "match_key": chosen.get("match_key"),
+                "home_team": chosen.get("home_team"),
+                "away_team": chosen.get("away_team"),
+                "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
+                "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
+                "league_name": chosen.get("league_name"),
+                "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
+                "family": chosen.get("family"),
+                "selection": chosen.get("selection"),
+                "point": chosen.get("point"),
+                "odds": chosen.get("odds"),
+                "tier": tier,
+                "stake": stake,
+                "commence_time": chosen.get("commence_time"),
+                "commence_time_display": kickoff_text(chosen),
+                "metrics": metrics,
+            })
         save_sent_index(sent_index)
+    else:
+        for chosen, metrics, tier, stake in selected_items:
+            selected_rows.append({
+                "dedupe_key": dedupe_key(chosen),
+                "match_key": chosen.get("match_key"),
+                "home_team": chosen.get("home_team"),
+                "away_team": chosen.get("away_team"),
+                "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
+                "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
+                "league_name": chosen.get("league_name"),
+                "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
+                "family": chosen.get("family"),
+                "selection": chosen.get("selection"),
+                "point": chosen.get("point"),
+                "odds": chosen.get("odds"),
+                "tier": tier,
+                "stake": stake,
+                "commence_time": chosen.get("commence_time"),
+                "commence_time_display": kickoff_text(chosen),
+                "metrics": metrics,
+            })
 
     report.update({
         "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
         "published": bool(sent),
         "dry_run": bool(dry_run),
-        "selected": {
-            "dedupe_key": key,
-            "match_key": chosen.get("match_key"),
-            "home_team": chosen.get("home_team"),
-            "away_team": chosen.get("away_team"),
-            "home_team_ru": translate_team_name(chosen.get("home_team") or ""),
-            "away_team_ru": translate_team_name(chosen.get("away_team") or ""),
-            "league_name": chosen.get("league_name"),
-            "league_name_ru": translate_league_name(chosen.get("league_name") or ""),
-            "family": chosen.get("family"),
-            "selection": chosen.get("selection"),
-            "point": chosen.get("point"),
-            "odds": chosen.get("odds"),
-            "tier": tier,
-            "commence_time": chosen.get("commence_time"),
-            "commence_time_display": kickoff_text(chosen),
-            "metrics": metrics,
-        },
+        "selected_count": len(selected_rows),
+        "selected": selected_rows[0] if selected_rows else None,
+        "selected_all": selected_rows,
         "telegram_result": send_result,
         "message": message,
     })

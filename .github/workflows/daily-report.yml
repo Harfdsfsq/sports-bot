@@ -1,0 +1,223 @@
+name: Daily report
+
+on:
+  workflow_dispatch:
+    inputs:
+      profile:
+        description: Runtime profile for report-only run
+        required: true
+        default: balanced
+        type: choice
+        options:
+          - balanced
+          - conservative
+          - default
+      target_offset_days:
+        description: "0 = today by MSK, 1 = yesterday"
+        required: false
+        default: '0'
+        type: string
+      force_resend:
+        description: Remove sent marker and send report again for selected date
+        required: false
+        default: true
+        type: boolean
+  schedule:
+    # 22:10 MSK every day
+    - cron: '10 19 * * *'
+    # 23:10 MSK safety rerun; sends only if report changed / was not sent
+    - cron: '10 20 * * *'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: daily-report-${{ github.event.schedule || github.event_name }}
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+
+  # Report-only mode: no forecasts, no fallback publisher.
+  PUBLISH_DRY_RUN: 'false'
+  PREDICTION_PUBLICATION_ENABLED: 'false'
+  RUN_REPORT_ENABLED: 'false'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
+  SETTLEMENT_ENABLED: 'true'
+  SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
+
+  DAILY_REPORT_ENABLED: 'true'
+  DAILY_REPORT_SEND_TELEGRAM: 'true'
+  # Force due in the separate daily report workflow. The workflow itself is scheduled at 22:10 / 23:10 MSK.
+  DAILY_REPORT_HOUR_LOCAL: '0'
+  DAILY_REPORT_TARGET_OFFSET_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}
+  DAILY_REPORT_RESEND_ON_CHANGE: 'true'
+  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'true'
+
+  MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
+  PUBLISH_WINDOW_HOURS: '12'
+  MIN_KICKOFF_LEAD_MINUTES: '30'
+  MAX_PICKS_PER_RUN: '0'
+  CONTROLLED_FALLBACK_SEND_TELEGRAM: 'false'
+
+jobs:
+  daily-report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Prepare local state folders
+        shell: bash
+        run: |
+          mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/daily-report
+          rm -f artifacts/controlled-fallback-report.json
+          rm -f artifacts/run-bot/latest-rescue-candidates.json
+          rm -f .data/exports/latest-rescue-candidates.json
+          rm -f .data/exports/latest-controlled-fallback-report.json
+          rm -f .data/exports/latest-controlled-fallback-pick.json
+
+      - name: Apply selected runtime profile
+        shell: bash
+        env:
+          SELECTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'balanced' }}
+        run: |
+          set -euo pipefail
+          echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
+          case "$SELECTED_PROFILE" in
+            balanced)
+              PROFILE_FILE="config/balanced_output.env"
+              ;;
+            conservative)
+              PROFILE_FILE="config/conservative_passability.env"
+              ;;
+            default)
+              PROFILE_FILE=""
+              ;;
+            *)
+              echo "Unknown profile: $SELECTED_PROFILE" >&2
+              exit 1
+              ;;
+          esac
+          if [ -n "$PROFILE_FILE" ] && [ -f "$PROFILE_FILE" ]; then
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
+            echo "Applied profile file: $PROFILE_FILE"
+          else
+            echo "No profile file applied"
+          fi
+
+      - name: Force report-only daily mode
+        shell: bash
+        run: |
+          echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_SEND_TELEGRAM=false" >> "$GITHUB_ENV"
+          echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
+          echo "SETTLEMENT_ENABLED=true" >> "$GITHUB_ENV"
+          echo "SETTLEMENT_SEND_TELEGRAM_SUMMARY=false" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_ENABLED=true" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_SEND_TELEGRAM=true" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_HOUR_LOCAL=0" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_TARGET_OFFSET_DAYS=${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_RESEND_ON_CHANGE=true" >> "$GITHUB_ENV"
+          echo "NIGHTLY_REVIEW_REPORT_ONLY_ENABLED=true" >> "$GITHUB_ENV"
+          echo "MAX_PICKS_PER_RUN=0" >> "$GITHUB_ENV"
+
+      - name: Apply daily report today-date patch
+        shell: bash
+        run: |
+          python scripts/apply_daily_report_today_patch.py || true
+
+      - name: Force resend for manual run
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.force_resend }}
+        shell: bash
+        run: |
+          echo "DAILY_REPORT_FORCE_RESEND=true" >> "$GITHUB_ENV"
+          python scripts/reset_daily_report_sent.py || true
+
+      - name: Ensure calibration profile exists
+        shell: bash
+        run: |
+          mkdir -p .data
+          if [ ! -f .data/calibration-profile.json ] && [ -f config/calibration-profile.example.json ]; then
+            cp config/calibration-profile.example.json .data/calibration-profile.json
+          fi
+
+      - name: Run daily report only
+        run: python -m app.cli run-once
+
+      - name: Collect daily report artifacts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/daily-report
+          cp -f .data/exports/latest-daily-report.json artifacts/daily-report/latest-daily-report.json 2>/dev/null || true
+          cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
+          cp -f .data/exports/latest-daily-report.csv artifacts/daily-report/latest-daily-report.csv 2>/dev/null || true
+          cp -f .data/exports/latest-daily-summary.csv artifacts/daily-report/latest-daily-summary.csv 2>/dev/null || true
+          echo "---- latest daily summary ----"
+          cat artifacts/daily-report/latest-daily-summary.json || true
+
+      - name: Generate audit payloads
+        if: always()
+        shell: bash
+        run: |
+          python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
+          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json || true
+          python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
+
+      - name: Upload daily-report artifact
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: daily-report-current
+          path: |
+            artifacts/daily-report
+            .data/exports/latest-daily-report.json
+            .data/exports/latest-daily-summary.json
+            .data/exports/latest-daily-report.csv
+            .data/exports/latest-daily-summary.csv
+            .logs/debug-last-run.json
+            .logs/runs
+            .data/*.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Commit updated report state
+        if: always()
+        shell: bash
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git add -A -f .data .logs artifacts/daily-report
+          git diff --cached --quiet && exit 0
+          git commit -m "Update daily report state"
+          git push

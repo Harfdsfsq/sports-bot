@@ -25,17 +25,17 @@ on:
       late_manual_mode:
         description: Allow very late manual runs with a smaller kickoff lead window
         required: false
-        default: true
+        default: false
         type: boolean
       publish_window_hours:
         description: Publish window in hours for this manual run
         required: false
-        default: '24'
+        default: '12'
         type: string
       max_picks_per_run:
         description: Maximum picks to publish in this manual run
         required: false
-        default: '1'
+        default: '3'
         type: string
   schedule:
     - cron: '7 5 * * *'
@@ -48,7 +48,9 @@ on:
     - cron: '27 13 * * *'
     - cron: '7 15 * * *'
     - cron: '17 16 * * *'
+    - cron: '37 17 * * *'
     - cron: '7 19 * * *'
+    - cron: '37 20 * * *'
 
 permissions:
   contents: write
@@ -96,9 +98,9 @@ env:
   MIN_SOURCES_PUBLISH: '1'
 
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
-  PUBLISH_WINDOW_HOURS: '24'
-  MIN_KICKOFF_LEAD_MINUTES: '20'
-  MAX_PICKS_PER_RUN: '1'
+  PUBLISH_WINDOW_HOURS: '12'
+  MIN_KICKOFF_LEAD_MINUTES: '30'
+  MAX_PICKS_PER_RUN: '3'
 
 jobs:
   run-bot:
@@ -167,8 +169,8 @@ jobs:
           echo "MANUAL_LATE_MODE_ENABLED=${{ inputs.late_manual_mode && 'true' || 'false' }}" >> "$GITHUB_ENV"
           echo "PUBLISH_WINDOW_HOURS=${{ inputs.publish_window_hours }}" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=${{ inputs.max_picks_per_run }}" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=20" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=10" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
 
       - name: Force external publisher mode
         shell: bash
@@ -176,6 +178,21 @@ jobs:
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=true" >> "$GITHUB_ENV"
+
+      - name: Force 12h 30min best-or-multi scan policy
+        shell: bash
+        run: |
+          echo "PUBLISH_WINDOW_HOURS=12" >> "$GITHUB_ENV"
+          echo "MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MODE_ENABLED=false" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD=false" >> "$GITHUB_ENV"
+          echo "MAX_PICKS_PER_RUN=3" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=3" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH=1" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_TARGET_OFFSET_DAYS=0" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_HOUR_LOCAL=22" >> "$GITHUB_ENV"
 
       - name: Apply rescue prefilter runtime patch
         shell: bash
@@ -186,6 +203,11 @@ jobs:
         shell: bash
         run: |
           python scripts/apply_global_telegram_i18n_patch.py || true
+
+      - name: Apply daily report today-date patch
+        shell: bash
+        run: |
+          python scripts/apply_daily_report_today_patch.py || true
 
       - name: Ensure calibration profile exists
         shell: bash
