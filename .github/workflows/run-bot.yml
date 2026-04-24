@@ -121,7 +121,14 @@ jobs:
 
       - name: Apply Russian Telegram wording patch
         shell: bash
-        run: python scripts/apply_telegram_ru_patch.py
+        run: |
+          if [ -f scripts/apply_telegram_ru_patch.py ]; then
+            python scripts/apply_telegram_ru_patch.py
+          fi
+
+      - name: Apply rescue pre-filter candidate pool patch
+        shell: bash
+        run: python scripts/apply_rescue_prefilter_pool_patch.py
 
       - name: Prepare local state folders
         run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
