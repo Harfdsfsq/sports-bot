@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 import os
+import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -919,12 +920,46 @@ def handicap_market_title(candidate: dict[str, Any]) -> str | None:
     return "Фора"
 
 
+def clean_handicap_selection_text(candidate: dict[str, Any], selection: str) -> str:
+    value = str(selection or "").strip()
+    if not value:
+        return value
+
+    point = clean_point_text(candidate.get("point"))
+    if point:
+        escaped = re.escape(point)
+        patterns = [
+            rf"\s*\(\s*{escaped}\s*\)\s*$",
+            rf"\s+{escaped}\s*$",
+        ]
+        for pattern in patterns:
+            value = re.sub(pattern, "", value).strip()
+
+    value = re.sub(r"\s*\(\s*[+-]?\d+(?:\.\d+)?\s*\)\s*$", "", value).strip()
+    value = re.sub(r"\s+[+-]?\d+(?:\.\d+)?\s*$", "", value).strip()
+
+    try:
+        home_raw = str(candidate.get("home_team") or "").strip()
+        away_raw = str(candidate.get("away_team") or "").strip()
+        if home_raw and home_raw.lower() == value.lower():
+            return translate_team_name(home_raw)
+        if away_raw and away_raw.lower() == value.lower():
+            return translate_team_name(away_raw)
+    except Exception:
+        pass
+
+    return normalize_telegram_text(value)
+
+
+
 def bet_line_text(candidate: dict[str, Any], selection: str) -> str:
     fam = family_norm(candidate)
     handicap_title = handicap_market_title(candidate)
     if handicap_title:
-        # Keep the selected team after dash for readability, but market name becomes Фора 1/Фора 2.
-        return f"{handicap_title} — {selection}" if selection else handicap_title
+        # Keep the selected team after dash for readability, but do not duplicate the point:
+        # "Фора 2(0) — Команда", not "Фора 2(0) — Команда (0)".
+        clean_selection = clean_handicap_selection_text(candidate, selection)
+        return f"{handicap_title} — {clean_selection}" if clean_selection else handicap_title
 
     point = candidate.get("point")
     point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
