@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
+from zoneinfo import ZoneInfo
 
 try:
     from app.services.telegram_i18n import (
@@ -149,6 +150,41 @@ def parse_dt(value: Any) -> datetime | None:
         return dt.astimezone(UTC)
     except Exception:
         return None
+
+
+def telegram_match_tz() -> Any:
+    name = (
+        os.getenv("TELEGRAM_MATCH_TIMEZONE")
+        or os.getenv("APP_TIMEZONE")
+        or os.getenv("TZ")
+        or "Europe/Moscow"
+    )
+    try:
+        return ZoneInfo(str(name))
+    except Exception:
+        return UTC
+
+
+def timezone_label(dt: datetime) -> str:
+    raw = dt.tzname()
+    if raw:
+        return str(raw)
+    name = str(os.getenv("TELEGRAM_MATCH_TIMEZONE") or os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "UTC")
+    if name == "Europe/Moscow":
+        return "MSK"
+    return name
+
+
+def format_match_time_for_telegram(value: Any) -> str:
+    kickoff = parse_dt(value)
+    if kickoff is None:
+        return str(value or "н/д")
+    local = kickoff.astimezone(telegram_match_tz())
+    label = timezone_label(local)
+    text = f"{local.strftime('%d.%m.%Y %H:%M')} {label}"
+    if env_bool("TELEGRAM_SHOW_UTC_MATCH_TIME", False):
+        text += f" / UTC {kickoff.strftime('%d.%m.%Y %H:%M')}"
+    return text
 
 
 def quality_payload(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -465,10 +501,9 @@ def market_title(family: str) -> str:
 
 
 def kickoff_text(candidate: dict[str, Any]) -> str:
-    kickoff = parse_dt(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
-    if kickoff is None:
-        return str(candidate.get("commence_time") or "")
-    return kickoff.astimezone(UTC).isoformat()
+    return format_match_time_for_telegram(
+        candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff")
+    )
 
 
 def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str, bankroll: dict[str, Any]) -> str:
@@ -596,6 +631,7 @@ def main() -> int:
             "league_name": candidate.get("league_name"),
             "league_name_ru": translate_league_name(candidate.get("league_name") or ""),
             "commence_time": candidate.get("commence_time"),
+            "commence_time_display": kickoff_text(candidate),
             "candidate_source": candidate.get("_candidate_source"),
             "family": candidate.get("family"),
             "selection": candidate.get("selection"),
@@ -663,6 +699,7 @@ def main() -> int:
             "odds": chosen.get("odds"),
             "tier": tier,
             "commence_time": chosen.get("commence_time"),
+            "commence_time_display": kickoff_text(chosen),
             "metrics": metrics,
         },
         "telegram_result": send_result,

@@ -7,6 +7,17 @@ from typing import Any
 # The bot keeps raw provider/team names in data, but outgoing Telegram text should be readable in Russian.
 
 TEAM_ALIASES: dict[str, str] = {
+    "Dubai United FC": "Дубай Юнайтед",
+    "Dubai United": "Дубай Юнайтед",
+    "Gulf United": "Галф Юнайтед",
+    "Gulf United FC": "Галф Юнайтед",
+    "Al Arabi UAE": "Аль-Араби ОАЭ",
+    "Al Dhafra": "Аль-Дафра",
+    "Dibba Al Fujairah": "Дибба Аль-Фуджейра",
+    "Hatta Club": "Хатта",
+    "Masfout": "Масфут",
+    "Al Hamriyah": "Аль-Хамрия",
+    "United Arab Emirates": "ОАЭ",
     "El Gouna FC": "Эль-Гуна",
     "Pharco FC": "Фарко",
     "PFC Spartak Pleven": "Спартак Плевен",
@@ -44,6 +55,10 @@ TEAM_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "United Arab Emirates - First Division": "ОАЭ - Первый дивизион",
+    "United Arab Emirates - Pro League": "ОАЭ - Про-лига",
+    "UAE - First Division": "ОАЭ - Первый дивизион",
+    "UAE - Pro League": "ОАЭ - Про-лига",
     "Romania - Liga III": "Румыния - Лига III",
     "Bulgaria - Vtora Liga": "Болгария - Вторая лига",
     "USA - MLS": "США - MLS",
@@ -59,6 +74,19 @@ LEAGUE_ALIASES: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
+    "dubai": "Дубай",
+    "gulf": "Галф",
+    "emirates": "Эмирейтс",
+    "arab": "Араб",
+    "arabic": "Арабик",
+    "arabi": "Араби",
+    "dhafra": "Дафра",
+    "dibba": "Дибба",
+    "fujairah": "Фуджейра",
+    "hatta": "Хатта",
+    "masfout": "Масфут",
+    "hamriyah": "Хамрия",
+    "uae": "ОАЭ",
     "new": "Нью",
     "york": "Йорк",
     "city": "Сити",
@@ -152,9 +180,17 @@ def translate_team_name(name: Any) -> str:
         return ""
     if raw in TEAM_ALIASES:
         return TEAM_ALIASES[raw]
+    raw_lower = raw.lower()
+    for alias, translated in TEAM_ALIASES.items():
+        if alias.lower() == raw_lower:
+            return translated
     stripped = _strip_club_suffixes(raw)
     if stripped in TEAM_ALIASES:
         return TEAM_ALIASES[stripped]
+    stripped_lower = stripped.lower()
+    for alias, translated in TEAM_ALIASES.items():
+        if alias.lower() == stripped_lower:
+            return translated
 
     tokens = re.split(r"([ \-])", stripped)
     translated: list[str] = []
@@ -178,6 +214,10 @@ def translate_league_name(name: Any) -> str:
         return ""
     if raw in LEAGUE_ALIASES:
         return LEAGUE_ALIASES[raw]
+    raw_lower = raw.lower()
+    for alias, translated in LEAGUE_ALIASES.items():
+        if alias.lower() == raw_lower:
+            return translated
     parts = [part.strip() for part in raw.split("-", 1)]
     countries = {
         "USA": "США",
@@ -202,6 +242,8 @@ def translate_league_name(name: Any) -> str:
         "LaLiga": "Ла Лига",
         "Eredivisie": "Эредивизи",
         "DFB Pokal": "Кубок DFB",
+        "First Division": "Первый дивизион",
+        "Pro League": "Про-лига",
     }
     if len(parts) == 2:
         country = countries.get(parts[0], parts[0])
