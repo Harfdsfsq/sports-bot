@@ -8,6 +8,37 @@ from typing import Any
 # Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
+    "Al-Nasr Dubai CSC": "Аль-Наср Дубай",
+    "Al Nasr Dubai CSC": "Аль-Наср Дубай",
+    "Al-Nasr Dubai": "Аль-Наср Дубай",
+    "Al Nasr Dubai": "Аль-Наср Дубай",
+    "Al-Nasr SC Dubai": "Аль-Наср Дубай",
+    "Al Nasr SC Dubai": "Аль-Наср Дубай",
+    "Al-Nasr CSC": "Аль-Наср",
+    "Al Nasr CSC": "Аль-Наср",
+    "Al-Nasr": "Аль-Наср",
+    "Al Nasr": "Аль-Наср",
+    "Al Jazira (UAE)": "Аль-Джазира",
+    "Al-Jazira (UAE)": "Аль-Джазира",
+    "Al Jazira Club": "Аль-Джазира",
+    "Al-Jazira Club": "Аль-Джазира",
+    "Al Jazira": "Аль-Джазира",
+    "Al-Jazira": "Аль-Джазира",
+    "Shabab Al Ahli Dubai": "Шабаб Аль-Ахли Дубай",
+    "Shabab Al-Ahli Dubai": "Шабаб Аль-Ахли Дубай",
+    "Al Ain": "Аль-Айн",
+    "Al-Ain": "Аль-Айн",
+    "Al Wasl": "Аль-Васл",
+    "Al-Wasl": "Аль-Васл",
+    "Al Wahda": "Аль-Вахда",
+    "Al-Wahda": "Аль-Вахда",
+    "Baniyas": "Банияс",
+    "Khor Fakkan": "Хор-Факкан",
+    "Khorfakkan": "Хор-Факкан",
+    "Ajman Club": "Аджман",
+    "Ajman": "Аджман",
+    "Kalba": "Калба",
+    "Ittihad Kalba": "Иттихад Калба",
     "MKS Znicz Pruszkow": "Знич Прушкув",
     "Znicz Pruszkow": "Знич Прушкув",
     "MKS Znicz Pruszków": "Знич Прушкув",
@@ -120,6 +151,13 @@ TEAM_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_ALIASES: dict[str, str] = {
+    "United Arab Emirates - Arabian Gulf League": "ОАЭ - Арабская лига Залива",
+    "United Arab Emirates - UAE Pro League": "ОАЭ - Про-лига",
+    "United Arab Emirates - UAE League": "ОАЭ - Про-лига",
+    "UAE - Arabian Gulf League": "ОАЭ - Арабская лига Залива",
+    "UAE - UAE Pro League": "ОАЭ - Про-лига",
+    "UAE - League Cup": "ОАЭ - Кубок лиги",
+    "United Arab Emirates - League Cup": "ОАЭ - Кубок лиги",
     "Poland - I Liga": "Польша - Первая лига",
     "Poland - Ekstraklasa": "Польша - Экстракласса",
     "Poland - II Liga": "Польша - Вторая лига",
@@ -218,6 +256,7 @@ COUNTRY_ALIASES: dict[str, str] = {
 }
 
 LEAGUE_WORDS: dict[str, str] = {
+    "Arabian Gulf League": "Арабская лига Залива",
     "Premier League": "Премьер-лига",
     "Professional League": "Профессиональная лига",
     "Pro League": "Про-лига",
@@ -253,6 +292,19 @@ LEAGUE_WORDS: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
+    "csc": "",
+    "nasr": "Наср",
+    "jazira": "Джазира",
+    "ain": "Айн",
+    "wasl": "Васл",
+    "wahda": "Вахда",
+    "baniyas": "Банияс",
+    "khor": "Хор",
+    "fakkan": "Факкан",
+    "khorfakkan": "Хор-Факкан",
+    "ajman": "Аджман",
+    "kalba": "Калба",
+    "arabian": "Арабская",
     "mks": "",
     "znicz": "Знич",
     "pruszkow": "Прушкув",
@@ -383,7 +435,7 @@ _SINGLE = {
     "y": "и", "z": "з",
 }
 CLUB_SUFFIX_RE = re.compile(
-    r"^(FC|SC|CF|AC|AFC|PFC|UD)\s+|\s+(FC|SC|CF|AC|AFC|PFC|UD|Club|F\.C\.|S\.C\.)$",
+    r"^(FC|SC|CF|AC|AFC|PFC|UD)\s+|\s+(FC|SC|CF|AC|AFC|PFC|UD|CSC|Club|F\.C\.|S\.C\.)$",
     flags=re.IGNORECASE,
 )
 
@@ -421,6 +473,8 @@ def _lookup_alias(value: Any, aliases: dict[str, str]) -> str | None:
 
 def _strip_club_suffixes(text: str) -> str:
     value = _squash_spaces(text)
+    # Country suffix cleanup: "Al Jazira (UAE)" -> "Al Jazira"
+    value = re.sub(r"\s*\((UAE|United Arab Emirates|KSA|Saudi Arabia|POL|Poland|AUT|Austria)\)\s*$", "", value, flags=re.IGNORECASE)
     previous = None
     while previous != value:
         previous = value
