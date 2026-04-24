@@ -8,6 +8,11 @@ from typing import Any
 # Known names use explicit aliases; unknown names fall back to safe transliteration.
 
 TEAM_ALIASES: dict[str, str] = {
+    "Al Riyadh SC": "Аль-Рияд",
+    "Al-Riyadh SC": "Аль-Рияд",
+    "Al-Hazm SC": "Аль-Хазм",
+    "Al Hazm": "Аль-Хазм",
+    "Al-Hazm": "Аль-Хазм",
     # Saudi Arabia / Gulf
     "Al-Fateh SC": "Аль-Фатех",
     "Al Fateh SC": "Аль-Фатех",
@@ -210,6 +215,7 @@ LEAGUE_WORDS: dict[str, str] = {
 }
 
 WORD_ALIASES: dict[str, str] = {
+    "hazm": "Хазм",
     # club words
     "fc": "",
     "f.c.": "",

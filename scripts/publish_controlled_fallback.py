@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
+from zoneinfo import ZoneInfo
 
 try:
     from app.services.telegram_i18n import (
@@ -152,6 +153,41 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def telegram_match_tz() -> Any:
+    name = (
+        os.getenv("TELEGRAM_MATCH_TIMEZONE")
+        or os.getenv("APP_TIMEZONE")
+        or os.getenv("TZ")
+        or "Europe/Moscow"
+    )
+    try:
+        return ZoneInfo(str(name))
+    except Exception:
+        return UTC
+
+
+def timezone_label(dt: datetime) -> str:
+    raw = dt.tzname()
+    if raw:
+        return str(raw)
+    name = str(os.getenv("TELEGRAM_MATCH_TIMEZONE") or os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "UTC")
+    if name == "Europe/Moscow":
+        return "MSK"
+    return name
+
+
+def format_match_time_for_telegram(value: Any) -> str:
+    kickoff = parse_dt(value)
+    if kickoff is None:
+        return str(value or "н/д")
+    local = kickoff.astimezone(telegram_match_tz())
+    label = timezone_label(local)
+    text = f"{local.strftime('%d.%m.%Y %H:%M')} {label}"
+    if env_bool("TELEGRAM_SHOW_UTC_MATCH_TIME", False):
+        text += f" / UTC {kickoff.strftime('%d.%m.%Y %H:%M')}"
+    return text
+
+
 
 def poisson_cdf(k: int, lam: float) -> float:
     if lam < 0:
@@ -256,6 +292,78 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
         "xg_abs_gap_pp": round(abs_gap_pp, 3),
         "xg_total": round(total_xg, 3) if total_xg is not None else None,
         "xg_direction_ok": direction_ok,
+    }
+
+
+
+
+def btts_probability_from_xg(selection: Any, expected_home: Any, expected_away: Any) -> float | None:
+    try:
+        home = float(expected_home)
+        away = float(expected_away)
+    except Exception:
+        return None
+    if home < 0 or away < 0:
+        return None
+
+    yes_probability = (1.0 - math.exp(-home)) * (1.0 - math.exp(-away))
+    selection_text = str(selection or "").lower()
+    is_yes = any(token in selection_text for token in ("yes", "да", "btts yes", "обе забьют: да"))
+    is_no = any(token in selection_text for token in ("no", "нет", "btts no", "обе забьют: нет"))
+    if is_yes:
+        return max(0.0, min(1.0, yes_probability))
+    if is_no:
+        return max(0.0, min(1.0, 1.0 - yes_probability))
+    return None
+
+
+def btts_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
+    if not env_bool("CONTROLLED_FALLBACK_BTTS_SANITY_ENABLED", True):
+        return {"enabled": False}
+    if family_norm(candidate) != "btts":
+        return {"enabled": False, "reason": "family_not_btts"}
+
+    expected_home = candidate.get("expected_home")
+    expected_away = candidate.get("expected_away")
+    if expected_home in (None, "") or expected_away in (None, ""):
+        return {"enabled": False, "reason": "missing_xg"}
+
+    probability = btts_probability_from_xg(candidate.get("selection") or "", expected_home, expected_away)
+    if probability is None:
+        return {"enabled": False, "reason": "unsupported_btts_selection"}
+
+    try:
+        home = float(expected_home)
+        away = float(expected_away)
+        yes_probability = (1.0 - math.exp(-home)) * (1.0 - math.exp(-away))
+    except Exception:
+        home = away = yes_probability = None
+
+    gap_pp = (float(adjusted_probability) - float(probability)) * 100.0
+    abs_gap_pp = abs(gap_pp)
+
+    selection_text = str(candidate.get("selection") or "").lower()
+    is_yes = any(token in selection_text for token in ("yes", "да", "обе забьют: да"))
+    is_no = any(token in selection_text for token in ("no", "нет", "обе забьют: нет"))
+
+    direction_ok = True
+    # Very simple xG sanity: BTTS Yes needs both teams' xG not too low; BTTS No is suspicious if both xG are clearly high.
+    low_team_threshold = env_float("CONTROLLED_FALLBACK_BTTS_LOW_TEAM_XG_THRESHOLD", 0.72)
+    high_team_threshold = env_float("CONTROLLED_FALLBACK_BTTS_HIGH_TEAM_XG_THRESHOLD", 1.15)
+    if home is not None and away is not None:
+        if is_yes and min(home, away) < low_team_threshold:
+            direction_ok = False
+        if is_no and min(home, away) > high_team_threshold:
+            direction_ok = False
+
+    return {
+        "enabled": True,
+        "btts_probability": round(probability, 6),
+        "btts_probability_pct": round(probability * 100.0, 3),
+        "btts_yes_probability_pct": round(float(yes_probability or 0.0) * 100.0, 3),
+        "btts_model_gap_pp": round(gap_pp, 3),
+        "btts_abs_gap_pp": round(abs_gap_pp, 3),
+        "btts_direction_ok": direction_ok,
     }
 
 
@@ -375,6 +483,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     }
     quality_score, quality_score_source = quality_proxy_score(candidate, seed_metrics, raw_quality_score)
     xg_sanity = xg_sanity_metrics(candidate, adjusted)
+    btts_sanity = btts_sanity_metrics(candidate, adjusted)
 
     return {
         "odds": round(odds, 4),
@@ -394,6 +503,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "sources_count": sources,
         "quality_reasons": quality_reasons(candidate),
         "xg_sanity": xg_sanity,
+        "btts_sanity": btts_sanity,
     }
 
 
@@ -448,6 +558,14 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         hard_gap = env_float("CONTROLLED_FALLBACK_XG_HARD_REJECT_GAP_PP", 14.0)
         if float(xg.get("xg_abs_gap_pp") or 0.0) > hard_gap:
             reasons.append("xg_probability_gap_hard_reject")
+
+    btts = metrics.get("btts_sanity") or {}
+    if bool(btts.get("enabled")):
+        if not bool(btts.get("btts_direction_ok", True)):
+            reasons.append("btts_direction_conflict")
+        hard_gap = env_float("CONTROLLED_FALLBACK_BTTS_HARD_REJECT_GAP_PP", 16.0)
+        if float(btts.get("btts_abs_gap_pp") or 0.0) > hard_gap:
+            reasons.append("btts_probability_gap_hard_reject")
     return reasons
 
 
@@ -490,6 +608,18 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
             if gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_XG_GAP_PP", 6.5):
                 reasons.append("tier_a_xg_confirmation_missing")
 
+    btts = metrics.get("btts_sanity") or {}
+    if bool(btts.get("enabled")):
+        gap = float(btts.get("btts_abs_gap_pp") or 0.0)
+        max_gap = env_float(prefix + "MAX_BTTS_GAP_PP", 999.0)
+        if gap > max_gap:
+            reasons.append(f"tier_{tier.lower()}_btts_gap_above_max")
+        if tier in {"A", "B"} and not bool(btts.get("btts_direction_ok", True)):
+            reasons.append(f"tier_{tier.lower()}_btts_direction_conflict")
+        if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_BTTS_SANITY", True):
+            if gap > env_float("CONTROLLED_FALLBACK_TIER_A_MAX_BTTS_GAP_PP", 7.0):
+                reasons.append("tier_a_btts_confirmation_missing")
+
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
     allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
     if q_reasons and q_reasons[0] not in allowed_stops:
@@ -516,8 +646,10 @@ def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str
     proxy_penalty = 5.0 if str(metrics.get("quality_score_source") or "") == "proxy" else 0.0
     xg = metrics.get("xg_sanity") or {}
     xg_gap_penalty = min(10.0, float(xg.get("xg_abs_gap_pp") or 0.0) * 0.45) if bool(xg.get("enabled")) else 0.0
+    btts = metrics.get("btts_sanity") or {}
+    btts_gap_penalty = min(10.0, float(btts.get("btts_abs_gap_pp") or 0.0) * 0.45) if bool(btts.get("enabled")) else 0.0
     return (
-        tier_bonus + float(metrics["canonical_ev_pct"]) - proxy_penalty - xg_gap_penalty,
+        tier_bonus + float(metrics["canonical_ev_pct"]) - proxy_penalty - xg_gap_penalty - btts_gap_penalty,
         float(metrics["canonical_edge_pp"]),
         float(metrics["quality_score"]),
         float(metrics["publication_score"]),
@@ -604,11 +736,9 @@ def market_title(family: str) -> str:
 
 
 def kickoff_text(candidate: dict[str, Any]) -> str:
-    kickoff = parse_dt(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
-    if kickoff is None:
-        return str(candidate.get("commence_time") or "")
-    return kickoff.astimezone(UTC).isoformat()
-
+    return format_match_time_for_telegram(
+        candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff")
+    )
 
 def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str, bankroll: dict[str, Any]) -> str:
     bank = as_float(bankroll.get("current_balance"), as_float(bankroll.get("starting_balance"), 0.0))
@@ -635,6 +765,13 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
                 )
         except Exception:
             pass
+    btts = metrics.get("btts_sanity") or {}
+    if bool(btts.get("enabled")):
+        xg_line += (
+            f"\n🔎 ОЗ-проверка: ориентир {float(btts.get('btts_probability_pct') or 0.0):.1f}% "
+            f"| разрыв {float(btts.get('btts_model_gap_pp') or 0.0):+.1f} п.п."
+        )
+
     risk_note = {
         "уровень A": "контролируемый резерв, уровень A. 2+ линии и нормальный запас ценности.",
         "уровень B": "контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.",
@@ -741,6 +878,7 @@ def main() -> int:
             "league_name": candidate.get("league_name"),
             "league_name_ru": translate_league_name(candidate.get("league_name") or ""),
             "commence_time": candidate.get("commence_time"),
+            "commence_time_display": kickoff_text(candidate),
             "candidate_source": candidate.get("_candidate_source"),
             "family": candidate.get("family"),
             "selection": candidate.get("selection"),
@@ -808,6 +946,7 @@ def main() -> int:
             "odds": chosen.get("odds"),
             "tier": tier,
             "commence_time": chosen.get("commence_time"),
+            "commence_time_display": kickoff_text(chosen),
             "metrics": metrics,
         },
         "telegram_result": send_result,
