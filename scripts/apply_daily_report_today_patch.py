@@ -2,45 +2,88 @@ from __future__ import annotations
 
 from pathlib import Path
 
-TARGET = Path("app/state.py")
+STATE_TARGET = Path("app/state.py")
+RUNNER_TARGET = Path("app/services/runner.py")
 
-
-OLD_LINE = "        offset_days = max(0, int(getattr(settings, 'daily_report_target_offset_days', 1) or 1))"
-NEW_BLOCK = """        # DAILY_REPORT_TARGET_OFFSET_DAYS=0 must mean today's local date.
-        # Previous code used `value or 1`, so explicit 0 was converted to 1 and
-        # Telegram daily report was sent for yesterday.
+REPLACEMENTS: list[tuple[Path, str, str]] = [
+    (
+        STATE_TARGET,
+        "        offset_days = max(0, int(getattr(settings, 'daily_report_target_offset_days', 1) or 1))",
+        """        # DAILY_REPORT_TARGET_OFFSET_DAYS=0 must mean today's local date.
+        # Do not use `value or default`: explicit 0 is a valid setting.
         raw_offset = getattr(settings, 'daily_report_target_offset_days', 0)
         if raw_offset in (None, ''):
             raw_offset = 0
         try:
             offset_days = max(0, int(raw_offset))
         except Exception:
-            offset_days = 0"""
+            offset_days = 0""",
+    ),
+    (
+        STATE_TARGET,
+        "        report_hour = min(23, max(0, int(getattr(settings, 'daily_report_hour_local', 8) or 8)))",
+        """        # DAILY_REPORT_HOUR_LOCAL=0 must mean midnight.
+        # Do not use `value or default`: explicit 0 is a valid setting.
+        raw_report_hour = getattr(settings, 'daily_report_hour_local', 8)
+        if raw_report_hour in (None, ''):
+            raw_report_hour = 8
+        try:
+            report_hour = min(23, max(0, int(raw_report_hour)))
+        except Exception:
+            report_hour = 8""",
+    ),
+    (
+        RUNNER_TARGET,
+        "        report_hour_local = min(23, max(0, int(getattr(self.settings, 'daily_report_hour_local', 22) or 22)))",
+        """        # DAILY_REPORT_HOUR_LOCAL=0 must mean midnight.
+        # Do not use `value or default`: explicit 0 is a valid setting.
+        raw_report_hour = getattr(self.settings, 'daily_report_hour_local', 22)
+        if raw_report_hour in (None, ''):
+            raw_report_hour = 22
+        try:
+            report_hour_local = min(23, max(0, int(raw_report_hour)))
+        except Exception:
+            report_hour_local = 22""",
+    ),
+]
+
+
+def apply_replacements(path: Path, replacements: list[tuple[str, str]]) -> bool:
+    if not path.exists():
+        print(f"skip: {path} not found")
+        return False
+
+    src = path.read_text(encoding="utf-8")
+    original = src
+
+    for old, new in replacements:
+        if old in src:
+            src = src.replace(old, new, 1)
+        elif new in src:
+            print(f"already patched: {path}")
+        else:
+            print(f"warn: expected block not found in {path}: {old[:90]}...")
+
+    if src != original:
+        path.write_text(src, encoding="utf-8")
+        print(f"patched: {path}")
+        return True
+
+    print(f"no changes: {path}")
+    return False
 
 
 def main() -> int:
-    if not TARGET.exists():
-        print(f"skip: {TARGET} not found")
-        return 0
+    grouped: dict[Path, list[tuple[str, str]]] = {}
+    for path, old, new in REPLACEMENTS:
+        grouped.setdefault(path, []).append((old, new))
 
-    src = TARGET.read_text(encoding="utf-8")
-    original = src
+    changed = 0
+    for path, replacements in grouped.items():
+        if apply_replacements(path, replacements):
+            changed += 1
 
-    if OLD_LINE in src:
-        src = src.replace(OLD_LINE, NEW_BLOCK, 1)
-    elif "daily_report_target_offset_days" in src and "explicit 0 was converted to 1" in src:
-        print(f"already patched: {TARGET}")
-        return 0
-    else:
-        print("warn: expected daily_report offset line not found")
-        return 0
-
-    if src != original:
-        TARGET.write_text(src, encoding="utf-8")
-        print(f"patched: {TARGET}")
-    else:
-        print(f"no changes: {TARGET}")
-
+    print(f"changed_files={changed}")
     return 0
 
 
