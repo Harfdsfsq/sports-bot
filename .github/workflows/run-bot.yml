@@ -33,7 +33,7 @@ on:
         default: '24'
         type: string
       max_picks_per_run:
-        description: Maximum picks to publish in this manual run
+        description: Maximum normal picks to publish in this manual run
         required: false
         default: '1'
         type: string
@@ -79,8 +79,10 @@ env:
 
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'true'
-  RUN_REPORT_ENABLED: 'true'
-  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
+  # Report is handled after controlled fallback, so Telegram never gets
+  # "no picks" immediately before a fallback pick.
+  RUN_REPORT_ENABLED: 'false'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
@@ -120,7 +122,7 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Prepare local state folders
-        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts artifacts/run-bot
+        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
 
       - name: Apply selected runtime profile
         shell: bash
@@ -178,7 +180,7 @@ jobs:
       - name: Run bot once
         run: python -m app.cli run-once
 
-      - name: Publish tiered controlled fallback if normal quality returns zero
+      - name: Publish tiered controlled fallback or final status report
         if: always()
         shell: bash
         run: |
@@ -206,13 +208,14 @@ jobs:
         with:
           name: run-bot-current
           path: |
-            artifacts/run-bot-bundle.zip
             artifacts/run-bot
+            artifacts/run-bot-bundle.zip
             artifacts/controlled-fallback-report.json
             .logs/debug-last-run.json
             .logs/runs
-            .data/exports/latest-*.json
-            .data/exports/latest-*.csv
+            .data/exports
+            .data/*.csv
+            .data/*.json
           if-no-files-found: ignore
           retention-days: 7
 
@@ -222,7 +225,7 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A -f .data .logs artifacts
+          git add -A -f .data .logs artifacts/run-bot artifacts/controlled-fallback-report.json
           git diff --cached --quiet && exit 0
           git commit -m "Update bot state"
           git push
