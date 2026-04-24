@@ -33,7 +33,7 @@ on:
         default: '24'
         type: string
       max_picks_per_run:
-        description: Maximum normal picks to publish in this manual run
+        description: Maximum picks to publish in this manual run
         required: false
         default: '1'
         type: string
@@ -78,9 +78,7 @@ env:
   GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
 
   PUBLISH_DRY_RUN: 'false'
-  PREDICTION_PUBLICATION_ENABLED: 'true'
-  # Report is handled after controlled fallback, so Telegram never gets
-  # "no picks" immediately before a fallback pick.
+  PREDICTION_PUBLICATION_ENABLED: 'false'
   RUN_REPORT_ENABLED: 'false'
   RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
@@ -94,7 +92,7 @@ env:
   TARGET_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
   CONSENSUS_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
   SHARP_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair'
-  MIN_BOOKS_PUBLISH: '2'
+  MIN_BOOKS_PUBLISH: '1'
   MIN_SOURCES_PUBLISH: '1'
 
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
@@ -158,12 +156,20 @@ jobs:
         shell: bash
         run: |
           echo "PUBLISH_DRY_RUN=${{ inputs.dry_run && 'true' || 'false' }}" >> "$GITHUB_ENV"
-          echo "PREDICTION_PUBLICATION_ENABLED=${{ inputs.dry_run && 'false' || 'true' }}" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_MODE_ENABLED=${{ inputs.late_manual_mode && 'true' || 'false' }}" >> "$GITHUB_ENV"
           echo "PUBLISH_WINDOW_HOURS=${{ inputs.publish_window_hours }}" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=${{ inputs.max_picks_per_run }}" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=20" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=10" >> "$GITHUB_ENV"
+
+      - name: Force external publisher mode
+        shell: bash
+        run: |
+          # The application still builds candidates and writes diagnostics.
+          # Telegram publication is handled only by scripts/publish_controlled_fallback.py.
+          echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
+          echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
+          echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=true" >> "$GITHUB_ENV"
 
       - name: Ensure calibration profile exists
         shell: bash
@@ -175,12 +181,12 @@ jobs:
 
       - name: Reset state for manual republish
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
-        run: rm -f .data/state.json
+        run: rm -f .data/state.json .data/fallback-sent-index.json
 
       - name: Run bot once
         run: python -m app.cli run-once
 
-      - name: Publish tiered controlled fallback or final status report
+      - name: Publish controlled pick or final status report
         if: always()
         shell: bash
         run: |
@@ -208,13 +214,12 @@ jobs:
         with:
           name: run-bot-current
           path: |
-            artifacts/run-bot
             artifacts/run-bot-bundle.zip
+            artifacts/run-bot
             artifacts/controlled-fallback-report.json
             .logs/debug-last-run.json
             .logs/runs
             .data/exports
-            .data/*.csv
             .data/*.json
           if-no-files-found: ignore
           retention-days: 7

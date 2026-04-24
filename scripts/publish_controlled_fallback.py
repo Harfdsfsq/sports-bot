@@ -46,7 +46,10 @@ def env_set(name: str, default: str) -> set[str]:
 
 def load_json(path: str | Path, default: Any) -> Any:
     try:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
+        p = Path(path)
+        if not p.exists() or p.stat().st_size <= 0:
+            return default
+        return json.loads(p.read_text(encoding="utf-8"))
     except Exception:
         return default
 
@@ -75,6 +78,16 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def parse_dt(value: Any) -> datetime | None:
+    text = str(value or "").strip()
+    if not text:
+        return None
+    try:
+        return datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except Exception:
+        return None
+
+
 def quality_payload(candidate: dict[str, Any]) -> dict[str, Any]:
     diag = candidate.get("diagnostics") or {}
     q = diag.get("quality") if isinstance(diag, dict) else None
@@ -88,6 +101,11 @@ def quality_reasons(candidate: dict[str, Any]) -> list[str]:
         return [str(item) for item in reasons if str(item).strip()]
     if isinstance(reasons, str) and reasons.strip():
         return [reasons.strip()]
+    ss = candidate.get("source_summary") or {}
+    if isinstance(ss, dict):
+        reasons = ss.get("quality_reasons") or []
+        if isinstance(reasons, list):
+            return [str(item) for item in reasons if str(item).strip()]
     return []
 
 
@@ -103,6 +121,19 @@ def selected_source(candidate: dict[str, Any]) -> str:
 
 def family_norm(candidate: dict[str, Any]) -> str:
     return str(candidate.get("family") or "").strip().lower()
+
+
+def normalize_candidate(raw: dict[str, Any], source: str) -> dict[str, Any]:
+    row = dict(raw)
+    row.setdefault("_candidate_source", source)
+    # State rows can store prediction_id/fingerprint, but not always selection_key.
+    if not row.get("selection_key"):
+        family = str(row.get("family") or "").lower()
+        selection = str(row.get("selection") or "").lower()
+        point = "" if row.get("point") in (None, "") else str(row.get("point"))
+        team_side = str(row.get("team_side") or "").lower()
+        row["selection_key"] = "|".join([family, selection, point, team_side])
+    return row
 
 
 def dedupe_key(candidate: dict[str, Any]) -> str:
@@ -134,78 +165,52 @@ def prune_sent_index(index: dict[str, Any], hours: int) -> dict[str, Any]:
     for key, row in index.items():
         if not isinstance(row, dict):
             continue
-        try:
-            ts = datetime.fromisoformat(str(row.get("sent_at") or "").replace("Z", "+00:00"))
-        except Exception:
-            continue
-        if ts >= cutoff:
+        ts = parse_dt(row.get("sent_at"))
+        if ts and ts >= cutoff:
             result[key] = row
     return result
 
 
-def _is_real_published_row(row: dict[str, Any]) -> bool:
-    """Return True only for rows that represent a real published bet.
-
-    Earlier versions blocked candidates present in shadow_bets or generated rows.
-    That was too strict: shadow tracking is diagnostic, not an actual Telegram bet.
-    """
-    if bool(row.get("telegram_sent")):
-        return True
-    status = str(row.get("status") or "").strip().lower()
-    tracking_mode = str(row.get("tracking_mode") or row.get("source_summary", {}).get("tracking_mode") if isinstance(row.get("source_summary"), dict) else "").strip().lower()
-    if tracking_mode == "shadow" or status.startswith("shadow"):
-        return False
-    # pending with stake normally means it was really booked/sent by the main bot.
-    if status == "pending" and as_float(row.get("stake_amount"), 0.0) > 0:
-        return True
-    return False
+def row_was_really_published(row: dict[str, Any]) -> bool:
+    status = str(row.get("status") or "").lower()
+    return bool(row.get("telegram_sent")) or status in {"pending", "won", "lost", "push", "void", "half_won", "half_lost"}
 
 
 def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> str | None:
     key = dedupe_key(candidate)
     if key in sent_index:
         return "duplicate_fallback_sent_index"
-
     state = load_json(".data/state.json", {})
     if not isinstance(state, dict):
         return None
-
-    # Real bets/published candidates still block duplicates.
-    collections: list[tuple[str, bool]] = [
-        ("bets", env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_BETS", True)),
-        ("published_candidates", env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED", True)),
-        # Shadow candidates should not block by default: they were not Telegram picks.
-        ("shadow_bets", env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_SHADOW", False)),
-    ]
-
-    for collection, enabled in collections:
-        if not enabled:
-            continue
-        rows = state.get(collection) or []
-        if not isinstance(rows, list):
-            continue
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            if dedupe_key(row) != key:
-                continue
-            if collection == "shadow_bets":
-                return f"duplicate_state:{collection}"
-            if _is_real_published_row(row):
-                return f"duplicate_state:{collection}"
+    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_BETS", True):
+        for row in state.get("bets") or []:
+            if isinstance(row, dict) and row_was_really_published(row) and dedupe_key(row) == key:
+                return "duplicate_state:bets"
+    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED", True):
+        for row in state.get("published_candidates") or []:
+            if isinstance(row, dict) and row_was_really_published(row) and dedupe_key(row) == key:
+                return "duplicate_state:published_candidates"
+    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_SHADOW", False):
+        for row in state.get("shadow_bets") or []:
+            if isinstance(row, dict) and dedupe_key(row) == key:
+                return "duplicate_state:shadow_bets"
     return None
 
 
 def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
-    odds = as_float(candidate.get("odds"), 0.0)
-    adjusted = as_float(candidate.get("adjusted_probability"), 0.0)
+    odds = as_float(candidate.get("odds"), as_float(candidate.get("selected_price"), 0.0))
+    adjusted = as_float(candidate.get("adjusted_probability"), as_float(candidate.get("final_probability"), 0.0))
+    ss = candidate.get("source_summary") or {}
+    if adjusted <= 0 and isinstance(ss, dict):
+        adjusted = as_float(ss.get("adjusted_probability"), 0.0)
     model_prob = as_float(candidate.get("model_probability"), 0.0)
-    market_prob = as_float(candidate.get("market_probability"), 0.0)
+    market_prob = as_float(candidate.get("market_probability"), as_float(candidate.get("consensus_probability"), 0.0))
     confidence = as_float(candidate.get("confidence"), 0.0)
     books = as_int(candidate.get("books_count"), 0)
     sources = as_int(candidate.get("sources_count"), 0)
     q = quality_payload(candidate)
-    quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), 0.0))
+    quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), as_float((candidate.get("source_summary") or {}).get("quality_score"), 0.0)))
     publication_score = as_float(candidate.get("publication_score"), 0.0)
     selected_implied = 1.0 / odds if odds > 1.0 else 0.0
     canonical_edge_pp = (adjusted - selected_implied) * 100.0 if odds > 1.0 else -999.0
@@ -232,14 +237,14 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
 def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent_index: dict[str, Any]) -> list[str]:
     reasons: list[str] = []
     fam = family_norm(candidate)
-    if fam not in env_set("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,teamtotals,btts"):
+    if fam not in env_set("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,teamtotals,teamTotals,btts"):
         reasons.append(f"family_not_allowed:{fam}")
     dup = duplicate_reason(candidate, sent_index)
     if dup:
         reasons.append(dup)
     if metrics["odds"] < env_float("CONTROLLED_FALLBACK_GLOBAL_MIN_ODDS", 1.55):
         reasons.append("odds_below_global_min")
-    if metrics["odds"] > env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.05):
+    if metrics["odds"] > env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.10):
         reasons.append("odds_above_global_max")
     if metrics["canonical_edge_pp"] <= 0 or metrics["canonical_ev_pct"] <= 0:
         reasons.append("canonical_negative_value")
@@ -249,7 +254,7 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         reasons.append("missing_books")
     if metrics["sources_count"] <= 0:
         reasons.append("missing_sources")
-    if fam == "h2h" and metrics["odds"] > 2.25:
+    if fam == "h2h" and metrics["odds"] > env_float("CONTROLLED_FALLBACK_H2H_MAX_ODDS", 2.25):
         reasons.append("h2h_rescue_odds_too_high")
     return reasons
 
@@ -273,19 +278,14 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         reasons.append(f"tier_{tier.lower()}_canonical_ev_below_min")
     if metrics["publication_score"] < env_float(prefix + "MIN_PUBLICATION_SCORE", 20.0):
         reasons.append(f"tier_{tier.lower()}_publication_score_below_min")
-    if metrics["odds"] > env_float(prefix + "MAX_ODDS", env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.05)):
+    if metrics["odds"] > env_float(prefix + "MAX_ODDS", env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.10)):
         reasons.append(f"tier_{tier.lower()}_odds_above_max")
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
-    allowed_stops = env_set(
-        prefix + "ALLOWED_QUALITY_STOPS",
-        os.getenv(
-            "CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS",
-            "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard",
-        ),
-    )
+    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,historical_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
     if q_reasons and q_reasons[0] not in allowed_stops:
         reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{q_reasons[0]}")
-    if not q_reasons:
+    # Candidates sourced from latest-picks may already be clean. Do not require a quality reason for them.
+    if not q_reasons and str(candidate.get("_candidate_source") or "") not in {"latest_picks"}:
         reasons.append(f"tier_{tier.lower()}_missing_quality_reason")
     return reasons
 
@@ -315,13 +315,69 @@ def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str
     )
 
 
-def already_has_picks() -> bool:
-    latest_picks = load_json(".data/exports/latest-picks.json", [])
-    if isinstance(latest_picks, list) and len(latest_picks) > 0:
+def candidate_in_window(candidate: dict[str, Any]) -> bool:
+    dt = parse_dt(candidate.get("commence_time"))
+    if dt is None:
         return True
-    debug = load_json(".logs/debug-last-run.json", {})
-    summary = debug.get("summary") if isinstance(debug, dict) else {}
-    return isinstance(summary, dict) and as_int(summary.get("published"), 0) > 0
+    now = datetime.now(UTC)
+    lead_minutes = env_int("MIN_KICKOFF_LEAD_MINUTES", 20)
+    window_hours = env_int("PUBLISH_WINDOW_HOURS", 24)
+    return now + timedelta(minutes=lead_minutes) <= dt <= now + timedelta(hours=window_hours)
+
+
+def candidate_from_state_is_eligible(row: dict[str, Any]) -> bool:
+    if row_was_really_published(row):
+        return False
+    status = str(row.get("status") or "").lower()
+    if status not in {"shadow_pending", "generated", "", "shadow"}:
+        return False
+    return candidate_in_window(row)
+
+
+def collect_candidates() -> tuple[list[dict[str, Any]], dict[str, int]]:
+    counts: Counter[str] = Counter()
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+
+    def add_many(items: Any, source: str) -> None:
+        if not isinstance(items, list):
+            return
+        for item in items:
+            if not isinstance(item, dict):
+                continue
+            row = normalize_candidate(item, source)
+            if not candidate_in_window(row):
+                counts[f"{source}_outside_window"] += 1
+                continue
+            key = dedupe_key(row)
+            if key in seen:
+                counts[f"{source}_duplicate_in_pool"] += 1
+                continue
+            seen.add(key)
+            rows.append(row)
+            counts[source] += 1
+
+    if env_bool("CONTROLLED_FALLBACK_INCLUDE_LATEST_PICKS", True):
+        add_many(load_json(".data/exports/latest-picks.json", []), "latest_picks")
+
+    if env_bool("CONTROLLED_FALLBACK_INCLUDE_DEBUG_CANDIDATES", True):
+        for path in [".logs/debug-last-run.json", "artifacts/run-bot/debug-last-run.json"]:
+            debug = load_json(path, {})
+            if isinstance(debug, dict):
+                add_many(debug.get("candidates_before_quality") or [], "debug_candidates_before_quality")
+                add_many(debug.get("candidates_after_quality") or [], "debug_candidates_after_quality")
+                add_many(debug.get("published_candidates") or [], "debug_published_candidates")
+
+    if env_bool("CONTROLLED_FALLBACK_INCLUDE_STATE_SHADOW", True):
+        state = load_json(".data/state.json", {})
+        if isinstance(state, dict):
+            shadow = []
+            for item in state.get("shadow_bets") or []:
+                if isinstance(item, dict) and candidate_from_state_is_eligible(item):
+                    shadow.append(item)
+            add_many(shadow[-env_int("CONTROLLED_FALLBACK_MAX_STATE_SHADOW_CANDIDATES", 40):], "state_shadow_bets")
+
+    return rows, dict(counts)
 
 
 def send_telegram(text: str) -> tuple[bool, str]:
@@ -408,6 +464,11 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
         "",
         f"Кандидатов fallback проверено: {report.get('candidates_seen', 0)}",
     ]
+    pool_counts = report.get("candidate_pool_counts") or {}
+    if pool_counts:
+        lines.append("Пул кандидатов:")
+        for key, count in sorted(pool_counts.items()):
+            lines.append(f"• {key}: {count}")
     if counter:
         lines.append("Причины отказа:")
         for reason, count in counter.most_common(8):
@@ -436,26 +497,22 @@ def main() -> int:
         write_json("artifacts/controlled-fallback-report.json", report)
         write_json(".data/exports/latest-controlled-fallback-report.json", report)
         return 0
-    if already_has_picks():
-        report["status"] = "skipped_existing_pick"
-        write_json("artifacts/controlled-fallback-report.json", report)
-        write_json(".data/exports/latest-controlled-fallback-report.json", report)
-        return 0
 
     sent_index = prune_sent_index(load_sent_index(), env_int("CONTROLLED_FALLBACK_DEDUPE_HOURS", 72))
     debug = load_json(".logs/debug-last-run.json", {})
-    candidates = debug.get("candidates_before_quality") if isinstance(debug, dict) else []
-    if not isinstance(candidates, list):
-        candidates = []
     bankroll = (debug.get("bankroll") or {}) if isinstance(debug, dict) else {}
+    candidates, pool_counts = collect_candidates()
     report["candidates_seen"] = len(candidates)
+    report["candidate_pool_counts"] = pool_counts
 
     viable: list[tuple[tuple[float, float, float, float, float], dict[str, Any], dict[str, Any], str]] = []
+    max_evaluated_rows = env_int("CONTROLLED_FALLBACK_REPORT_MAX_EVALUATED", 80)
     for candidate in candidates:
         if not isinstance(candidate, dict):
             continue
         ok, reasons, metrics, tier = evaluate_candidate(candidate, sent_index)
         row = {
+            "source": candidate.get("_candidate_source"),
             "match_key": candidate.get("match_key"),
             "home_team": candidate.get("home_team"),
             "away_team": candidate.get("away_team"),
@@ -468,7 +525,8 @@ def main() -> int:
             "reject_reasons": reasons,
             "metrics": metrics,
         }
-        report["evaluated"].append(row)
+        if len(report["evaluated"]) < max_evaluated_rows:
+            report["evaluated"].append(row)
         if ok and tier:
             viable.append((candidate_rank(candidate, metrics, tier), candidate, metrics, tier))
 
@@ -505,28 +563,27 @@ def main() -> int:
         }
         save_sent_index(sent_index)
 
-    report.update(
-        {
-            "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
-            "published": bool(sent),
-            "dry_run": bool(dry_run),
-            "selected": {
-                "dedupe_key": key,
-                "match_key": chosen.get("match_key"),
-                "home_team": chosen.get("home_team"),
-                "away_team": chosen.get("away_team"),
-                "league_name": chosen.get("league_name"),
-                "family": chosen.get("family"),
-                "selection": chosen.get("selection"),
-                "point": chosen.get("point"),
-                "odds": chosen.get("odds"),
-                "tier": tier,
-                "metrics": metrics,
-            },
-            "telegram_result": send_result,
-            "message": message,
-        }
-    )
+    report.update({
+        "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
+        "published": bool(sent),
+        "dry_run": bool(dry_run),
+        "selected": {
+            "dedupe_key": key,
+            "source": chosen.get("_candidate_source"),
+            "match_key": chosen.get("match_key"),
+            "home_team": chosen.get("home_team"),
+            "away_team": chosen.get("away_team"),
+            "league_name": chosen.get("league_name"),
+            "family": chosen.get("family"),
+            "selection": chosen.get("selection"),
+            "point": chosen.get("point"),
+            "odds": chosen.get("odds"),
+            "tier": tier,
+            "metrics": metrics,
+        },
+        "telegram_result": send_result,
+        "message": message,
+    })
     write_json("artifacts/controlled-fallback-report.json", report)
     write_json(".data/exports/latest-controlled-fallback-report.json", report)
     return 0 if (sent or dry_run) else 1
