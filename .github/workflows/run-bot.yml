@@ -38,20 +38,20 @@ on:
         default: '2'
         type: string
   schedule:
-    - cron: '7 5 * * *'
-    # 08:47 MSK pre-window run: finishes earlier, reducing match_time_outside_window rejects for 10:00 MSK fixtures.
-    - cron: '47 5 * * *'
-    - cron: '27 7 * * *'
-    - cron: '37 8 * * *'
-    - cron: '47 9 * * *'
-    - cron: '7 11 * * *'
-    - cron: '17 12 * * *'
-    - cron: '27 13 * * *'
-    - cron: '7 15 * * *'
-    - cron: '17 16 * * *'
-    - cron: '37 17 * * *'
-    - cron: '7 19 * * *'
-    - cron: '37 20 * * *'
+    # Profit-distance cadence, MSK = UTC+3.
+    # Runs are placed at :47 to preserve the 30-minute lead before common hourly kickoffs.
+    - cron: '47 3 * * *'   # 06:47 MSK
+    - cron: '47 4 * * *'   # 07:47 MSK
+    - cron: '47 5 * * *'   # 08:47 MSK
+    - cron: '47 6 * * *'   # 09:47 MSK
+    - cron: '47 7 * * *'   # 10:47 MSK
+    - cron: '47 8 * * *'   # 11:47 MSK
+    - cron: '47 10 * * *'  # 13:47 MSK
+    - cron: '47 12 * * *'  # 15:47 MSK
+    - cron: '47 14 * * *'  # 17:47 MSK
+    - cron: '47 16 * * *'  # 19:47 MSK
+    - cron: '47 18 * * *'  # 21:47 MSK
+    - cron: '47 20 * * *'  # 23:47 MSK
 
 permissions:
   contents: write
@@ -126,7 +126,6 @@ jobs:
         shell: bash
         run: |
           mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
-          # Important: never let the external reserve publisher read stale candidate files from a previous commit/run.
           rm -f artifacts/controlled-fallback-report.json
           rm -f artifacts/run-bot/latest-rescue-candidates.json
           rm -f .data/exports/latest-rescue-candidates.json
@@ -232,6 +231,14 @@ jobs:
           python scripts/publish_controlled_fallback.py || true
           echo "---- controlled fallback report ----"
           cat artifacts/controlled-fallback-report.json || true
+
+      - name: Build profit distance ledgers
+        if: always()
+        shell: bash
+        run: |
+          python scripts/profit_distance_ledger.py || true
+          echo "---- profit distance summary ----"
+          cat .data/exports/latest-profit-distance-summary.json || true
 
       - name: Generate audit payloads
         if: always()
