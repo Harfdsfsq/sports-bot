@@ -20,13 +20,13 @@ on:
       force_resend:
         description: Remove sent marker and send report again for selected date
         required: false
-        default: true
+        default: false
         type: boolean
   schedule:
-    # 22:10 MSK every day
-    - cron: '10 19 * * *'
-    # 23:10 MSK safety rerun; sends only if report changed / was not sent
-    - cron: '10 20 * * *'
+    # 22:00 MSK every day
+    - cron: '0 19 * * *'
+    # 22:30 MSK safety rerun; sends only if report was not sent or changed
+    - cron: '30 19 * * *'
 
 permissions:
   contents: write
@@ -54,21 +54,27 @@ env:
   THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
   NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
   GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+  WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+  OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+  OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_KEY }}
+  METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+  METEOSTAT_RAPIDAPI_HOST: ${{ secrets.METEOSTAT_RAPIDAPI_HOST }}
 
-  # Report-only mode: no forecasts, no fallback publisher.
+  # Report-only mode: no forecasts, no controlled fallback publication.
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'false'
   RUN_REPORT_ENABLED: 'false'
-  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
   SETTLEMENT_ENABLED: 'true'
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
 
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
-  # Force due in the separate daily report workflow. The workflow itself is scheduled at 22:10 / 23:10 MSK.
-  DAILY_REPORT_HOUR_LOCAL: '0'
+  DAILY_REPORT_HOUR_LOCAL: '22'
   DAILY_REPORT_TARGET_OFFSET_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}
   DAILY_REPORT_RESEND_ON_CHANGE: 'true'
+  DAILY_REPORT_MIN_BETS: '0'
   NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'true'
 
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
@@ -76,6 +82,7 @@ env:
   MIN_KICKOFF_LEAD_MINUTES: '30'
   MAX_PICKS_PER_RUN: '0'
   CONTROLLED_FALLBACK_SEND_TELEGRAM: 'false'
+  CONTROLLED_FALLBACK_ENABLED: 'false'
 
 jobs:
   daily-report:
@@ -139,15 +146,18 @@ jobs:
         shell: bash
         run: |
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_SEND_TELEGRAM=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
+          echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=false" >> "$GITHUB_ENV"
           echo "SETTLEMENT_ENABLED=true" >> "$GITHUB_ENV"
           echo "SETTLEMENT_SEND_TELEGRAM_SUMMARY=false" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_ENABLED=true" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_SEND_TELEGRAM=true" >> "$GITHUB_ENV"
-          echo "DAILY_REPORT_HOUR_LOCAL=0" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_HOUR_LOCAL=22" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_TARGET_OFFSET_DAYS=${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_RESEND_ON_CHANGE=true" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_MIN_BETS=0" >> "$GITHUB_ENV"
           echo "NIGHTLY_REVIEW_REPORT_ONLY_ENABLED=true" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=0" >> "$GITHUB_ENV"
 
@@ -156,12 +166,27 @@ jobs:
         run: |
           python scripts/apply_daily_report_today_patch.py || true
 
+      - name: Apply data-depth settings patch
+        shell: bash
+        run: |
+          python scripts/apply_data_depth_settings_patch.py || true
+
+      - name: Apply API-Football and weather patch
+        shell: bash
+        run: |
+          python scripts/apply_api_football_weather_patch.py || true
+
       - name: Force resend for manual run
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.force_resend }}
         shell: bash
         run: |
           echo "DAILY_REPORT_FORCE_RESEND=true" >> "$GITHUB_ENV"
           python scripts/reset_daily_report_sent.py || true
+
+      - name: Apply free API enrichment patch
+        shell: bash
+        run: |
+          python scripts/apply_free_api_enrichment_patch.py || true
 
       - name: Ensure calibration profile exists
         shell: bash

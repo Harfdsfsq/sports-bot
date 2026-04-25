@@ -87,6 +87,8 @@ env:
   OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
   OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
   OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_KEY }}
+  METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+  METEOSTAT_RAPIDAPI_HOST: ${{ secrets.METEOSTAT_RAPIDAPI_HOST }}
 
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'false'
@@ -226,6 +228,11 @@ jobs:
         shell: bash
         run: |
           python scripts/apply_api_football_weather_patch.py || true
+
+      - name: Apply free API enrichment patch
+        shell: bash
+        run: |
+          python scripts/apply_free_api_enrichment_patch.py || true
 
       - name: Ensure calibration profile exists
         shell: bash
