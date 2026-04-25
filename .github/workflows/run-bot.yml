@@ -213,6 +213,11 @@ jobs:
         run: |
           python scripts/apply_daily_report_today_patch.py || true
 
+      - name: Apply data-depth settings patch
+        shell: bash
+        run: |
+          python scripts/apply_data_depth_settings_patch.py || true
+
       - name: Ensure calibration profile exists
         shell: bash
         run: |
@@ -243,6 +248,14 @@ jobs:
           python scripts/profit_distance_ledger.py || true
           echo "---- profit distance summary ----"
           cat .data/exports/latest-profit-distance-summary.json || true
+
+      - name: Build match data coverage report
+        if: always()
+        shell: bash
+        run: |
+          python scripts/match_data_coverage_report.py || true
+          echo "---- match data coverage summary ----"
+          cat .data/exports/latest-match-data-coverage-summary.json || true
 
       - name: Generate audit payloads
         if: always()
