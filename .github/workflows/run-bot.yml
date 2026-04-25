@@ -273,6 +273,14 @@ jobs:
           echo "---- match data coverage summary ----"
           cat .data/exports/latest-match-data-coverage-summary.json || true
 
+      - name: Probe RapidAPI subscriptions
+        if: always()
+        shell: bash
+        run: |
+          python scripts/rapidapi_quota_probe.py || true
+          echo "---- rapidapi provider probe summary ----"
+          cat .data/exports/latest-rapidapi-provider-summary.json || true
+
       - name: Generate audit payloads
         if: always()
         shell: bash
