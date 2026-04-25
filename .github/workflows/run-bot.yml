@@ -83,6 +83,10 @@ env:
   THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
   NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
   GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+  WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+  OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+  OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_KEY }}
 
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'false'
@@ -217,6 +221,11 @@ jobs:
         shell: bash
         run: |
           python scripts/apply_data_depth_settings_patch.py || true
+
+      - name: Apply API-Football and weather patch
+        shell: bash
+        run: |
+          python scripts/apply_api_football_weather_patch.py || true
 
       - name: Ensure calibration profile exists
         shell: bash
