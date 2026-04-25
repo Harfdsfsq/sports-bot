@@ -39,19 +39,23 @@ on:
         type: string
   schedule:
     # Profit-distance cadence, MSK = UTC+3.
-    # Runs are placed at :47 to preserve the 30-minute lead before common hourly kickoffs.
-    - cron: '47 3 * * *'   # 06:47 MSK
-    - cron: '47 4 * * *'   # 07:47 MSK
-    - cron: '47 5 * * *'   # 08:47 MSK
-    - cron: '47 6 * * *'   # 09:47 MSK
-    - cron: '47 7 * * *'   # 10:47 MSK
-    - cron: '47 8 * * *'   # 11:47 MSK
-    - cron: '47 10 * * *'  # 13:47 MSK
-    - cron: '47 12 * * *'  # 15:47 MSK
-    - cron: '47 14 * * *'  # 17:47 MSK
-    - cron: '47 16 * * *'  # 19:47 MSK
-    - cron: '47 18 * * *'  # 21:47 MSK
-    - cron: '47 20 * * *'  # 23:47 MSK
+    # Runs are placed at :07 MSK so the workflow usually finishes before :30
+    # and preserves MIN_KICKOFF_LEAD_MINUTES=30 for common :00 kickoffs.
+    # The previous :47 grid was too late for next-hour fixtures and caused
+    # match_time_outside_window spikes.
+    - cron: '7 3 * * *'    # 06:07 MSK
+    - cron: '7 4 * * *'    # 07:07 MSK
+    - cron: '7 5 * * *'    # 08:07 MSK
+    - cron: '7 6 * * *'    # 09:07 MSK
+    - cron: '7 7 * * *'    # 10:07 MSK
+    - cron: '7 8 * * *'    # 11:07 MSK
+    - cron: '7 10 * * *'   # 13:07 MSK
+    - cron: '7 12 * * *'   # 15:07 MSK
+    - cron: '7 14 * * *'   # 17:07 MSK
+    - cron: '7 15 * * *'   # 18:07 MSK
+    - cron: '7 16 * * *'   # 19:07 MSK
+    - cron: '7 18 * * *'   # 21:07 MSK
+    - cron: '7 20 * * *'   # 23:07 MSK
 
 permissions:
   contents: write
