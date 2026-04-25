@@ -1,10 +1,10 @@
 {
-  "created_at": "2026-04-25T22:14:51.339614+00:00",
+  "created_at": "2026-04-25T22:35:24.549083+00:00",
   "enabled": true,
   "providers_total": 4,
-  "called": 0,
-  "ok": 0,
-  "skipped": 4,
+  "called": 3,
+  "ok": 3,
+  "skipped": 1,
   "rate_limited": 0,
   "auth_failed": 0,
   "results": [
@@ -13,12 +13,25 @@
       "name": "Sportsbook API advantages",
       "host": "sportsbook-api2.p.rapidapi.com",
       "enabled": true,
-      "called": false,
-      "skip_reason": "missing_rapidapi_key",
-      "status_code": null,
-      "ok": false,
-      "rate_limit_headers": {},
-      "shape": {}
+      "called": true,
+      "skip_reason": null,
+      "status_code": 200,
+      "ok": true,
+      "rate_limit_headers": {
+        "x-ratelimit-requests-limit": "150",
+        "x-ratelimit-requests-remaining": "149",
+        "x-ratelimit-requests-reset": "83100",
+        "x-ratelimit-rapid-free-plans-hard-limit-limit": "500000",
+        "x-ratelimit-rapid-free-plans-hard-limit-remaining": "499999",
+        "x-ratelimit-rapid-free-plans-hard-limit-reset": "2588700"
+      },
+      "shape": {
+        "type": "dict",
+        "keys": [
+          "advantages"
+        ]
+      },
+      "preview": "{\"advantages\": [{\"key\": \"advg-xxxx-0000\", \"type\": \"ARBITRAGE\", \"lastFoundAt\": \"2026-04-25T22:35:23.161Z\", \"createdAt\": \"2026-04-25T22:35:23.161Z\", \"market\": {\"key\": \"05B5-Aexo-L18C\", \"type\": \"MONEYLINE\", \"segment\": \"FULL_MATCH\", \"lastFoundAt\": \"2026-04-25T22:35:23.161Z\", \"event\": {\"key\": \"vlHj-Aexo-3uIb\", \"name\": \"Buffalo Bandits @ Georgia Swarm\", \"startTime\": \"2026-04-25T23:30:00.000Z\", \"homeParticipantKey\": \"FEJL-yblv-xcwn\", \"participants\": [{\"key\": \"FEJL-yblv-xcwn\", \"slug\": \"georgia-swarm\", \"name\": \"Georgia Swarm\", \"shortName\": \"GAS\", \"sport\": \"LACROSSE\"}, {\"key\": \"XRLO-yblv-AdOp\", \"slug\": \"buffalo-bandits\", \"name\": \"Buffalo Bandits\", \"shortName\": \"BUF\", \"sport\": \"LACROSSE\"}], \"competitionInstance\": {\"key\": \"bf30-zmxe-gqWG\", \"name\": \"2026 National Lacrosse League\", \"competitionKey\": \"v1pA-yblv-fESR\", \"startAt\": \"2026-04-25T22:35:23.161Z\", \"endAt\": \"2026-04-25T22:35:23.161Z\", \"competition\": {\"key\": \"v1pA-yblv-fESR\", \"name\": \"National Lacrosse League\", \"shortName\": \"NLL\", \"sport\": \"LACROSSE\"}}}}, \"outcomes\": [{\"key\": \"outc-x000-0000\", \"modifier\": 0, \"payout\": 1.88, \"type\": \"WIN\", \"live\": false, \"readAt\": \"2026-04-25T22:34:00.191Z\", \"lastFoundAt\": \"2026-04-25T22:34:00.191Z\", \"source\": \"BET_PARX\", \"marketKey\": \"05B5-Aexo-L18C\", \"participantKey\": \"XRLO-yblv-AdOp\", \"participant\": {\"key\": \"XRLO-yblv-AdOp\", \"slug\": \"buffalo-bandits\", \"name\": \"Buffalo Bandits\", \"shortName\": \"BUF\", \"sport\": \"LACROSSE\"}}, {\"key\": \"outc-x001-0000\", \"modifier\": 0, \"payout\": 2.14, \"type\": \"WIN\", \"live\": false, \"readAt\": \"2026-04-25T22:34:00.258Z\", \"lastFoundAt\": \"2026-04-25T22:34:00.258Z\", \"source\": \"DRAFT_KINGS\", \"marketKey\": \"05B5-Aexo-L18C\", \"participantKey\": \"FEJL-yblv-xcwn\", \"participant\": {\"key\": \"FEJL-yblv-xcwn\", \"slug\": \"georgia-swarm\", \"name\": \"Georgia Swarm\", \"shortName\": \"GAS\", \"sport\":...<truncated>"
     },
     {
       "provider": "odds_feed",
@@ -26,7 +39,7 @@
       "host": "odds-feed.p.rapidapi.com",
       "enabled": true,
       "called": false,
-      "skip_reason": "missing_rapidapi_key",
+      "skip_reason": "missing_event_ids",
       "status_code": null,
       "ok": false,
       "rate_limit_headers": {},
@@ -37,24 +50,54 @@
       "name": "Free API Live Football Data player search",
       "host": "free-api-live-football-data.p.rapidapi.com",
       "enabled": true,
-      "called": false,
-      "skip_reason": "missing_rapidapi_key",
-      "status_code": null,
-      "ok": false,
-      "rate_limit_headers": {},
-      "shape": {}
+      "called": true,
+      "skip_reason": null,
+      "status_code": 200,
+      "ok": true,
+      "rate_limit_headers": {
+        "x-ratelimit-requests-limit": "100",
+        "x-ratelimit-requests-remaining": "99",
+        "x-ratelimit-requests-reset": "2588842",
+        "x-ratelimit-rapid-free-plans-hard-limit-limit": "500000",
+        "x-ratelimit-rapid-free-plans-hard-limit-remaining": "499999",
+        "x-ratelimit-rapid-free-plans-hard-limit-reset": "2588842"
+      },
+      "shape": {
+        "type": "dict",
+        "keys": [
+          "status",
+          "response"
+        ],
+        "response_keys": [
+          "suggestions"
+        ]
+      },
+      "preview": "{\"status\": \"success\", \"response\": {\"suggestions\": [{\"type\": \"player\", \"id\": \"701154\", \"score\": 301297, \"name\": \"Kylian Mbappé\", \"isCoach\": false, \"teamId\": 8633, \"teamName\": \"Real Madrid\"}, {\"type\": \"player\", \"id\": \"292462\", \"score\": 301223, \"name\": \"Mohamed Salah\", \"isCoach\": false, \"teamId\": 8650, \"teamName\": \"Liverpool\"}, {\"type\": \"player\", \"id\": \"30981\", \"score\": 301155, \"name\": \"Lionel Messi\", \"isCoach\": false, \"teamId\": 960720, \"teamName\": \"Inter Miami CF\"}, {\"type\": \"player\", \"id\": \"831489\", \"score\": 301097, \"name\": \"Alexis Mac Allister\", \"isCoach\": false, \"teamId\": 8650, \"teamName\": \"Liverpool\"}, {\"type\": \"player\", \"id\": \"839204\", \"score\": 301095, \"name\": \"Omar Marmoush\", \"isCoach\": false, \"teamId\": 8456, \"teamName\": \"Manchester City\"}, {\"type\": \"player\", \"id\": \"1158945\", \"score\": 301094, \"name\": \"Nuno Mendes\", \"isCoach\": false, \"teamId\": 9847, \"teamName\": \"Paris Saint-Germain\"}, {\"type\": \"player\", \"id\": \"534670\", \"score\": 301093, \"name\": \"Martin Ødegaard\", \"isCoach\": false, \"teamId\": 9825, \"teamName\": \"Arsenal\"}, {\"type\": \"player\", \"id\": \"1031325\", \"score\": 301093, \"name\": \"Martín Zubimendi\", \"isCoach\": false, \"teamId\": 9825, \"teamName\": \"Arsenal\"}, {\"type\": \"player\", \"id\": \"1029063\", \"score\": 301092, \"name\": \"Michael Olise\", \"isCoach\": false, \"teamId\": 9823, \"teamName\": \"Bayern München\"}, {\"type\": \"player\", \"id\": \"1156141\", \"score\": 301092, \"name\": \"Jamal Musiala\", \"isCoach\": false, \"teamId\": 9823, \"teamName\": \"Bayern München\"}, {\"type\": \"player\", \"id\": \"1137668\", \"score\": 301091, \"name\": \"Moisés Caicedo\", \"isCoach\": false, \"teamId\": 8455, \"teamName\": \"Chelsea\"}, {\"type\": \"player\", \"id\": \"863098\", \"score\": 301083, \"name\": \"Matheus Cunha\", \"isCoach\": false, \"teamId\": 10260, \"teamName\": \"Manchester United\"}, {\"type\": \"player\", \"id\": \"1021586\", \"score\": 301064, \"...<truncated>"
     },
     {
       "provider": "sportapi7",
       "name": "SportAPI sample endpoint",
       "host": "sportapi7.p.rapidapi.com",
       "enabled": true,
-      "called": false,
-      "skip_reason": "missing_rapidapi_key",
-      "status_code": null,
-      "ok": false,
-      "rate_limit_headers": {},
-      "shape": {}
+      "called": true,
+      "skip_reason": null,
+      "status_code": 200,
+      "ok": true,
+      "rate_limit_headers": {
+        "x-ratelimit-rapid-free-plans-hard-limit-limit": "500000",
+        "x-ratelimit-rapid-free-plans-hard-limit-remaining": "499999",
+        "x-ratelimit-rapid-free-plans-hard-limit-reset": "2588534",
+        "x-ratelimit-requests-limit": "50",
+        "x-ratelimit-requests-remaining": "49",
+        "x-ratelimit-requests-reset": "2588534"
+      },
+      "shape": {
+        "type": "dict",
+        "keys": [
+          "pitches"
+        ]
+      },
+      "preview": "{\"pitches\": [{\"pitcher\": {\"name\": \"Randy Vásquez\", \"firstName\": \"Randy\", \"lastName\": \"Vásquez\", \"slug\": \"vasquez-randy\", \"shortName\": \"R. Vásquez\", \"position\": \"SP\", \"jerseyNumber\": \"98\", \"userCount\": 21, \"gender\": \"M\", \"id\": 1195950, \"fieldTranslations\": {\"nameTranslation\": {\"ar\": \"فاسكيز، راندي\"}, \"shortNameTranslation\": {\"ar\": \"ر. فاسكيز\"}}}, \"pitcherTeam\": {\"name\": \"San Diego Padres\", \"slug\": \"san-diego-padres\", \"shortName\": \"Padres\", \"gender\": \"M\", \"sport\": {\"name\": \"Baseball\", \"slug\": \"baseball\", \"id\": 64}, \"userCount\": 13888, \"nameCode\": \"SD\", \"disabled\": false, \"national\": false, \"type\": 0, \"id\": 3636, \"teamColors\": {\"primary\": \"#012c61\", \"secondary\": \"#012c61\", \"text\": \"#012c61\"}, \"fieldTranslations\": {\"nameTranslation\": {\"ar\": \"سان دييغو بادريس\"}, \"shortNameTranslation\": {\"ar\": \"بادريس\", \"bn\": \"প্যাড্রেস\", \"hi\": \"पैड्रेस\"}}}, \"hitter\": {\"name\": \"Brendan Donovan\", \"firstName\": \"Brendan\", \"lastName\": \"Donovan\", \"slug\": \"donovan-brendan\", \"shortName\": \"B. Donovan\", \"position\": \"2B\", \"userCount\": 28, \"gender\": \"M\", \"id\": 1191964, \"fieldTranslations\": {\"nameTranslation\": {\"ar\": \"دونوفان، بريندان\"}, \"shortNameTranslation\": {\"ar\": \"ب. دونوفان\"}}}, \"hitterTeam\": {\"name\": \"Seattle Mariners\", \"slug\": \"seattle-mariners\", \"shortName\": \"Mariners\", \"gender\": \"M\", \"sport\": {\"name\": \"Baseball\", \"slug\": \"baseball\", \"id\": 64}, \"userCount\": 14421, \"nameCode\": \"SEA\", \"national\": false, \"type\": 0, \"id\": 3641, \"teamColors\": {\"primary\": \"#006c67\", \"secondary\": \"#006c67\", \"text\": \"#006c67\"}, \"fieldTranslations\": {\"nameTranslation\": {\"ar\": \"سياتل مارينرز\"}, \"shortNameTranslation\": {\"ar\": \"مارينرز\", \"bn\": \"মেরিনার্স\", \"hi\": \"मरीनर्स\"}}}, \"status\": \"official\", \"outcome\": \"kKL\", \"type\": \"pitch\", \"startTime\": \"2026-04-16T01:41:24+00:00\", \"endTime\": \"2026-04-16T01:41:28+00:00\", \"isAbOver\":...<truncated>"
     }
   ],
   "state_path": ".data/provider_quota_state.json"
