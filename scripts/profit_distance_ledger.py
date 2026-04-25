@@ -21,10 +21,23 @@ CANDIDATE_PATHS = [
 OUT_LEDGER = Path(".data/profit-distance-ledger.jsonl")
 OUT_SUMMARY = Path(".data/exports/latest-profit-distance-summary.json")
 OUT_WATCHLIST = Path(".data/exports/latest-profit-watchlist.json")
-OUT_PUBLISHABLE_WATCHLIST = Path(".data/exports/latest-profit-publishable-watchlist.json")
+OUT_ALLOWED_NEAR_MISS = Path(".data/exports/latest-profit-allowed-near-miss.json")
 OUT_BLOCKED_POSITIVE = Path(".data/exports/latest-profit-blocked-positive.json")
 
 DEFAULT_ALLOWED_FAMILIES = {"totals", "dnb"}
+
+HARD_REJECTS = {
+    "canonical_negative_value",
+    "xg_probability_gap_hard_reject",
+    "xg_direction_conflict",
+    "btts_probability_gap_hard_reject",
+    "btts_direction_conflict",
+    "dnb_direction_conflict",
+    "match_already_started",
+    "match_time_outside_window",
+    "match_time_too_late",
+    "duplicate_fallback_sent_index",
+}
 
 
 def env_set(name: str, default: set[str]) -> set[str]:
@@ -162,8 +175,6 @@ def controlled_payload(row: dict[str, Any]) -> dict[str, Any]:
 
 
 def final_reject_reasons(row: dict[str, Any]) -> list[str]:
-    # Only true reject fields are used here. Generic candidate "reasons" often contains
-    # source/model notes, so it is intentionally kept out of rejection counters.
     keys = (
         "final_reject_reasons",
         "reject_reasons",
@@ -184,7 +195,6 @@ def final_reject_reasons(row: dict[str, Any]) -> list[str]:
     if isinstance(value, list):
         reasons.extend(str(item) for item in value if str(item).strip())
 
-    # Deduplicate without reordering.
     result: list[str] = []
     seen: set[str] = set()
     for reason in reasons:
@@ -197,13 +207,18 @@ def final_reject_reasons(row: dict[str, Any]) -> list[str]:
 
 def candidate_notes(row: dict[str, Any]) -> list[str]:
     notes: list[str] = []
-    # Generic "reasons" is useful, but it is not a final rejection reason.
     for key in ("reasons", "quality_reasons", "model_reasons"):
         notes.extend(list_field(row, key))
 
     ss = source_summary(row)
     for key in ("selected_source", "selected_bookmaker", "source", "market_move", "context"):
         value = ss.get(key)
+        if value not in (None, ""):
+            notes.append(f"{key}={value}")
+
+    # Controlled report rows often do not carry source_summary. Keep selected book/source from top-level fields.
+    for key in ("candidate_source", "bookmaker", "source"):
+        value = row.get(key)
         if value not in (None, ""):
             notes.append(f"{key}={value}")
 
@@ -217,26 +232,11 @@ def candidate_notes(row: dict[str, Any]) -> list[str]:
     return result
 
 
-def report_rejection_counts(report: dict[str, Any]) -> dict[str, int]:
-    for key in ("rejection_counts", "reject_counts", "reason_counts", "reasons"):
-        value = report.get(key)
-        if isinstance(value, dict):
-            result: dict[str, int] = {}
-            for raw_key, raw_value in value.items():
-                try:
-                    result[str(raw_key)] = int(raw_value)
-                except Exception:
-                    continue
-            if result:
-                return dict(sorted(result.items(), key=lambda item: item[1], reverse=True))
-    return {}
-
-
 def reliability(row: dict[str, Any], confidence: float) -> dict[str, Any]:
     books = as_int(row.get("books_count"), as_int(metric(row, "books_count"), 0))
     sources = as_int(row.get("sources_count"), as_int(metric(row, "sources_count"), 0))
     quality_raw = metric(row, "quality_score_raw", metric(row, "quality_score", 0.0))
-    q_source = str(row.get("quality_score_source") or "").strip().lower()
+    q_source = str(row.get("quality_score_source") or metric(row, "quality_score_source", 0.0) or "").strip().lower()
     fam = family(row)
 
     data_rel = 1.0 if quality_raw > 0 and sources >= 2 else 0.74 if books >= 2 and sources >= 1 else 0.45
@@ -322,13 +322,54 @@ def selected_key(report: dict[str, Any]) -> str:
     return ""
 
 
-def load_candidates() -> list[dict[str, Any]]:
-    merged: dict[str, dict[str, Any]] = {}
+def controlled_report_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    for section in ("evaluated", "watchlist", "selected", "pick", "published_pick"):
+        value = report.get(section)
+        if isinstance(value, list):
+            for row in value:
+                if isinstance(row, dict):
+                    item = dict(row)
+                    item["_candidate_file"] = f"controlled_report:{section}"
+                    rows.append(item)
+        elif isinstance(value, dict):
+            item = dict(value)
+            item["_candidate_file"] = f"controlled_report:{section}"
+            rows.append(item)
+    return rows
+
+
+def raw_candidate_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
     for path in CANDIDATE_PATHS:
         for row in rows_from(load_json(path, [])):
-            row.setdefault("_candidate_file", str(path))
-            merged.setdefault(candidate_key(row), row)
+            item = dict(row)
+            item.setdefault("_candidate_file", str(path))
+            rows.append(item)
+    return rows
+
+
+def load_candidates(report: dict[str, Any]) -> list[dict[str, Any]]:
+    # Controlled report rows have the true controlled-fallback rejection reasons.
+    # Raw rescue candidates are appended only if the controlled report did not evaluate them.
+    merged: dict[str, dict[str, Any]] = {}
+    for row in raw_candidate_rows():
+        merged.setdefault(candidate_key(row), row)
+    for row in controlled_report_rows(report):
+        merged[candidate_key(row)] = row
     return list(merged.values())
+
+
+def is_family_block(reason: str) -> bool:
+    return reason.startswith("family_not_allowed:") or reason.startswith("family_not_publishable:")
+
+
+def has_hard_block(reasons: list[str]) -> bool:
+    for reason in reasons:
+        text = str(reason)
+        if text in HARD_REJECTS or text.startswith("duplicate_state:") or is_family_block(text):
+            return True
+    return False
 
 
 def blocked_reasons(item: dict[str, Any], allowed_families: set[str]) -> list[str]:
@@ -339,25 +380,34 @@ def blocked_reasons(item: dict[str, Any], allowed_families: set[str]) -> list[st
 
     for reason in item.get("final_reject_reasons") or []:
         text = str(reason)
-        if (
-            text.startswith("family_not_allowed:")
-            or text in {
-                "canonical_negative_value",
-                "xg_probability_gap_hard_reject",
-                "xg_direction_conflict",
-                "btts_probability_gap_hard_reject",
-                "btts_direction_conflict",
-                "dnb_direction_conflict",
-                "match_already_started",
-                "match_time_outside_window",
-                "match_time_too_late",
-                "duplicate_fallback_sent_index",
-            }
-            or text.startswith("duplicate_state:")
-        ):
+        if text in HARD_REJECTS or text.startswith("duplicate_state:") or is_family_block(text):
             result.append(text)
 
-    return result
+    out: list[str] = []
+    seen: set[str] = set()
+    for reason in result:
+        if reason and reason not in seen:
+            seen.add(reason)
+            out.append(reason)
+    return out
+
+
+def classify(item: dict[str, Any], selected: str, allowed_families: set[str]) -> str:
+    if selected and item["candidate_key"] == selected:
+        return "published"
+    if float(item.get("profit_score") or 0.0) <= 0:
+        return "rejected"
+
+    blocks = blocked_reasons(item, allowed_families)
+    if blocks:
+        item["blocked_reasons"] = blocks
+        return "blocked_positive"
+
+    # Positive EV but controlled fallback still rejected it on quality/tier/proxy thresholds.
+    if item.get("final_reject_reasons"):
+        return "allowed_near_miss"
+
+    return "raw_positive"
 
 
 def main() -> int:
@@ -371,7 +421,7 @@ def main() -> int:
     candidate_note_counts: Counter[str] = Counter()
     family_counts: Counter[str] = Counter()
 
-    for raw in load_candidates():
+    for raw in load_candidates(report):
         key = candidate_key(raw)
         metrics = profit_score(raw)
         final_reasons = final_reject_reasons(raw)
@@ -380,8 +430,9 @@ def main() -> int:
         item = {
             "recorded_at": now,
             "run_report_path": report.get("_path", ""),
+            "candidate_file": raw.get("_candidate_file", ""),
             "candidate_key": key,
-            "decision": "published" if selected and key == selected else "candidate",
+            "decision": "candidate",
             "home_team": home(raw),
             "away_team": away(raw),
             "commence_time": start_time(raw),
@@ -395,16 +446,7 @@ def main() -> int:
             **metrics,
         }
 
-        blocks = blocked_reasons(item, allowed_families)
-        if item["decision"] != "published":
-            if float(item.get("profit_score") or 0.0) <= 0:
-                item["decision"] = "rejected"
-            elif blocks:
-                item["decision"] = "blocked_positive"
-                item["blocked_reasons"] = blocks
-            else:
-                item["decision"] = "publishable_watchlist"
-
+        item["decision"] = classify(item, selected, allowed_families)
         rows.append(item)
         candidate_rejection_counts.update(final_reasons)
         candidate_note_counts.update(notes)
@@ -413,46 +455,33 @@ def main() -> int:
     rows.sort(
         key=lambda item: (
             item["decision"] != "published",
-            item["decision"] != "publishable_watchlist",
+            item["decision"] != "allowed_near_miss",
+            item["decision"] != "raw_positive",
             -float(item.get("profit_score") or 0.0),
         )
     )
 
-    publishable_watchlist = [
-        item
-        for item in rows
-        if item["decision"] == "publishable_watchlist" and float(item.get("profit_score") or 0.0) > 0
-    ][:25]
-    blocked_positive = [
-        item
-        for item in rows
-        if item["decision"] == "blocked_positive" and float(item.get("profit_score") or 0.0) > 0
-    ][:25]
-    all_positive = [
-        item
-        for item in rows
-        if item["decision"] != "published" and float(item.get("profit_score") or 0.0) > 0
-    ][:25]
+    allowed_near_miss = [item for item in rows if item["decision"] in {"allowed_near_miss", "raw_positive"}][:25]
+    blocked_positive = [item for item in rows if item["decision"] == "blocked_positive"][:25]
+    all_positive = [item for item in rows if item["decision"] in {"allowed_near_miss", "raw_positive", "blocked_positive"}][:25]
 
     OUT_LEDGER.parent.mkdir(parents=True, exist_ok=True)
     with OUT_LEDGER.open("a", encoding="utf-8") as fh:
         for item in rows:
             fh.write(json.dumps(item, ensure_ascii=False, sort_keys=True) + "\n")
 
-    report_counts = report_rejection_counts(report)
     summary = {
         "created_at": now,
         "report_path": report.get("_path", ""),
         "allowed_families": sorted(allowed_families),
         "candidates": len(rows),
         "published": sum(1 for item in rows if item["decision"] == "published"),
-        "publishable_watchlist_count": len(publishable_watchlist),
+        "allowed_near_miss_count": len(allowed_near_miss),
         "blocked_positive_count": len(blocked_positive),
         "positive_total_count": len(all_positive),
-        "top_publishable_watchlist": publishable_watchlist[:10],
+        "top_allowed_near_miss": allowed_near_miss[:10],
         "top_blocked_positive": blocked_positive[:10],
         "top_positive_all": all_positive[:10],
-        "report_rejection_counts": report_counts,
         "candidate_final_rejection_counts": dict(candidate_rejection_counts.most_common(25)),
         "candidate_note_counts": dict(candidate_note_counts.most_common(25)),
         "family_counts": dict(family_counts),
@@ -460,14 +489,14 @@ def main() -> int:
         "outputs": {
             "summary": str(OUT_SUMMARY),
             "all_positive_watchlist": str(OUT_WATCHLIST),
-            "publishable_watchlist": str(OUT_PUBLISHABLE_WATCHLIST),
+            "allowed_near_miss": str(OUT_ALLOWED_NEAR_MISS),
             "blocked_positive": str(OUT_BLOCKED_POSITIVE),
         },
     }
 
     write_json(OUT_SUMMARY, summary)
     write_json(OUT_WATCHLIST, all_positive)
-    write_json(OUT_PUBLISHABLE_WATCHLIST, publishable_watchlist)
+    write_json(OUT_ALLOWED_NEAR_MISS, allowed_near_miss)
     write_json(OUT_BLOCKED_POSITIVE, blocked_positive)
 
     print(json.dumps(summary, ensure_ascii=False, indent=2))
