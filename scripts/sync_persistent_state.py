@@ -17,6 +17,7 @@ STATE_FILES = [
     ".data/provider_quota_governor_state.json",
     ".data/provider_quota_state.json",
     ".data/daily-ops-report-sent.json",
+    ".data/detailed-run-report-sent.json",
     ".data/calibration-profile.json",
     ".data/auto_learning_runtime_overrides.env",
     ".data/learning-state.json",

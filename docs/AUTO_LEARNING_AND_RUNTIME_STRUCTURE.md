@@ -138,3 +138,25 @@ cat .data/exports/latest-auto-learning-report.txt
 - Auto-learning no longer displays one-loss ROI as a decision signal when sample is below the configured minimum.
 - Near-miss reasons in the auto-learning report are translated to Russian.
 - Added translations for `tier_a_odds_above_max` and related odds/tier reasons.
+
+
+## v3: защита от дублей подробного отчёта
+
+Файл:
+
+```text
+.data/detailed-run-report-sent.json
+```
+
+теперь сохраняется как persistent state. Поэтому cooldown/hash detailed report работает между разными GitHub runs, а не только внутри одного запуска.
+
+Persistent state теперь включает:
+
+```text
+.data/detailed-run-report-sent.json
+.data/daily-ops-report-sent.json
+.data/learning-state.json
+.data/auto_learning_runtime_overrides.env
+```
+
+Это убирает повторные одинаковые no-pick отчёты, если два run’а проходят рядом.

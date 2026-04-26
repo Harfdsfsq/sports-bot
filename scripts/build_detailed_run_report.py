@@ -522,6 +522,30 @@ def render(payload: dict[str, Any]) -> str:
     return normalize_telegram_text("\n".join(lines))
 
 
+
+def semantic_message_hash(payload: dict[str, Any]) -> str:
+    """Stable hash for cooldown/dedupe that ignores tiny token/quota/count drift."""
+    reasons = payload.get("reason_counts") or {}
+    top_reasons = []
+    if isinstance(reasons, dict):
+        top_reasons = [str(k) for k, _ in Counter(reasons).most_common(5)]
+    near = []
+    for item in (payload.get("near_misses") or [])[:5]:
+        try:
+            candidate = item["candidate"]
+            ident = candidate_identity(candidate)
+            near.append([ident.get("home"), ident.get("away"), ident.get("selection"), str(candidate.get("odds") or "")])
+        except Exception:
+            continue
+    raw = {
+        "published": bool(payload.get("published")),
+        "status": payload.get("status"),
+        "top_reasons": top_reasons,
+        "near": near,
+    }
+    return hashlib.sha1(json.dumps(raw, ensure_ascii=False, sort_keys=True).encode("utf-8")).hexdigest()
+
+
 def split_text(text: str, limit: int = 3900) -> list[str]:
     if len(text) <= limit:
         return [text]

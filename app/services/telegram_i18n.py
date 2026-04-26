@@ -241,6 +241,16 @@ _REASON_MAP.update({
     "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
 })
 
+
+_REASON_MAP.update({
+    "tier_a_odds_above_max": "уровень A: коэффициент выше безопасного максимума",
+    "tier_b_odds_above_max": "уровень B: коэффициент выше безопасного максимума",
+    "tier_c_odds_above_max": "уровень C: коэффициент выше безопасного максимума",
+    "tier_a_odds_below_min": "уровень A: коэффициент ниже минимума",
+    "tier_b_odds_below_min": "уровень B: коэффициент ниже минимума",
+    "tier_c_odds_below_min": "уровень C: коэффициент ниже минимума",
+})
+
 _TEXT_REPLACEMENTS: list[tuple[str, str]] = [
     ("Over", "Больше"),
     ("Under", "Меньше"),
