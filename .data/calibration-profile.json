@@ -16,19 +16,53 @@
       "comment": "Тоталы пока мягко тянем ближе к рынку"
     },
     "odds_bucket:3.00-4.50": {
-      "delta_probability": -0.020,
+      "delta_probability": -0.02,
       "min_sample": 16,
       "comment": "Высокие коэффициенты штрафуем сильнее"
     },
     "books_bucket:1": {
-      "delta_probability": -0.010,
+      "delta_probability": -0.01,
       "min_sample": 10,
       "comment": "Одиночная книга допустима, но с мягким штрафом"
     },
     "confidence_bucket:45-52": {
-      "delta_probability": -0.010,
+      "delta_probability": -0.01,
       "min_sample": 12,
       "comment": "Низкая уверенность — ближе к рынку"
     }
+  },
+  "auto_learning": {
+    "version": "safe-feedback-v1",
+    "updated_at": "2026-04-26T23:12:28.742258+00:00",
+    "mode": "observe_only",
+    "sample_ready": false,
+    "overall": {
+      "n": 1,
+      "won": 0,
+      "lost": 1,
+      "push": 1,
+      "stake": 5.0,
+      "pnl": -5.0,
+      "roi": -1.0,
+      "hit_rate": 0.0,
+      "avg_predicted_probability": 0.3775,
+      "calibration_bias_pp": -37.75
+    },
+    "recommendations": [
+      {
+        "type": "observe_only",
+        "severity": "info",
+        "message": "Недостаточно закрытых ставок для изменения guard’ов: 1/30."
+      }
+    ],
+    "runtime_overrides": {
+      "AUTO_LEARNING_ACTIVE": "true",
+      "AUTO_LEARNING_SAMPLE_READY": "false",
+      "AUTO_LEARNING_MODE": "observe_only",
+      "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE": "73.50",
+      "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": "10.00",
+      "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": "5.00"
+    },
+    "note": "Auto-learning is conservative: it can tighten proxy/single-source guardrails after enough negative evidence; it does not loosen thresholds automatically."
   }
 }
