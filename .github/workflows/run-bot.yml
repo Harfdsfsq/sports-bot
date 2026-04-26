@@ -37,25 +37,19 @@ on:
         required: false
         default: '2'
         type: string
+  push:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/run-bot.yml'
+      - 'app/**'
+      - 'config/**'
+      - 'scripts/**'
+      - 'requirements.txt'
   schedule:
-    # Profit-distance cadence, MSK = UTC+3.
-    # Runs are placed at :07 MSK so the workflow usually finishes before :30
-    # and preserves MIN_KICKOFF_LEAD_MINUTES=30 for common :00 kickoffs.
-    # The previous :47 grid was too late for next-hour fixtures and caused
-    # match_time_outside_window spikes.
-    - cron: '7 3 * * *'    # 06:07 MSK
-    - cron: '7 4 * * *'    # 07:07 MSK
-    - cron: '7 5 * * *'    # 08:07 MSK
-    - cron: '7 6 * * *'    # 09:07 MSK
-    - cron: '7 7 * * *'    # 10:07 MSK
-    - cron: '7 8 * * *'    # 11:07 MSK
-    - cron: '7 10 * * *'   # 13:07 MSK
-    - cron: '7 12 * * *'   # 15:07 MSK
-    - cron: '7 14 * * *'   # 17:07 MSK
-    - cron: '7 15 * * *'   # 18:07 MSK
-    - cron: '7 16 * * *'   # 19:07 MSK
-    - cron: '7 18 * * *'   # 21:07 MSK
-    - cron: '7 20 * * *'   # 23:07 MSK
+    # MSK = UTC+3. Run before common :00/:30 kickoffs, preserving
+    # MIN_KICKOFF_LEAD_MINUTES=30 while the quota governor prevents API burn.
+    - cron: '12,42 3-20 * * *' # 06:12-23:42 MSK
 
 permissions:
   contents: write
@@ -176,6 +170,14 @@ jobs:
             echo "No profile file applied"
           fi
 
+      - name: Apply quota governor profile
+        shell: bash
+        run: |
+          if [ -f config/api_quota_governor.env ]; then
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/api_quota_governor.env >> "$GITHUB_ENV"
+            echo "Applied quota profile: config/api_quota_governor.env"
+          fi
+
       - name: Apply manual dispatch overrides
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
@@ -238,6 +240,13 @@ jobs:
         shell: bash
         run: |
           python scripts/apply_free_api_enrichment_patch.py || true
+
+      - name: Apply provider quota governor
+        shell: bash
+        run: |
+          python scripts/apply_provider_quota_governor.py
+          echo "---- provider quota governor summary ----"
+          cat .data/exports/latest-provider-quota-governor.json || true
 
       - name: Ensure calibration profile exists
         shell: bash

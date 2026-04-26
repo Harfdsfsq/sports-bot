@@ -149,8 +149,60 @@ def shape_summary(payload: Any) -> dict[str, Any]:
     return {"type": type(payload).__name__}
 
 
+def _walk_event_ids(payload: Any, out: list[str], limit: int) -> None:
+    if len(out) >= limit:
+        return
+    if isinstance(payload, dict):
+        for key in (
+            "event_id",
+            "eventId",
+            "provider_event_id",
+            "odds_api_io_event_id",
+            "external_event_id",
+            "id",
+        ):
+            value = payload.get(key)
+            if value not in (None, ""):
+                text = str(value).strip()
+                if text and text not in out:
+                    out.append(text)
+                    if len(out) >= limit:
+                        return
+        for value in payload.values():
+            _walk_event_ids(value, out, limit)
+            if len(out) >= limit:
+                return
+    elif isinstance(payload, list):
+        for item in payload:
+            _walk_event_ids(item, out, limit)
+            if len(out) >= limit:
+                return
+
+
+def discover_odds_feed_event_ids(limit: int = 20) -> str:
+    explicit = str(os.getenv("RAPIDAPI_ODDS_FEED_EVENT_IDS") or "").strip()
+    if explicit:
+        return explicit
+
+    candidates = [
+        Path(".data/exports/latest-match-data-coverage-matches.json"),
+        Path(".data/exports/latest-rescue-candidates.json"),
+        Path("artifacts/run-bot/latest-rescue-candidates.json"),
+        Path(".logs/debug-last-run.json"),
+    ]
+    ids: list[str] = []
+    for path in candidates:
+        payload = load_json(path, None)
+        if payload is None:
+            continue
+        _walk_event_ids(payload, ids, limit)
+        if len(ids) >= limit:
+            break
+    return ",".join(ids[:limit])
+
+
 def build_probes() -> list[RapidApiProbe]:
-    odds_feed_ids = quote(str(os.getenv("RAPIDAPI_ODDS_FEED_EVENT_IDS") or "").strip(), safe=",")
+    odds_feed_ids = quote(discover_odds_feed_event_ids(env_int("RAPIDAPI_ODDS_FEED_EVENT_IDS_LIMIT", 20)), safe=",")
     odds_feed_url = (
         "https://odds-feed.p.rapidapi.com/api/v1/markets/feed"
         f"?placing=LIVE&market_name=1X2&bet_type=BACK&page=0&event_ids={odds_feed_ids}&period=FULL_TIME_AND_OT"
@@ -284,11 +336,12 @@ async def main_async() -> int:
         "auth_failed": sum(1 for item in results if item.get("auth_failed")),
         "results": results,
         "state_path": str(STATE_PATH),
+        "odds_feed_event_ids_discovered": bool(str(os.getenv("RAPIDAPI_ODDS_FEED_EVENT_IDS") or discover_odds_feed_event_ids()).strip()),
     }
     write_json(OUT_PATH, summary)
     write_json(OUT_SUMMARY, {
         key: summary[key]
-        for key in ("created_at", "enabled", "providers_total", "called", "ok", "skipped", "rate_limited", "auth_failed", "state_path")
+        for key in ("created_at", "enabled", "providers_total", "called", "ok", "skipped", "rate_limited", "auth_failed", "state_path", "odds_feed_event_ids_discovered")
     } | {
         "provider_status": [
             {
