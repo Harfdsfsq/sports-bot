@@ -129,3 +129,12 @@ python scripts/runtime_healthcheck.py
 python scripts/auto_learning_engine.py
 cat .data/exports/latest-auto-learning-report.txt
 ```
+
+
+## v2 adjustments
+
+- Telegram detailed report now shows up to 5 near-miss candidates by default to avoid awkward message splitting.
+- If Telegram still needs multiple messages, each part is labeled `часть N/M`.
+- Auto-learning no longer displays one-loss ROI as a decision signal when sample is below the configured minimum.
+- Near-miss reasons in the auto-learning report are translated to Russian.
+- Added translations for `tier_a_odds_above_max` and related odds/tier reasons.

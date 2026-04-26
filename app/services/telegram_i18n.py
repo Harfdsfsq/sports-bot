@@ -413,7 +413,17 @@ def translate_reject_reason(reason: Any) -> str:
             "dnb": "фора 0",
         }.get(family, family)
         return f"семья рынка закрыта для Telegram: {family_ru}"
-    return text.replace("_", " ")
+    # Generic readable fallback for tier/family slugs not yet in the dictionary.
+    generic = text
+    generic = re.sub(r"^tier_([abc])_", lambda m: f"уровень {m.group(1).upper()}: ", generic)
+    generic = generic.replace("odds above max", "коэффициент выше безопасного максимума")
+    generic = generic.replace("odds below min", "коэффициент ниже минимума")
+    generic = generic.replace("books below min", "линий букмекеров меньше минимума")
+    generic = generic.replace("sources below min", "источников меньше минимума")
+    generic = generic.replace("xg gap above max", "разрыв с xG выше лимита")
+    generic = generic.replace("xg confirmation missing", "нет подтверждения xG")
+    generic = generic.replace("market confirmation missing", "нет рыночного подтверждения")
+    return generic.replace("_", " ")
 
 
 def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:

@@ -34,6 +34,12 @@ except Exception:
         "tier_a_confidence_below_min": "уверенность ниже минимума уровня A",
         "tier_a_canonical_edge_below_min": "запас value ниже минимума уровня A",
         "tier_a_canonical_ev_below_min": "EV ниже минимума уровня A",
+        "tier_a_odds_above_max": "уровень A: коэффициент выше безопасного максимума",
+        "tier_b_odds_above_max": "уровень B: коэффициент выше безопасного максимума",
+        "tier_c_odds_above_max": "уровень C: коэффициент выше безопасного максимума",
+        "tier_a_odds_below_min": "уровень A: коэффициент ниже минимума",
+        "tier_b_odds_below_min": "уровень B: коэффициент ниже минимума",
+        "tier_c_odds_below_min": "уровень C: коэффициент ниже минимума",
         "tier_a_books_below_min": "линий букмекеров меньше минимума уровня A",
         "tier_b_books_below_min": "линий букмекеров меньше минимума уровня B",
         "tier_c_books_below_min": "линий букмекеров меньше минимума уровня C",
@@ -394,17 +400,28 @@ def learning_lines() -> list[str]:
     overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
     overrides = payload.get("runtime_overrides") if isinstance(payload.get("runtime_overrides"), dict) else {}
     n = as_int(overall.get("n"))
-    roi = as_float(overall.get("roi")) * 100.0
-    bias = as_float(overall.get("calibration_bias_pp"))
+    min_total = 30
+    try:
+        pol = load_json("config/auto_learning_policy.json", {})
+        if isinstance(pol, dict):
+            min_total = as_int(pol.get("min_settled_total"), 30)
+    except Exception:
+        pass
     mode = str(overrides.get("AUTO_LEARNING_MODE") or "unknown")
     ready = str(overrides.get("AUTO_LEARNING_SAMPLE_READY") or "false")
-    return [
+    lines = [
         "🧠 Автообучение",
-        f"• Закрытых ставок: {n} | ROI {roi:+.1f}% | bias {bias:+.1f} п.п.",
-        f"• sample_ready={ready} | mode={mode}",
-        "",
+        f"• Выборка: {n}/{min_total} закрытых ставок | sample_ready={ready}",
+        f"• Режим: {mode}",
     ]
-
+    if n < min_total:
+        lines.append("• Фильтры не менялись: идёт накопление статистики.")
+    else:
+        roi = as_float(overall.get("roi")) * 100.0
+        bias = as_float(overall.get("calibration_bias_pp"))
+        lines.append(f"• ROI {roi:+.1f}% | bias {bias:+.1f} п.п.")
+    lines.append("")
+    return lines
 
 def build_payload() -> dict[str, Any]:
     report = fallback_report()
@@ -518,7 +535,12 @@ def split_text(text: str, limit: int = 3900) -> list[str]:
         size += add
     if current:
         parts.append("\n".join(current))
+
+    if len(parts) > 1:
+        total = len(parts)
+        parts = [f"🧾 Подробный отчёт run — часть {idx}/{total}\n\n{part}" for idx, part in enumerate(parts, start=1)]
     return parts
+
 
 
 def send_telegram(text: str) -> dict[str, Any]:

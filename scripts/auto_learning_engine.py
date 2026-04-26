@@ -8,6 +8,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
+try:
+    from app.services.telegram_i18n import translate_reject_reason
+except Exception:
+    def translate_reject_reason(reason: Any) -> str:
+        return str(reason or '').replace('_', ' ')
+
 UTC = timezone.utc
 
 POLICY_PATH = Path("config/auto_learning_policy.json")
@@ -476,13 +482,28 @@ def render_report(payload: dict[str, Any]) -> str:
     recs = payload.get("recommendations") or []
     overrides = payload.get("runtime_overrides") or {}
 
+    n = safe_int(overall.get("n"))
+    push = safe_int(overall.get("push"))
+    min_total = safe_int(policy().get("min_settled_total"), 30)
+    sample_ready = str(overrides.get("AUTO_LEARNING_SAMPLE_READY") or "false").lower() == "true"
+    show_roi_min = safe_int(os.getenv("AUTO_LEARNING_REPORT_MIN_SAMPLE_TO_SHOW_ROI"), 10)
+
     lines = [
         "🧠 Отчёт автообучения",
         "",
-        "📚 Закрытые ставки",
-        f"• Учтено: {overall.get('n', 0)} | W {overall.get('won', 0)} / L {overall.get('lost', 0)} / Push {overall.get('push', 0)}",
-        f"• ROI: {safe_float(overall.get('roi')) * 100:+.1f}% | PnL {safe_float(overall.get('pnl')):+.2f} | ставка {safe_float(overall.get('stake')):.2f}",
-        f"• Калибровка: факт {safe_float(overall.get('hit_rate')) * 100:.1f}% vs модель {safe_float(overall.get('avg_predicted_probability')) * 100:.1f}% | bias {safe_float(overall.get('calibration_bias_pp')):+.1f} п.п.",
+        "📚 Выборка",
+        f"• Рассчитанных ставок: {n}/{min_total} | Push/Void: {push}",
+    ]
+
+    if n >= show_roi_min:
+        lines.extend([
+            f"• ROI: {safe_float(overall.get('roi')) * 100:+.1f}% | PnL {safe_float(overall.get('pnl')):+.2f} | ставка {safe_float(overall.get('stake')):.2f}",
+            f"• Калибровка: факт {safe_float(overall.get('hit_rate')) * 100:.1f}% vs модель {safe_float(overall.get('avg_predicted_probability')) * 100:.1f}% | bias {safe_float(overall.get('calibration_bias_pp')):+.1f} п.п.",
+        ])
+    else:
+        lines.append("• ROI и bias пока не используются для решений: выборка слишком маленькая.")
+
+    lines += [
         "",
         "⚠️ Near-miss / отказы",
         f"• Положительных near-miss: {near.get('positive_near_misses', 0)}",
@@ -490,11 +511,15 @@ def render_report(payload: dict[str, Any]) -> str:
 
     reasons = near.get("reason_counts") if isinstance(near.get("reason_counts"), dict) else {}
     for reason, count in list(reasons.items())[:6]:
-        lines.append(f"• {reason} — {count}")
+        lines.append(f"• {translate_reject_reason(reason)} — {count}")
 
     lines += ["", "🛡️ Решение"]
-    for rec in recs[:8]:
-        lines.append(f"• {rec.get('message')}")
+    if not sample_ready:
+        lines.append(f"• Режим наблюдения: недостаточно закрытых ставок для изменения guard’ов ({n}/{min_total}).")
+        lines.append("• Фильтры не ослаблялись и не ужесточались.")
+    else:
+        for rec in recs[:8]:
+            lines.append(f"• {rec.get('message')}")
 
     lines += [
         "",
@@ -506,7 +531,6 @@ def render_report(payload: dict[str, Any]) -> str:
         f"• proxy edge ≥ {overrides.get('CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP')} п.п.",
     ]
     return "\n".join(lines)
-
 
 def main() -> int:
     try:
