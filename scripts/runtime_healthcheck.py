@@ -56,6 +56,8 @@ def main() -> int:
         warnings.append("run-bot.yml does not call auto_learning_engine.py")
     if "python scripts/sync_persistent_state.py || true" not in run_yml:
         warnings.append("run-bot.yml does not use safe persistent state sync")
+    if "workflow_dispatch" not in run_yml or "SEND_DETAILED_REPORT=true" not in run_yml:
+        warnings.append("manual detailed report Telegram policy should be enabled for workflow_dispatch")
 
     gitignore = read(".gitignore")
     for state in STATE_FILES:

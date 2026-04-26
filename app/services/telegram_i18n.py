@@ -95,6 +95,28 @@ _BUILTIN_TEAMS: dict[str, str] = {
     "Northern AFC": "Нортерн",
 }
 
+_BUILTIN_TEAMS.update({
+    "Dunedin City Royals FC": "Данидин Сити Ройалс",
+    "Ferrymead Bays": "Ферримид Бэйс",
+    "FK Haugesund 2": "Хаугесунд 2",
+    "Stabaek Fotball 2": "Стабек 2",
+    "Stabæk Fotball 2": "Стабек 2",
+    "Union Espanola": "Унион Эспаньола",
+    "CD Santa Cruz": "Санта-Крус",
+    "Barranquilla FC": "Барранкилья",
+    "Real Cartagena FC": "Реал Картахена",
+    "Bali United": "Бали Юнайтед",
+    "PSM Makassar": "ПСМ Макассар",
+    "Дунедин Кити Роиалс ФК": "Данидин Сити Ройалс",
+    "Ферримеад Баис": "Ферримид Бэйс",
+    "ФК Хаугесунд 2": "Хаугесунд 2",
+    "Стабаек Фотбалл 2": "Стабек 2",
+    "Унион Еспанола": "Унион Эспаньола",
+    "КД Санта Круз": "Санта-Крус",
+    "Барранкуилла ФК": "Барранкилья",
+    "Реал Картагена ФК": "Реал Картахена",
+})
+
 _BUILTIN_LEAGUES: dict[str, str] = {
     "Italy - Serie A": "Италия - Серия A",
     "Italy - Serie B": "Италия - Серия B",

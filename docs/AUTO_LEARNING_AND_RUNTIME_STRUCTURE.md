@@ -160,3 +160,15 @@ Persistent state теперь включает:
 ```
 
 Это убирает повторные одинаковые no-pick отчёты, если два run’а проходят рядом.
+
+
+## v4 notes
+
+- `workflow_dispatch` now sends detailed no-pick diagnostics to Telegram.
+- `push` still does not send no-pick diagnostics.
+- `detailed-run-report-sent.json` is persistent, so cooldown works across separate GitHub Actions runs.
+- Added alias cleanup for bad Cyrillic transliterations such as:
+  - `Дунедин Кити Роиалс ФК` → `Данидин Сити Ройалс`
+  - `Ферримеад Баис` → `Ферримид Бэйс`
+  - `ФК Хаугесунд 2` → `Хаугесунд 2`
+  - `Стабаек Фотбалл 2` → `Стабек 2`
