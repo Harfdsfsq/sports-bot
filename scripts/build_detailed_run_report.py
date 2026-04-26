@@ -19,11 +19,70 @@ try:
         translate_team_name,
     )
 except Exception:
+    _FALLBACK_REASONS = {
+        "canonical_negative_value": "отрицательная контрольная ценность",
+        "xg_probability_gap_hard_reject": "слишком большой разрыв между моделью и xG",
+        "xg_direction_conflict": "конфликт направления ставки с xG",
+        "match_time_outside_window": "слишком мало времени до начала матча",
+        "family_not_allowed:spreads": "закрытая семья рынка: форы",
+        "family_not_allowed:teamtotals": "закрытая семья рынка: индивидуальные тоталы",
+        "family_not_allowed:btts": "закрытая семья рынка: обе забьют",
+        "family_not_allowed:h2h": "закрытая семья рынка: исходы 1X2",
+        "tier_a_quality_below_min": "качество ниже минимума уровня A",
+        "tier_a_proxy_quality_not_allowed": "уровень A не принимает proxy-качество",
+        "tier_c_confidence_below_min": "уверенность ниже минимума уровня C",
+        "tier_a_confidence_below_min": "уверенность ниже минимума уровня A",
+        "tier_a_canonical_edge_below_min": "запас value ниже минимума уровня A",
+        "tier_a_canonical_ev_below_min": "EV ниже минимума уровня A",
+    }
+
+    _TEAM_FALLBACK = {
+        "AC Milan": "Милан",
+        "Juventus Turin": "Ювентус",
+        "Club Santos Laguna": "Сантос Лагуна",
+        "CF Monterrey": "Монтеррей",
+        "Llaneros FC": "Льянерос",
+        "Alianza FC Valledupar": "Альянса Вальедупар",
+        "Tacoma Defiance": "Такома Дифайенс",
+        "Los Angeles FC 2": "Лос-Анджелес 2",
+        "Tepatitlan FC": "Тепатитлан",
+        "Atlante FC": "Атланте",
+    }
+
+    def _fallback_translit(value: Any) -> str:
+        text = str(value or "")
+        table = str.maketrans({
+            "a":"а","b":"б","c":"к","d":"д","e":"е","f":"ф","g":"г","h":"х","i":"и","j":"дж","k":"к","l":"л","m":"м",
+            "n":"н","o":"о","p":"п","q":"к","r":"р","s":"с","t":"т","u":"у","v":"в","w":"у","x":"кс","y":"и","z":"з",
+            "A":"А","B":"Б","C":"К","D":"Д","E":"Е","F":"Ф","G":"Г","H":"Х","I":"И","J":"Дж","K":"К","L":"Л","M":"М",
+            "N":"Н","O":"О","P":"П","Q":"К","R":"Р","S":"С","T":"Т","U":"У","V":"В","W":"У","X":"Кс","Y":"И","Z":"З",
+        })
+        return text.translate(table)
+
     def normalize_telegram_text(text: Any) -> str: return str(text or "")
-    def translate_league_name(name: Any) -> str: return str(name or "")
-    def translate_reject_reason(reason: Any) -> str: return str(reason or "")
-    def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str: return str(selection or "")
-    def translate_team_name(name: Any) -> str: return str(name or "")
+    def translate_league_name(name: Any) -> str:
+        text = str(name or "")
+        for en, ru in {"Mexico": "Мексика", "USA": "США", "Italy": "Италия", "Spain": "Испания"}.items():
+            text = text.replace(en, ru)
+        return text
+    def translate_reject_reason(reason: Any) -> str:
+        text = str(reason or "")
+        if text in _FALLBACK_REASONS:
+            return _FALLBACK_REASONS[text]
+        if text.startswith("family_not_allowed:"):
+            return "закрытая семья рынка: " + text.split(":", 1)[1]
+        return text.replace("_", " ")
+    def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:
+        text = str(selection or "")
+        text = text.replace("Over", "Больше").replace("Under", "Меньше")
+        if home_team:
+            text = text.replace(str(home_team), translate_team_name(home_team))
+        if away_team:
+            text = text.replace(str(away_team), translate_team_name(away_team))
+        return text
+    def translate_team_name(name: Any) -> str:
+        text = str(name or "")
+        return _TEAM_FALLBACK.get(text, _fallback_translit(text))
 
 UTC = timezone.utc
 EXPORT_DIR = Path(".data/exports")
