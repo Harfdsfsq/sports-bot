@@ -23,10 +23,10 @@ on:
         default: false
         type: boolean
   schedule:
-    # 22:00 MSK every day
-    - cron: '0 19 * * *'
-    # 22:30 MSK safety rerun; sends only if report was not sent or changed
-    - cron: '30 19 * * *'
+    # 23:55 MSK: daily operational report for the current local date.
+    - cron: '55 20 * * *'
+    # 02:40 MSK: final settlement/revision for the previous local date.
+    - cron: '40 23 * * *'
 
 permissions:
   contents: write
@@ -67,11 +67,13 @@ env:
   RUN_REPORT_ENABLED: 'false'
   RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
   SETTLEMENT_ENABLED: 'true'
+  SETTLEMENT_GRACE_MINUTES: '180'
+  SETTLEMENT_LOOKBACK_DAYS: '7'
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
 
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
-  DAILY_REPORT_HOUR_LOCAL: '22'
+  DAILY_REPORT_HOUR_LOCAL: '0'
   DAILY_REPORT_TARGET_OFFSET_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}
   DAILY_REPORT_RESEND_ON_CHANGE: 'true'
   DAILY_REPORT_MIN_BETS: '0'
@@ -145,17 +147,24 @@ jobs:
       - name: Force report-only daily mode
         shell: bash
         run: |
+          REPORT_OFFSET="${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}"
+          if [ "${{ github.event.schedule }}" = "40 23 * * *" ]; then
+            REPORT_OFFSET="1"
+          fi
+
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_SEND_TELEGRAM=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=false" >> "$GITHUB_ENV"
           echo "SETTLEMENT_ENABLED=true" >> "$GITHUB_ENV"
+          echo "SETTLEMENT_GRACE_MINUTES=180" >> "$GITHUB_ENV"
+          echo "SETTLEMENT_LOOKBACK_DAYS=7" >> "$GITHUB_ENV"
           echo "SETTLEMENT_SEND_TELEGRAM_SUMMARY=false" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_ENABLED=true" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_SEND_TELEGRAM=true" >> "$GITHUB_ENV"
-          echo "DAILY_REPORT_HOUR_LOCAL=22" >> "$GITHUB_ENV"
-          echo "DAILY_REPORT_TARGET_OFFSET_DAYS=${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_HOUR_LOCAL=0" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_TARGET_OFFSET_DAYS=${REPORT_OFFSET}" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_RESEND_ON_CHANGE=true" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_MIN_BETS=0" >> "$GITHUB_ENV"
           echo "NIGHTLY_REVIEW_REPORT_ONLY_ENABLED=true" >> "$GITHUB_ENV"
@@ -181,6 +190,7 @@ jobs:
         shell: bash
         run: |
           echo "DAILY_REPORT_FORCE_RESEND=true" >> "$GITHUB_ENV"
+          echo "DAILY_OPS_REPORT_FORCE_SEND=true" >> "$GITHUB_ENV"
           python scripts/reset_daily_report_sent.py || true
 
       - name: Apply free API enrichment patch
@@ -199,6 +209,14 @@ jobs:
       - name: Run daily report only
         run: python -m app.cli run-once
 
+      - name: Build and send daily operations report
+        if: always()
+        shell: bash
+        run: |
+          python scripts/build_daily_ops_report.py --send-telegram || true
+          echo "---- latest daily operations report ----"
+          cat .data/exports/latest-daily-ops-report.txt || true
+
       - name: Collect daily report artifacts
         if: always()
         shell: bash
@@ -208,6 +226,8 @@ jobs:
           cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
           cp -f .data/exports/latest-daily-report.csv artifacts/daily-report/latest-daily-report.csv 2>/dev/null || true
           cp -f .data/exports/latest-daily-summary.csv artifacts/daily-report/latest-daily-summary.csv 2>/dev/null || true
+          cp -f .data/exports/latest-daily-ops-report.json artifacts/daily-report/latest-daily-ops-report.json 2>/dev/null || true
+          cp -f .data/exports/latest-daily-ops-report.txt artifacts/daily-report/latest-daily-ops-report.txt 2>/dev/null || true
           echo "---- latest daily summary ----"
           cat artifacts/daily-report/latest-daily-summary.json || true
 
@@ -230,6 +250,8 @@ jobs:
             .data/exports/latest-daily-summary.json
             .data/exports/latest-daily-report.csv
             .data/exports/latest-daily-summary.csv
+            .data/exports/latest-daily-ops-report.json
+            .data/exports/latest-daily-ops-report.txt
             .logs/debug-last-run.json
             .logs/runs
             .data/*.json

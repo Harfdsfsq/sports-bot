@@ -47,9 +47,11 @@ on:
       - 'scripts/**'
       - 'requirements.txt'
   schedule:
-    # MSK = UTC+3. Runs are moved earlier than :12/:42 to reduce queue-delay
-    # risk before common :00/:30 kickoffs. Scheduled runs keep a strict 30m lead.
-    - cron: '2,32 3-20 * * *' # 06:02-23:32 MSK
+    # MSK = UTC+3.
+    # Observed workflow start -> fallback is ~7-10 minutes.
+    # :14/:44 makes fallback land around :22/:52 and preserves strict 30m lead
+    # before common :00/:30 kickoff clusters.
+    - cron: '14,44 3-20 * * *' # 06:14-23:44 MSK
 
 permissions:
   contents: write
@@ -202,11 +204,12 @@ jobs:
           EVENT_NAME="${{ github.event_name }}"
           if [ "$EVENT_NAME" = "schedule" ]; then
             MIN_LEAD=30
+            SEND_NO_PICK=true
           else
-            # Push/manual runs often start after a local commit at :25-:31.
-            # Keep strict quality gates, but allow a controlled 25m lead so the
-            # nearest :00 kickoff is not rejected at 28-29 minutes.
+            # Manual/push runs are diagnostics and can start at bad minutes.
+            # They may publish a valid pick, but must not spam Telegram with no-pick noise.
             MIN_LEAD=25
+            SEND_NO_PICK=false
           fi
 
           echo "PUBLISH_WINDOW_HOURS=12" >> "$GITHUB_ENV"
@@ -214,6 +217,7 @@ jobs:
           echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD=false" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT=${SEND_NO_PICK}" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH=1" >> "$GITHUB_ENV"
