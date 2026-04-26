@@ -317,18 +317,50 @@ def build_provider_plans() -> list[ProviderPlan]:
     ]
 
 
-def provider_numbers(plan: ProviderPlan) -> tuple[int, int, int, int, int]:
+def provider_numbers(plan: ProviderPlan) -> tuple[int, int, int, int, int, int]:
     prefix = plan.prefix
     daily_budget = max(0, env_int(f"{prefix}_DAILY_BUDGET", plan.default_daily_budget))
     bucket_max = max(0, env_int(f"{prefix}_BUCKET_MAX", plan.default_bucket_max))
     per_run_max = max(0, env_int(f"{prefix}_PER_RUN_MAX", plan.default_per_run_max))
     reserve_tokens = max(0, env_int(f"{prefix}_RESERVE_TOKENS", plan.default_reserve_tokens))
-    initial_tokens = max(0, env_int(f"{prefix}_INITIAL_TOKENS", per_run_max))
-    return daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens
+
+    # Seed buckets with reserve + one run's allowance. The first governor version
+    # used only PER_RUN_MAX, so fresh core providers had no spendable tokens when
+    # RESERVE_TOKENS was larger than PER_RUN_MAX.
+    default_start = reserve_tokens + per_run_max
+    initial_tokens = max(0, env_int(f"{prefix}_INITIAL_TOKENS", default_start))
+    min_start_tokens = max(0, env_int(f"{prefix}_MIN_START_TOKENS", default_start))
+    return daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens, min_start_tokens
+
+
+def maybe_recover_underfilled_bucket(
+    row: dict[str, Any],
+    plan: ProviderPlan,
+    *,
+    bucket_max: int,
+    min_start_tokens: int,
+    today: str,
+) -> bool:
+    if not env_bool("PROVIDER_QUOTA_RECOVERY_ENABLED", True):
+        return False
+    if min_start_tokens <= 0 or bucket_max <= 0:
+        return False
+    if str(row.get("last_recovery_date") or "") == today:
+        return False
+
+    current_tokens = max(0, int(row.get("tokens") or 0))
+    floor = min(bucket_max, min_start_tokens)
+    if current_tokens >= floor:
+        return False
+
+    row["tokens"] = floor
+    row["last_recovery_date"] = today
+    row["recovery_reason"] = "underfilled_initial_bucket"
+    return True
 
 
 def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any]:
-    daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens = provider_numbers(plan)
+    daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens, min_start_tokens = provider_numbers(plan)
     providers = state.setdefault("providers", {})
     row = providers.setdefault(plan.key, {})
     now = datetime.now(UTC)
@@ -345,10 +377,27 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
         row["tokens"] = min(bucket_max, int(row.get("tokens") or 0) + daily_budget)
         row["last_refill_date"] = today
         row["used_today"] = 0
+        row.pop("last_recovery_date", None)
+        row.pop("recovery_reason", None)
+
+    recovered = maybe_recover_underfilled_bucket(
+        row,
+        plan,
+        bucket_max=bucket_max,
+        min_start_tokens=min_start_tokens,
+        today=today,
+    )
 
     tokens_before = max(0, int(row.get("tokens") or 0))
     available = max(0, tokens_before - reserve_tokens)
     grant = min(per_run_max, available)
+
+    # Optional emergency valve for stale state after manual quota verification.
+    # Disabled by default; the recovery floor is the normal safe path.
+    if grant <= 0 and env_bool(f"{plan.prefix}_ALLOW_RESERVE_SPEND", False):
+        reserve_spend_cap = max(0, env_int(f"{plan.prefix}_RESERVE_SPEND_MAX", 1))
+        grant = min(per_run_max, reserve_spend_cap, tokens_before)
+
     if not env_bool("PROVIDER_QUOTA_GOVERNOR_DRY_RUN", False):
         row["tokens"] = max(0, tokens_before - grant)
         row["used_today"] = int(row.get("used_today") or 0) + grant
@@ -357,6 +406,8 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
     row["bucket_max"] = bucket_max
     row["per_run_max"] = per_run_max
     row["reserve_tokens"] = reserve_tokens
+    row["initial_tokens"] = initial_tokens
+    row["min_start_tokens"] = min_start_tokens
 
     return {
         "provider": plan.key,
@@ -365,7 +416,10 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
         "bucket_max": bucket_max,
         "per_run_max": per_run_max,
         "reserve_tokens": reserve_tokens,
+        "initial_tokens": initial_tokens,
+        "min_start_tokens": min_start_tokens,
         "tokens_before": tokens_before,
+        "recovered": recovered,
         "granted": grant,
         "tokens_after": int(row.get("tokens") or 0),
         "enabled_for_run": grant > 0,
@@ -431,8 +485,9 @@ def main() -> int:
         "state_path": str(STATE_PATH),
         "legacy_rapidapi_state_path": str(LEGACY_RAPIDAPI_STATE_PATH),
         "note": (
-            "Conservative token-bucket budgets. Defaults are intentionally below typical free-tier "
-            "limits and can be overridden with *_DAILY_BUDGET, *_BUCKET_MAX, *_PER_RUN_MAX."
+            "Conservative token-bucket budgets with recovery floors for critical startup coverage. "
+            "Defaults are intentionally below typical free-tier limits and can be overridden with "
+            "*_DAILY_BUDGET, *_BUCKET_MAX, *_PER_RUN_MAX."
         ),
         "providers": provider_rows,
         "exports": exports,
