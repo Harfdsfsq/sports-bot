@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import math
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -13,6 +12,8 @@ STATE_PATH = Path(os.getenv("PROVIDER_QUOTA_STATE_PATH") or ".data/provider_quot
 LEGACY_RAPIDAPI_STATE_PATH = Path(os.getenv("RAPIDAPI_PROVIDER_STATE_PATH") or ".data/provider_quota_state.json")
 OUT_JSON = Path(".data/exports/latest-provider-quota-governor.json")
 OUT_ENV = Path(".data/exports/latest-provider-quota-governor.env")
+
+RECOVERY_VERSION = os.getenv("PROVIDER_QUOTA_RECOVERY_VERSION") or "real-quota-v1"
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -42,20 +43,8 @@ def env_float(name: str, default: float) -> float:
         return default
 
 
-def load_json(path: Path, default: Any) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8"))
-    except Exception:
-        return default
-
-
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
 def parse_dt(value: Any) -> datetime | None:
-    if not value:
+    if value in (None, ""):
         return None
     try:
         text = str(value)
@@ -69,13 +58,25 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def load_json(path: Path, default: Any) -> Any:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return default
+
+
+def write_json(path: Path, payload: Any) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
 def shell_quote(value: Any) -> str:
     text = str(value)
     return "'" + text.replace("'", "'\"'\"'") + "'"
 
 
-def today_key(now: datetime | None = None) -> str:
-    return (now or datetime.now(UTC)).strftime("%Y-%m-%d")
+def today_key() -> str:
+    return datetime.now(UTC).strftime("%Y-%m-%d")
 
 
 def bool_text(value: bool) -> str:
@@ -108,6 +109,7 @@ class ProviderPlan:
     default_per_run_max: int
     default_reserve_tokens: int
     build_env: Callable[[int, float], dict[str, str]]
+    default_minute_spacing: int = 0
 
     @property
     def prefix(self) -> str:
@@ -118,180 +120,193 @@ def build_provider_plans() -> list[ProviderPlan]:
     return [
         ProviderPlan(
             key="odds_api_io",
-            title="Odds API IO odds/bootstrap",
-            default_daily_budget=96,
-            default_bucket_max=160,
+            title="odds-api.io odds/bootstrap; quota 100 requests/hour, 2 bookmakers",
+            default_daily_budget=384,
+            default_bucket_max=96,
             default_per_run_max=8,
-            default_reserve_tokens=12,
+            default_reserve_tokens=16,
+            default_minute_spacing=0,
             build_env=lambda grant, tokens: {
                 "ENABLE_ODDS_API_IO": bool_text(grant > 0),
                 "ODDS_API_IO_PAGE_LIMIT": "100",
-                "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": str(clamp_int(grant, 1, 6)) if grant > 0 else "0",
-                "MAX_MATCHES_FOR_ODDS_FETCH": str(clamp_int(grant * 10, 20, 70)) if grant > 0 else "0",
-                "ANALYSIS_MATCH_CAP_PER_RUN": str(clamp_int(120 + grant * 20, 120, 340)) if grant > 0 else "80",
-                "DIAGNOSTICS_MATCH_LIMIT": str(clamp_int(120 + grant * 20, 120, 340)) if grant > 0 else "80",
+                "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": str(clamp_int(grant, 1, 8)) if grant > 0 else "0",
+                "MAX_MATCHES_FOR_ODDS_FETCH": str(clamp_int(grant * 10, 30, 90)) if grant > 0 else "0",
+                "ANALYSIS_MATCH_CAP_PER_RUN": str(clamp_int(160 + grant * 28, 160, 420)) if grant > 0 else "100",
+                "DIAGNOSTICS_MATCH_LIMIT": str(clamp_int(160 + grant * 28, 160, 420)) if grant > 0 else "100",
+                # Account is limited to 2 bookmakers; do not widen this unless the plan changes.
+                "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet",
             },
         ),
         ProviderPlan(
             key="oddspapi",
-            title="OddsPAPI secondary odds",
-            default_daily_budget=6,
-            default_bucket_max=14,
+            title="OddsPapi secondary odds; quota 250 requests/month",
+            default_daily_budget=8,
+            default_bucket_max=24,
             default_per_run_max=1,
-            default_reserve_tokens=2,
+            default_reserve_tokens=4,
+            default_minute_spacing=180,
             build_env=lambda grant, tokens: {
                 "ENABLE_ODDSPAPI": bool_text(grant > 0),
-                "ODDSPAPI_MATCH_LIMIT": str(clamp_int(grant * 4, 2, 8)) if grant > 0 else "0",
-                "ODDSPAPI_TOURNAMENT_LIMIT": str(clamp_int(grant, 1, 2)) if grant > 0 else "0",
+                "ODDSPAPI_MATCH_LIMIT": str(clamp_int(grant * 6, 2, 8)) if grant > 0 else "0",
+                "ODDSPAPI_TOURNAMENT_LIMIT": "1" if grant > 0 else "0",
                 "ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES": "360",
             },
         ),
         ProviderPlan(
             key="allsportsapi",
-            title="AllSportsAPI odds supplement",
-            default_daily_budget=6,
-            default_bucket_max=14,
+            title="AllSportsAPI soccer trial/free; unknown limit, conservative",
+            default_daily_budget=12,
+            default_bucket_max=32,
             default_per_run_max=1,
-            default_reserve_tokens=2,
+            default_reserve_tokens=4,
+            default_minute_spacing=120,
             build_env=lambda grant, tokens: {
                 "ENABLE_ALLSPORTSAPI": bool_text(grant > 0),
-                "ALLSPORTSAPI_MATCH_LIMIT": str(clamp_int(grant * 4, 2, 8)) if grant > 0 else "0",
+                "ALLSPORTSAPI_MATCH_LIMIT": str(clamp_int(grant * 6, 2, 10)) if grant > 0 else "0",
                 "ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES": "240",
             },
         ),
         ProviderPlan(
             key="sstats",
-            title="SStats form/xG context",
-            default_daily_budget=48,
-            default_bucket_max=96,
-            default_per_run_max=4,
-            default_reserve_tokens=8,
+            title="SStats form/xG context; account quota unknown, controlled medium usage",
+            default_daily_budget=96,
+            default_bucket_max=160,
+            default_per_run_max=6,
+            default_reserve_tokens=12,
             build_env=lambda grant, tokens: {
                 "SSTATS_ENABLED": bool_text(grant > 0),
                 "ENABLE_SSTATS_CONTEXT": bool_text(grant > 0),
-                "SSTATS_RECENT_MATCHES": str(clamp_int(4 + grant, 4, 10)) if grant > 0 else "0",
+                "SSTATS_RECENT_MATCHES": str(clamp_int(4 + grant, 6, 12)) if grant > 0 else "0",
                 "SSTATS_LOOKBACK_DAYS": "45",
-                "CONTEXT_ENRICHMENT_MATCH_LIMIT": str(clamp_int(80 + grant * 28, 80, 260)) if grant > 0 else "60",
-                "PREMIUM_CONTEXT_SHORTLIST_LIMIT": str(clamp_int(12 + grant * 3, 12, 36)) if grant > 0 else "8",
+                "CONTEXT_ENRICHMENT_MATCH_LIMIT": str(clamp_int(100 + grant * 34, 100, 340)) if grant > 0 else "70",
+                "PREMIUM_CONTEXT_SHORTLIST_LIMIT": str(clamp_int(14 + grant * 4, 14, 42)) if grant > 0 else "8",
             },
         ),
         ProviderPlan(
             key="bzzoiro",
-            title="Bzzoiro prediction context",
-            default_daily_budget=20,
-            default_bucket_max=48,
-            default_per_run_max=2,
-            default_reserve_tokens=4,
+            title="bzzoiro.com prediction context; free forever, no rate limits",
+            default_daily_budget=10000,
+            default_bucket_max=20000,
+            default_per_run_max=50,
+            default_reserve_tokens=0,
             build_env=lambda grant, tokens: {
-                "ENABLE_BZZOIRO_CONTEXT": bool_text(grant > 0),
-                "PREMIUM_CONTEXT_SHORTLIST_LIMIT": str(clamp_int(12 + grant * 6, 12, 42)) if grant > 0 else "8",
+                "ENABLE_BZZOIRO_CONTEXT": "true",
+                "PREMIUM_CONTEXT_SHORTLIST_LIMIT": str(clamp_int(24 + grant, 24, 80)),
             },
         ),
         ProviderPlan(
             key="api_football",
-            title="API-Football context/predictions",
-            default_daily_budget=24,
-            default_bucket_max=60,
+            title="api-football/API-Sports football; quota 100 requests/day, 10 requests/min",
+            default_daily_budget=78,
+            default_bucket_max=120,
             default_per_run_max=3,
-            default_reserve_tokens=5,
+            default_reserve_tokens=18,
+            default_minute_spacing=2,
             build_env=lambda grant, tokens: {
                 "API_FOOTBALL_ENABLED": bool_text(grant > 0),
                 "API_FOOTBALL_FETCH_MATCH_DATES_ONLY": "true",
-                "API_FOOTBALL_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 4, 4, 16)) if grant > 0 else "0",
+                "API_FOOTBALL_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 5, 5, 20)) if grant > 0 else "0",
                 "API_FOOTBALL_PREDICTIONS_LIMIT": str(clamp_int(grant, 1, 4)) if grant > 0 else "0",
                 "API_FOOTBALL_RATE_LIMIT_COOLDOWN_MINUTES": "180",
             },
         ),
         ProviderPlan(
             key="football_data",
-            title="football-data.org standings/context",
-            default_daily_budget=18,
-            default_bucket_max=42,
-            default_per_run_max=2,
-            default_reserve_tokens=4,
+            title="football-data.org registered free; 10 requests/min",
+            default_daily_budget=220,
+            default_bucket_max=360,
+            default_per_run_max=8,
+            default_reserve_tokens=24,
+            default_minute_spacing=1,
             build_env=lambda grant, tokens: {
                 "ENABLE_FOOTBALL_DATA_CONTEXT": bool_text(grant > 0),
-                "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 16, 12, 80)) if grant > 0 else "0",
-                "FOOTBALL_DATA_MATCH_LIMIT": str(clamp_int(grant * 12, 12, 60)) if grant > 0 else "0",
-                "FOOTBALL_DATA_STANDINGS_LIMIT": str(clamp_int(grant * 2, 2, 6)) if grant > 0 else "0",
+                "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 18, 20, 140)) if grant > 0 else "0",
+                "FOOTBALL_DATA_MATCH_LIMIT": str(clamp_int(grant * 12, 20, 100)) if grant > 0 else "0",
+                "FOOTBALL_DATA_STANDINGS_LIMIT": str(clamp_int(grant * 2, 2, 10)) if grant > 0 else "0",
             },
         ),
         ProviderPlan(
             key="thesportsdb",
-            title="TheSportsDB context",
-            default_daily_budget=18,
-            default_bucket_max=42,
-            default_per_run_max=2,
-            default_reserve_tokens=4,
+            title="TheSportsDB free; 30 requests/min",
+            default_daily_budget=360,
+            default_bucket_max=720,
+            default_per_run_max=12,
+            default_reserve_tokens=36,
+            default_minute_spacing=1,
             build_env=lambda grant, tokens: {
                 "ENABLE_THESPORTSDB_CONTEXT": bool_text(grant > 0),
-                "THESPORTSDB_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 16, 12, 80)) if grant > 0 else "0",
-                "THESPORTSDB_MAX_LEAGUES": str(clamp_int(grant * 3, 3, 12)) if grant > 0 else "0",
+                "THESPORTSDB_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 16, 24, 180)) if grant > 0 else "0",
+                "THESPORTSDB_MAX_LEAGUES": str(clamp_int(grant * 2, 4, 24)) if grant > 0 else "0",
             },
         ),
         ProviderPlan(
             key="futrixmetrics",
-            title="FutrixMetrics premium context",
-            default_daily_budget=4,
-            default_bucket_max=10,
-            default_per_run_max=1,
-            default_reserve_tokens=1,
+            title="FutrixMetrics; quota 5000 requests/month",
+            default_daily_budget=110,
+            default_bucket_max=240,
+            default_per_run_max=5,
+            default_reserve_tokens=20,
+            default_minute_spacing=3,
             build_env=lambda grant, tokens: {
                 "ENABLE_FUTRIXMETRICS_CONTEXT": bool_text(grant > 0),
-                "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 3, 2, 6)) if grant > 0 else "0",
+                "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 4, 4, 20)) if grant > 0 else "0",
             },
         ),
         ProviderPlan(
             key="newsapi",
-            title="NewsAPI injury/news overlay",
-            default_daily_budget=8,
-            default_bucket_max=20,
+            title="NewsAPI; quota 100 requests/day",
+            default_daily_budget=34,
+            default_bucket_max=70,
             default_per_run_max=1,
-            default_reserve_tokens=2,
+            default_reserve_tokens=12,
+            default_minute_spacing=30,
             build_env=lambda grant, tokens: {
                 "ENABLE_NEWSAPI_CONTEXT": bool_text(grant > 0),
-                "NEWSAPI_MATCH_LIMIT": str(clamp_int(grant * 2, 1, 4)) if grant > 0 else "0",
+                "NEWSAPI_MATCH_LIMIT": str(clamp_int(grant * 3, 1, 5)) if grant > 0 else "0",
                 "NEWSAPI_ARTICLES_PER_MATCH": "2",
                 "PREMIUM_NEWS_SHORTLIST_LIMIT": str(clamp_int(grant, 1, 2)) if grant > 0 else "0",
             },
         ),
         ProviderPlan(
             key="gnews",
-            title="GNews injury/news overlay",
-            default_daily_budget=8,
-            default_bucket_max=20,
+            title="GNews; quota 100 requests/day",
+            default_daily_budget=34,
+            default_bucket_max=70,
             default_per_run_max=1,
-            default_reserve_tokens=2,
+            default_reserve_tokens=12,
+            default_minute_spacing=30,
             build_env=lambda grant, tokens: {
                 "ENABLE_GNEWS_CONTEXT": bool_text(grant > 0),
-                "GNEWS_MATCH_LIMIT": str(clamp_int(grant * 2, 1, 4)) if grant > 0 else "0",
+                "GNEWS_MATCH_LIMIT": str(clamp_int(grant * 3, 1, 5)) if grant > 0 else "0",
                 "GNEWS_ARTICLES_PER_MATCH": "2",
                 "PREMIUM_NEWS_SHORTLIST_LIMIT": str(clamp_int(grant, 1, 2)) if grant > 0 else "0",
             },
         ),
         ProviderPlan(
             key="weather",
-            title="Weather overlays",
-            default_daily_budget=18,
-            default_bucket_max=42,
-            default_per_run_max=2,
-            default_reserve_tokens=4,
+            title="WeatherAPI/OpenWeather/OpenMeteo overlay; WeatherAPI 100K/month, OWM 1000/day",
+            default_daily_budget=360,
+            default_bucket_max=720,
+            default_per_run_max=6,
+            default_reserve_tokens=36,
+            default_minute_spacing=1,
             build_env=lambda grant, tokens: {
                 "WEATHER_CONTEXT_ENABLED": bool_text(grant > 0),
                 "WEATHERAPI_ENABLED": bool_text(grant > 0),
                 "OPENWEATHERMAP_ENABLED": bool_text(grant > 0),
                 "OPENMETEO_ENABLED": bool_text(grant > 0),
-                "WEATHER_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 5, 4, 12)) if grant > 0 else "0",
+                "WEATHER_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 4, 8, 24)) if grant > 0 else "0",
                 "WEATHER_CACHE_TTL_MINUTES": "240",
             },
         ),
         ProviderPlan(
             key="rapidapi_sportsbook",
-            title="RapidAPI Sportsbook probe",
-            default_daily_budget=1,
-            default_bucket_max=3,
+            title="Sportsbook API; quota 50 requests/day",
+            default_daily_budget=18,
+            default_bucket_max=50,
             default_per_run_max=1,
-            default_reserve_tokens=0,
+            default_reserve_tokens=6,
+            default_minute_spacing=60,
             build_env=lambda grant, tokens: {
                 "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": bool_text(grant > 0),
                 "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": str(rapidapi_used_today("sportsbook_api") + grant),
@@ -299,11 +314,12 @@ def build_provider_plans() -> list[ProviderPlan]:
         ),
         ProviderPlan(
             key="rapidapi_odds_feed",
-            title="RapidAPI Odds Feed probe",
-            default_daily_budget=1,
-            default_bucket_max=3,
+            title="OddsFeed; quota 500 requests/month",
+            default_daily_budget=12,
+            default_bucket_max=36,
             default_per_run_max=1,
-            default_reserve_tokens=0,
+            default_reserve_tokens=4,
+            default_minute_spacing=120,
             build_env=lambda grant, tokens: {
                 "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": bool_text(grant > 0),
                 "RAPIDAPI_ODDS_FEED_DAILY_LIMIT": str(rapidapi_used_today("odds_feed") + grant),
@@ -311,11 +327,12 @@ def build_provider_plans() -> list[ProviderPlan]:
         ),
         ProviderPlan(
             key="rapidapi_free_football",
-            title="RapidAPI Free Football probe",
-            default_daily_budget=1,
-            default_bucket_max=3,
+            title="FreeAPILiveFootballData; quota 100 requests/month",
+            default_daily_budget=3,
+            default_bucket_max=10,
             default_per_run_max=1,
-            default_reserve_tokens=0,
+            default_reserve_tokens=2,
+            default_minute_spacing=360,
             build_env=lambda grant, tokens: {
                 "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": bool_text(grant > 0),
                 "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": str(rapidapi_used_today("free_live_football_data") + grant),
@@ -323,7 +340,7 @@ def build_provider_plans() -> list[ProviderPlan]:
         ),
         ProviderPlan(
             key="rapidapi_sportapi7",
-            title="RapidAPI SportAPI7 probe",
+            title="SportAPI/API-Sports sample probe; current endpoint is not football-useful",
             default_daily_budget=0,
             default_bucket_max=1,
             default_per_run_max=0,
@@ -335,11 +352,12 @@ def build_provider_plans() -> list[ProviderPlan]:
         ),
         ProviderPlan(
             key="rapidapi_meteostat",
-            title="RapidAPI Meteostat weather fallback",
-            default_daily_budget=2,
-            default_bucket_max=6,
+            title="Meteostat; quota 500 requests/month",
+            default_daily_budget=10,
+            default_bucket_max=30,
             default_per_run_max=1,
-            default_reserve_tokens=1,
+            default_reserve_tokens=4,
+            default_minute_spacing=120,
             build_env=lambda grant, tokens: {
                 "METEOSTAT_RAPIDAPI_ENABLED": bool_text(grant > 0),
                 "WEATHER_METEOSTAT_FALLBACK_ENABLED": bool_text(grant > 0),
@@ -348,82 +366,73 @@ def build_provider_plans() -> list[ProviderPlan]:
     ]
 
 
-def provider_numbers(plan: ProviderPlan) -> tuple[float, float, int, float, float, float]:
+def provider_numbers(plan: ProviderPlan) -> tuple[float, float, int, int, int, int, int]:
     prefix = plan.prefix
     daily_budget = max(0.0, env_float(f"{prefix}_DAILY_BUDGET", float(plan.default_daily_budget)))
     bucket_max = max(0.0, env_float(f"{prefix}_BUCKET_MAX", float(plan.default_bucket_max)))
     per_run_max = max(0, env_int(f"{prefix}_PER_RUN_MAX", plan.default_per_run_max))
-    reserve_tokens = max(0.0, env_float(f"{prefix}_RESERVE_TOKENS", float(plan.default_reserve_tokens)))
+    reserve_tokens = max(0, env_int(f"{prefix}_RESERVE_TOKENS", plan.default_reserve_tokens))
+    minute_spacing = max(0, env_int(f"{prefix}_MIN_SPACING_MINUTES", plan.default_minute_spacing))
+    default_start = reserve_tokens + per_run_max
+    initial_tokens = max(0, env_int(f"{prefix}_INITIAL_TOKENS", default_start))
+    min_start_tokens = max(0, env_int(f"{prefix}_MIN_START_TOKENS", default_start))
+    return daily_budget, bucket_max, per_run_max, reserve_tokens, minute_spacing, initial_tokens, min_start_tokens
 
-    default_start = reserve_tokens + float(per_run_max)
-    initial_tokens = max(0.0, env_float(f"{prefix}_INITIAL_TOKENS", default_start))
-    min_start_tokens = max(0.0, env_float(f"{prefix}_MIN_START_TOKENS", default_start))
-    return daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens, min_start_tokens
 
-
-def apply_continuous_refill(row: dict[str, Any], *, now: datetime, daily_budget: float, bucket_max: float) -> float:
-    current = max(0.0, float(row.get("tokens") or 0.0))
-    if not env_bool("PROVIDER_QUOTA_CONTINUOUS_REFILL_ENABLED", True):
-        return min(bucket_max, current)
-
-    last_refill = parse_dt(row.get("last_refill_at") or row.get("updated_at") or row.get("created_at"))
-    if last_refill is None:
+def apply_continuous_refill(row: dict[str, Any], *, daily_budget: float, bucket_max: float, now: datetime) -> float:
+    current = float(row.get("tokens") or 0.0)
+    last = parse_dt(row.get("last_refill_at") or row.get("updated_at"))
+    if last is None:
         row["last_refill_at"] = now.isoformat()
         return min(bucket_max, current)
 
-    elapsed_seconds = max(0.0, (now - last_refill).total_seconds())
-    refill_seconds = max(60.0, env_float("PROVIDER_QUOTA_REFILL_WINDOW_SECONDS", 86400.0))
-    refill = daily_budget * (elapsed_seconds / refill_seconds)
-    if refill > 0:
-        current = min(bucket_max, current + refill)
+    elapsed_seconds = max(0.0, (now - last).total_seconds())
+    refill = (daily_budget / 86400.0) * elapsed_seconds if daily_budget > 0 else 0.0
+    tokens = min(bucket_max, current + refill)
     row["last_refill_at"] = now.isoformat()
-    row["last_refill_amount"] = round(refill, 4)
-    return current
+    return tokens
 
 
-def maybe_recover_underfilled_bucket(
-    row: dict[str, Any],
-    *,
-    bucket_max: float,
-    min_start_tokens: float,
-    today: str,
-) -> bool:
+def maybe_version_recover(row: dict[str, Any], *, bucket_max: float, min_start_tokens: int) -> bool:
     if not env_bool("PROVIDER_QUOTA_RECOVERY_ENABLED", True):
         return False
     if min_start_tokens <= 0 or bucket_max <= 0:
         return False
-
-    version = str(os.getenv("PROVIDER_QUOTA_RECOVERY_VERSION") or "continuous-v1")
-    marker = f"{today}:{version}:{min_start_tokens:g}"
-    current_tokens = max(0.0, float(row.get("tokens") or 0.0))
-    floor = min(bucket_max, min_start_tokens)
-
-    # Important: old state can contain last_recovery_date=today from a broken recovery.
-    # Do not let that block a versioned recovery. A same-version recovery is skipped to
-    # avoid minting fresh tokens on every run.
-    if current_tokens >= floor:
-        return False
-    if str(row.get("recovery_marker") or "") == marker:
+    if str(row.get("last_recovery_version") or "") == RECOVERY_VERSION:
         return False
 
-    row["tokens"] = floor
-    row["last_recovery_date"] = today
-    row["recovery_marker"] = marker
-    row["recovery_reason"] = "versioned_underfilled_bucket"
+    floor = min(float(bucket_max), float(min_start_tokens))
+    current = float(row.get("tokens") or 0.0)
+    if current < floor:
+        row["tokens"] = floor
+    row["last_recovery_version"] = RECOVERY_VERSION
+    row["recovery_reason"] = "versioned_real_quota_floor"
     return True
 
 
+def spacing_allows(row: dict[str, Any], spacing_minutes: int, now: datetime) -> tuple[bool, str | None]:
+    if spacing_minutes <= 0:
+        return True, None
+    last_grant_at = parse_dt(row.get("last_grant_at"))
+    if last_grant_at is None:
+        return True, None
+    elapsed = (now - last_grant_at).total_seconds() / 60.0
+    if elapsed >= spacing_minutes:
+        return True, None
+    return False, f"spacing_active:{round(spacing_minutes - elapsed, 1)}m"
+
+
 def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any]:
-    daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens, min_start_tokens = provider_numbers(plan)
+    daily_budget, bucket_max, per_run_max, reserve_tokens, spacing_minutes, initial_tokens, min_start_tokens = provider_numbers(plan)
     providers = state.setdefault("providers", {})
     row = providers.setdefault(plan.key, {})
     now = datetime.now(UTC)
-    today = today_key(now)
+    today = today_key()
 
     if not row:
         row.update(
             {
-                "tokens": min(bucket_max, initial_tokens),
+                "tokens": min(bucket_max, float(initial_tokens)),
                 "last_refill_date": today,
                 "last_refill_at": now.isoformat(),
                 "used_today": 0,
@@ -432,37 +441,25 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
         )
 
     if str(row.get("last_refill_date") or "") != today:
-        # New day: refill by the daily budget and reset used_today.
-        row["tokens"] = min(bucket_max, float(row.get("tokens") or 0.0) + daily_budget)
         row["last_refill_date"] = today
-        row["last_refill_at"] = now.isoformat()
         row["used_today"] = 0
-        row.pop("last_recovery_date", None)
-        row.pop("recovery_marker", None)
-        row.pop("recovery_reason", None)
-    else:
-        row["tokens"] = apply_continuous_refill(row, now=now, daily_budget=daily_budget, bucket_max=bucket_max)
 
-    recovered = maybe_recover_underfilled_bucket(
-        row,
-        bucket_max=bucket_max,
-        min_start_tokens=min_start_tokens,
-        today=today,
-    )
+    row["tokens"] = apply_continuous_refill(row, daily_budget=daily_budget, bucket_max=bucket_max, now=now)
+    recovered = maybe_version_recover(row, bucket_max=bucket_max, min_start_tokens=min_start_tokens)
 
-    tokens_before = max(0.0, float(row.get("tokens") or 0.0))
-    available = max(0.0, tokens_before - reserve_tokens)
+    tokens_before = float(row.get("tokens") or 0.0)
+    available = max(0.0, tokens_before - float(reserve_tokens))
+    spacing_ok, skip_reason = spacing_allows(row, spacing_minutes, now)
+    grant = min(per_run_max, int(available)) if spacing_ok else 0
 
-    # Grant only full tokens/request units.
-    grant = min(per_run_max, int(math.floor(available + 1e-9)))
-
-    # Emergency valve: disabled by default. Use only after checking provider dashboard.
     if grant <= 0 and env_bool(f"{plan.prefix}_ALLOW_RESERVE_SPEND", False):
         reserve_spend_cap = max(0, env_int(f"{plan.prefix}_RESERVE_SPEND_MAX", 1))
-        grant = min(per_run_max, reserve_spend_cap, int(math.floor(tokens_before)))
+        grant = min(per_run_max, reserve_spend_cap, int(tokens_before))
 
     if not env_bool("PROVIDER_QUOTA_GOVERNOR_DRY_RUN", False):
         row["tokens"] = max(0.0, tokens_before - float(grant))
+        if grant > 0:
+            row["last_grant_at"] = now.isoformat()
         row["used_today"] = int(row.get("used_today") or 0) + grant
 
     row["updated_at"] = now.isoformat()
@@ -470,6 +467,7 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
     row["bucket_max"] = bucket_max
     row["per_run_max"] = per_run_max
     row["reserve_tokens"] = reserve_tokens
+    row["minute_spacing"] = spacing_minutes
     row["initial_tokens"] = initial_tokens
     row["min_start_tokens"] = min_start_tokens
 
@@ -480,13 +478,15 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
         "bucket_max": bucket_max,
         "per_run_max": per_run_max,
         "reserve_tokens": reserve_tokens,
+        "minute_spacing": spacing_minutes,
         "initial_tokens": initial_tokens,
         "min_start_tokens": min_start_tokens,
-        "tokens_before": round(tokens_before, 4),
+        "tokens_before": round(tokens_before, 3),
         "recovered": recovered,
         "granted": grant,
-        "tokens_after": round(float(row.get("tokens") or 0.0), 4),
+        "tokens_after": round(float(row.get("tokens") or 0.0), 3),
         "enabled_for_run": grant > 0,
+        "skip_reason": skip_reason,
     }
 
 
@@ -528,6 +528,8 @@ def main() -> int:
         "RAPIDAPI_DEFAULT_DAILY_LIMIT": os.getenv("RAPIDAPI_DEFAULT_DAILY_LIMIT") or "1",
         "WEATHER_CACHE_TTL_MINUTES": os.getenv("WEATHER_CACHE_TTL_MINUTES") or "240",
         "SCOREBAT_CACHE_TTL_MINUTES": os.getenv("SCOREBAT_CACHE_TTL_MINUTES") or "240",
+        # Currents is budgeted in docs/config, but no Currents provider is present in this repo yet.
+        "CURRENTS_NEWS_CONTEXT_ENABLED": "false",
     }
 
     for plan in build_provider_plans():
@@ -540,28 +542,31 @@ def main() -> int:
         for item in provider_rows
         if item["enabled_for_run"] and item["provider"] not in {"odds_api_io", "weather"}
     )
-    max_shortlist = clamp_int(10 + active_premium * 3, 10, 42)
+    max_shortlist = clamp_int(12 + active_premium * 4, 12, 80)
     exports["PREMIUM_CONTEXT_SHORTLIST_LIMIT"] = str(
         min(int(exports.get("PREMIUM_CONTEXT_SHORTLIST_LIMIT", max_shortlist) or max_shortlist), max_shortlist)
     )
     exports["CONTEXT_ENRICHMENT_MATCH_LIMIT"] = str(
-        min(int(exports.get("CONTEXT_ENRICHMENT_MATCH_LIMIT", "260") or 260), 260)
+        min(int(exports.get("CONTEXT_ENRICHMENT_MATCH_LIMIT", "340") or 340), 340)
     )
 
     state["updated_at"] = datetime.now(UTC).isoformat()
-    state["mode"] = "continuous_token_bucket"
+    state["mode"] = "continuous_token_bucket_real_quotas"
+    state["recovery_version"] = RECOVERY_VERSION
     write_json(STATE_PATH, state)
     write_env(exports)
 
     payload = {
         "created_at": datetime.now(UTC).isoformat(),
         "enabled": True,
+        "mode": "continuous_token_bucket_real_quotas",
+        "recovery_version": RECOVERY_VERSION,
         "state_path": str(STATE_PATH),
         "local_env_path": str(OUT_ENV),
         "legacy_rapidapi_state_path": str(LEGACY_RAPIDAPI_STATE_PATH),
         "note": (
-            "Continuous token-bucket budgets with versioned recovery floors. "
-            "Tokens refill gradually during the day; recovery no longer gets stuck behind old last_recovery_date."
+            "Budgets are derived from provided free-tier quotas. High-quota/no-limit providers feed broad coverage; "
+            "daily/monthly providers are reserved for shortlist confirmation."
         ),
         "providers": provider_rows,
         "exports": exports,

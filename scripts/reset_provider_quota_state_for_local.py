@@ -6,26 +6,25 @@ from pathlib import Path
 
 UTC = timezone.utc
 STATE_PATH = Path(".data/provider_quota_governor_state.json")
-RECOVERY_VERSION = "continuous-v2"
 
 MIN_TOKENS = {
-    "odds_api_io": 24,
-    "oddspapi": 4,
-    "allsportsapi": 4,
-    "sstats": 16,
-    "bzzoiro": 8,
-    "api_football": 10,
-    "football_data": 8,
-    "thesportsdb": 8,
-    "futrixmetrics": 3,
-    "newsapi": 4,
-    "gnews": 4,
-    "weather": 8,
-    "rapidapi_sportsbook": 1,
-    "rapidapi_odds_feed": 1,
-    "rapidapi_free_football": 1,
+    "odds_api_io": 48,
+    "oddspapi": 10,
+    "allsportsapi": 12,
+    "sstats": 36,
+    "bzzoiro": 1000,
+    "api_football": 32,
+    "football_data": 60,
+    "thesportsdb": 96,
+    "futrixmetrics": 50,
+    "newsapi": 18,
+    "gnews": 18,
+    "weather": 96,
+    "rapidapi_sportsbook": 12,
+    "rapidapi_odds_feed": 10,
+    "rapidapi_free_football": 4,
     "rapidapi_sportapi7": 0,
-    "rapidapi_meteostat": 3,
+    "rapidapi_meteostat": 8,
 }
 
 
@@ -42,18 +41,18 @@ def main() -> int:
 
     for key, min_tokens in MIN_TOKENS.items():
         row = providers.setdefault(key, {})
-        row["tokens"] = max(float(row.get("tokens") or 0.0), float(min_tokens))
+        row["tokens"] = max(float(row.get("tokens") or 0), float(min_tokens))
         row["last_refill_date"] = today
         row["last_refill_at"] = now.isoformat()
-        row["last_recovery_date"] = today
-        row["recovery_marker"] = f"{today}:{RECOVERY_VERSION}:{min_tokens:g}"
-        row["recovery_reason"] = "local_manual_topup"
+        row["last_recovery_version"] = "real-quota-v1"
+        row["recovery_reason"] = "local_real_quota_topup"
         row["updated_at"] = now.isoformat()
 
     state["updated_at"] = now.isoformat()
-    state["mode"] = "continuous_token_bucket_local_topup"
+    state["mode"] = "continuous_token_bucket_real_quotas_local_topup"
+    state["recovery_version"] = "real-quota-v1"
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"Top-up written: {STATE_PATH}")
+    print(f"Real-quota top-up written: {STATE_PATH}")
     return 0
 
 
