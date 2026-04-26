@@ -193,7 +193,7 @@ jobs:
         shell: bash
         run: |
           python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
-          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json || true
+          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json 2> .data/exports/latest-history-guard-audit.err || true
           python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
 
       - name: Upload daily-report artifact
@@ -211,13 +211,30 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Commit updated report state
+      - name: Commit persistent report state only
         if: always()
         shell: bash
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
-          git add -A -f .data .logs artifacts/daily-report
+
+          # Keep only cross-run state. Do not commit logs, exports, or artifacts.
+          git add -f \
+            .data/state.json \
+            .data/fallback-sent-index.json \
+            .data/provider_quota_governor_state.json \
+            .data/provider_quota_state.json \
+            .data/daily-ops-report-sent.json \
+            .data/calibration-profile.json 2>/dev/null || true
+
           git diff --cached --quiet && exit 0
-          git commit -m "Update daily report state"
+          git commit -m "Update persistent report state"
+          git pull --rebase --autostash origin main || true
+          git push
+
+          # Keep only cross-run state. Do not commit logs, exports, or artifacts.
+          git add -f             .data/state.json             .data/fallback-sent-index.json             .data/provider_quota_governor_state.json             .data/provider_quota_state.json             .data/daily-ops-report-sent.json             .data/calibration-profile.json 2>/dev/null || true
+
+          git diff --cached --quiet && exit 0
+          git commit -m "Update persistent report state"
           git push
