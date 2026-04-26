@@ -11,6 +11,19 @@ from typing import Any
 from urllib import parse, request
 from zoneinfo import ZoneInfo
 
+try:
+    from app.services.telegram_i18n import (
+        normalize_telegram_text,
+        translate_league_name,
+        translate_selection_text,
+        translate_team_name,
+    )
+except Exception:
+    def normalize_telegram_text(text: Any) -> str: return str(text or "")
+    def translate_league_name(name: Any) -> str: return str(name or "")
+    def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str: return str(selection or "")
+    def translate_team_name(name: Any) -> str: return str(name or "")
+
 UTC = timezone.utc
 EXPORT_DIR = Path(".data/exports")
 OUT_JSON = EXPORT_DIR / "latest-daily-ops-report.json"
@@ -52,10 +65,23 @@ def env_int(name: str, default: int) -> int:
         return default
 
 
-def app_tz() -> ZoneInfo | timezone:
-    name = os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow"
+def safe_int(value: Any, default: int = 0) -> int:
     try:
-        return ZoneInfo(str(name))
+        return int(float(value)) if value not in (None, "") else default
+    except Exception:
+        return default
+
+
+def safe_float(value: Any, default: float = 0.0) -> float:
+    try:
+        return float(value) if value not in (None, "") else default
+    except Exception:
+        return default
+
+
+def app_tz() -> ZoneInfo | timezone:
+    try:
+        return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
     except Exception:
         return UTC
 
@@ -82,29 +108,12 @@ def local_date(value: Any, tz: ZoneInfo | timezone) -> str:
 
 def target_report_date() -> str:
     tz = app_tz()
-    local_now = datetime.now(UTC).astimezone(tz)
     offset = max(0, env_int("DAILY_REPORT_TARGET_OFFSET_DAYS", 0))
-    cutoff_hour = max(0, min(12, env_int("DAILY_OPS_EARLY_MORNING_PREVIOUS_DAY_CUTOFF_HOUR", 4)))
-    # GitHub scheduled jobs may start late. If the evening report scheduled before
-    # midnight actually runs after midnight, it still belongs to the previous
-    # football day.
-    if offset == 0 and local_now.hour < cutoff_hour:
+    local_now = datetime.now(UTC).astimezone(tz)
+    # Football-day guard: delayed evening reports that start just after midnight still close previous day.
+    if env_bool("DAILY_OPS_FOOTBALL_DAY_GUARD", True) and offset == 0 and local_now.hour < env_int("DAILY_OPS_ROLLOVER_HOUR_LOCAL", 4):
         offset = 1
     return (local_now.date() - timedelta(days=offset)).isoformat()
-
-
-def safe_int(value: Any, default: int = 0) -> int:
-    try:
-        return int(float(value)) if value not in (None, "") else default
-    except Exception:
-        return default
-
-
-def safe_float(value: Any, default: float = 0.0) -> float:
-    try:
-        return float(value) if value not in (None, "") else default
-    except Exception:
-        return default
 
 
 def collect_runs(report_date: str) -> list[dict[str, Any]]:
@@ -124,12 +133,7 @@ def collect_runs(report_date: str) -> list[dict[str, Any]]:
             if not isinstance(payload, dict):
                 continue
             summary = dict(payload.get("summary") or {})
-            dt_value = (
-                payload.get("created_at")
-                or summary.get("current_time_utc")
-                or summary.get("started_time_utc")
-                or summary.get("current_time_local")
-            )
+            dt_value = payload.get("created_at") or summary.get("current_time_utc") or summary.get("started_time_utc") or summary.get("current_time_local")
             if local_date(dt_value, tz) == report_date:
                 payload["_archive_path"] = key
                 runs.append(payload)
@@ -139,8 +143,6 @@ def collect_runs(report_date: str) -> list[dict[str, Any]]:
 
 def run_totals(runs: list[dict[str, Any]]) -> dict[str, Any]:
     totals = Counter()
-    providers = {}
-    provider_errors = Counter()
     for payload in runs:
         summary = dict(payload.get("summary") or {})
         totals["runs"] += 1
@@ -155,31 +157,19 @@ def run_totals(runs: list[dict[str, Any]]) -> dict[str, Any]:
         status = str(summary.get("run_status") or summary.get("status") or "ok").lower()
         if status in {"error", "failed"}:
             totals["errors"] += 1
-        source_stats = dict(summary.get("source_stats") or payload.get("source_stats") or {})
-        for name, row in source_stats.items():
-            if isinstance(row, dict):
-                providers[str(name)] = row
-                if row.get("runtime_error") or row.get("error"):
-                    provider_errors[str(name)] += 1
-                if row.get("rate_limited"):
-                    provider_errors[f"{name}:rate_limited"] += 1
-    return {
-        "totals": dict(totals),
-        "provider_last": providers,
-        "provider_errors": dict(provider_errors),
-    }
+    return dict(totals)
 
 
 def tracked_bets() -> list[dict[str, Any]]:
     state = load_json(".data/state.json", {})
     if not isinstance(state, dict):
         return []
-    raw: list[dict[str, Any]] = []
+    raw = []
     for key in ("bets", "published_candidates"):
         for item in state.get(key) or []:
             if isinstance(item, dict):
                 raw.append(dict(item))
-    dedup: dict[str, dict[str, Any]] = {}
+    dedup = {}
     for item in raw:
         key = str(item.get("fingerprint") or item.get("prediction_id") or "")
         if not key:
@@ -206,32 +196,38 @@ def bet_date(bet: dict[str, Any], tz: ZoneInfo | timezone) -> str:
 
 
 def bet_line(bet: dict[str, Any]) -> str:
-    home = str(bet.get("home_team") or bet.get("home") or "").strip()
-    away = str(bet.get("away_team") or bet.get("away") or "").strip()
-    match = f"{home} — {away}".strip(" —") or str(bet.get("match_key") or "матч")
-    selection = str(bet.get("selection") or bet.get("market") or "").strip()
+    home = translate_team_name(bet.get("home_team") or bet.get("home") or "")
+    away = translate_team_name(bet.get("away_team") or bet.get("away") or "")
+    match = f"{home} — {away}".strip(" —") or "матч"
+    selection = translate_selection_text(bet.get("selection") or bet.get("market") or "", bet.get("home_team"), bet.get("away_team"))
     odds = bet.get("odds")
     status = str(bet.get("status") or "").strip()
+    status_ru = {
+        "pending": "ожидает расчёта",
+        "generated": "сгенерирован",
+        "won": "выигрыш",
+        "lost": "проигрыш",
+        "push": "возврат",
+        "void": "отмена",
+        "half_won": "половина выигрыша",
+        "half_lost": "половина проигрыша",
+    }.get(status, status or "н/д")
     stake = safe_float(bet.get("stake_amount"))
-    return f"{match}: {selection} @{odds} | {status} | stake {stake:.2f}"
+    return f"{match}: {selection} @{odds} | {status_ru} | ставка {stake:.2f}"
 
 
 def summarize_bets(report_date: str) -> dict[str, Any]:
     tz = app_tz()
     bets = tracked_bets()
-    published = []
-    settled = []
-    pending = []
-    stale_pending = []
+    published, settled, pending_today, old_pending = [], [], [], []
     counters = Counter()
     pnl = 0.0
     stake = 0.0
 
     for bet in bets:
         status = str(bet.get("status") or "").lower()
-        b_date = bet_date(bet, tz)
-        is_real_sent = bool(bet.get("telegram_sent")) or safe_float(bet.get("stake_amount")) > 0
-        if b_date == report_date and is_real_sent:
+        bdate = bet_date(bet, tz)
+        if bdate == report_date:
             published.append(bet)
         if settlement_date(bet, tz) == report_date:
             settled.append(bet)
@@ -240,26 +236,26 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
             counters[outcome] += 1
             pnl += safe_float((settlement or {}).get("pnl"))
             stake += safe_float(bet.get("stake_amount"))
-        if status == "pending" and is_real_sent:
-            if b_date == report_date:
-                pending.append(bet)
-            elif b_date and b_date < report_date:
-                stale_pending.append(bet)
+        if status in {"pending", "generated"}:
+            if bdate == report_date:
+                pending_today.append(bet)
+            elif bdate and bdate < report_date:
+                old_pending.append(bet)
 
     state = load_json(".data/state.json", {})
     bankroll = state.get("bankroll") if isinstance(state, dict) and isinstance(state.get("bankroll"), dict) else {}
-    bankroll = dict(bankroll or {})
     current_balance = safe_float(bankroll.get("current_balance"))
     open_exposure = safe_float(bankroll.get("open_exposure"))
-    if "available_balance" not in bankroll or bankroll.get("available_balance") in (None, ""):
-        bankroll["available_balance"] = round(max(0.0, current_balance - open_exposure), 2)
+    available = bankroll.get("available_balance")
+    if available in (None, ""):
+        available = max(0.0, current_balance - open_exposure)
 
     return {
         "counts": {
             "published_today": len(published),
             "settled_today": len(settled),
-            "pending_relevant": len(pending),
-            "stale_pending": len(stale_pending),
+            "pending_today": len(pending_today),
+            "old_pending": len(old_pending),
             "won": counters.get("won", 0) + counters.get("half_won", 0),
             "lost": counters.get("lost", 0) + counters.get("half_lost", 0),
             "push": counters.get("push", 0),
@@ -268,37 +264,20 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
         "settled_stake": round(stake, 2),
         "settled_pnl": round(pnl, 2),
         "open_exposure": round(open_exposure, 2),
-        "bankroll": bankroll,
+        "bankroll": {
+            **bankroll,
+            "current_balance": round(current_balance, 2),
+            "open_exposure": round(open_exposure, 2),
+            "available_balance": round(float(available), 2),
+        },
         "published_today": [bet_line(item) for item in published[:10]],
         "settled_today": [bet_line(item) for item in settled[:10]],
-        "pending_relevant": [bet_line(item) for item in pending[:10]],
-        "stale_pending_examples": [bet_line(item) for item in stale_pending[:5]],
+        "pending_today": [bet_line(item) for item in pending_today[:10]],
+        "old_pending": [bet_line(item) for item in old_pending[:6]],
     }
 
 
-def fallback_reasons() -> dict[str, int]:
-    paths = [Path("artifacts/controlled-fallback-report.json"), EXPORT_DIR / "latest-controlled-fallback-report.json"]
-    for path in paths:
-        payload = load_json(path, None)
-        if not isinstance(payload, dict):
-            continue
-        reasons = Counter()
-        evaluated = payload.get("evaluated")
-        if isinstance(evaluated, list):
-            for item in evaluated:
-                if isinstance(item, dict):
-                    for reason in item.get("reject_reasons") or []:
-                        reasons[str(reason)] += 1
-        for key in ("reject_reasons", "reason_counts", "rejection_reasons"):
-            raw = payload.get(key)
-            if isinstance(raw, dict):
-                reasons.update({str(k): safe_int(v) for k, v in raw.items()})
-        if reasons:
-            return dict(reasons.most_common(12))
-    return {}
-
-
-def quota_rows() -> list[dict[str, Any]]:
+def quota_rows() -> list[str]:
     payload = load_json(EXPORT_DIR / "latest-provider-quota-governor.json", {})
     rows = payload.get("providers") if isinstance(payload, dict) else []
     if not isinstance(rows, list):
@@ -309,13 +288,13 @@ def quota_rows() -> list[dict[str, Any]]:
         if not isinstance(row, dict):
             continue
         provider = str(row.get("provider") or "")
-        if provider in important:
-            out.append({
-                "provider": provider,
-                "granted": safe_int(row.get("granted")),
-                "tokens_after": row.get("tokens_after"),
-                "skip_reason": row.get("skip_reason"),
-            })
+        if provider not in important:
+            continue
+        grant = safe_int(row.get("granted"))
+        after = row.get("tokens_after")
+        skip = row.get("skip_reason")
+        tail = f", пропуск: {skip}" if skip else ""
+        out.append(f"• {provider}: grant {grant}, остаток {after}{tail}")
     return out
 
 
@@ -328,8 +307,7 @@ def build(report_date: str) -> dict[str, Any]:
         "runs": run_totals(runs),
         "runs_count": len(runs),
         "bets": summarize_bets(report_date),
-        "quota": quota_rows(),
-        "fallback_reasons": fallback_reasons(),
+        "quota_lines": quota_rows(),
     }
 
 
@@ -338,7 +316,7 @@ def fmt(value: Any) -> str:
 
 
 def render(payload: dict[str, Any]) -> str:
-    totals = Counter(payload.get("runs", {}).get("totals") or {})
+    totals = Counter(payload.get("runs") or {})
     bets = payload.get("bets") or {}
     counts = bets.get("counts") or {}
     bankroll = bets.get("bankroll") or {}
@@ -354,44 +332,28 @@ def render(payload: dict[str, Any]) -> str:
         "",
         "💼 Банк и settlement",
         f"• Банк: {fmt(bankroll.get('current_balance'))} | открытый риск: {fmt(bankroll.get('open_exposure'))} | доступно: {fmt(bankroll.get('available_balance'))}",
-        f"• За дату: опубликовано {counts.get('published_today', 0)} | закрыто {counts.get('settled_today', 0)} | pending дня {counts.get('pending_relevant', 0)} | старых pending {counts.get('stale_pending', 0)}",
+        f"• За дату: опубликовано {counts.get('published_today', 0)} | закрыто {counts.get('settled_today', 0)} | pending сегодня {counts.get('pending_today', 0)} | старые pending {counts.get('old_pending', 0)}",
         f"• Итоги закрытых: W {counts.get('won', 0)} / L {counts.get('lost', 0)} / Push {counts.get('push', 0)} / Void {counts.get('void', 0)} | PnL {fmt(bets.get('settled_pnl'))}",
     ]
 
     for title, key, icon in [
         ("Прогнозы дня", "published_today", "🎯"),
         ("Закрыто сегодня", "settled_today", "✅"),
-        ("Ещё открыто за дату отчёта", "pending_relevant", "⏳"),
+        ("Открыто сегодня", "pending_today", "⏳"),
+        ("Старые pending", "old_pending", "🧾"),
     ]:
         rows = bets.get(key) or []
         if rows:
             lines += ["", f"{icon} {title}"]
             lines += [f"• {item}" for item in rows[:6]]
 
-
-
-    stale_examples = bets.get("stale_pending_examples") or []
-    if stale_examples:
-        lines += ["", "🧹 Старые pending вне даты отчёта"]
-        for item in stale_examples[:5]:
-            lines.append(f"• {item}")
-        lines.append("• Эти ставки не входят в pending дня; settlement продолжит проверять их отдельно.")
-
-    quota = payload.get("quota") or []
+    quota = payload.get("quota_lines") or []
     if quota:
         lines += ["", "🔌 API / квоты последнего run"]
-        for row in quota[:10]:
-            tail = f", skip={row.get('skip_reason')}" if row.get("skip_reason") else ""
-            lines.append(f"• {row.get('provider')}: grant {row.get('granted')}, остаток {row.get('tokens_after')}{tail}")
-
-    reasons = payload.get("fallback_reasons") or {}
-    if reasons:
-        lines += ["", "🧾 Главные причины отказов fallback"]
-        for reason, count in list(reasons.items())[:8]:
-            lines.append(f"• {reason} — {count}")
+        lines.extend(quota[:10])
 
     lines += ["", "📝 Settlement запускается перед отчётом. Если матч ещё не закрыт, он остаётся pending и проверяется следующим вечерним/ночным run."]
-    return "\n".join(lines)
+    return normalize_telegram_text("\n".join(lines))
 
 
 def split_text(text: str, limit: int = 3900) -> list[str]:

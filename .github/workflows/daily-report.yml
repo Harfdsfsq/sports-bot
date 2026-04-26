@@ -23,10 +23,8 @@ on:
         default: false
         type: boolean
   schedule:
-    # 23:45 MSK: current local day operational report.
-    - cron: '45 20 * * *'
-    # 02:40 MSK: final settlement/revision for the previous local day.
-    - cron: '40 23 * * *'
+    - cron: '45 20 * * *' # 23:45 MSK
+    - cron: '40 23 * * *' # 02:40 MSK final settlement/revision
 
 permissions:
   contents: write
@@ -71,7 +69,7 @@ env:
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
 
   DAILY_REPORT_ENABLED: 'true'
-  DAILY_REPORT_SEND_TELEGRAM: 'true'
+  DAILY_REPORT_SEND_TELEGRAM: 'false'
   DAILY_REPORT_HOUR_LOCAL: '0'
   DAILY_REPORT_TARGET_OFFSET_DAYS: ${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}
   DAILY_REPORT_RESEND_ON_CHANGE: 'true'
@@ -83,6 +81,7 @@ env:
   MIN_KICKOFF_LEAD_MINUTES: '30'
   MAX_PICKS_PER_RUN: '0'
   CONTROLLED_FALLBACK_SEND_TELEGRAM: 'false'
+  CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT: 'false'
   CONTROLLED_FALLBACK_ENABLED: 'false'
 
 jobs:
@@ -108,11 +107,6 @@ jobs:
         shell: bash
         run: |
           mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/daily-report
-          rm -f artifacts/controlled-fallback-report.json
-          rm -f artifacts/run-bot/latest-rescue-candidates.json
-          rm -f .data/exports/latest-rescue-candidates.json
-          rm -f .data/exports/latest-controlled-fallback-report.json
-          rm -f .data/exports/latest-controlled-fallback-pick.json
 
       - name: Apply selected runtime profile
         shell: bash
@@ -120,48 +114,26 @@ jobs:
           SELECTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'balanced' }}
         run: |
           set -euo pipefail
-          echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
           case "$SELECTED_PROFILE" in
-            balanced)
-              PROFILE_FILE="config/balanced_output.env"
-              ;;
-            conservative)
-              PROFILE_FILE="config/conservative_passability.env"
-              ;;
-            default)
-              PROFILE_FILE=""
-              ;;
-            *)
-              echo "Unknown profile: $SELECTED_PROFILE" >&2
-              exit 1
-              ;;
+            balanced) PROFILE_FILE="config/balanced_output.env" ;;
+            conservative) PROFILE_FILE="config/conservative_passability.env" ;;
+            default) PROFILE_FILE="" ;;
+            *) echo "Unknown profile: $SELECTED_PROFILE" >&2; exit 1 ;;
           esac
           if [ -n "$PROFILE_FILE" ] && [ -f "$PROFILE_FILE" ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
-            echo "Applied profile file: $PROFILE_FILE"
-          else
-            echo "No profile file applied"
           fi
-
-      - name: Apply final runtime overrides
-        shell: bash
-        run: |
           if [ -f config/final_runtime_overrides.env ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
-            echo "Applied final runtime overrides: config/final_runtime_overrides.env"
           fi
 
       - name: Force report-only daily mode
         shell: bash
         run: |
           REPORT_OFFSET="${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}"
-          LOCAL_HOUR="$(TZ=Europe/Moscow date +%H)"
-          # If a scheduled evening report is delayed past midnight, it still belongs
-          # to the previous football day. The 02:40 finalizer also always reports yesterday.
-          if [ "${{ github.event.schedule }}" = "40 23 * * *" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$LOCAL_HOUR" -lt 4 ]; }; then
+          if [ "${{ github.event.schedule }}" = "40 23 * * *" ]; then
             REPORT_OFFSET="1"
           fi
-
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_SEND_TELEGRAM=false" >> "$GITHUB_ENV"
@@ -173,7 +145,7 @@ jobs:
           echo "SETTLEMENT_LOOKBACK_DAYS=7" >> "$GITHUB_ENV"
           echo "SETTLEMENT_SEND_TELEGRAM_SUMMARY=false" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_ENABLED=true" >> "$GITHUB_ENV"
-          echo "DAILY_REPORT_SEND_TELEGRAM=true" >> "$GITHUB_ENV"
+          echo "DAILY_REPORT_SEND_TELEGRAM=false" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_HOUR_LOCAL=0" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_TARGET_OFFSET_DAYS=${REPORT_OFFSET}" >> "$GITHUB_ENV"
           echo "DAILY_REPORT_RESEND_ON_CHANGE=true" >> "$GITHUB_ENV"
@@ -181,34 +153,12 @@ jobs:
           echo "NIGHTLY_REVIEW_REPORT_ONLY_ENABLED=true" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=0" >> "$GITHUB_ENV"
 
-      - name: Apply daily report today-date patch
-        shell: bash
-        run: |
-          python scripts/apply_daily_report_today_patch.py || true
-
-      - name: Apply data-depth settings patch
-        shell: bash
-        run: |
-          python scripts/apply_data_depth_settings_patch.py || true
-
-      - name: Apply API-Football and weather patch
-        shell: bash
-        run: |
-          python scripts/apply_api_football_weather_patch.py || true
-
       - name: Force resend for manual run
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.force_resend }}
         shell: bash
         run: |
-          echo "DAILY_REPORT_FORCE_RESEND=true" >> "$GITHUB_ENV"
           echo "DAILY_OPS_REPORT_FORCE_SEND=true" >> "$GITHUB_ENV"
-          python scripts/reset_daily_report_sent.py || true
           rm -f .data/daily-ops-report-sent.json || true
-
-      - name: Apply free API enrichment patch
-        shell: bash
-        run: |
-          python scripts/apply_free_api_enrichment_patch.py || true
 
       - name: Ensure calibration profile exists
         shell: bash
@@ -218,15 +168,14 @@ jobs:
             cp config/calibration-profile.example.json .data/calibration-profile.json
           fi
 
-      - name: Run settlement and daily report base logic
+      - name: Run settlement and base daily logic
         run: python -m app.cli run-once
 
-      - name: Build and send daily operations report
+      - name: Build and send Russian daily operations report
         if: always()
         shell: bash
         run: |
           python scripts/build_daily_ops_report.py --send-telegram || true
-          echo "---- latest daily operations report ----"
           cat .data/exports/latest-daily-ops-report.txt || true
 
       - name: Collect daily report artifacts
@@ -234,14 +183,10 @@ jobs:
         shell: bash
         run: |
           mkdir -p artifacts/daily-report
-          cp -f .data/exports/latest-daily-report.json artifacts/daily-report/latest-daily-report.json 2>/dev/null || true
-          cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
-          cp -f .data/exports/latest-daily-report.csv artifacts/daily-report/latest-daily-report.csv 2>/dev/null || true
-          cp -f .data/exports/latest-daily-summary.csv artifacts/daily-report/latest-daily-summary.csv 2>/dev/null || true
           cp -f .data/exports/latest-daily-ops-report.json artifacts/daily-report/latest-daily-ops-report.json 2>/dev/null || true
           cp -f .data/exports/latest-daily-ops-report.txt artifacts/daily-report/latest-daily-ops-report.txt 2>/dev/null || true
-          echo "---- latest daily summary ----"
-          cat artifacts/daily-report/latest-daily-summary.json || true
+          cp -f .data/exports/latest-daily-report.json artifacts/daily-report/latest-daily-report.json 2>/dev/null || true
+          cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
 
       - name: Generate audit payloads
         if: always()
@@ -258,10 +203,6 @@ jobs:
           name: daily-report-current
           path: |
             artifacts/daily-report
-            .data/exports/latest-daily-report.json
-            .data/exports/latest-daily-summary.json
-            .data/exports/latest-daily-report.csv
-            .data/exports/latest-daily-summary.csv
             .data/exports/latest-daily-ops-report.json
             .data/exports/latest-daily-ops-report.txt
             .logs/debug-last-run.json

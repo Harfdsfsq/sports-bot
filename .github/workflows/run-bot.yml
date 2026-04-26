@@ -48,8 +48,6 @@ on:
       - 'scripts/**'
       - 'requirements.txt'
   schedule:
-    # MSK = UTC+3. Workflow normally needs 7-10 minutes before fallback.
-    # :04/:34 gives extra buffer for GitHub queue delay and the 7-10 minute pipeline.
     - cron: '4,34 3-22 * * *' # 06:04-01:34 MSK
 
 permissions:
@@ -93,7 +91,7 @@ env:
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'false'
   RUN_REPORT_ENABLED: 'false'
-  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'true'
+  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
   SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
   DAILY_REPORT_ENABLED: 'true'
   DAILY_REPORT_SEND_TELEGRAM: 'true'
@@ -105,8 +103,6 @@ env:
   TARGET_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
   CONSENSUS_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
   SHARP_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair'
-  MIN_BOOKS_PUBLISH: '1'
-  MIN_SOURCES_PUBLISH: '1'
 
   MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
   PUBLISH_WINDOW_HOURS: '12'
@@ -150,25 +146,13 @@ jobs:
           set -euo pipefail
           echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
           case "$SELECTED_PROFILE" in
-            balanced)
-              PROFILE_FILE="config/balanced_output.env"
-              ;;
-            conservative)
-              PROFILE_FILE="config/conservative_passability.env"
-              ;;
-            default)
-              PROFILE_FILE=""
-              ;;
-            *)
-              echo "Unknown profile: $SELECTED_PROFILE" >&2
-              exit 1
-              ;;
+            balanced) PROFILE_FILE="config/balanced_output.env" ;;
+            conservative) PROFILE_FILE="config/conservative_passability.env" ;;
+            default) PROFILE_FILE="" ;;
+            *) echo "Unknown profile: $SELECTED_PROFILE" >&2; exit 1 ;;
           esac
           if [ -n "$PROFILE_FILE" ] && [ -f "$PROFILE_FILE" ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
-            echo "Applied profile file: $PROFILE_FILE"
-          else
-            echo "No profile file applied"
           fi
 
       - name: Apply quota governor profile
@@ -176,7 +160,6 @@ jobs:
         run: |
           if [ -f config/api_quota_governor.env ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/api_quota_governor.env >> "$GITHUB_ENV"
-            echo "Applied quota profile: config/api_quota_governor.env"
           fi
 
       - name: Apply final runtime overrides
@@ -184,7 +167,6 @@ jobs:
         run: |
           if [ -f config/final_runtime_overrides.env ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
-            echo "Applied final runtime overrides: config/final_runtime_overrides.env"
           fi
 
       - name: Apply manual dispatch overrides
@@ -198,74 +180,46 @@ jobs:
           echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=25" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=25" >> "$GITHUB_ENV"
 
-      - name: Force external publisher mode
-        shell: bash
-        run: |
-          echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
-          echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
-          echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=true" >> "$GITHUB_ENV"
-
       - name: Force safe scan policy
         shell: bash
         run: |
           EVENT_NAME="${{ github.event_name }}"
           if [ "$EVENT_NAME" = "schedule" ]; then
             MIN_LEAD=30
+            SEND_DETAILED_REPORT=true
           else
-            # Manual/push runs are diagnostic and may start at bad minutes.
-            # They may publish a valid pick, but should not spam no-pick Telegram reports.
             MIN_LEAD=25
+            SEND_DETAILED_REPORT=false
           fi
-          # Daily operations report now carries no-pick diagnostics; run-bot only sends real picks.
-          SEND_NO_PICK=false
 
+          echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
+          echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
+          echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=false" >> "$GITHUB_ENV"
           echo "PUBLISH_WINDOW_HOURS=12" >> "$GITHUB_ENV"
           echo "MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
           echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD=false" >> "$GITHUB_ENV"
-          echo "CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT=${SEND_NO_PICK}" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT=false" >> "$GITHUB_ENV"
+          echo "DETAILED_RUN_REPORT_SEND_TELEGRAM=${SEND_DETAILED_REPORT}" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH=1" >> "$GITHUB_ENV"
-          echo "DAILY_REPORT_TARGET_OFFSET_DAYS=0" >> "$GITHUB_ENV"
-          echo "DAILY_REPORT_HOUR_LOCAL=22" >> "$GITHUB_ENV"
 
-      - name: Apply rescue prefilter runtime patch
+      - name: Apply runtime patches
         shell: bash
         run: |
           python scripts/apply_rescue_prefilter_patch.py || true
-
-      - name: Apply global Telegram i18n patch
-        shell: bash
-        run: |
           python scripts/apply_global_telegram_i18n_patch.py || true
-
-      - name: Apply daily report today-date patch
-        shell: bash
-        run: |
           python scripts/apply_daily_report_today_patch.py || true
-
-      - name: Apply data-depth settings patch
-        shell: bash
-        run: |
           python scripts/apply_data_depth_settings_patch.py || true
-
-      - name: Apply API-Football and weather patch
-        shell: bash
-        run: |
           python scripts/apply_api_football_weather_patch.py || true
-
-      - name: Apply free API enrichment patch
-        shell: bash
-        run: |
           python scripts/apply_free_api_enrichment_patch.py || true
 
       - name: Apply provider quota governor
         shell: bash
         run: |
           python scripts/apply_provider_quota_governor.py
-          echo "---- provider quota governor summary ----"
           cat .data/exports/latest-provider-quota-governor.json || true
 
       - name: Ensure calibration profile exists
@@ -283,37 +237,27 @@ jobs:
       - name: Run bot once
         run: python -m app.cli run-once
 
-      - name: Publish controlled pick or final status report
+      - name: Publish controlled pick
         if: always()
         shell: bash
         run: |
           python scripts/publish_controlled_fallback.py || true
-          echo "---- controlled fallback report ----"
           cat artifacts/controlled-fallback-report.json || true
 
-      - name: Build profit distance ledgers
+      - name: Build detailed run report
+        if: always()
+        shell: bash
+        run: |
+          python scripts/build_detailed_run_report.py || true
+          cat .data/exports/latest-detailed-run-report.txt || true
+
+      - name: Build ledgers and coverage reports
         if: always()
         shell: bash
         run: |
           python scripts/profit_distance_ledger.py || true
-          echo "---- profit distance summary ----"
-          cat .data/exports/latest-profit-distance-summary.json || true
-
-      - name: Build match data coverage report
-        if: always()
-        shell: bash
-        run: |
           python scripts/match_data_coverage_report.py || true
-          echo "---- match data coverage summary ----"
-          cat .data/exports/latest-match-data-coverage-summary.json || true
-
-      - name: Probe RapidAPI subscriptions
-        if: always()
-        shell: bash
-        run: |
           python scripts/rapidapi_quota_probe.py || true
-          echo "---- rapidapi provider probe summary ----"
-          cat .data/exports/latest-rapidapi-provider-summary.json || true
 
       - name: Generate audit payloads
         if: always()

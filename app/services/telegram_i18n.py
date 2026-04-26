@@ -1,961 +1,441 @@
 from __future__ import annotations
 
+import json
 import re
+from functools import lru_cache
+from pathlib import Path
 from typing import Any
 
-# Telegram-facing localization.
-# Goal: all public Telegram messages should be readable in Russian.
-# Known names use explicit aliases; unknown names fall back to safe transliteration.
+ALIAS_PATH = Path("config/telegram_i18n_aliases.json")
 
-TEAM_ALIASES: dict[str, str] = {
-    "Valenciennes FC": "Валансьен",
-    "Valenciennes": "Валансьен",
-    "Dijon FCO": "Дижон",
-    "Dijon": "Дижон",
-    "FC Sochaux-Montbeliard": "Сошо-Монбельяр",
-    "FC Sochaux-Montbéliard": "Сошо-Монбельяр",
-    "Sochaux": "Сошо",
-    "AS Nancy Lorraine": "Нанси",
-    "Nancy": "Нанси",
-    "US Orleans": "Орлеан",
-    "US Orléans": "Орлеан",
-    "Orleans": "Орлеан",
-    "Orléans": "Орлеан",
-    "FC Rouen": "Руан",
-    "Rouen": "Руан",
-    "FC Versailles": "Версаль",
-    "Versailles": "Версаль",
-    "LB Chateauroux": "Шатору",
-    "LB Châteauroux": "Шатору",
-    "Chateauroux": "Шатору",
-    "Châteauroux": "Шатору",
-    "Villefranche Beaujolais": "Вильфранш Божоле",
-    "FC Villefranche Beaujolais": "Вильфранш Божоле",
-    "Bourg-en-Bresse Peronnas": "Бурк-ан-Брес Перонна",
-    "Bourg-en-Bresse Péronnas": "Бурк-ан-Брес Перонна",
-    "Concarneau": "Конкарно",
-    "US Concarneau": "Конкарно",
-    "Le Mans FC": "Ле-Ман",
-    "Le Mans": "Ле-Ман",
-    "Nimes Olympique": "Ним",
-    "Nîmes Olympique": "Ним",
-    "Nimes": "Ним",
-    "Nîmes": "Ним",
-    "Aubagne FC": "Обань",
-    "Aubagne": "Обань",
-    "Paris 13 Atletico": "Париж 13 Атлетико",
-    "Paris 13 Atlético": "Париж 13 Атлетико",
-    "QRM": "Кевийи-Руан",
-    "Quevilly Rouen": "Кевийи-Руан",
-    "Talaea El Gaish": "Талаеа Эль-Гаиш",
-    "Tala'ea El Gaish": "Талаеа Эль-Гаиш",
-    "El Gaish": "Эль-Гаиш",
-    "Kahrabaa Ismailia": "Кахраба Исмаилия",
-    "Kahraba Ismailia": "Кахраба Исмаилия",
-    "Ismaily SC": "Исмаили",
-    "Ismaily": "Исмаили",
-    "Al Masry": "Аль-Масри",
-    "Al-Masry": "Аль-Масри",
-    "ENPPI": "ЭНППИ",
-    "Enppi": "ЭНППИ",
-    "Pyramids FC": "Пирамидс",
-    "Zamalek SC": "Замалек",
-    "Zamalek": "Замалек",
-    "Al Ahly": "Аль-Ахли",
-    "Al-Ahly": "Аль-Ахли",
-    "Ceramica Cleopatra": "Керамика Клеопатра",
-    "Future FC": "Фьючер",
-    "Modern Sport FC": "Модерн Спорт",
-    "National Bank of Egypt": "Нэшнл Банк оф Иджипт",
-    "Alemannia Aachen": "Алеманния Ахен",
-    "MSV Duisburg": "Дуйсбург",
-    "Duisburg": "Дуйсбург",
-    "Dynamo Dresden": "Динамо Дрезден",
-    "Arminia Bielefeld": "Арминия Билефельд",
-    "Rot-Weiss Essen": "Рот-Вайсс Эссен",
-    "Rot Weiss Essen": "Рот-Вайсс Эссен",
-    "Erzgebirge Aue": "Эрцгебирге Ауэ",
-    "Saarbrucken": "Саарбрюккен",
-    "Saarbrücken": "Саарбрюккен",
-    "Ingolstadt": "Ингольштадт",
-    "FC Ingolstadt": "Ингольштадт",
-    "Viktoria Koln": "Виктория Кёльн",
-    "Viktoria Köln": "Виктория Кёльн",
-    "Wehen Wiesbaden": "Веен Висбаден",
-    "Hansa Rostock": "Ганза Росток",
-    "Sandhausen": "Зандхаузен",
-    "Unterhaching": "Унтерхахинг",
-    "Verl": "Верль",
-    "Skive IK": "Скиве",
-    "BK Fremad Amager": "Фремад Амагер",
-    "Fremad Amager": "Фремад Амагер",
-    "SV Wals-Grunau": "Вальс-Грюнау",
-    "SV Wals-Grünau": "Вальс-Грюнау",
-    "SC Imst 1933": "Имст 1933",
-    "SC Imst": "Имст",
-    "FC Helsingor": "Хельсингёр",
-    "FC Helsingør": "Хельсингёр",
-    "Hobro IK": "Хобро",
-    "Kolding IF": "Колдинг",
-    "Hillerod Fodbold": "Хиллерёд",
-    "Hillerød Fodbold": "Хиллерёд",
-    "AC Horsens": "Хорсенс",
-    "Esbjerg fB": "Эсбьерг",
-    "HB Koge": "Кёге",
-    "HB Køge": "Кёге",
-    "Al-Nasr Dubai CSC": "Аль-Наср Дубай",
-    "Al Nasr Dubai CSC": "Аль-Наср Дубай",
-    "Al-Nasr Dubai": "Аль-Наср Дубай",
-    "Al Nasr Dubai": "Аль-Наср Дубай",
-    "Al-Nasr SC Dubai": "Аль-Наср Дубай",
-    "Al Nasr SC Dubai": "Аль-Наср Дубай",
-    "Al-Nasr CSC": "Аль-Наср",
-    "Al Nasr CSC": "Аль-Наср",
-    "Al-Nasr": "Аль-Наср",
-    "Al Nasr": "Аль-Наср",
-    "Al Jazira (UAE)": "Аль-Джазира",
-    "Al-Jazira (UAE)": "Аль-Джазира",
-    "Al Jazira Club": "Аль-Джазира",
-    "Al-Jazira Club": "Аль-Джазира",
-    "Al Jazira": "Аль-Джазира",
-    "Al-Jazira": "Аль-Джазира",
-    "Shabab Al Ahli Dubai": "Шабаб Аль-Ахли Дубай",
-    "Shabab Al-Ahli Dubai": "Шабаб Аль-Ахли Дубай",
-    "Al Ain": "Аль-Айн",
-    "Al-Ain": "Аль-Айн",
-    "Al Wasl": "Аль-Васл",
-    "Al-Wasl": "Аль-Васл",
-    "Al Wahda": "Аль-Вахда",
-    "Al-Wahda": "Аль-Вахда",
-    "Baniyas": "Банияс",
-    "Khor Fakkan": "Хор-Факкан",
-    "Khorfakkan": "Хор-Факкан",
-    "Ajman Club": "Аджман",
-    "Ajman": "Аджман",
-    "Kalba": "Калба",
-    "Ittihad Kalba": "Иттихад Калба",
-    "MKS Znicz Pruszkow": "Знич Прушкув",
-    "Znicz Pruszkow": "Знич Прушкув",
-    "MKS Znicz Pruszków": "Знич Прушкув",
-    "Znicz Pruszków": "Знич Прушкув",
-    "Gornik Leczna": "Гурник Ленчна",
-    "Górnik Łęczna": "Гурник Ленчна",
-    "Gornik Łęczna": "Гурник Ленчна",
-    "Górnik Leczna": "Гурник Ленчна",
-    "Wisla Krakow": "Висла Краков",
-    "Wisła Kraków": "Висла Краков",
-    "Arka Gdynia": "Арка Гдыня",
-    "Miedz Legnica": "Медзь Легница",
-    "Miedź Legnica": "Медзь Легница",
-    "Ruch Chorzow": "Рух Хожув",
-    "Ruch Chorzów": "Рух Хожув",
-    "Polonia Warszawa": "Полония Варшава",
-    "Stal Rzeszow": "Сталь Жешув",
-    "Stal Rzeszów": "Сталь Жешув",
-    "Odra Opole": "Одра Ополе",
-    "Termalica Bruk-Bet Nieciecza": "Термалика Брук-Бет Нецеча",
-    "Bruk-Bet Termalica Nieciecza": "Брук-Бет Термалика Нецеча",
-    "SKU Amstetten": "СКУ Амштеттен",
-    "Amstetten": "Амштеттен",
-    "First Vienna FC 1894": "Фёрст Вена 1894",
-    "First Vienna FC": "Фёрст Вена",
-    "First Vienna": "Фёрст Вена",
-    "Vienna FC": "Вена",
-    "Austria Lustenau": "Аустрия Лустенау",
-    "Admira Wacker": "Адмира Ваккер",
-    "SV Ried": "Рид",
-    "SKN St. Polten": "Санкт-Пёльтен",
-    "SKN St. Pölten": "Санкт-Пёльтен",
-    "Kapfenberger SV": "Капфенберг",
-    "Floridsdorfer AC": "Флоридсдорф",
-    # Saudi Arabia / Gulf
-    "Al-Fateh SC": "Аль-Фатех",
-    "Al Fateh SC": "Аль-Фатех",
-    "Al-Fateh": "Аль-Фатех",
-    "Al Fateh": "Аль-Фатех",
-    "Al-Khaleej Club": "Аль-Халидж",
-    "Al Khaleej Club": "Аль-Халидж",
-    "Al-Khaleej": "Аль-Халидж",
-    "Al Khaleej": "Аль-Халидж",
-    "Al Hilal": "Аль-Хиляль",
-    "Al-Hilal": "Аль-Хиляль",
-    "Al Nassr": "Аль-Наср",
-    "Al-Nassr": "Аль-Наср",
-    "Al Ittihad": "Аль-Иттихад",
-    "Al-Ittihad": "Аль-Иттихад",
-    "Al Ahli": "Аль-Ахли",
-    "Al-Ahli": "Аль-Ахли",
-    "Al Shabab": "Аль-Шабаб",
-    "Al-Shabab": "Аль-Шабаб",
-    "Al Taawoun": "Аль-Таавун",
-    "Al-Taawoun": "Аль-Таавун",
-    "Al Riyadh": "Аль-Рияд",
-    "Al-Riyadh": "Аль-Рияд",
-    "Al Ettifaq": "Аль-Иттифак",
-    "Al-Ettifaq": "Аль-Иттифак",
-    "Damac FC": "Дамак",
-    "Abha Club": "Абха",
+_BUILTIN_TEAMS: dict[str, str] = {
+    # Italy
+    "AC Milan": "Милан",
+    "Milan": "Милан",
+    "Juventus Turin": "Ювентус",
+    "Juventus": "Ювентус",
+    "Inter Milan": "Интер",
+    "Internazionale": "Интер",
+    "AS Roma": "Рома",
+    "Roma": "Рома",
+    "Napoli": "Наполи",
+    "Lazio": "Лацио",
+    "Atalanta": "Аталанта",
+    "Fiorentina": "Фиорентина",
+    "Torino": "Торино",
+    "Bologna": "Болонья",
+    "Genoa CFC": "Дженоа",
+    "Genoa": "Дженоа",
+    "Pisa SC": "Пиза",
 
-    # UAE
-    "Dubai United FC": "Дубай Юнайтед",
-    "Dubai United": "Дубай Юнайтед",
-    "Gulf United": "Галф Юнайтед",
-    "Gulf United FC": "Галф Юнайтед",
-    "Al Arabi UAE": "Аль-Араби ОАЭ",
-    "Al Dhafra": "Аль-Дафра",
-    "Dibba Al Fujairah": "Дибба Аль-Фуджейра",
-    "Hatta Club": "Хатта",
-    "Masfout": "Масфут",
-    "Al Hamriyah": "Аль-Хамрия",
+    # Spain
+    "Real Madrid": "Реал Мадрид",
+    "Barcelona": "Барселона",
+    "FC Barcelona": "Барселона",
+    "Atletico Madrid": "Атлетико Мадрид",
+    "Atlético Madrid": "Атлетико Мадрид",
+    "Sevilla FC": "Севилья",
+    "Sevilla": "Севилья",
+    "CA Osasuna": "Осасуна",
+    "Osasuna": "Осасуна",
+    "CD Leganes": "Леганес",
+    "CD Leganés": "Леганес",
+    "Leganes": "Леганес",
+    "Leganés": "Леганес",
+    "FC Andorra": "Андорра",
+    "Andorra": "Андорра",
+    "Valencia": "Валенсия",
+    "Villarreal": "Вильярреал",
+    "Real Sociedad": "Реал Сосьедад",
+    "Athletic Bilbao": "Атлетик Бильбао",
+    "Real Betis": "Бетис",
+    "Levante UD": "Леванте",
+    "Levante": "Леванте",
 
-    # Previously seen teams
+    # England / France / Germany
+    "Manchester City": "Манчестер Сити",
+    "Manchester United": "Манчестер Юнайтед",
+    "Liverpool": "Ливерпуль",
+    "Chelsea": "Челси",
+    "Arsenal": "Арсенал",
+    "Tottenham": "Тоттенхэм",
+    "Paris Saint-Germain": "Пари Сен-Жермен",
+    "PSG": "ПСЖ",
+    "Olympique Lyon": "Лион",
+    "Lyon": "Лион",
+    "Marseille": "Марсель",
+    "Olympique Marseille": "Марсель",
+    "Bayern Munich": "Бавария",
+    "Bayern München": "Бавария",
+    "Borussia Dortmund": "Боруссия Дортмунд",
+    "Bayer Leverkusen": "Байер Леверкузен",
+    "RB Leipzig": "РБ Лейпциг",
+    "VfB Stuttgart": "Штутгарт",
+    "SC Freiburg": "Фрайбург",
+
+    # USA / Americas
+    "Los Angeles Galaxy": "Лос-Анджелес Гэлакси",
+    "LA Galaxy": "Лос-Анджелес Гэлакси",
+    "Real Salt Lake": "Реал Солт-Лейк",
+    "Los Angeles FC": "Лос-Анджелес",
+    "San Jose Earthquakes": "Сан-Хосе Эртквейкс",
     "New York City FC": "Нью-Йорк Сити",
     "New York City": "Нью-Йорк Сити",
     "FC Cincinnati": "Цинциннати",
-    "Cincinnati": "Цинциннати",
-    "Kolos Kovalivka": "Колос Ковалёвка",
-    "SC Poltava": "Полтава",
-    "Brisbane Strikers FC": "Брисбен Страйкерс",
-    "St George Willawong FC": "Сент-Джордж Уиллавонг",
-    "National Bank of Egypt SC": "Нэшнл Банк оф Иджипт",
-    "Zed FC": "Зед",
-    "Levante UD": "Леванте",
-    "Sevilla FC": "Севилья",
-    "PSV Eindhoven": "ПСВ Эйндховен",
-    "PEC Zwolle": "Зволле",
-    "VfB Stuttgart": "Штутгарт",
-    "SC Freiburg": "Фрайбург",
-    "FC Pyunik Yerevan": "Пюник",
-    "FC Urartu Yerevan": "Урарту",
-    "Al Mokawloon Al Arab": "Аль-Мокавлун",
-    "Al Ittihad Al Sakandary": "Аль-Иттихад Александрия",
-    "Capalaba Bulldogs": "Капалаба Буллдогс",
-    "North Star FC": "Норт Стар",
-    "Brunswick City SC": "Брансуик Сити",
-    "Langwarrin SC": "Лангваррин",
-    "Brunswick Juventus FC": "Брансуик Ювентус",
-    "North Sunshine Eagles FC": "Норт Саншайн Иглз",
-    "Springvale White Eagles": "Спрингвейл Уайт Иглз",
-    "Kingston City FC": "Кингстон Сити",
-    "Spanish Town Police FC": "Спэниш Таун Полис",
     "Portmore United": "Портмор Юнайтед",
-    "El Gouna FC": "Эль-Гуна",
-    "Pharco FC": "Фарко",
-    "PFC Spartak Pleven": "Спартак Плевен",
-    "FC Yantra Gabrovo": "Янтра Габрово",
+
+    # Other seen teams
+    "FBC Melgar": "Мельгар",
+    "Universitario de Deportes": "Университарио",
+    "Operario FC MS": "Операрио MS",
+    "Abecat Ouvidorense GO": "Абекат Овидоренсе",
+    "Figueirense FC SC": "Фигейренсе",
+    "Botafogo FC PB": "Ботафого PB",
+    "Christchurch United": "Крайстчерч Юнайтед",
+    "Northern AFC": "Нортерн",
 }
 
-LEAGUE_ALIASES: dict[str, str] = {
-    "France - National": "Франция - Насьональ",
-    "France - Championnat National": "Франция - Насьональ",
-    "France - National 1": "Франция - Насьональ 1",
-    "France - National 2": "Франция - Насьональ 2",
+_BUILTIN_LEAGUES: dict[str, str] = {
+    "Italy - Serie A": "Италия - Серия A",
+    "Italy - Serie B": "Италия - Серия B",
+    "Spain - LaLiga": "Испания - Ла Лига",
+    "Spain - LaLiga 2": "Испания - Ла Лига 2",
+    "Spain - Segunda Division": "Испания - Сегунда",
+    "England - Premier League": "Англия - Премьер-лига",
+    "England - Championship": "Англия - Чемпионшип",
     "France - Ligue 1": "Франция - Лига 1",
     "France - Ligue 2": "Франция - Лига 2",
-    "France - Coupe de France": "Франция - Кубок Франции",
-    "Germany - 3. Liga": "Германия - Третья лига",
+    "Germany - Bundesliga": "Германия - Бундеслига",
     "Germany - 2. Bundesliga": "Германия - Вторая Бундеслига",
-    "Germany - Regionalliga": "Германия - Региональная лига",
-    "Denmark - 2nd Division": "Дания - Второй дивизион",
-    "Denmark - 1st Division": "Дания - Первый дивизион",
-    "Denmark - Superliga": "Дания - Суперлига",
-    "Denmark - Danish Cup": "Дания - Кубок Дании",
-    "United Arab Emirates - Arabian Gulf League": "ОАЭ - Арабская лига Залива",
-    "United Arab Emirates - UAE Pro League": "ОАЭ - Про-лига",
-    "United Arab Emirates - UAE League": "ОАЭ - Про-лига",
-    "UAE - Arabian Gulf League": "ОАЭ - Арабская лига Залива",
-    "UAE - UAE Pro League": "ОАЭ - Про-лига",
-    "UAE - League Cup": "ОАЭ - Кубок лиги",
-    "United Arab Emirates - League Cup": "ОАЭ - Кубок лиги",
-    "Poland - I Liga": "Польша - Первая лига",
-    "Poland - Ekstraklasa": "Польша - Экстракласса",
-    "Poland - II Liga": "Польша - Вторая лига",
-    "Poland - Polish Cup": "Польша - Кубок Польши",
-    "Austria - 2. Liga": "Австрия - Вторая лига",
-    "Austria - Bundesliga": "Австрия - Бундеслига",
-    "Austria - OFB Cup": "Австрия - Кубок OFB",
-    "Saudi Arabia - Saudi Pro League": "Саудовская Аравия - Про-лига",
-    "Saudi Arabia - Pro League": "Саудовская Аравия - Про-лига",
-    "Saudi Arabia - Professional League": "Саудовская Аравия - Про-лига",
-    "Saudi Arabia - First Division": "Саудовская Аравия - Первый дивизион",
-    "Saudi Arabia - King Cup": "Саудовская Аравия - Кубок Короля",
-    "United Arab Emirates - First Division": "ОАЭ - Первый дивизион",
-    "United Arab Emirates - Pro League": "ОАЭ - Про-лига",
-    "UAE - First Division": "ОАЭ - Первый дивизион",
-    "UAE - Pro League": "ОАЭ - Про-лига",
-    "USA - MLS": "США - MLS",
-    "Ukraine - Premier League": "Украина - Премьер-лига",
-    "Australia - Queensland Premier League 1": "Австралия - Премьер-лига Квинсленда 1",
-    "Australia - Victoria Premier League 1": "Австралия - Премьер-лига Виктории 1",
-    "Australia - Victoria Premier League 2": "Австралия - Премьер-лига Виктории 2",
-    "Egypt - Premier League": "Египет - Премьер-лига",
-    "Spain - LaLiga": "Испания - Ла Лига",
+    "Germany - 3. Liga": "Германия - Третья лига",
     "Netherlands - Eredivisie": "Нидерланды - Эредивизи",
-    "Germany - DFB Pokal": "Германия - Кубок DFB",
-    "Armenia - Premier League": "Армения - Премьер-лига",
-    "Bulgaria - Vtora Liga": "Болгария - Вторая лига",
-    "Romania - Liga III": "Румыния - Лига III",
+    "USA - MLS": "США - MLS",
+    "Brazil - Serie A": "Бразилия - Серия A",
+    "Brazil - Serie B": "Бразилия - Серия B",
+    "Peru - Liga 1": "Перу - Лига 1",
+    "France - National": "Франция - Насьональ",
+    "Australia - A-League": "Австралия - A-Лига",
 }
 
-COUNTRY_ALIASES: dict[str, str] = {
+_COUNTRIES: dict[str, str] = {
+    "Italy": "Италия",
+    "Spain": "Испания",
+    "England": "Англия",
+    "France": "Франция",
+    "Germany": "Германия",
+    "Netherlands": "Нидерланды",
+    "Portugal": "Португалия",
+    "Brazil": "Бразилия",
+    "Argentina": "Аргентина",
+    "Peru": "Перу",
+    "Chile": "Чили",
+    "Colombia": "Колумбия",
     "USA": "США",
     "United States": "США",
-    "United States of America": "США",
-    "England": "Англия",
-    "Scotland": "Шотландия",
-    "Wales": "Уэльс",
-    "Ireland": "Ирландия",
-    "Northern Ireland": "Северная Ирландия",
-    "Spain": "Испания",
-    "Italy": "Италия",
-    "Germany": "Германия",
-    "France": "Франция",
-    "Portugal": "Португалия",
-    "Netherlands": "Нидерланды",
+    "Australia": "Австралия",
+    "Japan": "Япония",
+    "South Korea": "Южная Корея",
+    "Saudi Arabia": "Саудовская Аравия",
+    "United Arab Emirates": "ОАЭ",
+    "UAE": "ОАЭ",
+    "Egypt": "Египет",
+    "Turkey": "Турция",
     "Belgium": "Бельгия",
     "Austria": "Австрия",
     "Switzerland": "Швейцария",
     "Denmark": "Дания",
-    "Sweden": "Швеция",
-    "Norway": "Норвегия",
-    "Finland": "Финляндия",
-    "Iceland": "Исландия",
     "Poland": "Польша",
-    "Czech Republic": "Чехия",
-    "Slovakia": "Словакия",
-    "Hungary": "Венгрия",
-    "Romania": "Румыния",
-    "Bulgaria": "Болгария",
-    "Greece": "Греция",
-    "Turkey": "Турция",
-    "Croatia": "Хорватия",
-    "Serbia": "Сербия",
-    "Slovenia": "Словения",
     "Ukraine": "Украина",
-    "Armenia": "Армения",
-    "Georgia": "Грузия",
-    "Azerbaijan": "Азербайджан",
-    "Kazakhstan": "Казахстан",
-    "Saudi Arabia": "Саудовская Аравия",
-    "United Arab Emirates": "ОАЭ",
-    "UAE": "ОАЭ",
-    "Qatar": "Катар",
-    "Bahrain": "Бахрейн",
-    "Kuwait": "Кувейт",
-    "Oman": "Оман",
-    "Egypt": "Египет",
-    "Morocco": "Марокко",
-    "Tunisia": "Тунис",
-    "Algeria": "Алжир",
-    "South Africa": "ЮАР",
-    "Australia": "Австралия",
-    "New Zealand": "Новая Зеландия",
-    "Japan": "Япония",
-    "South Korea": "Южная Корея",
-    "China": "Китай",
-    "India": "Индия",
-    "Brazil": "Бразилия",
-    "Argentina": "Аргентина",
-    "Chile": "Чили",
-    "Colombia": "Колумбия",
-    "Peru": "Перу",
-    "Uruguay": "Уругвай",
-    "Mexico": "Мексика",
-    "Canada": "Канада",
 }
 
-LEAGUE_WORDS: dict[str, str] = {
-    "Championnat National": "Насьональ",
-    "National": "Насьональ",
-    "3. Liga": "Третья лига",
-    "2nd Division": "Второй дивизион",
-    "1st Division": "Первый дивизион",
-    "Arabian Gulf League": "Арабская лига Залива",
+_LEAGUE_WORDS: dict[str, str] = {
     "Premier League": "Премьер-лига",
-    "Professional League": "Профессиональная лига",
     "Pro League": "Про-лига",
-    "Saudi Pro League": "Про-лига",
-    "First Division": "Первый дивизион",
-    "Second Division": "Второй дивизион",
-    "Third Division": "Третий дивизион",
+    "Professional League": "Профессиональная лига",
     "Championship": "Чемпионшип",
     "League One": "Лига 1",
     "League Two": "Лига 2",
-    "2. Liga": "Вторая лига",
-    "National League": "Национальная лига",
-    "Super League": "Суперлига",
-    "Superliga": "Суперлига",
-    "Liga I": "Лига I",
-    "I Liga": "Первая лига",
-    "Liga II": "Лига II",
-    "Liga III": "Лига III",
-    "LaLiga": "Ла Лига",
+    "First Division": "Первый дивизион",
+    "Second Division": "Второй дивизион",
+    "Third Division": "Третий дивизион",
     "Serie A": "Серия A",
     "Serie B": "Серия B",
+    "LaLiga": "Ла Лига",
+    "La Liga": "Ла Лига",
+    "Segunda Division": "Сегунда",
     "Bundesliga": "Бундеслига",
     "2. Bundesliga": "Вторая Бундеслига",
+    "3. Liga": "Третья лига",
     "Ligue 1": "Лига 1",
     "Ligue 2": "Лига 2",
     "Eredivisie": "Эредивизи",
-    "Eerste Divisie": "Первый дивизион",
-    "DFB Pokal": "Кубок DFB",
     "Cup": "Кубок",
-    "King Cup": "Кубок Короля",
+    "Super Cup": "Суперкубок",
+    "League Cup": "Кубок лиги",
+    "National": "Насьональ",
     "MLS": "MLS",
     "A-League": "A-Лига",
 }
 
-WORD_ALIASES: dict[str, str] = {
-    "valenciennes": "Валансьен",
-    "dijon": "Дижон",
-    "fco": "",
-    "sochaux": "Сошо",
-    "montbeliard": "Монбельяр",
-    "montbéliard": "Монбельяр",
-    "nancy": "Нанси",
-    "lorraine": "Лотарингия",
-    "orleans": "Орлеан",
-    "orléans": "Орлеан",
-    "rouen": "Руан",
-    "versailles": "Версаль",
-    "chateauroux": "Шатору",
-    "châteauroux": "Шатору",
-    "villefranche": "Вильфранш",
-    "beaujolais": "Божоле",
-    "bourg": "Бурк",
-    "bresse": "Брес",
-    "peronnas": "Перонна",
-    "péronnas": "Перонна",
-    "concarneau": "Конкарно",
-    "mans": "Ман",
-    "nimes": "Ним",
-    "nîmes": "Ним",
-    "aubagne": "Обань",
-    "atletico": "Атлетико",
-    "atlético": "Атлетико",
-    "quevilly": "Кевийи",
-    "championnat": "Чемпионат",
-    "talaea": "Талаеа",
-    "tala'ea": "Талаеа",
-    "gaish": "Гаиш",
-    "kahrabaa": "Кахраба",
-    "kahraba": "Кахраба",
-    "ismailia": "Исмаилия",
-    "ismaily": "Исмаили",
-    "masry": "Масри",
-    "pyramids": "Пирамидс",
-    "zamalek": "Замалек",
-    "ceramica": "Керамика",
-    "cleopatra": "Клеопатра",
-    "future": "Фьючер",
-    "modern": "Модерн",
-    "alemannia": "Алеманния",
-    "aachen": "Ахен",
-    "duisburg": "Дуйсбург",
-    "dresden": "Дрезден",
-    "bielefeld": "Билефельд",
-    "essen": "Эссен",
-    "aue": "Ауэ",
-    "saarbrucken": "Саарбрюккен",
-    "saarbrücken": "Саарбрюккен",
-    "ingolstadt": "Ингольштадт",
-    "koln": "Кёльн",
-    "köln": "Кёльн",
-    "wiesbaden": "Висбаден",
-    "rostock": "Росток",
-    "sandhausen": "Зандхаузен",
-    "unterhaching": "Унтерхахинг",
-    "verl": "Верль",
-    "skive": "Скиве",
-    "fremad": "Фремад",
-    "amager": "Амагер",
-    "denmark": "Дания",
-    "danish": "Датский",
-    "helsingor": "Хельсингёр",
-    "helsingør": "Хельсингёр",
-    "hobro": "Хобро",
-    "kolding": "Колдинг",
-    "hillerod": "Хиллерёд",
-    "hillerød": "Хиллерёд",
-    "horsens": "Хорсенс",
-    "esbjerg": "Эсбьерг",
-    "koge": "Кёге",
-    "køge": "Кёге",
-    "csc": "",
-    "nasr": "Наср",
-    "jazira": "Джазира",
-    "ain": "Айн",
-    "wasl": "Васл",
-    "wahda": "Вахда",
-    "baniyas": "Банияс",
-    "khor": "Хор",
-    "fakkan": "Факкан",
-    "khorfakkan": "Хор-Факкан",
-    "ajman": "Аджман",
-    "kalba": "Калба",
-    "arabian": "Арабская",
-    "mks": "",
-    "znicz": "Знич",
-    "pruszkow": "Прушкув",
-    "pruszków": "Прушкув",
-    "gornik": "Гурник",
-    "górnik": "Гурник",
-    "leczna": "Ленчна",
-    "łęczna": "Ленчна",
-    "poland": "Польша",
-    "polish": "Польский",
-    "wisla": "Висла",
-    "wisła": "Висла",
-    "krakow": "Краков",
-    "kraków": "Краков",
-    "gdynia": "Гдыня",
-    "legnica": "Легница",
-    "chorzow": "Хожув",
-    "chorzów": "Хожув",
-    "warszawa": "Варшава",
-    "rzeszow": "Жешув",
-    "rzeszów": "Жешув",
-    "opole": "Ополе",
-    "amstetten": "Амштеттен",
-    "first": "Фёрст",
-    "vienna": "Вена",
-    "austria": "Австрия",
-    "liga": "Лига",
-    "lustenau": "Лустенау",
-    "admira": "Адмира",
-    "wacker": "Ваккер",
-    "ried": "Рид",
-    "kapfenberger": "Капфенберг",
-    "floridsdorfer": "Флоридсдорф",
-    # club words
-    "fc": "",
-    "f.c.": "",
-    "sc": "",
-    "s.c.": "",
-    "cf": "",
-    "ac": "",
-    "afc": "",
-    "ud": "",
-    "pfc": "",
-    "club": "",
-    "united": "Юнайтед",
-    "city": "Сити",
-    "town": "Таун",
-    "county": "Каунти",
-    "rovers": "Роверс",
-    "wanderers": "Уондерерс",
-    "rangers": "Рейнджерс",
-    "athletic": "Атлетик",
-    "sporting": "Спортинг",
-    "real": "Реал",
-    "deportivo": "Депортиво",
-    "inter": "Интер",
-    "internacional": "Интернасьонал",
-    "olympic": "Олимпик",
-    "olympique": "Олимпик",
-    "dynamo": "Динамо",
-    "dinamo": "Динамо",
-    "lokomotiv": "Локомотив",
-    "arsenal": "Арсенал",
-    "juventus": "Ювентус",
-    "central": "Сентрал",
-    "north": "Норт",
-    "south": "Саут",
-    "east": "Ист",
-    "west": "Вест",
-    "stars": "Старз",
-    "star": "Стар",
-    "eagles": "Иглз",
-    "white": "Уайт",
-    "bulldogs": "Буллдогс",
-    "strikers": "Страйкерс",
-    "police": "Полис",
-    "bank": "Банк",
-    "national": "Нэшнл",
-
-    # geographic/common words
-    "new": "Нью",
-    "york": "Йорк",
-    "dubai": "Дубай",
-    "gulf": "Галф",
-    "emirates": "Эмирейтс",
-    "uae": "ОАЭ",
-    "saudi": "Саудовская",
-    "arabia": "Аравия",
-    "egypt": "Иджипт",
-
-    # Arabic-style names
-    "al": "Аль",
-    "el": "Эль",
-    "arabi": "Араби",
-    "fateh": "Фатех",
-    "khaleej": "Халидж",
-    "hilal": "Хиляль",
-    "nassr": "Наср",
-    "ittihad": "Иттихад",
-    "ahli": "Ахли",
-    "shabab": "Шабаб",
-    "taawoun": "Таавун",
-    "riyadh": "Рияд",
-    "ettifaq": "Иттифак",
-    "raed": "Раед",
-    "wehda": "Вахда",
-    "qadsiah": "Кадисия",
-    "damac": "Дамак",
-    "abha": "Абха",
-    "okhdood": "Охдуд",
-    "dhafra": "Дафра",
-    "dibba": "Дибба",
-    "fujairah": "Фуджейра",
-    "hatta": "Хатта",
-    "masfout": "Масфут",
-    "hamriyah": "Хамрия",
+_REASON_MAP: dict[str, str] = {
+    "canonical_negative_value": "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
+    "match_time_outside_window": "до начала матча меньше разрешённого запаса времени",
+    "match_already_started": "матч уже начался",
+    "match_time_too_late": "матч дальше окна публикации",
+    "missing_commence_time": "нет времени начала матча",
+    "xg_direction_conflict": "направление ставки конфликтует с xG",
+    "xg_probability_gap_hard_reject": "слишком большой разрыв между моделью и xG-ориентиром",
+    "btts_direction_conflict": "BTTS конфликтует с xG по обеим командам",
+    "btts_probability_gap_hard_reject": "слишком большой разрыв BTTS-модели и xG",
+    "dnb_direction_conflict": "DNB конфликтует с xG-проверкой",
+    "tier_a_quality_below_min": "качество ниже минимума уровня A",
+    "tier_b_quality_below_min": "качество ниже минимума уровня B",
+    "tier_c_quality_below_min": "качество ниже минимума уровня C",
+    "tier_a_confidence_below_min": "уверенность ниже минимума уровня A",
+    "tier_b_confidence_below_min": "уверенность ниже минимума уровня B",
+    "tier_c_confidence_below_min": "уверенность ниже минимума уровня C",
+    "tier_a_canonical_edge_below_min": "запас value ниже минимума уровня A",
+    "tier_b_canonical_edge_below_min": "запас value ниже минимума уровня B",
+    "tier_c_canonical_edge_below_min": "запас value ниже минимума уровня C",
+    "tier_a_canonical_ev_below_min": "EV ниже минимума уровня A",
+    "tier_b_canonical_ev_below_min": "EV ниже минимума уровня B",
+    "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
+    "tier_a_proxy_quality_not_allowed": "уровень A не принимает proxy-качество",
+    "tier_b_proxy_quality_not_allowed": "уровень B не принимает proxy-качество",
+    "tier_c_proxy_quality_not_allowed": "уровень C не принимает proxy-качество",
+    "proxy_single_source_confidence_below_min": "proxy/single-source: уверенность ниже строгого минимума",
+    "proxy_single_source_edge_below_min": "proxy/single-source: value-запас ниже строгого минимума",
+    "proxy_single_source_ev_below_min": "proxy/single-source: EV ниже строгого минимума",
+    "family_not_allowed:spreads": "семья рынка закрыта для Telegram: форы",
+    "family_not_allowed:h2h": "семья рынка закрыта для Telegram: исходы 1X2",
+    "family_not_allowed:teamtotals": "семья рынка закрыта для Telegram: индивидуальные тоталы",
+    "family_not_allowed:btts": "семья рынка закрыта для Telegram: обе забьют",
+    "h2h_rescue_odds_too_high": "исход 1X2 с коэффициентом выше безопасного лимита",
+    "duplicate_fallback_sent_index": "такой прогноз уже отправлялся ранее",
+    "odds_below_global_min": "коэффициент ниже общего минимума",
+    "odds_above_global_max": "коэффициент выше общего максимума",
+    "missing_books": "нет подтверждения линией букмекера",
+    "missing_sources": "нет подтверждения источниками",
 }
 
-_MULTI = {
-    "sh": "ш", "ch": "ч", "zh": "ж", "ya": "я", "yu": "ю", "yo": "ё", "ye": "е",
-    "kh": "х", "ts": "ц", "th": "т", "ph": "ф", "oo": "у", "ee": "и", "ou": "у",
-    "ck": "к", "qu": "кв",
-}
-_SINGLE = {
+_TEXT_REPLACEMENTS: list[tuple[str, str]] = [
+    ("Over", "Больше"),
+    ("Under", "Меньше"),
+    ("Draw No Bet", "Фора 0"),
+    ("DNB", "Фора 0"),
+    ("Both Teams To Score", "Обе забьют"),
+    ("BTTS", "Обе забьют"),
+    ("Yes", "Да"),
+    ("No", "Нет"),
+    ("Home", "Хозяева"),
+    ("Away", "Гости"),
+    ("Total", "Тотал"),
+    ("Spread", "Фора"),
+    ("Moneyline", "Исход"),
+    ("Match Winner", "Победитель матча"),
+    ("Team Total", "Индивидуальный тотал"),
+]
+
+_TRANSLIT = {
     "a": "а", "b": "б", "c": "к", "d": "д", "e": "е", "f": "ф", "g": "г", "h": "х",
     "i": "и", "j": "дж", "k": "к", "l": "л", "m": "м", "n": "н", "o": "о", "p": "п",
-    "q": "к", "r": "р", "s": "с", "t": "т", "u": "у", "v": "в", "w": "в", "x": "кс",
+    "q": "к", "r": "р", "s": "с", "t": "т", "u": "у", "v": "в", "w": "у", "x": "кс",
     "y": "и", "z": "з",
 }
-CLUB_SUFFIX_RE = re.compile(
-    r"^(FC|SC|CF|AC|AFC|PFC|UD)\s+|\s+(FC|SC|CF|AC|AFC|PFC|FCO|UD|CSC|Club|F\.C\.|S\.C\.)$",
-    flags=re.IGNORECASE,
-)
+
+_DIGRAPHS = {
+    "sch": "ш", "sh": "ш", "ch": "ч", "th": "т", "ph": "ф", "kh": "х", "zh": "ж",
+    "ts": "ц", "tz": "ц", "ck": "к", "qu": "кв", "oo": "у", "ee": "и", "ea": "и",
+    "ou": "у", "ai": "ай", "ei": "ей", "ay": "ей", "ey": "ей",
+}
 
 
-def _squash_spaces(text: str) -> str:
-    return re.sub(r"\s+", " ", str(text or "").strip())
+def _clean_key(value: Any) -> str:
+    return re.sub(r"\s+", " ", str(value or "").strip())
 
 
-def _norm_key(value: Any) -> str:
-    text = _squash_spaces(str(value or "")).lower()
-    text = text.replace("’", "'").replace("`", "'")
-    text = re.sub(r"[^a-zа-яё0-9]+", " ", text, flags=re.IGNORECASE)
-    return _squash_spaces(text)
+@lru_cache(maxsize=1)
+def _external_aliases() -> dict[str, dict[str, str]]:
+    if not ALIAS_PATH.exists():
+        return {"teams": {}, "leagues": {}, "countries": {}, "words": {}}
+    try:
+        payload = json.loads(ALIAS_PATH.read_text(encoding="utf-8"))
+    except Exception:
+        return {"teams": {}, "leagues": {}, "countries": {}, "words": {}}
+    if not isinstance(payload, dict):
+        return {"teams": {}, "leagues": {}, "countries": {}, "words": {}}
+    out: dict[str, dict[str, str]] = {}
+    for section in ("teams", "leagues", "countries", "words"):
+        raw = payload.get(section) or {}
+        out[section] = {str(k): str(v) for k, v in raw.items() if str(k).strip() and str(v).strip()} if isinstance(raw, dict) else {}
+    return out
 
 
-def _lookup_alias(value: Any, aliases: dict[str, str]) -> str | None:
-    raw = _squash_spaces(str(value or ""))
-    if not raw:
-        return None
-    if raw in aliases:
-        return aliases[raw]
-    raw_key = _norm_key(raw)
-    for alias, translated in aliases.items():
-        if _norm_key(alias) == raw_key:
-            return translated
-    stripped = _strip_club_suffixes(raw)
-    if stripped in aliases:
-        return aliases[stripped]
-    stripped_key = _norm_key(stripped)
-    for alias, translated in aliases.items():
-        if _norm_key(alias) == stripped_key:
-            return translated
+def _lookup(value: Any, table: dict[str, str], external_section: str) -> str | None:
+    text = _clean_key(value)
+    if not text:
+        return ""
+    external = _external_aliases().get(external_section, {})
+    for source in (external, table):
+        if text in source:
+            return source[text]
+        low = text.lower()
+        for k, v in source.items():
+            if k.lower() == low:
+                return v
     return None
 
 
-def _strip_club_suffixes(text: str) -> str:
-    value = _squash_spaces(text)
-    # Country suffix cleanup: "Al Jazira (UAE)" -> "Al Jazira"
-    value = re.sub(r"\s*\((UAE|United Arab Emirates|KSA|Saudi Arabia|POL|Poland|AUT|Austria)\)\s*$", "", value, flags=re.IGNORECASE)
-    previous = None
-    while previous != value:
-        previous = value
-        value = CLUB_SUFFIX_RE.sub("", value)
-        value = _squash_spaces(value)
-    return value
+def _transliterate_word(word: str) -> str:
+    original = word
+    lower = word.lower()
+    if not re.search(r"[A-Za-z]", word):
+        return word
 
+    # Preserve common abbreviations.
+    if original.isupper() and len(original) <= 4:
+        return original
 
-def _title_ru(text: str) -> str:
-    if not text:
-        return text
-    if text.isupper() and len(text) <= 5:
-        return text
-    return text[:1].upper() + text[1:]
-
-
-def transliterate_word(word: str) -> str:
-    src = str(word or "").strip()
-    if not src:
-        return ""
-    low = src.lower().strip(" .,'\"()[]{}")
-    if not low:
-        return ""
-
-    if low in WORD_ALIASES:
-        return WORD_ALIASES[low]
-
-    if re.fullmatch(r"[A-ZА-ЯЁ0-9]+", src) and len(src) <= 5:
-        return src
-
-    # Preserve numbers, roman numerals and short league acronyms.
-    if re.fullmatch(r"[IVX]+", src.upper()):
-        return src.upper()
-    if re.fullmatch(r"\d+(\.\d+)?", src):
-        return src
-
-    out: list[str] = []
+    result = ""
     i = 0
-    while i < len(low):
+    while i < len(lower):
         matched = False
-        for latin, cyr in sorted(_MULTI.items(), key=lambda item: len(item[0]), reverse=True):
-            if low.startswith(latin, i):
-                out.append(cyr)
-                i += len(latin)
+        for size in (3, 2):
+            part = lower[i:i + size]
+            if part in _DIGRAPHS:
+                result += _DIGRAPHS[part]
+                i += size
                 matched = True
                 break
         if matched:
             continue
-        ch = low[i]
-        out.append(_SINGLE.get(ch, ch))
+        ch = lower[i]
+        result += _TRANSLIT.get(ch, ch)
         i += 1
-    return _title_ru("".join(out))
+
+    # Capitalize first Cyrillic letter if source looked capitalized.
+    if original[:1].isupper() and result:
+        result = result[:1].upper() + result[1:]
+    return result
 
 
-def _translate_free_text_name(value: Any) -> str:
-    raw = _squash_spaces(str(value or ""))
-    if not raw:
+def transliterate_unknown_name(value: Any) -> str:
+    text = _clean_key(value)
+    if not text:
         return ""
-    raw = _strip_club_suffixes(raw)
-    raw = raw.replace("&", " and ")
-    tokens = re.split(r"([ \-/])", raw)
-    result: list[str] = []
-    for token in tokens:
-        if token in {" ", "-", "/"}:
-            result.append(token)
-            continue
-        if not token:
-            continue
-        if re.search(r"[А-Яа-яЁё]", token):
-            result.append(token)
-        elif re.search(r"[A-Za-z]", token):
-            result.append(transliterate_word(token))
-        else:
-            result.append(token)
-    text = _squash_spaces("".join(result))
-    # Arabic style: "Аль - Фатех" -> "Аль-Фатех"
-    text = re.sub(r"\b(Аль|Эль)\s*-\s*", r"\1-", text)
-    return text or raw
+    # Split but preserve punctuation/hyphens/spaces.
+    parts = re.split(r"(\s+|-|/|,|\(|\)|\.|')", text)
+    return "".join(_transliterate_word(part) for part in parts)
 
 
 def translate_team_name(name: Any) -> str:
-    raw = _squash_spaces(str(name or ""))
-    if not raw:
+    text = _clean_key(name)
+    if not text:
         return ""
-    alias = _lookup_alias(raw, TEAM_ALIASES)
-    if alias:
-        return alias
-    return _translate_free_text_name(raw)
+    exact = _lookup(text, _BUILTIN_TEAMS, "teams")
+    if exact is not None:
+        return exact
+
+    # Remove common club suffixes before fallback, but keep if name is only abbreviation.
+    cleaned = re.sub(r"\b(FC|CF|SC|AFC|CFC|CD|CA|UD|AC|AS|FK|PFC|SAD)\b\.?", "", text, flags=re.IGNORECASE)
+    cleaned = re.sub(r"\s+", " ", cleaned).strip(" -")
+    exact_clean = _lookup(cleaned, _BUILTIN_TEAMS, "teams") if cleaned else None
+    if exact_clean:
+        return exact_clean
+    return transliterate_unknown_name(cleaned or text)
 
 
 def translate_league_name(name: Any) -> str:
-    raw = _squash_spaces(str(name or ""))
-    if not raw:
-        return ""
-    alias = _lookup_alias(raw, LEAGUE_ALIASES)
-    if alias:
-        return alias
-
-    if " - " in raw:
-        country_raw, league_raw = [part.strip() for part in raw.split(" - ", 1)]
-    elif "-" in raw:
-        country_raw, league_raw = [part.strip() for part in raw.split("-", 1)]
-    else:
-        country_raw, league_raw = "", raw
-
-    country = _lookup_alias(country_raw, COUNTRY_ALIASES) if country_raw else ""
-    if not country and country_raw:
-        country = _translate_free_text_name(country_raw)
-
-    league = league_raw
-    for en, ru in sorted(LEAGUE_WORDS.items(), key=lambda item: len(item[0]), reverse=True):
-        league = re.sub(re.escape(en), ru, league, flags=re.IGNORECASE)
-    if re.search(r"[A-Za-z]", league):
-        # Translate remaining unknown English words, but preserve common acronyms.
-        league = _translate_free_text_name(league)
-
-    if country:
-        return f"{country} - {league}"
-    return league
-
-
-def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:
-    text = _squash_spaces(str(selection or ""))
+    text = _clean_key(name)
     if not text:
         return ""
-    replacements = {
-        str(home_team or ""): translate_team_name(home_team),
-        str(away_team or ""): translate_team_name(away_team),
-        "Over": "Больше",
-        "Under": "Меньше",
-        "Yes": "Да",
-        "No": "Нет",
-    }
-    for src, dst in sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True):
-        if src and dst:
-            text = re.sub(re.escape(src), dst, text, flags=re.IGNORECASE)
-    return _squash_spaces(text)
+    exact = _lookup(text, _BUILTIN_LEAGUES, "leagues")
+    if exact is not None:
+        return exact
+
+    if " - " in text:
+        country, league = text.split(" - ", 1)
+        country_ru = _lookup(country, _COUNTRIES, "countries") or transliterate_unknown_name(country)
+        league_ru = _lookup(league, _LEAGUE_WORDS, "words") or _translate_league_words(league)
+        return f"{country_ru} - {league_ru}"
+
+    return _translate_league_words(text)
 
 
-_REASON_TRANSLATIONS = {
-    "dnb_xg_probability_outlier": "DNB: xG-вероятность выглядит аномально высокой",
-    "dnb_xg_edge_outlier": "DNB: xG-запас выглядит аномально высоким",
-    "dnb_xg_ev_outlier": "DNB: xG EV выглядит аномально высоким",
-    "dnb_xg_model_gap_outlier": "DNB: слишком большой разрыв xG и модели",
-    "dnb_xg_ev_below_min": "DNB: xG EV ниже минимума",
-    "dnb_xg_edge_below_min": "DNB: xG-запас ниже минимума",
-    "proxy_single_source_confidence_below_min": "один источник: уверенность ниже усиленного минимума",
-    "proxy_single_source_ev_below_min": "один источник: EV ниже усиленного минимума",
-    "proxy_single_source_edge_below_min": "один источник: запас ниже усиленного минимума",
-    "final_ev_below_min": "финальный EV ниже минимума",
-    "final_edge_below_min": "финальный запас ниже минимума",
-    "missing_dnb_sanity": "нет xG-проверки DNB",
-    "missing_btts_sanity": "нет xG-проверки ОЗ",
-    "missing_total_xg_sanity": "нет xG-проверки тотала",
-    "tier_c_watch_only": "уровень C оставлен только для наблюдения",
-    "proxy_without_market_confirmation": "резервная оценка без рыночного подтверждения",
-    "proxy_single_book_guard": "одна линия + резервная оценка качества",
-    "telegram_publish_books_guard": "недостаточно подтверждения букмекерами",
-    "canonical_negative_value": "отрицательная контрольная ценность",
-    "match_time_outside_window": "матч вне текущего окна публикации",
-    "match_already_started": "матч уже начался",
-    "match_time_too_late": "матч слишком далеко по времени",
-    "missing_commence_time": "нет времени начала матча",
-    "duplicate_fallback_sent_index": "резервный прогноз уже отправлялся",
-    "duplicate_state:bets": "ставка уже есть в опубликованных",
-    "duplicate_state:published_candidates": "кандидат уже публиковался",
-    "tier_a_quality_below_min": "уровень A: качество ниже минимума",
-    "tier_a_canonical_edge_below_min": "уровень A: запас ниже минимума",
-    "tier_a_canonical_ev_below_min": "уровень A: EV ниже минимума",
-    "tier_b_quality_below_min": "уровень B: качество ниже минимума",
-    "tier_b_canonical_edge_below_min": "уровень B: запас ниже минимума",
-    "tier_b_canonical_ev_below_min": "уровень B: EV ниже минимума",
-    "tier_c_quality_below_min": "уровень C: качество ниже минимума",
-    "tier_c_canonical_edge_below_min": "уровень C: запас ниже минимума",
-    "tier_c_canonical_ev_below_min": "уровень C: EV ниже минимума",
-    "books_below_min": "недостаточно линий букмекеров",
-    "sources_below_min": "недостаточно источников",
-    "confidence_below_min": "уверенность ниже минимума",
-    "quality_below_min": "качество ниже минимума",
-    "publication_score_below_min": "публикационный балл ниже минимума",
-}
+def _translate_league_words(text: str) -> str:
+    result = text
+    external_words = _external_aliases().get("words", {})
+    for source in (external_words, _LEAGUE_WORDS):
+        for k, v in sorted(source.items(), key=lambda item: len(item[0]), reverse=True):
+            result = re.sub(rf"\b{re.escape(k)}\b", v, result, flags=re.IGNORECASE)
+    if re.search(r"[A-Za-z]", result):
+        result = transliterate_unknown_name(result)
+    return result
 
 
 def translate_reject_reason(reason: Any) -> str:
-    text = str(reason or "").strip()
+    text = _clean_key(reason)
     if not text:
-        return "неизвестная причина"
-    if text in _REASON_TRANSLATIONS:
-        return _REASON_TRANSLATIONS[text]
-    market_names = {
-        "spreads": "фора",
-        "h2h": "исход",
-        "totals": "тотал",
-        "btts": "обе забьют",
-        "teamtotals": "индивидуальный тотал",
-        "teamTotals": "индивидуальный тотал",
-        "dnb": "фора 0 / DNB",
-    }
+        return ""
+    if text in _REASON_MAP:
+        return _REASON_MAP[text]
     if text.startswith("family_not_allowed:"):
         family = text.split(":", 1)[1]
-        return f"рынок не разрешён: {market_names.get(family, family)}"
-    if "quality_stop_not_allowed:" in text:
-        return "стоп слоя качества не разрешён для резерва"
-    if text.startswith("tier_a_"):
-        return "уровень A: " + text.removeprefix("tier_a_").replace("_", " ")
-    if text.startswith("tier_b_"):
-        return "уровень B: " + text.removeprefix("tier_b_").replace("_", " ")
-    if text.startswith("tier_c_"):
-        return "уровень C: " + text.removeprefix("tier_c_").replace("_", " ")
+        family_ru = {
+            "spreads": "форы",
+            "h2h": "исходы 1X2",
+            "teamtotals": "индивидуальные тоталы",
+            "btts": "обе забьют",
+            "totals": "тоталы",
+            "dnb": "фора 0",
+        }.get(family, family)
+        return f"семья рынка закрыта для Telegram: {family_ru}"
     return text.replace("_", " ")
 
 
-def _replace_known_aliases(text: str) -> str:
-    value = text
-    alias_pairs: list[tuple[str, str]] = []
-    alias_pairs.extend(TEAM_ALIASES.items())
-    alias_pairs.extend(LEAGUE_ALIASES.items())
-    alias_pairs.sort(key=lambda item: len(item[0]), reverse=True)
-    for src, dst in alias_pairs:
-        if not src or not dst:
-            continue
-        value = re.sub(re.escape(src), dst, value, flags=re.IGNORECASE)
-    return value
+def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any = "") -> str:
+    text = _clean_key(selection)
+    if not text:
+        return ""
+    home_raw = _clean_key(home_team)
+    away_raw = _clean_key(away_team)
+    if home_raw:
+        text = re.sub(re.escape(home_raw), translate_team_name(home_raw), text, flags=re.IGNORECASE)
+    if away_raw:
+        text = re.sub(re.escape(away_raw), translate_team_name(away_raw), text, flags=re.IGNORECASE)
 
+    for source, target in sorted(_TEXT_REPLACEMENTS, key=lambda item: len(item[0]), reverse=True):
+        text = re.sub(rf"\b{re.escape(source)}\b", target, text, flags=re.IGNORECASE)
 
-def _normalize_match_line(line: str) -> str:
-    # Examples:
-    # 1. Team A — Team B
-    # 12. Team A - Team B
-    match = re.match(r"^(\s*\d+\.\s+)(.+?)\s+[—–-]\s+(.+?)\s*$", line)
-    if not match:
-        return line
-    prefix, home, away = match.groups()
-    return f"{prefix}{translate_team_name(home)} — {translate_team_name(away)}"
-
-
-def _normalize_tournament_line(line: str) -> str:
-    match = re.match(r"^(\s*🏆\s*Турнир:\s*)(.+?)\s*$", line)
-    if not match:
-        return line
-    prefix, league = match.groups()
-    return f"{prefix}{translate_league_name(league)}"
-
-
-def _normalize_bet_line(line: str) -> str:
-    if "🎯" not in line and "Ставка:" not in line:
-        return line
-    line = _replace_known_aliases(line)
-
-    # Translate selections like:
-    # 🎯 Ставка: Фора 0 / DNB — First Vienna FC 1894 (0)
-    match = re.match(r"^(.*?—\s*)(.+?)(\s*\([^)]*\)\s*)$", line)
-    if match:
-        prefix, selection_name, suffix = match.groups()
-        if re.search(r"[A-Za-z]", selection_name):
-            return f"{prefix}{translate_team_name(selection_name)}{suffix}"
-
-    match = re.match(r"^(.*?—\s*)(.+?)\s*$", line)
-    if match:
-        prefix, selection_name = match.groups()
-        if re.search(r"[A-Za-z]", selection_name) and len(selection_name.split()) <= 5:
-            return f"{prefix}{translate_team_name(selection_name)}"
-    return line
+    # Common compact market patterns.
+    text = re.sub(r"\bO\s*([0-9]+(?:\.[0-9]+)?)\b", r"Больше \1", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bU\s*([0-9]+(?:\.[0-9]+)?)\b", r"Меньше \1", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bOver\s*\(?([0-9]+(?:\.[0-9]+)?)\)?", r"Больше \1", text, flags=re.IGNORECASE)
+    text = re.sub(r"\bUnder\s*\(?([0-9]+(?:\.[0-9]+)?)\)?", r"Меньше \1", text, flags=re.IGNORECASE)
+    return normalize_telegram_text(text)
 
 
 def normalize_telegram_text(text: Any) -> str:
     value = str(text or "")
-    replacements = {
-        "controlled fallback": "контролируемый резерв",
-        "Controlled fallback": "Контролируемый резерв",
-        "Tier A": "уровень A",
-        "Tier B": "уровень B",
-        "Tier C": "уровень C",
-        "single-book": "одна линия букмекера",
-        "single-source": "один источник",
-        "heavy-shrink": "сильная корректировка",
-        "non-core": "вне основного пула",
-        "canonical value": "контрольная ценность",
-        "Canonical value": "Контрольная ценность",
-        "quality-layer": "слой качества",
-        "quality": "качество",
-        "value": "ценность",
-    }
-    for src, dst in replacements.items():
-        value = value.replace(src, dst)
+    if not value:
+        return ""
 
-    normalized_lines: list[str] = []
-    for line in value.splitlines():
-        out = _normalize_match_line(line)
-        out = _normalize_tournament_line(out)
-        out = _normalize_bet_line(out)
-        out = _replace_known_aliases(out)
-        normalized_lines.append(out.rstrip())
+    # Replace exact known team/league names anywhere in message.
+    replacements: dict[str, str] = {}
+    replacements.update(_external_aliases().get("teams", {}))
+    replacements.update(_external_aliases().get("leagues", {}))
+    replacements.update(_BUILTIN_TEAMS)
+    replacements.update(_BUILTIN_LEAGUES)
 
-    return "\n".join(normalized_lines).strip()
+    for source, target in sorted(replacements.items(), key=lambda item: len(item[0]), reverse=True):
+        if source and target:
+            value = re.sub(re.escape(source), target, value, flags=re.IGNORECASE)
+
+    for source, target in sorted(_TEXT_REPLACEMENTS, key=lambda item: len(item[0]), reverse=True):
+        value = re.sub(rf"\b{re.escape(source)}\b", target, value, flags=re.IGNORECASE)
+
+    # Translate reason slugs if they appear literally.
+    for source, target in sorted(_REASON_MAP.items(), key=lambda item: len(item[0]), reverse=True):
+        value = value.replace(source, target)
+
+    return re.sub(r"[ \t]+", " ", value).strip()
