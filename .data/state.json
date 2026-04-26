@@ -1,14 +1,14 @@
 {
   "version": 3,
-  "updated_at": "2026-04-26T22:20:35.856952+00:00",
+  "updated_at": "2026-04-26T22:32:02.057347+00:00",
   "last_run": {
     "status": "ok",
-    "at": "2026-04-26T22:20:35.856924+00:00",
+    "at": "2026-04-26T22:32:02.057328+00:00",
     "summary": {
-      "current_time_utc": "2026-04-26T22:20:35.410262+00:00",
-      "current_time_local": "2026-04-27T01:20:35.410262+03:00",
-      "started_time_utc": "2026-04-26T22:15:33.373844+00:00",
-      "started_time_local": "2026-04-27T01:15:33.373844+03:00",
+      "current_time_utc": "2026-04-26T22:32:01.692784+00:00",
+      "current_time_local": "2026-04-27T01:32:01.692784+03:00",
+      "started_time_utc": "2026-04-26T22:26:52.557947+00:00",
+      "started_time_local": "2026-04-27T01:26:52.557947+03:00",
       "app_timezone": "Europe/Moscow",
       "schedule_mode": "forecast",
       "matches_seen": 36,
@@ -22,7 +22,7 @@
         "selected_matches": 36,
         "trimmed_matches": 0,
         "skipped_without_offers": 0,
-        "premium_shortlist_limit": 36,
+        "premium_shortlist_limit": 44,
         "matches_with_value_hint": 18
       },
       "provider_context_targets": {
@@ -31,15 +31,15 @@
         "api_football": 0,
         "espn": 14,
         "thesportsdb": 36,
-        "football_data": 20,
+        "football_data": 36,
         "openligadb": 0,
-        "futrixmetrics": 0,
+        "futrixmetrics": 4,
         "openfootball": 0,
-        "newsapi": 3,
-        "gnews": 3,
+        "newsapi": 1,
+        "gnews": 1,
         "scorebat": 36
       },
-      "contexts_built": 31,
+      "contexts_built": 30,
       "self_history_contexts_built": 0,
       "candidates": 4,
       "candidates_publishable": 0,
@@ -47,7 +47,7 @@
       "candidates_raw": 4,
       "candidates_before_quality": 5,
       "candidates_rejected_by_quality": 1,
-      "shadow_candidates_tracked": 1,
+      "shadow_candidates_tracked": 0,
       "candidates_before_quality_with_derived_market_signal": 0,
       "publishable_with_derived_market_signal": 0,
       "skipped_already_in_state": 0,
@@ -93,21 +93,21 @@
         },
         "too_soon_share_of_future_in_window": 0.0526,
         "lead_time_snapshot": {
-          "nearest_minutes": 14.4,
-          "farthest_minutes": 704.4,
+          "nearest_minutes": 3.1,
+          "farthest_minutes": 693.1,
           "sample_minutes": [
-            14.4,
-            14.4,
-            44.4,
-            44.4,
-            44.4,
-            44.4,
-            44.4,
-            44.4
+            3.1,
+            3.1,
+            33.1,
+            33.1,
+            33.1,
+            33.1,
+            33.1,
+            33.1
           ]
         },
-        "now_utc": "2026-04-26T22:15:33.373844+00:00",
-        "now_local": "2026-04-27T01:15:33.373844+03:00"
+        "now_utc": "2026-04-26T22:26:52.557947+00:00",
+        "now_local": "2026-04-27T01:26:52.557947+03:00"
       },
       "bootstrap_provider": "odds_api_io",
       "source_stats": {
@@ -169,8 +169,8 @@
           "matched_loose": 0,
           "matched_fuzzy": 1,
           "unmatched_offer_events": 126,
-          "markets_parsed": 459,
-          "offers_parsed": 878,
+          "markets_parsed": 462,
+          "offers_parsed": 881,
           "event_http_statuses": [],
           "odds_http_statuses": [
             200,
@@ -214,9 +214,9 @@
           "enabled": true,
           "api_key_present": true,
           "cache_hit": false,
-          "requests": 0,
-          "rate_limit_retries": 0,
-          "response_errors": 0,
+          "requests": 2,
+          "rate_limit_retries": 2,
+          "response_errors": 1,
           "fixtures_fetched": 0,
           "events_matched": 0,
           "offers_parsed": 0,
@@ -225,15 +225,25 @@
           "matched_fuzzy": 0,
           "tournament_ids_selected": 0,
           "tournament_batches": 0,
-          "http_statuses": [],
-          "last_body_preview": "cooldown active until 2026-04-26T22:20:15.029104+00:00",
+          "http_statuses": [
+            429,
+            429
+          ],
+          "last_body_preview": "{\"error\":{\"message\":\"Request limit exceeded\",\"code\":\"REQUEST_LIMIT_EXCEEDED\",\"details\":\"You have exceeded your request limit of 250 requests.\"}}",
           "families_supported": [
             "h2h"
           ],
-          "bookmakers_requested": [],
+          "bookmakers_requested": [
+            "bet365",
+            "unibet",
+            "pinnacle",
+            "betfair",
+            "williamhill",
+            "1xbet",
+            "bwin"
+          ],
           "rate_limited": true,
-          "aborted_on_rate_limit": true,
-          "cooldown_until": "2026-04-26T22:20:15.029104+00:00"
+          "aborted_on_rate_limit": true
         },
         "allsportsapi": {
           "enabled": true,
@@ -253,7 +263,16 @@
           "last_body_preview": "{\"success\":1,\"result\":[{\"event_key\":1702474,\"event_date\":\"2026-04-26\",\"event_time\":\"15:00\",\"event_home_team\":\"Hohoe United\",\"home_team_key\":34135,\"event_away_team\":\"Berekum Chelsea\",\"away_team_key\":4292,\"event_halftime_result\":\" - \",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"Not Started\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 31\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Hohoe Sports Stadium\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/34135_hohoe-united.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4292_berekum-chelsea.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[],\"substitutes\":[],\"cards\":[],\"vars\":{\"home_team\":[],\"away_team\":[]},\"lineups\":{\"home_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":null,\"player_key\":null,\"info_time\":\"\"}],\"substitutes\":[],\"coaches\":[],\"missing_players\":[]},\"away_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":null,\"player_key\":null,\"info_time\":\"\"}],\"substitutes\":[],\"coaches\":[{\"coache\":\"S. Odwo\",\"coache_country\":null}],\"missing_players\":[]}},\"statistics\":[]}]}"
         },
         "futrixmetrics": {
-          "enabled": false
+          "enabled": true,
+          "api_key_present": true,
+          "requests": 1,
+          "response_errors": 0,
+          "team_cache_hits": 7,
+          "contexts_built": 0,
+          "http_statuses": [
+            200
+          ],
+          "last_body_preview": "{\"db\":\"pro_rating.db\",\"filters\":{\"league\":\"Ukraine - Premier League\",\"Current Club\":\"FC Oleksandriya\"},\"base_scores\":{\"count\":0,\"rows\":[]},\"pro_scores\":{\"count\":0,\"rows\":[]}}"
         },
         "sstats": {
           "enabled": true,
@@ -264,12 +283,12 @@
           "days_requested": 47,
           "chunk_windows_requested": 7,
           "rows_fetched": 26487,
-          "contexts_built": 31,
+          "contexts_built": 30,
           "matched_exact": 0,
           "matched_loose": 0,
           "matched_fuzzy": 0,
           "unmatched_rows": 26483,
-          "team_form_contexts_built": 31,
+          "team_form_contexts_built": 29,
           "bzzoiro_enabled": true,
           "bzzoiro_requests": 3,
           "bzzoiro_response_errors": 0,
@@ -490,12 +509,12 @@
           "http_statuses": [
             200
           ],
-          "league_limit_applied": 8
+          "league_limit_applied": 6
         },
         "football_data": {
           "enabled": true,
           "api_key_present": true,
-          "target_matches": 20,
+          "target_matches": 24,
           "requests": 3,
           "response_errors": 0,
           "matches_fetched": 7,
@@ -517,7 +536,7 @@
             200,
             200
           ],
-          "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":380,\"first\":\"2026-01-28\",\"last\":\"2026-12-02\",\"played\":123},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":13,\"winner\":null},\"id\":554740,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-25T20:20:48Z\",\"homeTeam\":{\"id\":1766,\"name\":\"CA Mineiro\",\"shortName\":\"Mineiro\",\"tla\":\"CAM\",\"crest\":\"https://crests.football-data.org/1766.png\"},\"awayTeam\":{\"id\":1769,\"name\":\"SE Palmeiras\",\"shortName\":\"Palmeiras\",\"tla\":\"PAL\",\"crest\":\"https://crests.football-data.org/1769.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":2},\"halfTime\":{\"home\":1,\"away\":1}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206800,\"name\":\"Bruno de Araújo\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":13,\"winner\":null},\"id\":554744,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-25T20:20:48"
+          "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":380,\"first\":\"2026-01-28\",\"last\":\"2026-12-02\",\"played\":123},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554740,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-21T05:21:07Z\",\"homeTeam\":{\"id\":1766,\"name\":\"CA Mineiro\",\"shortName\":\"Mineiro\",\"tla\":\"CAM\",\"crest\":\"https://crests.football-data.org/1766.png\"},\"awayTeam\":{\"id\":1769,\"name\":\"SE Palmeiras\",\"shortName\":\"Palmeiras\",\"tla\":\"PAL\",\"crest\":\"https://crests.football-data.org/1769.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":2},\"halfTime\":{\"home\":1,\"away\":1}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206800,\"name\":\"Bruno de Araújo\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554744,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-21T05:21:07"
         },
         "openligadb": {
           "enabled": true,
@@ -547,14 +566,14 @@
           "last_body_preview": null
         },
         "newsapi": {
-          "enabled": false,
+          "enabled": true,
           "api_key_present": true,
           "currents_enabled": false,
           "newsapi_enabled": true,
           "requests": 0,
           "currents_requests": 0,
           "newsapi_requests": 0,
-          "cache_hits": 0,
+          "cache_hits": 1,
           "response_errors": 0,
           "contexts_built": 0,
           "articles_seen": 0,
@@ -565,14 +584,16 @@
           "newsapi_rate_limited": false
         },
         "gnews": {
-          "enabled": false,
+          "enabled": true,
           "api_key_present": true,
-          "requests": 0,
+          "requests": 1,
           "response_errors": 0,
           "contexts_built": 0,
           "articles_seen": 0,
-          "http_statuses": [],
-          "last_body_preview": null,
+          "http_statuses": [
+            200
+          ],
+          "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":0,\"articles\":[]}",
           "rate_limited": false
         },
         "scorebat": {
@@ -599,8 +620,8 @@
           "enabled": true,
           "snapshots_written": 1,
           "matches_snapshotted": 29,
-          "markets_snapshotted": 720,
-          "signals_built": 720,
+          "markets_snapshotted": 723,
+          "signals_built": 723,
           "clv_pending": 0,
           "clv_resolved": 0,
           "avg_open_clv_pct": null,
@@ -631,22 +652,22 @@
       },
       "rejections": {
         "unsupported_total_line": 19,
-        "missing_context_totals": 4,
-        "missing_context_h2h": 4,
-        "simple_market_h2h_high_odds_skip": 4,
-        "missing_context_spreads": 4,
-        "missing_context_dnb": 4,
-        "market_derived_signal_guard_totals": 68,
+        "market_derived_signal_guard_totals": 72,
+        "market_derived_h2h_high_odds_guard": 9,
+        "market_derived_signal_guard_spreads": 38,
+        "missing_context_totals": 5,
+        "missing_context_h2h": 5,
+        "simple_market_h2h_high_odds_skip": 5,
+        "missing_context_spreads": 5,
+        "missing_context_dnb": 5,
         "market_derived_signal_guard_h2h": 6,
-        "market_derived_h2h_high_odds_guard": 8,
-        "market_derived_signal_guard_spreads": 34,
         "unsupported_team_total_line": 2,
         "missing_context_team_totals": 1,
-        "edge_below_threshold": 14,
         "non_core_confidence_guard": 18,
-        "ev_below_threshold": 150,
-        "confidence_below_threshold": 87,
-        "publish_books_guard": 47,
+        "ev_below_threshold": 158,
+        "confidence_below_threshold": 83,
+        "edge_below_threshold": 14,
+        "publish_books_guard": 49,
         "single_book_total_guard": 1,
         "totals_over25_edge_guard": 1,
         "quality_post_calibration_probability_guard": 1
@@ -657,7 +678,7 @@
           "odds_api_io": {
             "type": "offers",
             "matches_with_data": 29,
-            "items_total": 878,
+            "items_total": 881,
             "stats": {
               "enabled": true,
               "api_key_present": true,
@@ -670,8 +691,8 @@
               "matched_loose": 0,
               "matched_fuzzy": 1,
               "unmatched_offer_events": 126,
-              "markets_parsed": 459,
-              "offers_parsed": 878,
+              "markets_parsed": 462,
+              "offers_parsed": 881,
               "event_http_statuses": [],
               "odds_http_statuses": [
                 200,
@@ -706,9 +727,9 @@
               "enabled": true,
               "api_key_present": true,
               "cache_hit": false,
-              "requests": 0,
-              "rate_limit_retries": 0,
-              "response_errors": 0,
+              "requests": 2,
+              "rate_limit_retries": 2,
+              "response_errors": 1,
               "fixtures_fetched": 0,
               "events_matched": 0,
               "offers_parsed": 0,
@@ -717,15 +738,25 @@
               "matched_fuzzy": 0,
               "tournament_ids_selected": 0,
               "tournament_batches": 0,
-              "http_statuses": [],
-              "last_body_preview": "cooldown active until 2026-04-26T22:20:15.029104+00:00",
+              "http_statuses": [
+                429,
+                429
+              ],
+              "last_body_preview": "{\"error\":{\"message\":\"Request limit exceeded\",\"code\":\"REQUEST_LIMIT_EXCEEDED\",\"details\":\"You have exceeded your request limit of 250 requests.\"}}",
               "families_supported": [
                 "h2h"
               ],
-              "bookmakers_requested": [],
+              "bookmakers_requested": [
+                "bet365",
+                "unibet",
+                "pinnacle",
+                "betfair",
+                "williamhill",
+                "1xbet",
+                "bwin"
+              ],
               "rate_limited": true,
-              "aborted_on_rate_limit": true,
-              "cooldown_until": "2026-04-26T22:20:15.029104+00:00"
+              "aborted_on_rate_limit": true
             }
           },
           "allsportsapi": {
@@ -755,13 +786,22 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false
+              "enabled": true,
+              "api_key_present": true,
+              "requests": 1,
+              "response_errors": 0,
+              "team_cache_hits": 7,
+              "contexts_built": 0,
+              "http_statuses": [
+                200
+              ],
+              "last_body_preview": "{\"db\":\"pro_rating.db\",\"filters\":{\"league\":\"Ukraine - Premier League\",\"Current Club\":\"FC Oleksandriya\"},\"base_scores\":{\"count\":0,\"rows\":[]},\"pro_scores\":{\"count\":0,\"rows\":[]}}"
             }
           },
           "sstats": {
             "type": "context",
-            "matches_with_data": 31,
-            "items_total": 31,
+            "matches_with_data": 30,
+            "items_total": 30,
             "stats": {
               "enabled": true,
               "api_key_present": true,
@@ -771,12 +811,12 @@
               "days_requested": 47,
               "chunk_windows_requested": 7,
               "rows_fetched": 26487,
-              "contexts_built": 31,
+              "contexts_built": 30,
               "matched_exact": 0,
               "matched_loose": 0,
               "matched_fuzzy": 0,
               "unmatched_rows": 26483,
-              "team_form_contexts_built": 31,
+              "team_form_contexts_built": 29,
               "bzzoiro_enabled": true,
               "bzzoiro_requests": 3,
               "bzzoiro_response_errors": 0,
@@ -1004,7 +1044,7 @@
               "http_statuses": [
                 200
               ],
-              "league_limit_applied": 8
+              "league_limit_applied": 6
             }
           },
           "football_data": {
@@ -1014,7 +1054,7 @@
             "stats": {
               "enabled": true,
               "api_key_present": true,
-              "target_matches": 20,
+              "target_matches": 24,
               "requests": 3,
               "response_errors": 0,
               "matches_fetched": 7,
@@ -1036,7 +1076,7 @@
                 200,
                 200
               ],
-              "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":380,\"first\":\"2026-01-28\",\"last\":\"2026-12-02\",\"played\":123},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":13,\"winner\":null},\"id\":554740,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-25T20:20:48Z\",\"homeTeam\":{\"id\":1766,\"name\":\"CA Mineiro\",\"shortName\":\"Mineiro\",\"tla\":\"CAM\",\"crest\":\"https://crests.football-data.org/1766.png\"},\"awayTeam\":{\"id\":1769,\"name\":\"SE Palmeiras\",\"shortName\":\"Palmeiras\",\"tla\":\"PAL\",\"crest\":\"https://crests.football-data.org/1769.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":2},\"halfTime\":{\"home\":1,\"away\":1}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206800,\"name\":\"Bruno de Araújo\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":13,\"winner\":null},\"id\":554744,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-25T20:20:48"
+              "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":380,\"first\":\"2026-01-28\",\"last\":\"2026-12-02\",\"played\":123},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554740,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-21T05:21:07Z\",\"homeTeam\":{\"id\":1766,\"name\":\"CA Mineiro\",\"shortName\":\"Mineiro\",\"tla\":\"CAM\",\"crest\":\"https://crests.football-data.org/1766.png\"},\"awayTeam\":{\"id\":1769,\"name\":\"SE Palmeiras\",\"shortName\":\"Palmeiras\",\"tla\":\"PAL\",\"crest\":\"https://crests.football-data.org/1769.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":2},\"halfTime\":{\"home\":1,\"away\":1}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206800,\"name\":\"Bruno de Araújo\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":12,\"winner\":null},\"id\":554744,\"utcDate\":\"2026-01-28T22:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-04-21T05:21:07"
             }
           },
           "openligadb": {
@@ -1081,14 +1121,14 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false,
+              "enabled": true,
               "api_key_present": true,
               "currents_enabled": false,
               "newsapi_enabled": true,
               "requests": 0,
               "currents_requests": 0,
               "newsapi_requests": 0,
-              "cache_hits": 0,
+              "cache_hits": 1,
               "response_errors": 0,
               "contexts_built": 0,
               "articles_seen": 0,
@@ -1104,14 +1144,16 @@
             "matches_with_data": 0,
             "items_total": 0,
             "stats": {
-              "enabled": false,
+              "enabled": true,
               "api_key_present": true,
-              "requests": 0,
+              "requests": 1,
               "response_errors": 0,
               "contexts_built": 0,
               "articles_seen": 0,
-              "http_statuses": [],
-              "last_body_preview": null,
+              "http_statuses": [
+                200
+              ],
+              "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":0,\"articles\":[]}",
               "rate_limited": false
             }
           },
@@ -1178,9 +1220,9 @@
             "last_fetch_enabled": true,
             "api_key_present": true,
             "rate_limited": true,
-            "cooldown_until": "2026-04-26T22:20:15.029104+00:00",
-            "requests": 0,
-            "response_errors": 0,
+            "cooldown_until": null,
+            "requests": 2,
+            "response_errors": 1,
             "fixtures_fetched": 0
           },
           "allsportsapi": {
@@ -1197,9 +1239,18 @@
             "fixtures_fetched": 1
           },
           "futrixmetrics": {
-            "enabled": false,
-            "loaded": false,
-            "reason": "disabled_by_config"
+            "enabled": true,
+            "loaded": true,
+            "class_name": "FutrixMetricsContextProvider",
+            "targeting_ready": true,
+            "last_method": "fetch_context",
+            "last_fetch_enabled": true,
+            "api_key_present": true,
+            "rate_limited": null,
+            "cooldown_until": null,
+            "requests": 1,
+            "response_errors": 0,
+            "contexts_built": 0
           },
           "sstats": {
             "enabled": true,
@@ -1213,7 +1264,7 @@
             "cooldown_until": null,
             "requests": 31,
             "response_errors": 0,
-            "contexts_built": 31
+            "contexts_built": 30
           },
           "bzzoiro": {
             "enabled": true,
@@ -1325,7 +1376,7 @@
             "class_name": "NewsApiContextProvider",
             "targeting_ready": true,
             "last_method": "fetch_context",
-            "last_fetch_enabled": false,
+            "last_fetch_enabled": true,
             "api_key_present": true,
             "rate_limited": false,
             "cooldown_until": null,
@@ -1340,11 +1391,11 @@
             "class_name": "GNewsContextProvider",
             "targeting_ready": true,
             "last_method": "fetch_context",
-            "last_fetch_enabled": false,
+            "last_fetch_enabled": true,
             "api_key_present": true,
             "rate_limited": false,
             "cooldown_until": null,
-            "requests": 0,
+            "requests": 1,
             "response_errors": 0,
             "contexts_built": 0,
             "articles_seen": 0
@@ -1367,8 +1418,8 @@
         "provider_runtime_errors": {},
         "provider_rate_limits": {},
         "matches_with_any_offer_source": 29,
-        "matches_with_any_context_source": 31,
-        "matches_with_merged_context": 31,
+        "matches_with_any_context_source": 30,
+        "matches_with_merged_context": 30,
         "raw_candidates_with_derived_market_signal": 0,
         "published_candidates_with_derived_market_signal": 0,
         "matches_with_raw_derived_market_signal": 0,
@@ -1376,10 +1427,10 @@
         "published_candidates_single_source_context": 0,
         "published_candidates_low_book_support": 0,
         "context_source_combinations": {
-          "sstats": 23,
+          "sstats": 22,
           "sstats+bzzoiro+espn": 1,
           "sstats+bzzoiro": 5,
-          "none": 5,
+          "none": 6,
           "sstats+bzzoiro+football_data": 2
         },
         "offer_source_combinations": {
@@ -1391,8 +1442,8 @@
         "enabled": true,
         "snapshots_written": 1,
         "matches_snapshotted": 29,
-        "markets_snapshotted": 720,
-        "signals_built": 720,
+        "markets_snapshotted": 723,
+        "signals_built": 723,
         "clv_pending": 0,
         "clv_resolved": 0,
         "avg_open_clv_pct": null,
@@ -1595,7 +1646,7 @@
       },
       "quality": {
         "summary": {
-          "total_tracked_bets": 160,
+          "total_tracked_bets": 161,
           "settled_binary_bets": 130,
           "count": 130,
           "wins": 50,
@@ -1791,15 +1842,15 @@
         "yield_pct": -14.18
       },
       "exports": {
-        "matches_json": ".data/exports/2026-04-26/222035-matches.json",
-        "picks_json": ".data/exports/2026-04-26/222035-picks.json",
-        "bets_json": ".data/exports/2026-04-26/222035-bets.json",
-        "matches_csv": ".data/exports/2026-04-26/222035-matches.csv",
-        "picks_csv": ".data/exports/2026-04-26/222035-picks.csv",
-        "bets_csv": ".data/exports/2026-04-26/222035-bets.csv",
-        "bankroll_json": ".data/exports/2026-04-26/222035-bankroll.json",
-        "pending_bets_json": ".data/exports/2026-04-26/222035-pending-bets.json",
-        "settled_bets_json": ".data/exports/2026-04-26/222035-settled-bets.json",
+        "matches_json": ".data/exports/2026-04-26/223201-matches.json",
+        "picks_json": ".data/exports/2026-04-26/223201-picks.json",
+        "bets_json": ".data/exports/2026-04-26/223201-bets.json",
+        "matches_csv": ".data/exports/2026-04-26/223201-matches.csv",
+        "picks_csv": ".data/exports/2026-04-26/223201-picks.csv",
+        "bets_csv": ".data/exports/2026-04-26/223201-bets.csv",
+        "bankroll_json": ".data/exports/2026-04-26/223201-bankroll.json",
+        "pending_bets_json": ".data/exports/2026-04-26/223201-pending-bets.json",
+        "settled_bets_json": ".data/exports/2026-04-26/223201-settled-bets.json",
         "latest_matches_json": ".data/exports/latest-matches.json",
         "latest_picks_json": ".data/exports/latest-picks.json",
         "latest_bets_json": ".data/exports/latest-bets.json",
@@ -1842,7 +1893,7 @@
         "webhook_error": null
       },
       "history": {
-        "run_archive_path": ".logs/runs/2026-04-26/222035-run.json",
+        "run_archive_path": ".logs/runs/2026-04-26/223201-run.json",
         "run_history_count": 60,
         "message_history_count": 128
       }
@@ -28234,7 +28285,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "below_threshold",
@@ -36448,7 +36499,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -36683,7 +36734,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "below_threshold",
@@ -36933,7 +36984,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -37166,7 +37217,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -37412,7 +37463,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -37649,7 +37700,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -37895,7 +37946,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -38147,7 +38198,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -38388,7 +38439,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "below_threshold",
@@ -38646,7 +38697,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -38892,7 +38943,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -39142,7 +39193,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -39371,7 +39422,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -39620,7 +39671,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -39861,7 +39912,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -40110,7 +40161,7 @@
       "tracking_mode": "shadow",
       "tracking_reason": "shadow_learning",
       "last_settlement_attempt": {
-        "attempted_at": "2026-04-26T22:15:33.373844+00:00",
+        "attempted_at": "2026-04-26T22:26:52.557947+00:00",
         "reason": "no_match",
         "grade_issue": "",
         "match_failure": "no_positive_candidate",
@@ -51342,17 +51393,6 @@
   },
   "run_history": [
     {
-      "created_at": "2026-04-24T16:13:22.242438+00:00",
-      "path": ".logs/runs/2026-04-24/161322-run.json",
-      "status": "ok",
-      "matches_seen": 92,
-      "contexts_built": 59,
-      "candidates": 0,
-      "published": 0,
-      "telegram_messages_sent": 0,
-      "forecast_rows": 200
-    },
-    {
       "created_at": "2026-04-24T16:29:18.813444+00:00",
       "path": ".logs/runs/2026-04-24/162918-run.json",
       "status": "ok",
@@ -51996,6 +52036,17 @@
       "status": "ok",
       "matches_seen": 36,
       "contexts_built": 31,
+      "candidates": 4,
+      "published": 0,
+      "telegram_messages_sent": 0,
+      "forecast_rows": 200
+    },
+    {
+      "created_at": "2026-04-26T22:32:01.905856+00:00",
+      "path": ".logs/runs/2026-04-26/223201-run.json",
+      "status": "ok",
+      "matches_seen": 36,
+      "contexts_built": 30,
       "candidates": 4,
       "published": 0,
       "telegram_messages_sent": 0,
@@ -52773,9 +52824,9 @@
     }
   ],
   "learning_state": {
-    "updated_at": "2026-04-26T22:20:35.686112+00:00",
+    "updated_at": "2026-04-26T22:32:01.905856+00:00",
     "summary": {
-      "total_tracked_bets": 160,
+      "total_tracked_bets": 161,
       "settled_binary_bets": 130,
       "count": 130,
       "wins": 50,
@@ -53124,6 +53175,6 @@
       "actions": []
     },
     "report_date": "2026-04-27",
-    "archive_path": ".logs/runs/2026-04-26/222035-run.json"
+    "archive_path": ".logs/runs/2026-04-26/223201-run.json"
   }
 }
