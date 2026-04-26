@@ -411,7 +411,15 @@ def main() -> int:
     text = render(payload)
     payload["text"] = text
     if args.send_telegram:
-        payload["telegram"] = send_telegram(text, report_date)
+        try:
+            payload["telegram"] = send_telegram(text, report_date)
+        except Exception as exc:
+            payload["telegram"] = {
+                "sent": False,
+                "reason": "telegram_send_error",
+                "error": str(exc),
+            }
+            print(f"Telegram send failed: {exc}")
     write_json(OUT_JSON, payload)
     write_text(OUT_TXT, text)
     print(text)

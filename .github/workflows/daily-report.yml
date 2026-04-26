@@ -211,30 +211,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 14
 
-      - name: Commit persistent report state only
+      - name: Sync persistent state
         if: always()
         shell: bash
+        env:
+          PERSISTENT_STATE_COMMIT_MESSAGE: "Update persistent report state"
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-
-          # Keep only cross-run state. Do not commit logs, exports, or artifacts.
-          git add -f \
-            .data/state.json \
-            .data/fallback-sent-index.json \
-            .data/provider_quota_governor_state.json \
-            .data/provider_quota_state.json \
-            .data/daily-ops-report-sent.json \
-            .data/calibration-profile.json 2>/dev/null || true
-
-          git diff --cached --quiet && exit 0
-          git commit -m "Update persistent report state"
-          git pull --rebase --autostash origin main || true
-          git push
-
-          # Keep only cross-run state. Do not commit logs, exports, or artifacts.
-          git add -f             .data/state.json             .data/fallback-sent-index.json             .data/provider_quota_governor_state.json             .data/provider_quota_state.json             .data/daily-ops-report-sent.json             .data/calibration-profile.json 2>/dev/null || true
-
-          git diff --cached --quiet && exit 0
-          git commit -m "Update persistent report state"
-          git push
+          python scripts/sync_persistent_state.py || true

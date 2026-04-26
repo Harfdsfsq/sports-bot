@@ -145,3 +145,36 @@ git pull --rebase --autostash origin main || true
 ```text
 .data/exports/latest-history-guard-audit.err
 ```
+
+
+## Что исправлено в stable runtime fix
+
+Последний run падал не в прогнозах, а в последнем git-шаге:
+
+```text
+CONFLICT (content): .data/provider_quota_governor_state.json
+CONFLICT (content): .data/state.json
+fatal: You are not currently on a branch
+exit code 128
+```
+
+Теперь workflow не делает `git pull --rebase` поверх уже созданного state-коммита. Вместо этого используется:
+
+```bash
+python scripts/sync_persistent_state.py || true
+```
+
+Скрипт:
+
+1. копирует свежие state-файлы во временную папку;
+2. делает `git fetch origin main`;
+3. делает `git reset --hard origin/main`;
+4. возвращает свежие state-файлы;
+5. коммитит только persistent state;
+6. пушит в `main`;
+7. при конфликте/ошибке пробует ещё раз;
+8. если push всё равно не вышел — пишет warning и возвращает exit code `0`.
+
+То есть bot run больше не падает из-за state-sync.
+
+Также manual `workflow_dispatch` теперь отправляет подробный Telegram no-pick отчёт. Push по-прежнему не спамит Telegram.

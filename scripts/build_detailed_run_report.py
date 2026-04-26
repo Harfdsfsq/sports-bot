@@ -542,7 +542,15 @@ def main() -> int:
         should_send = False
 
     if should_send:
-        payload["telegram"] = send_telegram(text)
+        try:
+            payload["telegram"] = send_telegram(text)
+        except Exception as exc:
+            payload["telegram"] = {
+                "sent": False,
+                "reason": "telegram_send_error",
+                "error": str(exc),
+            }
+            print(f"Telegram send failed: {exc}")
     else:
         payload["telegram"] = {"sent": False, "reason": "disabled_or_published"}
 

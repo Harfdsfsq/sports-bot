@@ -187,6 +187,9 @@ jobs:
           if [ "$EVENT_NAME" = "schedule" ]; then
             MIN_LEAD=30
             SEND_DETAILED_REPORT=true
+          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            MIN_LEAD=25
+            SEND_DETAILED_REPORT=true
           else
             MIN_LEAD=25
             SEND_DETAILED_REPORT=false
@@ -287,32 +290,10 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Commit persistent bot state only
+      - name: Sync persistent state
         if: always()
         shell: bash
+        env:
+          PERSISTENT_STATE_COMMIT_MESSAGE: "Update persistent bot state"
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@users.noreply.github.com"
-
-          # Do not commit logs, exports, provider caches, or workflow artifacts.
-          # They are uploaded as Actions artifacts and ignored by .gitignore.
-          git add -f \
-            .data/state.json \
-            .data/fallback-sent-index.json \
-            .data/provider_quota_governor_state.json \
-            .data/provider_quota_state.json \
-            .data/daily-ops-report-sent.json \
-            .data/calibration-profile.json 2>/dev/null || true
-
-          git diff --cached --quiet && exit 0
-          git commit -m "Update persistent bot state"
-          git pull --rebase --autostash origin main || true
-          git push
-
-          # Do not commit logs, exports, provider caches, or workflow artifacts.
-          # They are uploaded as Actions artifacts and are ignored by .gitignore.
-          git add -f             .data/state.json             .data/fallback-sent-index.json             .data/provider_quota_governor_state.json             .data/provider_quota_state.json             .data/daily-ops-report-sent.json             .data/calibration-profile.json 2>/dev/null || true
-
-          git diff --cached --quiet && exit 0
-          git commit -m "Update persistent bot state"
-          git push
+          python scripts/sync_persistent_state.py || true
