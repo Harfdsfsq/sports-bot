@@ -42,15 +42,14 @@ on:
       - main
     paths:
       - '.github/workflows/run-bot.yml'
+      - '.github/workflows/daily-report.yml'
       - 'app/**'
       - 'config/**'
       - 'scripts/**'
       - 'requirements.txt'
   schedule:
-    # MSK = UTC+3.
-    # Observed workflow start -> fallback is ~7-10 minutes.
-    # :14/:44 makes fallback land around :22/:52 and preserves strict 30m lead
-    # before common :00/:30 kickoff clusters.
+    # MSK = UTC+3. Workflow normally needs 7-10 minutes before fallback.
+    # :14/:44 keeps the final fallback check far enough from common :00/:30 kickoffs.
     - cron: '14,44 3-20 * * *' # 06:14-23:44 MSK
 
 permissions:
@@ -180,6 +179,14 @@ jobs:
             echo "Applied quota profile: config/api_quota_governor.env"
           fi
 
+      - name: Apply final runtime overrides
+        shell: bash
+        run: |
+          if [ -f config/final_runtime_overrides.env ]; then
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
+            echo "Applied final runtime overrides: config/final_runtime_overrides.env"
+          fi
+
       - name: Apply manual dispatch overrides
         if: ${{ github.event_name == 'workflow_dispatch' }}
         shell: bash
@@ -206,8 +213,8 @@ jobs:
             MIN_LEAD=30
             SEND_NO_PICK=true
           else
-            # Manual/push runs are diagnostics and can start at bad minutes.
-            # They may publish a valid pick, but must not spam Telegram with no-pick noise.
+            # Manual/push runs are diagnostic and may start at bad minutes.
+            # They may publish a valid pick, but should not spam no-pick Telegram reports.
             MIN_LEAD=25
             SEND_NO_PICK=false
           fi

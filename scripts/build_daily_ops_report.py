@@ -198,6 +198,17 @@ def bet_date(bet: dict[str, Any], tz: ZoneInfo | timezone) -> str:
     return ""
 
 
+def bet_line(bet: dict[str, Any]) -> str:
+    home = str(bet.get("home_team") or bet.get("home") or "").strip()
+    away = str(bet.get("away_team") or bet.get("away") or "").strip()
+    match = f"{home} — {away}".strip(" —") or str(bet.get("match_key") or "матч")
+    selection = str(bet.get("selection") or bet.get("market") or "").strip()
+    odds = bet.get("odds")
+    status = str(bet.get("status") or "").strip()
+    stake = safe_float(bet.get("stake_amount"))
+    return f"{match}: {selection} @{odds} | {status} | stake {stake:.2f}"
+
+
 def summarize_bets(report_date: str) -> dict[str, Any]:
     tz = app_tz()
     bets = tracked_bets()
@@ -243,17 +254,6 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
         "settled_today": [bet_line(item) for item in settled[:10]],
         "pending_relevant": [bet_line(item) for item in pending[:10]],
     }
-
-
-def bet_line(bet: dict[str, Any]) -> str:
-    home = str(bet.get("home_team") or bet.get("home") or "").strip()
-    away = str(bet.get("away_team") or bet.get("away") or "").strip()
-    match = f"{home} — {away}".strip(" —") or str(bet.get("match_key") or "матч")
-    selection = str(bet.get("selection") or "").strip()
-    odds = bet.get("odds")
-    status = str(bet.get("status") or "").strip()
-    stake = safe_float(bet.get("stake_amount"))
-    return f"{match}: {selection} @{odds} | {status} | stake {stake:.2f}"
 
 
 def fallback_reasons() -> dict[str, int]:

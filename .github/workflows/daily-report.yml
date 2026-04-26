@@ -23,9 +23,9 @@ on:
         default: false
         type: boolean
   schedule:
-    # 23:55 MSK: daily operational report for the current local date.
+    # 23:55 MSK: current local day operational report.
     - cron: '55 20 * * *'
-    # 02:40 MSK: final settlement/revision for the previous local date.
+    # 02:40 MSK: final settlement/revision for the previous local day.
     - cron: '40 23 * * *'
 
 permissions:
@@ -61,7 +61,6 @@ env:
   METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
   METEOSTAT_RAPIDAPI_HOST: ${{ secrets.METEOSTAT_RAPIDAPI_HOST }}
 
-  # Report-only mode: no forecasts, no controlled fallback publication.
   PUBLISH_DRY_RUN: 'false'
   PREDICTION_PUBLICATION_ENABLED: 'false'
   RUN_REPORT_ENABLED: 'false'
@@ -144,6 +143,14 @@ jobs:
             echo "No profile file applied"
           fi
 
+      - name: Apply final runtime overrides
+        shell: bash
+        run: |
+          if [ -f config/final_runtime_overrides.env ]; then
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
+            echo "Applied final runtime overrides: config/final_runtime_overrides.env"
+          fi
+
       - name: Force report-only daily mode
         shell: bash
         run: |
@@ -155,6 +162,7 @@ jobs:
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_ENABLED=false" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_SEND_TELEGRAM=false" >> "$GITHUB_ENV"
+          echo "CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=false" >> "$GITHUB_ENV"
           echo "SETTLEMENT_ENABLED=true" >> "$GITHUB_ENV"
@@ -192,6 +200,7 @@ jobs:
           echo "DAILY_REPORT_FORCE_RESEND=true" >> "$GITHUB_ENV"
           echo "DAILY_OPS_REPORT_FORCE_SEND=true" >> "$GITHUB_ENV"
           python scripts/reset_daily_report_sent.py || true
+          rm -f .data/daily-ops-report-sent.json || true
 
       - name: Apply free API enrichment patch
         shell: bash
@@ -206,7 +215,7 @@ jobs:
             cp config/calibration-profile.example.json .data/calibration-profile.json
           fi
 
-      - name: Run daily report only
+      - name: Run settlement and daily report base logic
         run: python -m app.cli run-once
 
       - name: Build and send daily operations report
