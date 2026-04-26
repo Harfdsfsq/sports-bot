@@ -128,6 +128,11 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Runtime structure healthcheck
+        shell: bash
+        run: |
+          python scripts/runtime_healthcheck.py || true
+
       - name: Prepare local state folders
         shell: bash
         run: |
@@ -167,6 +172,14 @@ jobs:
         run: |
           if [ -f config/final_runtime_overrides.env ]; then
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
+          fi
+
+      - name: Apply auto-learning runtime overrides
+        shell: bash
+        run: |
+          if [ -f .data/auto_learning_runtime_overrides.env ]; then
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .data/auto_learning_runtime_overrides.env >> "$GITHUB_ENV"
+            echo "Applied auto-learning runtime overrides: .data/auto_learning_runtime_overrides.env"
           fi
 
       - name: Apply manual dispatch overrides
@@ -246,12 +259,6 @@ jobs:
           python scripts/publish_controlled_fallback.py || true
           cat artifacts/controlled-fallback-report.json || true
 
-      - name: Build detailed run report
-        if: always()
-        shell: bash
-        run: |
-          python scripts/build_detailed_run_report.py || true
-
       - name: Build ledgers and coverage reports
         if: always()
         shell: bash
@@ -268,6 +275,19 @@ jobs:
           python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json 2> .data/exports/latest-history-guard-audit.err || true
           python -m app.cli training-dataset > .data/exports/latest-training-dataset.json || true
           python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
+
+      - name: Run auto-learning feedback loop
+        if: always()
+        shell: bash
+        run: |
+          python scripts/auto_learning_engine.py || true
+          cat .data/exports/latest-auto-learning-report.txt || true
+
+      - name: Build detailed run report
+        if: always()
+        shell: bash
+        run: |
+          python scripts/build_detailed_run_report.py || true
 
       - name: Build run-bot bundle
         if: always()

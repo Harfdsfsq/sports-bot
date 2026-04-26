@@ -127,6 +127,14 @@ jobs:
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
           fi
 
+      - name: Apply auto-learning runtime overrides
+        shell: bash
+        run: |
+          if [ -f .data/auto_learning_runtime_overrides.env ]; then
+            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .data/auto_learning_runtime_overrides.env >> "$GITHUB_ENV"
+            echo "Applied auto-learning runtime overrides: .data/auto_learning_runtime_overrides.env"
+          fi
+
       - name: Force report-only daily mode
         shell: bash
         run: |
@@ -171,6 +179,22 @@ jobs:
       - name: Run settlement and base daily logic
         run: python -m app.cli run-once
 
+      - name: Generate audit and training payloads
+        if: always()
+        shell: bash
+        run: |
+          python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
+          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json 2> .data/exports/latest-history-guard-audit.err || true
+          python -m app.cli training-dataset > .data/exports/latest-training-dataset.json || true
+          python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
+
+      - name: Run daily auto-learning feedback loop
+        if: always()
+        shell: bash
+        run: |
+          python scripts/auto_learning_engine.py || true
+          cat .data/exports/latest-auto-learning-report.txt || true
+
       - name: Build and send Russian daily operations report
         if: always()
         shell: bash
@@ -187,14 +211,6 @@ jobs:
           cp -f .data/exports/latest-daily-ops-report.txt artifacts/daily-report/latest-daily-ops-report.txt 2>/dev/null || true
           cp -f .data/exports/latest-daily-report.json artifacts/daily-report/latest-daily-report.json 2>/dev/null || true
           cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
-
-      - name: Generate audit payloads
-        if: always()
-        shell: bash
-        run: |
-          python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
-          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json 2> .data/exports/latest-history-guard-audit.err || true
-          python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
 
       - name: Upload daily-report artifact
         if: always()

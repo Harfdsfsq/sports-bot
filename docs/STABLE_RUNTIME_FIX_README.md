@@ -28,3 +28,24 @@ DETAILED_RUN_REPORT_SEND_TELEGRAM=true
 ## Файлы
 
 См. `PATCH_MANIFEST.json`.
+
+
+## Auto-learning layer
+
+Добавлен безопасный модуль автообучения:
+
+```bash
+python scripts/auto_learning_engine.py
+```
+
+Он учится только на закрытых ставках и сохраняет результат в:
+
+```text
+.data/learning-state.json
+.data/auto_learning_runtime_overrides.env
+.data/calibration-profile.json
+```
+
+Workflow теперь применяет `.data/auto_learning_runtime_overrides.env` в начале следующего run.
+
+Важно: автообучение не ослабляет фильтры автоматически. Оно может только наблюдать или ужесточать proxy/single-source guard’ы после достаточной плохой статистики.

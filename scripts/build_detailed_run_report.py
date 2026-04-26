@@ -386,6 +386,26 @@ def provider_summary() -> list[str]:
     return lines
 
 
+
+def learning_lines() -> list[str]:
+    payload = load_json(".data/exports/latest-auto-learning-report.json", {})
+    if not isinstance(payload, dict) or not payload:
+        return []
+    overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+    overrides = payload.get("runtime_overrides") if isinstance(payload.get("runtime_overrides"), dict) else {}
+    n = as_int(overall.get("n"))
+    roi = as_float(overall.get("roi")) * 100.0
+    bias = as_float(overall.get("calibration_bias_pp"))
+    mode = str(overrides.get("AUTO_LEARNING_MODE") or "unknown")
+    ready = str(overrides.get("AUTO_LEARNING_SAMPLE_READY") or "false")
+    return [
+        "🧠 Автообучение",
+        f"• Закрытых ставок: {n} | ROI {roi:+.1f}% | bias {bias:+.1f} п.п.",
+        f"• sample_ready={ready} | mode={mode}",
+        "",
+    ]
+
+
 def build_payload() -> dict[str, Any]:
     report = fallback_report()
     debug = debug_last_run()
@@ -460,6 +480,8 @@ def render(payload: dict[str, Any]) -> str:
         lines.append("⚠️ Пограничные кандидаты: не найдено ставок с положительным EV/edge после жёстких guard’ов.")
         lines.append("")
 
+    lines.extend(learning_lines())
+
     provider_lines = payload.get("provider_lines") or []
     if provider_lines:
         lines.append("🔌 API / квоты последнего run")
@@ -509,20 +531,43 @@ def send_telegram(text: str) -> dict[str, Any]:
     state = load_json(SENT_STATE, {})
     if not isinstance(state, dict):
         state = {}
+
     if state.get("last_hash") == h and not env_bool("DETAILED_RUN_REPORT_FORCE_SEND", False):
         return {"sent": False, "reason": "unchanged", "hash": h}
 
+    cooldown = env_int("DETAILED_RUN_REPORT_MIN_INTERVAL_MINUTES", 20)
+    sent_at_raw = state.get("sent_at")
+    if sent_at_raw and cooldown > 0 and not env_bool("DETAILED_RUN_REPORT_FORCE_SEND", False):
+        try:
+            sent_at = datetime.fromisoformat(str(sent_at_raw).replace("Z", "+00:00"))
+            if sent_at.tzinfo is None:
+                sent_at = sent_at.replace(tzinfo=UTC)
+            age_minutes = (datetime.now(UTC) - sent_at.astimezone(UTC)).total_seconds() / 60.0
+            if age_minutes < cooldown:
+                return {
+                    "sent": False,
+                    "reason": "cooldown_active",
+                    "age_minutes": round(age_minutes, 1),
+                    "cooldown_minutes": cooldown,
+                    "hash": h,
+                }
+        except Exception:
+            pass
+
     url = f"https://api.telegram.org/bot{token}/sendMessage"
     parts = split_text(text)
-    for part in parts:
-        data = parse.urlencode({
-            "chat_id": chat_id,
-            "text": part,
-            "disable_web_page_preview": "true",
-        }).encode("utf-8")
-        req = request.Request(url, data=data, method="POST")
-        with request.urlopen(req, timeout=20) as response:
-            response.read()
+    try:
+        for part in parts:
+            data = parse.urlencode({
+                "chat_id": chat_id,
+                "text": part,
+                "disable_web_page_preview": "true",
+            }).encode("utf-8")
+            req = request.Request(url, data=data, method="POST")
+            with request.urlopen(req, timeout=20) as response:
+                response.read()
+    except Exception as exc:
+        return {"sent": False, "reason": "telegram_send_error", "error": repr(exc), "hash": h}
 
     state["last_hash"] = h
     state["sent_at"] = datetime.now(UTC).isoformat()

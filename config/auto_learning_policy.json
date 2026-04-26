@@ -1,0 +1,35 @@
+{
+  "enabled": true,
+  "mode": "safe_feedback_loop",
+  "description": "Learns from settled bets and near-miss diagnostics. Default policy never loosens Telegram guards automatically; it may tighten proxy/single-source thresholds after enough negative evidence.",
+  "min_settled_total": 30,
+  "min_bucket_samples": 12,
+  "min_bucket_stake": 20.0,
+  "max_probability_bias_pp": 2.0,
+  "max_runtime_confidence_raise_pp": 2.0,
+  "max_runtime_ev_raise_pct": 2.0,
+  "max_runtime_edge_raise_pp": 1.0,
+  "allow_threshold_relief": false,
+  "runtime_override_defaults": {
+    "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE": 73.5,
+    "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": 10.0,
+    "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": 5.0
+  },
+  "bad_bucket_rules": {
+    "min_roi": -0.08,
+    "min_calibration_bias_pp": -8.0,
+    "min_loss_count": 6
+  },
+  "good_bucket_rules": {
+    "min_roi": 0.08,
+    "min_calibration_bias_pp": 5.0,
+    "min_win_count": 8
+  },
+  "output": {
+    "learning_state_path": ".data/learning-state.json",
+    "runtime_overrides_path": ".data/auto_learning_runtime_overrides.env",
+    "calibration_profile_path": ".data/calibration-profile.json",
+    "latest_report_json": ".data/exports/latest-auto-learning-report.json",
+    "latest_report_txt": ".data/exports/latest-auto-learning-report.txt"
+  }
+}

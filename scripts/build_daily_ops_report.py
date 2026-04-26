@@ -298,6 +298,25 @@ def quota_rows() -> list[str]:
     return out
 
 
+
+def learning_summary() -> dict[str, Any]:
+    payload = load_json(EXPORT_DIR / "latest-auto-learning-report.json", {})
+    if not isinstance(payload, dict):
+        return {}
+    overall = payload.get("overall") if isinstance(payload.get("overall"), dict) else {}
+    overrides = payload.get("runtime_overrides") if isinstance(payload.get("runtime_overrides"), dict) else {}
+    recommendations = payload.get("recommendations") if isinstance(payload.get("recommendations"), list) else []
+    return {
+        "enabled": bool(payload.get("enabled", True)),
+        "n": safe_int(overall.get("n")),
+        "roi": safe_float(overall.get("roi")),
+        "calibration_bias_pp": safe_float(overall.get("calibration_bias_pp")),
+        "sample_ready": str(overrides.get("AUTO_LEARNING_SAMPLE_READY") or "false"),
+        "mode": str(overrides.get("AUTO_LEARNING_MODE") or "unknown"),
+        "recommendations": [str(item.get("message")) for item in recommendations[:3] if isinstance(item, dict) and item.get("message")],
+    }
+
+
 def build(report_date: str) -> dict[str, Any]:
     runs = collect_runs(report_date)
     return {
@@ -308,6 +327,7 @@ def build(report_date: str) -> dict[str, Any]:
         "runs_count": len(runs),
         "bets": summarize_bets(report_date),
         "quota_lines": quota_rows(),
+        "learning": learning_summary(),
     }
 
 
@@ -351,6 +371,17 @@ def render(payload: dict[str, Any]) -> str:
     if quota:
         lines += ["", "🔌 API / квоты последнего run"]
         lines.extend(quota[:10])
+
+
+    learning = payload.get("learning") or {}
+    if learning:
+        lines += ["", "🧠 Автообучение"]
+        lines.append(
+            f"• Закрытых ставок в обучении: {learning.get('n', 0)} | ROI {safe_float(learning.get('roi')) * 100:+.1f}% | bias {safe_float(learning.get('calibration_bias_pp')):+.1f} п.п."
+        )
+        lines.append(f"• sample_ready={learning.get('sample_ready')} | mode={learning.get('mode')}")
+        for msg in learning.get("recommendations") or []:
+            lines.append(f"• {msg}")
 
     lines += ["", "📝 Settlement запускается перед отчётом. Если матч ещё не закрыт, он остаётся pending и проверяется следующим вечерним/ночным run."]
     return normalize_telegram_text("\n".join(lines))
