@@ -103,3 +103,22 @@ PATCH_MANIFEST.json
 Льянерос — Альянса Вальедупар
 Такома Дифайенс — Лос-Анджелес 2
 ```
+
+
+## Что исправлено в v3
+
+- Добавлены переводы служебных причин:
+  - `tier_a_xg_gap_above_max`
+  - `tier_a_xg_confirmation_missing`
+  - `tier_a_books_below_min`
+  - `tier_b_canonical_edge_below_min`
+  - tier/xG/books/source причины.
+- Добавлены aliases для команд из последнего отчёта:
+  - Лос-Анджелес Гэлакси
+  - Реал Солт-Лейк
+  - Банфилд
+  - Крайстчерч Юнайтед
+  - Нортерн
+  - Атлетико Минейро
+  - Фламенго
+- Убран повторный `cat` detailed report в workflow, чтобы GitHub logs не показывали один и тот же отчёт два раза.

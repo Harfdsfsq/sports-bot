@@ -218,6 +218,29 @@ _REASON_MAP: dict[str, str] = {
     "missing_sources": "нет подтверждения источниками",
 }
 
+
+_REASON_MAP.update({
+    "tier_a_books_below_min": "линий букмекеров меньше минимума уровня A",
+    "tier_b_books_below_min": "линий букмекеров меньше минимума уровня B",
+    "tier_c_books_below_min": "линий букмекеров меньше минимума уровня C",
+    "tier_a_sources_below_min": "источников меньше минимума уровня A",
+    "tier_b_sources_below_min": "источников меньше минимума уровня B",
+    "tier_c_sources_below_min": "источников меньше минимума уровня C",
+    "tier_a_xg_gap_above_max": "уровень A: разрыв с xG выше лимита",
+    "tier_b_xg_gap_above_max": "уровень B: разрыв с xG выше лимита",
+    "tier_c_xg_gap_above_max": "уровень C: разрыв с xG выше лимита",
+    "tier_a_xg_confirmation_missing": "уровень A: нет подтверждения xG",
+    "tier_b_xg_confirmation_missing": "уровень B: нет подтверждения xG",
+    "tier_c_xg_confirmation_missing": "уровень C: нет подтверждения xG",
+    "tier_a_market_confirmation_missing": "уровень A: нет рыночного подтверждения",
+    "tier_b_market_confirmation_missing": "уровень B: нет рыночного подтверждения",
+    "tier_c_market_confirmation_missing": "уровень C: нет рыночного подтверждения",
+    "tier_b_canonical_edge_below_min": "запас value ниже минимума уровня B",
+    "tier_b_canonical_ev_below_min": "EV ниже минимума уровня B",
+    "tier_c_canonical_edge_below_min": "запас value ниже минимума уровня C",
+    "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
+})
+
 _TEXT_REPLACEMENTS: list[tuple[str, str]] = [
     ("Over", "Больше"),
     ("Under", "Меньше"),
