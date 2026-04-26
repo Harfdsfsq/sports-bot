@@ -1,10 +1,10 @@
 {
-  "created_at": "2026-04-26T14:07:26.062341+00:00",
+  "created_at": "2026-04-26T14:10:22.805877+00:00",
   "enabled": true,
   "providers_total": 4,
-  "called": 0,
-  "ok": 0,
-  "skipped": 4,
+  "called": 2,
+  "ok": 1,
+  "skipped": 2,
   "rate_limited": 0,
   "auth_failed": 0,
   "results": [
@@ -13,12 +13,25 @@
       "name": "Sportsbook API advantages",
       "host": "sportsbook-api2.p.rapidapi.com",
       "enabled": true,
-      "called": false,
-      "skip_reason": "daily_limit_reached:1",
-      "status_code": null,
-      "ok": false,
-      "rate_limit_headers": {},
-      "shape": {}
+      "called": true,
+      "skip_reason": null,
+      "status_code": 200,
+      "ok": true,
+      "rate_limit_headers": {
+        "x-ratelimit-requests-limit": "150",
+        "x-ratelimit-requests-remaining": "147",
+        "x-ratelimit-requests-reset": "27002",
+        "x-ratelimit-rapid-free-plans-hard-limit-limit": "500000",
+        "x-ratelimit-rapid-free-plans-hard-limit-remaining": "499998",
+        "x-ratelimit-rapid-free-plans-hard-limit-reset": "2532602"
+      },
+      "shape": {
+        "type": "dict",
+        "keys": [
+          "advantages"
+        ]
+      },
+      "preview": "{\"advantages\": [{\"key\": \"advg-xxxx-0000\", \"type\": \"ARBITRAGE\", \"lastFoundAt\": \"2026-04-26T14:10:21.898Z\", \"createdAt\": \"2026-04-26T14:10:21.898Z\", \"market\": {\"key\": \"0G4r-Aezs-8N1M\", \"type\": \"POINT_SPREAD\", \"segment\": \"FULL_MATCH\", \"lastFoundAt\": \"2026-04-26T14:10:21.898Z\", \"event\": {\"key\": \"AEuE-Aexs-ZSRT\", \"name\": \"Seattle Mariners @ St. Louis Cardinals\", \"startTime\": \"2026-04-26T18:15:00.000Z\", \"homeParticipantKey\": \"Icui-wegw-pldc\", \"participants\": [{\"key\": \"3peb-wegw-yaT2\", \"slug\": \"seattle-mariners\", \"name\": \"Seattle Mariners\", \"shortName\": \"SEA\", \"sport\": \"BASEBALL\"}, {\"key\": \"Icui-wegw-pldc\", \"slug\": \"st-louis-cardinals\", \"name\": \"St. Louis Cardinals\", \"shortName\": \"STL\", \"sport\": \"BASEBALL\"}], \"competitionInstance\": {\"key\": \"EvNX-Acqu-t5Qf\", \"name\": \"2026 Major League Baseball\", \"competitionKey\": \"qK0E-wddv-bFet\", \"startAt\": \"2026-04-26T14:10:21.898Z\", \"endAt\": \"2026-04-26T14:10:21.898Z\", \"competition\": {\"key\": \"qK0E-wddv-bFet\", \"name\": \"Major League Baseball\", \"shortName\": \"MLB\", \"sport\": \"BASEBALL\"}}}}, \"outcomes\": [{\"key\": \"outc-x000-0000\", \"modifier\": -1.5, \"payout\": 2.25, \"type\": \"WIN\", \"live\": false, \"readAt\": \"2026-04-26T14:09:00.149Z\", \"lastFoundAt\": \"2026-04-26T14:09:00.149Z\", \"source\": \"BET_PARX\", \"marketKey\": \"0G4r-Aezs-8N1M\", \"participantKey\": \"3peb-wegw-yaT2\", \"participant\": {\"key\": \"3peb-wegw-yaT2\", \"slug\": \"seattle-mariners\", \"name\": \"Seattle Mariners\", \"shortName\": \"SEA\", \"sport\": \"BASEBALL\"}}, {\"key\": \"outc-x001-0000\", \"modifier\": 1.5, \"payout\": 2, \"type\": \"WIN\", \"live\": false, \"readAt\": \"2026-04-26T14:09:00.295Z\", \"lastFoundAt\": \"2026-04-26T14:09:00.295Z\", \"source\": \"KUTT\", \"marketKey\": \"0G4r-Aezs-8N1M\", \"participantKey\": \"Icui-wegw-pldc\", \"participant\": {\"key\": \"Icui-wegw-pldc\", \"slug\": \"st-louis-cardinals\", \"name\": \"St. Louis Cardinals\", \"sh...<truncated>"
     },
     {
       "provider": "odds_feed",
@@ -37,25 +50,45 @@
       "name": "Free API Live Football Data player search",
       "host": "free-api-live-football-data.p.rapidapi.com",
       "enabled": true,
-      "called": false,
-      "skip_reason": "daily_limit_reached:1",
-      "status_code": null,
+      "called": true,
+      "skip_reason": null,
+      "status_code": 503,
       "ok": false,
-      "rate_limit_headers": {},
-      "shape": {}
+      "rate_limit_headers": {
+        "x-ratelimit-requests-limit": "100",
+        "x-ratelimit-requests-remaining": "98",
+        "x-ratelimit-requests-reset": "2532743",
+        "x-ratelimit-rapid-free-plans-hard-limit-limit": "500000",
+        "x-ratelimit-rapid-free-plans-hard-limit-remaining": "499999",
+        "x-ratelimit-rapid-free-plans-hard-limit-reset": "2532743"
+      },
+      "shape": {
+        "type": "dict",
+        "keys": [
+          "error",
+          "message",
+          "request_id"
+        ]
+      },
+      "preview": {
+        "error": "usage_exceeded",
+        "message": "Usage exceeded",
+        "request_id": "01KQ5211XQK7BVDHS3Y3V2B3W1"
+      }
     },
     {
       "provider": "sportapi7",
       "name": "SportAPI sample endpoint",
       "host": "sportapi7.p.rapidapi.com",
-      "enabled": true,
+      "enabled": false,
       "called": false,
-      "skip_reason": "daily_limit_reached:1",
+      "skip_reason": "provider_probe_disabled",
       "status_code": null,
       "ok": false,
       "rate_limit_headers": {},
       "shape": {}
     }
   ],
-  "state_path": ".data/provider_quota_state.json"
+  "state_path": ".data/provider_quota_state.json",
+  "odds_feed_event_ids_discovered": true
 }
