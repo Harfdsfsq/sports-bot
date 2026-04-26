@@ -47,9 +47,9 @@ on:
       - 'scripts/**'
       - 'requirements.txt'
   schedule:
-    # MSK = UTC+3. Run before common :00/:30 kickoffs, preserving
-    # MIN_KICKOFF_LEAD_MINUTES=30 while the quota governor prevents API burn.
-    - cron: '12,42 3-20 * * *' # 06:12-23:42 MSK
+    # MSK = UTC+3. Runs are moved earlier than :12/:42 to reduce queue-delay
+    # risk before common :00/:30 kickoffs. Scheduled runs keep a strict 30m lead.
+    - cron: '2,32 3-20 * * *' # 06:02-23:32 MSK
 
 permissions:
   contents: write
@@ -186,8 +186,8 @@ jobs:
           echo "MANUAL_LATE_MODE_ENABLED=${{ inputs.late_manual_mode && 'true' || 'false' }}" >> "$GITHUB_ENV"
           echo "PUBLISH_WINDOW_HOURS=${{ inputs.publish_window_hours }}" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=${{ inputs.max_picks_per_run }}" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=25" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=25" >> "$GITHUB_ENV"
 
       - name: Force external publisher mode
         shell: bash
@@ -196,14 +196,23 @@ jobs:
           echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
           echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=true" >> "$GITHUB_ENV"
 
-      - name: Force 12h 30min best-or-multi scan policy
+      - name: Force safe scan policy
         shell: bash
         run: |
+          EVENT_NAME="${{ github.event_name }}"
+          if [ "$EVENT_NAME" = "schedule" ]; then
+            MIN_LEAD=30
+          else
+            # Push/manual runs often start after a local commit at :25-:31.
+            # Keep strict quality gates, but allow a controlled 25m lead so the
+            # nearest :00 kickoff is not rejected at 28-29 minutes.
+            MIN_LEAD=25
+          fi
+
           echo "PUBLISH_WINDOW_HOURS=12" >> "$GITHUB_ENV"
-          echo "MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MODE_ENABLED=false" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=30" >> "$GITHUB_ENV"
+          echo "MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
+          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD=false" >> "$GITHUB_ENV"
           echo "MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
           echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"

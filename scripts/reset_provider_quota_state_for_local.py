@@ -6,7 +6,7 @@ from pathlib import Path
 
 UTC = timezone.utc
 STATE_PATH = Path(".data/provider_quota_governor_state.json")
-
+RECOVERY_VERSION = "continuous-v2"
 
 MIN_TOKENS = {
     "odds_api_io": 24,
@@ -36,19 +36,22 @@ def main() -> int:
     except Exception:
         state = {"providers": {}}
 
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    now = datetime.now(UTC)
+    today = now.strftime("%Y-%m-%d")
     providers = state.setdefault("providers", {})
 
     for key, min_tokens in MIN_TOKENS.items():
         row = providers.setdefault(key, {})
-        row["tokens"] = max(int(row.get("tokens") or 0), min_tokens)
+        row["tokens"] = max(float(row.get("tokens") or 0.0), float(min_tokens))
         row["last_refill_date"] = today
+        row["last_refill_at"] = now.isoformat()
         row["last_recovery_date"] = today
+        row["recovery_marker"] = f"{today}:{RECOVERY_VERSION}:{min_tokens:g}"
         row["recovery_reason"] = "local_manual_topup"
-        row["updated_at"] = datetime.now(UTC).isoformat()
+        row["updated_at"] = now.isoformat()
 
-    state["updated_at"] = datetime.now(UTC).isoformat()
-    state["mode"] = "token_bucket_local_topup"
+    state["updated_at"] = now.isoformat()
+    state["mode"] = "continuous_token_bucket_local_topup"
     STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"Top-up written: {STATE_PATH}")
     return 0

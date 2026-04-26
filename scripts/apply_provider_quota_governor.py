@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -31,6 +32,16 @@ def env_int(name: str, default: int) -> int:
         return default
 
 
+def env_float(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        return float(str(raw).strip())
+    except Exception:
+        return default
+
+
 def load_json(path: Path, default: Any) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -43,20 +54,35 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def parse_dt(value: Any) -> datetime | None:
+    if not value:
+        return None
+    try:
+        text = str(value)
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
+    except Exception:
+        return None
+
+
 def shell_quote(value: Any) -> str:
     text = str(value)
     return "'" + text.replace("'", "'\"'\"'") + "'"
 
 
-def today_key() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%d")
+def today_key(now: datetime | None = None) -> str:
+    return (now or datetime.now(UTC)).strftime("%Y-%m-%d")
 
 
 def bool_text(value: bool) -> str:
     return "true" if value else "false"
 
 
-def clamp_int(value: int, low: int, high: int) -> int:
+def clamp_int(value: int | float, low: int, high: int) -> int:
     return max(low, min(high, int(value)))
 
 
@@ -81,7 +107,7 @@ class ProviderPlan:
     default_bucket_max: int
     default_per_run_max: int
     default_reserve_tokens: int
-    build_env: Callable[[int, int], dict[str, str]]
+    build_env: Callable[[int, float], dict[str, str]]
 
     @property
     def prefix(self) -> str:
@@ -322,42 +348,68 @@ def build_provider_plans() -> list[ProviderPlan]:
     ]
 
 
-def provider_numbers(plan: ProviderPlan) -> tuple[int, int, int, int, int, int]:
+def provider_numbers(plan: ProviderPlan) -> tuple[float, float, int, float, float, float]:
     prefix = plan.prefix
-    daily_budget = max(0, env_int(f"{prefix}_DAILY_BUDGET", plan.default_daily_budget))
-    bucket_max = max(0, env_int(f"{prefix}_BUCKET_MAX", plan.default_bucket_max))
+    daily_budget = max(0.0, env_float(f"{prefix}_DAILY_BUDGET", float(plan.default_daily_budget)))
+    bucket_max = max(0.0, env_float(f"{prefix}_BUCKET_MAX", float(plan.default_bucket_max)))
     per_run_max = max(0, env_int(f"{prefix}_PER_RUN_MAX", plan.default_per_run_max))
-    reserve_tokens = max(0, env_int(f"{prefix}_RESERVE_TOKENS", plan.default_reserve_tokens))
+    reserve_tokens = max(0.0, env_float(f"{prefix}_RESERVE_TOKENS", float(plan.default_reserve_tokens)))
 
-    # Critical fix: initial bucket must include reserve + spendable per-run grant.
-    default_start = reserve_tokens + per_run_max
-    initial_tokens = max(0, env_int(f"{prefix}_INITIAL_TOKENS", default_start))
-    min_start_tokens = max(0, env_int(f"{prefix}_MIN_START_TOKENS", default_start))
+    default_start = reserve_tokens + float(per_run_max)
+    initial_tokens = max(0.0, env_float(f"{prefix}_INITIAL_TOKENS", default_start))
+    min_start_tokens = max(0.0, env_float(f"{prefix}_MIN_START_TOKENS", default_start))
     return daily_budget, bucket_max, per_run_max, reserve_tokens, initial_tokens, min_start_tokens
+
+
+def apply_continuous_refill(row: dict[str, Any], *, now: datetime, daily_budget: float, bucket_max: float) -> float:
+    current = max(0.0, float(row.get("tokens") or 0.0))
+    if not env_bool("PROVIDER_QUOTA_CONTINUOUS_REFILL_ENABLED", True):
+        return min(bucket_max, current)
+
+    last_refill = parse_dt(row.get("last_refill_at") or row.get("updated_at") or row.get("created_at"))
+    if last_refill is None:
+        row["last_refill_at"] = now.isoformat()
+        return min(bucket_max, current)
+
+    elapsed_seconds = max(0.0, (now - last_refill).total_seconds())
+    refill_seconds = max(60.0, env_float("PROVIDER_QUOTA_REFILL_WINDOW_SECONDS", 86400.0))
+    refill = daily_budget * (elapsed_seconds / refill_seconds)
+    if refill > 0:
+        current = min(bucket_max, current + refill)
+    row["last_refill_at"] = now.isoformat()
+    row["last_refill_amount"] = round(refill, 4)
+    return current
 
 
 def maybe_recover_underfilled_bucket(
     row: dict[str, Any],
     *,
-    bucket_max: int,
-    min_start_tokens: int,
+    bucket_max: float,
+    min_start_tokens: float,
     today: str,
 ) -> bool:
     if not env_bool("PROVIDER_QUOTA_RECOVERY_ENABLED", True):
         return False
     if min_start_tokens <= 0 or bucket_max <= 0:
         return False
-    if str(row.get("last_recovery_date") or "") == today:
-        return False
 
-    current_tokens = max(0, int(row.get("tokens") or 0))
+    version = str(os.getenv("PROVIDER_QUOTA_RECOVERY_VERSION") or "continuous-v1")
+    marker = f"{today}:{version}:{min_start_tokens:g}"
+    current_tokens = max(0.0, float(row.get("tokens") or 0.0))
     floor = min(bucket_max, min_start_tokens)
+
+    # Important: old state can contain last_recovery_date=today from a broken recovery.
+    # Do not let that block a versioned recovery. A same-version recovery is skipped to
+    # avoid minting fresh tokens on every run.
     if current_tokens >= floor:
+        return False
+    if str(row.get("recovery_marker") or "") == marker:
         return False
 
     row["tokens"] = floor
     row["last_recovery_date"] = today
-    row["recovery_reason"] = "underfilled_initial_bucket"
+    row["recovery_marker"] = marker
+    row["recovery_reason"] = "versioned_underfilled_bucket"
     return True
 
 
@@ -366,25 +418,30 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
     providers = state.setdefault("providers", {})
     row = providers.setdefault(plan.key, {})
     now = datetime.now(UTC)
-    today = today_key()
+    today = today_key(now)
 
     if not row:
         row.update(
             {
                 "tokens": min(bucket_max, initial_tokens),
                 "last_refill_date": today,
+                "last_refill_at": now.isoformat(),
                 "used_today": 0,
                 "created_at": now.isoformat(),
             }
         )
 
     if str(row.get("last_refill_date") or "") != today:
-        # Daily refill: unused tokens carry over up to BUCKET_MAX.
-        row["tokens"] = min(bucket_max, int(row.get("tokens") or 0) + daily_budget)
+        # New day: refill by the daily budget and reset used_today.
+        row["tokens"] = min(bucket_max, float(row.get("tokens") or 0.0) + daily_budget)
         row["last_refill_date"] = today
+        row["last_refill_at"] = now.isoformat()
         row["used_today"] = 0
         row.pop("last_recovery_date", None)
+        row.pop("recovery_marker", None)
         row.pop("recovery_reason", None)
+    else:
+        row["tokens"] = apply_continuous_refill(row, now=now, daily_budget=daily_budget, bucket_max=bucket_max)
 
     recovered = maybe_recover_underfilled_bucket(
         row,
@@ -393,17 +450,19 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
         today=today,
     )
 
-    tokens_before = max(0, int(row.get("tokens") or 0))
-    available = max(0, tokens_before - reserve_tokens)
-    grant = min(per_run_max, available)
+    tokens_before = max(0.0, float(row.get("tokens") or 0.0))
+    available = max(0.0, tokens_before - reserve_tokens)
+
+    # Grant only full tokens/request units.
+    grant = min(per_run_max, int(math.floor(available + 1e-9)))
 
     # Emergency valve: disabled by default. Use only after checking provider dashboard.
     if grant <= 0 and env_bool(f"{plan.prefix}_ALLOW_RESERVE_SPEND", False):
         reserve_spend_cap = max(0, env_int(f"{plan.prefix}_RESERVE_SPEND_MAX", 1))
-        grant = min(per_run_max, reserve_spend_cap, tokens_before)
+        grant = min(per_run_max, reserve_spend_cap, int(math.floor(tokens_before)))
 
     if not env_bool("PROVIDER_QUOTA_GOVERNOR_DRY_RUN", False):
-        row["tokens"] = max(0, tokens_before - grant)
+        row["tokens"] = max(0.0, tokens_before - float(grant))
         row["used_today"] = int(row.get("used_today") or 0) + grant
 
     row["updated_at"] = now.isoformat()
@@ -423,10 +482,10 @@ def refill_and_grant(state: dict[str, Any], plan: ProviderPlan) -> dict[str, Any
         "reserve_tokens": reserve_tokens,
         "initial_tokens": initial_tokens,
         "min_start_tokens": min_start_tokens,
-        "tokens_before": tokens_before,
+        "tokens_before": round(tokens_before, 4),
         "recovered": recovered,
         "granted": grant,
-        "tokens_after": int(row.get("tokens") or 0),
+        "tokens_after": round(float(row.get("tokens") or 0.0), 4),
         "enabled_for_run": grant > 0,
     }
 
@@ -436,7 +495,10 @@ def write_env(exports: dict[str, str]) -> None:
     lines = [f"{key}={value}" for key, value in sorted(exports.items())]
 
     OUT_ENV.parent.mkdir(parents=True, exist_ok=True)
-    OUT_ENV.write_text("\n".join(f"export {key}={shell_quote(value)}" for key, value in sorted(exports.items())) + "\n", encoding="utf-8")
+    OUT_ENV.write_text(
+        "\n".join(f"export {key}={shell_quote(value)}" for key, value in sorted(exports.items())) + "\n",
+        encoding="utf-8",
+    )
 
     if github_env:
         with open(github_env, "a", encoding="utf-8") as handle:
@@ -471,7 +533,7 @@ def main() -> int:
     for plan in build_provider_plans():
         row = refill_and_grant(state, plan)
         provider_rows.append(row)
-        exports.update(plan.build_env(int(row["granted"]), int(row["tokens_after"])))
+        exports.update(plan.build_env(int(row["granted"]), float(row["tokens_after"])))
 
     active_premium = sum(
         1
@@ -487,7 +549,7 @@ def main() -> int:
     )
 
     state["updated_at"] = datetime.now(UTC).isoformat()
-    state["mode"] = "token_bucket"
+    state["mode"] = "continuous_token_bucket"
     write_json(STATE_PATH, state)
     write_env(exports)
 
@@ -498,8 +560,8 @@ def main() -> int:
         "local_env_path": str(OUT_ENV),
         "legacy_rapidapi_state_path": str(LEGACY_RAPIDAPI_STATE_PATH),
         "note": (
-            "Conservative token-bucket budgets with recovery floors. "
-            "The local wrapper sources latest-provider-quota-governor.env before run-once."
+            "Continuous token-bucket budgets with versioned recovery floors. "
+            "Tokens refill gradually during the day; recovery no longer gets stuck behind old last_recovery_date."
         ),
         "providers": provider_rows,
         "exports": exports,
