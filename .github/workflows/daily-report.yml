@@ -23,8 +23,8 @@ on:
         default: false
         type: boolean
   schedule:
-    # 23:55 MSK: current local day operational report.
-    - cron: '55 20 * * *'
+    # 23:45 MSK: current local day operational report.
+    - cron: '45 20 * * *'
     # 02:40 MSK: final settlement/revision for the previous local day.
     - cron: '40 23 * * *'
 
@@ -155,7 +155,10 @@ jobs:
         shell: bash
         run: |
           REPORT_OFFSET="${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}"
-          if [ "${{ github.event.schedule }}" = "40 23 * * *" ]; then
+          LOCAL_HOUR="$(TZ=Europe/Moscow date +%H)"
+          # If a scheduled evening report is delayed past midnight, it still belongs
+          # to the previous football day. The 02:40 finalizer also always reports yesterday.
+          if [ "${{ github.event.schedule }}" = "40 23 * * *" ] || { [ "${{ github.event_name }}" = "schedule" ] && [ "$LOCAL_HOUR" -lt 4 ]; }; then
             REPORT_OFFSET="1"
           fi
 

@@ -82,8 +82,15 @@ def local_date(value: Any, tz: ZoneInfo | timezone) -> str:
 
 def target_report_date() -> str:
     tz = app_tz()
+    local_now = datetime.now(UTC).astimezone(tz)
     offset = max(0, env_int("DAILY_REPORT_TARGET_OFFSET_DAYS", 0))
-    return (datetime.now(UTC).astimezone(tz).date() - timedelta(days=offset)).isoformat()
+    cutoff_hour = max(0, min(12, env_int("DAILY_OPS_EARLY_MORNING_PREVIOUS_DAY_CUTOFF_HOUR", 4)))
+    # GitHub scheduled jobs may start late. If the evening report scheduled before
+    # midnight actually runs after midnight, it still belongs to the previous
+    # football day.
+    if offset == 0 and local_now.hour < cutoff_hour:
+        offset = 1
+    return (local_now.date() - timedelta(days=offset)).isoformat()
 
 
 def safe_int(value: Any, default: int = 0) -> int:
@@ -215,13 +222,16 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
     published = []
     settled = []
     pending = []
+    stale_pending = []
     counters = Counter()
     pnl = 0.0
     stake = 0.0
 
     for bet in bets:
         status = str(bet.get("status") or "").lower()
-        if bet_date(bet, tz) == report_date:
+        b_date = bet_date(bet, tz)
+        is_real_sent = bool(bet.get("telegram_sent")) or safe_float(bet.get("stake_amount")) > 0
+        if b_date == report_date and is_real_sent:
             published.append(bet)
         if settlement_date(bet, tz) == report_date:
             settled.append(bet)
@@ -230,17 +240,26 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
             counters[outcome] += 1
             pnl += safe_float((settlement or {}).get("pnl"))
             stake += safe_float(bet.get("stake_amount"))
-        if status in {"pending", "generated"} and bet_date(bet, tz) <= report_date:
-            pending.append(bet)
+        if status == "pending" and is_real_sent:
+            if b_date == report_date:
+                pending.append(bet)
+            elif b_date and b_date < report_date:
+                stale_pending.append(bet)
 
     state = load_json(".data/state.json", {})
     bankroll = state.get("bankroll") if isinstance(state, dict) and isinstance(state.get("bankroll"), dict) else {}
+    bankroll = dict(bankroll or {})
+    current_balance = safe_float(bankroll.get("current_balance"))
+    open_exposure = safe_float(bankroll.get("open_exposure"))
+    if "available_balance" not in bankroll or bankroll.get("available_balance") in (None, ""):
+        bankroll["available_balance"] = round(max(0.0, current_balance - open_exposure), 2)
 
     return {
         "counts": {
             "published_today": len(published),
             "settled_today": len(settled),
             "pending_relevant": len(pending),
+            "stale_pending": len(stale_pending),
             "won": counters.get("won", 0) + counters.get("half_won", 0),
             "lost": counters.get("lost", 0) + counters.get("half_lost", 0),
             "push": counters.get("push", 0),
@@ -248,11 +267,12 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
         },
         "settled_stake": round(stake, 2),
         "settled_pnl": round(pnl, 2),
-        "open_exposure": round(sum(safe_float(item.get("stake_amount")) for item in pending), 2),
+        "open_exposure": round(open_exposure, 2),
         "bankroll": bankroll,
         "published_today": [bet_line(item) for item in published[:10]],
         "settled_today": [bet_line(item) for item in settled[:10]],
         "pending_relevant": [bet_line(item) for item in pending[:10]],
+        "stale_pending_examples": [bet_line(item) for item in stale_pending[:5]],
     }
 
 
@@ -334,19 +354,28 @@ def render(payload: dict[str, Any]) -> str:
         "",
         "💼 Банк и settlement",
         f"• Банк: {fmt(bankroll.get('current_balance'))} | открытый риск: {fmt(bankroll.get('open_exposure'))} | доступно: {fmt(bankroll.get('available_balance'))}",
-        f"• За дату: опубликовано {counts.get('published_today', 0)} | закрыто {counts.get('settled_today', 0)} | pending {counts.get('pending_relevant', 0)}",
+        f"• За дату: опубликовано {counts.get('published_today', 0)} | закрыто {counts.get('settled_today', 0)} | pending дня {counts.get('pending_relevant', 0)} | старых pending {counts.get('stale_pending', 0)}",
         f"• Итоги закрытых: W {counts.get('won', 0)} / L {counts.get('lost', 0)} / Push {counts.get('push', 0)} / Void {counts.get('void', 0)} | PnL {fmt(bets.get('settled_pnl'))}",
     ]
 
     for title, key, icon in [
         ("Прогнозы дня", "published_today", "🎯"),
         ("Закрыто сегодня", "settled_today", "✅"),
-        ("Ещё открыто", "pending_relevant", "⏳"),
+        ("Ещё открыто за дату отчёта", "pending_relevant", "⏳"),
     ]:
         rows = bets.get(key) or []
         if rows:
             lines += ["", f"{icon} {title}"]
             lines += [f"• {item}" for item in rows[:6]]
+
+
+
+    stale_examples = bets.get("stale_pending_examples") or []
+    if stale_examples:
+        lines += ["", "🧹 Старые pending вне даты отчёта"]
+        for item in stale_examples[:5]:
+            lines.append(f"• {item}")
+        lines.append("• Эти ставки не входят в pending дня; settlement продолжит проверять их отдельно.")
 
     quota = payload.get("quota") or []
     if quota:

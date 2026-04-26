@@ -70,3 +70,14 @@ FUTRIXMETRICS_MIN_SPACING_MINUTES=15
 ## Как применить
 
 Распаковать архив в корень локального `sports-bot` с заменой файлов, затем проверить diff в GitHub Desktop и сделать commit/push вручную.
+
+
+## v2 changes after 26/27.04 logs
+
+- Forecast cron moved from `14,44` to `4,34` to absorb GitHub queue delay and the 7-10 minute pipeline.
+- Run-bot no-pick Telegram reports are disabled for all event types. Real picks still publish.
+- Daily operations report handles no-pick diagnostics instead of spamming every run.
+- Daily report target date is protected against GitHub delay past midnight:
+  if a scheduled report starts before `04:00 MSK`, it reports the previous football day.
+- Available balance is computed as `current_balance - open_exposure` when the state does not contain `available_balance`.
+- Pending list now shows only pending bets for the report date and separates older pending as `старые pending`.

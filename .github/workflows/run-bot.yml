@@ -49,8 +49,8 @@ on:
       - 'requirements.txt'
   schedule:
     # MSK = UTC+3. Workflow normally needs 7-10 minutes before fallback.
-    # :14/:44 keeps the final fallback check far enough from common :00/:30 kickoffs.
-    - cron: '14,44 3-20 * * *' # 06:14-23:44 MSK
+    # :04/:34 gives extra buffer for GitHub queue delay and the 7-10 minute pipeline.
+    - cron: '4,34 3-22 * * *' # 06:04-01:34 MSK
 
 permissions:
   contents: write
@@ -211,13 +211,13 @@ jobs:
           EVENT_NAME="${{ github.event_name }}"
           if [ "$EVENT_NAME" = "schedule" ]; then
             MIN_LEAD=30
-            SEND_NO_PICK=true
           else
             # Manual/push runs are diagnostic and may start at bad minutes.
             # They may publish a valid pick, but should not spam no-pick Telegram reports.
             MIN_LEAD=25
-            SEND_NO_PICK=false
           fi
+          # Daily operations report now carries no-pick diagnostics; run-bot only sends real picks.
+          SEND_NO_PICK=false
 
           echo "PUBLISH_WINDOW_HOURS=12" >> "$GITHUB_ENV"
           echo "MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
