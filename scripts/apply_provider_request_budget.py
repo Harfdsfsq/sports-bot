@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os
-import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -125,10 +124,10 @@ def current_slot_label(now: datetime) -> str:
 
 
 def collect_recent_text() -> str:
-    # Best-effort scan of recent artifacts/exports for fatal provider patterns. This is intentionally cheap.
     chunks: list[str] = []
     for path in [
         ROOT / '.data' / 'exports' / 'latest-provider-quota-governor.json',
+        ROOT / '.data' / 'exports' / 'latest-provider-request-budget.json',
         ROOT / '.data' / 'exports' / 'latest-provider-request-usage.json',
         ROOT / '.data' / 'exports' / 'latest-rapidapi-provider-probe.json',
         ROOT / 'artifacts' / 'controlled-fallback-report.json',
@@ -136,8 +135,7 @@ def collect_recent_text() -> str:
     ]:
         try:
             if path.exists() and path.is_file():
-                text = path.read_text(encoding='utf-8', errors='ignore')
-                chunks.append(text[:200000])
+                chunks.append(path.read_text(encoding='utf-8', errors='ignore')[:200000])
         except Exception:
             pass
     return '\n'.join(chunks).lower()
@@ -184,7 +182,6 @@ def decide_provider(name: str, cfg: dict[str, Any], row: dict[str, Any], now: da
         'monthly_used_before': usage(row, 'monthly', mkey),
     }
 
-    # Detect recent fatal conditions from prior artifacts. If detected, persist cooldown immediately.
     until, why = fatal_cooldown_until(now, cfg, recent_text)
     if until:
         row['cooldown_until'] = until
@@ -199,6 +196,13 @@ def decide_provider(name: str, cfg: dict[str, Any], row: dict[str, Any], now: da
         decision['reason'] = 'disabled_by_policy'
         return decision
 
+    if is_manual and cfg.get('manual_enabled') is False:
+        decision['reason'] = 'manual_disabled_by_policy'
+        return decision
+    if is_push and cfg.get('push_enabled') is False:
+        decision['reason'] = 'push_disabled_by_policy'
+        return decision
+
     allowed_hours = cfg.get('allowed_msk_hours')
     if isinstance(allowed_hours, list) and not is_manual:
         hours = {as_int(x, -1) for x in allowed_hours}
@@ -208,7 +212,7 @@ def decide_provider(name: str, cfg: dict[str, Any], row: dict[str, Any], now: da
 
     min_spacing = as_int(cfg.get('min_spacing_minutes'), 0)
     last_grant = parse_dt(row.get('last_grant_at'))
-    if last_grant and min_spacing > 0 and not is_manual:
+    if last_grant and min_spacing > 0:
         elapsed = (now - last_grant).total_seconds() / 60.0
         if elapsed < min_spacing:
             decision['reason'] = f'spacing_active:{elapsed:.1f}m/{min_spacing}m'
@@ -216,10 +220,9 @@ def decide_provider(name: str, cfg: dict[str, Any], row: dict[str, Any], now: da
 
     per_run = as_int(cfg.get('per_run_max'), 0)
     if is_push:
-        # Push runs should be cheap; odds can still run but monthly providers should not.
         per_run = min(per_run, as_int(cfg.get('push_per_run_max'), 0))
-    if is_manual:
-        per_run = max(per_run, as_int(cfg.get('manual_per_run_max'), per_run))
+    if is_manual and 'manual_per_run_max' in cfg:
+        per_run = as_int(cfg.get('manual_per_run_max'), per_run)
 
     daily_budget = as_int(cfg.get('safe_daily_budget'), 0)
     monthly_budget = as_int(cfg.get('safe_monthly_budget'), 0)
@@ -254,13 +257,10 @@ def build_env_for_decision(cfg: dict[str, Any], decision: dict[str, Any]) -> dic
     grant = as_int(decision.get('grant'), 0)
     if grant <= 0:
         env = dict(cfg.get('disable_env') or {})
-        # v13: Some provider implementations check only for key presence, not ENABLE_* flags.
-        # When budget grants 0, blank the relevant secret env vars as a hard stop for that run.
         for key in cfg.get('secret_env_keys') or []:
             env[str(key)] = ''
     else:
         env = dict(cfg.get('env') or {})
-    # Generic signal for debugging/optional provider support.
     prefix = str(decision['provider']).upper().replace('-', '_')
     env[f'{prefix}_REQUEST_BUDGET_GRANTED'] = str(grant)
     env[f'{prefix}_REQUEST_BUDGET_REASON'] = str(decision.get('reason') or '')
@@ -280,7 +280,7 @@ def main() -> int:
     providers = policy.get('providers') if isinstance(policy.get('providers'), dict) else {}
 
     all_env: dict[str, str] = {
-        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v13-api-hard-disable-budget'),
+        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v14-api-budget-tighten'),
         'PROVIDER_REQUEST_BUDGET_APPLIED': 'true',
         'PROVIDER_REQUEST_BUDGET_SLOT_MSK': current_slot_label(now),
     }
@@ -294,11 +294,11 @@ def main() -> int:
         all_env.update(build_env_for_decision(cfg, decision))
 
     append_github_env(all_env)
-    state['version'] = str(policy.get('version') or 'v13-api-hard-disable-budget')
+    state['version'] = str(policy.get('version') or 'v14-api-budget-tighten')
     state['updated_at'] = now.isoformat()
     write_json(STATE_PATH, state)
     export = {
-        'version': str(policy.get('version') or 'v13-api-hard-disable-budget'),
+        'version': str(policy.get('version') or 'v14-api-budget-tighten'),
         'event': os.getenv('GITHUB_EVENT_NAME') or '',
         'utc_now': now.isoformat(),
         'msk_now': now.astimezone(MSK).isoformat(),
@@ -307,9 +307,9 @@ def main() -> int:
         'decisions': decisions,
         'env_written_count': len(all_env),
         'notes': [
-            'This is a pre-run budget gate. It caps provider env values before app.cli run-once.',
-            'v13 adds hard key blanking when a provider receives grant=0, because some providers ignored ENABLE_* flags.',
-            'Monthly providers are intentionally sparse; bzzoiro and odds-api.io carry broad coverage.'
+            'v14 tightens manual-run behavior: expensive monthly providers may be disabled on workflow_dispatch.',
+            'API-Football is disabled until the suspended account is fixed.',
+            'ESPN is kept but narrowed to one league slug per run to prevent 50+ scoreboard calls.'
         ],
     }
     write_json(EXPORT_PATH, export)
