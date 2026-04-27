@@ -25,6 +25,10 @@ STATE_FILES = [
     ".data/volume-governor-state.json",
     ".data/provider_request_budget_state.json",
     ".data/exports/latest-run-summary.json",
+    ".data/exports/latest-day-inventory-summary.json",
+    ".data/day_inventory/latest.json",
+    ".data/day_inventory/current.json",
+    ".data/day_inventory/today.json",
 ]
 
 
