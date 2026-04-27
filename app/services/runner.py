@@ -11,7 +11,10 @@ from importlib import import_module
 import math
 from typing import Any
 
+import httpx
+
 from app.config import Settings
+from app.providers.weather_common import WeatherContextEnricher
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
@@ -44,6 +47,7 @@ class PredictionRunner:
         self.openfootball = self._safe_provider('app.providers.openfootball', 'OpenFootballContextProvider')
         self.newsapi = self._safe_provider('app.providers.newsapi', 'NewsApiContextProvider')
         self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')
+        self.weather = WeatherContextEnricher(settings)
         self.factory = CandidateFactory(settings)
         self.quality = PredictionQualityService(settings)
         self.market_monitor = MarketMonitor(settings) if getattr(settings, 'market_monitor_enabled', True) else None
@@ -360,6 +364,10 @@ class PredictionRunner:
                 'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),
             }
             provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
+            provider_target_counts['weather'] = min(
+                len(context_target_matches),
+                max(0, int(getattr(self.settings, 'weather_context_match_limit', 0) or 0)),
+            )
 
             (
                 (sstats_contexts, sstats_stats, sstats_preview),
@@ -403,6 +411,13 @@ class PredictionRunner:
             self_history_contexts, self_history_stats, self_history_preview = self._build_self_history_contexts(filtered_matches, now_utc)
             context_maps['self_history'] = self_history_contexts
             contexts = self._merge_context_maps(*context_maps.values())
+            weather_contexts, weather_stats, weather_preview = await self._fetch_weather_contexts(
+                context_target_matches,
+                contexts,
+            )
+            context_maps['weather'] = weather_contexts
+            if weather_contexts:
+                contexts.update(weather_contexts)
 
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
             candidates_before_quality = list(raw_candidates)
@@ -561,6 +576,7 @@ class PredictionRunner:
                 'openfootball': openfootball_stats,
                 'newsapi': newsapi_stats,
                 'gnews': gnews_stats,
+                'weather': weather_stats,
                 'self_history': self_history_stats,
                 'market_monitor': market_monitor_stats,
             }
@@ -752,6 +768,7 @@ class PredictionRunner:
                     'openfootball': openfootball_preview,
                     'newsapi': newsapi_preview,
                     'gnews': gnews_preview,
+                    'weather': weather_preview,
                     'self_history': self_history_preview,
                     'market_monitor': market_monitor_preview,
                 },
@@ -865,6 +882,119 @@ class PredictionRunner:
             'attempts': attempts,
         }
 
+    async def _fetch_weather_contexts(
+        self,
+        matches: list[Match],
+        base_contexts: dict[str, MatchContext],
+    ) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+        stats: dict[str, Any] = {
+            'enabled': bool(getattr(self.settings, 'weather_context_enabled', True)),
+            'api_key_present': bool(
+                getattr(self.settings, 'weatherapi_key', None)
+                or getattr(self.settings, 'openweathermap_api_key', None)
+            ),
+            'requests': 0,
+            'response_errors': 0,
+            'contexts_built': 0,
+            'matches_considered': 0,
+            'matches_with_base_context': 0,
+            'weatherapi_requests': 0,
+            'openweathermap_requests': 0,
+            'weatherapi_enriched': 0,
+            'openweathermap_enriched': 0,
+            'cache_hits': 0,
+            'missing_location': 0,
+            'no_weather_payload': 0,
+            'max_http_requests_per_run': f"{getattr(self.weather, 'weatherapi_per_run_max', 0)}+{getattr(self.weather, 'openweather_per_run_max', 0)}",
+            'budget_exhausted': False,
+        }
+        preview: dict[str, Any] = {'sample_weather': []}
+        contexts: dict[str, MatchContext] = {}
+        if not stats['enabled']:
+            self._mark_provider_status('weather', enabled=False, loaded=False, reason='disabled_by_config')
+            return contexts, stats, preview
+        if not stats['api_key_present']:
+            self._mark_provider_status('weather', enabled=False, loaded=False, reason='missing_api_key')
+            return contexts, stats, preview
+        self._mark_provider_status('weather', enabled=True, loaded=True, class_name='WeatherContextEnricher')
+
+        limit = max(0, int(getattr(self.settings, 'weather_context_match_limit', 0) or 0))
+        if limit <= 0:
+            stats['budget_exhausted'] = True
+            self._record_provider_fetch_status('weather', 'fetch_context', stats)
+            return contexts, stats, preview
+
+        selected = [match for match in matches if base_contexts.get(match.match_key) is not None]
+        stats['matches_with_base_context'] = len(selected)
+        selected = selected[:limit]
+        stats['matches_considered'] = len(selected)
+
+        async with httpx.AsyncClient(timeout=float(getattr(self.settings, 'weather_timeout_seconds', 8.0) or 8.0)) as client:
+            for match in selected:
+                base_context = base_contexts.get(match.match_key)
+                if base_context is None:
+                    continue
+                try:
+                    updated, weather_stats = await self.weather.enrich_context(client, match, {}, base_context)
+                except Exception as exc:
+                    stats['response_errors'] += 1
+                    stats['last_error'] = self._format_exception(exc)
+                    continue
+                stats['requests'] += int(weather_stats.get('requests', 0) or 0)
+                stats['response_errors'] += int(weather_stats.get('response_errors', 0) or 0)
+                stats['weatherapi_requests'] += int(weather_stats.get('weatherapi_requests', 0) or 0)
+                stats['openweathermap_requests'] += int(weather_stats.get('openweathermap_requests', 0) or 0)
+                if bool(weather_stats.get('cache_hit')):
+                    stats['cache_hits'] += 1
+                if bool(weather_stats.get('budget_exhausted')):
+                    stats['budget_exhausted'] = True
+                reason = str(weather_stats.get('reason') or '').strip()
+                if reason == 'missing_location':
+                    stats['missing_location'] += 1
+                elif reason == 'no_weather_payload':
+                    stats['no_weather_payload'] += 1
+                if not bool(weather_stats.get('enriched')):
+                    continue
+                provider_name = str(weather_stats.get('provider') or 'unknown').strip().lower()
+                if provider_name == 'weatherapi':
+                    stats['weatherapi_enriched'] += 1
+                elif provider_name == 'openweathermap':
+                    stats['openweathermap_enriched'] += 1
+                details = dict(getattr(updated, 'details', {}) or {})
+                details['merged_sources'] = self._context_source_names(base_context)
+                details['weather_context_applied'] = True
+                contexts[match.match_key] = MatchContext(
+                    source=getattr(base_context, 'source', None) or getattr(updated, 'source', None) or 'weather',
+                    payload=dict(getattr(updated, 'payload', {}) or {}),
+                    expected_home=getattr(updated, 'expected_home', None),
+                    expected_away=getattr(updated, 'expected_away', None),
+                    home_win_probability=getattr(updated, 'home_win_probability', None),
+                    away_win_probability=getattr(updated, 'away_win_probability', None),
+                    home_starting=getattr(updated, 'home_starting', None),
+                    away_starting=getattr(updated, 'away_starting', None),
+                    confidence=getattr(updated, 'confidence', 58.0),
+                    profits=dict(getattr(updated, 'profits', {}) or {}),
+                    details=details,
+                )
+                stats['contexts_built'] += 1
+                if len(preview['sample_weather']) < 5:
+                    preview['sample_weather'].append(
+                        {
+                            'match_key': match.match_key,
+                            'provider': provider_name,
+                            'condition': details.get('weather_condition'),
+                            'temp_c': details.get('weather_temp_c'),
+                            'wind_kph': details.get('weather_wind_kph'),
+                            'precip_mm': details.get('weather_precip_mm'),
+                            'factor': details.get('weather_total_factor'),
+                        }
+                    )
+                if stats['budget_exhausted']:
+                    break
+
+        self._record_provider_fetch_status('weather', 'fetch_context', stats)
+        return contexts, stats, preview
+
     async def _fetch_provider(self, provider: Any | None, method_name: str, *args: Any, empty_data: Any) -> tuple[Any, dict[str, Any], dict[str, Any]]:
         if provider is None or not hasattr(provider, method_name):
             return empty_data, {'enabled': False}, {}
@@ -904,6 +1034,8 @@ class PredictionRunner:
             'cooldown_until': stats.get('cooldown_until') or self.provider_status.get(provider_name, {}).get('cooldown_until'),
             'requests': stats.get('requests'),
             'response_errors': stats.get('response_errors'),
+            'max_http_requests_per_run': stats.get('max_http_requests_per_run'),
+            'budget_exhausted': stats.get('budget_exhausted'),
         }
         for key in (
             'contexts_built',
@@ -914,6 +1046,11 @@ class PredictionRunner:
             'scoreboard_requests',
             'probability_requests',
             'summary_requests',
+            'weatherapi_requests',
+            'openweathermap_requests',
+            'weatherapi_enriched',
+            'openweathermap_enriched',
+            'cache_hits',
         ):
             if key in stats:
                 payload[key] = stats.get(key)

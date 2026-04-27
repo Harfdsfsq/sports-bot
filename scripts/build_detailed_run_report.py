@@ -498,6 +498,16 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
         parts = [f"data {matches}/{items}"]
         if requests_count is not None:
             parts.append(f"req {requests_count}")
+        if name == "weather":
+            weatherapi_requests = stats.get("weatherapi_requests", status.get("weatherapi_requests"))
+            openweathermap_requests = stats.get("openweathermap_requests", status.get("openweathermap_requests"))
+            cache_hits = stats.get("cache_hits", status.get("cache_hits"))
+            if weatherapi_requests is not None:
+                parts.append(f"weatherapi {weatherapi_requests}")
+            if openweathermap_requests is not None:
+                parts.append(f"openweathermap {openweathermap_requests}")
+            if cache_hits:
+                parts.append(f"cache {cache_hits}")
         if max_requests:
             parts.append(f"max {max_requests}")
         if response_errors:
