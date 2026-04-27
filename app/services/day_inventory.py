@@ -192,6 +192,38 @@ class DayInventoryStore:
         }
         return payload
 
+    def write_summary(self, summary: dict[str, Any]) -> str:
+        self._write_json(self.summary_path, summary)
+        return str(self.summary_path)
+
+    def save_failure_summary(
+        self,
+        *,
+        local_date: str,
+        error_text: str,
+        source_meta: dict[str, Any] | None = None,
+        bootstrap_provider: str | None = None,
+    ) -> str:
+        payload = {
+            "date_local": str(local_date),
+            "updated_at_utc": datetime.now(UTC).isoformat(),
+            "timezone": self.timezone_name,
+            "build_status": "error",
+            "bootstrap_provider": str(bootstrap_provider or ""),
+            "error": str(error_text or "unknown error"),
+            "counts": {
+                "matches_total": 0,
+                "matches_added": 0,
+                "matches_updated": 0,
+                "providers_seen": 0,
+                "leagues_seen": 0,
+            },
+            "source_match_counts": {},
+            "league_match_counts": {},
+            "sources": source_meta or {},
+        }
+        return self.write_summary(payload)
+
     def save_inventory(self, payload: dict[str, Any]) -> dict[str, str]:
         local_date = str(payload.get("date_local") or date.today().isoformat())
         date_path = self._date_file(local_date)
@@ -206,9 +238,11 @@ class DayInventoryStore:
             "date_local": local_date,
             "updated_at_utc": payload.get("updated_at_utc"),
             "timezone": payload.get("timezone"),
+            "build_status": payload.get("build_status") or "ok",
             "counts": dict(payload.get("counts") or {}),
             "source_match_counts": dict(payload.get("source_match_counts") or {}),
             "league_match_counts": dict(payload.get("league_match_counts") or {}),
+            "sources": dict(payload.get("sources") or {}),
         }
         self._write_json(self.summary_path, summary)
         return {
