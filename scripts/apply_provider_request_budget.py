@@ -254,6 +254,10 @@ def build_env_for_decision(cfg: dict[str, Any], decision: dict[str, Any]) -> dic
     grant = as_int(decision.get('grant'), 0)
     if grant <= 0:
         env = dict(cfg.get('disable_env') or {})
+        # v13: Some provider implementations check only for key presence, not ENABLE_* flags.
+        # When budget grants 0, blank the relevant secret env vars as a hard stop for that run.
+        for key in cfg.get('secret_env_keys') or []:
+            env[str(key)] = ''
     else:
         env = dict(cfg.get('env') or {})
     # Generic signal for debugging/optional provider support.
@@ -276,7 +280,7 @@ def main() -> int:
     providers = policy.get('providers') if isinstance(policy.get('providers'), dict) else {}
 
     all_env: dict[str, str] = {
-        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v12-api-request-budget'),
+        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v13-api-hard-disable-budget'),
         'PROVIDER_REQUEST_BUDGET_APPLIED': 'true',
         'PROVIDER_REQUEST_BUDGET_SLOT_MSK': current_slot_label(now),
     }
@@ -290,11 +294,11 @@ def main() -> int:
         all_env.update(build_env_for_decision(cfg, decision))
 
     append_github_env(all_env)
-    state['version'] = str(policy.get('version') or 'v12-api-request-budget')
+    state['version'] = str(policy.get('version') or 'v13-api-hard-disable-budget')
     state['updated_at'] = now.isoformat()
     write_json(STATE_PATH, state)
     export = {
-        'version': str(policy.get('version') or 'v12-api-request-budget'),
+        'version': str(policy.get('version') or 'v13-api-hard-disable-budget'),
         'event': os.getenv('GITHUB_EVENT_NAME') or '',
         'utc_now': now.isoformat(),
         'msk_now': now.astimezone(MSK).isoformat(),
@@ -304,7 +308,7 @@ def main() -> int:
         'env_written_count': len(all_env),
         'notes': [
             'This is a pre-run budget gate. It caps provider env values before app.cli run-once.',
-            'For strict accounting, provider implementations should also decrement one token per real HTTP request.',
+            'v13 adds hard key blanking when a provider receives grant=0, because some providers ignored ENABLE_* flags.',
             'Monthly providers are intentionally sparse; bzzoiro and odds-api.io carry broad coverage.'
         ],
     }

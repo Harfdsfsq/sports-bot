@@ -65,3 +65,16 @@ Apply provider request budget
 ## Важное ограничение
 
 Это pre-run budget gate. Он выставляет env-переменные. Чтобы добиться идеального `1 token = 1 HTTP request`, внутренние provider-модули должны также проверять `*_MAX_HTTP_REQUESTS_PER_RUN` перед каждым HTTP-запросом. v12 уже передаёт такие переменные, но если конкретный provider их не поддерживает, он может частично превысить план. Поэтому следующий шаг после v12 — instrumented request wrapper внутри provider-клиентов.
+
+
+## v13 hard-disable update
+
+v12 correctly detected monthly-limit cooldowns, but some providers still made HTTP calls after `grant=0` because their implementation checked only whether an API key existed. v13 adds hard key blanking for providers with zero grant.
+
+Examples:
+
+- `oddspapi`: disabled by policy after `REQUEST_LIMIT_EXCEEDED`; `ODDSPAPI_API_KEY` is blanked when grant is zero.
+- `allsportsapi`: disabled until quota is known; `ALLSPORTSAPI_API_KEY` is blanked when grant is zero.
+- `api_football`, `futrixmetrics`, news/weather/RapidAPI providers: key blanking is applied if cooldown or budget exhaustion gives grant zero.
+
+v13 also tightens FutrixMetrics to 1 request/run, 90-minute spacing and 1200/month operating budget; this keeps autoruns from consuming the 5000/month account quota too aggressively.

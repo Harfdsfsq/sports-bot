@@ -10,7 +10,7 @@
     "auth_error_cooldown_hours": 24,
     "enabled": true,
     "fatal_429_cooldown_hours": 6,
-    "manual_multiplier": 1.0,
+    "manual_multiplier": 1,
     "reserve_daily_ratio": 0.2,
     "reserve_monthly_ratio": 0.25,
     "unknown_limit_scheduled_enabled": false
@@ -23,7 +23,8 @@
         "ALLSPORTSAPI_ENABLED": "false",
         "ALLSPORTSAPI_MATCH_LIMIT": "0",
         "ALLSPORTSAPI_PER_RUN_MAX": "0",
-        "ENABLE_ALLSPORTSAPI": "false"
+        "ENABLE_ALLSPORTSAPI": "false",
+        "ALLSPORTSAPI_API_KEY": ""
       },
       "enabled": false,
       "limit": {
@@ -31,7 +32,10 @@
       },
       "notes": "Trial/free limit unclear and previous run called it despite grant=0. Disabled until dashboard quota is known.",
       "per_run_max": 0,
-      "safe_daily_budget": 0
+      "safe_daily_budget": 0,
+      "secret_env_keys": [
+        "ALLSPORTSAPI_API_KEY"
+      ]
     },
     "api_football": {
       "auth_patterns": [
@@ -50,7 +54,7 @@
       "enabled": true,
       "env": {
         "API_FOOTBALL_AUTH_ERROR_COOLDOWN_MINUTES": "1440",
-        "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "6",
+        "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "4",
         "API_FOOTBALL_ENABLED": "true",
         "API_FOOTBALL_FETCH_MATCH_DATES_ONLY": "true",
         "API_FOOTBALL_FREE_DAYS_AHEAD": "1",
@@ -65,8 +69,11 @@
       },
       "min_spacing_minutes": 5,
       "notes": "API-Sports football. Conservative because recent logs showed suspended account body.",
-      "per_run_max": 2,
-      "safe_daily_budget": 36
+      "per_run_max": 1,
+      "safe_daily_budget": 24,
+      "secret_env_keys": [
+        "API_FOOTBALL_KEY"
+      ]
     },
     "bzzoiro": {
       "disable_env": {
@@ -111,19 +118,19 @@
       },
       "enabled": true,
       "env": {
-        "ESPN_CONTEXT_MATCH_LIMIT": "28",
-        "ESPN_MAX_HTTP_REQUESTS_PER_RUN": "20",
-        "ESPN_PROBABILITY_MAX_REQUESTS_PER_RUN": "4",
-        "ESPN_SCOREBOARD_MAX_REQUESTS_PER_RUN": "12",
+        "ESPN_CONTEXT_MATCH_LIMIT": "10",
+        "ESPN_MAX_HTTP_REQUESTS_PER_RUN": "12",
+        "ESPN_PROBABILITY_MAX_REQUESTS_PER_RUN": "3",
+        "ESPN_SCOREBOARD_MAX_REQUESTS_PER_RUN": "6",
         "ESPN_SHORTLIST_ONLY": "true",
-        "ESPN_SUMMARY_MAX_REQUESTS_PER_RUN": "4"
+        "ESPN_SUMMARY_MAX_REQUESTS_PER_RUN": "3"
       },
       "limit": {
         "public_no_key": true
       },
       "min_spacing_minutes": 0,
       "notes": "Public source. Limit summary/probability calls to shortlist; previous 72/run was noisy.",
-      "per_run_max": 20,
+      "per_run_max": 12,
       "safe_daily_budget": 240
     },
     "football_data": {
@@ -137,10 +144,10 @@
       "enabled": true,
       "env": {
         "ENABLE_FOOTBALL_DATA": "true",
-        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "80",
+        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "60",
         "FOOTBALL_DATA_ENABLED": "true",
-        "FOOTBALL_DATA_PER_RUN_MAX": "6",
-        "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "6"
+        "FOOTBALL_DATA_PER_RUN_MAX": "5",
+        "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "5"
       },
       "limit": {
         "requests_per_minute_registered": 10,
@@ -148,7 +155,7 @@
       },
       "min_spacing_minutes": 1,
       "notes": "Registered free plan is minute-limited; daily safe cap keeps broad autoruns under control.",
-      "per_run_max": 6,
+      "per_run_max": 5,
       "safe_daily_budget": 96
     },
     "freeapilivefootball": {
@@ -177,21 +184,24 @@
       "enabled": true,
       "env": {
         "ENABLE_FUTRIXMETRICS": "true",
-        "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "3",
+        "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "2",
         "FUTRIXMETRICS_ENABLED": "true",
-        "FUTRIXMETRICS_MIN_SPACING_MINUTES": "45",
-        "FUTRIXMETRICS_PER_RUN_MAX": "2",
-        "FUTRIXMETRICS_REQUESTS_MAX_PER_RUN": "2",
+        "FUTRIXMETRICS_MIN_SPACING_MINUTES": "90",
+        "FUTRIXMETRICS_PER_RUN_MAX": "1",
+        "FUTRIXMETRICS_REQUESTS_MAX_PER_RUN": "1",
         "FUTRIXMETRICS_SHORTLIST_ONLY": "true"
       },
       "limit": {
         "requests_per_month": 5000
       },
-      "min_spacing_minutes": 45,
+      "min_spacing_minutes": 90,
       "notes": "Monthly-limited. Hard shortlist-only; previous actual 12/run is too high.",
-      "per_run_max": 2,
-      "safe_daily_budget": 80,
-      "safe_monthly_budget": 2400
+      "per_run_max": 1,
+      "safe_daily_budget": 36,
+      "safe_monthly_budget": 1200,
+      "secret_env_keys": [
+        "FUTRIXMETRICS_API_KEY"
+      ]
     },
     "gnews": {
       "allowed_msk_hours": [
@@ -218,7 +228,10 @@
       "min_spacing_minutes": 180,
       "notes": "Do not call alongside NewsAPI for every match; shortlist only.",
       "per_run_max": 1,
-      "safe_daily_budget": 24
+      "safe_daily_budget": 24,
+      "secret_env_keys": [
+        "GNEWS_KEY"
+      ]
     },
     "meteostat": {
       "allowed_msk_hours": [
@@ -244,7 +257,10 @@
       "notes": "Weather fallback only when free providers miss.",
       "per_run_max": 1,
       "safe_daily_budget": 8,
-      "safe_monthly_budget": 240
+      "safe_monthly_budget": 240,
+      "secret_env_keys": [
+        "METEOSTAT_RAPIDAPI_KEY"
+      ]
     },
     "newsapi": {
       "allowed_msk_hours": [
@@ -271,7 +287,10 @@
       "min_spacing_minutes": 180,
       "notes": "Only top shortlist / injury-sensitive fixtures.",
       "per_run_max": 1,
-      "safe_daily_budget": 24
+      "safe_daily_budget": 24,
+      "secret_env_keys": [
+        "NEWSAPI_KEY"
+      ]
     },
     "odds_api_io": {
       "disable_env": {
@@ -322,7 +341,10 @@
       "notes": "Monthly-limited odds confirmation. Sparse slots only.",
       "per_run_max": 1,
       "safe_daily_budget": 8,
-      "safe_monthly_budget": 240
+      "safe_monthly_budget": 240,
+      "secret_env_keys": [
+        "ODDS_FEED_RAPIDAPI_KEY"
+      ]
     },
     "oddspapi": {
       "allowed_msk_hours": [
@@ -335,9 +357,12 @@
         "ENABLE_ODDSPAPI": "false",
         "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
         "ODDSPAPI_ENABLED": "false",
-        "ODDSPAPI_PER_RUN_MAX": "0"
+        "ODDSPAPI_PER_RUN_MAX": "0",
+        "ODDSPAPI_API_KEY": "",
+        "ODDSPAPI_MATCH_LIMIT": "0",
+        "ODDSPAPI_TOURNAMENT_LIMIT": "0"
       },
-      "enabled": true,
+      "enabled": false,
       "env": {
         "ENABLE_ODDSPAPI": "true",
         "ODDSPAPI_CONTEXT_MATCH_LIMIT": "2",
@@ -355,10 +380,13 @@
         "requests_per_month": 250
       },
       "min_spacing_minutes": 360,
-      "notes": "Monthly-limited. Four candidate slots/day max; state budget usually caps it to about 5/day.",
-      "per_run_max": 1,
-      "safe_daily_budget": 5,
-      "safe_monthly_budget": 150
+      "notes": "Disabled by default after REQUEST_LIMIT_EXCEEDED; set enabled=true only after the monthly quota resets and dashboard confirms capacity.",
+      "per_run_max": 0,
+      "safe_daily_budget": 0,
+      "safe_monthly_budget": 0,
+      "secret_env_keys": [
+        "ODDSPAPI_API_KEY"
+      ]
     },
     "openfootball_public": {
       "disable_env": {
@@ -367,8 +395,8 @@
       },
       "enabled": true,
       "env": {
-        "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "120",
-        "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "8",
+        "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "60",
+        "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "4",
         "OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS": "24"
       },
       "limit": {
@@ -376,7 +404,7 @@
       },
       "min_spacing_minutes": 0,
       "notes": "Public static data. Keep modest to avoid repeated 404 noise.",
-      "per_run_max": 8,
+      "per_run_max": 4,
       "safe_daily_budget": 120
     },
     "openweathermap": {
@@ -440,7 +468,11 @@
       "min_spacing_minutes": 240,
       "notes": "Market confirmation only.",
       "per_run_max": 1,
-      "safe_daily_budget": 12
+      "safe_daily_budget": 12,
+      "secret_env_keys": [
+        "SPORTSBOOK_RAPIDAPI_KEY",
+        "RAPIDAPI_KEY"
+      ]
     },
     "sstats": {
       "disable_env": {
@@ -453,20 +485,20 @@
       "enabled": true,
       "env": {
         "ENABLE_SSTATS": "true",
-        "SSTATS_CONTEXT_MATCH_LIMIT": "24",
+        "SSTATS_CONTEXT_MATCH_LIMIT": "12",
         "SSTATS_ENABLED": "true",
         "SSTATS_LOOKBACK_DAYS": "21",
-        "SSTATS_PER_RUN_MAX": "8",
+        "SSTATS_PER_RUN_MAX": "6",
         "SSTATS_RECENT_MATCHES": "8",
-        "SSTATS_REQUESTS_MAX_PER_RUN": "8"
+        "SSTATS_REQUESTS_MAX_PER_RUN": "6"
       },
       "limit": {
         "unknown": true
       },
       "min_spacing_minutes": 0,
       "notes": "Heavy historical provider. Cap contexts and lookback so it does not perform 30+ HTTP requests/run.",
-      "per_run_max": 8,
-      "safe_daily_budget": 96
+      "per_run_max": 6,
+      "safe_daily_budget": 72
     },
     "thesportsdb": {
       "disable_env": {
@@ -479,17 +511,17 @@
       "enabled": true,
       "env": {
         "ENABLE_THESPORTSDB": "true",
-        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "60",
+        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "40",
         "THESPORTSDB_ENABLED": "true",
-        "THESPORTSDB_PER_RUN_MAX": "8",
-        "THESPORTSDB_REQUESTS_MAX_PER_RUN": "8"
+        "THESPORTSDB_PER_RUN_MAX": "6",
+        "THESPORTSDB_REQUESTS_MAX_PER_RUN": "6"
       },
       "limit": {
         "requests_per_minute": 30
       },
       "min_spacing_minutes": 1,
       "notes": "Free minute-limited; useful but lower yield than bzzoiro.",
-      "per_run_max": 8,
+      "per_run_max": 6,
       "safe_daily_budget": 144
     },
     "weatherapi": {
@@ -517,5 +549,5 @@
       "safe_monthly_budget": 9000
     }
   },
-  "version": "v12-api-request-budget"
+  "version": "v13-api-hard-disable-budget"
 }
