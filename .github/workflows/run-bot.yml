@@ -41,6 +41,7 @@ on:
     # Watchdog/failsafe slots. If a primary autorun was missed, these run the full pipeline.
     # 07:47, 13:47, 19:47, 01:47 MSK.
     - cron: "47 4,10,16,22 * * *"
+
 permissions:
   contents: write
   actions: read
@@ -57,35 +58,50 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v12-volume-api-budget-watchdog
+      AUTORUN_POLICY_VERSION: v15-all-api-budget-no-api-football
       VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_3' }}
 
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      # Primary odds/context providers.
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
       FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+
+      # News providers. Currents is handled by app/providers/newsapi.py as primary news source.
       CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
       CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
       GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+
+      # Weather providers.
       WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
       OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
       OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_KEY }}
       METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
       METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
+
+      # RapidAPI / secondary providers.
       RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
       SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
       ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
       FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
       SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+
+      # api-football is intentionally removed from runtime.
+      ENABLE_API_FOOTBALL: "false"
+      API_FOOTBALL_ENABLED: "false"
+      API_FOOTBALL_KEY: ""
+      API_FOOTBALL_PER_RUN_MAX: "0"
+      API_FOOTBALL_CONTEXT_MATCH_LIMIT: "0"
+      API_FOOTBALL_PREDICTIONS_LIMIT: "0"
 
       PUBLISH_DRY_RUN: "false"
       PREDICTION_PUBLICATION_ENABLED: "false"

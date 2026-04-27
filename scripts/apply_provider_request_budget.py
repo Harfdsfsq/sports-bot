@@ -67,13 +67,6 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
-def env_bool(name: str, default: bool = False) -> bool:
-    raw = os.getenv(name)
-    if raw is None or str(raw).strip() == '':
-        return default
-    return str(raw).strip().lower() in {'1', 'true', 'yes', 'on'}
-
-
 def append_github_env(env: dict[str, str]) -> None:
     if not GITHUB_ENV:
         return
@@ -126,7 +119,6 @@ def current_slot_label(now: datetime) -> str:
 def collect_recent_text() -> str:
     chunks: list[str] = []
     for path in [
-        ROOT / '.data' / 'exports' / 'latest-provider-quota-governor.json',
         ROOT / '.data' / 'exports' / 'latest-provider-request-budget.json',
         ROOT / '.data' / 'exports' / 'latest-provider-request-usage.json',
         ROOT / '.data' / 'exports' / 'latest-rapidapi-provider-probe.json',
@@ -282,10 +274,13 @@ def main() -> int:
     providers = policy.get('providers') if isinstance(policy.get('providers'), dict) else {}
 
     all_env: dict[str, str] = {
-        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v14-api-budget-tighten'),
+        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v15-all-api-budget-no-api-football'),
         'PROVIDER_REQUEST_BUDGET_APPLIED': 'true',
         'PROVIDER_REQUEST_BUDGET_SLOT_MSK': current_slot_label(now),
     }
+    deleted_env = policy.get('deleted_provider_env') if isinstance(policy.get('deleted_provider_env'), dict) else {}
+    all_env.update({str(k): str(v) for k, v in deleted_env.items()})
+
     decisions: list[dict[str, Any]] = []
     for name, cfg in providers.items():
         if not isinstance(cfg, dict):
@@ -296,22 +291,23 @@ def main() -> int:
         all_env.update(build_env_for_decision(cfg, decision))
 
     append_github_env(all_env)
-    state['version'] = str(policy.get('version') or 'v14-api-budget-tighten')
+    state['version'] = str(policy.get('version') or 'v15-all-api-budget-no-api-football')
     state['updated_at'] = now.isoformat()
     write_json(STATE_PATH, state)
     export = {
-        'version': str(policy.get('version') or 'v14-api-budget-tighten'),
+        'version': str(policy.get('version') or 'v15-all-api-budget-no-api-football'),
         'event': os.getenv('GITHUB_EVENT_NAME') or '',
         'utc_now': now.isoformat(),
         'msk_now': now.astimezone(MSK).isoformat(),
         'slot_msk': current_slot_label(now),
         'is_watchdog_slot': is_watchdog_slot(now),
+        'deleted_providers': list((policy.get('deleted_providers') or [])),
         'decisions': decisions,
         'env_written_count': len(all_env),
         'notes': [
-            'v14 tightens manual-run behavior: expensive monthly providers may be disabled on workflow_dispatch.',
-            'API-Football is disabled until the suspended account is fixed.',
-            'ESPN is kept but narrowed to one league slug per run to prevent 50+ scoreboard calls.'
+            'v15 removes api-football from active runtime and blanks all API_FOOTBALL_* env values.',
+            'All other configured APIs are enabled with conservative per-run/daily/monthly budgets.',
+            'Providers with exhausted monthly quota, such as OddsPapi, may still be cooldown-skipped until reset.',
         ],
     }
     write_json(EXPORT_PATH, export)
