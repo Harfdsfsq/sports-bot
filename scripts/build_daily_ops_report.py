@@ -278,11 +278,38 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
 
 
 def quota_rows() -> list[str]:
-    payload = load_json(EXPORT_DIR / "latest-provider-quota-governor.json", {})
+    payload = load_json(EXPORT_DIR / "latest-provider-request-budget.json", {})
+    if not payload:
+        payload = load_json(EXPORT_DIR / "latest-provider-quota-governor.json", {})
+    decisions = payload.get("decisions") if isinstance(payload, dict) else []
+    important = {"odds_api_io", "bzzoiro", "sstats", "api_football", "football_data", "thesportsdb", "futrixmetrics", "weatherapi", "openweathermap", "oddspapi", "sportsbook_api", "meteostat", "oddsfeed", "freeapilivefootball", "sportapi"}
+    if isinstance(decisions, list) and decisions:
+        out = []
+        for row in decisions:
+            if not isinstance(row, dict):
+                continue
+            provider = str(row.get("provider") or "")
+            if provider not in important:
+                continue
+            grant = safe_int(row.get("grant"))
+            reason = str(row.get("reason") or "unknown")
+            daily_budget = safe_int(row.get("daily_budget"))
+            daily_remaining_after = row.get("daily_remaining_after")
+            monthly_budget = safe_int(row.get("monthly_budget"))
+            monthly_remaining_after = row.get("monthly_remaining_after")
+            parts = [f"grant {grant}", f"reason {reason}"]
+            if daily_budget > 0:
+                used = daily_budget - safe_int(daily_remaining_after, daily_budget) if daily_remaining_after is not None else safe_int(row.get("daily_used_before"))
+                parts.append(f"day {used}/{daily_budget}")
+            if monthly_budget > 0:
+                used = monthly_budget - safe_int(monthly_remaining_after, monthly_budget) if monthly_remaining_after is not None else safe_int(row.get("monthly_used_before"))
+                parts.append(f"month {used}/{monthly_budget}")
+            out.append(f"• {provider}: " + ", ".join(parts))
+        return out
+
     rows = payload.get("providers") if isinstance(payload, dict) else []
     if not isinstance(rows, list):
         return []
-    important = {"odds_api_io", "bzzoiro", "sstats", "api_football", "football_data", "thesportsdb", "futrixmetrics", "weather", "oddspapi", "rapidapi_odds_feed", "rapidapi_sportsbook"}
     out = []
     for row in rows:
         if not isinstance(row, dict):

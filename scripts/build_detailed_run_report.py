@@ -450,6 +450,77 @@ def provider_summary() -> list[str]:
     return lines
 
 
+def provider_work_lines(debug: dict[str, Any]) -> list[str]:
+    diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
+    summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
+    providers = summary.get("providers") if isinstance(summary.get("providers"), dict) else {}
+    statuses = summary.get("provider_status") if isinstance(summary.get("provider_status"), dict) else {}
+    runtime_errors = summary.get("provider_runtime_errors") if isinstance(summary.get("provider_runtime_errors"), dict) else {}
+    rate_limits = summary.get("provider_rate_limits") if isinstance(summary.get("provider_rate_limits"), dict) else {}
+    important = [
+        "odds_api_io",
+        "bzzoiro",
+        "sstats",
+        "api_football",
+        "football_data",
+        "thesportsdb",
+        "openfootball",
+        "weather",
+        "newsapi",
+        "gnews",
+    ]
+    lines: list[str] = []
+    for name in important:
+        row = providers.get(name) if isinstance(providers.get(name), dict) else {}
+        status = statuses.get(name) if isinstance(statuses.get(name), dict) else {}
+        if not row and not status:
+            continue
+        stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}
+        if isinstance(stats.get("stats"), dict):
+            stats = stats.get("stats")
+        if not isinstance(stats, dict):
+            stats = {}
+        matches = as_int(row.get("matches_with_data"))
+        items = as_int(row.get("items_total"))
+        requests_count = stats.get("requests", status.get("requests"))
+        response_errors = stats.get("response_errors", status.get("response_errors"))
+        parts = [f"data {matches}/{items}"]
+        if requests_count is not None:
+            parts.append(f"req {requests_count}")
+        if response_errors:
+            parts.append(f"err {response_errors}")
+        if status.get("loaded") is False:
+            parts.append(f"off:{status.get('reason') or 'not_loaded'}")
+        elif status.get("rate_limited") or name in rate_limits:
+            parts.append("rate_limited")
+        elif status.get("degraded"):
+            parts.append("degraded")
+        errors = runtime_errors.get(name)
+        if isinstance(errors, list) and errors:
+            parts.append(f"runtime_err {len(errors)}")
+        lines.append(f"• {name}: " + ", ".join(parts))
+    return lines
+
+
+def run_diagnostic_lines(debug: dict[str, Any]) -> list[str]:
+    diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
+    summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
+    if not summary:
+        return []
+    keys = [
+        ("matches_with_any_offer_source", "матчей с линиями из любого источника"),
+        ("matches_with_any_context_source", "матчей с любым контекстом"),
+        ("matches_with_merged_context", "матчей с объединенным контекстом"),
+        ("raw_candidates_with_derived_market_signal", "raw с market-derived сигналом"),
+    ]
+    parts = []
+    for key, label in keys:
+        value = summary.get(key)
+        if value is not None:
+            parts.append(f"{label}: {as_int(value)}")
+    return [f"• {part}" for part in parts]
+
+
 
 def learning_lines() -> list[str]:
     payload = load_json(".data/exports/latest-auto-learning-report.json", {})
@@ -502,6 +573,8 @@ def build_payload() -> dict[str, Any]:
         },
         "reason_counts": dict(reasons.most_common(20)),
         "near_misses": near,
+        "diagnostic_lines": run_diagnostic_lines(debug),
+        "provider_work_lines": provider_work_lines(debug),
         "provider_lines": provider_summary(),
     }
 
@@ -525,7 +598,16 @@ def render(payload: dict[str, Any]) -> str:
     lines.append(f"• Матчи: {as_int(summary.get('matches_seen'))} | с линиями: {as_int(summary.get('matches_with_offers'))} | контекстов: {as_int(summary.get('contexts_built'))}")
     lines.append(f"• Кандидаты: raw {as_int(summary.get('candidates_raw'))} | до качества {as_int(summary.get('candidates_before_quality'))} | publishable {as_int(summary.get('candidates_publishable'))}")
     lines.append(f"• Резерв проверил: {counts.get('rescue_checked', 0)} | оценено в отчёте: {counts.get('evaluated', 0)} | выбрано: {counts.get('selected_count', 0)}")
+    diagnostic_lines = payload.get("diagnostic_lines") or []
+    if diagnostic_lines:
+        lines.extend(diagnostic_lines[:4])
     lines.append("")
+
+    provider_work = payload.get("provider_work_lines") or []
+    if provider_work:
+        lines.append("📡 Источники / фактическая работа")
+        lines.extend(provider_work[:8])
+        lines.append("")
 
     if reasons:
         total = sum(reasons.values())

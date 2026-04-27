@@ -41,11 +41,6 @@ on:
     # Watchdog/failsafe slots. If a primary autorun was missed, these run the full pipeline.
     # 07:47, 13:47, 19:47, 01:47 MSK.
     - cron: "47 4,10,16,22 * * *"
-  push:
-    branches:
-      - main
-      - master
-
 permissions:
   contents: write
   actions: read
@@ -228,6 +223,7 @@ jobs:
           python scripts/profit_distance_ledger.py || true
           python scripts/match_data_coverage_report.py || true
           python scripts/rapidapi_quota_probe.py || true
+          python scripts/rapidapi_endpoint_discovery.py || true
 
       - name: Generate audit payloads
         if: env.AUTORUN_SKIP_MAIN != 'true'

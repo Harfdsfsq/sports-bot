@@ -50,12 +50,14 @@
       "notes": "Main context expansion source because it has no stated rate limit.",
       "env": {
         "ENABLE_BZZOIRO": "true",
+        "ENABLE_BZZOIRO_CONTEXT": "true",
         "BZZOIRO_ENABLED": "true",
         "BZZOIRO_PER_RUN_MAX": "70",
         "BZZOIRO_CONTEXT_MATCH_LIMIT": "80"
       },
       "disable_env": {
         "ENABLE_BZZOIRO": "false",
+        "ENABLE_BZZOIRO_CONTEXT": "false",
         "BZZOIRO_ENABLED": "false",
         "BZZOIRO_PER_RUN_MAX": "0",
         "BZZOIRO_CONTEXT_MATCH_LIMIT": "0"
@@ -189,6 +191,7 @@
       "notes": "Heavy historical provider. v14 lowers context limit/lookback to prevent 12-30 requests/run.",
       "env": {
         "ENABLE_SSTATS": "true",
+        "ENABLE_SSTATS_CONTEXT": "true",
         "SSTATS_ENABLED": "true",
         "SSTATS_PER_RUN_MAX": "4",
         "SSTATS_REQUESTS_MAX_PER_RUN": "4",
@@ -198,6 +201,7 @@
       },
       "disable_env": {
         "ENABLE_SSTATS": "false",
+        "ENABLE_SSTATS_CONTEXT": "false",
         "SSTATS_ENABLED": "false",
         "SSTATS_PER_RUN_MAX": "0",
         "SSTATS_REQUESTS_MAX_PER_RUN": "0",
@@ -228,6 +232,7 @@
       ],
       "env": {
         "ENABLE_FUTRIXMETRICS": "true",
+        "ENABLE_FUTRIXMETRICS_CONTEXT": "true",
         "FUTRIXMETRICS_ENABLED": "true",
         "FUTRIXMETRICS_PER_RUN_MAX": "1",
         "FUTRIXMETRICS_REQUESTS_MAX_PER_RUN": "1",
@@ -237,6 +242,7 @@
       },
       "disable_env": {
         "ENABLE_FUTRIXMETRICS": "false",
+        "ENABLE_FUTRIXMETRICS_CONTEXT": "false",
         "FUTRIXMETRICS_ENABLED": "false",
         "FUTRIXMETRICS_PER_RUN_MAX": "0",
         "FUTRIXMETRICS_REQUESTS_MAX_PER_RUN": "0",
@@ -256,6 +262,7 @@
       "notes": "Registered free plan. v14 lowers context limit to keep actual HTTP near budget.",
       "env": {
         "ENABLE_FOOTBALL_DATA": "true",
+        "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
         "FOOTBALL_DATA_ENABLED": "true",
         "FOOTBALL_DATA_PER_RUN_MAX": "4",
         "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "4",
@@ -263,6 +270,7 @@
       },
       "disable_env": {
         "ENABLE_FOOTBALL_DATA": "false",
+        "ENABLE_FOOTBALL_DATA_CONTEXT": "false",
         "FOOTBALL_DATA_ENABLED": "false",
         "FOOTBALL_DATA_PER_RUN_MAX": "0",
         "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "0",
@@ -283,6 +291,7 @@
       "notes": "Free minute-limited context source.",
       "env": {
         "ENABLE_THESPORTSDB": "true",
+        "ENABLE_THESPORTSDB_CONTEXT": "true",
         "THESPORTSDB_ENABLED": "true",
         "THESPORTSDB_PER_RUN_MAX": "6",
         "THESPORTSDB_REQUESTS_MAX_PER_RUN": "6",
@@ -290,6 +299,7 @@
       },
       "disable_env": {
         "ENABLE_THESPORTSDB": "false",
+        "ENABLE_THESPORTSDB_CONTEXT": "false",
         "THESPORTSDB_ENABLED": "false",
         "THESPORTSDB_PER_RUN_MAX": "0",
         "THESPORTSDB_REQUESTS_MAX_PER_RUN": "0",
@@ -364,11 +374,15 @@
       "safe_daily_budget": 96,
       "min_spacing_minutes": 0,
       "env": {
+        "ENABLE_OPENFOOTBALL_CONTEXT": "true",
+        "OPENFOOTBALL_ENABLED": "true",
         "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "40",
         "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "4",
         "OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS": "24"
       },
       "disable_env": {
+        "ENABLE_OPENFOOTBALL_CONTEXT": "false",
+        "OPENFOOTBALL_ENABLED": "false",
         "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "0",
         "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "0"
       }
@@ -395,6 +409,7 @@
       ],
       "env": {
         "ENABLE_NEWSAPI": "true",
+        "ENABLE_NEWSAPI_CONTEXT": "true",
         "NEWSAPI_ENABLED": "true",
         "NEWSAPI_PER_RUN_MAX": "1",
         "NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN": "1",
@@ -405,6 +420,7 @@
       },
       "disable_env": {
         "ENABLE_NEWSAPI": "false",
+        "ENABLE_NEWSAPI_CONTEXT": "false",
         "NEWSAPI_ENABLED": "false",
         "NEWSAPI_PER_RUN_MAX": "0",
         "NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
@@ -436,6 +452,7 @@
       ],
       "env": {
         "ENABLE_GNEWS": "true",
+        "ENABLE_GNEWS_CONTEXT": "true",
         "GNEWS_ENABLED": "true",
         "GNEWS_PER_RUN_MAX": "1",
         "GNEWS_MAX_HTTP_REQUESTS_PER_RUN": "1",
@@ -443,6 +460,7 @@
       },
       "disable_env": {
         "ENABLE_GNEWS": "false",
+        "ENABLE_GNEWS_CONTEXT": "false",
         "GNEWS_ENABLED": "false",
         "GNEWS_PER_RUN_MAX": "0",
         "GNEWS_MAX_HTTP_REQUESTS_PER_RUN": "0",
@@ -457,21 +475,22 @@
       },
       "manual_enabled": false,
       "allowed_msk_hours": [
-        11,
-        17,
+        9,
+        15,
         21
       ],
       "per_run_max": 1,
-      "safe_daily_budget": 8,
-      "min_spacing_minutes": 360,
-      "notes": "Sparse market confirmation; disabled on manual runs.",
+      "safe_daily_budget": 12,
+      "min_spacing_minutes": 240,
+      "notes": "Sparse market confirmation; scheduled shortlist only, disabled on manual runs.",
       "secret_env_keys": [
         "SPORTSBOOK_RAPIDAPI_KEY"
       ],
       "env": {
         "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true",
-        "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": "8",
-        "RAPIDAPI_SPORTSBOOK_PER_RUN_MAX": "1"
+        "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": "12",
+        "RAPIDAPI_SPORTSBOOK_PER_RUN_MAX": "1",
+        "RAPIDAPI_DISCOVERY_SPORTSBOOK_MAX_CALLS": "1"
       },
       "disable_env": {
         "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "false",
@@ -502,12 +521,14 @@
         "METEOSTAT_RAPIDAPI_ENABLED": "true",
         "WEATHER_METEOSTAT_FALLBACK_ENABLED": "true",
         "RAPIDAPI_METEOSTAT_PER_RUN_MAX": "1",
+        "METEOSTAT_MAX_HTTP_REQUESTS_PER_RUN": "1",
         "METEOSTAT_TIMEOUT_SECONDS": "8"
       },
       "disable_env": {
         "METEOSTAT_RAPIDAPI_ENABLED": "false",
         "WEATHER_METEOSTAT_FALLBACK_ENABLED": "false",
         "RAPIDAPI_METEOSTAT_PER_RUN_MAX": "0",
+        "METEOSTAT_MAX_HTTP_REQUESTS_PER_RUN": "0",
         "METEOSTAT_RAPIDAPI_KEY": ""
       }
     },
@@ -532,7 +553,8 @@
       "env": {
         "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true",
         "RAPIDAPI_ODDS_FEED_DAILY_LIMIT": "6",
-        "RAPIDAPI_ODDS_FEED_PER_RUN_MAX": "1"
+        "RAPIDAPI_ODDS_FEED_PER_RUN_MAX": "1",
+        "RAPIDAPI_DISCOVERY_ODDS_FEED_MAX_CALLS": "1"
       },
       "disable_env": {
         "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "false",
@@ -542,14 +564,25 @@
       }
     },
     "freeapilivefootball": {
-      "enabled": false,
+      "enabled": true,
       "limit": {
         "requests_per_month": 100
       },
-      "per_run_max": 0,
-      "safe_daily_budget": 0,
-      "safe_monthly_budget": 0,
-      "notes": "Too small for autoruns; disabled until endpoint schema is proven.",
+      "manual_enabled": false,
+      "allowed_msk_hours": [
+        15
+      ],
+      "per_run_max": 1,
+      "safe_daily_budget": 2,
+      "safe_monthly_budget": 60,
+      "min_spacing_minutes": 720,
+      "notes": "Very small monthly budget. Scheduled discovery/probe only; disabled on manual runs.",
+      "env": {
+        "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true",
+        "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "2",
+        "RAPIDAPI_FREE_FOOTBALL_PER_RUN_MAX": "1",
+        "RAPIDAPI_DISCOVERY_FREE_FOOTBALL_MAX_CALLS": "1"
+      },
       "disable_env": {
         "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "false",
         "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "0",
@@ -560,15 +593,27 @@
       ]
     },
     "sportapi": {
-      "enabled": false,
+      "enabled": true,
       "limit": {
         "requests_per_day": 100
       },
-      "per_run_max": 0,
-      "safe_daily_budget": 0,
-      "notes": "Disabled until useful football schema is proven.",
+      "manual_enabled": false,
+      "allowed_msk_hours": [
+        9,
+        15,
+        21
+      ],
+      "per_run_max": 1,
+      "safe_daily_budget": 12,
+      "min_spacing_minutes": 240,
+      "notes": "API-Sports/SportAPI discovery/probe only until schema is proven; disabled on manual runs.",
+      "env": {
+        "RAPIDAPI_SPORTAPI7_PROBE_ENABLED": "true",
+        "RAPIDAPI_SPORTAPI7_DAILY_LIMIT": "12",
+        "RAPIDAPI_SPORTAPI7_PER_RUN_MAX": "1",
+        "RAPIDAPI_DISCOVERY_SPORTAPI7_MAX_CALLS": "1"
+      },
       "disable_env": {
-        "RAPIDAPI_ENDPOINT_DISCOVERY_ENABLED": "false",
         "RAPIDAPI_SPORTAPI7_PROBE_ENABLED": "false",
         "RAPIDAPI_SPORTAPI7_DAILY_LIMIT": "0",
         "RAPIDAPI_SPORTAPI7_PER_RUN_MAX": "0"
