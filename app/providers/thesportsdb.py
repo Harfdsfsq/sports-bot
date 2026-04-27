@@ -68,6 +68,7 @@ class TheSportsDbContextProvider:
         api_key = str(settings.thesportsdb_api_key or '123').strip() or '123'
         self.base_url = f"{(settings.thesportsdb_base_url or 'https://www.thesportsdb.com/api/v1/json').rstrip('/')}/{api_key}"
         self.timeout = float(settings.thesportsdb_timeout_seconds or 20.0)
+        self.max_http_requests = max(0, int(getattr(settings, 'thesportsdb_requests_max_per_run', 6) or 0))
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -81,6 +82,9 @@ class TheSportsDbContextProvider:
             'partial_contexts_built': 0,
             'last_body_preview': None,
             'http_statuses': [],
+            'max_http_requests_per_run': self.max_http_requests,
+            'budget_exhausted': False,
+            'rate_limited': False,
         }
         preview: dict[str, Any] = {
             'sample_leagues': [],
@@ -88,6 +92,9 @@ class TheSportsDbContextProvider:
             'sample_contexts': [],
         }
         if not self.settings.enable_thesportsdb_context:
+            return {}, stats, preview
+        if self.max_http_requests <= 0:
+            stats['budget_exhausted'] = True
             return {}, stats, preview
 
         soccer_matches = [match for match in matches if match.sport_key == 'soccer']
@@ -169,6 +176,9 @@ class TheSportsDbContextProvider:
         return not any(token in key for token in ('women', 'youth', 'reserve', 'reserves', 'friendly'))
 
     async def _fetch_json(self, client: httpx.AsyncClient, path: str, stats: dict[str, Any], params: dict[str, Any] | None = None) -> Any | None:
+        if self.max_http_requests <= 0 or int(stats.get('requests') or 0) >= self.max_http_requests:
+            stats['budget_exhausted'] = True
+            return None
         stats['requests'] += 1
         try:
             response = await client.get(f'{self.base_url}{path}', params=params)
@@ -178,6 +188,10 @@ class TheSportsDbContextProvider:
             return None
         stats['http_statuses'].append(response.status_code)
         stats['last_body_preview'] = response.text[:1200]
+        if response.status_code == 429:
+            stats['response_errors'] += 1
+            stats['rate_limited'] = True
+            return None
         if response.status_code != 200:
             stats['response_errors'] += 1
             return None

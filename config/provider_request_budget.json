@@ -84,6 +84,7 @@
         "ENABLE_API_FOOTBALL": "true",
         "API_FOOTBALL_ENABLED": "true",
         "API_FOOTBALL_PER_RUN_MAX": "1",
+        "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "3",
         "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "4",
         "API_FOOTBALL_PREDICTIONS_LIMIT": "1",
         "API_FOOTBALL_FETCH_MATCH_DATES_ONLY": "true",
@@ -95,6 +96,7 @@
         "ENABLE_API_FOOTBALL": "false",
         "API_FOOTBALL_ENABLED": "false",
         "API_FOOTBALL_PER_RUN_MAX": "0",
+        "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "0",
         "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "0",
         "API_FOOTBALL_PREDICTIONS_LIMIT": "0",
         "API_FOOTBALL_KEY": ""
@@ -308,6 +310,7 @@
         "ENABLE_WEATHERAPI": "true",
         "WEATHERAPI_ENABLED": "true",
         "WEATHERAPI_PER_RUN_MAX": "4",
+        "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": "4",
         "WEATHER_CONTEXT_ENABLED": "true",
         "WEATHER_CONTEXT_MATCH_LIMIT": "8",
         "WEATHER_CACHE_TTL_MINUTES": "360"
@@ -315,7 +318,8 @@
       "disable_env": {
         "ENABLE_WEATHERAPI": "false",
         "WEATHERAPI_ENABLED": "false",
-        "WEATHERAPI_PER_RUN_MAX": "0"
+        "WEATHERAPI_PER_RUN_MAX": "0",
+        "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": "0"
       },
       "secret_env_keys": [
         "WEATHERAPI_KEY"
@@ -335,12 +339,14 @@
         "ENABLE_OPENWEATHERMAP": "true",
         "OPENWEATHERMAP_ENABLED": "true",
         "OPENWEATHERMAP_PER_RUN_MAX": "2",
+        "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": "2",
         "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED": "true"
       },
       "disable_env": {
         "ENABLE_OPENWEATHERMAP": "false",
         "OPENWEATHERMAP_ENABLED": "false",
         "OPENWEATHERMAP_PER_RUN_MAX": "0",
+        "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": "0",
         "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED": "false"
       },
       "secret_env_keys": [
@@ -383,20 +389,31 @@
       "min_spacing_minutes": 240,
       "notes": "Scheduled shortlist only; disabled on manual runs.",
       "secret_env_keys": [
-        "NEWSAPI_KEY"
+        "NEWSAPI_KEY",
+        "CURRENTS_API_KEY",
+        "CURRENTS_KEY"
       ],
       "env": {
         "ENABLE_NEWSAPI": "true",
         "NEWSAPI_ENABLED": "true",
         "NEWSAPI_PER_RUN_MAX": "1",
-        "NEWS_CONTEXT_MATCH_LIMIT": "2"
+        "NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN": "1",
+        "CURRENTS_NEWS_PER_RUN_MAX": "3",
+        "CURRENTS_NEWS_MAX_HTTP_REQUESTS_PER_RUN": "3",
+        "NEWS_CONTEXT_MATCH_LIMIT": "2",
+        "NEWS_CONTEXT_CACHE_TTL_MINUTES": "180"
       },
       "disable_env": {
         "ENABLE_NEWSAPI": "false",
         "NEWSAPI_ENABLED": "false",
         "NEWSAPI_PER_RUN_MAX": "0",
+        "NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+        "CURRENTS_NEWS_PER_RUN_MAX": "0",
+        "CURRENTS_NEWS_MAX_HTTP_REQUESTS_PER_RUN": "0",
         "NEWS_CONTEXT_MATCH_LIMIT": "0",
-        "NEWSAPI_KEY": ""
+        "NEWSAPI_KEY": "",
+        "CURRENTS_API_KEY": "",
+        "CURRENTS_KEY": ""
       }
     },
     "gnews": {
@@ -421,12 +438,14 @@
         "ENABLE_GNEWS": "true",
         "GNEWS_ENABLED": "true",
         "GNEWS_PER_RUN_MAX": "1",
+        "GNEWS_MAX_HTTP_REQUESTS_PER_RUN": "1",
         "GNEWS_CONTEXT_MATCH_LIMIT": "2"
       },
       "disable_env": {
         "ENABLE_GNEWS": "false",
         "GNEWS_ENABLED": "false",
         "GNEWS_PER_RUN_MAX": "0",
+        "GNEWS_MAX_HTTP_REQUESTS_PER_RUN": "0",
         "GNEWS_CONTEXT_MATCH_LIMIT": "0",
         "GNEWS_KEY": ""
       }

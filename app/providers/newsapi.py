@@ -38,7 +38,12 @@ class NewsApiContextProvider:
             or 15.0
         )
         self.newsapi_key = str(getattr(settings, 'newsapi_key', None) or os.getenv('NEWSAPI_KEY') or '').strip()
-        self.currents_key = str(os.getenv('CURRENTS_API_KEY') or os.getenv('CURRENTS_KEY') or '').strip()
+        self.currents_key = str(
+            getattr(settings, 'currents_key', None)
+            or os.getenv('CURRENTS_API_KEY')
+            or os.getenv('CURRENTS_KEY')
+            or ''
+        ).strip()
         self.cache_ttl_minutes = max(
             30,
             int(os.getenv('NEWS_CONTEXT_CACHE_TTL_MINUTES') or getattr(settings, 'news_context_cache_ttl_minutes', 180) or 180),
@@ -73,7 +78,12 @@ class NewsApiContextProvider:
             return {}, stats, preview
 
         currents_limit = max(0, int(os.getenv('CURRENTS_MATCH_LIMIT') or 4))
+        currents_limit = min(currents_limit, max(0, int(getattr(self.settings, 'currents_news_per_run_max', 3) or 0)))
         newsapi_limit = max(0, int(getattr(self.settings, 'newsapi_match_limit', 4) or 4))
+        newsapi_limit = min(newsapi_limit, max(0, int(getattr(self.settings, 'newsapi_per_run_max', 1) or 0)))
+        if currents_limit <= 0 and newsapi_limit <= 0:
+            stats['budget_exhausted'] = True
+            return {}, stats, preview
         page_size_currents = max(1, min(int(os.getenv('CURRENTS_ARTICLES_PER_MATCH') or 4), 20))
         page_size_newsapi = max(1, min(int(getattr(self.settings, 'newsapi_articles_per_match', 4) or 4), 20))
         lookback = max(24, int(os.getenv('CURRENTS_LOOKBACK_HOURS') or getattr(self.settings, 'newsapi_lookback_hours', 48) or 48))

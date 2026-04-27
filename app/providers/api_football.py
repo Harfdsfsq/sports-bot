@@ -22,6 +22,7 @@ class ApiFootballContextProvider:
         self.base_url = os.getenv("API_FOOTBALL_BASE_URL") or getattr(settings, "api_football_base_url", None) or "https://v3.football.api-sports.io"
         self.rapidapi_host = str(getattr(settings, "api_football_rapidapi_host", None) or os.getenv("API_FOOTBALL_RAPIDAPI_HOST") or "").strip()
         self.weather_enricher = WeatherContextEnricher(settings)
+        self.max_http_requests = max(0, int(os.getenv("API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN") or getattr(settings, "api_football_per_run_max", 0) or 0))
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -42,9 +43,14 @@ class ApiFootballContextProvider:
             "weather_cache_hits": 0,
             "weather_enriched": 0,
             "weather_provider_hits": {},
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_predictions": [], "sample_weather": []}
         if not self.api_key:
+            return {}, stats, preview
+        if self.max_http_requests <= 0:
+            stats["budget_exhausted"] = True
             return {}, stats, preview
 
         cooldown_until = self._cooldown_until()
@@ -87,6 +93,8 @@ class ApiFootballContextProvider:
 
         async with httpx.AsyncClient(timeout=25.0) as client:
             for idx, day in enumerate(date_list):
+                if not self._request_budget_allows(stats):
+                    break
                 stats["requests"] += 1
                 try:
                     response = await client.get(f"{self.base_url}/fixtures", headers=headers, params={"date": day, "timezone": "UTC"})
@@ -128,6 +136,8 @@ class ApiFootballContextProvider:
                 fixture_id = (((fixture.get("fixture") or {}).get("id")))
                 if not fixture_id:
                     continue
+                if not self._request_budget_allows(stats):
+                    break
                 stats["requests"] += 1
                 try:
                     response = await client.get(f"{self.base_url}/predictions", headers=headers, params={"fixture": fixture_id})
@@ -203,6 +213,15 @@ class ApiFootballContextProvider:
                     stats["matched_fuzzy"] += 1
 
         return contexts, stats, preview
+
+    def _request_budget_allows(self, stats: dict[str, Any]) -> bool:
+        if self.max_http_requests <= 0:
+            stats["budget_exhausted"] = True
+            return False
+        if int(stats.get("requests") or 0) >= self.max_http_requests:
+            stats["budget_exhausted"] = True
+            return False
+        return True
 
     def _cooldown_path(self) -> Path:
         return Path(getattr(self.settings, "state_path", ".data/state.json")).resolve().parent / "provider_cache" / "api_football_rate_limit.json"

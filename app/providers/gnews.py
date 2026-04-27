@@ -44,7 +44,11 @@ class GNewsContextProvider:
         soccer_matches = [item for item in matches if item.sport_key == 'soccer']
         if not soccer_matches:
             return {}, stats, preview
-        limit = max(1, int(getattr(self.settings, 'gnews_match_limit', 12) or 12))
+        limit = max(0, int(getattr(self.settings, 'gnews_match_limit', 12) or 12))
+        limit = min(limit, max(0, int(getattr(self.settings, 'gnews_per_run_max', 1) or 0)))
+        if limit <= 0:
+            stats['budget_exhausted'] = True
+            return {}, stats, preview
         selected = soccer_matches[:limit]
         max_articles = max(1, min(int(getattr(self.settings, 'gnews_articles_per_match', 6) or 6), 10))
         lookback = max(24, int(getattr(self.settings, 'gnews_lookback_hours', 72) or 72))

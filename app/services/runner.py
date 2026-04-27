@@ -92,7 +92,7 @@ class PredictionRunner:
         if key == 'football_data':
             return bool(getattr(self.settings, 'football_data_api_key', None))
         if key == 'newsapi':
-            return bool(getattr(self.settings, 'newsapi_key', None))
+            return bool(getattr(self.settings, 'newsapi_key', None) or getattr(self.settings, 'currents_key', None))
         if key == 'gnews':
             return bool(getattr(self.settings, 'gnews_key', None))
         if key == 'sstats':
@@ -101,6 +101,10 @@ class PredictionRunner:
             return bool(getattr(self.settings, 'bzzoiro_api_key', None))
         if key == 'futrixmetrics':
             return bool(getattr(self.settings, 'futrixmetrics_api_key', None))
+        if key == 'oddspapi':
+            return bool(getattr(self.settings, 'oddspapi_api_key', None))
+        if key == 'allsportsapi':
+            return bool(getattr(self.settings, 'allsportsapi_api_key', None))
         return True
 
     def _provider_cooldown_until(self, provider_key: str) -> datetime | None:
@@ -168,29 +172,21 @@ class PredictionRunner:
                 return True
             return credentials_ready
         if provider_name == 'oddspapi':
-            explicit = bool(getattr(self.settings, 'enable_oddspapi', default))
-            return explicit or bool(getattr(self.settings, 'oddspapi_api_key', None))
+            return bool(getattr(self.settings, 'enable_oddspapi', default))
         if provider_name == 'allsportsapi':
-            explicit = bool(getattr(self.settings, 'enable_allsportsapi', default))
-            return explicit or bool(getattr(self.settings, 'allsportsapi_api_key', None))
+            return bool(getattr(self.settings, 'enable_allsportsapi', default))
         if provider_name == 'odds_api_io':
-            explicit = bool(getattr(self.settings, 'enable_odds_api_io', default))
-            return explicit or bool(getattr(self.settings, 'odds_api_io_key', None))
+            return bool(getattr(self.settings, 'enable_odds_api_io', default))
         if provider_name == 'sstats':
-            explicit = bool(getattr(self.settings, 'sstats_enabled', default)) and bool(getattr(self.settings, 'enable_sstats_context', default))
-            return explicit or bool(getattr(self.settings, 'sstats_api_key', None))
+            return bool(getattr(self.settings, 'sstats_enabled', default)) and bool(getattr(self.settings, 'enable_sstats_context', default))
         if provider_name == 'api_football':
-            explicit = bool(getattr(self.settings, 'api_football_enabled', default))
-            return explicit or bool(getattr(self.settings, 'api_football_key', None))
+            return bool(getattr(self.settings, 'api_football_enabled', default))
         if provider_name == 'football_data':
-            explicit = bool(getattr(self.settings, 'enable_football_data_context', default))
-            return explicit or bool(getattr(self.settings, 'football_data_api_key', None))
+            return bool(getattr(self.settings, 'enable_football_data_context', default))
         if provider_name == 'newsapi':
-            explicit = bool(getattr(self.settings, 'enable_newsapi_context', default))
-            return explicit or bool(getattr(self.settings, 'newsapi_key', None))
+            return bool(getattr(self.settings, 'enable_newsapi_context', default))
         if provider_name == 'gnews':
-            explicit = bool(getattr(self.settings, 'enable_gnews_context', default))
-            return explicit or bool(getattr(self.settings, 'gnews_key', None))
+            return bool(getattr(self.settings, 'enable_gnews_context', default))
         return bool(default)
 
     def _is_report_only_mode(self, now_utc: datetime) -> bool:

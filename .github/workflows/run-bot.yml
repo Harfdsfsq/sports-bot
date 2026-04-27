@@ -77,6 +77,8 @@ jobs:
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
       NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+      CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
+      CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
       GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
       WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
       OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
@@ -157,14 +159,6 @@ jobs:
             grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
           fi
 
-      - name: Apply quota governor profile
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          if [ -f config/api_quota_governor.env ]; then
-            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/api_quota_governor.env >> "$GITHUB_ENV"
-          fi
-
       - name: Apply final runtime overrides
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
@@ -198,13 +192,6 @@ jobs:
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python scripts/apply_rescue_prefilter_patch.py || true
-
-      - name: Apply provider quota governor
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/apply_provider_quota_governor.py
-          cat .data/exports/latest-provider-quota-governor.json || true
 
       - name: Apply provider request budget
         if: env.AUTORUN_SKIP_MAIN != 'true'

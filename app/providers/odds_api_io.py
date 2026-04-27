@@ -22,6 +22,8 @@ class OddsApiIoProvider:
         self.settings = settings
         self.base_url = "https://api.odds-api.io/v3"
         self._bootstrap_events_cache: list[dict[str, Any]] = []
+        self.max_http_requests = max(0, int(getattr(settings, "odds_api_io_per_run_max", 8) or 0))
+        self._requests_used = 0
 
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
@@ -38,6 +40,8 @@ class OddsApiIoProvider:
             "payload_shapes": [],
             "last_body_preview": None,
             "rate_limited": False,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_matches": []}
         api_key = getattr(self.settings, "odds_api_io_key", None)
@@ -55,6 +59,8 @@ class OddsApiIoProvider:
         cached_events: list[dict[str, Any]] = []
         async with httpx.AsyncClient(timeout=timeout) as client:
             for page in range(1, max_pages + 1):
+                if not self._request_budget_allows(stats):
+                    break
                 params = {
                     "apiKey": api_key,
                     "sport": "football",
@@ -65,6 +71,7 @@ class OddsApiIoProvider:
                     "page": page,
                 }
                 stats["event_requests"] += 1
+                self._requests_used += 1
                 try:
                     response = await client.get(f"{self.base_url}/events", params=params)
                 except Exception as exc:
@@ -173,6 +180,8 @@ class OddsApiIoProvider:
             "requested_bookmakers": None,
             "bootstrap_events_reused": 0,
             "rate_limited": False,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
@@ -210,6 +219,8 @@ class OddsApiIoProvider:
                     preview["sample_events"] = events[:3]
             else:
                 for page in range(1, max_pages + 1):
+                    if not self._request_budget_allows(stats):
+                        break
                     params = {
                         "apiKey": api_key,
                         "sport": "football",
@@ -220,6 +231,7 @@ class OddsApiIoProvider:
                         "page": page,
                     }
                     stats["event_requests"] += 1
+                    self._requests_used += 1
                     try:
                         response = await client.get(f"{self.base_url}/events", params=params)
                     except Exception as exc:
@@ -356,8 +368,11 @@ class OddsApiIoProvider:
             return []
         attempts = 0
         while attempts < 2:
+            if not self._request_budget_allows(stats):
+                return []
             attempts += 1
             stats["odds_requests"] += 1
+            self._requests_used += 1
             try:
                 response = await self._request_odds_multi(client, api_key, event_ids, target_books)
             except Exception as exc:
@@ -390,6 +405,15 @@ class OddsApiIoProvider:
             if response.status_code < 500:
                 return []
         return []
+
+    def _request_budget_allows(self, stats: dict[str, Any]) -> bool:
+        if self.max_http_requests <= 0:
+            stats["budget_exhausted"] = True
+            return False
+        if self._requests_used >= self.max_http_requests:
+            stats["budget_exhausted"] = True
+            return False
+        return True
 
     def _bookmakers_param(self) -> str:
         """Restrict odds-api.io requests to Bet365 and Unibet only.

@@ -13,9 +13,9 @@ REQUIRED_FILES = [
     "scripts/build_daily_ops_report.py",
     "scripts/auto_learning_engine.py",
     "scripts/sync_persistent_state.py",
-    "scripts/apply_provider_quota_governor.py",
+    "scripts/apply_provider_request_budget.py",
     "config/final_runtime_overrides.env",
-    "config/api_quota_governor.env",
+    "config/provider_request_budget.json",
     "config/auto_learning_policy.json",
     "app/services/telegram_i18n.py",
 ]
@@ -56,6 +56,10 @@ def main() -> int:
         warnings.append("run-bot.yml does not call auto_learning_engine.py")
     if "python scripts/sync_persistent_state.py || true" not in run_yml:
         warnings.append("run-bot.yml does not use safe persistent state sync")
+    if "config/api_quota_governor.env" in run_yml or "apply_provider_quota_governor.py" in run_yml:
+        warnings.append("run-bot.yml still applies the legacy quota governor; provider_request_budget must be the only quota source")
+    if "python scripts/apply_provider_request_budget.py" not in run_yml:
+        warnings.append("run-bot.yml does not apply provider_request_budget.py")
     if "workflow_dispatch" not in run_yml or "SEND_DETAILED_REPORT=true" not in run_yml:
         warnings.append("manual detailed report Telegram policy should be enabled for workflow_dispatch")
 
@@ -64,6 +68,21 @@ def main() -> int:
         marker = "!" + state
         if marker not in gitignore:
             warnings.append(f".gitignore does not explicitly keep {state}")
+
+    env_text = read(".env")
+    dangerous_defaults = [
+        "ODDSPAPI_ENABLED=true",
+        "ALLSPORTSAPI_ENABLED=true",
+        "API_FOOTBALL_ENABLED=true",
+        "FUTRIXMETRICS_ENABLED=true",
+        "ENABLE_NEWSAPI_CONTEXT=true",
+        "ENABLE_GNEWS_CONTEXT=true",
+        "ENABLE_FOOTBALL_DATA_CONTEXT=true",
+        "ENABLE_THESPORTSDB_CONTEXT=true",
+    ]
+    for marker in dangerous_defaults:
+        if marker in env_text:
+            warnings.append(f".env still has dangerous budget-bypassing default: {marker}")
 
     generated_present = [path for path in GENERATED_DIRS if Path(path).exists()]
     payload: dict[str, Any] = {

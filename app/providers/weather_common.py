@@ -43,6 +43,10 @@ class WeatherContextEnricher:
         self.openweather_enabled = _env_bool('OPENWEATHERMAP_ENABLED', True)
         self.timeout = float(os.getenv('WEATHER_TIMEOUT_SECONDS') or getattr(settings, 'weather_timeout_seconds', 8.0) or 8.0)
         self.cache_ttl_minutes = max(30, int(os.getenv('WEATHER_CACHE_TTL_MINUTES') or getattr(settings, 'weather_cache_ttl_minutes', 180) or 180))
+        self.weatherapi_per_run_max = max(0, int(os.getenv('WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN') or getattr(settings, 'weatherapi_per_run_max', 4) or 0))
+        self.openweather_per_run_max = max(0, int(os.getenv('OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN') or getattr(settings, 'openweathermap_per_run_max', 2) or 0))
+        self._weatherapi_requests_used = 0
+        self._openweather_requests_used = 0
         self.wind_penalty_kph = float(os.getenv('WEATHER_WIND_PENALTY_KPH') or 18.0)
         self.severe_wind_kph = float(os.getenv('WEATHER_SEVERE_WIND_KPH') or 25.0)
         self.rain_penalty_mm = float(os.getenv('WEATHER_RAIN_PENALTY_MM') or 1.0)
@@ -62,6 +66,9 @@ class WeatherContextEnricher:
             'response_errors': 0,
             'provider': None,
             'enriched': False,
+            'weatherapi_requests': 0,
+            'openweathermap_requests': 0,
+            'budget_exhausted': False,
         }
         if not stats['enabled']:
             return context, stats
@@ -131,7 +138,12 @@ class WeatherContextEnricher:
         kickoff: datetime,
         stats: dict[str, Any],
     ) -> dict[str, Any] | None:
+        if self._weatherapi_requests_used >= self.weatherapi_per_run_max:
+            stats['budget_exhausted'] = True
+            return None
         stats['requests'] += 1
+        stats['weatherapi_requests'] += 1
+        self._weatherapi_requests_used += 1
         try:
             response = await client.get(
                 'https://api.weatherapi.com/v1/forecast.json',
@@ -187,7 +199,12 @@ class WeatherContextEnricher:
         kickoff: datetime,
         stats: dict[str, Any],
     ) -> dict[str, Any] | None:
+        if self._openweather_requests_used >= self.openweather_per_run_max:
+            stats['budget_exhausted'] = True
+            return None
         stats['requests'] += 1
+        stats['openweathermap_requests'] += 1
+        self._openweather_requests_used += 1
         try:
             response = await client.get(
                 'https://api.openweathermap.org/data/2.5/forecast',

@@ -68,6 +68,7 @@ class FootballDataContextProvider:
         self.settings = settings
         self.base_url = str(settings.football_data_base_url or 'https://api.football-data.org/v4').rstrip('/')
         self.timeout = float(settings.football_data_timeout_seconds or 20.0)
+        self.max_http_requests = max(0, int(getattr(settings, 'football_data_requests_max_per_run', 4) or 0))
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -92,6 +93,9 @@ class FootballDataContextProvider:
             'unmatched_rows': 0,
             'http_statuses': [],
             'last_body_preview': None,
+            'max_http_requests_per_run': self.max_http_requests,
+            'budget_exhausted': False,
+            'rate_limited': False,
         }
         preview: dict[str, Any] = {
             'sample_matches': [],
@@ -103,6 +107,9 @@ class FootballDataContextProvider:
         }
 
         if not stats['enabled'] or not stats['api_key_present']:
+            return {}, stats, preview
+        if self.max_http_requests <= 0:
+            stats['budget_exhausted'] = True
             return {}, stats, preview
 
         soccer_matches = [item for item in matches if item.sport_key == 'soccer']
@@ -285,6 +292,9 @@ class FootballDataContextProvider:
         params: dict[str, Any] | None = None,
         soft_fail_statuses: set[int] | None = None,
     ) -> Any | None:
+        if self.max_http_requests <= 0 or int(stats.get('requests') or 0) >= self.max_http_requests:
+            stats['budget_exhausted'] = True
+            return None
         stats['requests'] += 1
         try:
             response = await client.get(f'{self.base_url}{path}', params=params)
@@ -294,6 +304,10 @@ class FootballDataContextProvider:
             return None
         stats['http_statuses'].append(response.status_code)
         stats['last_body_preview'] = response.text[:1800]
+        if response.status_code == 429:
+            stats['response_errors'] += 1
+            stats['rate_limited'] = True
+            return None
         if response.status_code != 200:
             if soft_fail_statuses and response.status_code in soft_fail_statuses:
                 return None

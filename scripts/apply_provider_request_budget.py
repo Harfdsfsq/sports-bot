@@ -180,6 +180,8 @@ def decide_provider(name: str, cfg: dict[str, Any], row: dict[str, Any], now: da
         'slot': current_slot_label(now),
         'daily_used_before': usage(row, 'daily', dkey),
         'monthly_used_before': usage(row, 'monthly', mkey),
+        'daily_budget': as_int(cfg.get('safe_daily_budget'), 0),
+        'monthly_budget': as_int(cfg.get('safe_monthly_budget'), 0),
     }
 
     until, why = fatal_cooldown_until(now, cfg, recent_text)
@@ -264,7 +266,7 @@ def build_env_for_decision(cfg: dict[str, Any], decision: dict[str, Any]) -> dic
     prefix = str(decision['provider']).upper().replace('-', '_')
     env[f'{prefix}_REQUEST_BUDGET_GRANTED'] = str(grant)
     env[f'{prefix}_REQUEST_BUDGET_REASON'] = str(decision.get('reason') or '')
-    env[f'{prefix}_MAX_HTTP_REQUESTS_PER_RUN'] = str(grant)
+    env.setdefault(f'{prefix}_MAX_HTTP_REQUESTS_PER_RUN', str(grant))
     return {str(k): str(v) for k, v in env.items()}
 
 

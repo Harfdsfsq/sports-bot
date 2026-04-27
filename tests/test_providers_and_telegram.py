@@ -1,14 +1,18 @@
 from __future__ import annotations
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 
 from app.config import Settings
 from app.providers.allsportsapi import AllSportsApiOddsProvider
+from app.providers.football_data import FootballDataContextProvider
+from app.providers.gnews import GNewsContextProvider
 from app.providers.oddspapi import OddsPapiProvider
 from app.schemas import CandidateBet, Match
 from app.services.quality import PredictionQualityService
 from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
+from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider
 
 UTC = timezone.utc
 
@@ -73,6 +77,109 @@ def test_oddspapi_splits_fixture_windows_under_limit():
     assert windows[0][0] == start
     assert windows[-1][1] == end
     assert all((window_end - window_start) <= timedelta(hours=provider.fixture_window_hours) for window_start, window_end in windows)
+
+
+def test_request_budget_disables_monthly_provider_on_manual_run(monkeypatch):
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    now = datetime(2026, 4, 27, 6, 0, tzinfo=UTC)
+    cfg = {
+        "enabled": True,
+        "manual_enabled": False,
+        "per_run_max": 1,
+        "safe_monthly_budget": 10,
+        "disable_env": {"FUTRIXMETRICS_ENABLED": "false"},
+    }
+
+    decision = decide_provider("futrixmetrics", cfg, {"daily": {}, "monthly": {}}, now, "")
+    env = build_env_for_decision(cfg, decision)
+
+    assert decision["grant"] == 0
+    assert decision["reason"] == "manual_disabled_by_policy"
+    assert env["FUTRIXMETRICS_ENABLED"] == "false"
+    assert env["FUTRIXMETRICS_MAX_HTTP_REQUESTS_PER_RUN"] == "0"
+
+
+def test_request_budget_grants_allowed_scheduled_hour(monkeypatch):
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    now = datetime(2026, 4, 27, 6, 0, tzinfo=UTC)  # 09:00 MSK
+    cfg = {
+        "enabled": True,
+        "allowed_msk_hours": [9, 15, 21],
+        "per_run_max": 1,
+        "safe_daily_budget": 18,
+        "safe_monthly_budget": 720,
+        "env": {"FUTRIXMETRICS_ENABLED": "true"},
+    }
+    state_row = {"daily": {}, "monthly": {}}
+
+    decision = decide_provider("futrixmetrics", cfg, state_row, now, "")
+
+    assert decision["grant"] == 1
+    assert decision["reason"] == "granted"
+    assert state_row["last_grant"] == 1
+
+
+def test_request_budget_blocks_exhausted_daily_budget(monkeypatch):
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "schedule")
+    now = datetime(2026, 4, 27, 6, 0, tzinfo=UTC)
+    cfg = {"enabled": True, "per_run_max": 1, "safe_daily_budget": 1}
+    state_row = {"daily": {"2026-04-27": 1}, "monthly": {}}
+
+    decision = decide_provider("newsapi", cfg, state_row, now, "")
+
+    assert decision["grant"] == 0
+    assert decision["reason"] == "daily_budget_exhausted:1/1"
+
+
+def test_gnews_zero_request_budget_short_circuits():
+    provider = GNewsContextProvider(Settings(_env_file=None, ENABLE_GNEWS_CONTEXT=True, GNEWS_KEY="fake", GNEWS_PER_RUN_MAX=0))
+    match = Match(
+        source="test",
+        source_event_id="1",
+        sport_key="soccer",
+        league_name="Premier League",
+        home_team="Home FC",
+        away_team="Away FC",
+        commence_time=datetime(2026, 4, 27, 12, 0, tzinfo=UTC),
+        home_team_norm="",
+        away_team_norm="",
+        league_key="",
+    )
+
+    contexts, stats, _ = asyncio.run(provider.fetch_context([match]))
+
+    assert contexts == {}
+    assert stats["requests"] == 0
+    assert stats["budget_exhausted"] is True
+
+
+def test_football_data_zero_request_budget_short_circuits():
+    provider = FootballDataContextProvider(
+        Settings(
+            _env_file=None,
+            ENABLE_FOOTBALL_DATA_CONTEXT=True,
+            FOOTBALL_DATA_API_KEY="fake",
+            FOOTBALL_DATA_REQUESTS_MAX_PER_RUN=0,
+        )
+    )
+    match = Match(
+        source="test",
+        source_event_id="1",
+        sport_key="soccer",
+        league_name="Premier League",
+        home_team="Home FC",
+        away_team="Away FC",
+        commence_time=datetime(2026, 4, 27, 12, 0, tzinfo=UTC),
+        home_team_norm="",
+        away_team_norm="",
+        league_key="",
+    )
+
+    contexts, stats, _ = asyncio.run(provider.fetch_context([match]))
+
+    assert contexts == {}
+    assert stats["requests"] == 0
+    assert stats["budget_exhausted"] is True
 
 
 def test_telegram_uses_live_edge_values_and_keeps_structured_sections():
