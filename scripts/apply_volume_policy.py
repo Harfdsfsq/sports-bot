@@ -77,8 +77,6 @@ def normalize_piece(value: Any) -> str:
 
 
 def row_dedupe_key(row: dict[str, Any], fallback: str) -> str:
-    # Keep this intentionally close to publish_controlled_fallback.dedupe_key,
-    # but resilient to partial rows in state/fallback indexes.
     parts = [
         normalize_piece(row.get("match_key")),
         normalize_piece(row.get("family")),
@@ -125,9 +123,6 @@ def configured_count_sources(policy: dict[str, Any]) -> dict[str, bool]:
             return value
         return str(value).strip().lower() in {"1", "true", "yes", "on"}
 
-    # Shadow bets are diagnostics/watchlist rows in this project. They must not block
-    # real Telegram picks, otherwise the governor can set MAX_PICKS_PER_RUN=0 even
-    # when nothing was published.
     return {
         "fallback_sent_index": flag("fallback_sent_index", True),
         "state_bets": flag("state_bets", True),
@@ -194,7 +189,7 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
     max_per_run = int(cfg.get("max_picks_per_run", 2))
 
     env: dict[str, str] = {
-        "VOLUME_POLICY_VERSION": "v11-target-volume-shadow-count-fix",
+        "VOLUME_POLICY_VERSION": "v12-no-tier-c-publication",
         "VOLUME_POLICY_MODE": mode,
         "VOLUME_DAILY_TARGET_PICKS": str(target),
         "VOLUME_DAILY_SOFT_CAP_PICKS": str(soft_cap),
@@ -214,6 +209,8 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
         "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": "true",
         "CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY": "true",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "true",
+        "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "false",
+        "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "",
     }
 
     families = cfg.get("allowed_families") or ["totals", "dnb"]
@@ -224,7 +221,10 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
         tier = tiers.get(tier_name) if isinstance(tiers.get(tier_name), dict) else {}
         prefix = f"CONTROLLED_FALLBACK_TIER_{tier_name}_"
         allowed = tier.get("allowed_families") or families
-        env[prefix + "ALLOWED_FAMILIES"] = ",".join(str(x) for x in allowed)
+        if tier_name == "C":
+            env[prefix + "ALLOWED_FAMILIES"] = ""
+        else:
+            env[prefix + "ALLOWED_FAMILIES"] = ",".join(str(x) for x in allowed)
         mapping = {
             "min_books": "MIN_BOOKS",
             "min_confidence": "MIN_CONFIDENCE",
@@ -267,10 +267,8 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
         env["CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN"] = "1"
         env["CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN"] = "1"
         env["MAX_PICKS_PER_RUN"] = "1"
-        env["CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED"] = "false"
         reasons.append(f"daily_target_reached_extra_pick_strict:{existing_today}/{target}")
     else:
-        env["CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED"] = str(bool(cfg.get("tier_c_publish_enabled", True))).lower()
         reasons.append(f"target_mode_active:{existing_today}/{target}")
 
     return env, reasons
@@ -299,7 +297,7 @@ def main() -> int:
 
     now_utc = datetime.now(UTC).isoformat()
     payload = {
-        "version": "v11-target-volume-shadow-count-fix",
+        "version": "v12-no-tier-c-publication",
         "mode": mode,
         "today_local": today,
         "now_utc": now_utc,
@@ -315,11 +313,11 @@ def main() -> int:
                 "dnb_outlier_guard",
                 "proxy_single_book_reject",
             ],
-            "target": "increase daily volume through Tier B/C micro only, not through hard-guard bypass",
+            "target": "increase daily volume through Tier A/B only, without hard-guard bypass and without Tier C Telegram publication",
         },
         "fix_note": (
-            "v11 excludes state.shadow_bets from daily cap by default. Shadow bets are diagnostics/watchlist rows, "
-            "not real Telegram publications."
+            "v12 excludes state.shadow_bets from daily cap by default and forces Tier C publication off. "
+            "Shadow bets are diagnostics/watchlist rows, not real Telegram publications."
         ),
     }
     write_json(STATE_PATH, payload)
