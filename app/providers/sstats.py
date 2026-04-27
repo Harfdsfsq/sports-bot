@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
@@ -26,6 +27,15 @@ class SStatsContextProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self.url = "https://api.sstats.net/Games/list"
+        self.max_http_requests = max(
+            0,
+            int(
+                os.getenv("SSTATS_MAX_HTTP_REQUESTS_PER_RUN")
+                or os.getenv("SSTATS_REQUESTS_MAX_PER_RUN")
+                or getattr(settings, "sstats_requests_max_per_run", 0)
+                or 0
+            ),
+        )
 
     async def fetch_context(
         self,
@@ -60,6 +70,8 @@ class SStatsContextProvider:
             "last_body_preview": None,
             "last_error": None,
             "last_url": self.url,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
         }
         preview: dict[str, Any] = {
             "sample_rows": [],
@@ -277,6 +289,8 @@ class SStatsContextProvider:
         seen_signatures: set[tuple[Any, ...]] = set()
 
         for window_from, window_to in self._date_windows(from_date, to_date, chunk_days):
+            if self._http_budget_exhausted(stats):
+                break
             stats["chunk_windows_requested"] = int(stats.get("chunk_windows_requested", 0) or 0) + 1
             batch_rows = await self._fetch_rows_window(client, window_from, window_to, stats)
             for row in batch_rows:
@@ -307,6 +321,8 @@ class SStatsContextProvider:
         rows: list[dict[str, Any]] = []
 
         while True:
+            if self._http_budget_exhausted(stats):
+                break
             params = {
                 "from": from_date,
                 "to": to_date,
@@ -383,6 +399,8 @@ class SStatsContextProvider:
         backoff = max(0.0, float(getattr(self.settings, "sstats_retry_backoff_seconds", 1.0) or 1.0))
 
         for attempt in range(retries + 1):
+            if self._http_budget_exhausted(stats):
+                return None
             if attempt > 0:
                 stats["retry_attempts"] = int(stats.get("retry_attempts", 0) or 0) + 1
 
@@ -417,6 +435,15 @@ class SStatsContextProvider:
                 await asyncio.sleep(backoff * attempt if attempt > 0 else backoff)
 
         return None
+
+    def _http_budget_exhausted(self, stats: dict[str, Any]) -> bool:
+        if self.max_http_requests <= 0:
+            return False
+        if int(stats.get("requests", 0) or 0) >= self.max_http_requests:
+            stats["budget_exhausted"] = True
+            stats["last_error"] = "budget_exhausted"
+            return True
+        return False
 
     @staticmethod
     def _retryable_status(status_code: int) -> bool:

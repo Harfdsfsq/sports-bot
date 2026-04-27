@@ -59,6 +59,16 @@ except Exception:
         "tier_b_canonical_ev_below_min": "EV ниже минимума уровня B",
         "tier_c_canonical_edge_below_min": "запас value ниже минимума уровня C",
         "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
+        "duplicate_fallback_sent_index": "такой прогноз уже отправлялся ранее",
+        "proxy_single_source_edge_below_min": "proxy-источник: запас value ниже минимума",
+        "proxy_single_source_ev_below_min": "proxy-источник: EV ниже минимума",
+        "proxy_single_source_confidence_below_min": "proxy-источник: уверенность ниже минимума",
+        "telegram_publish_books_guard": "недостаточно линий для публикации в Telegram",
+        "proxy_single_book_guard": "proxy-кандидат только с одной линией",
+        "proxy_without_market_confirmation": "proxy-кандидат без рыночного подтверждения",
+        "tier_c_watch_only": "уровень C оставлен только для наблюдения",
+        "final_edge_below_min": "финальный запас value ниже минимума",
+        "final_ev_below_min": "финальный EV ниже минимума",
     }
 
     _TEAM_FALLBACK = {
@@ -483,12 +493,17 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
         matches = as_int(row.get("matches_with_data"))
         items = as_int(row.get("items_total"))
         requests_count = stats.get("requests", status.get("requests"))
+        max_requests = stats.get("max_http_requests_per_run", status.get("max_http_requests_per_run"))
         response_errors = stats.get("response_errors", status.get("response_errors"))
         parts = [f"data {matches}/{items}"]
         if requests_count is not None:
             parts.append(f"req {requests_count}")
+        if max_requests:
+            parts.append(f"max {max_requests}")
         if response_errors:
             parts.append(f"err {response_errors}")
+        if stats.get("budget_exhausted") or status.get("budget_exhausted"):
+            parts.append("budget_exhausted")
         if status.get("loaded") is False:
             parts.append(f"off:{status.get('reason') or 'not_loaded'}")
         elif status.get("rate_limited") or name in rate_limits:
