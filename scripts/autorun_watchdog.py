@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -13,18 +13,37 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v16-two-hour-primary-five-minute-watchdog'
+POLICY_VERSION = 'v17-msk-midnight-primary-five-minute-watchdog'
 
-# Primary workflow slots are at :17 every two hours UTC.
-PRIMARY_UTC_HOURS = {0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22}
-PRIMARY_MINUTE = int(float(os.getenv('AUTORUN_PRIMARY_MINUTE', '17')))
+# Primary workflow slots are at 00 minutes every two hours in MSK.
+# In UTC that is 01,03,05,...,23 while Europe/Moscow = UTC+3.
+DEFAULT_PRIMARY_UTC_HOURS = '1,3,5,7,9,11,13,15,17,19,21,23'
+PRIMARY_MINUTE = int(float(os.getenv('AUTORUN_PRIMARY_MINUTE', '0')))
 WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '5')))
-WATCHDOG_MINUTE = (PRIMARY_MINUTE + WATCHDOG_DELAY_MINUTES) % 60
-WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '10'))))
+WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '6'))))
 
 # If the current primary slot has already succeeded, watchdog skips.
-# If only the previous two-hour slot succeeded, the age is ~120+ minutes, so watchdog runs.
 RECENT_SUCCESS_GRACE_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_RECENT_SUCCESS_MINUTES', '90')))
+
+
+def parse_primary_hours() -> set[int]:
+    raw = str(os.getenv('AUTORUN_PRIMARY_UTC_HOURS', DEFAULT_PRIMARY_UTC_HOURS) or DEFAULT_PRIMARY_UTC_HOURS)
+    result: set[int] = set()
+    for piece in raw.split(','):
+        piece = piece.strip()
+        if not piece:
+            continue
+        try:
+            hour = int(piece)
+        except Exception:
+            continue
+        if 0 <= hour <= 23:
+            result.add(hour)
+    return result or {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23}
+
+
+PRIMARY_UTC_HOURS = parse_primary_hours()
+WATCHDOG_MINUTE = (PRIMARY_MINUTE + WATCHDOG_DELAY_MINUTES) % 60
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -69,17 +88,20 @@ def append_env(env: dict[str, str]) -> None:
         print('\n'.join(lines))
 
 
+def minute_in_window(now_minute: int, start_minute: int, width: int) -> bool:
+    return start_minute <= now_minute <= (start_minute + width)
+
+
 def is_watchdog_slot(now_utc: datetime) -> bool:
     if now_utc.hour not in PRIMARY_UTC_HOURS:
         return False
-    upper = WATCHDOG_MINUTE + WATCHDOG_WINDOW_MINUTES
-    return WATCHDOG_MINUTE <= now_utc.minute <= upper
+    return minute_in_window(now_utc.minute, WATCHDOG_MINUTE, WATCHDOG_WINDOW_MINUTES)
 
 
 def is_primary_slot(now_utc: datetime) -> bool:
     if now_utc.hour not in PRIMARY_UTC_HOURS:
         return False
-    return PRIMARY_MINUTE <= now_utc.minute <= PRIMARY_MINUTE + 15
+    return minute_in_window(now_utc.minute, PRIMARY_MINUTE, 4)
 
 
 def state_age_minutes(state: dict[str, Any], now_utc: datetime) -> float | None:
