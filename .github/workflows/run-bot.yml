@@ -62,7 +62,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v10-target-volume-watchdog
+      AUTORUN_POLICY_VERSION: v12-volume-api-budget-watchdog
       VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_3' }}
 
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -205,6 +205,13 @@ jobs:
         run: |
           python scripts/apply_provider_quota_governor.py
           cat .data/exports/latest-provider-quota-governor.json || true
+
+      - name: Apply provider request budget
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/apply_provider_request_budget.py
+          cat .data/exports/latest-provider-request-budget.json || true
 
       - name: Ensure calibration profile exists
         if: env.AUTORUN_SKIP_MAIN != 'true'

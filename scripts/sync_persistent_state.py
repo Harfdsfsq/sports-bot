@@ -23,6 +23,7 @@ STATE_FILES = [
     ".data/learning-state.json",
     ".data/autorun-state.json",
     ".data/volume-governor-state.json",
+    ".data/provider_request_budget_state.json",
 ]
 
 
