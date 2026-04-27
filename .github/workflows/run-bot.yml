@@ -36,11 +36,11 @@ on:
           - target_7
   schedule:
     # Primary autoruns. UTC. Europe/Moscow = UTC+3.
-    # 03:17, 05:17, 07:17, 09:17, 11:17, 13:17, 15:17, 17:17, 19:17, 21:17, 23:17, 01:17 MSK.
-    - cron: "17 0,2,4,6,8,10,12,14,16,18,20,22 * * *"
-    # Watchdog/failsafe slots. If a primary autorun was missed, these run the full pipeline.
-    # 07:47, 13:47, 19:47, 01:47 MSK.
-    - cron: "47 4,10,16,22 * * *"
+    # 00:00, 02:00, 04:00, 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00 MSK.
+    - cron: "0 1,3,5,7,9,11,13,15,17,19,21,23 * * *"
+    # Watchdog/failsafe slots exactly +5 minutes after every primary slot.
+    # If the primary run already completed, scripts/autorun_watchdog.py skips the main pipeline.
+    - cron: "5 1,3,5,7,9,11,13,15,17,19,21,23 * * *"
 
 permissions:
   contents: write
@@ -58,7 +58,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v15-all-api-budget-no-api-football
+      AUTORUN_POLICY_VERSION: v17-msk-midnight-primary-five-minute-watchdog
       VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_3' }}
 
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
@@ -69,7 +69,7 @@ jobs:
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
       ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
       FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
-      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.STATS_API_KEY }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
@@ -260,6 +260,13 @@ jobs:
         shell: bash
         run: python scripts/build_detailed_run_report.py || true
 
+      - name: Export latest run summary
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/export_latest_run_summary.py || true
+          cat .data/exports/latest-run-summary.json || true
+
       - name: Build run-bot bundle
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
@@ -274,6 +281,7 @@ jobs:
             artifacts/run-bot/**
             .data/exports/**
             .logs/debug-last-run.json
+            .data/latest-run-summary.json
           if-no-files-found: ignore
           retention-days: 7
 
