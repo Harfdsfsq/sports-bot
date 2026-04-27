@@ -39,7 +39,7 @@
     "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "6.5",
     "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": "14",
     "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": "60.0",
-    "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "totals,dnb",
+    "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "",
     "CONTROLLED_FALLBACK_TIER_C_MAX_ODDS": "2.25",
     "CONTROLLED_FALLBACK_TIER_C_MIN_BOOKS": "2",
     "CONTROLLED_FALLBACK_TIER_C_MIN_CONFIDENCE": "68.0",
@@ -47,7 +47,7 @@
     "CONTROLLED_FALLBACK_TIER_C_MIN_EV_PCT": "7.5",
     "CONTROLLED_FALLBACK_TIER_C_MIN_PUBLICATION_SCORE": "12",
     "CONTROLLED_FALLBACK_TIER_C_MIN_QUALITY": "58.0",
-    "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "true",
+    "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "false",
     "CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT": "2.25",
     "MAX_PICKS_PER_RUN": "2",
     "VOLUME_DAILY_HARD_CAP_PICKS": "5",
@@ -55,7 +55,7 @@
     "VOLUME_DAILY_TARGET_PICKS": "3",
     "VOLUME_EXISTING_PICKS_TODAY": "0",
     "VOLUME_POLICY_MODE": "target_3",
-    "VOLUME_POLICY_VERSION": "v11-target-volume-shadow-count-fix"
+    "VOLUME_POLICY_VERSION": "v12-no-tier-c-publication"
   },
   "counts": {
     "count_sources": {
@@ -75,9 +75,9 @@
     "target_mode_active:0/3"
   ],
   "existing_picks_today": 0,
-  "fix_note": "v11 excludes state.shadow_bets from daily cap by default. Shadow bets are diagnostics/watchlist rows, not real Telegram publications.",
+  "fix_note": "v12 excludes state.shadow_bets from daily cap by default and forces Tier C publication off. Shadow bets are diagnostics/watchlist rows, not real Telegram publications.",
   "mode": "target_3",
-  "now_utc": "2026-04-27T21:18:50.779548+00:00",
+  "now_utc": "2026-04-27T23:20:20.847261+00:00",
   "quality_policy": {
     "hard_guards_preserved": [
       "canonical_negative_value",
@@ -86,8 +86,8 @@
       "dnb_outlier_guard",
       "proxy_single_book_reject"
     ],
-    "target": "increase daily volume through Tier B/C micro only, not through hard-guard bypass"
+    "target": "increase daily volume through Tier A/B only, without hard-guard bypass and without Tier C Telegram publication"
   },
   "today_local": "2026-04-28",
-  "version": "v11-target-volume-shadow-count-fix"
+  "version": "v12-no-tier-c-publication"
 }
