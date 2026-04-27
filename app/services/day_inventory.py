@@ -50,6 +50,9 @@ class DayInventoryStore:
     def _current_file(self) -> Path:
         return self.base_dir / "current.json"
 
+    def _today_file(self) -> Path:
+        return self.base_dir / "today.json"
+
     def local_date_for_dt(self, value: datetime) -> str:
         return value.astimezone(self.tzinfo).date().isoformat()
 
@@ -194,9 +197,11 @@ class DayInventoryStore:
         date_path = self._date_file(local_date)
         latest_path = self._latest_file()
         current_path = self._current_file()
+        today_path = self._today_file()
         self._write_json(date_path, payload)
         self._write_json(latest_path, payload)
         self._write_json(current_path, payload)
+        self._write_json(today_path, payload)
         summary = {
             "date_local": local_date,
             "updated_at_utc": payload.get("updated_at_utc"),
@@ -210,6 +215,7 @@ class DayInventoryStore:
             "date_path": str(date_path),
             "latest_path": str(latest_path),
             "current_path": str(current_path),
+            "today_path": str(today_path),
             "summary_path": str(self.summary_path),
         }
 
