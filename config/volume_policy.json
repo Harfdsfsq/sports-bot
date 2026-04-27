@@ -1,5 +1,5 @@
 {
-  "version": "v10-target-volume",
+  "version": "v11-target-volume-shadow-count-fix",
   "mode": "target_3",
   "modes": {
     "target_3": {
@@ -10,14 +10,20 @@
       "max_picks_per_run": 2,
       "max_picks_per_match": 1,
       "daily_stake_cap_pct": 2.25,
-      "allowed_families": ["totals", "dnb"],
+      "allowed_families": [
+        "totals",
+        "dnb"
+      ],
       "tier_c_publish_enabled": true,
       "extra_pick_min_ev_pct": 8.5,
       "extra_pick_min_edge_pp": 3.8,
       "extra_pick_min_confidence": 69.0,
       "tiers": {
         "A": {
-          "allowed_families": ["totals", "dnb"],
+          "allowed_families": [
+            "totals",
+            "dnb"
+          ],
           "min_books": 2,
           "min_confidence": 66.0,
           "min_quality": 66.0,
@@ -27,17 +33,23 @@
           "max_odds": 2.65
         },
         "B": {
-          "allowed_families": ["totals", "dnb"],
+          "allowed_families": [
+            "totals",
+            "dnb"
+          ],
           "min_books": 2,
           "min_confidence": 64.5,
           "min_quality": 60.0,
           "min_edge_pp": 3.2,
           "min_ev_pct": 6.5,
           "min_publication_score": 14,
-          "max_odds": 2.70
+          "max_odds": 2.7
         },
         "C": {
-          "allowed_families": ["totals", "dnb"],
+          "allowed_families": [
+            "totals",
+            "dnb"
+          ],
           "min_books": 2,
           "min_confidence": 68.0,
           "min_quality": 58.0,
@@ -74,24 +86,41 @@
       "max_picks_per_run": 2,
       "max_picks_per_match": 1,
       "daily_stake_cap_pct": 3.0,
-      "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+      "allowed_families": [
+        "totals",
+        "dnb",
+        "teamtotals",
+        "teamTotals",
+        "btts"
+      ],
       "tier_c_publish_enabled": true,
       "extra_pick_min_ev_pct": 8.5,
       "extra_pick_min_edge_pp": 3.8,
       "extra_pick_min_confidence": 69.0,
       "tiers": {
         "A": {
-          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals"],
+          "allowed_families": [
+            "totals",
+            "dnb",
+            "teamtotals",
+            "teamTotals"
+          ],
           "min_books": 2,
           "min_confidence": 66.0,
           "min_quality": 66.0,
           "min_edge_pp": 3.5,
           "min_ev_pct": 6.0,
           "min_publication_score": 20,
-          "max_odds": 2.70
+          "max_odds": 2.7
         },
         "B": {
-          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+          "allowed_families": [
+            "totals",
+            "dnb",
+            "teamtotals",
+            "teamTotals",
+            "btts"
+          ],
           "min_books": 2,
           "min_confidence": 64.5,
           "min_quality": 60.0,
@@ -101,7 +130,10 @@
           "max_odds": 2.75
         },
         "C": {
-          "allowed_families": ["totals", "dnb"],
+          "allowed_families": [
+            "totals",
+            "dnb"
+          ],
           "min_books": 2,
           "min_confidence": 67.0,
           "min_quality": 58.0,
@@ -112,7 +144,7 @@
         }
       },
       "tier_stake": {
-        "default_pct": 0.50,
+        "default_pct": 0.5,
         "min_stake": 2.0,
         "max_stake_tier_a": 7.0,
         "max_stake_tier_b": 4.0,
@@ -139,24 +171,41 @@
       "max_picks_per_run": 2,
       "max_picks_per_match": 1,
       "daily_stake_cap_pct": 3.5,
-      "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+      "allowed_families": [
+        "totals",
+        "dnb",
+        "teamtotals",
+        "teamTotals",
+        "btts"
+      ],
       "tier_c_publish_enabled": true,
       "extra_pick_min_ev_pct": 8.0,
       "extra_pick_min_edge_pp": 3.6,
       "extra_pick_min_confidence": 68.0,
       "tiers": {
         "A": {
-          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals"],
+          "allowed_families": [
+            "totals",
+            "dnb",
+            "teamtotals",
+            "teamTotals"
+          ],
           "min_books": 2,
           "min_confidence": 66.0,
           "min_quality": 66.0,
           "min_edge_pp": 3.5,
           "min_ev_pct": 6.0,
           "min_publication_score": 20,
-          "max_odds": 2.70
+          "max_odds": 2.7
         },
         "B": {
-          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+          "allowed_families": [
+            "totals",
+            "dnb",
+            "teamtotals",
+            "teamTotals",
+            "btts"
+          ],
           "min_books": 2,
           "min_confidence": 64.0,
           "min_quality": 60.0,
@@ -166,7 +215,10 @@
           "max_odds": 2.75
         },
         "C": {
-          "allowed_families": ["totals", "dnb"],
+          "allowed_families": [
+            "totals",
+            "dnb"
+          ],
           "min_books": 2,
           "min_confidence": 65.0,
           "min_quality": 58.0,
@@ -196,5 +248,16 @@
         "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": true
       }
     }
-  }
+  },
+  "count_sources": {
+    "fallback_sent_index": true,
+    "state_bets": true,
+    "state_published_candidates": true,
+    "state_shadow_bets": false
+  },
+  "notes": [
+    "state.shadow_bets is diagnostics/watchlist state and is excluded from daily volume caps by default.",
+    "Real pick count uses fallback-sent-index, state.bets and state.published_candidates.",
+    "Hard guards remain enabled: negative value, xG conflicts, DNB outliers, proxy single-book reject."
+  ]
 }

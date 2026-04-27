@@ -1,4 +1,33 @@
-# Volume policy v10
+# Volume policy v11
+
+v11 исправляет ошибку v10: `state.shadow_bets` больше не считается опубликованными прогнозами для дневного cap.
+
+## Что было
+
+v10 видел diagnostic/watchlist rows в `state.shadow_bets` и считал их как реальные прогнозы. В результате при `state_shadow_bets=6` и `daily_hard_cap=5` governor выставлял:
+
+```text
+CONTROLLED_FALLBACK_ENABLED=false
+MAX_PICKS_PER_RUN=0
+```
+
+После этого controlled fallback не проверял резерв (`evaluated=[]`, `candidates_seen=0`), а detailed report писал `Резерв проверил: 0`.
+
+## Что стало
+
+Для дневного лимита считаются только реальные публикации:
+
+- `.data/fallback-sent-index.json`;
+- `.data/state.json -> bets`;
+- `.data/state.json -> published_candidates`.
+
+`state.shadow_bets` остаётся в диагностике, но не блокирует публикации.
+
+Остальная volume-логика `target_3 / target_5 / target_7` сохранена.
+
+---
+
+# Volume policy v10/v11 base
 
 Цель v10: повысить дневной объём прогнозов до управляемого диапазона без отключения hard-guard'ов.
 
