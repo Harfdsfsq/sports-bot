@@ -24,6 +24,7 @@ STATE_FILES = [
     ".data/autorun-state.json",
     ".data/volume-governor-state.json",
     ".data/provider_request_budget_state.json",
+    ".data/exports/latest-run-summary.json",
 ]
 
 
@@ -96,8 +97,6 @@ def configure_git() -> None:
 
 
 def reset_to_origin() -> bool:
-    # Avoid rebase conflicts on JSON state. We intentionally restore local state after syncing
-    # to latest origin/main, then commit it as the new state snapshot.
     fetch = run(["git", "fetch", "origin", "main"], check=False)
     if fetch.returncode != 0:
         print("git fetch failed; will try to commit/push from current checkout without failing the job.")
@@ -151,7 +150,6 @@ def main() -> int:
 
         message = os.getenv("PERSISTENT_STATE_COMMIT_MESSAGE") or "Update persistent bot state"
 
-        # First attempt: reset to latest origin, restore current state, commit, push.
         ok = sync_once(tmp, copied, message, reset_first=True)
         if ok:
             print("Persistent state sync completed or nothing changed.")
@@ -163,7 +161,6 @@ def main() -> int:
             print("Persistent state sync completed on retry.")
             return 0
 
-        # Never fail forecast/report workflow because of state sync. Artifacts still contain the run data.
         print("WARNING: persistent state push failed after retry; leaving workflow successful.")
         return 0
 
