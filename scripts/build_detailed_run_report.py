@@ -228,7 +228,14 @@ def debug_last_run() -> dict[str, Any]:
 
 
 def quota_report() -> dict[str, Any]:
-    return load_json(".data/exports/latest-provider-quota-governor.json", {})
+    for path in (
+        ".data/exports/latest-provider-request-budget.json",
+        ".data/exports/latest-provider-quota-governor.json",
+    ):
+        payload = load_json(path, {})
+        if isinstance(payload, dict) and payload:
+            return payload
+    return {}
 
 
 def extract_evaluated(report: dict[str, Any]) -> list[dict[str, Any]]:
@@ -373,6 +380,57 @@ def explain_thresholds(candidate: dict[str, Any], metrics: dict[str, Any], reaso
 
 def provider_summary() -> list[str]:
     payload = quota_report()
+    decisions = payload.get("decisions") if isinstance(payload, dict) else []
+    if isinstance(decisions, list) and decisions:
+        important = {
+            "odds_api_io",
+            "bzzoiro",
+            "sstats",
+            "api_football",
+            "football_data",
+            "thesportsdb",
+            "futrixmetrics",
+            "weatherapi",
+            "openweathermap",
+            "meteostat",
+            "newsapi",
+            "currents",
+            "gnews",
+            "oddspapi",
+            "oddsfeed",
+            "sportsbook_api",
+        }
+        lines = []
+        for row in decisions:
+            if not isinstance(row, dict):
+                continue
+            provider = str(row.get("provider") or "")
+            if provider not in important:
+                continue
+            grant = as_int(row.get("grant"))
+            reason = str(row.get("reason") or "unknown")
+            parts = [f"grant {grant}", f"reason {reason}"]
+
+            daily_budget = as_int(row.get("daily_budget"))
+            daily_used_before = as_int(row.get("daily_used_before"))
+            daily_remaining_after = row.get("daily_remaining_after")
+            if daily_budget > 0:
+                daily_used_after = daily_budget - as_int(daily_remaining_after, daily_budget) if daily_remaining_after is not None else daily_used_before
+                parts.append(f"day {daily_used_after}/{daily_budget}")
+
+            monthly_budget = as_int(row.get("monthly_budget"))
+            monthly_used_before = as_int(row.get("monthly_used_before"))
+            monthly_remaining_after = row.get("monthly_remaining_after")
+            if monthly_budget > 0:
+                monthly_used_after = monthly_budget - as_int(monthly_remaining_after, monthly_budget) if monthly_remaining_after is not None else monthly_used_before
+                parts.append(f"month {monthly_used_after}/{monthly_budget}")
+
+            cooldown = row.get("cooldown_until")
+            if cooldown:
+                parts.append(f"cooldown {cooldown}")
+            lines.append(f"• {provider}: " + ", ".join(parts))
+        return lines
+
     providers = payload.get("providers") if isinstance(payload, dict) else []
     if not isinstance(providers, list):
         return []
@@ -508,8 +566,13 @@ def render(payload: dict[str, Any]) -> str:
     # Operational conclusion.
     if reasons:
         top_reason = reasons.most_common(1)[0][0]
+        top_near_reasons = set()
+        if near and isinstance(near[0], dict):
+            top_near_reasons = {str(reason) for reason in (near[0].get("reasons") or [])}
         lines.append("📌 Вывод")
-        if top_reason == "canonical_negative_value":
+        if "duplicate_fallback_sent_index" in top_near_reasons:
+            lines.append("• Лучший пограничный кандидат уже был отправлен ранее, поэтому текущий run не стал публиковать дубль.")
+        elif top_reason == "canonical_negative_value":
             lines.append("• Главный фильтр — отрицательная контрольная ценность. Скрипт видел матчи, но рынок не дал достаточного value.")
         elif top_reason == "match_time_outside_window":
             lines.append("• Главный фильтр — время. Кандидаты были слишком близко к началу матча или вне окна публикации.")
