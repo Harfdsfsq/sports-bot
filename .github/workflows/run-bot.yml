@@ -148,7 +148,7 @@ jobs:
 
       - name: Prepare local state folders
         shell: bash
-        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
+        run: mkdir -p .data .data/exports .data/day_inventory .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
 
       - name: Autorun watchdog preflight
         shell: bash
@@ -210,6 +210,15 @@ jobs:
         run: |
           python scripts/apply_provider_request_budget.py
           cat .data/exports/latest-provider-request-budget.json || true
+
+      - name: Build day inventory
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        env:
+          DAY_INVENTORY_BOOTSTRAP_PROVIDER: football_data
+        run: |
+          python scripts/build_day_inventory.py || true
+          cat .data/exports/latest-day-inventory-summary.json || true
 
       - name: Ensure calibration profile exists
         if: env.AUTORUN_SKIP_MAIN != 'true'
@@ -280,6 +289,7 @@ jobs:
           path: |
             artifacts/run-bot/**
             .data/exports/**
+            .data/day_inventory/**
             .logs/debug-last-run.json
             .data/exports/latest-run-summary.json
           if-no-files-found: ignore
