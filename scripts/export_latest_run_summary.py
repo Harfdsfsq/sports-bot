@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
 UTC = timezone.utc
 ROOT = Path('.').resolve()
 OUT_PATH = ROOT / '.data' / 'exports' / 'latest-run-summary.json'
+FRESHNESS_HOURS = 6
 
 
 def load_json(path: str | Path, default: Any) -> Any:
@@ -21,6 +22,23 @@ def write_json(path: str | Path, payload: Any) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+
+
+def parse_dt(value: Any) -> datetime | None:
+    if value in (None, ''):
+        return None
+    try:
+        text = str(value).strip()
+        if not text:
+            return None
+        if text.endswith('Z'):
+            text = text[:-1] + '+00:00'
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
+    except Exception:
+        return None
 
 
 def first_dict(paths: list[str | Path]) -> dict[str, Any]:
@@ -55,11 +73,63 @@ def compact_dict(raw: Any, limit: int = 10) -> dict[str, Any]:
     return {str(k): v for k, v in items}
 
 
-def provider_snapshot() -> dict[str, Any]:
+def payload_timestamp(payload: dict[str, Any]) -> datetime | None:
+    if not isinstance(payload, dict):
+        return None
+    candidates = [
+        payload.get('created_at_utc'),
+        payload.get('created_at'),
+        payload.get('updated_at_utc'),
+        payload.get('updated_at'),
+        payload.get('now_utc'),
+        payload.get('last_preflight_utc'),
+        payload.get('last_successful_scheduled_run_utc'),
+    ]
+    summary = payload.get('summary') if isinstance(payload.get('summary'), dict) else {}
+    if summary:
+        candidates.extend([
+            summary.get('current_time_utc'),
+            summary.get('started_time_utc'),
+        ])
+    for value in candidates:
+        dt = parse_dt(value)
+        if dt is not None:
+            return dt
+    return None
+
+
+def is_fresh(payload: dict[str, Any], reference_dt: datetime, *, max_age_hours: int = FRESHNESS_HOURS) -> bool:
+    ts = payload_timestamp(payload)
+    if ts is None:
+        return False
+    return ts >= (reference_dt - timedelta(hours=max_age_hours))
+
+
+def source_status(payload: dict[str, Any], reference_dt: datetime, *, max_age_hours: int = FRESHNESS_HOURS) -> dict[str, Any]:
+    ts = payload_timestamp(payload)
+    return {
+        'present': bool(payload),
+        'timestamp_utc': ts.isoformat() if ts is not None else None,
+        'fresh': bool(payload) and ts is not None and ts >= (reference_dt - timedelta(hours=max_age_hours)),
+    }
+
+
+def choose_reference_dt(debug: dict[str, Any], fallback: dict[str, Any], detailed: dict[str, Any]) -> datetime:
+    for payload in (debug, fallback, detailed):
+        ts = payload_timestamp(payload)
+        if ts is not None:
+            return ts
+    return datetime.now(UTC)
+
+
+def provider_snapshot(reference_dt: datetime) -> tuple[dict[str, Any], dict[str, Any]]:
     quota = load_json(ROOT / '.data' / 'provider_quota_governor_state.json', {})
+    meta = source_status(quota, reference_dt)
+    if not meta['fresh']:
+        return {}, meta
     providers = quota.get('providers') if isinstance(quota, dict) else {}
     if not isinstance(providers, dict):
-        return {}
+        return {}, meta
     important = [
         'odds_api_io',
         'bzzoiro',
@@ -76,6 +146,9 @@ def provider_snapshot() -> dict[str, Any]:
         row = providers.get(name)
         if not isinstance(row, dict):
             continue
+        updated_at = parse_dt(row.get('updated_at'))
+        if updated_at is not None and updated_at < (reference_dt - timedelta(hours=FRESHNESS_HOURS)):
+            continue
         out[name] = {
             'used_today': as_int(row.get('used_today')),
             'tokens': row.get('tokens'),
@@ -83,30 +156,40 @@ def provider_snapshot() -> dict[str, Any]:
             'per_run_max': row.get('per_run_max'),
             'updated_at': row.get('updated_at'),
         }
-    return out
+    return out, meta
 
 
 def main() -> int:
     debug = load_json(ROOT / '.logs' / 'debug-last-run.json', {})
-    summary = debug.get('summary') if isinstance(debug.get('summary'), dict) else {}
-    fallback = first_dict([
+    fallback_raw = first_dict([
         ROOT / 'artifacts' / 'controlled-fallback-report.json',
         ROOT / '.data' / 'exports' / 'latest-controlled-fallback-report.json',
     ])
-    detailed = first_dict([
+    detailed_raw = first_dict([
         ROOT / '.data' / 'exports' / 'latest-detailed-run-report.json',
     ])
-    learning = load_json(ROOT / '.data' / 'learning-state.json', {})
-    volume = load_json(ROOT / '.data' / 'volume-governor-state.json', {})
-    watchdog = load_json(ROOT / '.data' / 'autorun-state.json', {})
+    learning_raw = load_json(ROOT / '.data' / 'learning-state.json', {})
+    volume_raw = load_json(ROOT / '.data' / 'volume-governor-state.json', {})
+    watchdog_raw = load_json(ROOT / '.data' / 'autorun-state.json', {})
 
+    reference_dt = choose_reference_dt(debug, fallback_raw, detailed_raw)
+
+    fallback = fallback_raw if is_fresh(fallback_raw, reference_dt) else {}
+    detailed = detailed_raw if is_fresh(detailed_raw, reference_dt) else {}
+    learning = learning_raw if is_fresh(learning_raw, reference_dt, max_age_hours=12) else {}
+    volume = volume_raw if is_fresh(volume_raw, reference_dt, max_age_hours=12) else {}
+    watchdog = watchdog_raw if is_fresh(watchdog_raw, reference_dt, max_age_hours=12) else {}
+
+    summary = debug.get('summary') if isinstance(debug.get('summary'), dict) else {}
     learning_near = learning.get('last_near_misses') if isinstance(learning.get('last_near_misses'), dict) else {}
     detailed_counts = detailed.get('candidate_counts') if isinstance(detailed.get('candidate_counts'), dict) else {}
     detailed_reasons = detailed.get('reason_counts') if isinstance(detailed.get('reason_counts'), dict) else {}
     near_misses = detailed.get('near_misses') if isinstance(detailed.get('near_misses'), list) else []
+    providers, providers_meta = provider_snapshot(reference_dt)
 
     payload = {
         'created_at_utc': datetime.now(UTC).isoformat(),
+        'reference_run_utc': reference_dt.isoformat(),
         'status': (
             fallback.get('status')
             or detailed.get('status')
@@ -141,12 +224,15 @@ def main() -> int:
             'existing_picks_today': as_int(volume.get('existing_picks_today')),
             'tier_c_publish_enabled': str((volume.get('applied_env') or {}).get('CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED', 'false')).lower(),
         },
-        'providers': provider_snapshot(),
+        'providers': providers,
         'source_files': {
-            'debug_last_run_present': bool(debug),
-            'fallback_report_present': bool(fallback),
-            'detailed_report_present': bool(detailed),
-            'learning_state_present': bool(learning),
+            'debug_last_run': source_status(debug, reference_dt),
+            'fallback_report': source_status(fallback_raw, reference_dt),
+            'detailed_report': source_status(detailed_raw, reference_dt),
+            'learning_state': source_status(learning_raw, reference_dt, max_age_hours=12),
+            'volume_state': source_status(volume_raw, reference_dt, max_age_hours=12),
+            'watchdog_state': source_status(watchdog_raw, reference_dt, max_age_hours=12),
+            'provider_quota_state': providers_meta,
         },
     }
 
