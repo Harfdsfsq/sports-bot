@@ -1,9 +1,8 @@
 {
   "applied_env": {
-    "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "0",
+    "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "2",
     "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,dnb",
     "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": "true",
-    "CONTROLLED_FALLBACK_ENABLED": "false",
     "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": "69.0",
     "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP": "3.8",
     "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT": "8.5",
@@ -11,7 +10,7 @@
     "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "3.0",
     "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "6.0",
     "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH": "1",
-    "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": "0",
+    "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": "2",
     "CONTROLLED_FALLBACK_MAX_STAKE_TIER_A": "7.5",
     "CONTROLLED_FALLBACK_MAX_STAKE_TIER_B": "4.5",
     "CONTROLLED_FALLBACK_MAX_STAKE_TIER_C": "2.5",
@@ -48,28 +47,37 @@
     "CONTROLLED_FALLBACK_TIER_C_MIN_EV_PCT": "7.5",
     "CONTROLLED_FALLBACK_TIER_C_MIN_PUBLICATION_SCORE": "12",
     "CONTROLLED_FALLBACK_TIER_C_MIN_QUALITY": "58.0",
+    "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "true",
     "CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT": "2.25",
-    "MAX_PICKS_PER_RUN": "0",
+    "MAX_PICKS_PER_RUN": "2",
     "VOLUME_DAILY_HARD_CAP_PICKS": "5",
     "VOLUME_DAILY_SOFT_CAP_PICKS": "4",
     "VOLUME_DAILY_TARGET_PICKS": "3",
-    "VOLUME_EXISTING_PICKS_TODAY": "6",
+    "VOLUME_EXISTING_PICKS_TODAY": "0",
     "VOLUME_POLICY_MODE": "target_3",
-    "VOLUME_POLICY_VERSION": "v10-target-volume"
+    "VOLUME_POLICY_VERSION": "v11-target-volume-shadow-count-fix"
   },
   "counts": {
-    "effective_today_picks": 6,
+    "count_sources": {
+      "fallback_sent_index": true,
+      "state_bets": true,
+      "state_published_candidates": true,
+      "state_shadow_bets": false
+    },
+    "effective_count_note": "fallback_sent_index/state.bets/state.published_candidates are real-pick counters; state.shadow_bets is excluded by default because it is diagnostic/watchlist state.",
+    "effective_today_picks": 0,
     "fallback_sent_index": 0,
     "state_bets": 0,
     "state_published_candidates": 0,
     "state_shadow_bets": 6
   },
   "decision_reasons": [
-    "daily_hard_cap_reached:6/5"
+    "target_mode_active:0/3"
   ],
-  "existing_picks_today": 6,
+  "existing_picks_today": 0,
+  "fix_note": "v11 excludes state.shadow_bets from daily cap by default. Shadow bets are diagnostics/watchlist rows, not real Telegram publications.",
   "mode": "target_3",
-  "now_utc": "2026-04-27T15:36:09.550088+00:00",
+  "now_utc": "2026-04-27T15:54:43.311118+00:00",
   "quality_policy": {
     "hard_guards_preserved": [
       "canonical_negative_value",
@@ -81,5 +89,5 @@
     "target": "increase daily volume through Tier B/C micro only, not through hard-guard bypass"
   },
   "today_local": "2026-04-27",
-  "version": "v10-target-volume"
+  "version": "v11-target-volume-shadow-count-fix"
 }
