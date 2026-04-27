@@ -1,9 +1,9 @@
 {
-  "version": "v11-target-volume-shadow-count-fix",
+  "version": "v12-no-tier-c-publication",
   "mode": "target_3",
   "modes": {
     "target_3": {
-      "description": "Default balanced volume mode: target 3 picks/day with strict hard guards and micro Tier C.",
+      "description": "Default balanced volume mode: target 3 picks/day with strict hard guards and no Tier C publication.",
       "daily_target_picks": 3,
       "daily_soft_cap_picks": 4,
       "daily_hard_cap_picks": 5,
@@ -14,7 +14,7 @@
         "totals",
         "dnb"
       ],
-      "tier_c_publish_enabled": true,
+      "tier_c_publish_enabled": false,
       "extra_pick_min_ev_pct": 8.5,
       "extra_pick_min_edge_pp": 3.8,
       "extra_pick_min_confidence": 69.0,
@@ -79,7 +79,7 @@
       }
     },
     "target_5": {
-      "description": "Balanced-volume mode: target 5 picks/day. Enable only after target_3 is stable for several days.",
+      "description": "Balanced-volume mode: target 5 picks/day with Tier A/B only.",
       "daily_target_picks": 5,
       "daily_soft_cap_picks": 6,
       "daily_hard_cap_picks": 7,
@@ -93,7 +93,7 @@
         "teamTotals",
         "btts"
       ],
-      "tier_c_publish_enabled": true,
+      "tier_c_publish_enabled": false,
       "extra_pick_min_ev_pct": 8.5,
       "extra_pick_min_edge_pp": 3.8,
       "extra_pick_min_confidence": 69.0,
@@ -164,7 +164,7 @@
       }
     },
     "target_7": {
-      "description": "Aggressive learning-volume mode. Use only after at least 30 closed bets and acceptable ROI/CLV.",
+      "description": "Aggressive learning-volume mode with Tier A/B only. Use only after at least 30 closed bets and acceptable ROI/CLV.",
       "daily_target_picks": 7,
       "daily_soft_cap_picks": 8,
       "daily_hard_cap_picks": 9,
@@ -178,7 +178,7 @@
         "teamTotals",
         "btts"
       ],
-      "tier_c_publish_enabled": true,
+      "tier_c_publish_enabled": false,
       "extra_pick_min_ev_pct": 8.0,
       "extra_pick_min_edge_pp": 3.6,
       "extra_pick_min_confidence": 68.0,
@@ -258,6 +258,7 @@
   "notes": [
     "state.shadow_bets is diagnostics/watchlist state and is excluded from daily volume caps by default.",
     "Real pick count uses fallback-sent-index, state.bets and state.published_candidates.",
-    "Hard guards remain enabled: negative value, xG conflicts, DNB outliers, proxy single-book reject."
+    "Hard guards remain enabled: negative value, xG conflicts, DNB outliers, proxy single-book reject.",
+    "Tier C remains available for diagnostics and ranking, but is not allowed to publish to Telegram."
   ]
 }
