@@ -1,118 +1,105 @@
-name: Run bot
+name: run-bot
 
 on:
   workflow_dispatch:
     inputs:
       profile:
-        description: Runtime profile for this manual run
-        required: true
-        default: balanced
+        description: Runtime profile
         type: choice
+        required: false
+        default: balanced
         options:
           - balanced
           - conservative
           - default
-      dry_run:
-        description: Disable Telegram publication for this run
-        required: false
-        default: false
-        type: boolean
-      reset_state:
-        description: Delete .data/state.json before this manual run
-        required: false
-        default: false
-        type: boolean
-      late_manual_mode:
-        description: Allow very late manual runs with a smaller kickoff lead window
-        required: false
-        default: false
-        type: boolean
       publish_window_hours:
-        description: Publish window in hours for this manual run
+        description: Manual scan window in hours; empty uses autorun policy
         required: false
-        default: '12'
-        type: string
-      max_picks_per_run:
-        description: Maximum picks to publish in this manual run
+        default: "9"
+      min_kickoff_lead_minutes:
+        description: Manual minimum kickoff lead; empty uses autorun policy
         required: false
-        default: '2'
-        type: string
+        default: "25"
+      send_detailed_report:
+        description: Send detailed Telegram run report for manual run
+        type: boolean
+        required: false
+        default: true
+  schedule:
+    # UTC. Europe/Moscow = UTC+3, so these are 03:17, 05:17, ..., 01:17 MSK.
+    # Frequent overlapping scans prevent fixtures from falling outside PUBLISH_WINDOW_HOURS.
+    - cron: "17 0,2,4,6,8,10,12,14,16,18,20,22 * * *"
   push:
     branches:
       - main
-    paths:
-      - '.github/workflows/run-bot.yml'
-      - '.github/workflows/daily-report.yml'
-      - 'app/**'
-      - 'config/**'
-      - 'scripts/**'
-      - 'requirements.txt'
-  schedule:
-    - cron: '4,34 3-22 * * *' # 06:04-01:34 MSK
+      - master
 
 permissions:
   contents: write
+  actions: read
 
 concurrency:
-  group: run-bot-${{ github.event.schedule || github.event_name }}
-  cancel-in-progress: true
-
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
-  TZ: Europe/Moscow
-  APP_TIMEZONE: Europe/Moscow
-
-  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
-  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
-  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
-  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-  API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
-  WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
-  OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
-  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
-  OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_KEY }}
-  METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
-  METEOSTAT_RAPIDAPI_HOST: ${{ secrets.METEOSTAT_RAPIDAPI_HOST }}
-  RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
-  SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
-  ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
-  FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
-  SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
-
-  PUBLISH_DRY_RUN: 'false'
-  PREDICTION_PUBLICATION_ENABLED: 'false'
-  RUN_REPORT_ENABLED: 'false'
-  RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: 'false'
-  SETTLEMENT_SEND_TELEGRAM_SUMMARY: 'false'
-  DAILY_REPORT_ENABLED: 'true'
-  DAILY_REPORT_SEND_TELEGRAM: 'true'
-  DAILY_REPORT_HOUR_LOCAL: '22'
-  DAILY_REPORT_TARGET_OFFSET_DAYS: '0'
-  DAILY_REPORT_RESEND_ON_CHANGE: 'false'
-  NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: 'false'
-
-  TARGET_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
-  CONSENSUS_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair,Bwin'
-  SHARP_BOOKMAKERS: 'Bet365,Unibet,Pinnacle,Betfair'
-
-  MATCH_BOOTSTRAP_PROVIDER: 'odds_api_io'
-  PUBLISH_WINDOW_HOURS: '12'
-  MIN_KICKOFF_LEAD_MINUTES: '30'
-  MAX_PICKS_PER_RUN: '2'
+  group: run-bot-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 45
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      TZ: Europe/Moscow
+      APP_TIMEZONE: Europe/Moscow
+
+      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+      GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+      WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
+      OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_KEY }}
+      METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+      METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
+      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
+      ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
+      FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
+      SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+
+      PUBLISH_DRY_RUN: "false"
+      PREDICTION_PUBLICATION_ENABLED: "false"
+      RUN_REPORT_ENABLED: "false"
+      RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: "false"
+      SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
+      DAILY_REPORT_ENABLED: "true"
+      DAILY_REPORT_SEND_TELEGRAM: "true"
+      DAILY_REPORT_HOUR_LOCAL: "22"
+      DAILY_REPORT_TARGET_OFFSET_DAYS: "0"
+      DAILY_REPORT_RESEND_ON_CHANGE: "false"
+      NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: "false"
+
+      TARGET_BOOKMAKERS: Bet365,Unibet,Pinnacle,Betfair,Bwin
+      CONSENSUS_BOOKMAKERS: Bet365,Unibet,Pinnacle,Betfair,Bwin
+      SHARP_BOOKMAKERS: Bet365,Unibet,Pinnacle,Betfair
+      MATCH_BOOTSTRAP_PROVIDER: odds_api_io
+      PUBLISH_WINDOW_HOURS: "6"
+      MIN_KICKOFF_LEAD_MINUTES: "35"
+      MAX_PICKS_PER_RUN: "2"
+      SELECTED_PROFILE: ${{ github.event.inputs.profile || 'balanced' }}
+      AUTORUN_MANUAL_PUBLISH_WINDOW_HOURS: ${{ github.event.inputs.publish_window_hours }}
+      AUTORUN_MANUAL_MIN_KICKOFF_LEAD_MINUTES: ${{ github.event.inputs.min_kickoff_lead_minutes }}
+      AUTORUN_MANUAL_SEND_DETAILED_REPORT: ${{ github.event.inputs.send_detailed_report }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -122,31 +109,22 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-          cache: 'pip'
+          python-version: "3.12"
 
       - name: Install dependencies
+        shell: bash
         run: pip install -r requirements.txt
 
       - name: Runtime structure healthcheck
         shell: bash
-        run: |
-          python scripts/runtime_healthcheck.py || true
+        run: python scripts/runtime_healthcheck.py || true
 
       - name: Prepare local state folders
         shell: bash
-        run: |
-          mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
-          rm -f artifacts/controlled-fallback-report.json
-          rm -f artifacts/run-bot/latest-rescue-candidates.json
-          rm -f .data/exports/latest-rescue-candidates.json
-          rm -f .data/exports/latest-controlled-fallback-report.json
-          rm -f .data/exports/latest-controlled-fallback-pick.json
+        run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
 
       - name: Apply selected runtime profile
         shell: bash
-        env:
-          SELECTED_PROFILE: ${{ github.event_name == 'workflow_dispatch' && inputs.profile || 'balanced' }}
         run: |
           set -euo pipefail
           echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
@@ -182,54 +160,13 @@ jobs:
             echo "Applied auto-learning runtime overrides: .data/auto_learning_runtime_overrides.env"
           fi
 
-      - name: Apply manual dispatch overrides
-        if: ${{ github.event_name == 'workflow_dispatch' }}
+      - name: Apply autorun coverage policy
         shell: bash
-        run: |
-          echo "PUBLISH_DRY_RUN=${{ inputs.dry_run && 'true' || 'false' }}" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MODE_ENABLED=${{ inputs.late_manual_mode && 'true' || 'false' }}" >> "$GITHUB_ENV"
-          echo "PUBLISH_WINDOW_HOURS=${{ inputs.publish_window_hours }}" >> "$GITHUB_ENV"
-          echo "MAX_PICKS_PER_RUN=${{ inputs.max_picks_per_run }}" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=25" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=25" >> "$GITHUB_ENV"
-
-      - name: Force safe scan policy
-        shell: bash
-        run: |
-          EVENT_NAME="${{ github.event_name }}"
-          if [ "$EVENT_NAME" = "schedule" ]; then
-            MIN_LEAD=30
-            SEND_DETAILED_REPORT=true
-          elif [ "$EVENT_NAME" = "workflow_dispatch" ]; then
-            MIN_LEAD=25
-            SEND_DETAILED_REPORT=true
-          else
-            MIN_LEAD=25
-            SEND_DETAILED_REPORT=false
-          fi
-
-          echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
-          echo "RUN_REPORT_ENABLED=false" >> "$GITHUB_ENV"
-          echo "RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=false" >> "$GITHUB_ENV"
-          echo "PUBLISH_WINDOW_HOURS=12" >> "$GITHUB_ENV"
-          echo "MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
-          echo "MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES=${MIN_LEAD}" >> "$GITHUB_ENV"
-          echo "CONTROLLED_FALLBACK_USE_MANUAL_LATE_LEAD=false" >> "$GITHUB_ENV"
-          echo "CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT=false" >> "$GITHUB_ENV"
-          echo "DETAILED_RUN_REPORT_SEND_TELEGRAM=${SEND_DETAILED_REPORT}" >> "$GITHUB_ENV"
-          echo "MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
-          echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN=2" >> "$GITHUB_ENV"
-          echo "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH=1" >> "$GITHUB_ENV"
+        run: python scripts/apply_autorun_policy.py
 
       - name: Apply runtime patches
         shell: bash
-        run: |
-          python scripts/apply_rescue_prefilter_patch.py || true
-          python scripts/apply_daily_report_today_patch.py || true
-          python scripts/apply_data_depth_settings_patch.py || true
-          python scripts/apply_api_football_weather_patch.py || true
-          python scripts/apply_free_api_enrichment_patch.py || true
+        run: python scripts/apply_rescue_prefilter_patch.py || true
 
       - name: Apply provider quota governor
         shell: bash
@@ -245,22 +182,17 @@ jobs:
             cp config/calibration-profile.example.json .data/calibration-profile.json
           fi
 
-      - name: Reset state for manual republish
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_state }}
-        run: rm -f .data/state.json .data/fallback-sent-index.json
-
       - name: Run bot once
+        shell: bash
         run: python -m app.cli run-once
 
       - name: Publish controlled pick
-        if: always()
         shell: bash
         run: |
           python scripts/publish_controlled_fallback.py || true
           cat artifacts/controlled-fallback-report.json || true
 
       - name: Build ledgers and coverage reports
-        if: always()
         shell: bash
         run: |
           python scripts/profit_distance_ledger.py || true
@@ -268,7 +200,6 @@ jobs:
           python scripts/rapidapi_quota_probe.py || true
 
       - name: Generate audit payloads
-        if: always()
         shell: bash
         run: |
           python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
@@ -277,42 +208,28 @@ jobs:
           python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
 
       - name: Run auto-learning feedback loop
-        if: always()
         shell: bash
-        run: |
-          python scripts/auto_learning_engine.py || true
+        run: python scripts/auto_learning_engine.py || true
 
       - name: Build detailed run report
-        if: always()
         shell: bash
-        run: |
-          python scripts/build_detailed_run_report.py || true
+        run: python scripts/build_detailed_run_report.py || true
 
       - name: Build run-bot bundle
-        if: always()
         shell: bash
         run: bash scripts/build_run_bot_bundle.sh || true
 
       - name: Upload run-bot current artifact
-        if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: run-bot-current
+          name: run-bot-current-${{ github.run_id }}
           path: |
-            artifacts/run-bot-bundle.zip
-            artifacts/run-bot
-            artifacts/controlled-fallback-report.json
+            artifacts/run-bot/**
+            .data/exports/**
             .logs/debug-last-run.json
-            .logs/runs
-            .data/exports
-            .data/*.json
           if-no-files-found: ignore
           retention-days: 7
 
       - name: Sync persistent state
-        if: always()
         shell: bash
-        env:
-          PERSISTENT_STATE_COMMIT_MESSAGE: "Update persistent bot state"
-        run: |
-          python scripts/sync_persistent_state.py || true
+        run: python scripts/sync_persistent_state.py || true
