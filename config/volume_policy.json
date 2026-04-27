@@ -1,0 +1,200 @@
+{
+  "version": "v10-target-volume",
+  "mode": "target_3",
+  "modes": {
+    "target_3": {
+      "description": "Default balanced volume mode: target 3 picks/day with strict hard guards and micro Tier C.",
+      "daily_target_picks": 3,
+      "daily_soft_cap_picks": 4,
+      "daily_hard_cap_picks": 5,
+      "max_picks_per_run": 2,
+      "max_picks_per_match": 1,
+      "daily_stake_cap_pct": 2.25,
+      "allowed_families": ["totals", "dnb"],
+      "tier_c_publish_enabled": true,
+      "extra_pick_min_ev_pct": 8.5,
+      "extra_pick_min_edge_pp": 3.8,
+      "extra_pick_min_confidence": 69.0,
+      "tiers": {
+        "A": {
+          "allowed_families": ["totals", "dnb"],
+          "min_books": 2,
+          "min_confidence": 66.0,
+          "min_quality": 66.0,
+          "min_edge_pp": 3.5,
+          "min_ev_pct": 6.0,
+          "min_publication_score": 20,
+          "max_odds": 2.65
+        },
+        "B": {
+          "allowed_families": ["totals", "dnb"],
+          "min_books": 2,
+          "min_confidence": 64.5,
+          "min_quality": 60.0,
+          "min_edge_pp": 3.2,
+          "min_ev_pct": 6.5,
+          "min_publication_score": 14,
+          "max_odds": 2.70
+        },
+        "C": {
+          "allowed_families": ["totals", "dnb"],
+          "min_books": 2,
+          "min_confidence": 68.0,
+          "min_quality": 58.0,
+          "min_edge_pp": 3.5,
+          "min_ev_pct": 7.5,
+          "min_publication_score": 12,
+          "max_odds": 2.25
+        }
+      },
+      "tier_stake": {
+        "default_pct": 0.55,
+        "min_stake": 2.0,
+        "max_stake_tier_a": 7.5,
+        "max_stake_tier_b": 4.5,
+        "max_stake_tier_c": 2.5
+      },
+      "final_guards": {
+        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": true,
+        "CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY": true,
+        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": true,
+        "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_DNB_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": 3.0,
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": 6.0,
+        "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": true
+      }
+    },
+    "target_5": {
+      "description": "Balanced-volume mode: target 5 picks/day. Enable only after target_3 is stable for several days.",
+      "daily_target_picks": 5,
+      "daily_soft_cap_picks": 6,
+      "daily_hard_cap_picks": 7,
+      "max_picks_per_run": 2,
+      "max_picks_per_match": 1,
+      "daily_stake_cap_pct": 3.0,
+      "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+      "tier_c_publish_enabled": true,
+      "extra_pick_min_ev_pct": 8.5,
+      "extra_pick_min_edge_pp": 3.8,
+      "extra_pick_min_confidence": 69.0,
+      "tiers": {
+        "A": {
+          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals"],
+          "min_books": 2,
+          "min_confidence": 66.0,
+          "min_quality": 66.0,
+          "min_edge_pp": 3.5,
+          "min_ev_pct": 6.0,
+          "min_publication_score": 20,
+          "max_odds": 2.70
+        },
+        "B": {
+          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+          "min_books": 2,
+          "min_confidence": 64.5,
+          "min_quality": 60.0,
+          "min_edge_pp": 3.2,
+          "min_ev_pct": 6.5,
+          "min_publication_score": 14,
+          "max_odds": 2.75
+        },
+        "C": {
+          "allowed_families": ["totals", "dnb"],
+          "min_books": 2,
+          "min_confidence": 67.0,
+          "min_quality": 58.0,
+          "min_edge_pp": 3.5,
+          "min_ev_pct": 7.5,
+          "min_publication_score": 12,
+          "max_odds": 2.25
+        }
+      },
+      "tier_stake": {
+        "default_pct": 0.50,
+        "min_stake": 2.0,
+        "max_stake_tier_a": 7.0,
+        "max_stake_tier_b": 4.0,
+        "max_stake_tier_c": 2.25
+      },
+      "final_guards": {
+        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": true,
+        "CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY": true,
+        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": true,
+        "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_BTTS_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_DNB_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": 3.0,
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": 6.0,
+        "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": true
+      }
+    },
+    "target_7": {
+      "description": "Aggressive learning-volume mode. Use only after at least 30 closed bets and acceptable ROI/CLV.",
+      "daily_target_picks": 7,
+      "daily_soft_cap_picks": 8,
+      "daily_hard_cap_picks": 9,
+      "max_picks_per_run": 2,
+      "max_picks_per_match": 1,
+      "daily_stake_cap_pct": 3.5,
+      "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+      "tier_c_publish_enabled": true,
+      "extra_pick_min_ev_pct": 8.0,
+      "extra_pick_min_edge_pp": 3.6,
+      "extra_pick_min_confidence": 68.0,
+      "tiers": {
+        "A": {
+          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals"],
+          "min_books": 2,
+          "min_confidence": 66.0,
+          "min_quality": 66.0,
+          "min_edge_pp": 3.5,
+          "min_ev_pct": 6.0,
+          "min_publication_score": 20,
+          "max_odds": 2.70
+        },
+        "B": {
+          "allowed_families": ["totals", "dnb", "teamtotals", "teamTotals", "btts"],
+          "min_books": 2,
+          "min_confidence": 64.0,
+          "min_quality": 60.0,
+          "min_edge_pp": 3.0,
+          "min_ev_pct": 6.2,
+          "min_publication_score": 14,
+          "max_odds": 2.75
+        },
+        "C": {
+          "allowed_families": ["totals", "dnb"],
+          "min_books": 2,
+          "min_confidence": 65.0,
+          "min_quality": 58.0,
+          "min_edge_pp": 3.2,
+          "min_ev_pct": 7.0,
+          "min_publication_score": 12,
+          "max_odds": 2.35
+        }
+      },
+      "tier_stake": {
+        "default_pct": 0.45,
+        "min_stake": 2.0,
+        "max_stake_tier_a": 6.5,
+        "max_stake_tier_b": 3.75,
+        "max_stake_tier_c": 2.0
+      },
+      "final_guards": {
+        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": true,
+        "CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY": true,
+        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": true,
+        "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_BTTS_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_DNB_SANITY_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": 2.9,
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": 6.0,
+        "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": true
+      }
+    }
+  }
+}

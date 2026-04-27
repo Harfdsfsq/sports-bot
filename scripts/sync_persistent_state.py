@@ -21,6 +21,8 @@ STATE_FILES = [
     ".data/calibration-profile.json",
     ".data/auto_learning_runtime_overrides.env",
     ".data/learning-state.json",
+    ".data/autorun-state.json",
+    ".data/volume-governor-state.json",
 ]
 
 

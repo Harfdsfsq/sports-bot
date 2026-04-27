@@ -25,10 +25,22 @@ on:
         type: boolean
         required: false
         default: true
+      volume_mode:
+        description: Volume policy mode
+        type: choice
+        required: false
+        default: target_3
+        options:
+          - target_3
+          - target_5
+          - target_7
   schedule:
-    # UTC. Europe/Moscow = UTC+3, so these are 03:17, 05:17, ..., 01:17 MSK.
-    # Frequent overlapping scans prevent fixtures from falling outside PUBLISH_WINDOW_HOURS.
+    # Primary autoruns. UTC. Europe/Moscow = UTC+3.
+    # 03:17, 05:17, 07:17, 09:17, 11:17, 13:17, 15:17, 17:17, 19:17, 21:17, 23:17, 01:17 MSK.
     - cron: "17 0,2,4,6,8,10,12,14,16,18,20,22 * * *"
+    # Watchdog/failsafe slots. If a primary autorun was missed, these run the full pipeline.
+    # 07:47, 13:47, 19:47, 01:47 MSK.
+    - cron: "47 4,10,16,22 * * *"
   push:
     branches:
       - main
@@ -50,6 +62,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
+      AUTORUN_POLICY_VERSION: v10-target-volume-watchdog
+      VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_3' }}
 
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -123,7 +137,12 @@ jobs:
         shell: bash
         run: mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot
 
+      - name: Autorun watchdog preflight
+        shell: bash
+        run: python scripts/autorun_watchdog.py || true
+
       - name: Apply selected runtime profile
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           set -euo pipefail
@@ -139,6 +158,7 @@ jobs:
           fi
 
       - name: Apply quota governor profile
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           if [ -f config/api_quota_governor.env ]; then
@@ -146,6 +166,7 @@ jobs:
           fi
 
       - name: Apply final runtime overrides
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           if [ -f config/final_runtime_overrides.env ]; then
@@ -153,6 +174,7 @@ jobs:
           fi
 
       - name: Apply auto-learning runtime overrides
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           if [ -f .data/auto_learning_runtime_overrides.env ]; then
@@ -161,20 +183,31 @@ jobs:
           fi
 
       - name: Apply autorun coverage policy
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python scripts/apply_autorun_policy.py
 
+      - name: Apply volume governor policy
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/apply_volume_policy.py
+          cat .data/exports/latest-volume-governor.json || true
+
       - name: Apply runtime patches
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python scripts/apply_rescue_prefilter_patch.py || true
 
       - name: Apply provider quota governor
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           python scripts/apply_provider_quota_governor.py
           cat .data/exports/latest-provider-quota-governor.json || true
 
       - name: Ensure calibration profile exists
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           mkdir -p .data
@@ -183,16 +216,19 @@ jobs:
           fi
 
       - name: Run bot once
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python -m app.cli run-once
 
       - name: Publish controlled pick
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           python scripts/publish_controlled_fallback.py || true
           cat artifacts/controlled-fallback-report.json || true
 
       - name: Build ledgers and coverage reports
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           python scripts/profit_distance_ledger.py || true
@@ -200,6 +236,7 @@ jobs:
           python scripts/rapidapi_quota_probe.py || true
 
       - name: Generate audit payloads
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: |
           python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
@@ -208,18 +245,22 @@ jobs:
           python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
 
       - name: Run auto-learning feedback loop
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python scripts/auto_learning_engine.py || true
 
       - name: Build detailed run report
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python scripts/build_detailed_run_report.py || true
 
       - name: Build run-bot bundle
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: bash scripts/build_run_bot_bundle.sh || true
 
       - name: Upload run-bot current artifact
+        if: env.AUTORUN_SKIP_MAIN != 'true'
         uses: actions/upload-artifact@v5
         with:
           name: run-bot-current-${{ github.run_id }}
@@ -229,6 +270,11 @@ jobs:
             .logs/debug-last-run.json
           if-no-files-found: ignore
           retention-days: 7
+
+      - name: Mark successful autorun state
+        if: github.event_name == 'schedule' && env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: python scripts/autorun_watchdog.py --mark-success || true
 
       - name: Sync persistent state
         shell: bash
