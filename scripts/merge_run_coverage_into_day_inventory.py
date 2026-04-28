@@ -99,6 +99,41 @@ def selected_keys_from_payload(payload: Any) -> set[str]:
     return keys
 
 
+def deep_int(payload: Any, names: set[str], default: int = 0) -> int:
+    """Find the largest integer value for any key in names inside a nested payload.
+
+    Runtime debug contains reliable aggregate counters such as
+    matches_with_any_context_source / matches_with_merged_context, while
+    latest-match-data-coverage-matches.json intentionally contains only matches
+    that produced candidate/coverage rows. We use the max so inventory counts do
+    not shrink just because the coverage report was sparse.
+    """
+    best = default
+    stack = [payload]
+    while stack:
+        item = stack.pop()
+        if isinstance(item, dict):
+            for key, value in item.items():
+                if key in names:
+                    best = max(best, as_int(value, default))
+                if isinstance(value, (dict, list)):
+                    stack.append(value)
+        elif isinstance(item, list):
+            stack.extend(value for value in item if isinstance(value, (dict, list)))
+    return best
+
+
+def runtime_counts_from_debug(debug: Any) -> dict[str, int]:
+    if not isinstance(debug, dict):
+        return {}
+    return {
+        'matches_seen': deep_int(debug, {'matches_seen'}),
+        'matches_with_odds': deep_int(debug, {'matches_with_any_offer_source', 'matches_with_offers'}),
+        'matches_with_context': deep_int(debug, {'matches_with_any_context_source', 'matches_with_merged_context', 'contexts_built'}),
+        'matches_ready_for_model': deep_int(debug, {'matches_with_any_context_source', 'matches_with_merged_context', 'contexts_built'}),
+    }
+
+
 def main() -> int:
     now_utc = datetime.now(UTC)
     target_date = parse_target_date()
@@ -119,6 +154,7 @@ def main() -> int:
     coverage_rows = load_json(ROOT / '.data' / 'exports' / 'latest-match-data-coverage-matches.json', [])
     coverage_index = build_coverage_index(coverage_rows)
     debug = load_json(ROOT / '.logs' / 'debug-last-run.json', {})
+    runtime_counts = runtime_counts_from_debug(debug)
     controlled = load_json(ROOT / 'artifacts' / 'controlled-fallback-report.json', {})
     detailed = load_json(ROOT / '.data' / 'exports' / 'latest-detailed-run-report.json', {})
     source_stats = provider_stats_from_debug(debug if isinstance(debug, dict) else {})
@@ -219,6 +255,11 @@ def main() -> int:
         if bool(coverage.get('ready_for_publish')):
             publish_marked += 1
 
+    runtime_matches_seen = runtime_counts.get('matches_seen', 0)
+    runtime_odds = runtime_counts.get('matches_with_odds', 0)
+    runtime_context = runtime_counts.get('matches_with_context', 0)
+    runtime_model = runtime_counts.get('matches_ready_for_model', 0)
+
     inventory['updated_at_utc'] = now_utc.isoformat()
     sources = inventory.setdefault('sources', {})
     if not isinstance(sources, dict):
@@ -229,18 +270,22 @@ def main() -> int:
         'coverage_rows_seen': len(coverage_index),
         'matches_updated': updated,
         'source_stats_seen': sorted(source_stats.keys()) if isinstance(source_stats, dict) else [],
+        'runtime_counts': runtime_counts,
     }
 
     counts = inventory.setdefault('counts', {})
     if not isinstance(counts, dict):
         counts = {}
         inventory['counts'] = counts
-    counts['matches_total'] = len(matches)
-    counts['matches_with_odds'] = odds_marked
-    counts['matches_with_context'] = context_marked
-    counts['matches_ready_for_model'] = model_marked
-    counts['matches_ready_for_publish'] = publish_marked
+    counts['matches_total'] = max(len(matches), runtime_matches_seen)
+    counts['matches_with_odds'] = max(odds_marked, runtime_odds, as_int(counts.get('matches_with_odds')))
+    counts['matches_with_context'] = max(context_marked, runtime_context, as_int(counts.get('matches_with_context')))
+    counts['matches_ready_for_model'] = max(model_marked, runtime_model, as_int(counts.get('matches_ready_for_model')))
+    counts['matches_ready_for_publish'] = max(publish_marked, as_int(counts.get('matches_ready_for_publish')))
     counts['matches_coverage_updated_last_run'] = updated
+    counts['coverage_rows_seen_last_run'] = len(coverage_index)
+    counts['runtime_matches_with_odds_last_run'] = runtime_odds
+    counts['runtime_matches_with_context_last_run'] = runtime_context
 
     base = ROOT / '.data' / 'day_inventory'
     paths = [
@@ -257,17 +302,19 @@ def main() -> int:
         'target_date': target_date,
         'updated_at_utc': now_utc.isoformat(),
         'inventory_path': str(inventory_path),
-        'matches_total': len(matches),
+        'matches_total': counts['matches_total'],
         'coverage_rows_seen': len(coverage_index),
+        'runtime_counts': runtime_counts,
         'matches_updated': updated,
-        'matches_with_odds': odds_marked,
-        'matches_with_context': context_marked,
-        'matches_ready_for_model': model_marked,
-        'matches_ready_for_publish': publish_marked,
+        'matches_with_odds': counts['matches_with_odds'],
+        'matches_with_context': counts['matches_with_context'],
+        'matches_ready_for_model': counts['matches_ready_for_model'],
+        'matches_ready_for_publish': counts['matches_ready_for_publish'],
         'selected_keys_seen': len(selected_keys),
         'saved_paths': [str(path) for path in paths],
         'notes': [
             'Coverage is cumulative: true flags are preserved across two-hour runs.',
+            'Aggregate counts use max(per-match coverage rows, runtime debug counters, previous inventory counts) so they do not shrink when coverage rows are sparse.',
             'This step does not publish or relax quality filters; it only records what data the run already produced.',
         ],
     }
