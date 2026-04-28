@@ -38,6 +38,50 @@ def inventory_count_snapshot() -> dict[str, Any]:
     return {}
 '''
 
+MARKET_POINT_HELPER = r'''
+
+def _format_market_point(value: Any) -> str:
+    if value in (None, ''):
+        return ''
+    try:
+        number = float(value)
+    except Exception:
+        return str(value).strip()
+    if abs(number) < 0.000001:
+        return '0'
+    if number.is_integer():
+        return str(int(number))
+    return f'{number:.2f}'.rstrip('0').rstrip('.')
+
+
+def detailed_selection_text(candidate: dict[str, Any]) -> str:
+    raw_selection = candidate.get('selection') or candidate.get('market') or ''
+    text = translate_selection_text(raw_selection, candidate.get('home_team'), candidate.get('away_team')).strip()
+    point = _format_market_point(candidate.get('point'))
+    if not point:
+        return text
+    family = str(candidate.get('family') or candidate.get('market_family') or '').strip().lower()
+    normalized = text.lower().replace(',', '.')
+    if point.lower() in normalized:
+        return text
+    is_total = family in {'totals', 'total', 'match_total'} or normalized in {'меньше', 'больше', 'under', 'over'} or normalized.startswith(('меньше ', 'больше ', 'under ', 'over '))
+    is_team_total = family in {'teamtotals', 'team_total', 'individual_totals'}
+    is_spread = family in {'spreads', 'spread', 'handicap', 'dnb'}
+    if is_total or is_team_total:
+        return f'{text} {point}'.strip()
+    if is_spread:
+        signed = point
+        try:
+            number = float(candidate.get('point'))
+            signed = ('+' if number > 0 else '') + _format_market_point(number)
+        except Exception:
+            pass
+        if '(' in text and ')' in text:
+            return text
+        return f'{text} ({signed})'.strip()
+    return text
+'''
+
 
 def main() -> int:
     if not REPORT_PATH.exists():
@@ -52,6 +96,18 @@ def main() -> int:
             src = src.replace(marker, INVENTORY_FUNCTION + marker, 1)
         else:
             print('warn: build_payload marker not found')
+
+    if 'def detailed_selection_text(candidate:' not in src:
+        marker = '\ndef candidate_identity(candidate: dict[str, Any]) -> dict[str, str]:\n'
+        if marker in src:
+            src = src.replace(marker, MARKET_POINT_HELPER + marker, 1)
+        else:
+            print('warn: candidate_identity marker not found')
+
+    old_selection_line = '    selection = translate_selection_text(candidate.get("selection") or candidate.get("market") or "", candidate.get("home_team"), candidate.get("away_team"))\n'
+    new_selection_line = '    selection = detailed_selection_text(candidate)\n'
+    if old_selection_line in src and new_selection_line not in src:
+        src = src.replace(old_selection_line, new_selection_line, 1)
 
     if '"inventory_counts": inventory_count_snapshot(),' not in src:
         marker = '        "provider_lines": provider_summary(),\n'
