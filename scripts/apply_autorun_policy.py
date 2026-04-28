@@ -32,8 +32,9 @@ def _load_policy() -> Dict[str, Any]:
             "publish_window_hours": 6,
             "min_kickoff_lead_minutes": 35,
             "max_picks_per_run": 2,
+            "send_detailed_report": True,
             "detailed_report_hours_local": [9, 15, 21],
-            "detailed_report_min_interval_minutes": 240,
+            "detailed_report_min_interval_minutes": 0,
         },
         "workflow_dispatch": {
             "publish_window_hours": 9,
@@ -55,7 +56,8 @@ def _load_policy() -> Dict[str, Any]:
             "run_report_only_when_no_predictions": False,
             "controlled_fallback_send_no_pick_report": False,
             "controlled_fallback_use_manual_late_lead": False,
-            "detailed_report_send_when_published": False,
+            "detailed_report_send_when_published": True,
+            "detailed_report_force_send": True,
             "controlled_fallback_max_picks_per_match": 1,
         },
     }
@@ -163,8 +165,11 @@ def main() -> int:
     elif event_name == "schedule":
         window = default_window
         lead = default_lead
-        send_detailed = _scheduled_report_enabled(section, now_local)
-        detailed_min_interval = _parse_int(section.get("detailed_report_min_interval_minutes", 240), 240, 0, 1440)
+        if "send_detailed_report" in section:
+            send_detailed = bool(section.get("send_detailed_report"))
+        else:
+            send_detailed = _scheduled_report_enabled(section, now_local)
+        detailed_min_interval = _parse_int(section.get("detailed_report_min_interval_minutes", 0), 0, 0, 1440)
     else:
         window = default_window
         lead = default_lead
@@ -189,6 +194,7 @@ def main() -> int:
         "CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT": _bool_text(always.get("controlled_fallback_send_no_pick_report", False)),
         "DETAILED_RUN_REPORT_SEND_TELEGRAM": _bool_text(send_detailed),
         "DETAILED_RUN_REPORT_SEND_WHEN_PUBLISHED": _bool_text(always.get("detailed_report_send_when_published", False)),
+        "DETAILED_RUN_REPORT_FORCE_SEND": _bool_text(always.get("detailed_report_force_send", False)),
         "DETAILED_RUN_REPORT_MIN_INTERVAL_MINUTES": str(detailed_min_interval),
         "MAX_PICKS_PER_RUN": str(max_picks),
         "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": str(max_picks),

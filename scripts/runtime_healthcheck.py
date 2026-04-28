@@ -62,8 +62,8 @@ def main() -> int:
         warnings.append("run-bot.yml does not apply provider_request_budget.py")
     if "push:" in run_yml and ("main" in run_yml or "master" in run_yml):
         warnings.append("run-bot.yml still has a push trigger; merge commits should not auto-run the bot")
-    if "workflow_dispatch" not in run_yml or "SEND_DETAILED_REPORT=true" not in run_yml:
-        warnings.append("manual detailed report Telegram policy should be enabled for workflow_dispatch")
+    if "workflow_dispatch" not in run_yml or "DETAILED_RUN_REPORT_SEND_TELEGRAM" not in run_yml:
+        warnings.append("detailed run report Telegram policy should be enabled for workflow_dispatch")
 
     gitignore = read(".gitignore")
     for state in STATE_FILES:
