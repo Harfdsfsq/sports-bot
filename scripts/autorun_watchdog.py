@@ -93,8 +93,23 @@ def append_env(env: dict[str, str]) -> None:
         print('\n'.join(lines))
 
 
-def minute_in_window(now_minute: int, start_minute: int, width: int) -> bool:
-    return start_minute <= now_minute <= (start_minute + width)
+def latest_primary_slot(now_utc: datetime) -> datetime:
+    now = now_utc.astimezone(UTC)
+    candidates: list[datetime] = []
+    for day_delta in (0, 1):
+        day = (now - timedelta(days=day_delta)).date()
+        for hour in PRIMARY_UTC_HOURS:
+            candidate = datetime(day.year, day.month, day.day, hour, PRIMARY_MINUTE, tzinfo=UTC)
+            if candidate <= now:
+                candidates.append(candidate)
+    if not candidates:
+        return now.replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
+    return max(candidates)
+
+
+def minutes_since_slot(now_utc: datetime, slot_utc: datetime | None = None) -> float:
+    slot = slot_utc or latest_primary_slot(now_utc)
+    return max(0.0, (now_utc.astimezone(UTC) - slot).total_seconds() / 60.0)
 
 
 def latest_primary_slot(now_utc: datetime) -> datetime:
