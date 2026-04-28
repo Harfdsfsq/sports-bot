@@ -145,12 +145,12 @@ def missing_context_examples(matches: list[dict[str, Any]], now: datetime, limit
     return rows[:limit]
 
 
-def run_next_day_warmup() -> dict[str, Any]:
-    path = ROOT / 'scripts' / 'warm_next_day_inventory.py'
+def run_script(script_name: str, export_path: str | None = None) -> dict[str, Any]:
+    path = ROOT / 'scripts' / script_name
     if not path.exists():
-        return {'status': 'skipped', 'reason': 'warmup_script_missing'}
+        return {'status': 'skipped', 'reason': 'script_missing', 'script': script_name}
     result = subprocess.run([sys.executable, str(path)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
-    payload = load_json(ROOT / '.data' / 'exports' / 'latest-next-day-inventory-warmup.json', {})
+    payload = load_json(ROOT / export_path, {}) if export_path else {}
     if not isinstance(payload, dict):
         payload = {}
     return {
@@ -159,6 +159,14 @@ def run_next_day_warmup() -> dict[str, Any]:
         'report': payload,
         'output_tail': result.stdout[-1500:],
     }
+
+
+def run_next_day_warmup() -> dict[str, Any]:
+    return run_script('warm_next_day_inventory.py', '.data/exports/latest-next-day-inventory-warmup.json')
+
+
+def run_near_miss_queue_build() -> dict[str, Any]:
+    return run_script('build_near_miss_enrichment_queue.py', '.data/exports/latest-near-miss-enrichment-queue.json')
 
 
 def main() -> int:
@@ -202,6 +210,7 @@ def main() -> int:
     run_seen = deep_int(debug, {'matches_seen'})
     run_offers = deep_int(debug, {'matches_with_offers', 'matches_with_any_offer_source'})
     run_context = deep_int(debug, {'contexts_built', 'matches_with_any_context_source', 'matches_with_merged_context'})
+    near_miss_queue = run_near_miss_queue_build()
     next_day_warmup = run_next_day_warmup()
 
     audit = {
@@ -242,12 +251,14 @@ def main() -> int:
             'coverage_rows_seen': as_int(merge.get('coverage_rows_seen')),
             'runtime_counts': merge.get('runtime_counts') if isinstance(merge.get('runtime_counts'), dict) else {},
         },
+        'near_miss_enrichment_queue': near_miss_queue,
         'next_day_warmup': next_day_warmup,
         'missing_context_priority_examples': missing_context_examples(matches, now),
         'explanation': [
             'day_provider_stats shows how many fixtures the day bootstrap sources returned.',
             'day_inventory is cumulative for the whole local date.',
             'current_run is only the current publish/enrichment window and can shrink as matches start.',
+            'near_miss_enrichment_queue stores high-EV single-source/proxy candidates for priority confirmation in the next run.',
             'missing_context_priority_examples are the next future matches that enrichment should prefer, especially when they already have odds.',
             'next_day_warmup builds tomorrow inventory after evening local time so overnight matches start accumulating earlier.',
         ],
