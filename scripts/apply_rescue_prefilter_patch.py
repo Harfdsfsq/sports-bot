@@ -8,6 +8,7 @@ from pathlib import Path
 MODEL_PATH = Path("app/services/model.py")
 RUNNER_PATH = Path("app/services/runner.py")
 DAY_INVENTORY_RUNTIME_PATCH = Path("scripts/apply_day_inventory_runtime_patch.py")
+DETAILED_REPORT_INVENTORY_PATCH = Path("scripts/patch_detailed_report_inventory_counts.py")
 
 
 def patch_model() -> bool:
@@ -144,22 +145,31 @@ def patch_runner() -> bool:
     return False
 
 
-def patch_day_inventory_runtime() -> bool:
-    if not DAY_INVENTORY_RUNTIME_PATCH.exists():
-        print(f"skip: {DAY_INVENTORY_RUNTIME_PATCH} not found")
+def run_patch(path: Path) -> bool:
+    if not path.exists():
+        print(f"skip: {path} not found")
         return False
-    print(f"running: {DAY_INVENTORY_RUNTIME_PATCH}")
-    result = subprocess.run([sys.executable, str(DAY_INVENTORY_RUNTIME_PATCH)], check=False)
+    print(f"running: {path}")
+    result = subprocess.run([sys.executable, str(path)], check=False)
     if result.returncode != 0:
-        print(f"warn: {DAY_INVENTORY_RUNTIME_PATCH} exited with {result.returncode}")
+        print(f"warn: {path} exited with {result.returncode}")
         return False
     return True
+
+
+def patch_day_inventory_runtime() -> bool:
+    return run_patch(DAY_INVENTORY_RUNTIME_PATCH)
+
+
+def patch_detailed_report_inventory_counts() -> bool:
+    return run_patch(DETAILED_REPORT_INVENTORY_PATCH)
 
 
 def main() -> int:
     patch_model()
     patch_runner()
     patch_day_inventory_runtime()
+    patch_detailed_report_inventory_counts()
     return 0
 
 
