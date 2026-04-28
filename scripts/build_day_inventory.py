@@ -3,8 +3,14 @@ from __future__ import annotations
 import asyncio
 import json
 import os
+import sys
 from datetime import datetime, timezone
+from pathlib import Path
 from zoneinfo import ZoneInfo
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 from app.config import Settings
 from app.services.day_inventory import DayInventoryStore
@@ -49,51 +55,70 @@ async def main_async() -> int:
 
     original_provider, override_provider = maybe_override_bootstrap_provider(settings)
     runner = PredictionRunner(settings)
+    matches: list = []
 
     try:
-        matches, bootstrap_meta = await fetch_inventory_matches(runner)
-        source_meta['primary_provider'] = str((bootstrap_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or '')
-        source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})
-        source_meta['stats'] = dict((bootstrap_meta or {}).get('stats') or {})
-        source_meta['preview'] = dict((bootstrap_meta or {}).get('preview') or {})
-    except Exception as exc:
-        if override_provider and original_provider and hasattr(settings, 'match_bootstrap_provider'):
-            setattr(settings, 'match_bootstrap_provider', original_provider)
-            runner = PredictionRunner(settings)
+        try:
             matches, bootstrap_meta = await fetch_inventory_matches(runner)
             source_meta['primary_provider'] = str((bootstrap_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or '')
-            source_meta['fallback_from'] = override_provider
-            source_meta['fallback_reason'] = f'{type(exc).__name__}: {exc}'
             source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})
             source_meta['stats'] = dict((bootstrap_meta or {}).get('stats') or {})
             source_meta['preview'] = dict((bootstrap_meta or {}).get('preview') or {})
-        else:
-            raise
+        except Exception as exc:
+            if override_provider and original_provider and hasattr(settings, 'match_bootstrap_provider'):
+                setattr(settings, 'match_bootstrap_provider', original_provider)
+                runner = PredictionRunner(settings)
+                matches, bootstrap_meta = await fetch_inventory_matches(runner)
+                source_meta['primary_provider'] = str((bootstrap_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or '')
+                source_meta['fallback_from'] = override_provider
+                source_meta['fallback_reason'] = f'{type(exc).__name__}: {exc}'
+                source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})
+                source_meta['stats'] = dict((bootstrap_meta or {}).get('stats') or {})
+                source_meta['preview'] = dict((bootstrap_meta or {}).get('preview') or {})
+            else:
+                raise
 
-    matches_for_day = [
-        match
-        for match in matches
-        if store.local_date_for_dt(match.commence_time) == local_date
-    ]
-    existing = store.load_inventory(local_date)
-    payload = store.build_payload(
-        local_date=local_date,
-        matches=matches_for_day,
-        source_meta=source_meta,
-        existing=existing,
-    )
-    paths = store.save_inventory(payload)
+        matches_for_day = [
+            match
+            for match in matches
+            if store.local_date_for_dt(match.commence_time) == local_date
+        ]
+        existing = store.load_inventory(local_date)
+        payload = store.build_payload(
+            local_date=local_date,
+            matches=matches_for_day,
+            source_meta=source_meta,
+            existing=existing,
+        )
+        paths = store.save_inventory(payload)
 
-    result = {
-        'date_local': local_date,
-        'bootstrap_provider': source_meta.get('primary_provider'),
-        'matches_total_raw': len(matches),
-        'matches_for_day': len(matches_for_day),
-        'saved_paths': paths,
-        'counts': dict(payload.get('counts') or {}),
-    }
-    print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0
+        result = {
+            'date_local': local_date,
+            'build_status': 'ok',
+            'bootstrap_provider': source_meta.get('primary_provider'),
+            'matches_total_raw': len(matches),
+            'matches_for_day': len(matches_for_day),
+            'saved_paths': paths,
+            'counts': dict(payload.get('counts') or {}),
+        }
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        return 0
+    except Exception as exc:
+        summary_path = store.save_failure_summary(
+            local_date=local_date,
+            error_text=f'{type(exc).__name__}: {exc}',
+            source_meta=source_meta,
+            bootstrap_provider=str(source_meta.get('primary_provider') or getattr(settings, 'match_bootstrap_provider', '') or ''),
+        )
+        result = {
+            'date_local': local_date,
+            'build_status': 'error',
+            'error': f'{type(exc).__name__}: {exc}',
+            'summary_path': summary_path,
+            'source_meta': source_meta,
+        }
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        return 1
 
 
 def main() -> int:
