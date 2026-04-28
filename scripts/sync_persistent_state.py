@@ -28,9 +28,11 @@ STATE_FILES = [
     ".data/exports/latest-day-inventory-summary.json",
     ".data/exports/latest-day-inventory-policy.json",
     ".data/exports/latest-day-inventory-coverage-merge.json",
+    ".data/exports/latest-near-miss-enrichment-queue.json",
     ".data/day_inventory/latest.json",
     ".data/day_inventory/current.json",
     ".data/day_inventory/today.json",
+    ".data/provider_cache/day-shortlist/latest-near-miss-enrichment-queue.json",
 ]
 
 STATE_GLOBS = [
@@ -38,6 +40,10 @@ STATE_GLOBS = [
     # checks .data/day_inventory/YYYY-MM-DD.json first; without this glob every
     # checkout looked like a fresh day and triggered recovery_bootstrap.
     ".data/day_inventory/*.json",
+    # Keep high-EV near-miss enrichment queues between GitHub Actions checkouts.
+    # Without this, the next run cannot prioritize single-source/proxy candidates
+    # that need confirmation from sstats/bzzoiro/football_data/thesportsdb.
+    ".data/provider_cache/day-shortlist/*.json",
 ]
 
 
