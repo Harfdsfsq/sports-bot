@@ -57,6 +57,28 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def restore_aliases(local_date: str) -> dict[str, Any]:
+    """Keep aliases pointed at the current run date after building tomorrow.
+
+    build_day_inventory.py writes latest/current/today aliases for whatever
+    DAY_INVENTORY_TARGET_DATE it builds. During evening warm-up that target is
+    tomorrow, but the current Telegram report still needs today's accumulated
+    coverage. So after the warm-up we restore aliases from today's dated file.
+    """
+    current_path = ROOT / '.data' / 'day_inventory' / f'{local_date}.json'
+    payload = load_json(current_path, {})
+    if not isinstance(payload, dict) or not payload:
+        return {'status': 'skipped', 'reason': 'current_dated_inventory_missing', 'path': str(current_path)}
+    targets = [
+        ROOT / '.data' / 'day_inventory' / 'latest.json',
+        ROOT / '.data' / 'day_inventory' / 'current.json',
+        ROOT / '.data' / 'day_inventory' / 'today.json',
+    ]
+    for path in targets:
+        write_json(path, payload)
+    return {'status': 'ok', 'source': str(current_path), 'restored_aliases': [str(path) for path in targets]}
+
+
 def should_warm(now_local: datetime, tomorrow_path: Path) -> tuple[bool, str]:
     forced = str(os.getenv('NEXT_DAY_INVENTORY_FORCE', '')).strip().lower() in {'1', 'true', 'yes', 'on'}
     if forced:
@@ -83,6 +105,7 @@ def should_warm(now_local: datetime, tomorrow_path: Path) -> tuple[bool, str]:
 def main() -> int:
     now_utc = datetime.now(UTC)
     now_local = now_utc.astimezone(tzinfo())
+    current_date = now_local.date().isoformat()
     tomorrow = (now_local.date() + timedelta(days=1)).isoformat()
     tomorrow_path = ROOT / '.data' / 'day_inventory' / f'{tomorrow}.json'
     should_run, reason = should_warm(now_local, tomorrow_path)
@@ -90,11 +113,13 @@ def main() -> int:
         'status': 'skipped',
         'updated_at_utc': now_utc.isoformat(),
         'local_now': now_local.isoformat(),
+        'current_date': current_date,
         'target_date': tomorrow,
         'inventory_path': str(tomorrow_path),
         'reason': reason,
     }
     if not should_run:
+        report['alias_restore'] = restore_aliases(current_date)
         write_json(OUT, report)
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
@@ -113,9 +138,11 @@ def main() -> int:
         'build_output_tail': result.stdout[-3000:],
         'counts': counts,
         'saved_inventory_exists': tomorrow_path.exists(),
+        'alias_restore': restore_aliases(current_date),
         'notes': [
             'This warms tomorrow inventory after evening local time so overnight matches can collect context before kickoff.',
-            'It does not change the current run target date or publish quality filters.',
+            'After warm-up, latest/current/today aliases are restored to the current local date so the current detailed report stays correct.',
+            'It does not change publish quality filters.',
         ],
     })
     write_json(OUT, report)
