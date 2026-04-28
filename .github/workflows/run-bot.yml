@@ -38,9 +38,6 @@ on:
     # Primary autoruns. UTC. Europe/Moscow = UTC+3.
     # 00:00, 02:00, 04:00, 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00 MSK.
     - cron: "0 21,23,1,3,5,7,9,11,13,15,17,19 * * *"
-    # Watchdog/failsafe slots exactly +5 minutes after every primary slot.
-    # If the primary run already completed, scripts/autorun_watchdog.py skips the main pipeline.
-    - cron: "5 21,23,1,3,5,7,9,11,13,15,17,19 * * *"
 
 permissions:
   contents: write
@@ -58,7 +55,7 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v19-msk-midnight-daily-inventory
+      AUTORUN_POLICY_VERSION: v20-msk-delayed-slot-aware
       VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_5' }}
       DAILY_TOP5_TARGET_PICKS: "5"
       DAILY_TOP5_HARD_CAP_PICKS: "7"
@@ -109,6 +106,10 @@ jobs:
       PREDICTION_PUBLICATION_ENABLED: "false"
       RUN_REPORT_ENABLED: "false"
       RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: "false"
+      DETAILED_RUN_REPORT_SEND_TELEGRAM: "true"
+      DETAILED_RUN_REPORT_SEND_WHEN_PUBLISHED: "true"
+      DETAILED_RUN_REPORT_FORCE_SEND: "true"
+      DETAILED_RUN_REPORT_MIN_INTERVAL_MINUTES: "0"
       SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
       DAILY_REPORT_ENABLED: "true"
       DAILY_REPORT_SEND_TELEGRAM: "true"
