@@ -123,7 +123,6 @@ def queue_item(row: dict[str, Any], idx: int, now: datetime, min_ev: float, min_
     if not proxyish:
         return None
     family = str(candidate.get('family') or candidate.get('market_family') or '').strip().lower()
-    # BTTS is useful as a context target too, but not enough to open publication; keep it in enrichment only.
     needs_confirmation = [reason for reason in reasons if 'proxy' in reason or 'sources_below' in reason or 'books_below' in reason or 'xg_confirmation' in reason]
     priority = (ev * 3.0) + (edge * 4.0) + (confidence * 0.25) + (quality * 0.15)
     if minutes_to_kickoff <= 180:
@@ -158,6 +157,28 @@ def queue_item(row: dict[str, Any], idx: int, now: datetime, min_ev: float, min_
     }
 
 
+def existing_non_empty_queue(date_key: str) -> dict[str, Any]:
+    candidates = [
+        OUT_DIR / 'latest-near-miss-enrichment-queue.json',
+        OUT_DIR / f'{date_key}-near-miss-enrichment-queue.json',
+        EXPORT,
+    ]
+    for path in candidates:
+        payload = load_json(path, {})
+        if isinstance(payload, dict) and isinstance(payload.get('items'), list) and payload.get('items'):
+            return payload
+    return {}
+
+
+def write_all(date_key: str, payload: dict[str, Any]) -> None:
+    for path in [
+        OUT_DIR / 'latest-near-miss-enrichment-queue.json',
+        OUT_DIR / f'{date_key}-near-miss-enrichment-queue.json',
+        EXPORT,
+    ]:
+        write_json(path, payload)
+
+
 def main() -> int:
     now = datetime.now(UTC)
     date_key = local_date()
@@ -185,6 +206,17 @@ def main() -> int:
         items.append(item)
     items.sort(key=lambda x: (as_float(x.get('priority')), -as_float(x.get('minutes_to_kickoff'), 99999)), reverse=True)
     items = items[:limit]
+
+    if not items:
+        existing = existing_non_empty_queue(date_key)
+        if existing:
+            existing['status'] = 'preserved_non_empty_queue'
+            existing['preserved_at_utc'] = now.isoformat()
+            existing['preserve_reason'] = f'empty_current_run:evaluated_seen={len(evaluated)}'
+            write_all(date_key, existing)
+            print(json.dumps(existing, ensure_ascii=False, indent=2, sort_keys=True))
+            return 0
+
     payload = {
         'status': 'ok',
         'created_at_utc': now.isoformat(),
@@ -197,15 +229,10 @@ def main() -> int:
         'notes': [
             'Queue contains high-EV near-miss matches that failed mainly because they are proxy/single-source/low-confirmation.',
             'Next run uses this queue to prioritize context/confirmation API calls before generic enrichment.',
+            'If current run is empty, a previous non-empty queue is preserved instead of being overwritten.',
         ],
     }
-    paths = [
-        OUT_DIR / 'latest-near-miss-enrichment-queue.json',
-        OUT_DIR / f'{date_key}-near-miss-enrichment-queue.json',
-        EXPORT,
-    ]
-    for path in paths:
-        write_json(path, payload)
+    write_all(date_key, payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
