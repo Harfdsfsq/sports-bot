@@ -64,7 +64,6 @@ jobs:
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
-      # Primary odds/context providers.
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
       ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
@@ -74,13 +73,11 @@ jobs:
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
 
-      # News providers. Currents is handled by app/providers/newsapi.py as primary news source.
       CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
       CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
       NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
       GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
 
-      # Weather providers.
       WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
       OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHER_API_KEY }}
@@ -88,14 +85,12 @@ jobs:
       METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
       METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
 
-      # RapidAPI / secondary providers.
       RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
       SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
       ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
       FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
       SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
 
-      # api-football is intentionally removed from runtime.
       ENABLE_API_FOOTBALL: "false"
       API_FOOTBALL_ENABLED: "false"
       API_FOOTBALL_KEY: ""
@@ -123,8 +118,6 @@ jobs:
       MIN_KICKOFF_LEAD_MINUTES: "35"
       MAX_PICKS_PER_RUN: "2"
 
-      # Daily inventory policy. 00:00 MSK performs the large fixture bootstrap;
-      # later two-hour runs reuse and enrich the existing inventory.
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: football_data
       DAY_INVENTORY_FULL_BOOTSTRAP_HOURS_LOCAL: "0"
       DAY_INVENTORY_REFRESH_INTERVAL_HOURS: "6"
@@ -171,6 +164,9 @@ jobs:
           rm -f .data/exports/latest-day-inventory-summary.json
           rm -f .data/exports/latest-day-inventory-policy.json
           rm -f .data/exports/latest-day-inventory-coverage-merge.json
+          rm -f .data/exports/latest-rules-api-budget-policy.json
+          rm -f .data/exports/latest-daily-top5-publish-policy.json
+          rm -f .data/exports/latest-day-inventory-coverage-audit.json
           rm -f .data/exports/latest-coverage-audit.json
           rm -f .data/exports/latest-history-guard-audit.json
           rm -f .data/exports/latest-history-guard-audit.err
@@ -231,7 +227,11 @@ jobs:
       - name: Apply runtime patches
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
-        run: python scripts/apply_rescue_prefilter_patch.py || true
+        run: |
+          python scripts/apply_rescue_prefilter_patch.py || true
+          python scripts/apply_runtime_policy_stack.py || true
+          cat .data/exports/latest-rules-api-budget-policy.json || true
+          cat .data/exports/latest-daily-top5-publish-policy.json || true
 
       - name: Apply provider request budget
         if: env.AUTORUN_SKIP_MAIN != 'true'
@@ -299,7 +299,9 @@ jobs:
         shell: bash
         run: |
           python scripts/merge_run_coverage_into_day_inventory.py || true
+          python scripts/day_inventory_coverage_audit.py || true
           cat .data/exports/latest-day-inventory-coverage-merge.json || true
+          cat .data/exports/latest-day-inventory-coverage-audit.json || true
 
       - name: Generate audit payloads
         if: env.AUTORUN_SKIP_MAIN != 'true'
