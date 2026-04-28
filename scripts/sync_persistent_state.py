@@ -26,9 +26,18 @@ STATE_FILES = [
     ".data/provider_request_budget_state.json",
     ".data/exports/latest-run-summary.json",
     ".data/exports/latest-day-inventory-summary.json",
+    ".data/exports/latest-day-inventory-policy.json",
+    ".data/exports/latest-day-inventory-coverage-merge.json",
     ".data/day_inventory/latest.json",
     ".data/day_inventory/current.json",
     ".data/day_inventory/today.json",
+]
+
+STATE_GLOBS = [
+    # Keep the date-addressable inventory, not only aliases. The autorun policy
+    # checks .data/day_inventory/YYYY-MM-DD.json first; without this glob every
+    # checkout looked like a fresh day and triggered recovery_bootstrap.
+    ".data/day_inventory/*.json",
 ]
 
 
@@ -59,9 +68,27 @@ def is_git_repo() -> bool:
         return False
 
 
+def collect_state_files() -> list[str]:
+    seen: set[str] = set()
+    files: list[str] = []
+    for rel in STATE_FILES:
+        if rel not in seen:
+            files.append(rel)
+            seen.add(rel)
+    for pattern in STATE_GLOBS:
+        for path in sorted(ROOT.glob(pattern)):
+            if not path.is_file():
+                continue
+            rel = path.relative_to(ROOT).as_posix()
+            if rel not in seen:
+                files.append(rel)
+                seen.add(rel)
+    return files
+
+
 def copy_existing_state(dst: Path) -> list[str]:
     copied: list[str] = []
-    for rel in STATE_FILES:
+    for rel in collect_state_files():
         src = ROOT / rel
         if not src.exists() or not src.is_file():
             continue
