@@ -63,25 +63,24 @@ def main() -> int:
         providers = {}
         policy['providers'] = providers
 
-    # RULES.txt: odds-api.io allows 100 requests/hour. With a two-hour run cadence,
-    # a 60/run and 720/day budget stays conservative while avoiding evening exhaustion.
+    # RULES.txt: odds-api.io allows 100 requests/hour.
+    # Run cadence is every 2 hours, so 80/run stays under hourly pressure and
+    # 1200/day prevents late-night runs from becoming line-less after manual runs.
     odds = patch_provider(providers, 'odds_api_io', {
-        'per_run_max': 60,
-        'safe_daily_budget': 720,
+        'per_run_max': 80,
+        'safe_daily_budget': 1200,
         'min_spacing_minutes': 0,
         'limit': {'requests_per_hour': 100, 'bookmakers': 2, 'rules_source': 'RULES.txt'},
         'env': {
             'ENABLE_ODDS_API_IO': 'true',
             'ODDS_API_IO_ENABLED': 'true',
-            'ODDS_API_IO_PER_RUN_MAX': '60',
+            'ODDS_API_IO_PER_RUN_MAX': '80',
             'ODDS_API_IO_PAGE_LIMIT': '100',
-            'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '30',
-            'MAX_MATCHES_FOR_ODDS_FETCH': '260',
+            'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
+            'MAX_MATCHES_FOR_ODDS_FETCH': '320',
         },
     })
 
-    # Registered football-data free plan is 10 requests/minute in RULES.txt.
-    # Keep it below aggressive usage but enough to avoid late-day depletion.
     football = patch_provider(providers, 'football_data', {
         'per_run_max': 12,
         'safe_daily_budget': 180,
@@ -93,15 +92,15 @@ def main() -> int:
         },
     })
 
-    policy['version'] = 'v17-rules-api-budget-odds-boost'
+    policy['version'] = 'v18-rules-api-budget-odds-late-run-reserve'
     write_json(POLICY_PATH, policy)
 
     env = {
         'RULES_API_BUDGET_POLICY_VERSION': policy['version'],
         'ALL_SOURCES_FREE_MAXIMIZE': 'false',
-        'ODDS_API_IO_PER_RUN_MAX': '60',
-        'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '30',
-        'MAX_MATCHES_FOR_ODDS_FETCH': '260',
+        'ODDS_API_IO_PER_RUN_MAX': '80',
+        'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
+        'MAX_MATCHES_FOR_ODDS_FETCH': '320',
         'FOOTBALL_DATA_PER_RUN_MAX': '12',
         'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '12',
         'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '140',
@@ -125,7 +124,7 @@ def main() -> int:
                 'env': football.get('env'),
             },
         },
-        'reason': 'odds_api_io was exhausted at 288/288 even though RULES.txt allows 100 requests/hour.',
+        'reason': 'odds_api_io was exhausted at 720/720 in late runs; RULES.txt allows 100 requests/hour, so 80/run and 1200/day preserve late-run odds coverage.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
