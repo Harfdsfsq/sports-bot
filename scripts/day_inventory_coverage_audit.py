@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import os
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -143,6 +145,22 @@ def missing_context_examples(matches: list[dict[str, Any]], now: datetime, limit
     return rows[:limit]
 
 
+def run_next_day_warmup() -> dict[str, Any]:
+    path = ROOT / 'scripts' / 'warm_next_day_inventory.py'
+    if not path.exists():
+        return {'status': 'skipped', 'reason': 'warmup_script_missing'}
+    result = subprocess.run([sys.executable, str(path)], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, check=False)
+    payload = load_json(ROOT / '.data' / 'exports' / 'latest-next-day-inventory-warmup.json', {})
+    if not isinstance(payload, dict):
+        payload = {}
+    return {
+        'status': 'ok' if result.returncode == 0 else 'error',
+        'returncode': result.returncode,
+        'report': payload,
+        'output_tail': result.stdout[-1500:],
+    }
+
+
 def main() -> int:
     now = datetime.now(UTC)
     local_date = target_date()
@@ -184,6 +202,7 @@ def main() -> int:
     run_seen = deep_int(debug, {'matches_seen'})
     run_offers = deep_int(debug, {'matches_with_offers', 'matches_with_any_offer_source'})
     run_context = deep_int(debug, {'contexts_built', 'matches_with_any_context_source', 'matches_with_merged_context'})
+    next_day_warmup = run_next_day_warmup()
 
     audit = {
         'status': 'ok' if inventory else 'missing_inventory',
@@ -223,12 +242,14 @@ def main() -> int:
             'coverage_rows_seen': as_int(merge.get('coverage_rows_seen')),
             'runtime_counts': merge.get('runtime_counts') if isinstance(merge.get('runtime_counts'), dict) else {},
         },
+        'next_day_warmup': next_day_warmup,
         'missing_context_priority_examples': missing_context_examples(matches, now),
         'explanation': [
             'day_provider_stats shows how many fixtures the day bootstrap sources returned.',
             'day_inventory is cumulative for the whole local date.',
             'current_run is only the current publish/enrichment window and can shrink as matches start.',
             'missing_context_priority_examples are the next future matches that enrichment should prefer, especially when they already have odds.',
+            'next_day_warmup builds tomorrow inventory after evening local time so overnight matches start accumulating earlier.',
         ],
     }
     write_json(OUT, audit)
