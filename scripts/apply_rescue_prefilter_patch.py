@@ -1,10 +1,13 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 
 MODEL_PATH = Path("app/services/model.py")
 RUNNER_PATH = Path("app/services/runner.py")
+DAY_INVENTORY_RUNTIME_PATCH = Path("scripts/apply_day_inventory_runtime_patch.py")
 
 
 def patch_model() -> bool:
@@ -141,9 +144,22 @@ def patch_runner() -> bool:
     return False
 
 
+def patch_day_inventory_runtime() -> bool:
+    if not DAY_INVENTORY_RUNTIME_PATCH.exists():
+        print(f"skip: {DAY_INVENTORY_RUNTIME_PATCH} not found")
+        return False
+    print(f"running: {DAY_INVENTORY_RUNTIME_PATCH}")
+    result = subprocess.run([sys.executable, str(DAY_INVENTORY_RUNTIME_PATCH)], check=False)
+    if result.returncode != 0:
+        print(f"warn: {DAY_INVENTORY_RUNTIME_PATCH} exited with {result.returncode}")
+        return False
+    return True
+
+
 def main() -> int:
     patch_model()
     patch_runner()
+    patch_day_inventory_runtime()
     return 0
 
 

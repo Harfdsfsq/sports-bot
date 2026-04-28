@@ -29,7 +29,7 @@ on:
         description: Volume policy mode
         type: choice
         required: false
-        default: target_3
+        default: target_5
         options:
           - target_3
           - target_5
@@ -37,10 +37,10 @@ on:
   schedule:
     # Primary autoruns. UTC. Europe/Moscow = UTC+3.
     # 00:00, 02:00, 04:00, 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00 MSK.
-    - cron: "0 1,3,5,7,9,11,13,15,17,19,21,23 * * *"
+    - cron: "0 21,23,1,3,5,7,9,11,13,15,17,19 * * *"
     # Watchdog/failsafe slots exactly +5 minutes after every primary slot.
     # If the primary run already completed, scripts/autorun_watchdog.py skips the main pipeline.
-    - cron: "5 1,3,5,7,9,11,13,15,17,19,21,23 * * *"
+    - cron: "5 21,23,1,3,5,7,9,11,13,15,17,19 * * *"
 
 permissions:
   contents: write
@@ -58,8 +58,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v18-msk-delayed-primary-aware
-      VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_3' }}
+      AUTORUN_POLICY_VERSION: v19-msk-midnight-daily-inventory
+      VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_5' }}
 
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -122,6 +122,17 @@ jobs:
       PUBLISH_WINDOW_HOURS: "6"
       MIN_KICKOFF_LEAD_MINUTES: "35"
       MAX_PICKS_PER_RUN: "2"
+
+      # Daily inventory policy. 00:00 MSK performs the large fixture bootstrap;
+      # later two-hour runs reuse and enrich the existing inventory.
+      DAY_INVENTORY_BOOTSTRAP_PROVIDER: football_data
+      DAY_INVENTORY_FULL_BOOTSTRAP_HOURS_LOCAL: "0"
+      DAY_INVENTORY_REFRESH_INTERVAL_HOURS: "6"
+      DAY_INVENTORY_MIN_MATCHES_FOR_SKIP: "40"
+      DAY_INVENTORY_DIRECT_WINDOW_DAYS: "1"
+      DAY_INVENTORY_DIRECT_MIN_MATCHES: "8"
+      DAY_INVENTORY_MIDNIGHT_FRESH_MINUTES: "75"
+
       SELECTED_PROFILE: ${{ github.event.inputs.profile || 'balanced' }}
       AUTORUN_MANUAL_PUBLISH_WINDOW_HOURS: ${{ github.event.inputs.publish_window_hours }}
       AUTORUN_MANUAL_MIN_KICKOFF_LEAD_MINUTES: ${{ github.event.inputs.min_kickoff_lead_minutes }}
@@ -158,6 +169,8 @@ jobs:
           rm -f .data/exports/latest-run-summary.json
           rm -f .data/exports/latest-detailed-run-report.json
           rm -f .data/exports/latest-day-inventory-summary.json
+          rm -f .data/exports/latest-day-inventory-policy.json
+          rm -f .data/exports/latest-day-inventory-coverage-merge.json
           rm -f .data/exports/latest-coverage-audit.json
           rm -f .data/exports/latest-history-guard-audit.json
           rm -f .data/exports/latest-history-guard-audit.err
@@ -227,14 +240,28 @@ jobs:
           python scripts/apply_provider_request_budget.py
           cat .data/exports/latest-provider-request-budget.json || true
 
-      - name: Build day inventory
+      - name: Apply day inventory policy
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
+        run: |
+          python scripts/apply_day_inventory_policy.py
+          cat .data/exports/latest-day-inventory-policy.json || true
+
+      - name: Build day inventory
+        if: env.AUTORUN_SKIP_MAIN != 'true' && env.DAY_INVENTORY_SKIP_BUILD != 'true'
+        shell: bash
         env:
-          DAY_INVENTORY_BOOTSTRAP_PROVIDER: football_data
           PYTHONPATH: ${{ github.workspace }}
         run: |
           python scripts/build_day_inventory.py || true
+          cat .data/exports/latest-day-inventory-summary.json || true
+
+      - name: Show existing day inventory summary
+        if: env.AUTORUN_SKIP_MAIN != 'true' && env.DAY_INVENTORY_SKIP_BUILD == 'true'
+        shell: bash
+        run: |
+          echo "Daily inventory is fresh enough; skipping fixture bootstrap."
+          cat .data/exports/latest-day-inventory-policy.json || true
           cat .data/exports/latest-day-inventory-summary.json || true
 
       - name: Ensure calibration profile exists
@@ -266,6 +293,13 @@ jobs:
           python scripts/match_data_coverage_report.py || true
           python scripts/rapidapi_quota_probe.py || true
           python scripts/rapidapi_endpoint_discovery.py || true
+
+      - name: Merge run coverage into day inventory
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/merge_run_coverage_into_day_inventory.py || true
+          cat .data/exports/latest-day-inventory-coverage-merge.json || true
 
       - name: Generate audit payloads
         if: env.AUTORUN_SKIP_MAIN != 'true'
