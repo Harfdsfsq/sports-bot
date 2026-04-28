@@ -9,6 +9,7 @@ MODEL_PATH = Path("app/services/model.py")
 RUNNER_PATH = Path("app/services/runner.py")
 DAY_INVENTORY_RUNTIME_PATCH = Path("scripts/apply_day_inventory_runtime_patch.py")
 DETAILED_REPORT_INVENTORY_PATCH = Path("scripts/patch_detailed_report_inventory_counts.py")
+DAILY_TOP5_PUBLISH_POLICY = Path("scripts/apply_daily_top5_publish_policy.py")
 
 
 def patch_model() -> bool:
@@ -165,9 +166,16 @@ def patch_detailed_report_inventory_counts() -> bool:
     return run_patch(DETAILED_REPORT_INVENTORY_PATCH)
 
 
+def apply_daily_top5_policy() -> bool:
+    # This runs after apply_volume_policy in workflow and overrides publication caps
+    # to target exactly ~5 high-quality picks/day, not 6-7 medium picks.
+    return run_patch(DAILY_TOP5_PUBLISH_POLICY)
+
+
 def main() -> int:
     patch_model()
     patch_runner()
+    apply_daily_top5_policy()
     patch_day_inventory_runtime()
     patch_detailed_report_inventory_counts()
     return 0
