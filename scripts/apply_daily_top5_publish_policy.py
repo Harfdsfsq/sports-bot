@@ -76,6 +76,10 @@ def as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def env_float_str(name: str, default: float) -> str:
+    return str(as_float(os.getenv(name), default))
+
+
 def row_timestamp(row: dict[str, Any]) -> Any:
     for key in ('sent_at', 'published_at', 'created_at', 'placed_at', 'timestamp', 'updated_at'):
         if row.get(key):
@@ -198,11 +202,54 @@ def main() -> int:
         'CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED': 'false',
         'CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES': '',
         'CONTROLLED_FALLBACK_DAILY_TOP5_REASON': reason,
-        # Keep quality: do not bypass hard guards; only choose fewer, better picks.
+        # Keep quality: do not bypass hard guards; make target_5 override late enough to
+        # beat final_runtime_overrides.env and let strong Tier B reserve picks publish.
+        'CONTROLLED_FALLBACK_ALLOWED_FAMILIES': os.getenv(
+            'DAILY_TOP5_ALLOWED_FAMILIES',
+            'totals,dnb,teamtotals,teamTotals,btts,spreads',
+        ),
+        'CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES': os.getenv(
+            'DAILY_TOP5_TIER_B_ALLOWED_FAMILIES',
+            'totals,dnb,teamtotals,teamTotals,btts,spreads',
+        ),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE': env_float_str('DAILY_TOP5_TIER_B_MIN_CONFIDENCE', 63.0),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY': env_float_str('DAILY_TOP5_TIER_B_MIN_QUALITY', 60.0),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP': env_float_str('DAILY_TOP5_TIER_B_MIN_EDGE_PP', 3.0),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT': env_float_str('DAILY_TOP5_TIER_B_MIN_EV_PCT', 6.0),
         'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'true',
         'CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK': 'true',
         'CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY': 'true',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT': 'true',
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': env_float_str(
+            'DAILY_TOP5_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE',
+            64.0,
+        ),
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': env_float_str(
+            'DAILY_TOP5_PROXY_SINGLE_SOURCE_MIN_EDGE_PP',
+            3.0,
+        ),
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': env_float_str(
+            'DAILY_TOP5_PROXY_SINGLE_SOURCE_MIN_EV_PCT',
+            6.0,
+        ),
+        'CONTROLLED_FALLBACK_DNB_MIN_XG_EDGE_PP': env_float_str('DAILY_TOP5_DNB_MIN_XG_EDGE_PP', 2.5),
+        'CONTROLLED_FALLBACK_DNB_MIN_XG_EV_UNCONDITIONAL_PCT': env_float_str(
+            'DAILY_TOP5_DNB_MIN_XG_EV_UNCONDITIONAL_PCT',
+            3.5,
+        ),
+        'CONTROLLED_FALLBACK_DNB_MAX_ABS_MODEL_XG_GAP_PP': env_float_str(
+            'DAILY_TOP5_DNB_MAX_ABS_MODEL_XG_GAP_PP',
+            36.0,
+        ),
+        'CONTROLLED_FALLBACK_DNB_MAX_XG_EV_UNCONDITIONAL_PCT': env_float_str(
+            'DAILY_TOP5_DNB_MAX_XG_EV_UNCONDITIONAL_PCT',
+            90.0,
+        ),
+        'CONTROLLED_FALLBACK_DNB_MAX_XG_EDGE_PP': env_float_str('DAILY_TOP5_DNB_MAX_XG_EDGE_PP', 45.0),
+        'CONTROLLED_FALLBACK_DNB_MAX_NO_PUSH_PROBABILITY_PCT': env_float_str(
+            'DAILY_TOP5_DNB_MAX_NO_PUSH_PROBABILITY_PCT',
+            88.0,
+        ),
     }
     if allowed_this_run <= 0:
         env['CONTROLLED_FALLBACK_ENABLED'] = 'false'
@@ -222,7 +269,7 @@ def main() -> int:
         'reason': reason,
         'counts': counts,
         'env': env,
-        'quality_note': 'Daily top5 policy targets 5 picks/day, lets manual runs fill the remaining target, and keeps Tier C disabled / hard guards enabled.',
+        'quality_note': 'Daily top5 policy targets 5 picks/day, lets manual runs fill the remaining target, keeps Tier C disabled, and relaxes only Tier B/proxy reserve gates while preserving hard market guards.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
