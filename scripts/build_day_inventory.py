@@ -72,6 +72,11 @@ def _football_data_url(settings: Settings) -> str:
     return str(getattr(settings, 'football_data_base_url', 'https://api.football-data.org/v4') or 'https://api.football-data.org/v4').rstrip('/') + '/matches'
 
 
+def _thesportsdb_base_url(settings: Settings) -> str:
+    api_key = str(getattr(settings, 'thesportsdb_api_key', '') or '123').strip() or '123'
+    return f"{(getattr(settings, 'thesportsdb_base_url', 'https://www.thesportsdb.com/api/v1/json') or 'https://www.thesportsdb.com/api/v1/json').rstrip('/')}/{api_key}"
+
+
 def _football_data_min_matches() -> int:
     try:
         return max(1, int(float(os.getenv('DAY_INVENTORY_DIRECT_MIN_MATCHES', '12'))))
@@ -122,6 +127,96 @@ def _row_to_match(row: dict, settings: Settings) -> Match | None:
             'status': str(row.get('status') or '').strip(),
         },
     )
+
+
+def _parse_thesportsdb_event_dt(row: dict) -> datetime | None:
+    candidates = [
+        str(row.get('strTimestamp') or '').strip(),
+        str(row.get('strTimeLocal') or '').strip(),
+    ]
+    for value in candidates:
+        if not value:
+            continue
+        try:
+            normalized = value.replace(' ', 'T')
+            if normalized.endswith('Z') or '+' in normalized[10:]:
+                return parse_datetime(normalized)
+            return parse_datetime(normalized + '+00:00')
+        except Exception:
+            continue
+    date_value = str(row.get('dateEvent') or '').strip()
+    time_value = str(row.get('strTime') or '').strip() or '12:00:00'
+    if date_value:
+        try:
+            time_normalized = time_value if len(time_value.split(':')) == 3 else f'{time_value}:00'
+            return parse_datetime(f'{date_value}T{time_normalized}+00:00')
+        except Exception:
+            return None
+    return None
+
+
+def _thesportsdb_row_to_match(row: dict, settings: Settings) -> Match | None:
+    home = str(row.get('strHomeTeam') or '').strip()
+    away = str(row.get('strAwayTeam') or '').strip()
+    league_name = str(row.get('strLeague') or '').strip()
+    if not home or not away or not league_name:
+        return None
+    commence_time = _parse_thesportsdb_event_dt(row)
+    if commence_time is None:
+        return None
+    if not bool(getattr(settings, 'allow_low_tier', False)) and is_low_tier_league(league_name):
+        return None
+    return Match(
+        source='thesportsdb',
+        source_event_id=str(row.get('idEvent') or ''),
+        sport_key='soccer',
+        league_name=league_name,
+        home_team=home,
+        away_team=away,
+        commence_time=commence_time,
+        home_team_norm=canonicalize_team_name(home),
+        away_team_norm=canonicalize_team_name(away),
+        league_key=canonicalize_league_name(league_name),
+        tier='mid',
+        metadata={
+            'event_status': str(row.get('strStatus') or '').strip(),
+            'season': str(row.get('strSeason') or '').strip(),
+            'venue': str(row.get('strVenue') or '').strip(),
+        },
+    )
+
+
+def _dedupe_matches(matches: list[Match]) -> list[Match]:
+    mapping: dict[str, Match] = {}
+    for match in matches:
+        existing = mapping.get(match.match_key)
+        if existing is None:
+            mapping[match.match_key] = match
+            continue
+        existing_sources = set(str(existing.metadata.get('sources_seen') or '').split(',')) if isinstance(existing.metadata, dict) else set()
+        existing_sources.discard('')
+        existing_sources.add(existing.source)
+        existing_sources.add(match.source)
+        merged = Match(
+            source=existing.source,
+            source_event_id=existing.source_event_id,
+            sport_key=existing.sport_key,
+            league_name=existing.league_name,
+            home_team=existing.home_team,
+            away_team=existing.away_team,
+            commence_time=existing.commence_time,
+            home_team_norm=existing.home_team_norm,
+            away_team_norm=existing.away_team_norm,
+            league_key=existing.league_key,
+            tier=existing.tier,
+            metadata={
+                **dict(existing.metadata or {}),
+                'sources_seen': ','.join(sorted(existing_sources)),
+                'secondary_source_event_id': match.source_event_id,
+            },
+        )
+        mapping[match.match_key] = merged
+    return sorted(mapping.values(), key=lambda item: (item.commence_time.isoformat(), item.league_name, item.home_team, item.away_team))
 
 
 async def fetch_direct_football_data_inventory(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, object]]:
@@ -218,12 +313,133 @@ async def fetch_direct_football_data_inventory(settings: Settings, local_date: s
     return matches_for_target, meta
 
 
+async def fetch_direct_thesportsdb_inventory(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, object]]:
+    stats: dict[str, object] = {
+        'enabled': True,
+        'requests': 0,
+        'response_errors': 0,
+        'events_fetched': 0,
+        'matches_built': 0,
+        'matches_for_target_local_date': 0,
+        'low_tier_skipped': 0,
+        'http_statuses': [],
+        'last_body_preview': None,
+        'rate_limited': False,
+        'max_http_requests_per_run': 1,
+        'request_date': local_date,
+    }
+    preview: dict[str, object] = {'sample_events': [], 'sample_matches': []}
+
+    async with httpx.AsyncClient(timeout=float(getattr(settings, 'thesportsdb_timeout_seconds', 20.0) or 20.0)) as client:
+        stats['requests'] = 1
+        response = await client.get(
+            f"{_thesportsdb_base_url(settings)}/eventsday.php",
+            params={'d': local_date, 's': 'Soccer'},
+        )
+        stats['http_statuses'].append(int(response.status_code))
+        stats['last_body_preview'] = response.text[:1800]
+        if response.status_code == 429:
+            stats['response_errors'] = 1
+            stats['rate_limited'] = True
+            raise RuntimeError('thesportsdb_rate_limited')
+        if response.status_code != 200:
+            stats['response_errors'] = 1
+            raise RuntimeError(f'thesportsdb_http_{response.status_code}')
+        payload = response.json()
+
+    rows = payload.get('events') if isinstance(payload, dict) else []
+    if not isinstance(rows, list):
+        rows = []
+    stats['events_fetched'] = len(rows)
+    if rows:
+        preview['sample_events'] = rows[:3]
+
+    matches: list[Match] = []
+    sample_matches: list[dict[str, object]] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        match = _thesportsdb_row_to_match(row, settings)
+        if match is None:
+            if row.get('strLeague') and is_low_tier_league(str(row.get('strLeague') or '')):
+                stats['low_tier_skipped'] = int(stats.get('low_tier_skipped') or 0) + 1
+            continue
+        matches.append(match)
+        if len(sample_matches) < 5:
+            sample_matches.append(
+                {
+                    'match_key': match.match_key,
+                    'league_name': match.league_name,
+                    'home_team': match.home_team,
+                    'away_team': match.away_team,
+                    'commence_time': match.commence_time.isoformat(),
+                    'tier': match.tier,
+                }
+            )
+    stats['matches_built'] = len(matches)
+    matches_for_target = [match for match in matches if match.commence_time.astimezone(app_tz(settings)).date().isoformat() == local_date]
+    stats['matches_for_target_local_date'] = len(matches_for_target)
+    preview['sample_matches'] = sample_matches
+    meta = {
+        'provider': 'thesportsdb',
+        'attempts': {'thesportsdb': {'stats': stats, 'preview': preview}},
+        'stats': stats,
+        'preview': preview,
+    }
+    return matches_for_target, meta
+
+
+async def fetch_combined_free_inventory(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, object]]:
+    football_data_result, thesportsdb_result = await asyncio.gather(
+        fetch_direct_football_data_inventory(settings, local_date),
+        fetch_direct_thesportsdb_inventory(settings, local_date),
+        return_exceptions=True,
+    )
+
+    attempts: dict[str, object] = {}
+    previews: dict[str, object] = {}
+    merged_matches: list[Match] = []
+    errors: list[str] = []
+
+    if isinstance(football_data_result, Exception):
+        errors.append(f'football_data:{type(football_data_result).__name__}:{football_data_result}')
+    else:
+        fd_matches, fd_meta = football_data_result
+        merged_matches.extend(fd_matches)
+        attempts.update(dict(fd_meta.get('attempts') or {}))
+        previews['football_data'] = dict(fd_meta.get('preview') or {})
+
+    if isinstance(thesportsdb_result, Exception):
+        errors.append(f'thesportsdb:{type(thesportsdb_result).__name__}:{thesportsdb_result}')
+    else:
+        tsd_matches, tsd_meta = thesportsdb_result
+        merged_matches.extend(tsd_matches)
+        attempts.update(dict(tsd_meta.get('attempts') or {}))
+        previews['thesportsdb'] = dict(tsd_meta.get('preview') or {})
+
+    deduped = _dedupe_matches(merged_matches)
+    stats = {
+        'providers_attempted': ['football_data', 'thesportsdb'],
+        'providers_succeeded': [name for name in ['football_data', 'thesportsdb'] if name in attempts],
+        'errors': errors,
+        'matches_combined_raw': len(merged_matches),
+        'matches_combined_deduped': len(deduped),
+    }
+    meta = {
+        'provider': 'free_bootstrap',
+        'attempts': attempts,
+        'stats': stats,
+        'preview': previews,
+    }
+    return deduped, meta
+
+
 async def fetch_requested_bootstrap(settings: Settings, local_date: str, override_provider: str | None) -> tuple[list[Match], dict[str, object]] | None:
     provider = str(override_provider or '').strip().lower()
     if provider == 'football_data':
-        matches, meta = await fetch_direct_football_data_inventory(settings, local_date)
+        matches, meta = await fetch_combined_free_inventory(settings, local_date)
         if len(matches) < _football_data_min_matches():
-            raise RuntimeError(f'football_data_low_coverage:{len(matches)}<{_football_data_min_matches()}')
+            raise RuntimeError(f'free_bootstrap_low_coverage:{len(matches)}<{_football_data_min_matches()}')
         return matches, meta
     return None
 
