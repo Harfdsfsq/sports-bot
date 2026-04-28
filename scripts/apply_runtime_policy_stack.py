@@ -6,6 +6,7 @@ from pathlib import Path
 
 PATCHES = [
     Path("scripts/apply_rules_api_budget_policy.py"),
+    Path("scripts/apply_odds_budget_boost_policy.py"),
     Path("scripts/apply_daily_top5_publish_policy.py"),
     Path("scripts/apply_day_inventory_runtime_patch.py"),
     Path("scripts/patch_detailed_report_inventory_counts.py"),
