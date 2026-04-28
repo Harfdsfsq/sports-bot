@@ -170,7 +170,7 @@ def main() -> int:
     target = max(1, as_int(os.getenv('DAILY_TOP5_TARGET_PICKS'), 5))
     hard_cap = max(target, as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS'), target))
     scheduled_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MAX_PICKS_PER_RUN'), 2))
-    manual_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN'), target))
+    manual_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN'), scheduled_max_per_run))
     is_manual_run = str(os.getenv('GITHUB_EVENT_NAME') or '').strip().lower() == 'workflow_dispatch'
     max_per_run = manual_max_per_run if is_manual_run else scheduled_max_per_run
     remaining_to_target = max(0, target - existing)
@@ -269,7 +269,7 @@ def main() -> int:
         'reason': reason,
         'counts': counts,
         'env': env,
-        'quality_note': 'Daily top5 policy targets 5 picks/day, lets manual runs fill the remaining target, keeps Tier C disabled, and relaxes only Tier B/proxy reserve gates while preserving hard market guards.',
+        'quality_note': 'Daily top5 policy targets about 5 picks/day, spreads publishing through the day at 1-2 picks per run, keeps Tier C disabled, and relaxes only Tier B/proxy reserve gates while preserving hard market guards.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
