@@ -1,7 +1,13 @@
 {
   "applied_env": {
     "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": "2",
-    "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,dnb,teamtotals,teamTotals,btts",
+    "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,dnb,teamtotals,teamTotals,btts,spreads",
+    "CONTROLLED_FALLBACK_DNB_MAX_ABS_MODEL_XG_GAP_PP": "36.0",
+    "CONTROLLED_FALLBACK_DNB_MAX_NO_PUSH_PROBABILITY_PCT": "88.0",
+    "CONTROLLED_FALLBACK_DNB_MAX_XG_EDGE_PP": "45.0",
+    "CONTROLLED_FALLBACK_DNB_MAX_XG_EV_UNCONDITIONAL_PCT": "90.0",
+    "CONTROLLED_FALLBACK_DNB_MIN_XG_EDGE_PP": "2.5",
+    "CONTROLLED_FALLBACK_DNB_MIN_XG_EV_UNCONDITIONAL_PCT": "3.5",
     "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": "true",
     "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": "64.0",
     "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP": "3.0",
@@ -15,6 +21,9 @@
     "CONTROLLED_FALLBACK_MAX_STAKE_TIER_B": "4.0",
     "CONTROLLED_FALLBACK_MAX_STAKE_TIER_C": "2.25",
     "CONTROLLED_FALLBACK_MIN_STAKE": "2.0",
+    "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE": "64.0",
+    "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": "3.0",
+    "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": "6.0",
     "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "true",
     "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": "true",
     "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
@@ -32,12 +41,12 @@
     "CONTROLLED_FALLBACK_TIER_A_MIN_EV_PCT": "6.0",
     "CONTROLLED_FALLBACK_TIER_A_MIN_PUBLICATION_SCORE": "20",
     "CONTROLLED_FALLBACK_TIER_A_MIN_QUALITY": "66.0",
-    "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": "totals,dnb,teamtotals,teamTotals,btts",
+    "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": "totals,dnb,teamtotals,teamTotals,btts,spreads",
     "CONTROLLED_FALLBACK_TIER_B_MAX_ODDS": "2.75",
     "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE": "64.5",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "3.2",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "6.5",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE": "63.0",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "3.0",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "6.0",
     "CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE": "14",
     "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": "60.0",
     "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "",
@@ -54,7 +63,7 @@
     "VOLUME_DAILY_HARD_CAP_PICKS": "7",
     "VOLUME_DAILY_SOFT_CAP_PICKS": "6",
     "VOLUME_DAILY_TARGET_PICKS": "5",
-    "VOLUME_EXISTING_PICKS_TODAY": "0",
+    "VOLUME_EXISTING_PICKS_TODAY": "3",
     "VOLUME_POLICY_MODE": "target_5",
     "VOLUME_POLICY_VERSION": "v12-no-tier-c-publication"
   },
@@ -66,19 +75,19 @@
       "state_shadow_bets": false
     },
     "effective_count_note": "fallback_sent_index/state.bets/state.published_candidates are real-pick counters; state.shadow_bets is excluded by default because it is diagnostic/watchlist state.",
-    "effective_today_picks": 0,
-    "fallback_sent_index": 0,
+    "effective_today_picks": 3,
+    "fallback_sent_index": 3,
     "state_bets": 0,
     "state_published_candidates": 0,
-    "state_shadow_bets": 0
+    "state_shadow_bets": 3
   },
   "decision_reasons": [
-    "target_mode_active:0/5"
+    "target_mode_active:3/5"
   ],
-  "existing_picks_today": 0,
+  "existing_picks_today": 3,
   "fix_note": "v12 excludes state.shadow_bets from daily cap by default and forces Tier C publication off. Shadow bets are diagnostics/watchlist rows, not real Telegram publications.",
   "mode": "target_5",
-  "now_utc": "2026-04-28T21:30:43.229473+00:00",
+  "now_utc": "2026-04-28T21:54:16.496262+00:00",
   "quality_policy": {
     "hard_guards_preserved": [
       "canonical_negative_value",
