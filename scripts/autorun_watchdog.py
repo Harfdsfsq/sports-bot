@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
@@ -13,7 +13,7 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v19-msk-midnight-slot-aware'
+POLICY_VERSION = 'v20-msk-delayed-slot-aware'
 
 # Primary workflow slots are at 00 minutes every two hours in MSK.
 # Europe/Moscow = UTC+3, so the UTC schedule is:
@@ -23,7 +23,7 @@ DEFAULT_PRIMARY_UTC_HOURS = '21,23,1,3,5,7,9,11,13,15,17,19'
 DEFAULT_PRIMARY_UTC_HOURS_SET = {21, 23, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19}
 PRIMARY_MINUTE = int(float(os.getenv('AUTORUN_PRIMARY_MINUTE', '0')))
 PRIMARY_WINDOW_MINUTES = max(4, int(float(os.getenv('AUTORUN_PRIMARY_WINDOW_MINUTES', '8'))))
-DELAYED_PRIMARY_WINDOW_MINUTES = max(PRIMARY_WINDOW_MINUTES, int(float(os.getenv('AUTORUN_DELAYED_PRIMARY_WINDOW_MINUTES', '55'))))
+DELAYED_PRIMARY_WINDOW_MINUTES = max(PRIMARY_WINDOW_MINUTES, int(float(os.getenv('AUTORUN_DELAYED_PRIMARY_WINDOW_MINUTES', '90'))))
 WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '5')))
 WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '8'))))
 
@@ -93,37 +93,46 @@ def append_env(env: dict[str, str]) -> None:
         print('\n'.join(lines))
 
 
-def minute_in_window(now_minute: int, start_minute: int, width: int) -> bool:
-    return start_minute <= now_minute <= (start_minute + width)
+def latest_primary_slot(now_utc: datetime) -> datetime:
+    now = now_utc.astimezone(UTC)
+    candidates: list[datetime] = []
+    for day_delta in (0, 1):
+        day = (now - timedelta(days=day_delta)).date()
+        for hour in PRIMARY_UTC_HOURS:
+            candidate = datetime(day.year, day.month, day.day, hour, PRIMARY_MINUTE, tzinfo=UTC)
+            if candidate <= now:
+                candidates.append(candidate)
+    if not candidates:
+        return now.replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
+    return max(candidates)
+
+
+def minutes_since_slot(now_utc: datetime, slot_utc: datetime | None = None) -> float:
+    slot = slot_utc or latest_primary_slot(now_utc)
+    return max(0.0, (now_utc.astimezone(UTC) - slot).total_seconds() / 60.0)
 
 
 def is_watchdog_slot(now_utc: datetime) -> bool:
-    if now_utc.hour not in PRIMARY_UTC_HOURS:
-        return False
-    return minute_in_window(now_utc.minute, WATCHDOG_MINUTE, WATCHDOG_WINDOW_MINUTES)
+    elapsed = minutes_since_slot(now_utc)
+    return WATCHDOG_DELAY_MINUTES <= elapsed <= (WATCHDOG_DELAY_MINUTES + WATCHDOG_WINDOW_MINUTES)
 
 
 def is_primary_slot(now_utc: datetime) -> bool:
-    if now_utc.hour not in PRIMARY_UTC_HOURS:
-        return False
-    return minute_in_window(now_utc.minute, PRIMARY_MINUTE, PRIMARY_WINDOW_MINUTES)
+    return minutes_since_slot(now_utc) <= PRIMARY_WINDOW_MINUTES
 
 
 def is_delayed_primary_slot(now_utc: datetime) -> bool:
-    if now_utc.hour not in PRIMARY_UTC_HOURS:
-        return False
-    if now_utc.minute <= PRIMARY_WINDOW_MINUTES:
-        return False
-    return now_utc.minute <= DELAYED_PRIMARY_WINDOW_MINUTES
+    elapsed = minutes_since_slot(now_utc)
+    return PRIMARY_WINDOW_MINUTES < elapsed <= DELAYED_PRIMARY_WINDOW_MINUTES
 
 
 def current_slot_key(now_utc: datetime) -> str:
-    slot = now_utc.astimezone(UTC).replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
+    slot = latest_primary_slot(now_utc)
     return slot.isoformat().replace('+00:00', 'Z')
 
 
 def current_slot_local_key(now_utc: datetime) -> str:
-    slot = now_utc.astimezone(UTC).replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
+    slot = latest_primary_slot(now_utc)
     return slot.astimezone(MSK).strftime('%Y-%m-%d %H:%M %Z')
 
 
@@ -208,6 +217,7 @@ def preflight() -> int:
         'last_skip_main': skip_main,
         'last_decision_reason': reason,
         'last_success_age_minutes': age,
+        'last_slot_elapsed_minutes': round(minutes_since_slot(now_utc), 1),
         'last_successful_slot_key': state.get('last_successful_slot_key'),
         'recent_success_grace_minutes': RECENT_SUCCESS_GRACE_MINUTES,
         'primary_utc_hours': sorted(PRIMARY_UTC_HOURS),
