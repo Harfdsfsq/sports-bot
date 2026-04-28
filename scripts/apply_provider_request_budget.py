@@ -14,6 +14,283 @@ EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-provider-request-budget.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
+ALL_HOURS = list(range(24))
+
+FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
+    'odds_api_io': {
+        'per_run_max': 12,
+        'safe_daily_budget': 360,
+        'env': {
+            'ODDS_API_IO_PER_RUN_MAX': '12',
+            'ODDS_API_IO_PAGE_LIMIT': '100',
+            'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '12',
+            'MAX_MATCHES_FOR_ODDS_FETCH': '110',
+        },
+        'disable_env': {
+            'ODDS_API_IO_PER_RUN_MAX': '0',
+            'MAX_MATCHES_FOR_ODDS_FETCH': '0',
+        },
+    },
+    'bzzoiro': {
+        'per_run_max': 140,
+        'safe_daily_budget': 50000,
+        'env': {
+            'BZZOIRO_PER_RUN_MAX': '140',
+            'BZZOIRO_CONTEXT_MATCH_LIMIT': '160',
+        },
+        'disable_env': {
+            'BZZOIRO_PER_RUN_MAX': '0',
+            'BZZOIRO_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'sstats': {
+        'per_run_max': 16,
+        'safe_daily_budget': 192,
+        'env': {
+            'SSTATS_PER_RUN_MAX': '16',
+            'SSTATS_REQUESTS_MAX_PER_RUN': '16',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '24',
+            'SSTATS_LOOKBACK_DAYS': '21',
+            'SSTATS_RECENT_MATCHES': '8',
+        },
+        'disable_env': {
+            'SSTATS_PER_RUN_MAX': '0',
+            'SSTATS_REQUESTS_MAX_PER_RUN': '0',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'espn_public': {
+        'per_run_max': 18,
+        'safe_daily_budget': 216,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'ESPN_CONTEXT_MATCH_LIMIT': '16',
+            'ESPN_MAX_MATCHES': '20',
+            'ESPN_MAX_HTTP_REQUESTS_PER_RUN': '18',
+            'ESPN_SCOREBOARD_MAX_REQUESTS_PER_RUN': '10',
+            'ESPN_PROBABILITY_MAX_REQUESTS_PER_RUN': '4',
+            'ESPN_SUMMARY_MAX_REQUESTS_PER_RUN': '4',
+            'ESPN_SLUGS_PER_RUN_LIMIT': '3',
+        },
+        'disable_env': {
+            'ESPN_CONTEXT_MATCH_LIMIT': '0',
+            'ESPN_MAX_MATCHES': '0',
+            'ESPN_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        },
+    },
+    'football_data': {
+        'per_run_max': 8,
+        'safe_daily_budget': 96,
+        'min_spacing_minutes': 0,
+        'env': {
+            'FOOTBALL_DATA_PER_RUN_MAX': '8',
+            'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '8',
+            'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '48',
+        },
+        'disable_env': {
+            'FOOTBALL_DATA_PER_RUN_MAX': '0',
+            'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '0',
+            'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'thesportsdb': {
+        'per_run_max': 12,
+        'safe_daily_budget': 180,
+        'min_spacing_minutes': 0,
+        'env': {
+            'THESPORTSDB_PER_RUN_MAX': '12',
+            'THESPORTSDB_REQUESTS_MAX_PER_RUN': '12',
+            'THESPORTSDB_CONTEXT_MATCH_LIMIT': '72',
+        },
+        'disable_env': {
+            'THESPORTSDB_PER_RUN_MAX': '0',
+            'THESPORTSDB_REQUESTS_MAX_PER_RUN': '0',
+            'THESPORTSDB_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'openfootball_public': {
+        'per_run_max': 8,
+        'safe_daily_budget': 192,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'OPENFOOTBALL_CONTEXT_MATCH_LIMIT': '120',
+            'OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '8',
+        },
+        'disable_env': {
+            'OPENFOOTBALL_CONTEXT_MATCH_LIMIT': '0',
+            'OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        },
+    },
+    'newsapi_currents': {
+        'per_run_max': 4,
+        'safe_daily_budget': 72,
+        'min_spacing_minutes': 60,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'NEWSAPI_PER_RUN_MAX': '2',
+            'NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN': '2',
+            'NEWSAPI_MATCH_LIMIT': '2',
+            'NEWS_CONTEXT_MATCH_LIMIT': '6',
+            'CURRENTS_NEWS_PER_RUN_MAX': '4',
+            'CURRENTS_NEWS_MAX_HTTP_REQUESTS_PER_RUN': '4',
+            'CURRENTS_MATCH_LIMIT': '4',
+            'NEWS_CONTEXT_CACHE_TTL_MINUTES': '120',
+        },
+        'disable_env': {
+            'NEWSAPI_PER_RUN_MAX': '0',
+            'NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN': '0',
+            'NEWSAPI_MATCH_LIMIT': '0',
+            'NEWS_CONTEXT_MATCH_LIMIT': '0',
+            'CURRENTS_NEWS_PER_RUN_MAX': '0',
+            'CURRENTS_NEWS_MAX_HTTP_REQUESTS_PER_RUN': '0',
+            'CURRENTS_MATCH_LIMIT': '0',
+        },
+    },
+    'gnews': {
+        'per_run_max': 2,
+        'safe_daily_budget': 36,
+        'min_spacing_minutes': 60,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'GNEWS_PER_RUN_MAX': '2',
+            'GNEWS_MAX_HTTP_REQUESTS_PER_RUN': '2',
+            'GNEWS_CONTEXT_MATCH_LIMIT': '4',
+            'GNEWS_MATCH_LIMIT': '2',
+        },
+        'disable_env': {
+            'GNEWS_PER_RUN_MAX': '0',
+            'GNEWS_MAX_HTTP_REQUESTS_PER_RUN': '0',
+            'GNEWS_CONTEXT_MATCH_LIMIT': '0',
+            'GNEWS_MATCH_LIMIT': '0',
+        },
+    },
+    'allsportsapi': {
+        'per_run_max': 2,
+        'safe_daily_budget': 24,
+        'min_spacing_minutes': 120,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'ALLSPORTSAPI_PER_RUN_MAX': '2',
+            'ALLSPORTSAPI_MATCH_LIMIT': '16',
+            'ALLSPORTSAPI_CONTEXT_MATCH_LIMIT': '8',
+        },
+        'disable_env': {
+            'ALLSPORTSAPI_PER_RUN_MAX': '0',
+            'ALLSPORTSAPI_MATCH_LIMIT': '0',
+            'ALLSPORTSAPI_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'oddspapi': {
+        'per_run_max': 1,
+        'safe_daily_budget': 8,
+        'safe_monthly_budget': 250,
+        'allowed_msk_hours': ALL_HOURS,
+    },
+    'futrixmetrics': {
+        'per_run_max': 4,
+        'safe_daily_budget': 60,
+        'safe_monthly_budget': 1500,
+        'min_spacing_minutes': 60,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'FUTRIXMETRICS_PER_RUN_MAX': '4',
+            'FUTRIXMETRICS_REQUESTS_MAX_PER_RUN': '4',
+            'FUTRIXMETRICS_CONTEXT_MATCH_LIMIT': '8',
+            'FUTRIXMETRICS_SHORTLIST_ONLY': 'false',
+            'FUTRIXMETRICS_MIN_SPACING_MINUTES': '60',
+        },
+        'disable_env': {
+            'FUTRIXMETRICS_PER_RUN_MAX': '0',
+            'FUTRIXMETRICS_REQUESTS_MAX_PER_RUN': '0',
+            'FUTRIXMETRICS_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'weatherapi': {
+        'per_run_max': 12,
+        'safe_daily_budget': 720,
+        'safe_monthly_budget': 20000,
+        'env': {
+            'WEATHERAPI_PER_RUN_MAX': '12',
+            'WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN': '12',
+            'WEATHER_CONTEXT_MATCH_LIMIT': '20',
+            'WEATHER_CACHE_TTL_MINUTES': '240',
+        },
+        'disable_env': {
+            'WEATHERAPI_PER_RUN_MAX': '0',
+            'WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        },
+    },
+    'openweathermap': {
+        'per_run_max': 8,
+        'safe_daily_budget': 240,
+        'env': {
+            'OPENWEATHERMAP_PER_RUN_MAX': '8',
+            'OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN': '8',
+            'WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED': 'true',
+        },
+        'disable_env': {
+            'OPENWEATHERMAP_PER_RUN_MAX': '0',
+            'OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        },
+    },
+    'sportsbook_api': {
+        'per_run_max': 2,
+        'safe_daily_budget': 20,
+        'min_spacing_minutes': 120,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'RAPIDAPI_SPORTSBOOK_DAILY_LIMIT': '20',
+            'RAPIDAPI_SPORTSBOOK_PER_RUN_MAX': '2',
+            'RAPIDAPI_DISCOVERY_SPORTSBOOK_MAX_CALLS': '2',
+        },
+    },
+    'meteostat': {
+        'per_run_max': 2,
+        'safe_daily_budget': 12,
+        'safe_monthly_budget': 240,
+        'min_spacing_minutes': 120,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'RAPIDAPI_METEOSTAT_PER_RUN_MAX': '2',
+            'METEOSTAT_MAX_HTTP_REQUESTS_PER_RUN': '2',
+        },
+    },
+    'oddsfeed': {
+        'per_run_max': 2,
+        'safe_daily_budget': 12,
+        'safe_monthly_budget': 240,
+        'min_spacing_minutes': 120,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'RAPIDAPI_ODDS_FEED_DAILY_LIMIT': '12',
+            'RAPIDAPI_ODDS_FEED_PER_RUN_MAX': '2',
+            'RAPIDAPI_DISCOVERY_ODDS_FEED_MAX_CALLS': '2',
+        },
+    },
+    'freeapilivefootball': {
+        'per_run_max': 1,
+        'safe_daily_budget': 3,
+        'safe_monthly_budget': 90,
+        'min_spacing_minutes': 240,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT': '3',
+            'RAPIDAPI_FREE_FOOTBALL_PER_RUN_MAX': '1',
+            'RAPIDAPI_DISCOVERY_FREE_FOOTBALL_MAX_CALLS': '1',
+        },
+    },
+    'sportapi': {
+        'per_run_max': 2,
+        'safe_daily_budget': 24,
+        'min_spacing_minutes': 120,
+        'allowed_msk_hours': ALL_HOURS,
+        'env': {
+            'RAPIDAPI_SPORTAPI7_DAILY_LIMIT': '24',
+            'RAPIDAPI_SPORTAPI7_PER_RUN_MAX': '2',
+            'RAPIDAPI_DISCOVERY_SPORTAPI7_MAX_CALLS': '2',
+        },
+    },
+}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -131,6 +408,37 @@ def collect_recent_text() -> str:
         except Exception:
             pass
     return '\n'.join(chunks).lower()
+
+
+def merge_dict(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged = dict(base)
+    for key, value in override.items():
+        if isinstance(value, dict) and isinstance(merged.get(key), dict):
+            merged[key] = merge_dict(dict(merged.get(key) or {}), value)
+        else:
+            merged[key] = value
+    return merged
+
+
+def maximize_free_providers(policy: dict[str, Any]) -> dict[str, Any]:
+    if str(os.getenv('ALL_SOURCES_FREE_MAXIMIZE', 'true')).strip().lower() in {'0', 'false', 'no', 'off'}:
+        return policy
+    providers = policy.get('providers') if isinstance(policy.get('providers'), dict) else {}
+    upgraded: dict[str, Any] = dict(policy)
+    upgraded_providers: dict[str, Any] = dict(providers)
+    for name, override in FREE_PROVIDER_OVERRIDES.items():
+        current = upgraded_providers.get(name)
+        if not isinstance(current, dict):
+            continue
+        upgraded_providers[name] = merge_dict(current, override)
+    upgraded['providers'] = upgraded_providers
+    version = str(upgraded.get('version') or 'provider-budget')
+    if 'free-max' not in version:
+        upgraded['version'] = f'{version}-free-max-v1'
+    notes = list(upgraded.get('notes') or []) if isinstance(upgraded.get('notes'), list) else []
+    notes.append('Free-source maximize mode raises per-run budgets and context caps for free providers based on RULES.txt quotas.')
+    upgraded['notes'] = notes
+    return upgraded
 
 
 def fatal_cooldown_until(now: datetime, cfg: dict[str, Any], recent_text: str) -> tuple[str | None, str | None]:
@@ -266,6 +574,7 @@ def main() -> int:
     policy = load_json(POLICY_PATH, {})
     if not isinstance(policy, dict):
         policy = {}
+    policy = maximize_free_providers(policy)
     state = load_json(STATE_PATH, {})
     if not isinstance(state, dict):
         state = {}
@@ -273,10 +582,12 @@ def main() -> int:
     recent_text = collect_recent_text()
     providers = policy.get('providers') if isinstance(policy.get('providers'), dict) else {}
 
+    version = str(policy.get('version') or 'provider-budget-free-max')
     all_env: dict[str, str] = {
-        'PROVIDER_REQUEST_BUDGET_VERSION': str(policy.get('version') or 'v15-all-api-budget-no-api-football'),
+        'PROVIDER_REQUEST_BUDGET_VERSION': version,
         'PROVIDER_REQUEST_BUDGET_APPLIED': 'true',
         'PROVIDER_REQUEST_BUDGET_SLOT_MSK': current_slot_label(now),
+        'ALL_SOURCES_FREE_MAXIMIZE': str(os.getenv('ALL_SOURCES_FREE_MAXIMIZE', 'true')).lower(),
     }
     deleted_env = policy.get('deleted_provider_env') if isinstance(policy.get('deleted_provider_env'), dict) else {}
     all_env.update({str(k): str(v) for k, v in deleted_env.items()})
@@ -291,23 +602,25 @@ def main() -> int:
         all_env.update(build_env_for_decision(cfg, decision))
 
     append_github_env(all_env)
-    state['version'] = str(policy.get('version') or 'v15-all-api-budget-no-api-football')
+    state['version'] = version
     state['updated_at'] = now.isoformat()
+    state['free_source_maximize'] = str(os.getenv('ALL_SOURCES_FREE_MAXIMIZE', 'true')).strip().lower() not in {'0', 'false', 'no', 'off'}
     write_json(STATE_PATH, state)
     export = {
-        'version': str(policy.get('version') or 'v15-all-api-budget-no-api-football'),
+        'version': version,
         'event': os.getenv('GITHUB_EVENT_NAME') or '',
         'utc_now': now.isoformat(),
         'msk_now': now.astimezone(MSK).isoformat(),
         'slot_msk': current_slot_label(now),
         'is_watchdog_slot': is_watchdog_slot(now),
         'deleted_providers': list((policy.get('deleted_providers') or [])),
+        'free_source_maximize': state['free_source_maximize'],
         'decisions': decisions,
         'env_written_count': len(all_env),
         'notes': [
-            'v15 removes api-football from active runtime and blanks all API_FOOTBALL_* env values.',
-            'All other configured APIs are enabled with conservative per-run/daily/monthly budgets.',
-            'Providers with exhausted monthly quota, such as OddsPapi, may still be cooldown-skipped until reset.',
+            'api-football remains removed from active runtime and its env values are blanked.',
+            'Free-source maximize mode is active and raises budgets/context caps for free providers from RULES.txt quotas.',
+            'Providers with explicit monthly cooldowns, such as OddsPapi after REQUEST_LIMIT_EXCEEDED, remain cooldown-skipped until reset.',
         ],
     }
     write_json(EXPORT_PATH, export)
