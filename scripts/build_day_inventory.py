@@ -17,6 +17,7 @@ from app.services.day_inventory import DayInventoryStore
 from app.services.runner import PredictionRunner
 
 UTC = timezone.utc
+ENV_BOOTSTRAP_KEY = 'MATCH_BOOTSTRAP_PROVIDER'
 
 
 def app_tz(settings: Settings):
@@ -33,12 +34,24 @@ def target_local_date(settings: Settings) -> str:
     return datetime.now(UTC).astimezone(app_tz(settings)).date().isoformat()
 
 
-def maybe_override_bootstrap_provider(settings: Settings) -> tuple[str | None, str | None]:
-    original = str(getattr(settings, 'match_bootstrap_provider', '') or '').strip() or None
+def maybe_override_bootstrap_provider(settings: Settings) -> tuple[str | None, str | None, str | None]:
+    original_setting = str(getattr(settings, 'match_bootstrap_provider', '') or '').strip() or None
+    original_env = str(os.getenv(ENV_BOOTSTRAP_KEY, '') or '').strip() or None
     override = str(os.getenv('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or '').strip() or None
-    if override and hasattr(settings, 'match_bootstrap_provider'):
-        setattr(settings, 'match_bootstrap_provider', override)
-    return original, override
+    if override:
+        if hasattr(settings, 'match_bootstrap_provider'):
+            setattr(settings, 'match_bootstrap_provider', override)
+        os.environ[ENV_BOOTSTRAP_KEY] = override
+    return original_setting, original_env, override
+
+
+def restore_bootstrap_provider(settings: Settings, original_setting: str | None, original_env: str | None) -> None:
+    if hasattr(settings, 'match_bootstrap_provider'):
+        setattr(settings, 'match_bootstrap_provider', original_setting or '')
+    if original_env:
+        os.environ[ENV_BOOTSTRAP_KEY] = original_env
+    else:
+        os.environ.pop(ENV_BOOTSTRAP_KEY, None)
 
 
 async def fetch_inventory_matches(runner: PredictionRunner) -> tuple[list, dict]:
@@ -53,7 +66,7 @@ async def main_async() -> int:
     local_date = target_local_date(settings)
     source_meta: dict[str, object] = {}
 
-    original_provider, override_provider = maybe_override_bootstrap_provider(settings)
+    original_setting, original_env, override_provider = maybe_override_bootstrap_provider(settings)
     runner = PredictionRunner(settings)
     matches: list = []
 
@@ -61,15 +74,17 @@ async def main_async() -> int:
         try:
             matches, bootstrap_meta = await fetch_inventory_matches(runner)
             source_meta['primary_provider'] = str((bootstrap_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or '')
+            source_meta['requested_bootstrap_provider'] = override_provider or original_setting
             source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})
             source_meta['stats'] = dict((bootstrap_meta or {}).get('stats') or {})
             source_meta['preview'] = dict((bootstrap_meta or {}).get('preview') or {})
         except Exception as exc:
-            if override_provider and original_provider and hasattr(settings, 'match_bootstrap_provider'):
-                setattr(settings, 'match_bootstrap_provider', original_provider)
+            if override_provider and original_setting:
+                restore_bootstrap_provider(settings, original_setting, original_env)
                 runner = PredictionRunner(settings)
                 matches, bootstrap_meta = await fetch_inventory_matches(runner)
                 source_meta['primary_provider'] = str((bootstrap_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or '')
+                source_meta['requested_bootstrap_provider'] = override_provider
                 source_meta['fallback_from'] = override_provider
                 source_meta['fallback_reason'] = f'{type(exc).__name__}: {exc}'
                 source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})
@@ -96,6 +111,7 @@ async def main_async() -> int:
             'date_local': local_date,
             'build_status': 'ok',
             'bootstrap_provider': source_meta.get('primary_provider'),
+            'requested_bootstrap_provider': source_meta.get('requested_bootstrap_provider'),
             'matches_total_raw': len(matches),
             'matches_for_day': len(matches_for_day),
             'saved_paths': paths,
@@ -119,6 +135,8 @@ async def main_async() -> int:
         }
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         return 1
+    finally:
+        restore_bootstrap_provider(settings, original_setting, original_env)
 
 
 def main() -> int:
