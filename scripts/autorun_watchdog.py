@@ -13,14 +13,16 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v17-msk-midnight-primary-five-minute-watchdog'
+POLICY_VERSION = 'v18-msk-delayed-primary-aware'
 
 # Primary workflow slots are at 00 minutes every two hours in MSK.
 # In UTC that is 01,03,05,...,23 while Europe/Moscow = UTC+3.
 DEFAULT_PRIMARY_UTC_HOURS = '1,3,5,7,9,11,13,15,17,19,21,23'
 PRIMARY_MINUTE = int(float(os.getenv('AUTORUN_PRIMARY_MINUTE', '0')))
+PRIMARY_WINDOW_MINUTES = max(4, int(float(os.getenv('AUTORUN_PRIMARY_WINDOW_MINUTES', '8'))))
+DELAYED_PRIMARY_WINDOW_MINUTES = max(PRIMARY_WINDOW_MINUTES, int(float(os.getenv('AUTORUN_DELAYED_PRIMARY_WINDOW_MINUTES', '55'))))
 WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '5')))
-WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '6'))))
+WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '8'))))
 
 # If the current primary slot has already succeeded, watchdog skips.
 RECENT_SUCCESS_GRACE_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_RECENT_SUCCESS_MINUTES', '90')))
@@ -101,7 +103,15 @@ def is_watchdog_slot(now_utc: datetime) -> bool:
 def is_primary_slot(now_utc: datetime) -> bool:
     if now_utc.hour not in PRIMARY_UTC_HOURS:
         return False
-    return minute_in_window(now_utc.minute, PRIMARY_MINUTE, 4)
+    return minute_in_window(now_utc.minute, PRIMARY_MINUTE, PRIMARY_WINDOW_MINUTES)
+
+
+def is_delayed_primary_slot(now_utc: datetime) -> bool:
+    if now_utc.hour not in PRIMARY_UTC_HOURS:
+        return False
+    if now_utc.minute <= PRIMARY_WINDOW_MINUTES:
+        return False
+    return now_utc.minute <= DELAYED_PRIMARY_WINDOW_MINUTES
 
 
 def state_age_minutes(state: dict[str, Any], now_utc: datetime) -> float | None:
@@ -121,6 +131,7 @@ def preflight() -> int:
 
     watchdog = event == 'schedule' and is_watchdog_slot(now_utc)
     primary = event == 'schedule' and is_primary_slot(now_utc)
+    delayed_primary = event == 'schedule' and is_delayed_primary_slot(now_utc)
     age = state_age_minutes(state, now_utc)
     skip_main = False
     reason = 'non_schedule_event'
@@ -136,6 +147,9 @@ def preflight() -> int:
         elif primary:
             skip_main = False
             reason = 'primary_scheduled_run'
+        elif delayed_primary:
+            skip_main = False
+            reason = 'delayed_primary_scheduled_run'
         else:
             skip_main = False
             reason = 'scheduled_run_outside_known_slot_run_anyway'
@@ -145,6 +159,7 @@ def preflight() -> int:
         'AUTORUN_UTC_NOW': now_utc.isoformat(),
         'AUTORUN_MSK_NOW': now_msk.isoformat(),
         'AUTORUN_IS_PRIMARY_SLOT': str(primary).lower(),
+        'AUTORUN_IS_DELAYED_PRIMARY_SLOT': str(delayed_primary).lower(),
         'AUTORUN_IS_WATCHDOG_SLOT': str(watchdog).lower(),
         'AUTORUN_SKIP_MAIN': str(skip_main).lower(),
         'AUTORUN_DECISION_REASON': reason,
@@ -158,6 +173,7 @@ def preflight() -> int:
         'last_policy_version': POLICY_VERSION,
         'last_event': event,
         'last_is_primary_slot': primary,
+        'last_is_delayed_primary_slot': delayed_primary,
         'last_is_watchdog_slot': watchdog,
         'last_skip_main': skip_main,
         'last_decision_reason': reason,
@@ -165,6 +181,8 @@ def preflight() -> int:
         'recent_success_grace_minutes': RECENT_SUCCESS_GRACE_MINUTES,
         'primary_utc_hours': sorted(PRIMARY_UTC_HOURS),
         'primary_minute': PRIMARY_MINUTE,
+        'primary_window_minutes': PRIMARY_WINDOW_MINUTES,
+        'delayed_primary_window_minutes': DELAYED_PRIMARY_WINDOW_MINUTES,
         'watchdog_minute': WATCHDOG_MINUTE,
         'watchdog_delay_minutes': WATCHDOG_DELAY_MINUTES,
         'watchdog_window_minutes': WATCHDOG_WINDOW_MINUTES,
