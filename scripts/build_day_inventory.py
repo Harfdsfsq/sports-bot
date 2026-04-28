@@ -4,7 +4,7 @@ import asyncio
 import json
 import os
 import sys
-from datetime import datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -79,6 +79,13 @@ def _football_data_min_matches() -> int:
         return 12
 
 
+def _football_data_window_days() -> int:
+    try:
+        return max(0, int(float(os.getenv('DAY_INVENTORY_DIRECT_WINDOW_DAYS', '1'))))
+    except Exception:
+        return 1
+
+
 def _row_to_match(row: dict, settings: Settings) -> Match | None:
     home_team = row.get('homeTeam') or {}
     away_team = row.get('awayTeam') or {}
@@ -125,24 +132,34 @@ async def fetch_direct_football_data_inventory(settings: Settings, local_date: s
         'response_errors': 0,
         'events_fetched': 0,
         'matches_built': 0,
+        'matches_for_target_local_date': 0,
         'low_tier_skipped': 0,
         'http_statuses': [],
         'last_body_preview': None,
         'budget_exhausted': False,
         'rate_limited': False,
         'max_http_requests_per_run': 1,
+        'request_date_from': None,
+        'request_date_to': None,
     }
     preview: dict[str, object] = {'sample_events': [], 'sample_matches': []}
     if not stats['api_key_present']:
         raise RuntimeError('football_data_api_key_missing')
+
+    target_day = date.fromisoformat(local_date)
+    window_days = _football_data_window_days()
+    request_from = (target_day - timedelta(days=window_days)).isoformat()
+    request_to = (target_day + timedelta(days=window_days)).isoformat()
+    stats['request_date_from'] = request_from
+    stats['request_date_to'] = request_to
 
     async with httpx.AsyncClient(timeout=float(getattr(settings, 'football_data_timeout_seconds', 20.0) or 20.0), headers=_football_data_headers(settings)) as client:
         stats['requests'] = 1
         response = await client.get(
             _football_data_url(settings),
             params={
-                'dateFrom': local_date,
-                'dateTo': local_date,
+                'dateFrom': request_from,
+                'dateTo': request_to,
                 'status': 'SCHEDULED,TIMED',
                 'limit': 200,
             },
@@ -189,13 +206,16 @@ async def fetch_direct_football_data_inventory(settings: Settings, local_date: s
             )
     stats['matches_built'] = len(matches)
     preview['sample_matches'] = sample_matches
+
+    matches_for_target = [match for match in matches if match.commence_time.astimezone(app_tz(settings)).date().isoformat() == local_date]
+    stats['matches_for_target_local_date'] = len(matches_for_target)
     meta = {
         'provider': 'football_data',
         'attempts': {'football_data': {'stats': stats, 'preview': preview}},
         'stats': stats,
         'preview': preview,
     }
-    return matches, meta
+    return matches_for_target, meta
 
 
 async def fetch_requested_bootstrap(settings: Settings, local_date: str, override_provider: str | None) -> tuple[list[Match], dict[str, object]] | None:
@@ -231,6 +251,7 @@ async def main_async() -> int:
             source_meta['stats'] = dict((bootstrap_meta or {}).get('stats') or {})
             source_meta['preview'] = dict((bootstrap_meta or {}).get('preview') or {})
         except Exception as exc:
+            direct_error = dict(source_meta)
             if override_provider and original_setting:
                 restore_bootstrap_provider(settings, original_setting, original_env)
                 runner = PredictionRunner(settings)
@@ -239,6 +260,8 @@ async def main_async() -> int:
                 source_meta['requested_bootstrap_provider'] = override_provider
                 source_meta['fallback_from'] = override_provider
                 source_meta['fallback_reason'] = f'{type(exc).__name__}: {exc}'
+                if direct_error:
+                    source_meta['failed_direct_bootstrap'] = direct_error
                 source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})
                 source_meta['stats'] = dict((bootstrap_meta or {}).get('stats') or {})
                 source_meta['preview'] = dict((bootstrap_meta or {}).get('preview') or {})
