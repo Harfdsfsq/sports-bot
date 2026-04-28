@@ -9,6 +9,8 @@ PATCHES = [
     Path("scripts/apply_odds_budget_boost_policy.py"),
     Path("scripts/apply_daily_top5_publish_policy.py"),
     Path("scripts/apply_day_inventory_runtime_patch.py"),
+    Path("scripts/patch_inventory_tomorrow_and_nearmiss_runtime.py"),
+    Path("scripts/patch_near_miss_enrichment_targets.py"),
     Path("scripts/patch_detailed_report_inventory_counts.py"),
 ]
 
