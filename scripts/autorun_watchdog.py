@@ -13,18 +13,21 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v18-msk-delayed-primary-aware'
+POLICY_VERSION = 'v19-msk-midnight-slot-aware'
 
 # Primary workflow slots are at 00 minutes every two hours in MSK.
-# In UTC that is 01,03,05,...,23 while Europe/Moscow = UTC+3.
-DEFAULT_PRIMARY_UTC_HOURS = '1,3,5,7,9,11,13,15,17,19,21,23'
+# Europe/Moscow = UTC+3, so the UTC schedule is:
+# 00:00 MSK -> 21:00 UTC previous day, 02:00 MSK -> 23:00 UTC,
+# 04:00 MSK -> 01:00 UTC, ... 22:00 MSK -> 19:00 UTC.
+DEFAULT_PRIMARY_UTC_HOURS = '21,23,1,3,5,7,9,11,13,15,17,19'
+DEFAULT_PRIMARY_UTC_HOURS_SET = {21, 23, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19}
 PRIMARY_MINUTE = int(float(os.getenv('AUTORUN_PRIMARY_MINUTE', '0')))
 PRIMARY_WINDOW_MINUTES = max(4, int(float(os.getenv('AUTORUN_PRIMARY_WINDOW_MINUTES', '8'))))
 DELAYED_PRIMARY_WINDOW_MINUTES = max(PRIMARY_WINDOW_MINUTES, int(float(os.getenv('AUTORUN_DELAYED_PRIMARY_WINDOW_MINUTES', '55'))))
 WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '5')))
 WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '8'))))
 
-# If the current primary slot has already succeeded, watchdog skips.
+# Backward-compatible safety net. Slot-aware matching is primary; age is used only as an extra guard.
 RECENT_SUCCESS_GRACE_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_RECENT_SUCCESS_MINUTES', '90')))
 
 
@@ -41,7 +44,7 @@ def parse_primary_hours() -> set[int]:
             continue
         if 0 <= hour <= 23:
             result.add(hour)
-    return result or {1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23}
+    return result or set(DEFAULT_PRIMARY_UTC_HOURS_SET)
 
 
 PRIMARY_UTC_HOURS = parse_primary_hours()
@@ -114,6 +117,16 @@ def is_delayed_primary_slot(now_utc: datetime) -> bool:
     return now_utc.minute <= DELAYED_PRIMARY_WINDOW_MINUTES
 
 
+def current_slot_key(now_utc: datetime) -> str:
+    slot = now_utc.astimezone(UTC).replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
+    return slot.isoformat().replace('+00:00', 'Z')
+
+
+def current_slot_local_key(now_utc: datetime) -> str:
+    slot = now_utc.astimezone(UTC).replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
+    return slot.astimezone(MSK).strftime('%Y-%m-%d %H:%M %Z')
+
+
 def state_age_minutes(state: dict[str, Any], now_utc: datetime) -> float | None:
     last = parse_dt(state.get('last_successful_scheduled_run_utc'))
     if last is None:
@@ -121,9 +134,25 @@ def state_age_minutes(state: dict[str, Any], now_utc: datetime) -> float | None:
     return max(0.0, (now_utc - last).total_seconds() / 60.0)
 
 
+def should_watchdog_skip(state: dict[str, Any], slot_key: str, age: float | None) -> tuple[bool, str]:
+    last_slot = str(state.get('last_successful_slot_key') or '').strip()
+    if last_slot and last_slot == slot_key:
+        return True, 'watchdog_skip_current_slot_success'
+
+    # Backward compatibility for old state files that do not yet contain last_successful_slot_key.
+    if not last_slot and age is not None and age <= RECENT_SUCCESS_GRACE_MINUTES:
+        return True, f'watchdog_skip_recent_success_legacy_{age:.1f}m'
+
+    if last_slot and last_slot != slot_key:
+        return False, 'watchdog_failsafe_run_no_success_for_current_slot'
+    return False, 'watchdog_failsafe_run_missing_current_slot_success'
+
+
 def preflight() -> int:
     now_utc = datetime.now(UTC)
     now_msk = now_utc.astimezone(MSK)
+    slot_key = current_slot_key(now_utc)
+    slot_local_key = current_slot_local_key(now_utc)
     event = os.getenv('GITHUB_EVENT_NAME', '')
     state = load_json(STATE_PATH, {})
     if not isinstance(state, dict):
@@ -138,12 +167,9 @@ def preflight() -> int:
 
     if event == 'schedule':
         if watchdog:
-            if age is not None and age <= RECENT_SUCCESS_GRACE_MINUTES:
-                skip_main = True
-                reason = f'watchdog_skip_current_slot_success_{age:.1f}m'
-            else:
-                skip_main = False
-                reason = 'watchdog_failsafe_run_missing_current_slot_success'
+            skip_main, reason = should_watchdog_skip(state, slot_key, age)
+            if skip_main and age is not None:
+                reason = f'{reason}_{age:.1f}m'
         elif primary:
             skip_main = False
             reason = 'primary_scheduled_run'
@@ -158,6 +184,8 @@ def preflight() -> int:
         'AUTORUN_POLICY_VERSION': POLICY_VERSION,
         'AUTORUN_UTC_NOW': now_utc.isoformat(),
         'AUTORUN_MSK_NOW': now_msk.isoformat(),
+        'AUTORUN_CURRENT_SLOT_KEY': slot_key,
+        'AUTORUN_CURRENT_SLOT_LOCAL_KEY': slot_local_key,
         'AUTORUN_IS_PRIMARY_SLOT': str(primary).lower(),
         'AUTORUN_IS_DELAYED_PRIMARY_SLOT': str(delayed_primary).lower(),
         'AUTORUN_IS_WATCHDOG_SLOT': str(watchdog).lower(),
@@ -172,12 +200,15 @@ def preflight() -> int:
         'last_preflight_msk': now_msk.isoformat(),
         'last_policy_version': POLICY_VERSION,
         'last_event': event,
+        'last_current_slot_key': slot_key,
+        'last_current_slot_local_key': slot_local_key,
         'last_is_primary_slot': primary,
         'last_is_delayed_primary_slot': delayed_primary,
         'last_is_watchdog_slot': watchdog,
         'last_skip_main': skip_main,
         'last_decision_reason': reason,
         'last_success_age_minutes': age,
+        'last_successful_slot_key': state.get('last_successful_slot_key'),
         'recent_success_grace_minutes': RECENT_SUCCESS_GRACE_MINUTES,
         'primary_utc_hours': sorted(PRIMARY_UTC_HOURS),
         'primary_minute': PRIMARY_MINUTE,
@@ -196,12 +227,16 @@ def preflight() -> int:
 def mark_success() -> int:
     now_utc = datetime.now(UTC)
     now_msk = now_utc.astimezone(MSK)
+    slot_key = os.getenv('AUTORUN_CURRENT_SLOT_KEY') or current_slot_key(now_utc)
+    slot_local_key = os.getenv('AUTORUN_CURRENT_SLOT_LOCAL_KEY') or current_slot_local_key(now_utc)
     state = load_json(STATE_PATH, {})
     if not isinstance(state, dict):
         state = {}
     state.update({
         'last_successful_scheduled_run_utc': now_utc.isoformat(),
         'last_successful_scheduled_run_msk': now_msk.isoformat(),
+        'last_successful_slot_key': slot_key,
+        'last_successful_slot_local_key': slot_local_key,
         'last_successful_run_id': os.getenv('GITHUB_RUN_ID', ''),
         'last_successful_run_attempt': os.getenv('GITHUB_RUN_ATTEMPT', ''),
         'last_policy_version': POLICY_VERSION,
