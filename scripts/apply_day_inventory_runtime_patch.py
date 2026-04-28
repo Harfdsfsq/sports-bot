@@ -54,6 +54,7 @@ RUNNER_METHODS = r'''
             Path('.data/day_inventory') / f'{local_date}.json',
             Path('.data/day_inventory/today.json'),
             Path('.data/day_inventory/current.json'),
+            Path('.data/day_inventory/latest.json'),
         ]
         payload: dict[str, Any] = {}
         for path in candidates:
@@ -123,7 +124,11 @@ RUNNER_METHODS = r'''
             limit = 0
         if limit <= 0:
             limit = len(selected_matches)
-        hard_cap = max(limit, int(float(os.getenv('DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT', '64') or 64)))
+        default_backfill_limit = int(float(os.getenv('DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT', '64') or 64))
+        # Never shrink a provider target list that upstream selection already made larger.
+        # Previous version used max(limit, default_backfill_limit) and then sliced selected_by_key,
+        # which reduced sstats from 80 targets to 64 in the 2026-04-28 15:00 MSK run.
+        hard_cap = max(len(selected_matches), limit, default_backfill_limit)
         selected_by_key: dict[str, Match] = {match.match_key: match for match in selected_matches}
 
         def score(match: Match) -> tuple[int, int, float, str]:
@@ -142,7 +147,9 @@ RUNNER_METHODS = r'''
             if match.match_key in selected_by_key:
                 continue
             selected_by_key[match.match_key] = match
-        expanded = list(selected_by_key.values())[:hard_cap]
+        expanded = list(selected_by_key.values())
+        if len(expanded) > hard_cap:
+            expanded = expanded[:hard_cap]
         self._mark_provider_status(
             provider_key,
             context_backfill_enabled=True,
