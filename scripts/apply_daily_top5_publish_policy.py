@@ -67,6 +67,15 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def as_float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value in (None, ''):
+            return default
+        return float(value)
+    except Exception:
+        return default
+
+
 def row_timestamp(row: dict[str, Any]) -> Any:
     for key in ('sent_at', 'published_at', 'created_at', 'placed_at', 'timestamp', 'updated_at'):
         if row.get(key):
@@ -156,7 +165,10 @@ def main() -> int:
     existing = as_int(counts.get('effective_today_picks'))
     target = max(1, as_int(os.getenv('DAILY_TOP5_TARGET_PICKS'), 5))
     hard_cap = max(target, as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS'), target))
-    max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MAX_PICKS_PER_RUN'), 2))
+    scheduled_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MAX_PICKS_PER_RUN'), 2))
+    manual_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN'), target))
+    is_manual_run = str(os.getenv('GITHUB_EVENT_NAME') or '').strip().lower() == 'workflow_dispatch'
+    max_per_run = manual_max_per_run if is_manual_run else scheduled_max_per_run
     remaining_to_target = max(0, target - existing)
     remaining_to_hard = max(0, hard_cap - existing)
 
@@ -180,6 +192,9 @@ def main() -> int:
         'CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN': str(allowed_this_run),
         'MAX_PICKS_PER_RUN': str(allowed_this_run),
         'CONTROLLED_FALLBACK_EXTRA_PICK_STRICT': 'true',
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT': str(as_float(os.getenv('DAILY_TOP5_EXTRA_PICK_MIN_EV_PCT'), 6.0)),
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP': str(as_float(os.getenv('DAILY_TOP5_EXTRA_PICK_MIN_EDGE_PP'), 3.0)),
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE': str(as_float(os.getenv('DAILY_TOP5_EXTRA_PICK_MIN_CONFIDENCE'), 64.0)),
         'CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED': 'false',
         'CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES': '',
         'CONTROLLED_FALLBACK_DAILY_TOP5_REASON': reason,
@@ -200,11 +215,14 @@ def main() -> int:
         'target_picks': target,
         'hard_cap_picks': hard_cap,
         'max_picks_per_run': max_per_run,
+        'scheduled_max_picks_per_run': scheduled_max_per_run,
+        'manual_max_picks_per_run': manual_max_per_run,
+        'is_manual_run': is_manual_run,
         'allowed_this_run': allowed_this_run,
         'reason': reason,
         'counts': counts,
         'env': env,
-        'quality_note': 'Daily top5 policy limits volume and keeps Tier C disabled / hard guards enabled.',
+        'quality_note': 'Daily top5 policy targets 5 picks/day, lets manual runs fill the remaining target, and keeps Tier C disabled / hard guards enabled.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))

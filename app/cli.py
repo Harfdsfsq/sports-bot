@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -12,6 +13,12 @@ from app.reporting import CoverageAuditService, ReportingSQLiteExporter, Trainin
 from app.reporting.history_guard_audit import HistoryGuardAuditService
 from app.services.runner import PredictionRunner
 from app.state import resolve_run_history_roots
+
+LOG_LEVEL = os.getenv('LOG_LEVEL', 'INFO').upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format='%(asctime)s %(levelname)s %(name)s: %(message)s',
+)
 
 
 def _parse_bool(value: str) -> bool:

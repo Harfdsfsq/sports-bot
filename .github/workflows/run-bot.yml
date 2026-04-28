@@ -60,6 +60,13 @@ jobs:
       APP_TIMEZONE: Europe/Moscow
       AUTORUN_POLICY_VERSION: v19-msk-midnight-daily-inventory
       VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_5' }}
+      DAILY_TOP5_TARGET_PICKS: "5"
+      DAILY_TOP5_HARD_CAP_PICKS: "7"
+      DAILY_TOP5_MAX_PICKS_PER_RUN: "2"
+      DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN: "5"
+      DAILY_TOP5_EXTRA_PICK_MIN_EV_PCT: "6.0"
+      DAILY_TOP5_EXTRA_PICK_MIN_EDGE_PP: "3.0"
+      DAILY_TOP5_EXTRA_PICK_MIN_CONFIDENCE: "64.0"
 
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

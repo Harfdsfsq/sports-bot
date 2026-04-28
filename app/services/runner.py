@@ -8,6 +8,7 @@ from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
 from pathlib import Path
 from importlib import import_module
+import logging
 import math
 from typing import Any
 
@@ -24,6 +25,8 @@ from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
 from app.state import JsonStateStore, collect_run_archive_paths, resolve_run_history_roots, resolve_run_logs_dir
 from app.utils import candidate_selection_key, clamp, ensure_utc
+
+logger = logging.getLogger(__name__)
 
 
 class PredictionRunner:
@@ -265,6 +268,7 @@ class PredictionRunner:
 
     async def run_once(self) -> dict[str, Any]:
         started_at = datetime.now(UTC).isoformat()
+        logger.info('Starting prediction run at %s', started_at)
         self.state.save_run('running', summary={'started_at': started_at})
         try:
             now_utc = datetime.now(UTC)
@@ -819,9 +823,17 @@ class PredictionRunner:
             )
             summary['history'] = history_result
             self.state.save_run('ok', summary=summary)
+            logger.info(
+                'Prediction run finished: matches=%s candidates=%s publishable=%s telegram=%s',
+                summary.get('matches_seen'),
+                summary.get('candidates_raw'),
+                summary.get('candidates_publishable'),
+                summary.get('published_to_telegram'),
+            )
             return summary
         except Exception as exc:
             error_text = f'{type(exc).__name__}: {exc}'
+            logger.exception('Prediction run failed: %s', error_text)
             self.state.save_run('error', error_text=error_text)
             error_payload = {'created_at': datetime.now(UTC).isoformat(), 'error': error_text}
             self.state.write_debug(error_payload)
