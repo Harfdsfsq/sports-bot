@@ -168,12 +168,16 @@ def main() -> int:
         mode = 'incremental_fixture_refresh'
         reason = f'inventory_age_reached_{refresh_hours}h'
 
+    requested_bootstrap = os.getenv('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'football_data'
+    effective_bootstrap = 'odds_api_io' if coverage_active else requested_bootstrap
+
     env = {
         'DAY_INVENTORY_POLICY_ACTIVE': 'true',
         'DAY_INVENTORY_MODE': mode,
         'DAY_INVENTORY_SKIP_BUILD': 'true' if skip_build else 'false',
         'DAY_INVENTORY_TARGET_DATE': target_date,
-        'DAY_INVENTORY_BOOTSTRAP_PROVIDER': os.getenv('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'football_data',
+        'DAY_INVENTORY_BOOTSTRAP_PROVIDER': effective_bootstrap,
+        'DAY_INVENTORY_REQUESTED_BOOTSTRAP_PROVIDER': requested_bootstrap,
         'DAY_INVENTORY_DIRECT_WINDOW_DAYS': os.getenv('DAY_INVENTORY_DIRECT_WINDOW_DAYS') or '1',
         'DAY_INVENTORY_DIRECT_MIN_MATCHES': os.getenv('DAY_INVENTORY_DIRECT_MIN_MATCHES') or '8',
         'COVERAGE_MAXIMIZE_ACTIVE': 'true' if coverage_active else 'false',
@@ -192,7 +196,7 @@ def main() -> int:
     append_github_env(env)
 
     report = {
-        'policy_version': 'daily-inventory-coverage-max-v2',
+        'policy_version': 'daily-inventory-coverage-max-v3-odds-bootstrap',
         'utc_now': now_utc.isoformat(),
         'local_now': now_local.isoformat(),
         'timezone': str(tz.key),
@@ -207,6 +211,8 @@ def main() -> int:
         'min_ready_ratio_pct': min_ready_ratio_pct,
         'coverage_maximize_active': coverage_active,
         'coverage_maximize_until_local_date': coverage_until,
+        'requested_bootstrap_provider': requested_bootstrap,
+        'effective_bootstrap_provider': effective_bootstrap,
         'updated_at_utc': updated_at.isoformat() if updated_at is not None else None,
         'age_minutes': round(age_minutes, 2) if age_minutes is not None else None,
         'full_bootstrap_hours_local': sorted(full_hours),
@@ -219,6 +225,7 @@ def main() -> int:
         'notes': [
             'Coverage-max mode is temporary and controlled by COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE.',
             'When active, the inventory refreshes if odds/context/ready coverage is incomplete, even if the fixture list itself is fresh.',
+            'Coverage-max forces the inventory bootstrap provider to odds_api_io because football_data/thesportsdb direct bootstrap covers too few fixtures for broad same-day inventory.',
             'This increases data coverage only; prediction quality guards are not relaxed.',
         ],
     }
