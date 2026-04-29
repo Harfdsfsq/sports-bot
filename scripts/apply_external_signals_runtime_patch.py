@@ -4,77 +4,102 @@ from pathlib import Path
 
 ROOT = Path('.').resolve()
 TARGET = ROOT / 'app' / 'services' / 'runner.py'
-PATCH_VERSION = 'v1-external-signals-context'
+PATCH_VERSION = 'v2-external-signals-context-import-safe'
+
+
+def ensure_os_import(text: str) -> tuple[str, bool]:
+    if 'import os\n' in text:
+        return text, False
+    # runner.py normally imports json near the top, but keep robust fallbacks.
+    if 'import json\n' in text:
+        return text.replace('import json\n', 'import json\nimport os\n', 1), True
+    if 'import asyncio\n' in text:
+        return text.replace('import asyncio\n', 'import asyncio\nimport os\n', 1), True
+    return 'import os\n' + text, True
+
+
+def replace_once(text: str, old: str, new: str) -> tuple[str, bool]:
+    if old not in text:
+        return text, False
+    return text.replace(old, new, 1), True
 
 
 def main() -> int:
     text = TARGET.read_text(encoding='utf-8')
-    if 'self.external_signals' in text:
-        print(f'{PATCH_VERSION}: already applied')
-        return 0
     changed = False
 
-    marker = "        self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')\n"
-    insert = marker + "        self.external_signals = self._safe_provider('app.providers.external_signals', 'ExternalSignalsContextProvider')\n"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    text, did = ensure_os_import(text)
+    changed = changed or did
 
-    marker = "            'gnews': self.gnews,\n            'odds_api_io': self.odds_api_io,"
-    insert = "            'gnews': self.gnews,\n            'external_signals': self.external_signals,\n            'odds_api_io': self.odds_api_io,"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    # Idempotent insertions: each block is only inserted if its final marker is missing.
+    if 'self.external_signals' not in text:
+        text, did = replace_once(
+            text,
+            "        self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')\n",
+            "        self.gnews = self._safe_provider('app.providers.gnews', 'GNewsContextProvider')\n        self.external_signals = self._safe_provider('app.providers.external_signals', 'ExternalSignalsContextProvider')\n",
+        )
+        changed = changed or did
 
-    marker = "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        return bool(default)"
-    insert = "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        if provider_name == 'external_signals':\n            return str(os.getenv('ENABLE_EXTERNAL_SIGNALS', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'}\n        return bool(default)"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    if "'external_signals': self.external_signals" not in text:
+        text, did = replace_once(
+            text,
+            "            'gnews': self.gnews,\n            'odds_api_io': self.odds_api_io,",
+            "            'gnews': self.gnews,\n            'external_signals': self.external_signals,\n            'odds_api_io': self.odds_api_io,",
+        )
+        changed = changed or did
 
-    marker = "        if module_name.endswith('gnews') and not self._provider_enabled('gnews', default=True):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n        try:"
-    insert = "        if module_name.endswith('gnews') and not self._provider_enabled('gnews', default=True):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n        if module_name.endswith('external_signals') and not self._provider_enabled('external_signals', default=True):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n        try:"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    if "if provider_name == 'external_signals'" not in text:
+        text, did = replace_once(
+            text,
+            "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        return bool(default)",
+            "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        if provider_name == 'external_signals':\n            return str(os.getenv('ENABLE_EXTERNAL_SIGNALS', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'}\n        return bool(default)",
+        )
+        changed = changed or did
 
-    marker = "                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n            }"
-    insert = "                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n                'external_signals': self._select_provider_context_matches(context_target_matches, 'external_signals', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n            }"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    if "module_name.endswith('external_signals')" not in text:
+        text, did = replace_once(
+            text,
+            "        if module_name.endswith('gnews') and not self._provider_enabled('gnews', default=True):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n        try:",
+            "        if module_name.endswith('gnews') and not self._provider_enabled('gnews', default=True):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n        if module_name.endswith('external_signals') and not self._provider_enabled('external_signals', default=True):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n        try:",
+        )
+        changed = changed or did
 
-    marker = "                (gnews_contexts, gnews_stats, gnews_preview),\n            ) = await asyncio.gather("
-    insert = "                (gnews_contexts, gnews_stats, gnews_preview),\n                (external_signals_contexts, external_signals_stats, external_signals_preview),\n            ) = await asyncio.gather("
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    if "provider_targets['external_signals']" not in text:
+        text, did = replace_once(
+            text,
+            "                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n            }",
+            "                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n                'external_signals': self._select_provider_context_matches(context_target_matches, 'external_signals', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n            }",
+        )
+        changed = changed or did
 
-    marker = "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n            )"
-    insert = "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n                self._fetch_provider(self.external_signals, 'fetch_context', provider_targets['external_signals'], empty_data={}),\n            )"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
+    if 'external_signals_contexts' not in text:
+        text, did = replace_once(
+            text,
+            "                (gnews_contexts, gnews_stats, gnews_preview),\n            ) = await asyncio.gather(",
+            "                (gnews_contexts, gnews_stats, gnews_preview),\n                (external_signals_contexts, external_signals_stats, external_signals_preview),\n            ) = await asyncio.gather(",
+        )
+        changed = changed or did
+        text, did = replace_once(
+            text,
+            "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n            )",
+            "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n                self._fetch_provider(self.external_signals, 'fetch_context', provider_targets['external_signals'], empty_data={}),\n            )",
+        )
+        changed = changed or did
+        text, did = replace_once(
+            text,
+            "                'gnews': gnews_contexts,\n            }",
+            "                'gnews': gnews_contexts,\n                'external_signals': external_signals_contexts,\n            }",
+        )
+        changed = changed or did
+        text, did = replace_once(
+            text,
+            "                'gnews': gnews_stats,\n                'weather': weather_stats,",
+            "                'gnews': gnews_stats,\n                'external_signals': external_signals_stats,\n                'weather': weather_stats,",
+        )
+        changed = changed or did
 
-    marker = "                'gnews': gnews_contexts,\n            }"
-    insert = "                'gnews': gnews_contexts,\n                'external_signals': external_signals_contexts,\n            }"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
-
-    marker = "                'gnews': gnews_stats,\n                'weather': weather_stats,"
-    insert = "                'gnews': gnews_stats,\n                'external_signals': external_signals_stats,\n                'weather': weather_stats,"
-    if marker in text:
-        text = text.replace(marker, insert, 1)
-        changed = True
-
-    if changed:
-        if 'import os\n' not in text:
-            text = text.replace('import json\n', 'import json\nimport os\n', 1)
-        TARGET.write_text(text, encoding='utf-8')
-        print(f'{PATCH_VERSION}: patched {TARGET}')
-    else:
-        print(f'{PATCH_VERSION}: no changes; target markers not found')
+    TARGET.write_text(text, encoding='utf-8')
+    print(f'{PATCH_VERSION}: patched={changed} target={TARGET}')
     return 0
 
 
