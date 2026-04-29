@@ -34,8 +34,6 @@ def apply_rapidapi_runtime_budget_overrides(name: str, cfg: dict[str, Any], row:
     provider = str(name)
     patched = dict(cfg)
 
-    # OddsPapi moved from the official site to RapidAPI. A legacy official-site monthly
-    # cooldown must not block the new RapidAPI key/host route.
     if provider == 'oddspapi' and env_true('ODDSPAPI_RAPIDAPI_ENABLED', False):
         row.pop('cooldown_until', None)
         row.pop('cooldown_reason', None)
@@ -54,14 +52,18 @@ def apply_rapidapi_runtime_budget_overrides(name: str, cfg: dict[str, Any], row:
         })
         patched['env'] = env
 
-    # These RapidAPI entries are endpoint-discovery/probe style diagnostics. In normal
-    # production runs they were producing 400/404/429 noise and confusing quota reports.
-    if provider in {'sportsbook_api', 'freeapilivefootball', 'sportapi'} and not env_true('RAPIDAPI_PRODUCTION_DIAGNOSTIC_PROBES_ENABLED', False):
+    if provider in {'sportsbook_api', 'freeapilivefootball', 'sportapi', 'allsportsapi', 'oddsfeed'} and not env_true('RAPIDAPI_PRODUCTION_DIAGNOSTIC_PROBES_ENABLED', False):
         patched['enabled'] = False
         patched['per_run_max'] = 0
         patched['safe_daily_budget'] = 0
         patched['safe_monthly_budget'] = 0
         disable_env = dict(patched.get('disable_env') or {})
+        disable_env.update({
+            'ENABLE_RAPIDAPI_ODDS_BRIDGE': 'false',
+            'RAPIDAPI_ODDS_MAX_HTTP_REQUESTS_PER_RUN': '0',
+            'RAPIDAPI_ODDS_MATCH_LIMIT': '0',
+            'RAPIDAPI_ODDS_CACHE_TTL_MINUTES': '240',
+        })
         if provider == 'sportsbook_api':
             disable_env.update({
                 'RAPIDAPI_SPORTSBOOK_PROBE_ENABLED': 'false',
@@ -82,6 +84,13 @@ def apply_rapidapi_runtime_budget_overrides(name: str, cfg: dict[str, Any], row:
                 'RAPIDAPI_SPORTAPI7_DAILY_LIMIT': '0',
                 'RAPIDAPI_SPORTAPI7_PER_RUN_MAX': '0',
                 'RAPIDAPI_DISCOVERY_SPORTAPI7_MAX_CALLS': '0',
+            })
+        elif provider == 'oddsfeed':
+            disable_env.update({
+                'RAPIDAPI_ODDS_FEED_PROBE_ENABLED': 'false',
+                'RAPIDAPI_ODDS_FEED_DAILY_LIMIT': '0',
+                'RAPIDAPI_ODDS_FEED_PER_RUN_MAX': '0',
+                'RAPIDAPI_DISCOVERY_ODDS_FEED_MAX_CALLS': '0',
             })
         patched['disable_env'] = disable_env
     return patched
@@ -110,6 +119,13 @@ def main() -> int:
         src = src.replace(
             marker,
             marker + "\n            'WEATHER_SHORTLIST_ONLY': 'true',\n            'WEATHER_ALLOW_TEAM_NAME_FALLBACK': 'false',",
+            1,
+        )
+    env_marker = "'ALL_SOURCES_FREE_MAXIMIZE': str(os.getenv('ALL_SOURCES_FREE_MAXIMIZE', 'true')).lower(),"
+    if env_marker in src and "'ENABLE_RAPIDAPI_ODDS_BRIDGE': 'false'" not in src:
+        src = src.replace(
+            env_marker,
+            env_marker + "\n        'ENABLE_RAPIDAPI_ODDS_BRIDGE': 'false',\n        'RAPIDAPI_ODDS_MAX_HTTP_REQUESTS_PER_RUN': '0',\n        'RAPIDAPI_ODDS_MATCH_LIMIT': '0',",
             1,
         )
     if 'def apply_rapidapi_runtime_budget_overrides(' not in src:
