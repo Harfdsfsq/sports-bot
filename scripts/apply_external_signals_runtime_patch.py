@@ -4,18 +4,7 @@ from pathlib import Path
 
 ROOT = Path('.').resolve()
 TARGET = ROOT / 'app' / 'services' / 'runner.py'
-PATCH_VERSION = 'v2-external-signals-context-import-safe'
-
-
-def ensure_os_import(text: str) -> tuple[str, bool]:
-    if 'import os\n' in text:
-        return text, False
-    # runner.py normally imports json near the top, but keep robust fallbacks.
-    if 'import json\n' in text:
-        return text.replace('import json\n', 'import json\nimport os\n', 1), True
-    if 'import asyncio\n' in text:
-        return text.replace('import asyncio\n', 'import asyncio\nimport os\n', 1), True
-    return 'import os\n' + text, True
+PATCH_VERSION = 'v3-external-signals-context-no-os-dependency'
 
 
 def replace_once(text: str, old: str, new: str) -> tuple[str, bool]:
@@ -28,10 +17,13 @@ def main() -> int:
     text = TARGET.read_text(encoding='utf-8')
     changed = False
 
-    text, did = ensure_os_import(text)
-    changed = changed or did
+    # Remove fragile os.getenv usage from runner.py. The provider itself reads env.
+    old_line = "        if provider_name == 'external_signals':\n            return str(os.getenv('ENABLE_EXTERNAL_SIGNALS', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'}\n        return bool(default)"
+    new_line = "        if provider_name == 'external_signals':\n            return bool(getattr(self.settings, 'enable_external_signals', default))\n        return bool(default)"
+    if old_line in text:
+        text = text.replace(old_line, new_line, 1)
+        changed = True
 
-    # Idempotent insertions: each block is only inserted if its final marker is missing.
     if 'self.external_signals' not in text:
         text, did = replace_once(
             text,
@@ -52,7 +44,7 @@ def main() -> int:
         text, did = replace_once(
             text,
             "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        return bool(default)",
-            "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        if provider_name == 'external_signals':\n            return str(os.getenv('ENABLE_EXTERNAL_SIGNALS', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'}\n        return bool(default)",
+            "        if provider_name == 'gnews':\n            return bool(getattr(self.settings, 'enable_gnews_context', default))\n        if provider_name == 'external_signals':\n            return bool(getattr(self.settings, 'enable_external_signals', default))\n        return bool(default)",
         )
         changed = changed or did
 
