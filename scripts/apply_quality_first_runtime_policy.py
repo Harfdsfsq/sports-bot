@@ -20,7 +20,7 @@ ROOT = Path('.').resolve()
 UTC = timezone.utc
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 OUT = ROOT / '.data' / 'exports' / 'latest-quality-first-runtime-policy.json'
-POLICY_VERSION = 'v1-quality-first-totals-only'
+POLICY_VERSION = 'v2-quality-first-totals-b-tier-xg-10p5'
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -94,14 +94,15 @@ def main() -> int:
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': '3.5',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': '7.0',
 
-        # Totals sanity remains mandatory. Slightly tighten the hard xG gap to cut fake value.
+        # Totals sanity remains mandatory. Tier B is allowed a small extra proxy-xG gap,
+        # but the hard reject still blocks obvious model-vs-xG disagreements.
         'CONTROLLED_FALLBACK_XG_SANITY_ENABLED': 'true',
         'CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM': 'true',
         'CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN': '0.18',
         'CONTROLLED_FALLBACK_XG_HARD_REJECT_GAP_PP': '12.0',
         'CONTROLLED_FALLBACK_TIER_A_REQUIRE_XG_SANITY': 'true',
         'CONTROLLED_FALLBACK_TIER_A_MAX_XG_GAP_PP': '6.0',
-        'CONTROLLED_FALLBACK_TIER_B_MAX_XG_GAP_PP': '9.0',
+        'CONTROLLED_FALLBACK_TIER_B_MAX_XG_GAP_PP': '10.5',
 
         # Keep target-5 cadence, but do not force volume over quality.
         'DAILY_TOP5_TARGET_PICKS': os.getenv('DAILY_TOP5_TARGET_PICKS', '5'),
@@ -131,6 +132,7 @@ def main() -> int:
             'diagnostics': 'all generated candidates can still be tracked in reports/shadow, but weak families are blocked from Telegram',
             'historical_reason': 'totals is the only historically positive family; high_odds, non_core_league and single_book are top loss tags',
             'target': 'about 5 best picks/day when value exists, no forced volume',
+            'xg_tuning': 'Tier B totals xG gap raised from 9.0 to 10.5 while hard reject remains 12.0',
         },
     }
     write_json(OUT, report)
