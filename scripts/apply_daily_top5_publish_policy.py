@@ -11,6 +11,7 @@ ROOT = Path('.').resolve()
 UTC = timezone.utc
 OUT = ROOT / '.data' / 'exports' / 'latest-daily-top5-publish-policy.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
+POLICY_VERSION = 'v14-top5-quality-governor-no-hard-stop'
 
 
 def tzinfo() -> ZoneInfo:
@@ -89,12 +90,6 @@ def env_nonnegative_int(name: str) -> int | None:
 
 
 def upstream_pick_cap() -> dict[str, Any]:
-    """Return the cap already imposed by earlier policies in this workflow.
-
-    apply_volume_policy.py runs before this script. The previous top5 policy could
-    accidentally raise MAX_PICKS_PER_RUN from 0 back to 1 after the soft cap was
-    reached. This helper makes top5 monotonic: it may reduce a cap, never raise it.
-    """
     names = (
         'CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN',
         'CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN',
@@ -159,9 +154,6 @@ def collect_rows_for_today(rows: Any, today: str) -> tuple[set[str], int]:
 
 
 def count_today_picks(today: str) -> dict[str, Any]:
-    # Effective count must dedupe the same Telegram publication across
-    # fallback-sent-index/state.bets/state.published_candidates. Per-source details
-    # remain visible, but the cap uses one normalized key set without source prefixes.
     keys: set[str] = set()
     details: dict[str, Any] = {}
 
@@ -201,61 +193,89 @@ def append_env(env: dict[str, str]) -> None:
             print(f'{key}={env[key]}')
 
 
+def stage_for(existing: int, target: int) -> str:
+    if existing < max(1, target - 1):
+        return 'build_to_target'
+    if existing < target:
+        return 'last_target_pick'
+    return 'after_target_extra_strict'
+
+
+def thresholds_for(stage: str) -> dict[str, float]:
+    if stage == 'after_target_extra_strict':
+        return {
+            'tier_b_confidence': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_MIN_CONFIDENCE'), 68.0),
+            'tier_b_quality': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_MIN_QUALITY'), 64.0),
+            'tier_b_edge': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_MIN_EDGE_PP'), 4.0),
+            'tier_b_ev': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_MIN_EV_PCT'), 8.5),
+            'tier_b_max_odds': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_MAX_ODDS'), 2.55),
+            'final_edge': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_FINAL_MIN_EDGE_PP'), 3.8),
+            'final_ev': as_float(os.getenv('DAILY_TOP5_AFTER_TARGET_FINAL_MIN_EV_PCT'), 8.0),
+        }
+    return {
+        'tier_b_confidence': as_float(os.getenv('DAILY_TOP5_TIER_B_MIN_CONFIDENCE'), 63.0),
+        'tier_b_quality': as_float(os.getenv('DAILY_TOP5_TIER_B_MIN_QUALITY'), 60.0),
+        'tier_b_edge': as_float(os.getenv('DAILY_TOP5_TIER_B_MIN_EDGE_PP'), 3.0),
+        'tier_b_ev': as_float(os.getenv('DAILY_TOP5_TIER_B_MIN_EV_PCT'), 6.0),
+        'tier_b_max_odds': as_float(os.getenv('DAILY_TOP5_TIER_B_MAX_ODDS'), 2.75),
+        'final_edge': as_float(os.getenv('DAILY_TOP5_FINAL_MIN_EDGE_PP'), 3.0),
+        'final_ev': as_float(os.getenv('DAILY_TOP5_FINAL_MIN_EV_PCT'), 6.0),
+    }
+
+
 def main() -> int:
     today = today_local()
     counts = count_today_picks(today)
     existing = as_int(counts.get('effective_today_picks'))
     target = max(1, as_int(os.getenv('DAILY_TOP5_TARGET_PICKS'), 5))
-    configured_hard_cap = max(target, as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS'), target))
-    volume_soft_cap = as_int(os.getenv('VOLUME_DAILY_SOFT_CAP_PICKS'), configured_hard_cap)
-    soft_cap = max(target, min(configured_hard_cap, volume_soft_cap if volume_soft_cap > 0 else configured_hard_cap))
-    hard_cap = configured_hard_cap
+    telemetry_soft_cap = max(target, as_int(os.getenv('DAILY_TOP5_SOFT_CAP_PICKS') or os.getenv('VOLUME_DAILY_SOFT_CAP_PICKS'), target))
+    telemetry_hard_cap = max(target, as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS') or os.getenv('VOLUME_DAILY_HARD_CAP_PICKS'), target))
     scheduled_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MAX_PICKS_PER_RUN'), 2))
     manual_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN'), scheduled_max_per_run))
+    after_target_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_AFTER_TARGET_MAX_PICKS_PER_RUN'), 1))
     is_manual_run = str(os.getenv('GITHUB_EVENT_NAME') or '').strip().lower() == 'workflow_dispatch'
     max_per_run = manual_max_per_run if is_manual_run else scheduled_max_per_run
-    remaining_to_target = max(0, target - existing)
-    remaining_to_soft = max(0, soft_cap - existing)
-    remaining_to_hard = max(0, hard_cap - existing)
+    stage = stage_for(existing, target)
+    thresholds = thresholds_for(stage)
     upstream = upstream_pick_cap()
     upstream_cap_value = upstream.get('cap')
 
-    allowed_this_run = min(max_per_run, remaining_to_hard, remaining_to_soft)
-    reason = f'top5_active:{existing}/{target}'
-    if remaining_to_hard <= 0:
-        allowed_this_run = 0
-        reason = f'daily_top5_hard_cap_reached:{existing}/{hard_cap}'
-    elif remaining_to_soft <= 0:
-        allowed_this_run = 0
-        reason = f'daily_top5_soft_cap_reached:{existing}/{soft_cap}'
-    elif remaining_to_target <= 0:
-        allowed_this_run = min(1, remaining_to_soft, remaining_to_hard)
-        reason = f'daily_top5_target_reached_extra_strict:{existing}/{target}'
+    if stage == 'build_to_target':
+        allowed_this_run = min(max_per_run, max(1, target - existing))
+        reason = f'top5_build_to_target:{existing}/{target}'
+    elif stage == 'last_target_pick':
+        allowed_this_run = 1
+        reason = f'top5_last_pick_before_target:{existing}/{target}'
+    else:
+        allowed_this_run = after_target_max_per_run
+        reason = f'top5_after_target_quality_only:{existing}/{target}'
 
     if isinstance(upstream_cap_value, int):
         if upstream_cap_value < allowed_this_run:
             reason = f'{reason}; upstream_volume_cap:{upstream_cap_value}'
-        allowed_this_run = min(allowed_this_run, upstream_cap_value)
+        allowed_this_run = min(allowed_this_run, max(1, upstream_cap_value))
 
     env = {
         'DAILY_TOP5_PUBLISH_POLICY_ACTIVE': 'true',
+        'DAILY_TOP5_POLICY_VERSION': POLICY_VERSION,
         'VOLUME_POLICY_MODE': 'target_5',
+        'VOLUME_POLICY_STAGE': stage,
         'VOLUME_DAILY_TARGET_PICKS': str(target),
-        'VOLUME_DAILY_SOFT_CAP_PICKS': str(soft_cap),
-        'VOLUME_DAILY_HARD_CAP_PICKS': str(hard_cap),
+        # Telemetry only; these no longer block fallback/evaluation.
+        'VOLUME_DAILY_SOFT_CAP_PICKS': str(telemetry_soft_cap),
+        'VOLUME_DAILY_HARD_CAP_PICKS': str(telemetry_hard_cap),
         'VOLUME_EXISTING_PICKS_TODAY': str(existing),
+        'CONTROLLED_FALLBACK_ENABLED': 'true',
         'CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN': str(allowed_this_run),
         'CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN': str(allowed_this_run),
         'MAX_PICKS_PER_RUN': str(allowed_this_run),
         'CONTROLLED_FALLBACK_EXTRA_PICK_STRICT': 'true',
-        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT': str(as_float(os.getenv('DAILY_TOP5_EXTRA_PICK_MIN_EV_PCT'), 6.0)),
-        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP': str(as_float(os.getenv('DAILY_TOP5_EXTRA_PICK_MIN_EDGE_PP'), 3.0)),
-        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE': str(as_float(os.getenv('DAILY_TOP5_EXTRA_PICK_MIN_CONFIDENCE'), 64.0)),
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT': str(thresholds['tier_b_ev']),
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP': str(thresholds['tier_b_edge']),
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE': str(thresholds['tier_b_confidence']),
         'CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED': 'false',
         'CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES': '',
         'CONTROLLED_FALLBACK_DAILY_TOP5_REASON': reason,
-        # Keep quality: do not bypass hard guards; make target_5 override late enough to
-        # beat final_runtime_overrides.env and let strong Tier B reserve picks publish.
         'CONTROLLED_FALLBACK_ALLOWED_FAMILIES': os.getenv(
             'DAILY_TOP5_ALLOWED_FAMILIES',
             'totals,dnb,teamtotals,teamTotals,btts,spreads',
@@ -264,68 +284,51 @@ def main() -> int:
             'DAILY_TOP5_TIER_B_ALLOWED_FAMILIES',
             'totals,dnb,teamtotals,teamTotals,btts,spreads',
         ),
-        'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE': env_float_str('DAILY_TOP5_TIER_B_MIN_CONFIDENCE', 63.0),
-        'CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY': env_float_str('DAILY_TOP5_TIER_B_MIN_QUALITY', 60.0),
-        'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP': env_float_str('DAILY_TOP5_TIER_B_MIN_EDGE_PP', 3.0),
-        'CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT': env_float_str('DAILY_TOP5_TIER_B_MIN_EV_PCT', 6.0),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE': str(thresholds['tier_b_confidence']),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY': str(thresholds['tier_b_quality']),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP': str(thresholds['tier_b_edge']),
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT': str(thresholds['tier_b_ev']),
+        'CONTROLLED_FALLBACK_TIER_B_MAX_ODDS': str(thresholds['tier_b_max_odds']),
+        'CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP': str(thresholds['final_edge']),
+        'CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT': str(thresholds['final_ev']),
         'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'true',
         'CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK': 'true',
         'CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY': 'true',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT': 'true',
-        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': env_float_str(
-            'DAILY_TOP5_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE',
-            64.0,
-        ),
-        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': env_float_str(
-            'DAILY_TOP5_PROXY_SINGLE_SOURCE_MIN_EDGE_PP',
-            3.0,
-        ),
-        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': env_float_str(
-            'DAILY_TOP5_PROXY_SINGLE_SOURCE_MIN_EV_PCT',
-            6.0,
-        ),
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': str(thresholds['tier_b_confidence']),
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': str(thresholds['tier_b_edge']),
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': str(thresholds['tier_b_ev']),
         'CONTROLLED_FALLBACK_DNB_MIN_XG_EDGE_PP': env_float_str('DAILY_TOP5_DNB_MIN_XG_EDGE_PP', 2.5),
-        'CONTROLLED_FALLBACK_DNB_MIN_XG_EV_UNCONDITIONAL_PCT': env_float_str(
-            'DAILY_TOP5_DNB_MIN_XG_EV_UNCONDITIONAL_PCT',
-            3.5,
-        ),
-        'CONTROLLED_FALLBACK_DNB_MAX_ABS_MODEL_XG_GAP_PP': env_float_str(
-            'DAILY_TOP5_DNB_MAX_ABS_MODEL_XG_GAP_PP',
-            36.0,
-        ),
-        'CONTROLLED_FALLBACK_DNB_MAX_XG_EV_UNCONDITIONAL_PCT': env_float_str(
-            'DAILY_TOP5_DNB_MAX_XG_EV_UNCONDITIONAL_PCT',
-            90.0,
-        ),
+        'CONTROLLED_FALLBACK_DNB_MIN_XG_EV_UNCONDITIONAL_PCT': env_float_str('DAILY_TOP5_DNB_MIN_XG_EV_UNCONDITIONAL_PCT', 3.5),
+        'CONTROLLED_FALLBACK_DNB_MAX_ABS_MODEL_XG_GAP_PP': env_float_str('DAILY_TOP5_DNB_MAX_ABS_MODEL_XG_GAP_PP', 36.0),
+        'CONTROLLED_FALLBACK_DNB_MAX_XG_EV_UNCONDITIONAL_PCT': env_float_str('DAILY_TOP5_DNB_MAX_XG_EV_UNCONDITIONAL_PCT', 90.0),
         'CONTROLLED_FALLBACK_DNB_MAX_XG_EDGE_PP': env_float_str('DAILY_TOP5_DNB_MAX_XG_EDGE_PP', 45.0),
-        'CONTROLLED_FALLBACK_DNB_MAX_NO_PUSH_PROBABILITY_PCT': env_float_str(
-            'DAILY_TOP5_DNB_MAX_NO_PUSH_PROBABILITY_PCT',
-            88.0,
-        ),
+        'CONTROLLED_FALLBACK_DNB_MAX_NO_PUSH_PROBABILITY_PCT': env_float_str('DAILY_TOP5_DNB_MAX_NO_PUSH_PROBABILITY_PCT', 88.0),
     }
-    if allowed_this_run <= 0:
-        env['CONTROLLED_FALLBACK_ENABLED'] = 'false'
 
     append_env(env)
     report = {
         'status': 'ok',
+        'policy_version': POLICY_VERSION,
         'today_local': today,
         'existing_today_picks': existing,
         'target_picks': target,
-        'soft_cap_picks': soft_cap,
-        'hard_cap_picks': hard_cap,
-        'configured_hard_cap_picks': configured_hard_cap,
-        'volume_soft_cap_picks': volume_soft_cap,
+        'stage': stage,
+        'telemetry_soft_cap_picks': telemetry_soft_cap,
+        'telemetry_hard_cap_picks': telemetry_hard_cap,
+        'hard_stop_removed': True,
         'max_picks_per_run': max_per_run,
         'scheduled_max_picks_per_run': scheduled_max_per_run,
         'manual_max_picks_per_run': manual_max_per_run,
+        'after_target_max_picks_per_run': after_target_max_per_run,
         'is_manual_run': is_manual_run,
         'upstream_pick_cap': upstream,
         'allowed_this_run': allowed_this_run,
         'reason': reason,
+        'thresholds': thresholds,
         'counts': counts,
         'env': env,
-        'quality_note': 'Daily top5 policy targets about 5 picks/day, spreads publishing through the day at 1-2 picks per run, keeps Tier C disabled, relaxes only Tier B/proxy reserve gates, preserves hard market guards, and never raises a stricter upstream volume cap.',
+        'quality_note': 'Daily top5 policy no longer applies hard/soft stops. It targets about 5 picks/day by keeping fallback enabled and switching to 1 pick/run with stricter EV/edge/confidence/quality thresholds after the target is reached. Tier C remains disabled.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
