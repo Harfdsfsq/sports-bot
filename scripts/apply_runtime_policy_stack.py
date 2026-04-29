@@ -15,6 +15,7 @@ PATCHES = [
     Path("scripts/patch_weather_location_policy.py"),
     Path("scripts/patch_oddspapi_rapidapi.py"),
     Path("scripts/patch_oddspapi_nested_schema.py"),
+    Path("scripts/patch_oddspapi_inline_offers.py"),
     Path("scripts/fix_report_conclusion.py"),
     Path("scripts/check_publication_runtime_syntax.py"),
     Path("scripts/patch_detailed_report_inventory_counts.py"),
