@@ -20,7 +20,7 @@ ROOT = Path('.').resolve()
 UTC = timezone.utc
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 OUT = ROOT / '.data' / 'exports' / 'latest-quality-first-runtime-policy.json'
-POLICY_VERSION = 'v2-quality-first-totals-b-tier-xg-10p5'
+POLICY_VERSION = 'v3-quality-first-totals-b-tier-ev6p3'
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -80,19 +80,19 @@ def main() -> int:
         'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE': '64.0',
         'CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY': '62.0',
         'CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP': '3.5',
-        'CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT': '7.0',
+        'CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT': '6.3',
         'CONTROLLED_FALLBACK_TIER_B_MIN_PUBLICATION_SCORE': '14',
         'CONTROLLED_FALLBACK_TIER_B_MAX_ODDS': '2.35',
 
-        # Final value gates.
+        # Final value gates. 6.3% keeps target volume possible without admitting thin value.
         'CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP': '3.2',
-        'CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT': '6.8',
+        'CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT': '6.3',
         'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP': '3.5',
-        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT': '7.0',
+        'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT': '6.3',
         'CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE': '64.0',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': '64.0',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': '3.5',
-        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': '7.0',
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': '6.3',
 
         # Totals sanity remains mandatory. Tier B is allowed a small extra proxy-xG gap,
         # but the hard reject still blocks obvious model-vs-xG disagreements.
@@ -132,7 +132,8 @@ def main() -> int:
             'diagnostics': 'all generated candidates can still be tracked in reports/shadow, but weak families are blocked from Telegram',
             'historical_reason': 'totals is the only historically positive family; high_odds, non_core_league and single_book are top loss tags',
             'target': 'about 5 best picks/day when value exists, no forced volume',
-            'xg_tuning': 'Tier B totals xG gap raised from 9.0 to 10.5 while hard reject remains 12.0',
+            'xg_tuning': 'Tier B totals xG gap is 10.5 while hard reject remains 12.0',
+            'ev_tuning': 'Tier B/final/extra EV threshold is 6.3% for two-book totals with strong confidence and xG sanity',
         },
     }
     write_json(OUT, report)
