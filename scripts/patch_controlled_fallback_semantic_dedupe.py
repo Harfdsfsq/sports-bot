@@ -35,11 +35,18 @@ def _dedupe_kickoff_bucket(candidate: dict[str, Any]) -> str:
     return kickoff.astimezone(UTC).strftime('%Y-%m-%dT%H:%M')
 
 
+def _semantic_match_raw(candidate: dict[str, Any]) -> str:
+    home = _dedupe_norm_text(candidate.get('home_team') or candidate.get('home') or '')
+    away = _dedupe_norm_text(candidate.get('away_team') or candidate.get('away') or '')
+    kickoff = _dedupe_kickoff_bucket(candidate)
+    if home and away and kickoff:
+        return '|'.join([home, away, kickoff])
+    return str(candidate.get('match_key') or '').strip().lower()
+
+
 def _semantic_dedupe_raw(candidate: dict[str, Any]) -> str:
     return '|'.join([
-        _dedupe_norm_text(candidate.get('home_team') or candidate.get('home') or ''),
-        _dedupe_norm_text(candidate.get('away_team') or candidate.get('away') or ''),
-        _dedupe_kickoff_bucket(candidate),
+        _semantic_match_raw(candidate),
         _dedupe_norm_text(candidate.get('family') or ''),
         _dedupe_norm_text(candidate.get('selection') or ''),
         _dedupe_norm_text(candidate.get('selection_key') or ''),
@@ -59,6 +66,16 @@ def _legacy_dedupe_raw(candidate: dict[str, Any]) -> str:
     ])
 
 
+def all_match_dedupe_keys(candidate: dict[str, Any]) -> list[str]:
+    keys: list[str] = []
+    for raw in (_semantic_match_raw(candidate), str(candidate.get('match_key') or '').strip().lower()):
+        if raw.strip('|'):
+            value = hashlib.sha1(raw.encode('utf-8')).hexdigest()
+            if value not in keys:
+                keys.append(value)
+    return keys
+
+
 def all_dedupe_keys(candidate: dict[str, Any]) -> list[str]:
     keys: list[str] = []
     for raw in (_semantic_dedupe_raw(candidate), _legacy_dedupe_raw(candidate)):
@@ -76,12 +93,17 @@ def dedupe_key(candidate: dict[str, Any]) -> str:
 
 DUP_BLOCK = r'''def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> str | None:
     keys = set(all_dedupe_keys(candidate))
+    match_keys = set(all_match_dedupe_keys(candidate))
     for key in keys:
         if key in sent_index:
             return 'duplicate_fallback_sent_index'
     for row in sent_index.values():
-        if isinstance(row, dict) and keys & set(all_dedupe_keys(row)):
+        if not isinstance(row, dict):
+            continue
+        if keys & set(all_dedupe_keys(row)):
             return 'duplicate_fallback_sent_index_semantic'
+        if match_keys & set(all_match_dedupe_keys(row)):
+            return 'duplicate_fallback_same_match_sent_index'
 
     state = load_json('.data/state.json', {})
     if not isinstance(state, dict):
@@ -98,8 +120,12 @@ DUP_BLOCK = r'''def duplicate_reason(candidate: dict[str, Any], sent_index: dict
         if not isinstance(rows, list):
             continue
         for row in rows:
-            if isinstance(row, dict) and keys & set(all_dedupe_keys(row)):
+            if not isinstance(row, dict):
+                continue
+            if keys & set(all_dedupe_keys(row)):
                 return f'duplicate_state:{collection}'
+            if match_keys & set(all_match_dedupe_keys(row)):
+                return f'duplicate_same_match_state:{collection}'
     return None
 '''
 
@@ -120,17 +146,17 @@ def main() -> int:
         return 0
     src = PATH.read_text(encoding='utf-8')
     original = src
-    if 'def all_dedupe_keys(' not in src:
+    if 'def all_match_dedupe_keys(' not in src:
         src, ok = replace_block(src, DEDUPE_START, DEDUPE_END, DEDUPE_BLOCK)
         if not ok:
             print('warn: dedupe_key block not found')
-    if 'duplicate_fallback_sent_index_semantic' not in src:
+    if 'duplicate_fallback_same_match_sent_index' not in src:
         src, ok = replace_block(src, DUP_START, DUP_END, DUP_BLOCK)
         if not ok:
             print('warn: duplicate_reason block not found')
     if src != original:
         PATH.write_text(src, encoding='utf-8')
-        print('patched: semantic controlled-fallback dedupe')
+        print('patched: same-match controlled-fallback dedupe')
     else:
         print('already patched or no changes')
     return 0
