@@ -7,6 +7,7 @@ from pathlib import Path
 # Clean runtime stack. Legacy one-off patches are intentionally not executed here.
 # Important fixes now live either in normal code or in apply_clean_runtime_system.py.
 PATCHES = [
+    Path("scripts/patch_clean_provider_parsers.py"),
     Path("scripts/apply_clean_runtime_system.py"),
     Path("scripts/patch_provider_budget_clean_runtime.py"),
     Path("scripts/apply_publication_same_match_dedupe_patch.py"),
@@ -16,6 +17,7 @@ PATCHES = [
 ]
 
 REQUIRED = {
+    "patch_clean_provider_parsers.py",
     "apply_clean_runtime_system.py",
     "patch_provider_budget_clean_runtime.py",
     "check_publication_runtime_syntax.py",
