@@ -7,6 +7,13 @@ with the top5 publishing policy and could disable fallback evaluation entirely.
 The single source of truth is now scripts/apply_daily_best5_governor.py.
 """
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from scripts.apply_daily_best5_governor import main
 
 
