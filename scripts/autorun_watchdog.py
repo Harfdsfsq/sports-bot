@@ -13,7 +13,7 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v20-msk-delayed-slot-aware'
+POLICY_VERSION = 'v21-msk-slot-aware-watchdog-catchup'
 
 # Primary workflow slots are at 00 minutes every two hours in MSK.
 # Europe/Moscow = UTC+3, so the UTC schedule is:
@@ -26,8 +26,10 @@ PRIMARY_WINDOW_MINUTES = max(4, int(float(os.getenv('AUTORUN_PRIMARY_WINDOW_MINU
 DELAYED_PRIMARY_WINDOW_MINUTES = max(PRIMARY_WINDOW_MINUTES, int(float(os.getenv('AUTORUN_DELAYED_PRIMARY_WINDOW_MINUTES', '90'))))
 WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '5')))
 WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '8'))))
+CATCHUP_DELAY_MINUTES = int(float(os.getenv('AUTORUN_CATCHUP_DELAY_MINUTES', '17')))
+CATCHUP_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_CATCHUP_WINDOW_MINUTES', '10'))))
 
-# Backward-compatible safety net. Slot-aware matching is primary; age is used only as an extra guard.
+# Backward-compatible safety net for state files created before slot keys existed.
 RECENT_SUCCESS_GRACE_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_RECENT_SUCCESS_MINUTES', '90')))
 
 
@@ -49,6 +51,7 @@ def parse_primary_hours() -> set[int]:
 
 PRIMARY_UTC_HOURS = parse_primary_hours()
 WATCHDOG_MINUTE = (PRIMARY_MINUTE + WATCHDOG_DELAY_MINUTES) % 60
+CATCHUP_MINUTE = (PRIMARY_MINUTE + CATCHUP_DELAY_MINUTES) % 60
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -112,23 +115,8 @@ def minutes_since_slot(now_utc: datetime, slot_utc: datetime | None = None) -> f
     return max(0.0, (now_utc.astimezone(UTC) - slot).total_seconds() / 60.0)
 
 
-def latest_primary_slot(now_utc: datetime) -> datetime:
-    now = now_utc.astimezone(UTC)
-    candidates: list[datetime] = []
-    for day_delta in (0, 1):
-        day = (now - timedelta(days=day_delta)).date()
-        for hour in PRIMARY_UTC_HOURS:
-            candidate = datetime(day.year, day.month, day.day, hour, PRIMARY_MINUTE, tzinfo=UTC)
-            if candidate <= now:
-                candidates.append(candidate)
-    if not candidates:
-        return now.replace(minute=PRIMARY_MINUTE, second=0, microsecond=0)
-    return max(candidates)
-
-
-def minutes_since_slot(now_utc: datetime, slot_utc: datetime | None = None) -> float:
-    slot = slot_utc or latest_primary_slot(now_utc)
-    return max(0.0, (now_utc.astimezone(UTC) - slot).total_seconds() / 60.0)
+def is_primary_slot(now_utc: datetime) -> bool:
+    return minutes_since_slot(now_utc) <= PRIMARY_WINDOW_MINUTES
 
 
 def is_watchdog_slot(now_utc: datetime) -> bool:
@@ -136,8 +124,9 @@ def is_watchdog_slot(now_utc: datetime) -> bool:
     return WATCHDOG_DELAY_MINUTES <= elapsed <= (WATCHDOG_DELAY_MINUTES + WATCHDOG_WINDOW_MINUTES)
 
 
-def is_primary_slot(now_utc: datetime) -> bool:
-    return minutes_since_slot(now_utc) <= PRIMARY_WINDOW_MINUTES
+def is_catchup_slot(now_utc: datetime) -> bool:
+    elapsed = minutes_since_slot(now_utc)
+    return CATCHUP_DELAY_MINUTES <= elapsed <= (CATCHUP_DELAY_MINUTES + CATCHUP_WINDOW_MINUTES)
 
 
 def is_delayed_primary_slot(now_utc: datetime) -> bool:
@@ -162,18 +151,35 @@ def state_age_minutes(state: dict[str, Any], now_utc: datetime) -> float | None:
     return max(0.0, (now_utc - last).total_seconds() / 60.0)
 
 
-def should_watchdog_skip(state: dict[str, Any], slot_key: str, age: float | None) -> tuple[bool, str]:
+def current_slot_already_succeeded(state: dict[str, Any], slot_key: str, age: float | None) -> tuple[bool, str]:
     last_slot = str(state.get('last_successful_slot_key') or '').strip()
     if last_slot and last_slot == slot_key:
-        return True, 'watchdog_skip_current_slot_success'
-
-    # Backward compatibility for old state files that do not yet contain last_successful_slot_key.
+        return True, 'current_slot_already_succeeded'
     if not last_slot and age is not None and age <= RECENT_SUCCESS_GRACE_MINUTES:
-        return True, f'watchdog_skip_recent_success_legacy_{age:.1f}m'
+        return True, f'recent_success_legacy_{age:.1f}m'
+    return False, 'current_slot_not_completed'
 
-    if last_slot and last_slot != slot_key:
-        return False, 'watchdog_failsafe_run_no_success_for_current_slot'
-    return False, 'watchdog_failsafe_run_missing_current_slot_success'
+
+def scheduled_decision(state: dict[str, Any], now_utc: datetime, slot_key: str, age: float | None) -> tuple[bool, str]:
+    elapsed = minutes_since_slot(now_utc)
+    primary = is_primary_slot(now_utc)
+    watchdog = is_watchdog_slot(now_utc)
+    catchup = is_catchup_slot(now_utc)
+    delayed = is_delayed_primary_slot(now_utc)
+
+    already_done, done_reason = current_slot_already_succeeded(state, slot_key, age)
+    if already_done:
+        return True, f'skip_{done_reason}'
+
+    if primary:
+        return False, 'primary_scheduled_run'
+    if watchdog:
+        return False, 'watchdog_failsafe_run_missing_current_slot_success'
+    if catchup:
+        return False, 'catchup_failsafe_run_missing_current_slot_success'
+    if delayed:
+        return False, f'delayed_primary_scheduled_run_{elapsed:.1f}m'
+    return False, f'scheduled_run_outside_known_slot_run_anyway_{elapsed:.1f}m'
 
 
 def preflight() -> int:
@@ -181,32 +187,24 @@ def preflight() -> int:
     now_msk = now_utc.astimezone(MSK)
     slot_key = current_slot_key(now_utc)
     slot_local_key = current_slot_local_key(now_utc)
+    elapsed = minutes_since_slot(now_utc)
     event = os.getenv('GITHUB_EVENT_NAME', '')
     state = load_json(STATE_PATH, {})
     if not isinstance(state, dict):
         state = {}
 
-    watchdog = event == 'schedule' and is_watchdog_slot(now_utc)
     primary = event == 'schedule' and is_primary_slot(now_utc)
+    watchdog = event == 'schedule' and is_watchdog_slot(now_utc)
+    catchup = event == 'schedule' and is_catchup_slot(now_utc)
     delayed_primary = event == 'schedule' and is_delayed_primary_slot(now_utc)
     age = state_age_minutes(state, now_utc)
     skip_main = False
     reason = 'non_schedule_event'
 
     if event == 'schedule':
-        if watchdog:
-            skip_main, reason = should_watchdog_skip(state, slot_key, age)
-            if skip_main and age is not None:
-                reason = f'{reason}_{age:.1f}m'
-        elif primary:
-            skip_main = False
-            reason = 'primary_scheduled_run'
-        elif delayed_primary:
-            skip_main = False
-            reason = 'delayed_primary_scheduled_run'
-        else:
-            skip_main = False
-            reason = 'scheduled_run_outside_known_slot_run_anyway'
+        skip_main, reason = scheduled_decision(state, now_utc, slot_key, age)
+        if skip_main and age is not None:
+            reason = f'{reason}_{age:.1f}m'
 
     env = {
         'AUTORUN_POLICY_VERSION': POLICY_VERSION,
@@ -214,9 +212,11 @@ def preflight() -> int:
         'AUTORUN_MSK_NOW': now_msk.isoformat(),
         'AUTORUN_CURRENT_SLOT_KEY': slot_key,
         'AUTORUN_CURRENT_SLOT_LOCAL_KEY': slot_local_key,
+        'AUTORUN_SLOT_ELAPSED_MINUTES': f'{elapsed:.1f}',
         'AUTORUN_IS_PRIMARY_SLOT': str(primary).lower(),
         'AUTORUN_IS_DELAYED_PRIMARY_SLOT': str(delayed_primary).lower(),
         'AUTORUN_IS_WATCHDOG_SLOT': str(watchdog).lower(),
+        'AUTORUN_IS_CATCHUP_SLOT': str(catchup).lower(),
         'AUTORUN_SKIP_MAIN': str(skip_main).lower(),
         'AUTORUN_DECISION_REASON': reason,
         'AUTORUN_LAST_SUCCESS_AGE_MINUTES': '' if age is None else f'{age:.1f}',
@@ -233,10 +233,11 @@ def preflight() -> int:
         'last_is_primary_slot': primary,
         'last_is_delayed_primary_slot': delayed_primary,
         'last_is_watchdog_slot': watchdog,
+        'last_is_catchup_slot': catchup,
         'last_skip_main': skip_main,
         'last_decision_reason': reason,
         'last_success_age_minutes': age,
-        'last_slot_elapsed_minutes': round(minutes_since_slot(now_utc), 1),
+        'last_slot_elapsed_minutes': round(elapsed, 1),
         'last_successful_slot_key': state.get('last_successful_slot_key'),
         'recent_success_grace_minutes': RECENT_SUCCESS_GRACE_MINUTES,
         'primary_utc_hours': sorted(PRIMARY_UTC_HOURS),
@@ -246,6 +247,9 @@ def preflight() -> int:
         'watchdog_minute': WATCHDOG_MINUTE,
         'watchdog_delay_minutes': WATCHDOG_DELAY_MINUTES,
         'watchdog_window_minutes': WATCHDOG_WINDOW_MINUTES,
+        'catchup_minute': CATCHUP_MINUTE,
+        'catchup_delay_minutes': CATCHUP_DELAY_MINUTES,
+        'catchup_window_minutes': CATCHUP_WINDOW_MINUTES,
     })
     write_json(STATE_PATH, state)
     write_json(EXPORT_PATH, state)
