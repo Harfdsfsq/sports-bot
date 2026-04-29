@@ -28,7 +28,7 @@ INIT_NEW = """        self.settings = settings
                 or \"\"
             ).strip()
             self.api_key = rapidapi_key
-            self.base_url = str(os.getenv(\"ODDSPAPI_BASE_URL\") or f\"https://{self.rapidapi_host}/v4\").rstrip(\"/\")
+            self.base_url = str(os.getenv(\"ODDSPAPI_BASE_URL\") or f\"https://{self.rapidapi_host}\").rstrip(\"/\")
         self.timeout = float(getattr(settings, \"oddspapi_timeout_seconds\", 12.0) or 12.0)
 """
 
@@ -45,6 +45,9 @@ REQUEST_NEW = """                request_params = dict(params or {})
                     if not self.rapidapi_use_query_api_key:
                         request_params.pop(\"apiKey\", None)
                 response = await client.get(f\"{self.base_url}{path}\", params=request_params, headers=headers)
+                if self.rapidapi_enabled and response.status_code == 404 and self.base_url.rstrip(\"/\").endswith(\"/v4\"):
+                    root_url = self.base_url.rstrip(\"/\")[:-3].rstrip(\"/\")
+                    response = await client.get(f\"{root_url}{path}\", params=request_params, headers=headers)
 """
 
 
@@ -66,6 +69,14 @@ def main() -> int:
             print('warn: oddspapi request block not found')
         else:
             src = src.replace(REQUEST_OLD, REQUEST_NEW, 1)
+    if 'https://{self.rapidapi_host}/v4' in src:
+        src = src.replace('https://{self.rapidapi_host}/v4', 'https://{self.rapidapi_host}')
+    if 'root_url = self.base_url.rstrip("/")[:-3].rstrip("/")' not in src and 'response = await client.get(f"{self.base_url}{path}", params=request_params, headers=headers)' in src:
+        src = src.replace(
+            '                response = await client.get(f"{self.base_url}{path}", params=request_params, headers=headers)\n',
+            REQUEST_NEW,
+            1,
+        )
     if src != original:
         PATH.write_text(src, encoding='utf-8')
         print(f'patched: {PATH}')
