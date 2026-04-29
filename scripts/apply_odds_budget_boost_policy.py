@@ -63,46 +63,58 @@ def main() -> int:
         providers = {}
         policy['providers'] = providers
 
-    # RULES.txt: odds-api.io allows 100 requests/hour.
-    # Run cadence is every 2 hours, so 80/run stays under hourly pressure and
-    # 1200/day prevents late-night runs from becoming line-less after manual runs.
+    odds_global = os.getenv('ODDS_API_IO_PER_RUN_MAX', '140')
+    odds_account1 = os.getenv('ODDS_API_IO_ACCOUNT1_PER_RUN_MAX', '70')
+    odds_account2 = os.getenv('ODDS_API_IO_ACCOUNT2_PER_RUN_MAX', '70')
+
+    # RULES.txt: each odds-api.io free account allows 100 requests/hour and 2 selected bookmakers.
+    # Dual-account mode keeps 2 books per account, not 4 books on one key.
     odds = patch_provider(providers, 'odds_api_io', {
-        'per_run_max': 80,
-        'safe_daily_budget': 1200,
+        'per_run_max': int(float(odds_global or 140)),
         'min_spacing_minutes': 0,
-        'limit': {'requests_per_hour': 100, 'bookmakers': 2, 'rules_source': 'RULES.txt'},
+        'limit': {
+            'requests_per_hour_per_account': 100,
+            'bookmakers_per_account': 2,
+            'budget_scope': 'per_run_dual_account',
+            'account1_bookmakers': ['Bet365', 'Unibet'],
+            'account2_bookmakers': ['Betfair Exchange', 'Sbobet'],
+            'rules_source': 'RULES.txt + dual-account user configuration',
+        },
         'env': {
             'ENABLE_ODDS_API_IO': 'true',
             'ODDS_API_IO_ENABLED': 'true',
-            'ODDS_API_IO_PER_RUN_MAX': '80',
+            'ODDS_API_IO_PER_RUN_MAX': odds_global,
+            'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': odds_global,
+            'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': odds_account1,
+            'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': odds_account2,
+            'ODDS_API_IO_BOOKMAKERS': 'Bet365,Unibet',
+            'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
+            'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
             'ODDS_API_IO_PAGE_LIMIT': '100',
             'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
             'MAX_MATCHES_FOR_ODDS_FETCH': '320',
         },
     })
 
-    # Confirmation providers: keep quality filters intact, but avoid late-run
-    # exhaustion that leaves strong near-miss candidates as sources=1/proxy.
     sstats = patch_provider(providers, 'sstats', {
-        'per_run_max': 80,
-        'safe_daily_budget': 1200,
+        'per_run_max': 150,
         'min_spacing_minutes': 0,
         'limit': {'requests_per_minute': 150, 'rules_source': 'RULES.txt'},
         'env': {
             'ENABLE_SSTATS': 'true',
             'ENABLE_SSTATS_CONTEXT': 'true',
             'SSTATS_ENABLED': 'true',
-            'SSTATS_PER_RUN_MAX': '80',
-            'SSTATS_REQUESTS_MAX_PER_RUN': '80',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '180',
-            'SSTATS_LOOKBACK_DAYS': '30',
+            'SSTATS_PER_RUN_MAX': '150',
+            'SSTATS_REQUESTS_MAX_PER_RUN': '150',
+            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '220',
+            'SSTATS_LOOKBACK_DAYS': '35',
             'SSTATS_RECENT_MATCHES': '10',
         },
     })
 
     thesportsdb = patch_provider(providers, 'thesportsdb', {
         'per_run_max': 30,
-        'safe_daily_budget': 600,
         'min_spacing_minutes': 0,
         'limit': {'requests_per_minute': 30, 'rules_source': 'RULES.txt'},
         'env': {
@@ -117,7 +129,6 @@ def main() -> int:
 
     football = patch_provider(providers, 'football_data', {
         'per_run_max': 16,
-        'safe_daily_budget': 240,
         'min_spacing_minutes': 2,
         'limit': {'requests_per_minute_registered': 10, 'rules_source': 'RULES.txt'},
         'env': {
@@ -132,7 +143,6 @@ def main() -> int:
 
     openfootball = patch_provider(providers, 'openfootball_public', {
         'per_run_max': 18,
-        'safe_daily_budget': 480,
         'min_spacing_minutes': 0,
         'env': {
             'ENABLE_OPENFOOTBALL_CONTEXT': 'true',
@@ -143,18 +153,23 @@ def main() -> int:
         },
     })
 
-    policy['version'] = 'v19-rules-api-budget-late-confirmation-reserve'
+    policy['version'] = 'v20-dual-account-odds-api-io-budget'
     write_json(POLICY_PATH, policy)
 
     env = {
         'RULES_API_BUDGET_POLICY_VERSION': policy['version'],
         'ALL_SOURCES_FREE_MAXIMIZE': 'false',
-        'ODDS_API_IO_PER_RUN_MAX': '80',
+        'ODDS_API_IO_PER_RUN_MAX': odds_global,
+        'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': odds_global,
+        'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': odds_account1,
+        'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': odds_account2,
+        'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
+        'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
         'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
         'MAX_MATCHES_FOR_ODDS_FETCH': '320',
-        'SSTATS_PER_RUN_MAX': '80',
-        'SSTATS_REQUESTS_MAX_PER_RUN': '80',
-        'SSTATS_CONTEXT_MATCH_LIMIT': '180',
+        'SSTATS_PER_RUN_MAX': '150',
+        'SSTATS_REQUESTS_MAX_PER_RUN': '150',
+        'SSTATS_CONTEXT_MATCH_LIMIT': '220',
         'THESPORTSDB_PER_RUN_MAX': '30',
         'THESPORTSDB_REQUESTS_MAX_PER_RUN': '30',
         'THESPORTSDB_CONTEXT_MATCH_LIMIT': '180',
@@ -172,13 +187,13 @@ def main() -> int:
         'policy_path': str(POLICY_PATH),
         'version': policy['version'],
         'patched': {
-            'odds_api_io': {'per_run_max': odds.get('per_run_max'), 'safe_daily_budget': odds.get('safe_daily_budget'), 'env': odds.get('env')},
-            'sstats': {'per_run_max': sstats.get('per_run_max'), 'safe_daily_budget': sstats.get('safe_daily_budget'), 'env': sstats.get('env')},
-            'thesportsdb': {'per_run_max': thesportsdb.get('per_run_max'), 'safe_daily_budget': thesportsdb.get('safe_daily_budget'), 'env': thesportsdb.get('env')},
-            'football_data': {'per_run_max': football.get('per_run_max'), 'safe_daily_budget': football.get('safe_daily_budget'), 'env': football.get('env')},
-            'openfootball_public': {'per_run_max': openfootball.get('per_run_max'), 'safe_daily_budget': openfootball.get('safe_daily_budget'), 'env': openfootball.get('env')},
+            'odds_api_io': {'per_run_max': odds.get('per_run_max'), 'limit': odds.get('limit'), 'env': odds.get('env')},
+            'sstats': {'per_run_max': sstats.get('per_run_max'), 'env': sstats.get('env')},
+            'thesportsdb': {'per_run_max': thesportsdb.get('per_run_max'), 'env': thesportsdb.get('env')},
+            'football_data': {'per_run_max': football.get('per_run_max'), 'env': football.get('env')},
+            'openfootball_public': {'per_run_max': openfootball.get('per_run_max'), 'env': openfootball.get('env')},
         },
-        'reason': 'Late runs had odds again but confirmation providers were exhausted, keeping high-EV candidates as single-source/proxy. This raises confirmation budgets under RULES.txt without relaxing quality filters.',
+        'reason': 'Align legacy odds budget boost with dual-account odds-api.io mode so it no longer downgrades provider max to 80.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
