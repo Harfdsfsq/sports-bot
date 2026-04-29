@@ -5,6 +5,7 @@ from __future__ import annotations
 This script replaces the growing stack of one-off runtime patches with a small,
 explicit set of runtime decisions:
   - Bzzoiro uses v2 provider implementation.
+  - SStats uses a clean v1 provider implementation.
   - Bzzoiro has no planned request/context cap.
   - odds-api.io dual-account and SStats capacities remain explicit.
   - legacy budget files are normalized so old low caps do not win later.
@@ -21,7 +22,7 @@ ROOT = Path('.').resolve()
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 POLICY_PATH = ROOT / 'config' / 'provider_request_budget.json'
 OUT = ROOT / '.data' / 'exports' / 'latest-clean-runtime-system.json'
-VERSION = 'v1-clean-bzzoiro-v2-no-limit'
+VERSION = 'v2-clean-bzzoiro-v2-sstats-v1'
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -60,11 +61,11 @@ def merge_provider(providers: dict[str, Any], name: str, patch: dict[str, Any]) 
     return row
 
 
-def patch_runner_to_bzzoiro_v2() -> bool:
+def patch_runner_provider(module_from: str, module_to: str, attr: str, cls: str) -> bool:
     path = ROOT / 'app' / 'services' / 'runner.py'
     text = path.read_text(encoding='utf-8')
-    old = "self.bzzoiro = self._safe_provider('app.providers.bzzoiro', 'BzzoiroContextProvider')"
-    new = "self.bzzoiro = self._safe_provider('app.providers.bzzoiro_v2', 'BzzoiroContextProvider')"
+    old = f"self.{attr} = self._safe_provider('{module_from}', '{cls}')"
+    new = f"self.{attr} = self._safe_provider('{module_to}', '{cls}')"
     if new in text:
         return False
     if old not in text:
@@ -147,18 +148,26 @@ def apply_policy() -> dict[str, Any]:
     sstats = merge_provider(providers, 'sstats', {
         'enabled': True,
         'per_run_max': 150,
+        'safe_daily_budget': 0,
+        'safe_monthly_budget': 0,
         'min_spacing_minutes': 0,
         'limit': {'requests_per_minute': 150, 'budget_scope': 'per_run'},
         'env': {
             'ENABLE_SSTATS': 'true',
             'ENABLE_SSTATS_CONTEXT': 'true',
             'SSTATS_ENABLED': 'true',
+            'SSTATS_API_VERSION': 'v1',
+            'SSTATS_BASE_URL': 'https://api.sstats.net',
             'SSTATS_PER_RUN_MAX': '150',
             'SSTATS_REQUESTS_MAX_PER_RUN': '150',
             'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '220',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '0',
             'SSTATS_LOOKBACK_DAYS': '35',
             'SSTATS_RECENT_MATCHES': '10',
+            'SSTATS_DETAIL_MATCH_LIMIT': '80',
+            'SSTATS_FETCH_LAST_GAMES_STATS': 'true',
+            'SSTATS_FETCH_GLICKO': 'true',
+            'SSTATS_FETCH_PROFITS': 'false',
         },
     })
 
@@ -170,9 +179,10 @@ def apply_policy() -> dict[str, Any]:
 
     policy['providers'] = providers
     policy['version'] = VERSION
-    policy['description'] = 'Clean runtime policy: Bzzoiro v2 unlimited, odds-api.io dual account, SStats 150/run, legacy low caps normalized.'
+    policy['description'] = 'Clean runtime policy: Bzzoiro v2 unlimited, clean SStats v1 150/run, odds-api.io dual account, legacy low caps normalized.'
     notes = list(policy.get('notes') or []) if isinstance(policy.get('notes'), list) else []
     notes.append('Bzzoiro v2 is treated as unlimited/free: no per-run prebudget and no context match slicing unless BZZOIRO_ENFORCE_CONTEXT_LIMIT=true.')
+    notes.append('SStats uses app.providers.sstats_v1 and SStats OpenAPI endpoints: /Games/list, /Games/last-games-stats, /Games/glicko/{id}.')
     notes.append('Legacy provider_request_budget.json low caps are overwritten by this clean policy before runtime.')
     policy['notes'] = notes[-12:]
     write_json(POLICY_PATH, policy)
@@ -181,21 +191,26 @@ def apply_policy() -> dict[str, Any]:
 
 def run_check() -> dict[str, Any]:
     result: dict[str, Any] = {'compiled': [], 'imports': []}
-    files = ['app/providers/bzzoiro_v2.py', 'app/services/runner.py', 'scripts/publish_controlled_fallback.py']
+    files = ['app/providers/bzzoiro_v2.py', 'app/providers/sstats_v1.py', 'app/services/runner.py', 'scripts/publish_controlled_fallback.py']
     for rel in files:
         proc = subprocess.run([sys.executable, '-m', 'py_compile', rel], cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         result['compiled'].append({'file': rel, 'returncode': proc.returncode, 'stderr_tail': proc.stderr[-500:]})
         if proc.returncode != 0:
             result['status'] = 'compile_failed'
             return result
-    proc = subprocess.run([sys.executable, '-c', 'from app.providers.bzzoiro_v2 import BzzoiroContextProvider; from app.services.runner import PredictionRunner; print("ok")'], cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    proc = subprocess.run([
+        sys.executable,
+        '-c',
+        'from app.providers.bzzoiro_v2 import BzzoiroContextProvider; from app.providers.sstats_v1 import SStatsContextProvider; from app.services.runner import PredictionRunner; print("ok")'
+    ], cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result['imports'].append({'returncode': proc.returncode, 'stdout': proc.stdout.strip(), 'stderr_tail': proc.stderr[-500:]})
     result['status'] = 'ok' if proc.returncode == 0 else 'import_failed'
     return result
 
 
 def main() -> int:
-    runner_changed = patch_runner_to_bzzoiro_v2()
+    runner_bzz_changed = patch_runner_provider('app.providers.bzzoiro', 'app.providers.bzzoiro_v2', 'bzzoiro', 'BzzoiroContextProvider')
+    runner_sstats_changed = patch_runner_provider('app.providers.sstats', 'app.providers.sstats_v1', 'sstats', 'SStatsContextProvider')
     providers = apply_policy()
     env = {
         'CLEAN_RUNTIME_SYSTEM_ACTIVE': 'true',
@@ -212,15 +227,30 @@ def main() -> int:
         'BZZOIRO_V2_MAX_EVENTS': '0',
         'BZZOIRO_V2_FETCH_EVENT_ODDS': 'true',
         'BZZOIRO_V2_FETCH_EVENT_STATS': 'true',
-        'ODDS_API_IO_PER_RUN_MAX': '140',
-        'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': '140',
+        'SSTATS_API_VERSION': 'v1',
+        'SSTATS_BASE_URL': 'https://api.sstats.net',
         'SSTATS_PER_RUN_MAX': '150',
         'SSTATS_REQUESTS_MAX_PER_RUN': '150',
         'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
+        'SSTATS_CONTEXT_MATCH_LIMIT': '0',
+        'SSTATS_DETAIL_MATCH_LIMIT': '80',
+        'SSTATS_FETCH_LAST_GAMES_STATS': 'true',
+        'SSTATS_FETCH_GLICKO': 'true',
+        'SSTATS_FETCH_PROFITS': 'false',
+        'ODDS_API_IO_PER_RUN_MAX': '140',
+        'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': '140',
     }
     append_env(env)
     check = run_check()
-    report = {'status': check.get('status'), 'version': VERSION, 'runner_bzzoiro_v2_changed': runner_changed, 'env': env, 'providers': providers, 'check': check}
+    report = {
+        'status': check.get('status'),
+        'version': VERSION,
+        'runner_bzzoiro_v2_changed': runner_bzz_changed,
+        'runner_sstats_v1_changed': runner_sstats_changed,
+        'env': env,
+        'providers': providers,
+        'check': check,
+    }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0 if check.get('status') == 'ok' else 1
