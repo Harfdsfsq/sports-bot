@@ -10,6 +10,7 @@ PATCHES = [
     Path("scripts/patch_clean_provider_parsers.py"),
     Path("scripts/apply_clean_runtime_system.py"),
     Path("scripts/patch_provider_budget_clean_runtime.py"),
+    Path("scripts/patch_api_budget_noise_policy.py"),
     Path("scripts/apply_publication_same_match_dedupe_patch.py"),
     Path("scripts/patch_near_miss_enrichment_targets.py"),
     Path("scripts/patch_weather_location_policy.py"),
