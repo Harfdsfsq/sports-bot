@@ -9,6 +9,7 @@ PATCHES = [
     Path("scripts/apply_odds_budget_boost_policy.py"),
     Path("scripts/apply_odds_api_io_dual_account_patch.py"),
     Path("scripts/apply_publication_same_match_dedupe_patch.py"),
+    Path("scripts/check_publication_runtime_syntax.py"),
     Path("scripts/apply_daily_top5_publish_policy.py"),
     Path("scripts/apply_day_inventory_runtime_patch.py"),
     Path("scripts/patch_inventory_tomorrow_and_nearmiss_runtime.py"),
@@ -24,7 +25,9 @@ def run_patch(path: Path) -> None:
         print(f"skip: {path}")
         return
     print(f"running: {path}")
-    subprocess.run([sys.executable, str(path)], check=False)
+    proc = subprocess.run([sys.executable, str(path)], check=False)
+    if path.name == "check_publication_runtime_syntax.py" and proc.returncode != 0:
+        raise SystemExit(proc.returncode)
 
 
 def main() -> int:
