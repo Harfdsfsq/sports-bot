@@ -4,7 +4,17 @@ from pathlib import Path
 
 ROOT = Path('.').resolve()
 TARGET = ROOT / 'scripts' / 'publish_controlled_fallback.py'
-PATCH_VERSION = 'v1-same-match-dedupe'
+PATCH_VERSION = 'v2-same-match-dedupe-future-safe'
+MARKER = 'PUBLICATION_SAME_MATCH_DEDUPE_PATCH_VERSION = "v2-same-match-dedupe-future-safe"'
+
+
+def insert_marker_future_safe(text: str) -> str:
+    if 'PUBLICATION_SAME_MATCH_DEDUPE_PATCH_VERSION' in text:
+        return text
+    future = 'from __future__ import annotations\n'
+    if future in text:
+        return text.replace(future, future + MARKER + '\n', 1)
+    return MARKER + '\n' + text
 
 
 def main() -> int:
@@ -102,7 +112,7 @@ def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> s
         changed = True
 
     if changed:
-        text = 'PUBLICATION_SAME_MATCH_DEDUPE_PATCH_VERSION = "v1-same-match-dedupe"\n' + text
+        text = insert_marker_future_safe(text)
         TARGET.write_text(text, encoding='utf-8')
     print({'patch': PATCH_VERSION, 'changed': changed, 'target': str(TARGET)})
     return 0
