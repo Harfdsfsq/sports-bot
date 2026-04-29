@@ -11,6 +11,7 @@ PATCHES = [
     Path("scripts/apply_clean_runtime_system.py"),
     Path("scripts/patch_provider_budget_clean_runtime.py"),
     Path("scripts/apply_publication_same_match_dedupe_patch.py"),
+    Path("scripts/patch_near_miss_enrichment_targets.py"),
     Path("scripts/check_publication_runtime_syntax.py"),
     Path("scripts/patch_detailed_report_inventory_counts.py"),
     Path("scripts/apply_settlement_matching_patch.py"),
