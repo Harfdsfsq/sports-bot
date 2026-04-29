@@ -67,7 +67,8 @@ jobs:
       DAY_INVENTORY_MIN_READY_RATIO_PCT: "90"
       VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_5' }}
       DAILY_TOP5_TARGET_PICKS: "5"
-      DAILY_TOP5_HARD_CAP_PICKS: "7"
+      DAILY_TOP5_HARD_CAP_PICKS: "999"
+      DAILY_TOP5_NO_HARD_CAP: "true"
       DAILY_TOP5_MAX_PICKS_PER_RUN: "2"
       DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN: "2"
       DAILY_TOP5_EXTRA_PICK_MIN_EV_PCT: "6.0"
@@ -183,6 +184,7 @@ jobs:
           rm -f .data/exports/latest-day-inventory-coverage-merge.json
           rm -f .data/exports/latest-rules-api-budget-policy.json
           rm -f .data/exports/latest-daily-top5-publish-policy.json
+          rm -f .data/exports/latest-per-run-only-runtime-policy.json
           rm -f .data/exports/latest-day-inventory-coverage-audit.json
           rm -f .data/exports/latest-coverage-audit.json
           rm -f .data/exports/latest-history-guard-audit.json
@@ -249,6 +251,13 @@ jobs:
           python scripts/apply_runtime_policy_stack.py || true
           cat .data/exports/latest-rules-api-budget-policy.json || true
           cat .data/exports/latest-daily-top5-publish-policy.json || true
+
+      - name: Apply per-run API and target-5 no-cap policy
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/apply_per_run_only_runtime_policy.py
+          cat .data/exports/latest-per-run-only-runtime-policy.json || true
 
       - name: Apply provider request budget
         if: env.AUTORUN_SKIP_MAIN != 'true'
