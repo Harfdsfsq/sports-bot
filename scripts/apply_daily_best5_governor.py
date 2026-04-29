@@ -9,12 +9,13 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path('.').resolve()
 UTC = timezone.utc
-POLICY_VERSION = 'v1-unified-daily-best5-governor'
+POLICY_VERSION = 'v2-unified-daily-best5-no-hard-cap'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-daily-best5-governor.json'
 VOLUME_EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-volume-governor.json'
 TOP5_EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-daily-top5-publish-policy.json'
 STATE_PATH = ROOT / '.data' / 'daily-best5-governor-state.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
+NO_DAILY_HARD_CAP_SENTINEL = 999
 
 
 def app_tz() -> ZoneInfo:
@@ -172,6 +173,20 @@ def env_bool(name: str, default: bool = False) -> bool:
     return str(raw).strip().lower() in {'1', 'true', 'yes', 'on'}
 
 
+def no_daily_hard_cap_enabled() -> bool:
+    if env_bool('DAILY_TOP5_NO_HARD_CAP', False):
+        return True
+    if env_bool('VOLUME_NO_DAILY_HARD_CAP', False):
+        return True
+    if env_bool('CONTROLLED_FALLBACK_NO_DAILY_HARD_CAP', False):
+        return True
+    if as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS'), 0) >= NO_DAILY_HARD_CAP_SENTINEL:
+        return True
+    if as_int(os.getenv('VOLUME_DAILY_HARD_CAP_PICKS'), 0) >= NO_DAILY_HARD_CAP_SENTINEL:
+        return True
+    return False
+
+
 def minutes_from_midnight(local_now: datetime) -> int:
     return local_now.hour * 60 + local_now.minute
 
@@ -182,12 +197,27 @@ def expected_by_now(target: int, local_now: datetime) -> float:
     return max(0.0, min(float(target), float(target) * minutes_from_midnight(local_now) / 1440.0))
 
 
-def stage_for(existing: int, target: int, expected: float, local_now: datetime) -> str:
+def stage_for(existing: int, target: int, expected: float, local_now: datetime, no_hard_cap: bool = False) -> str:
+    gap = expected - float(existing)
+
+    if no_hard_cap:
+        # No-hard-cap mode means the daily target controls pacing/thresholds, not a stop sign.
+        # Once the target is reached, keep evaluating normal best-value candidates instead of
+        # switching to elite-only just because today's counter is already above target.
+        if existing >= target:
+            return 'target_met_best_available'
+        if local_now.hour >= 20 and existing < target:
+            return 'late_catchup'
+        if gap >= 1.25:
+            return 'behind_schedule_catchup'
+        if existing >= max(0, target - 1):
+            return 'last_target_pick'
+        return 'on_track_build'
+
     if existing >= target + 2:
         return 'ahead_elite_only'
     if existing >= target:
         return 'after_target_elite_only'
-    gap = expected - float(existing)
     if local_now.hour >= 20 and existing < target:
         return 'late_catchup'
     if gap >= 1.25:
@@ -253,6 +283,20 @@ def stage_policy(stage: str, existing: int, target: int, is_manual: bool) -> dic
             'final_min_ev_pct': 6.8,
             'stage_note': 'last pick to target: slightly stricter',
         })
+    elif stage == 'target_met_best_available':
+        base.update({
+            'allowed_this_run': 1,
+            'tier_b_min_confidence': 64.0,
+            'tier_b_min_quality': 61.0,
+            'tier_b_min_edge_pp': 3.2,
+            'tier_b_min_ev_pct': 6.5,
+            'tier_b_max_odds': 2.70,
+            'final_min_edge_pp': 3.0,
+            'final_min_ev_pct': 6.0,
+            'require_2_books': True,
+            'reject_proxy_single_book': True,
+            'stage_note': 'daily target reached, but no hard cap is active: keep normal best-available gates',
+        })
     elif stage == 'after_target_elite_only':
         base.update({
             'allowed_this_run': 1,
@@ -302,29 +346,33 @@ def bool_str(value: bool) -> str:
     return 'true' if value else 'false'
 
 
-def build_env(policy: dict[str, Any], target: int, existing: int, stage: str) -> dict[str, str]:
+def build_env(policy: dict[str, Any], target: int, existing: int, stage: str, no_hard_cap: bool) -> dict[str, str]:
     allowed = int(policy['allowed_this_run'])
     require_2_books = bool(policy['require_2_books'])
     reject_single = bool(policy['reject_proxy_single_book'])
     proxy_strict = bool(policy['proxy_single_source_strict'])
+    hard_cap = NO_DAILY_HARD_CAP_SENTINEL if no_hard_cap else target
 
     env = {
         'DAILY_BEST5_GOVERNOR_ACTIVE': 'true',
         'DAILY_BEST5_GOVERNOR_VERSION': POLICY_VERSION,
         'DAILY_TOP5_PUBLISH_POLICY_ACTIVE': 'true',
         'DAILY_TOP5_POLICY_VERSION': POLICY_VERSION,
+        'DAILY_TOP5_NO_HARD_CAP': bool_str(no_hard_cap),
         'VOLUME_POLICY_VERSION': POLICY_VERSION,
-        'VOLUME_POLICY_MODE': 'daily_best5',
+        'VOLUME_POLICY_MODE': 'daily_best5_no_hard_cap' if no_hard_cap else 'daily_best5',
         'VOLUME_POLICY_STAGE': stage,
+        'VOLUME_NO_DAILY_HARD_CAP': bool_str(no_hard_cap),
         'VOLUME_DAILY_TARGET_PICKS': str(target),
         'VOLUME_DAILY_SOFT_CAP_PICKS': str(target),
-        'VOLUME_DAILY_HARD_CAP_PICKS': str(target),
+        'VOLUME_DAILY_HARD_CAP_PICKS': str(hard_cap),
         'VOLUME_EXISTING_PICKS_TODAY': str(existing),
         'CONTROLLED_FALLBACK_ENABLED': 'true',
         'CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN': str(allowed),
         'CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN': str(allowed),
         'MAX_PICKS_PER_RUN': str(allowed),
         'CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH': '1',
+        'CONTROLLED_FALLBACK_DAILY_TARGET_MODE': 'target_5_average_no_daily_cap' if no_hard_cap else 'target_with_daily_elite_cap',
         'CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT': os.getenv('DAILY_BEST5_TOTAL_STAKE_CAP_PCT', '3.0'),
         'CONTROLLED_FALLBACK_SKIP_IF_STAKE_BELOW_MIN': 'true',
         'CONTROLLED_FALLBACK_EXTRA_PICK_STRICT': 'true',
@@ -367,7 +415,7 @@ def build_env(policy: dict[str, Any], target: int, existing: int, stage: str) ->
         'CONTROLLED_FALLBACK_DNB_MAX_XG_EV_UNCONDITIONAL_PCT': os.getenv('DAILY_BEST5_DNB_MAX_XG_EV_UNCONDITIONAL_PCT', '90.0'),
         'CONTROLLED_FALLBACK_DNB_MAX_XG_EDGE_PP': os.getenv('DAILY_BEST5_DNB_MAX_XG_EDGE_PP', '45.0'),
         'CONTROLLED_FALLBACK_DNB_MAX_NO_PUSH_PROBABILITY_PCT': os.getenv('DAILY_BEST5_DNB_MAX_NO_PUSH_PROBABILITY_PCT', '88.0'),
-        'CONTROLLED_FALLBACK_DAILY_TOP5_REASON': f'daily_best5:{stage}:{existing}/{target}',
+        'CONTROLLED_FALLBACK_DAILY_TOP5_REASON': f'daily_best5:{stage}:{existing}/{target}:no_hard_cap={bool_str(no_hard_cap)}',
     }
     return env
 
@@ -381,10 +429,11 @@ def main() -> int:
     counts = count_today_picks(today, tz)
     existing = as_int(counts.get('effective_today_picks'), 0)
     expected = expected_by_now(target, now_local)
-    stage = stage_for(existing, target, expected, now_local)
+    no_hard_cap = no_daily_hard_cap_enabled()
+    stage = stage_for(existing, target, expected, now_local, no_hard_cap=no_hard_cap)
     is_manual = str(os.getenv('GITHUB_EVENT_NAME') or '').strip().lower() == 'workflow_dispatch'
     policy = stage_policy(stage, existing, target, is_manual)
-    env = build_env(policy, target, existing, stage)
+    env = build_env(policy, target, existing, stage, no_hard_cap)
     append_env(env)
 
     payload = {
@@ -398,6 +447,7 @@ def main() -> int:
         'existing_today_picks': existing,
         'expected_by_now': round(expected, 3),
         'pace_gap': round(expected - existing, 3),
+        'no_daily_hard_cap': no_hard_cap,
         'stage': stage,
         'allowed_this_run': int(policy['allowed_this_run']),
         'is_manual_run': is_manual,
@@ -405,9 +455,9 @@ def main() -> int:
         'policy': policy,
         'applied_env': env,
         'quality_strategy': {
-            'summary': 'One unified daily governor targets the best ~5 picks/day by pacing and dynamic quality thresholds. It does not hard-disable fallback after a fixed cap.',
+            'summary': 'One unified daily governor targets the best ~5 picks/day by pacing and dynamic quality thresholds. In no-hard-cap mode it never switches to elite-only solely because today already reached the target.',
             'before_target': 'Allow 1-2 picks/run only when value, confidence, market confirmation and sanity guards pass.',
-            'after_target': 'Keep fallback enabled, but publish only elite extra picks with stricter EV/edge/confidence/quality.',
+            'after_target': 'If no-hard-cap mode is active, keep normal best-available gates with max 1 pick/run. If disabled, use elite-only extra picks.',
             'single_book_policy': 'No broad single-book shortcut. Telegram publication keeps two-book confirmation unless this file is explicitly changed.',
             'tier_c_publication': 'disabled',
         },
