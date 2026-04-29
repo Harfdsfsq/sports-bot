@@ -4,11 +4,14 @@ from __future__ import annotations
 
 This is intentionally narrow: only the files used by duplicate/open-risk guards
 are refreshed. Runtime artifacts from the current run are not touched.
+After refresh, fallback Telegram publications are materialized into state.json so
+bankroll/open-risk code can see pending controlled fallback bets.
 """
 
 import json
 import shutil
 import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -34,6 +37,20 @@ def is_json_file(path: Path) -> bool:
         return False
 
 
+def sync_fallback_sent_index_to_state(report: dict[str, object]) -> None:
+    script = ROOT / 'scripts' / 'sync_fallback_sent_index_to_state.py'
+    if not script.exists():
+        report['fallback_state_sync'] = {'status': 'missing'}
+        return
+    proc = subprocess.run([sys.executable, str(script)], cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=30)
+    report['fallback_state_sync'] = {
+        'status': 'ok' if proc.returncode == 0 else 'failed',
+        'returncode': proc.returncode,
+        'stdout_tail': proc.stdout[-1200:],
+        'stderr_tail': proc.stderr[-1200:],
+    }
+
+
 def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     report: dict[str, object] = {
@@ -48,6 +65,7 @@ def main() -> int:
     report['commands'].append({'cmd': 'git fetch origin main', 'returncode': fetch.returncode, 'stderr_tail': fetch.stderr[-500:]})
     if fetch.returncode != 0:
         report['status'] = 'fetch_failed_best_effort'
+        sync_fallback_sent_index_to_state(report)
         OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
@@ -73,6 +91,7 @@ def main() -> int:
             if backup.exists():
                 shutil.copy2(backup, path)
 
+    sync_fallback_sent_index_to_state(report)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
