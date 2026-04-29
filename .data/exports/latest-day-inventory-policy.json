@@ -1,6 +1,9 @@
 {
-  "age_minutes": 18.44,
+  "age_minutes": 7.56,
+  "coverage_maximize_active": false,
+  "coverage_maximize_until_local_date": null,
   "env_updates": {
+    "COVERAGE_MAXIMIZE_ACTIVE": "false",
     "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "football_data",
     "DAY_INVENTORY_DIRECT_MIN_MATCHES": "8",
     "DAY_INVENTORY_DIRECT_WINDOW_DAYS": "1",
@@ -14,21 +17,26 @@
   ],
   "inventory_exists": true,
   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-04-29.json",
-  "local_now": "2026-04-29T09:36:47.320222+03:00",
-  "matches_total": 84,
+  "local_now": "2026-04-29T09:50:12.018985+03:00",
+  "matches_ready_for_model": 63,
+  "matches_total": 82,
+  "matches_with_context": 63,
+  "matches_with_odds": 63,
   "min_matches_for_skip": 40,
+  "min_ready_ratio_pct": 85,
   "mode": "incremental_skip",
   "notes": [
-    "00:00 local run performs the large daily fixture bootstrap unless the inventory is already fresh.",
-    "Normal two-hour runs do not repeat the full fixture pull when the daily inventory is fresh.",
-    "Odds/context/weather enrichment is handled by the main bot run and then merged back into the inventory."
+    "Coverage-max mode is temporary and controlled by COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE.",
+    "When active, the inventory refreshes if odds/context/ready coverage is incomplete, even if the fixture list itself is fresh.",
+    "This increases data coverage only; prediction quality guards are not relaxed."
   ],
-  "policy_version": "daily-inventory-api-max-v1",
+  "policy_version": "daily-inventory-coverage-max-v2",
+  "ready_ratio_pct": 76.83,
   "reason": "skip_existing_inventory",
   "refresh_interval_hours": 6,
   "skip_build": true,
   "target_date": "2026-04-29",
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-04-29T06:18:20.857719+00:00",
-  "utc_now": "2026-04-29T06:36:47.320222+00:00"
+  "updated_at_utc": "2026-04-29T06:42:38.142380+00:00",
+  "utc_now": "2026-04-29T06:50:12.018985+00:00"
 }
