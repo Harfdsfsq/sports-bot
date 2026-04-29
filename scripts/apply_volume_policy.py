@@ -14,6 +14,7 @@ EXPORT_PATH = ROOT / ".data" / "exports" / "latest-volume-governor.json"
 
 MSK = ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
 UTC = timezone.utc
+POLICY_VERSION = "v13-target5-quality-governor-no-hard-stop"
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -59,14 +60,7 @@ def today_local() -> str:
 
 
 def row_timestamp(row: dict[str, Any]) -> Any:
-    for key in (
-        "sent_at",
-        "published_at",
-        "created_at",
-        "placed_at",
-        "timestamp",
-        "updated_at",
-    ):
+    for key in ("sent_at", "published_at", "created_at", "placed_at", "timestamp", "updated_at"):
         if row.get(key):
             return row.get(key)
     return None
@@ -142,7 +136,7 @@ def count_existing_picks_today(today: str, policy: dict[str, Any]) -> dict[str, 
         n, keys = count_collection_rows(rows, today)
         counts["fallback_sent_index"] = n
         if sources["fallback_sent_index"]:
-            effective_keys.update({f"fallback:{k}" for k in keys})
+            effective_keys.update(keys)
     else:
         counts["fallback_sent_index"] = 0
 
@@ -157,7 +151,7 @@ def count_existing_picks_today(today: str, policy: dict[str, Any]) -> dict[str, 
             n, keys = count_collection_rows(state.get(collection) or [], today)
             counts[source_name] = n
             if sources[source_name]:
-                effective_keys.update({f"state:{k}" for k in keys})
+                effective_keys.update(keys)
     else:
         counts["state_bets"] = 0
         counts["state_published_candidates"] = 0
@@ -165,55 +159,121 @@ def count_existing_picks_today(today: str, policy: dict[str, Any]) -> dict[str, 
 
     counts["effective_today_picks"] = len(effective_keys)
     counts["effective_count_note"] = (
-        "fallback_sent_index/state.bets/state.published_candidates are real-pick counters; "
-        "state.shadow_bets is excluded by default because it is diagnostic/watchlist state."
+        "Real pick count is deduped across fallback-sent-index/state.bets/state.published_candidates. "
+        "Shadow bets are excluded because they are diagnostic/watchlist rows."
     )
     return counts
 
 
 def choose_mode(policy: dict[str, Any]) -> tuple[str, dict[str, Any]]:
-    raw_mode = os.getenv("VOLUME_POLICY_MODE") or str(policy.get("mode") or "target_3")
+    raw_mode = os.getenv("VOLUME_POLICY_MODE") or str(policy.get("mode") or "target_5")
     modes = policy.get("modes") if isinstance(policy.get("modes"), dict) else {}
     mode_cfg = modes.get(raw_mode)
     if not isinstance(mode_cfg, dict):
-        raw_mode = "target_3"
+        raw_mode = "target_5"
         mode_cfg = modes.get(raw_mode) if isinstance(modes.get(raw_mode), dict) else {}
     return raw_mode, dict(mode_cfg)
 
 
-def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[dict[str, str], list[str]]:
-    reasons: list[str] = []
-    target = int(cfg.get("daily_target_picks", 3))
-    soft_cap = int(cfg.get("daily_soft_cap_picks", max(target, 4)))
-    hard_cap = int(cfg.get("daily_hard_cap_picks", max(soft_cap, target + 1)))
-    max_per_run = int(cfg.get("max_picks_per_run", 2))
+def _float(cfg: dict[str, Any], key: str, default: float) -> float:
+    try:
+        return float(cfg.get(key, default))
+    except Exception:
+        return default
+
+
+def _int(cfg: dict[str, Any], key: str, default: int) -> int:
+    try:
+        return int(float(cfg.get(key, default)))
+    except Exception:
+        return default
+
+
+def volume_stage(existing_today: int, target: int) -> str:
+    if existing_today < max(1, target - 1):
+        return "build_to_target"
+    if existing_today < target:
+        return "last_target_pick"
+    return "after_target_extra_strict"
+
+
+def stage_thresholds(cfg: dict[str, Any], stage: str) -> dict[str, float]:
+    strict = cfg.get("after_target_extra_strict") if isinstance(cfg.get("after_target_extra_strict"), dict) else {}
+    if stage == "after_target_extra_strict":
+        return {
+            "tier_b_min_confidence": _float(strict, "min_confidence", 68.0),
+            "tier_b_min_quality": _float(strict, "min_quality", 64.0),
+            "tier_b_min_edge_pp": _float(strict, "min_edge_pp", 4.0),
+            "tier_b_min_ev_pct": _float(strict, "min_ev_pct", 8.5),
+            "tier_b_max_odds": _float(strict, "max_odds", 2.55),
+            "final_min_edge_pp": _float(strict, "final_min_edge_pp", 3.8),
+            "final_min_ev_pct": _float(strict, "final_min_ev_pct", 8.0),
+            "extra_pick_min_confidence": _float(strict, "min_confidence", 68.0),
+            "extra_pick_min_edge_pp": _float(strict, "min_edge_pp", 4.0),
+            "extra_pick_min_ev_pct": _float(strict, "min_ev_pct", 8.5),
+        }
+    return {
+        "tier_b_min_confidence": _float(cfg, "tier_b_min_confidence", 63.0),
+        "tier_b_min_quality": _float(cfg, "tier_b_min_quality", 60.0),
+        "tier_b_min_edge_pp": _float(cfg, "tier_b_min_edge_pp", 3.0),
+        "tier_b_min_ev_pct": _float(cfg, "tier_b_min_ev_pct", 6.0),
+        "tier_b_max_odds": _float(cfg, "tier_b_max_odds", 2.75),
+        "final_min_edge_pp": _float(cfg, "final_min_edge_pp", 3.0),
+        "final_min_ev_pct": _float(cfg, "final_min_ev_pct", 6.0),
+        "extra_pick_min_confidence": _float(cfg, "extra_pick_min_confidence", 64.0),
+        "extra_pick_min_edge_pp": _float(cfg, "extra_pick_min_edge_pp", 3.0),
+        "extra_pick_min_ev_pct": _float(cfg, "extra_pick_min_ev_pct", 6.0),
+    }
+
+
+def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[dict[str, str], list[str], dict[str, Any]]:
+    target = _int(cfg, "daily_target_picks", 5)
+    max_per_run = max(1, _int(cfg, "max_picks_per_run", 2))
+    extra_max_per_run = max(1, _int(cfg, "after_target_max_picks_per_run", 1))
+    stage = volume_stage(existing_today, target)
+    thresholds = stage_thresholds(cfg, stage)
+
+    if stage == "build_to_target":
+        allowed_this_run = min(max_per_run, max(1, target - existing_today))
+        reasons = [f"target5_build_to_target:{existing_today}/{target}"]
+    elif stage == "last_target_pick":
+        allowed_this_run = 1
+        reasons = [f"target5_last_pick_before_target:{existing_today}/{target}"]
+    else:
+        allowed_this_run = extra_max_per_run
+        reasons = [f"target5_after_target_quality_only:{existing_today}/{target}"]
 
     env: dict[str, str] = {
-        "VOLUME_POLICY_VERSION": "v12-no-tier-c-publication",
+        "VOLUME_POLICY_VERSION": POLICY_VERSION,
         "VOLUME_POLICY_MODE": mode,
+        "VOLUME_POLICY_STAGE": stage,
         "VOLUME_DAILY_TARGET_PICKS": str(target),
-        "VOLUME_DAILY_SOFT_CAP_PICKS": str(soft_cap),
-        "VOLUME_DAILY_HARD_CAP_PICKS": str(hard_cap),
+        # Kept only as telemetry. They no longer disable analysis/publication.
+        "VOLUME_DAILY_SOFT_CAP_PICKS": str(_int(cfg, "daily_soft_cap_picks", target)),
+        "VOLUME_DAILY_HARD_CAP_PICKS": str(_int(cfg, "daily_hard_cap_picks", target)),
         "VOLUME_EXISTING_PICKS_TODAY": str(existing_today),
-        "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": str(max_per_run),
-        "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": str(max_per_run),
-        "MAX_PICKS_PER_RUN": str(max_per_run),
-        "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH": str(int(cfg.get("max_picks_per_match", 1))),
-        "CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT": str(float(cfg.get("daily_stake_cap_pct", 2.25))),
+        "CONTROLLED_FALLBACK_ENABLED": "true",
+        "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": str(allowed_this_run),
+        "CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN": str(allowed_this_run),
+        "MAX_PICKS_PER_RUN": str(allowed_this_run),
+        "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH": str(_int(cfg, "max_picks_per_match", 1)),
+        "CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT": str(_float(cfg, "daily_stake_cap_pct", 3.0)),
         "CONTROLLED_FALLBACK_SKIP_IF_STAKE_BELOW_MIN": "true",
         "CONTROLLED_FALLBACK_EXTRA_PICK_STRICT": "true",
-        "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT": str(float(cfg.get("extra_pick_min_ev_pct", 8.5))),
-        "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP": str(float(cfg.get("extra_pick_min_edge_pp", 3.8))),
-        "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": str(float(cfg.get("extra_pick_min_confidence", 69.0))),
+        "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EV_PCT": str(thresholds["extra_pick_min_ev_pct"]),
+        "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_EDGE_PP": str(thresholds["extra_pick_min_edge_pp"]),
+        "CONTROLLED_FALLBACK_EXTRA_PICK_MIN_CONFIDENCE": str(thresholds["extra_pick_min_confidence"]),
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": "true",
         "CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY": "true",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "true",
         "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "false",
         "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "",
+        "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": str(thresholds["final_min_edge_pp"]),
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": str(thresholds["final_min_ev_pct"]),
     }
 
-    families = cfg.get("allowed_families") or ["totals", "dnb"]
+    families = cfg.get("allowed_families") or ["totals", "dnb", "teamtotals", "teamTotals", "btts"]
     env["CONTROLLED_FALLBACK_ALLOWED_FAMILIES"] = ",".join(str(x) for x in families)
 
     tiers = cfg.get("tiers") if isinstance(cfg.get("tiers"), dict) else {}
@@ -221,10 +281,7 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
         tier = tiers.get(tier_name) if isinstance(tiers.get(tier_name), dict) else {}
         prefix = f"CONTROLLED_FALLBACK_TIER_{tier_name}_"
         allowed = tier.get("allowed_families") or families
-        if tier_name == "C":
-            env[prefix + "ALLOWED_FAMILIES"] = ""
-        else:
-            env[prefix + "ALLOWED_FAMILIES"] = ",".join(str(x) for x in allowed)
+        env[prefix + "ALLOWED_FAMILIES"] = "" if tier_name == "C" else ",".join(str(x) for x in allowed)
         mapping = {
             "min_books": "MIN_BOOKS",
             "min_confidence": "MIN_CONFIDENCE",
@@ -238,8 +295,24 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
             if src in tier:
                 env[prefix + dst] = str(tier[src])
 
+    # After the target is reached, Tier B becomes an elite-only rescue tier.
+    if stage == "after_target_extra_strict":
+        env.update({
+            "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE": str(thresholds["tier_b_min_confidence"]),
+            "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": str(thresholds["tier_b_min_quality"]),
+            "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": str(thresholds["tier_b_min_edge_pp"]),
+            "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": str(thresholds["tier_b_min_ev_pct"]),
+            "CONTROLLED_FALLBACK_TIER_B_MAX_ODDS": str(thresholds["tier_b_max_odds"]),
+            "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE": str(thresholds["tier_b_min_confidence"]),
+            "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": str(thresholds["tier_b_min_edge_pp"]),
+            "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": str(thresholds["tier_b_min_ev_pct"]),
+        })
+
     final_guards = cfg.get("final_guards") if isinstance(cfg.get("final_guards"), dict) else {}
     for key, value in final_guards.items():
+        # Stage-specific final EV/edge values must not be overwritten by config defaults.
+        if str(key) in {"CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT"}:
+            continue
         env[str(key)] = str(value).lower() if isinstance(value, bool) else str(value)
 
     stakes = cfg.get("tier_stake") if isinstance(cfg.get("tier_stake"), dict) else {}
@@ -252,26 +325,8 @@ def flatten_env(mode: str, cfg: dict[str, Any], existing_today: int) -> tuple[di
         if key in stakes:
             env[f"CONTROLLED_FALLBACK_MAX_STAKE_TIER_{tier_name}"] = str(stakes[key])
 
-    if existing_today >= hard_cap:
-        env["CONTROLLED_FALLBACK_ENABLED"] = "false"
-        env["CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN"] = "0"
-        env["CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN"] = "0"
-        env["MAX_PICKS_PER_RUN"] = "0"
-        reasons.append(f"daily_hard_cap_reached:{existing_today}/{hard_cap}")
-    elif existing_today >= soft_cap:
-        env["CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN"] = "0"
-        env["CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN"] = "0"
-        env["MAX_PICKS_PER_RUN"] = "0"
-        reasons.append(f"daily_soft_cap_reached:{existing_today}/{soft_cap}")
-    elif existing_today >= target:
-        env["CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN"] = "1"
-        env["CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN"] = "1"
-        env["MAX_PICKS_PER_RUN"] = "1"
-        reasons.append(f"daily_target_reached_extra_pick_strict:{existing_today}/{target}")
-    else:
-        reasons.append(f"target_mode_active:{existing_today}/{target}")
-
-    return env, reasons
+    details = {"target": target, "stage": stage, "allowed_this_run": allowed_this_run, "thresholds": thresholds}
+    return env, reasons, details
 
 
 def append_github_env(env: dict[str, str]) -> None:
@@ -293,11 +348,11 @@ def main() -> int:
     today = today_local()
     counts = count_existing_picks_today(today, policy)
     existing_today = int(counts.get("effective_today_picks") or 0)
-    env, reasons = flatten_env(mode, cfg, existing_today)
+    env, reasons, details = flatten_env(mode, cfg, existing_today)
 
     now_utc = datetime.now(UTC).isoformat()
     payload = {
-        "version": "v12-no-tier-c-publication",
+        "version": POLICY_VERSION,
         "mode": mode,
         "today_local": today,
         "now_utc": now_utc,
@@ -305,19 +360,23 @@ def main() -> int:
         "counts": counts,
         "decision_reasons": reasons,
         "applied_env": env,
+        "target_governor": details,
         "quality_policy": {
+            "hard_daily_stop_removed": True,
+            "publication_strategy": "Aim for about 5 picks/day. Before target, allow 1-2 picks/run. After target, keep analysis and fallback enabled but allow only 1 extra pick/run under stricter EV/edge/confidence/quality guards.",
             "hard_guards_preserved": [
                 "canonical_negative_value",
                 "xg_direction_conflict",
                 "xg_probability_gap_hard_reject",
                 "dnb_outlier_guard",
                 "proxy_single_book_reject",
+                "two-book Telegram guard",
             ],
-            "target": "increase daily volume through Tier A/B only, without hard-guard bypass and without Tier C Telegram publication",
+            "tier_c_publication": "disabled",
         },
         "fix_note": (
-            "v12 excludes state.shadow_bets from daily cap by default and forces Tier C publication off. "
-            "Shadow bets are diagnostics/watchlist rows, not real Telegram publications."
+            "v13 removes the hard daily stop that previously set MAX_PICKS_PER_RUN=0 and disabled fallback after cap. "
+            "Daily average is now controlled by target-aware quality thresholds instead of blocking analysis."
         ),
     }
     write_json(STATE_PATH, payload)
