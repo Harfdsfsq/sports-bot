@@ -13,7 +13,7 @@ POLICY_PATH = ROOT / 'config' / 'provider_request_budget.json'
 OUT = ROOT / '.data' / 'exports' / 'latest-per-run-only-runtime-policy.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
-POLICY_VERSION = 'v2-api-per-run-only-with-capacity-layer'
+POLICY_VERSION = 'v3-api-per-run-only-capacity-import-checked'
 NO_DAILY_PICK_CAP_SENTINEL = '999'
 
 REMOVED_PROVIDER_LIMIT_FIELDS = ('safe_daily_budget', 'safe_monthly_budget', 'min_spacing_minutes', 'allowed_msk_hours', 'manual_per_run_max')
@@ -43,12 +43,19 @@ def append_env(env: dict[str, str]) -> None:
             print(f'{key}={env[key]}')
 
 
-def run_optional_script(path: str) -> dict[str, Any]:
+def run_script(path: str, *, required: bool = False) -> dict[str, Any]:
     script = ROOT / path
     if not script.exists():
-        return {'script': path, 'status': 'missing'}
+        result = {'script': path, 'status': 'missing'}
+        if required:
+            raise SystemExit(f'required runtime script missing: {path}')
+        return result
     proc = subprocess.run([sys.executable, str(script)], cwd=str(ROOT), text=True, capture_output=True)
-    return {'script': path, 'status': 'ok' if proc.returncode == 0 else 'failed', 'returncode': proc.returncode, 'stdout_tail': proc.stdout[-1200:], 'stderr_tail': proc.stderr[-1200:]}
+    result = {'script': path, 'status': 'ok' if proc.returncode == 0 else 'failed', 'returncode': proc.returncode, 'stdout_tail': proc.stdout[-1600:], 'stderr_tail': proc.stderr[-1600:]}
+    if required and proc.returncode != 0:
+        print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
+        raise SystemExit(proc.returncode)
+    return result
 
 
 def normalize_provider_env(provider: dict[str, Any]) -> dict[str, str]:
@@ -113,7 +120,7 @@ def publication_env() -> dict[str, str]:
 
 
 def main() -> int:
-    pre_scripts = [run_optional_script('scripts/apply_external_signals_runtime_patch.py')]
+    pre_scripts = [run_script('scripts/apply_external_signals_runtime_patch.py', required=True)]
     policy = load_json(POLICY_PATH, {})
     if not isinstance(policy, dict):
         policy = {}
@@ -132,7 +139,10 @@ def main() -> int:
     env.update(publication_env())
     append_env(env)
 
-    post_scripts = [run_optional_script('scripts/apply_api_capacity_and_keypool_policy.py')]
+    post_scripts = [
+        run_script('scripts/apply_api_capacity_and_keypool_policy.py', required=True),
+        run_script('scripts/check_runtime_patches_imports.py', required=True),
+    ]
     report = {
         'status': 'ok',
         'version': POLICY_VERSION,
