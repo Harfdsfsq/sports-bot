@@ -185,6 +185,7 @@ jobs:
           rm -f .data/exports/latest-rules-api-budget-policy.json
           rm -f .data/exports/latest-daily-top5-publish-policy.json
           rm -f .data/exports/latest-per-run-only-runtime-policy.json
+          rm -f .data/exports/latest-quality-first-runtime-policy.json
           rm -f .data/exports/latest-day-inventory-coverage-audit.json
           rm -f .data/exports/latest-coverage-audit.json
           rm -f .data/exports/latest-history-guard-audit.json
@@ -258,6 +259,13 @@ jobs:
         run: |
           python scripts/apply_per_run_only_runtime_policy.py
           cat .data/exports/latest-per-run-only-runtime-policy.json || true
+
+      - name: Apply quality-first publication policy
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/apply_quality_first_runtime_policy.py
+          cat .data/exports/latest-quality-first-runtime-policy.json || true
 
       - name: Apply provider request budget
         if: env.AUTORUN_SKIP_MAIN != 'true'
