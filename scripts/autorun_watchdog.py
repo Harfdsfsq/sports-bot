@@ -13,7 +13,7 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v21-msk-slot-aware-watchdog-catchup'
+POLICY_VERSION = 'v22-schedule-trigger-aware-autorun'
 
 # Primary workflow slots are at 00 minutes every two hours in MSK.
 # Europe/Moscow = UTC+3, so the UTC schedule is:
@@ -151,6 +151,37 @@ def state_age_minutes(state: dict[str, Any], now_utc: datetime) -> float | None:
     return max(0.0, (now_utc - last).total_seconds() / 60.0)
 
 
+def read_schedule_cron() -> str:
+    event_path = str(os.getenv('GITHUB_EVENT_PATH') or '').strip()
+    if not event_path:
+        return ''
+    payload = load_json(Path(event_path), {})
+    if not isinstance(payload, dict):
+        return ''
+    return str(payload.get('schedule') or '').strip()
+
+
+def schedule_minute(schedule: str) -> int | None:
+    first = str(schedule or '').strip().split(' ', 1)[0].strip()
+    try:
+        return int(first)
+    except Exception:
+        return None
+
+
+def trigger_kind(schedule: str) -> str:
+    minute = schedule_minute(schedule)
+    if minute == PRIMARY_MINUTE:
+        return 'primary'
+    if minute == WATCHDOG_MINUTE:
+        return 'watchdog'
+    if minute == CATCHUP_MINUTE:
+        return 'catchup'
+    if minute is None:
+        return 'unknown'
+    return f'unknown_minute_{minute}'
+
+
 def current_slot_already_succeeded(state: dict[str, Any], slot_key: str, age: float | None) -> tuple[bool, str]:
     last_slot = str(state.get('last_successful_slot_key') or '').strip()
     if last_slot and last_slot == slot_key:
@@ -160,8 +191,15 @@ def current_slot_already_succeeded(state: dict[str, Any], slot_key: str, age: fl
     return False, 'current_slot_not_completed'
 
 
-def scheduled_decision(state: dict[str, Any], now_utc: datetime, slot_key: str, age: float | None) -> tuple[bool, str]:
+def scheduled_decision(
+    state: dict[str, Any],
+    now_utc: datetime,
+    slot_key: str,
+    age: float | None,
+    cron_schedule: str,
+) -> tuple[bool, str]:
     elapsed = minutes_since_slot(now_utc)
+    kind = trigger_kind(cron_schedule)
     primary = is_primary_slot(now_utc)
     watchdog = is_watchdog_slot(now_utc)
     catchup = is_catchup_slot(now_utc)
@@ -171,15 +209,41 @@ def scheduled_decision(state: dict[str, Any], now_utc: datetime, slot_key: str, 
     if already_done:
         return True, f'skip_{done_reason}'
 
-    if primary:
-        return False, 'primary_scheduled_run'
-    if watchdog:
+    # GitHub scheduled workflows can start several minutes late. The event payload
+    # still contains the cron string that actually triggered the run. Use that
+    # trigger role first, otherwise a delayed watchdog can be misclassified as a
+    # catchup run and duplicate the real catchup trigger for the same slot.
+    if kind == 'primary':
+        if primary:
+            return False, 'primary_scheduled_run'
+        if delayed:
+            return False, f'delayed_primary_scheduled_run_{elapsed:.1f}m'
+        return True, f'skip_primary_trigger_too_late_{elapsed:.1f}m'
+
+    if kind == 'watchdog':
+        if elapsed >= CATCHUP_DELAY_MINUTES:
+            return True, f'skip_late_watchdog_trigger_elapsed_{elapsed:.1f}m_catchup_will_handle'
+        if elapsed < WATCHDOG_DELAY_MINUTES:
+            return True, f'skip_watchdog_trigger_too_early_{elapsed:.1f}m'
         return False, 'watchdog_failsafe_run_missing_current_slot_success'
-    if catchup:
+
+    if kind == 'catchup':
+        if elapsed < CATCHUP_DELAY_MINUTES:
+            return True, f'skip_catchup_trigger_too_early_{elapsed:.1f}m'
+        if elapsed > DELAYED_PRIMARY_WINDOW_MINUTES:
+            return True, f'skip_catchup_trigger_too_late_{elapsed:.1f}m'
         return False, 'catchup_failsafe_run_missing_current_slot_success'
+
+    # Backward-compatible fallback for old/manual schedule payloads.
+    if primary:
+        return False, 'primary_scheduled_run_unknown_trigger'
+    if watchdog:
+        return False, 'watchdog_failsafe_run_missing_current_slot_success_unknown_trigger'
+    if catchup:
+        return False, 'catchup_failsafe_run_missing_current_slot_success_unknown_trigger'
     if delayed:
-        return False, f'delayed_primary_scheduled_run_{elapsed:.1f}m'
-    return False, f'scheduled_run_outside_known_slot_run_anyway_{elapsed:.1f}m'
+        return False, f'delayed_primary_scheduled_run_unknown_trigger_{elapsed:.1f}m'
+    return False, f'scheduled_run_outside_known_slot_run_anyway_unknown_trigger_{elapsed:.1f}m'
 
 
 def preflight() -> int:
@@ -189,20 +253,22 @@ def preflight() -> int:
     slot_local_key = current_slot_local_key(now_utc)
     elapsed = minutes_since_slot(now_utc)
     event = os.getenv('GITHUB_EVENT_NAME', '')
+    cron_schedule = read_schedule_cron()
+    kind = trigger_kind(cron_schedule)
     state = load_json(STATE_PATH, {})
     if not isinstance(state, dict):
         state = {}
 
-    primary = event == 'schedule' and is_primary_slot(now_utc)
-    watchdog = event == 'schedule' and is_watchdog_slot(now_utc)
-    catchup = event == 'schedule' and is_catchup_slot(now_utc)
+    primary = event == 'schedule' and (kind == 'primary' or (kind == 'unknown' and is_primary_slot(now_utc)))
+    watchdog = event == 'schedule' and (kind == 'watchdog' or (kind == 'unknown' and is_watchdog_slot(now_utc)))
+    catchup = event == 'schedule' and (kind == 'catchup' or (kind == 'unknown' and is_catchup_slot(now_utc)))
     delayed_primary = event == 'schedule' and is_delayed_primary_slot(now_utc)
     age = state_age_minutes(state, now_utc)
     skip_main = False
     reason = 'non_schedule_event'
 
     if event == 'schedule':
-        skip_main, reason = scheduled_decision(state, now_utc, slot_key, age)
+        skip_main, reason = scheduled_decision(state, now_utc, slot_key, age, cron_schedule)
         if skip_main and age is not None:
             reason = f'{reason}_{age:.1f}m'
 
@@ -213,6 +279,8 @@ def preflight() -> int:
         'AUTORUN_CURRENT_SLOT_KEY': slot_key,
         'AUTORUN_CURRENT_SLOT_LOCAL_KEY': slot_local_key,
         'AUTORUN_SLOT_ELAPSED_MINUTES': f'{elapsed:.1f}',
+        'AUTORUN_EVENT_SCHEDULE': cron_schedule,
+        'AUTORUN_TRIGGER_KIND': kind,
         'AUTORUN_IS_PRIMARY_SLOT': str(primary).lower(),
         'AUTORUN_IS_DELAYED_PRIMARY_SLOT': str(delayed_primary).lower(),
         'AUTORUN_IS_WATCHDOG_SLOT': str(watchdog).lower(),
@@ -228,6 +296,8 @@ def preflight() -> int:
         'last_preflight_msk': now_msk.isoformat(),
         'last_policy_version': POLICY_VERSION,
         'last_event': event,
+        'last_event_schedule': cron_schedule,
+        'last_trigger_kind': kind,
         'last_current_slot_key': slot_key,
         'last_current_slot_local_key': slot_local_key,
         'last_is_primary_slot': primary,
@@ -272,6 +342,8 @@ def mark_success() -> int:
         'last_successful_slot_local_key': slot_local_key,
         'last_successful_run_id': os.getenv('GITHUB_RUN_ID', ''),
         'last_successful_run_attempt': os.getenv('GITHUB_RUN_ATTEMPT', ''),
+        'last_successful_event_schedule': os.getenv('AUTORUN_EVENT_SCHEDULE', ''),
+        'last_successful_trigger_kind': os.getenv('AUTORUN_TRIGGER_KIND', ''),
         'last_policy_version': POLICY_VERSION,
         'last_success_reason': os.getenv('AUTORUN_DECISION_REASON', ''),
     })
