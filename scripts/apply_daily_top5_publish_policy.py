@@ -80,6 +80,35 @@ def env_float_str(name: str, default: float) -> str:
     return str(as_float(os.getenv(name), default))
 
 
+def env_nonnegative_int(name: str) -> int | None:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == '':
+        return None
+    parsed = as_int(raw, -1)
+    return parsed if parsed >= 0 else None
+
+
+def upstream_pick_cap() -> dict[str, Any]:
+    """Return the cap already imposed by earlier policies in this workflow.
+
+    apply_volume_policy.py runs before this script. The previous top5 policy could
+    accidentally raise MAX_PICKS_PER_RUN from 0 back to 1 after the soft cap was
+    reached. This helper makes top5 monotonic: it may reduce a cap, never raise it.
+    """
+    names = (
+        'CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN',
+        'CONTROLLED_FALLBACK_ABSOLUTE_MAX_PICKS_PER_RUN',
+        'MAX_PICKS_PER_RUN',
+    )
+    values: dict[str, int] = {}
+    for name in names:
+        value = env_nonnegative_int(name)
+        if value is not None:
+            values[name] = value
+    cap = min(values.values()) if values else None
+    return {'cap': cap, 'values': values}
+
+
 def row_timestamp(row: dict[str, Any]) -> Any:
     for key in ('sent_at', 'published_at', 'created_at', 'placed_at', 'timestamp', 'updated_at'):
         if row.get(key):
@@ -114,42 +143,51 @@ def row_key(row: dict[str, Any], fallback: str) -> str:
     return '|'.join(parts).strip('|') or fallback
 
 
-def collect_rows_for_today(rows: Any, today: str, prefix: str) -> set[str]:
+def collect_rows_for_today(rows: Any, today: str) -> tuple[set[str], int]:
     if not isinstance(rows, list):
-        return set()
+        return set(), 0
     out: set[str] = set()
+    scanned = 0
     for idx, row in enumerate(rows):
         if not isinstance(row, dict):
             continue
         if local_date_of(row_timestamp(row)) != today:
             continue
-        out.add(f'{prefix}:{row_key(row, f"row:{idx}")}')
-    return out
+        scanned += 1
+        out.add(row_key(row, f'row:{idx}'))
+    return out, scanned
 
 
 def count_today_picks(today: str) -> dict[str, Any]:
+    # Effective count must dedupe the same Telegram publication across
+    # fallback-sent-index/state.bets/state.published_candidates. Per-source details
+    # remain visible, but the cap uses one normalized key set without source prefixes.
     keys: set[str] = set()
-    details: dict[str, int] = {}
+    details: dict[str, Any] = {}
 
     sent = load_json(ROOT / '.data' / 'fallback-sent-index.json', {})
     if isinstance(sent, dict):
         rows = [row for row in sent.values() if isinstance(row, dict)]
-        k = collect_rows_for_today(rows, today, 'fallback')
+        k, scanned = collect_rows_for_today(rows, today)
         keys.update(k)
         details['fallback_sent_index'] = len(k)
+        details['fallback_sent_index_rows'] = scanned
     else:
         details['fallback_sent_index'] = 0
+        details['fallback_sent_index_rows'] = 0
 
     state = load_json(ROOT / '.data' / 'state.json', {})
     if isinstance(state, dict):
-        for collection, prefix in (
+        for collection, source_name in (
             ('bets', 'state_bets'),
-            ('published_candidates', 'state_published'),
+            ('published_candidates', 'state_published_candidates'),
         ):
-            k = collect_rows_for_today(state.get(collection), today, prefix)
+            k, scanned = collect_rows_for_today(state.get(collection), today)
             keys.update(k)
-            details[prefix] = len(k)
+            details[source_name] = len(k)
+            details[source_name + '_rows'] = scanned
     details['effective_today_picks'] = len(keys)
+    details['effective_count_note'] = 'Effective top5 count dedupes the same pick across all real publication sources.'
     return details
 
 
@@ -168,28 +206,42 @@ def main() -> int:
     counts = count_today_picks(today)
     existing = as_int(counts.get('effective_today_picks'))
     target = max(1, as_int(os.getenv('DAILY_TOP5_TARGET_PICKS'), 5))
-    hard_cap = max(target, as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS'), target))
+    configured_hard_cap = max(target, as_int(os.getenv('DAILY_TOP5_HARD_CAP_PICKS'), target))
+    volume_soft_cap = as_int(os.getenv('VOLUME_DAILY_SOFT_CAP_PICKS'), configured_hard_cap)
+    soft_cap = max(target, min(configured_hard_cap, volume_soft_cap if volume_soft_cap > 0 else configured_hard_cap))
+    hard_cap = configured_hard_cap
     scheduled_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MAX_PICKS_PER_RUN'), 2))
     manual_max_per_run = max(1, as_int(os.getenv('DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN'), scheduled_max_per_run))
     is_manual_run = str(os.getenv('GITHUB_EVENT_NAME') or '').strip().lower() == 'workflow_dispatch'
     max_per_run = manual_max_per_run if is_manual_run else scheduled_max_per_run
     remaining_to_target = max(0, target - existing)
+    remaining_to_soft = max(0, soft_cap - existing)
     remaining_to_hard = max(0, hard_cap - existing)
+    upstream = upstream_pick_cap()
+    upstream_cap_value = upstream.get('cap')
 
-    allowed_this_run = min(max_per_run, remaining_to_hard)
+    allowed_this_run = min(max_per_run, remaining_to_hard, remaining_to_soft)
     reason = f'top5_active:{existing}/{target}'
     if remaining_to_hard <= 0:
         allowed_this_run = 0
         reason = f'daily_top5_hard_cap_reached:{existing}/{hard_cap}'
+    elif remaining_to_soft <= 0:
+        allowed_this_run = 0
+        reason = f'daily_top5_soft_cap_reached:{existing}/{soft_cap}'
     elif remaining_to_target <= 0:
-        allowed_this_run = min(1, remaining_to_hard)
+        allowed_this_run = min(1, remaining_to_soft, remaining_to_hard)
         reason = f'daily_top5_target_reached_extra_strict:{existing}/{target}'
+
+    if isinstance(upstream_cap_value, int):
+        if upstream_cap_value < allowed_this_run:
+            reason = f'{reason}; upstream_volume_cap:{upstream_cap_value}'
+        allowed_this_run = min(allowed_this_run, upstream_cap_value)
 
     env = {
         'DAILY_TOP5_PUBLISH_POLICY_ACTIVE': 'true',
         'VOLUME_POLICY_MODE': 'target_5',
         'VOLUME_DAILY_TARGET_PICKS': str(target),
-        'VOLUME_DAILY_SOFT_CAP_PICKS': str(target),
+        'VOLUME_DAILY_SOFT_CAP_PICKS': str(soft_cap),
         'VOLUME_DAILY_HARD_CAP_PICKS': str(hard_cap),
         'VOLUME_EXISTING_PICKS_TODAY': str(existing),
         'CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN': str(allowed_this_run),
@@ -260,16 +312,20 @@ def main() -> int:
         'today_local': today,
         'existing_today_picks': existing,
         'target_picks': target,
+        'soft_cap_picks': soft_cap,
         'hard_cap_picks': hard_cap,
+        'configured_hard_cap_picks': configured_hard_cap,
+        'volume_soft_cap_picks': volume_soft_cap,
         'max_picks_per_run': max_per_run,
         'scheduled_max_picks_per_run': scheduled_max_per_run,
         'manual_max_picks_per_run': manual_max_per_run,
         'is_manual_run': is_manual_run,
+        'upstream_pick_cap': upstream,
         'allowed_this_run': allowed_this_run,
         'reason': reason,
         'counts': counts,
         'env': env,
-        'quality_note': 'Daily top5 policy targets about 5 picks/day, spreads publishing through the day at 1-2 picks per run, keeps Tier C disabled, and relaxes only Tier B/proxy reserve gates while preserving hard market guards.',
+        'quality_note': 'Daily top5 policy targets about 5 picks/day, spreads publishing through the day at 1-2 picks per run, keeps Tier C disabled, relaxes only Tier B/proxy reserve gates, preserves hard market guards, and never raises a stricter upstream volume cap.',
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
