@@ -6,6 +6,13 @@ Historically this script handled top5 publishing and daily limits. To unify logi
 all thresholds and pacing are now handled in scripts/apply_daily_best5_governor.py.
 """
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 from scripts.apply_daily_best5_governor import main
 
 
