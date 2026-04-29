@@ -4,8 +4,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-# Clean runtime stack. Legacy one-off patches are intentionally not executed here.
-# Important fixes now live either in normal code or in apply_clean_runtime_system.py.
 PATCHES = [
     Path("scripts/patch_clean_provider_parsers.py"),
     Path("scripts/apply_clean_runtime_system.py"),
@@ -15,6 +13,7 @@ PATCHES = [
     Path("scripts/patch_near_miss_enrichment_targets.py"),
     Path("scripts/patch_weather_location_policy.py"),
     Path("scripts/patch_oddspapi_rapidapi.py"),
+    Path("scripts/fix_report_conclusion.py"),
     Path("scripts/check_publication_runtime_syntax.py"),
     Path("scripts/patch_detailed_report_inventory_counts.py"),
     Path("scripts/apply_settlement_matching_patch.py"),
