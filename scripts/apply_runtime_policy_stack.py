@@ -8,6 +8,7 @@ PATCHES = [
     Path("scripts/apply_rules_api_budget_policy.py"),
     Path("scripts/apply_odds_budget_boost_policy.py"),
     Path("scripts/apply_odds_api_io_dual_account_patch.py"),
+    Path("scripts/apply_publication_same_match_dedupe_patch.py"),
     Path("scripts/apply_daily_top5_publish_policy.py"),
     Path("scripts/apply_day_inventory_runtime_patch.py"),
     Path("scripts/patch_inventory_tomorrow_and_nearmiss_runtime.py"),
