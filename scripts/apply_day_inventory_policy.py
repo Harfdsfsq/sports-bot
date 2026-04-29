@@ -71,6 +71,24 @@ def parse_hours(raw: str | None, default: set[int]) -> set[int]:
     return out or set(default)
 
 
+def truthy(value: Any) -> bool:
+    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def coverage_max_active(now_local: datetime) -> tuple[bool, str | None]:
+    until = str(os.getenv('COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE') or '').strip()
+    if not truthy(os.getenv('COVERAGE_MAXIMIZE_TODAY')) and not until:
+        return False, None
+    if until:
+        try:
+            if now_local.date().isoformat() <= until:
+                return True, until
+            return False, until
+        except Exception:
+            return False, until
+    return True, now_local.date().isoformat()
+
+
 def append_github_env(env: dict[str, str]) -> None:
     if GITHUB_ENV:
         with open(GITHUB_ENV, 'a', encoding='utf-8') as fh:
@@ -90,6 +108,9 @@ def main() -> int:
     inventory = load_json(inventory_path, {})
     counts = inventory.get('counts') if isinstance(inventory.get('counts'), dict) else {}
     matches_total = as_int(counts.get('matches_total'), 0)
+    ready_for_model = as_int(counts.get('matches_ready_for_model'), 0)
+    with_context = as_int(counts.get('matches_with_context'), 0)
+    with_odds = as_int(counts.get('matches_with_odds'), 0)
     updated_at = parse_dt(inventory.get('updated_at_utc'))
     age_minutes = (now_utc - updated_at).total_seconds() / 60.0 if updated_at is not None else None
 
@@ -97,15 +118,21 @@ def main() -> int:
     refresh_hours = max(1, as_int(os.getenv('DAY_INVENTORY_REFRESH_INTERVAL_HOURS'), 6))
     min_matches_for_skip = max(1, as_int(os.getenv('DAY_INVENTORY_MIN_MATCHES_FOR_SKIP'), 40))
     midnight_fresh_minutes = max(15, as_int(os.getenv('DAY_INVENTORY_MIDNIGHT_FRESH_MINUTES'), 75))
+    min_ready_ratio_pct = max(1, min(100, as_int(os.getenv('DAY_INVENTORY_MIN_READY_RATIO_PCT'), 85)))
 
-    force_full = str(os.getenv('DAY_INVENTORY_FORCE_FULL_BOOTSTRAP', '')).strip().lower() in {'1', 'true', 'yes', 'on'}
-    force_refresh = str(os.getenv('DAY_INVENTORY_FORCE_REFRESH', '')).strip().lower() in {'1', 'true', 'yes', 'on'}
+    force_full = truthy(os.getenv('DAY_INVENTORY_FORCE_FULL_BOOTSTRAP'))
+    force_refresh = truthy(os.getenv('DAY_INVENTORY_FORCE_REFRESH'))
+    coverage_active, coverage_until = coverage_max_active(now_local)
 
     reason = 'skip_existing_inventory'
     skip_build = True
     mode = 'incremental_skip'
 
     inventory_missing_or_small = not inventory_path.exists() or matches_total < min_matches_for_skip
+    ready_ratio_pct = (ready_for_model / matches_total * 100.0) if matches_total > 0 else 0.0
+    context_gap = matches_total > 0 and with_context < matches_total
+    odds_gap = matches_total > 0 and with_odds < matches_total
+    inventory_not_enriched_enough = matches_total > 0 and ready_ratio_pct < min_ready_ratio_pct
     inventory_stale = age_minutes is None or age_minutes >= refresh_hours * 60
     full_slot = now_local.hour in full_hours
 
@@ -113,6 +140,14 @@ def main() -> int:
         skip_build = False
         mode = 'forced_full_bootstrap'
         reason = 'DAY_INVENTORY_FORCE_FULL_BOOTSTRAP'
+    elif coverage_active and (inventory_missing_or_small or inventory_not_enriched_enough or context_gap or odds_gap):
+        skip_build = False
+        mode = 'coverage_max_refresh'
+        reason = f'coverage_maximize_until_{coverage_until}_ready_{ready_ratio_pct:.1f}_context_{with_context}/{matches_total}_odds_{with_odds}/{matches_total}'
+    elif coverage_active and age_minutes is not None and age_minutes >= 60:
+        skip_build = False
+        mode = 'coverage_max_hourly_refresh'
+        reason = f'coverage_maximize_hourly_refresh_age_{age_minutes:.1f}m'
     elif full_slot:
         if inventory_missing_or_small or age_minutes is None or age_minutes >= midnight_fresh_minutes:
             skip_build = False
@@ -141,11 +176,23 @@ def main() -> int:
         'DAY_INVENTORY_BOOTSTRAP_PROVIDER': os.getenv('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'football_data',
         'DAY_INVENTORY_DIRECT_WINDOW_DAYS': os.getenv('DAY_INVENTORY_DIRECT_WINDOW_DAYS') or '1',
         'DAY_INVENTORY_DIRECT_MIN_MATCHES': os.getenv('DAY_INVENTORY_DIRECT_MIN_MATCHES') or '8',
+        'COVERAGE_MAXIMIZE_ACTIVE': 'true' if coverage_active else 'false',
     }
+    if coverage_active:
+        env.update({
+            'DAY_INVENTORY_FORCE_PROVIDER_MERGE': 'true',
+            'DAY_INVENTORY_COVERAGE_MAX_REBUILD': 'true',
+            'MATCH_BOOTSTRAP_PROVIDER': 'odds_api_io',
+            'OPENFOOTBALL_CONTEXT_MATCH_LIMIT': os.getenv('OPENFOOTBALL_CONTEXT_MATCH_LIMIT') or '220',
+            'ESPN_CONTEXT_MATCH_LIMIT': os.getenv('ESPN_CONTEXT_MATCH_LIMIT') or '16',
+            'BZZOIRO_CONTEXT_MATCH_LIMIT': os.getenv('BZZOIRO_CONTEXT_MATCH_LIMIT') or '240',
+            'SSTATS_CONTEXT_MATCH_LIMIT': os.getenv('SSTATS_CONTEXT_MATCH_LIMIT') or '180',
+            'THESPORTSDB_CONTEXT_MATCH_LIMIT': os.getenv('THESPORTSDB_CONTEXT_MATCH_LIMIT') or '180',
+        })
     append_github_env(env)
 
     report = {
-        'policy_version': 'daily-inventory-api-max-v1',
+        'policy_version': 'daily-inventory-coverage-max-v2',
         'utc_now': now_utc.isoformat(),
         'local_now': now_local.isoformat(),
         'timezone': str(tz.key),
@@ -153,6 +200,13 @@ def main() -> int:
         'inventory_path': str(inventory_path),
         'inventory_exists': inventory_path.exists(),
         'matches_total': matches_total,
+        'matches_ready_for_model': ready_for_model,
+        'matches_with_context': with_context,
+        'matches_with_odds': with_odds,
+        'ready_ratio_pct': round(ready_ratio_pct, 2),
+        'min_ready_ratio_pct': min_ready_ratio_pct,
+        'coverage_maximize_active': coverage_active,
+        'coverage_maximize_until_local_date': coverage_until,
         'updated_at_utc': updated_at.isoformat() if updated_at is not None else None,
         'age_minutes': round(age_minutes, 2) if age_minutes is not None else None,
         'full_bootstrap_hours_local': sorted(full_hours),
@@ -163,9 +217,9 @@ def main() -> int:
         'reason': reason,
         'env_updates': env,
         'notes': [
-            '00:00 local run performs the large daily fixture bootstrap unless the inventory is already fresh.',
-            'Normal two-hour runs do not repeat the full fixture pull when the daily inventory is fresh.',
-            'Odds/context/weather enrichment is handled by the main bot run and then merged back into the inventory.',
+            'Coverage-max mode is temporary and controlled by COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE.',
+            'When active, the inventory refreshes if odds/context/ready coverage is incomplete, even if the fixture list itself is fresh.',
+            'This increases data coverage only; prediction quality guards are not relaxed.',
         ],
     }
     write_json(EXPORT_PATH, report)
