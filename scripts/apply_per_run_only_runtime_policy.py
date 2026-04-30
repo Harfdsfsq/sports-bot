@@ -13,7 +13,7 @@ POLICY_PATH = ROOT / 'config' / 'provider_request_budget.json'
 OUT = ROOT / '.data' / 'exports' / 'latest-per-run-only-runtime-policy.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
-POLICY_VERSION = 'v3-api-per-run-only-capacity-import-checked'
+POLICY_VERSION = 'v4-api-per-run-only-with-enrichment-cycle'
 NO_DAILY_PICK_CAP_SENTINEL = '999'
 
 REMOVED_PROVIDER_LIMIT_FIELDS = ('safe_daily_budget', 'safe_monthly_budget', 'min_spacing_minutes', 'allowed_msk_hours', 'manual_per_run_max')
@@ -51,7 +51,13 @@ def run_script(path: str, *, required: bool = False) -> dict[str, Any]:
             raise SystemExit(f'required runtime script missing: {path}')
         return result
     proc = subprocess.run([sys.executable, str(script)], cwd=str(ROOT), text=True, capture_output=True)
-    result = {'script': path, 'status': 'ok' if proc.returncode == 0 else 'failed', 'returncode': proc.returncode, 'stdout_tail': proc.stdout[-1600:], 'stderr_tail': proc.stderr[-1600:]}
+    result = {
+        'script': path,
+        'status': 'ok' if proc.returncode == 0 else 'failed',
+        'returncode': proc.returncode,
+        'stdout_tail': proc.stdout[-1600:],
+        'stderr_tail': proc.stderr[-1600:],
+    }
     if required and proc.returncode != 0:
         print(json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True))
         raise SystemExit(proc.returncode)
@@ -87,12 +93,17 @@ def apply_provider_policy(policy: dict[str, Any]) -> dict[str, Any]:
         limit = provider.get('limit') if isinstance(provider.get('limit'), dict) else {}
         limit.update({'budget_scope': 'per_run_only', 'daily_prebudget_disabled': True, 'monthly_prebudget_disabled': True})
         provider['limit'] = limit
-        changed[str(name)] = {'per_run_max': provider.get('per_run_max'), 'removed_planned_limit_fields': removed_fields, 'daily_or_monthly_env_values_lifted': env_budget_overrides}
+        changed[str(name)] = {
+            'per_run_max': provider.get('per_run_max'),
+            'removed_planned_limit_fields': removed_fields,
+            'daily_or_monthly_env_values_lifted': env_budget_overrides,
+        }
     policy['providers'] = providers
     policy['version'] = POLICY_VERSION
-    policy['description'] = 'API request budgets are per-run only. Capacity overrides are applied by apply_api_capacity_and_keypool_policy.py.'
+    policy['description'] = 'API request budgets are per-run only. Capacity and enrichment-cycle overrides are applied by runtime scripts.'
     notes = list(policy.get('notes') or []) if isinstance(policy.get('notes'), list) else []
     notes.append('Per-run-only runtime policy removed daily/monthly planned API budgets; only per_run_max is enforced before requests.')
+    notes.append('Full-day enrichment cycle runs before day inventory: fixtures -> odds -> contexts -> coverage merge -> repeat next run.')
     policy['notes'] = notes
     return changed
 
@@ -141,6 +152,7 @@ def main() -> int:
 
     post_scripts = [
         run_script('scripts/apply_api_capacity_and_keypool_policy.py', required=True),
+        run_script('scripts/apply_enrichment_cycle_policy.py', required=True),
         run_script('scripts/check_runtime_patches_imports.py', required=True),
     ]
     report = {
@@ -152,7 +164,11 @@ def main() -> int:
         'applied_env': env,
         'pre_scripts': pre_scripts,
         'post_scripts': post_scripts,
-        'summary': {'api_limits': 'per-run only; capacity layer sets odds_api_io=100/run and sstats=150/run', 'publication_volume': 'daily hard cap disabled; target remains about 5 best picks/day'},
+        'summary': {
+            'api_limits': 'per-run only; capacity layer sets full-day enrichment caps before provider budget',
+            'enrichment_cycle': 'active before day inventory: fixtures -> odds -> contexts -> merge -> repeat',
+            'publication_volume': 'daily hard cap disabled; target remains about 5 best picks/day',
+        },
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
