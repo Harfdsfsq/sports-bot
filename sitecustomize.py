@@ -1,8 +1,9 @@
 """Repository-wide startup hook for Harizon sports-bot.
 
 Python imports this module automatically before app code when the repository
-root is on sys.path.  It applies the centralized runtime patches and keeps the
-SportLogic runner wiring that the central patcher intentionally does not touch.
+root is on sys.path.  It applies per-run-only API limits, centralized runtime
+patches, and keeps SportLogic runner wiring that must happen before app.cli is
+imported.
 """
 
 from __future__ import annotations
@@ -162,6 +163,9 @@ def _patch_runner_sportlogic() -> None:
 
 
 try:
+    from scripts import api_max_usage_patch
+
+    api_max_usage_patch.apply_api_max_usage_patch()
     _patch_runner_sportlogic()
     from scripts.runtime_startup_patches import apply_all, install_import_hook
 
