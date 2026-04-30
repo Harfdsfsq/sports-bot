@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
@@ -24,6 +25,11 @@ class OddsApiIoProvider:
         self._bootstrap_events_cache: list[dict[str, Any]] = []
         self.max_http_requests = max(0, int(getattr(settings, "odds_api_io_per_run_max", 8) or 0))
         self._requests_used = 0
+        self._account_request_limits = {
+            "account1": max(0, int(float(os.getenv("ODDS_API_IO_ACCOUNT1_PER_RUN_MAX") or 0))),
+            "account2": max(0, int(float(os.getenv("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX") or 0))),
+        }
+        self._account_requests_used: dict[str, int] = defaultdict(int)
 
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
@@ -59,7 +65,7 @@ class OddsApiIoProvider:
         cached_events: list[dict[str, Any]] = []
         async with httpx.AsyncClient(timeout=timeout) as client:
             for page in range(1, max_pages + 1):
-                if not self._request_budget_allows(stats):
+                if not self._request_budget_allows(stats, account_name="account1"):
                     break
                 params = {
                     "apiKey": api_key,
@@ -71,7 +77,7 @@ class OddsApiIoProvider:
                     "page": page,
                 }
                 stats["event_requests"] += 1
-                self._requests_used += 1
+                self._record_request(account_name="account1")
                 try:
                     response = await client.get(f"{self.base_url}/events", params=params)
                 except Exception as exc:
@@ -240,7 +246,7 @@ class OddsApiIoProvider:
                     preview["sample_events"] = events[:3]
             else:
                 for page in range(1, max_pages + 1):
-                    if not self._request_budget_allows(stats):
+                    if not self._request_budget_allows(stats, account_name=str(event_account["name"])):
                         break
                     params = {
                         "apiKey": api_key,
@@ -252,7 +258,7 @@ class OddsApiIoProvider:
                         "page": page,
                     }
                     stats["event_requests"] += 1
-                    self._requests_used += 1
+                    self._record_request(account_name=str(event_account["name"]))
                     try:
                         response = await client.get(f"{self.base_url}/events", params=params)
                     except Exception as exc:
@@ -425,12 +431,12 @@ class OddsApiIoProvider:
         account_stats.setdefault("http_statuses", [])
         attempts = 0
         while attempts < 2:
-            if not self._request_budget_allows(stats):
+            if not self._request_budget_allows(stats, account_name=account_name):
                 return []
             attempts += 1
             stats["odds_requests"] += 1
             account_stats["odds_requests"] = int(account_stats.get("odds_requests") or 0) + 1
-            self._requests_used += 1
+            self._record_request(account_name=account_name)
             try:
                 response = await self._request_odds_multi(client, api_key, event_ids, target_books)
             except Exception as exc:
@@ -469,14 +475,29 @@ class OddsApiIoProvider:
                 return []
         return []
 
-    def _request_budget_allows(self, stats: dict[str, Any]) -> bool:
+    def _request_budget_allows(self, stats: dict[str, Any], account_name: str | None = None) -> bool:
         if self.max_http_requests <= 0:
             stats["budget_exhausted"] = True
             return False
         if self._requests_used >= self.max_http_requests:
             stats["budget_exhausted"] = True
             return False
+        if account_name:
+            limit = int(self._account_request_limits.get(account_name, 0) or 0)
+            used = int(self._account_requests_used.get(account_name, 0) or 0)
+            if limit > 0 and used >= limit:
+                stats["budget_exhausted"] = True
+                account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
+                account_stats["budget_exhausted"] = True
+                account_stats["request_limit"] = limit
+                account_stats["requests_used"] = used
+                return False
         return True
+
+    def _record_request(self, account_name: str | None = None) -> None:
+        self._requests_used += 1
+        if account_name:
+            self._account_requests_used[account_name] = int(self._account_requests_used.get(account_name, 0) or 0) + 1
 
     def _bookmakers_param(self) -> str:
         return ",".join(account["bookmakers"] for account in self._odds_accounts()) or "Bet365,Unibet"
@@ -584,12 +605,13 @@ class OddsApiIoProvider:
         event["match_quality"] = best_quality
         return best_match
 
-    def _match_priority(self, match: Match, now: datetime) -> tuple[int, int, int, float, str, str]:
+    def _match_priority(self, match: Match, now: datetime) -> tuple[int, int, float, int, int, str, str]:
         publish_window = now + timedelta(hours=max(1, int(getattr(self.settings, "publish_window_hours", 48) or 48)))
         in_window = 0 if now <= match.commence_time <= publish_window else 1
         tier_rank = 0 if match.tier == "top" else 1 if match.tier == "mid" else 2
         kickoff_distance = abs((match.commence_time - now).total_seconds()) / 3600.0
-        return (in_window, tier_rank, 0 if match.metadata.get("bet365_id") else 1, kickoff_distance, match.league_name.lower(), match.home_team.lower())
+        soon_bucket = 0 if kickoff_distance <= 6 else 1 if kickoff_distance <= 12 else 2 if kickoff_distance <= 24 else 3
+        return (in_window, soon_bucket, kickoff_distance, tier_rank, 0 if match.metadata.get("bet365_id") else 1, match.league_name.lower(), match.home_team.lower())
 
     def _parse_event_odds(self, payload: dict[str, Any], match: Match) -> list[Offer]:
         bookmakers = payload.get("bookmakers")

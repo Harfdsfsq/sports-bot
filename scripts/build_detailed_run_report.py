@@ -60,6 +60,8 @@ except Exception:
         "tier_c_canonical_edge_below_min": "запас value ниже минимума уровня C",
         "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
         "duplicate_fallback_sent_index": "такой прогноз уже отправлялся ранее",
+        "duplicate_same_match:fallback_sent_index": "матч уже был опубликован ранее",
+        "btts_probability_gap_hard_reject": "BTTS-модель слишком расходится с xG",
         "proxy_single_source_edge_below_min": "proxy-источник: запас value ниже минимума",
         "proxy_single_source_ev_below_min": "proxy-источник: EV ниже минимума",
         "proxy_single_source_confidence_below_min": "proxy-источник: уверенность ниже минимума",
@@ -743,11 +745,14 @@ def render(payload: dict[str, Any]) -> str:
     reasons = Counter(payload.get("reason_counts") or {})
     selected = payload.get("selected") or []
     near = payload.get("near_misses") or []
+    has_duplicate_block = any(str(reason).startswith("duplicate") for reason in reasons)
 
     lines = []
     title = "🧾 Подробный отчёт run"
     if payload.get("published"):
         title += " — прогноз опубликован"
+    elif has_duplicate_block:
+        title += " — новых прогнозов нет"
     else:
         title += " — прогнозов нет"
     lines.append(title)
@@ -853,7 +858,7 @@ def render(payload: dict[str, Any]) -> str:
         if near and isinstance(near[0], dict):
             top_near_reasons = {str(reason) for reason in (near[0].get("reasons") or [])}
         lines.append("📌 Вывод")
-        if "duplicate_fallback_sent_index" in top_near_reasons:
+        if "duplicate_fallback_sent_index" in top_near_reasons or any(reason.startswith("duplicate_same_match:") for reason in top_near_reasons):
             lines.append("• Лучший пограничный кандидат уже был отправлен ранее, поэтому текущий run не стал публиковать дубль.")
         elif top_reason == "canonical_negative_value":
             lines.append("• Главный фильтр — отрицательная контрольная ценность. Скрипт видел матчи, но рынок не дал достаточного value.")
@@ -862,9 +867,11 @@ def render(payload: dict[str, Any]) -> str:
         elif top_reason.startswith("family_not_allowed:"):
             lines.append("• Главный фильтр — закрытые семьи рынков. Они остаются в watchlist, но не публикуются в Telegram без отдельного safe-tier.")
         elif "xg" in top_reason:
-            lines.append("• Главный фильтр — конфликт с xG. Модельный value не подтвердился базовой xG-проверкой.")
+            lines.append("• Главный фильтр — оптимизм модели против xG. Value есть, но xG-ориентир не подтверждает такой запас.")
         else:
             lines.append("• Прогнозов нет из-за комбинации value, xG, качества и ограничений семейств рынков.")
+        if has_duplicate_block:
+            lines.append("• Уже опубликованный ранее матч не дублировался повторно.")
     return normalize_telegram_text("\n".join(lines))
 
 

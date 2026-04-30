@@ -58,6 +58,11 @@ def run_script(path: str, required: bool = False) -> dict[str, object]:
     return result
 
 
+def policy_value(name: str, default: str) -> str:
+    """Use explicit HARIZON_* overrides, ignoring stale profile caps."""
+    return os.getenv(f"HARIZON_{name}") or default
+
+
 def base_env() -> dict[str, str]:
     now_local = datetime.now(UTC).astimezone(app_tz())
     today = now_local.date().isoformat()
@@ -82,20 +87,27 @@ def base_env() -> dict[str, str]:
         "COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE": today,
         "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
         "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
-        "ODDS_API_IO_PER_RUN_MAX": os.getenv("ODDS_API_IO_PER_RUN_MAX") or "140",
-        "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": os.getenv("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN") or "140",
-        "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": os.getenv("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT") or "24",
-        "MAX_MATCHES_FOR_ODDS_FETCH": os.getenv("MAX_MATCHES_FOR_ODDS_FETCH") or "320",
+        "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": policy_value("ODDS_API_IO_ACCOUNT1_PER_RUN_MAX", "100"),
+        "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": policy_value("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX", "100"),
+        "ODDS_API_IO_PER_RUN_MAX": policy_value("ODDS_API_IO_PER_RUN_MAX", "200"),
+        "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": policy_value("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", "200"),
+        "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": policy_value("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT", "36"),
+        "MAX_MATCHES_FOR_ODDS_FETCH": policy_value("MAX_MATCHES_FOR_ODDS_FETCH", "520"),
         "TARGET_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "SHARP_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
-        "CONTEXT_ENRICHMENT_MATCH_LIMIT": os.getenv("CONTEXT_ENRICHMENT_MATCH_LIMIT") or "220",
+        "CONTEXT_ENRICHMENT_MATCH_LIMIT": policy_value("CONTEXT_ENRICHMENT_MATCH_LIMIT", "520"),
         "SSTATS_ENABLED": "true",
         "ENABLE_SSTATS_CONTEXT": "true",
-        "SSTATS_PER_RUN_MAX": os.getenv("SSTATS_PER_RUN_MAX") or "24",
-        "SSTATS_REQUESTS_MAX_PER_RUN": os.getenv("SSTATS_REQUESTS_MAX_PER_RUN") or "24",
-        "SSTATS_CONTEXT_MATCH_LIMIT": os.getenv("SSTATS_CONTEXT_MATCH_LIMIT") or "72",
+        "SSTATS_PER_RUN_MAX": policy_value("SSTATS_PER_RUN_MAX", "120"),
+        "SSTATS_REQUESTS_MAX_PER_RUN": policy_value("SSTATS_REQUESTS_MAX_PER_RUN", "120"),
+        "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": policy_value("SSTATS_MAX_HTTP_REQUESTS_PER_RUN", "120"),
+        "SSTATS_CONTEXT_MATCH_LIMIT": policy_value("SSTATS_CONTEXT_MATCH_LIMIT", "260"),
+        "BZZOIRO_PER_RUN_MAX": policy_value("BZZOIRO_PER_RUN_MAX", "500"),
+        "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": policy_value("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN", "500"),
+        "BZZOIRO_CONTEXT_MATCH_LIMIT": policy_value("BZZOIRO_CONTEXT_MATCH_LIMIT", "520"),
+        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "24"),
         "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
         "FOOTBALL_DATA_ENABLED": "true",
         "FOOTBALL_DATA_PER_RUN_MAX": os.getenv("FOOTBALL_DATA_PER_RUN_MAX") or "8",

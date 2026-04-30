@@ -1437,6 +1437,7 @@ class PredictionRunner:
         offers_by_match = offers_by_match or {}
         requires_offers = bool(getattr(self.settings, 'context_enrichment_requires_offers', True))
         target_bookmakers = {str(name).strip().lower() for name in (self.settings.target_bookmakers or []) if str(name).strip()}
+        now_utc = datetime.now(UTC)
         ranked: list[tuple[tuple[float, ...], Match]] = []
         for match in matches:
             if str(getattr(match, 'sport_key', '') or '') != 'soccer':
@@ -1453,8 +1454,10 @@ class PredictionRunner:
             rich_offer_bonus = 1.0 if {'h2h', 'totals', 'btts'} & families else 0.0
             league_priority = float(self.settings.league_priority_score(match.league_name))
             low_tier_penalty = -0.75 if self.settings.is_low_tier_league(match.league_name) else 0.0
-            kickoff_weight = -abs(ensure_utc(match.commence_time).timestamp())
+            kickoff_delta = max((ensure_utc(match.commence_time) - now_utc).total_seconds(), 0.0)
+            soon_bucket = 4.0 if kickoff_delta <= 6 * 3600 else 3.0 if kickoff_delta <= 12 * 3600 else 2.0 if kickoff_delta <= 24 * 3600 else 1.0
             rank_key = (
+                soon_bucket,
                 support_score,
                 league_priority,
                 float(supported_books),
@@ -1463,7 +1466,7 @@ class PredictionRunner:
                 float(len(unique_books)),
                 float(len(offers)),
                 low_tier_penalty,
-                kickoff_weight,
+                -kickoff_delta,
             )
             ranked.append((rank_key, match))
         ranked.sort(key=lambda item: item[0], reverse=True)

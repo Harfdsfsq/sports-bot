@@ -63,9 +63,9 @@ def main() -> int:
         providers = {}
         policy['providers'] = providers
 
-    odds_global = os.getenv('ODDS_API_IO_PER_RUN_MAX', '140')
-    odds_account1 = os.getenv('ODDS_API_IO_ACCOUNT1_PER_RUN_MAX', '70')
-    odds_account2 = os.getenv('ODDS_API_IO_ACCOUNT2_PER_RUN_MAX', '70')
+    odds_global = os.getenv('ODDS_API_IO_PER_RUN_MAX', '200')
+    odds_account1 = os.getenv('ODDS_API_IO_ACCOUNT1_PER_RUN_MAX', '100')
+    odds_account2 = os.getenv('ODDS_API_IO_ACCOUNT2_PER_RUN_MAX', '100')
 
     # RULES.txt: each odds-api.io free account allows 100 requests/hour and 2 selected bookmakers.
     # Dual-account mode keeps 2 books per account, not 4 books on one key.
@@ -92,7 +92,7 @@ def main() -> int:
             'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
             'ODDS_API_IO_PAGE_LIMIT': '100',
             'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
-            'MAX_MATCHES_FOR_ODDS_FETCH': '320',
+            'MAX_MATCHES_FOR_ODDS_FETCH': '520',
         },
     })
 
@@ -104,10 +104,10 @@ def main() -> int:
             'ENABLE_SSTATS': 'true',
             'ENABLE_SSTATS_CONTEXT': 'true',
             'SSTATS_ENABLED': 'true',
-            'SSTATS_PER_RUN_MAX': '150',
-            'SSTATS_REQUESTS_MAX_PER_RUN': '150',
-            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '220',
+            'SSTATS_PER_RUN_MAX': '120',
+            'SSTATS_REQUESTS_MAX_PER_RUN': '120',
+            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '120',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '260',
             'SSTATS_LOOKBACK_DAYS': '35',
             'SSTATS_RECENT_MATCHES': '10',
         },
@@ -166,10 +166,10 @@ def main() -> int:
         'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
         'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
         'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
-        'MAX_MATCHES_FOR_ODDS_FETCH': '320',
-        'SSTATS_PER_RUN_MAX': '150',
-        'SSTATS_REQUESTS_MAX_PER_RUN': '150',
-        'SSTATS_CONTEXT_MATCH_LIMIT': '220',
+        'MAX_MATCHES_FOR_ODDS_FETCH': '520',
+        'SSTATS_PER_RUN_MAX': '120',
+        'SSTATS_REQUESTS_MAX_PER_RUN': '120',
+        'SSTATS_CONTEXT_MATCH_LIMIT': '260',
         'THESPORTSDB_PER_RUN_MAX': '30',
         'THESPORTSDB_REQUESTS_MAX_PER_RUN': '30',
         'THESPORTSDB_CONTEXT_MATCH_LIMIT': '180',

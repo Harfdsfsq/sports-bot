@@ -29,12 +29,16 @@ class BzzoiroContextProvider:
         self.base_url = "https://sports.bzzoiro.com/api"
         self.api_key = os.getenv("BZZOIRO_API_KEY") or getattr(settings, "bzzoiro_api_key", None)
         self.timeout = float(getattr(settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
+        self.max_http_requests = max(0, int(float(os.getenv("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN") or getattr(settings, "bzzoiro_per_run_max", 70) or 70)))
+        self._requests_used = 0
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
             "enabled": bool(self.api_key),
             "api_key_present": bool(self.api_key),
             "requests": 0,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
             "response_errors": 0,
             "retry_attempts": 0,
             "events_fetched": 0,
@@ -269,10 +273,14 @@ class BzzoiroContextProvider:
         backoff = max(0.0, float(getattr(self.settings, "bzzoiro_retry_backoff_seconds", 1.0) or 1.0))
 
         for attempt in range(retries + 1):
+            if self.max_http_requests <= 0 or self._requests_used >= self.max_http_requests:
+                stats["budget_exhausted"] = True
+                return None
             if attempt > 0:
                 stats["retry_attempts"] = int(stats.get("retry_attempts", 0) or 0) + 1
 
             stats["requests"] = int(stats.get("requests", 0) or 0) + 1
+            self._requests_used += 1
             stats["last_url"] = url
             try:
                 response = await client.get(url, headers=headers, params=params)
