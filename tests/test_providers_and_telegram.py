@@ -13,6 +13,7 @@ from app.services.quality import PredictionQualityService
 from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
 from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider
+from scripts.publish_controlled_fallback import hard_reject_reasons, xg_sanity_metrics
 
 UTC = timezone.utc
 
@@ -129,6 +130,58 @@ def test_request_budget_blocks_exhausted_daily_budget(monkeypatch):
 
     assert decision["grant"] == 0
     assert decision["reason"] == "daily_budget_exhausted:1/1"
+
+
+def test_xg_guard_allows_conservative_total_model(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_XG_HARD_REJECT_GAP_PP", "14.0")
+    candidate = {
+        "family": "totals",
+        "selection": "Under",
+        "point": 2.5,
+        "expected_home": 0.82,
+        "expected_away": 0.88,
+    }
+
+    xg = xg_sanity_metrics(candidate, adjusted_probability=0.55)
+    metrics = {
+        "odds": 1.96,
+        "canonical_edge_pp": 4.2,
+        "canonical_ev_pct": 8.4,
+        "adjusted_probability": 0.55,
+        "books_count": 2,
+        "sources_count": 1,
+        "xg_sanity": xg,
+    }
+
+    assert xg["xg_model_optimism_gap_pp"] == 0.0
+    assert "xg_probability_gap_hard_reject" not in hard_reject_reasons(candidate, metrics, {})
+
+
+def test_xg_guard_rejects_only_model_optimism(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_XG_HARD_REJECT_GAP_PP", "14.0")
+    candidate = {
+        "family": "totals",
+        "selection": "Under",
+        "point": 2.5,
+        "expected_home": 0.82,
+        "expected_away": 0.88,
+    }
+
+    xg = xg_sanity_metrics(candidate, adjusted_probability=0.91)
+    metrics = {
+        "odds": 1.96,
+        "canonical_edge_pp": 4.2,
+        "canonical_ev_pct": 8.4,
+        "adjusted_probability": 0.91,
+        "books_count": 2,
+        "sources_count": 1,
+        "xg_sanity": xg,
+    }
+
+    assert xg["xg_model_optimism_gap_pp"] > 14.0
+    assert "xg_probability_gap_hard_reject" in hard_reject_reasons(candidate, metrics, {})
 
 
 def test_gnews_zero_request_budget_short_circuits():

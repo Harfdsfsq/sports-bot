@@ -206,7 +206,7 @@ _REASON_MAP: dict[str, str] = {
     "match_time_too_late": "матч дальше окна публикации",
     "missing_commence_time": "нет времени начала матча",
     "xg_direction_conflict": "направление ставки конфликтует с xG",
-    "xg_probability_gap_hard_reject": "слишком большой разрыв между моделью и xG-ориентиром",
+    "xg_probability_gap_hard_reject": "модель слишком оптимистична относительно xG-ориентира",
     "btts_direction_conflict": "BTTS конфликтует с xG по обеим командам",
     "btts_probability_gap_hard_reject": "слишком большой разрыв BTTS-модели и xG",
     "dnb_direction_conflict": "DNB конфликтует с xG-проверкой",
@@ -248,12 +248,12 @@ _REASON_MAP.update({
     "tier_a_sources_below_min": "источников меньше минимума уровня A",
     "tier_b_sources_below_min": "источников меньше минимума уровня B",
     "tier_c_sources_below_min": "источников меньше минимума уровня C",
-    "tier_a_xg_gap_above_max": "уровень A: разрыв с xG выше лимита",
-    "tier_b_xg_gap_above_max": "уровень B: разрыв с xG выше лимита",
-    "tier_c_xg_gap_above_max": "уровень C: разрыв с xG выше лимита",
-    "tier_a_xg_confirmation_missing": "уровень A: нет подтверждения xG",
-    "tier_b_xg_confirmation_missing": "уровень B: нет подтверждения xG",
-    "tier_c_xg_confirmation_missing": "уровень C: нет подтверждения xG",
+    "tier_a_xg_gap_above_max": "уровень A: оптимизм модели против xG выше лимита",
+    "tier_b_xg_gap_above_max": "уровень B: оптимизм модели против xG выше лимита",
+    "tier_c_xg_gap_above_max": "уровень C: оптимизм модели против xG выше лимита",
+    "tier_a_xg_confirmation_missing": "уровень A: xG не подтверждает запас модели",
+    "tier_b_xg_confirmation_missing": "уровень B: xG не подтверждает запас модели",
+    "tier_c_xg_confirmation_missing": "уровень C: xG не подтверждает запас модели",
     "tier_a_market_confirmation_missing": "уровень A: нет рыночного подтверждения",
     "tier_b_market_confirmation_missing": "уровень B: нет рыночного подтверждения",
     "tier_c_market_confirmation_missing": "уровень C: нет рыночного подтверждения",
@@ -452,8 +452,8 @@ def translate_reject_reason(reason: Any) -> str:
     generic = generic.replace("odds below min", "коэффициент ниже минимума")
     generic = generic.replace("books below min", "линий букмекеров меньше минимума")
     generic = generic.replace("sources below min", "источников меньше минимума")
-    generic = generic.replace("xg gap above max", "разрыв с xG выше лимита")
-    generic = generic.replace("xg confirmation missing", "нет подтверждения xG")
+    generic = generic.replace("xg gap above max", "оптимизм модели против xG выше лимита")
+    generic = generic.replace("xg confirmation missing", "xG не подтверждает запас модели")
     generic = generic.replace("market confirmation missing", "нет рыночного подтверждения")
     return generic.replace("_", " ")
 

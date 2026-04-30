@@ -276,6 +276,8 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     gap_pp = (float(adjusted_probability) - float(probability)) * 100.0
     abs_gap_pp = abs(gap_pp)
+    optimism_gap_pp = max(0.0, gap_pp)
+    conservative_gap_pp = max(0.0, -gap_pp)
     selection_text = str(candidate.get("selection") or "").lower()
     is_over = any(token in selection_text for token in ("over", "больше", "тб"))
     is_under = any(token in selection_text for token in ("under", "меньше", "тм"))
@@ -294,6 +296,8 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
         "xg_probability_pct": round(probability * 100.0, 3),
         "xg_model_gap_pp": round(gap_pp, 3),
         "xg_abs_gap_pp": round(abs_gap_pp, 3),
+        "xg_model_optimism_gap_pp": round(optimism_gap_pp, 3),
+        "xg_model_conservative_gap_pp": round(conservative_gap_pp, 3),
         "xg_total": round(total_xg, 3) if total_xg is not None else None,
         "xg_direction_ok": direction_ok,
     }
@@ -692,7 +696,8 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
         if not bool(xg.get("xg_direction_ok", True)):
             reasons.append("xg_direction_conflict")
         hard_gap = env_float("CONTROLLED_FALLBACK_XG_HARD_REJECT_GAP_PP", 14.0)
-        if float(xg.get("xg_abs_gap_pp") or 0.0) > hard_gap:
+        optimism_gap = float(xg.get("xg_model_optimism_gap_pp") or max(0.0, float(xg.get("xg_model_gap_pp") or 0.0)))
+        if optimism_gap > hard_gap:
             reasons.append("xg_probability_gap_hard_reject")
 
     btts = metrics.get("btts_sanity") or {}
@@ -752,7 +757,7 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
 
     xg = metrics.get("xg_sanity") or {}
     if bool(xg.get("enabled")):
-        gap = float(xg.get("xg_abs_gap_pp") or 0.0)
+        gap = float(xg.get("xg_model_optimism_gap_pp") or max(0.0, float(xg.get("xg_model_gap_pp") or 0.0)))
         max_gap = env_float(prefix + "MAX_XG_GAP_PP", 999.0)
         if gap > max_gap:
             reasons.append(f"tier_{tier.lower()}_xg_gap_above_max")
@@ -979,7 +984,10 @@ def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str
     tier_bonus = {"уровень A": 30.0, "уровень B": 15.0, "уровень C": 0.0}.get(tier, 0.0)
     proxy_penalty = 5.0 if str(metrics.get("quality_score_source") or "") == "proxy" else 0.0
     xg = metrics.get("xg_sanity") or {}
-    xg_gap_penalty = min(10.0, float(xg.get("xg_abs_gap_pp") or 0.0) * 0.45) if bool(xg.get("enabled")) else 0.0
+    xg_gap_penalty = min(
+        10.0,
+        float(xg.get("xg_model_optimism_gap_pp") or max(0.0, float(xg.get("xg_model_gap_pp") or 0.0))) * 0.45,
+    ) if bool(xg.get("enabled")) else 0.0
     btts = metrics.get("btts_sanity") or {}
     btts_gap_penalty = min(10.0, float(btts.get("btts_abs_gap_pp") or 0.0) * 0.45) if bool(btts.get("enabled")) else 0.0
     dnb = metrics.get("dnb_sanity") or {}
