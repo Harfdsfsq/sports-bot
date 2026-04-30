@@ -1,0 +1,556 @@
+HARIZON SPORTS BOT — API DOCUMENTATION CATALOG
+Last checked online: 2026-04-30
+Repository: Harfdsfsq/sports-bot
+
+Purpose
+-------
+Single text index for all external APIs mentioned for the bot. This file is not a replacement for vendor docs; it is a practical connection map: documentation URL, base URL where known, auth style, useful endpoints, bot secret/env names, and implementation notes.
+
+Confidence legend
+-----------------
+official         = official vendor documentation or official vendor page found.
+official/limited = official vendor/product page found, but complete endpoint reference was limited or not indexable.
+marketplace      = RapidAPI/marketplace page found; exact endpoint schema must be confirmed in the marketplace console.
+unverified       = no stable official docs found from public search; manual console/API check required.
+
+Important project note
+----------------------
+api-football / API-FOOTBALL is intentionally removed from active runtime in this project. Its documentation is still listed here for reference, but it must not be restored without explicit user request.
+
+
+1) Currents News API
+--------------------
+Status: official
+Docs: https://www.currentsapi.services/en/docs/
+Official libraries: https://www.currentsapi.services/en/docs/official
+Main use in bot: news/context enrichment.
+Auth: API key. Currents examples commonly use an Authorization header or apiKey depending on endpoint/client.
+Common endpoints:
+- Latest news
+- Search news
+- Available languages/countries/categories via docs
+Bot env/secrets:
+- CURRENTS_API_KEY
+- CURRENTS_KEY
+Repo budget group: newsapi_currents
+Notes:
+- Use sparingly; cache football news context.
+- Prefer targeted club/team queries, not broad sports queries.
+
+2) GNews API
+------------
+Status: official
+Docs: https://docs.gnews.io/?lang=en
+Base URL: https://gnews.io/api/v4
+Auth: query parameter `apikey=YOUR_API_KEY`.
+Common endpoints:
+- /search?q=...
+- /top-headlines
+Bot env/secrets:
+- GNEWS_KEY
+Repo provider: gnews
+Notes:
+- Good for targeted news confirmation.
+- Current budget throttles it heavily; do not expect every run.
+
+3) NewsAPI
+----------
+Status: official
+Docs: https://newsapi.org/docs
+Auth docs: https://newsapi.org/docs/authentication
+Everything endpoint: https://newsapi.org/docs/endpoints/everything
+Base URL: https://newsapi.org/v2
+Auth:
+- query parameter `apiKey=...`, or
+- header `X-Api-Key: ...`, or
+- header `Authorization: ...`
+Common endpoints:
+- /v2/everything
+- /v2/top-headlines
+Bot env/secrets:
+- NEWSAPI_KEY
+Repo budget group: newsapi_currents
+Notes:
+- Prefer header auth to avoid leaking key in logs.
+- Use for context only; do not let news-only signals create picks.
+
+4) odds-api.io
+--------------
+Status: official
+Docs: https://docs.odds-api.io/
+Auth: https://docs.odds-api.io/authentication
+Odds guide: https://docs.odds-api.io/guides/fetching-odds
+Base URL: https://api.odds-api.io/v3
+Auth: query parameter `apiKey=YOUR_API_KEY`.
+Useful endpoints:
+- GET /v3/sports
+- GET /v3/leagues
+- GET /v3/events?apiKey=...&sport=football
+- GET /v3/odds?apiKey=...&eventId=...&bookmakers=...
+- GET /v3/odds/multi?apiKey=...&eventIds=...&bookmakers=...
+Bot env/secrets:
+- ODDS_API_IO_KEY
+- ODDS_API_IO_KEY_2
+- ODDS_API_IO_BOOKMAKERS_ACCOUNT1
+- ODDS_API_IO_BOOKMAKERS_ACCOUNT2
+Repo provider: odds_api_io
+Notes:
+- This is the current primary bootstrap/odds source.
+- Multi-odds endpoint is efficient and should remain the main odds fetch path.
+- Account split currently routes Bet365/Unibet and Betfair Exchange/Sbobet separately.
+
+5) api-football / API-FOOTBALL / API-Sports Football
+----------------------------------------------------
+Status: official, but removed from project runtime
+Official product page: https://api-sports.io/sports/football
+Docs URL usually referenced as: https://www.api-football.com/documentation-v3
+Beginner guide: https://www.api-football.com/news/post/how-to-get-started-with-api-football-the-complete-beginners-guide
+Base URL: https://v3.football.api-sports.io
+Auth: header `x-apisports-key: YOUR_API_KEY`.
+Common endpoints:
+- /countries
+- /leagues
+- /fixtures
+- /standings
+- /predictions
+- /odds
+Bot env/secrets, currently disabled:
+- ENABLE_API_FOOTBALL=false
+- API_FOOTBALL_ENABLED=false
+- API_FOOTBALL_KEY=
+- API_FOOTBALL_PER_RUN_MAX=0
+Notes:
+- Do not re-enable unless explicitly requested.
+- Existing repo policy marks it as removed_from_project.
+
+6) AllSportsAPI
+---------------
+Status: official
+Docs: https://allsportsapi.com/soccer-football-api-documentation
+Socket docs: https://allsportsapi.com/soccer-football-socket-documentation
+Base URL: https://apiv2.allsportsapi.com/football/
+Auth: query parameter `APIkey=YOUR_KEY`.
+Useful football methods:
+- ?met=Countries
+- ?met=Fixtures&from=YYYY-MM-DD&to=YYYY-MM-DD
+- ?met=Odds&matchId=...
+- ?met=Livescore
+Bot env/secrets:
+- ALLSPORTSAPI_API_KEY
+- ENABLE_ALLSPORTSAPI
+- ALLSPORTSAPI_PER_RUN_MAX
+Repo provider: allsportsapi
+Notes:
+- Current budget uses low per-run caps and large spacing.
+- Best use: recovery/fill source when odds-api.io coverage is thin.
+
+7) OddsPapi
+-----------
+Status: official
+Docs v4: https://oddspapi.io/docs
+Docs v5/B2B: https://docs.oddspapi.io/
+REST overview v5: https://docs.oddspapi.io/api-reference/overview
+Base URLs:
+- v4: https://api.oddspapi.io/v4
+- v5 B2B: https://v5.oddspapi.io/{lang}
+Auth:
+- v4 examples use query parameter `apiKey={{YOUR_API_KEY}}`.
+- v5 docs should be checked for current auth details before implementation.
+Useful endpoints:
+- /v4/sports
+- /v4/bookmakers
+- /v4/tournaments
+- /v4/fixtures
+- /v4/odds
+- /v4/historical odds / settlements / scores
+Bot env/secrets:
+- ODDSPAPI_API_KEY
+- ENABLE_ODDSPAPI
+Repo provider/budget: oddspapi
+Notes:
+- Monthly/daily limits are restrictive in repo policy.
+- Use only targeted probes unless paid quota is increased.
+
+8) FutrixMetrics
+----------------
+Status: official/limited
+Main site: https://www.futrixmetrics.com/
+Landing/API page: https://lp.futrixmetrics.com/
+Base URL shown in public examples: https://footballperformanceapi.site
+Example endpoint shown publicly: GET /database/ratings, POST /score/predict-base
+Auth: API key from FutrixMetrics dashboard or RapidAPI integration; exact header must be confirmed in console/docs.
+Bot env/secrets:
+- FUTRIXMETRICS_API_KEY
+- ENABLE_FUTRIXMETRICS
+- FUTRIXMETRICS_PER_RUN_MAX
+Repo provider/budget: futrixmetrics
+Notes:
+- Public docs are marketing/playground style, not a complete OpenAPI reference.
+- Treat as context/model enrichment until endpoint audit confirms stable schema.
+
+9) football-data.org
+--------------------
+Status: official
+Docs/API reference: https://www.football-data.org/documentation/api
+v4 overview: https://docs.football-data.org/general/v4/index.html
+Quickstart: https://www.football-data.org/documentation/quickstart
+Base URL: https://api.football-data.org/v4
+Auth: header `X-Auth-Token: YOUR_TOKEN`.
+Useful endpoints:
+- /v4/competitions
+- /v4/matches?dateFrom=YYYY-MM-DD&dateTo=YYYY-MM-DD
+- /v4/competitions/{code}/standings
+- /v4/teams/{id}/matches
+Bot env/secrets:
+- FOOTBALL_DATA_API_KEY
+- ENABLE_FOOTBALL_DATA
+Repo provider: football_data
+Notes:
+- Good top-league context source.
+- Free coverage is narrow vs odds-api.io long-tail fixtures.
+
+10) TheSportsDB
+---------------
+Status: official
+Docs: https://www.thesportsdb.com/documentation
+Free API page: https://www.thesportsdb.com/docs_api
+Base URL examples:
+- v1: https://www.thesportsdb.com/api/v1/json/{API_KEY_OR_3}/...
+- v2: documented on TheSportsDB docs for premium/supporter keys
+Auth: free/test key or paid API key depending endpoint/version.
+Useful endpoints:
+- search league/team/event
+- lookup table / standings
+- schedules / livescores
+Bot env/secrets:
+- THESPORTSDB_API_KEY
+- ENABLE_THESPORTSDB
+Repo provider: thesportsdb
+Notes:
+- Cache league ID resolution; avoid repeated all_leagues calls.
+- Use for tables/context, not primary odds.
+
+11) WeatherAPI
+--------------
+Status: official
+Docs: https://www.weatherapi.com/docs/
+Postman official collection: https://www.postman.com/weatherapicom/weatherapi-com-official/overview
+Base URL: https://api.weatherapi.com/v1
+Auth: query parameter `key=YOUR_API_KEY`.
+Useful endpoints:
+- /current.json
+- /forecast.json?q=...&days=...
+- /history.json
+- /search.json
+Bot env/secrets:
+- WEATHERAPI_KEY
+- ENABLE_WEATHERAPI
+- WEATHERAPI_PER_RUN_MAX
+Repo provider: weather
+Notes:
+- Best weather source when venue/city is known.
+- Current reports often show max 0 because budget/key path is not active.
+
+12) OpenWeatherMap / OpenWeather
+--------------------------------
+Status: official
+API index: https://openweathermap.org/api
+5 day / 3 hour forecast docs: https://docs.openweather.co.uk/forecast5
+Base URL commonly used by bot: https://api.openweathermap.org/data/2.5/forecast
+Auth: query parameter `appid=YOUR_API_KEY`.
+Useful endpoint:
+- /data/2.5/forecast?lat={lat}&lon={lon}&appid={API key}&units=metric
+Bot env/secrets:
+- OPENWEATHERMAP_API_KEY
+- OPENWEATHER_API_KEY
+- OPENWEATHERMAP_KEY
+- ENABLE_OPENWEATHERMAP
+Repo provider: weather fallback
+Notes:
+- Prefer lat/lon when possible.
+- Daily budget currently often exhausted in reports.
+
+13) SportAPI / API-Sports
+-------------------------
+Status: official, but naming is ambiguous
+API-Sports football product page: https://api-sports.io/sports/football
+API-Football docs: https://www.api-football.com/documentation-v3
+Base URL: https://v3.football.api-sports.io
+Auth: header `x-apisports-key: YOUR_API_KEY`.
+Bot env/secrets in repo for separate RapidAPI/SportAPI probe:
+- SPORTAPI7_RAPIDAPI_KEY
+- RAPIDAPI_SPORTAPI7_PROBE_ENABLED
+Notes:
+- If this means API-FOOTBALL/API-Sports, it overlaps with removed api-football.
+- If this means a separate RapidAPI product, confirm exact RapidAPI host and endpoints before coding.
+
+14) Sportsbook API
+------------------
+Status: official/marketplace
+Docs: https://sportsbookapi.com/documentation/
+Site: https://sportsbookapi.com/
+Auth: RapidAPI headers:
+- X-RapidAPI-Key
+- X-RapidAPI-Host
+Common product: sportsbook odds API for major US/international sports.
+Bot env/secrets:
+- SPORTSBOOK_RAPIDAPI_KEY
+- RAPIDAPI_SPORTSBOOK_PROBE_ENABLED
+Repo budget: sportsbook_api
+Notes:
+- Current repo only probes/discovers lightly.
+- Needs exact RapidAPI endpoint/host from dashboard before production use.
+
+15) Meteostat
+-------------
+Status: official
+Docs: https://dev.meteostat.net/api
+Base URL: https://meteostat.p.rapidapi.com
+Auth: RapidAPI key/host headers.
+Common headers:
+- X-RapidAPI-Key: YOUR_KEY
+- X-RapidAPI-Host: meteostat.p.rapidapi.com
+Useful data:
+- historical weather/climate by station or geo location
+- daily/hourly/monthly records depending endpoint
+Bot env/secrets:
+- METEOSTAT_RAPIDAPI_KEY
+- METEOSTAT_RAPIDAPI_HOST=meteostat.p.rapidapi.com
+- METEOSTAT_RAPIDAPI_ENABLED
+Notes:
+- Historical weather only; use to verify completed match conditions or fallback historical climate.
+
+16) FreeAPILiveFootballData
+---------------------------
+Status: marketplace
+RapidAPI page: https://rapidapi.com/Creativesdev/api/free-api-live-football-data/playground/apiendpoint_05e82dac-4928-4357-b7d6-83e3b95aa2ce
+Marketplace mirror: https://www.getodata.com/tools/Free-API-Live-Football-Data
+Auth: RapidAPI headers.
+Bot env/secrets:
+- FREE_FOOTBALL_RAPIDAPI_KEY
+- RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED
+Repo budget: freeapilivefootball
+Notes:
+- Public searchable docs are thin; use RapidAPI console for exact host/endpoints.
+- Current repo caps are very low; treat as probe-only unless validated.
+
+17) OddsFeed
+------------
+Status: marketplace/unverified
+No stable official docs page was confirmed from public search in this pass.
+Likely auth in repo: RapidAPI headers.
+Bot env/secrets:
+- ODDS_FEED_RAPIDAPI_KEY
+- RAPIDAPI_ODDS_FEED_PROBE_ENABLED
+Repo budget: oddsfeed
+Notes:
+- Must verify exact RapidAPI product page, host, endpoints, and quota before implementation.
+- Current repo treats this as low-frequency discovery/probe.
+
+18) SStats
+----------
+Status: official/community Postman docs
+Postman docs: https://www.postman.com/whispryte/sstats-net/documentation/lu941wt/sstats-net-api
+Postman collection: https://www.postman.com/whispryte/sstats-net/collection/lu941wt/sstats-net-api-documentation
+Base URL: https://api.sstats.net
+Auth: API key, current bot uses `apikey` style for SStats requests.
+Publicly documented data:
+- football matches
+- statistics
+- odds
+- squads/lineups/events
+- Glicko2/xG analytics
+- JSON/CSV
+Bot env/secrets:
+- SSTATS_API_KEY
+- ENABLE_SSTATS
+- SSTATS_PER_RUN_MAX
+Repo provider: sstats
+Notes:
+- Very useful context source.
+- Main improvement needed: cache and alias matching to reduce unmatched rows.
+
+19) ClubElo
+-----------
+Status: official/limited + community wrapper docs
+Official site: https://clubelo.com/
+Official data/source page: https://clubelo.com/Data
+Community wrapper docs: https://soccerdata.readthedocs.io/en/latest/datasources/ClubElo.html
+CSV API host referenced by soccerdata: http://api.clubelo.com
+Auth: no API key found/required for the CSV API reference.
+Useful patterns to verify manually:
+- http://api.clubelo.com/{team}
+- http://api.clubelo.com/{date}
+Bot env/secrets: none currently standardized.
+Notes:
+- Best used for team strength context/ratings.
+- No league names in source according to soccerdata docs; aliasing is required.
+
+20) Football-Data.co.uk
+-----------------------
+Status: official public dataset, not API
+Data page: https://www.football-data.co.uk/data.php
+Main data page: https://www.football-data.co.uk/data
+Current-season downloads: https://www.football-data.co.uk/downloadm.php
+Worldwide leagues: https://www.football-data.co.uk/all_new_data.php
+Auth: none.
+Format: CSV/Excel files.
+Useful data:
+- historical match results
+- match stats
+- betting odds columns
+- current-season CSVs by league/division
+Bot env/secrets: none currently standardized.
+Notes:
+- Great for historical model/training and calibration, not live API.
+- Need CSV downloader/cache and column normalizer.
+
+21) Open-Meteo
+--------------
+Status: official
+Docs: https://open-meteo.com/en/docs
+Main forecast endpoint: https://api.open-meteo.com/v1/forecast
+Auth: no API key for basic non-commercial use.
+Useful params:
+- latitude, longitude
+- hourly=temperature_2m,precipitation,wind_speed_10m,...
+- daily=...
+- forecast_days=...
+- timezone=...
+Bot env/secrets: none required; add ENABLE_OPEN_METEO if implemented.
+Notes:
+- Strong candidate to add because it reduces dependency on exhausted WeatherAPI/OpenWeatherMap quotas.
+- Requires venue/city geocoding or team-country fallback.
+
+22) NewsData.io
+---------------
+Status: official/limited
+Docs/blog category: https://newsdata.io/blog/category/documentation/
+Latest endpoint article: https://newsdata.io/blog/latest-news-endpoint/
+Base URL: https://newsdata.io/api/1
+Auth: query parameter `apikey=YOUR_API_KEY`.
+Useful endpoints:
+- /latest?apikey=...
+- query params such as q, qInTitle, qInMeta, timeframe, country/language/category depending plan/docs
+Bot env/secrets: not currently standardized. Suggested: NEWSDATA_API_KEY.
+Notes:
+- Potential replacement/addition for football news context.
+- Verify official dashboard docs for current endpoint list before coding.
+
+23) The Guardian Open Platform
+------------------------------
+Status: official
+Open Platform: https://open-platform.theguardian.com/
+Base URL: https://content.guardianapis.com
+Auth: query parameter `api-key=YOUR_KEY`.
+Useful endpoints:
+- /search
+- /sections
+- /tags
+- /{content-id}
+Bot env/secrets: not currently standardized. Suggested: GUARDIAN_API_KEY.
+Notes:
+- Good for English news context, but sports football coverage is not as broad as sports-specific news sources.
+- Use targeted club/team/league queries only.
+
+24) Wikidata REST / SPARQL
+--------------------------
+Status: official
+REST docs: https://www.wikidata.org/wiki/Wikidata:REST_API
+SPARQL docs: https://www.wikidata.org/wiki/Wikidata:SPARQL_query_service
+REST base URL: https://www.wikidata.org/w/rest.php/wikibase/v1
+SPARQL endpoint: https://query.wikidata.org/sparql
+Auth: no key for read-only public queries; follow User-Agent policy.
+Useful for bot:
+- team aliases
+- club country/city/stadium
+- league metadata
+- entity disambiguation
+Bot env/secrets: none required. Suggested env: WIKIDATA_USER_AGENT.
+Notes:
+- This should be added as alias/metadata provider, not prediction source.
+- Cache aggressively and use polite User-Agent.
+
+25) Highlightly
+---------------
+Status: official
+Football docs: https://highlightly.net/documentation/football/
+All Sports docs: https://highlightly.net/sport-api/documentation/
+Auth: Highlightly account or RapidAPI integration; exact header depends selected access path.
+Data:
+- live scores
+- highlights
+- match statistics
+- lineups
+- predictions
+- odds
+- head-to-head
+- standings
+Coverage shown publicly:
+- football 950+ leagues / 170+ countries
+- football odds from 100+ bookmakers
+Bot env/secrets: not currently standardized. Suggested: HIGHLIGHTLY_API_KEY or HIGHLIGHTLY_RAPIDAPI_KEY.
+Notes:
+- High-value candidate if free/cheap quota is available.
+- Needs endpoint audit before integration.
+
+26) SportLogic
+--------------
+Status: official
+Docs/site: https://api.sportlogic.io/
+Docs index URL provided by user: https://api.sportlogic.io/docs/index.html
+Base URL: https://api.sportlogic.io/api/v1
+Auth: header `X-API-Key: sl_YOUR_KEY`
+Useful endpoints:
+- GET /games?date_from=YYYY-MM-DD&date_to=YYYY-MM-DD&status=scheduled&per_page=...
+- GET /games/{id}/odds
+- GET /odds?game_id=...
+- GET /outcomes/{gameId}
+- GET /leagues
+- GET /markets
+Bot env/secrets:
+- SPORTLOGIC_API_KEY
+- SPORTLOGIC_BASE_URL=https://api.sportlogic.io/api/v1
+- SPORTLOGIC_HEADER_NAME=X-API-Key
+- ENABLE_SPORTLOGIC
+Repo provider: sportlogic_provider
+Notes:
+- This was recently fixed in runtime patch: old `/v1/football/fixtures` path was wrong and produced 404.
+- Parser must support flat odds rows: option_name, option_value, odds, market.key, bookmaker.name.
+
+
+Suggested next implementation work
+----------------------------------
+1. Add Open-Meteo provider because it needs no key and can replace quota-exhausted weather fallbacks.
+2. Add Wikidata alias provider for team/league/stadium/city normalization.
+3. Add Football-Data.co.uk CSV cache for historical model/training/calibration.
+4. Add SportLogic endpoint audit output to reports: attempted path, status, body preview, parsed fixtures, parsed odds.
+5. Add Highlightly only after checking free quota and exact auth path.
+6. Keep api-football disabled unless the user explicitly reverses that decision.
+
+Sources checked online
+----------------------
+Currents: https://www.currentsapi.services/en/docs/
+GNews: https://docs.gnews.io/?lang=en
+NewsAPI: https://newsapi.org/docs
+Odds-API.io: https://docs.odds-api.io/
+API-Sports/API-FOOTBALL: https://api-sports.io/sports/football and https://www.api-football.com/documentation-v3
+AllSportsAPI: https://allsportsapi.com/soccer-football-api-documentation
+OddsPapi: https://oddspapi.io/docs and https://docs.oddspapi.io/
+FutrixMetrics: https://www.futrixmetrics.com/ and https://lp.futrixmetrics.com/
+football-data.org: https://www.football-data.org/documentation/api
+TheSportsDB: https://www.thesportsdb.com/documentation
+WeatherAPI: https://www.weatherapi.com/docs/
+OpenWeatherMap: https://openweathermap.org/api and https://docs.openweather.co.uk/forecast5
+Sportsbook API: https://sportsbookapi.com/documentation/
+Meteostat: https://dev.meteostat.net/api
+Free API Live Football Data: RapidAPI page and marketplace mirrors
+SStats: Postman public documentation for api.sstats.net
+ClubElo: https://clubelo.com/Data and soccerdata ClubElo docs
+Football-Data.co.uk: https://www.football-data.co.uk/data.php
+Open-Meteo: https://open-meteo.com/en/docs
+NewsData.io: https://newsdata.io/blog/category/documentation/
+Guardian Open Platform: https://open-platform.theguardian.com/
+Wikidata REST/SPARQL: Wikidata REST API and SPARQL Query Service docs
+Highlightly: https://highlightly.net/documentation/football/
+SportLogic: https://api.sportlogic.io/
