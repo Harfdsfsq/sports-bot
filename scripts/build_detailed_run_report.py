@@ -481,6 +481,7 @@ def provider_summary() -> list[str]:
             "api_football",
             "football_data",
             "thesportsdb",
+            "sportlogic",
             "futrixmetrics",
             "weatherapi",
             "openweathermap",
@@ -589,26 +590,58 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
             weatherapi_requests = stats.get("weatherapi_requests", status.get("weatherapi_requests"))
             openweathermap_requests = stats.get("openweathermap_requests", status.get("openweathermap_requests"))
             cache_hits = stats.get("cache_hits", status.get("cache_hits"))
+            weatherapi_cap = ""
+            openweathermap_cap = ""
+            if isinstance(max_requests, str) and "+" in max_requests:
+                first, second = max_requests.split("+", 1)
+                weatherapi_cap = first.strip()
+                openweathermap_cap = second.strip()
             if weatherapi_requests is not None:
-                parts.append(f"weatherapi {weatherapi_requests}")
+                suffix = f"/{weatherapi_cap}" if weatherapi_cap else ""
+                parts.append(f"weatherapi cap {weatherapi_requests}{suffix}")
             if openweathermap_requests is not None:
-                parts.append(f"openweathermap {openweathermap_requests}")
+                suffix = f"/{openweathermap_cap}" if openweathermap_cap else ""
+                parts.append(f"openweathermap cap {openweathermap_requests}{suffix}")
             if cache_hits:
                 parts.append(f"cache {cache_hits}")
+        if name == "bzzoiro":
+            for key in ("target_matches", "pages_requested", "rows_seen", "exact_matches", "fuzzy_matches", "near_miss_matches_closed"):
+                value = stats.get(key, status.get(key))
+                if value is not None:
+                    parts.append(f"{key} {value}")
+        if name == "sstats":
+            for key in ("target_matches", "matched_exact", "matched_fuzzy", "unmatched_after_alias", "confirmation_added"):
+                value = stats.get(key, status.get(key))
+                if value is not None:
+                    parts.append(f"{key} {value}")
         if name == "sportlogic":
-            for key in ("games_fetched", "events_matched", "odds_requests", "odds_payload_rows", "offers_parsed", "empty_odds_payloads"):
+            for key in ("games_fetched", "events_matched", "odds_requests", "rows_before_parse", "odds_payload_rows", "offers_parsed", "empty_odds_payloads"):
                 value = stats.get(key, status.get(key))
                 if value is not None:
                     parts.append(f"{key} {value}")
             keys = stats.get("top_level_keys") or status.get("top_level_keys")
             if isinstance(keys, list) and keys:
                 parts.append("top_keys " + "/".join(str(item) for item in keys[:4]))
+            for key, label in (
+                ("market_keys_seen", "market_keys"),
+                ("option_keys_seen", "option_keys"),
+                ("price_keys_seen", "price_keys"),
+            ):
+                values = stats.get(key) or status.get(key)
+                if isinstance(values, list) and values:
+                    parts.append(f"{label} " + "/".join(str(item) for item in values[:3]))
+            reject = stats.get("parse_reject_reasons") or status.get("parse_reject_reasons")
+            if isinstance(reject, dict) and reject:
+                parts.append(
+                    "parse_reject "
+                    + "/".join(f"{reason}:{as_int(count)}" for reason, count in list(reject.items())[:4])
+                )
         if max_requests:
             parts.append(f"max {max_requests}")
         if response_errors:
             parts.append(f"err {response_errors}")
         if stats.get("budget_exhausted") or status.get("budget_exhausted"):
-            parts.append("budget_exhausted")
+            parts.append("per_run_cap_reached" if name == "weather" else "budget_exhausted")
         if status.get("loaded") is False:
             parts.append(f"off:{status.get('reason') or 'not_loaded'}")
         elif status.get("rate_limited") or name in rate_limits:

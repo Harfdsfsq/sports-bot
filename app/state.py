@@ -575,19 +575,34 @@ class JsonStateStore:
         self._save()
 
     def build_daily_report(self, settings: Any, report_date: str) -> dict[str, Any]:
-        rows = [
+        raw_rows = [
             self._accounting_row_for_bet(item, settings)
             for item in self._tracked_bets()
             if self._local_date_for_bet(item, settings) == str(report_date)
         ]
+        rows: list[dict[str, Any]] = []
+        corrupted_rows: list[dict[str, Any]] = []
+        for row in raw_rows:
+            reasons = self._accounting_row_corruption_reasons(row)
+            if reasons:
+                row = dict(row)
+                row['corrupted_entry'] = True
+                row['corruption_reasons'] = reasons
+                corrupted_rows.append(row)
+                continue
+            rows.append(row)
         rows.sort(key=lambda item: (str(item.get('commence_time_local') or ''), str(item.get('home_team') or '')))
+        corrupted_rows.sort(key=lambda item: (str(item.get('commence_time_local') or ''), str(item.get('home_team') or '')))
         summary = self._daily_summary(rows, settings, report_date)
+        summary['raw_total_bets'] = len(raw_rows)
+        summary['corrupted_bets'] = len(corrupted_rows)
         return {
             'created_at': datetime.now(UTC).isoformat(),
             'report_date': str(report_date),
             'timezone': str(getattr(settings, 'app_timezone', 'UTC') or 'UTC'),
             'summary': summary,
             'rows': rows,
+            'corrupted_rows': corrupted_rows,
         }
 
     def daily_report_refresh_due(self, report_date: str, report: dict[str, Any] | None) -> tuple[bool, str | None]:
@@ -721,6 +736,73 @@ class JsonStateStore:
         except Exception:
             return None
 
+    @staticmethod
+    def _payload_chain(payload: dict[str, Any]) -> list[dict[str, Any]]:
+        rows = [payload]
+        for key in ('bet', 'candidate', 'match', 'payload'):
+            value = payload.get(key)
+            if isinstance(value, dict):
+                rows.append(value)
+        return rows
+
+    @staticmethod
+    def _first_text(payloads: list[dict[str, Any]], *keys: str) -> str:
+        for payload in payloads:
+            for key in keys:
+                value = payload.get(key)
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+                if value not in (None, '') and not isinstance(value, (dict, list)):
+                    text = str(value).strip()
+                    if text:
+                        return text
+        return ''
+
+    @staticmethod
+    def _split_match_name(value: str) -> tuple[str, str]:
+        text = ' '.join(str(value or '').strip().split())
+        if not text:
+            return '', ''
+        separators = [f' {chr(8212)} ', f' {chr(8211)} ', ' vs ', ' v ', ' - ']
+        low = text.lower()
+        for sep in separators:
+            marker = sep.lower()
+            if marker not in low:
+                continue
+            index = low.find(marker)
+            home = text[:index].strip()
+            away = text[index + len(sep):].strip()
+            if home and away:
+                return home, away
+        return '', ''
+
+    def _bet_team_pair(self, bet: dict[str, Any]) -> tuple[str, str]:
+        payloads = self._payload_chain(bet)
+        home = self._first_text(payloads, 'home_team', 'home', 'team_home', 'home_name')
+        away = self._first_text(payloads, 'away_team', 'away', 'team_away', 'away_name')
+        if home and away:
+            return home, away
+        match_name = self._first_text(payloads, 'match_name', 'event_name', 'fixture_name', 'name', 'match')
+        parsed_home, parsed_away = self._split_match_name(match_name)
+        return home or parsed_home, away or parsed_away
+
+    def _bet_odds_value(self, bet: dict[str, Any]) -> Any:
+        payloads = self._payload_chain(bet)
+        for payload in payloads:
+            for key in ('odds', 'selected_odds', 'price', 'decimal_odds', 'odd', 'value'):
+                value = payload.get(key)
+                if value not in (None, ''):
+                    return value
+        return ''
+
+    def _accounting_row_corruption_reasons(self, row: dict[str, Any]) -> list[str]:
+        reasons: list[str] = []
+        if not str(row.get('home_team') or '').strip() or not str(row.get('away_team') or '').strip():
+            reasons.append('missing_teams')
+        if self._safe_float(row.get('odds')) <= 1.0:
+            reasons.append('invalid_odds')
+        return reasons
+
     def _accounting_row_for_bet(self, bet: dict[str, Any], settings: Any | None = None) -> dict[str, Any]:
         settlement = dict(bet.get('settlement') or {})
         settlement_attempt = dict(bet.get('last_settlement_attempt') or {})
@@ -765,6 +847,8 @@ class JsonStateStore:
         family = str(bet.get('family') or '')
         selection = str(bet.get('selection') or '')
         point = bet.get('point')
+        home_team, away_team = self._bet_team_pair(bet)
+        odds_value = self._bet_odds_value(bet)
         selection_key = str(
             bet.get('selection_key')
             or candidate_selection_key(
@@ -772,8 +856,8 @@ class JsonStateStore:
                 selection,
                 point=point,
                 team_side=bet.get('team_side'),
-                home_team=str(bet.get('home_team') or ''),
-                away_team=str(bet.get('away_team') or ''),
+                home_team=home_team,
+                away_team=away_team,
             )
         )
 
@@ -791,8 +875,9 @@ class JsonStateStore:
             'match_key': bet.get('match_key') or '',
             'sport_key': bet.get('sport_key') or '',
             'league_name': bet.get('league_name') or '',
-            'home_team': bet.get('home_team') or '',
-            'away_team': bet.get('away_team') or '',
+            'home_team': home_team,
+            'away_team': away_team,
+            'match_name': bet.get('match_name') or bet.get('event_name') or '',
             'commence_time_utc': commence_utc,
             'commence_time_local': commence_local,
             'family': family,
@@ -800,7 +885,7 @@ class JsonStateStore:
             'selection_key': selection_key,
             'team_side': bet.get('team_side') or '',
             'point': '' if point in (None, '') else point,
-            'odds': self._round_value(bet.get('odds'), 3),
+            'odds': self._round_value(odds_value, 3),
             'stake_amount': round(stake, 2),
             'status': status,
             'result': self._result_label(status, outcome),

@@ -277,7 +277,7 @@ def _patch_harizon_runtime_policy(text: str) -> str:
             '        "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",\n'
             '        "SPORTLOGIC_HEADER_NAME": "X-API-Key",\n'
             '        "SPORTLOGIC_PER_RUN_MAX": policy_value("SPORTLOGIC_PER_RUN_MAX", "40"),\n'
-            '        "SPORTLOGIC_MATCH_LIMIT": policy_value("SPORTLOGIC_MATCH_LIMIT", "80"),\n'
+            '        "SPORTLOGIC_MATCH_LIMIT": policy_value("SPORTLOGIC_MATCH_LIMIT", "120"),\n'
             '        "SPORTLOGIC_ODDS_MATCH_LIMIT": policy_value("SPORTLOGIC_ODDS_MATCH_LIMIT", "32"),\n'
             '        "SPORTLOGIC_TIMEOUT_SECONDS": policy_value("SPORTLOGIC_TIMEOUT_SECONDS", "20"),\n'
             '        "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",\n',
@@ -307,7 +307,7 @@ def _patch_provider_budget(text: str) -> str:
             'SPORTLOGIC_BASE_URL': 'https://api.sportlogic.io/api/v1',
             'SPORTLOGIC_HEADER_NAME': 'X-API-Key',
             'SPORTLOGIC_PER_RUN_MAX': '40',
-            'SPORTLOGIC_MATCH_LIMIT': '80',
+            'SPORTLOGIC_MATCH_LIMIT': '120',
             'SPORTLOGIC_ODDS_MATCH_LIMIT': '32',
             'SPORTLOGIC_TIMEOUT_SECONDS': '20',
         },
@@ -345,7 +345,7 @@ def _patch_budget_config_file() -> None:
                 "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
                 "SPORTLOGIC_HEADER_NAME": "X-API-Key",
                 "SPORTLOGIC_PER_RUN_MAX": "40",
-                "SPORTLOGIC_MATCH_LIMIT": "80",
+                "SPORTLOGIC_MATCH_LIMIT": "120",
                 "SPORTLOGIC_ODDS_MATCH_LIMIT": "32",
                 "SPORTLOGIC_TIMEOUT_SECONDS": "20",
             },

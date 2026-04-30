@@ -201,12 +201,15 @@ class SportLogicProvider:
                     continue
                 payload = await self._fetch_odds_payload(client, event_id, stats, preview)
                 rows = self._extract_odds_rows(payload)
+                stats["rows_before_parse"] += len(rows)
                 stats["odds_payload_rows"] += len(rows)
                 if not rows:
                     stats["empty_odds_payloads"] += 1
                 if rows and len(preview["sample_odds"]) < 3:
                     preview["sample_odds"].append(rows[0])
-                parsed = self._parse_odds(rows, item["match"], event_id)
+                if rows:
+                    self._write_odds_sample(event_id, item["match"], payload, rows[0])
+                parsed = self._parse_odds(rows, item["match"], event_id, stats)
                 if parsed:
                     offers_by_match[item["match"].match_key].extend(parsed)
                     stats["offers_parsed"] += len(parsed)
@@ -347,6 +350,22 @@ class SportLogicProvider:
         except Exception:
             return
 
+    def _write_odds_sample(self, event_id: str, match: Match, payload: Any, row: dict[str, Any]) -> None:
+        try:
+            path = Path(".data/exports/latest-sportlogic-odds-sample.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            sample = {
+                "event_id": event_id,
+                "match_key": match.match_key,
+                "home_team": match.home_team,
+                "away_team": match.away_team,
+                "row": self._sanitize(row),
+                "payload_top_level": self._sanitize(payload if isinstance(payload, dict) else {}),
+            }
+            path.write_text(json.dumps(sample, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        except Exception:
+            return
+
     def _sanitize(self, value: Any) -> Any:
         if isinstance(value, dict):
             out: dict[str, Any] = {}
@@ -474,7 +493,7 @@ class SportLogicProvider:
                 stats["matched_fuzzy"] += 1
         return mapping
 
-    def _parse_odds(self, rows: list[dict[str, Any]], match: Match, event_id: str) -> list[Offer]:
+    def _parse_odds(self, rows: list[dict[str, Any]], match: Match, event_id: str, stats: dict[str, Any] | None = None) -> list[Offer]:
         offers: list[Offer] = []
         seen: set[tuple[str, str, str, float | None]] = set()
         configured_books = getattr(self.settings, "sportlogic_bookmakers", None)
@@ -487,16 +506,26 @@ class SportLogicProvider:
         allowed = {self._canonical_bookmaker(item) for item in book_items}
         allowed.discard("")
 
-        def add(book: str, family: str, selection: str, price: Any, point: float | None = None, team_side: str | None = None, market_name: str = "") -> None:
+        def reject(reason: str) -> None:
+            if stats is None:
+                return
+            reasons = stats.setdefault("parse_reject_reasons", {})
+            if isinstance(reasons, dict):
+                reasons[reason] = int(reasons.get(reason) or 0) + 1
+
+        def add(book: str, family: str, selection: str, price: Any, point: float | None = None, team_side: str | None = None, market_name: str = "") -> bool:
             odds = self._float(price)
             if odds is None or odds <= 1.0:
-                return
+                reject("missing_or_invalid_price")
+                return False
             bookmaker = self._canonical_bookmaker(book or "SportLogic")
             if allowed and bookmaker not in allowed:
-                return
+                reject("bookmaker_not_allowed")
+                return False
             key = (bookmaker, family, selection, point)
             if key in seen:
-                return
+                reject("duplicate_offer")
+                return False
             seen.add(key)
             offers.append(Offer(
                 source="sportlogic",
@@ -511,24 +540,27 @@ class SportLogicProvider:
                 source_event_id=event_id,
                 metadata={"sportlogic_event_id": event_id},
             ))
+            return True
 
         for row in rows:
+            self._record_odds_shape(row, stats)
             # Shape A: bookmakers -> markets -> outcomes
             bookmakers = row.get("bookmakers") if isinstance(row, dict) else None
             if isinstance(bookmakers, list):
                 for bookmaker_payload in [x for x in bookmakers if isinstance(x, dict)]:
-                    book = str(bookmaker_payload.get("name") or bookmaker_payload.get("bookmaker") or bookmaker_payload.get("title") or "SportLogic")
+                    book = str(bookmaker_payload.get("name") or bookmaker_payload.get("bookmaker") or bookmaker_payload.get("sportsbook") or bookmaker_payload.get("provider") or bookmaker_payload.get("title") or "SportLogic")
                     for market in self._market_rows(bookmaker_payload):
                         self._parse_market(market, match, book, add)
                 continue
 
             # Shape B: markets at top level
             for market in self._market_rows(row):
-                book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("book") or "SportLogic")
+                book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("sportsbook") or row.get("provider") or row.get("book") or "SportLogic")
                 self._parse_market(market, match, book, add)
 
             # Shape C: flattened odds fields
-            book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("book") or "SportLogic")
+            book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("sportsbook") or row.get("provider") or row.get("book") or "SportLogic")
+            self._parse_flat_odds_row(row, match, book, add, reject)
             add(book, "h2h", match.home_team, row.get("home") or row.get("home_odds") or row.get("odd_1"), team_side="home")
             add(book, "h2h", "Draw", row.get("draw") or row.get("draw_odds") or row.get("odd_x"))
             add(book, "h2h", match.away_team, row.get("away") or row.get("away_odds") or row.get("odd_2"), team_side="away")
@@ -544,9 +576,110 @@ class SportLogicProvider:
         return offers
 
     @staticmethod
+    def _record_seen(stats: dict[str, Any] | None, bucket: str, value: Any) -> None:
+        if stats is None:
+            return
+        text = str(value or "").strip()
+        if not text:
+            return
+        seen = stats.setdefault(bucket, [])
+        if isinstance(seen, list) and text not in seen and len(seen) < 40:
+            seen.append(text[:80])
+
+    def _record_odds_shape(self, row: dict[str, Any], stats: dict[str, Any] | None) -> None:
+        if stats is None or not isinstance(row, dict):
+            return
+        market_fields = {"market", "market_name", "market_key", "key", "name", "label", "type"}
+        option_fields = {"outcome", "selection", "label", "option", "option_name", "name", "team"}
+        price_fields = {"price", "decimal_odds", "value", "odd", "odds", "decimal", "option_value"}
+        point_fields = {"total", "handicap", "line", "points", "point"}
+        for key, value in row.items():
+            low = str(key).lower()
+            if low in market_fields:
+                self._record_seen(stats, "market_keys_seen", f"{low}={value}" if not isinstance(value, (dict, list)) else low)
+            if low in option_fields:
+                self._record_seen(stats, "option_keys_seen", f"{low}={value}" if not isinstance(value, (dict, list)) else low)
+            if low in price_fields:
+                self._record_seen(stats, "price_keys_seen", low)
+            if low in point_fields:
+                self._record_seen(stats, "line_keys_seen", f"{low}={value}" if not isinstance(value, (dict, list)) else low)
+        for market in self._market_rows(row):
+            for key, value in market.items():
+                low = str(key).lower()
+                if low in market_fields:
+                    self._record_seen(stats, "market_keys_seen", f"{low}={value}" if not isinstance(value, (dict, list)) else low)
+            outcomes = market.get("outcomes") or market.get("values") or market.get("selections") or market.get("options") or market.get("odds")
+            if isinstance(outcomes, dict):
+                outcomes = [{"name": key, "price": value} for key, value in outcomes.items()]
+            if isinstance(outcomes, list):
+                for outcome in outcomes:
+                    if isinstance(outcome, dict):
+                        for key, value in outcome.items():
+                            low = str(key).lower()
+                            if low in option_fields:
+                                self._record_seen(stats, "option_keys_seen", f"{low}={value}" if not isinstance(value, (dict, list)) else low)
+                            if low in price_fields:
+                                self._record_seen(stats, "price_keys_seen", low)
+
+    def _parse_flat_odds_row(self, row: dict[str, Any], match: Match, book: str, add: Any, reject: Any) -> None:
+        market_name = str(row.get("market") or row.get("market_name") or row.get("market_key") or row.get("type") or "").strip()
+        selection_name = str(row.get("outcome") or row.get("selection") or row.get("label") or row.get("option") or row.get("option_name") or row.get("name") or "").strip()
+        price = row.get("price") or row.get("decimal_odds") or row.get("value") or row.get("odd") or row.get("odds") or row.get("decimal") or row.get("option_value")
+        point = self._float(row.get("total") or row.get("handicap") or row.get("line") or row.get("points") or row.get("point"))
+        if not market_name and not selection_name and price in (None, ""):
+            return
+        if price in (None, ""):
+            reject("missing_price")
+            return
+        if not market_name and not selection_name:
+            reject("missing_market_and_selection")
+            return
+
+        family = self._market_family(market_name or selection_name)
+        low = selection_name.lower()
+        market_low = market_name.lower()
+        if family == "h2h":
+            if low in {"home", "1", "home_team"} or selection_name == match.home_team:
+                add(book, "h2h", match.home_team, price, team_side="home", market_name=market_name)
+            elif low in {"draw", "x", "tie"}:
+                add(book, "h2h", "Draw", price, market_name=market_name)
+            elif low in {"away", "2", "away_team"} or selection_name == match.away_team:
+                add(book, "h2h", match.away_team, price, team_side="away", market_name=market_name)
+            else:
+                reject("unknown_h2h_selection")
+        elif family == "totals":
+            combined = f"{market_low} {low}"
+            if point is None:
+                match_obj = re.search(r"(\d+(?:\.\d+)?)", combined)
+                point = self._float(match_obj.group(1)) if match_obj else None
+            if "under" in combined or low.startswith("u"):
+                add(book, "totals", "Under", price, point, market_name=market_name)
+            elif "over" in combined or low.startswith("o"):
+                add(book, "totals", "Over", price, point, market_name=market_name)
+            else:
+                reject("unknown_total_selection")
+        elif family == "spreads":
+            side = "home" if low in {"home", "1"} or selection_name == match.home_team else "away" if low in {"away", "2"} or selection_name == match.away_team else None
+            if side is None:
+                reject("unknown_spread_side")
+                return
+            selection = match.home_team if side == "home" else match.away_team
+            if point == 0:
+                add(book, "dnb", selection, price, 0.0, side, market_name=market_name)
+            else:
+                add(book, "spreads", selection, price, point, side, market_name=market_name)
+        elif family == "btts":
+            if "yes" in low:
+                add(book, "btts", "Yes", price, market_name=market_name)
+            elif "no" in low:
+                add(book, "btts", "No", price, market_name=market_name)
+            else:
+                reject("unknown_btts_selection")
+
+    @staticmethod
     def _market_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
         rows = []
-        for key in ("markets", "odds", "bets"):
+        for key in ("markets", "odds", "bets", "bookmaker_markets", "market_odds"):
             value = payload.get(key)
             if isinstance(value, list):
                 rows.extend([row for row in value if isinstance(row, dict)])
@@ -565,8 +698,8 @@ class SportLogicProvider:
         return rows
 
     def _parse_market(self, market: dict[str, Any], match: Match, bookmaker: str, add: Any) -> None:
-        raw_name = str(market.get("key") or market.get("name") or market.get("market") or market.get("label") or "").lower()
-        outcomes = market.get("outcomes") or market.get("values") or market.get("selections") or market.get("odds")
+        raw_name = str(market.get("key") or market.get("name") or market.get("market") or market.get("market_name") or market.get("market_key") or market.get("label") or "").lower()
+        outcomes = market.get("outcomes") or market.get("values") or market.get("selections") or market.get("options") or market.get("odds")
         if isinstance(outcomes, dict):
             outcomes = [{"name": key, "price": value} for key, value in outcomes.items()]
         if not isinstance(outcomes, list):
@@ -574,9 +707,9 @@ class SportLogicProvider:
 
         family = self._market_family(raw_name)
         for outcome in [x for x in outcomes if isinstance(x, dict)]:
-            name = str(outcome.get("name") or outcome.get("selection") or outcome.get("label") or outcome.get("team") or "").strip()
-            price = outcome.get("price") or outcome.get("odds") or outcome.get("value") or outcome.get("decimal")
-            point = self._float(outcome.get("point") or outcome.get("line") or outcome.get("handicap"))
+            name = str(outcome.get("name") or outcome.get("outcome") or outcome.get("selection") or outcome.get("label") or outcome.get("option") or outcome.get("option_name") or outcome.get("team") or "").strip()
+            price = outcome.get("price") or outcome.get("decimal_odds") or outcome.get("odds") or outcome.get("value") or outcome.get("odd") or outcome.get("decimal") or outcome.get("option_value")
+            point = self._float(outcome.get("point") or outcome.get("line") or outcome.get("points") or outcome.get("total") or outcome.get("handicap"))
             low = name.lower()
 
             if family == "h2h":
@@ -676,9 +809,15 @@ class SportLogicProvider:
             "matches_built": 0,
             "events_matched": 0,
             "odds_requests": 0,
+            "rows_before_parse": 0,
             "odds_payload_rows": 0,
             "offers_parsed": 0,
             "empty_odds_payloads": 0,
+            "parse_reject_reasons": {},
+            "market_keys_seen": [],
+            "option_keys_seen": [],
+            "price_keys_seen": [],
+            "line_keys_seen": [],
             "contexts_built": 0,
             "matched_exact": 0,
             "matched_loose": 0,

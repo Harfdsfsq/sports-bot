@@ -1552,10 +1552,13 @@ class PredictionRunner:
         market_signals_by_match = market_signals_by_match or {}
         min_value_hint = float(getattr(self.settings, 'value_hint_min_edge_pct', 1.0) or 1.0)
         near_miss_priority = self._load_near_miss_priority()
+        confirmation_counts = self._load_context_confirmation_counts()
+        min_confirmations = max(1, int(os.getenv('CONTEXT_TARGET_MIN_CONFIRMATION_SOURCES', '2') or '2'))
 
         ranked: list[tuple[tuple[float, ...], Match]] = []
         skipped_without_offers = 0
         hints_kept = 0
+        confirmation_gap_candidates = 0
         for match in matches:
             offers = list(offers_by_match.get(match.match_key) or [])
             if requires_offers and not offers:
@@ -1583,8 +1586,13 @@ class PredictionRunner:
             soon_bucket = 4.0 if kickoff_delta <= 6 * 3600 else 3.0 if kickoff_delta <= 12 * 3600 else 2.0 if kickoff_delta <= 24 * 3600 else 1.0
             odds_backed = 1.0 if offers else 0.0
             queue_priority = float(near_miss_priority.get(match.match_key, 0.0) or 0.0)
+            current_confirmations = int(confirmation_counts.get(match.match_key, 0) or 0)
+            confirmation_gap = 1.0 if odds_backed and current_confirmations < min_confirmations else 0.0
+            if confirmation_gap:
+                confirmation_gap_candidates += 1
             rank_key = (
                 queue_priority,
+                confirmation_gap,
                 soon_bucket,
                 odds_backed,
                 value_hint,
@@ -1617,6 +1625,13 @@ class PredictionRunner:
             'matches_with_value_hint': hints_kept,
             'near_miss_queue_items': len(near_miss_priority),
             'near_miss_selected': sum(1 for match in selected if match.match_key in near_miss_priority),
+            'confirmation_gap_candidates': confirmation_gap_candidates,
+            'confirmation_gap_selected': sum(
+                1
+                for match in selected
+                if offers_by_match.get(match.match_key) and int(confirmation_counts.get(match.match_key, 0) or 0) < min_confirmations
+            ),
+            'min_confirmation_sources': min_confirmations,
         }
         return selected, summary
 
@@ -1650,6 +1665,37 @@ class PredictionRunner:
                     score = 1.0
                 priority[match_key] = max(priority.get(match_key, 0.0), score + max(0.0, 0.001 * (len(rows) - idx)))
         return priority
+
+    def _load_context_confirmation_counts(self) -> dict[str, int]:
+        paths = [
+            Path('.data/exports/latest-context-source-index.json'),
+            Path('.data/provider_cache/context-source-index/latest.json'),
+        ]
+        counts: dict[str, int] = {}
+        for path in paths:
+            try:
+                payload = json.loads(path.read_text(encoding='utf-8'))
+            except Exception:
+                continue
+            by_match = payload.get('by_match') if isinstance(payload, dict) else {}
+            if not isinstance(by_match, dict):
+                continue
+            for key, value in by_match.items():
+                match_key = str(key or '').strip()
+                if not match_key:
+                    continue
+                if isinstance(value, list):
+                    count = len({str(item).strip().lower() for item in value if str(item).strip()})
+                elif isinstance(value, dict):
+                    sources = value.get('sources') or value.get('confirmation_sources') or value.get('context_sources') or []
+                    if isinstance(sources, list):
+                        count = len({str(item).strip().lower() for item in sources if str(item).strip()})
+                    else:
+                        count = 0
+                else:
+                    count = 0
+                counts[match_key] = max(counts.get(match_key, 0), count)
+        return counts
 
     @staticmethod
     def _dedupe_matches(matches: list[Match]) -> list[Match]:

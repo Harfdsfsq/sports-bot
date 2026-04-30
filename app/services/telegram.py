@@ -760,9 +760,56 @@ class TelegramPublisher:
             return 0, []
         return await self._send_message(message)
 
+    @staticmethod
+    def _daily_report_team_pair(row: dict[str, Any]) -> tuple[str, str]:
+        home = str(row.get("home_team") or row.get("home") or "").strip()
+        away = str(row.get("away_team") or row.get("away") or "").strip()
+        if home and away:
+            return home, away
+        match_name = str(row.get("match_name") or row.get("event_name") or row.get("match") or "").strip()
+        text = " ".join(match_name.split())
+        low = text.lower()
+        for sep in (f" {chr(8212)} ", f" {chr(8211)} ", " vs ", " v ", " - "):
+            marker = sep.lower()
+            if marker not in low:
+                continue
+            index = low.find(marker)
+            parsed_home = text[:index].strip()
+            parsed_away = text[index + len(sep):].strip()
+            if parsed_home and parsed_away:
+                return home or parsed_home, away or parsed_away
+        return home, away
+
+    @staticmethod
+    def _daily_report_odds(row: dict[str, Any]) -> float:
+        for key in ("odds", "selected_odds", "price", "decimal_odds", "odd", "value"):
+            value = row.get(key)
+            if value in (None, ""):
+                continue
+            try:
+                return float(value)
+            except Exception:
+                continue
+        return 0.0
+
     def render_daily_report(self, daily_report: dict[str, Any]) -> str | None:
         summary = dict(daily_report.get("summary") or {})
-        rows = [dict(item) for item in (daily_report.get("rows") or []) if isinstance(item, dict)]
+        rows: list[dict[str, Any]] = []
+        skipped_corrupted = 0
+        for item in (daily_report.get("rows") or []):
+            if not isinstance(item, dict):
+                continue
+            row = dict(item)
+            home, away = self._daily_report_team_pair(row)
+            odds = self._daily_report_odds(row)
+            if not home or not away or odds <= 1.0:
+                skipped_corrupted += 1
+                continue
+            row["home_team"] = home
+            row["away_team"] = away
+            row["odds"] = odds
+            rows.append(row)
+        skipped_corrupted += len([item for item in (daily_report.get("corrupted_rows") or []) if isinstance(item, dict)])
         if int(summary.get("total_bets") or 0) <= 0:
             return None
 
@@ -801,6 +848,9 @@ class TelegramPublisher:
         pending_stake = float(summary.get("pending_stake") or 0.0)
         if pending_stake > 0:
             lines.append(f"Открытый остаток за день: {self._format_money(pending_stake, bankroll_summary=bankroll)}")
+
+        if skipped_corrupted:
+            lines.append(f"Corrupted entries skipped: {skipped_corrupted}")
 
         quality_analysis = dict(daily_report.get("quality_analysis") or {})
         failure_tags = dict(quality_analysis.get("top_failure_tags") or {})
