@@ -75,6 +75,160 @@ def write_json(path: str | Path, payload: Any) -> None:
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+_CONTEXT_SOURCE_INDEX_CACHE: dict[str, Any] | None = None
+
+
+def load_context_source_index() -> dict[str, Any]:
+    """Independent context confirmations keyed by match_key."""
+    global _CONTEXT_SOURCE_INDEX_CACHE
+    if _CONTEXT_SOURCE_INDEX_CACHE is not None:
+        return _CONTEXT_SOURCE_INDEX_CACHE
+
+    paths = [
+        Path(".data/exports/latest-context-source-index.json"),
+        Path(".data/provider_cache/context-source-index/latest.json"),
+    ]
+    if not any(path.exists() for path in paths):
+        try:
+            import importlib.util
+
+            builder_path = Path("scripts/build_context_source_index.py")
+            if not builder_path.exists():
+                builder_path = Path(__file__).resolve().with_name("build_context_source_index.py")
+            if builder_path.exists():
+                spec = importlib.util.spec_from_file_location("harizon_context_source_index_builder", builder_path)
+                if spec is not None and spec.loader is not None:
+                    module = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(module)
+                    build_main = getattr(module, "main", None)
+                    if callable(build_main):
+                        build_main()
+        except Exception:
+            pass
+
+    for path in paths:
+        payload = load_json(path, {})
+        if isinstance(payload, dict) and isinstance(payload.get("by_match"), dict):
+            _CONTEXT_SOURCE_INDEX_CACHE = payload
+            return payload
+    _CONTEXT_SOURCE_INDEX_CACHE = {}
+    return _CONTEXT_SOURCE_INDEX_CACHE
+
+
+def normalize_confirmation_source(value: Any) -> str | None:
+    text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if not text:
+        return None
+    aliases = {
+        "sstats": "sstats",
+        "sstats_direct": "sstats",
+        "sstats_form": "sstats",
+        "bzzoiro": "bzzoiro",
+        "bzzoiro_event_odds": "bzzoiro",
+        "weather": "weather",
+        "weatherapi": "weather",
+        "openweathermap": "weather",
+        "openmeteo": "weather",
+        "open_meteo": "weather",
+        "meteostat": "weather",
+        "football_data": "football_data",
+        "football_data_org": "football_data",
+        "thesportsdb": "thesportsdb",
+        "espn": "espn",
+        "futrixmetrics": "futrixmetrics",
+        "gnews": "gnews",
+        "newsapi": "newsapi",
+        "currents": "newsapi",
+        "sportlogic": "sportlogic",
+        "scorebat": "scorebat",
+        "openfootball": "openfootball",
+        "clubelo": "clubelo",
+        "wikidata": "wikidata",
+        "guardian": "guardian",
+        "highlightly": "highlightly",
+    }
+    if text in aliases:
+        return aliases[text]
+    for needle, canonical in aliases.items():
+        if needle in text:
+            return canonical
+    return None
+
+
+def _source_values(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if isinstance(value, str):
+        return re.split(r"[,+;/|\s]+", value)
+    return []
+
+
+def weather_confirmation_state(candidate: dict[str, Any]) -> dict[str, Any]:
+    family = str(candidate.get("family") or "").strip().lower()
+    details: dict[str, Any] = {}
+    for container_key in ("weather", "weather_context", "context", "details", "metadata"):
+        value = candidate.get(container_key)
+        if isinstance(value, dict):
+            details.update(value)
+    for container in (candidate.get("context") or {}, candidate.get("details") or {}):
+        if isinstance(container, dict):
+            nested = container.get("weather") or container.get("weather_context")
+            if isinstance(nested, dict):
+                details.update(nested)
+
+    text = json.dumps(details, ensure_ascii=False).lower() if details else ""
+    supports_under = any(token in text for token in ("heavy_rain", "rain", "wind", "storm", "weather_supports_under", "under_weather"))
+    supports_over = any(token in text for token in ("fast_pitch", "clear_weather", "weather_supports_over", "over_weather"))
+    risk_flag = any(token in text for token in ("risk", "postpon", "storm", "extreme", "weather_risk"))
+    relevant = family in {"totals", "teamtotals", "btts"} and (supports_under or supports_over or risk_flag)
+    return {
+        "weather_supports_under": supports_under,
+        "weather_supports_over": supports_over,
+        "weather_neutral": not relevant,
+        "weather_risk_flag": risk_flag,
+        "weather_confirmation_relevant": relevant,
+    }
+
+
+def candidate_confirmation_sources(candidate: dict[str, Any]) -> tuple[list[str], dict[str, Any]]:
+    sources: set[str] = set()
+    match_key = str(candidate.get("match_key") or "").strip().lower()
+    index = load_context_source_index() if env_bool("CONTROLLED_FALLBACK_USE_CONTEXT_SOURCE_INDEX", True) else {}
+    by_match = index.get("by_match") if isinstance(index, dict) else {}
+    if match_key and isinstance(by_match, dict):
+        indexed = by_match.get(match_key) or []
+        if isinstance(indexed, list):
+            for item in indexed:
+                src = normalize_confirmation_source(item)
+                if src:
+                    sources.add(src)
+
+    for field in ("confirmation_sources", "context_sources", "context_source_names", "merged_context_sources", "providers", "provider_names"):
+        for item in _source_values(candidate.get(field)):
+            src = normalize_confirmation_source(item)
+            if src:
+                sources.add(src)
+
+    source_summary = candidate.get("source_summary") or {}
+    if isinstance(source_summary, dict):
+        for field in ("context_sources", "providers", "confirmation_sources"):
+            for item in _source_values(source_summary.get(field)):
+                src = normalize_confirmation_source(item)
+                if src:
+                    sources.add(src)
+
+    sources.discard("odds_api_io")
+    sources.discard("market")
+
+    relevance = weather_confirmation_state(candidate)
+    if "weather" in sources and not relevance["weather_confirmation_relevant"]:
+        sources.discard("weather")
+        relevance["weather_dropped_as_neutral"] = True
+    else:
+        relevance["weather_dropped_as_neutral"] = False
+    return sorted(sources), relevance
+
+
 def as_float(value: Any, default: float = 0.0) -> float:
     try:
         if value is None or value == "":
@@ -602,7 +756,12 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     market_prob = as_float(candidate.get("market_probability"), 0.0)
     confidence = as_float(candidate.get("confidence"), 0.0)
     books = as_int(candidate.get("books_count"), 0)
-    sources = as_int(candidate.get("sources_count"), 0)
+    raw_sources = as_int(candidate.get("sources_count"), 0)
+    odds_sources = as_int(candidate.get("odds_sources_count"), raw_sources)
+    confirmation_sources, confirmation_meta = candidate_confirmation_sources(candidate)
+    declared_confirmation_count = as_int(candidate.get("confirmation_sources_count"), 0)
+    confirmation_sources_count = max(declared_confirmation_count, len(confirmation_sources))
+    sources = confirmation_sources_count
     q = quality_payload(candidate)
     raw_quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), 0.0))
     publication_score = as_float(candidate.get("publication_score"), 0.0)
@@ -615,7 +774,11 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confidence": confidence,
         "publication_score": publication_score,
         "books_count": books,
+        "odds_sources_count": odds_sources,
         "sources_count": sources,
+        "confirmation_sources_count": confirmation_sources_count,
+        "confirmation_sources": confirmation_sources,
+        "confirmation_meta": confirmation_meta,
         "canonical_edge_pp": canonical_edge_pp,
         "canonical_ev_pct": canonical_ev_pct,
     }
@@ -639,7 +802,11 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "quality_score_source": quality_score_source,
         "publication_score": round(publication_score, 3),
         "books_count": books,
+        "odds_sources_count": odds_sources,
         "sources_count": sources,
+        "confirmation_sources_count": confirmation_sources_count,
+        "confirmation_sources": confirmation_sources,
+        "confirmation_meta": confirmation_meta,
         "quality_reasons": quality_reasons(candidate),
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
@@ -824,11 +991,17 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
         if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
             reasons.append("proxy_without_market_confirmation")
 
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES", True):
+        min_sources = env_int("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", 2)
+        confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
+        if confirmation_count < min_sources:
+            reasons.append(f"controlled_fallback_confirmation_sources_below_min:{confirmation_count}/{min_sources}")
+
     # If all prices come from one provider, proxy signals need stronger numeric confirmation.
     # This avoids "looks good but only one data pipeline" publications while still allowing
     # strong 2-book signals when there is clear EV, edge and confidence.
     if env_bool("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", True):
-        if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("sources_count") or 0) < 2:
+        if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
             if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0):
                 reasons.append("proxy_single_source_edge_below_min")
             if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0):
@@ -868,7 +1041,7 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             # With proxy quality and one source it is more likely an xG/match mapping/outlier problem.
             if env_bool("CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED", True):
                 quality_source = str(metrics.get("quality_score_source") or "")
-                single_source = int(metrics.get("sources_count") or 0) < 2
+                single_source = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2
                 if quality_source == "proxy" and single_source:
                     abs_gap = abs(float(dnb.get("dnb_model_gap_pp") or 0.0))
                     xg_ev = float(dnb.get("dnb_xg_ev_unconditional_pct") or 0.0)
@@ -957,6 +1130,9 @@ def build_watchlist(evaluated: list[dict[str, Any]], limit: int | None = None) -
                 "quality_score_source": metrics.get("quality_score_source"),
                 "books_count": metrics.get("books_count"),
                 "sources_count": metrics.get("sources_count"),
+                "odds_sources_count": metrics.get("odds_sources_count"),
+                "confirmation_sources_count": metrics.get("confirmation_sources_count"),
+                "confirmation_sources": metrics.get("confirmation_sources"),
             },
         })
     return watchlist
@@ -1283,8 +1459,9 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
     xg_line += sanity_lines(metrics)
 
     source_note = ""
-    if int(metrics.get("sources_count") or 0) < 2:
+    if int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
         source_note = " | один источник, сниженный риск"
+    confirmations = ", ".join(metrics.get("confirmation_sources") or []) or "нет"
 
     return (
         f"{index}. {home} — {away}\n"
@@ -1294,7 +1471,8 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
         f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} "
         f"({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}{source_note}\n"
-        f"📚 Линии: {metrics['books_count']} | Источники: {metrics['sources_count']} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
+        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
+        f"🔎 Подтверждения: {confirmations} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
         f"🕒 Начало: {kickoff_text(candidate)}\n"
@@ -1435,7 +1613,8 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
         f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}\n"
-        f"📚 Линии: {metrics['books_count']} | Источники: {metrics['sources_count']} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
+        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
+        f"🔎 Подтверждения: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
         f"🕒 Начало: {kickoff_text(candidate)}\n"
@@ -1502,6 +1681,8 @@ def main() -> int:
             "publish_window_hours": env_int("PUBLISH_WINDOW_HOURS", 12),
             "mode": "best_or_multi",
             "max_picks_per_run": env_int("CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN", env_int("MAX_PICKS_PER_RUN", 3)),
+            "use_context_source_index": env_bool("CONTROLLED_FALLBACK_USE_CONTEXT_SOURCE_INDEX", True),
+            "min_confirmation_sources": env_int("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", 2),
         },
         "time_guard": {
             "enabled": env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True),

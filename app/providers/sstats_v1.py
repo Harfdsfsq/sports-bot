@@ -70,6 +70,7 @@ class SStatsContextProvider:
             "retry_attempts": 0,
             "max_http_requests_per_run": self.max_http_requests,
             "budget_exhausted": False,
+            "target_matches": 0,
             "games_list_rows_fetched": 0,
             "direct_contexts_built": 0,
             "team_form_contexts_built": 0,
@@ -81,6 +82,8 @@ class SStatsContextProvider:
             "matched_loose": 0,
             "matched_fuzzy": 0,
             "unmatched_rows": 0,
+            "unmatched_after_alias": 0,
+            "confirmation_added": 0,
             "http_statuses": [],
             "payload_shapes": [],
             "last_url": None,
@@ -100,6 +103,7 @@ class SStatsContextProvider:
         soccer_matches = [m for m in matches if m.sport_key == "soccer"]
         if not soccer_matches:
             return {}, stats, preview
+        stats["target_matches"] = len(soccer_matches)
 
         now_utc = datetime.now(UTC)
         min_dt = min(m.commence_time for m in soccer_matches).astimezone(UTC)
@@ -124,6 +128,8 @@ class SStatsContextProvider:
             await self._enrich_with_details(client, contexts, detail_targets, stats, preview)
 
         stats["contexts_built"] = len(contexts)
+        stats["confirmation_added"] = len(contexts)
+        stats["unmatched_after_alias"] = int(stats.get("unmatched_rows", 0) or 0)
         return contexts, stats, preview
 
     async def _fetch_games_list(self, client: httpx.AsyncClient, from_date: str, to_date: str, stats: dict[str, Any]) -> list[dict[str, Any]]:

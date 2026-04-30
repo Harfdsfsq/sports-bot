@@ -40,6 +40,7 @@ class PredictionRunner:
         self.bookies_api = self._safe_provider('app.providers.bookies_api', 'BookiesApiProvider')
         self.oddspapi = self._safe_provider('app.providers.oddspapi', 'OddsPapiProvider')
         self.allsportsapi = self._safe_provider('app.providers.allsportsapi', 'AllSportsApiOddsProvider')
+        self.sportlogic = self._safe_provider('app.providers.sportlogic_provider', 'SportLogicProvider')
         self.futrixmetrics = self._safe_provider('app.providers.futrixmetrics', 'FutrixMetricsContextProvider')
         self.sstats = self._safe_provider('app.providers.sstats', 'SStatsContextProvider')
         self.bzzoiro = self._safe_provider('app.providers.bzzoiro', 'BzzoiroContextProvider')
@@ -62,6 +63,8 @@ class PredictionRunner:
 
     @staticmethod
     def _provider_name_from_module(module_name: str) -> str:
+        if module_name.endswith('sportlogic_provider'):
+            return 'sportlogic'
         return module_name.rsplit('.', 1)[-1]
 
     @staticmethod
@@ -90,6 +93,7 @@ class PredictionRunner:
             'bookies_api': self.bookies_api,
             'oddspapi': self.oddspapi,
             'allsportsapi': self.allsportsapi,
+            'sportlogic': self.sportlogic,
             'bookies_bootstrap': self.bookies_bootstrap,
         }.get(str(provider_key or '').strip().lower())
 
@@ -113,6 +117,8 @@ class PredictionRunner:
             return bool(getattr(self.settings, 'oddspapi_api_key', None))
         if key == 'allsportsapi':
             return bool(getattr(self.settings, 'allsportsapi_api_key', None))
+        if key == 'sportlogic':
+            return bool(os.getenv('SPORTLOGIC_API_KEY') or os.getenv('SPORTLOGIC_KEY') or os.getenv('SPORTLOGIC_TOKEN'))
         return True
 
     def _provider_cooldown_until(self, provider_key: str) -> datetime | None:
@@ -314,6 +320,7 @@ class PredictionRunner:
                 (bookies_api_offers, bookies_stats, bookies_preview),
                 (oddspapi_offers, oddspapi_stats, oddspapi_preview),
                 (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
+                (sportlogic_offers, sportlogic_stats, sportlogic_preview),
             ) = await asyncio.gather(
                 self._fetch_provider(
                     self.odds_api_io,
@@ -339,6 +346,12 @@ class PredictionRunner:
                     filtered_matches,
                     empty_data={},
                 ),
+                self._fetch_provider(
+                    self.sportlogic,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
             )
 
             offer_maps = {
@@ -346,6 +359,7 @@ class PredictionRunner:
                 'bookies_api': bookies_api_offers,
                 'oddspapi': oddspapi_offers,
                 'allsportsapi': allsportsapi_offers,
+                'sportlogic': sportlogic_offers,
             }
             merged_offers = self._merge_offers(*offer_maps.values())
             market_signals: dict[str, dict[str, Any]] = {}
@@ -372,6 +386,7 @@ class PredictionRunner:
                 'openfootball': self._select_provider_context_matches(context_target_matches, 'openfootball', fallback_matches=filtered_matches, offers_by_match=merged_offers),
                 'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi', fallback_matches=filtered_matches, offers_by_match=merged_offers),
                 'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+                'sportlogic': self._select_provider_context_matches(context_target_matches, 'sportlogic', fallback_matches=filtered_matches, offers_by_match=merged_offers),
             }
             provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
             provider_target_counts['weather'] = min(
@@ -391,6 +406,7 @@ class PredictionRunner:
                 (openfootball_contexts, openfootball_stats, openfootball_preview),
                 (newsapi_contexts, newsapi_stats, newsapi_preview),
                 (gnews_contexts, gnews_stats, gnews_preview),
+                (sportlogic_contexts, sportlogic_context_stats, sportlogic_context_preview),
             ) = await asyncio.gather(
                 self._fetch_provider(self.sstats, 'fetch_context', provider_targets['sstats'], empty_data={}),
                 self._fetch_provider(self.bzzoiro, 'fetch_context', provider_targets['bzzoiro'], empty_data={}),
@@ -403,6 +419,7 @@ class PredictionRunner:
                 self._fetch_provider(self.openfootball, 'fetch_context', provider_targets['openfootball'], empty_data={}),
                 self._fetch_provider(self.newsapi, 'fetch_context', provider_targets['newsapi'], empty_data={}),
                 self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),
+                self._fetch_provider(self.sportlogic, 'fetch_context', provider_targets['sportlogic'], empty_data={}),
             )
 
             context_maps = {
@@ -417,6 +434,7 @@ class PredictionRunner:
                 'openfootball': openfootball_contexts,
                 'newsapi': newsapi_contexts,
                 'gnews': gnews_contexts,
+                'sportlogic': sportlogic_contexts,
             }
             self_history_contexts, self_history_stats, self_history_preview = self._build_self_history_contexts(filtered_matches, now_utc)
             context_maps['self_history'] = self_history_contexts
@@ -575,6 +593,8 @@ class PredictionRunner:
                 'bookies_api': bookies_stats,
                 'oddspapi': oddspapi_stats,
                 'allsportsapi': allsportsapi_stats,
+                'sportlogic': sportlogic_stats,
+                'sportlogic_context': sportlogic_context_stats,
                 'futrixmetrics': futrixmetrics_stats,
                 'sstats': sstats_stats,
                 'bzzoiro': bzzoiro_stats,
@@ -767,6 +787,8 @@ class PredictionRunner:
                     'bookies_api': bookies_preview,
                     'oddspapi': oddspapi_preview,
                     'allsportsapi': allsportsapi_preview,
+                    'sportlogic': sportlogic_preview,
+                    'sportlogic_context': sportlogic_context_preview,
                     'futrixmetrics': futrixmetrics_preview,
                     'sstats': sstats_preview,
                     'bzzoiro': bzzoiro_preview,
@@ -1379,6 +1401,7 @@ class PredictionRunner:
             'openfootball': int(getattr(self.settings, 'openfootball_context_match_limit', 120) or 120),
             'newsapi': int(getattr(self.settings, 'newsapi_context_match_limit', 12) or 12),
             'gnews': int(getattr(self.settings, 'gnews_context_match_limit', 8) or 8),
+            'sportlogic': int(float(os.getenv('SPORTLOGIC_MATCH_LIMIT', '120') or 120)),
         }
         provider_key = str(provider_name or '').strip().lower()
         limit = max(0, int(limit_map.get(provider_key, 0) or 0))
@@ -1503,6 +1526,9 @@ class PredictionRunner:
             base_score = 0.92 if league_priority >= 1.0 else 0.74
         elif provider_key == 'bzzoiro':
             base_score = 0.9 if league_priority >= 2.0 else 0.64 if league_priority >= 1.0 else 0.0
+        elif provider_key == 'sportlogic':
+            checker = getattr(self.sportlogic, 'supports_match', None)
+            base_score = 0.86 if callable(checker) and checker(match) else 0.0
         elif provider_key == 'futrixmetrics':
             base_score = 0.84 if league_priority >= 1.0 else 0.58
         elif provider_key == 'newsapi':
@@ -1525,6 +1551,7 @@ class PredictionRunner:
         target_bookmakers = {str(name).strip().lower() for name in (self.settings.target_bookmakers or []) if str(name).strip()}
         market_signals_by_match = market_signals_by_match or {}
         min_value_hint = float(getattr(self.settings, 'value_hint_min_edge_pct', 1.0) or 1.0)
+        near_miss_priority = self._load_near_miss_priority()
 
         ranked: list[tuple[tuple[float, ...], Match]] = []
         skipped_without_offers = 0
@@ -1555,7 +1582,9 @@ class PredictionRunner:
             value_hint = clamp(best_hint / 2.5, 0.0, 6.0) + min(steam_hits, 2.0) * 0.5
             soon_bucket = 4.0 if kickoff_delta <= 6 * 3600 else 3.0 if kickoff_delta <= 12 * 3600 else 2.0 if kickoff_delta <= 24 * 3600 else 1.0
             odds_backed = 1.0 if offers else 0.0
+            queue_priority = float(near_miss_priority.get(match.match_key, 0.0) or 0.0)
             rank_key = (
+                queue_priority,
                 soon_bucket,
                 odds_backed,
                 value_hint,
@@ -1586,8 +1615,41 @@ class PredictionRunner:
             'skipped_without_offers': skipped_without_offers,
             'premium_shortlist_limit': premium_limit,
             'matches_with_value_hint': hints_kept,
+            'near_miss_queue_items': len(near_miss_priority),
+            'near_miss_selected': sum(1 for match in selected if match.match_key in near_miss_priority),
         }
         return selected, summary
+
+    def _load_near_miss_priority(self) -> dict[str, float]:
+        paths = [
+            Path('.data/exports/latest-near-miss-enrichment-queue.json'),
+            Path('.data/exports/latest-match-data-near-miss.json'),
+            Path('.data/exports/latest-profit-allowed-near-miss.json'),
+        ]
+        priority: dict[str, float] = {}
+        for path in paths:
+            try:
+                payload = json.loads(path.read_text(encoding='utf-8'))
+            except Exception:
+                continue
+            rows = payload.get('items') or payload.get('rows') or payload.get('candidates') if isinstance(payload, dict) else payload
+            if not isinstance(rows, list):
+                continue
+            for idx, row in enumerate(rows):
+                if not isinstance(row, dict):
+                    continue
+                match_key = str(row.get('match_key') or row.get('key') or '').strip()
+                if not match_key:
+                    candidate = row.get('candidate') if isinstance(row.get('candidate'), dict) else {}
+                    match_key = str(candidate.get('match_key') or '').strip()
+                if not match_key:
+                    continue
+                try:
+                    score = float(row.get('priority') or row.get('score') or row.get('ev_pct') or row.get('canonical_ev_pct') or 1.0)
+                except Exception:
+                    score = 1.0
+                priority[match_key] = max(priority.get(match_key, 0.0), score + max(0.0, 0.001 * (len(rows) - idx)))
+        return priority
 
     @staticmethod
     def _dedupe_matches(matches: list[Match]) -> list[Match]:

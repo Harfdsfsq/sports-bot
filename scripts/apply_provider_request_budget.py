@@ -22,14 +22,16 @@ HARIZON_CRITICAL_PROVIDERS = {
     'football_data',
     'thesportsdb',
     'openfootball_public',
+    'sportlogic',
 }
 HARIZON_RECOVERY_GRANTS = {
     'odds_api_io': 200,
-    'bzzoiro': 500,
-    'sstats': 120,
+    'bzzoiro': 1000,
+    'sstats': 150,
     'football_data': 8,
     'thesportsdb': 12,
     'openfootball_public': 8,
+    'sportlogic': 40,
 }
 
 FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
@@ -52,13 +54,13 @@ FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
         },
     },
     'bzzoiro': {
-        'per_run_max': 500,
+        'per_run_max': 1000,
         'safe_daily_budget': 200000,
         'env': {
-            'BZZOIRO_PER_RUN_MAX': '500',
-            'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '500',
+            'BZZOIRO_PER_RUN_MAX': '1000',
+            'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '1000',
             'BZZOIRO_CONTEXT_MATCH_LIMIT': '520',
-            'BZZOIRO_MAX_PAGES': '24',
+            'BZZOIRO_MAX_PAGES': '80',
         },
         'disable_env': {
             'BZZOIRO_PER_RUN_MAX': '0',
@@ -67,13 +69,14 @@ FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
         },
     },
     'sstats': {
-        'per_run_max': 120,
+        'per_run_max': 150,
         'safe_daily_budget': 50000,
         'env': {
-            'SSTATS_PER_RUN_MAX': '120',
-            'SSTATS_REQUESTS_MAX_PER_RUN': '120',
-            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '120',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '260',
+            'SSTATS_TARGET_NEAR_MISS_FIRST': 'true',
+            'SSTATS_PER_RUN_MAX': '150',
+            'SSTATS_REQUESTS_MAX_PER_RUN': '150',
+            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '320',
             'SSTATS_LOOKBACK_DAYS': '45',
             'SSTATS_RECENT_MATCHES': '10',
         },
@@ -82,6 +85,28 @@ FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
             'SSTATS_REQUESTS_MAX_PER_RUN': '0',
             'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '0',
             'SSTATS_CONTEXT_MATCH_LIMIT': '0',
+        },
+    },
+    'sportlogic': {
+        'per_run_max': 40,
+        'safe_daily_budget': 960,
+        'min_spacing_minutes': 0,
+        'env': {
+            'ENABLE_SPORTLOGIC': 'true',
+            'SPORTLOGIC_ENABLED': 'true',
+            'SPORTLOGIC_BASE_URL': 'https://api.sportlogic.io/api/v1',
+            'SPORTLOGIC_HEADER_NAME': 'X-API-Key',
+            'SPORTLOGIC_PER_RUN_MAX': '40',
+            'SPORTLOGIC_MATCH_LIMIT': '120',
+            'SPORTLOGIC_ODDS_MATCH_LIMIT': '40',
+            'SPORTLOGIC_TIMEOUT_SECONDS': '20',
+        },
+        'disable_env': {
+            'ENABLE_SPORTLOGIC': 'false',
+            'SPORTLOGIC_ENABLED': 'false',
+            'SPORTLOGIC_PER_RUN_MAX': '0',
+            'SPORTLOGIC_MATCH_LIMIT': '0',
+            'SPORTLOGIC_ODDS_MATCH_LIMIT': '0',
         },
     },
     'espn_public': {

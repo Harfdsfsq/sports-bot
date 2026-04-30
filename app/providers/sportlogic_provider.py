@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import os
 import re
+import json
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 
 import httpx
@@ -197,8 +199,11 @@ class SportLogicProvider:
                 event_id = str(item["event_id"] or "").strip()
                 if not event_id:
                     continue
-                payload = await self._get_json(client, f"/football/odds/{event_id}", {}, stats, preview)
+                payload = await self._fetch_odds_payload(client, event_id, stats, preview)
                 rows = self._extract_odds_rows(payload)
+                stats["odds_payload_rows"] += len(rows)
+                if not rows:
+                    stats["empty_odds_payloads"] += 1
                 if rows and len(preview["sample_odds"]) < 3:
                     preview["sample_odds"].append(rows[0])
                 parsed = self._parse_odds(rows, item["match"], event_id)
@@ -207,6 +212,8 @@ class SportLogicProvider:
                     stats["offers_parsed"] += len(parsed)
 
         stats["events_matched"] = len(mapping)
+        stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)
+        self._write_debug_export(stats, preview)
         return {key: value for key, value in offers_by_match.items() if value}, stats, preview
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
@@ -291,11 +298,70 @@ class SportLogicProvider:
             stats["response_errors"] += 1
             return None
         try:
-            return response.json()
+            payload = response.json()
+            if isinstance(payload, dict):
+                keys = stats.setdefault("top_level_keys", [])
+                for key in payload.keys():
+                    if key not in keys and len(keys) < 25:
+                        keys.append(key)
+            return payload
         except Exception as exc:
             stats["response_errors"] += 1
             self._preview_error(preview, "json", exc)
             return None
+
+    async def _fetch_odds_payload(
+        self,
+        client: httpx.AsyncClient,
+        event_id: str,
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+    ) -> Any | None:
+        endpoints = [
+            (f"/football/odds/{event_id}", {}),
+            (f"/games/{event_id}/odds", {}),
+            ("/odds", {"game_id": event_id}),
+        ]
+        for path, params in endpoints:
+            if not self._budget_left():
+                stats["budget_exhausted"] = True
+                return None
+            stats["odds_requests"] += 1
+            payload = await self._get_json(client, path, params, stats, preview)
+            rows = self._extract_odds_rows(payload)
+            if rows:
+                stats["odds_endpoint_used"] = path
+                return payload
+        return None
+
+    def _write_debug_export(self, stats: dict[str, Any], preview: dict[str, Any]) -> None:
+        try:
+            path = Path(".data/exports/latest-sportlogic-debug.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            payload = {
+                "stats": {key: value for key, value in stats.items() if key != "last_body_preview"},
+                "preview": self._sanitize(preview),
+                "last_body_preview": str(stats.get("last_body_preview") or "")[:800],
+            }
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        except Exception:
+            return
+
+    def _sanitize(self, value: Any) -> Any:
+        if isinstance(value, dict):
+            out: dict[str, Any] = {}
+            for key, item in value.items():
+                low = str(key).lower()
+                if any(token in low for token in ("key", "token", "secret", "authorization", "apikey", "api_key")):
+                    out[str(key)] = "***"
+                else:
+                    out[str(key)] = self._sanitize(item)
+            return out
+        if isinstance(value, list):
+            return [self._sanitize(item) for item in value[:10]]
+        if isinstance(value, str):
+            return value[:500]
+        return value
 
     def _headers(self) -> dict[str, str]:
         headers: dict[str, str] = {"Accept": "application/json"}
@@ -605,15 +671,20 @@ class SportLogicProvider:
             "auth_error": False,
             "rate_limited": False,
             "fixtures_fetched": 0,
+            "games_fetched": 0,
             "fixtures_skipped": 0,
             "matches_built": 0,
             "events_matched": 0,
+            "odds_requests": 0,
+            "odds_payload_rows": 0,
             "offers_parsed": 0,
+            "empty_odds_payloads": 0,
             "contexts_built": 0,
             "matched_exact": 0,
             "matched_loose": 0,
             "matched_fuzzy": 0,
             "http_statuses": [],
+            "top_level_keys": [],
             "last_body_preview": None,
         }
 

@@ -270,8 +270,8 @@ def _patch_harizon_runtime_policy(text: str) -> str:
     if '"ENABLE_SPORTLOGIC": "true"' not in text:
         text = _replace_once(
             text,
-            '        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "24"),\n',
-            '        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "24"),\n'
+            '        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "80"),\n',
+            '        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "80"),\n'
             '        "ENABLE_SPORTLOGIC": "true",\n'
             '        "SPORTLOGIC_ENABLED": "true",\n'
             '        "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",\n'

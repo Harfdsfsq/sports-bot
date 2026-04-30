@@ -228,6 +228,7 @@ _REASON_MAP: dict[str, str] = {
     "proxy_single_source_confidence_below_min": "proxy/single-source: уверенность ниже строгого минимума",
     "proxy_single_source_edge_below_min": "proxy/single-source: value-запас ниже строгого минимума",
     "proxy_single_source_ev_below_min": "proxy/single-source: EV ниже строгого минимума",
+    "controlled_fallback_confirmation_sources_below_min": "независимых подтверждений меньше минимума",
     "family_not_allowed:spreads": "семья рынка закрыта для Telegram: форы",
     "family_not_allowed:h2h": "семья рынка закрыта для Telegram: исходы 1X2",
     "family_not_allowed:teamtotals": "семья рынка закрыта для Telegram: индивидуальные тоталы",
@@ -446,6 +447,9 @@ def translate_reject_reason(reason: Any) -> str:
             "dnb": "фора 0",
         }.get(family, family)
         return f"семья рынка закрыта для Telegram: {family_ru}"
+    if text.startswith("controlled_fallback_confirmation_sources_below_min:"):
+        suffix = text.split(":", 1)[1]
+        return f"независимых подтверждений меньше минимума: {suffix}"
     # Generic readable fallback for tier/family slugs not yet in the dictionary.
     generic = text
     generic = re.sub(r"^tier_([abc])_", lambda m: f"уровень {m.group(1).upper()}: ", generic)

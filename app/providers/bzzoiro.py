@@ -43,10 +43,16 @@ class BzzoiroContextProvider:
             "retry_attempts": 0,
             "events_fetched": 0,
             "predictions_fetched": 0,
+            "target_matches": 0,
+            "pages_requested": 0,
+            "rows_seen": 0,
             "contexts_built": 0,
             "matched_exact": 0,
             "matched_loose": 0,
             "matched_fuzzy": 0,
+            "exact_matches": 0,
+            "fuzzy_matches": 0,
+            "near_miss_matches_closed": 0,
             "event_matches": 0,
             "prediction_links": 0,
             "fallback_prediction_matches": 0,
@@ -81,6 +87,7 @@ class BzzoiroContextProvider:
 
         target_limit = max(1, int(getattr(self.settings, "bzzoiro_context_match_limit", len(soccer_matches)) or len(soccer_matches)))
         soccer_matches = self._prioritize_matches(soccer_matches)[:target_limit]
+        stats["target_matches"] = len(soccer_matches)
 
         headers = {"Authorization": f"Token {self.api_key}"}
         min_dt = min(match.commence_time for match in soccer_matches).astimezone(UTC)
@@ -180,10 +187,14 @@ class BzzoiroContextProvider:
             stats["contexts_built"] = len(contexts)
             if quality == "exact":
                 stats["matched_exact"] = int(stats.get("matched_exact", 0) or 0) + 1
+                stats["exact_matches"] = int(stats.get("exact_matches", 0) or 0) + 1
             elif quality == "loose":
                 stats["matched_loose"] = int(stats.get("matched_loose", 0) or 0) + 1
             elif quality == "fuzzy":
                 stats["matched_fuzzy"] = int(stats.get("matched_fuzzy", 0) or 0) + 1
+                stats["fuzzy_matches"] = int(stats.get("fuzzy_matches", 0) or 0) + 1
+            if match.match_key:
+                stats["near_miss_matches_closed"] = int(stats.get("near_miss_matches_closed", 0) or 0) + 1
 
             if len(preview["matched_examples"]) < 10:
                 preview["matched_examples"].append(
@@ -235,9 +246,11 @@ class BzzoiroContextProvider:
         rows: list[dict[str, Any]] = []
         max_pages = max(1, int(getattr(self.settings, "bzzoiro_max_pages", 8) or 8))
         page = 1
+        seen_signatures: set[str] = set()
 
         while page <= max_pages:
             request_params = {**params, "page": page}
+            stats["pages_requested"] = int(stats.get("pages_requested", 0) or 0) + 1
             response = await self._request_with_retries(
                 client,
                 f"{self.base_url}{path}",
@@ -251,7 +264,17 @@ class BzzoiroContextProvider:
             batch = self._results(payload)
             if not batch:
                 break
-            rows.extend(batch)
+            new_rows: list[dict[str, Any]] = []
+            for row in batch:
+                signature = str(row.get("id") or row.get("uuid") or row.get("api_id") or row.get("event_id") or row)
+                if signature in seen_signatures:
+                    continue
+                seen_signatures.add(signature)
+                new_rows.append(row)
+            if not new_rows:
+                break
+            rows.extend(new_rows)
+            stats["rows_seen"] = int(stats.get("rows_seen", 0) or 0) + len(new_rows)
             next_url = payload.get("next") if isinstance(payload, dict) else None
             if not next_url:
                 break

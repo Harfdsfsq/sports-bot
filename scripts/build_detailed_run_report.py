@@ -407,6 +407,13 @@ def explain_thresholds(candidate: dict[str, Any], metrics: dict[str, Any], reaso
     quality = metric(candidate, metrics, "quality_score")
     books = as_int(metrics.get("books_count", candidate.get("books_count", 0)))
     sources = as_int(metrics.get("sources_count", candidate.get("sources_count", 0)))
+    odds_sources = as_int(metrics.get("odds_sources_count", candidate.get("odds_sources_count", 0)))
+    confirmation_sources = as_int(metrics.get("confirmation_sources_count", candidate.get("confirmation_sources_count", sources)))
+    if odds_sources or confirmation_sources:
+        out.append(f"odds sources {odds_sources}, confirmation sources {confirmation_sources}")
+        names = metrics.get("confirmation_sources") or candidate.get("confirmation_sources") or []
+        if isinstance(names, list) and names:
+            out.append("confirmation sources: " + ", ".join(str(item) for item in names[:5]))
 
     if ev > 0:
         out.append(f"EV {ev:+.1f}%")
@@ -435,6 +442,13 @@ def explain_selected(candidate: dict[str, Any], metrics: dict[str, Any]) -> list
     quality = metric(candidate, metrics, "quality_score")
     books = as_int(metrics.get("books_count", candidate.get("books_count", 0)))
     sources = as_int(metrics.get("sources_count", candidate.get("sources_count", 0)))
+    odds_sources = as_int(metrics.get("odds_sources_count", candidate.get("odds_sources_count", 0)))
+    confirmation_sources = as_int(metrics.get("confirmation_sources_count", candidate.get("confirmation_sources_count", sources)))
+    if odds_sources or confirmation_sources:
+        out.append(f"odds sources {odds_sources}, confirmation sources {confirmation_sources}")
+        names = metrics.get("confirmation_sources") or candidate.get("confirmation_sources") or []
+        if isinstance(names, list) and names:
+            out.append("confirmation sources: " + ", ".join(str(item) for item in names[:5]))
     if tier:
         out.append(f"уровень {tier.replace('уровень ', '')}")
     if ev or edge:
@@ -516,7 +530,7 @@ def provider_summary() -> list[str]:
     providers = payload.get("providers") if isinstance(payload, dict) else []
     if not isinstance(providers, list):
         return []
-    important = {"odds_api_io", "bzzoiro", "sstats", "api_football", "football_data", "thesportsdb", "futrixmetrics", "weather"}
+    important = {"odds_api_io", "bzzoiro", "sstats", "api_football", "football_data", "thesportsdb", "futrixmetrics", "sportlogic", "weather"}
     lines = []
     for row in providers:
         if not isinstance(row, dict):
@@ -546,6 +560,7 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
         "api_football",
         "football_data",
         "thesportsdb",
+        "sportlogic",
         "openfootball",
         "weather",
         "newsapi",
@@ -580,6 +595,14 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
                 parts.append(f"openweathermap {openweathermap_requests}")
             if cache_hits:
                 parts.append(f"cache {cache_hits}")
+        if name == "sportlogic":
+            for key in ("games_fetched", "events_matched", "odds_requests", "odds_payload_rows", "offers_parsed", "empty_odds_payloads"):
+                value = stats.get(key, status.get(key))
+                if value is not None:
+                    parts.append(f"{key} {value}")
+            keys = stats.get("top_level_keys") or status.get("top_level_keys")
+            if isinstance(keys, list) and keys:
+                parts.append("top_keys " + "/".join(str(item) for item in keys[:4]))
         if max_requests:
             parts.append(f"max {max_requests}")
         if response_errors:
