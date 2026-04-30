@@ -15,6 +15,22 @@ GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
 ALL_HOURS = list(range(24))
+HARIZON_CRITICAL_PROVIDERS = {
+    'odds_api_io',
+    'bzzoiro',
+    'sstats',
+    'football_data',
+    'thesportsdb',
+    'openfootball_public',
+}
+HARIZON_RECOVERY_GRANTS = {
+    'odds_api_io': 70,
+    'bzzoiro': 140,
+    'sstats': 24,
+    'football_data': 8,
+    'thesportsdb': 12,
+    'openfootball_public': 8,
+}
 
 FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
     'odds_api_io': {
@@ -344,6 +360,21 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def env_truthy(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == '':
+        return default
+    return str(raw).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+
+def harizon_budget_recovery_enabled() -> bool:
+    return (
+        env_truthy('HARIZON_IGNORE_STALE_PROVIDER_BUDGET')
+        or env_truthy('DAY_INVENTORY_COVERAGE_MAX_REBUILD')
+        or str(os.getenv('HARIZON_RUNTIME_POLICY_VERSION') or '').strip() == 'harizon-runtime-policy-v1'
+    )
+
+
 def append_github_env(env: dict[str, str]) -> None:
     if not GITHUB_ENV:
         return
@@ -539,6 +570,26 @@ def decide_provider(name: str, cfg: dict[str, Any], row: dict[str, Any], now: da
             decision['reason'] = f'monthly_budget_exhausted:{usage(row, "monthly", mkey)}/{monthly_budget}'
         else:
             decision['reason'] = 'per_run_zero'
+        if (
+            harizon_budget_recovery_enabled()
+            and name in HARIZON_CRITICAL_PROVIDERS
+            and decision['reason'].startswith('daily_budget_exhausted:')
+            and per_run > 0
+        ):
+            grant = max(1, min(per_run, HARIZON_RECOVERY_GRANTS.get(name, per_run)))
+            decision.update({
+                'grant': grant,
+                'reason': f'harizon_recovery_after_{decision["reason"]}',
+                'daily_remaining_after': None,
+                'monthly_remaining_after': max(0, monthly_remaining - grant) if monthly_budget > 0 else None,
+                'stale_daily_budget_bypassed': True,
+            })
+            row['last_grant_at'] = now.isoformat()
+            row['last_grant'] = grant
+            row['last_decision_reason'] = decision['reason']
+            add_usage(row, 'daily', dkey, grant)
+            add_usage(row, 'monthly', mkey, grant)
+            return decision
         return decision
 
     decision.update({

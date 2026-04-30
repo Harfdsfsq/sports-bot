@@ -996,6 +996,18 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     pool: list[dict[str, Any]] = []
     counts: Counter[str] = Counter()
     seen: set[str] = set()
+    filter_by_time = env_bool("CONTROLLED_FALLBACK_FILTER_POOL_BY_TIME", True)
+    now = datetime.now(UTC)
+    earliest = now + timedelta(minutes=effective_min_kickoff_lead_minutes())
+    latest = now + timedelta(hours=max(1, env_int("PUBLISH_WINDOW_HOURS", 24)))
+
+    def row_in_current_window(row: dict[str, Any]) -> bool:
+        if not filter_by_time or not env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True):
+            return True
+        kickoff = parse_dt(row.get("commence_time") or row.get("start_time") or row.get("kickoff"))
+        if kickoff is None:
+            return env_bool("CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME", False)
+        return earliest <= kickoff <= latest
 
     def add_rows(source: str, rows: Any) -> None:
         if isinstance(rows, dict):
@@ -1006,6 +1018,9 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
             return
         for row in rows_iter:
             if not isinstance(row, dict):
+                continue
+            if not row_in_current_window(row):
+                counts[f"{source}_stale_or_outside_window"] += 1
                 continue
             key = dedupe_key(row)
             if key in seen:
@@ -1037,7 +1052,16 @@ def already_has_picks() -> bool:
     # Keep this guard for safety if internal publication is accidentally re-enabled.
     latest_picks = load_json(".data/exports/latest-picks.json", [])
     if isinstance(latest_picks, list) and len(latest_picks) > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_LATEST_PICKS", True):
-        return True
+        if not env_bool("CONTROLLED_FALLBACK_FILTER_POOL_BY_TIME", True):
+            return True
+        now = datetime.now(UTC)
+        latest = now + timedelta(hours=max(1, env_int("PUBLISH_WINDOW_HOURS", 24)))
+        for row in latest_picks:
+            if not isinstance(row, dict):
+                continue
+            kickoff = parse_dt(row.get("commence_time") or row.get("start_time") or row.get("kickoff"))
+            if kickoff is not None and now <= kickoff <= latest:
+                return True
     debug = load_json(".logs/debug-last-run.json", {})
     summary = debug.get("summary") if isinstance(debug, dict) else {}
     return isinstance(summary, dict) and as_int(summary.get("published"), 0) > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_INTERNAL_PUBLISHED", True)

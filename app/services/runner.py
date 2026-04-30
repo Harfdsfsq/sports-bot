@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 from collections import Counter, defaultdict
 import json
+import os
 from dataclasses import asdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
@@ -24,7 +25,7 @@ from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
 from app.services.settlement import SettlementService
 from app.state import JsonStateStore, collect_run_archive_paths, resolve_run_history_roots, resolve_run_logs_dir
-from app.utils import candidate_selection_key, clamp, ensure_utc
+from app.utils import candidate_selection_key, canonicalize_league_name, canonicalize_team_name, clamp, ensure_utc, parse_datetime
 
 logger = logging.getLogger(__name__)
 
@@ -296,6 +297,11 @@ class PredictionRunner:
             daily_report_payloads: list[str] = []
 
             bootstrap_matches, bootstrap_meta = await self._fetch_matches()
+            bootstrap_matches, bootstrap_meta = self._merge_day_inventory_matches(
+                list(bootstrap_matches or []),
+                dict(bootstrap_meta or {}),
+                now_utc,
+            )
             deduped_matches = self._dedupe_matches(bootstrap_matches)
             bootstrap_provider = str(bootstrap_meta.get('provider') or 'none')
             bootstrap_attempts = dict(bootstrap_meta.get('attempts') or {})
@@ -893,6 +899,151 @@ class PredictionRunner:
             'preview': {},
             'attempts': attempts,
         }
+
+    @staticmethod
+    def _env_bool(name: str, default: bool = False) -> bool:
+        raw = os.getenv(name)
+        if raw is None or str(raw).strip() == '':
+            return default
+        return str(raw).strip().lower() in {'1', 'true', 'yes', 'on'}
+
+    def _day_inventory_paths(self, now_utc: datetime) -> list[Path]:
+        local_date = now_utc.astimezone(self.settings.tzinfo).date().isoformat()
+        base = Path('.data') / 'day_inventory'
+        paths = [
+            base / f'{local_date}.json',
+            base / 'today.json',
+            base / 'current.json',
+            Path(self.settings.storage_export_dir) / 'latest-day-inventory.json',
+        ]
+        unique: list[Path] = []
+        seen: set[str] = set()
+        for path in paths:
+            key = str(path)
+            if key in seen:
+                continue
+            seen.add(key)
+            unique.append(path)
+        return unique
+
+    def _load_day_inventory_matches(self, now_utc: datetime) -> tuple[list[Match], dict[str, Any]]:
+        if not self._env_bool('DAY_INVENTORY_USE_FOR_RUN', True):
+            return [], {'enabled': False, 'reason': 'disabled'}
+
+        target_local_date = now_utc.astimezone(self.settings.tzinfo).date().isoformat()
+        try:
+            limit = max(0, int(float(os.getenv('DAY_INVENTORY_RUN_MATCH_LIMIT', '400') or '400')))
+        except Exception:
+            limit = 400
+        stats: dict[str, Any] = {
+            'enabled': True,
+            'target_local_date': target_local_date,
+            'path': '',
+            'rows_seen': 0,
+            'loaded_matches': 0,
+            'skipped_wrong_date': 0,
+            'skipped_invalid': 0,
+            'skipped_limit': 0,
+        }
+
+        payload: dict[str, Any] = {}
+        for path in self._day_inventory_paths(now_utc):
+            if not path.exists() or not path.is_file():
+                continue
+            try:
+                candidate = json.loads(path.read_text(encoding='utf-8'))
+            except Exception as exc:
+                stats.setdefault('read_errors', []).append(f'{path}:{type(exc).__name__}:{exc}')
+                continue
+            if isinstance(candidate, dict):
+                payload = candidate
+                stats['path'] = str(path)
+                break
+        if not payload:
+            stats['reason'] = 'inventory_file_missing'
+            return [], stats
+
+        rows = payload.get('matches') if isinstance(payload.get('matches'), list) else []
+        stats['rows_seen'] = len(rows)
+        matches: list[Match] = []
+        for row in rows:
+            if limit > 0 and len(matches) >= limit:
+                stats['skipped_limit'] += 1
+                continue
+            if not isinstance(row, dict):
+                stats['skipped_invalid'] += 1
+                continue
+            kickoff_raw = row.get('kickoff_utc') or row.get('commence_time') or row.get('start_time') or row.get('kickoff')
+            try:
+                commence_time = parse_datetime(kickoff_raw)
+            except Exception:
+                stats['skipped_invalid'] += 1
+                continue
+            if commence_time.astimezone(self.settings.tzinfo).date().isoformat() != target_local_date:
+                stats['skipped_wrong_date'] += 1
+                continue
+            home = str(row.get('home_team') or '').strip()
+            away = str(row.get('away_team') or '').strip()
+            league = str(row.get('league_name') or row.get('competition') or '').strip()
+            if not home or not away or not league:
+                stats['skipped_invalid'] += 1
+                continue
+            source_ids = row.get('source_ids') if isinstance(row.get('source_ids'), dict) else {}
+            metadata = dict(row.get('metadata') or {})
+            metadata.update({
+                'day_inventory': True,
+                'day_inventory_path': stats['path'],
+                'day_inventory_coverage': row.get('coverage') or {},
+                'day_inventory_refresh': row.get('refresh') or {},
+                'day_inventory_source_ids': source_ids,
+            })
+            source_event_id = (
+                str(row.get('source_event_id') or '').strip()
+                or str(source_ids.get('odds_api_io') or source_ids.get('football_data') or source_ids.get('thesportsdb') or '').strip()
+                or str(metadata.get('odds_api_io_id') or row.get('match_key') or '').strip()
+            )
+            matches.append(
+                Match(
+                    source='day_inventory',
+                    source_event_id=source_event_id,
+                    sport_key=str(row.get('sport_key') or 'soccer'),  # type: ignore[arg-type]
+                    league_name=league,
+                    home_team=home,
+                    away_team=away,
+                    commence_time=commence_time,
+                    home_team_norm=str(row.get('home_team_norm') or canonicalize_team_name(home)),
+                    away_team_norm=str(row.get('away_team_norm') or canonicalize_team_name(away)),
+                    league_key=str(row.get('league_key') or canonicalize_league_name(league)),
+                    tier=str(row.get('tier') or 'mid'),
+                    metadata=metadata,
+                )
+            )
+        stats['loaded_matches'] = len(matches)
+        return matches, stats
+
+    def _merge_day_inventory_matches(
+        self,
+        bootstrap_matches: list[Match],
+        bootstrap_meta: dict[str, Any],
+        now_utc: datetime,
+    ) -> tuple[list[Match], dict[str, Any]]:
+        inventory_matches, inventory_stats = self._load_day_inventory_matches(now_utc)
+        bootstrap_meta['day_inventory_bridge'] = inventory_stats
+        if not inventory_matches:
+            return bootstrap_matches, bootstrap_meta
+
+        existing_keys = {match.match_key for match in bootstrap_matches}
+        added = [match for match in inventory_matches if match.match_key not in existing_keys]
+        bootstrap_meta['day_inventory_bridge'] = {
+            **inventory_stats,
+            'deduped_added_to_run': len(added),
+            'duplicates_with_bootstrap': len(inventory_matches) - len(added),
+        }
+        if added and str(bootstrap_meta.get('provider') or 'none') == 'none':
+            bootstrap_meta['provider'] = 'day_inventory'
+        elif added:
+            bootstrap_meta['provider'] = f"{bootstrap_meta.get('provider') or 'unknown'}+day_inventory"
+        return bootstrap_matches + added, bootstrap_meta
 
     async def _fetch_weather_contexts(
         self,
