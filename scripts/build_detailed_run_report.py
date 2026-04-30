@@ -294,11 +294,27 @@ def metric(candidate: dict[str, Any], metrics: dict[str, Any], *keys: str, defau
 
 
 def candidate_identity(candidate: dict[str, Any]) -> dict[str, str]:
-    home = translate_team_name(candidate.get("home_team") or candidate.get("home") or "")
-    away = translate_team_name(candidate.get("away_team") or candidate.get("away") or "")
-    league = translate_league_name(candidate.get("league") or candidate.get("competition") or candidate.get("tournament") or "")
+    home = str(candidate.get("home_team_ru") or "").strip() or translate_team_name(candidate.get("home_team") or candidate.get("home") or "")
+    away = str(candidate.get("away_team_ru") or "").strip() or translate_team_name(candidate.get("away_team") or candidate.get("away") or "")
+    league = (
+        str(candidate.get("league_name_ru") or "").strip()
+        or translate_league_name(candidate.get("league_name") or candidate.get("league") or candidate.get("competition") or candidate.get("tournament") or "")
+    )
     selection = translate_selection_text(candidate.get("selection") or candidate.get("market") or "", candidate.get("home_team"), candidate.get("away_team"))
     return {"home": home, "away": away, "league": league, "selection": selection}
+
+
+def candidate_key(candidate: dict[str, Any]) -> tuple[str, str, str, str, str, str]:
+    point = candidate.get("point")
+    odds = candidate.get("odds")
+    return (
+        str(candidate.get("match_key") or ""),
+        str(candidate.get("home_team") or candidate.get("home") or ""),
+        str(candidate.get("away_team") or candidate.get("away") or ""),
+        str(candidate.get("selection") or candidate.get("market") or ""),
+        "" if point in (None, "") else str(point),
+        "" if odds in (None, "") else str(odds),
+    )
 
 
 def reason_counter(report: dict[str, Any], evaluated: list[dict[str, Any]]) -> Counter:
@@ -338,11 +354,14 @@ def near_miss_score(candidate: dict[str, Any], metrics: dict[str, Any], reasons:
     return (hard_penalty == 0, ev, edge, confidence, quality, -len(reasons))
 
 
-def pick_near_misses(evaluated: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
+def pick_near_misses(evaluated: list[dict[str, Any]], limit: int, selected: list[dict[str, Any]] | None = None) -> list[dict[str, Any]]:
     rows = []
     seen = set()
+    selected_keys = {candidate_key(row) for row in (selected or [])}
     for row in evaluated:
         candidate, metrics, reasons = unwrap_candidate(row)
+        if candidate_key(candidate) in selected_keys:
+            continue
         ident = candidate_identity(candidate)
         key = (
             ident["home"],
@@ -368,6 +387,14 @@ def pick_near_misses(evaluated: list[dict[str, Any]], limit: int) -> list[dict[s
         })
     rows.sort(key=lambda item: item["score"], reverse=True)
     return rows[:limit]
+
+
+def selected_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
+    rows = report.get("selected_all")
+    if isinstance(rows, list):
+        return [row for row in rows if isinstance(row, dict)]
+    row = report.get("selected")
+    return [row] if isinstance(row, dict) else []
 
 
 def explain_thresholds(candidate: dict[str, Any], metrics: dict[str, Any], reasons: list[str]) -> list[str]:
@@ -396,8 +423,39 @@ def explain_thresholds(candidate: dict[str, Any], metrics: dict[str, Any], reaso
     return out
 
 
+def explain_selected(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    out: list[str] = []
+    tier = str(candidate.get("tier") or "").strip()
+    stake = metric(candidate, metrics, "stake", default=as_float(candidate.get("stake")))
+    ev = metric(candidate, metrics, "canonical_ev_pct", "ev_pct")
+    edge = metric(candidate, metrics, "canonical_edge_pp", "edge_pp")
+    confidence = metric(candidate, metrics, "confidence")
+    quality = metric(candidate, metrics, "quality_score")
+    books = as_int(metrics.get("books_count", candidate.get("books_count", 0)))
+    sources = as_int(metrics.get("sources_count", candidate.get("sources_count", 0)))
+    if tier:
+        out.append(f"уровень {tier.replace('уровень ', '')}")
+    if ev or edge:
+        out.append(f"EV {ev:+.1f}% | запас {edge:+.1f} п.п.")
+    if confidence or quality:
+        out.append(f"уверенность {confidence:.1f}% | качество {quality:.1f}")
+    if books or sources:
+        out.append(f"линии {books}, источники {sources}")
+    if stake > 0:
+        out.append(f"ставка {stake:.2f}")
+    xg = metrics.get("xg_sanity") if isinstance(metrics.get("xg_sanity"), dict) else {}
+    if xg and bool(xg.get("enabled")):
+        xg_prob = as_float(xg.get("xg_probability_pct"))
+        gap = as_float(xg.get("xg_model_gap_pp"))
+        out.append(f"xG-ориентир {xg_prob:.1f}% | разрыв {gap:+.1f} п.п.")
+    return out
+
+
 def provider_summary() -> list[str]:
     payload = quota_report()
+    runtime_env = runtime_policy_report().get("env_updates")
+    if not isinstance(runtime_env, dict):
+        runtime_env = {}
     decisions = payload.get("decisions") if isinstance(payload, dict) else []
     if isinstance(decisions, list) and decisions:
         important = {
@@ -428,6 +486,10 @@ def provider_summary() -> list[str]:
             grant = as_int(row.get("grant"))
             reason = str(row.get("reason") or "unknown")
             parts = [f"grant {grant}", f"reason {reason}"]
+            if provider == "odds_api_io":
+                effective = as_int(runtime_env.get("ODDS_API_IO_PER_RUN_MAX"))
+                if effective > grant:
+                    parts.append(f"effective max {effective}")
 
             daily_budget = as_int(row.get("daily_budget"))
             daily_used_before = as_int(row.get("daily_used_before"))
@@ -648,7 +710,8 @@ def build_payload() -> dict[str, Any]:
     summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
     evaluated = extract_evaluated(report)
     reasons = reason_counter(report, evaluated)
-    near = pick_near_misses(evaluated, env_int("DETAILED_RUN_REPORT_TOP_NEAR_MISSES", 8))
+    selected = selected_rows(report)
+    near = pick_near_misses(evaluated, env_int("DETAILED_RUN_REPORT_TOP_NEAR_MISSES", 8), selected)
 
     published = bool(report.get("published") or report.get("telegram_sent") or report.get("selected_count"))
     return {
@@ -664,6 +727,7 @@ def build_payload() -> dict[str, Any]:
             "selected_count": as_int(report.get("selected_count")),
         },
         "reason_counts": dict(reasons.most_common(20)),
+        "selected": selected,
         "near_misses": near,
         "diagnostic_lines": run_diagnostic_lines(debug),
         "provider_work_lines": provider_work_lines(debug),
@@ -677,6 +741,7 @@ def render(payload: dict[str, Any]) -> str:
     summary = payload.get("summary") or {}
     counts = payload.get("candidate_counts") or {}
     reasons = Counter(payload.get("reason_counts") or {})
+    selected = payload.get("selected") or []
     near = payload.get("near_misses") or []
 
     lines = []
@@ -730,8 +795,26 @@ def render(payload: dict[str, Any]) -> str:
             lines.append(f"• {translate_reject_reason(reason)} — {count} ({pct:.0f}%)")
         lines.append("")
 
+    if selected:
+        lines.append("✅ Опубликовано")
+        for idx, candidate in enumerate(selected, start=1):
+            metrics = candidate.get("metrics") if isinstance(candidate.get("metrics"), dict) else {}
+            ident = candidate_identity(candidate)
+            odds = metric(candidate, metrics, "odds", default=as_float(candidate.get("odds")))
+            kickoff = candidate.get("commence_time_display") or fmt_time(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
+            point = candidate.get("point")
+            point_text = f" ({point})" if point not in (None, "") else ""
+            match = f"{ident['home']} — {ident['away']}".strip(" —")
+            lines.append(f"{idx}. {match}")
+            if ident["league"]:
+                lines.append(f"   🏆 {ident['league']}")
+            lines.append(f"   🎯 {ident['selection']}{point_text} @{odds:.2f} | 🕒 {kickoff}")
+            for part in explain_selected(candidate, metrics):
+                lines.append(f"   • {part}")
+        lines.append("")
+
     if near:
-        lines.append("⚠️ Пограничные кандидаты")
+        lines.append("⚠️ Остальные пограничные кандидаты" if selected else "⚠️ Пограничные кандидаты")
         for idx, item in enumerate(near[: env_int("DETAILED_RUN_REPORT_TOP_NEAR_MISSES", 8)], start=1):
             candidate = item["candidate"]
             metrics = item["metrics"]
@@ -759,7 +842,12 @@ def render(payload: dict[str, Any]) -> str:
         lines.append("")
 
     # Operational conclusion.
-    if reasons:
+    if selected:
+        lines.append("📌 Вывод")
+        lines.append("• Система штатно опубликовала контролируемый прогноз; причины отказа выше относятся только к оставшимся кандидатам.")
+        if any("xg" in str(reason) for reason in reasons):
+            lines.append("• xG-фильтр теперь отсекает именно чрезмерный оптимизм модели, не блокируя подтверждающие xG-сценарии.")
+    elif reasons:
         top_reason = reasons.most_common(1)[0][0]
         top_near_reasons = set()
         if near and isinstance(near[0], dict):
