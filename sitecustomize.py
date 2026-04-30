@@ -1,11 +1,12 @@
 """Runtime hotfixes for sports-bot.
 
 Imported automatically by Python before app modules.  Keep this file defensive:
-it must never break CLI startup.  It handles three runtime fixes:
+it must never break CLI startup.  It handles these runtime fixes:
 
 1) Preserve the probability normalizer hotfix.
 2) Remove api-football from runtime without requiring a large runner rewrite.
 3) Wire SportLogic into offers/context and clean human reports/inventory counts.
+4) Patch SportLogic provider to the documented API contract.
 """
 
 from __future__ import annotations
@@ -216,6 +217,76 @@ def _patch_runner_text(text: str) -> str:
     return text
 
 
+def _patch_sportlogic_provider_text(text: str) -> str:
+    """Patch SportLogic to the documented API contract.
+
+    Documentation checked 2026-04-30:
+    - Base URL: https://api.sportlogic.io/api/v1
+    - Auth header: X-API-Key
+    - Games: GET /games with date_from/date_to/status/per_page
+    - Odds: GET /games/{id}/odds or /odds?game_id=...
+    """
+    text = text.replace('BASE_URL = "https://api.sportlogic.io/v1"', 'BASE_URL = "https://api.sportlogic.io/api/v1"')
+    text = text.replace('os.getenv("SPORTLOGIC_HEADER_NAME", "Authorization")', 'os.getenv("SPORTLOGIC_HEADER_NAME", "X-API-Key")')
+    text = text.replace('f"{self.base_url}/football/fixtures"', 'f"{self.base_url}/games"')
+    text = text.replace('f"{self.base_url}/football/odds/{fixture_id}"', 'f"{self.base_url}/games/{fixture_id}/odds"')
+    text = text.replace('f"{self.base_url}/football/results/{fixture_id}"', 'f"{self.base_url}/outcomes/{fixture_id}"')
+    text = text.replace(
+        'payload = await self._get_json(client, "/football/fixtures", {"date": date_key}, stats, preview)',
+        'payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "status": "scheduled", "per_page": 100}, stats, preview)',
+    )
+    text = text.replace('payload = await self._get_json(client, f"/football/odds/{event_id}", {}, stats, preview)', 'payload = await self._get_json(client, f"/games/{event_id}/odds", {}, stats, preview)')
+    text = text.replace(
+        '            response = await client.get(f"{self.base_url}{path}", headers=self._headers(), params=params or None)\n',
+        '            stats.setdefault("attempted_paths", []).append({"path": path, "params": dict(params or {})})\n'
+        '            response = await client.get(f"{self.base_url}{path}", headers=self._headers(), params=params or None)\n',
+    )
+    flat_marker = '        for row in rows:\n            # Shape A: bookmakers -> markets -> outcomes\n'
+    flat_patch = '''        for row in rows:
+            # SportLogic documented flat odds shape: option_name/option_value/odds + market/bookmaker objects.
+            if isinstance(row, dict) and ("option_name" in row or "market_id" in row) and ("odds" in row or "price" in row):
+                market_payload = row.get("market") if isinstance(row.get("market"), dict) else {}
+                bookmaker_payload = row.get("bookmaker") if isinstance(row.get("bookmaker"), dict) else {}
+                market_key = str(market_payload.get("key") or row.get("market_key") or row.get("market") or "").strip().lower()
+                market_name = str(market_payload.get("name") or market_key or row.get("market_id") or "sportlogic_market")
+                option_name = str(row.get("option_name") or row.get("name") or row.get("selection") or "").strip()
+                option_value = row.get("option_value") if row.get("option_value") not in ("", None) else row.get("line")
+                price = row.get("odds") or row.get("price") or row.get("decimal")
+                book = str(bookmaker_payload.get("name") or row.get("bookmaker_name") or row.get("bookmaker") or "SportLogic")
+                low = option_name.lower()
+                if bool(row.get("is_suspended")):
+                    continue
+                if market_key in {"match_winner", "winner", "1x2", "full_time_result"}:
+                    if low in {"home", "1"}:
+                        add(book, "h2h", match.home_team, price, team_side="home", market_name=market_name)
+                    elif low in {"draw", "x", "tie"}:
+                        add(book, "h2h", "Draw", price, market_name=market_name)
+                    elif low in {"away", "2"}:
+                        add(book, "h2h", match.away_team, price, team_side="away", market_name=market_name)
+                    else:
+                        side = "home" if option_name == match.home_team else "away" if option_name == match.away_team else None
+                        add(book, "h2h", option_name, price, team_side=side, market_name=market_name)
+                    continue
+                if market_key in {"goals_over_under", "total_goals", "over_under", "totals"}:
+                    if "over" in low:
+                        add(book, "totals", "Over", price, self._float(option_value), market_name=market_name)
+                    elif "under" in low:
+                        add(book, "totals", "Under", price, self._float(option_value), market_name=market_name)
+                    continue
+                if market_key in {"both_teams_to_score", "btts"}:
+                    if low in {"yes", "both teams to score - yes"} or "yes" in low:
+                        add(book, "btts", "Yes", price, market_name=market_name)
+                    elif low in {"no", "both teams to score - no"} or "no" in low:
+                        add(book, "btts", "No", price, market_name=market_name)
+                    continue
+
+            # Shape A: bookmakers -> markets -> outcomes
+'''
+    if flat_marker in text and 'SportLogic documented flat odds shape' not in text:
+        text = text.replace(flat_marker, flat_patch, 1)
+    return text
+
+
 def _patch_detailed_report_text(text: str) -> str:
     # Human reports should not list api-football after it was removed.
     text = text.replace('            "api_football",\n', '')
@@ -319,11 +390,20 @@ def _patch_workflow_text(text: str) -> str:
             "      SPORTLOGIC_ODDS_MATCH_LIMIT: \"40\"\n",
             1,
         )
+    if "SPORTLOGIC_BASE_URL:" not in text:
+        text = text.replace(
+            "      SPORTLOGIC_TIMEOUT_SECONDS: \"20\"\n",
+            "      SPORTLOGIC_TIMEOUT_SECONDS: \"20\"\n"
+            "      SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1\n"
+            "      SPORTLOGIC_HEADER_NAME: X-API-Key\n",
+            1,
+        )
     return text
 
 
 def _apply_file_patches() -> None:
     _patch_file(ROOT / "app" / "services" / "runner.py", _patch_runner_text)
+    _patch_file(ROOT / "app" / "providers" / "sportlogic_provider.py", _patch_sportlogic_provider_text)
     _patch_file(ROOT / "scripts" / "build_detailed_run_report.py", _patch_detailed_report_text)
     _patch_file(ROOT / "scripts" / "merge_run_coverage_into_day_inventory.py", _patch_merge_inventory_text)
     _patch_file(ROOT / ".github" / "workflows" / "run-bot.yml", _patch_workflow_text)
