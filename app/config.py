@@ -77,6 +77,14 @@ class Settings(BaseSettings):
         default_factory=lambda: ["Bet365", "Unibet"],
         validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS"),
     )
+    odds_api_io_bookmakers_account1: CsvList = Field(
+        default_factory=lambda: ["Bet365", "Unibet"],
+        validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS_ACCOUNT1"),
+    )
+    odds_api_io_bookmakers_account2: CsvList = Field(
+        default_factory=lambda: ["Betfair Exchange", "Sbobet"],
+        validation_alias=AliasChoices("ODDS_API_IO_BOOKMAKERS_ACCOUNT2"),
+    )
     bookies_api_sports: CsvList = Field(default_factory=lambda: ["soccer"], validation_alias=AliasChoices("BOOKIES_API_SPORTS"))
     allow_low_tier: bool = Field(default=False, validation_alias=AliasChoices("ALLOW_LOW_TIER", "EXCLUDE_EXOTIC_LEAGUES"))
 
@@ -188,6 +196,7 @@ class Settings(BaseSettings):
     sheet_id: str | None = Field(default=None, validation_alias=AliasChoices("SHEET_ID"))
 
     odds_api_io_key: str | None = Field(default=None, validation_alias=AliasChoices("ODDS_API_IO_KEY"))
+    odds_api_io_key_2: str | None = Field(default=None, validation_alias=AliasChoices("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2"))
     odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"))
     odds_api_io_page_limit: int = Field(default=100, validation_alias=AliasChoices("ODDS_API_IO_PAGE_LIMIT"))
     odds_api_io_max_pages_per_sport: int = Field(default=8, validation_alias=AliasChoices("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT"))
@@ -697,6 +706,8 @@ class Settings(BaseSettings):
         "target_bookmakers",
         "consensus_bookmakers",
         "odds_api_io_bookmakers",
+        "odds_api_io_bookmakers_account1",
+        "odds_api_io_bookmakers_account2",
         "bookies_api_sports",
         "espn_soccer_leagues",
         "espn_soft_fail_statuses",

@@ -248,6 +248,14 @@ def quota_report() -> dict[str, Any]:
     return {}
 
 
+def runtime_policy_report() -> dict[str, Any]:
+    return load_json(".data/exports/latest-harizon-runtime-policy.json", {})
+
+
+def day_inventory_summary() -> dict[str, Any]:
+    return load_json(".data/exports/latest-day-inventory-summary.json", {})
+
+
 def extract_evaluated(report: dict[str, Any]) -> list[dict[str, Any]]:
     for key in ("evaluated", "candidates", "checked_candidates", "rejected_candidates"):
         rows = report.get(key)
@@ -527,6 +535,63 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
     return lines
 
 
+def coverage_pipeline_lines(payload: dict[str, Any]) -> list[str]:
+    inventory = payload.get("day_inventory") if isinstance(payload.get("day_inventory"), dict) else {}
+    counts = inventory.get("counts") if isinstance(inventory.get("counts"), dict) else {}
+    if not counts:
+        return []
+    total = as_int(counts.get("matches_total"))
+    with_odds = as_int(counts.get("matches_with_odds"))
+    with_context = as_int(counts.get("matches_with_context"))
+    ready = as_int(counts.get("matches_ready_for_model"))
+    next_6h = as_int(counts.get("matches_next_6h"))
+    next_6h_ready = as_int(counts.get("matches_next_6h_ready"))
+    next_12h = as_int(counts.get("matches_next_12h"))
+    next_12h_ready = as_int(counts.get("matches_next_12h_ready"))
+    return [
+        "📦 Дневной inventory",
+        f"• Матчей всего: {total}",
+        f"• С линиями: {with_odds}/{total}",
+        f"• С контекстом: {with_context}/{total}",
+        f"• Готово к модели: {ready}/{total}",
+        f"• Ближайшие 6 часов: {next_6h_ready}/{next_6h} готово",
+        f"• Следующие 12 часов: {next_12h_ready}/{next_12h} готово",
+    ]
+
+
+def odds_account_lines(debug: dict[str, Any]) -> list[str]:
+    diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
+    summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
+    providers = summary.get("providers") if isinstance(summary.get("providers"), dict) else {}
+    odds_provider = providers.get("odds_api_io") if isinstance(providers.get("odds_api_io"), dict) else {}
+    stats = odds_provider.get("stats") if isinstance(odds_provider.get("stats"), dict) else {}
+    if isinstance(stats.get("stats"), dict):
+        stats = stats.get("stats")
+    accounts = stats.get("accounts") if isinstance(stats.get("accounts"), dict) else {}
+    requested = stats.get("requested_bookmakers_by_account") if isinstance(stats.get("requested_bookmakers_by_account"), list) else []
+    if not accounts and not requested:
+        return []
+    lines = ["📈 odds-api.io routing"]
+    requested_map = {
+        str(row.get("account")): str(row.get("bookmakers") or "")
+        for row in requested
+        if isinstance(row, dict)
+    }
+    for name in ("account1", "account2"):
+        row = accounts.get(name) if isinstance(accounts.get(name), dict) else {}
+        books = requested_map.get(name) or str(row.get("bookmakers") or "")
+        missing = name == "account2" and bool(stats.get("account2_missing"))
+        suffix = " | missing key" if missing else ""
+        lines.append(
+            f"• {name}: {books or 'н/д'} | req {as_int(row.get('odds_requests'))} | offers {as_int(row.get('offers_parsed'))}{suffix}"
+        )
+    if stats.get("bookmakers_seen_names"):
+        lines.append("• Букмекеры в ответах: " + ", ".join(str(item) for item in (stats.get("bookmakers_seen_names") or [])[:8]))
+    if stats.get("matches_with_2plus_books") is not None:
+        lines.append(f"• Матчи с 2+ букмекерами: {as_int(stats.get('matches_with_2plus_books'))}; с 1 букмекером: {as_int(stats.get('matches_with_1_book'))}")
+    return lines
+
+
 def run_diagnostic_lines(debug: dict[str, Any]) -> list[str]:
     diagnostics = debug.get("provider_diagnostics") if isinstance(debug.get("provider_diagnostics"), dict) else {}
     summary = diagnostics.get("summary") if isinstance(diagnostics.get("summary"), dict) else {}
@@ -588,6 +653,8 @@ def build_payload() -> dict[str, Any]:
     published = bool(report.get("published") or report.get("telegram_sent") or report.get("selected_count"))
     return {
         "created_at": datetime.now(UTC).isoformat(),
+        "runtime_policy": runtime_policy_report(),
+        "day_inventory": day_inventory_summary(),
         "published": published,
         "status": report.get("status") or ("published" if published else "no_pick"),
         "summary": summary,
@@ -600,6 +667,8 @@ def build_payload() -> dict[str, Any]:
         "near_misses": near,
         "diagnostic_lines": run_diagnostic_lines(debug),
         "provider_work_lines": provider_work_lines(debug),
+        "coverage_pipeline_lines": coverage_pipeline_lines({"day_inventory": day_inventory_summary()}),
+        "odds_account_lines": odds_account_lines(debug),
         "provider_lines": provider_summary(),
     }
 
@@ -619,6 +688,20 @@ def render(payload: dict[str, Any]) -> str:
     lines.append(title)
     lines.append("")
 
+    runtime_policy = payload.get("runtime_policy") if isinstance(payload.get("runtime_policy"), dict) else {}
+    if runtime_policy:
+        lines.append("🧭 Runtime policy")
+        lines.append(f"• Версия: {runtime_policy.get('policy_version') or 'н/д'}")
+        env_updates = runtime_policy.get("env_updates") if isinstance(runtime_policy.get("env_updates"), dict) else {}
+        if env_updates:
+            lines.append(f"• Inventory bootstrap: {env_updates.get('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'н/д'} | provider merge: {env_updates.get('DAY_INVENTORY_FORCE_PROVIDER_MERGE') or 'false'}")
+        lines.append("")
+
+    coverage_lines = payload.get("coverage_pipeline_lines") or []
+    if coverage_lines:
+        lines.extend(coverage_lines)
+        lines.append("")
+
     lines.append("⚙️ Что сделал скрипт")
     lines.append(f"• Матчи: {as_int(summary.get('matches_seen'))} | с линиями: {as_int(summary.get('matches_with_offers'))} | контекстов: {as_int(summary.get('contexts_built'))}")
     lines.append(f"• Кандидаты: raw {as_int(summary.get('candidates_raw'))} | до качества {as_int(summary.get('candidates_before_quality'))} | publishable {as_int(summary.get('candidates_publishable'))}")
@@ -632,6 +715,11 @@ def render(payload: dict[str, Any]) -> str:
     if provider_work:
         lines.append("📡 Источники / фактическая работа")
         lines.extend(provider_work[:8])
+        lines.append("")
+
+    odds_lines = payload.get("odds_account_lines") or []
+    if odds_lines:
+        lines.extend(odds_lines)
         lines.append("")
 
     if reasons:

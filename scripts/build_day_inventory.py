@@ -434,6 +434,66 @@ async def fetch_combined_free_inventory(settings: Settings, local_date: str) -> 
     return deduped, meta
 
 
+async def fetch_merged_day_inventory(settings: Settings, runner: PredictionRunner, local_date: str) -> tuple[list[Match], dict[str, object]]:
+    results = await asyncio.gather(
+        fetch_inventory_matches(runner),
+        fetch_combined_free_inventory(settings, local_date),
+        return_exceptions=True,
+    )
+
+    merged_matches: list[Match] = []
+    attempts: dict[str, object] = {}
+    previews: dict[str, object] = {}
+    errors: list[str] = []
+    providers_succeeded: list[str] = []
+
+    odds_result, free_result = results
+    if isinstance(odds_result, Exception):
+        errors.append(f'odds_api_io:{type(odds_result).__name__}:{odds_result}')
+    else:
+        odds_matches, odds_meta = odds_result
+        merged_matches.extend(odds_matches)
+        providers_succeeded.append(str((odds_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or 'odds_api_io'))
+        attempts['odds_api_io'] = {
+            'stats': dict((odds_meta or {}).get('stats') or {}),
+            'preview': dict((odds_meta or {}).get('preview') or {}),
+        }
+        previews['odds_api_io'] = dict((odds_meta or {}).get('preview') or {})
+
+    if isinstance(free_result, Exception):
+        errors.append(f'free_bootstrap:{type(free_result).__name__}:{free_result}')
+    else:
+        free_matches, free_meta = free_result
+        merged_matches.extend(free_matches)
+        providers_succeeded.extend(list((free_meta.get('stats') or {}).get('providers_succeeded') or []))
+        attempts.update(dict(free_meta.get('attempts') or {}))
+        previews['free_bootstrap'] = dict(free_meta.get('preview') or {})
+
+    deduped = _dedupe_matches([
+        match
+        for match in merged_matches
+        if store_local_date(settings, match.commence_time) == local_date
+    ])
+    stats = {
+        'providers_attempted': ['odds_api_io', 'football_data', 'thesportsdb'],
+        'providers_succeeded': sorted({item for item in providers_succeeded if item}),
+        'errors': errors,
+        'matches_combined_raw': len(merged_matches),
+        'matches_combined_deduped': len(deduped),
+    }
+    meta = {
+        'provider': 'merged_day_inventory',
+        'attempts': attempts,
+        'stats': stats,
+        'preview': previews,
+    }
+    return deduped, meta
+
+
+def store_local_date(settings: Settings, value: datetime) -> str:
+    return value.astimezone(app_tz(settings)).date().isoformat()
+
+
 async def fetch_requested_bootstrap(settings: Settings, local_date: str, override_provider: str | None) -> tuple[list[Match], dict[str, object]] | None:
     provider = str(override_provider or '').strip().lower()
     if provider == 'football_data':
@@ -456,11 +516,14 @@ async def main_async() -> int:
 
     try:
         try:
-            direct_result = await fetch_requested_bootstrap(settings, local_date, override_provider)
-            if direct_result is not None:
-                matches, bootstrap_meta = direct_result
+            if str(os.getenv('DAY_INVENTORY_FORCE_PROVIDER_MERGE') or '').strip().lower() in {'1', 'true', 'yes', 'on'}:
+                matches, bootstrap_meta = await fetch_merged_day_inventory(settings, runner, local_date)
             else:
-                matches, bootstrap_meta = await fetch_inventory_matches(runner)
+                direct_result = await fetch_requested_bootstrap(settings, local_date, override_provider)
+                if direct_result is not None:
+                    matches, bootstrap_meta = direct_result
+                else:
+                    matches, bootstrap_meta = await fetch_inventory_matches(runner)
             source_meta['primary_provider'] = str((bootstrap_meta or {}).get('provider') or getattr(settings, 'match_bootstrap_provider', '') or '')
             source_meta['requested_bootstrap_provider'] = override_provider or original_setting
             source_meta['attempts'] = dict((bootstrap_meta or {}).get('attempts') or {})

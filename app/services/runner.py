@@ -1399,11 +1399,15 @@ class PredictionRunner:
             if best_hint >= min_value_hint:
                 hints_kept += 1
             value_hint = clamp(best_hint / 2.5, 0.0, 6.0) + min(steam_hits, 2.0) * 0.5
+            soon_bucket = 4.0 if kickoff_delta <= 6 * 3600 else 3.0 if kickoff_delta <= 12 * 3600 else 2.0 if kickoff_delta <= 24 * 3600 else 1.0
+            odds_backed = 1.0 if offers else 0.0
             rank_key = (
+                soon_bucket,
+                odds_backed,
                 value_hint,
-                league_priority,
                 float(supported_books),
                 float(len(unique_books)),
+                league_priority,
                 rich_offer_bonus,
                 float(len(offers)),
                 float(len(families)),

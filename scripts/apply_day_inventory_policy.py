@@ -77,7 +77,9 @@ def truthy(value: Any) -> bool:
 
 def coverage_max_active(now_local: datetime) -> tuple[bool, str | None]:
     until = str(os.getenv('COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE') or '').strip()
-    if not truthy(os.getenv('COVERAGE_MAXIMIZE_TODAY')) and not until:
+    if truthy(os.getenv('COVERAGE_MAXIMIZE_TODAY')):
+        return True, now_local.date().isoformat()
+    if not until:
         return False, None
     if until:
         try:
@@ -111,6 +113,8 @@ def main() -> int:
     ready_for_model = as_int(counts.get('matches_ready_for_model'), 0)
     with_context = as_int(counts.get('matches_with_context'), 0)
     with_odds = as_int(counts.get('matches_with_odds'), 0)
+    next_6h = as_int(counts.get('matches_next_6h'), 0)
+    next_6h_ready = as_int(counts.get('matches_next_6h_ready'), 0)
     updated_at = parse_dt(inventory.get('updated_at_utc'))
     age_minutes = (now_utc - updated_at).total_seconds() / 60.0 if updated_at is not None else None
 
@@ -133,6 +137,8 @@ def main() -> int:
     context_gap = matches_total > 0 and with_context < matches_total
     odds_gap = matches_total > 0 and with_odds < matches_total
     inventory_not_enriched_enough = matches_total > 0 and ready_ratio_pct < min_ready_ratio_pct
+    next_6h_ready_ratio_pct = (next_6h_ready / next_6h * 100.0) if next_6h > 0 else 100.0
+    near_term_poorly_covered = next_6h > 0 and next_6h_ready_ratio_pct < min_ready_ratio_pct
     inventory_stale = age_minutes is None or age_minutes >= refresh_hours * 60
     full_slot = now_local.hour in full_hours
 
@@ -140,10 +146,10 @@ def main() -> int:
         skip_build = False
         mode = 'forced_full_bootstrap'
         reason = 'DAY_INVENTORY_FORCE_FULL_BOOTSTRAP'
-    elif coverage_active and (inventory_missing_or_small or inventory_not_enriched_enough or context_gap or odds_gap):
+    elif coverage_active and (inventory_missing_or_small or inventory_not_enriched_enough or near_term_poorly_covered or context_gap or odds_gap):
         skip_build = False
         mode = 'coverage_max_refresh'
-        reason = f'coverage_maximize_until_{coverage_until}_ready_{ready_ratio_pct:.1f}_context_{with_context}/{matches_total}_odds_{with_odds}/{matches_total}'
+        reason = f'coverage_maximize_until_{coverage_until}_ready_{ready_ratio_pct:.1f}_next6h_{next_6h_ready}/{next_6h}_context_{with_context}/{matches_total}_odds_{with_odds}/{matches_total}'
     elif coverage_active and age_minutes is not None and age_minutes >= 60:
         skip_build = False
         mode = 'coverage_max_hourly_refresh'
@@ -208,6 +214,9 @@ def main() -> int:
         'matches_with_context': with_context,
         'matches_with_odds': with_odds,
         'ready_ratio_pct': round(ready_ratio_pct, 2),
+        'next_6h_matches': next_6h,
+        'next_6h_ready': next_6h_ready,
+        'next_6h_ready_ratio_pct': round(next_6h_ready_ratio_pct, 2),
         'min_ready_ratio_pct': min_ready_ratio_pct,
         'coverage_maximize_active': coverage_active,
         'coverage_maximize_until_local_date': coverage_until,

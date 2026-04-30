@@ -730,6 +730,16 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         reasons.append(f"tier_{tier.lower()}_canonical_edge_below_min")
     if metrics["canonical_ev_pct"] < env_float(prefix + "MIN_EV_PCT", 3.0):
         reasons.append(f"tier_{tier.lower()}_canonical_ev_below_min")
+    if tier == "B" and fam == "dnb":
+        if metrics["canonical_edge_pp"] < env_float("CONTROLLED_FALLBACK_TIER_B_DNB_MIN_EDGE_PP", 2.5):
+            reasons.append("tier_b_dnb_edge_below_min")
+        if metrics["canonical_ev_pct"] < env_float("CONTROLLED_FALLBACK_TIER_B_DNB_MIN_EV_PCT", 5.5):
+            reasons.append("tier_b_dnb_ev_below_min")
+    if tier == "B" and fam == "btts":
+        if metrics["canonical_edge_pp"] < env_float("CONTROLLED_FALLBACK_TIER_B_BTTS_MIN_EDGE_PP", 2.5):
+            reasons.append("tier_b_btts_edge_below_min")
+        if metrics["canonical_ev_pct"] < env_float("CONTROLLED_FALLBACK_TIER_B_BTTS_MIN_EV_PCT", 5.5):
+            reasons.append("tier_b_btts_ev_below_min")
     if metrics["publication_score"] < env_float(prefix + "MIN_PUBLICATION_SCORE", 20.0):
         reasons.append(f"tier_{tier.lower()}_publication_score_below_min")
     if metrics["odds"] > env_float(prefix + "MAX_ODDS", env_float("CONTROLLED_FALLBACK_GLOBAL_MAX_ODDS", 3.05)):

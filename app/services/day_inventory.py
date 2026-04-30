@@ -62,6 +62,7 @@ class DayInventoryStore:
         source_ids = {str(match.source): str(match.source_event_id)} if match.source else {}
         metadata = dict(payload.get("metadata") or {}) if isinstance(payload.get("metadata"), dict) else {}
         local_date = self.local_date_for_dt(commence_time) if commence_time is not None else ""
+        priority = self._priority_score(match)
         return {
             "canonical_match_id": str(match.match_key),
             "match_key": str(match.match_key),
@@ -85,9 +86,14 @@ class DayInventoryStore:
                 "context": False,
                 "weather": False,
                 "news": False,
+                "xg": False,
+                "form": False,
                 "ready_for_model": False,
                 "ready_for_publish": False,
             },
+            "priority": priority,
+            "last_enriched_at": None,
+            "next_retry_at": None,
             "refresh": {
                 "last_fixture_refresh_utc": datetime.now(UTC).isoformat(),
                 "last_odds_refresh_utc": None,
@@ -95,6 +101,29 @@ class DayInventoryStore:
             },
             "metadata": metadata,
         }
+
+    def _priority_score(self, match: Match) -> float:
+        now = datetime.now(UTC)
+        try:
+            hours_to_kickoff = (match.commence_time.astimezone(UTC) - now).total_seconds() / 3600.0
+        except Exception:
+            hours_to_kickoff = 999.0
+        if hours_to_kickoff <= 6:
+            score = 100.0
+        elif hours_to_kickoff <= 12:
+            score = 85.0
+        elif hours_to_kickoff <= 24:
+            score = 70.0
+        else:
+            score = 45.0
+        league_text = str(match.league_name or "").lower()
+        if any(term in league_text for term in ("premier", "championship", "serie a", "la liga", "bundesliga", "ligue 1", "eredivisie", "mls")):
+            score += 10.0
+        if str(match.source or "").lower() == "odds_api_io":
+            score += 8.0
+        if str(match.tier or "").lower() == "low":
+            score -= 20.0
+        return round(max(0.0, min(120.0, score)), 3)
 
     def build_payload(
         self,
@@ -143,6 +172,7 @@ class DayInventoryStore:
             coverage.update({k: bool(v) or bool(coverage.get(k)) for k, v in (row.get("coverage") or {}).items()})
             refresh = dict(current.get("refresh") or {})
             refresh["last_fixture_refresh_utc"] = now_utc
+            priority = max(float(current.get("priority") or 0.0), float(row.get("priority") or 0.0))
 
             current.update({
                 "kickoff_utc": row.get("kickoff_utc") or current.get("kickoff_utc"),
@@ -157,6 +187,9 @@ class DayInventoryStore:
                 "source_ids": new_source_ids,
                 "sources_seen": sources_seen,
                 "coverage": coverage,
+                "priority": round(priority, 3),
+                "last_enriched_at": current.get("last_enriched_at") or row.get("last_enriched_at"),
+                "next_retry_at": current.get("next_retry_at") or row.get("next_retry_at"),
                 "refresh": refresh,
                 "metadata": metadata,
             })
@@ -172,6 +205,8 @@ class DayInventoryStore:
             ),
         )
 
+        coverage_counts = self._coverage_counts(sorted_matches)
+
         payload = {
             "date_local": local_date,
             "timezone": self.timezone_name,
@@ -185,12 +220,77 @@ class DayInventoryStore:
                 "matches_updated": updated,
                 "providers_seen": len(source_counts),
                 "leagues_seen": len(leagues),
+                **coverage_counts,
             },
             "source_match_counts": source_counts,
             "league_match_counts": dict(sorted(leagues.items(), key=lambda item: (-item[1], item[0]))[:50]),
             "matches": sorted_matches,
         }
         return payload
+
+    def _coverage_counts(self, rows: list[dict[str, Any]]) -> dict[str, int]:
+        now = datetime.now(UTC)
+        counts = {
+            "matches_with_odds": 0,
+            "matches_with_context": 0,
+            "matches_with_weather": 0,
+            "matches_with_news": 0,
+            "matches_with_xg": 0,
+            "matches_with_form": 0,
+            "matches_ready_for_model": 0,
+            "matches_ready_for_publish": 0,
+            "matches_next_6h": 0,
+            "matches_next_6h_ready": 0,
+            "matches_next_12h": 0,
+            "matches_next_12h_ready": 0,
+        }
+        for row in rows:
+            coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+            if bool(coverage.get("odds")):
+                counts["matches_with_odds"] += 1
+            if bool(coverage.get("context")):
+                counts["matches_with_context"] += 1
+            if bool(coverage.get("weather")):
+                counts["matches_with_weather"] += 1
+            if bool(coverage.get("news")):
+                counts["matches_with_news"] += 1
+            if bool(coverage.get("xg")):
+                counts["matches_with_xg"] += 1
+            if bool(coverage.get("form")):
+                counts["matches_with_form"] += 1
+            if bool(coverage.get("ready_for_model")):
+                counts["matches_ready_for_model"] += 1
+            if bool(coverage.get("ready_for_publish")):
+                counts["matches_ready_for_publish"] += 1
+            kickoff = self._parse_dt(row.get("kickoff_utc"))
+            if kickoff is None:
+                continue
+            hours = (kickoff - now).total_seconds() / 3600.0
+            ready = bool(coverage.get("ready_for_model"))
+            if 0 <= hours <= 6:
+                counts["matches_next_6h"] += 1
+                if ready:
+                    counts["matches_next_6h_ready"] += 1
+            if 0 <= hours <= 12:
+                counts["matches_next_12h"] += 1
+                if ready:
+                    counts["matches_next_12h_ready"] += 1
+        return counts
+
+    @staticmethod
+    def _parse_dt(value: Any) -> datetime | None:
+        try:
+            if value in (None, ""):
+                return None
+            text = str(value)
+            if text.endswith("Z"):
+                text = text[:-1] + "+00:00"
+            dt = datetime.fromisoformat(text)
+            if dt.tzinfo is None:
+                dt = dt.replace(tzinfo=UTC)
+            return dt.astimezone(UTC)
+        except Exception:
+            return None
 
     def write_summary(self, summary: dict[str, Any]) -> str:
         self._write_json(self.summary_path, summary)

@@ -25,6 +25,7 @@ on:
   schedule:
     - cron: '45 20 * * *' # 23:45 MSK
     - cron: '40 23 * * *' # 02:40 MSK final settlement/revision
+    - cron: '40 2 * * *' # 05:40 MSK completed settlement review
 
 permissions:
   contents: write
@@ -42,6 +43,7 @@ env:
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
 
   ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
   ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
   ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
   FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
@@ -141,7 +143,7 @@ jobs:
         shell: bash
         run: |
           REPORT_OFFSET="${{ github.event_name == 'workflow_dispatch' && inputs.target_offset_days || '0' }}"
-          if [ "${{ github.event.schedule }}" = "40 23 * * *" ]; then
+          if [ "${{ github.event.schedule }}" = "40 23 * * *" ] || [ "${{ github.event.schedule }}" = "40 2 * * *" ]; then
             REPORT_OFFSET="1"
           fi
           echo "PREDICTION_PUBLICATION_ENABLED=false" >> "$GITHUB_ENV"
@@ -196,6 +198,13 @@ jobs:
         run: |
           python scripts/auto_learning_engine.py || true
 
+      - name: Build completed settlement review
+        if: always()
+        shell: bash
+        run: |
+          python scripts/build_settlement_review_report.py --target-offset-days "$DAILY_REPORT_TARGET_OFFSET_DAYS" --send-telegram || true
+          cat .data/exports/latest-settlement-review-report.txt || true
+
       - name: Build and send Russian daily operations report
         if: always()
         shell: bash
@@ -212,6 +221,8 @@ jobs:
           cp -f .data/exports/latest-daily-ops-report.txt artifacts/daily-report/latest-daily-ops-report.txt 2>/dev/null || true
           cp -f .data/exports/latest-daily-report.json artifacts/daily-report/latest-daily-report.json 2>/dev/null || true
           cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
+          cp -f .data/exports/latest-settlement-review-report.json artifacts/daily-report/latest-settlement-review-report.json 2>/dev/null || true
+          cp -f .data/exports/latest-settlement-review-report.txt artifacts/daily-report/latest-settlement-review-report.txt 2>/dev/null || true
 
       - name: Upload daily-report artifact
         if: always()

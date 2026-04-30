@@ -1,51 +1,13 @@
 from __future__ import annotations
 
-import subprocess
 import sys
 from pathlib import Path
 
-PATCHES = [
-    Path("scripts/patch_clean_provider_parsers.py"),
-    Path("scripts/apply_clean_runtime_system.py"),
-    Path("scripts/patch_provider_budget_clean_runtime.py"),
-    Path("scripts/patch_api_budget_noise_policy.py"),
-    Path("scripts/apply_publication_same_match_dedupe_patch.py"),
-    Path("scripts/patch_controlled_fallback_semantic_dedupe.py"),
-    Path("scripts/patch_near_miss_enrichment_targets.py"),
-    Path("scripts/patch_weather_location_policy.py"),
-    Path("scripts/patch_oddspapi_rapidapi.py"),
-    Path("scripts/patch_oddspapi_nested_schema.py"),
-    Path("scripts/patch_oddspapi_inline_offers.py"),
-    Path("scripts/fix_report_conclusion.py"),
-    Path("scripts/check_publication_runtime_syntax.py"),
-    Path("scripts/patch_detailed_report_inventory_counts.py"),
-    Path("scripts/apply_settlement_matching_patch.py"),
-]
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
-REQUIRED = {
-    "patch_clean_provider_parsers.py",
-    "apply_clean_runtime_system.py",
-    "patch_provider_budget_clean_runtime.py",
-    "check_publication_runtime_syntax.py",
-}
-
-
-def run_patch(path: Path) -> None:
-    if not path.exists():
-        print(f"skip: {path}")
-        if path.name in REQUIRED:
-            raise SystemExit(f"required runtime script missing: {path}")
-        return
-    print(f"running: {path}")
-    proc = subprocess.run([sys.executable, str(path)], check=False)
-    if path.name in REQUIRED and proc.returncode != 0:
-        raise SystemExit(proc.returncode)
-
-
-def main() -> int:
-    for path in PATCHES:
-        run_patch(path)
-    return 0
+from scripts.apply_harizon_runtime_policy import main
 
 
 if __name__ == "__main__":

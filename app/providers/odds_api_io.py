@@ -157,9 +157,12 @@ class OddsApiIoProvider:
         return matches, stats, preview
 
     async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
+        accounts = self._odds_accounts()
         stats: dict[str, Any] = {
             "enabled": True,
-            "api_key_present": bool(getattr(self.settings, "odds_api_io_key", None)),
+            "api_key_present": bool(accounts),
+            "api_key_2_present": bool(getattr(self.settings, "odds_api_io_key_2", None)),
+            "account2_missing": not bool(getattr(self.settings, "odds_api_io_key_2", None)),
             "event_requests": 0,
             "odds_requests": 0,
             "response_errors": 0,
@@ -178,6 +181,23 @@ class OddsApiIoProvider:
             "last_body_preview": None,
             "simulated_skipped": 0,
             "requested_bookmakers": None,
+            "requested_bookmakers_by_account": [
+                {"account": account["name"], "bookmakers": account["bookmakers"]}
+                for account in accounts
+            ],
+            "accounts": {
+                account["name"]: {
+                    "bookmakers": account["bookmakers"],
+                    "api_key_present": bool(account.get("api_key")),
+                    "odds_requests": 0,
+                    "response_errors": 0,
+                    "offers_parsed": 0,
+                    "events_matched": 0,
+                    "rate_limited": False,
+                    "http_statuses": [],
+                }
+                for account in accounts
+            },
             "bootstrap_events_reused": 0,
             "rate_limited": False,
             "max_http_requests_per_run": self.max_http_requests,
@@ -185,9 +205,10 @@ class OddsApiIoProvider:
         }
         preview: dict[str, Any] = {"sample_events": [], "sample_odds": []}
 
-        api_key = getattr(self.settings, "odds_api_io_key", None)
-        if not api_key:
+        if not accounts:
             return {}, stats, preview
+        event_account = accounts[0]
+        api_key = str(event_account["api_key"])
 
         soccer_matches = [
             match
@@ -200,7 +221,7 @@ class OddsApiIoProvider:
         now = datetime.now(UTC)
         days_ahead = max(1, int(getattr(self.settings, "run_days_ahead", 4) or 4))
         until = now + timedelta(days=days_ahead)
-        target_books = self._bookmakers_param()
+        target_books = ",".join(account["bookmakers"] for account in accounts if account.get("bookmakers"))
         stats["requested_bookmakers"] = target_books
 
         events: list[dict[str, Any]] = []
@@ -320,25 +341,57 @@ class OddsApiIoProvider:
                 if not chunk:
                     continue
                 event_id_list = [int(item["event"]["id"]) for item in chunk]
-                event_list = await self._fetch_odds_multi_chunk(client, api_key, event_id_list, target_books, stats)
+                for account in accounts:
+                    event_list = await self._fetch_odds_multi_chunk(
+                        client,
+                        str(account["api_key"]),
+                        event_id_list,
+                        str(account["bookmakers"]),
+                        stats,
+                        account_name=str(account["name"]),
+                    )
+                    if stats.get("rate_limited"):
+                        break
+                    if len(preview["sample_odds"]) < 2 and event_list:
+                        preview["sample_odds"].append(event_list[:2])
+                    for event_payload in event_list:
+                        event_id = int(event_payload.get("id") or 0)
+                        row = next((item for item in chunk if int(item["event"]["id"]) == event_id), None)
+                        if row is None:
+                            continue
+                        parsed = self._parse_event_odds(event_payload, row["match"])
+                        if not parsed:
+                            continue
+                        for offer in parsed:
+                            offer.metadata["odds_api_io_account"] = str(account["name"])
+                            offer.metadata["requested_bookmakers"] = str(account["bookmakers"])
+                        offers_by_match[row["match"].match_key].extend(parsed)
+                        stats["offers_parsed"] += len(parsed)
+                        stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
+                        bookmakers_seen.update(offer.bookmaker for offer in parsed)
+                        account_stats = stats["accounts"].setdefault(str(account["name"]), {})
+                        account_stats["offers_parsed"] = int(account_stats.get("offers_parsed") or 0) + len(parsed)
+                        account_stats["events_matched"] = int(account_stats.get("events_matched") or 0) + 1
                 if stats.get("rate_limited"):
                     break
-                if len(preview["sample_odds"]) < 2 and event_list:
-                    preview["sample_odds"].append(event_list[:2])
-                for event_payload in event_list:
-                    event_id = int(event_payload.get("id") or 0)
-                    row = next((item for item in chunk if int(item["event"]["id"]) == event_id), None)
-                    if row is None:
-                        continue
-                    parsed = self._parse_event_odds(event_payload, row["match"])
-                    if not parsed:
-                        continue
-                    offers_by_match[row["match"].match_key].extend(parsed)
-                    stats["offers_parsed"] += len(parsed)
-                    stats["markets_parsed"] += len({(offer.bookmaker, offer.family, offer.market_name, offer.point) for offer in parsed})
-                    bookmakers_seen.update(offer.bookmaker for offer in parsed)
 
             stats["bookmakers_seen"] = len(bookmakers_seen)
+            stats["bookmakers_seen_names"] = sorted(bookmakers_seen)
+            stats["matches_with_2plus_books"] = sum(
+                1
+                for offers in offers_by_match.values()
+                if len({offer.bookmaker for offer in offers if str(offer.bookmaker or "").strip()}) >= 2
+            )
+            stats["matches_with_1_book"] = sum(
+                1
+                for offers in offers_by_match.values()
+                if len({offer.bookmaker for offer in offers if str(offer.bookmaker or "").strip()}) == 1
+            )
+            offers_by_family: dict[str, int] = defaultdict(int)
+            for offers in offers_by_match.values():
+                for offer in offers:
+                    offers_by_family[str(offer.family or "unknown")] += 1
+            stats["offers_by_family"] = dict(sorted(offers_by_family.items()))
             return dict(offers_by_match), stats, preview
 
 
@@ -363,28 +416,37 @@ class OddsApiIoProvider:
         event_ids: list[int],
         target_books: str,
         stats: dict[str, Any],
+        account_name: str = "account1",
     ) -> list[dict[str, Any]]:
         if not event_ids:
             return []
+        account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
+        account_stats.setdefault("bookmakers", target_books)
+        account_stats.setdefault("http_statuses", [])
         attempts = 0
         while attempts < 2:
             if not self._request_budget_allows(stats):
                 return []
             attempts += 1
             stats["odds_requests"] += 1
+            account_stats["odds_requests"] = int(account_stats.get("odds_requests") or 0) + 1
             self._requests_used += 1
             try:
                 response = await self._request_odds_multi(client, api_key, event_ids, target_books)
             except Exception as exc:
                 stats["response_errors"] += 1
+                account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
                 stats["last_body_preview"] = f"odds request failed: {exc}"
                 response = None
             if response is None:
                 continue
             stats["odds_http_statuses"].append(response.status_code)
+            account_stats["http_statuses"].append(response.status_code)
             stats["last_body_preview"] = response.text[:2000]
             if response.status_code == 429:
                 stats["response_errors"] += 1
+                account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
+                account_stats["rate_limited"] = True
                 stats["rate_limited"] = True
                 return []
             if response.status_code == 200:
@@ -398,10 +460,11 @@ class OddsApiIoProvider:
                 return [item for item in payload if isinstance(item, dict)] if isinstance(payload, list) else []
             if response.status_code >= 500 and len(event_ids) > 1:
                 mid = max(1, len(event_ids) // 2)
-                left = await self._fetch_odds_multi_chunk(client, api_key, event_ids[:mid], target_books, stats)
-                right = await self._fetch_odds_multi_chunk(client, api_key, event_ids[mid:], target_books, stats)
+                left = await self._fetch_odds_multi_chunk(client, api_key, event_ids[:mid], target_books, stats, account_name=account_name)
+                right = await self._fetch_odds_multi_chunk(client, api_key, event_ids[mid:], target_books, stats, account_name=account_name)
                 return left + right
             stats["response_errors"] += 1
+            account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
             if response.status_code < 500:
                 return []
         return []
@@ -416,16 +479,16 @@ class OddsApiIoProvider:
         return True
 
     def _bookmakers_param(self) -> str:
-        """Restrict odds-api.io requests to Bet365 and Unibet only.
+        return ",".join(account["bookmakers"] for account in self._odds_accounts()) or "Bet365,Unibet"
 
-        We intentionally ignore any extra bookmaker names that may appear in
-        env/config so the provider cannot silently widen coverage again.
-        """
-        preferred = list(getattr(self.settings, "odds_api_io_bookmakers", []) or [])
+    def _bookmakers_param_from_values(self, preferred: list[str], fallback: list[str]) -> str:
         values: list[str] = []
         allowed = {
             "bet365": "Bet365",
             "unibet": "Unibet",
+            "betfair": "Betfair Exchange",
+            "betfairexchange": "Betfair Exchange",
+            "sbobet": "Sbobet",
         }
         for item in preferred:
             raw = str(item or "").strip()
@@ -434,7 +497,26 @@ class OddsApiIoProvider:
             value = allowed.get(normalize_bookmaker_name(raw))
             if value and value not in values:
                 values.append(value)
-        return ",".join(values or ["Bet365", "Unibet"])
+        return ",".join(values or fallback)
+
+    def _odds_accounts(self) -> list[dict[str, str]]:
+        account1_key = str(getattr(self.settings, "odds_api_io_key", "") or "").strip()
+        account2_key = str(getattr(self.settings, "odds_api_io_key_2", "") or "").strip()
+        account1_books = self._bookmakers_param_from_values(
+            list(getattr(self.settings, "odds_api_io_bookmakers_account1", []) or [])
+            or list(getattr(self.settings, "odds_api_io_bookmakers", []) or []),
+            ["Bet365", "Unibet"],
+        )
+        account2_books = self._bookmakers_param_from_values(
+            list(getattr(self.settings, "odds_api_io_bookmakers_account2", []) or []),
+            ["Betfair Exchange", "Sbobet"],
+        )
+        accounts: list[dict[str, str]] = []
+        if account1_key:
+            accounts.append({"name": "account1", "api_key": account1_key, "bookmakers": account1_books})
+        if account2_key:
+            accounts.append({"name": "account2", "api_key": account2_key, "bookmakers": account2_books})
+        return accounts
 
     @staticmethod
     def _safe_json(response: httpx.Response) -> Any | None:
@@ -828,7 +910,11 @@ class OddsApiIoProvider:
         if norm == "unibet":
             return "Unibet"
         if norm == "betfair":
-            return "Betfair"
+            return "Betfair Exchange"
+        if norm == "betfairexchange":
+            return "Betfair Exchange"
+        if norm == "sbobet":
+            return "Sbobet"
         if norm == "pinnacle":
             return "Pinnacle"
         return str(name or "Unknown")
