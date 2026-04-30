@@ -1,26 +1,56 @@
 from __future__ import annotations
 
-"""Aggressive but quota-safe API usage patch.
+"""Per-run-only API limits for Harizon.
 
-This module is imported from both root `sitecustomize.py` and
-`scripts/sitecustomize.py`.  It must be safe to run many times.
+User policy: every provider is limited only by the current run. Daily/monthly
+request budgets and accumulated usage counters are disabled.
 """
 
-import hashlib
 import json
 import os
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
-STATE_PATH = ROOT / ".data" / "provider_request_budget_state.json"
 POLICY_PATH = ROOT / "config" / "provider_request_budget.json"
+STATE_PATH = ROOT / ".data" / "provider_request_budget_state.json"
 
+PER_RUN_LIMITS: dict[str, int] = {
+    "odds_api_io": 200,
+    "bzzoiro": 1000,
+    "sstats": 150,
+    "sportlogic": 40,
+    "espn_public": 18,
+    "football_data": 4,
+    "thesportsdb": 8,
+    "openfootball_public": 8,
+    "newsapi_currents": 4,
+    "gnews": 2,
+    "allsportsapi": 4,
+    "oddspapi": 1,
+    "futrixmetrics": 4,
+    "weatherapi": 24,
+    "openweathermap": 12,
+    "sportsbook_api": 2,
+    "meteostat": 2,
+    "oddsfeed": 2,
+    "freeapilivefootball": 1,
+    "sportapi": 2,
+}
 
-AGGRESSIVE_ENV: dict[str, str] = {
+ENV_OVERRIDES: dict[str, str] = {
     "ALL_SOURCES_FREE_MAXIMIZE": "true",
+    "PROVIDER_REQUEST_BUDGET_MODE": "per_run_only",
+    "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "true",
 
-    # SStats: user-confirmed limit is 150 requests/minute.  Cap one run at 150.
+    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
+    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "100",
+    "ODDS_API_IO_PER_RUN_MAX": "200",
+    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "ODDS_API_IO_PAGE_LIMIT": "100",
+    "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36",
+    "MAX_MATCHES_FOR_ODDS_FETCH": "520",
+
     "ENABLE_SSTATS": "true",
     "ENABLE_SSTATS_CONTEXT": "true",
     "SSTATS_ENABLED": "true",
@@ -31,7 +61,6 @@ AGGRESSIVE_ENV: dict[str, str] = {
     "SSTATS_LOOKBACK_DAYS": "60",
     "SSTATS_RECENT_MATCHES": "12",
 
-    # Bzzoiro: user-confirmed no practical limit.  Use strongly, not infinitely.
     "ENABLE_BZZOIRO": "true",
     "ENABLE_BZZOIRO_CONTEXT": "true",
     "BZZOIRO_ENABLED": "true",
@@ -40,7 +69,14 @@ AGGRESSIVE_ENV: dict[str, str] = {
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "520",
     "BZZOIRO_MAX_PAGES": "80",
 
-    # Weather restored.  Key rotation reset is handled below.
+    "ENABLE_SPORTLOGIC": "true",
+    "SPORTLOGIC_ENABLED": "true",
+    "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
+    "SPORTLOGIC_HEADER_NAME": "X-API-Key",
+    "SPORTLOGIC_PER_RUN_MAX": "40",
+    "SPORTLOGIC_MATCH_LIMIT": "120",
+    "SPORTLOGIC_ODDS_MATCH_LIMIT": "40",
+
     "ENABLE_WEATHERAPI": "true",
     "WEATHERAPI_ENABLED": "true",
     "WEATHERAPI_PER_RUN_MAX": "24",
@@ -56,16 +92,6 @@ AGGRESSIVE_ENV: dict[str, str] = {
     "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": "12",
     "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED": "true",
 
-    # SportLogic.
-    "ENABLE_SPORTLOGIC": "true",
-    "SPORTLOGIC_ENABLED": "true",
-    "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
-    "SPORTLOGIC_HEADER_NAME": "X-API-Key",
-    "SPORTLOGIC_PER_RUN_MAX": "40",
-    "SPORTLOGIC_MATCH_LIMIT": "120",
-    "SPORTLOGIC_ODDS_MATCH_LIMIT": "40",
-
-    # Extra providers, enabled with bounded grants.
     "ENABLE_ALLSPORTSAPI": "true",
     "ALLSPORTSAPI_ENABLED": "true",
     "ALLSPORTSAPI_PER_RUN_MAX": "4",
@@ -78,7 +104,7 @@ AGGRESSIVE_ENV: dict[str, str] = {
     "FUTRIXMETRICS_REQUESTS_MAX_PER_RUN": "4",
     "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "10",
     "FUTRIXMETRICS_SHORTLIST_ONLY": "false",
-    "FUTRIXMETRICS_MIN_SPACING_MINUTES": "60",
+    "FUTRIXMETRICS_MIN_SPACING_MINUTES": "0",
     "ENABLE_GNEWS": "true",
     "ENABLE_GNEWS_CONTEXT": "true",
     "GNEWS_ENABLED": "true",
@@ -118,11 +144,9 @@ AGGRESSIVE_ENV: dict[str, str] = {
     "ODDSPAPI_CONTEXT_MATCH_LIMIT": "1",
     "ODDSPAPI_MATCH_LIMIT": "4",
     "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true",
-    "RAPIDAPI_ODDS_FEED_DAILY_LIMIT": "12",
     "RAPIDAPI_ODDS_FEED_PER_RUN_MAX": "2",
     "RAPIDAPI_DISCOVERY_ODDS_FEED_MAX_CALLS": "2",
     "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true",
-    "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": "20",
     "RAPIDAPI_SPORTSBOOK_PER_RUN_MAX": "2",
     "RAPIDAPI_DISCOVERY_SPORTSBOOK_MAX_CALLS": "2",
     "METEOSTAT_RAPIDAPI_ENABLED": "true",
@@ -130,90 +154,22 @@ AGGRESSIVE_ENV: dict[str, str] = {
     "RAPIDAPI_METEOSTAT_PER_RUN_MAX": "2",
     "METEOSTAT_MAX_HTTP_REQUESTS_PER_RUN": "2",
     "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true",
-    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "3",
     "RAPIDAPI_FREE_FOOTBALL_PER_RUN_MAX": "1",
     "RAPIDAPI_SPORTAPI7_PROBE_ENABLED": "true",
-    "RAPIDAPI_SPORTAPI7_DAILY_LIMIT": "24",
     "RAPIDAPI_SPORTAPI7_PER_RUN_MAX": "2",
 }
 
-BUDGET_OVERRIDES: dict[str, dict[str, Any]] = {
-    "sstats": {
-        "enabled": True,
-        "per_run_max": 150,
-        "safe_daily_budget": 1800,
-        "min_spacing_minutes": 0,
-        "limit": {"requests_per_minute": 150, "safe_runs_per_day_assumption": 12},
-        "env": {k: v for k, v in AGGRESSIVE_ENV.items() if k.startswith("SSTATS") or k.startswith("ENABLE_SSTATS")},
-    },
-    "bzzoiro": {
-        "enabled": True,
-        "per_run_max": 1000,
-        "safe_daily_budget": 200000,
-        "min_spacing_minutes": 0,
-        "limit": {"free_forever_no_rate_limit": True},
-        "env": {k: v for k, v in AGGRESSIVE_ENV.items() if k.startswith("BZZOIRO") or k.startswith("ENABLE_BZZOIRO")},
-    },
-    "weatherapi": {
-        "enabled": True,
-        "per_run_max": 24,
-        "safe_daily_budget": 576,
-        "safe_monthly_budget": 9000,
-        "min_spacing_minutes": 0,
-        "secret_env_keys": ["WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY", "WEATHERAPI_TOKEN"],
-        "env": {k: v for k, v in AGGRESSIVE_ENV.items() if k.startswith("WEATHER") or k.startswith("ENABLE_WEATHERAPI")},
-    },
-    "openweathermap": {
-        "enabled": True,
-        "per_run_max": 12,
-        "safe_daily_budget": 360,
-        "min_spacing_minutes": 0,
-        "secret_env_keys": ["OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY", "OPENWEATHER_KEY", "OWM_API_KEY"],
-        "env": {k: v for k, v in AGGRESSIVE_ENV.items() if k.startswith("OPENWEATHER") or k.startswith("ENABLE_OPENWEATHERMAP") or k == "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED"},
-    },
-    "sportlogic": {"enabled": True, "per_run_max": 40, "safe_daily_budget": 480, "min_spacing_minutes": 0},
-    "allsportsapi": {"enabled": True, "per_run_max": 4, "safe_daily_budget": 48, "min_spacing_minutes": 60},
-    "futrixmetrics": {"enabled": True, "per_run_max": 4, "safe_daily_budget": 60, "safe_monthly_budget": 1500, "min_spacing_minutes": 60},
-    "gnews": {"enabled": True, "per_run_max": 2, "safe_daily_budget": 36, "min_spacing_minutes": 60},
-    "newsapi_currents": {"enabled": True, "per_run_max": 4, "safe_daily_budget": 72, "min_spacing_minutes": 60},
-    "football_data": {"enabled": True, "per_run_max": 4, "safe_daily_budget": 72, "min_spacing_minutes": 1},
-    "thesportsdb": {"enabled": True, "per_run_max": 8, "safe_daily_budget": 144, "min_spacing_minutes": 1},
-    "openfootball_public": {"enabled": True, "per_run_max": 8, "safe_daily_budget": 192, "min_spacing_minutes": 0},
-    "oddsfeed": {"enabled": True, "per_run_max": 2, "safe_daily_budget": 12, "safe_monthly_budget": 240, "min_spacing_minutes": 120},
-    "sportsbook_api": {"enabled": True, "per_run_max": 2, "safe_daily_budget": 20, "min_spacing_minutes": 120},
-    "meteostat": {"enabled": True, "per_run_max": 2, "safe_daily_budget": 12, "safe_monthly_budget": 240, "min_spacing_minutes": 120},
-    "sportapi": {"enabled": True, "per_run_max": 2, "safe_daily_budget": 24, "min_spacing_minutes": 120},
-    "freeapilivefootball": {"enabled": True, "per_run_max": 1, "safe_daily_budget": 3, "safe_monthly_budget": 90, "min_spacing_minutes": 240},
-}
-
-TEXT_REPLACEMENTS = {
-    "'sstats': 120,": "'sstats': 150,",
-    "'bzzoiro': 500,": "'bzzoiro': 1000,",
-    "'per_run_max': 120,\n        'safe_daily_budget': 50000,": "'per_run_max': 150,\n        'safe_daily_budget': 1800,",
-    "'SSTATS_PER_RUN_MAX': '120'": "'SSTATS_PER_RUN_MAX': '150'",
-    "'SSTATS_REQUESTS_MAX_PER_RUN': '120'": "'SSTATS_REQUESTS_MAX_PER_RUN': '150'",
-    "'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '120'": "'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150'",
-    "'SSTATS_CONTEXT_MATCH_LIMIT': '260'": "'SSTATS_CONTEXT_MATCH_LIMIT': '320'",
-    "'SSTATS_LOOKBACK_DAYS': '45'": "'SSTATS_LOOKBACK_DAYS': '60'",
-    "'SSTATS_RECENT_MATCHES': '10'": "'SSTATS_RECENT_MATCHES': '12'",
-    "'per_run_max': 500,\n        'safe_daily_budget': 200000,": "'per_run_max': 1000,\n        'safe_daily_budget': 200000,",
-    "'BZZOIRO_PER_RUN_MAX': '500'": "'BZZOIRO_PER_RUN_MAX': '1000'",
-    "'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '500'": "'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '1000'",
-    "'BZZOIRO_MAX_PAGES': '24'": "'BZZOIRO_MAX_PAGES': '80'",
-}
+SECRET_ALIASES: tuple[tuple[str, tuple[str, ...]], ...] = (
+    ("WEATHERAPI_KEY", ("WEATHER_API_KEY", "WEATHERAPI_API_KEY", "WEATHERAPI_TOKEN")),
+    ("WEATHER_API_KEY", ("WEATHERAPI_KEY", "WEATHERAPI_API_KEY", "WEATHERAPI_TOKEN")),
+    ("WEATHERAPI_API_KEY", ("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_TOKEN")),
+    ("OPENWEATHERMAP_API_KEY", ("OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY", "OPENWEATHER_KEY", "OWM_API_KEY")),
+    ("OPENWEATHER_API_KEY", ("OPENWEATHERMAP_API_KEY", "OPENWEATHERMAP_KEY", "OPENWEATHER_KEY", "OWM_API_KEY")),
+    ("OPENWEATHERMAP_KEY", ("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHER_KEY", "OWM_API_KEY")),
+)
 
 
-def _merge_dict(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
-    result = dict(base)
-    for key, value in override.items():
-        if isinstance(value, dict) and isinstance(result.get(key), dict):
-            result[key] = _merge_dict(dict(result[key]), value)
-        else:
-            result[key] = value
-    return result
-
-
-def _alias_env(target: str, *aliases: str) -> None:
+def _alias_env(target: str, aliases: tuple[str, ...]) -> None:
     if os.getenv(target):
         return
     for alias in aliases:
@@ -223,79 +179,68 @@ def _alias_env(target: str, *aliases: str) -> None:
             return
 
 
-def _provider_key_fingerprint(*keys: str) -> str | None:
-    values = [os.getenv(key, "").strip() for key in keys if os.getenv(key, "").strip()]
-    if not values:
-        return None
-    raw = "|".join(values).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest()[:16]
-
-
-def _reset_provider_state_on_key_change(provider: str, fingerprint: str | None) -> None:
-    if not fingerprint:
-        return
-    try:
-        state = json.loads(STATE_PATH.read_text(encoding="utf-8")) if STATE_PATH.exists() else {}
-        providers = state.setdefault("providers", {})
-        row = providers.setdefault(provider, {})
-        old = row.get("key_fingerprint")
-        if old != fingerprint:
-            row["daily"] = {}
-            row["monthly"] = {}
-            row["cooldown_until"] = None
-            row["cooldown_reason"] = None
-            row["key_fingerprint"] = fingerprint
-            row["budget_reset_reason"] = "api_key_changed_or_first_seen"
-            STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
-            STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    except Exception:
-        return
-
-
-def _apply_env() -> None:
-    _alias_env("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY", "WEATHERAPI_TOKEN")
-    _alias_env("WEATHER_API_KEY", "WEATHERAPI_KEY", "WEATHERAPI_API_KEY", "WEATHERAPI_TOKEN")
-    _alias_env("WEATHERAPI_API_KEY", "WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_TOKEN")
-    _alias_env("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY", "OPENWEATHER_KEY", "OWM_API_KEY")
-    _alias_env("OPENWEATHER_API_KEY", "OPENWEATHERMAP_API_KEY", "OPENWEATHERMAP_KEY", "OPENWEATHER_KEY", "OWM_API_KEY")
-    _alias_env("OPENWEATHERMAP_KEY", "OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHER_KEY", "OWM_API_KEY")
-    for key, value in AGGRESSIVE_ENV.items():
-        os.environ[key] = str(value)
-    _reset_provider_state_on_key_change("weatherapi", _provider_key_fingerprint("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY", "WEATHERAPI_TOKEN"))
-    _reset_provider_state_on_key_change("openweathermap", _provider_key_fingerprint("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY", "OPENWEATHER_KEY", "OWM_API_KEY"))
-
-
-def _append_github_env() -> None:
+def _append_github_env(values: dict[str, str]) -> None:
     env_path = os.getenv("GITHUB_ENV")
     if not env_path:
         return
-    payload = dict(AGGRESSIVE_ENV)
-    for key in ("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY", "OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY"):
-        value = os.getenv(key)
-        if value:
-            payload[key] = value
     try:
         with open(env_path, "a", encoding="utf-8") as fh:
-            for key in sorted(payload):
-                fh.write(f"{key}={payload[key]}\n")
+            for key in sorted(values):
+                fh.write(f"{key}={values[key]}\n")
     except Exception:
-        return
+        pass
 
 
-def _patch_budget_json() -> None:
+def _strip_period_budgets(obj: Any) -> Any:
+    if isinstance(obj, dict):
+        return {k: _strip_period_budgets(v) for k, v in obj.items() if k not in {"safe_daily_budget", "safe_monthly_budget", "daily_budget", "monthly_budget"}}
+    if isinstance(obj, list):
+        return [_strip_period_budgets(v) for v in obj]
+    return obj
+
+
+def _patch_policy_json() -> None:
     try:
         payload = json.loads(POLICY_PATH.read_text(encoding="utf-8")) if POLICY_PATH.exists() else {}
+        payload = _strip_period_budgets(payload)
+        payload["version"] = "v18-per-run-only-api-limits"
+        payload["description"] = "All active providers are limited only by per-run caps. Daily and monthly request budgets are disabled."
+        payload["period_budgets_disabled"] = True
         providers = payload.setdefault("providers", {})
-        for name, override in BUDGET_OVERRIDES.items():
-            current = providers.get(name)
-            providers[name] = _merge_dict(current if isinstance(current, dict) else {}, override)
-        payload["version"] = "v17-max-api-usage-key-rotation-reset"
+        for name, limit in PER_RUN_LIMITS.items():
+            row = providers.setdefault(name, {})
+            if not isinstance(row, dict):
+                row = {}
+                providers[name] = row
+            row["enabled"] = True
+            row["per_run_max"] = int(limit)
+            row["min_spacing_minutes"] = 0
+            row.pop("allowed_msk_hours", None)
+            row.pop("manual_per_run_max", None)
         notes = payload.setdefault("notes", [])
-        if isinstance(notes, list) and not any("key-rotation" in str(x) for x in notes):
-            notes.append("SStats=150/run, Bzzoiro=1000/run, weather key-rotation resets stale daily budget state.")
+        if isinstance(notes, list):
+            notes.append("Daily/monthly budgets removed by user request; only per-run limits apply.")
         POLICY_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
-        return
+        pass
+
+
+def _patch_budget_state() -> None:
+    try:
+        state = json.loads(STATE_PATH.read_text(encoding="utf-8")) if STATE_PATH.exists() else {}
+        providers = state.get("providers") if isinstance(state.get("providers"), dict) else {}
+        for row in providers.values():
+            if isinstance(row, dict):
+                row["daily"] = {}
+                row["monthly"] = {}
+                row.pop("cooldown_until", None)
+                row.pop("cooldown_reason", None)
+        state["period_budgets_disabled"] = True
+        state["budget_mode"] = "per_run_only"
+        STATE_PATH.parent.mkdir(parents=True, exist_ok=True)
+        STATE_PATH.write_text(json.dumps(state, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _patch_text_file(rel_path: str, patcher) -> None:
@@ -306,31 +251,43 @@ def _patch_text_file(rel_path: str, patcher) -> None:
         if new != old:
             path.write_text(new, encoding="utf-8")
     except Exception:
-        return
+        pass
 
 
 def _patch_provider_budget_py(text: str) -> str:
-    for old, new in TEXT_REPLACEMENTS.items():
-        text = text.replace(old, new)
-    text = text.replace(
-        "and name in HARIZON_CRITICAL_PROVIDERS\n            and decision['reason'].startswith('daily_budget_exhausted:')",
-        "and name in {'odds_api_io', 'bzzoiro', 'sstats', 'sportlogic'}\n            and decision['reason'].startswith('daily_budget_exhausted:')",
-    )
+    if "PER_RUN_ONLY_LIMITS = True" not in text:
+        text = text.replace("ALL_HOURS = list(range(24))\n", "ALL_HOURS = list(range(24))\nPER_RUN_ONLY_LIMITS = True\n", 1)
+    text = text.replace("daily_budget = as_int(cfg.get('safe_daily_budget'), 0)", "daily_budget = 0 if PER_RUN_ONLY_LIMITS else as_int(cfg.get('safe_daily_budget'), 0)")
+    text = text.replace("monthly_budget = as_int(cfg.get('safe_monthly_budget'), 0)", "monthly_budget = 0 if PER_RUN_ONLY_LIMITS else as_int(cfg.get('safe_monthly_budget'), 0)")
+    text = text.replace("'daily_budget': as_int(cfg.get('safe_daily_budget'), 0),", "'daily_budget': None,")
+    text = text.replace("'monthly_budget': as_int(cfg.get('safe_monthly_budget'), 0),", "'monthly_budget': None,")
+    text = text.replace("'daily_used_before': usage(row, 'daily', dkey),", "'daily_used_before': None,")
+    text = text.replace("'monthly_used_before': usage(row, 'monthly', mkey),", "'monthly_used_before': None,")
+    text = text.replace("add_usage(row, 'daily', dkey, grant)\n    add_usage(row, 'monthly', mkey, grant)", "# daily/monthly accounting disabled: per-run limits only")
+    text = text.replace("add_usage(row, 'daily', dkey, grant)\n            add_usage(row, 'monthly', mkey, grant)", "# daily/monthly accounting disabled: per-run limits only")
+    text = text.replace("and decision['reason'].startswith('daily_budget_exhausted:')", "and False  # period budgets disabled")
+    text = text.replace("'Free-source maximize mode is active and raises budgets/context caps for free providers from RULES.txt quotas.'", "'Provider budgets are per-run only; daily/monthly caps are disabled by user request.'")
+    text = text.replace("'Providers with explicit monthly cooldowns, such as OddsPapi after REQUEST_LIMIT_EXCEEDED, remain cooldown-skipped until reset.'", "'Cooldowns from fatal/auth provider errors may still apply, but daily/monthly request caps do not.'")
     return text
 
 
-def _patch_runtime_policy_py(text: str) -> str:
-    text = text.replace('"BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "24")', '"BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "80")')
-    text = text.replace('"WEATHERAPI_PER_RUN_MAX": "80"', '"WEATHERAPI_PER_RUN_MAX": policy_value("WEATHERAPI_PER_RUN_MAX", "24")')
-    return text
+def _apply_env() -> None:
+    for target, aliases in SECRET_ALIASES:
+        _alias_env(target, aliases)
+    os.environ.update(ENV_OVERRIDES)
+    secret_payload = dict(ENV_OVERRIDES)
+    for target, _ in SECRET_ALIASES:
+        value = os.getenv(target)
+        if value:
+            secret_payload[target] = value
+    _append_github_env(secret_payload)
 
 
 def apply_api_max_usage_patch() -> None:
     _apply_env()
-    _append_github_env()
-    _patch_budget_json()
+    _patch_policy_json()
+    _patch_budget_state()
     _patch_text_file("scripts/apply_provider_request_budget.py", _patch_provider_budget_py)
-    _patch_text_file("scripts/apply_harizon_runtime_policy.py", _patch_runtime_policy_py)
 
 
 try:
