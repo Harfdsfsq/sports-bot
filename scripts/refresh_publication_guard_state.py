@@ -6,6 +6,10 @@ This is intentionally narrow: only the files used by duplicate/open-risk guards
 are refreshed. Runtime artifacts from the current run are not touched.
 After refresh, fallback Telegram publications are materialized into state.json so
 bankroll/open-risk code can see pending controlled fallback bets.
+
+The final step also applies the bookmaker compatibility filter. This keeps
+unsupported markets, such as quarter Asian totals that the target bookmaker does
+not accept, out of controlled fallback publishing even when they have strong EV.
 """
 
 import json
@@ -51,6 +55,28 @@ def sync_fallback_sent_index_to_state(report: dict[str, object]) -> None:
     }
 
 
+def run_unsupported_market_filter(report: dict[str, object]) -> None:
+    script = ROOT / 'scripts' / 'filter_unsupported_markets.py'
+    if not script.exists():
+        report['unsupported_market_filter'] = {'status': 'missing'}
+        return
+    proc = subprocess.run([sys.executable, str(script)], cwd=str(ROOT), text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=False, timeout=30)
+    payload_path = ROOT / '.data' / 'exports' / 'latest-unsupported-market-filter.json'
+    payload = None
+    try:
+        if payload_path.exists():
+            payload = json.loads(payload_path.read_text(encoding='utf-8'))
+    except Exception:
+        payload = None
+    report['unsupported_market_filter'] = {
+        'status': 'ok' if proc.returncode == 0 else 'failed',
+        'returncode': proc.returncode,
+        'stdout_tail': proc.stdout[-1200:],
+        'stderr_tail': proc.stderr[-1200:],
+        'report': payload if isinstance(payload, dict) else None,
+    }
+
+
 def main() -> int:
     OUT.parent.mkdir(parents=True, exist_ok=True)
     report: dict[str, object] = {
@@ -66,6 +92,7 @@ def main() -> int:
     if fetch.returncode != 0:
         report['status'] = 'fetch_failed_best_effort'
         sync_fallback_sent_index_to_state(report)
+        run_unsupported_market_filter(report)
         OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
         print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
@@ -92,6 +119,7 @@ def main() -> int:
                 shutil.copy2(backup, path)
 
     sync_fallback_sent_index_to_state(report)
+    run_unsupported_market_filter(report)
     OUT.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
