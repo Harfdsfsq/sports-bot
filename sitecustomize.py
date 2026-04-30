@@ -1,63 +1,19 @@
-"""Runtime hotfixes for sports-bot.
+"""Defensive runtime patches for Harizon sports-bot.
 
-Imported automatically by Python before app modules.  Keep this file defensive:
-it must never break CLI startup.  It handles these runtime fixes:
-
-1) Preserve the probability normalizer hotfix.
-2) Remove api-football from runtime without requiring a large runner rewrite.
-3) Wire SportLogic into offers/context and clean human reports/inventory counts.
-4) Patch SportLogic provider to the documented API contract.
+This file is imported automatically before app/scripts modules.  Keep patches
+idempotent and non-fatal: startup must never fail because of a patch.
 """
 
 from __future__ import annotations
 
 import builtins
+import json
 import re
 import sys
 from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent
-
-
-def _normalize_probability_percent_patched(value: Any) -> float | None:
-    if value is None or isinstance(value, bool):
-        return None
-    had_percent_sign = False
-    if isinstance(value, str):
-        text = value.strip()
-        if not text:
-            return None
-        lowered = text.lower()
-        if lowered in {"n/a", "na", "none", "null", "-", "--", "unknown"}:
-            return None
-        had_percent_sign = "%" in text
-        text = text.replace("%", "").replace(",", ".").strip()
-        match = re.search(r"[-+]?\d*\.?\d+", text)
-        if not match:
-            return None
-        try:
-            number = float(match.group(0))
-        except ValueError:
-            return None
-    else:
-        try:
-            number = float(value)
-        except (TypeError, ValueError):
-            return None
-    if had_percent_sign or number > 1.0:
-        number /= 100.0
-    if number < 0.0:
-        number = 0.0
-    elif number > 1.0:
-        number = 1.0
-    return number
-
-
-def _replace_once(text: str, old: str, new: str) -> tuple[str, bool]:
-    if old not in text:
-        return text, False
-    return text.replace(old, new, 1), True
 
 
 def _patch_file(path: Path, patcher: Any) -> None:
@@ -70,36 +26,62 @@ def _patch_file(path: Path, patcher: Any) -> None:
         return
 
 
+def _replace_once(text: str, old: str, new: str) -> str:
+    return text.replace(old, new, 1) if old in text else text
+
+
+def _normalize_probability_percent_patched(value: Any) -> float | None:
+    if value is None or isinstance(value, bool):
+        return None
+    try:
+        if isinstance(value, str):
+            raw = value.strip()
+            if not raw or raw.lower() in {"n/a", "na", "none", "null", "-", "--", "unknown"}:
+                return None
+            had_percent = "%" in raw
+            raw = raw.replace("%", "").replace(",", ".")
+            match = re.search(r"[-+]?\d*\.?\d+", raw)
+            if not match:
+                return None
+            number = float(match.group(0))
+            if had_percent or number > 1.0:
+                number /= 100.0
+        else:
+            number = float(value)
+            if number > 1.0:
+                number /= 100.0
+    except Exception:
+        return None
+    return max(0.0, min(1.0, number))
+
+
+# ---------------------------------------------------------------------------
+# Runner wiring.
+# ---------------------------------------------------------------------------
+
 def _patch_runner_text(text: str) -> str:
-    # Fully remove api-football from runtime loading/API calls.
     text = text.replace(
         "        self.api_football = self._safe_provider('app.providers.api_football', 'ApiFootballContextProvider')\n",
         "        self.api_football = None  # api-football removed from Harizon runtime\n",
         1,
     )
-
-    # SportLogic instance.
     if "self.sportlogic" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "        self.allsportsapi = self._safe_provider('app.providers.allsportsapi', 'AllSportsApiOddsProvider')\n",
             "        self.allsportsapi = self._safe_provider('app.providers.allsportsapi', 'AllSportsApiOddsProvider')\n"
             "        self.sportlogic = self._safe_provider('app.providers.sportlogic_provider', 'SportLogicProvider')\n",
         )
-
-    # Provider lookup.
     if "'sportlogic': self.sportlogic" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "            'allsportsapi': self.allsportsapi,\n            'bookies_bootstrap': self.bookies_bootstrap,\n",
             "            'allsportsapi': self.allsportsapi,\n"
             "            'sportlogic': self.sportlogic,\n"
             "            'bookies_bootstrap': self.bookies_bootstrap,\n",
         )
-
-    # Auth readiness.
     if "key == 'sportlogic'" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "        if key == 'allsportsapi':\n            return bool(getattr(self.settings, 'allsportsapi_api_key', None))\n        return True\n",
             "        if key == 'allsportsapi':\n            return bool(getattr(self.settings, 'allsportsapi_api_key', None))\n"
@@ -107,20 +89,16 @@ def _patch_runner_text(text: str) -> str:
             "            return bool(getattr(self.settings, 'sportlogic_api_key', None) or os.getenv('SPORTLOGIC_API_KEY') or os.getenv('SPORTLOGIC_KEY') or os.getenv('SPORTLOGIC_TOKEN'))\n"
             "        return True\n",
         )
-
-    # Enable flag.
     if "provider_name == 'sportlogic'" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "        if provider_name == 'odds_api_io':\n            return bool(getattr(self.settings, 'enable_odds_api_io', default))\n",
             "        if provider_name == 'odds_api_io':\n            return bool(getattr(self.settings, 'enable_odds_api_io', default))\n"
             "        if provider_name == 'sportlogic':\n"
             "            return str(os.getenv('ENABLE_SPORTLOGIC', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'} and str(os.getenv('SPORTLOGIC_ENABLED', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'}\n",
         )
-
-    # Safe provider loading.
     if "module_name.endswith('sportlogic_provider')" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "        if module_name.endswith('allsportsapi') and not self._provider_enabled('allsportsapi', default=False):\n            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n            return None\n",
             "        if module_name.endswith('allsportsapi') and not self._provider_enabled('allsportsapi', default=False):\n"
@@ -130,17 +108,15 @@ def _patch_runner_text(text: str) -> str:
             "            self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')\n"
             "            return None\n",
         )
-
-    # Odds offers gather.
     if "sportlogic_offers" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "                (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),\n            ) = await asyncio.gather(\n",
             "                (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),\n"
             "                (sportlogic_offers, sportlogic_stats, sportlogic_preview),\n"
             "            ) = await asyncio.gather(\n",
         )
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "                self._fetch_provider(\n                    self.allsportsapi,\n                    'fetch_offers',\n                    filtered_matches,\n                    empty_data={},\n                ),\n            )\n",
             "                self._fetch_provider(\n"
@@ -157,17 +133,9 @@ def _patch_runner_text(text: str) -> str:
             "                ),\n"
             "            )\n",
         )
-        text, _ = _replace_once(
-            text,
-            "                'allsportsapi': allsportsapi_offers,\n            }\n",
-            "                'allsportsapi': allsportsapi_offers,\n"
-            "                'sportlogic': sportlogic_offers,\n"
-            "            }\n",
-        )
-
-    # Context targets/gather.
+        text = _replace_once(text, "                'allsportsapi': allsportsapi_offers,\n            }\n", "                'allsportsapi': allsportsapi_offers,\n                'sportlogic': sportlogic_offers,\n            }\n")
     if "provider_targets['sportlogic']" not in text:
-        text, _ = _replace_once(
+        text = _replace_once(
             text,
             "                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n            }\n",
             "                'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),\n"
@@ -175,57 +143,21 @@ def _patch_runner_text(text: str) -> str:
             "            }\n",
         )
     if "sportlogic_contexts" not in text:
-        text, _ = _replace_once(
-            text,
-            "                (gnews_contexts, gnews_stats, gnews_preview),\n            ) = await asyncio.gather(\n",
-            "                (gnews_contexts, gnews_stats, gnews_preview),\n"
-            "                (sportlogic_contexts, sportlogic_context_stats, sportlogic_context_preview),\n"
-            "            ) = await asyncio.gather(\n",
-        )
-        text, _ = _replace_once(
-            text,
-            "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n            )\n",
-            "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n"
-            "                self._fetch_provider(self.sportlogic, 'fetch_context', provider_targets['sportlogic'], empty_data={}),\n"
-            "            )\n",
-        )
-        text, _ = _replace_once(
-            text,
-            "                'gnews': gnews_contexts,\n            }\n",
-            "                'gnews': gnews_contexts,\n"
-            "                'sportlogic': sportlogic_contexts,\n"
-            "            }\n",
-        )
-
-    # Source stats so the detailed report shows real SportLogic work.
+        text = _replace_once(text, "                (gnews_contexts, gnews_stats, gnews_preview),\n            ) = await asyncio.gather(\n", "                (gnews_contexts, gnews_stats, gnews_preview),\n                (sportlogic_contexts, sportlogic_context_stats, sportlogic_context_preview),\n            ) = await asyncio.gather(\n")
+        text = _replace_once(text, "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n            )\n", "                self._fetch_provider(self.gnews, 'fetch_context', provider_targets['gnews'], empty_data={}),\n                self._fetch_provider(self.sportlogic, 'fetch_context', provider_targets['sportlogic'], empty_data={}),\n            )\n")
+        text = _replace_once(text, "                'gnews': gnews_contexts,\n            }\n", "                'gnews': gnews_contexts,\n                'sportlogic': sportlogic_contexts,\n            }\n")
     if "'sportlogic': sportlogic_stats" not in text:
-        text, _ = _replace_once(
-            text,
-            "                'allsportsapi': allsportsapi_stats,\n                'futrixmetrics': futrixmetrics_stats,\n",
-            "                'allsportsapi': allsportsapi_stats,\n"
-            "                'sportlogic': sportlogic_stats,\n"
-            "                'futrixmetrics': futrixmetrics_stats,\n",
-        )
+        text = _replace_once(text, "                'allsportsapi': allsportsapi_stats,\n                'futrixmetrics': futrixmetrics_stats,\n", "                'allsportsapi': allsportsapi_stats,\n                'sportlogic': sportlogic_stats,\n                'futrixmetrics': futrixmetrics_stats,\n")
     if "'sportlogic_context': sportlogic_context_stats" not in text:
-        text, _ = _replace_once(
-            text,
-            "                'gnews': gnews_stats,\n                'weather': weather_stats,\n",
-            "                'gnews': gnews_stats,\n"
-            "                'sportlogic_context': sportlogic_context_stats,\n"
-            "                'weather': weather_stats,\n",
-        )
+        text = _replace_once(text, "                'gnews': gnews_stats,\n                'weather': weather_stats,\n", "                'gnews': gnews_stats,\n                'sportlogic_context': sportlogic_context_stats,\n                'weather': weather_stats,\n")
     return text
 
 
-def _patch_sportlogic_provider_text(text: str) -> str:
-    """Patch SportLogic to the documented API contract.
+# ---------------------------------------------------------------------------
+# SportLogic documented contract patch.
+# ---------------------------------------------------------------------------
 
-    Documentation checked 2026-04-30:
-    - Base URL: https://api.sportlogic.io/api/v1
-    - Auth header: X-API-Key
-    - Games: GET /games with date_from/date_to/status/per_page
-    - Odds: GET /games/{id}/odds or /odds?game_id=...
-    """
+def _patch_sportlogic_provider_text(text: str) -> str:
     text = text.replace('BASE_URL = "https://api.sportlogic.io/v1"', 'BASE_URL = "https://api.sportlogic.io/api/v1"')
     text = text.replace('os.getenv("SPORTLOGIC_HEADER_NAME", "Authorization")', 'os.getenv("SPORTLOGIC_HEADER_NAME", "X-API-Key")')
     text = text.replace('f"{self.base_url}/football/fixtures"', 'f"{self.base_url}/games"')
@@ -241,8 +173,8 @@ def _patch_sportlogic_provider_text(text: str) -> str:
         '            stats.setdefault("attempted_paths", []).append({"path": path, "params": dict(params or {})})\n'
         '            response = await client.get(f"{self.base_url}{path}", headers=self._headers(), params=params or None)\n',
     )
-    flat_marker = '        for row in rows:\n            # Shape A: bookmakers -> markets -> outcomes\n'
-    flat_patch = '''        for row in rows:
+    marker = '        for row in rows:\n            # Shape A: bookmakers -> markets -> outcomes\n'
+    patch = '''        for row in rows:
             # SportLogic documented flat odds shape: option_name/option_value/odds + market/bookmaker objects.
             if isinstance(row, dict) and ("option_name" in row or "market_id" in row) and ("odds" in row or "price" in row):
                 market_payload = row.get("market") if isinstance(row.get("market"), dict) else {}
@@ -274,152 +206,165 @@ def _patch_sportlogic_provider_text(text: str) -> str:
                         add(book, "totals", "Under", price, self._float(option_value), market_name=market_name)
                     continue
                 if market_key in {"both_teams_to_score", "btts"}:
-                    if low in {"yes", "both teams to score - yes"} or "yes" in low:
+                    if "yes" in low:
                         add(book, "btts", "Yes", price, market_name=market_name)
-                    elif low in {"no", "both teams to score - no"} or "no" in low:
+                    elif "no" in low:
                         add(book, "btts", "No", price, market_name=market_name)
                     continue
 
             # Shape A: bookmakers -> markets -> outcomes
 '''
-    if flat_marker in text and 'SportLogic documented flat odds shape' not in text:
-        text = text.replace(flat_marker, flat_patch, 1)
+    if marker in text and "SportLogic documented flat odds shape" not in text:
+        text = text.replace(marker, patch, 1)
     return text
 
 
+# ---------------------------------------------------------------------------
+# Runtime policy/budget patches based on docs catalog.
+# ---------------------------------------------------------------------------
+
+def _patch_harizon_runtime_policy_text(text: str) -> str:
+    if '"ENABLE_SPORTLOGIC": "true"' not in text:
+        text = _replace_once(
+            text,
+            '        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "24"),\n',
+            '        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "24"),\n'
+            '        "ENABLE_SPORTLOGIC": "true",\n'
+            '        "SPORTLOGIC_ENABLED": "true",\n'
+            '        "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",\n'
+            '        "SPORTLOGIC_HEADER_NAME": "X-API-Key",\n'
+            '        "SPORTLOGIC_PER_RUN_MAX": policy_value("SPORTLOGIC_PER_RUN_MAX", "40"),\n'
+            '        "SPORTLOGIC_MATCH_LIMIT": policy_value("SPORTLOGIC_MATCH_LIMIT", "80"),\n'
+            '        "SPORTLOGIC_ODDS_MATCH_LIMIT": policy_value("SPORTLOGIC_ODDS_MATCH_LIMIT", "32"),\n'
+            '        "SPORTLOGIC_TIMEOUT_SECONDS": policy_value("SPORTLOGIC_TIMEOUT_SECONDS", "20"),\n',
+        )
+    # football-data.org registered docs: 10 req/min; current daily cap should be respected, never bypassed.
+    text = text.replace('"FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": os.getenv("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT") or "72"', '"FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": os.getenv("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT") or "48"')
+    return text
+
+
+def _patch_provider_budget_text(text: str) -> str:
+    if "'sportlogic'" not in text.split("HARIZON_CRITICAL_PROVIDERS", 1)[1].split("}", 1)[0]:
+        text = text.replace("    'openfootball_public',\n}", "    'openfootball_public',\n    'sportlogic',\n}", 1)
+    # Do not bypass football-data.org safe daily cap. It has a tight free/registered quota and was observed above cap.
+    text = text.replace("    'football_data',\n", "", 1)
+    text = text.replace("    'football_data': 8,\n", "", 1)
+    if "'sportlogic': 40" not in text:
+        text = text.replace("    'openfootball_public': 8,\n}", "    'openfootball_public': 8,\n    'sportlogic': 40,\n}", 1)
+    if "'sportlogic': {" not in text:
+        insert = """
+    'sportlogic': {
+        'per_run_max': 40,
+        'safe_daily_budget': 480,
+        'min_spacing_minutes': 0,
+        'env': {
+            'ENABLE_SPORTLOGIC': 'true',
+            'SPORTLOGIC_ENABLED': 'true',
+            'SPORTLOGIC_BASE_URL': 'https://api.sportlogic.io/api/v1',
+            'SPORTLOGIC_HEADER_NAME': 'X-API-Key',
+            'SPORTLOGIC_PER_RUN_MAX': '40',
+            'SPORTLOGIC_MATCH_LIMIT': '80',
+            'SPORTLOGIC_ODDS_MATCH_LIMIT': '32',
+            'SPORTLOGIC_TIMEOUT_SECONDS': '20',
+        },
+        'disable_env': {
+            'ENABLE_SPORTLOGIC': 'false',
+            'SPORTLOGIC_ENABLED': 'false',
+            'SPORTLOGIC_PER_RUN_MAX': '0',
+            'SPORTLOGIC_MATCH_LIMIT': '0',
+            'SPORTLOGIC_ODDS_MATCH_LIMIT': '0',
+        },
+    },
+"""
+        text = text.replace("    'bzzoiro': {", insert + "    'bzzoiro': {", 1)
+    # Hard guard: only truly critical/high-quota providers may recover after stale daily counter exhaustion.
+    text = text.replace(
+        "and name in HARIZON_CRITICAL_PROVIDERS\n            and decision['reason'].startswith('daily_budget_exhausted:')",
+        "and name in {'odds_api_io', 'bzzoiro', 'sstats', 'sportlogic'}\n            and decision['reason'].startswith('daily_budget_exhausted:')",
+    )
+    return text
+
+
+def _patch_budget_config_file() -> None:
+    path = ROOT / "config" / "provider_request_budget.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        providers = payload.setdefault("providers", {})
+        providers["sportlogic"] = {
+            "enabled": True,
+            "per_run_max": 40,
+            "safe_daily_budget": 480,
+            "min_spacing_minutes": 0,
+            "secret_env_keys": ["SPORTLOGIC_API_KEY"],
+            "limit": {"documented_daily_assumption": 500, "safe_buffer_requests": 20},
+            "env": {
+                "ENABLE_SPORTLOGIC": "true",
+                "SPORTLOGIC_ENABLED": "true",
+                "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
+                "SPORTLOGIC_HEADER_NAME": "X-API-Key",
+                "SPORTLOGIC_PER_RUN_MAX": "40",
+                "SPORTLOGIC_MATCH_LIMIT": "80",
+                "SPORTLOGIC_ODDS_MATCH_LIMIT": "32",
+                "SPORTLOGIC_TIMEOUT_SECONDS": "20",
+            },
+            "disable_env": {
+                "ENABLE_SPORTLOGIC": "false",
+                "SPORTLOGIC_ENABLED": "false",
+                "SPORTLOGIC_PER_RUN_MAX": "0",
+                "SPORTLOGIC_MATCH_LIMIT": "0",
+                "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
+                "SPORTLOGIC_API_KEY": "",
+            },
+        }
+        if "football_data" in providers:
+            providers["football_data"]["safe_daily_budget"] = min(int(providers["football_data"].get("safe_daily_budget") or 72), 72)
+            providers["football_data"]["per_run_max"] = min(int(providers["football_data"].get("per_run_max") or 4), 4)
+            providers["football_data"].setdefault("limit", {})["registered_requests_per_minute"] = 10
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        return
+
+
+# ---------------------------------------------------------------------------
+# Reports/workflow.
+# ---------------------------------------------------------------------------
+
 def _patch_detailed_report_text(text: str) -> str:
-    # Human reports should not list api-football after it was removed.
     text = text.replace('            "api_football",\n', '')
     text = text.replace('        "api_football",\n', '')
     if '"sportlogic",' not in text:
         text = text.replace('            "odds_api_io",\n', '            "odds_api_io",\n            "sportlogic",\n')
         text = text.replace('        "odds_api_io",\n', '        "odds_api_io",\n        "sportlogic",\n')
-
-    old_fn = '''def day_inventory_summary() -> dict[str, Any]:
-    return load_json(".data/exports/latest-day-inventory-summary.json", {})
-'''
-    new_fn = '''def day_inventory_summary() -> dict[str, Any]:
-    summary = load_json(".data/exports/latest-day-inventory-summary.json", {})
-    if not isinstance(summary, dict):
-        summary = {}
-    counts = summary.setdefault("counts", {})
-    if not isinstance(counts, dict):
-        counts = {}
-        summary["counts"] = counts
-
-    merge = load_json(".data/exports/latest-day-inventory-coverage-merge.json", {})
-    debug = load_json(".logs/debug-last-run.json", {})
-    runtime_counts = merge.get("runtime_counts") if isinstance(merge, dict) else {}
-    if not isinstance(runtime_counts, dict):
-        runtime_counts = {}
-    if not runtime_counts and isinstance(debug, dict):
-        dbg_summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else debug
-        runtime_counts = {
-            "matches_seen": as_int(dbg_summary.get("matches_seen")),
-            "matches_with_odds": as_int(dbg_summary.get("matches_with_offers")),
-            "matches_with_context": as_int(dbg_summary.get("contexts_built")),
-            "matches_ready_for_model": as_int(dbg_summary.get("contexts_built")),
-        }
-
-    runtime_total = as_int(runtime_counts.get("matches_seen"))
-    runtime_odds = as_int(runtime_counts.get("matches_with_odds"))
-    runtime_context = as_int(runtime_counts.get("matches_with_context"))
-    runtime_ready = as_int(runtime_counts.get("matches_ready_for_model"))
-    if runtime_total:
-        counts["matches_total"] = max(as_int(counts.get("matches_total")), runtime_total)
-    if runtime_odds:
-        counts["matches_with_odds"] = max(as_int(counts.get("matches_with_odds")), runtime_odds)
-    if runtime_context:
-        counts["matches_with_context"] = max(as_int(counts.get("matches_with_context")), runtime_context)
-    if runtime_ready:
-        counts["matches_ready_for_model"] = max(as_int(counts.get("matches_ready_for_model")), runtime_ready)
-    summary["runtime_counts_applied"] = bool(runtime_counts)
-    return summary
-'''
-    if old_fn in text:
-        text = text.replace(old_fn, new_fn, 1)
-    return text
-
-
-def _patch_merge_inventory_text(text: str) -> str:
-    if "SUMMARY_PATH" not in text:
-        text = text.replace(
-            "EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-day-inventory-coverage-merge.json'\n",
-            "EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-day-inventory-coverage-merge.json'\n"
-            "SUMMARY_PATH = ROOT / '.data' / 'exports' / 'latest-day-inventory-summary.json'\n",
-            1,
-        )
-    if "write_json(SUMMARY_PATH, inventory_summary)" not in text:
-        marker = "    write_json(EXPORT_PATH, summary)\n"
-        inject = '''    inventory_summary = {
-        'bootstrap_provider': 'runtime_coverage_merge',
-        'build_status': 'ok',
-        'date_local': target_date,
-        'matches_for_day': counts['matches_total'],
-        'matches_total_raw': counts['matches_total'],
-        'counts': counts,
-        'runtime_counts': runtime_counts,
-        'updated_at_utc': now_utc.isoformat(),
-        'saved_paths': {
-            'date_path': str(inventory_path),
-            'latest_path': '.data/day_inventory/latest.json',
-            'current_path': '.data/day_inventory/current.json',
-            'today_path': '.data/day_inventory/today.json',
-            'summary_path': str(SUMMARY_PATH),
-        },
-    }
-    write_json(SUMMARY_PATH, inventory_summary)
-'''
-        if marker in text:
-            text = text.replace(marker, inject + marker, 1)
     return text
 
 
 def _patch_workflow_text(text: str) -> str:
-    # Expose SportLogic key/flags to GitHub Actions.  Without this line GitHub
-    # secrets remain unavailable to the Python process.
     if "SPORTLOGIC_API_KEY:" not in text:
-        text = text.replace(
-            "      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}\n",
-            "      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}\n"
-            "      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}\n"
-            "      ENABLE_SPORTLOGIC: \"true\"\n"
-            "      SPORTLOGIC_ENABLED: \"true\"\n"
-            "      SPORTLOGIC_PER_RUN_MAX: \"80\"\n"
-            "      SPORTLOGIC_MATCH_LIMIT: \"80\"\n"
-            "      SPORTLOGIC_ODDS_MATCH_LIMIT: \"40\"\n",
-            1,
-        )
+        text = text.replace("      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}\n", "      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}\n      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}\n", 1)
     if "SPORTLOGIC_BASE_URL:" not in text:
-        text = text.replace(
-            "      SPORTLOGIC_TIMEOUT_SECONDS: \"20\"\n",
-            "      SPORTLOGIC_TIMEOUT_SECONDS: \"20\"\n"
-            "      SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1\n"
-            "      SPORTLOGIC_HEADER_NAME: X-API-Key\n",
-            1,
-        )
+        text = text.replace("      SPORTLOGIC_TIMEOUT_SECONDS: \"20\"\n", "      SPORTLOGIC_TIMEOUT_SECONDS: \"20\"\n      SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1\n      SPORTLOGIC_HEADER_NAME: X-API-Key\n", 1)
     return text
 
 
 def _apply_file_patches() -> None:
+    _patch_budget_config_file()
     _patch_file(ROOT / "app" / "services" / "runner.py", _patch_runner_text)
     _patch_file(ROOT / "app" / "providers" / "sportlogic_provider.py", _patch_sportlogic_provider_text)
+    _patch_file(ROOT / "scripts" / "apply_harizon_runtime_policy.py", _patch_harizon_runtime_policy_text)
+    _patch_file(ROOT / "scripts" / "apply_provider_request_budget.py", _patch_provider_budget_text)
     _patch_file(ROOT / "scripts" / "build_detailed_run_report.py", _patch_detailed_report_text)
-    _patch_file(ROOT / "scripts" / "merge_run_coverage_into_day_inventory.py", _patch_merge_inventory_text)
     _patch_file(ROOT / ".github" / "workflows" / "run-bot.yml", _patch_workflow_text)
 
+
+# ---------------------------------------------------------------------------
+# Import-time monkey patches.
+# ---------------------------------------------------------------------------
 
 def _apply_import_patches() -> None:
     utils_mod = sys.modules.get("app.utils")
     if utils_mod is not None:
         try:
             utils_mod.normalize_probability_percent = _normalize_probability_percent_patched
-        except Exception:
-            pass
-    provider_mod = sys.modules.get("app.providers.api_football")
-    if provider_mod is not None:
-        try:
-            provider_mod.normalize_probability_percent = _normalize_probability_percent_patched
         except Exception:
             pass
 
@@ -429,9 +374,7 @@ _original_import = builtins.__import__
 
 def _patched_import(name, globals=None, locals=None, fromlist=(), level=0):
     module = _original_import(name, globals, locals, fromlist, level)
-    if name == "app.utils" or name.startswith("app.utils.") or name == "app.providers.api_football":
-        _apply_import_patches()
-    elif name.startswith("app.providers") and "api_football" in name:
+    if name == "app.utils" or name.startswith("app.utils."):
         _apply_import_patches()
     return module
 
