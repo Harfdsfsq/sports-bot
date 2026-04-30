@@ -13,7 +13,7 @@ STATE_PATH = ROOT / '.data' / 'autorun-state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-autorun-watchdog.json'
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v22-schedule-trigger-aware-autorun'
+POLICY_VERSION = 'v23-primary-plus-single-watchdog'
 
 # Primary workflow slots are at 00 minutes every two hours in MSK.
 # Europe/Moscow = UTC+3, so the UTC schedule is:
@@ -24,9 +24,9 @@ DEFAULT_PRIMARY_UTC_HOURS_SET = {21, 23, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19}
 PRIMARY_MINUTE = int(float(os.getenv('AUTORUN_PRIMARY_MINUTE', '0')))
 PRIMARY_WINDOW_MINUTES = max(4, int(float(os.getenv('AUTORUN_PRIMARY_WINDOW_MINUTES', '8'))))
 DELAYED_PRIMARY_WINDOW_MINUTES = max(PRIMARY_WINDOW_MINUTES, int(float(os.getenv('AUTORUN_DELAYED_PRIMARY_WINDOW_MINUTES', '90'))))
-WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '5')))
+WATCHDOG_DELAY_MINUTES = int(float(os.getenv('AUTORUN_WATCHDOG_DELAY_MINUTES', '15')))
 WATCHDOG_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_WATCHDOG_WINDOW_MINUTES', '8'))))
-CATCHUP_DELAY_MINUTES = int(float(os.getenv('AUTORUN_CATCHUP_DELAY_MINUTES', '17')))
+CATCHUP_DELAY_MINUTES = int(float(os.getenv('AUTORUN_CATCHUP_DELAY_MINUTES', '999')))
 CATCHUP_WINDOW_MINUTES = max(3, int(float(os.getenv('AUTORUN_CATCHUP_WINDOW_MINUTES', '10'))))
 
 # Backward-compatible safety net for state files created before slot keys existed.
@@ -175,7 +175,7 @@ def trigger_kind(schedule: str) -> str:
         return 'primary'
     if minute == WATCHDOG_MINUTE:
         return 'watchdog'
-    if minute == CATCHUP_MINUTE:
+    if minute == CATCHUP_MINUTE and CATCHUP_DELAY_MINUTES < 120:
         return 'catchup'
     if minute is None:
         return 'unknown'
@@ -191,28 +191,17 @@ def current_slot_already_succeeded(state: dict[str, Any], slot_key: str, age: fl
     return False, 'current_slot_not_completed'
 
 
-def scheduled_decision(
-    state: dict[str, Any],
-    now_utc: datetime,
-    slot_key: str,
-    age: float | None,
-    cron_schedule: str,
-) -> tuple[bool, str]:
+def scheduled_decision(state: dict[str, Any], now_utc: datetime, slot_key: str, age: float | None, cron_schedule: str) -> tuple[bool, str]:
     elapsed = minutes_since_slot(now_utc)
     kind = trigger_kind(cron_schedule)
     primary = is_primary_slot(now_utc)
     watchdog = is_watchdog_slot(now_utc)
-    catchup = is_catchup_slot(now_utc)
     delayed = is_delayed_primary_slot(now_utc)
 
     already_done, done_reason = current_slot_already_succeeded(state, slot_key, age)
     if already_done:
         return True, f'skip_{done_reason}'
 
-    # GitHub scheduled workflows can start several minutes late. The event payload
-    # still contains the cron string that actually triggered the run. Use that
-    # trigger role first, otherwise a delayed watchdog can be misclassified as a
-    # catchup run and duplicate the real catchup trigger for the same slot.
     if kind == 'primary':
         if primary:
             return False, 'primary_scheduled_run'
@@ -221,26 +210,16 @@ def scheduled_decision(
         return True, f'skip_primary_trigger_too_late_{elapsed:.1f}m'
 
     if kind == 'watchdog':
-        if elapsed >= CATCHUP_DELAY_MINUTES:
-            return True, f'skip_late_watchdog_trigger_elapsed_{elapsed:.1f}m_catchup_will_handle'
         if elapsed < WATCHDOG_DELAY_MINUTES:
             return True, f'skip_watchdog_trigger_too_early_{elapsed:.1f}m'
+        if elapsed > DELAYED_PRIMARY_WINDOW_MINUTES:
+            return True, f'skip_watchdog_trigger_too_late_{elapsed:.1f}m'
         return False, 'watchdog_failsafe_run_missing_current_slot_success'
 
-    if kind == 'catchup':
-        if elapsed < CATCHUP_DELAY_MINUTES:
-            return True, f'skip_catchup_trigger_too_early_{elapsed:.1f}m'
-        if elapsed > DELAYED_PRIMARY_WINDOW_MINUTES:
-            return True, f'skip_catchup_trigger_too_late_{elapsed:.1f}m'
-        return False, 'catchup_failsafe_run_missing_current_slot_success'
-
-    # Backward-compatible fallback for old/manual schedule payloads.
     if primary:
         return False, 'primary_scheduled_run_unknown_trigger'
     if watchdog:
         return False, 'watchdog_failsafe_run_missing_current_slot_success_unknown_trigger'
-    if catchup:
-        return False, 'catchup_failsafe_run_missing_current_slot_success_unknown_trigger'
     if delayed:
         return False, f'delayed_primary_scheduled_run_unknown_trigger_{elapsed:.1f}m'
     return False, f'scheduled_run_outside_known_slot_run_anyway_unknown_trigger_{elapsed:.1f}m'
@@ -261,7 +240,7 @@ def preflight() -> int:
 
     primary = event == 'schedule' and (kind == 'primary' or (kind == 'unknown' and is_primary_slot(now_utc)))
     watchdog = event == 'schedule' and (kind == 'watchdog' or (kind == 'unknown' and is_watchdog_slot(now_utc)))
-    catchup = event == 'schedule' and (kind == 'catchup' or (kind == 'unknown' and is_catchup_slot(now_utc)))
+    catchup = False
     delayed_primary = event == 'schedule' and is_delayed_primary_slot(now_utc)
     age = state_age_minutes(state, now_utc)
     skip_main = False
