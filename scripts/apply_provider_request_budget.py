@@ -98,7 +98,8 @@ FREE_PROVIDER_OVERRIDES: dict[str, dict[str, Any]] = {
             'SPORTLOGIC_HEADER_NAME': 'X-API-Key',
             'SPORTLOGIC_PER_RUN_MAX': '40',
             'SPORTLOGIC_MATCH_LIMIT': '120',
-            'SPORTLOGIC_ODDS_MATCH_LIMIT': '40',
+            'SPORTLOGIC_ODDS_MATCH_LIMIT': '0',
+            'SPORTLOGIC_ODDS_DISABLED_REASON': 'offers_parsed_zero_price_missing_payload',
             'SPORTLOGIC_TIMEOUT_SECONDS': '20',
         },
         'disable_env': {
@@ -502,6 +503,7 @@ def maximize_free_providers(policy: dict[str, Any]) -> dict[str, Any]:
         upgraded['version'] = f'{version}-free-max-v1'
     notes = list(upgraded.get('notes') or []) if isinstance(upgraded.get('notes'), list) else []
     notes.append('Free-source maximize mode raises per-run budgets and context caps for free providers based on RULES.txt quotas.')
+    notes.append('SportLogic odds fetching stays disabled until its odds payload parser produces valid prices; fixtures/context remain available.')
     upgraded['notes'] = notes
     return upgraded
 
@@ -705,6 +707,7 @@ def main() -> int:
         'notes': [
             'api-football remains removed from active runtime and its env values are blanked.',
             'Free-source maximize mode is active and raises budgets/context caps for free providers from RULES.txt quotas.',
+            'SportLogic odds fetching remains disabled until payload parsing is fixed; this prevents spending requests on zero parsed offers.',
             'Providers with explicit monthly cooldowns, such as OddsPapi after REQUEST_LIMIT_EXCEEDED, remain cooldown-skipped until reset.',
         ],
     }
