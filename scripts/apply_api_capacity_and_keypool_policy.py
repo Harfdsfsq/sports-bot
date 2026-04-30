@@ -11,7 +11,7 @@ UTC = timezone.utc
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 POLICY_PATH = ROOT / 'config' / 'provider_request_budget.json'
 OUT = ROOT / '.data' / 'exports' / 'latest-api-capacity-keypool-policy.json'
-POLICY_VERSION = 'v2-capacity-keypool-dual-odds-api-io'
+POLICY_VERSION = 'v3-capacity-keypool-full-day-enrichment-no-api-football'
 
 KEY_POOL_ENV = {
     'ODDS_API_IO_KEY_POOL': ['ODDS_API_IO_KEY', 'ODDS_API_IO_KEY_2', 'ODDS_API_IO_KEY_3'],
@@ -22,6 +22,8 @@ KEY_POOL_ENV = {
     'GUARDIAN_KEY_POOL': ['GUARDIAN_API_KEY', 'GUARDIAN_OPEN_PLATFORM_KEY'],
     'HIGHLIGHTLY_KEY_POOL': ['HIGHLIGHTLY_API_KEY', 'HIGHLIGHTLY_RAPIDAPI_KEY'],
 }
+
+TARGET_BOOKMAKERS = 'Bet365,Unibet,Betfair Exchange,Sbobet'
 
 PROVIDER_PATCHES: dict[str, dict[str, Any]] = {
     'odds_api_io': {
@@ -44,8 +46,13 @@ PROVIDER_PATCHES: dict[str, dict[str, Any]] = {
             'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': os.getenv('ODDS_API_IO_ACCOUNT2_PER_RUN_MAX', '70'),
             'ODDS_API_IO_PAGE_LIMIT': '100',
             'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '24',
-            'MAX_MATCHES_FOR_ODDS_FETCH': '260',
-            'ODDS_API_IO_BOOKMAKERS': 'Bet365,Unibet',
+            'MAX_MATCHES_FOR_ODDS_FETCH': '320',
+            # Critical: keep the global bookmaker list at four books. The previous two-book value
+            # made many candidates single-book/single-source and killed market-derived signals.
+            'ODDS_API_IO_BOOKMAKERS': TARGET_BOOKMAKERS,
+            'TARGET_BOOKMAKERS': TARGET_BOOKMAKERS,
+            'CONSENSUS_BOOKMAKERS': TARGET_BOOKMAKERS,
+            'SHARP_BOOKMAKERS': TARGET_BOOKMAKERS,
             'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
             'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
         },
@@ -62,22 +69,22 @@ PROVIDER_PATCHES: dict[str, dict[str, Any]] = {
             'SSTATS_PER_RUN_MAX': '150',
             'SSTATS_REQUESTS_MAX_PER_RUN': '150',
             'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '220',
-            'SSTATS_LOOKBACK_DAYS': '35',
-            'SSTATS_RECENT_MATCHES': '10',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '260',
+            'SSTATS_LOOKBACK_DAYS': '45',
+            'SSTATS_RECENT_MATCHES': '12',
             'SSTATS_REQUEST_CHUNK_DAYS': '5',
         },
         'disable_env': {'SSTATS_PER_RUN_MAX': '0', 'SSTATS_REQUESTS_MAX_PER_RUN': '0', 'SSTATS_CONTEXT_MATCH_LIMIT': '0'},
     },
     'external_signals': {
         'enabled': True,
-        'per_run_max': 60,
+        'per_run_max': 120,
         'limit': {'mixed_free_context_sources': True, 'budget_scope': 'per_run'},
         'secret_env_keys': ['NEWSDATA_API_KEY', 'GUARDIAN_API_KEY', 'HIGHLIGHTLY_API_KEY'],
         'env': {
             'ENABLE_EXTERNAL_SIGNALS': 'true',
-            'EXTERNAL_SIGNALS_PER_RUN_MAX': '60',
-            'EXTERNAL_SIGNALS_CONTEXT_MATCH_LIMIT': '90',
+            'EXTERNAL_SIGNALS_PER_RUN_MAX': '120',
+            'EXTERNAL_SIGNALS_CONTEXT_MATCH_LIMIT': '180',
             'ENABLE_CLUBELO_CONTEXT': 'true',
             'ENABLE_FOOTBALL_DATA_UK_CONTEXT': 'true',
             'ENABLE_OPEN_METEO_CONTEXT': 'true',
@@ -94,10 +101,29 @@ PROVIDER_PATCHES: dict[str, dict[str, Any]] = {
         },
         'disable_env': {'ENABLE_EXTERNAL_SIGNALS': 'false', 'EXTERNAL_SIGNALS_PER_RUN_MAX': '0', 'EXTERNAL_SIGNALS_CONTEXT_MATCH_LIMIT': '0'},
     },
-    'weatherapi': {'enabled': True, 'per_run_max': 40, 'env': {'WEATHERAPI_PER_RUN_MAX': '40', 'WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN': '40', 'WEATHER_CONTEXT_MATCH_LIMIT': '80', 'WEATHER_CACHE_TTL_MINUTES': '240'}},
-    'openweathermap': {'enabled': True, 'per_run_max': 24, 'env': {'OPENWEATHERMAP_PER_RUN_MAX': '24', 'OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN': '24', 'WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED': 'true'}},
-    'football_data': {'enabled': True, 'per_run_max': 16, 'env': {'FOOTBALL_DATA_PER_RUN_MAX': '16', 'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '16', 'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '180'}},
-    'thesportsdb': {'enabled': True, 'per_run_max': 30, 'env': {'THESPORTSDB_PER_RUN_MAX': '30', 'THESPORTSDB_REQUESTS_MAX_PER_RUN': '30', 'THESPORTSDB_CONTEXT_MATCH_LIMIT': '180'}},
+    'weatherapi': {
+        'enabled': True,
+        'per_run_max': 80,
+        'env': {
+            'WEATHERAPI_PER_RUN_MAX': '80',
+            'WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN': '80',
+            'WEATHER_CONTEXT_MATCH_LIMIT': '140',
+            'WEATHER_SHORTLIST_ONLY': 'true',
+            'WEATHER_ALLOW_TEAM_NAME_FALLBACK': 'true',
+            'WEATHER_CACHE_TTL_MINUTES': '240',
+        },
+    },
+    'openweathermap': {
+        'enabled': True,
+        'per_run_max': 40,
+        'env': {
+            'OPENWEATHERMAP_PER_RUN_MAX': '40',
+            'OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN': '40',
+            'WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED': 'true',
+        },
+    },
+    'football_data': {'enabled': True, 'per_run_max': 16, 'env': {'FOOTBALL_DATA_PER_RUN_MAX': '16', 'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '16', 'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': '220'}},
+    'thesportsdb': {'enabled': True, 'per_run_max': 30, 'env': {'THESPORTSDB_PER_RUN_MAX': '30', 'THESPORTSDB_REQUESTS_MAX_PER_RUN': '30', 'THESPORTSDB_CONTEXT_MATCH_LIMIT': '220'}},
 }
 
 
@@ -161,11 +187,12 @@ def main() -> int:
         changed[name] = {'per_run_max': providers[name].get('per_run_max'), 'env': providers[name].get('env')}
     policy['providers'] = providers
     policy['version'] = POLICY_VERSION
-    policy['description'] = 'Per-run capacity policy with dual odds-api.io account support and shortlist-first source expansion.'
+    policy['description'] = 'Per-run capacity policy with full-day enrichment, dual odds-api.io account support, and api-football removed.'
     notes = list(policy.get('notes') or []) if isinstance(policy.get('notes'), list) else []
     notes.append('odds-api.io dual account mode: account1 Bet365/Unibet, account2 Betfair Exchange/Sbobet, max 2 bookmakers per account.')
-    notes.append('odds-api.io global cap defaults to 140/run with 70/run per account to stay below 100/hour plan limits on 2-hour cadence.')
-    notes.append('External signals are confirmation context only, not standalone predictors.')
+    notes.append('Global ODDS_API_IO_BOOKMAKERS now stays at four books so consensus and market-derived signals can be formed.')
+    notes.append('Weather and external-signals caps were raised because the latest run exhausted 40+24 weather and 60 external signal requests before covering all enriched matches.')
+    notes.append('api-football remains deleted from production runtime and is not patched back by this layer.')
     policy['notes'] = notes
     write_json(POLICY_PATH, policy)
 
@@ -177,12 +204,27 @@ def main() -> int:
         'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': os.getenv('ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN', '140'),
         'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': os.getenv('ODDS_API_IO_ACCOUNT1_PER_RUN_MAX', '70'),
         'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': os.getenv('ODDS_API_IO_ACCOUNT2_PER_RUN_MAX', '70'),
+        'ODDS_API_IO_BOOKMAKERS': TARGET_BOOKMAKERS,
+        'TARGET_BOOKMAKERS': TARGET_BOOKMAKERS,
+        'CONSENSUS_BOOKMAKERS': TARGET_BOOKMAKERS,
+        'SHARP_BOOKMAKERS': TARGET_BOOKMAKERS,
         'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1', 'Bet365,Unibet'),
         'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2', 'Betfair Exchange,Sbobet'),
+        'MAX_MATCHES_FOR_ODDS_FETCH': '320',
         'SSTATS_PER_RUN_MAX': '150',
         'SSTATS_REQUESTS_MAX_PER_RUN': '150',
         'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
+        'SSTATS_CONTEXT_MATCH_LIMIT': '260',
         'ENABLE_EXTERNAL_SIGNALS': 'true',
+        'EXTERNAL_SIGNALS_PER_RUN_MAX': '120',
+        'EXTERNAL_SIGNALS_CONTEXT_MATCH_LIMIT': '180',
+        'WEATHERAPI_PER_RUN_MAX': '80',
+        'WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN': '80',
+        'OPENWEATHERMAP_PER_RUN_MAX': '40',
+        'OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN': '40',
+        'WEATHER_CONTEXT_MATCH_LIMIT': '140',
+        'WEATHER_SHORTLIST_ONLY': 'true',
+        'WEATHER_ALLOW_TEAM_NAME_FALLBACK': 'true',
     }
     for pool_name, secret_names in KEY_POOL_ENV.items():
         value = key_pool_value(secret_names)
@@ -198,7 +240,7 @@ def main() -> int:
         'changed': changed,
         'key_pool_secret_names': KEY_POOL_ENV,
         'applied_env_public': {k: ('***' if k.endswith('_POOL') else v) for k, v in env.items()},
-        'notes': policy['notes'][-3:],
+        'notes': policy['notes'][-4:],
     }
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
