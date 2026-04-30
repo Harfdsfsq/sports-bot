@@ -1,0 +1,37 @@
+name: autorun-supervisor
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'  # every 15 minutes
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  supervisor:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Run autorun supervisor (catch-up/recovery)
+        run: python scripts/autorun_supervisor.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TZ: Europe/Moscow
+          APP_TIMEZONE: Europe/Moscow
+          AUTORUN_RECOVERY_PROFILE: balanced
+          AUTORUN_RECOVERY_PUBLISH_WINDOW_HOURS: '9'
+          AUTORUN_RECOVERY_MIN_KICKOFF_LEAD_MINUTES: '25'
+          AUTORUN_RECOVERY_SEND_DETAILED_REPORT: 'true'
+          AUTORUN_RECOVERY_VOLUME_MODE: target_5
