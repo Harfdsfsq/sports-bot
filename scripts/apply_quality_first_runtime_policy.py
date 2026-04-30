@@ -8,7 +8,7 @@ It keeps publication quality strict, but fixes the data conditions that made the
 latest run empty:
 - odds-api.io must request all target books, not only Bet365/Unibet;
 - weather must have shortlist fallback when venue/location is missing;
-- api-football must not stay disabled by stale runtime config;
+- api-football remains fully removed from runtime;
 - B-tier must be usable for real moderate value, while weak 1-3% EV candidates
   remain rejected.
 """
@@ -23,11 +23,7 @@ ROOT = Path('.').resolve()
 UTC = timezone.utc
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 OUT = ROOT / '.data' / 'exports' / 'latest-quality-first-runtime-policy.json'
-POLICY_VERSION = 'v5-quality-first-run-blocker-fixes'
-
-SECRET_KEYS = {
-    'API_FOOTBALL_KEY',
-}
+POLICY_VERSION = 'v6-quality-first-no-api-football-run-blocker-fixes'
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -42,22 +38,13 @@ def append_env(env: dict[str, str]) -> None:
                 fh.write(f'{key}={env[key]}\n')
     else:
         for key in sorted(env):
-            value = '***' if key in SECRET_KEYS and env[key] else env[key]
-            print(f'{key}={value}')
-
-
-def first_non_empty_env(names: list[str]) -> str:
-    for name in names:
-        value = str(os.getenv(name) or '').strip()
-        if value:
-            return value
-    return ''
+            print(f'{key}={env[key]}')
 
 
 def redacted_env(env: dict[str, str]) -> dict[str, str]:
     result: dict[str, str] = {}
     for key, value in env.items():
-        if key in SECRET_KEYS or any(token in key.upper() for token in ('TOKEN', 'SECRET', 'PASSWORD')):
+        if any(token in key.upper() for token in ('TOKEN', 'SECRET', 'PASSWORD', 'KEY')):
             result[key] = '***' if value else ''
         else:
             result[key] = value
@@ -70,6 +57,19 @@ def main() -> int:
         'QUALITY_FIRST_RUNTIME_POLICY_VERSION': POLICY_VERSION,
         'RUN_BLOCKER_FIX_POLICY_ACTIVE': 'true',
         'RUN_BLOCKER_FIX_POLICY_VERSION': POLICY_VERSION,
+
+        # api-football is intentionally deleted from production runtime.
+        # Keep these hard overrides here because this file is applied late in the
+        # workflow and therefore protects against stale profile/env overrides.
+        'ENABLE_API_FOOTBALL': 'false',
+        'API_FOOTBALL_ENABLED': 'false',
+        'API_FOOTBALL_KEY': '',
+        'API_FOOTBALL_PER_RUN_MAX': '0',
+        'API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '0',
+        'API_FOOTBALL_PREDICTIONS_LIMIT': '0',
+        'API_FOOTBALL_REQUEST_BUDGET_GRANTED': '0',
+        'API_FOOTBALL_REQUEST_BUDGET_REASON': 'removed_from_project',
 
         # Publication market policy.
         # A-tier stays conservative; B-tier can publish guarded totals/DNB/BTTS.
@@ -205,19 +205,6 @@ def main() -> int:
         'WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED': 'true',
         'WEATHER_CACHE_TTL_MINUTES': '240',
 
-        # Re-enable api-football with a small cap after the old provider-budget layer
-        # blanks it. The key is restored below only if one is available in env.
-        'ENABLE_API_FOOTBALL': 'true',
-        'API_FOOTBALL_ENABLED': 'true',
-        'API_FOOTBALL_PER_RUN_MAX': '8',
-        'API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '8',
-        'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '36',
-        'API_FOOTBALL_PREDICTIONS_LIMIT': '12',
-        'API_FOOTBALL_REQUEST_BUDGET_GRANTED': '8',
-        'API_FOOTBALL_REQUEST_BUDGET_REASON': 'reenabled_by_quality_first_policy',
-        'API_FOOTBALL_AUTH_ERROR_COOLDOWN_MINUTES': '1440',
-        'API_FOOTBALL_RATE_LIMIT_COOLDOWN_MINUTES': '180',
-
         # RapidAPI discovery/probe is diagnostic only.
         'RAPIDAPI_PROBE_ENABLED': 'false',
         'RAPIDAPI_ENDPOINT_DISCOVERY_ENABLED': 'false',
@@ -250,17 +237,6 @@ def main() -> int:
         'CONTROLLED_FALLBACK_TOTAL_STAKE_CAP_PCT': '2.50',
     }
 
-    api_football_key = first_non_empty_env([
-        'API_FOOTBALL_KEY',
-        'APISPORTS_KEY',
-        'API_SPORTS_KEY',
-        'SPORTAPI_API_KEY',
-        'SPORTAPI7_RAPIDAPI_KEY',
-        'RAPIDAPI_KEY',
-    ])
-    if api_football_key:
-        env['API_FOOTBALL_KEY'] = api_football_key
-
     append_env(env)
 
     report = {
@@ -274,7 +250,7 @@ def main() -> int:
             'target': 'about 3-5 best picks/day when value exists, no forced volume',
             'odds_fix': 'four target bookmakers requested to reduce single-book and revive market-derived candidates',
             'weather_fix': 'shortlist fallback enabled so missing venue/location no longer forces 0 weather calls',
-            'api_football_fix': 'provider re-enabled after budget layer; key is restored only if available from env/secrets',
+            'api_football': 'fully removed from production runtime and forcibly disabled by late policy',
             'b_tier': '2 books, EV >= 5.5%, edge >= 2.6pp, odds <= 2.25, sanity guards enabled',
             'latest_near_misses': 'EV 1-3% and edge below 1.5pp remain blocked',
         },
