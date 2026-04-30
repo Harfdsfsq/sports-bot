@@ -73,7 +73,11 @@ class SStatsContextProvider:
             "target_matches": 0,
             "games_list_rows_fetched": 0,
             "direct_contexts_built": 0,
+            "event_contexts": 0,
             "team_form_contexts_built": 0,
+            "team_form_contexts": 0,
+            "exact_event_matches": 0,
+            "fuzzy_event_matches": 0,
             "last_games_stats_fetched": 0,
             "glicko_fetched": 0,
             "profits_fetched": 0,
@@ -122,6 +126,7 @@ class SStatsContextProvider:
                 if key not in contexts:
                     contexts[key] = ctx
                     stats["team_form_contexts_built"] += 1
+                    stats["team_form_contexts"] += 1
 
             detail_targets = self._detail_targets(matched, soccer_matches)
             detail_targets = detail_targets[: self.shortlist_detail_limit] if self.shortlist_detail_limit > 0 else detail_targets
@@ -228,12 +233,15 @@ class SStatsContextProvider:
             matched[best_match.match_key] = {"match": best_match, "row": row, "quality": best_quality, "score": best_score}
             best_scores[best_match.match_key] = best_score
             stats["direct_contexts_built"] += 1
+            stats["event_contexts"] += 1
             if best_quality == "exact":
                 stats["matched_exact"] += 1
+                stats["exact_event_matches"] += 1
             elif best_quality == "loose":
                 stats["matched_loose"] += 1
             elif best_quality == "fuzzy":
                 stats["matched_fuzzy"] += 1
+                stats["fuzzy_event_matches"] += 1
             if len(preview["matched_examples"]) < 10:
                 preview["matched_examples"].append({
                     "match_key": best_match.match_key,

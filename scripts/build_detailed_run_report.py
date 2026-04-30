@@ -605,12 +605,18 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
             if cache_hits:
                 parts.append(f"cache {cache_hits}")
         if name == "bzzoiro":
-            for key in ("target_matches", "pages_requested", "rows_seen", "exact_matches", "fuzzy_matches", "near_miss_matches_closed"):
+            for key in ("target_matches", "pages_requested", "rows_seen", "exact_matches", "fuzzy_matches", "near_miss_matches_closed", "stop_reason"):
                 value = stats.get(key, status.get(key))
                 if value is not None:
                     parts.append(f"{key} {value}")
+            stop_reasons = stats.get("stop_reasons") or status.get("stop_reasons")
+            if isinstance(stop_reasons, dict) and stop_reasons:
+                parts.append(
+                    "stop_reasons "
+                    + "/".join(f"{str(path).strip('/')}:{reason}" for path, reason in list(stop_reasons.items())[:3])
+                )
         if name == "sstats":
-            for key in ("target_matches", "matched_exact", "matched_fuzzy", "unmatched_after_alias", "confirmation_added"):
+            for key in ("target_matches", "event_contexts", "team_form_contexts", "exact_event_matches", "fuzzy_event_matches", "unmatched_after_alias", "confirmation_added"):
                 value = stats.get(key, status.get(key))
                 if value is not None:
                     parts.append(f"{key} {value}")
@@ -636,6 +642,9 @@ def provider_work_lines(debug: dict[str, Any]) -> list[str]:
                     "parse_reject "
                     + "/".join(f"{reason}:{as_int(count)}" for reason, count in list(reject.items())[:4])
                 )
+            disabled_reason = stats.get("odds_disabled_reason") or status.get("odds_disabled_reason")
+            if disabled_reason:
+                parts.append(f"odds_off:{disabled_reason}")
         if max_requests:
             parts.append(f"max {max_requests}")
         if response_errors:

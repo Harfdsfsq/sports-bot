@@ -27,7 +27,7 @@ class SportLogicProvider:
     expose slightly different JSON envelopes.
     """
 
-    BASE_URL = "https://api.sportlogic.io/v1"
+    BASE_URL = "https://api.sportlogic.io/api/v1"
     MAX_DAILY = 500
 
     def __init__(self, settings: Any) -> None:
@@ -84,9 +84,9 @@ class SportLogicProvider:
 
         params = {"date": date} if date else {}
         response = requests.get(
-            f"{self.base_url}/football/fixtures",
+            f"{self.base_url}/games",
             headers=self._headers(),
-            params=params,
+            params={"date_from": date, "date_to": date, "per_page": 100} if date else {},
             timeout=self.timeout,
         )
         response.raise_for_status()
@@ -96,7 +96,7 @@ class SportLogicProvider:
         import requests
 
         response = requests.get(
-            f"{self.base_url}/football/odds/{fixture_id}",
+            f"{self.base_url}/games/{fixture_id}/odds",
             headers=self._headers(),
             timeout=self.timeout,
         )
@@ -107,7 +107,7 @@ class SportLogicProvider:
         import requests
 
         response = requests.get(
-            f"{self.base_url}/football/results/{fixture_id}",
+            f"{self.base_url}/outcomes/{fixture_id}",
             headers=self._headers(),
             timeout=self.timeout,
         )
@@ -132,7 +132,7 @@ class SportLogicProvider:
                     stats["budget_exhausted"] = True
                     break
                 date_key = (now + timedelta(days=offset)).date().isoformat()
-                payload = await self._get_json(client, "/football/fixtures", {"date": date_key}, stats, preview)
+                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
                 fixtures.extend(self._extract_list(payload))
 
         self._fixture_cache = fixtures
@@ -216,6 +216,12 @@ class SportLogicProvider:
 
         stats["events_matched"] = len(mapping)
         stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)
+        reject_reasons = stats.get("parse_reject_reasons") if isinstance(stats.get("parse_reject_reasons"), dict) else {}
+        if int(stats.get("rows_before_parse", 0) or 0) > 0 and int(stats.get("offers_parsed", 0) or 0) <= 0:
+            if reject_reasons and "missing_or_invalid_price" in reject_reasons:
+                stats["odds_disabled_reason"] = "price_missing_in_payload"
+            else:
+                stats["odds_disabled_reason"] = "parser_shape_unmatched"
         self._write_debug_export(stats, preview)
         return {key: value for key, value in offers_by_match.items() if value}, stats, preview
 
@@ -268,7 +274,7 @@ class SportLogicProvider:
                 if not self._budget_left():
                     stats["budget_exhausted"] = True
                     break
-                payload = await self._get_json(client, "/football/fixtures", {"date": date_key}, stats, preview)
+                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
                 fixtures.extend(self._extract_list(payload))
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
@@ -321,7 +327,6 @@ class SportLogicProvider:
         preview: dict[str, Any],
     ) -> Any | None:
         endpoints = [
-            (f"/football/odds/{event_id}", {}),
             (f"/games/{event_id}/odds", {}),
             ("/odds", {"game_id": event_id}),
         ]
@@ -386,7 +391,7 @@ class SportLogicProvider:
         headers: dict[str, str] = {"Accept": "application/json"}
         if not self.api_key:
             return headers
-        header_name = os.getenv("SPORTLOGIC_HEADER_NAME", "Authorization").strip() or "Authorization"
+        header_name = os.getenv("SPORTLOGIC_HEADER_NAME", "X-API-Key").strip() or "X-API-Key"
         if header_name.lower() == "authorization":
             scheme = os.getenv("SPORTLOGIC_AUTH_SCHEME", "Bearer").strip()
             headers["Authorization"] = f"{scheme} {self.api_key}".strip()

@@ -195,12 +195,67 @@ def bet_date(bet: dict[str, Any], tz: ZoneInfo | timezone) -> str:
     return ""
 
 
+def split_match_name(value: Any) -> tuple[str, str]:
+    text = " ".join(str(value or "").strip().split())
+    if not text:
+        return "", ""
+    low = text.lower()
+    for sep in (f" {chr(8212)} ", f" {chr(8211)} ", " vs ", " v ", " - "):
+        marker = sep.lower()
+        if marker not in low:
+            continue
+        index = low.find(marker)
+        home = text[:index].strip()
+        away = text[index + len(sep):].strip()
+        if home and away:
+            return home, away
+    return "", ""
+
+
+def bet_teams(bet: dict[str, Any]) -> tuple[str, str]:
+    home = str(bet.get("home_team") or bet.get("home") or "").strip()
+    away = str(bet.get("away_team") or bet.get("away") or "").strip()
+    if home and away:
+        return home, away
+    for key in ("match_name", "event_name", "fixture_name", "match", "name"):
+        parsed_home, parsed_away = split_match_name(bet.get(key))
+        if parsed_home and parsed_away:
+            return home or parsed_home, away or parsed_away
+    return home, away
+
+
+def bet_odds(bet: dict[str, Any]) -> float:
+    payloads = [bet]
+    payload = bet.get("bet_payload")
+    if isinstance(payload, dict):
+        payloads.append(payload)
+    for payload in payloads:
+        for key in ("odds", "selected_odds", "price", "decimal_odds", "odd", "value"):
+            value = payload.get(key)
+            if value not in (None, ""):
+                return safe_float(value)
+    return 0.0
+
+
+def corrupted_bet_reasons(bet: dict[str, Any]) -> list[str]:
+    reasons: list[str] = []
+    home, away = bet_teams(bet)
+    if not home or not away:
+        reasons.append("missing_teams")
+    if bet_odds(bet) <= 1.0:
+        reasons.append("invalid_odds")
+    if not str(bet.get("selection") or bet.get("market") or "").strip():
+        reasons.append("missing_selection")
+    return reasons
+
+
 def bet_line(bet: dict[str, Any]) -> str:
-    home = translate_team_name(bet.get("home_team") or bet.get("home") or "")
-    away = translate_team_name(bet.get("away_team") or bet.get("away") or "")
+    home_raw, away_raw = bet_teams(bet)
+    home = translate_team_name(home_raw)
+    away = translate_team_name(away_raw)
     match = f"{home} — {away}".strip(" —") or "матч"
     selection = translate_selection_text(bet.get("selection") or bet.get("market") or "", bet.get("home_team"), bet.get("away_team"))
-    odds = bet.get("odds")
+    odds = bet_odds(bet)
     status = str(bet.get("status") or "").strip()
     status_ru = {
         "pending": "ожидает расчёта",
@@ -220,11 +275,18 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
     tz = app_tz()
     bets = tracked_bets()
     published, settled, pending_today, old_pending = [], [], [], []
+    corrupted: list[dict[str, Any]] = []
     counters = Counter()
     pnl = 0.0
     stake = 0.0
 
     for bet in bets:
+        reasons = corrupted_bet_reasons(bet)
+        if reasons:
+            item = dict(bet)
+            item["corruption_reasons"] = reasons
+            corrupted.append(item)
+            continue
         status = str(bet.get("status") or "").lower()
         bdate = bet_date(bet, tz)
         if bdate == report_date:
@@ -256,6 +318,7 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
             "settled_today": len(settled),
             "pending_today": len(pending_today),
             "old_pending": len(old_pending),
+            "corrupted_skipped": len(corrupted),
             "won": counters.get("won", 0) + counters.get("half_won", 0),
             "lost": counters.get("lost", 0) + counters.get("half_lost", 0),
             "push": counters.get("push", 0),
@@ -274,6 +337,14 @@ def summarize_bets(report_date: str) -> dict[str, Any]:
         "settled_today": [bet_line(item) for item in settled[:10]],
         "pending_today": [bet_line(item) for item in pending_today[:10]],
         "old_pending": [bet_line(item) for item in old_pending[:6]],
+        "corrupted_skipped": [
+            {
+                "fingerprint": item.get("fingerprint") or item.get("prediction_id") or "",
+                "match_name": item.get("match_name") or item.get("event_name") or "",
+                "reasons": item.get("corruption_reasons") or [],
+            }
+            for item in corrupted[:20]
+        ],
     }
 
 
@@ -382,6 +453,9 @@ def render(payload: dict[str, Any]) -> str:
         f"• За дату: опубликовано {counts.get('published_today', 0)} | закрыто {counts.get('settled_today', 0)} | pending сегодня {counts.get('pending_today', 0)} | старые pending {counts.get('old_pending', 0)}",
         f"• Итоги закрытых: W {counts.get('won', 0)} / L {counts.get('lost', 0)} / Push {counts.get('push', 0)} / Void {counts.get('void', 0)} | PnL {fmt(bets.get('settled_pnl'))}",
     ]
+
+    if counts.get("corrupted_skipped"):
+        lines.append(f"Corrupted entries skipped: {counts.get('corrupted_skipped')}")
 
     for title, key, icon in [
         ("Прогнозы дня", "published_today", "🎯"),

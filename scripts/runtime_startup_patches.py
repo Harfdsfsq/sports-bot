@@ -82,7 +82,6 @@ def _patch_sportlogic_provider(text: str) -> str:
     text = text.replace('BASE_URL = "https://api.sportlogic.io/v1"', 'BASE_URL = "https://api.sportlogic.io/api/v1"')
     text = text.replace('os.getenv("SPORTLOGIC_HEADER_NAME", "Authorization")', 'os.getenv("SPORTLOGIC_HEADER_NAME", "X-API-Key")')
     text = text.replace('f"{self.base_url}/football/fixtures"', 'f"{self.base_url}/games"')
-    text = text.replace('f"{self.base_url}/football/odds/{fixture_id}"', 'f"{self.base_url}/games/{fixture_id}/odds"')
     text = text.replace('f"{self.base_url}/football/results/{fixture_id}"', 'f"{self.base_url}/outcomes/{fixture_id}"')
     text = text.replace(
         'payload = await self._get_json(client, "/football/fixtures", {"date": date_key}, stats, preview)',
@@ -98,7 +97,6 @@ def _patch_sportlogic_provider(text: str) -> str:
         '            response = await client.get(f"{self.base_url}{path}", headers=self._headers(), params=params or None)\n',
     )
 
-    old_odds_block_1 = 'payload = await self._get_json(client, f"/football/odds/{event_id}", {}, stats, preview)\n                rows = self._extract_odds_rows(payload)'
     old_odds_block_2 = 'payload = await self._get_json(client, f"/games/{event_id}/odds", {}, stats, preview)\n                rows = self._extract_odds_rows(payload)'
     new_odds_block = (
         'payload = await self._get_json(client, f"/games/{event_id}/odds", {}, stats, preview)\n'
@@ -107,9 +105,7 @@ def _patch_sportlogic_provider(text: str) -> str:
         '                    payload = await self._get_json(client, "/odds", {"game_id": event_id}, stats, preview)\n'
         '                    rows = self._extract_odds_rows(payload)'
     )
-    if old_odds_block_1 in text:
-        text = text.replace(old_odds_block_1, new_odds_block, 1)
-    elif old_odds_block_2 in text and '"/odds", {"game_id": event_id}' not in text:
+    if old_odds_block_2 in text and '"/odds", {"game_id": event_id}' not in text:
         text = text.replace(old_odds_block_2, new_odds_block, 1)
 
     if '"odds_rows_empty"' not in text:

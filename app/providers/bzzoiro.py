@@ -53,6 +53,8 @@ class BzzoiroContextProvider:
             "exact_matches": 0,
             "fuzzy_matches": 0,
             "near_miss_matches_closed": 0,
+            "stop_reason": "",
+            "stop_reasons": {},
             "event_matches": 0,
             "prediction_links": 0,
             "fallback_prediction_matches": 0,
@@ -259,10 +261,14 @@ class BzzoiroContextProvider:
                 stats=stats,
             )
             if response is None:
+                stats["stop_reason"] = "request_failed_or_budget"
+                stats.setdefault("stop_reasons", {})[path] = "request_failed_or_budget"
                 break
             payload = self._safe_json(response)
             batch = self._results(payload)
             if not batch:
+                stats["stop_reason"] = "empty_page"
+                stats.setdefault("stop_reasons", {})[path] = "empty_page"
                 break
             new_rows: list[dict[str, Any]] = []
             for row in batch:
@@ -272,13 +278,20 @@ class BzzoiroContextProvider:
                 seen_signatures.add(signature)
                 new_rows.append(row)
             if not new_rows:
+                stats["stop_reason"] = "duplicate_page"
+                stats.setdefault("stop_reasons", {})[path] = "duplicate_page"
                 break
             rows.extend(new_rows)
             stats["rows_seen"] = int(stats.get("rows_seen", 0) or 0) + len(new_rows)
             next_url = payload.get("next") if isinstance(payload, dict) else None
             if not next_url:
+                stats["stop_reason"] = "no_more_data"
+                stats.setdefault("stop_reasons", {})[path] = "no_more_data"
                 break
             page += 1
+        if page > max_pages and not stats.get("stop_reason"):
+            stats["stop_reason"] = "page_cap"
+            stats.setdefault("stop_reasons", {})[path] = "page_cap"
 
         return rows
 
