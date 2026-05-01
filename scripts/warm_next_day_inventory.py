@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path('.').resolve()
 UTC = timezone.utc
 OUT = ROOT / '.data' / 'exports' / 'latest-next-day-inventory-warmup.json'
+SUMMARY_PATH = ROOT / '.data' / 'exports' / 'latest-day-inventory-summary.json'
 
 
 def tzinfo() -> ZoneInfo:
@@ -57,14 +58,23 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def restore_aliases(local_date: str) -> dict[str, Any]:
-    """Keep aliases pointed at the current run date after building tomorrow.
+def current_summary_payload(local_date: str, inventory: dict[str, Any]) -> dict[str, Any]:
+    counts = inventory.get('counts') if isinstance(inventory.get('counts'), dict) else {}
+    return {
+        'date_local': local_date,
+        'updated_at_utc': datetime.now(UTC).isoformat(),
+        'timezone': inventory.get('timezone') or str(tzinfo()),
+        'build_status': inventory.get('build_status') or 'ok',
+        'counts': dict(counts),
+        'source_match_counts': dict(inventory.get('source_match_counts') or {}),
+        'league_match_counts': dict(inventory.get('league_match_counts') or {}),
+        'sources': dict(inventory.get('sources') or {}),
+        'restored_after_next_day_warmup': True,
+    }
 
-    build_day_inventory.py writes latest/current/today aliases for whatever
-    DAY_INVENTORY_TARGET_DATE it builds. During evening warm-up that target is
-    tomorrow, but the current Telegram report still needs today's accumulated
-    coverage. So after the warm-up we restore aliases from today's dated file.
-    """
+
+def restore_aliases(local_date: str) -> dict[str, Any]:
+    """Keep aliases and latest summary pointed at current run date after building tomorrow."""
     current_path = ROOT / '.data' / 'day_inventory' / f'{local_date}.json'
     payload = load_json(current_path, {})
     if not isinstance(payload, dict) or not payload:
@@ -76,7 +86,14 @@ def restore_aliases(local_date: str) -> dict[str, Any]:
     ]
     for path in targets:
         write_json(path, payload)
-    return {'status': 'ok', 'source': str(current_path), 'restored_aliases': [str(path) for path in targets]}
+    write_json(SUMMARY_PATH, current_summary_payload(local_date, payload))
+    return {
+        'status': 'ok',
+        'source': str(current_path),
+        'restored_aliases': [str(path) for path in targets],
+        'restored_summary': str(SUMMARY_PATH),
+        'counts': payload.get('counts') if isinstance(payload.get('counts'), dict) else {},
+    }
 
 
 def should_warm(now_local: datetime, tomorrow_path: Path) -> tuple[bool, str]:
@@ -141,7 +158,7 @@ def main() -> int:
         'alias_restore': restore_aliases(current_date),
         'notes': [
             'This warms tomorrow inventory after evening local time so overnight matches can collect context before kickoff.',
-            'After warm-up, latest/current/today aliases are restored to the current local date so the current detailed report stays correct.',
+            'After warm-up, latest/current/today aliases and latest-day-inventory-summary are restored to current local date.',
             'It does not change publish quality filters.',
         ],
     })
