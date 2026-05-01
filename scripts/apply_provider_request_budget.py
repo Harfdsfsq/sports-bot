@@ -2,151 +2,22 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 ROOT = Path('.').resolve()
+POLICY_PATH = ROOT / 'config' / 'provider_runtime_policy.json'
 STATE_PATH = ROOT / '.data' / 'provider_request_budget_state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-provider-request-budget.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-POLICY_VERSION = 'v19-near-window-useful-requests'
-
-# This layer is deliberately conservative: it spends requests on providers that
-# currently produce usable odds/context, and hard-disables providers that only
-# return unparseable data. Runtime quality guards are not relaxed here.
-PROVIDERS: dict[str, dict[str, Any]] = {
-    'odds_api_io': {
-        'grant': 200,
-        'env': {
-            'ENABLE_ODDS_API_IO': 'true',
-            'ODDS_API_IO_ENABLED': 'true',
-            'ODDS_API_IO_PER_RUN_MAX': '200',
-            'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': '200',
-            'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': '100',
-            'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': '100',
-            'ODDS_API_IO_PAGE_LIMIT': '100',
-            'ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT': '36',
-            'MAX_MATCHES_FOR_ODDS_FETCH': '520',
-        },
-    },
-    'bzzoiro': {
-        'grant': 1000,
-        'env': {
-            'ENABLE_BZZOIRO': 'true',
-            'ENABLE_BZZOIRO_CONTEXT': 'true',
-            'BZZOIRO_ENABLED': 'true',
-            'BZZOIRO_PER_RUN_MAX': '1000',
-            'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '1000',
-            'BZZOIRO_CONTEXT_MATCH_LIMIT': os.getenv('HARIZON_BZZOIRO_CONTEXT_MATCH_LIMIT') or os.getenv('BZZOIRO_CONTEXT_MATCH_LIMIT') or '180',
-            'BZZOIRO_MAX_PAGES': os.getenv('HARIZON_BZZOIRO_MAX_PAGES') or '120',
-        },
-    },
-    'sstats': {
-        'grant': 150,
-        'env': {
-            'ENABLE_SSTATS': 'true',
-            'ENABLE_SSTATS_CONTEXT': 'true',
-            'SSTATS_ENABLED': 'true',
-            'SSTATS_TARGET_NEAR_MISS_FIRST': 'true',
-            'SSTATS_PER_RUN_MAX': '150',
-            'SSTATS_REQUESTS_MAX_PER_RUN': '150',
-            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '150',
-            'SSTATS_CONTEXT_MATCH_LIMIT': os.getenv('HARIZON_SSTATS_CONTEXT_MATCH_LIMIT') or os.getenv('SSTATS_CONTEXT_MATCH_LIMIT') or '180',
-            'SSTATS_LOOKBACK_DAYS': '45',
-            'SSTATS_RECENT_MATCHES': '10',
-        },
-    },
-    'football_data': {
-        'grant': 8,
-        'env': {
-            'ENABLE_FOOTBALL_DATA_CONTEXT': 'true',
-            'FOOTBALL_DATA_ENABLED': 'true',
-            'FOOTBALL_DATA_PER_RUN_MAX': '8',
-            'FOOTBALL_DATA_REQUESTS_MAX_PER_RUN': '8',
-            'FOOTBALL_DATA_CONTEXT_MATCH_LIMIT': os.getenv('FOOTBALL_DATA_CONTEXT_MATCH_LIMIT') or '48',
-        },
-    },
-    'thesportsdb': {
-        'grant': 12,
-        'env': {
-            'ENABLE_THESPORTSDB_CONTEXT': 'true',
-            'THESPORTSDB_CONTEXT_ENABLED': 'true',
-            'THESPORTSDB_PER_RUN_MAX': '12',
-            'THESPORTSDB_REQUESTS_MAX_PER_RUN': '12',
-            'THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN': '12',
-            'THESPORTSDB_CONTEXT_MATCH_LIMIT': os.getenv('THESPORTSDB_CONTEXT_MATCH_LIMIT') or '60',
-        },
-    },
-    # SportLogic has repeatedly returned odds rows without parseable price fields.
-    # Grant zero until parser/provider payload is fixed; this prevents 30-40 wasted calls every run.
-    'sportlogic': {
-        'grant': 0,
-        'reason': 'disabled_by_payload_shape:missing_or_invalid_price',
-        'env': {
-            'ENABLE_SPORTLOGIC': 'false',
-            'SPORTLOGIC_ENABLED': 'false',
-            'SPORTLOGIC_PER_RUN_MAX': '0',
-            'SPORTLOGIC_MATCH_LIMIT': '0',
-            'SPORTLOGIC_ODDS_MATCH_LIMIT': '0',
-            'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN': '0',
-            'SPORTLOGIC_ODDS_DISABLED_REASON': 'missing_or_invalid_price_payload',
-        },
-    },
-    'weatherapi': {
-        'grant': 12,
-        'env': {
-            'ENABLE_WEATHERAPI': 'true',
-            'WEATHERAPI_ENABLED': 'true',
-            'WEATHERAPI_PER_RUN_MAX': '12',
-            'WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN': '12',
-            'WEATHER_CONTEXT_MATCH_LIMIT': os.getenv('WEATHER_CONTEXT_MATCH_LIMIT') or '24',
-            'WEATHER_CACHE_TTL_MINUTES': '240',
-        },
-    },
-    'openweathermap': {
-        'grant': 8,
-        'env': {
-            'ENABLE_OPENWEATHERMAP': 'true',
-            'OPENWEATHERMAP_ENABLED': 'true',
-            'OPENWEATHERMAP_PER_RUN_MAX': '8',
-            'OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN': '8',
-            'WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED': 'true',
-        },
-    },
-    # Paid / fragile / spacing-limited providers stay gated.
-    'oddspapi': {'grant': 0, 'reason': 'cooldown_active:fatal_pattern:REQUEST_LIMIT_EXCEEDED', 'env': {'ODDSPAPI_PER_RUN_MAX': '0'}},
-    'futrixmetrics': {'grant': 0, 'reason': 'spacing_active:60m', 'env': {'FUTRIXMETRICS_PER_RUN_MAX': '0'}},
-    'gnews': {'grant': 0, 'reason': 'spacing_active:60m', 'env': {'GNEWS_PER_RUN_MAX': '0', 'GNEWS_MAX_HTTP_REQUESTS_PER_RUN': '0'}},
-    'meteostat': {'grant': 0, 'reason': 'spacing_active:120m', 'env': {'RAPIDAPI_METEOSTAT_PER_RUN_MAX': '0'}},
-    'oddsfeed': {'grant': 0, 'reason': 'spacing_active:120m', 'env': {'RAPIDAPI_ODDS_FEED_PER_RUN_MAX': '0'}},
-    'sportsbook_api': {'grant': 0, 'reason': 'spacing_active:120m', 'env': {'RAPIDAPI_SPORTSBOOK_PER_RUN_MAX': '0'}},
-    'sportapi': {'grant': 0, 'reason': 'spacing_active:120m', 'env': {'RAPIDAPI_SPORTAPI7_PER_RUN_MAX': '0'}},
-}
-
-BASE_ENV = {
-    'PROVIDER_REQUEST_BUDGET_VERSION': POLICY_VERSION,
-    'PROVIDER_REQUEST_BUDGET_APPLIED': 'true',
-    'PROVIDER_REQUEST_BUDGET_MODE': os.getenv('PROVIDER_REQUEST_BUDGET_MODE') or 'per_run_only',
-    'PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY': 'true',
-    'ALL_SOURCES_FREE_MAXIMIZE': str(os.getenv('ALL_SOURCES_FREE_MAXIMIZE', 'true')).lower(),
-    # Useful-request policy.
-    'PUBLISH_WINDOW_HOURS': os.getenv('PUBLISH_WINDOW_HOURS') or '12',
-    'CONTEXT_ENRICHMENT_REQUIRES_OFFERS': 'true',
-    'CONTEXT_ENRICHMENT_MATCH_LIMIT': os.getenv('CONTEXT_ENRICHMENT_MATCH_LIMIT') or '180',
-    'PREMIUM_CONTEXT_SHORTLIST_LIMIT': os.getenv('PREMIUM_CONTEXT_SHORTLIST_LIMIT') or '72',
-    'DAY_INVENTORY_NEAR_WINDOW_HOURS': os.getenv('DAY_INVENTORY_NEAR_WINDOW_HOURS') or '12',
-    'DAY_INVENTORY_NEAR_WINDOW_PRIORITY': 'true',
-}
 
 
 def load_json(path: Path, default: Any) -> Any:
     try:
-        if not path.exists():
-            return default
         return json.loads(path.read_text(encoding='utf-8'))
     except Exception:
         return default
@@ -167,48 +38,120 @@ def append_github_env(values: dict[str, str]) -> None:
             fh.write(f'{key}={values[key]}\n')
 
 
+def env_present(keys: list[str]) -> bool:
+    return any(str(os.getenv(key) or '').strip() for key in keys)
+
+
+def prefix(provider: str) -> str:
+    return provider.upper().replace('-', '_')
+
+
+def disabled_env(provider: str) -> dict[str, str]:
+    p = prefix(provider)
+    return {
+        f'{p}_PER_RUN_MAX': '0',
+        f'{p}_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        f'{p}_REQUEST_BUDGET_GRANTED': '0',
+    }
+
+
+def load_policy() -> dict[str, Any]:
+    policy = load_json(POLICY_PATH, {})
+    if isinstance(policy, dict) and isinstance(policy.get('providers'), dict):
+        return policy
+    return {
+        'version': 'v20-minimal-fallback',
+        'mode': 'per_run_only',
+        'deleted_providers': ['api_football'],
+        'base_env': {
+            'PROVIDER_REQUEST_BUDGET_MODE': 'per_run_only',
+            'PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY': 'true',
+            'ALL_SOURCES_FREE_MAXIMIZE': 'true',
+            'CONTEXT_ENRICHMENT_REQUIRES_OFFERS': 'true',
+        },
+        'deleted_provider_env': {
+            'ENABLE_API_FOOTBALL': 'false',
+            'API_FOOTBALL_ENABLED': 'false',
+            'API_FOOTBALL_KEY': '',
+            'API_FOOTBALL_PER_RUN_MAX': '0',
+            'API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '0',
+            'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '0',
+            'API_FOOTBALL_REQUEST_BUDGET_REASON': 'removed_from_project',
+        },
+        'providers': {},
+    }
+
+
+def compute(policy: dict[str, Any]) -> tuple[dict[str, str], list[dict[str, Any]], list[str]]:
+    env: dict[str, str] = {str(k): str(v) for k, v in dict(policy.get('base_env') or {}).items()}
+    env['PROVIDER_REQUEST_BUDGET_VERSION'] = str(policy.get('version') or 'unknown')
+    env['PROVIDER_REQUEST_BUDGET_APPLIED'] = 'true'
+    env.update({str(k): str(v) for k, v in dict(policy.get('deleted_provider_env') or {}).items()})
+
+    decisions: list[dict[str, Any]] = []
+    for provider, raw_cfg in dict(policy.get('providers') or {}).items():
+        cfg = raw_cfg if isinstance(raw_cfg, dict) else {}
+        configured_grant = max(0, int(float(cfg.get('grant') or 0)))
+        secret_keys = [str(item) for item in (cfg.get('secret_env_keys') or []) if str(item).strip()]
+        missing_key = bool(secret_keys) and not env_present(secret_keys)
+        grant = 0 if missing_key and configured_grant > 0 else configured_grant
+        reason = str(cfg.get('reason') or ('missing_key' if missing_key else 'granted' if grant > 0 else 'disabled_by_policy'))
+        status = str(cfg.get('status') or ('missing_key' if missing_key else 'working' if grant > 0 else 'disabled_by_policy'))
+
+        provider_env = {str(k): str(v) for k, v in dict(cfg.get('env') or {}).items()}
+        if missing_key and configured_grant > 0:
+            provider_env.update(disabled_env(str(provider)))
+        env.update(provider_env)
+        p = prefix(str(provider))
+        env[f'{p}_REQUEST_BUDGET_GRANTED'] = str(grant)
+        env[f'{p}_REQUEST_BUDGET_REASON'] = reason
+        env.setdefault(f'{p}_MAX_HTTP_REQUESTS_PER_RUN', str(grant))
+        decisions.append({
+            'provider': provider,
+            'status': status,
+            'grant': grant,
+            'configured_grant': configured_grant,
+            'reason': reason,
+            'secret_env_keys': secret_keys,
+            'api_key_present': None if not secret_keys else not missing_key,
+        })
+
+    notes = [
+        'config/provider_runtime_policy.json is the effective provider budget source of truth.',
+        'api-football is removed from active runtime and report provider lists.',
+        'SportLogic remains disabled until raw odds payload price parsing is fixture-tested.',
+        'Budget mode is per-run-only; daily/monthly counters are not used for critical free sources.',
+    ]
+    if env_present(['ODDS_API_IO_KEY_2']):
+        env['ODDS_API_IO_ACCOUNT2_ACTIVE'] = 'true'
+    else:
+        env['ODDS_API_IO_ACCOUNT2_ACTIVE'] = 'false'
+        notes.append('ODDS_API_IO_KEY_2 is missing; Betfair Exchange/Sbobet account2 cannot be queried.')
+    return env, decisions, notes
+
+
 def main() -> int:
     now = datetime.now(UTC)
+    policy = load_policy()
+    env, decisions, notes = compute(policy)
+    append_github_env(env)
     state = load_json(STATE_PATH, {})
     if not isinstance(state, dict):
         state = {}
-    decisions: list[dict[str, Any]] = []
-    env: dict[str, str] = dict(BASE_ENV)
-    for provider, cfg in PROVIDERS.items():
-        grant = int(cfg.get('grant') or 0)
-        reason = str(cfg.get('reason') or ('granted' if grant > 0 else 'disabled_by_policy'))
-        prefix = provider.upper().replace('-', '_')
-        for key, value in dict(cfg.get('env') or {}).items():
-            env[str(key)] = str(value)
-        env[f'{prefix}_REQUEST_BUDGET_GRANTED'] = str(grant)
-        env[f'{prefix}_REQUEST_BUDGET_REASON'] = reason
-        env.setdefault(f'{prefix}_MAX_HTTP_REQUESTS_PER_RUN', str(grant))
-        decisions.append({
-            'provider': provider,
-            'grant': grant,
-            'reason': reason,
-            'slot': now.astimezone(MSK).strftime('%H:%M MSK'),
-        })
-    append_github_env(env)
-    state.update({
-        'version': POLICY_VERSION,
-        'updated_at': now.isoformat(),
-        'last_decisions': decisions,
-    })
+    state.update({'version': policy.get('version'), 'policy_path': str(POLICY_PATH), 'updated_at': now.isoformat(), 'last_decisions': decisions})
     write_json(STATE_PATH, state)
     export = {
-        'version': POLICY_VERSION,
+        'version': policy.get('version'),
+        'policy_path': str(POLICY_PATH),
         'event': os.getenv('GITHUB_EVENT_NAME') or '',
         'utc_now': now.isoformat(),
         'msk_now': now.astimezone(MSK).isoformat(),
         'slot_msk': now.astimezone(MSK).strftime('%H:%M MSK'),
+        'mode': policy.get('mode') or 'per_run_only',
+        'deleted_providers': policy.get('deleted_providers') or ['api_football'],
         'decisions': decisions,
         'env_written_count': len(env),
-        'notes': [
-            'Near-window/useful-request policy is active: context requests are focused on priced 6-12h candidates.',
-            'SportLogic is hard-disabled because recent payloads had odds rows but no valid price fields.',
-            'Daily/monthly request accounting is intentionally bypassed; only per-run useful caps are used.',
-        ],
+        'notes': notes,
     }
     write_json(EXPORT_PATH, export)
     print(json.dumps(export, ensure_ascii=False, indent=2, sort_keys=True))
