@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import json
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
 UTC = timezone.utc
 
-DEBUG_PATHS = [
-    Path(".logs/debug-last-run.json"),
-]
+DEBUG_PATHS = [Path(".logs/debug-last-run.json")]
 CONTROLLED_REPORT_PATHS = [
     Path("artifacts/controlled-fallback-report.json"),
     Path(".data/exports/latest-controlled-fallback-report.json"),
@@ -19,12 +17,12 @@ RESCUE_PATHS = [
     Path(".data/exports/latest-rescue-candidates.json"),
     Path("artifacts/run-bot/latest-rescue-candidates.json"),
 ]
-PROFIT_SUMMARY_PATH = Path(".data/exports/latest-profit-distance-summary.json")
 
 OUT_SUMMARY = Path(".data/exports/latest-match-data-coverage-summary.json")
 OUT_MATCHES = Path(".data/exports/latest-match-data-coverage-matches.json")
 OUT_NEAR_MISS = Path(".data/exports/latest-match-data-near-miss.json")
 OUT_PROVIDER_GAPS = Path(".data/exports/latest-provider-gaps.json")
+DELETED_PROVIDERS = {"api_football"}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -36,7 +34,7 @@ def load_json(path: Path, default: Any) -> Any:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
 
 
 def as_float(value: Any, default: float = 0.0) -> float:
@@ -62,7 +60,7 @@ def rows_from(payload: Any) -> list[dict[str, Any]]:
         return [dict(item) for item in payload if isinstance(item, dict)]
     if not isinstance(payload, dict):
         return []
-    for key in ("candidates", "rows", "items", "rescue_candidates", "latest_rescue_candidates"):
+    for key in ("candidates", "rows", "items", "rescue_candidates", "latest_rescue_candidates", "evaluated", "watchlist", "selected"):
         value = payload.get(key)
         if isinstance(value, list):
             return [dict(item) for item in value if isinstance(item, dict)]
@@ -74,59 +72,51 @@ def nested(row: dict[str, Any], key: str) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
-def metric(row: dict[str, Any], key: str, default: float = 0.0) -> float:
-    if key in row:
-        return as_float(row.get(key), default)
-
+def value_from(row: dict[str, Any], *keys: str, default: Any = None) -> Any:
+    for key in keys:
+        if key in row and row.get(key) not in (None, ""):
+            return row.get(key)
     metrics = nested(row, "metrics")
-    if key in metrics:
-        return as_float(metrics.get(key), default)
-
+    for key in keys:
+        if key in metrics and metrics.get(key) not in (None, ""):
+            return metrics.get(key)
     diagnostics = nested(row, "diagnostics")
     quality = diagnostics.get("quality") if isinstance(diagnostics.get("quality"), dict) else {}
-    if key in quality:
-        return as_float(quality.get(key), default)
-
+    for key in keys:
+        if key in quality and quality.get(key) not in (None, ""):
+            return quality.get(key)
     return default
 
 
-def family(row: dict[str, Any]) -> str:
-    return str(row.get("family") or row.get("market_family") or "").strip().lower()
-
-
-def selection(row: dict[str, Any]) -> str:
-    return str(row.get("selection") or row.get("selection_text") or row.get("pick") or "").strip()
-
-
 def home(row: dict[str, Any]) -> str:
-    return str(row.get("home_team") or row.get("home") or "").strip()
+    return str(value_from(row, "home_team", "home", default="")).strip()
 
 
 def away(row: dict[str, Any]) -> str:
-    return str(row.get("away_team") or row.get("away") or "").strip()
+    return str(value_from(row, "away_team", "away", default="")).strip()
 
 
 def league(row: dict[str, Any]) -> str:
-    return str(row.get("league_name") or row.get("league") or row.get("competition") or "").strip()
+    return str(value_from(row, "league_name", "league", "competition", default="")).strip()
 
 
 def start_time(row: dict[str, Any]) -> str:
-    return str(row.get("commence_time") or row.get("start_time") or row.get("kickoff") or "").strip()
+    return str(value_from(row, "commence_time", "start_time", "kickoff", default="")).strip()
+
+
+def family(row: dict[str, Any]) -> str:
+    return str(value_from(row, "family", "market_family", default="unknown")).strip().lower() or "unknown"
+
+
+def selection(row: dict[str, Any]) -> str:
+    return str(value_from(row, "selection", "selection_text", "pick", default="")).strip()
 
 
 def match_key(row: dict[str, Any]) -> str:
-    raw_key = str(row.get("match_key") or "").strip()
-    if raw_key:
-        return raw_key
+    raw = str(value_from(row, "match_key", default="")).strip()
+    if raw:
+        return raw
     return "|".join([home(row).lower(), away(row).lower(), start_time(row)])
-
-
-def source_summary(row: dict[str, Any]) -> dict[str, Any]:
-    return nested(row, "source_summary")
-
-
-def candidate_source(row: dict[str, Any]) -> str:
-    return str(row.get("_candidate_source") or row.get("candidate_source") or row.get("_candidate_file") or "").strip()
 
 
 def list_field(row: dict[str, Any], key: str) -> list[str]:
@@ -142,34 +132,31 @@ def reject_reasons(row: dict[str, Any]) -> list[str]:
     reasons: list[str] = []
     for key in ("final_reject_reasons", "reject_reasons", "hard_reject_reasons", "quality_reasons"):
         reasons.extend(list_field(row, key))
-
     diagnostics = nested(row, "diagnostics")
     quality = diagnostics.get("quality") if isinstance(diagnostics.get("quality"), dict) else {}
-    value = quality.get("reasons") if isinstance(quality, dict) else []
-    if isinstance(value, list):
-        reasons.extend(str(item) for item in value if str(item).strip())
-
-    result: list[str] = []
+    q_reasons = quality.get("reasons") if isinstance(quality, dict) else []
+    if isinstance(q_reasons, list):
+        reasons.extend(str(item) for item in q_reasons if str(item).strip())
+    out: list[str] = []
     seen: set[str] = set()
     for reason in reasons:
-        text = str(reason).strip()
-        if text and text not in seen:
-            seen.add(text)
-            result.append(text)
-    return result
+        if reason not in seen:
+            seen.add(reason)
+            out.append(reason)
+    return out
 
 
 def candidate_score(row: dict[str, Any]) -> dict[str, Any]:
-    odds = metric(row, "odds", as_float(row.get("odds"), 0.0))
-    adjusted = metric(row, "adjusted_probability", as_float(row.get("adjusted_probability"), 0.0))
+    odds = as_float(value_from(row, "odds", default=0.0))
+    adjusted = as_float(value_from(row, "adjusted_probability", default=0.0))
     if adjusted > 1:
         adjusted /= 100.0
     implied = 1 / odds if odds > 1 else 0.0
-    edge = metric(row, "canonical_edge_pp", (adjusted - implied) * 100 if odds > 1 else -999.0)
-    ev = metric(row, "canonical_ev_pct", ((adjusted * odds) - 1) * 100 if odds > 1 else -999.0)
-    confidence = metric(row, "confidence", as_float(row.get("confidence"), 0.0))
-    books = as_int(row.get("books_count"), as_int(metric(row, "books_count"), 0))
-    sources = as_int(row.get("sources_count"), as_int(metric(row, "sources_count"), 0))
+    edge = as_float(value_from(row, "canonical_edge_pp", "edge_pp", default=(adjusted - implied) * 100 if odds > 1 else -999.0))
+    ev = as_float(value_from(row, "canonical_ev_pct", "ev_pct", default=((adjusted * odds) - 1) * 100 if odds > 1 else -999.0))
+    confidence = as_float(value_from(row, "confidence", default=0.0))
+    books = as_int(value_from(row, "books_count", default=0))
+    sources = as_int(value_from(row, "sources_count", default=0))
     return {
         "odds": round(odds, 4),
         "adjusted_probability": round(adjusted, 6),
@@ -181,16 +168,8 @@ def candidate_score(row: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def load_debug() -> dict[str, Any]:
-    for path in DEBUG_PATHS:
-        payload = load_json(path, {})
-        if isinstance(payload, dict) and payload:
-            return payload
-    return {}
-
-
-def load_controlled_report() -> dict[str, Any]:
-    for path in CONTROLLED_REPORT_PATHS:
+def first_existing(paths: list[Path]) -> dict[str, Any]:
+    for path in paths:
         payload = load_json(path, {})
         if isinstance(payload, dict) and payload:
             return payload
@@ -225,7 +204,6 @@ def controlled_rows(report: dict[str, Any]) -> list[dict[str, Any]]:
 
 
 def provider_stats_from_debug(debug: dict[str, Any]) -> dict[str, Any]:
-    # Debug shape changes between runs; traverse recursively and capture dicts that look like provider stats.
     providers: dict[str, Any] = {}
 
     def visit(obj: Any, path: list[str]) -> None:
@@ -236,6 +214,8 @@ def provider_stats_from_debug(debug: dict[str, Any]) -> dict[str, Any]:
                 and (
                     "matches_built" in keys
                     or "events_fetched" in keys
+                    or "fixtures_fetched" in keys
+                    or "rows_fetched" in keys
                     or "offers_parsed" in keys
                     or "contexts_built" in keys
                     or "rate_limited" in keys
@@ -244,14 +224,15 @@ def provider_stats_from_debug(debug: dict[str, Any]) -> dict[str, Any]:
             )
             if looks_provider:
                 name = path[-1] if path else "unknown"
-                providers[name] = obj
+                if str(name).strip().lower() not in DELETED_PROVIDERS:
+                    providers[name] = obj
             for key, value in obj.items():
                 if isinstance(value, (dict, list)):
                     visit(value, path + [str(key)])
         elif isinstance(obj, list):
-            for idx, value in enumerate(obj[:100]):
+            for index, value in enumerate(obj[:100]):
                 if isinstance(value, (dict, list)):
-                    visit(value, path + [str(idx)])
+                    visit(value, path + [str(index)])
 
     visit(debug, [])
     return providers
@@ -261,10 +242,11 @@ def run_core_counts(debug: dict[str, Any], rescue_count: int, controlled_report:
     text = json.dumps(debug, ensure_ascii=False)
 
     def find_int(keys: list[str]) -> int | None:
+        import re
         for key in keys:
-            m = __import__("re").search(rf'"{key}"\s*:\s*(\d+)', text)
-            if m:
-                return int(m.group(1))
+            match = re.search(rf'"{key}"\s*:\s*(\d+)', text)
+            if match:
+                return int(match.group(1))
         return None
 
     return {
@@ -310,12 +292,11 @@ def build_match_rows(rescue: list[dict[str, Any]], controlled: list[dict[str, An
                 "missing_flags": Counter(),
             },
         )
-        item["origins"].update([origin])
+        item["candidate_count"] += 1
         if origin == "controlled":
             item["controlled_count"] += 1
-        item["candidate_count"] += 1
-        fam = family(row) or "unknown"
-        item["families"].update([fam])
+        item["origins"].update([origin])
+        item["families"].update([family(row)])
         score = candidate_score(row)
         item["books_max"] = max(item["books_max"], score["books_count"])
         item["sources_max"] = max(item["sources_max"], score["sources_count"])
@@ -336,13 +317,13 @@ def build_match_rows(rescue: list[dict[str, Any]], controlled: list[dict[str, An
             item["best_ev_pct"] = score["canonical_ev_pct"]
             item["best_edge_pp"] = score["canonical_edge_pp"]
             item["best_candidate"] = {
-                "family": fam,
+                "family": family(row),
                 "selection": selection(row),
                 "point": row.get("point"),
                 **score,
                 "reject_reasons": reject_reasons(row),
                 "origin": origin,
-                "candidate_source": candidate_source(row),
+                "candidate_source": str(row.get("_candidate_source") or row.get("candidate_source") or row.get("_candidate_file") or ""),
             }
 
     for row in rescue:
@@ -358,9 +339,50 @@ def build_match_rows(rescue: list[dict[str, Any]], controlled: list[dict[str, An
         out["origins"] = dict(item["origins"].most_common())
         out["missing_flags"] = dict(item["missing_flags"].most_common())
         rows.append(out)
-
-    rows.sort(key=lambda x: (-(x.get("best_ev_pct") or -999), -(x.get("best_confidence") or 0), x.get("commence_time") or ""))
+    rows.sort(key=lambda item: (-(item.get("best_ev_pct") or -999), -(item.get("best_confidence") or 0), item.get("commence_time") or ""))
     return rows
+
+
+def provider_status_category(name: str, stats: dict[str, Any]) -> tuple[str, list[str]]:
+    provider = str(name or "").strip().lower()
+    flags: list[str] = []
+    if provider in DELETED_PROVIDERS:
+        return "deleted_provider", ["removed_from_project"]
+    if stats.get("enabled") is False:
+        return "disabled_by_config", ["disabled_by_config"]
+    if stats.get("api_key_present") is False:
+        flags.append("missing_key")
+    if stats.get("rate_limited"):
+        flags.append("rate_limited")
+    if as_int(stats.get("response_errors"), 0) > 0:
+        flags.append("response_errors")
+    if stats.get("budget_exhausted"):
+        flags.append("budget_exhausted")
+
+    useful = any(as_int(stats.get(key), 0) > 0 for key in ("matches_built", "events_matched", "offers_parsed", "contexts_built", "team_form_contexts_built", "bzzoiro_contexts_built"))
+    fetched = any(as_int(stats.get(key), 0) > 0 for key in ("events_fetched", "fixtures_fetched", "rows_fetched", "predictions_fetched"))
+    if not useful:
+        flags.append("no_useful_rows" if not fetched else "low_overlap_or_matching_failed")
+    if provider == "sstats" and as_int(stats.get("contexts_built"), 0) > 0 and as_int(stats.get("matched_exact"), 0) == 0:
+        flags.append("team_form_fallback_only")
+    if provider == "sportlogic" and as_int(stats.get("offers_parsed"), 0) == 0:
+        flags.append("parser_or_payload_shape_issue")
+    if provider == "odds_api_io" and stats.get("account2_missing"):
+        flags.append("odds_api_io_account2_missing")
+
+    if "missing_key" in flags:
+        category = "missing_key"
+    elif "rate_limited" in flags:
+        category = "rate_limited"
+    elif "response_errors" in flags and not useful:
+        category = "broken_or_unavailable"
+    elif useful:
+        category = "working"
+    elif fetched:
+        category = "low_overlap_or_matching_issue"
+    else:
+        category = "no_data"
+    return category, flags
 
 
 def provider_gaps(provider_stats: dict[str, Any]) -> list[dict[str, Any]]:
@@ -368,53 +390,51 @@ def provider_gaps(provider_stats: dict[str, Any]) -> list[dict[str, Any]]:
     for name, stats in provider_stats.items():
         if not isinstance(stats, dict):
             continue
-        reason = []
-        if stats.get("rate_limited"):
-            reason.append("rate_limited")
-        if not stats.get("api_key_present", True):
-            reason.append("api_key_missing")
-        if as_int(stats.get("response_errors"), 0) > 0:
-            reason.append("response_errors")
-        if as_int(stats.get("matches_built"), as_int(stats.get("events_matched"), 0)) == 0 and as_int(stats.get("offers_parsed"), 0) == 0 and as_int(stats.get("contexts_built"), 0) == 0:
-            reason.append("no_useful_rows")
-        rows.append(
-            {
-                "provider": name,
-                "enabled": stats.get("enabled"),
-                "api_key_present": stats.get("api_key_present"),
-                "events_fetched": stats.get("events_fetched"),
-                "matches_built": stats.get("matches_built"),
-                "events_matched": stats.get("events_matched"),
-                "offers_parsed": stats.get("offers_parsed"),
-                "contexts_built": stats.get("contexts_built"),
-                "response_errors": stats.get("response_errors"),
-                "rate_limited": stats.get("rate_limited"),
-                "requested_bookmakers": stats.get("requested_bookmakers"),
-                "bookmakers_seen": stats.get("bookmakers_seen"),
-                "gap_flags": reason,
-            }
-        )
-    rows.sort(key=lambda x: (len(x.get("gap_flags") or []), str(x.get("provider"))))
+        if str(name).strip().lower() in DELETED_PROVIDERS:
+            continue
+        category, flags = provider_status_category(str(name), stats)
+        contexts_built = as_int(stats.get("contexts_built"))
+        team_form_contexts = as_int(stats.get("team_form_contexts_built"))
+        rows.append({
+            "provider": name,
+            "status_category": category,
+            "enabled": stats.get("enabled"),
+            "api_key_present": stats.get("api_key_present"),
+            "events_fetched": stats.get("events_fetched"),
+            "fixtures_fetched": stats.get("fixtures_fetched"),
+            "rows_fetched": stats.get("rows_fetched"),
+            "matches_built": stats.get("matches_built"),
+            "events_matched": stats.get("events_matched"),
+            "offers_parsed": stats.get("offers_parsed"),
+            "contexts_built": stats.get("contexts_built"),
+            "team_form_contexts_built": stats.get("team_form_contexts_built"),
+            "direct_event_contexts_built": max(0, contexts_built - team_form_contexts),
+            "response_errors": stats.get("response_errors"),
+            "rate_limited": stats.get("rate_limited"),
+            "budget_exhausted": stats.get("budget_exhausted"),
+            "requested_bookmakers": stats.get("requested_bookmakers"),
+            "requested_bookmakers_by_account": stats.get("requested_bookmakers_by_account"),
+            "bookmakers_seen": stats.get("bookmakers_seen"),
+            "bookmakers_seen_names": stats.get("bookmakers_seen_names"),
+            "account2_missing": stats.get("account2_missing"),
+            "gap_flags": flags,
+        })
+    order = {"working": 0, "low_overlap_or_matching_issue": 1, "missing_key": 2, "rate_limited": 3, "broken_or_unavailable": 4, "no_data": 5, "disabled_by_config": 6}
+    rows.sort(key=lambda item: (order.get(str(item.get("status_category")), 99), str(item.get("provider"))))
     return rows
 
 
 def main() -> int:
     now = datetime.now(UTC).isoformat()
-    debug = load_debug()
-    controlled_report = load_controlled_report()
+    debug = first_existing(DEBUG_PATHS)
+    controlled_report = first_existing(CONTROLLED_REPORT_PATHS)
     rescue = load_rescue_candidates()
     controlled = controlled_rows(controlled_report)
     provider_stats = provider_stats_from_debug(debug)
     match_rows = build_match_rows(rescue, controlled)
     gaps = provider_gaps(provider_stats)
 
-    near_miss = [
-        row
-        for row in match_rows
-        if row.get("best_candidate")
-        and row["best_candidate"].get("canonical_ev_pct", -999) > 0
-    ][:30]
-
+    near_miss = [row for row in match_rows if row.get("best_candidate") and row["best_candidate"].get("canonical_ev_pct", -999) > 0][:30]
     missing_counter: Counter[str] = Counter()
     family_counter: Counter[str] = Counter()
     reason_counter: Counter[str] = Counter()
@@ -423,6 +443,7 @@ def main() -> int:
         family_counter.update(row.get("families") or {})
         reason_counter.update(row.get("reject_reasons") or {})
 
+    provider_status_counts = Counter(str(row.get("status_category") or "unknown") for row in gaps)
     summary = {
         "created_at": now,
         "core_counts": run_core_counts(debug, len(rescue), controlled_report),
@@ -432,6 +453,7 @@ def main() -> int:
         "missing_data_flags": dict(missing_counter.most_common(20)),
         "family_counts": dict(family_counter.most_common(20)),
         "reject_reason_counts_from_rows": dict(reason_counter.most_common(25)),
+        "provider_status_counts": dict(provider_status_counts.most_common()),
         "provider_gap_summary": gaps,
         "outputs": {
             "summary": str(OUT_SUMMARY),
@@ -445,7 +467,7 @@ def main() -> int:
     write_json(OUT_MATCHES, match_rows)
     write_json(OUT_NEAR_MISS, near_miss)
     write_json(OUT_PROVIDER_GAPS, gaps)
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
 
