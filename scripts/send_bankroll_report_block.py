@@ -3,6 +3,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -55,13 +57,40 @@ def as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def run_clean_bankroll_state() -> dict[str, Any]:
+    script = ROOT / 'scripts' / 'clean_bankroll_state.py'
+    if not script.exists():
+        return {'status': 'missing', 'script': str(script)}
+    try:
+        proc = subprocess.run(
+            [sys.executable, str(script)],
+            cwd=ROOT,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+            timeout=45,
+        )
+        payload = load_json(ROOT / '.data' / 'exports' / 'latest-bankroll-state-cleanup.json', {})
+        return {
+            'status': 'ok' if proc.returncode == 0 else 'failed',
+            'returncode': proc.returncode,
+            'stdout_tail': proc.stdout[-1500:],
+            'stderr_tail': proc.stderr[-1500:],
+            'report': payload if isinstance(payload, dict) else None,
+        }
+    except Exception as exc:  # noqa: BLE001
+        return {'status': 'failed', 'error': f'{type(exc).__name__}: {exc}'}
+
+
 def current_bankroll() -> dict[str, Any]:
-    audit = load_json(AUDIT_PATH, {})
-    if isinstance(audit, dict) and isinstance(audit.get('bankroll'), dict):
-        return dict(audit['bankroll'])
+    # Prefer state after cleanup; audit can be stale from before fallback sync.
     state = load_json(STATE_PATH, {})
     if isinstance(state, dict) and isinstance(state.get('bankroll'), dict):
         return dict(state['bankroll'])
+    audit = load_json(AUDIT_PATH, {})
+    if isinstance(audit, dict) and isinstance(audit.get('bankroll'), dict):
+        return dict(audit['bankroll'])
     return {
         'starting_balance': 1000.0,
         'current_balance': 1000.0,
@@ -74,11 +103,13 @@ def current_bankroll() -> dict[str, Any]:
 
 
 def reset_applied() -> bool:
+    state = load_json(STATE_PATH, {})
+    if isinstance(state, dict) and state.get('bankroll_reset_at_utc'):
+        return True
     audit = load_json(AUDIT_PATH, {})
     if isinstance(audit, dict) and 'reset_applied' in audit:
         return bool(audit.get('reset_applied'))
-    state = load_json(STATE_PATH, {})
-    return bool(isinstance(state, dict) and state.get('bankroll_reset_at_utc'))
+    return False
 
 
 def candidate_stake_stats() -> dict[str, Any]:
@@ -97,6 +128,29 @@ def candidate_stake_stats() -> dict[str, Any]:
     return {'enriched_candidates_total': total, 'files': files}
 
 
+def open_bets_lines(bank: dict[str, Any]) -> list[str]:
+    state = load_json(STATE_PATH, {})
+    rows = state.get('bets') if isinstance(state, dict) and isinstance(state.get('bets'), list) else []
+    current = as_float(bank.get('current_balance'), 1000.0) or 1000.0
+    lines: list[str] = []
+    for row in rows[:8]:
+        if not isinstance(row, dict):
+            continue
+        stake = as_float(row.get('stake_amount') or row.get('stake') or row.get('risk'))
+        if stake <= 0:
+            continue
+        stake_pct = as_float(row.get('stake_pct') or row.get('recommended_stake_pct'))
+        if stake_pct <= 0 and current > 0:
+            stake_pct = stake / current * 100.0
+        home = str(row.get('home_team') or '').strip()
+        away = str(row.get('away_team') or '').strip()
+        selection = str(row.get('selection') or '').strip()
+        match = f'{home} — {away}'.strip(' —') or str(row.get('match_key') or 'матч')
+        tail = f' | {selection}' if selection else ''
+        lines.append(f'• {match}{tail}: {stake:.2f} ({stake_pct:.2f}% банка)')
+    return lines
+
+
 def money(value: Any) -> str:
     return f'{as_float(value):.2f}'
 
@@ -113,6 +167,10 @@ def build_text() -> str:
     reset = reset_applied()
     exposure_pct = open_exposure / current * 100.0 if current > 0 else 0.0
     available_pct = available / current * 100.0 if current > 0 else 0.0
+    open_lines = open_bets_lines(bank)
+    open_block = ''
+    if open_lines:
+        open_block = '\n\n📌 Открытые ставки:\n' + '\n'.join(open_lines)
     return (
         '💼 Контроль банка / риск\n\n'
         f'• Банк: {money(current)} / старт {money(starting)}\n'
@@ -120,7 +178,8 @@ def build_text() -> str:
         f'• Открытая экспозиция: {money(open_exposure)} ({exposure_pct:.2f}% банка)\n'
         f'• Доступно: {money(available)} ({available_pct:.2f}% банка)\n'
         f'• Stake %: записан в кандидаты ({stake_stats["enriched_candidates_total"]} enriched)\n'
-        f'• reset_applied: {str(reset).lower()}\n\n'
+        f'• reset_applied: {str(reset).lower()}'
+        f'{open_block}\n\n'
         'Правило: в прогнозе ставка должна показываться как сумма и процент от текущего банка.'
     )
 
@@ -152,12 +211,14 @@ def send_telegram(text: str) -> dict[str, Any]:
 
 
 def main() -> int:
+    cleanup = run_clean_bankroll_state()
     text = build_text()
     write_text(OUT_TXT, text)
     send_result = send_telegram(text)
     payload = {
         'status': 'ok',
         'created_at_utc': datetime.now(UTC).isoformat(),
+        'cleanup': cleanup,
         'text': text,
         'bankroll': current_bankroll(),
         'reset_applied': reset_applied(),
