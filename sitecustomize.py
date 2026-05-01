@@ -1,13 +1,13 @@
 """Repository-wide startup hook for Harizon sports-bot.
 
 Python imports this module automatically before app code when the repository
-root is on sys.path.  It applies per-run-only API limits, centralized runtime
-patches, and keeps SportLogic runner wiring that must happen before app.cli is
-imported.
+root is on sys.path. Keep this hook safe and non-invasive: do not rewrite core
+runtime files on every process start.
 """
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -15,6 +15,52 @@ ROOT = Path(__file__).resolve().parent
 
 def _replace_once(text: str, old: str, new: str) -> str:
     return text.replace(old, new, 1) if old in text else text
+
+
+def _apply_provider_aliases() -> None:
+    """Load static provider aliases into app.utils normalization maps.
+
+    The alias file is data-only. This hook applies it before providers begin
+    matching SStats/Bzzoiro/football-data/TheSportsDB rows to odds-api.io
+    fixtures.
+    """
+    try:
+        from app import utils
+    except Exception:
+        return
+    if getattr(utils, '_provider_aliases_applied', False):
+        return
+    path = ROOT / 'config' / 'provider_aliases.json'
+    try:
+        payload = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    for canonical, aliases in dict(payload.get('teams') or {}).items():
+        canonical_key = str(utils.canonicalize_team_name(str(canonical)))
+        values = aliases if isinstance(aliases, list) else []
+        for value in [canonical, *values]:
+            alias_key = str(utils.normalize_text(str(value)))
+            if alias_key:
+                utils.TEAM_ALIAS_MAP[alias_key] = canonical_key
+    base_league_normalizer = utils.canonicalize_league_name
+    league_lookup: dict[str, str] = {}
+    for canonical, aliases in dict(payload.get('leagues') or {}).items():
+        canonical_key = str(base_league_normalizer(str(canonical)))
+        values = aliases if isinstance(aliases, list) else []
+        for value in [canonical, *values]:
+            alias_key = str(base_league_normalizer(str(value)))
+            if alias_key:
+                league_lookup[alias_key] = canonical_key
+    if league_lookup:
+        def canonicalize_league_name_with_aliases(name: str) -> str:
+            key = str(base_league_normalizer(str(name or '')))
+            return league_lookup.get(key, key)
+
+        utils.canonicalize_league_name = canonicalize_league_name_with_aliases
+        utils._provider_alias_league_lookup = league_lookup
+    utils._provider_aliases_applied = True
 
 
 def _patch_runner_sportlogic() -> None:
@@ -163,14 +209,16 @@ def _patch_runner_sportlogic() -> None:
 
 
 try:
+    _apply_provider_aliases()
     from scripts import api_max_usage_patch
 
     api_max_usage_patch.apply_api_max_usage_patch()
     _patch_runner_sportlogic()
-    from scripts.runtime_startup_patches import apply_all, install_import_hook
-
-    apply_all()
-    install_import_hook()
+    try:
+        from scripts.runtime_startup_patches import install_import_hook
+        install_import_hook()
+    except Exception:
+        pass
 except Exception:
     # Startup hooks must never break bot execution.
     pass
