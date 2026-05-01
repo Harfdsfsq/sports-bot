@@ -133,8 +133,26 @@ def _suspicious_total_price_reasons(text: str) -> list[str]:
     return reasons
 
 
-def _assert_no_suspicious_total_price(text: str) -> None:
-    reasons = _suspicious_total_price_reasons(text)
+def _market_structure_reasons(text: str) -> list[str]:
+    reasons: list[str] = []
+    if "контролируемый прогноз" not in text and "Режим: контролируемый резерв" not in text:
+        return reasons
+    for block in _iter_pick_blocks(text):
+        if "Коэффициент:" not in block:
+            continue
+        odds_sources_match = re.search(r"odds\s+sources\s*:?\s*(\d+)", block, re.IGNORECASE)
+        if odds_sources_match:
+            try:
+                odds_sources = int(odds_sources_match.group(1))
+            except Exception:
+                odds_sources = 0
+            if odds_sources < 2:
+                reasons.append(f"single_odds_source:{odds_sources}/2")
+    return reasons
+
+
+def _assert_publishable_market_structure(text: str) -> None:
+    reasons = _suspicious_total_price_reasons(text) + _market_structure_reasons(text)
     if reasons:
         raise RuntimeError("blocked suspicious Telegram pick: " + "; ".join(reasons))
 
@@ -177,14 +195,14 @@ def _install_telegram_stake_percent_formatter() -> None:
             if isinstance(query, dict) and isinstance(query.get("text"), str):
                 query = dict(query)
                 query["text"] = _format_stake_percent_in_text(query["text"])
-                _assert_no_suspicious_total_price(query["text"])
+                _assert_publishable_market_structure(query["text"])
             elif isinstance(query, (list, tuple)):
                 updated = []
                 changed = False
                 for item in query:
                     if isinstance(item, (list, tuple)) and len(item) == 2 and item[0] == "text" and isinstance(item[1], str):
                         new_text = _format_stake_percent_in_text(item[1])
-                        _assert_no_suspicious_total_price(new_text)
+                        _assert_publishable_market_structure(new_text)
                         updated.append((item[0], new_text))
                         changed = True
                     else:
@@ -223,7 +241,7 @@ def _install_telegram_request_guard() -> None:
             if not text and data is not None:
                 text = _extract_text_from_request(data)
             if text:
-                _assert_no_suspicious_total_price(text)
+                _assert_publishable_market_structure(text)
         return original_urlopen(url, data=data, timeout=timeout, *args, **kwargs)
 
     request.urlopen = urlopen_patched
@@ -253,7 +271,7 @@ def _install_httpx_telegram_guard() -> None:
                 elif "data" in kwargs:
                     text = _extract_text_from_payload_bytes(kwargs.get("data"))
                 if text:
-                    _assert_no_suspicious_total_price(text)
+                    _assert_publishable_market_structure(text)
         except RuntimeError:
             raise
         except Exception:
