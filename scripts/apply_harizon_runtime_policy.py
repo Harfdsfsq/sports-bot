@@ -10,7 +10,7 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(".").resolve()
 UTC = timezone.utc
-POLICY_VERSION = "harizon-runtime-policy-v1"
+POLICY_VERSION = "harizon-runtime-policy-v2-near-window"
 OUT_PATH = ROOT / ".data" / "exports" / "latest-harizon-runtime-policy.json"
 
 
@@ -59,7 +59,6 @@ def run_script(path: str, required: bool = False) -> dict[str, object]:
 
 
 def policy_value(name: str, default: str) -> str:
-    """Use explicit HARIZON_* overrides, ignoring stale profile caps."""
     return os.getenv(f"HARIZON_{name}") or default
 
 
@@ -69,6 +68,22 @@ def base_env() -> dict[str, str]:
     return {
         "HARIZON_RUNTIME_POLICY_VERSION": POLICY_VERSION,
         "HARIZON_IGNORE_STALE_PROVIDER_BUDGET": "true",
+
+        # Run window / coverage priority. The goal is to spend provider requests
+        # on matches that can actually be published soon, not on a broad stale day list.
+        "PUBLISH_WINDOW_HOURS": policy_value("PUBLISH_WINDOW_HOURS", "12"),
+        "MIN_KICKOFF_LEAD_MINUTES": policy_value("MIN_KICKOFF_LEAD_MINUTES", "25"),
+        "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
+        "CONTEXT_ENRICHMENT_MATCH_LIMIT": policy_value("CONTEXT_ENRICHMENT_MATCH_LIMIT", "180"),
+        "PREMIUM_CONTEXT_SHORTLIST_LIMIT": policy_value("PREMIUM_CONTEXT_SHORTLIST_LIMIT", "72"),
+        "PREMIUM_NEWS_SHORTLIST_LIMIT": policy_value("PREMIUM_NEWS_SHORTLIST_LIMIT", "6"),
+        "VALUE_HINT_MIN_EDGE_PCT": policy_value("VALUE_HINT_MIN_EDGE_PCT", "0.8"),
+        "NEAR_MISS_ENRICHMENT_QUEUE_LIMIT": policy_value("NEAR_MISS_ENRICHMENT_QUEUE_LIMIT", "90"),
+        "NEAR_MISS_ENRICHMENT_MIN_EV_PCT": policy_value("NEAR_MISS_ENRICHMENT_MIN_EV_PCT", "3.0"),
+        "NEAR_MISS_ENRICHMENT_MIN_EDGE_PP": policy_value("NEAR_MISS_ENRICHMENT_MIN_EDGE_PP", "1.5"),
+        "DAY_INVENTORY_NEAR_WINDOW_HOURS": policy_value("DAY_INVENTORY_NEAR_WINDOW_HOURS", "12"),
+        "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
+
         "ENABLE_API_FOOTBALL": "false",
         "API_FOOTBALL_ENABLED": "false",
         "API_FOOTBALL_KEY": "",
@@ -96,37 +111,46 @@ def base_env() -> dict[str, str]:
         "TARGET_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "SHARP_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
-        "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
-        "CONTEXT_ENRICHMENT_MATCH_LIMIT": policy_value("CONTEXT_ENRICHMENT_MATCH_LIMIT", "520"),
+
+        # Context providers: spend requests on near-window + priced matches first.
         "SSTATS_ENABLED": "true",
         "ENABLE_SSTATS_CONTEXT": "true",
         "SSTATS_TARGET_NEAR_MISS_FIRST": "true",
         "SSTATS_PER_RUN_MAX": policy_value("SSTATS_PER_RUN_MAX", "150"),
         "SSTATS_REQUESTS_MAX_PER_RUN": policy_value("SSTATS_REQUESTS_MAX_PER_RUN", "150"),
         "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": policy_value("SSTATS_MAX_HTTP_REQUESTS_PER_RUN", "150"),
-        "SSTATS_CONTEXT_MATCH_LIMIT": policy_value("SSTATS_CONTEXT_MATCH_LIMIT", "320"),
+        "SSTATS_CONTEXT_MATCH_LIMIT": policy_value("SSTATS_CONTEXT_MATCH_LIMIT", "180"),
         "BZZOIRO_PER_RUN_MAX": policy_value("BZZOIRO_PER_RUN_MAX", "1000"),
         "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": policy_value("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN", "1000"),
-        "BZZOIRO_CONTEXT_MATCH_LIMIT": policy_value("BZZOIRO_CONTEXT_MATCH_LIMIT", "520"),
-        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "80"),
-        "ENABLE_SPORTLOGIC": "true",
-        "SPORTLOGIC_ENABLED": "true",
-        "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
-        "SPORTLOGIC_HEADER_NAME": "X-API-Key",
-        "SPORTLOGIC_PER_RUN_MAX": policy_value("SPORTLOGIC_PER_RUN_MAX", "40"),
-        "SPORTLOGIC_MATCH_LIMIT": policy_value("SPORTLOGIC_MATCH_LIMIT", "120"),
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": policy_value("SPORTLOGIC_ODDS_MATCH_LIMIT", "40"),
-        "SPORTLOGIC_TIMEOUT_SECONDS": policy_value("SPORTLOGIC_TIMEOUT_SECONDS", "20"),
+        "BZZOIRO_CONTEXT_MATCH_LIMIT": policy_value("BZZOIRO_CONTEXT_MATCH_LIMIT", "180"),
+        "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "120"),
         "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
         "FOOTBALL_DATA_ENABLED": "true",
         "FOOTBALL_DATA_PER_RUN_MAX": os.getenv("FOOTBALL_DATA_PER_RUN_MAX") or "8",
         "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": os.getenv("FOOTBALL_DATA_REQUESTS_MAX_PER_RUN") or "8",
-        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": os.getenv("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT") or "72",
+        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": os.getenv("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT") or "48",
         "ENABLE_THESPORTSDB_CONTEXT": "true",
         "THESPORTSDB_CONTEXT_ENABLED": "true",
         "THESPORTSDB_PER_RUN_MAX": os.getenv("THESPORTSDB_PER_RUN_MAX") or "12",
         "THESPORTSDB_REQUESTS_MAX_PER_RUN": os.getenv("THESPORTSDB_REQUESTS_MAX_PER_RUN") or "12",
-        "THESPORTSDB_CONTEXT_MATCH_LIMIT": os.getenv("THESPORTSDB_CONTEXT_MATCH_LIMIT") or "96",
+        "THESPORTSDB_CONTEXT_MATCH_LIMIT": os.getenv("THESPORTSDB_CONTEXT_MATCH_LIMIT") or "60",
+
+        # SportLogic odds currently returns payloads without valid price fields.
+        # Disable the provider completely until parser is fixed; this saves requests.
+        "ENABLE_SPORTLOGIC": "false",
+        "SPORTLOGIC_ENABLED": "false",
+        "SPORTLOGIC_PER_RUN_MAX": "0",
+        "SPORTLOGIC_MATCH_LIMIT": "0",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
+        "SPORTLOGIC_ODDS_DISABLED_REASON": "missing_or_invalid_price_payload",
+
+        # Weather/news: use for candidate context, not broad match inventory.
+        "WEATHER_CONTEXT_MATCH_LIMIT": policy_value("WEATHER_CONTEXT_MATCH_LIMIT", "24"),
+        "WEATHERAPI_PER_RUN_MAX": policy_value("WEATHERAPI_PER_RUN_MAX", "12"),
+        "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": policy_value("WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN", "12"),
+        "OPENWEATHERMAP_PER_RUN_MAX": policy_value("OPENWEATHERMAP_PER_RUN_MAX", "8"),
+        "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": policy_value("OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN", "8"),
+
         "MARKET_DERIVED_MIN_BOOKS": "2",
         "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "2",
         "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,dnb,btts,teamtotals,spreads",
@@ -154,6 +178,7 @@ def base_env() -> dict[str, str]:
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_FILTER_POOL_BY_TIME": "true",
         "DETAILED_RUN_REPORT_INCLUDE_RUNTIME_POLICY": "true",
+        "DETAILED_RUN_REPORT_INCLUDE_BANKROLL_BLOCK": "true",
     }
 
 
@@ -178,9 +203,10 @@ def main() -> int:
         "env_updates": applied_env,
         "script_results": script_results,
         "notes": [
-            "Single runtime policy entrypoint used before day inventory build.",
-            "Coverage-max date is pinned to the current local date at runtime, so stale workflow dates cannot disable enrichment.",
-            "Odds-api.io is routed as two account-specific bookmaker groups and merged by the provider.",
+            "Near-window coverage mode prioritizes matches with odds inside the next 6-12 hours.",
+            "Context requests are concentrated on priced matches and near-miss/value-first candidates.",
+            "SportLogic is disabled while its odds payload lacks parseable prices, so requests are not wasted.",
+            "Odds-api.io remains routed as two account-specific bookmaker groups and merged by the provider.",
         ],
     }
     write_json(OUT_PATH, payload)
