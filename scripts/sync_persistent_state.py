@@ -18,6 +18,7 @@ STATE_FILES = [
     ".data/provider_quota_state.json",
     ".data/daily-ops-report-sent.json",
     ".data/detailed-run-report-sent.json",
+    ".data/bankroll-report-block-sent.json",
     ".data/calibration-profile.json",
     ".data/auto_learning_runtime_overrides.env",
     ".data/learning-state.json",
@@ -29,6 +30,9 @@ STATE_FILES = [
     ".data/exports/latest-day-inventory-policy.json",
     ".data/exports/latest-day-inventory-coverage-merge.json",
     ".data/exports/latest-near-miss-enrichment-queue.json",
+    ".data/exports/latest-bankroll-control-audit.json",
+    ".data/exports/latest-bankroll-report-block.json",
+    ".data/exports/latest-bankroll-report-block.txt",
     ".data/day_inventory/latest.json",
     ".data/day_inventory/current.json",
     ".data/day_inventory/today.json",
@@ -36,13 +40,7 @@ STATE_FILES = [
 ]
 
 STATE_GLOBS = [
-    # Keep the date-addressable inventory, not only aliases. The autorun policy
-    # checks .data/day_inventory/YYYY-MM-DD.json first; without this glob every
-    # checkout looked like a fresh day and triggered recovery_bootstrap.
     ".data/day_inventory/*.json",
-    # Keep high-EV near-miss enrichment queues between GitHub Actions checkouts.
-    # Without this, the next run cannot prioritize single-source/proxy candidates
-    # that need confirmation from sstats/bzzoiro/football_data/thesportsdb.
     ".data/provider_cache/day-shortlist/*.json",
 ]
 
@@ -57,6 +55,30 @@ def run(cmd: list[str], *, check: bool = False) -> subprocess.CompletedProcess[s
         stderr=sys.stderr,
         check=check,
     )
+
+
+def run_bankroll_report_block() -> None:
+    """Emit the compact bankroll/risk block after run artifacts exist.
+
+    This is intentionally best-effort: financial reporting must not break the run,
+    but when it succeeds the generated JSON/TXT and sent-state are persisted below.
+    """
+    if str(os.getenv("AUTORUN_SKIP_MAIN") or "").strip().lower() == "true":
+        print("Skipping bankroll report block because AUTORUN_SKIP_MAIN=true.")
+        return
+    script = ROOT / "scripts" / "send_bankroll_report_block.py"
+    if not script.exists():
+        print("Bankroll report block script is missing; skipping.")
+        return
+    proc = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=ROOT,
+        text=True,
+        stdout=sys.stdout,
+        stderr=sys.stderr,
+        check=False,
+    )
+    print(f"Bankroll report block finished with returncode={proc.returncode}")
 
 
 def is_git_repo() -> bool:
@@ -175,6 +197,7 @@ def main() -> int:
         return 0
 
     configure_git()
+    run_bankroll_report_block()
 
     with tempfile.TemporaryDirectory(prefix="bot-state-sync-") as raw_tmp:
         tmp = Path(raw_tmp)
