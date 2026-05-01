@@ -126,8 +126,6 @@ def _suspicious_total_price_reasons(text: str) -> list[str]:
         implied = 1.0 / odds
         ratio = odds / fair_xg_odds
         implied_gap_pp = (xg_probability - implied) * 100.0
-        # Guard against line/price mismatches: e.g. ТБ 1.5 @1.98 while xG fair is ~1.31.
-        # It only blocks when the published price is far richer than the xG-derived fair price.
         if point <= 2.0 and ratio >= 1.35 and implied_gap_pp >= 18.0:
             reasons.append(
                 f"total_line_price_mismatch:point={point:g},odds={odds:.2f},xg_fair={fair_xg_odds:.2f},gap={implied_gap_pp:.1f}pp"
@@ -139,6 +137,30 @@ def _assert_no_suspicious_total_price(text: str) -> None:
     reasons = _suspicious_total_price_reasons(text)
     if reasons:
         raise RuntimeError("blocked suspicious Telegram pick: " + "; ".join(reasons))
+
+
+def _extract_text_from_payload_bytes(data) -> str:
+    if data is None:
+        return ""
+    try:
+        raw = data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else str(data)
+    except Exception:
+        return ""
+    if not raw:
+        return ""
+    try:
+        payload = json.loads(raw)
+        if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+            return payload["text"]
+    except Exception:
+        pass
+    try:
+        from urllib import parse
+        parsed = parse.parse_qs(raw)
+        text_values = parsed.get("text") or []
+        return str(text_values[0] or "") if text_values else ""
+    except Exception:
+        return ""
 
 
 def _install_telegram_stake_percent_formatter() -> None:
@@ -181,7 +203,7 @@ def _install_telegram_stake_percent_formatter() -> None:
 
 def _install_telegram_request_guard() -> None:
     try:
-        from urllib import parse, request
+        from urllib import request
     except Exception:
         return
     if getattr(request, "_harizon_total_price_guard_patch", False):
@@ -190,17 +212,9 @@ def _install_telegram_request_guard() -> None:
 
     def _extract_text_from_request(obj) -> str:
         data = getattr(obj, "data", None)
-        if data is None and isinstance(obj, (bytes, bytearray)):
+        if data is None and isinstance(obj, (bytes, bytearray, str)):
             data = obj
-        if data is None:
-            return ""
-        try:
-            raw = data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else str(data)
-            parsed = parse.parse_qs(raw)
-            text_values = parsed.get("text") or []
-            return str(text_values[0] or "") if text_values else ""
-        except Exception:
-            return ""
+        return _extract_text_from_payload_bytes(data)
 
     def urlopen_patched(url, data=None, timeout=None, *args, **kwargs):
         target = getattr(url, "full_url", url)
@@ -216,9 +230,44 @@ def _install_telegram_request_guard() -> None:
     request._harizon_total_price_guard_patch = True
 
 
+def _install_httpx_telegram_guard() -> None:
+    try:
+        import httpx
+    except Exception:
+        return
+    if getattr(httpx.AsyncClient, "_harizon_total_price_guard_patch", False):
+        return
+    original_post = httpx.AsyncClient.post
+
+    async def post_patched(self, url, *args, **kwargs):
+        try:
+            target = str(url or "")
+            if "api.telegram.org" in target and "sendMessage" in target:
+                text = ""
+                json_payload = kwargs.get("json")
+                if isinstance(json_payload, dict) and isinstance(json_payload.get("text"), str):
+                    text = _format_stake_percent_in_text(json_payload["text"])
+                    json_payload = dict(json_payload)
+                    json_payload["text"] = text
+                    kwargs["json"] = json_payload
+                elif "data" in kwargs:
+                    text = _extract_text_from_payload_bytes(kwargs.get("data"))
+                if text:
+                    _assert_no_suspicious_total_price(text)
+        except RuntimeError:
+            raise
+        except Exception:
+            pass
+        return await original_post(self, url, *args, **kwargs)
+
+    httpx.AsyncClient.post = post_patched
+    httpx.AsyncClient._harizon_total_price_guard_patch = True
+
+
 try:
     _apply_provider_aliases()
     _install_telegram_stake_percent_formatter()
     _install_telegram_request_guard()
+    _install_httpx_telegram_guard()
 except Exception:
     pass
