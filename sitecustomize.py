@@ -88,6 +88,59 @@ def _format_stake_percent_in_text(text: str) -> str:
     return pattern.sub(repl, text)
 
 
+def _iter_pick_blocks(text: str) -> list[str]:
+    blocks: list[str] = []
+    current: list[str] = []
+    for line in str(text or "").splitlines():
+        if re.match(r"^\d+\.\s+", line.strip()) and current:
+            blocks.append("\n".join(current))
+            current = [line]
+        elif current or re.match(r"^\d+\.\s+", line.strip()):
+            current.append(line)
+    if current:
+        blocks.append("\n".join(current))
+    return blocks
+
+
+def _suspicious_total_price_reasons(text: str) -> list[str]:
+    reasons: list[str] = []
+    if "Ставка: Тотал" not in text or "Коэффициент:" not in text:
+        return reasons
+    for block in _iter_pick_blocks(text):
+        if "Ставка: Тотал" not in block:
+            continue
+        line_match = re.search(r"Ставка:\s*Тотал\s*[—-]\s*(?:Больше|Меньше|Over|Under)\s*\(([0-9]+(?:[.,][0-9]+)?)\)", block, re.IGNORECASE)
+        odds_match = re.search(r"Коэффициент:\s*([0-9]+(?:[.,][0-9]+)?)", block)
+        xg_match = re.search(r"xG-проверка:\s*ориентир\s*([0-9]+(?:[.,][0-9]+)?)%", block)
+        if not (line_match and odds_match and xg_match):
+            continue
+        try:
+            point = _num(line_match.group(1))
+            odds = _num(odds_match.group(1))
+            xg_probability = _num(xg_match.group(1)) / 100.0
+        except Exception:
+            continue
+        if odds <= 1.0 or xg_probability <= 0.0:
+            continue
+        fair_xg_odds = 1.0 / xg_probability
+        implied = 1.0 / odds
+        ratio = odds / fair_xg_odds
+        implied_gap_pp = (xg_probability - implied) * 100.0
+        # Guard against line/price mismatches: e.g. ТБ 1.5 @1.98 while xG fair is ~1.31.
+        # It only blocks when the published price is far richer than the xG-derived fair price.
+        if point <= 2.0 and ratio >= 1.35 and implied_gap_pp >= 18.0:
+            reasons.append(
+                f"total_line_price_mismatch:point={point:g},odds={odds:.2f},xg_fair={fair_xg_odds:.2f},gap={implied_gap_pp:.1f}pp"
+            )
+    return reasons
+
+
+def _assert_no_suspicious_total_price(text: str) -> None:
+    reasons = _suspicious_total_price_reasons(text)
+    if reasons:
+        raise RuntimeError("blocked suspicious Telegram pick: " + "; ".join(reasons))
+
+
 def _install_telegram_stake_percent_formatter() -> None:
     try:
         from urllib import parse
@@ -102,17 +155,22 @@ def _install_telegram_stake_percent_formatter() -> None:
             if isinstance(query, dict) and isinstance(query.get("text"), str):
                 query = dict(query)
                 query["text"] = _format_stake_percent_in_text(query["text"])
+                _assert_no_suspicious_total_price(query["text"])
             elif isinstance(query, (list, tuple)):
                 updated = []
                 changed = False
                 for item in query:
                     if isinstance(item, (list, tuple)) and len(item) == 2 and item[0] == "text" and isinstance(item[1], str):
-                        updated.append((item[0], _format_stake_percent_in_text(item[1])))
+                        new_text = _format_stake_percent_in_text(item[1])
+                        _assert_no_suspicious_total_price(new_text)
+                        updated.append((item[0], new_text))
                         changed = True
                     else:
                         updated.append(item)
                 if changed:
                     query = updated
+        except RuntimeError:
+            raise
         except Exception:
             pass
         return original_urlencode(query, doseq=doseq, safe=safe, encoding=encoding, errors=errors, quote_via=quote_via)
@@ -121,8 +179,46 @@ def _install_telegram_stake_percent_formatter() -> None:
     parse._harizon_stake_percent_patch = True
 
 
+def _install_telegram_request_guard() -> None:
+    try:
+        from urllib import parse, request
+    except Exception:
+        return
+    if getattr(request, "_harizon_total_price_guard_patch", False):
+        return
+    original_urlopen = request.urlopen
+
+    def _extract_text_from_request(obj) -> str:
+        data = getattr(obj, "data", None)
+        if data is None and isinstance(obj, (bytes, bytearray)):
+            data = obj
+        if data is None:
+            return ""
+        try:
+            raw = data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else str(data)
+            parsed = parse.parse_qs(raw)
+            text_values = parsed.get("text") or []
+            return str(text_values[0] or "") if text_values else ""
+        except Exception:
+            return ""
+
+    def urlopen_patched(url, data=None, timeout=None, *args, **kwargs):
+        target = getattr(url, "full_url", url)
+        if isinstance(target, str) and "api.telegram.org" in target and "sendMessage" in target:
+            text = _extract_text_from_request(url)
+            if not text and data is not None:
+                text = _extract_text_from_request(data)
+            if text:
+                _assert_no_suspicious_total_price(text)
+        return original_urlopen(url, data=data, timeout=timeout, *args, **kwargs)
+
+    request.urlopen = urlopen_patched
+    request._harizon_total_price_guard_patch = True
+
+
 try:
     _apply_provider_aliases()
     _install_telegram_stake_percent_formatter()
+    _install_telegram_request_guard()
 except Exception:
     pass
