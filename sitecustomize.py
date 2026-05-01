@@ -56,11 +56,5 @@ def _apply_provider_aliases() -> None:
 
 try:
     _apply_provider_aliases()
-    try:
-        from scripts.runtime_startup_patches import install_import_hook
-
-        install_import_hook()
-    except Exception:
-        pass
 except Exception:
     pass
