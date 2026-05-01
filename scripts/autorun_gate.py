@@ -21,7 +21,7 @@ from autorun_state import (
 
 UTC = timezone.utc
 OUT = Path(".data/exports/latest-autorun-gate.json")
-POLICY_VERSION = "v24-slot-supervisor"
+POLICY_VERSION = "v25-manual-bypass-slot-supervisor"
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -48,6 +48,13 @@ def input_value(name: str, default: str = "") -> str:
     return default
 
 
+def input_bool(name: str, default: bool = False) -> bool:
+    raw = input_value(name)
+    if not raw:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on", "force"}
+
+
 def event_reason(event_name: str) -> str:
     explicit = input_value("RUN_REASON") or input_value("REASON")
     if explicit:
@@ -59,10 +66,17 @@ def event_reason(event_name: str) -> str:
     return event_name or "unknown"
 
 
-def current_slot() -> str:
+def current_slot(*, event_name: str = "", reason: str = "", now: datetime | None = None, run_id: str = "") -> str:
     explicit = input_value("SLOT_KEY")
     if explicit:
         return normalize_slot_key(explicit, app_tz())
+    if event_name == "workflow_dispatch" and reason == "manual":
+        # Manual runs are operator probes after code/config changes. They must not
+        # be blocked by the already-completed scheduled slot and must not rewrite
+        # that scheduled slot's success record.
+        local_now = (now or utc_now()).astimezone(app_tz()).replace(microsecond=0)
+        suffix = f"#{run_id}" if run_id else ""
+        return f"{local_now.isoformat()}#manual{suffix}"
     return latest_slot_key(tz=app_tz())
 
 
@@ -70,16 +84,26 @@ def preflight() -> int:
     now = utc_now()
     local_now = now.astimezone(app_tz())
     event_name = str(os.getenv("GITHUB_EVENT_NAME") or "")
-    slot_key = current_slot()
     reason = event_reason(event_name)
     run_id = str(os.getenv("GITHUB_RUN_ID") or "")
     run_attempt = str(os.getenv("GITHUB_RUN_ATTEMPT") or "")
+    explicit_slot = bool(input_value("SLOT_KEY"))
+    force_run = input_bool("FORCE_RUN", default=False)
+    slot_key = current_slot(event_name=event_name, reason=reason, now=now, run_id=run_id)
 
     state = load_state()
     prune_old_slots(state)
     completed = slot_completed(state, slot_key)
-    skip = completed
-    decision = "skip_slot_already_completed" if completed else "run_slot"
+    manual_probe = event_name == "workflow_dispatch" and reason == "manual" and not explicit_slot
+    skip = completed and not force_run and not manual_probe
+    if skip:
+        decision = "skip_slot_already_completed"
+    elif completed and force_run:
+        decision = "force_run_completed_slot"
+    elif manual_probe:
+        decision = "run_manual_probe"
+    else:
+        decision = "run_slot"
 
     row = slot_record(state, slot_key)
     if not skip:
@@ -93,6 +117,8 @@ def preflight() -> int:
                 "started_at_utc": now.isoformat(),
                 "started_at_local": local_now.isoformat(),
                 "policy_version": POLICY_VERSION,
+                "manual_probe": manual_probe,
+                "force_run": force_run,
                 "missed_slots": input_value("MISSED_SLOTS"),
                 "catchup_from": input_value("CATCHUP_FROM"),
                 "catchup_to": input_value("CATCHUP_TO"),
@@ -131,6 +157,8 @@ def preflight() -> int:
         "AUTORUN_RUN_REASON": reason,
         "AUTORUN_SKIP_MAIN": str(skip).lower(),
         "AUTORUN_DECISION_REASON": decision,
+        "AUTORUN_FORCE_RUN": str(force_run).lower(),
+        "AUTORUN_MANUAL_PROBE": str(manual_probe).lower(),
         "AUTORUN_MSK_NOW": local_now.isoformat(),
         "AUTORUN_UTC_NOW": now.isoformat(),
     }
