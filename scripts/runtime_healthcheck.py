@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import importlib.util
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
 
 REQUIRED_FILES = [
     ".github/workflows/run-bot.yml",
@@ -47,8 +53,16 @@ def read(path: str) -> str:
 
 
 def apply_integrity_fixups() -> dict[str, Any]:
+    patch_path = ROOT / "scripts" / "apply_run_integrity_fixups.py"
     try:
-        from scripts.apply_run_integrity_fixups import apply_all
+        spec = importlib.util.spec_from_file_location("harizon_apply_run_integrity_fixups", patch_path)
+        if spec is None or spec.loader is None:
+            return {"error": "cannot_load_apply_run_integrity_fixups"}
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        apply_all = getattr(module, "apply_all", None)
+        if not callable(apply_all):
+            return {"error": "apply_all_missing"}
         return dict(apply_all())
     except Exception as exc:
         return {"error": f"{type(exc).__name__}: {exc}"}
@@ -113,7 +127,6 @@ def main() -> int:
     )
 
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    # Do not fail the workflow for warnings or fixup errors; fail only if critical files are missing.
     return 1 if missing else 0
 
 
