@@ -139,6 +139,12 @@ jobs:
             echo "Applied auto-learning runtime overrides: .data/auto_learning_runtime_overrides.env"
           fi
 
+      - name: Apply integrity fixups
+        shell: bash
+        run: |
+          python scripts/apply_run_integrity_fixups.py || true
+          cat .data/exports/latest-run-integrity-fixups.json || true
+
       - name: Force report-only daily mode
         shell: bash
         run: |
