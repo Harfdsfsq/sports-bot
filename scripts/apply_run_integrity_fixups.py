@@ -5,10 +5,12 @@ from __future__ import annotations
 Non-fatal startup patcher. Current behavior:
 1) keep detailed report day-inventory numbers fresh after coverage merge;
 2) keep SportLogic empty odds envelopes from being parsed as odds rows;
-3) do NOT inject an odds-source diversity hard gate. A selected valid pick should
+3) keep Telegram reports using normalized market display text;
+4) do NOT inject an odds-source diversity hard gate. A selected valid pick should
    be published unless duplicate/quality/business filters reject it.
 """
 
+import importlib.util
 import re
 from pathlib import Path
 from typing import Callable
@@ -45,24 +47,30 @@ def _patch_file(rel_path: str, patcher: Callable[[str], str]) -> bool:
     return _write_if_changed(path, text, updated)
 
 
-def _patch_detailed_run_report(text: str) -> str:
-    # Always apply the existing market point patch if it is available.
+def _run_patch_script(script_name: str) -> bool:
+    patch_path = ROOT / "scripts" / script_name
+    if not patch_path.exists():
+        return False
     try:
-        import importlib.util
-        patch_path = ROOT / "scripts" / "patch_detailed_report_market_points.py"
-        if patch_path.exists():
-            spec = importlib.util.spec_from_file_location("harizon_patch_detailed_report_market_points", patch_path)
-            if spec and spec.loader:
-                module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
-                main = getattr(module, "main", None)
-                if callable(main):
-                    main()
-                    patched = _read(ROOT / "scripts" / "build_detailed_run_report.py")
-                    if patched:
-                        text = patched
+        spec = importlib.util.spec_from_file_location(f"harizon_{script_name.replace('.', '_')}", patch_path)
+        if spec is None or spec.loader is None:
+            return False
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        main = getattr(module, "main", None)
+        if callable(main):
+            main()
+            return True
     except Exception:
-        pass
+        return False
+    return False
+
+
+def _patch_detailed_run_report(text: str) -> str:
+    _run_patch_script("patch_detailed_report_market_points.py")
+    patched = _read(ROOT / "scripts" / "build_detailed_run_report.py")
+    if patched:
+        text = patched
 
     if "coverage_merge_counts_applied" in text and "runtime_counts_applied" in text:
         return text
@@ -123,8 +131,6 @@ def _patch_detailed_run_report(text: str) -> str:
 
 
 def _patch_controlled_fallback(text: str) -> str:
-    # Deliberately do not inject controlled_fallback_odds_sources_below_min.
-    # Valid selected picks should publish; duplicate handling remains in the sent/state indices.
     text = text.replace('env_bool("CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY", True)', 'env_bool("CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY", False)')
     text = re.sub(
         r'\n    if env_bool\("CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY", False\):\n(?:        .+\n){1,20}?            reasons\.append\(f"controlled_fallback_odds_sources_below_min:\{odds_sources_count\}/\{min_odds_sources\}"\)\n',
@@ -136,9 +142,6 @@ def _patch_controlled_fallback(text: str) -> str:
 
 
 def _patch_sportlogic_provider(text: str) -> str:
-    if "sportlogic_empty_envelope_guard" in text:
-        return text
-
     old_limit = '''        self.odds_match_limit = max(
             1,
             int(float(
@@ -159,6 +162,21 @@ def _patch_sportlogic_provider(text: str) -> str:
 '''
     if old_limit in text:
         text = text.replace(old_limit, new_limit, 1)
+
+    marker = '        prioritized_items = list(mapping.values())[: self.odds_match_limit]\n\n        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:\n'
+    if marker in text and "odds_probe_disabled_by_config" not in text:
+        text = text.replace(
+            marker,
+            '        prioritized_items = list(mapping.values())[: self.odds_match_limit]\n'
+            '        if self.odds_match_limit <= 0:\n'
+            '            stats["events_matched"] = len(mapping)\n'
+            '            stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)\n'
+            '            stats["odds_disabled_reason"] = "odds_probe_disabled_by_config"\n'
+            '            self._write_debug_export(stats, preview)\n'
+            '            return {}, stats, preview\n\n'
+            '        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:\n',
+            1,
+        )
 
     new_extract = '''    @staticmethod
     def _extract_odds_rows(payload: Any) -> list[dict[str, Any]]:
@@ -197,11 +215,22 @@ def _patch_sportlogic_provider(text: str) -> str:
         count=1,
         flags=re.S,
     )
+
+    marker_reason = '''        if int(stats.get("rows_before_parse", 0) or 0) > 0 and int(stats.get("offers_parsed", 0) or 0) <= 0:
+            if reject_reasons and "missing_or_invalid_price" in reject_reasons:
+                stats["odds_disabled_reason"] = "price_missing_in_payload"
+            else:
+                stats["odds_disabled_reason"] = "parser_shape_unmatched"
+'''
+    if marker_reason in text and "no_odds_rows_returned" not in text:
+        text = text.replace(marker_reason, marker_reason + '        elif int(stats.get("odds_requests", 0) or 0) > 0 and int(stats.get("rows_before_parse", 0) or 0) <= 0:\n            stats["odds_disabled_reason"] = "no_odds_rows_returned"\n', 1)
     return text
 
 
 def apply_all() -> dict[str, bool]:
+    report_patch = _run_patch_script("patch_telegram_market_displays.py")
     return {
+        "telegram_market_displays": report_patch,
         "detailed_run_report": _patch_file("scripts/build_detailed_run_report.py", _patch_detailed_run_report),
         "controlled_fallback": _patch_file("scripts/publish_controlled_fallback.py", _patch_controlled_fallback),
         "sportlogic_provider": _patch_file("app/providers/sportlogic_provider.py", _patch_sportlogic_provider),
