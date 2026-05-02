@@ -29,6 +29,8 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def append_github_env(values: dict[str, str]) -> None:
+    for key, value in values.items():
+        os.environ[str(key)] = str(value)
     if not GITHUB_ENV:
         for key in sorted(values):
             print(f'{key}={values[key]}')
@@ -36,6 +38,10 @@ def append_github_env(values: dict[str, str]) -> None:
     with open(GITHUB_ENV, 'a', encoding='utf-8') as fh:
         for key in sorted(values):
             fh.write(f'{key}={values[key]}\n')
+
+
+def truthy(value: object) -> bool:
+    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on', 'force'}
 
 
 def env_present(keys: list[str]) -> bool:
@@ -52,6 +58,56 @@ def disabled_env(provider: str) -> dict[str, str]:
         f'{p}_PER_RUN_MAX': '0',
         f'{p}_MAX_HTTP_REQUESTS_PER_RUN': '0',
         f'{p}_REQUEST_BUDGET_GRANTED': '0',
+    }
+
+
+def manual_probe_without_force_publish() -> bool:
+    if str(os.getenv('GITHUB_EVENT_NAME') or '').strip() != 'workflow_dispatch':
+        return False
+    return not truthy(os.getenv('AUTORUN_INPUT_FORCE_PUBLISH') or os.getenv('FORCE_PUBLISH'))
+
+
+def final_market_integrity_env() -> dict[str, str]:
+    manual_dry_run = manual_probe_without_force_publish()
+    return {
+        # Manual Actions runs are diagnostics by default. Scheduled runs keep normal publication behavior.
+        'HARIZON_MANUAL_DRY_RUN': str(manual_dry_run).lower(),
+        'PUBLISH_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('PUBLISH_DRY_RUN') or 'false').lower(),
+        'CONTROLLED_FALLBACK_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('CONTROLLED_FALLBACK_DRY_RUN') or 'false').lower(),
+        'CONTROLLED_FALLBACK_SEND_TELEGRAM': 'false' if manual_dry_run else 'true',
+        'CONTROLLED_FALLBACK_TELEGRAM_ENABLED': 'false' if manual_dry_run else 'true',
+
+        # Do not let context providers validate market price. Price must be confirmed by independent odds sources.
+        'MARKET_DERIVED_MIN_BOOKS': '2',
+        'MARKET_DERIVED_MIN_SOURCES': '2',
+        'MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS': '2',
+        'MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES': '2',
+        'CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES': '2',
+        'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '2',
+        'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'true',
+        'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
+        'CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS': 'true',
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT': 'true',
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': '78.0',
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': '8.0',
+        'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': '15.0',
+
+        # Handicap parser is not trusted yet: close spreads/team totals from fallback publication.
+        'CONTROLLED_FALLBACK_ALLOWED_FAMILIES': 'totals,dnb',
+        'CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES': 'totals,dnb',
+        'CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES': 'totals,dnb',
+        'CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES': '',
+        'CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED': 'false',
+        'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS': '2',
+        'CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES': '2',
+        'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS': '2',
+        'CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES': '2',
+        'CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT': '6.0',
+        'CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP': '3.0',
+        'DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED': 'true',
+        'HANDICAP_PAIR_INTEGRITY_REQUIRED': 'true',
+        'SPREADS_PUBLICATION_ENABLED': 'false',
+        'TEAM_TOTALS_PUBLICATION_ENABLED': 'false',
     }
 
 
@@ -116,10 +172,14 @@ def compute(policy: dict[str, Any]) -> tuple[dict[str, str], list[dict[str, Any]
             'api_key_present': None if not secret_keys else not missing_key,
         })
 
+    integrity = final_market_integrity_env()
+    env.update(integrity)
     notes = [
         'config/provider_runtime_policy.json is the effective provider budget source of truth.',
         'api-football is removed from active runtime and report provider lists.',
-        'SportLogic remains disabled until raw odds payload price parsing is fixture-tested.',
+        'SportLogic is context-probe only; odds are quarantined until parser fixtures pass.',
+        'Controlled fallback is market-integrity hardened: totals/dnb only, no spreads/teamtotals, min 2 odds sources.',
+        'Manual workflow_dispatch runs are dry-run unless FORCE_PUBLISH/AUTORUN_INPUT_FORCE_PUBLISH is true.',
         'Budget mode is per-run-only; daily/monthly counters are not used for critical free sources.',
     ]
     if env_present(['ODDS_API_IO_KEY_2']):
@@ -151,6 +211,7 @@ def main() -> int:
         'deleted_providers': policy.get('deleted_providers') or ['api_football'],
         'decisions': decisions,
         'env_written_count': len(env),
+        'integrity_env': final_market_integrity_env(),
         'notes': notes,
     }
     write_json(EXPORT_PATH, export)
