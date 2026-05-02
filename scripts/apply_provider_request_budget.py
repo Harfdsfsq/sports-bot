@@ -11,6 +11,7 @@ ROOT = Path('.').resolve()
 POLICY_PATH = ROOT / 'config' / 'provider_runtime_policy.json'
 STATE_PATH = ROOT / '.data' / 'provider_request_budget_state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-provider-request-budget.json'
+EFFECTIVE_RUNTIME_PATH = ROOT / '.data' / 'exports' / 'latest-harizon-runtime-policy.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
@@ -70,14 +71,13 @@ def manual_probe_without_force_publish() -> bool:
 def final_market_integrity_env() -> dict[str, str]:
     manual_dry_run = manual_probe_without_force_publish()
     return {
-        # Manual Actions runs are diagnostics by default. Scheduled runs keep normal publication behavior.
+        'HARIZON_RUNTIME_POLICY_VERSION': 'harizon-runtime-policy-v3-market-integrity',
+        'HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION': 'harizon-runtime-policy-v3-market-integrity',
         'HARIZON_MANUAL_DRY_RUN': str(manual_dry_run).lower(),
         'PUBLISH_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('PUBLISH_DRY_RUN') or 'false').lower(),
         'CONTROLLED_FALLBACK_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('CONTROLLED_FALLBACK_DRY_RUN') or 'false').lower(),
         'CONTROLLED_FALLBACK_SEND_TELEGRAM': 'false' if manual_dry_run else 'true',
         'CONTROLLED_FALLBACK_TELEGRAM_ENABLED': 'false' if manual_dry_run else 'true',
-
-        # Do not let context providers validate market price. Price must be confirmed by independent odds sources.
         'MARKET_DERIVED_MIN_BOOKS': '2',
         'MARKET_DERIVED_MIN_SOURCES': '2',
         'MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS': '2',
@@ -91,8 +91,6 @@ def final_market_integrity_env() -> dict[str, str]:
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': '78.0',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': '8.0',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': '15.0',
-
-        # Handicap parser is not trusted yet: close spreads/team totals from fallback publication.
         'CONTROLLED_FALLBACK_ALLOWED_FAMILIES': 'totals,dnb',
         'CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES': 'totals,dnb',
         'CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES': 'totals,dnb',
@@ -200,6 +198,7 @@ def main() -> int:
         state = {}
     state.update({'version': policy.get('version'), 'policy_path': str(POLICY_PATH), 'updated_at': now.isoformat(), 'last_decisions': decisions})
     write_json(STATE_PATH, state)
+    integrity_env = final_market_integrity_env()
     export = {
         'version': policy.get('version'),
         'policy_path': str(POLICY_PATH),
@@ -211,10 +210,21 @@ def main() -> int:
         'deleted_providers': policy.get('deleted_providers') or ['api_football'],
         'decisions': decisions,
         'env_written_count': len(env),
-        'integrity_env': final_market_integrity_env(),
+        'integrity_env': integrity_env,
         'notes': notes,
     }
+    effective_runtime = {
+        'policy_version': integrity_env['HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION'],
+        'provider_policy_version': policy.get('version'),
+        'created_at_utc': now.isoformat(),
+        'local_now': now.astimezone(MSK).isoformat(),
+        'env_updates': env,
+        'provider_decisions': decisions,
+        'notes': notes,
+        'source': 'scripts/apply_provider_request_budget.py final market-integrity layer',
+    }
     write_json(EXPORT_PATH, export)
+    write_json(EFFECTIVE_RUNTIME_PATH, effective_runtime)
     print(json.dumps(export, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
 
