@@ -14,6 +14,7 @@ REQUIRED_FILES = [
     "scripts/auto_learning_engine.py",
     "scripts/sync_persistent_state.py",
     "scripts/apply_provider_request_budget.py",
+    "scripts/apply_run_integrity_fixups.py",
     "config/final_runtime_overrides.env",
     "config/provider_request_budget.json",
     "config/auto_learning_policy.json",
@@ -45,7 +46,16 @@ def read(path: str) -> str:
         return ""
 
 
+def apply_integrity_fixups() -> dict[str, Any]:
+    try:
+        from scripts.apply_run_integrity_fixups import apply_all
+        return dict(apply_all())
+    except Exception as exc:
+        return {"error": f"{type(exc).__name__}: {exc}"}
+
+
 def main() -> int:
+    fixups = apply_integrity_fixups()
     missing = [path for path in REQUIRED_FILES if not Path(path).exists()]
     warnings = []
 
@@ -89,6 +99,7 @@ def main() -> int:
     generated_present = [path for path in GENERATED_DIRS if Path(path).exists()]
     payload: dict[str, Any] = {
         "ok": not missing,
+        "integrity_fixups": fixups,
         "missing_required_files": missing,
         "warnings": warnings,
         "generated_dirs_present": generated_present,
@@ -102,7 +113,7 @@ def main() -> int:
     )
 
     print(json.dumps(payload, ensure_ascii=False, indent=2))
-    # Do not fail the workflow for warnings; fail only if critical files are missing.
+    # Do not fail the workflow for warnings or fixup errors; fail only if critical files are missing.
     return 1 if missing else 0
 
 
