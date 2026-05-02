@@ -425,9 +425,18 @@ def _install_httpx_telegram_guard() -> None:
     httpx.AsyncClient._harizon_total_price_guard_patch = True
 
 
+def _install_telegram_runtime_safety() -> None:
+    try:
+        from app.services import telegram_runtime_safety
+        telegram_runtime_safety.install()
+    except Exception:
+        return
+
+
 try:
     _apply_provider_aliases()
     _install_provider_import_hook()
+    _install_telegram_runtime_safety()
     _install_telegram_stake_percent_formatter()
     _install_telegram_request_guard()
     _install_httpx_telegram_guard()
