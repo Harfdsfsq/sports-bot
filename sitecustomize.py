@@ -2,11 +2,18 @@
 
 from __future__ import annotations
 
+import builtins
 import json
+import os
 import re
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
+
+
+def _truthy(value: object) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
 def _apply_provider_aliases() -> None:
@@ -181,6 +188,61 @@ def _extract_text_from_payload_bytes(data) -> str:
         return ""
 
 
+def _filter_quarantined_offer_families(offers):
+    if not offers:
+        return offers
+    disable_spreads = _truthy(os.getenv("DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED", "true")) or not _truthy(os.getenv("SPREADS_PUBLICATION_ENABLED", "false"))
+    disable_team_totals = not _truthy(os.getenv("TEAM_TOTALS_PUBLICATION_ENABLED", "false"))
+    if not disable_spreads and not disable_team_totals:
+        return offers
+    filtered = []
+    for offer in offers:
+        family = str(getattr(offer, "family", "") or "").strip().lower()
+        if disable_spreads and family == "spreads":
+            continue
+        if disable_team_totals and family == "teamtotals":
+            continue
+        filtered.append(offer)
+    return filtered
+
+
+def _patch_odds_api_io_provider() -> None:
+    try:
+        import app.providers.odds_api_io as odds_module
+    except Exception:
+        return
+    cls = getattr(odds_module, "OddsApiIoProvider", None)
+    if cls is None or getattr(cls, "_harizon_market_integrity_patch", False):
+        return
+    original = getattr(cls, "_parse_event_odds", None)
+    if not callable(original):
+        return
+
+    def parse_event_odds_patched(self, payload, match):
+        offers = original(self, payload, match)
+        return _filter_quarantined_offer_families(offers)
+
+    cls._parse_event_odds = parse_event_odds_patched
+    cls._harizon_market_integrity_patch = True
+
+
+def _install_provider_import_hook() -> None:
+    if getattr(builtins, "_harizon_provider_integrity_import_hook", False):
+        _patch_odds_api_io_provider()
+        return
+    original_import = builtins.__import__
+
+    def import_patched(name, globals=None, locals=None, fromlist=(), level=0):
+        module = original_import(name, globals, locals, fromlist, level)
+        if name == "app.providers.odds_api_io" or name.startswith("app.providers.odds_api_io"):
+            _patch_odds_api_io_provider()
+        return module
+
+    builtins.__import__ = import_patched
+    builtins._harizon_provider_integrity_import_hook = True
+    _patch_odds_api_io_provider()
+
+
 def _install_telegram_stake_percent_formatter() -> None:
     try:
         from urllib import parse
@@ -284,6 +346,7 @@ def _install_httpx_telegram_guard() -> None:
 
 try:
     _apply_provider_aliases()
+    _install_provider_import_hook()
     _install_telegram_stake_percent_formatter()
     _install_telegram_request_guard()
     _install_httpx_telegram_guard()
