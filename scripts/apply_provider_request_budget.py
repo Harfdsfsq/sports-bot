@@ -80,7 +80,7 @@ def manual_probe_without_force_publish() -> bool:
 
 def final_market_integrity_env() -> dict[str, str]:
     manual_dry_run = manual_probe_without_force_publish()
-    return {
+    env = {
         'HARIZON_RUNTIME_POLICY_VERSION': 'harizon-runtime-policy-v3-market-integrity',
         'HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION': 'harizon-runtime-policy-v3-market-integrity',
         'HARIZON_MANUAL_DRY_RUN': str(manual_dry_run).lower(),
@@ -88,6 +88,13 @@ def final_market_integrity_env() -> dict[str, str]:
         'CONTROLLED_FALLBACK_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('CONTROLLED_FALLBACK_DRY_RUN') or 'false').lower(),
         'CONTROLLED_FALLBACK_SEND_TELEGRAM': 'false' if manual_dry_run else 'true',
         'CONTROLLED_FALLBACK_TELEGRAM_ENABLED': 'false' if manual_dry_run else 'true',
+        'MATCH_BOOTSTRAP_PROVIDER': os.getenv('MATCH_BOOTSTRAP_PROVIDER') or 'odds_api_io',
+        'DAY_INVENTORY_BOOTSTRAP_PROVIDER': os.getenv('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'odds_api_io',
+        'DAY_INVENTORY_FORCE_PROVIDER_MERGE': 'true',
+        'DAY_INVENTORY_USE_FOR_RUN': 'true',
+        'DAY_INVENTORY_COVERAGE_MAX_REBUILD': 'true',
+        'DAY_INVENTORY_NEAR_WINDOW_PRIORITY': 'true',
+        'DAY_INVENTORY_NEAR_WINDOW_HOURS': os.getenv('DAY_INVENTORY_NEAR_WINDOW_HOURS') or '12',
         'MARKET_DERIVED_MIN_BOOKS': '2',
         'MARKET_DERIVED_MIN_SOURCES': '2',
         'MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS': '2',
@@ -117,6 +124,22 @@ def final_market_integrity_env() -> dict[str, str]:
         'SPREADS_PUBLICATION_ENABLED': 'false',
         'TEAM_TOTALS_PUBLICATION_ENABLED': 'false',
     }
+    if manual_dry_run:
+        # Manual dry-runs are diagnostic-only, so allow near-kickoff data collection.
+        # Real scheduled or FORCE_PUBLISH runs keep the normal lead-time protection.
+        env.update({
+            'MIN_KICKOFF_LEAD_MINUTES': '0',
+            'ADAPTIVE_MIN_KICKOFF_LEAD_ENABLED': 'false',
+            'ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES': '0',
+            'EMERGENCY_MIN_KICKOFF_LEAD_ENABLED': 'true',
+            'EMERGENCY_MIN_KICKOFF_LEAD_MINUTES': '0',
+            'FORCE_RELAXED_MIN_KICKOFF_LEAD_ENABLED': 'true',
+            'FORCE_RELAXED_MIN_KICKOFF_LEAD_MINUTES': '0',
+            'MANUAL_LATE_MODE_ENABLED': 'true',
+            'MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES': '0',
+            'MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES': '0',
+        })
+    return env
 
 
 def market_integrity_check(env: dict[str, str], policy_version: str | None) -> dict[str, Any]:
@@ -152,6 +175,8 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
             failures.append('manual_workflow_without_force_publish_not_dry_run')
         if truthy(env.get('CONTROLLED_FALLBACK_SEND_TELEGRAM')):
             failures.append('manual_workflow_without_force_publish_can_send_controlled_telegram')
+        if as_int(env.get('MIN_KICKOFF_LEAD_MINUTES'), 999) != 0:
+            failures.append('manual_dry_run_min_kickoff_lead_not_zero')
     if str(env.get('SPORTLOGIC_BOOKMAKERS') or '') != '__probe_only__':
         warnings.append('sportlogic_bookmakers_not_probe_only')
     if 'quarantined' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or ''):
@@ -170,6 +195,9 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
             'min_odds_sources': min_odds_sources,
             'manual_dry_run': env.get('HARIZON_MANUAL_DRY_RUN'),
             'controlled_send_telegram': env.get('CONTROLLED_FALLBACK_SEND_TELEGRAM'),
+            'min_kickoff_lead_minutes': env.get('MIN_KICKOFF_LEAD_MINUTES'),
+            'inventory_bootstrap': env.get('DAY_INVENTORY_BOOTSTRAP_PROVIDER'),
+            'inventory_provider_merge': env.get('DAY_INVENTORY_FORCE_PROVIDER_MERGE'),
             'sportlogic_bookmakers': env.get('SPORTLOGIC_BOOKMAKERS'),
         },
     }
@@ -244,6 +272,7 @@ def compute(policy: dict[str, Any]) -> tuple[dict[str, str], list[dict[str, Any]
         'SportLogic is context-probe only; odds are quarantined until parser fixtures pass.',
         'Controlled fallback is market-integrity hardened: totals/dnb only, no spreads/teamtotals, min 2 odds sources.',
         'Manual workflow_dispatch runs are dry-run unless FORCE_PUBLISH/AUTORUN_INPUT_FORCE_PUBLISH is true.',
+        'Manual dry-run may analyze near-kickoff matches with lead=0 because Telegram publication is disabled.',
         'Budget mode is per-run-only; daily/monthly counters are not used for critical free sources.',
     ]
     if env_present(['ODDS_API_IO_KEY_2']):
