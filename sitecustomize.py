@@ -106,6 +106,8 @@ def _iter_pick_blocks(text: str) -> list[str]:
             current.append(line)
     if current:
         blocks.append("\n".join(current))
+    if not blocks and text:
+        blocks = [str(text)]
     return blocks
 
 
@@ -141,11 +143,20 @@ def _suspicious_total_price_reasons(text: str) -> list[str]:
 
 
 def _market_structure_reasons(text: str) -> list[str]:
+    """Final Telegram gate for reserve picks.
+
+    The controlled-fallback report can count context confirmations as sources;
+    publication requires independent market support. We therefore block any
+    outgoing Telegram pick that explicitly says odds sources < 2, and when that
+    field is absent we require at least 3 bookmaker lines.
+    """
     reasons: list[str] = []
-    if "контролируемый прогноз" not in text and "Режим: контролируемый резерв" not in text:
+    if not str(text or "").strip():
         return reasons
     for block in _iter_pick_blocks(text):
-        if "Коэффициент:" not in block:
+        block_low = block.lower()
+        looks_like_pick = any(token in block for token in ("Коэффициент:", "Ставка:", "🎯", "✅ Опубликовано"))
+        if not looks_like_pick:
             continue
         odds_sources_match = re.search(r"odds\s+sources\s*:?\s*(\d+)", block, re.IGNORECASE)
         if odds_sources_match:
@@ -153,8 +164,19 @@ def _market_structure_reasons(text: str) -> list[str]:
                 odds_sources = int(odds_sources_match.group(1))
             except Exception:
                 odds_sources = 0
-            if odds_sources < 2:
+            if odds_sources < int(os.getenv("TELEGRAM_MIN_ODDS_SOURCES", "2") or 2):
                 reasons.append(f"single_odds_source:{odds_sources}/2")
+            continue
+        # Fallback for the actual publication message where odds_sources may not be printed.
+        books_match = re.search(r"(?:линии|линий|букмекер(?:ов|а)?|books?)\s*[: ]\s*(\d+)", block, re.IGNORECASE)
+        if books_match:
+            try:
+                books = int(books_match.group(1))
+            except Exception:
+                books = 0
+            min_books = int(os.getenv("TELEGRAM_SINGLE_SOURCE_MIN_BOOKS", "3") or 3)
+            if books < min_books and ("контрол" in block_low or "резерв" in block_low or "коэффициент:" in block_low or "🎯" in block):
+                reasons.append(f"bookmaker_lines_below_market_guard:{books}/{min_books}")
     return reasons
 
 
@@ -226,13 +248,26 @@ def _patch_odds_api_io_provider() -> None:
     cls._harizon_market_integrity_patch = True
 
 
+def _sportlogic_has_row_shape(payload) -> bool:
+    if not isinstance(payload, dict):
+        return False
+    keys = {str(key).lower() for key in payload.keys()}
+    shape_keys = {
+        "price", "decimal_odds", "value", "odd", "odds", "decimal", "option_value",
+        "market", "market_name", "market_key", "selection", "outcome", "option", "option_name",
+        "home", "home_odds", "draw", "draw_odds", "away", "away_odds", "odd_1", "odd_x", "odd_2",
+        "bookmaker", "bookmaker_name", "sportsbook", "provider", "book",
+    }
+    return bool(keys & shape_keys)
+
+
 def _patch_sportlogic_provider() -> None:
     try:
         import app.providers.sportlogic_provider as sportlogic_module
     except Exception:
         return
     cls = getattr(sportlogic_module, "SportLogicProvider", None)
-    if cls is None or getattr(cls, "_harizon_empty_odds_patch", False):
+    if cls is None or getattr(cls, "_harizon_empty_odds_patch_v2", False):
         return
 
     def extract_odds_rows_patched(payload):
@@ -246,24 +281,26 @@ def _patch_sportlogic_provider() -> None:
                 return [row for row in data if isinstance(row, dict)]
             if isinstance(data, dict):
                 nested = extract_odds_rows_patched(data)
-                return nested if nested else [data]
+                if nested:
+                    return nested
+                return [data] if _sportlogic_has_row_shape(data) else []
             return []
-        for key in ("response", "results", "fixtures", "matches", "events", "items", "odds", "markets"):
+        for key in ("response", "results", "fixtures", "matches", "events", "items", "odds", "markets", "bookmakers"):
+            if key not in payload:
+                continue
             value = payload.get(key)
             if isinstance(value, list):
                 return [row for row in value if isinstance(row, dict)]
             if isinstance(value, dict):
                 nested = extract_odds_rows_patched(value)
-                return nested if nested else [value]
-        # Only treat a bare dict as an odds row when it has a plausible price/market/selection shape.
-        keys = {str(key).lower() for key in payload.keys()}
-        shape_keys = {"price", "decimal_odds", "value", "odd", "odds", "decimal", "market", "market_name", "selection", "outcome", "name"}
-        if keys & shape_keys:
-            return [payload]
-        return []
+                if nested:
+                    return nested
+                return [value] if _sportlogic_has_row_shape(value) else []
+            return []
+        return [payload] if _sportlogic_has_row_shape(payload) else []
 
     cls._extract_odds_rows = staticmethod(extract_odds_rows_patched)
-    cls._harizon_empty_odds_patch = True
+    cls._harizon_empty_odds_patch_v2 = True
 
 
 def _install_provider_import_hook() -> None:
