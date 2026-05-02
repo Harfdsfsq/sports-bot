@@ -2,39 +2,88 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
-UTC = timezone.utc
 from typing import Any
 
 import httpx
 
 from app.config import Settings
+from app.providers.clubelo import ClubEloContextProvider
 from app.schemas import Match, MatchContext
-from app.utils import canonicalize_team_name, clamp, parse_datetime, soft_contains_team, team_similarity
+from app.utils import canonicalize_league_name, canonicalize_team_name, clamp, parse_datetime, soft_contains_team, team_similarity
+
+UTC = timezone.utc
+
+
+OPENLIGADB_TEAM_ALIASES: dict[str, tuple[str, ...]] = {
+    'bayern munich': ('FC Bayern München', 'Bayern München', 'Bayern Munich'),
+    'bayern munchen': ('FC Bayern München', 'Bayern München', 'Bayern Munich'),
+    'borussia dortmund': ('Borussia Dortmund', 'BVB'),
+    'bayer leverkusen': ('Bayer 04 Leverkusen', 'Bayer Leverkusen'),
+    'rb leipzig': ('RB Leipzig', 'RasenBallsport Leipzig'),
+    'eintracht frankfurt': ('Eintracht Frankfurt',),
+    'borussia monchengladbach': ('Borussia Mönchengladbach', 'Gladbach'),
+    'koln': ('1. FC Köln', 'FC Köln', 'Koeln'),
+    'fc koln': ('1. FC Köln', 'FC Köln', 'Koeln'),
+    'freiburg': ('SC Freiburg',),
+    'stuttgart': ('VfB Stuttgart',),
+    'werder bremen': ('SV Werder Bremen', 'Werder Bremen'),
+    'wolfsburg': ('VfL Wolfsburg',),
+    'mainz': ('1. FSV Mainz 05', 'Mainz 05'),
+    'hoffenheim': ('TSG Hoffenheim', 'TSG 1899 Hoffenheim'),
+    'union berlin': ('1. FC Union Berlin', 'Union Berlin'),
+    'augsburg': ('FC Augsburg',),
+    'bochum': ('VfL Bochum',),
+    'heidenheim': ('1. FC Heidenheim', 'FC Heidenheim'),
+    'darmstadt': ('SV Darmstadt 98', 'Darmstadt 98'),
+    'schalke': ('FC Schalke 04', 'Schalke 04'),
+    'hamburg': ('Hamburger SV', 'HSV'),
+    'hertha berlin': ('Hertha BSC', 'Hertha Berlin'),
+}
+
+OPENLIGADB_DEFAULT_ALIASES: dict[str, str] = {
+    'germany bundesliga': 'bl1',
+    'german bundesliga': 'bl1',
+    'bundesliga': 'bl1',
+    '1 bundesliga': 'bl1',
+    '1. bundesliga': 'bl1',
+    'germany bundesliga 2': 'bl2',
+    'german bundesliga 2': 'bl2',
+    'bundesliga 2': 'bl2',
+    '2 bundesliga': 'bl2',
+    '2. bundesliga': 'bl2',
+    'germany 3 liga': 'bl3',
+    'german 3 liga': 'bl3',
+    '3 liga': 'bl3',
+    '3. liga': 'bl3',
+    'dfb pokal': 'dfb',
+    'germany dfb pokal': 'dfb',
+    'uefa champions league': 'ucl',
+    'champions league': 'ucl',
+    'uefa europa league': 'el',
+    'europa league': 'el',
+}
 
 
 class OpenLigaDbContextProvider:
+    """OpenLigaDB adapter with an embedded ClubElo sidecar.
+
+    The runner already wires `openligadb`, so ClubElo is merged here as a
+    no-extra-runner-risk context source. OpenLigaDB covers mostly German/UEFA
+    slugs; ClubElo covers broader European clubs as a strength prior.
+    """
+
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
-        self.base_url = str(settings.openligadb_base_url or 'https://api.openligadb.de').rstrip('/')
-        self.timeout = float(settings.openligadb_timeout_seconds or 12.0)
+        self.base_url = str(getattr(settings, 'openligadb_base_url', None) or 'https://api.openligadb.de').rstrip('/')
+        self.timeout = float(getattr(settings, 'openligadb_timeout_seconds', None) or 12.0)
+        self.max_http_requests = max(0, int(getattr(settings, 'openligadb_requests_max_per_run', None) or 14))
+        self.match_limit = max(1, int(getattr(settings, 'openligadb_context_match_limit', None) or getattr(settings, 'openligadb_match_limit', None) or 80))
+        self.dataset_limit = max(1, int(getattr(settings, 'openligadb_dataset_limit', None) or 8))
         self.league_map = self._parse_competition_map(getattr(settings, 'openligadb_competition_map', []) or [])
-        self.alias_map = {
-            'germany bundesliga': 'bl1',
-            'german bundesliga': 'bl1',
-            '1 bundesliga': 'bl1',
-            '1. bundesliga': 'bl1',
-            'germany bundesliga 2': 'bl2',
-            'german bundesliga 2': 'bl2',
-            '2 bundesliga': 'bl2',
-            '2. bundesliga': 'bl2',
-            'germany 3 liga': 'bl3',
-            'german 3 liga': 'bl3',
-            '3 liga': 'bl3',
-            '3. liga': 'bl3',
-            'uefa champions league': 'ucl',
-            'champions league': 'ucl',
-            'dfb pokal': 'dfb',
-        }
+        self.alias_map = {**OPENLIGADB_DEFAULT_ALIASES, **self.league_map}
+        self.clubelo_sidecar_enabled = self._env_bool('OPENLIGADB_CLUBELO_SIDECAR_ENABLED', True)
+        self.clubelo = ClubEloContextProvider(settings) if self.clubelo_sidecar_enabled else None
+        self._requests = 0
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -49,19 +98,48 @@ class OpenLigaDbContextProvider:
             'matched_exact': 0,
             'matched_loose': 0,
             'matched_fuzzy': 0,
+            'clubelo_sidecar_enabled': self.clubelo_sidecar_enabled,
+            'clubelo_contexts_built': 0,
+            'clubelo_only_contexts': 0,
+            'merged_with_clubelo': 0,
+            'budget_exhausted': False,
+            'max_http_requests_per_run': self.max_http_requests,
             'http_statuses': [],
             'last_body_preview': None,
         }
-        preview: dict[str, Any] = {'sample_datasets': [], 'sample_tables': [], 'sample_contexts': []}
-        if not stats['enabled']:
-            return {}, stats, preview
+        preview: dict[str, Any] = {
+            'sample_datasets': [],
+            'sample_tables': [],
+            'sample_contexts': [],
+            'clubelo_preview': {},
+        }
 
-        soccer_matches = [item for item in matches if item.sport_key == 'soccer']
+        soccer_matches = [item for item in matches if str(getattr(item, 'sport_key', '') or '') == 'soccer'][: self.match_limit]
         if not soccer_matches:
             return {}, stats, preview
 
-        match_limit = max(1, int(getattr(self.settings, 'openligadb_match_limit', 24) or 24))
-        soccer_matches = soccer_matches[:match_limit]
+        openligadb_matches = [item for item in soccer_matches if self._competition_key(item.league_name)]
+        contexts: dict[str, MatchContext] = {}
+        if stats['enabled'] and openligadb_matches and self.max_http_requests > 0:
+            contexts = await self._fetch_openligadb_contexts(openligadb_matches, stats, preview)
+        elif stats['enabled'] and openligadb_matches and self.max_http_requests <= 0:
+            stats['budget_exhausted'] = True
+
+        if self.clubelo is not None:
+            clubelo_contexts, clubelo_stats, clubelo_preview = await self.clubelo.fetch_context(soccer_matches)
+            stats['clubelo'] = clubelo_stats
+            stats['clubelo_contexts_built'] = len(clubelo_contexts)
+            preview['clubelo_preview'] = clubelo_preview
+            contexts = self._merge_clubelo_contexts(contexts, clubelo_contexts, stats)
+
+        return contexts, stats, preview
+
+    async def _fetch_openligadb_contexts(
+        self,
+        soccer_matches: list[Match],
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+    ) -> dict[str, MatchContext]:
         grouped: dict[str, list[Match]] = defaultdict(list)
         for match in soccer_matches:
             comp_key = self._competition_key(match.league_name)
@@ -69,9 +147,8 @@ class OpenLigaDbContextProvider:
                 grouped[comp_key].append(match)
 
         datasets: dict[tuple[str, int], dict[str, Any]] = {}
-        dataset_limit = max(1, int(getattr(self.settings, 'openligadb_dataset_limit', 8) or 8))
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
-            for comp_key, match_group in list(grouped.items())[:dataset_limit]:
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+            for comp_key, match_group in list(grouped.items())[: self.dataset_limit]:
                 data_rows: list[dict[str, Any]] | None = None
                 table_rows: list[dict[str, Any]] = []
                 used_season: int | None = None
@@ -127,7 +204,7 @@ class OpenLigaDbContextProvider:
                         'expected_away': context.expected_away,
                         'confidence': context.confidence,
                     })
-        return contexts, stats, preview
+        return contexts
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
@@ -137,21 +214,25 @@ class OpenLigaDbContextProvider:
             'datasets_loaded': 0,
             'fixtures_scanned': 0,
             'matches_built': 0,
+            'budget_exhausted': False,
+            'max_http_requests_per_run': self.max_http_requests,
             'http_statuses': [],
             'last_body_preview': None,
         }
         preview: dict[str, Any] = {'sample_datasets': [], 'sample_matches': []}
+        if self.max_http_requests <= 0:
+            stats['budget_exhausted'] = True
+            return [], stats, preview
 
         now_utc = datetime.now(UTC)
         horizon = now_utc + timedelta(days=max(1, int(getattr(self.settings, 'run_days_ahead', 4) or 4)))
-        dataset_limit = max(1, int(getattr(self.settings, 'openligadb_dataset_limit', 8) or 8))
-        competition_keys = self._bootstrap_competition_keys()[:dataset_limit]
+        competition_keys = self._bootstrap_competition_keys()[: self.dataset_limit]
         if not competition_keys:
             return [], stats, preview
 
         matches: list[Match] = []
         seen: set[str] = set()
-        async with httpx.AsyncClient(timeout=self.timeout) as client:
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             for comp_key in competition_keys:
                 loaded_rows: list[dict[str, Any]] | None = None
                 used_season: int | None = None
@@ -196,7 +277,11 @@ class OpenLigaDbContextProvider:
         return matches, stats, preview
 
     def supports_match(self, match: Match) -> bool:
-        return str(getattr(match, 'sport_key', '') or '') == 'soccer' and bool(self._competition_key(match.league_name))
+        if str(getattr(match, 'sport_key', '') or '') != 'soccer':
+            return False
+        if self.clubelo_sidecar_enabled:
+            return True
+        return bool(self._competition_key(match.league_name))
 
     async def _fetch_json(
         self,
@@ -206,6 +291,10 @@ class OpenLigaDbContextProvider:
         *,
         soft_fail: bool = False,
     ) -> Any | None:
+        if self.max_http_requests <= 0 or self._requests >= self.max_http_requests:
+            stats['budget_exhausted'] = True
+            return None
+        self._requests += 1
         stats['requests'] += 1
         try:
             response = await client.get(f'{self.base_url}{path}')
@@ -233,38 +322,27 @@ class OpenLigaDbContextProvider:
             if not text or '=' not in text:
                 continue
             left, right = text.split('=', 1)
-            result[left.strip().lower()] = right.strip().lower()
+            result[canonicalize_league_name(left.strip())] = right.strip().lower()
         return result
 
     def _competition_key(self, league_name: str) -> str | None:
-        raw = self._normalize_league_name(league_name)
+        raw = canonicalize_league_name(league_name)
         if not raw:
             return None
-        for source in (raw,):
-            if source in self.league_map:
-                return self.league_map[source]
-            if source in self.alias_map:
-                return self.alias_map[source]
-        for source in (raw,):
-            for left, right in {**self.league_map, **self.alias_map}.items():
-                if left in source or source in left:
-                    return right
+        if raw in self.alias_map:
+            return self.alias_map[raw]
+        for left, right in self.alias_map.items():
+            left_key = canonicalize_league_name(left)
+            if left_key and (left_key in raw or raw in left_key):
+                return right
         return None
 
     def _competition_label(self, comp_key: str) -> str:
         key = str(comp_key or '').strip()
-        for mapping in (self.league_map, self.alias_map):
-            for name, value in mapping.items():
-                if str(value or '').strip().lower() == key.lower():
-                    return str(name or '').strip().title()
+        for name, value in self.alias_map.items():
+            if str(value or '').strip().lower() == key.lower():
+                return str(name or '').strip().title()
         return key
-
-    @staticmethod
-    def _normalize_league_name(name: str) -> str:
-        text = ' '.join(str(name or '').lower().replace('_', ' ').replace('/', ' ').replace('.', ' ').split())
-        for ch in ',:;()[]{}':
-            text = text.replace(ch, ' ')
-        return ' '.join(text.split())
 
     @staticmethod
     def _season_candidates(dt: datetime) -> list[int]:
@@ -281,21 +359,20 @@ class OpenLigaDbContextProvider:
 
     def _bootstrap_competition_keys(self) -> list[str]:
         ordered: list[str] = []
-        for source in (self.league_map, self.alias_map):
-            for value in source.values():
-                comp_key = str(value or '').strip()
-                if comp_key and comp_key not in ordered:
-                    ordered.append(comp_key)
+        for value in self.alias_map.values():
+            comp_key = str(value or '').strip()
+            if comp_key and comp_key not in ordered:
+                ordered.append(comp_key)
         return ordered
 
     def _row_to_match(self, row: dict[str, Any], *, comp_key: str) -> Match | None:
-        home_payload = row.get('Team1') if isinstance(row.get('Team1'), dict) else {}
-        away_payload = row.get('Team2') if isinstance(row.get('Team2'), dict) else {}
-        home_team = str(home_payload.get('TeamName') or row.get('Team1Name') or '').strip()
-        away_team = str(away_payload.get('TeamName') or row.get('Team2Name') or '').strip()
+        home_payload = self._team_payload(row, home=True)
+        away_payload = self._team_payload(row, home=False)
+        home_team = str(home_payload.get('TeamName') or home_payload.get('teamName') or row.get('Team1Name') or row.get('team1Name') or '').strip()
+        away_team = str(away_payload.get('TeamName') or away_payload.get('teamName') or row.get('Team2Name') or row.get('team2Name') or '').strip()
         if not home_team or not away_team:
             return None
-        commence_raw = str(row.get('MatchDateTimeUTC') or row.get('MatchDateTime') or '').strip()
+        commence_raw = str(row.get('MatchDateTimeUTC') or row.get('matchDateTimeUTC') or row.get('MatchDateTime') or row.get('matchDateTime') or '').strip()
         if not commence_raw:
             return None
         if '+' not in commence_raw and not commence_raw.endswith('Z'):
@@ -304,15 +381,15 @@ class OpenLigaDbContextProvider:
             commence_time = parse_datetime(commence_raw)
         except Exception:
             return None
-        league_name = str(row.get('LeagueName') or self._competition_label(comp_key)).strip()
+        league_name = str(row.get('LeagueName') or row.get('leagueName') or self._competition_label(comp_key)).strip()
         metadata = {
             'openligadb_competition_key': comp_key,
-            'group': row.get('Group') or {},
+            'group': row.get('Group') or row.get('group') or {},
             'raw_row': row,
         }
         return Match(
             source='openligadb',
-            source_event_id=str(row.get('MatchID') or f'{comp_key}:{home_team}:{away_team}:{commence_time.isoformat()}'),
+            source_event_id=str(row.get('MatchID') or row.get('matchID') or f'{comp_key}:{home_team}:{away_team}:{commence_time.isoformat()}'),
             sport_key='soccer',
             league_name=league_name or self._competition_label(comp_key),
             home_team=home_team,
@@ -326,16 +403,25 @@ class OpenLigaDbContextProvider:
         )
 
     @staticmethod
-    def _team_aliases(payload: dict[str, Any]) -> list[str]:
+    def _team_payload(row: dict[str, Any], *, home: bool) -> dict[str, Any]:
+        for key in (('Team1', 'team1') if home else ('Team2', 'team2')):
+            value = row.get(key)
+            if isinstance(value, dict):
+                return value
+        return {}
+
+    def _team_aliases(self, payload: dict[str, Any]) -> list[str]:
         aliases: list[str] = []
-        for value in (
-            str(payload.get('teamName') or '').strip(),
-            str(payload.get('shortName') or '').strip(),
-            str(payload.get('teamGroupName') or '').strip(),
-        ):
+        for key in ('TeamName', 'teamName', 'ShortName', 'shortName', 'TeamGroupName', 'teamGroupName'):
+            value = str(payload.get(key) or '').strip()
             if value and value not in aliases:
                 aliases.append(value)
-        return aliases
+        expanded = list(aliases)
+        for value in aliases:
+            for alias in OPENLIGADB_TEAM_ALIASES.get(canonicalize_team_name(value), ()):
+                if alias not in expanded:
+                    expanded.append(alias)
+        return expanded
 
     @staticmethod
     def _team_match_score(a: str, b: str) -> float:
@@ -388,10 +474,11 @@ class OpenLigaDbContextProvider:
             payload['history'] = history_payload['payload']
             details.update(history_payload['details'])
         if standings_payload is not None:
-            expected_home_values.append((float(standings_payload['expected_home']), 0.32 if history_payload is not None else 0.62))
-            expected_away_values.append((float(standings_payload['expected_away']), 0.32 if history_payload is not None else 0.62))
-            home_prob_values.append((float(standings_payload['home_prob']), 0.32 if history_payload is not None else 0.62))
-            away_prob_values.append((float(standings_payload['away_prob']), 0.32 if history_payload is not None else 0.62))
+            weight = 0.32 if history_payload is not None else 0.62
+            expected_home_values.append((float(standings_payload['expected_home']), weight))
+            expected_away_values.append((float(standings_payload['expected_away']), weight))
+            home_prob_values.append((float(standings_payload['home_prob']), weight))
+            away_prob_values.append((float(standings_payload['away_prob']), weight))
             confidence = max(confidence, float(standings_payload['confidence']))
             payload['table'] = standings_payload['payload']
             details.update(standings_payload['details'])
@@ -421,13 +508,16 @@ class OpenLigaDbContextProvider:
         h2h_goals: list[float] = []
         best_quality: str | None = None
         for row in rows:
-            row_dt = parse_datetime(str(row.get('matchDateTimeUTC') or row.get('matchDateTime') or ''))
-            if row_dt is None or row_dt >= match_dt:
+            try:
+                row_dt = parse_datetime(str(row.get('matchDateTimeUTC') or row.get('MatchDateTimeUTC') or row.get('matchDateTime') or row.get('MatchDateTime') or ''))
+            except Exception:
                 continue
-            team1 = row.get('team1') or {}
-            team2 = row.get('team2') or {}
-            team1_aliases = self._team_aliases(team1 if isinstance(team1, dict) else {})
-            team2_aliases = self._team_aliases(team2 if isinstance(team2, dict) else {})
+            if row_dt >= match_dt:
+                continue
+            team1 = self._team_payload(row, home=True)
+            team2 = self._team_payload(row, home=False)
+            team1_aliases = self._team_aliases(team1)
+            team2_aliases = self._team_aliases(team2)
             score = self._extract_final_score(row)
             if score is None or not team1_aliases or not team2_aliases:
                 continue
@@ -508,14 +598,14 @@ class OpenLigaDbContextProvider:
         away_row = self._find_table_row(match.away_team, rows)
         if home_row is None or away_row is None:
             return None
-        home_matches = max(float(home_row.get('matches') or 0.0), 1.0)
-        away_matches = max(float(away_row.get('matches') or 0.0), 1.0)
-        home_gf = float(home_row.get('goals') or 0.0) / home_matches
-        home_ga = float(home_row.get('opponentGoals') or 0.0) / home_matches
-        away_gf = float(away_row.get('goals') or 0.0) / away_matches
-        away_ga = float(away_row.get('opponentGoals') or 0.0) / away_matches
-        home_ppg = float(home_row.get('points') or 0.0) / home_matches
-        away_ppg = float(away_row.get('points') or 0.0) / away_matches
+        home_matches = max(float(home_row.get('matches') or home_row.get('Matches') or 0.0), 1.0)
+        away_matches = max(float(away_row.get('matches') or away_row.get('Matches') or 0.0), 1.0)
+        home_gf = float(home_row.get('goals') or home_row.get('Goals') or 0.0) / home_matches
+        home_ga = float(home_row.get('opponentGoals') or home_row.get('OpponentGoals') or 0.0) / home_matches
+        away_gf = float(away_row.get('goals') or away_row.get('Goals') or 0.0) / away_matches
+        away_ga = float(away_row.get('opponentGoals') or away_row.get('OpponentGoals') or 0.0) / away_matches
+        home_ppg = float(home_row.get('points') or home_row.get('Points') or 0.0) / home_matches
+        away_ppg = float(away_row.get('points') or away_row.get('Points') or 0.0) / away_matches
         expected_home = clamp(((home_gf + away_ga) / 2.0) + 0.15, 0.35, 3.5)
         expected_away = clamp(((away_gf + home_ga) / 2.0), 0.22, 3.2)
         delta = clamp((home_ppg - away_ppg) * 0.10, -0.16, 0.16)
@@ -546,20 +636,26 @@ class OpenLigaDbContextProvider:
         best_score = 0.0
         for row in rows:
             aliases = []
-            for value in (str(row.get('teamName') or '').strip(), str(row.get('shortName') or '').strip()):
+            for value in (str(row.get('teamName') or row.get('TeamName') or '').strip(), str(row.get('shortName') or row.get('ShortName') or '').strip()):
                 if value and value not in aliases:
                     aliases.append(value)
-            if not aliases:
+            expanded = list(aliases)
+            for alias in aliases:
+                for extra in OPENLIGADB_TEAM_ALIASES.get(canonicalize_team_name(alias), ()):
+                    if extra not in expanded:
+                        expanded.append(extra)
+            if not expanded:
                 continue
-            score = max(self._team_match_score(team_name, alias) for alias in aliases)
+            score = max(self._team_match_score(team_name, alias) for alias in expanded)
             if score > best_score:
                 best_score = score
                 best_row = row
-        return best_row if best_score >= 0.7 else None
+        threshold = float(getattr(self.settings, 'openligadb_team_match_threshold', 0.62) or 0.62)
+        return best_row if best_score >= threshold else None
 
     @staticmethod
     def _extract_final_score(row: dict[str, Any]) -> tuple[float, float] | None:
-        results = row.get('matchResults')
+        results = row.get('matchResults') or row.get('MatchResults')
         if not isinstance(results, list):
             return None
         best: dict[str, Any] | None = None
@@ -567,8 +663,8 @@ class OpenLigaDbContextProvider:
         for item in results:
             if not isinstance(item, dict):
                 continue
-            result_type = int(item.get('resultTypeID') or 0)
-            result_order = int(item.get('resultOrderID') or 0)
+            result_type = int(item.get('resultTypeID') or item.get('ResultTypeID') or 0)
+            result_order = int(item.get('resultOrderID') or item.get('ResultOrderID') or 0)
             rank = 100 if result_type == 2 else result_order
             if rank > best_rank:
                 best_rank = rank
@@ -576,9 +672,55 @@ class OpenLigaDbContextProvider:
         if best is None:
             return None
         try:
-            return float(best.get('pointsTeam1')), float(best.get('pointsTeam2'))
+            return float(best.get('pointsTeam1') or best.get('PointsTeam1')), float(best.get('pointsTeam2') or best.get('PointsTeam2'))
         except Exception:
             return None
+
+    def _merge_clubelo_contexts(
+        self,
+        open_contexts: dict[str, MatchContext],
+        clubelo_contexts: dict[str, MatchContext],
+        stats: dict[str, Any],
+    ) -> dict[str, MatchContext]:
+        merged = dict(open_contexts)
+        for match_key, clubelo in clubelo_contexts.items():
+            existing = merged.get(match_key)
+            if existing is None:
+                merged[match_key] = clubelo
+                stats['clubelo_only_contexts'] = int(stats.get('clubelo_only_contexts') or 0) + 1
+                continue
+            weight_existing = clamp(float(existing.confidence or 55.0) / 100.0, 0.45, 0.72)
+            weight_clubelo = clamp(float(clubelo.confidence or 55.0) / 100.0, 0.35, 0.65)
+            expected_home = self._blend(existing.expected_home, clubelo.expected_home, weight_existing, weight_clubelo)
+            expected_away = self._blend(existing.expected_away, clubelo.expected_away, weight_existing, weight_clubelo)
+            home_prob = self._blend(existing.home_win_probability, clubelo.home_win_probability, weight_existing, weight_clubelo)
+            away_prob = self._blend(existing.away_win_probability, clubelo.away_win_probability, weight_existing, weight_clubelo)
+            details = dict(existing.details or {})
+            details.update({f'clubelo_sidecar_{key}': value for key, value in (clubelo.details or {}).items()})
+            details['context_blend'] = 'openligadb+clubelo'
+            payload = dict(existing.payload or {})
+            payload['clubelo'] = clubelo.payload
+            merged[match_key] = MatchContext(
+                source='openligadb+clubelo',
+                payload=payload,
+                expected_home=round(expected_home, 3) if expected_home is not None else None,
+                expected_away=round(expected_away, 3) if expected_away is not None else None,
+                home_win_probability=round(home_prob, 4) if home_prob is not None else None,
+                away_win_probability=round(away_prob, 4) if away_prob is not None else None,
+                confidence=float(round(clamp(max(float(existing.confidence or 0.0), float(clubelo.confidence or 0.0)) + 2.0, 54.0, 68.0), 2)),
+                details=details,
+            )
+            stats['merged_with_clubelo'] = int(stats.get('merged_with_clubelo') or 0) + 1
+        return merged
+
+    @staticmethod
+    def _blend(a: float | None, b: float | None, wa: float, wb: float) -> float | None:
+        if a is None:
+            return b
+        if b is None:
+            return a
+        total = wa + wb
+        return (float(a) * wa + float(b) * wb) / total if total > 0 else float(a)
 
     @staticmethod
     def _ppg(rows: list[tuple[datetime, float, float]]) -> float:
@@ -601,3 +743,12 @@ class OpenLigaDbContextProvider:
         if total_weight <= 0:
             return None
         return sum(value * weight for value, weight in clean) / total_weight
+
+    @staticmethod
+    def _env_bool(name: str, default: bool) -> bool:
+        import os
+
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+        return str(raw).strip().lower() in {'1', 'true', 'yes', 'on', 'force'}
