@@ -12,6 +12,7 @@ POLICY_PATH = ROOT / 'config' / 'provider_runtime_policy.json'
 STATE_PATH = ROOT / '.data' / 'provider_request_budget_state.json'
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-provider-request-budget.json'
 EFFECTIVE_RUNTIME_PATH = ROOT / '.data' / 'exports' / 'latest-harizon-runtime-policy.json'
+MARKET_INTEGRITY_CHECK_PATH = ROOT / '.data' / 'exports' / 'latest-market-integrity-runtime-check.json'
 GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
@@ -43,6 +44,15 @@ def append_github_env(values: dict[str, str]) -> None:
 
 def truthy(value: object) -> bool:
     return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on', 'force'}
+
+
+def as_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ''):
+            return default
+        return int(float(str(value)))
+    except Exception:
+        return default
 
 
 def env_present(keys: list[str]) -> bool:
@@ -106,6 +116,62 @@ def final_market_integrity_env() -> dict[str, str]:
         'HANDICAP_PAIR_INTEGRITY_REQUIRED': 'true',
         'SPREADS_PUBLICATION_ENABLED': 'false',
         'TEAM_TOTALS_PUBLICATION_ENABLED': 'false',
+    }
+
+
+def market_integrity_check(env: dict[str, str], policy_version: str | None) -> dict[str, Any]:
+    def families(name: str) -> set[str]:
+        return {item.strip().lower() for item in str(env.get(name) or '').split(',') if item.strip()}
+
+    failures: list[str] = []
+    warnings: list[str] = []
+    forbidden = {'spreads', 'teamtotals'}
+    scopes = {
+        'allowed': families('CONTROLLED_FALLBACK_ALLOWED_FAMILIES'),
+        'tier_a': families('CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES'),
+        'tier_b': families('CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES'),
+        'tier_c': families('CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES'),
+    }
+    for scope, values in scopes.items():
+        leaked = sorted(values & forbidden)
+        if leaked:
+            failures.append(f'{scope}_contains_forbidden_families:{"/".join(leaked)}')
+    if truthy(env.get('SPREADS_PUBLICATION_ENABLED')):
+        failures.append('SPREADS_PUBLICATION_ENABLED=true')
+    if truthy(env.get('TEAM_TOTALS_PUBLICATION_ENABLED')):
+        failures.append('TEAM_TOTALS_PUBLICATION_ENABLED=true')
+    if not truthy(env.get('DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED')):
+        failures.append('DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED=false')
+    min_odds_sources = as_int(env.get('CONTROLLED_FALLBACK_MIN_ODDS_SOURCES'))
+    if min_odds_sources < 2:
+        failures.append(f'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES={min_odds_sources}')
+    if not truthy(env.get('CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM')):
+        failures.append('CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM=false')
+    if manual_probe_without_force_publish():
+        if not truthy(env.get('HARIZON_MANUAL_DRY_RUN')):
+            failures.append('manual_workflow_without_force_publish_not_dry_run')
+        if truthy(env.get('CONTROLLED_FALLBACK_SEND_TELEGRAM')):
+            failures.append('manual_workflow_without_force_publish_can_send_controlled_telegram')
+    if str(env.get('SPORTLOGIC_BOOKMAKERS') or '') != '__probe_only__':
+        warnings.append('sportlogic_bookmakers_not_probe_only')
+    if 'quarantined' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or ''):
+        warnings.append('sportlogic_odds_quarantine_reason_missing')
+    return {
+        'status': 'failed' if failures else 'ok',
+        'failures': failures,
+        'warnings': warnings,
+        'runtime_policy_version': env.get('HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION'),
+        'provider_policy_version': policy_version,
+        'checked': {
+            'allowed_families': sorted(scopes['allowed']),
+            'tier_a': sorted(scopes['tier_a']),
+            'tier_b': sorted(scopes['tier_b']),
+            'tier_c': sorted(scopes['tier_c']),
+            'min_odds_sources': min_odds_sources,
+            'manual_dry_run': env.get('HARIZON_MANUAL_DRY_RUN'),
+            'controlled_send_telegram': env.get('CONTROLLED_FALLBACK_SEND_TELEGRAM'),
+            'sportlogic_bookmakers': env.get('SPORTLOGIC_BOOKMAKERS'),
+        },
     }
 
 
@@ -199,6 +265,7 @@ def main() -> int:
     state.update({'version': policy.get('version'), 'policy_path': str(POLICY_PATH), 'updated_at': now.isoformat(), 'last_decisions': decisions})
     write_json(STATE_PATH, state)
     integrity_env = final_market_integrity_env()
+    check = market_integrity_check(env, policy.get('version'))
     export = {
         'version': policy.get('version'),
         'policy_path': str(POLICY_PATH),
@@ -211,6 +278,7 @@ def main() -> int:
         'decisions': decisions,
         'env_written_count': len(env),
         'integrity_env': integrity_env,
+        'market_integrity_check': check,
         'notes': notes,
     }
     effective_runtime = {
@@ -220,13 +288,15 @@ def main() -> int:
         'local_now': now.astimezone(MSK).isoformat(),
         'env_updates': env,
         'provider_decisions': decisions,
+        'market_integrity_check': check,
         'notes': notes,
         'source': 'scripts/apply_provider_request_budget.py final market-integrity layer',
     }
     write_json(EXPORT_PATH, export)
     write_json(EFFECTIVE_RUNTIME_PATH, effective_runtime)
+    write_json(MARKET_INTEGRITY_CHECK_PATH, check)
     print(json.dumps(export, ensure_ascii=False, indent=2, sort_keys=True))
-    return 0
+    return 1 if check.get('status') == 'failed' else 0
 
 
 if __name__ == '__main__':
