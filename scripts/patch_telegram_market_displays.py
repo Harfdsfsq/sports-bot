@@ -22,10 +22,15 @@ def patch_daily_ops_report() -> bool:
     if fallback_marker in src and "def market_display_from_mapping" not in src:
         src = src.replace(fallback_marker, fallback_replacement, 1)
 
-    old = """    selection = translate_selection_text(bet.get(\"selection\") or bet.get(\"market\") or \"\", bet.get(\"home_team\"), bet.get(\"away_team\"))\n"""
-    new = """    selection = market_display_from_mapping(bet, include_family=True)\n"""
-    if old in src:
-        src = src.replace(old, new, 1)
+    old_selection = """    selection = translate_selection_text(bet.get(\"selection\") or bet.get(\"market\") or \"\", bet.get(\"home_team\"), bet.get(\"away_team\"))\n"""
+    new_selection = """    selection = market_display_from_mapping(bet, include_family=True)\n"""
+    if old_selection in src:
+        src = src.replace(old_selection, new_selection, 1)
+
+    old_runs = """    runs.sort(key=lambda item: str(item.get(\"created_at\") or \"\"))\n    return runs\n"""
+    new_runs = """    if not runs:\n        debug_payload = load_json(\".logs/debug-last-run.json\", {})\n        if isinstance(debug_payload, dict):\n            summary = dict(debug_payload.get(\"summary\") or {})\n            dt_value = debug_payload.get(\"created_at\") or summary.get(\"current_time_utc\") or summary.get(\"started_time_utc\") or summary.get(\"current_time_local\")\n            if not dt_value:\n                dt_value = datetime.now(UTC).isoformat()\n            if local_date(dt_value, tz) == report_date:\n                debug_payload[\"_archive_path\"] = \".logs/debug-last-run.json\"\n                runs.append(debug_payload)\n    runs.sort(key=lambda item: str(item.get(\"created_at\") or \"\"))\n    return runs\n"""
+    if old_runs in src and "debug-last-run.json" not in src[src.find("def collect_runs"):src.find("def run_totals")]:
+        src = src.replace(old_runs, new_runs, 1)
 
     if src != original:
         path.write_text(src, encoding="utf-8")
