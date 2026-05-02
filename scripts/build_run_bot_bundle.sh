@@ -9,6 +9,7 @@ python scripts/build_match_analysis_audit.py || true
 python scripts/update_daily_candidate_pool.py || true
 python scripts/send_daily_best5_no_pick_note.py || true
 python scripts/send_completed_daily_report_when_closed.py || true
+python scripts/sportlogic_probe.py || true
 
 cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
 cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
@@ -20,6 +21,9 @@ cp .data/exports/latest-match-analysis-audit.json artifacts/run-bot/latest-match
 cp .data/exports/latest-daily-candidate-pool.json artifacts/run-bot/latest-daily-candidate-pool.json 2>/dev/null || true
 cp .data/exports/latest-completed-daily-report-check.json artifacts/run-bot/latest-completed-daily-report-check.json 2>/dev/null || true
 cp .data/exports/latest-daily-best5-no-pick-note.json artifacts/run-bot/latest-daily-best5-no-pick-note.json 2>/dev/null || true
+cp .data/exports/latest-sportlogic-probe.json artifacts/run-bot/latest-sportlogic-probe.json 2>/dev/null || true
+cp .data/exports/latest-sportlogic-debug.json artifacts/run-bot/latest-sportlogic-debug.json 2>/dev/null || true
+cp .data/exports/latest-sportlogic-odds-sample.json artifacts/run-bot/latest-sportlogic-odds-sample.json 2>/dev/null || true
 cp .data/state.json artifacts/run-bot/state.json 2>/dev/null || true
 
 python - <<'PY'
