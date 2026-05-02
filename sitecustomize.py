@@ -226,9 +226,50 @@ def _patch_odds_api_io_provider() -> None:
     cls._harizon_market_integrity_patch = True
 
 
+def _patch_sportlogic_provider() -> None:
+    try:
+        import app.providers.sportlogic_provider as sportlogic_module
+    except Exception:
+        return
+    cls = getattr(sportlogic_module, "SportLogicProvider", None)
+    if cls is None or getattr(cls, "_harizon_empty_odds_patch", False):
+        return
+
+    def extract_odds_rows_patched(payload):
+        if isinstance(payload, list):
+            return [row for row in payload if isinstance(row, dict)]
+        if not isinstance(payload, dict):
+            return []
+        if "data" in payload:
+            data = payload.get("data")
+            if isinstance(data, list):
+                return [row for row in data if isinstance(row, dict)]
+            if isinstance(data, dict):
+                nested = extract_odds_rows_patched(data)
+                return nested if nested else [data]
+            return []
+        for key in ("response", "results", "fixtures", "matches", "events", "items", "odds", "markets"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return [row for row in value if isinstance(row, dict)]
+            if isinstance(value, dict):
+                nested = extract_odds_rows_patched(value)
+                return nested if nested else [value]
+        # Only treat a bare dict as an odds row when it has a plausible price/market/selection shape.
+        keys = {str(key).lower() for key in payload.keys()}
+        shape_keys = {"price", "decimal_odds", "value", "odd", "odds", "decimal", "market", "market_name", "selection", "outcome", "name"}
+        if keys & shape_keys:
+            return [payload]
+        return []
+
+    cls._extract_odds_rows = staticmethod(extract_odds_rows_patched)
+    cls._harizon_empty_odds_patch = True
+
+
 def _install_provider_import_hook() -> None:
     if getattr(builtins, "_harizon_provider_integrity_import_hook", False):
         _patch_odds_api_io_provider()
+        _patch_sportlogic_provider()
         return
     original_import = builtins.__import__
 
@@ -236,11 +277,14 @@ def _install_provider_import_hook() -> None:
         module = original_import(name, globals, locals, fromlist, level)
         if name == "app.providers.odds_api_io" or name.startswith("app.providers.odds_api_io"):
             _patch_odds_api_io_provider()
+        if name == "app.providers.sportlogic_provider" or name.startswith("app.providers.sportlogic_provider"):
+            _patch_sportlogic_provider()
         return module
 
     builtins.__import__ = import_patched
     builtins._harizon_provider_integrity_import_hook = True
     _patch_odds_api_io_provider()
+    _patch_sportlogic_provider()
 
 
 def _install_telegram_stake_percent_formatter() -> None:
