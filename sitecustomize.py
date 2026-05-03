@@ -62,6 +62,38 @@ def _apply_provider_aliases() -> None:
     utils._provider_aliases_applied = True
 
 
+def _apply_sportlogic_env_defaults() -> None:
+    defaults = {
+        "ENABLE_SPORTLOGIC": "true",
+        "SPORTLOGIC_ENABLED": "true",
+        "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
+        "SPORTLOGIC_HEADER_NAME": "X-API-Key",
+        "SPORTLOGIC_PER_RUN_MAX": "40",
+        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "40",
+        "SPORTLOGIC_MATCH_LIMIT": "120",
+        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "120",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "32",
+        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "40",
+        "SPORTLOGIC_REQUEST_BUDGET_REASON": "granted_after_parser_hardening",
+    }
+    for key, value in defaults.items():
+        raw = str(os.getenv(key) or "").strip()
+        if not raw or raw == "0" or raw.lower() in {"false", "__probe_only__"}:
+            os.environ[key] = value
+    if str(os.getenv("SPORTLOGIC_BOOKMAKERS") or "").strip() == "__probe_only__":
+        os.environ["SPORTLOGIC_BOOKMAKERS"] = ""
+    if "quarant" in str(os.getenv("SPORTLOGIC_ODDS_DISABLED_REASON") or "").lower() or str(os.getenv("SPORTLOGIC_ODDS_DISABLED_REASON") or "") == "missing_or_invalid_price_payload":
+        os.environ["SPORTLOGIC_ODDS_DISABLED_REASON"] = ""
+
+
+def _install_sportlogic_hardening() -> None:
+    try:
+        from app.providers import sportlogic_hardening
+        sportlogic_hardening.install()
+    except Exception:
+        return
+
+
 def _num(value: str) -> float:
     return float(str(value or "0").replace(",", "."))
 
@@ -143,13 +175,6 @@ def _suspicious_total_price_reasons(text: str) -> list[str]:
 
 
 def _market_structure_reasons(text: str) -> list[str]:
-    """Final Telegram gate for reserve picks.
-
-    The controlled-fallback report can count context confirmations as sources;
-    publication requires independent market support. We therefore block any
-    outgoing Telegram pick that explicitly says odds sources < 2, and when that
-    field is absent we require at least 3 bookmaker lines.
-    """
     reasons: list[str] = []
     if not str(text or "").strip():
         return reasons
@@ -167,7 +192,6 @@ def _market_structure_reasons(text: str) -> list[str]:
             if odds_sources < int(os.getenv("TELEGRAM_MIN_ODDS_SOURCES", "2") or 2):
                 reasons.append(f"single_odds_source:{odds_sources}/2")
             continue
-        # Fallback for the actual publication message where odds_sources may not be printed.
         books_match = re.search(r"(?:линии|линий|букмекер(?:ов|а)?|books?)\s*[: ]\s*(\d+)", block, re.IGNORECASE)
         if books_match:
             try:
@@ -248,59 +272,8 @@ def _patch_odds_api_io_provider() -> None:
     cls._harizon_market_integrity_patch = True
 
 
-def _sportlogic_has_row_shape(payload) -> bool:
-    if not isinstance(payload, dict):
-        return False
-    keys = {str(key).lower() for key in payload.keys()}
-    shape_keys = {
-        "price", "decimal_odds", "value", "odd", "odds", "decimal", "option_value",
-        "market", "market_name", "market_key", "selection", "outcome", "option", "option_name",
-        "home", "home_odds", "draw", "draw_odds", "away", "away_odds", "odd_1", "odd_x", "odd_2",
-        "bookmaker", "bookmaker_name", "sportsbook", "provider", "book",
-    }
-    return bool(keys & shape_keys)
-
-
 def _patch_sportlogic_provider() -> None:
-    try:
-        import app.providers.sportlogic_provider as sportlogic_module
-    except Exception:
-        return
-    cls = getattr(sportlogic_module, "SportLogicProvider", None)
-    if cls is None or getattr(cls, "_harizon_empty_odds_patch_v2", False):
-        return
-
-    def extract_odds_rows_patched(payload):
-        if isinstance(payload, list):
-            return [row for row in payload if isinstance(row, dict)]
-        if not isinstance(payload, dict):
-            return []
-        if "data" in payload:
-            data = payload.get("data")
-            if isinstance(data, list):
-                return [row for row in data if isinstance(row, dict)]
-            if isinstance(data, dict):
-                nested = extract_odds_rows_patched(data)
-                if nested:
-                    return nested
-                return [data] if _sportlogic_has_row_shape(data) else []
-            return []
-        for key in ("response", "results", "fixtures", "matches", "events", "items", "odds", "markets", "bookmakers"):
-            if key not in payload:
-                continue
-            value = payload.get(key)
-            if isinstance(value, list):
-                return [row for row in value if isinstance(row, dict)]
-            if isinstance(value, dict):
-                nested = extract_odds_rows_patched(value)
-                if nested:
-                    return nested
-                return [value] if _sportlogic_has_row_shape(value) else []
-            return []
-        return [payload] if _sportlogic_has_row_shape(payload) else []
-
-    cls._extract_odds_rows = staticmethod(extract_odds_rows_patched)
-    cls._harizon_empty_odds_patch_v2 = True
+    _install_sportlogic_hardening()
 
 
 def _install_provider_import_hook() -> None:
@@ -435,6 +408,8 @@ def _install_telegram_runtime_safety() -> None:
 
 try:
     _apply_provider_aliases()
+    _apply_sportlogic_env_defaults()
+    _install_sportlogic_hardening()
     _install_provider_import_hook()
     _install_telegram_runtime_safety()
     _install_telegram_stake_percent_formatter()
