@@ -68,11 +68,11 @@ def install_runtime_patches() -> dict[str, Any]:
     except Exception as exc:
         result["errors"].append(f"sportlogic_hardening:{type(exc).__name__}:{exc}")
     try:
-        from app.providers import sportlogic_fixture_discovery
-        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery.install())
-        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery, "PATCH_MARKER", "")
+        from app.providers import sportlogic_fixture_discovery_v6
+        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery_v6.install())
+        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v6, "PATCH_MARKER", "")
     except Exception as exc:
-        result["errors"].append(f"sportlogic_fixture_discovery:{type(exc).__name__}:{exc}")
+        result["errors"].append(f"sportlogic_fixture_discovery_v6:{type(exc).__name__}:{exc}")
     return result
 
 
@@ -137,7 +137,8 @@ def compact_stats(stats: Any) -> dict[str, Any]:
         "contexts_built", "offers_parsed", "rows_before_parse", "odds_payload_rows", "empty_odds_payloads",
         "empty_fixture_attempts", "budget_exhausted", "response_errors", "auth_error", "rate_limited",
         "cooldown_active", "stop_reason", "odds_endpoint_used", "empty_games_reason", "last_body_preview",
-        "fixture_out_of_window", "fixture_parse_rejects", "sample_fixture_keys",
+        "fixture_out_of_window", "fixture_parse_rejects", "sample_fixture_keys", "fixture_stale_rows_filtered",
+        "fixture_window_start", "fixture_window_end", "fixture_page_scan_max",
     ]
     for key in keep:
         if key in stats:
@@ -171,7 +172,7 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
     if provider == "sportlogic":
         fixtures = safe_int(stats.get("fixtures_fetched") or stats.get("games_fetched"), 0)
         if fixtures <= 0:
-            return "EMPTY_FIXTURES", "SportLogic /games returned no fixtures"
+            return "EMPTY_FIXTURES", "SportLogic /games returned no fixtures inside target window"
         if method == "fetch_matches" and safe_int(stats.get("matches_built"), 0) <= 0:
             return "NO_MATCHES_BUILT", f"fixtures={fixtures}, rejects={stats.get('fixture_parse_rejects')}, out_of_window={stats.get('fixture_out_of_window')}"
         if method == "fetch_offers" and safe_int(stats.get("events_matched"), 0) <= 0:
@@ -359,13 +360,13 @@ def build_text(payload: dict[str, Any]) -> str:
             for check in checks.values():
                 stats = check.get("stats") or {}
                 preview = check.get("preview") or {}
-                for key in ("fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "sample_fixture_keys", "attempted_paths", "fixture_query_attempts", "last_body_preview"):
+                for key in ("fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths", "fixture_query_attempts", "last_body_preview"):
                     if stats.get(key) not in (None, "", [], {}):
                         value = stats.get(key)
-                        lines.append(f"  {key}: {json.dumps(value, ensure_ascii=False)[:900] if key != 'last_body_preview' else str(value)[:500]}")
-                for key in ("sample_fixture_parse", "sample_matches"):
+                        lines.append(f"  {key}: {json.dumps(value, ensure_ascii=False)[:1200] if key != 'last_body_preview' else str(value)[:500]}")
+                for key in ("sample_fixture_parse", "sample_fixture_parse_kept", "sample_matches"):
                     if preview.get(key):
-                        lines.append(f"  {key}: {json.dumps(preview.get(key), ensure_ascii=False)[:1200]}")
+                        lines.append(f"  {key}: {json.dumps(preview.get(key), ensure_ascii=False)[:1400]}")
     lines += ["", "📁 Files", str(JSON_OUT), str(TXT_OUT)]
     return "\n".join(lines)
 
@@ -384,12 +385,9 @@ def send_telegram(text: str) -> bool:
     if not token or not chat_id:
         return False
     ok = True
-    for chunk in [text[i:i + 3600] for i in range(0, len(text), 3600)][:5] or [text]:
+    for chunk in [text[i:i + 3600] for i in range(0, len(text), 3600)][:6] or [text]:
         try:
-            req = request.Request(
-                f"https://api.telegram.org/bot{token}/sendMessage",
-                data=parse.urlencode({"chat_id": chat_id, "text": chunk}).encode("utf-8"),
-            )
+            req = request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=parse.urlencode({"chat_id": chat_id, "text": chunk}).encode("utf-8"))
             with request.urlopen(req, timeout=20) as resp:  # nosec - CI-only diagnostic script
                 ok = ok and 200 <= int(resp.status) < 300
         except Exception:
