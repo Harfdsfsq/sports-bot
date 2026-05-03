@@ -26,11 +26,6 @@ on:
     types:
       - autorun-supervisor
       - external-autorun-watchdog
-  schedule:
-    # GitHub schedule is best-effort. This workflow is only the supervisor;
-    # run-bot itself has no direct cron, so delayed GitHub schedule events cannot
-    # create a second bot run for the same slot.
-    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
@@ -45,9 +40,8 @@ env:
   TZ: Europe/Moscow
   APP_TIMEZONE: Europe/Moscow
   AUTORUN_TARGET_WORKFLOW: run-bot.yml
-  # The supervisor can be woken every minute by external cron. Dispatch happens
-  # only after this delay from the planned 2-hour slot, and only if slot state is
-  # missing/failed/stale.
+  # Supervisor is now manual/recovery only. Normal timing is handled by external
+  # cron-job.org calling run-bot.yml workflow_dispatch every 2 hours.
   AUTORUN_SUPERVISOR_DELAY_MINUTES: "2"
   AUTORUN_PENDING_TTL_MINUTES: "90"
   AUTORUN_MAX_CATCHUP_SLOTS: "2"
