@@ -43,15 +43,6 @@
       "pending": false,
       "reason": "slot_completed",
       "should_dispatch": false,
-      "slot_key": "2026-05-03T14:00:00+03:00",
-      "stale": false,
-      "status": "recovered"
-    },
-    {
-      "completed": true,
-      "pending": false,
-      "reason": "slot_completed",
-      "should_dispatch": false,
       "slot_key": "2026-05-03T16:00:00+03:00",
       "stale": false,
       "status": "recovered"
@@ -73,14 +64,25 @@
       "slot_key": "2026-05-03T20:00:00+03:00",
       "stale": false,
       "status": "success"
+    },
+    {
+      "completed": false,
+      "pending": false,
+      "reason": "missed_slot",
+      "should_dispatch": true,
+      "slot_key": "2026-05-03T22:00:00+03:00",
+      "stale": false,
+      "status": "missing"
     }
   ],
-  "last_supervisor_check_local": "2026-05-03T21:55:28.613937+03:00",
-  "last_supervisor_check_utc": "2026-05-03T18:55:28.613937+00:00",
-  "last_supervisor_dispatched": [],
+  "last_supervisor_check_local": "2026-05-03T22:15:30.706849+03:00",
+  "last_supervisor_check_utc": "2026-05-03T19:15:30.706849+00:00",
+  "last_supervisor_dispatched": [
+    "2026-05-03T22:00:00+03:00"
+  ],
   "last_supervisor_policy_version": "v25-external-watchdog-catchup",
-  "last_supervisor_reason": "slot_completed",
-  "last_supervisor_status": "noop",
+  "last_supervisor_reason": "ok",
+  "last_supervisor_status": "dispatched",
   "last_trigger_kind": "unknown",
   "primary_minute": 0,
   "primary_utc_hours": [
@@ -838,6 +840,16 @@
       "started_at_utc": "2026-05-03T18:43:45.804973+00:00",
       "status": "running"
     },
+    "2026-05-03T22:00:00+03:00": {
+      "dispatched_at_local": "2026-05-03T22:15:30.706849+03:00",
+      "dispatched_at_utc": "2026-05-03T19:15:30.706849+00:00",
+      "missed_slots": [
+        "2026-05-03T22:00:00+03:00"
+      ],
+      "policy_version": "v25-external-watchdog-catchup",
+      "reason": "external_watchdog",
+      "status": "dispatched"
+    },
     "2026-05-03T22:00:19+03:00#manual#25287898476": {
       "catchup_from": "",
       "catchup_to": "",
@@ -855,7 +867,7 @@
     }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-05-03T19:00:19.160852+00:00",
+  "updated_at_utc": "2026-05-03T19:15:31.860031+00:00",
   "watchdog_delay_minutes": 15,
   "watchdog_minute": 15,
   "watchdog_window_minutes": 8
