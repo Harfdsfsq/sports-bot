@@ -93,8 +93,8 @@ def _install_sportlogic_hardening() -> None:
     except Exception:
         return
     try:
-        from app.providers import sportlogic_fixture_discovery
-        sportlogic_fixture_discovery.install()
+        from app.providers import sportlogic_fixture_discovery_v7
+        sportlogic_fixture_discovery_v7.install()
     except Exception:
         return
 
@@ -173,9 +173,7 @@ def _suspicious_total_price_reasons(text: str) -> list[str]:
         ratio = odds / fair_xg_odds
         implied_gap_pp = (xg_probability - implied) * 100.0
         if point <= 2.0 and ratio >= 1.35 and implied_gap_pp >= 18.0:
-            reasons.append(
-                f"total_line_price_mismatch:point={point:g},odds={odds:.2f},xg_fair={fair_xg_odds:.2f},gap={implied_gap_pp:.1f}pp"
-            )
+            reasons.append(f"total_line_price_mismatch:point={point:g},odds={odds:.2f},xg_fair={fair_xg_odds:.2f},gap={implied_gap_pp:.1f}pp")
     return reasons
 
 
