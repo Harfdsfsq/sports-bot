@@ -11,6 +11,7 @@ on:
         options:
           - core
           - sportlogic
+          - sharpapi
           - odds
           - context
           - all
@@ -98,6 +99,17 @@ env:
   ODDS_API_IO_BOOKMAKERS_ACCOUNT2: Betfair Exchange,Sbobet
   ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "8"
   MAX_MATCHES_FOR_ODDS_FETCH: "80"
+
+  ENABLE_SHARPAPI: "true"
+  SHARPAPI_ENABLED: "true"
+  SHARPAPI_BASE_URL: https://api.sharpapi.io
+  SHARPAPI_ODDS_ENDPOINTS: /api/v1/odds
+  SHARPAPI_LEAGUE: Soccer
+  SHARPAPI_PER_RUN_MAX: "4"
+  SHARPAPI_MAX_HTTP_REQUESTS_PER_RUN: "4"
+  SHARPAPI_MATCH_LIMIT: "80"
+  SHARPAPI_TIMEOUT_SECONDS: "18"
+  MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS: "1.65"
 
   ENABLE_SPORTLOGIC: "true"
   SPORTLOGIC_ENABLED: "true"
@@ -190,6 +202,9 @@ env:
   TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
   ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
   ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+  SHARPAPI_API_KEY: ${{ secrets.SHARPAPI_API_KEY }}
+  SHARPAPI_KEY: ${{ secrets.SHARPAPI_API_KEY }}
+  SHARP_API_KEY: ${{ secrets.SHARPAPI_API_KEY }}
   ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
   ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
   FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
