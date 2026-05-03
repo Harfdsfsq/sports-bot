@@ -250,6 +250,16 @@ jobs:
           python scripts/api_max_usage_patch.py || true
           cat .data/exports/latest-api-max-usage-patch.json || true
 
+      - name: Run SportLogic raw API debug
+        if: github.event.inputs.providers == 'sportlogic' || github.event.inputs.providers == 'core' || github.event.inputs.providers == 'all'
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python scripts/sportlogic_raw_debug.py || true
+          echo "----- sportlogic raw debug txt -----"
+          cat .data/exports/latest-sportlogic-debug.txt || true
+
       - name: Run provider smoke diagnostics
         shell: bash
         env:
@@ -278,6 +288,7 @@ jobs:
             .data/exports/latest-provider-smoke.txt
             .data/exports/latest-api-max-usage-patch.json
             .data/exports/latest-sportlogic-debug.json
+            .data/exports/latest-sportlogic-debug.txt
             .data/exports/latest-sportlogic-odds-sample.json
           if-no-files-found: ignore
           retention-days: 7
