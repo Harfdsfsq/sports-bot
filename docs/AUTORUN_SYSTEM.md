@@ -2,15 +2,21 @@
 
 ## Goal
 
-The bot must run close to the planned 2-hour slots and must not miss matches when GitHub scheduled workflows are delayed or skipped.
+The bot must run close to the planned 2-hour slots and must not duplicate runs when GitHub scheduled workflows are delayed.
 
-The new system uses three layers:
+The current system uses a **single scheduler authority**:
 
-1. **Primary schedule**: `.github/workflows/run-bot.yml` still runs every 2 hours.
-2. **Internal supervisor**: `.github/workflows/autorun-supervisor.yml` runs every 5 minutes and dispatches `run-bot.yml` when the expected slot is missing or stale.
-3. **External watchdog-ready trigger**: any external cron/webhook service can call GitHub `repository_dispatch` and wake the supervisor independently of GitHub's own cron timing.
+1. **Supervisor schedule**: `.github/workflows/autorun-supervisor.yml` wakes every 5 minutes on GitHub cron.
+2. **External cron wake-up**: cron-job.org or another external cron can wake the supervisor every 1 minute through `repository_dispatch`.
+3. **Bot run**: `.github/workflows/run-bot.yml` has no direct cron. It runs only through `workflow_dispatch`, normally dispatched by the supervisor.
 
-The supervisor is stateful through `.data/autorun-state.json`, which is already persisted by `scripts/sync_persistent_state.py`. Duplicate protection remains in `scripts/autorun_gate.py`.
+This avoids the old duplicate pattern:
+
+```text
+run-bot GitHub cron is late → supervisor dispatches recovery → delayed run-bot cron starts too
+```
+
+With supervisor-only scheduling, delayed GitHub schedule events can only delay/duplicate the supervisor check, not the bot run itself.
 
 ---
 
@@ -22,69 +28,60 @@ Slots are 2-hour local MSK slots:
 00:00, 02:00, 04:00, 06:00, 08:00, 10:00, 12:00, 14:00, 16:00, 18:00, 20:00, 22:00 MSK
 ```
 
-`run-bot.yml` uses UTC cron:
-
-```yaml
-0 21,23,1,3,5,7,9,11,13,15,17,19 * * *
-```
-
-That maps to the MSK slots above.
+The supervisor determines the latest expected slot and dispatches `run-bot.yml` when that slot is missing, failed, or stale.
 
 ---
 
-## Supervisor behavior
+## Workflows
 
-`autorun-supervisor.yml` runs every 5 minutes.
+### `.github/workflows/run-bot.yml`
 
-Default policy:
+`run-bot.yml` is dispatch-only:
+
+```yaml
+on:
+  workflow_dispatch:
+```
+
+It intentionally has no `schedule:` block.
+
+### `.github/workflows/autorun-supervisor.yml`
+
+The supervisor is the only scheduled GitHub workflow:
+
+```yaml
+schedule:
+  - cron: "*/5 * * * *"
+```
+
+Recommended runtime policy:
 
 ```text
-AUTORUN_SUPERVISOR_DELAY_MINUTES=7
-AUTORUN_PENDING_TTL_MINUTES=70
-AUTORUN_MAX_CATCHUP_SLOTS=4
+AUTORUN_SUPERVISOR_DELAY_MINUTES=2
+AUTORUN_PENDING_TTL_MINUTES=90
+AUTORUN_MAX_CATCHUP_SLOTS=2
+AUTORUN_SUPERVISOR_MAX_DISPATCHES=1
 ```
 
 Meaning:
 
-- The supervisor waits 7 minutes after a planned slot.
+- The supervisor waits 2 minutes after a planned slot.
 - If the slot is already `success` or `recovered`, it does nothing.
-- If the slot is `running`/`dispatched` and younger than 70 minutes, it does nothing.
-- If the slot is missing, failed, or stale, it dispatches `run-bot.yml` with `run_reason=watchdog_recovery`.
-- If multiple slots are missed, it dispatches catchup with `run_reason=catchup` and sends `missed_slots`, `catchup_from`, `catchup_to`.
+- If the slot is `running`/`dispatched` and younger than 90 minutes, it does nothing.
+- If the slot is missing, failed, or stale, it dispatches `run-bot.yml`.
+- It dispatches at most one bot run per supervisor check.
 
 ---
 
-## Manual supervisor run
+## External cron-job.org setup
 
-GitHub UI:
+Recommended: **cron-job.org every 1 minute**.
 
-```text
-Actions → autorun-supervisor → Run workflow
-```
-
-Useful options:
-
-- `force=true`: force a supervisor check now.
-- `slot_key=2026-05-03T14:00:00+03:00`: force a specific slot.
-- `mode=dry_run`: generate supervisor report without dispatching `run-bot`.
-
----
-
-## External watchdog setup
-
-External services you can use:
-
-- cron-job.org
-- UptimeRobot webhook monitor
-- Better Stack Heartbeats
-- any VPS with cron + curl
-- Pipedream / Make / Zapier webhook job
-
-Recommended: **cron-job.org every 5 minutes**.
+The external cron should not call `run-bot.yml` directly. It must only wake the supervisor.
 
 ### 1. Create GitHub fine-grained token
 
-Create a fine-grained GitHub token for this repository with permissions:
+Create a fine-grained GitHub token for `Harfdsfsq/sports-bot` with:
 
 ```text
 Repository permissions:
@@ -93,14 +90,18 @@ Repository permissions:
 - Metadata: Read-only
 ```
 
-The token owner must have access to `Harfdsfsq/sports-bot`.
+### 2. cron-job.org request
 
-### 2. External POST request
-
-Endpoint:
+Method:
 
 ```text
-POST https://api.github.com/repos/Harfdsfsq/sports-bot/dispatches
+POST
+```
+
+URL:
+
+```text
+https://api.github.com/repos/Harfdsfsq/sports-bot/dispatches
 ```
 
 Headers:
@@ -123,11 +124,25 @@ Body:
 }
 ```
 
-This wakes `autorun-supervisor.yml`. The supervisor then decides whether `run-bot.yml` actually needs to start. This avoids duplicates.
+The supervisor will decide whether a bot run is actually needed. Repeated external cron calls are safe because slot state prevents duplicates.
 
-### 3. Force a specific slot externally
+---
 
-Use only for manual recovery:
+## Manual checks
+
+Dry-run supervisor:
+
+```text
+Actions → autorun-supervisor → Run workflow → mode=dry_run
+```
+
+Force supervisor check:
+
+```text
+Actions → autorun-supervisor → Run workflow → force=true
+```
+
+Force a specific slot only when manually recovering:
 
 ```json
 {
@@ -141,16 +156,43 @@ Use only for manual recovery:
 
 ---
 
-## Why external watchdog helps
+## Expected reports
 
-GitHub Actions schedule is best-effort. It can be delayed or skipped under load. The external service does not run the bot directly; it wakes the supervisor. The supervisor checks persistent slot state and only dispatches `run-bot` if needed.
+No action:
 
-This gives:
+```json
+{
+  "status": "noop",
+  "reason": "slot_completed"
+}
+```
 
-- fewer missed slots;
-- no duplicate picks from repeated webhook calls;
-- catchup after stale/failed runs;
-- a visible audit file: `.data/exports/latest-autorun-supervisor.json`.
+Recovery dispatch:
+
+```json
+{
+  "status": "dispatched",
+  "target_slot_key": "..."
+}
+```
+
+Duplicate guard in run-bot:
+
+```json
+{
+  "AUTORUN_SKIP_MAIN": "true",
+  "AUTORUN_DECISION_REASON": "skip_slot_already_completed"
+}
+```
+
+Direct schedule guard, if a schedule trigger is accidentally reintroduced:
+
+```json
+{
+  "AUTORUN_SKIP_MAIN": "true",
+  "AUTORUN_DECISION_REASON": "skip_direct_schedule_disabled_supervisor_only"
+}
+```
 
 ---
 
@@ -165,49 +207,24 @@ scripts/autorun_state.py
 scripts/sync_persistent_state.py
 .data/autorun-state.json
 .data/exports/latest-autorun-supervisor.json
+.data/exports/latest-autorun-gate.json
 .data/exports/latest-autorun-state.json
 ```
 
 ---
 
-## Health check checklist
+## Health checklist
 
-After the next supervisor run, check:
+After the next slot, check:
 
 ```text
 .data/exports/latest-autorun-supervisor.json
+.data/exports/latest-autorun-gate.json
 ```
 
-Expected no-action state:
+Healthy behavior:
 
-```json
-{
-  "status": "noop",
-  "reason": "current_slot_already_completed"
-}
-```
-
-Expected recovery state:
-
-```json
-{
-  "status": "dispatched",
-  "reason": "watchdog_recovery",
-  "target_slot_key": "..."
-}
-```
-
-If dispatch fails with `github_token_missing`, check that workflow has:
-
-```yaml
-permissions:
-  actions: write
-```
-
-or set repository secret:
-
-```text
-AUTORUN_DISPATCH_TOKEN
-```
-
-with Actions read/write permission.
+- one `run-bot` dispatch per 2-hour slot;
+- no direct scheduled `run-bot` events;
+- supervisor checks can be frequent;
+- repeated supervisor wake-ups produce `noop` after a slot is completed or pending.
