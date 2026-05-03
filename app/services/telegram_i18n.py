@@ -19,14 +19,18 @@ _BUILTIN_TEAMS: dict[str, str] = {
     "AS Roma": "Рома",
     "Roma": "Рома",
     "Napoli": "Наполи",
+    "SSC Napoli": "Наполи",
     "Lazio": "Лацио",
     "Atalanta": "Аталанта",
+    "Atalanta BC": "Аталанта",
     "Fiorentina": "Фиорентина",
     "Torino": "Торино",
     "Bologna": "Болонья",
     "Genoa CFC": "Дженоа",
     "Genoa": "Дженоа",
     "Pisa SC": "Пиза",
+    "Como 1907": "Комо",
+    "Como": "Комо",
 
     # Spain
     "Real Madrid": "Реал Мадрид",
@@ -48,9 +52,14 @@ _BUILTIN_TEAMS: dict[str, str] = {
     "Villarreal": "Вильярреал",
     "Real Sociedad": "Реал Сосьедад",
     "Athletic Bilbao": "Атлетик Бильбао",
+    "Athletic Club": "Атлетик Бильбао",
     "Real Betis": "Бетис",
     "Levante UD": "Леванте",
     "Levante": "Леванте",
+    "Deportivo Alaves": "Алавес",
+    "Deportivo Alavés": "Алавес",
+    "Alaves": "Алавес",
+    "Alavés": "Алавес",
 
     # England / France / Germany
     "Manchester City": "Манчестер Сити",
@@ -78,11 +87,32 @@ _BUILTIN_TEAMS: dict[str, str] = {
     "LA Galaxy": "Лос-Анджелес Гэлакси",
     "Real Salt Lake": "Реал Солт-Лейк",
     "Los Angeles FC": "Лос-Анджелес",
+    "Los Angeles FC 2": "Лос-Анджелес 2",
     "San Jose Earthquakes": "Сан-Хосе Эртквейкс",
     "New York City FC": "Нью-Йорк Сити",
     "New York City": "Нью-Йорк Сити",
     "FC Cincinnati": "Цинциннати",
     "Portmore United": "Портмор Юнайтед",
+    "Inter Miami CF": "Интер Майами",
+    "Inter Miami": "Интер Майами",
+    "Orlando City SC": "Орландо Сити",
+    "Orlando City": "Орландо Сити",
+    "Atlanta United FC": "Атланта Юнайтед",
+    "Atlanta United": "Атланта Юнайтед",
+    "Atlanta United 2": "Атланта Юнайтед 2",
+    "CF Montreal": "Монреаль",
+    "CF Montréal": "Монреаль",
+    "Montreal": "Монреаль",
+    "Montréal": "Монреаль",
+    "New England Revolution": "Нью-Инглэнд Революшн",
+    "Charlotte FC": "Шарлотт",
+    "Carolina Core FC": "Каролина Коре",
+    "Carolina Core": "Каролина Коре",
+    "Chattanooga FC": "Чаттануга",
+    "Huntsville City FC": "Хантсвилл Сити",
+    "Huntsville City": "Хантсвилл Сити",
+    "Miami FC": "Майами",
+    "Brooklyn FC": "Бруклин",
 
     # Other seen teams
     "FBC Melgar": "Мельгар",
@@ -115,6 +145,22 @@ _BUILTIN_TEAMS.update({
     "КД Санта Круз": "Санта-Крус",
     "Барранкуилла ФК": "Барранкилья",
     "Реал Картагена ФК": "Реал Картахена",
+    "Интер Миами КФ": "Интер Майами",
+    "Орландо Кити СК": "Орландо Сити",
+    "Атланта Унитед ФК": "Атланта Юнайтед",
+    "КФ Монтреал": "Монреаль",
+    "Ней Енгланд Револутион": "Нью-Инглэнд Революшн",
+    "Кхарлотте ФК": "Шарлотт",
+    "Каролина Коре ФК": "Каролина Коре",
+    "Кхаттануга ФК": "Чаттануга",
+    "Хунтсвилле Кити ФК": "Хантсвилл Сити",
+    "Миами ФК": "Майами",
+    "Брооклин ФК": "Бруклин",
+    "Депортиво Алавес": "Алавес",
+    "Комо 1907": "Комо",
+    "ССК Наполи": "Наполи",
+    "Аталанта БК": "Аталанта",
+    "Геноа КФК": "Дженоа",
 })
 
 _BUILTIN_LEAGUES: dict[str, str] = {
@@ -132,7 +178,10 @@ _BUILTIN_LEAGUES: dict[str, str] = {
     "Germany - 3. Liga": "Германия - Третья лига",
     "Netherlands - Eredivisie": "Нидерланды - Эредивизи",
     "USA - MLS": "США - MLS",
+    "USA - MLS Next Pro": "США - MLS Next Pro",
+    "USA - USL Championship": "США - USL Чемпионшип",
     "Brazil - Serie A": "Бразилия - Серия A",
+    "Brazil - Brasileiro Serie A": "Бразилия - Серия A",
     "Brazil - Serie B": "Бразилия - Серия B",
     "Peru - Liga 1": "Перу - Лига 1",
     "France - National": "Франция - Насьональ",
@@ -182,6 +231,7 @@ _LEAGUE_WORDS: dict[str, str] = {
     "Third Division": "Третий дивизион",
     "Serie A": "Серия A",
     "Serie B": "Серия B",
+    "Brasileiro Serie A": "Серия A",
     "LaLiga": "Ла Лига",
     "La Liga": "Ла Лига",
     "Segunda Division": "Сегунда",
@@ -195,7 +245,9 @@ _LEAGUE_WORDS: dict[str, str] = {
     "Super Cup": "Суперкубок",
     "League Cup": "Кубок лиги",
     "National": "Насьональ",
+    "MLS Next Pro": "MLS Next Pro",
     "MLS": "MLS",
+    "USL Championship": "USL Чемпионшип",
     "A-League": "A-Лига",
 }
 
@@ -242,7 +294,6 @@ _REASON_MAP: dict[str, str] = {
     "missing_sources": "нет подтверждения источниками",
 }
 
-
 _REASON_MAP.update({
     "tier_a_books_below_min": "линий букмекеров меньше минимума уровня A",
     "tier_b_books_below_min": "линий букмекеров меньше минимума уровня B",
@@ -259,14 +310,6 @@ _REASON_MAP.update({
     "tier_a_market_confirmation_missing": "уровень A: нет рыночного подтверждения",
     "tier_b_market_confirmation_missing": "уровень B: нет рыночного подтверждения",
     "tier_c_market_confirmation_missing": "уровень C: нет рыночного подтверждения",
-    "tier_b_canonical_edge_below_min": "запас value ниже минимума уровня B",
-    "tier_b_canonical_ev_below_min": "EV ниже минимума уровня B",
-    "tier_c_canonical_edge_below_min": "запас value ниже минимума уровня C",
-    "tier_c_canonical_ev_below_min": "EV ниже минимума уровня C",
-})
-
-
-_REASON_MAP.update({
     "tier_a_odds_above_max": "уровень A: коэффициент выше безопасного максимума",
     "tier_b_odds_above_max": "уровень B: коэффициент выше безопасного максимума",
     "tier_c_odds_above_max": "уровень C: коэффициент выше безопасного максимума",
@@ -348,11 +391,8 @@ def _transliterate_word(word: str) -> str:
     lower = word.lower()
     if not re.search(r"[A-Za-z]", word):
         return word
-
-    # Preserve common abbreviations.
     if original.isupper() and len(original) <= 4:
         return original
-
     result = ""
     i = 0
     while i < len(lower):
@@ -369,8 +409,6 @@ def _transliterate_word(word: str) -> str:
         ch = lower[i]
         result += _TRANSLIT.get(ch, ch)
         i += 1
-
-    # Capitalize first Cyrillic letter if source looked capitalized.
     if original[:1].isupper() and result:
         result = result[:1].upper() + result[1:]
     return result
@@ -380,7 +418,6 @@ def transliterate_unknown_name(value: Any) -> str:
     text = _clean_key(value)
     if not text:
         return ""
-    # Split but preserve punctuation/hyphens/spaces.
     parts = re.split(r"(\s+|-|/|,|\(|\)|\.|')", text)
     return "".join(_transliterate_word(part) for part in parts)
 
@@ -392,8 +429,6 @@ def translate_team_name(name: Any) -> str:
     exact = _lookup(text, _BUILTIN_TEAMS, "teams")
     if exact is not None:
         return exact
-
-    # Remove common club suffixes before fallback, but keep if name is only abbreviation.
     cleaned = re.sub(r"\b(FC|CF|SC|AFC|CFC|CD|CA|UD|AC|AS|FK|PFC|SAD)\b\.?", "", text, flags=re.IGNORECASE)
     cleaned = re.sub(r"\s+", " ", cleaned).strip(" -")
     exact_clean = _lookup(cleaned, _BUILTIN_TEAMS, "teams") if cleaned else None
@@ -409,13 +444,11 @@ def translate_league_name(name: Any) -> str:
     exact = _lookup(text, _BUILTIN_LEAGUES, "leagues")
     if exact is not None:
         return exact
-
     if " - " in text:
         country, league = text.split(" - ", 1)
         country_ru = _lookup(country, _COUNTRIES, "countries") or transliterate_unknown_name(country)
         league_ru = _lookup(league, _LEAGUE_WORDS, "words") or _translate_league_words(league)
         return f"{country_ru} - {league_ru}"
-
     return _translate_league_words(text)
 
 
@@ -450,7 +483,6 @@ def translate_reject_reason(reason: Any) -> str:
     if text.startswith("controlled_fallback_confirmation_sources_below_min:"):
         suffix = text.split(":", 1)[1]
         return f"независимых подтверждений меньше минимума: {suffix}"
-    # Generic readable fallback for tier/family slugs not yet in the dictionary.
     generic = text
     generic = re.sub(r"^tier_([abc])_", lambda m: f"уровень {m.group(1).upper()}: ", generic)
     generic = generic.replace("odds above max", "коэффициент выше безопасного максимума")
@@ -473,11 +505,8 @@ def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any
         text = re.sub(re.escape(home_raw), translate_team_name(home_raw), text, flags=re.IGNORECASE)
     if away_raw:
         text = re.sub(re.escape(away_raw), translate_team_name(away_raw), text, flags=re.IGNORECASE)
-
     for source, target in sorted(_TEXT_REPLACEMENTS, key=lambda item: len(item[0]), reverse=True):
         text = re.sub(rf"\b{re.escape(source)}\b", target, text, flags=re.IGNORECASE)
-
-    # Common compact market patterns.
     text = re.sub(r"\bO\s*([0-9]+(?:\.[0-9]+)?)\b", r"Больше \1", text, flags=re.IGNORECASE)
     text = re.sub(r"\bU\s*([0-9]+(?:\.[0-9]+)?)\b", r"Меньше \1", text, flags=re.IGNORECASE)
     text = re.sub(r"\bOver\s*\(?([0-9]+(?:\.[0-9]+)?)\)?", r"Больше \1", text, flags=re.IGNORECASE)
@@ -485,12 +514,40 @@ def translate_selection_text(selection: Any, home_team: Any = "", away_team: Any
     return normalize_telegram_text(text)
 
 
+def _normalize_match_like_line(line: str) -> str:
+    """Translate team names inside lines like bullets, report rows and open-bet rows."""
+    if "—" not in line and " - " not in line:
+        return line
+    if any(token in line for token in ("Runtime policy", "Inventory bootstrap", "P&L", "sample_ready")):
+        return line
+    # Avoid translating league/country label rows; those are handled by league replacements.
+    if line.strip().startswith(("🏆", "• Версия", "• odds", "• confirmation", "• EV", "• запас", "• уверенность", "• качество")):
+        return line
+
+    pattern = re.compile(
+        r"(?P<prefix>^\s*(?:[•\-]\s*)?(?:\d+\.\s*)?)"
+        r"(?P<home>[A-Za-zА-Яа-яЁё0-9 .'&()]+?)\s+[—-]\s+"
+        r"(?P<away>[A-Za-zА-Яа-яЁё0-9 .'&()]+?)"
+        r"(?P<tail>\s*(?::|\||$).*)$"
+    )
+    match = pattern.match(line)
+    if not match:
+        return line
+    home_raw = match.group("home").strip()
+    away_raw = match.group("away").strip()
+    # Guard against non-match phrases.
+    if len(home_raw) < 2 or len(away_raw) < 2:
+        return line
+    home = translate_team_name(home_raw)
+    away = translate_team_name(away_raw)
+    return f"{match.group('prefix')}{home} — {away}{match.group('tail')}"
+
+
 def normalize_telegram_text(text: Any) -> str:
     value = str(text or "")
     if not value:
         return ""
 
-    # Replace exact known team/league names anywhere in message.
     replacements: dict[str, str] = {}
     replacements.update(_external_aliases().get("teams", {}))
     replacements.update(_external_aliases().get("leagues", {}))
@@ -504,8 +561,10 @@ def normalize_telegram_text(text: Any) -> str:
     for source, target in sorted(_TEXT_REPLACEMENTS, key=lambda item: len(item[0]), reverse=True):
         value = re.sub(rf"\b{re.escape(source)}\b", target, value, flags=re.IGNORECASE)
 
-    # Translate reason slugs if they appear literally.
     for source, target in sorted(_REASON_MAP.items(), key=lambda item: len(item[0]), reverse=True):
         value = value.replace(source, target)
 
+    # Final pass: unknown match names inside report rows should be transliterated,
+    # not left as English. This catches bullets and bank/open bet lines.
+    value = "\n".join(_normalize_match_like_line(line) for line in value.splitlines())
     return re.sub(r"[ \t]+", " ", value).strip()
