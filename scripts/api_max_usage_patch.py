@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-"""Legacy compatibility shim plus mandatory SportLogic runtime unquarantine.
+"""Legacy compatibility shim plus mandatory SportLogic runtime fixes.
 
 Provider budgets are primarily applied by scripts/apply_provider_request_budget.py
 from config/provider_runtime_policy.json. The workflow still calls this shim
 immediately before provider budget application, so it is the safest explicit
-place to patch SportLogic out of the old probe-only quarantine before budgets
-are computed.
+place to patch SportLogic out of the old probe-only quarantine and to fix the
+/games date-range loader before the bot imports providers.
 """
 
 import json
@@ -16,6 +16,7 @@ from typing import Any
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "config" / "provider_runtime_policy.json"
+PROVIDER_PATH = ROOT / "app" / "providers" / "sportlogic_provider.py"
 OUT_PATH = ROOT / ".data" / "exports" / "latest-api-max-usage-patch.json"
 
 SPORTLOGIC_ENV = {
@@ -98,8 +99,44 @@ def _patch_sportlogic_policy() -> dict[str, Any]:
     }
 
 
+def _patch_sportlogic_provider_file() -> dict[str, Any]:
+    try:
+        text = PROVIDER_PATH.read_text(encoding="utf-8")
+    except Exception as exc:
+        return {"changed": False, "error": f"read:{type(exc).__name__}:{exc}"}
+
+    original = text
+    old = 'payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)'
+    new = (
+        'date_to_key = (datetime.fromisoformat(date_key) + timedelta(days=1)).date().isoformat()\n'
+        '                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_to_key, "per_page": 100}, stats, preview)\n'
+        '                if not self._extract_list(payload):\n'
+        '                    payload = await self._get_json(client, "/games", {"date": date_key, "per_page": 100}, stats, preview)'
+    )
+    text = text.replace(old, new)
+
+    # Make the diagnostic export show that the provider file was corrected.
+    marker = 'stats["http_statuses"].append(response.status_code)'
+    if 'stats.setdefault("attempted_paths", [])' not in text and marker in text:
+        text = text.replace(
+            marker,
+            'stats.setdefault("attempted_paths", []).append({"path": path, "params": dict(params or {})})\n        ' + marker,
+            1,
+        )
+
+    changed = text != original
+    if changed:
+        PROVIDER_PATH.write_text(text, encoding="utf-8")
+    return {
+        "changed": changed,
+        "exclusive_date_to_fix_applied": old not in text,
+        "attempted_paths_diagnostic": 'stats.setdefault("attempted_paths", [])' in text,
+    }
+
+
 def apply_api_max_usage_patch() -> None:
     result = _patch_sportlogic_policy()
+    provider_patch = _patch_sportlogic_provider_file()
     env = dict(SPORTLOGIC_ENV)
     env.update({
         "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "40",
@@ -107,7 +144,11 @@ def apply_api_max_usage_patch() -> None:
         "PROVIDER_REQUEST_BUDGET_VERSION": "v22-sportlogic-odds-enabled-parser-hardened",
     })
     _append_github_env(env)
-    _write_json(OUT_PATH, {"sportlogic_unquarantine": result, "env_written": env})
+    _write_json(OUT_PATH, {
+        "sportlogic_unquarantine": result,
+        "sportlogic_provider_file_patch": provider_patch,
+        "env_written": env,
+    })
 
 
 if __name__ == "__main__":
