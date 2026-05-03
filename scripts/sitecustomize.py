@@ -31,6 +31,12 @@ def _apply_api_patch() -> None:
     api_max_usage_patch.apply_api_max_usage_patch()
 
 
+def _apply_sportlogic_unquarantine() -> None:
+    import apply_sportlogic_policy_unquarantine
+
+    apply_sportlogic_policy_unquarantine.main()
+
+
 def _apply_runtime_patches() -> None:
     import runtime_startup_patches
 
@@ -57,6 +63,7 @@ def _install_import_hook() -> None:
 
 
 _safe_run("api_max_usage_patch", _apply_api_patch)
+_safe_run("sportlogic_policy_unquarantine", _apply_sportlogic_unquarantine)
 _safe_run("runtime_startup_patches.apply_all", _apply_runtime_patches)
 _safe_run("sportlogic_hardening", _apply_sportlogic_hardening)
 _safe_run("apply_confirmation_source_fallback_patch", _apply_confirmation_source_patch)
