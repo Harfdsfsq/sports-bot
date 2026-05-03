@@ -21,7 +21,7 @@ from autorun_state import (
 
 UTC = timezone.utc
 OUT = Path(".data/exports/latest-autorun-gate.json")
-POLICY_VERSION = "v25-manual-bypass-slot-supervisor"
+POLICY_VERSION = "v26-supervisor-only-direct-schedule-guard"
 
 
 def write_json(path: Path, payload: Any) -> None:
@@ -53,6 +53,13 @@ def input_bool(name: str, default: bool = False) -> bool:
     if not raw:
         return default
     return raw.strip().lower() in {"1", "true", "yes", "on", "force"}
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    raw = str(os.getenv(name) or "").strip()
+    if not raw:
+        return default
+    return raw.lower() in {"1", "true", "yes", "on", "force"}
 
 
 def event_reason(event_name: str) -> str:
@@ -91,12 +98,21 @@ def preflight() -> int:
     force_run = input_bool("FORCE_RUN", default=False)
     slot_key = current_slot(event_name=event_name, reason=reason, now=now, run_id=run_id)
 
+    # The reliable autorun architecture is supervisor-only: the frequent
+    # autorun-supervisor workflow decides whether a slot needs a run and starts
+    # run-bot through workflow_dispatch.  Direct schedule events from run-bot.yml
+    # are intentionally ignored by default because GitHub can deliver them late,
+    # after the supervisor has already dispatched the same slot.
+    direct_schedule_disabled = event_name == "schedule" and not env_bool("AUTORUN_DIRECT_SCHEDULE_ENABLED", False)
+
     state = load_state()
     prune_old_slots(state)
     completed = slot_completed(state, slot_key)
     manual_probe = event_name == "workflow_dispatch" and reason == "manual" and not explicit_slot
-    skip = completed and not force_run and not manual_probe
-    if skip:
+    skip = direct_schedule_disabled or (completed and not force_run and not manual_probe)
+    if direct_schedule_disabled:
+        decision = "skip_direct_schedule_disabled_supervisor_only"
+    elif skip:
         decision = "skip_slot_already_completed"
     elif completed and force_run:
         decision = "force_run_completed_slot"
@@ -130,6 +146,8 @@ def preflight() -> int:
                 "last_skipped_duplicate_at_utc": now.isoformat(),
                 "last_skipped_duplicate_run_id": run_id,
                 "last_skipped_duplicate_reason": reason,
+                "last_skipped_duplicate_decision": decision,
+                "direct_schedule_disabled": direct_schedule_disabled,
             }
         )
 
@@ -144,6 +162,7 @@ def preflight() -> int:
             "last_gate_reason": reason,
             "last_gate_decision": decision,
             "last_gate_skip_main": skip,
+            "last_gate_direct_schedule_disabled": direct_schedule_disabled,
             "last_run_id": run_id,
             "last_run_attempt": run_attempt,
         }
@@ -159,6 +178,7 @@ def preflight() -> int:
         "AUTORUN_DECISION_REASON": decision,
         "AUTORUN_FORCE_RUN": str(force_run).lower(),
         "AUTORUN_MANUAL_PROBE": str(manual_probe).lower(),
+        "AUTORUN_DIRECT_SCHEDULE_DISABLED": str(direct_schedule_disabled).lower(),
         "AUTORUN_MSK_NOW": local_now.isoformat(),
         "AUTORUN_UTC_NOW": now.isoformat(),
     }
@@ -179,7 +199,7 @@ def mark(status: str) -> int:
 
     state = load_state()
     row = slot_record(state, slot_key)
-    normalized_status = "recovered" if reason in {"watchdog_recovery", "catchup"} and status == "success" else status
+    normalized_status = "recovered" if reason in {"watchdog_recovery", "catchup", "external_watchdog", "external_catchup"} and status == "success" else status
     row.update(
         {
             "status": normalized_status,
