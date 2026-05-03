@@ -63,27 +63,31 @@ def _apply_provider_aliases() -> None:
 
 
 def _apply_sportlogic_env_defaults() -> None:
+    # SportLogic is currently verified as API-alive but stale-inventory for the
+    # active runtime window.  Defaults must therefore be cheap probe-only values.
+    # Existing explicit env values are preserved unless they are empty/disabled.
     defaults = {
         "ENABLE_SPORTLOGIC": "true",
         "SPORTLOGIC_ENABLED": "true",
         "SPORTLOGIC_BASE_URL": "https://api.sportlogic.io/api/v1",
         "SPORTLOGIC_HEADER_NAME": "X-API-Key",
-        "SPORTLOGIC_PER_RUN_MAX": "40",
-        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "40",
-        "SPORTLOGIC_MATCH_LIMIT": "120",
-        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "120",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": "32",
-        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "40",
-        "SPORTLOGIC_REQUEST_BUDGET_REASON": "granted_after_parser_hardening",
+        "SPORTLOGIC_PER_RUN_MAX": "2",
+        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "2",
+        "SPORTLOGIC_MATCH_LIMIT": "8",
+        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "0",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
+        "SPORTLOGIC_BOOKMAKERS": "__probe_only__",
+        "SPORTLOGIC_ODDS_DISABLED_REASON": "stale_inventory_probe_only",
+        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "2",
+        "SPORTLOGIC_REQUEST_BUDGET_REASON": "stale_inventory_probe_only",
+        "SPORTLOGIC_FIXTURE_CURSOR_SCAN_MAX": "1",
+        "SPORTLOGIC_INVENTORY_LOOKBACK_HOURS": "48",
+        "SPORTLOGIC_INVENTORY_LOOKAHEAD_DAYS": "4",
     }
     for key, value in defaults.items():
         raw = str(os.getenv(key) or "").strip()
-        if not raw or raw == "0" or raw.lower() in {"false", "__probe_only__"}:
+        if not raw or raw == "0" or raw.lower() in {"false"}:
             os.environ[key] = value
-    if str(os.getenv("SPORTLOGIC_BOOKMAKERS") or "").strip() == "__probe_only__":
-        os.environ["SPORTLOGIC_BOOKMAKERS"] = ""
-    if "quarant" in str(os.getenv("SPORTLOGIC_ODDS_DISABLED_REASON") or "").lower() or str(os.getenv("SPORTLOGIC_ODDS_DISABLED_REASON") or "") == "missing_or_invalid_price_payload":
-        os.environ["SPORTLOGIC_ODDS_DISABLED_REASON"] = ""
 
 
 def _install_sportlogic_hardening() -> None:
