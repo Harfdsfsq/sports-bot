@@ -68,11 +68,11 @@ def install_runtime_patches() -> dict[str, Any]:
     except Exception as exc:
         result["errors"].append(f"sportlogic_hardening:{type(exc).__name__}:{exc}")
     try:
-        from app.providers import sportlogic_fixture_discovery_v8
-        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery_v8.install())
-        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v8, "PATCH_MARKER", "")
+        from app.providers import sportlogic_fixture_discovery_v9
+        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery_v9.install())
+        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v9, "PATCH_MARKER", "")
     except Exception as exc:
-        result["errors"].append(f"sportlogic_fixture_discovery_v8:{type(exc).__name__}:{exc}")
+        result["errors"].append(f"sportlogic_fixture_discovery_v9:{type(exc).__name__}:{exc}")
     return result
 
 
