@@ -93,8 +93,8 @@ def _install_sportlogic_hardening() -> None:
     except Exception:
         return
     try:
-        from app.providers import sportlogic_fixture_discovery_v8
-        sportlogic_fixture_discovery_v8.install()
+        from app.providers import sportlogic_fixture_discovery_v9
+        sportlogic_fixture_discovery_v9.install()
     except Exception:
         return
 
