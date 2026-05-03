@@ -8,13 +8,13 @@
   "last_decision_reason": "non_schedule_event",
   "last_event": "workflow_dispatch",
   "last_event_schedule": "",
-  "last_gate_at_local": "2026-05-03T17:10:06.126777+03:00",
-  "last_gate_at_utc": "2026-05-03T14:10:06.126777+00:00",
-  "last_gate_decision": "skip_slot_already_completed",
-  "last_gate_event_name": "schedule",
-  "last_gate_reason": "primary",
-  "last_gate_skip_main": true,
-  "last_gate_slot_key": "2026-05-03T16:00:00+03:00",
+  "last_gate_at_local": "2026-05-03T18:10:55.477159+03:00",
+  "last_gate_at_utc": "2026-05-03T15:10:55.477159+00:00",
+  "last_gate_decision": "run_slot",
+  "last_gate_event_name": "workflow_dispatch",
+  "last_gate_reason": "external_watchdog",
+  "last_gate_skip_main": false,
+  "last_gate_slot_key": "2026-05-03T18:00:00+03:00",
   "last_is_catchup_slot": false,
   "last_is_delayed_primary_slot": false,
   "last_is_primary_slot": false,
@@ -24,7 +24,7 @@
   "last_preflight_msk": "2026-04-30T23:54:11.195108+03:00",
   "last_preflight_utc": "2026-04-30T20:54:11.195108+00:00",
   "last_run_attempt": "1",
-  "last_run_id": "25281380049",
+  "last_run_id": "25282745865",
   "last_skip_main": false,
   "last_slot_elapsed_minutes": 114.2,
   "last_success_age_minutes": 41.94252958333333,
@@ -38,6 +38,15 @@
   "last_successful_slot_local_key": "2026-05-03T16:00:00+03:00",
   "last_successful_trigger_kind": "watchdog_recovery",
   "last_supervisor_candidates": [
+    {
+      "completed": true,
+      "pending": false,
+      "reason": "slot_completed",
+      "should_dispatch": false,
+      "slot_key": "2026-05-03T10:00:00+03:00",
+      "stale": false,
+      "status": "success"
+    },
     {
       "completed": true,
       "pending": false,
@@ -64,22 +73,13 @@
       "slot_key": "2026-05-03T16:00:00+03:00",
       "stale": false,
       "status": "recovered"
-    },
-    {
-      "completed": false,
-      "pending": true,
-      "reason": "slot_pending",
-      "should_dispatch": false,
-      "slot_key": "2026-05-03T18:00:00+03:00",
-      "stale": false,
-      "status": "dispatched"
     }
   ],
-  "last_supervisor_check_local": "2026-05-03T18:15:31.587638+03:00",
-  "last_supervisor_check_utc": "2026-05-03T15:15:31.587638+00:00",
+  "last_supervisor_check_local": "2026-05-03T18:05:29.939961+03:00",
+  "last_supervisor_check_utc": "2026-05-03T15:05:29.939961+00:00",
   "last_supervisor_dispatched": [],
   "last_supervisor_policy_version": "v25-external-watchdog-catchup",
-  "last_supervisor_reason": "slot_pending",
+  "last_supervisor_reason": "slot_completed",
   "last_supervisor_status": "noop",
   "last_trigger_kind": "unknown",
   "primary_minute": 0,
@@ -758,18 +758,23 @@
       "status": "recovered"
     },
     "2026-05-03T18:00:00+03:00": {
-      "dispatched_at_local": "2026-05-03T18:10:31.457774+03:00",
-      "dispatched_at_utc": "2026-05-03T15:10:31.457774+00:00",
-      "missed_slots": [
-        "2026-05-03T18:00:00+03:00"
-      ],
-      "policy_version": "v25-external-watchdog-catchup",
+      "catchup_from": "2026-05-03T18:00:00+03:00",
+      "catchup_to": "2026-05-03T18:00:00+03:00",
+      "event_name": "workflow_dispatch",
+      "force_run": false,
+      "manual_probe": false,
+      "missed_slots": "2026-05-03T18:00:00+03:00",
+      "policy_version": "v25-manual-bypass-slot-supervisor",
       "reason": "external_watchdog",
-      "status": "dispatched"
+      "run_attempt": "1",
+      "run_id": "25282745865",
+      "started_at_local": "2026-05-03T18:10:55.477159+03:00",
+      "started_at_utc": "2026-05-03T15:10:55.477159+00:00",
+      "status": "running"
     }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-05-03T15:15:31.588147+00:00",
+  "updated_at_utc": "2026-05-03T15:10:55.477696+00:00",
   "watchdog_delay_minutes": 15,
   "watchdog_minute": 15,
   "watchdog_window_minutes": 8
