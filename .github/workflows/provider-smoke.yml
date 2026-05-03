@@ -4,17 +4,52 @@ on:
   workflow_dispatch:
     inputs:
       providers:
-        description: "Provider group/name list: core, odds, context, sportlogic, all, or comma-separated provider names"
-        required: false
+        description: "Choose provider smoke target"
+        type: choice
+        required: true
         default: "core"
+        options:
+          - core
+          - sportlogic
+          - odds
+          - context
+          - all
+          - odds_api_io
+          - sstats
+          - bzzoiro
+          - football_data
+          - thesportsdb
+          - espn
+          - openfootball
+          - openligadb
+          - futrixmetrics
+          - newsapi
+          - gnews
+          - bookies_api
+          - oddspapi
+          - allsportsapi
       match_limit:
         description: "Number of bootstrap matches passed to offer/context providers"
-        required: false
+        type: choice
+        required: true
         default: "24"
+        options:
+          - "8"
+          - "12"
+          - "24"
+          - "40"
+          - "80"
       context_match_limit:
         description: "Number of matches passed to context providers"
-        required: false
+        type: choice
+        required: true
         default: "12"
+        options:
+          - "4"
+          - "8"
+          - "12"
+          - "24"
+          - "40"
       send_telegram:
         description: "Send compact provider smoke report to Telegram"
         type: boolean
