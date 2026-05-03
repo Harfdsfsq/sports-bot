@@ -1,20 +1,18 @@
 from __future__ import annotations
 
-"""SportLogic fixture discovery v11: stale-inventory aware probe.
+"""SportLogic fixture discovery v12: stale-inventory aware diagnostics.
 
-Smoke proved that SportLogic auth, /games, cursor pagination and row parsing all
-work, but every date/filter alias currently returns the same stale page around
-2026-05-02 20:00-23:30 UTC.  Returning `EMPTY_FIXTURES` for this is misleading:
-the provider is alive but does not expose current/future fixtures for the target
-window.
+Current smoke facts:
+* auth works;
+* /games works;
+* cursor pagination works;
+* native row parser works;
+* returned inventory is outside the active runtime horizon and does not match
+  the bootstrap matches.
 
-This module keeps the cheap one-cursor strategy and widens the fixture discovery
-window enough to retain raw stale inventory.  The normal runner still filters out
-old matches before publishing, but smoke can now distinguish:
-
-* provider/API dead -> EMPTY/AUTH/HTTP_ERROR
-* provider alive but stale -> STALE_INVENTORY / NO_MATCH
-* provider alive and current -> OK
+This module keeps the safe one-cursor strategy, preserves stale raw inventory for
+smoke diagnostics, and labels it explicitly as `stale_inventory`.  The normal
+runner still must not publish old fixtures as current matches.
 """
 
 import os
@@ -24,7 +22,8 @@ from typing import Any
 from app.providers import sportlogic_fixture_discovery_v7 as v7
 
 UTC = timezone.utc
-PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v11_stale_inventory_aware"
+PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v12_stale_inventory_status"
+WRAP_MARKER = "_harizon_sportlogic_stale_inventory_wrappers_v12"
 
 
 def _fast_cursor_scan_max() -> int:
@@ -80,9 +79,88 @@ def _param_sets_fast(day: datetime) -> list[dict[str, Any]]:
     ]
 
 
+def _fixture_times(fixtures: list[dict[str, Any]]) -> list[datetime]:
+    times: list[datetime] = []
+    for row in fixtures:
+        try:
+            dt = v7._fixture_datetime(row)  # type: ignore[attr-defined]
+            if dt is not None:
+                times.append(dt.astimezone(UTC))
+        except Exception:
+            pass
+    return sorted(times)
+
+
+def _annotate_stats(provider: Any, stats: dict[str, Any], *, matches_built: int | None) -> None:
+    fixtures = list(getattr(provider, "_fixture_cache", []) or [])
+    if fixtures and int(stats.get("fixtures_fetched", 0) or 0) <= 0:
+        stats["fixtures_fetched"] = len(fixtures)
+        stats["games_fetched"] = len(fixtures)
+    if not fixtures:
+        return
+    times = _fixture_times(fixtures)
+    if times:
+        stats["inventory_min_start"] = times[0].isoformat()
+        stats["inventory_max_start"] = times[-1].isoformat()
+        stats["inventory_sample_start_times"] = [item.isoformat() for item in times[:5]]
+    if matches_built is not None:
+        out_of_window = int(stats.get("fixture_out_of_window", 0) or 0)
+        if matches_built <= 0 and out_of_window >= len(fixtures):
+            stats["inventory_status"] = "stale_inventory"
+            stats["stale_inventory"] = True
+            stats["empty_games_reason"] = "sportlogic_inventory_outside_runtime_horizon"
+    else:
+        if int(stats.get("events_matched", 0) or 0) <= 0 or int(stats.get("contexts_built", 0) or 0) <= 0:
+            stats.setdefault("inventory_status", "stale_inventory_or_unmatched_inventory")
+            stats.setdefault("no_match_reason", "sportlogic_fixture_inventory_does_not_match_bootstrap")
+
+
+def _install_stats_wrappers() -> bool:
+    try:
+        from app.providers import sportlogic_provider as module
+    except Exception:
+        return False
+    cls = getattr(module, "SportLogicProvider", None)
+    if cls is None or getattr(cls, WRAP_MARKER, False):
+        return False
+
+    original_fetch_matches = cls.fetch_matches
+    original_fetch_offers = cls.fetch_offers
+    original_fetch_context = cls.fetch_context
+
+    async def fetch_matches_stale_aware(self: Any):
+        data, stats, preview = await original_fetch_matches(self)
+        _annotate_stats(self, stats, matches_built=len(data or []))
+        if stats.get("inventory_status"):
+            preview.setdefault("inventory_status", stats.get("inventory_status"))
+        return data, stats, preview
+
+    async def fetch_offers_stale_aware(self: Any, matches: list[Any]):
+        data, stats, preview = await original_fetch_offers(self, matches)
+        _annotate_stats(self, stats, matches_built=None)
+        if stats.get("inventory_status"):
+            preview.setdefault("inventory_status", stats.get("inventory_status"))
+        return data, stats, preview
+
+    async def fetch_context_stale_aware(self: Any, matches: list[Any]):
+        data, stats, preview = await original_fetch_context(self, matches)
+        _annotate_stats(self, stats, matches_built=None)
+        if stats.get("inventory_status"):
+            preview.setdefault("inventory_status", stats.get("inventory_status"))
+        return data, stats, preview
+
+    cls.fetch_matches = fetch_matches_stale_aware
+    cls.fetch_offers = fetch_offers_stale_aware
+    cls.fetch_context = fetch_context_stale_aware
+    setattr(cls, WRAP_MARKER, True)
+    return True
+
+
 def install() -> bool:
     v7._param_sets = _param_sets_fast  # type: ignore[attr-defined]
     v7._cursor_scan_max = _fast_cursor_scan_max  # type: ignore[attr-defined]
     v7._target_window = _target_window_inventory  # type: ignore[attr-defined]
     v7.PATCH_MARKER = PATCH_MARKER
-    return bool(v7.install())
+    installed = bool(v7.install())
+    wrapped = _install_stats_wrappers()
+    return installed or wrapped
