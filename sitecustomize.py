@@ -92,6 +92,11 @@ def _install_sportlogic_hardening() -> None:
         sportlogic_hardening.install()
     except Exception:
         return
+    try:
+        from app.providers import sportlogic_fixture_discovery
+        sportlogic_fixture_discovery.install()
+    except Exception:
+        return
 
 
 def _num(value: str) -> float:
