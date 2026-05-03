@@ -3,14 +3,16 @@ from __future__ import annotations
 """Fast provider smoke run.
 
 Safe diagnostics only: no predictions are published and no betting ledger is
-mutated. The script always tries to write JSON/TXT outputs, even when one
-provider crashes.
+mutated. The script always writes JSON/TXT outputs, even when one provider
+crashes. SportLogic runtime patches are installed explicitly here so diagnostics
+never depend only on sitecustomize/import-hook timing.
 """
 
 import argparse
 import asyncio
 import json
 import os
+import subprocess
 import traceback
 from collections import Counter
 from dataclasses import asdict, is_dataclass
@@ -51,6 +53,29 @@ def safe_int(value: object, default: int) -> int:
         return default
 
 
+def git_sha() -> str:
+    try:
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+    except Exception:
+        return os.getenv("GITHUB_SHA", "")
+
+
+def install_runtime_patches() -> dict[str, Any]:
+    result: dict[str, Any] = {"sportlogic_hardening": False, "sportlogic_fixture_discovery": False, "errors": []}
+    try:
+        from app.providers import sportlogic_hardening
+        result["sportlogic_hardening"] = bool(sportlogic_hardening.install())
+    except Exception as exc:
+        result["errors"].append(f"sportlogic_hardening:{type(exc).__name__}:{exc}")
+    try:
+        from app.providers import sportlogic_fixture_discovery
+        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery.install())
+        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery, "PATCH_MARKER", "")
+    except Exception as exc:
+        result["errors"].append(f"sportlogic_fixture_discovery:{type(exc).__name__}:{exc}")
+    return result
+
+
 def sanitize(value: Any, depth: int = 0) -> Any:
     if depth > 6:
         return "..."
@@ -61,14 +86,14 @@ def sanitize(value: Any, depth: int = 0) -> Any:
             return str(value)[:400]
     if isinstance(value, dict):
         out: dict[str, Any] = {}
-        for key, item in list(value.items())[:70]:
+        for key, item in list(value.items())[:80]:
             low = str(key).lower()
             out[str(key)] = "***" if any(marker in low for marker in SECRET_MARKERS) else sanitize(item, depth + 1)
         return out
     if isinstance(value, (list, tuple, set)):
         return [sanitize(item, depth + 1) for item in list(value)[:20]]
     if isinstance(value, str):
-        return value[:1200]
+        return value[:1400]
     if isinstance(value, (int, float, bool)) or value is None:
         return value
     try:
@@ -108,10 +133,11 @@ def compact_stats(stats: Any) -> dict[str, Any]:
     out: dict[str, Any] = {}
     keep = [
         "enabled", "api_key_present", "credentials_present", "requests", "event_requests", "odds_requests",
-        "games_fetched", "fixtures_fetched", "matches_built", "events_fetched", "events_matched",
+        "games_fetched", "fixtures_fetched", "fixtures_skipped", "matches_built", "events_fetched", "events_matched",
         "contexts_built", "offers_parsed", "rows_before_parse", "odds_payload_rows", "empty_odds_payloads",
         "empty_fixture_attempts", "budget_exhausted", "response_errors", "auth_error", "rate_limited",
         "cooldown_active", "stop_reason", "odds_endpoint_used", "empty_games_reason", "last_body_preview",
+        "fixture_out_of_window", "fixture_parse_rejects", "sample_fixture_keys",
     ]
     for key in keep:
         if key in stats:
@@ -133,9 +159,7 @@ def compact_stats(stats: Any) -> dict[str, Any]:
 
 def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error: str | None) -> tuple[str, str]:
     if error:
-        if error.startswith("method_missing"):
-            return "SKIP", error
-        if error == "provider_not_loaded":
+        if error.startswith("method_missing") or error == "provider_not_loaded":
             return "SKIP", error
         return "ERROR", error[:220]
     if stats.get("auth_error"):
@@ -145,8 +169,11 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
     if count_data(data) > 0:
         return "OK", f"data={count_data(data)}"
     if provider == "sportlogic":
-        if safe_int(stats.get("fixtures_fetched"), 0) <= 0 and safe_int(stats.get("games_fetched"), 0) <= 0:
+        fixtures = safe_int(stats.get("fixtures_fetched") or stats.get("games_fetched"), 0)
+        if fixtures <= 0:
             return "EMPTY_FIXTURES", "SportLogic /games returned no fixtures"
+        if method == "fetch_matches" and safe_int(stats.get("matches_built"), 0) <= 0:
+            return "NO_MATCHES_BUILT", f"fixtures={fixtures}, rejects={stats.get('fixture_parse_rejects')}, out_of_window={stats.get('fixture_out_of_window')}"
         if method == "fetch_offers" and safe_int(stats.get("events_matched"), 0) <= 0:
             return "NO_MATCH", "fixtures did not match bootstrap matches"
         if method == "fetch_offers" and safe_int(stats.get("odds_requests"), 0) <= 0:
@@ -220,6 +247,7 @@ def match_sample(matches: list[Any], limit: int = 10) -> list[dict[str, Any]]:
 
 
 async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
+    runtime_patches = install_runtime_patches()
     from app.config import Settings
     from app.services.runner import PredictionRunner
 
@@ -276,14 +304,17 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     all_checks = [check for info in results.values() for check in (info.get("checks") or {}).values()]
     summary = {
         "checks_ok": sum(1 for check in all_checks if check.get("status") == "OK"),
-        "checks_warning": sum(1 for check in all_checks if check.get("status") in {"EMPTY", "EMPTY_CONTEXT", "EMPTY_OFFERS", "EMPTY_FIXTURES", "NO_MATCH", "NO_ODDS_REQUEST", "HTTP_ERROR", "SKIP"}),
+        "checks_warning": sum(1 for check in all_checks if check.get("status") in {"EMPTY", "EMPTY_CONTEXT", "EMPTY_OFFERS", "EMPTY_FIXTURES", "NO_MATCHES_BUILT", "NO_MATCH", "NO_ODDS_REQUEST", "HTTP_ERROR", "SKIP"}),
         "checks_error": sum(1 for check in all_checks if check.get("status") in {"ERROR", "AUTH", "RATE_LIMIT"}),
         "providers_loaded": sum(1 for info in results.values() if info.get("loaded")),
         "providers_total": len(results),
     }
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
+        "git_sha": git_sha(),
+        "github_sha": os.getenv("GITHUB_SHA", ""),
         "mode": "provider_smoke",
+        "runtime_patches": runtime_patches,
         "providers_requested": providers,
         "settings": {
             "providers_arg": args.providers,
@@ -308,6 +339,8 @@ def build_text(payload: dict[str, Any]) -> str:
     lines = [
         "🧪 Provider smoke run",
         f"• time UTC: {payload.get('created_at_utc')}",
+        f"• git: {str(payload.get('git_sha') or '')[:12]}",
+        f"• runtime patches: {payload.get('runtime_patches')}",
         f"• bootstrap: {bootstrap.get('status')} | matches: {bootstrap.get('matches_count')}",
         f"• checks: OK {summary.get('checks_ok')} | warn {summary.get('checks_warning')} | errors {summary.get('checks_error')}",
         "",
@@ -325,9 +358,14 @@ def build_text(payload: dict[str, Any]) -> str:
         if name == "sportlogic":
             for check in checks.values():
                 stats = check.get("stats") or {}
-                for key in ("attempted_paths", "fixture_query_attempts", "last_body_preview"):
-                    if stats.get(key):
-                        lines.append(f"  {key}: {json.dumps(stats.get(key), ensure_ascii=False)[:900] if key != 'last_body_preview' else str(stats.get(key))[:500]}")
+                preview = check.get("preview") or {}
+                for key in ("fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "sample_fixture_keys", "attempted_paths", "fixture_query_attempts", "last_body_preview"):
+                    if stats.get(key) not in (None, "", [], {}):
+                        value = stats.get(key)
+                        lines.append(f"  {key}: {json.dumps(value, ensure_ascii=False)[:900] if key != 'last_body_preview' else str(value)[:500]}")
+                for key in ("sample_fixture_parse", "sample_matches"):
+                    if preview.get(key):
+                        lines.append(f"  {key}: {json.dumps(preview.get(key), ensure_ascii=False)[:1200]}")
     lines += ["", "📁 Files", str(JSON_OUT), str(TXT_OUT)]
     return "\n".join(lines)
 
@@ -346,7 +384,7 @@ def send_telegram(text: str) -> bool:
     if not token or not chat_id:
         return False
     ok = True
-    for chunk in [text[i:i + 3600] for i in range(0, len(text), 3600)][:4] or [text]:
+    for chunk in [text[i:i + 3600] for i in range(0, len(text), 3600)][:5] or [text]:
         try:
             req = request.Request(
                 f"https://api.telegram.org/bot{token}/sendMessage",
@@ -371,6 +409,7 @@ def parse_args() -> argparse.Namespace:
 def failure_payload(exc: BaseException) -> dict[str, Any]:
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
+        "git_sha": git_sha(),
         "mode": "provider_smoke",
         "fatal_error": f"{type(exc).__name__}: {exc}",
         "traceback": traceback.format_exc()[-5000:],
