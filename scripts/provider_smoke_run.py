@@ -27,14 +27,15 @@ JSON_OUT = EXPORT_DIR / "latest-provider-smoke.json"
 TXT_OUT = EXPORT_DIR / "latest-provider-smoke.txt"
 
 GROUPS = {
-    "core": ["odds_api_io", "sportlogic", "sstats", "bzzoiro", "football_data", "thesportsdb", "espn"],
-    "odds": ["odds_api_io", "sportlogic", "bookies_api", "oddspapi", "allsportsapi"],
+    "core": ["odds_api_io", "sharpapi", "sportlogic", "sstats", "bzzoiro", "football_data", "thesportsdb", "espn"],
+    "odds": ["odds_api_io", "sharpapi", "sportlogic", "bookies_api", "oddspapi", "allsportsapi"],
     "context": ["sstats", "bzzoiro", "api_football", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews"],
     "sportlogic": ["sportlogic"],
+    "sharpapi": ["sharpapi"],
 }
 GROUPS["all"] = list(dict.fromkeys(GROUPS["odds"] + GROUPS["context"]))
 
-OFFER_PROVIDERS = {"odds_api_io", "bookies_api", "oddspapi", "allsportsapi", "sportlogic"}
+OFFER_PROVIDERS = {"odds_api_io", "sharpapi", "bookies_api", "oddspapi", "allsportsapi", "sportlogic"}
 CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "api_football", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews", "sportlogic"}
 SECRET_MARKERS = ("key", "token", "secret", "authorization", "password", "apikey", "api_key")
 WARNING_STATUSES = {"EMPTY", "EMPTY_CONTEXT", "EMPTY_OFFERS", "EMPTY_FIXTURES", "NO_MATCHES_BUILT", "NO_MATCH", "NO_ODDS_REQUEST", "HTTP_ERROR", "SKIP", "STALE_INVENTORY"}
@@ -62,7 +63,13 @@ def git_sha() -> str:
 
 
 def install_runtime_patches() -> dict[str, Any]:
-    result: dict[str, Any] = {"sportlogic_hardening": False, "sportlogic_fixture_discovery": False, "errors": []}
+    result: dict[str, Any] = {
+        "sportlogic_hardening": False,
+        "sportlogic_fixture_discovery": False,
+        "sharpapi_runtime_patch": False,
+        "sharpapi_official_patch": False,
+        "errors": [],
+    }
     try:
         from app.providers import sportlogic_hardening
         result["sportlogic_hardening"] = bool(sportlogic_hardening.install())
@@ -74,6 +81,16 @@ def install_runtime_patches() -> dict[str, Any]:
         result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v9, "PATCH_MARKER", "")
     except Exception as exc:
         result["errors"].append(f"sportlogic_fixture_discovery_v9:{type(exc).__name__}:{exc}")
+    try:
+        from app.providers import sharpapi_runtime_patch
+        result["sharpapi_runtime_patch"] = bool(sharpapi_runtime_patch.install())
+    except Exception as exc:
+        result["errors"].append(f"sharpapi_runtime_patch:{type(exc).__name__}:{exc}")
+    try:
+        from app.providers import sharpapi_official_patch
+        result["sharpapi_official_patch"] = bool(sharpapi_official_patch.install())
+    except Exception as exc:
+        result["errors"].append(f"sharpapi_official_patch:{type(exc).__name__}:{exc}")
     return result
 
 
@@ -87,14 +104,14 @@ def sanitize(value: Any, depth: int = 0) -> Any:
             return str(value)[:400]
     if isinstance(value, dict):
         out: dict[str, Any] = {}
-        for key, item in list(value.items())[:100]:
+        for key, item in list(value.items())[:120]:
             low = str(key).lower()
             out[str(key)] = "***" if any(marker in low for marker in SECRET_MARKERS) else sanitize(item, depth + 1)
         return out
     if isinstance(value, (list, tuple, set)):
-        return [sanitize(item, depth + 1) for item in list(value)[:30]]
+        return [sanitize(item, depth + 1) for item in list(value)[:40]]
     if isinstance(value, str):
-        return value[:1600]
+        return value[:2000]
     if isinstance(value, (int, float, bool)) or value is None:
         return value
     try:
@@ -133,15 +150,17 @@ def compact_stats(stats: Any) -> dict[str, Any]:
         return {}
     out: dict[str, Any] = {}
     keep = [
-        "enabled", "api_key_present", "credentials_present", "requests", "event_requests", "odds_requests",
-        "games_fetched", "fixtures_fetched", "fixtures_skipped", "matches_built", "events_fetched", "events_matched",
-        "contexts_built", "offers_parsed", "rows_before_parse", "odds_payload_rows", "empty_odds_payloads",
-        "empty_fixture_attempts", "budget_exhausted", "response_errors", "auth_error", "rate_limited",
-        "cooldown_active", "stop_reason", "odds_endpoint_used", "empty_games_reason", "last_body_preview",
-        "fixture_out_of_window", "fixture_parse_rejects", "sample_fixture_keys", "fixture_stale_rows_filtered",
-        "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max",
-        "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "inventory_sample_start_times",
-        "no_match_reason",
+        "enabled", "provider", "api_key_present", "api_key_2_present", "credentials_present", "base_url", "schema_mode",
+        "requests", "event_requests", "odds_requests", "games_fetched", "fixtures_fetched", "fixtures_skipped",
+        "matches_built", "events_fetched", "events_matched", "matched_exact", "matched_loose", "matched_fuzzy",
+        "unmatched_offer_events", "contexts_built", "offers_parsed", "markets_parsed", "bookmakers_seen",
+        "bookmakers_seen_names", "matches_with_2plus_books", "matches_with_1_book", "offers_by_family",
+        "rows_before_parse", "odds_payload_rows", "empty_odds_payloads", "empty_fixture_attempts", "budget_exhausted",
+        "response_errors", "auth_error", "rate_limited", "cooldown_active", "stop_reason", "odds_endpoint_used",
+        "odds_endpoint_params_used", "empty_games_reason", "last_body_preview", "fixture_out_of_window",
+        "fixture_parse_rejects", "sample_fixture_keys", "fixture_stale_rows_filtered", "fixture_window_start",
+        "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max", "inventory_status", "stale_inventory",
+        "inventory_min_start", "inventory_max_start", "inventory_sample_start_times", "no_match_reason",
     ]
     for key in keep:
         if key in stats:
@@ -192,6 +211,17 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
             return "NO_MATCH", "fixtures did not match bootstrap matches"
         if method == "fetch_offers" and safe_int(stats.get("odds_requests"), 0) <= 0:
             return "NO_ODDS_REQUEST", "provider did not reach odds endpoint"
+    if provider == "sharpapi":
+        if not stats.get("api_key_present"):
+            return "AUTH", "SHARPAPI_API_KEY/SHARPAPI_KEY/SHARP_API_KEY missing"
+        if safe_int(stats.get("requests"), 0) <= 0:
+            return "NO_ODDS_REQUEST", "SharpAPI did not reach odds endpoint"
+        if safe_int(stats.get("events_fetched"), 0) <= 0:
+            return "EMPTY_FIXTURES", "SharpAPI returned no event rows for smoke sample"
+        if safe_int(stats.get("offers_parsed"), 0) <= 0:
+            return "EMPTY_OFFERS", "SharpAPI returned rows but safe parser emitted no offers"
+    if method == "fetch_offers" and safe_int(stats.get("offers_parsed"), 0) <= 0:
+        return "EMPTY_OFFERS", "no offers parsed for smoke sample"
     if stats.get("response_errors"):
         return "HTTP_ERROR", f"response_errors={stats.get('response_errors')}"
     return "EMPTY", "no data for smoke sample"
@@ -200,6 +230,7 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
 def provider_secrets(provider: str) -> dict[str, bool]:
     mapping = {
         "odds_api_io": ["ODDS_API_IO_KEY", "ODDS_API_IO_KEY_2"],
+        "sharpapi": ["SHARPAPI_API_KEY", "SHARPAPI_KEY", "SHARP_API_KEY"],
         "sportlogic": ["SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"],
         "sstats": ["SSTATS_API_KEY"],
         "bzzoiro": ["BZZOIRO_API_KEY"],
@@ -260,6 +291,16 @@ def match_sample(matches: list[Any], limit: int = 10) -> list[dict[str, Any]]:
     return rows
 
 
+def resolve_provider_instance(runner: Any, provider_name: str, settings: Any) -> Any | None:
+    if provider_name == "sharpapi":
+        try:
+            from app.providers.sharpapi import SharpApiOddsProvider
+            return SharpApiOddsProvider(settings)
+        except Exception:
+            return None
+    return getattr(runner, provider_name, None)
+
+
 async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     runtime_patches = install_runtime_patches()
     from app.config import Settings
@@ -294,7 +335,7 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
 
     results: dict[str, Any] = {}
     for provider_name in providers:
-        provider = getattr(runner, provider_name, None)
+        provider = resolve_provider_instance(runner, provider_name, settings)
         result = {"provider": provider_name, "loaded": provider is not None, "secrets_present": provider_secrets(provider_name), "checks": {}}
 
         if provider_name == "sportlogic":
@@ -338,6 +379,11 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
             "prediction_publication_enabled": os.getenv("PREDICTION_PUBLICATION_ENABLED"),
             "sportlogic_odds_match_limit": os.getenv("SPORTLOGIC_ODDS_MATCH_LIMIT"),
             "sportlogic_budget_reason": os.getenv("SPORTLOGIC_REQUEST_BUDGET_REASON"),
+            "enable_sharpapi": os.getenv("ENABLE_SHARPAPI"),
+            "sharpapi_base_url": os.getenv("SHARPAPI_BASE_URL"),
+            "sharpapi_odds_endpoints": os.getenv("SHARPAPI_ODDS_ENDPOINTS"),
+            "sharpapi_league": os.getenv("SHARPAPI_LEAGUE"),
+            "sharpapi_per_run_max": os.getenv("SHARPAPI_PER_RUN_MAX") or os.getenv("SHARPAPI_MAX_HTTP_REQUESTS_PER_RUN"),
         },
         "bootstrap": bootstrap,
         "summary": summary,
@@ -363,27 +409,30 @@ def build_text(payload: dict[str, Any]) -> str:
     for name, info in (payload.get("providers") or {}).items():
         checks = info.get("checks") or {}
         if not checks:
-            lines.append(f"• {name}: no checks | loaded={info.get('loaded')}")
+            lines.append(f"• {name}: no checks | loaded={info.get('loaded')} | secrets={info.get('secrets_present')}")
             continue
         pieces = []
         for method, check in checks.items():
             pieces.append(f"{method}={check.get('status')} data={check.get('data_count')} ({check.get('reason')})")
         lines.append(f"• {name}: " + "; ".join(pieces))
-        if name == "sportlogic":
+        if name in {"sportlogic", "sharpapi"}:
             for check in checks.values():
                 stats = check.get("stats") or {}
                 preview = check.get("preview") or {}
                 for key in (
+                    "base_url", "schema_mode", "api_key_present", "requests", "http_statuses", "odds_endpoint_used",
+                    "odds_endpoint_params_used", "events_fetched", "events_matched", "offers_parsed", "markets_parsed",
+                    "bookmakers_seen_names", "offers_by_family", "payload_shapes", "last_body_preview",
                     "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "inventory_sample_start_times",
                     "fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end",
                     "fixture_page_scan_max", "fixture_cursor_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths",
-                    "fixture_query_attempts", "no_match_reason", "last_body_preview",
+                    "fixture_query_attempts", "no_match_reason",
                 ):
                     if stats.get(key) not in (None, "", [], {}):
                         value = stats.get(key)
                         rendered = json.dumps(value, ensure_ascii=False) if key != "last_body_preview" else str(value)
                         lines.append(f"  {key}: {rendered[:1200]}")
-                for key in ("inventory_status", "sample_fixture_parse", "sample_fixture_parse_kept", "sample_matches"):
+                for key in ("sample_events", "sample_odds", "inventory_status", "sample_fixture_parse", "sample_fixture_parse_kept", "sample_matches"):
                     if preview.get(key):
                         lines.append(f"  {key}: {json.dumps(preview.get(key), ensure_ascii=False)[:1400]}")
     lines += ["", "📁 Files", str(JSON_OUT), str(TXT_OUT)]
