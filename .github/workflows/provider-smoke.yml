@@ -1,0 +1,243 @@
+name: provider-smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: Provider group/name list: core, odds, context, sportlogic, all, or comma-separated provider names
+        required: false
+        default: core
+      match_limit:
+        description: Number of bootstrap matches passed to offer/context providers
+        required: false
+        default: "24"
+      context_match_limit:
+        description: Number of matches passed to context providers
+        required: false
+        default: "12"
+      send_telegram:
+        description: Send compact provider smoke report to Telegram
+        type: boolean
+        required: false
+        default: true
+
+permissions:
+  contents: read
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+  APP_ENV: provider-smoke
+  PUBLISH_DRY_RUN: "true"
+  PREDICTION_PUBLICATION_ENABLED: "false"
+  CONTROLLED_FALLBACK_SEND_TELEGRAM: "false"
+  CONTROLLED_FALLBACK_TELEGRAM_ENABLED: "false"
+  RUN_REPORT_ENABLED: "false"
+  DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
+  DAILY_REPORT_ENABLED: "false"
+  SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
+  PROVIDER_SMOKE_PROVIDERS: ${{ github.event.inputs.providers || 'core' }}
+  PROVIDER_SMOKE_MATCH_LIMIT: ${{ github.event.inputs.match_limit || '24' }}
+  PROVIDER_SMOKE_CONTEXT_MATCH_LIMIT: ${{ github.event.inputs.context_match_limit || '12' }}
+  PROVIDER_SMOKE_SEND_TELEGRAM: ${{ github.event.inputs.send_telegram || 'true' }}
+
+  PROVIDER_REQUEST_BUDGET_MODE: per_run_only
+  PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+  ALL_SOURCES_FREE_MAXIMIZE: "true"
+  MATCH_BOOTSTRAP_PROVIDER: odds_api_io
+  DAY_INVENTORY_USE_FOR_RUN: "false"
+  DAY_INVENTORY_SKIP_BUILD: "true"
+  RUN_DAYS_AHEAD: "2"
+  PUBLISH_WINDOW_HOURS: "12"
+  MIN_KICKOFF_LEAD_MINUTES: "0"
+  MANUAL_LATE_MODE_ENABLED: "true"
+
+  ENABLE_ODDS_API_IO: "true"
+  ODDS_API_IO_ENABLED: "true"
+  ODDS_API_IO_PER_RUN_MAX: "60"
+  ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "60"
+  ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "30"
+  ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "30"
+  ODDS_API_IO_BOOKMAKERS_ACCOUNT1: Bet365,Unibet
+  ODDS_API_IO_BOOKMAKERS_ACCOUNT2: Betfair Exchange,Sbobet
+  ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "8"
+  MAX_MATCHES_FOR_ODDS_FETCH: "80"
+
+  ENABLE_SPORTLOGIC: "true"
+  SPORTLOGIC_ENABLED: "true"
+  SPORTLOGIC_PER_RUN_MAX: "40"
+  SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "40"
+  SPORTLOGIC_MATCH_LIMIT: "120"
+  SPORTLOGIC_CONTEXT_MATCH_LIMIT: "120"
+  SPORTLOGIC_ODDS_MATCH_LIMIT: "32"
+  SPORTLOGIC_TIMEOUT_SECONDS: "20"
+  SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1
+  SPORTLOGIC_HEADER_NAME: X-API-Key
+
+  ENABLE_SSTATS: "true"
+  ENABLE_SSTATS_CONTEXT: "true"
+  SSTATS_ENABLED: "true"
+  SSTATS_PER_RUN_MAX: "40"
+  SSTATS_REQUESTS_MAX_PER_RUN: "40"
+  SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "40"
+  SSTATS_CONTEXT_MATCH_LIMIT: "24"
+
+  ENABLE_BZZOIRO: "true"
+  ENABLE_BZZOIRO_CONTEXT: "true"
+  BZZOIRO_ENABLED: "true"
+  BZZOIRO_PER_RUN_MAX: "80"
+  BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "80"
+  BZZOIRO_CONTEXT_MATCH_LIMIT: "24"
+  BZZOIRO_MAX_PAGES: "12"
+
+  ENABLE_FOOTBALL_DATA_CONTEXT: "true"
+  FOOTBALL_DATA_ENABLED: "true"
+  FOOTBALL_DATA_PER_RUN_MAX: "8"
+  FOOTBALL_DATA_REQUESTS_MAX_PER_RUN: "8"
+  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: "24"
+
+  ENABLE_THESPORTSDB_CONTEXT: "true"
+  THESPORTSDB_CONTEXT_ENABLED: "true"
+  THESPORTSDB_PER_RUN_MAX: "8"
+  THESPORTSDB_REQUESTS_MAX_PER_RUN: "8"
+  THESPORTSDB_CONTEXT_MATCH_LIMIT: "24"
+
+  ENABLE_ESPN_CONTEXT: "true"
+  ESPN_CONTEXT_MATCH_LIMIT: "24"
+  ESPN_MAX_MATCHES: "24"
+  ESPN_MAX_HTTP_REQUESTS_PER_RUN: "12"
+  ESPN_SCOREBOARD_MAX_REQUESTS_PER_RUN: "8"
+  ESPN_PROBABILITY_MAX_REQUESTS_PER_RUN: "2"
+  ESPN_SUMMARY_MAX_REQUESTS_PER_RUN: "2"
+
+  ENABLE_API_FOOTBALL: "false"
+  API_FOOTBALL_ENABLED: "false"
+  API_FOOTBALL_KEY: ""
+  API_FOOTBALL_PER_RUN_MAX: "0"
+  API_FOOTBALL_CONTEXT_MATCH_LIMIT: "0"
+
+  ENABLE_OPENFOOTBALL_CONTEXT: "true"
+  OPENFOOTBALL_ENABLED: "true"
+  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: "24"
+  OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN: "4"
+
+  ENABLE_FUTRIXMETRICS_CONTEXT: "true"
+  FUTRIXMETRICS_ENABLED: "true"
+  FUTRIXMETRICS_PER_RUN_MAX: "2"
+  FUTRIXMETRICS_REQUESTS_MAX_PER_RUN: "2"
+  FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: "4"
+
+  ENABLE_NEWSAPI_CONTEXT: "true"
+  NEWSAPI_ENABLED: "true"
+  NEWSAPI_PER_RUN_MAX: "1"
+  NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN: "1"
+  NEWSAPI_MATCH_LIMIT: "2"
+
+  ENABLE_GNEWS_CONTEXT: "true"
+  GNEWS_ENABLED: "true"
+  GNEWS_PER_RUN_MAX: "1"
+  GNEWS_MAX_HTTP_REQUESTS_PER_RUN: "1"
+  GNEWS_CONTEXT_MATCH_LIMIT: "2"
+
+  WEATHER_CONTEXT_ENABLED: "true"
+  ENABLE_WEATHERAPI: "true"
+  WEATHERAPI_ENABLED: "true"
+  WEATHERAPI_PER_RUN_MAX: "4"
+  WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN: "4"
+  WEATHER_CONTEXT_MATCH_LIMIT: "4"
+  ENABLE_OPENWEATHERMAP: "true"
+  OPENWEATHERMAP_ENABLED: "true"
+  OPENWEATHERMAP_PER_RUN_MAX: "2"
+  OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN: "2"
+
+  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+  ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+  CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
+  CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
+  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+  WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+  WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+  WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+  OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+  OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+  METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+  METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
+  RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+  SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
+  SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+  SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+  SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
+  ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
+  FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
+  SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+
+jobs:
+  provider-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 18
+    concurrency:
+      group: provider-smoke
+      cancel-in-progress: true
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: bash
+        run: pip install -r requirements.txt
+
+      - name: Prepare smoke folders
+        shell: bash
+        run: mkdir -p .data .data/exports artifacts/provider-smoke .logs
+
+      - name: Apply explicit provider runtime patches
+        shell: bash
+        run: |
+          python scripts/api_max_usage_patch.py || true
+          cat .data/exports/latest-api-max-usage-patch.json || true
+
+      - name: Run provider smoke diagnostics
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          python scripts/provider_smoke_run.py \
+            --providers "${PROVIDER_SMOKE_PROVIDERS}" \
+            --match-limit "${PROVIDER_SMOKE_MATCH_LIMIT}" \
+            --context-match-limit "${PROVIDER_SMOKE_CONTEXT_MATCH_LIMIT}" \
+            $([ "${PROVIDER_SMOKE_SEND_TELEGRAM}" = "true" ] && echo --send-telegram || true)
+          echo "----- provider smoke txt -----"
+          cat .data/exports/latest-provider-smoke.txt || true
+
+      - name: Upload provider smoke artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: provider-smoke-${{ github.run_id }}
+          path: |
+            artifacts/provider-smoke/**
+            .data/exports/latest-provider-smoke.json
+            .data/exports/latest-provider-smoke.txt
+            .data/exports/latest-api-max-usage-patch.json
+            .data/exports/latest-sportlogic-debug.json
+            .data/exports/latest-sportlogic-odds-sample.json
+          if-no-files-found: ignore
+          retention-days: 7
