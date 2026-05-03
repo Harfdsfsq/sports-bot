@@ -1,18 +1,18 @@
 from __future__ import annotations
 
-"""SportLogic fixture discovery v12: stale-inventory aware diagnostics.
+"""SportLogic fixture discovery v13: documented games filters only.
 
-Current smoke facts:
-* auth works;
-* /games works;
-* cursor pagination works;
-* native row parser works;
-* returned inventory is outside the active runtime horizon and does not match
-  the bootstrap matches.
+Docs for GET /games list only these fixture filters: league_id, status,
+date_from, date_to, is_live, per_page, cursor.  Previous probes used an
+undocumented `date=YYYY-MM-DD` fallback. Smoke showed that this fallback returns
+rows, but those rows stay at the same old start_time span. The likely reason is
+simple: SportLogic ignores the unknown `date` parameter and returns the default
+/games page ordered by start_time desc.
 
-This module keeps the safe one-cursor strategy, preserves stale raw inventory for
-smoke diagnostics, and labels it explicitly as `stale_inventory`.  The normal
-runner still must not publish old fixtures as current matches.
+This patch removes `date`, `day`, `from/to`, `start_time_from`, `starts_after`
+from production discovery. We now test only documented filters and cursor
+pagination, so a smoke result with rows=0 means the API/key really is not
+returning current fixtures via the documented contract.
 """
 
 import os
@@ -22,60 +22,31 @@ from typing import Any
 from app.providers import sportlogic_fixture_discovery_v7 as v7
 
 UTC = timezone.utc
-PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v12_stale_inventory_status"
-WRAP_MARKER = "_harizon_sportlogic_stale_inventory_wrappers_v12"
+PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v13_documented_games_filters"
+WRAP_MARKER = "_harizon_sportlogic_documented_filter_wrappers_v13"
 
 
 def _fast_cursor_scan_max() -> int:
     try:
-        return max(1, min(3, int(float(os.getenv("SPORTLOGIC_FIXTURE_CURSOR_SCAN_MAX", "1") or 1))))
+        return max(1, min(6, int(float(os.getenv("SPORTLOGIC_FIXTURE_CURSOR_SCAN_MAX", "2") or 2))))
     except Exception:
-        return 1
+        return 2
 
 
-def _inventory_lookback_hours() -> int:
-    try:
-        return max(0, min(96, int(float(os.getenv("SPORTLOGIC_INVENTORY_LOOKBACK_HOURS", "48") or 48))))
-    except Exception:
-        return 48
-
-
-def _inventory_lookahead_days() -> int:
-    try:
-        return max(1, min(7, int(float(os.getenv("SPORTLOGIC_INVENTORY_LOOKAHEAD_DAYS", "4") or 4))))
-    except Exception:
-        return 4
-
-
-def _target_window_inventory(matches: list[Any], now: datetime | None = None) -> tuple[datetime, datetime]:
-    now = now or datetime.now(UTC)
-    starts: list[datetime] = []
-    for match in matches:
-        try:
-            starts.append(match.commence_time.astimezone(UTC))
-        except Exception:
-            pass
-    if starts:
-        return min(starts) - timedelta(hours=_inventory_lookback_hours()), max(starts) + timedelta(days=_inventory_lookahead_days())
-    return now - timedelta(hours=_inventory_lookback_hours()), now + timedelta(days=_inventory_lookahead_days())
-
-
-def _param_sets_fast(day: datetime) -> list[dict[str, Any]]:
+def _param_sets_documented(day: datetime) -> list[dict[str, Any]]:
     date_key = day.date().isoformat()
     next_key = (day.date() + timedelta(days=1)).isoformat()
     return [
-        {"date": date_key, "per_page": 100},
-        {"date_from": date_key, "date_to": date_key, "per_page": 100},
+        # Documented first-request shape for upcoming games.
+        {"date_from": date_key, "status": "scheduled", "per_page": 100},
+        # Bounded day window. date_to is documented and must be >= date_from.
+        {"date_from": date_key, "date_to": next_key, "status": "scheduled", "per_page": 100},
+        # Also allow live games for today's run window.
+        {"date_from": date_key, "date_to": next_key, "status": "live", "per_page": 100},
+        {"date_from": date_key, "date_to": next_key, "is_live": True, "per_page": 100},
+        # No status fallback, still documented.
         {"date_from": date_key, "date_to": next_key, "per_page": 100},
         {"date_from": date_key, "per_page": 100},
-        {"start_time_from": f"{date_key}T00:00:00Z", "start_time_to": f"{next_key}T00:00:00Z", "per_page": 100},
-        {"starts_after": f"{date_key}T00:00:00Z", "starts_before": f"{next_key}T00:00:00Z", "per_page": 100},
-        {"from": date_key, "to": next_key, "per_page": 100},
-        {"day": date_key, "per_page": 100},
-        {"date_from": date_key, "date_to": date_key, "status": "scheduled", "per_page": 100},
-        {"date_from": date_key, "status": "scheduled", "per_page": 100},
-        {"date_from": date_key, "date_to": next_key, "status": "scheduled", "per_page": 100},
-        {"date": date_key, "status": "scheduled", "per_page": 100},
     ]
 
 
@@ -97,6 +68,7 @@ def _annotate_stats(provider: Any, stats: dict[str, Any], *, matches_built: int 
         stats["fixtures_fetched"] = len(fixtures)
         stats["games_fetched"] = len(fixtures)
     if not fixtures:
+        stats.setdefault("empty_games_reason", "documented_games_filters_returned_no_rows")
         return
     times = _fixture_times(fixtures)
     if times:
@@ -111,7 +83,7 @@ def _annotate_stats(provider: Any, stats: dict[str, Any], *, matches_built: int 
             stats["empty_games_reason"] = "sportlogic_inventory_outside_runtime_horizon"
     else:
         if int(stats.get("events_matched", 0) or 0) <= 0 or int(stats.get("contexts_built", 0) or 0) <= 0:
-            stats.setdefault("inventory_status", "stale_inventory_or_unmatched_inventory")
+            stats.setdefault("inventory_status", "unmatched_inventory")
             stats.setdefault("no_match_reason", "sportlogic_fixture_inventory_does_not_match_bootstrap")
 
 
@@ -128,38 +100,43 @@ def _install_stats_wrappers() -> bool:
     original_fetch_offers = cls.fetch_offers
     original_fetch_context = cls.fetch_context
 
-    async def fetch_matches_stale_aware(self: Any):
+    async def fetch_matches_doc_filter_aware(self: Any):
         data, stats, preview = await original_fetch_matches(self)
         _annotate_stats(self, stats, matches_built=len(data or []))
         if stats.get("inventory_status"):
             preview.setdefault("inventory_status", stats.get("inventory_status"))
+        if stats.get("empty_games_reason"):
+            preview.setdefault("empty_games_reason", stats.get("empty_games_reason"))
         return data, stats, preview
 
-    async def fetch_offers_stale_aware(self: Any, matches: list[Any]):
+    async def fetch_offers_doc_filter_aware(self: Any, matches: list[Any]):
         data, stats, preview = await original_fetch_offers(self, matches)
         _annotate_stats(self, stats, matches_built=None)
         if stats.get("inventory_status"):
             preview.setdefault("inventory_status", stats.get("inventory_status"))
+        if stats.get("empty_games_reason"):
+            preview.setdefault("empty_games_reason", stats.get("empty_games_reason"))
         return data, stats, preview
 
-    async def fetch_context_stale_aware(self: Any, matches: list[Any]):
+    async def fetch_context_doc_filter_aware(self: Any, matches: list[Any]):
         data, stats, preview = await original_fetch_context(self, matches)
         _annotate_stats(self, stats, matches_built=None)
         if stats.get("inventory_status"):
             preview.setdefault("inventory_status", stats.get("inventory_status"))
+        if stats.get("empty_games_reason"):
+            preview.setdefault("empty_games_reason", stats.get("empty_games_reason"))
         return data, stats, preview
 
-    cls.fetch_matches = fetch_matches_stale_aware
-    cls.fetch_offers = fetch_offers_stale_aware
-    cls.fetch_context = fetch_context_stale_aware
+    cls.fetch_matches = fetch_matches_doc_filter_aware
+    cls.fetch_offers = fetch_offers_doc_filter_aware
+    cls.fetch_context = fetch_context_doc_filter_aware
     setattr(cls, WRAP_MARKER, True)
     return True
 
 
 def install() -> bool:
-    v7._param_sets = _param_sets_fast  # type: ignore[attr-defined]
+    v7._param_sets = _param_sets_documented  # type: ignore[attr-defined]
     v7._cursor_scan_max = _fast_cursor_scan_max  # type: ignore[attr-defined]
-    v7._target_window = _target_window_inventory  # type: ignore[attr-defined]
     v7.PATCH_MARKER = PATCH_MARKER
     installed = bool(v7.install())
     wrapped = _install_stats_wrappers()
