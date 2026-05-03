@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
     inputs:
       providers:
-        description: Provider group/name list: core, odds, context, sportlogic, all, or comma-separated provider names
+        description: "Provider group/name list: core, odds, context, sportlogic, all, or comma-separated provider names"
         required: false
-        default: core
+        default: "core"
       match_limit:
-        description: Number of bootstrap matches passed to offer/context providers
+        description: "Number of bootstrap matches passed to offer/context providers"
         required: false
         default: "24"
       context_match_limit:
-        description: Number of matches passed to context providers
+        description: "Number of matches passed to context providers"
         required: false
         default: "12"
       send_telegram:
-        description: Send compact provider smoke report to Telegram
+        description: "Send compact provider smoke report to Telegram"
         type: boolean
         required: false
         default: true
@@ -220,11 +220,16 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python scripts/provider_smoke_run.py \
-            --providers "${PROVIDER_SMOKE_PROVIDERS}" \
-            --match-limit "${PROVIDER_SMOKE_MATCH_LIMIT}" \
-            --context-match-limit "${PROVIDER_SMOKE_CONTEXT_MATCH_LIMIT}" \
-            $([ "${PROVIDER_SMOKE_SEND_TELEGRAM}" = "true" ] && echo --send-telegram || true)
+          set -euo pipefail
+          args=(
+            --providers "${PROVIDER_SMOKE_PROVIDERS}"
+            --match-limit "${PROVIDER_SMOKE_MATCH_LIMIT}"
+            --context-match-limit "${PROVIDER_SMOKE_CONTEXT_MATCH_LIMIT}"
+          )
+          if [ "${PROVIDER_SMOKE_SEND_TELEGRAM}" = "true" ]; then
+            args+=(--send-telegram)
+          fi
+          python scripts/provider_smoke_run.py "${args[@]}"
           echo "----- provider smoke txt -----"
           cat .data/exports/latest-provider-smoke.txt || true
 
