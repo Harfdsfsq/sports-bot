@@ -8,7 +8,7 @@ on:
         required: false
         default: ""
       run_reason:
-        description: primary/watchdog_recovery/catchup/manual
+        description: primary/watchdog_recovery/catchup/manual/external_watchdog
         required: false
         default: "manual"
       missed_slots:
@@ -54,8 +54,6 @@ on:
           - target_3
           - target_5
           - target_7
-  schedule:
-    - cron: "0 21,23,1,3,5,7,9,11,13,15,17,19 * * *"
 
 permissions:
   contents: write
@@ -73,7 +71,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v24-slot-supervisor
+      AUTORUN_POLICY_VERSION: v26-supervisor-only
+      AUTORUN_DIRECT_SCHEDULE_ENABLED: "false"
       AUTORUN_INPUT_SLOT_KEY: ${{ github.event.inputs.slot_key }}
       AUTORUN_INPUT_RUN_REASON: ${{ github.event.inputs.run_reason }}
       AUTORUN_INPUT_MISSED_SLOTS: ${{ github.event.inputs.missed_slots }}
@@ -134,12 +133,19 @@ jobs:
       API_FOOTBALL_PREDICTIONS_LIMIT: "0"
       ENABLE_SPORTLOGIC: "true"
       SPORTLOGIC_ENABLED: "true"
-      SPORTLOGIC_PER_RUN_MAX: "40"
-      SPORTLOGIC_MATCH_LIMIT: "120"
+      SPORTLOGIC_PER_RUN_MAX: "2"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "2"
+      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "2"
+      SPORTLOGIC_REQUEST_BUDGET_REASON: stale_inventory_probe_only
+      SPORTLOGIC_MATCH_LIMIT: "8"
+      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "0"
       SPORTLOGIC_ODDS_MATCH_LIMIT: "0"
+      SPORTLOGIC_BOOKMAKERS: __probe_only__
+      SPORTLOGIC_ODDS_DISABLED_REASON: stale_inventory_probe_only
       SPORTLOGIC_TIMEOUT_SECONDS: "20"
       SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1
       SPORTLOGIC_HEADER_NAME: X-API-Key
+      SPORTLOGIC_FIXTURE_CURSOR_SCAN_MAX: "1"
       ENABLE_SSTATS: "true"
       ENABLE_SSTATS_CONTEXT: "true"
       SSTATS_ENABLED: "true"
@@ -401,11 +407,11 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
       - name: Mark successful autorun slot
-        if: env.AUTORUN_SKIP_MAIN != 'true' && (github.event_name == 'schedule' || env.AUTORUN_RUN_REASON == 'watchdog_recovery' || env.AUTORUN_RUN_REASON == 'catchup')
+        if: env.AUTORUN_SKIP_MAIN != 'true' && (github.event_name == 'schedule' || env.AUTORUN_RUN_REASON == 'watchdog_recovery' || env.AUTORUN_RUN_REASON == 'catchup' || env.AUTORUN_RUN_REASON == 'external_watchdog' || env.AUTORUN_RUN_REASON == 'external_catchup')
         shell: bash
         run: python scripts/autorun_gate.py --mark-success || true
       - name: Mark failed autorun slot
-        if: failure() && env.AUTORUN_SKIP_MAIN != 'true' && (github.event_name == 'schedule' || env.AUTORUN_RUN_REASON == 'watchdog_recovery' || env.AUTORUN_RUN_REASON == 'catchup')
+        if: failure() && env.AUTORUN_SKIP_MAIN != 'true' && (github.event_name == 'schedule' || env.AUTORUN_RUN_REASON == 'watchdog_recovery' || env.AUTORUN_RUN_REASON == 'catchup' || env.AUTORUN_RUN_REASON == 'external_watchdog' || env.AUTORUN_RUN_REASON == 'external_catchup')
         shell: bash
         run: python scripts/autorun_gate.py --mark-failed || true
       - name: Sync persistent state
