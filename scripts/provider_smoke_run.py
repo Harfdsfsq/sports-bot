@@ -4,8 +4,7 @@ from __future__ import annotations
 
 Safe diagnostics only: no predictions are published and no betting ledger is
 mutated. The script always writes JSON/TXT outputs, even when one provider
-crashes. SportLogic runtime patches are installed explicitly here so diagnostics
-never depend only on sitecustomize/import-hook timing.
+crashes.
 """
 
 import argparse
@@ -38,6 +37,8 @@ GROUPS["all"] = list(dict.fromkeys(GROUPS["odds"] + GROUPS["context"]))
 OFFER_PROVIDERS = {"odds_api_io", "bookies_api", "oddspapi", "allsportsapi", "sportlogic"}
 CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "api_football", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews", "sportlogic"}
 SECRET_MARKERS = ("key", "token", "secret", "authorization", "password", "apikey", "api_key")
+WARNING_STATUSES = {"EMPTY", "EMPTY_CONTEXT", "EMPTY_OFFERS", "EMPTY_FIXTURES", "NO_MATCHES_BUILT", "NO_MATCH", "NO_ODDS_REQUEST", "HTTP_ERROR", "SKIP", "STALE_INVENTORY"}
+ERROR_STATUSES = {"ERROR", "AUTH", "RATE_LIMIT"}
 
 
 def truthy(value: object) -> bool:
@@ -86,14 +87,14 @@ def sanitize(value: Any, depth: int = 0) -> Any:
             return str(value)[:400]
     if isinstance(value, dict):
         out: dict[str, Any] = {}
-        for key, item in list(value.items())[:80]:
+        for key, item in list(value.items())[:100]:
             low = str(key).lower()
             out[str(key)] = "***" if any(marker in low for marker in SECRET_MARKERS) else sanitize(item, depth + 1)
         return out
     if isinstance(value, (list, tuple, set)):
-        return [sanitize(item, depth + 1) for item in list(value)[:20]]
+        return [sanitize(item, depth + 1) for item in list(value)[:30]]
     if isinstance(value, str):
-        return value[:1400]
+        return value[:1600]
     if isinstance(value, (int, float, bool)) or value is None:
         return value
     try:
@@ -139,6 +140,8 @@ def compact_stats(stats: Any) -> dict[str, Any]:
         "cooldown_active", "stop_reason", "odds_endpoint_used", "empty_games_reason", "last_body_preview",
         "fixture_out_of_window", "fixture_parse_rejects", "sample_fixture_keys", "fixture_stale_rows_filtered",
         "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max",
+        "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "inventory_sample_start_times",
+        "no_match_reason",
     ]
     for key in keep:
         if key in stats:
@@ -158,6 +161,14 @@ def compact_stats(stats: Any) -> dict[str, Any]:
     return out
 
 
+def sportlogic_stale_reason(method: str, fixtures: int, stats: dict[str, Any]) -> str:
+    min_start = stats.get("inventory_min_start") or "?"
+    max_start = stats.get("inventory_max_start") or "?"
+    if method == "fetch_matches":
+        return f"fixtures={fixtures}, inventory stale/outside active horizon, span={min_start}..{max_start}, out_of_window={stats.get('fixture_out_of_window')}"
+    return f"fixtures={fixtures}, stale/unmatched inventory, span={min_start}..{max_start}"
+
+
 def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error: str | None) -> tuple[str, str]:
     if error:
         if error.startswith("method_missing") or error == "provider_not_loaded":
@@ -171,6 +182,8 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
         return "OK", f"data={count_data(data)}"
     if provider == "sportlogic":
         fixtures = safe_int(stats.get("fixtures_fetched") or stats.get("games_fetched"), 0)
+        if stats.get("stale_inventory") or str(stats.get("inventory_status") or "").startswith("stale_inventory"):
+            return "STALE_INVENTORY", sportlogic_stale_reason(method, fixtures, stats)
         if fixtures <= 0:
             return "EMPTY_FIXTURES", "SportLogic /games returned no fixtures inside target window"
         if method == "fetch_matches" and safe_int(stats.get("matches_built"), 0) <= 0:
@@ -305,8 +318,8 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     all_checks = [check for info in results.values() for check in (info.get("checks") or {}).values()]
     summary = {
         "checks_ok": sum(1 for check in all_checks if check.get("status") == "OK"),
-        "checks_warning": sum(1 for check in all_checks if check.get("status") in {"EMPTY", "EMPTY_CONTEXT", "EMPTY_OFFERS", "EMPTY_FIXTURES", "NO_MATCHES_BUILT", "NO_MATCH", "NO_ODDS_REQUEST", "HTTP_ERROR", "SKIP"}),
-        "checks_error": sum(1 for check in all_checks if check.get("status") in {"ERROR", "AUTH", "RATE_LIMIT"}),
+        "checks_warning": sum(1 for check in all_checks if check.get("status") in WARNING_STATUSES),
+        "checks_error": sum(1 for check in all_checks if check.get("status") in ERROR_STATUSES),
         "providers_loaded": sum(1 for info in results.values() if info.get("loaded")),
         "providers_total": len(results),
     }
@@ -360,11 +373,17 @@ def build_text(payload: dict[str, Any]) -> str:
             for check in checks.values():
                 stats = check.get("stats") or {}
                 preview = check.get("preview") or {}
-                for key in ("fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths", "fixture_query_attempts", "last_body_preview"):
+                for key in (
+                    "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "inventory_sample_start_times",
+                    "fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end",
+                    "fixture_page_scan_max", "fixture_cursor_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths",
+                    "fixture_query_attempts", "no_match_reason", "last_body_preview",
+                ):
                     if stats.get(key) not in (None, "", [], {}):
                         value = stats.get(key)
-                        lines.append(f"  {key}: {json.dumps(value, ensure_ascii=False)[:1200] if key != 'last_body_preview' else str(value)[:500]}")
-                for key in ("sample_fixture_parse", "sample_fixture_parse_kept", "sample_matches"):
+                        rendered = json.dumps(value, ensure_ascii=False) if key != "last_body_preview" else str(value)
+                        lines.append(f"  {key}: {rendered[:1200]}")
+                for key in ("inventory_status", "sample_fixture_parse", "sample_fixture_parse_kept", "sample_matches"):
                     if preview.get(key):
                         lines.append(f"  {key}: {json.dumps(preview.get(key), ensure_ascii=False)[:1400]}")
     lines += ["", "📁 Files", str(JSON_OUT), str(TXT_OUT)]
