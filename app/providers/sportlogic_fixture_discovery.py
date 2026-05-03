@@ -2,21 +2,25 @@ from __future__ import annotations
 
 """SportLogic fixture discovery + fixture parser hardening.
 
-Smoke diagnostics proved that /games can return rows for date=YYYY-MM-DD while
-no Match objects are built.  That means endpoint discovery is now good enough;
-the weak point is converting SportLogic's fixture row shape into the bot's
-canonical Match shape.  This patch keeps the broader /games query strategy and
-adds a tolerant row parser for common fixture schemas.
+SportLogic /games can return rows, but the first page is not guaranteed to be in
+the bot's current publish window.  This module therefore does three things:
+
+1. tries several /games query parameter shapes;
+2. scans a bounded number of pages;
+3. keeps only fixtures whose parsed start_time overlaps the target match window.
+
+It also patches SportLogicProvider's row parser so fixtures with SportLogic's
+native shape (home_team/away_team/start_time) become canonical Match objects.
 """
 
+import os
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
 import httpx
 
 UTC = timezone.utc
-PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v3"
-
+PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v4_windowed_pages"
 
 TEAM_NAME_KEYS = (
     "name",
@@ -163,9 +167,7 @@ def _first_value(payload: dict[str, Any], keys: tuple[str, ...]) -> Any:
 def _first_text(payload: dict[str, Any], keys: tuple[str, ...]) -> str:
     value = _first_value(payload, keys)
     text = _text(value)
-    if text:
-        return text
-    return ""
+    return text if text else ""
 
 
 def _team_from_side_lists(row: dict[str, Any], side: str) -> str:
@@ -240,11 +242,19 @@ def _team_name(row: dict[str, Any], side: str) -> str:
 
 def _league_name(row: dict[str, Any]) -> str:
     for key in LEAGUE_KEYS:
-        value = row.get(key)
-        text = _text(value)
+        text = _text(row.get(key))
         if text:
             return text
-    for key in ("league_name", "leagueName", "competition_name", "competitionName", "tournament_name", "tournamentName", "sport_title", "sportTitle"):
+    for key in (
+        "league_name",
+        "leagueName",
+        "competition_name",
+        "competitionName",
+        "tournament_name",
+        "tournamentName",
+        "sport_title",
+        "sportTitle",
+    ):
         text = _text(row.get(key))
         if text:
             return text
@@ -260,8 +270,7 @@ def _event_id(row: dict[str, Any]) -> str:
     if text:
         return text
     for path in (("fixture", "id"), ("game", "id"), ("event", "id"), ("match", "id")):
-        value = _dig(row, *path)
-        text = _text(value)
+        text = _text(_dig(row, *path))
         if text:
             return text
     return ""
@@ -276,8 +285,7 @@ def _parse_datetime_value(value: Any) -> datetime | None:
         parse_datetime = None  # type: ignore[assignment]
 
     if isinstance(value, datetime):
-        dt = value
-        return dt if dt.tzinfo is not None else dt.replace(tzinfo=UTC)
+        return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
     if isinstance(value, (int, float)):
         number = float(value)
         try:
@@ -303,7 +311,14 @@ def _parse_datetime_value(value: Any) -> datetime | None:
     if raw.isdigit() and len(raw) in {10, 13}:
         return _parse_datetime_value(int(raw))
     normalized = raw.replace("Z", "+00:00")
-    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M"):
+    for fmt in (
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "%d.%m.%Y %H:%M:%S",
+        "%d.%m.%Y %H:%M",
+        "%Y/%m/%d %H:%M:%S",
+        "%Y/%m/%d %H:%M",
+    ):
         try:
             return datetime.strptime(raw, fmt).replace(tzinfo=UTC)
         except Exception:
@@ -327,7 +342,14 @@ def _fixture_datetime(row: dict[str, Any]) -> datetime | None:
         dt = _parse_datetime_value(row.get(key))
         if dt is not None:
             return dt.astimezone(UTC)
-    for path in (("fixture", "date"), ("fixture", "start_time"), ("game", "date"), ("game", "start_time"), ("event", "date"), ("match", "date")):
+    for path in (
+        ("fixture", "date"),
+        ("fixture", "start_time"),
+        ("game", "date"),
+        ("game", "start_time"),
+        ("event", "date"),
+        ("match", "date"),
+    ):
         dt = _parse_datetime_value(_dig(row, *path))
         if dt is not None:
             return dt.astimezone(UTC)
@@ -342,7 +364,7 @@ def _fixture_datetime(row: dict[str, Any]) -> datetime | None:
 
 def _is_low_tier_text(text: str) -> bool:
     value = str(text or "").lower()
-    return any(token in value for token in ("u19", "u20", "u21", "u23", "reserve", "reserves", "women", "amateur", "youth", "2", "ii"))
+    return any(token in value for token in ("u19", "u20", "u21", "u23", "reserve", "reserves", "women", "amateur", "youth", " 2", " ii"))
 
 
 def _row_to_match(row: dict[str, Any]) -> Any | None:
@@ -459,19 +481,45 @@ def _collect_candidate_dates(matches: list[Any]) -> list[datetime]:
     return sorted(dates, key=lambda item: item.date())
 
 
+def _target_window(matches: list[Any], now: datetime | None = None) -> tuple[datetime, datetime]:
+    now = now or datetime.now(UTC)
+    starts: list[datetime] = []
+    for match in matches:
+        try:
+            starts.append(match.commence_time.astimezone(UTC))
+        except Exception:
+            pass
+    if starts:
+        return min(starts) - timedelta(hours=6), max(starts) + timedelta(hours=18)
+    return now - timedelta(hours=3), now + timedelta(days=4)
+
+
+def _row_in_window(row: dict[str, Any], window_start: datetime, window_end: datetime) -> bool:
+    dt = _fixture_datetime(row)
+    return dt is not None and window_start <= dt.astimezone(UTC) <= window_end
+
+
 def _sample_rows(rows: list[dict[str, Any]], limit: int = 3) -> list[dict[str, Any]]:
     sample: list[dict[str, Any]] = []
     for row in rows[:limit]:
+        dt = _fixture_datetime(row)
         sample.append({
             "keys": list(row.keys())[:40],
             "event_id": _event_id(row),
             "home": _team_name(row, "home"),
             "away": _team_name(row, "away"),
             "league": _league_name(row),
-            "commence_time": (_fixture_datetime(row).isoformat() if _fixture_datetime(row) is not None else ""),
+            "commence_time": dt.isoformat() if dt is not None else "",
             "raw": {key: row.get(key) for key in list(row.keys())[:16]},
         })
     return sample
+
+
+def _page_scan_max() -> int:
+    try:
+        return max(1, min(8, int(float(os.getenv("SPORTLOGIC_FIXTURE_PAGE_SCAN_MAX", "5") or 5))))
+    except Exception:
+        return 5
 
 
 def install() -> bool:
@@ -483,8 +531,6 @@ def install() -> bool:
     if cls is None or getattr(cls, PATCH_MARKER, False):
         return False
 
-    # Patch the low-level helpers as well so original fetch_offers/fetch_context paths
-    # benefit even if another runtime patch calls them directly.
     cls._team_name = staticmethod(_team_name)
     cls._fixture_datetime = staticmethod(_fixture_datetime)
     cls._league_name = staticmethod(_league_name)
@@ -495,9 +541,12 @@ def install() -> bool:
         stats = self._stats("fixtures")
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_fixture_parse": [], "errors": [], "fixture_query_attempts": []}
         dates = _collect_candidate_dates(matches)[:8]
+        window_start, window_end = _target_window(matches)
         fixtures: list[dict[str, Any]] = []
         rows_by_date: dict[str, int] = {}
         empty_attempts = 0
+        stale_rows = 0
+        page_scan_max = _page_scan_max()
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             for day in dates:
@@ -506,23 +555,35 @@ def install() -> bool:
                     break
                 day_key = _date_key(day)
                 before = len(fixtures)
-                for params in _fixture_query_variants(day):
-                    if not self._budget_left():
-                        stats["budget_exhausted"] = True
+                found_window_rows_for_day = False
+                for base_params in _fixture_query_variants(day):
+                    if found_window_rows_for_day:
                         break
-                    payload = await self._get_json(client, "/games", params, stats, preview)
-                    rows = self._extract_list(payload)
-                    attempt = {"date": day_key, "params": dict(params), "rows": len(rows)}
-                    if len(preview["fixture_query_attempts"]) < 20:
-                        preview["fixture_query_attempts"].append(attempt)
-                    stats.setdefault("fixture_query_attempts", []).append(attempt)
-                    if rows and not preview["sample_fixture_parse"]:
-                        preview["sample_fixture_parse"] = _sample_rows(rows, 3)
-                        stats["sample_fixture_keys"] = [list(row.keys())[:40] for row in rows[:3] if isinstance(row, dict)]
-                    if rows:
-                        fixtures.extend(rows)
-                        break
-                    empty_attempts += 1
+                    for page in range(1, page_scan_max + 1):
+                        if not self._budget_left():
+                            stats["budget_exhausted"] = True
+                            break
+                        params = dict(base_params)
+                        params["page"] = page
+                        payload = await self._get_json(client, "/games", params, stats, preview)
+                        rows = self._extract_list(payload)
+                        kept = [row for row in rows if _row_in_window(row, window_start, window_end)]
+                        stale_rows += max(0, len(rows) - len(kept))
+                        attempt = {"date": day_key, "params": dict(params), "rows": len(rows), "kept": len(kept)}
+                        if len(preview["fixture_query_attempts"]) < 28:
+                            preview["fixture_query_attempts"].append(attempt)
+                        stats.setdefault("fixture_query_attempts", []).append(attempt)
+                        if rows and not preview["sample_fixture_parse"]:
+                            preview["sample_fixture_parse"] = _sample_rows(rows, 3)
+                            stats["sample_fixture_keys"] = [list(row.keys())[:40] for row in rows[:3] if isinstance(row, dict)]
+                        if kept:
+                            fixtures.extend(kept)
+                            found_window_rows_for_day = True
+                        if not rows:
+                            empty_attempts += 1
+                            break
+                        if len(rows) < int(params.get("per_page") or 100):
+                            break
                 rows_by_date[day_key] = len(fixtures) - before
 
         fixtures = _dedupe_rows(fixtures)
@@ -532,11 +593,15 @@ def install() -> bool:
         stats["fixture_dates_requested"] = [_date_key(day) for day in dates]
         stats["fixture_rows_by_date"] = rows_by_date
         stats["empty_fixture_attempts"] = empty_attempts
+        stats["fixture_stale_rows_filtered"] = stale_rows
+        stats["fixture_window_start"] = window_start.isoformat()
+        stats["fixture_window_end"] = window_end.isoformat()
+        stats["fixture_page_scan_max"] = page_scan_max
         preview["sample_fixtures"] = fixtures[:3]
-        if not preview["sample_fixture_parse"] and fixtures:
-            preview["sample_fixture_parse"] = _sample_rows(fixtures, 3)
+        if fixtures:
+            preview["sample_fixture_parse_kept"] = _sample_rows(fixtures, 3)
         if not fixtures and not stats.get("response_errors"):
-            stats["empty_games_reason"] = "all_fixture_query_variants_empty"
+            stats["empty_games_reason"] = "all_fixture_rows_outside_target_window_or_empty_pages"
         return fixtures, stats, preview
 
     async def fetch_matches_patched(self: Any):
@@ -556,10 +621,12 @@ def install() -> bool:
         self._merge_stats(stats, fixture_stats)
         preview["sample_fixtures"] = fixture_preview.get("sample_fixtures", [])[:3]
         preview["sample_fixture_parse"] = fixture_preview.get("sample_fixture_parse", [])[:3]
+        if fixture_preview.get("sample_fixture_parse_kept"):
+            preview["sample_fixture_parse_kept"] = fixture_preview.get("sample_fixture_parse_kept", [])[:3]
 
         matches_out = []
         seen = set()
-        horizon = now + timedelta(days=days_ahead)
+        horizon = now + timedelta(days=days_ahead + 1)
         parse_rejects: dict[str, int] = {}
         out_of_window = 0
         for row in fixtures:
@@ -570,7 +637,7 @@ def install() -> bool:
                 stats["fixtures_skipped"] += 1
                 continue
             commence = match.commence_time.astimezone(UTC)
-            if commence < now - timedelta(hours=3) or commence > horizon + timedelta(days=1):
+            if commence < now - timedelta(hours=3) or commence > horizon:
                 out_of_window += 1
                 continue
             if match.match_key in seen:
