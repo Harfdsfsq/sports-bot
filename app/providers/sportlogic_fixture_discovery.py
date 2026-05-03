@@ -3,14 +3,12 @@ from __future__ import annotations
 """SportLogic fixture discovery + fixture parser hardening.
 
 SportLogic /games can return rows, but the first page is not guaranteed to be in
-the bot's current publish window.  This module therefore does three things:
+the bot's current publish window. This module therefore:
 
 1. tries several /games query parameter shapes;
 2. scans a bounded number of pages;
-3. keeps only fixtures whose parsed start_time overlaps the target match window.
-
-It also patches SportLogicProvider's row parser so fixtures with SportLogic's
-native shape (home_team/away_team/start_time) become canonical Match objects.
+3. prioritizes current/future dates before any lookback date;
+4. keeps only fixtures whose parsed start_time overlaps the target match window.
 """
 
 import os
@@ -20,113 +18,14 @@ from typing import Any
 import httpx
 
 UTC = timezone.utc
-PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v4_windowed_pages"
+PATCH_MARKER = "_harizon_sportlogic_fixture_discovery_v5_prioritize_window_dates"
 
-TEAM_NAME_KEYS = (
-    "name",
-    "team_name",
-    "teamName",
-    "display_name",
-    "displayName",
-    "full_name",
-    "fullName",
-    "short_name",
-    "shortName",
-    "title",
-    "label",
-    "value",
-)
-
-HOME_KEYS = (
-    "home",
-    "home_team",
-    "homeTeam",
-    "home_team_name",
-    "homeTeamName",
-    "home_name",
-    "homeName",
-    "team_home",
-    "teamHome",
-    "localteam",
-    "local_team",
-    "localTeam",
-    "host",
-    "team1",
-    "competitor1",
-    "participant1",
-)
-
-AWAY_KEYS = (
-    "away",
-    "away_team",
-    "awayTeam",
-    "away_team_name",
-    "awayTeamName",
-    "away_name",
-    "awayName",
-    "team_away",
-    "teamAway",
-    "visitorteam",
-    "visitor_team",
-    "visitorTeam",
-    "guest",
-    "team2",
-    "competitor2",
-    "participant2",
-)
-
-LEAGUE_KEYS = (
-    "league",
-    "competition",
-    "tournament",
-    "championship",
-    "season",
-    "category",
-    "country",
-)
-
-DATE_KEYS = (
-    "commence_time",
-    "start_time",
-    "startTime",
-    "starts_at",
-    "startsAt",
-    "start_at",
-    "startAt",
-    "scheduled",
-    "scheduled_at",
-    "scheduledAt",
-    "kickoff",
-    "kickoff_time",
-    "kickoffTime",
-    "event_time",
-    "eventTime",
-    "match_time",
-    "matchTime",
-    "datetime",
-    "date_time",
-    "dateTime",
-    "utcDate",
-    "timestamp",
-    "time",
-    "date",
-    "game_date",
-    "gameDate",
-)
-
-ID_KEYS = (
-    "id",
-    "game_id",
-    "gameId",
-    "event_id",
-    "eventId",
-    "fixture_id",
-    "fixtureId",
-    "match_id",
-    "matchId",
-    "uuid",
-    "slug",
-)
+TEAM_NAME_KEYS = ("name", "team_name", "teamName", "display_name", "displayName", "full_name", "fullName", "short_name", "shortName", "title", "label", "value")
+HOME_KEYS = ("home", "home_team", "homeTeam", "home_team_name", "homeTeamName", "home_name", "homeName", "team_home", "teamHome", "localteam", "local_team", "localTeam", "host", "team1", "competitor1", "participant1")
+AWAY_KEYS = ("away", "away_team", "awayTeam", "away_team_name", "awayTeamName", "away_name", "awayName", "team_away", "teamAway", "visitorteam", "visitor_team", "visitorTeam", "guest", "team2", "competitor2", "participant2")
+LEAGUE_KEYS = ("league", "competition", "tournament", "championship", "season", "category", "country")
+DATE_KEYS = ("commence_time", "start_time", "startTime", "starts_at", "startsAt", "start_at", "startAt", "scheduled", "scheduled_at", "scheduledAt", "kickoff", "kickoff_time", "kickoffTime", "event_time", "eventTime", "match_time", "matchTime", "datetime", "date_time", "dateTime", "utcDate", "timestamp", "time", "date", "game_date", "gameDate")
+ID_KEYS = ("id", "game_id", "gameId", "event_id", "eventId", "fixture_id", "fixtureId", "match_id", "matchId", "uuid", "slug")
 
 
 def _date_key(value: datetime) -> str:
@@ -157,17 +56,13 @@ def _dig(payload: Any, *path: str) -> Any:
     return value
 
 
-def _first_value(payload: dict[str, Any], keys: tuple[str, ...]) -> Any:
+def _first_text(payload: dict[str, Any], keys: tuple[str, ...]) -> str:
     for key in keys:
         if key in payload and payload.get(key) not in (None, ""):
-            return payload.get(key)
-    return None
-
-
-def _first_text(payload: dict[str, Any], keys: tuple[str, ...]) -> str:
-    value = _first_value(payload, keys)
-    text = _text(value)
-    return text if text else ""
+            text = _text(payload.get(key))
+            if text:
+                return text
+    return ""
 
 
 def _team_from_side_lists(row: dict[str, Any], side: str) -> str:
@@ -188,15 +83,7 @@ def _team_from_side_lists(row: dict[str, Any], side: str) -> str:
                 fallback_by_order.append(item)
                 continue
             fallback_by_order.append(item)
-            markers = [
-                item.get("side"),
-                item.get("home_away"),
-                item.get("homeAway"),
-                item.get("qualifier"),
-                item.get("position"),
-                item.get("type"),
-                item.get("role"),
-            ]
+            markers = [item.get("side"), item.get("home_away"), item.get("homeAway"), item.get("qualifier"), item.get("position"), item.get("type"), item.get("role")]
             marker_text = {str(marker or "").strip().lower() for marker in markers if marker not in (None, "")}
             if marker_text & side_tokens:
                 text = _text(item)
@@ -214,25 +101,7 @@ def _team_name(row: dict[str, Any], side: str) -> str:
     text = _first_text(row, keys)
     if text:
         return text
-    nested_paths = (
-        ("fixture", "home"),
-        ("fixture", "homeTeam"),
-        ("game", "home"),
-        ("game", "homeTeam"),
-        ("event", "home"),
-        ("event", "homeTeam"),
-        ("match", "home"),
-        ("match", "homeTeam"),
-    ) if side == "home" else (
-        ("fixture", "away"),
-        ("fixture", "awayTeam"),
-        ("game", "away"),
-        ("game", "awayTeam"),
-        ("event", "away"),
-        ("event", "awayTeam"),
-        ("match", "away"),
-        ("match", "awayTeam"),
-    )
+    nested_paths = (("fixture", "home"), ("fixture", "homeTeam"), ("game", "home"), ("game", "homeTeam"), ("event", "home"), ("event", "homeTeam"), ("match", "home"), ("match", "homeTeam")) if side == "home" else (("fixture", "away"), ("fixture", "awayTeam"), ("game", "away"), ("game", "awayTeam"), ("event", "away"), ("event", "awayTeam"), ("match", "away"), ("match", "awayTeam"))
     for path in nested_paths:
         text = _text(_dig(row, *path))
         if text:
@@ -245,16 +114,7 @@ def _league_name(row: dict[str, Any]) -> str:
         text = _text(row.get(key))
         if text:
             return text
-    for key in (
-        "league_name",
-        "leagueName",
-        "competition_name",
-        "competitionName",
-        "tournament_name",
-        "tournamentName",
-        "sport_title",
-        "sportTitle",
-    ):
+    for key in ("league_name", "leagueName", "competition_name", "competitionName", "tournament_name", "tournamentName", "sport_title", "sportTitle"):
         text = _text(row.get(key))
         if text:
             return text
@@ -283,7 +143,6 @@ def _parse_datetime_value(value: Any) -> datetime | None:
         from app.utils import parse_datetime
     except Exception:
         parse_datetime = None  # type: ignore[assignment]
-
     if isinstance(value, datetime):
         return value if value.tzinfo is not None else value.replace(tzinfo=UTC)
     if isinstance(value, (int, float)):
@@ -311,14 +170,7 @@ def _parse_datetime_value(value: Any) -> datetime | None:
     if raw.isdigit() and len(raw) in {10, 13}:
         return _parse_datetime_value(int(raw))
     normalized = raw.replace("Z", "+00:00")
-    for fmt in (
-        "%Y-%m-%d %H:%M:%S",
-        "%Y-%m-%d %H:%M",
-        "%d.%m.%Y %H:%M:%S",
-        "%d.%m.%Y %H:%M",
-        "%Y/%m/%d %H:%M:%S",
-        "%Y/%m/%d %H:%M",
-    ):
+    for fmt in ("%Y-%m-%d %H:%M:%S", "%Y-%m-%d %H:%M", "%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M", "%Y/%m/%d %H:%M:%S", "%Y/%m/%d %H:%M"):
         try:
             return datetime.strptime(raw, fmt).replace(tzinfo=UTC)
         except Exception:
@@ -342,14 +194,7 @@ def _fixture_datetime(row: dict[str, Any]) -> datetime | None:
         dt = _parse_datetime_value(row.get(key))
         if dt is not None:
             return dt.astimezone(UTC)
-    for path in (
-        ("fixture", "date"),
-        ("fixture", "start_time"),
-        ("game", "date"),
-        ("game", "start_time"),
-        ("event", "date"),
-        ("match", "date"),
-    ):
+    for path in (("fixture", "date"), ("fixture", "start_time"), ("game", "date"), ("game", "start_time"), ("event", "date"), ("match", "date")):
         dt = _parse_datetime_value(_dig(row, *path))
         if dt is not None:
             return dt.astimezone(UTC)
@@ -384,20 +229,7 @@ def _row_to_match(row: dict[str, Any]) -> Any | None:
     league = _league_name(row)
     event_id = _event_id(row)
     league_key = str(_dig(row, "league", "id") or _dig(row, "competition", "id") or row.get("league_id") or row.get("competition_id") or "")
-    return Match(
-        source="sportlogic",
-        source_event_id=event_id,
-        sport_key="soccer",
-        league_name=league,
-        home_team=home,
-        away_team=away,
-        commence_time=commence,
-        home_team_norm="",
-        away_team_norm="",
-        league_key=league_key,
-        tier="low" if _is_low_tier_text(league) else "mid",
-        metadata={"sportlogic_fixture": row},
-    )
+    return Match(source="sportlogic", source_event_id=event_id, sport_key="soccer", league_name=league, home_team=home, away_team=away, commence_time=commence, home_team_norm="", away_team_norm="", league_key=league_key, tier="low" if _is_low_tier_text(league) else "mid", metadata={"sportlogic_fixture": row})
 
 
 def _parse_reject_reason(row: dict[str, Any]) -> str:
@@ -445,8 +277,8 @@ def _fixture_query_variants(day: datetime) -> list[dict[str, Any]]:
     slash = day.strftime("%Y/%m/%d")
     dot = day.strftime("%d.%m.%Y")
     return [
-        {"date_from": date_from, "date_to": date_to_next, "per_page": 100},
         {"date": date_from, "per_page": 100},
+        {"date_from": date_from, "date_to": date_to_next, "per_page": 100},
         {"day": date_from, "per_page": 100},
         {"from": date_from, "to": date_to_next, "per_page": 100},
         {"start_date": date_from, "end_date": date_to_next, "per_page": 100},
@@ -456,29 +288,42 @@ def _fixture_query_variants(day: datetime) -> list[dict[str, Any]]:
     ]
 
 
+def _append_date(out: list[datetime], seen: set[str], day: datetime) -> None:
+    key = day.date().isoformat()
+    if key not in seen:
+        seen.add(key)
+        out.append(day)
+
+
 def _collect_candidate_dates(matches: list[Any]) -> list[datetime]:
-    dates: list[datetime] = []
-    seen: set[str] = set()
+    """Return dates in useful order, not chronological order.
+
+    The old implementation sorted dates and therefore burned the whole request
+    budget on yesterday.  Keep current/future match dates first; lookback dates
+    are appended last for midnight/UTC edge cases only.
+    """
     now = datetime.now(UTC)
+    base_dates: list[datetime] = []
+    seen_base: set[str] = set()
     for match in matches:
         try:
             base = match.commence_time.astimezone(UTC)
         except Exception:
             continue
-        for offset in (-1, 0, 1):
-            day = base + timedelta(days=offset)
-            key = day.date().isoformat()
-            if key not in seen:
-                seen.add(key)
-                dates.append(day)
-    if not dates:
-        for offset in range(0, 3):
-            day = now + timedelta(days=offset)
-            key = day.date().isoformat()
-            if key not in seen:
-                seen.add(key)
-                dates.append(day)
-    return sorted(dates, key=lambda item: item.date())
+        _append_date(base_dates, seen_base, base)
+    if not base_dates:
+        for offset in range(0, 4):
+            _append_date(base_dates, seen_base, now + timedelta(days=offset))
+
+    out: list[datetime] = []
+    seen: set[str] = set()
+    for base in base_dates:
+        _append_date(out, seen, base)
+    for base in base_dates:
+        _append_date(out, seen, base + timedelta(days=1))
+    for base in base_dates:
+        _append_date(out, seen, base - timedelta(days=1))
+    return out
 
 
 def _target_window(matches: list[Any], now: datetime | None = None) -> tuple[datetime, datetime]:
@@ -503,23 +348,15 @@ def _sample_rows(rows: list[dict[str, Any]], limit: int = 3) -> list[dict[str, A
     sample: list[dict[str, Any]] = []
     for row in rows[:limit]:
         dt = _fixture_datetime(row)
-        sample.append({
-            "keys": list(row.keys())[:40],
-            "event_id": _event_id(row),
-            "home": _team_name(row, "home"),
-            "away": _team_name(row, "away"),
-            "league": _league_name(row),
-            "commence_time": dt.isoformat() if dt is not None else "",
-            "raw": {key: row.get(key) for key in list(row.keys())[:16]},
-        })
+        sample.append({"keys": list(row.keys())[:40], "event_id": _event_id(row), "home": _team_name(row, "home"), "away": _team_name(row, "away"), "league": _league_name(row), "commence_time": dt.isoformat() if dt is not None else "", "raw": {key: row.get(key) for key in list(row.keys())[:16]}})
     return sample
 
 
 def _page_scan_max() -> int:
     try:
-        return max(1, min(8, int(float(os.getenv("SPORTLOGIC_FIXTURE_PAGE_SCAN_MAX", "5") or 5))))
+        return max(1, min(8, int(float(os.getenv("SPORTLOGIC_FIXTURE_PAGE_SCAN_MAX", "3") or 3))))
     except Exception:
-        return 5
+        return 3
 
 
 def install() -> bool:
@@ -540,12 +377,18 @@ def install() -> bool:
     async def load_fixtures_for_matches_patched(self: Any, matches: list[Any]):
         stats = self._stats("fixtures")
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_fixture_parse": [], "errors": [], "fixture_query_attempts": []}
-        dates = _collect_candidate_dates(matches)[:8]
         window_start, window_end = _target_window(matches)
+        raw_dates = _collect_candidate_dates(matches)
+        dates = [day for day in raw_dates if day.date() >= window_start.date()]
+        if not dates:
+            dates = raw_dates[:4]
+        dates = dates[:8]
+
         fixtures: list[dict[str, Any]] = []
         rows_by_date: dict[str, int] = {}
         empty_attempts = 0
         stale_rows = 0
+        skipped_past_dates = [day.date().isoformat() for day in raw_dates if day.date() < window_start.date()]
         page_scan_max = _page_scan_max()
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
@@ -570,7 +413,7 @@ def install() -> bool:
                         kept = [row for row in rows if _row_in_window(row, window_start, window_end)]
                         stale_rows += max(0, len(rows) - len(kept))
                         attempt = {"date": day_key, "params": dict(params), "rows": len(rows), "kept": len(kept)}
-                        if len(preview["fixture_query_attempts"]) < 28:
+                        if len(preview["fixture_query_attempts"]) < 32:
                             preview["fixture_query_attempts"].append(attempt)
                         stats.setdefault("fixture_query_attempts", []).append(attempt)
                         if rows and not preview["sample_fixture_parse"]:
@@ -591,6 +434,7 @@ def install() -> bool:
         stats["fixtures_fetched"] = len(fixtures)
         stats["games_fetched"] = len(fixtures)
         stats["fixture_dates_requested"] = [_date_key(day) for day in dates]
+        stats["fixture_dates_skipped_before_window"] = skipped_past_dates[:8]
         stats["fixture_rows_by_date"] = rows_by_date
         stats["empty_fixture_attempts"] = empty_attempts
         stats["fixture_stale_rows_filtered"] = stale_rows
@@ -648,16 +492,7 @@ def install() -> bool:
         stats["matches_built"] = len(matches_out)
         stats["fixture_parse_rejects"] = parse_rejects
         stats["fixture_out_of_window"] = out_of_window
-        preview["sample_matches"] = [
-            {
-                "match_key": item.match_key,
-                "league_name": item.league_name,
-                "home_team": item.home_team,
-                "away_team": item.away_team,
-                "commence_time": item.commence_time.isoformat(),
-            }
-            for item in matches_out[:8]
-        ]
+        preview["sample_matches"] = [{"match_key": item.match_key, "league_name": item.league_name, "home_team": item.home_team, "away_team": item.away_team, "commence_time": item.commence_time.isoformat()} for item in matches_out[:8]]
         return matches_out, stats, preview
 
     cls._load_fixtures_for_matches = load_fixtures_for_matches_patched
