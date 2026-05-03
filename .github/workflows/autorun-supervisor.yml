@@ -1,37 +1,132 @@
 name: autorun-supervisor
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'  # every 15 minutes
   workflow_dispatch:
+    inputs:
+      force:
+        description: Force supervisor dispatch check now
+        required: false
+        default: false
+        type: boolean
+      slot_key:
+        description: Optional slot key to force, e.g. 2026-05-03T14:00:00+03:00
+        required: false
+        default: ""
+        type: string
+      mode:
+        description: Supervisor mode
+        required: false
+        default: watchdog
+        type: choice
+        options:
+          - watchdog
+          - external_watchdog
+          - dry_run
+  repository_dispatch:
+    types:
+      - autorun-supervisor
+      - external-autorun-watchdog
+  schedule:
+    # GitHub cron is not exact. This runs frequently and only dispatches run-bot
+    # when the expected 2-hour slot is missing/stale.
+    - cron: "*/5 * * * *"
 
 permissions:
   contents: write
   actions: write
 
+concurrency:
+  group: autorun-supervisor
+  cancel-in-progress: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  TZ: Europe/Moscow
+  APP_TIMEZONE: Europe/Moscow
+  AUTORUN_TARGET_WORKFLOW: run-bot.yml
+  AUTORUN_SUPERVISOR_DELAY_MINUTES: "7"
+  AUTORUN_PENDING_TTL_MINUTES: "70"
+  AUTORUN_MAX_CATCHUP_SLOTS: "4"
+  AUTORUN_RECOVERY_PROFILE: balanced
+  AUTORUN_RECOVERY_PUBLISH_WINDOW_HOURS: "9"
+  AUTORUN_RECOVERY_MIN_KICKOFF_LEAD_MINUTES: "25"
+  AUTORUN_RECOVERY_SEND_DETAILED_REPORT: "true"
+  AUTORUN_RECOVERY_VOLUME_MODE: target_5
+  GH_TOKEN: ${{ github.token }}
+  AUTORUN_DISPATCH_TOKEN: ${{ secrets.AUTORUN_DISPATCH_TOKEN }}
+
 jobs:
   supervisor:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 12
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: '3.12'
-      - name: Install dependencies
-        run: pip install -r requirements.txt
-      - name: Run autorun supervisor (catch-up/recovery)
-        run: python scripts/autorun_supervisor.py
+          python-version: "3.12"
+
+      - name: Prepare state folders
+        shell: bash
+        run: |
+          mkdir -p .data .data/exports .logs artifacts/autorun-supervisor
+
+      - name: Apply dispatch inputs
+        shell: bash
+        run: |
+          set -euo pipefail
+          MODE="${{ github.event_name == 'workflow_dispatch' && inputs.mode || '' }}"
+          if [ -n "$MODE" ]; then
+            echo "AUTORUN_SUPERVISOR_MODE=$MODE" >> "$GITHUB_ENV"
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ "${{ inputs.force }}" = "true" ]; then
+            echo "AUTORUN_SUPERVISOR_FORCE=true" >> "$GITHUB_ENV"
+          fi
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ inputs.slot_key }}" ]; then
+            echo "AUTORUN_EXTERNAL_SLOT_KEY=${{ inputs.slot_key }}" >> "$GITHUB_ENV"
+            echo "AUTORUN_SUPERVISOR_FORCE=true" >> "$GITHUB_ENV"
+          fi
+          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
+            echo "AUTORUN_SUPERVISOR_MODE=external_watchdog" >> "$GITHUB_ENV"
+            echo "AUTORUN_SUPERVISOR_FORCE=${{ github.event.client_payload.force || 'false' }}" >> "$GITHUB_ENV"
+            echo "AUTORUN_EXTERNAL_SLOT_KEY=${{ github.event.client_payload.slot_key || '' }}" >> "$GITHUB_ENV"
+          fi
+          if [ "${{ github.event_name == 'workflow_dispatch' && inputs.mode || '' }}" = "dry_run" ]; then
+            echo "AUTORUN_SUPERVISOR_DRY_RUN=true" >> "$GITHUB_ENV"
+          fi
+
+      - name: Run autorun supervisor
+        shell: bash
+        run: |
+          python scripts/autorun_supervisor.py || true
+          cat .data/exports/latest-autorun-supervisor.json || true
+
+      - name: Collect supervisor artifacts
+        if: always()
+        shell: bash
+        run: |
+          mkdir -p artifacts/autorun-supervisor
+          cp -f .data/exports/latest-autorun-supervisor.json artifacts/autorun-supervisor/latest-autorun-supervisor.json 2>/dev/null || true
+          cp -f .data/autorun-state.json artifacts/autorun-supervisor/autorun-state.json 2>/dev/null || true
+          cp -f .data/exports/latest-autorun-state.json artifacts/autorun-supervisor/latest-autorun-state.json 2>/dev/null || true
+
+      - name: Upload supervisor artifact
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: autorun-supervisor-current-${{ github.run_id }}
+          path: artifacts/autorun-supervisor/**
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Sync persistent state
+        if: always()
+        shell: bash
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          TZ: Europe/Moscow
-          APP_TIMEZONE: Europe/Moscow
-          AUTORUN_RECOVERY_PROFILE: balanced
-          AUTORUN_RECOVERY_PUBLISH_WINDOW_HOURS: '9'
-          AUTORUN_RECOVERY_MIN_KICKOFF_LEAD_MINUTES: '25'
-          AUTORUN_RECOVERY_SEND_DETAILED_REPORT: 'true'
-          AUTORUN_RECOVERY_VOLUME_MODE: target_5
+          PERSISTENT_STATE_COMMIT_MESSAGE: "Update autorun supervisor state"
+        run: |
+          python scripts/sync_persistent_state.py || true
