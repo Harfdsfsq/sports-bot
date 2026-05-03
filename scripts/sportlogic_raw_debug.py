@@ -15,6 +15,7 @@ import os
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from urllib import parse, request
 
 import httpx
 
@@ -124,11 +125,48 @@ def build_queries(now: datetime) -> list[tuple[str, str, dict[str, Any], bool]]:
             (f"games_day_no_status_{key}", "/games", {"date_from": key, "date_to": next_key, "per_page": 5}, True),
             (f"games_date_from_no_status_{key}", "/games", {"date_from": key, "per_page": 5}, True),
         ])
-    # Deliberately undocumented control: if this returns rows while documented
-    # filters return zero, it proves unknown params are ignored or behave outside
-    # the documented contract.
     queries.append((f"control_undocumented_date_{utc_today.isoformat()}", "/games", {"date": utc_today.isoformat(), "per_page": 5}, True))
     return queries
+
+
+def summarize_conclusion(payload: dict[str, Any]) -> dict[str, Any]:
+    queries = list(payload.get("queries") or [])
+    unfiltered = next((q for q in queries if q.get("label") == "games_unfiltered"), {})
+    control = next((q for q in queries if str(q.get("label") or "").startswith("control_undocumented_date_")), {})
+    documented = [q for q in queries if str(q.get("label") or "").startswith("games_") and q.get("label") != "games_unfiltered"]
+    documented_rows = sum(int(q.get("row_count") or 0) for q in documented)
+    conclusion = "unknown"
+    if int(unfiltered.get("row_count") or 0) > 0 and documented_rows == 0:
+        conclusion = "unfiltered_inventory_exists_but_documented_current_filters_empty"
+    if int(control.get("row_count") or 0) > 0 and documented_rows == 0:
+        conclusion = "undocumented_date_behaves_like_unfiltered_or_stale_page"
+    return {
+        "conclusion": conclusion,
+        "unfiltered_rows": int(unfiltered.get("row_count") or 0),
+        "unfiltered_span": f"{unfiltered.get('min_start','')}..{unfiltered.get('max_start','')}",
+        "documented_filter_rows": documented_rows,
+        "control_date_rows": int(control.get("row_count") or 0),
+        "control_date_span": f"{control.get('min_start','')}..{control.get('max_start','')}",
+    }
+
+
+def send_telegram(text: str) -> bool:
+    token = os.getenv("TELEGRAM_TOKEN") or os.getenv("TELEGRAM_BOT_TOKEN")
+    chat_id = os.getenv("TELEGRAM_CHAT_ID")
+    if not token or not chat_id:
+        return False
+    ok = True
+    for chunk in [text[i:i + 3600] for i in range(0, len(text), 3600)][:4] or [text]:
+        try:
+            req = request.Request(
+                f"https://api.telegram.org/bot{token}/sendMessage",
+                data=parse.urlencode({"chat_id": chat_id, "text": chunk}).encode("utf-8"),
+            )
+            with request.urlopen(req, timeout=20) as resp:  # nosec - CI diagnostic script
+                ok = ok and 200 <= int(resp.status) < 300
+        except Exception:
+            ok = False
+    return ok
 
 
 async def main() -> int:
@@ -179,13 +217,21 @@ async def main() -> int:
                     item.update({"exception": f"{type(exc).__name__}: {exc}"})
                 payload["queries"].append(item)
 
+    payload["summary"] = summarize_conclusion(payload)
     OUT_JSON.parent.mkdir(parents=True, exist_ok=True)
     OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    summary = payload.get("summary") or {}
     lines = [
         "🧪 SportLogic raw debug",
         f"• time UTC: {payload.get('created_at_utc')}",
         f"• base_url: {payload.get('base_url')}",
         f"• api_key_present: {payload.get('api_key_present')}",
+        f"• conclusion: {summary.get('conclusion')}",
+        f"• unfiltered: rows={summary.get('unfiltered_rows')} span={summary.get('unfiltered_span')}",
+        f"• documented filters: rows={summary.get('documented_filter_rows')}",
+        f"• control date: rows={summary.get('control_date_rows')} span={summary.get('control_date_span')}",
+        "",
+        "📡 Queries",
     ]
     for item in payload.get("queries", []):
         lines.append(
@@ -195,9 +241,13 @@ async def main() -> int:
         if item.get("error"):
             lines.append(f"  error: {json.dumps(item.get('error'), ensure_ascii=False)[:500]}")
         if item.get("body_preview") and item.get("row_count", 0) == 0:
-            lines.append(f"  body: {str(item.get('body_preview'))[:350]}")
-    OUT_TXT.write_text("\n".join(lines).rstrip() + "\n", encoding="utf-8")
-    print(OUT_TXT.read_text(encoding="utf-8"))
+            lines.append(f"  body: {str(item.get('body_preview'))[:260]}")
+    text = "\n".join(lines).rstrip() + "\n"
+    OUT_TXT.write_text(text, encoding="utf-8")
+    print(text)
+    if truthy(os.getenv("SPORTLOGIC_RAW_DEBUG_SEND_TELEGRAM")) or truthy(os.getenv("PROVIDER_SMOKE_SEND_TELEGRAM")):
+        payload["telegram_sent"] = send_telegram(text)
+        OUT_JSON.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return 0
 
 
