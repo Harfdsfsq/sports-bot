@@ -68,11 +68,11 @@ def install_runtime_patches() -> dict[str, Any]:
     except Exception as exc:
         result["errors"].append(f"sportlogic_hardening:{type(exc).__name__}:{exc}")
     try:
-        from app.providers import sportlogic_fixture_discovery_v6
-        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery_v6.install())
-        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v6, "PATCH_MARKER", "")
+        from app.providers import sportlogic_fixture_discovery_v7
+        result["sportlogic_fixture_discovery"] = bool(sportlogic_fixture_discovery_v7.install())
+        result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v7, "PATCH_MARKER", "")
     except Exception as exc:
-        result["errors"].append(f"sportlogic_fixture_discovery_v6:{type(exc).__name__}:{exc}")
+        result["errors"].append(f"sportlogic_fixture_discovery_v7:{type(exc).__name__}:{exc}")
     return result
 
 
@@ -138,7 +138,7 @@ def compact_stats(stats: Any) -> dict[str, Any]:
         "empty_fixture_attempts", "budget_exhausted", "response_errors", "auth_error", "rate_limited",
         "cooldown_active", "stop_reason", "odds_endpoint_used", "empty_games_reason", "last_body_preview",
         "fixture_out_of_window", "fixture_parse_rejects", "sample_fixture_keys", "fixture_stale_rows_filtered",
-        "fixture_window_start", "fixture_window_end", "fixture_page_scan_max",
+        "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max",
     ]
     for key in keep:
         if key in stats:
@@ -360,7 +360,7 @@ def build_text(payload: dict[str, Any]) -> str:
             for check in checks.values():
                 stats = check.get("stats") or {}
                 preview = check.get("preview") or {}
-                for key in ("fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths", "fixture_query_attempts", "last_body_preview"):
+                for key in ("fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths", "fixture_query_attempts", "last_body_preview"):
                     if stats.get(key) not in (None, "", [], {}):
                         value = stats.get(key)
                         lines.append(f"  {key}: {json.dumps(value, ensure_ascii=False)[:1200] if key != 'last_body_preview' else str(value)[:500]}")
