@@ -7,6 +7,13 @@ fallback confirmation-source patch from running.
 
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
 
 def _safe_run(label: str, func) -> None:
     try:
@@ -30,6 +37,13 @@ def _apply_runtime_patches() -> None:
     runtime_startup_patches.apply_all()
 
 
+def _apply_sportlogic_hardening() -> None:
+    from app.providers import sportlogic_hardening
+
+    sportlogic_hardening.patch_provider_file(ROOT)
+    sportlogic_hardening.install()
+
+
 def _apply_confirmation_source_patch() -> None:
     import apply_confirmation_source_fallback_patch
 
@@ -44,5 +58,6 @@ def _install_import_hook() -> None:
 
 _safe_run("api_max_usage_patch", _apply_api_patch)
 _safe_run("runtime_startup_patches.apply_all", _apply_runtime_patches)
+_safe_run("sportlogic_hardening", _apply_sportlogic_hardening)
 _safe_run("apply_confirmation_source_fallback_patch", _apply_confirmation_source_patch)
 _safe_run("runtime_startup_patches.install_import_hook", _install_import_hook)
