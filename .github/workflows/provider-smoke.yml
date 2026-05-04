@@ -284,11 +284,12 @@ jobs:
         if: github.event.inputs.providers == 'rapidapi'
         shell: bash
         env:
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: ""
+          PYTHONSAFEPATH: "1"
           RAPIDAPI_SMOKE_RESET_STATE: "true"
         run: |
           set -euo pipefail
-          timeout 150s python -u scripts/rapidapi_smoke_run.py
+          timeout 80s python -S -u scripts/rapidapi_smoke_run.py
           echo "----- rapidapi smoke txt -----"
           cat .data/exports/latest-provider-smoke.txt || true
 
