@@ -270,10 +270,11 @@ jobs:
         if: github.event.inputs.providers == 'sharpapi'
         shell: bash
         env:
-          PYTHONPATH: ${{ github.workspace }}
+          PYTHONPATH: ""
+          PYTHONSAFEPATH: "1"
         run: |
           set -euo pipefail
-          timeout 25s python -u scripts/sharpapi_smoke_run.py
+          timeout 20s python -S -u scripts/sharpapi_smoke_run.py
           echo "----- sharpapi smoke txt -----"
           cat .data/exports/latest-provider-smoke.txt || true
 
