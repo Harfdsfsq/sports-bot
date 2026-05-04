@@ -108,7 +108,7 @@ env:
   SHARPAPI_PER_RUN_MAX: "1"
   SHARPAPI_MAX_HTTP_REQUESTS_PER_RUN: "1"
   SHARPAPI_MATCH_LIMIT: "24"
-  SHARPAPI_TIMEOUT_SECONDS: "8"
+  SHARPAPI_TIMEOUT_SECONDS: "6"
   MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS: "1.65"
 
   ENABLE_SPORTLOGIC: "true"
@@ -260,10 +260,22 @@ jobs:
         run: mkdir -p .data .data/exports artifacts/provider-smoke .logs
 
       - name: Apply explicit provider runtime patches
+        if: github.event.inputs.providers != 'sharpapi'
         shell: bash
         run: |
           python scripts/api_max_usage_patch.py || true
           cat .data/exports/latest-api-max-usage-patch.json || true
+
+      - name: Run standalone SharpAPI smoke diagnostics
+        if: github.event.inputs.providers == 'sharpapi'
+        shell: bash
+        env:
+          PYTHONPATH: ${{ github.workspace }}
+        run: |
+          set -euo pipefail
+          timeout 25s python -u scripts/sharpapi_smoke_run.py
+          echo "----- sharpapi smoke txt -----"
+          cat .data/exports/latest-provider-smoke.txt || true
 
       - name: Run SportLogic raw API debug
         if: github.event.inputs.providers == 'sportlogic' || github.event.inputs.providers == 'core' || github.event.inputs.providers == 'all'
@@ -276,6 +288,7 @@ jobs:
           cat .data/exports/latest-sportlogic-debug.txt || true
 
       - name: Run provider smoke diagnostics
+        if: github.event.inputs.providers != 'sharpapi'
         shell: bash
         env:
           PYTHONPATH: ${{ github.workspace }}
@@ -289,7 +302,7 @@ jobs:
           if [ "${PROVIDER_SMOKE_SEND_TELEGRAM}" = "true" ]; then
             args+=(--send-telegram)
           fi
-          python -u scripts/provider_smoke_run.py "${args[@]}"
+          timeout 8m python -u scripts/provider_smoke_run.py "${args[@]}"
           echo "----- provider smoke txt -----"
           cat .data/exports/latest-provider-smoke.txt || true
 
