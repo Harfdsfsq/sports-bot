@@ -1,6 +1,12 @@
 from sitecustomize import *
 
 try:
+    from app.services import day_inventory_runtime_guard
+    day_inventory_runtime_guard.install()
+except Exception:
+    pass
+
+try:
     from app.providers import sharpapi_runtime_patch
     sharpapi_runtime_patch.install()
 except Exception:
