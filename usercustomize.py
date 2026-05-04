@@ -7,6 +7,12 @@ except Exception:
     pass
 
 try:
+    from app.services import rapidapi_probe_runtime_guard
+    rapidapi_probe_runtime_guard.install()
+except Exception:
+    pass
+
+try:
     from app.providers import sharpapi_runtime_patch
     sharpapi_runtime_patch.install()
 except Exception:
