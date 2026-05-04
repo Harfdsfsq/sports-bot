@@ -2,29 +2,27 @@ from __future__ import annotations
 
 """Standalone SharpAPI smoke probe.
 
-This script intentionally does not instantiate PredictionRunner and does not
-bootstrap matches from odds_api_io. It is designed to terminate quickly and to
-show the real SharpAPI HTTP state even when other providers are slow.
+Pure-stdlib, no app imports, no httpx, no PredictionRunner. The workflow runs
+this with `python -S` so repository sitecustomize/usercustomize hooks cannot
+block the smoke before the HTTP probe starts.
 """
 
-import asyncio
 import json
 import os
+import socket
 import subprocess
 import traceback
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib import error as urlerror
 from urllib import parse, request
-
-import httpx
 
 UTC = timezone.utc
 EXPORT_DIR = Path(".data/exports")
 ARTIFACT_DIR = Path("artifacts/provider-smoke")
 JSON_OUT = EXPORT_DIR / "latest-provider-smoke.json"
 TXT_OUT = EXPORT_DIR / "latest-provider-smoke.txt"
-
 SECRET_KEYS = ("SHARPAPI_API_KEY", "SHARPAPI_KEY", "SHARP_API_KEY")
 
 
@@ -43,7 +41,7 @@ def safe_float(value: object, default: float) -> float:
 
 def git_sha() -> str:
     try:
-        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip()
+        return subprocess.check_output(["git", "rev-parse", "HEAD"], text=True, timeout=3).strip()
     except Exception:
         return os.getenv("GITHUB_SHA", "")
 
@@ -102,7 +100,8 @@ def verdict(status_code: int | None, error: str, rows: int, key_present: bool) -
     if not key_present:
         return "AUTH", "SHARPAPI_API_KEY/SHARPAPI_KEY/SHARP_API_KEY missing"
     if error:
-        if "Timeout" in error or "timeout" in error.lower():
+        low = error.lower()
+        if "timed out" in low or "timeout" in low:
             return "TIMEOUT", error[:220]
         return "HTTP_ERROR", error[:220]
     if status_code in {401, 403}:
@@ -118,7 +117,45 @@ def verdict(status_code: int | None, error: str, rows: int, key_present: bool) -
     return "OK", f"rows={rows}"
 
 
-async def probe() -> dict[str, Any]:
+def fetch_url(url: str, params: dict[str, str], headers: dict[str, str], timeout_seconds: float) -> tuple[int | None, str, str, int, str]:
+    full_url = f"{url}?{parse.urlencode(params)}"
+    req = request.Request(full_url, headers=headers, method="GET")
+    started = datetime.now(UTC)
+    status_code: int | None = None
+    body = ""
+    json_shape = ""
+    rows = 0
+    error = ""
+    try:
+        with request.urlopen(req, timeout=timeout_seconds) as resp:  # nosec - diagnostic smoke script
+            status_code = int(getattr(resp, "status", 0) or 0)
+            raw = resp.read(700_000)
+            body = raw.decode("utf-8", errors="replace")
+    except urlerror.HTTPError as exc:
+        status_code = int(getattr(exc, "code", 0) or 0)
+        try:
+            body = exc.read(700_000).decode("utf-8", errors="replace")
+        except Exception:
+            body = str(exc)
+    except (urlerror.URLError, TimeoutError, socket.timeout, OSError) as exc:
+        error = f"{type(exc).__name__}: {exc}"
+    except Exception as exc:
+        error = f"{type(exc).__name__}: {exc}"
+
+    elapsed_ms = int((datetime.now(UTC) - started).total_seconds() * 1000)
+    if body:
+        try:
+            payload = json.loads(body)
+            json_shape = payload_shape(payload)
+            rows = count_rows(payload)
+        except Exception as exc:
+            json_shape = "invalid_json"
+            if not error:
+                error = f"json_parse:{type(exc).__name__}:{exc}"
+    return status_code, body, json_shape, rows, error or f"elapsed_ms={elapsed_ms}"
+
+
+def probe() -> dict[str, Any]:
     key = api_key()
     base_url = str(os.getenv("SHARPAPI_BASE_URL") or "https://api.sharpapi.io").rstrip("/")
     endpoints = [item.strip() for item in str(os.getenv("SHARPAPI_ODDS_ENDPOINTS") or "/api/v1/odds").split(",") if item.strip()]
@@ -126,46 +163,33 @@ async def probe() -> dict[str, Any]:
     if not endpoint.startswith("/"):
         endpoint = f"/{endpoint}"
     league = str(os.getenv("SHARPAPI_LEAGUE") or os.getenv("SHARPAPI_DEFAULT_LEAGUE") or "Soccer").strip()
-    timeout_seconds = max(2.0, min(12.0, safe_float(os.getenv("SHARPAPI_TIMEOUT_SECONDS"), 6.0)))
+    timeout_seconds = max(2.0, min(8.0, safe_float(os.getenv("SHARPAPI_TIMEOUT_SECONDS"), 5.0)))
     url = f"{base_url}{endpoint}"
     params = {
         "league": league,
         "sport": "soccer",
         "limit": str(os.getenv("SHARPAPI_MATCH_LIMIT") or "24"),
     }
-    headers = {"Accept": "application/json"}
+    headers = {"Accept": "application/json", "User-Agent": "harizon-provider-smoke/1.0"}
     if key:
         headers["X-API-Key"] = key
         headers["Authorization"] = f"Bearer {key}"
 
+    print(f"[sharpapi-smoke] probing {url} league={league} timeout={timeout_seconds}s key_present={bool(key)}", flush=True)
     started = datetime.now(UTC)
     status_code: int | None = None
-    text_preview = ""
+    body = ""
     json_shape = ""
     rows = 0
     error = ""
-    elapsed_ms = 0
-
     if key:
-        try:
-            timeout = httpx.Timeout(timeout_seconds, connect=min(4.0, timeout_seconds), read=timeout_seconds, write=4.0, pool=4.0)
-            async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-                response = await client.get(url, params=params, headers=headers)
-            elapsed_ms = int((datetime.now(UTC) - started).total_seconds() * 1000)
-            status_code = int(response.status_code)
-            text_preview = sanitize_preview(response.text)
-            try:
-                payload = response.json()
-                json_shape = payload_shape(payload)
-                rows = count_rows(payload)
-            except Exception as exc:
-                json_shape = "invalid_json"
-                error = f"json_parse:{type(exc).__name__}:{exc}"
-        except Exception as exc:
-            elapsed_ms = int((datetime.now(UTC) - started).total_seconds() * 1000)
-            error = f"{type(exc).__name__}: {exc}"
+        status_code, body, json_shape, rows, raw_error = fetch_url(url, params, headers, timeout_seconds)
+        if not str(raw_error).startswith("elapsed_ms="):
+            error = raw_error
+    elapsed_ms = int((datetime.now(UTC) - started).total_seconds() * 1000)
 
     status, reason = verdict(status_code, error, rows, bool(key))
+    text_preview = sanitize_preview(body)
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "git_sha": git_sha(),
@@ -212,10 +236,7 @@ async def probe() -> dict[str, Any]:
                             "error": error,
                             "timeout_seconds": timeout_seconds,
                         },
-                        "preview": {
-                            "body": text_preview,
-                            "payload_shape": json_shape,
-                        },
+                        "preview": {"body": text_preview, "payload_shape": json_shape},
                     }
                 },
             }
@@ -278,15 +299,16 @@ def send_telegram(text: str) -> bool:
         req = request.Request(
             f"https://api.telegram.org/bot{token}/sendMessage",
             data=parse.urlencode({"chat_id": chat_id, "text": text[:3600]}).encode("utf-8"),
+            method="POST",
         )
-        with request.urlopen(req, timeout=15) as resp:  # nosec - CI diagnostic script
-            return 200 <= int(resp.status) < 300
+        with request.urlopen(req, timeout=5) as resp:  # nosec - CI diagnostic script
+            return 200 <= int(getattr(resp, "status", 0) or 0) < 300
     except Exception:
         return False
 
 
 def failure_payload(exc: BaseException) -> dict[str, Any]:
-    payload = {
+    return {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "git_sha": git_sha(),
         "mode": "provider_smoke",
@@ -296,19 +318,17 @@ def failure_payload(exc: BaseException) -> dict[str, Any]:
         "bootstrap": {"status": "SKIPPED", "matches_count": 0},
         "providers": {},
     }
-    return payload
 
 
 def main() -> int:
     try:
-        payload = asyncio.run(probe())
+        payload = probe()
     except BaseException as exc:
         payload = failure_payload(exc)
     write_outputs(payload)
     text = build_text(payload)
     print(text, flush=True)
-    sent = send_telegram(text)
-    payload["telegram_sent"] = sent
+    payload["telegram_sent"] = send_telegram(text)
     write_outputs(payload)
     return 0
 
