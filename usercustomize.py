@@ -11,3 +11,9 @@ try:
     sharpapi_official_patch.install()
 except Exception:
     pass
+
+try:
+    from app.services import sharpapi_text_runtime_patch
+    sharpapi_text_runtime_patch.install()
+except Exception:
+    pass
