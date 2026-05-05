@@ -1,37 +1,213 @@
 {
+  "policy_version": "2026-05-06.pdf-free-limits-v2",
+  "source_document": "api_free_limits_ru.pdf / api_free_limits_ru.docx, checked 2026-05-05",
   "runs_per_day_assumption": 12,
-  "policy_version": "2026-05-05.v1",
+  "safety_factor_default": 0.78,
   "notes": [
-    "Limits are conservative per-run budgets for the normal run. Context/news/weather providers must not count as price confirmation.",
-    "Daily/static sources are cached and should be fetched once per day or less.",
-    "Removed sources are intentionally absent: oddspapi, api-football/api-sports, bookies api."
+    "The executable policy is scripts/apply_provider_quota_governor.py. This JSON mirrors the same quota assumptions for diagnostics and documentation.",
+    "Daily/monthly providers are not spent on mass scans; they are reserved for shortlist/context/fallback checks.",
+    "Context/news/weather providers must not count as independent price confirmation.",
+    "odds-api.io has an official free-limit contradiction in the source document. The runtime uses the conservative 100 requests/hour/account basis until the account dashboard confirms otherwise.",
+    "api-football and API-Sports football are treated as the same backend, not independent football confirmations.",
+    "ClubElo and Football-Data.co.uk are cache sources, not high-frequency APIs."
   ],
   "providers": {
-    "odds_api_io_account1": {"role": "odds", "free_quota_basis": "account/free plan; keep existing provider cap", "max_requests_per_run": 140, "priority": "core"},
-    "odds_api_io_account2": {"role": "odds", "free_quota_basis": "second account/free plan; keep existing provider cap", "max_requests_per_run": 140, "priority": "core"},
-    "bzzoiro_events": {"role": "context", "free_quota_basis": "unstable endpoint; lightweight only", "max_requests_per_run": 1, "timeout_seconds": 18, "page_size": 3, "critical": false},
-    "bzzoiro_predictions": {"role": "context", "free_quota_basis": "working context endpoint", "max_requests_per_run": 1, "timeout_seconds": 18, "page_size": 5, "critical": false},
-    "sstats": {"role": "context", "free_quota_basis": "daily budget protected", "max_requests_per_run": 12, "critical": false},
-    "football_data": {"role": "context", "free_quota_basis": "10 req/min style free access; cache standings/results", "max_requests_per_run": 4, "critical": false},
-    "thesportsdb": {"role": "mapping_context", "free_quota_basis": "free key; cache catalogue lookups", "max_requests_per_run": 4, "critical": false},
-    "allsportsapi": {"role": "context", "free_quota_basis": "free plan has narrow league access", "max_requests_per_run": 1, "critical": false},
-    "futrixmetrics": {"role": "context", "free_quota_basis": "ratings/context only", "max_requests_per_run": 6, "critical": false},
-    "highlightly": {"role": "context", "free_quota_basis": "conservative free/RapidAPI use", "max_requests_per_run": 4, "critical": false},
-    "free_football_rapidapi": {"role": "context", "free_quota_basis": "RapidAPI fallback only", "max_requests_per_run": 2, "critical": false},
-    "sportlogic_games_broad": {"role": "fixtures_context", "free_quota_basis": "500/day class; broad fallback, not mass polling", "max_requests_per_run": 8, "critical": false},
-    "sportlogic_leagues": {"role": "mapping_context", "free_quota_basis": "catalogue cache", "max_requests_per_run": 1, "critical": false},
-    "weatherapi": {"role": "weather", "free_quota_basis": "large monthly free quota; cache by venue/hour", "max_requests_per_run": 40, "critical": false},
-    "openweathermap": {"role": "weather", "free_quota_basis": "daily free cap; fallback after WeatherAPI", "max_requests_per_run": 20, "critical": false},
-    "open_meteo": {"role": "weather", "free_quota_basis": "no-key fallback; cache by venue/hour", "max_requests_per_run": 60, "critical": false},
-    "meteostat_rapidapi": {"role": "weather_history", "free_quota_basis": "RapidAPI fallback; use sparingly", "max_requests_per_run": 2, "critical": false},
-    "newsapi": {"role": "news", "free_quota_basis": "small/dev free quota; fallback only", "max_requests_per_run": 2, "critical": false},
-    "currents": {"role": "news", "free_quota_basis": "small free quota; cache queries", "max_requests_per_run": 2, "critical": false},
-    "gnews": {"role": "news", "free_quota_basis": "small free quota; cache queries", "max_requests_per_run": 2, "critical": false},
-    "newsdata": {"role": "news", "free_quota_basis": "news fallback", "max_requests_per_run": 2, "critical": false},
-    "guardian": {"role": "news", "free_quota_basis": "500/day class; conservative fallback", "max_requests_per_run": 3, "critical": false},
-    "clubelo_today": {"role": "rating_cache", "free_quota_basis": "no-key CSV; daily cache", "max_requests_per_day": 1, "critical": false},
-    "football_data_co_uk_epl": {"role": "historical_csv_cache", "free_quota_basis": "no-key CSV; daily cache", "max_requests_per_day": 1, "critical": false},
-    "wikidata_entity": {"role": "mapping_cache", "free_quota_basis": "fair use; cache aliases", "max_requests_per_day": 4, "critical": false},
-    "wikidata_sparql": {"role": "mapping_cache", "free_quota_basis": "fair use; cache sparql results", "max_requests_per_day": 2, "critical": false}
+    "odds_api_io": {
+      "role": "primary_odds",
+      "free_quota_basis": "100 requests/hour/account conservative; dashboard may show 5000/hour",
+      "accounts_assumed": 2,
+      "daily_budget": 3744,
+      "max_requests_per_run": 280,
+      "account1_max_requests_per_run": 140,
+      "account2_max_requests_per_run": 140,
+      "min_spacing_minutes": 35,
+      "priority": "core"
+    },
+    "bzzoiro": {
+      "role": "prediction_context",
+      "free_quota_basis": "not verified in source document; lightweight optional use",
+      "daily_budget": 120,
+      "max_requests_per_run": 4,
+      "min_spacing_minutes": 20,
+      "critical": false
+    },
+    "sstats": {
+      "role": "form_xg_context",
+      "free_quota_basis": "public free limit not confirmed; controlled shortlist budget",
+      "daily_budget": 72,
+      "max_requests_per_run": 6,
+      "min_spacing_minutes": 20,
+      "critical": false
+    },
+    "api_football": {
+      "role": "football_context",
+      "free_quota_basis": "100 requests/day, reset 00:00 UTC",
+      "daily_budget": 78,
+      "max_requests_per_run": 6,
+      "min_spacing_minutes": 45,
+      "independence_note": "same backend family as API-Sports football"
+    },
+    "allsportsapi": {
+      "role": "fixtures_context",
+      "free_quota_basis": "260 calls/hour, but free access limited to two random leagues/year",
+      "daily_budget": 160,
+      "max_requests_per_run": 10,
+      "min_spacing_minutes": 10
+    },
+    "oddspapi": {
+      "role": "odds_fallback",
+      "free_quota_basis": "250 requests/month",
+      "daily_budget": 6,
+      "max_requests_per_run": 1,
+      "min_spacing_minutes": 240
+    },
+    "futrixmetrics": {
+      "role": "player_team_ratings",
+      "free_quota_basis": "300 requests/hour, 30 RPM, 10 scouting reports/month",
+      "daily_budget": 360,
+      "max_requests_per_run": 24,
+      "min_spacing_minutes": 5
+    },
+    "football_data": {
+      "role": "fixtures_standings_context",
+      "free_quota_basis": "10 requests/minute registered free plan",
+      "daily_budget": 180,
+      "max_requests_per_run": 12,
+      "min_spacing_minutes": 3
+    },
+    "thesportsdb": {
+      "role": "mapping_context",
+      "free_quota_basis": "30 requests/minute free API",
+      "daily_budget": 240,
+      "max_requests_per_run": 18,
+      "min_spacing_minutes": 3
+    },
+    "sportlogic": {
+      "role": "fixtures_odds_outcomes",
+      "free_quota_basis": "500 requests/day, 10 requests/minute, reset 00:00 UTC",
+      "daily_budget": 390,
+      "max_requests_per_run": 28,
+      "min_spacing_minutes": 10
+    },
+    "highlightly": {
+      "role": "live_scores_match_context",
+      "free_quota_basis": "100 requests/day across sports",
+      "daily_budget": 78,
+      "max_requests_per_run": 6,
+      "min_spacing_minutes": 45
+    },
+    "sportsbook_api": {
+      "role": "odds_fallback",
+      "free_quota_basis": "50 requests/day",
+      "daily_budget": 39,
+      "max_requests_per_run": 2,
+      "min_spacing_minutes": 120
+    },
+    "odds_feed": {
+      "role": "odds_fallback",
+      "free_quota_basis": "500 requests/month",
+      "daily_budget": 13,
+      "max_requests_per_run": 1,
+      "min_spacing_minutes": 120
+    },
+    "free_live_football_data": {
+      "role": "rapidapi_probe_fallback",
+      "free_quota_basis": "100 requests/month hard limit",
+      "daily_budget": 2,
+      "max_requests_per_run": 1,
+      "min_spacing_minutes": 360
+    },
+    "weatherapi": {
+      "role": "weather_forecast",
+      "free_quota_basis": "100000 calls/month",
+      "daily_budget": 1833,
+      "max_requests_per_run": 70,
+      "min_spacing_minutes": 2,
+      "cache_ttl_minutes": 360
+    },
+    "openweathermap": {
+      "role": "weather_fallback",
+      "free_quota_basis": "60 calls/minute and high monthly cap for current/forecast; One Call free portion 1000/day",
+      "daily_budget": 780,
+      "max_requests_per_run": 50,
+      "min_spacing_minutes": 3,
+      "cache_ttl_minutes": 360
+    },
+    "open_meteo": {
+      "role": "weather_primary_or_fallback",
+      "free_quota_basis": "no-key fair use; stay far below 10000/day guidance",
+      "daily_budget": 1800,
+      "max_requests_per_run": 120,
+      "min_spacing_minutes": 0,
+      "cache_ttl_minutes": 360
+    },
+    "meteostat": {
+      "role": "historical_weather_fallback",
+      "free_quota_basis": "500 requests/month RapidAPI Basic",
+      "daily_budget": 13,
+      "max_requests_per_run": 1,
+      "min_spacing_minutes": 120
+    },
+    "newsapi": {
+      "role": "news_context",
+      "free_quota_basis": "100 requests/day developer plan",
+      "daily_budget": 78,
+      "max_requests_per_run": 5,
+      "min_spacing_minutes": 45,
+      "cache_ttl_minutes": 240
+    },
+    "gnews": {
+      "role": "news_context",
+      "free_quota_basis": "100 requests/day, delayed free plan",
+      "daily_budget": 78,
+      "max_requests_per_run": 5,
+      "min_spacing_minutes": 45,
+      "cache_ttl_minutes": 240
+    },
+    "currents": {
+      "role": "news_context",
+      "free_quota_basis": "1000 requests/day",
+      "daily_budget": 780,
+      "max_requests_per_run": 50,
+      "min_spacing_minutes": 10,
+      "cache_ttl_minutes": 240
+    },
+    "newsdata": {
+      "role": "news_context",
+      "free_quota_basis": "200 credits/day, 30 credits per 15 minutes",
+      "daily_budget": 156,
+      "max_requests_per_run": 10,
+      "min_spacing_minutes": 20,
+      "cache_ttl_minutes": 240
+    },
+    "guardian": {
+      "role": "news_context",
+      "free_quota_basis": "500 requests/day, 1 request/second",
+      "daily_budget": 390,
+      "max_requests_per_run": 25,
+      "min_spacing_minutes": 5,
+      "cache_ttl_minutes": 240
+    },
+    "clubelo": {
+      "role": "rating_cache",
+      "free_quota_basis": "free CSV-like endpoints, no published quota",
+      "daily_budget": 1,
+      "max_requests_per_run": 1,
+      "min_spacing_minutes": 1320
+    },
+    "football_data_co_uk": {
+      "role": "historical_csv_cache",
+      "free_quota_basis": "free CSV/Excel downloads, no API-key quota",
+      "daily_budget": 1,
+      "max_requests_per_run": 1,
+      "min_spacing_minutes": 1320
+    },
+    "wikidata": {
+      "role": "mapping_cache",
+      "free_quota_basis": "free fair use; cache labels/aliases and use valid User-Agent",
+      "daily_budget": 120,
+      "max_requests_per_run": 8,
+      "min_spacing_minutes": 5
+    }
   }
 }
