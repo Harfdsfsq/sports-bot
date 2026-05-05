@@ -39,6 +39,7 @@ ACTIVE_PROVIDER_CHECKS = (
 )
 
 REMOVED_PROVIDERS = {"bookies_api", "api_football", "oddspapi"}
+NON_FAILURE_STATUSES = {"ok", "degraded", "config_only"}
 
 
 @dataclass(slots=True)
@@ -341,20 +342,31 @@ class HealthRunner:
             self.add(CheckResult("futrixmetrics", "context", "missing_secret", False, False, message="required secret is not configured"))
             return
         if not base_url or not endpoint:
-            self.add(CheckResult("futrixmetrics", "context", "config_only", False, True, message="key present but no documented health endpoint configured", details={"set": "FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT for live probe"}))
+            self.add(CheckResult("futrixmetrics", "context", "config_only", False, True, message="key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured", details={"set": "FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT for live probe", "runtime_effect": "not treated as health failure"}))
             return
         self.add(await self.request(client, "futrixmetrics", "context", f"{base_url.rstrip('/')}/{endpoint.lstrip('/')}", critical=False, configured=True, headers={"Authorization": f"Bearer {key}"}))
 
     def report(self) -> dict[str, Any]:
         rows = [x.to_dict() for x in sorted(self.results, key=lambda r: (r.group, r.provider))]
-        critical_failures = [r for r in rows if r["critical"] and r["status"] not in {"ok", "degraded", "config_only"}]
+        critical_failures = [r for r in rows if r["critical"] and r["status"] not in NON_FAILURE_STATUSES]
         by_status: dict[str, int] = {}
         by_group: dict[str, dict[str, int]] = {}
         for row in rows:
             by_status[row["status"]] = by_status.get(row["status"], 0) + 1
             by_group.setdefault(row["group"], {})
             by_group[row["group"]][row["status"]] = by_group[row["group"]].get(row["status"], 0) + 1
-        return {"created_at_utc": now_utc().isoformat(), "mode": self.mode, "removed_providers": sorted(REMOVED_PROVIDERS), "active_provider_checks": list(ACTIVE_PROVIDER_CHECKS), "summary": {"providers_checked": len(rows), "ok": by_status.get("ok", 0), "degraded": by_status.get("degraded", 0), "rate_limited": by_status.get("rate_limited", 0), "auth_error": by_status.get("auth_error", 0), "missing_secret": by_status.get("missing_secret", 0), "critical_failures": len(critical_failures)}, "by_status": by_status, "by_group": by_group, "critical_failures": critical_failures, "results": rows, "recommendations": build_recommendations(rows)}
+        summary = {
+            "providers_checked": len(rows),
+            "ok": by_status.get("ok", 0),
+            "config_only": by_status.get("config_only", 0),
+            "degraded": by_status.get("degraded", 0),
+            "rate_limited": by_status.get("rate_limited", 0),
+            "auth_error": by_status.get("auth_error", 0),
+            "missing_secret": by_status.get("missing_secret", 0),
+            "critical_failures": len(critical_failures),
+            "healthy_or_config_only": by_status.get("ok", 0) + by_status.get("config_only", 0),
+        }
+        return {"created_at_utc": now_utc().isoformat(), "mode": self.mode, "removed_providers": sorted(REMOVED_PROVIDERS), "active_provider_checks": list(ACTIVE_PROVIDER_CHECKS), "summary": summary, "by_status": by_status, "by_group": by_group, "critical_failures": critical_failures, "results": rows, "recommendations": build_recommendations(rows)}
 
 
 def build_recommendations(rows: list[dict[str, Any]]) -> list[str]:
@@ -368,7 +380,9 @@ def build_recommendations(rows: list[dict[str, Any]]) -> list[str]:
     if by_provider.get("sportlogic", {}).get("status") == "ok":
         recs.append("SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.")
     if by_provider.get("highlightly", {}).get("status") != "ok":
-        recs.append("Highlightly is not healthy on the current endpoint; set HIGHLIGHTLY_BASE_URL=https://soccer.highlightly.net or RapidAPI host/key correctly, otherwise keep context disabled.")
+        recs.append("Highlightly is not healthy on the current endpoint; keep it as optional context until endpoint/key is verified.")
+    if by_provider.get("futrixmetrics", {}).get("status") == "config_only":
+        recs.append("FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.")
     if by_provider.get("thesportsdb", {}).get("status") == "ok":
         recs.append("TheSportsDB is reachable; use it for team/league alias enrichment.")
     recs.append("Removed providers are intentionally excluded: bookies_api, api_football, oddspapi.")
@@ -378,7 +392,25 @@ def build_recommendations(rows: list[dict[str, Any]]) -> list[str]:
 def write_report(report: dict[str, Any], out_dir: Path) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     (out_dir / "latest-api-health-run.json").write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    lines = ["# API Health Run", "", f"- Created UTC: `{report['created_at_utc']}`", f"- Mode: `{report['mode']}`", f"- Providers checked: **{report['summary']['providers_checked']}**", f"- Removed providers: `{', '.join(report['removed_providers'])}`", f"- OK: **{report['summary']['ok']}**", f"- Degraded: **{report['summary']['degraded']}**", f"- Rate-limited: **{report['summary']['rate_limited']}**", f"- Auth errors: **{report['summary']['auth_error']}**", f"- Missing secrets: **{report['summary']['missing_secret']}**", f"- Critical failures: **{report['summary']['critical_failures']}**", "", "## Recommendations", ""]
+    lines = [
+        "# API Health Run",
+        "",
+        f"- Created UTC: `{report['created_at_utc']}`",
+        f"- Mode: `{report['mode']}`",
+        f"- Providers checked: **{report['summary']['providers_checked']}**",
+        f"- Removed providers: `{', '.join(report['removed_providers'])}`",
+        f"- OK: **{report['summary']['ok']}**",
+        f"- Config-only: **{report['summary']['config_only']}**",
+        f"- Healthy or config-only: **{report['summary']['healthy_or_config_only']}**",
+        f"- Degraded: **{report['summary']['degraded']}**",
+        f"- Rate-limited: **{report['summary']['rate_limited']}**",
+        f"- Auth errors: **{report['summary']['auth_error']}**",
+        f"- Missing secrets: **{report['summary']['missing_secret']}**",
+        f"- Critical failures: **{report['summary']['critical_failures']}**",
+        "",
+        "## Recommendations",
+        "",
+    ]
     lines.extend([f"- {item}" for item in report.get("recommendations", [])])
     lines.extend(["", "## Provider results", "", "| Provider | Group | Status | Requests | Useful rows | Message |", "|---|---|---:|---:|---:|---|"])
     for row in report["results"]:
