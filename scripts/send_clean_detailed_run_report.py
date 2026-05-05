@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -15,7 +17,9 @@ OUT_PATH = Path(".data/exports/latest-detailed-run-report-cleaned.txt")
 STATE_PATH = Path(".data/detailed-run-report-sent.json")
 DEBUG_PATH = Path(".logs/debug-last-run.json")
 HEALTH_PATH = Path(".data/exports/latest-api-health-run.json")
+BUDGET_PATH = Path(".data/exports/latest-provider-request-budget.json")
 REMOVED_PROVIDERS = {"api_football", "bookies_api", "oddspapi"}
+HEALTH_ALIASES = {"odds_api_io_events": "odds_api_io", "sharpapi": "sharpapi_configured_base"}
 API_ORDER = [
     "odds_api_io", "allsportsapi", "bzzoiro", "sstats", "football_data", "thesportsdb",
     "weather", "weatherapi", "openweathermap", "meteostat", "sportlogic", "openfootball",
@@ -35,15 +39,6 @@ def env_int(name: str, default: int) -> int:
     try:
         raw = os.getenv(name)
         return int(float(str(raw))) if raw not in (None, "") else default
-    except Exception:
-        return default
-
-
-def as_int(value: Any, default: int = 0) -> int:
-    try:
-        if value in (None, ""):
-            return default
-        return int(float(str(value)))
     except Exception:
         return default
 
@@ -70,6 +65,31 @@ def read_text(path: Path) -> str:
 def write_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(text, encoding="utf-8")
+
+
+def ensure_health_report() -> dict[str, Any]:
+    if HEALTH_PATH.exists():
+        return {"ran": False, "reason": "already_exists", "path": str(HEALTH_PATH)}
+    script = Path("scripts/api_health_run.py")
+    if not script.exists():
+        return {"ran": False, "reason": "script_missing", "path": str(script)}
+    try:
+        completed = subprocess.run(
+            [sys.executable, str(script), "--mode", os.getenv("API_HEALTH_MODE", "quick"), "--output-dir", ".data/exports"],
+            check=False,
+            timeout=env_int("API_HEALTH_CLEAN_REPORT_TIMEOUT_SECONDS", 60),
+            capture_output=True,
+            text=True,
+        )
+        return {
+            "ran": True,
+            "returncode": completed.returncode,
+            "path_exists": HEALTH_PATH.exists(),
+            "stdout_preview": (completed.stdout or "")[:800],
+            "stderr_preview": (completed.stderr or "")[:800],
+        }
+    except Exception as exc:
+        return {"ran": False, "reason": f"{type(exc).__name__}: {exc}", "path_exists": HEALTH_PATH.exists()}
 
 
 def remove_deleted_provider_lines(text: str) -> str:
@@ -173,6 +193,25 @@ def quota_lines_from_text(text: str) -> list[str]:
     return out
 
 
+def quota_from_budget_json() -> dict[str, str]:
+    payload = load_json(BUDGET_PATH, {})
+    decisions = payload.get("decisions") if isinstance(payload, dict) else []
+    out: dict[str, str] = {}
+    if isinstance(decisions, list):
+        for row in decisions:
+            if not isinstance(row, dict):
+                continue
+            name = str(row.get("provider") or "").strip()
+            if not name or name.lower() in REMOVED_PROVIDERS:
+                continue
+            parts = [f"grant {row.get('grant', 0)}", f"reason {row.get('reason') or 'unknown'}"]
+            status = row.get("status")
+            if status:
+                parts.append(f"status {status}")
+            out[name] = ", ".join(parts)
+    return out
+
+
 def provider_meaning(name: str) -> str:
     low = name.lower()
     meanings = {
@@ -230,8 +269,15 @@ def health_rows() -> dict[str, dict[str, Any]]:
     out: dict[str, dict[str, Any]] = {}
     if isinstance(rows, list):
         for row in rows:
-            if isinstance(row, dict):
-                out[str(row.get("provider") or "")] = row
+            if not isinstance(row, dict):
+                continue
+            raw = str(row.get("provider") or "").strip()
+            name = HEALTH_ALIASES.get(raw, raw)
+            if not name:
+                continue
+            current = out.get(name)
+            if current is None or (current.get("status") != "ok" and row.get("status") == "ok"):
+                out[name] = row
     return out
 
 
@@ -259,13 +305,18 @@ def compact_health(name: str, row: dict[str, Any]) -> str:
     if not row:
         return "нет health-probe"
     bits = [str(row.get("status") or "unknown")]
+    if row.get("configured") is not None:
+        bits.append(f"configured {str(row.get('configured')).lower()}")
     if row.get("requests") is not None:
         bits.append(f"req {row.get('requests')}")
     if row.get("useful_rows") is not None:
         bits.append(f"rows {row.get('useful_rows')}")
+    statuses = row.get("http_statuses")
+    if isinstance(statuses, list) and statuses:
+        bits.append("http " + "/".join(str(x) for x in statuses[:3]))
     msg = str(row.get("message") or "")
     if msg and msg != "ok":
-        bits.append(msg[:80])
+        bits.append(msg[:90])
     return ", ".join(bits)
 
 
@@ -277,15 +328,15 @@ def build_api_work_block(text: str) -> str:
     for line in quota_lines_from_text(text):
         name = provider_name(line)
         by_provider.setdefault(name, {})["quota"] = line.replace(f"• {name}: ", "")
+    for name, quota in quota_from_budget_json().items():
+        by_provider.setdefault(name, {})["quota"] = quota
 
-    debug_rows = debug_provider_rows()
-    for name, row in debug_rows.items():
+    for name, row in debug_provider_rows().items():
         if name.lower() in REMOVED_PROVIDERS:
             continue
         by_provider.setdefault(name, {})["runtime"] = compact_runtime(name, row)
 
-    health = health_rows()
-    for name, row in health.items():
+    for name, row in health_rows().items():
         if name.lower() in REMOVED_PROVIDERS:
             continue
         by_provider.setdefault(name, {})["health"] = compact_health(name, row)
@@ -377,9 +428,10 @@ def should_send() -> bool:
 
 
 def main() -> int:
+    health_probe = ensure_health_report()
     raw = read_text(TXT_PATH)
     if not raw:
-        payload = {"status": "skipped", "reason": "latest-detailed-run-report.txt missing", "path": str(TXT_PATH)}
+        payload = {"status": "skipped", "reason": "latest-detailed-run-report.txt missing", "path": str(TXT_PATH), "health_probe": health_probe}
         write_json(Path(".data/exports/latest-detailed-run-report-send-clean.json"), payload)
         print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
         return 0
@@ -395,7 +447,19 @@ def main() -> int:
             sent.append({"ok": ok, "response_preview": body})
     else:
         sent.append({"ok": False, "response_preview": "send_disabled_or_missing_telegram_credentials"})
-    payload = {"status": "sent" if sent and all(item.get("ok") for item in sent) else "not_sent_or_partial", "created_at_utc": datetime.now(UTC).isoformat(), "source_path": str(TXT_PATH), "cleaned_path": str(OUT_PATH), "chunks": len(chunks), "removed_providers": sorted(REMOVED_PROVIDERS), "api_work_block_added": "🧩 Работа API" in cleaned, "api_health_present": HEALTH_PATH.exists(), "sent": sent, "json_report_present": JSON_PATH.exists()}
+    payload = {
+        "status": "sent" if sent and all(item.get("ok") for item in sent) else "not_sent_or_partial",
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "source_path": str(TXT_PATH),
+        "cleaned_path": str(OUT_PATH),
+        "chunks": len(chunks),
+        "removed_providers": sorted(REMOVED_PROVIDERS),
+        "api_work_block_added": "🧩 Работа API" in cleaned,
+        "api_health_present": HEALTH_PATH.exists(),
+        "health_probe": health_probe,
+        "sent": sent,
+        "json_report_present": JSON_PATH.exists(),
+    }
     write_json(Path(".data/exports/latest-detailed-run-report-send-clean.json"), payload)
     write_json(STATE_PATH, {"last_sent_at_utc": payload["created_at_utc"], "chunks": len(chunks), "cleaned_path": str(OUT_PATH)})
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
