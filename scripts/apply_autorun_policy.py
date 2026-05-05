@@ -22,6 +22,7 @@ except Exception:  # pragma: no cover - Python <3.9 fallback, kept harmless.
 
 ROOT = Path(__file__).resolve().parents[1]
 POLICY_PATH = ROOT / "config" / "autoran_policy.json"
+API_MAX_OVERRIDES_PATH = ROOT / "config" / "api_max_overrides.env"
 REPORT_PATH = ROOT / ".data" / "exports" / "latest-autoran-policy.json"
 
 
@@ -79,6 +80,27 @@ def _load_policy() -> Dict[str, Any]:
         else:
             merged[key] = value
     return merged
+
+
+def _load_env_file(path: Path) -> Dict[str, str]:
+    updates: Dict[str, str] = {}
+    if not path.exists():
+        return updates
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except Exception as exc:
+        print(f"[autoran] failed to read {path}: {exc}")
+        return updates
+    for line in lines:
+        raw = line.strip()
+        if not raw or raw.startswith("#") or "=" not in raw:
+            continue
+        key, value = raw.split("=", 1)
+        key = key.strip()
+        if not key or not key.replace("_", "").isalnum() or key[0].isdigit():
+            continue
+        updates[key] = value.strip()
+    return updates
 
 
 def _local_now(tz_name: str) -> datetime:
@@ -200,6 +222,8 @@ def main() -> int:
         "CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN": str(max_picks),
         "CONTROLLED_FALLBACK_MAX_PICKS_PER_MATCH": str(max_picks_per_match),
     }
+    api_max_updates = _load_env_file(API_MAX_OVERRIDES_PATH)
+    updates.update(api_max_updates)
 
     REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
     report = {
@@ -212,9 +236,12 @@ def main() -> int:
         "max_picks_per_run": max_picks,
         "detailed_report_send_telegram": send_detailed,
         "detailed_report_min_interval_minutes": detailed_min_interval,
+        "api_max_overrides_loaded": bool(api_max_updates),
+        "api_max_overrides_count": len(api_max_updates),
         "notes": [
             "Autoran policy changes scan cadence/window only; it does not relax model quality guardrails.",
             "Schedule runs use overlapping windows to prevent skipped fixtures when GitHub cron is delayed.",
+            "API max overrides enforce targeted API-Football context and strict price/context separation.",
         ],
         "env_updates": updates,
     }
