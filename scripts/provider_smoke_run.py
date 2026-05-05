@@ -26,17 +26,19 @@ ARTIFACT_DIR = Path("artifacts/provider-smoke")
 JSON_OUT = EXPORT_DIR / "latest-provider-smoke.json"
 TXT_OUT = EXPORT_DIR / "latest-provider-smoke.txt"
 
+REMOVED_PROVIDERS = {"bookies_api", "api_football", "oddspapi"}
+
 GROUPS = {
     "core": ["odds_api_io", "sharpapi", "sportlogic", "sstats", "bzzoiro", "football_data", "thesportsdb", "espn"],
-    "odds": ["odds_api_io", "sharpapi", "sportlogic", "bookies_api", "oddspapi", "allsportsapi"],
-    "context": ["sstats", "bzzoiro", "api_football", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews"],
+    "odds": ["odds_api_io", "sharpapi", "sportlogic", "allsportsapi"],
+    "context": ["sstats", "bzzoiro", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews"],
     "sportlogic": ["sportlogic"],
     "sharpapi": ["sharpapi"],
 }
 GROUPS["all"] = list(dict.fromkeys(GROUPS["odds"] + GROUPS["context"]))
 
-OFFER_PROVIDERS = {"odds_api_io", "sharpapi", "bookies_api", "oddspapi", "allsportsapi", "sportlogic"}
-CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "api_football", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews", "sportlogic"}
+OFFER_PROVIDERS = {"odds_api_io", "sharpapi", "allsportsapi", "sportlogic"}
+CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "espn", "football_data", "thesportsdb", "openligadb", "openfootball", "futrixmetrics", "newsapi", "gnews", "sportlogic"}
 SECRET_MARKERS = ("key", "token", "secret", "authorization", "password", "apikey", "api_key")
 WARNING_STATUSES = {"EMPTY", "EMPTY_CONTEXT", "EMPTY_OFFERS", "EMPTY_FIXTURES", "NO_MATCHES_BUILT", "NO_MATCH", "NO_ODDS_REQUEST", "HTTP_ERROR", "SKIP", "STALE_INVENTORY"}
 ERROR_STATUSES = {"ERROR", "AUTH", "RATE_LIMIT"}
@@ -70,6 +72,11 @@ def install_runtime_patches() -> dict[str, Any]:
         "sharpapi_official_patch": False,
         "errors": [],
     }
+    try:
+        from app.services import api_runtime_enhancements
+        api_runtime_enhancements.install()
+    except Exception as exc:
+        result["errors"].append(f"api_runtime_enhancements:{type(exc).__name__}:{exc}")
     try:
         from app.providers import sportlogic_hardening
         result["sportlogic_hardening"] = bool(sportlogic_hardening.install())
@@ -171,21 +178,10 @@ def compact_stats(stats: Any) -> dict[str, Any]:
                 out[key] = dict(Counter(stats.get(key) or []))
             except Exception:
                 out[key] = sanitize(stats.get(key))
-    for key in (
-        "attempted_paths", "fixture_query_attempts", "fixture_dates_requested", "fixture_rows_by_date",
-        "top_level_keys", "payload_shapes", "parse_reject_reasons", "sportlogic_hardening_reject_reasons",
-    ):
+    for key in ("attempted_paths", "fixture_query_attempts", "fixture_dates_requested", "fixture_rows_by_date", "top_level_keys", "payload_shapes", "parse_reject_reasons", "sportlogic_hardening_reject_reasons"):
         if key in stats:
             out[key] = sanitize(stats.get(key))
     return out
-
-
-def sportlogic_stale_reason(method: str, fixtures: int, stats: dict[str, Any]) -> str:
-    min_start = stats.get("inventory_min_start") or "?"
-    max_start = stats.get("inventory_max_start") or "?"
-    if method == "fetch_matches":
-        return f"fixtures={fixtures}, inventory stale/outside active horizon, span={min_start}..{max_start}, out_of_window={stats.get('fixture_out_of_window')}"
-    return f"fixtures={fixtures}, stale/unmatched inventory, span={min_start}..{max_start}"
 
 
 def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error: str | None) -> tuple[str, str]:
@@ -202,7 +198,7 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
     if provider == "sportlogic":
         fixtures = safe_int(stats.get("fixtures_fetched") or stats.get("games_fetched"), 0)
         if stats.get("stale_inventory") or str(stats.get("inventory_status") or "").startswith("stale_inventory"):
-            return "STALE_INVENTORY", sportlogic_stale_reason(method, fixtures, stats)
+            return "STALE_INVENTORY", f"fixtures={fixtures}, inventory stale/outside active horizon"
         if fixtures <= 0:
             return "EMPTY_FIXTURES", "SportLogic /games returned no fixtures inside target window"
         if method == "fetch_matches" and safe_int(stats.get("matches_built"), 0) <= 0:
@@ -211,15 +207,6 @@ def verdict(provider: str, method: str, data: Any, stats: dict[str, Any], error:
             return "NO_MATCH", "fixtures did not match bootstrap matches"
         if method == "fetch_offers" and safe_int(stats.get("odds_requests"), 0) <= 0:
             return "NO_ODDS_REQUEST", "provider did not reach odds endpoint"
-    if provider == "sharpapi":
-        if not stats.get("api_key_present"):
-            return "AUTH", "SHARPAPI_API_KEY/SHARPAPI_KEY/SHARP_API_KEY missing"
-        if safe_int(stats.get("requests"), 0) <= 0:
-            return "NO_ODDS_REQUEST", "SharpAPI did not reach odds endpoint"
-        if safe_int(stats.get("events_fetched"), 0) <= 0:
-            return "EMPTY_FIXTURES", "SharpAPI returned no event rows for smoke sample"
-        if safe_int(stats.get("offers_parsed"), 0) <= 0:
-            return "EMPTY_OFFERS", "SharpAPI returned rows but safe parser emitted no offers"
     if method == "fetch_offers" and safe_int(stats.get("offers_parsed"), 0) <= 0:
         return "EMPTY_OFFERS", "no offers parsed for smoke sample"
     if stats.get("response_errors"):
@@ -236,8 +223,6 @@ def provider_secrets(provider: str) -> dict[str, bool]:
         "bzzoiro": ["BZZOIRO_API_KEY"],
         "football_data": ["FOOTBALL_DATA_API_KEY"],
         "thesportsdb": ["THESPORTSDB_API_KEY"],
-        "api_football": ["API_FOOTBALL_KEY"],
-        "oddspapi": ["ODDSPAPI_API_KEY"],
         "allsportsapi": ["ALLSPORTSAPI_API_KEY"],
         "futrixmetrics": ["FUTRIXMETRICS_API_KEY"],
         "newsapi": ["NEWSAPI_KEY", "CURRENTS_API_KEY", "CURRENTS_KEY"],
@@ -272,26 +257,20 @@ def resolve_provider_list(raw: str) -> list[str]:
         if not key:
             continue
         out.extend(GROUPS.get(key, [key]))
-    return list(dict.fromkeys(out))
+    return [name for name in list(dict.fromkeys(out)) if name not in REMOVED_PROVIDERS]
 
 
 def match_sample(matches: list[Any], limit: int = 10) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     for match in matches[:limit]:
         dt = getattr(match, "commence_time", None)
-        rows.append({
-            "source": getattr(match, "source", ""),
-            "event_id": getattr(match, "source_event_id", ""),
-            "league": getattr(match, "league_name", ""),
-            "home": getattr(match, "home_team", ""),
-            "away": getattr(match, "away_team", ""),
-            "commence_time": dt.isoformat() if hasattr(dt, "isoformat") else "",
-            "match_key": getattr(match, "match_key", ""),
-        })
+        rows.append({"source": getattr(match, "source", ""), "event_id": getattr(match, "source_event_id", ""), "league": getattr(match, "league_name", ""), "home": getattr(match, "home_team", ""), "away": getattr(match, "away_team", ""), "commence_time": dt.isoformat() if hasattr(dt, "isoformat") else "", "match_key": getattr(match, "match_key", "")})
     return rows
 
 
 def resolve_provider_instance(runner: Any, provider_name: str, settings: Any) -> Any | None:
+    if provider_name in REMOVED_PROVIDERS:
+        return None
     if provider_name == "sharpapi":
         try:
             from app.providers.sharpapi import SharpApiOddsProvider
@@ -310,7 +289,6 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     runner = PredictionRunner(settings)
     providers = resolve_provider_list(args.providers)
     now = datetime.now(UTC)
-
     bootstrap: dict[str, Any] = {"status": "EMPTY", "matches_count": 0, "error": None, "meta": {}, "sample_matches": []}
     matches: list[Any] = []
     try:
@@ -337,58 +315,23 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
     for provider_name in providers:
         provider = resolve_provider_instance(runner, provider_name, settings)
         result = {"provider": provider_name, "loaded": provider is not None, "secrets_present": provider_secrets(provider_name), "checks": {}}
-
         if provider_name == "sportlogic":
             data, stats, preview, error = await call_provider(provider, "fetch_matches")
             status, reason = verdict(provider_name, "fetch_matches", data, stats, error)
             result["checks"]["fetch_matches"] = {"status": status, "reason": reason, "data_count": count_data(data), "stats": compact_stats(stats), "preview": sanitize(preview)}
-
         if provider_name in OFFER_PROVIDERS:
             data, stats, preview, error = await call_provider(provider, "fetch_offers", matches)
             status, reason = verdict(provider_name, "fetch_offers", data, stats, error)
             result["checks"]["fetch_offers"] = {"status": status, "reason": reason, "data_count": count_data(data), "match_count": len(data or {}) if isinstance(data, dict) else 0, "stats": compact_stats(stats), "preview": sanitize(preview)}
-
         if provider_name in CONTEXT_PROVIDERS:
             target = matches[: max(1, min(len(matches), int(args.context_match_limit or 12)))]
             data, stats, preview, error = await call_provider(provider, "fetch_context", target)
             status, reason = verdict(provider_name, "fetch_context", data, stats, error)
             result["checks"]["fetch_context"] = {"status": status, "reason": reason, "data_count": count_data(data), "match_count": len(data or {}) if isinstance(data, dict) else 0, "stats": compact_stats(stats), "preview": sanitize(preview)}
-
         results[provider_name] = result
 
     all_checks = [check for info in results.values() for check in (info.get("checks") or {}).values()]
-    summary = {
-        "checks_ok": sum(1 for check in all_checks if check.get("status") == "OK"),
-        "checks_warning": sum(1 for check in all_checks if check.get("status") in WARNING_STATUSES),
-        "checks_error": sum(1 for check in all_checks if check.get("status") in ERROR_STATUSES),
-        "providers_loaded": sum(1 for info in results.values() if info.get("loaded")),
-        "providers_total": len(results),
-    }
-    payload = {
-        "created_at_utc": datetime.now(UTC).isoformat(),
-        "git_sha": git_sha(),
-        "github_sha": os.getenv("GITHUB_SHA", ""),
-        "mode": "provider_smoke",
-        "runtime_patches": runtime_patches,
-        "providers_requested": providers,
-        "settings": {
-            "providers_arg": args.providers,
-            "match_limit": args.match_limit,
-            "context_match_limit": args.context_match_limit,
-            "publish_dry_run": os.getenv("PUBLISH_DRY_RUN"),
-            "prediction_publication_enabled": os.getenv("PREDICTION_PUBLICATION_ENABLED"),
-            "sportlogic_odds_match_limit": os.getenv("SPORTLOGIC_ODDS_MATCH_LIMIT"),
-            "sportlogic_budget_reason": os.getenv("SPORTLOGIC_REQUEST_BUDGET_REASON"),
-            "enable_sharpapi": os.getenv("ENABLE_SHARPAPI"),
-            "sharpapi_base_url": os.getenv("SHARPAPI_BASE_URL"),
-            "sharpapi_odds_endpoints": os.getenv("SHARPAPI_ODDS_ENDPOINTS"),
-            "sharpapi_league": os.getenv("SHARPAPI_LEAGUE"),
-            "sharpapi_per_run_max": os.getenv("SHARPAPI_PER_RUN_MAX") or os.getenv("SHARPAPI_MAX_HTTP_REQUESTS_PER_RUN"),
-        },
-        "bootstrap": bootstrap,
-        "summary": summary,
-        "providers": results,
-    }
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "git_sha": git_sha(), "github_sha": os.getenv("GITHUB_SHA", ""), "mode": "provider_smoke", "removed_providers": sorted(REMOVED_PROVIDERS), "runtime_patches": runtime_patches, "providers_requested": providers, "settings": {"providers_arg": args.providers, "match_limit": args.match_limit, "context_match_limit": args.context_match_limit, "publish_dry_run": os.getenv("PUBLISH_DRY_RUN"), "prediction_publication_enabled": os.getenv("PREDICTION_PUBLICATION_ENABLED"), "sportlogic_odds_match_limit": os.getenv("SPORTLOGIC_ODDS_MATCH_LIMIT"), "sportlogic_budget_reason": os.getenv("SPORTLOGIC_REQUEST_BUDGET_REASON"), "enable_sharpapi": os.getenv("ENABLE_SHARPAPI")}, "bootstrap": bootstrap, "summary": {"checks_ok": sum(1 for check in all_checks if check.get("status") == "OK"), "checks_warning": sum(1 for check in all_checks if check.get("status") in WARNING_STATUSES), "checks_error": sum(1 for check in all_checks if check.get("status") in ERROR_STATUSES), "providers_loaded": sum(1 for info in results.values() if info.get("loaded")), "providers_total": len(results)}, "providers": results}
     write_outputs(payload)
     return payload
 
@@ -396,38 +339,19 @@ async def run_smoke(args: argparse.Namespace) -> dict[str, Any]:
 def build_text(payload: dict[str, Any]) -> str:
     bootstrap = payload.get("bootstrap") or {}
     summary = payload.get("summary") or {}
-    lines = [
-        "🧪 Provider smoke run",
-        f"• time UTC: {payload.get('created_at_utc')}",
-        f"• git: {str(payload.get('git_sha') or '')[:12]}",
-        f"• runtime patches: {payload.get('runtime_patches')}",
-        f"• bootstrap: {bootstrap.get('status')} | matches: {bootstrap.get('matches_count')}",
-        f"• checks: OK {summary.get('checks_ok')} | warn {summary.get('checks_warning')} | errors {summary.get('checks_error')}",
-        "",
-        "📡 Providers",
-    ]
+    lines = ["🧪 Provider smoke run", f"• time UTC: {payload.get('created_at_utc')}", f"• git: {str(payload.get('git_sha') or '')[:12]}", f"• removed providers: {', '.join(payload.get('removed_providers') or [])}", f"• bootstrap: {bootstrap.get('status')} | matches: {bootstrap.get('matches_count')}", f"• checks: OK {summary.get('checks_ok')} | warn {summary.get('checks_warning')} | errors {summary.get('checks_error')}", "", "📡 Providers"]
     for name, info in (payload.get("providers") or {}).items():
         checks = info.get("checks") or {}
         if not checks:
             lines.append(f"• {name}: no checks | loaded={info.get('loaded')} | secrets={info.get('secrets_present')}")
             continue
-        pieces = []
-        for method, check in checks.items():
-            pieces.append(f"{method}={check.get('status')} data={check.get('data_count')} ({check.get('reason')})")
+        pieces = [f"{method}={check.get('status')} data={check.get('data_count')} ({check.get('reason')})" for method, check in checks.items()]
         lines.append(f"• {name}: " + "; ".join(pieces))
         if name in {"sportlogic", "sharpapi"}:
             for check in checks.values():
                 stats = check.get("stats") or {}
                 preview = check.get("preview") or {}
-                for key in (
-                    "base_url", "schema_mode", "api_key_present", "requests", "http_statuses", "odds_endpoint_used",
-                    "odds_endpoint_params_used", "events_fetched", "events_matched", "offers_parsed", "markets_parsed",
-                    "bookmakers_seen_names", "offers_by_family", "payload_shapes", "last_body_preview",
-                    "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "inventory_sample_start_times",
-                    "fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "fixture_window_start", "fixture_window_end",
-                    "fixture_page_scan_max", "fixture_cursor_scan_max", "fixture_stale_rows_filtered", "sample_fixture_keys", "attempted_paths",
-                    "fixture_query_attempts", "no_match_reason",
-                ):
+                for key in ("base_url", "schema_mode", "api_key_present", "requests", "http_statuses", "odds_endpoint_used", "events_fetched", "events_matched", "offers_parsed", "markets_parsed", "bookmakers_seen_names", "offers_by_family", "payload_shapes", "last_body_preview", "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "attempted_paths", "fixture_query_attempts", "no_match_reason"):
                     if stats.get(key) not in (None, "", [], {}):
                         value = stats.get(key)
                         rendered = json.dumps(value, ensure_ascii=False) if key != "last_body_preview" else str(value)
@@ -456,7 +380,7 @@ def send_telegram(text: str) -> bool:
     for chunk in [text[i:i + 3600] for i in range(0, len(text), 3600)][:6] or [text]:
         try:
             req = request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=parse.urlencode({"chat_id": chat_id, "text": chunk}).encode("utf-8"))
-            with request.urlopen(req, timeout=20) as resp:  # nosec - CI-only diagnostic script
+            with request.urlopen(req, timeout=20) as resp:
                 ok = ok and 200 <= int(resp.status) < 300
         except Exception:
             ok = False
@@ -473,16 +397,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def failure_payload(exc: BaseException) -> dict[str, Any]:
-    payload = {
-        "created_at_utc": datetime.now(UTC).isoformat(),
-        "git_sha": git_sha(),
-        "mode": "provider_smoke",
-        "fatal_error": f"{type(exc).__name__}: {exc}",
-        "traceback": traceback.format_exc()[-5000:],
-        "summary": {"checks_ok": 0, "checks_warning": 0, "checks_error": 1, "providers_loaded": 0, "providers_total": 0},
-        "providers": {},
-        "bootstrap": {"status": "ERROR", "matches_count": 0, "error": f"{type(exc).__name__}: {exc}"},
-    }
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "git_sha": git_sha(), "mode": "provider_smoke", "removed_providers": sorted(REMOVED_PROVIDERS), "fatal_error": f"{type(exc).__name__}: {exc}", "traceback": traceback.format_exc()[-5000:], "summary": {"checks_ok": 0, "checks_warning": 0, "checks_error": 1, "providers_loaded": 0, "providers_total": 0}, "providers": {}, "bootstrap": {"status": "ERROR", "matches_count": 0, "error": f"{type(exc).__name__}: {exc}"}}
     write_outputs(payload)
     return payload
 
