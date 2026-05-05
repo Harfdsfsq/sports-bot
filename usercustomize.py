@@ -19,6 +19,12 @@ except Exception:
     pass
 
 try:
+    from app.services import lifecycle_sent_index_runtime_guard
+    lifecycle_sent_index_runtime_guard.install()
+except Exception:
+    pass
+
+try:
     from app.services import rapidapi_probe_runtime_guard
     rapidapi_probe_runtime_guard.install()
 except Exception:
