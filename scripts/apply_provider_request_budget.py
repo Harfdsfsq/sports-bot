@@ -17,6 +17,8 @@ GITHUB_ENV = os.getenv('GITHUB_ENV')
 UTC = timezone.utc
 MSK = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
 
+REMOVED_PROVIDERS = {'api_football', 'bookies_api', 'oddspapi'}
+
 
 def load_json(path: Path, default: Any) -> Any:
     try:
@@ -78,11 +80,41 @@ def manual_probe_without_force_publish() -> bool:
     return not truthy(os.getenv('AUTORUN_INPUT_FORCE_PUBLISH') or os.getenv('FORCE_PUBLISH'))
 
 
+def removed_provider_env() -> dict[str, str]:
+    return {
+        'ENABLE_BOOKIES_API': 'false',
+        'BOOKIES_API_ENABLED': 'false',
+        'BOOKIES_API_ODDS_FETCH_LIMIT': '0',
+        'BOOKIES_API_REQUEST_BUDGET_GRANTED': '0',
+        'BOOKIES_API_REQUEST_BUDGET_REASON': 'removed_from_project',
+        'ENABLE_API_FOOTBALL': 'false',
+        'API_FOOTBALL_ENABLED': 'false',
+        'API_FOOTBALL_KEY': '',
+        'API_FOOTBALL_PER_RUN_MAX': '0',
+        'API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '0',
+        'API_FOOTBALL_REQUEST_BUDGET_GRANTED': '0',
+        'API_FOOTBALL_REQUEST_BUDGET_REASON': 'removed_from_project',
+        'ENABLE_ODDSPAPI': 'false',
+        'ODDSPAPI_ENABLED': 'false',
+        'ODDSPAPI_MATCH_LIMIT': '0',
+        'ODDSPAPI_CONTEXT_MATCH_LIMIT': '0',
+        'ODDSPAPI_PER_RUN_MAX': '0',
+        'ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN': '0',
+        'ODDSPAPI_REQUEST_BUDGET_GRANTED': '0',
+        'ODDSPAPI_REQUEST_BUDGET_REASON': 'removed_from_project',
+    }
+
+
 def final_market_integrity_env() -> dict[str, str]:
     manual_dry_run = manual_probe_without_force_publish()
+    fast_inventory = truthy(os.getenv('HARIZON_FAST_INVENTORY_LOCK') or os.getenv('DAY_INVENTORY_FAST_MODE') or 'true')
+    inventory_merge = 'false' if fast_inventory else str(os.getenv('DAY_INVENTORY_FORCE_PROVIDER_MERGE') or 'false').lower()
+    runtime_version = 'harizon-runtime-policy-v4-value-lifecycle-fast-inventory'
     env = {
-        'HARIZON_RUNTIME_POLICY_VERSION': 'harizon-runtime-policy-v3-market-integrity',
-        'HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION': 'harizon-runtime-policy-v3-market-integrity',
+        'HARIZON_RUNTIME_POLICY_VERSION': runtime_version,
+        'HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION': runtime_version,
+        'HARIZON_FAST_INVENTORY_LOCK': 'true' if fast_inventory else 'false',
         'HARIZON_MANUAL_DRY_RUN': str(manual_dry_run).lower(),
         'PUBLISH_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('PUBLISH_DRY_RUN') or 'false').lower(),
         'CONTROLLED_FALLBACK_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('CONTROLLED_FALLBACK_DRY_RUN') or 'false').lower(),
@@ -90,9 +122,9 @@ def final_market_integrity_env() -> dict[str, str]:
         'CONTROLLED_FALLBACK_TELEGRAM_ENABLED': 'false' if manual_dry_run else 'true',
         'MATCH_BOOTSTRAP_PROVIDER': os.getenv('MATCH_BOOTSTRAP_PROVIDER') or 'odds_api_io',
         'DAY_INVENTORY_BOOTSTRAP_PROVIDER': os.getenv('DAY_INVENTORY_BOOTSTRAP_PROVIDER') or 'odds_api_io',
-        'DAY_INVENTORY_FORCE_PROVIDER_MERGE': 'true',
+        'DAY_INVENTORY_FORCE_PROVIDER_MERGE': inventory_merge,
         'DAY_INVENTORY_USE_FOR_RUN': 'true',
-        'DAY_INVENTORY_COVERAGE_MAX_REBUILD': 'true',
+        'DAY_INVENTORY_COVERAGE_MAX_REBUILD': 'false' if fast_inventory else str(os.getenv('DAY_INVENTORY_COVERAGE_MAX_REBUILD') or 'false').lower(),
         'DAY_INVENTORY_NEAR_WINDOW_PRIORITY': 'true',
         'DAY_INVENTORY_NEAR_WINDOW_HOURS': os.getenv('DAY_INVENTORY_NEAR_WINDOW_HOURS') or '12',
         'MARKET_DERIVED_MIN_BOOKS': '2',
@@ -108,9 +140,9 @@ def final_market_integrity_env() -> dict[str, str]:
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE': '78.0',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP': '8.0',
         'CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT': '15.0',
-        'CONTROLLED_FALLBACK_ALLOWED_FAMILIES': 'totals,dnb',
-        'CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES': 'totals,dnb',
-        'CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES': 'totals,dnb',
+        'CONTROLLED_FALLBACK_ALLOWED_FAMILIES': 'totals,dnb,btts',
+        'CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES': 'totals,dnb,btts',
+        'CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES': 'totals,dnb,btts',
         'CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES': '',
         'CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED': 'false',
         'CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS': '2',
@@ -124,9 +156,8 @@ def final_market_integrity_env() -> dict[str, str]:
         'SPREADS_PUBLICATION_ENABLED': 'false',
         'TEAM_TOTALS_PUBLICATION_ENABLED': 'false',
     }
+    env.update(removed_provider_env())
     if manual_dry_run:
-        # Manual dry-runs are diagnostic-only, so allow near-kickoff data collection.
-        # Real scheduled or FORCE_PUBLISH runs keep the normal lead-time protection.
         env.update({
             'MIN_KICKOFF_LEAD_MINUTES': '0',
             'ADAPTIVE_MIN_KICKOFF_LEAD_ENABLED': 'false',
@@ -179,7 +210,7 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
             failures.append('manual_dry_run_min_kickoff_lead_not_zero')
     if str(env.get('SPORTLOGIC_BOOKMAKERS') or '') != '__probe_only__':
         warnings.append('sportlogic_bookmakers_not_probe_only')
-    if 'quarantined' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or ''):
+    if 'quarantined' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or '') and 'stale' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or ''):
         warnings.append('sportlogic_odds_quarantine_reason_missing')
     return {
         'status': 'failed' if failures else 'ok',
@@ -210,22 +241,14 @@ def load_policy() -> dict[str, Any]:
     return {
         'version': 'v20-minimal-fallback',
         'mode': 'per_run_only',
-        'deleted_providers': ['api_football'],
+        'deleted_providers': sorted(REMOVED_PROVIDERS),
         'base_env': {
             'PROVIDER_REQUEST_BUDGET_MODE': 'per_run_only',
             'PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY': 'true',
             'ALL_SOURCES_FREE_MAXIMIZE': 'true',
             'CONTEXT_ENRICHMENT_REQUIRES_OFFERS': 'true',
         },
-        'deleted_provider_env': {
-            'ENABLE_API_FOOTBALL': 'false',
-            'API_FOOTBALL_ENABLED': 'false',
-            'API_FOOTBALL_KEY': '',
-            'API_FOOTBALL_PER_RUN_MAX': '0',
-            'API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN': '0',
-            'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '0',
-            'API_FOOTBALL_REQUEST_BUDGET_REASON': 'removed_from_project',
-        },
+        'deleted_provider_env': removed_provider_env(),
         'providers': {},
     }
 
@@ -234,10 +257,15 @@ def compute(policy: dict[str, Any]) -> tuple[dict[str, str], list[dict[str, Any]
     env: dict[str, str] = {str(k): str(v) for k, v in dict(policy.get('base_env') or {}).items()}
     env['PROVIDER_REQUEST_BUDGET_VERSION'] = str(policy.get('version') or 'unknown')
     env['PROVIDER_REQUEST_BUDGET_APPLIED'] = 'true'
-    env.update({str(k): str(v) for k, v in dict(policy.get('deleted_provider_env') or {}).items()})
+    env.update(removed_provider_env())
+    env.update({str(k): str(v) for k, v in dict(policy.get('deleted_provider_env') or {}).items() if str(k).lower() not in {'oddspapi_api_key'}})
 
     decisions: list[dict[str, Any]] = []
     for provider, raw_cfg in dict(policy.get('providers') or {}).items():
+        provider_key = str(provider).strip().lower()
+        if provider_key in REMOVED_PROVIDERS:
+            decisions.append({'provider': provider, 'status': 'removed', 'grant': 0, 'configured_grant': 0, 'reason': 'removed_from_project', 'secret_env_keys': [], 'api_key_present': None})
+            continue
         cfg = raw_cfg if isinstance(raw_cfg, dict) else {}
         configured_grant = max(0, int(float(cfg.get('grant') or 0)))
         secret_keys = [str(item) for item in (cfg.get('secret_env_keys') or []) if str(item).strip()]
@@ -268,11 +296,11 @@ def compute(policy: dict[str, Any]) -> tuple[dict[str, str], list[dict[str, Any]
     env.update(integrity)
     notes = [
         'config/provider_runtime_policy.json is the effective provider budget source of truth.',
-        'api-football is removed from active runtime and report provider lists.',
-        'SportLogic is context-probe only; odds are quarantined until parser fixtures pass.',
-        'Controlled fallback is market-integrity hardened: totals/dnb only, no spreads/teamtotals, min 2 odds sources.',
+        'bookies_api, api_football and oddspapi are removed from active runtime and provider budget decisions.',
+        'Fast inventory lock prevents provider_request_budget from re-enabling heavy day-inventory provider merge.',
+        'SportLogic remains context/probe only unless its odds payload is explicitly verified.',
+        'Controlled fallback is market-integrity hardened: totals/dnb/btts only, no spreads/teamtotals, min 2 odds sources.',
         'Manual workflow_dispatch runs are dry-run unless FORCE_PUBLISH/AUTORUN_INPUT_FORCE_PUBLISH is true.',
-        'Manual dry-run may analyze near-kickoff matches with lead=0 because Telegram publication is disabled.',
         'Budget mode is per-run-only; daily/monthly counters are not used for critical free sources.',
     ]
     if env_present(['ODDS_API_IO_KEY_2']):
@@ -303,7 +331,7 @@ def main() -> int:
         'msk_now': now.astimezone(MSK).isoformat(),
         'slot_msk': now.astimezone(MSK).strftime('%H:%M MSK'),
         'mode': policy.get('mode') or 'per_run_only',
-        'deleted_providers': policy.get('deleted_providers') or ['api_football'],
+        'deleted_providers': sorted(REMOVED_PROVIDERS),
         'decisions': decisions,
         'env_written_count': len(env),
         'integrity_env': integrity_env,
@@ -319,7 +347,7 @@ def main() -> int:
         'provider_decisions': decisions,
         'market_integrity_check': check,
         'notes': notes,
-        'source': 'scripts/apply_provider_request_budget.py final market-integrity layer',
+        'source': 'scripts/apply_provider_request_budget.py final market-integrity/lifecycle layer',
     }
     write_json(EXPORT_PATH, export)
     write_json(EFFECTIVE_RUNTIME_PATH, effective_runtime)
