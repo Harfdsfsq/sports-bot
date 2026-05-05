@@ -7,6 +7,12 @@ except Exception:
     pass
 
 try:
+    from app.services import sportlogic_query_runtime_guard
+    sportlogic_query_runtime_guard.install()
+except Exception:
+    pass
+
+try:
     from app.services import api_runtime_enhancements
     api_runtime_enhancements.install()
 except Exception:
