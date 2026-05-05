@@ -7,7 +7,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from scripts.provider_smoke_diagnostics import main
+from scripts.provider_smoke_diagnostics_v2 import main
 
 
 if __name__ == "__main__":
