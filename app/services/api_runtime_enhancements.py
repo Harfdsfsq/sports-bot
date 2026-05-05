@@ -4,6 +4,9 @@ import os
 from typing import Any
 
 
+REMOVED_PROVIDERS = ("bookies_api", "api_football", "oddspapi")
+
+
 def _truthy(value: Any) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
 
@@ -24,11 +27,76 @@ def _set_if_lower(name: str, minimum: int) -> None:
         os.environ[name] = str(minimum)
 
 
-def _credentials_present(*names: str) -> bool:
-    return all(str(os.getenv(name) or "").strip() for name in names)
+def disable_removed_providers_env() -> None:
+    disabled = {
+        "BOOKIES_API_ENABLED": "false",
+        "ENABLE_BOOKIES_API": "false",
+        "ODDSPAPI_ENABLED": "false",
+        "ENABLE_ODDSPAPI": "false",
+        "API_FOOTBALL_ENABLED": "false",
+        "ENABLE_API_FOOTBALL": "false",
+        "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "0",
+        "ODDSPAPI_MATCH_LIMIT": "0",
+        "BOOKIES_API_ODDS_FETCH_LIMIT": "0",
+    }
+    for key, value in disabled.items():
+        os.environ[key] = value
+
+
+def patch_runner_removed_providers() -> None:
+    try:
+        from app.services import runner as runner_module
+    except Exception:
+        return
+    cls = getattr(runner_module, "PredictionRunner", None)
+    if cls is None or getattr(cls, "_harizon_removed_provider_patch", False):
+        return
+
+    original_init = getattr(cls, "__init__", None)
+    if callable(original_init):
+        def init_patched(self, *args: Any, **kwargs: Any) -> None:
+            original_init(self, *args, **kwargs)
+            for name in REMOVED_PROVIDERS:
+                try:
+                    setattr(self, name, None)
+                    self._mark_provider_status(name, enabled=False, loaded=False, reason="removed_by_policy")
+                except Exception:
+                    pass
+        cls.__init__ = init_patched
+
+    original_instance_by_key = getattr(cls, "_provider_instance_by_key", None)
+    if callable(original_instance_by_key):
+        def provider_instance_by_key_patched(self, provider_key: str):
+            key = str(provider_key or "").strip().lower()
+            if key in REMOVED_PROVIDERS:
+                return None
+            return original_instance_by_key(self, provider_key)
+        cls._provider_instance_by_key = provider_instance_by_key_patched
+
+    original_has_auth = getattr(cls, "_provider_has_required_auth", None)
+    if callable(original_has_auth):
+        def provider_has_required_auth_patched(self, provider_key: str) -> bool:
+            key = str(provider_key or "").strip().lower()
+            if key in REMOVED_PROVIDERS:
+                return False
+            return bool(original_has_auth(self, provider_key))
+        cls._provider_has_required_auth = provider_has_required_auth_patched
+
+    original_provider_enabled = getattr(cls, "_provider_enabled", None)
+    if callable(original_provider_enabled):
+        def provider_enabled_patched(self, provider_name: str, default: bool = True) -> bool:
+            key = str(provider_name or "").strip().lower()
+            if key in REMOVED_PROVIDERS:
+                return False
+            return bool(original_provider_enabled(self, provider_name, default))
+        cls._provider_enabled = provider_enabled_patched
+
+    cls._harizon_removed_provider_patch = True
 
 
 def install_env_defaults() -> None:
+    disable_removed_providers_env()
+
     # odds-api.io dual-account mode. Free accounts are usually limited to two
     # bookmakers each, so split bookmakers by account instead of asking one key
     # for more books than the plan allows.
@@ -43,16 +111,6 @@ def install_env_defaults() -> None:
         _set_if_lower("ODDS_API_IO_PER_RUN_MAX", 160)
         _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 160)
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 420)
-
-    # BookiesAPI is the best already-coded independent odds source. Enable it
-    # automatically when credentials are present, but keep it backfill-aware.
-    if _credentials_present("BOOKIES_API_LOGIN") and (
-        str(os.getenv("BOOKIES_API_TOKEN") or "").strip() or str(os.getenv("BOOKIES_API_KEY") or "").strip()
-    ):
-        os.environ.setdefault("BOOKIES_API_ENABLED", "true")
-        os.environ.setdefault("ENABLE_BOOKIES_API", "true")
-        os.environ.setdefault("BOOKIES_API_USE_FOR_BACKFILL_ONLY", "true")
-        _set_if_lower("BOOKIES_API_ODDS_FETCH_LIMIT", 36)
 
     # TheSportsDB public key is usable in free mode. This prevents false
     # api_key_missing diagnostics when no private key was configured.
@@ -97,6 +155,7 @@ def install_env_defaults() -> None:
 
 def install() -> None:
     install_env_defaults()
+    patch_runner_removed_providers()
     try:
         from app.services import market_integrity
         market_integrity.install()
