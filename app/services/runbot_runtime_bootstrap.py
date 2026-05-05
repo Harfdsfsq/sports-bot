@@ -37,6 +37,10 @@ def install() -> dict[str, list[str]]:
         lambda: __import__("app.services.api_matching_quality_runtime_guard", fromlist=["install"]).install(),
     )
     _try_install(
+        "odds_api_io_runtime_compat",
+        lambda: __import__("app.services.odds_api_io_runtime_compat", fromlist=["install"]).install(),
+    )
+    _try_install(
         "sportlogic_query_runtime_guard",
         lambda: __import__("app.services.sportlogic_query_runtime_guard", fromlist=["install"]).install(),
     )
