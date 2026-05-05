@@ -22,7 +22,7 @@ JSON_OUT = OUT_DIR / "latest-provider-smoke-fast.json"
 TXT_OUT = OUT_DIR / "latest-provider-smoke-fast.txt"
 
 SECRET_MARKERS = ("key", "token", "secret", "authorization", "password", "apikey", "api_key", "appid")
-USER_AGENT = "HARIZON-sports-bot-provider-smoke/2.0"
+USER_AGENT = "HARIZON-sports-bot-provider-smoke/2.2"
 
 
 @dataclass(frozen=True)
@@ -132,7 +132,7 @@ def _rows(payload: Any) -> list[Any]:
     for key in (
         "results", "data", "items", "events", "matches", "response", "competitions", "articles", "news",
         "leagues", "stations", "fixtures", "games", "countries", "seasons", "standings", "sports",
-        "bookmakers", "markets", "rows", "clubs", "hourly", "daily", "content", "sportsbook",
+        "markets", "rows", "clubs", "hourly", "daily", "content",
     ):
         value = payload.get(key)
         if isinstance(value, list):
@@ -162,7 +162,7 @@ def _endpoint_config_problem(http_status: int | None, body: str) -> bool:
     return any(
         token in low
         for token in (
-            "endpoint", "api doesn't exists", "api doesn't exist", "does not exist", "missing required parameters",
+            "endpoint", "doesn't exist", "does not exist", "missing required parameters",
             "not found", "route", "cannot get", "invalid url", "path",
         )
     )
@@ -177,10 +177,13 @@ def _status(http_status: int | None, rows_count: int, error: str | None, key_pre
         if "ConnectError" in error or "Name or service not known" in error or "nodename nor servname" in error:
             return "ENDPOINT_CONFIG", error[:220]
         return "ERROR", error[:220]
+    body_low = str(body or "").lower()
+    if http_status == 403 and ("robot policy" in body_low or "w.wiki/4wjs" in body_low or "bot-traffic" in body_low):
+        return "BOT_POLICY", "http 403; provider robot policy / User-Agent / request-volume restriction"
     if http_status == 429:
         return "RATE_LIMIT", "http 429"
     if http_status in {401, 403}:
-        if "missing mandatory http headers" in str(body or "").lower():
+        if "missing mandatory http headers" in body_low:
             return "AUTH_HEADERS", "http 403; provider requires a different mandatory auth/header set"
         return "AUTH", f"http {http_status}"
     if http_status is None:
@@ -225,9 +228,7 @@ async def _run_probe(client: httpx.AsyncClient, sem: asyncio.Semaphore, probe: P
     payload: Any = None
     body_preview = ""
     async with sem:
-        if missing_config:
-            pass
-        elif key_present:
+        if not missing_config and key_present:
             try:
                 response = await client.request(configured.method, configured.url, headers=configured.headers, params=configured.params)
                 http_status = response.status_code
@@ -277,25 +278,20 @@ def _rapid_probe(name: str, host_env: str, default_host: str, key_envs: tuple[st
     )
 
 
-def _bookies_probe() -> Probe:
-    base = _env("BOOKIES_API_BASE_URL")
-    if not base:
-        return Probe("bookies_api", "odds", "about:blank", required_secret=False, required_envs=("BOOKIES_API_BASE_URL",), note="Set BOOKIES_API_BASE_URL and key/token before integration")
-    path = _env("BOOKIES_API_SMOKE_PATH", "/v1/sports")
-    if not path.startswith("/"):
-        path = "/" + path
-    headers: dict[str, str] = {}
-    params: dict[str, Any] = {}
-    if _env("BOOKIES_API_TOKEN"):
-        headers["Authorization"] = "Bearer ${KEY}"
-        key_envs = ("BOOKIES_API_TOKEN", "BOOKIES_API_KEY")
-    else:
-        params["apiKey"] = "${KEY}"
-        key_envs = ("BOOKIES_API_KEY", "BOOKIES_API_TOKEN")
-    return Probe("bookies_api", "odds", base.rstrip("/") + path, key_envs=key_envs, headers=headers, params=params)
-
-
 def _highlightly_probe() -> Probe:
+    use_rapid = _truthy(_env("HIGHLIGHTLY_USE_RAPIDAPI"))
+    if use_rapid:
+        host = _env("HIGHLIGHTLY_RAPIDAPI_HOST", "football-highlights-api.p.rapidapi.com")
+        url = f"https://{host}{_env('HIGHLIGHTLY_SMOKE_PATH', '/leagues')}"
+        return Probe(
+            "highlightly",
+            "context",
+            url,
+            key_envs=("HIGHLIGHTLY_API_KEY", "HIGHLIGHTLY_KEY", "RAPIDAPI_KEY"),
+            headers={"x-rapidapi-key": "${KEY}", "x-rapidapi-host": host},
+            params={"limit": 5, "offset": 0},
+            note="RapidAPI mode",
+        )
     base = _env("HIGHLIGHTLY_BASE_URL", "https://soccer.highlightly.net").rstrip("/")
     path = _env("HIGHLIGHTLY_SMOKE_PATH", "/leagues")
     if not path.startswith("/"):
@@ -304,17 +300,10 @@ def _highlightly_probe() -> Probe:
         "highlightly",
         "context",
         base + path,
-        key_envs=("HIGHLIGHTLY_API_KEY", "HIGHLIGHTLY_KEY"),
-        headers={
-            # Highlightly currently returns "Missing mandatory HTTP Headers" with x-api-key only on some accounts.
-            # Send the common auth header variants during smoke so we can discover which one the account accepts.
-            "x-api-key": "${KEY}",
-            "api-key": "${KEY}",
-            "x-highlightly-key": "${KEY}",
-            "x-highlightly-api-key": "${KEY}",
-            "Authorization": "Bearer ${KEY}",
-        },
-        note="Default base https://soccer.highlightly.net; smoke sends several common auth header variants",
+        key_envs=("HIGHLIGHTLY_API_KEY", "HIGHLIGHTLY_KEY", "RAPIDAPI_KEY"),
+        headers={"x-rapidapi-key": "${KEY}"},
+        params={"limit": 5, "offset": 0},
+        note="Direct Highlightly mode",
     )
 
 
@@ -337,14 +326,11 @@ def build_probes() -> list[Probe]:
     probes: list[Probe] = [
         Probe("odds_api_io_account1", "odds", "https://api.odds-api.io/v3/events", key_envs=("ODDS_API_IO_KEY",), params={"apiKey": "${KEY}", "sport": "football", "status": "pending,live", "limit": 3}),
         Probe("odds_api_io_account2", "odds", "https://api.odds-api.io/v3/events", key_envs=("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2"), params={"apiKey": "${KEY}", "sport": "football", "status": "pending,live", "limit": 3}),
-        _bookies_probe(),
-        _rapid_probe("oddspapi_rapidapi", "ODDSPAPI_RAPIDAPI_HOST", "oddspapi.p.rapidapi.com", ("ODDSPAPI_API_KEY", "ODDS_PAPI_API_KEY", "RAPIDAPI_KEY"), path="/sports", path_env="ODDSPAPI_RAPIDAPI_PATH", group="odds"),
         _rapid_probe("oddsfeed_rapidapi", "ODDS_FEED_RAPIDAPI_HOST", "odds-feed.p.rapidapi.com", ("ODDS_FEED_RAPIDAPI_KEY", "RAPIDAPI_KEY"), path="/sports", path_env="ODDS_FEED_RAPIDAPI_PATH", group="odds"),
-        _rapid_probe("sportsbook_rapidapi", "SPORTSBOOK_RAPIDAPI_HOST", "sportsbook-api2.p.rapidapi.com", ("SPORTSBOOK_RAPIDAPI_KEY", "BOOKIES_API_KEY", "RAPIDAPI_KEY"), path="/sports", path_env="SPORTSBOOK_RAPIDAPI_PATH", group="odds"),
+        _rapid_probe("sportsbook_rapidapi", "SPORTSBOOK_RAPIDAPI_HOST", "sportsbook-api2.p.rapidapi.com", ("SPORTSBOOK_RAPIDAPI_KEY", "RAPIDAPI_KEY"), path="/sports", path_env="SPORTSBOOK_RAPIDAPI_PATH", group="odds"),
         Probe("bzzoiro_events", "context", "https://sports.bzzoiro.com/api/events/", key_envs=("BZZOIRO_API_KEY",), headers={"Authorization": "Token ${KEY}"}, params={"date_from": today, "date_to": tomorrow, "tz": "UTC", "page": 1}),
         Probe("bzzoiro_predictions", "context", "https://sports.bzzoiro.com/api/predictions/", key_envs=("BZZOIRO_API_KEY",), headers={"Authorization": "Token ${KEY}"}, params={"upcoming": "true", "date_from": today, "date_to": tomorrow, "tz": "UTC", "page": 1}),
         Probe("sstats", "context", "https://api.sstats.net/Games/list", key_envs=("SSTATS_API_KEY",), params={"apikey": "${KEY}", "from": today, "to": tomorrow, "limit": 5, "offset": 0}),
-        Probe("api_football", "context", "https://v3.football.api-sports.io/status", key_envs=("API_FOOTBALL_KEY", "API_FOOTBALL_API_KEY", "API_SPORTS_KEY", "API_SPORTS_API_KEY", "APISPORTS_API_KEY"), headers={"x-apisports-key": "${KEY}"}),
         Probe("allsportsapi", "context", "https://apiv2.allsportsapi.com/football/", key_envs=("ALLSPORTSAPI_API_KEY",), params={"met": "Leagues", "APIkey": "${KEY}"}),
         Probe("football_data", "context", "https://api.football-data.org/v4/competitions", key_envs=("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY"), headers={"X-Auth-Token": "${KEY}"}),
         Probe("thesportsdb", "context", "https://www.thesportsdb.com/api/v1/json/${KEY}/search_all_leagues.php", key_envs=("THESPORTSDB_API_KEY",), params={"s": "Soccer"}),
@@ -374,7 +360,7 @@ def build_probes() -> list[Probe]:
 
 def _select(probes: list[Probe], raw: str) -> list[Probe]:
     groups = {"all", "core", "odds", "context", "weather", "news", "mapping", "csv", "rapidapi"}
-    core = {"odds_api_io_account1", "odds_api_io_account2", "bzzoiro_events", "bzzoiro_predictions", "sstats", "football_data", "thesportsdb", "weatherapi", "openweathermap", "api_football", "allsportsapi", "sportlogic_games_dated", "sportlogic_games_broad"}
+    core = {"odds_api_io_account1", "odds_api_io_account2", "bzzoiro_events", "bzzoiro_predictions", "sstats", "football_data", "thesportsdb", "weatherapi", "openweathermap", "allsportsapi", "sportlogic_games_broad"}
     wanted: set[str] = set()
     tokens = [part.strip().lower() for part in str(raw or "all").split(",") if part.strip()]
     for token in tokens or ["all"]:
@@ -398,7 +384,7 @@ def _summary(results: list[dict[str, Any]]) -> dict[str, Any]:
         counts[status] = counts.get(status, 0) + 1
         group_counts = by_group.setdefault(group, {})
         group_counts[status] = group_counts.get(status, 0) + 1
-    warning_statuses = {"EMPTY", "RATE_LIMIT", "ENDPOINT_CONFIG", "TIMEOUT", "AUTH_HEADERS"}
+    warning_statuses = {"EMPTY", "RATE_LIMIT", "ENDPOINT_CONFIG", "TIMEOUT", "AUTH_HEADERS", "BOT_POLICY"}
     error_statuses = {"ERROR", "AUTH", "HTTP_ERROR"}
     return {
         "total": len(results),
