@@ -1,0 +1,118 @@
+name: provider-smoke-fast
+
+on:
+  workflow_dispatch:
+    inputs:
+      providers:
+        description: "core/all/odds/context/weather/news/rapidapi or comma-separated provider names"
+        required: true
+        default: "core"
+      max_seconds:
+        description: "Hard script limit in seconds"
+        required: true
+        default: "105"
+      send_samples:
+        description: "Show small OK samples in txt report"
+        type: boolean
+        required: false
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: provider-smoke-fast
+  cancel-in-progress: true
+
+jobs:
+  smoke-fast:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      TZ: Europe/Moscow
+      APP_TIMEZONE: Europe/Moscow
+      APP_ENV: provider-smoke-fast
+      PUBLISH_DRY_RUN: "true"
+      PREDICTION_PUBLICATION_ENABLED: "false"
+      RUN_REPORT_ENABLED: "false"
+      DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
+      DAILY_REPORT_ENABLED: "false"
+      SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
+      PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'core' }}
+      PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '105' }}
+      PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'false' }}
+      PROVIDER_SMOKE_FAST_TIMEOUT: "7"
+      PROVIDER_SMOKE_FAST_CONCURRENCY: "6"
+
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      API_SPORTS_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
+      WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+      CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
+      CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
+      GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+      NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}
+      GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
+      METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+      METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
+      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+      ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
+      ODDS_FEED_RAPIDAPI_HOST: odds-feed.p.rapidapi.com
+      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
+      SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+      FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install minimal dependencies
+        shell: bash
+        run: pip install httpx==0.28.1
+
+      - name: Run fast provider smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .data/exports artifacts/provider-smoke-fast
+          python -u scripts/provider_smoke_fast.py \
+            --providers "${PROVIDER_SMOKE_FAST_PROVIDERS}" \
+            --max-seconds "${PROVIDER_SMOKE_FAST_MAX_SECONDS}" \
+            --timeout "${PROVIDER_SMOKE_FAST_TIMEOUT}" \
+            --concurrency "${PROVIDER_SMOKE_FAST_CONCURRENCY}"
+          echo "----- provider smoke fast txt -----"
+          cat .data/exports/latest-provider-smoke-fast.txt || true
+
+      - name: Upload provider smoke fast artifact
+        uses: actions/upload-artifact@v5
+        with:
+          name: provider-smoke-fast-${{ github.run_id }}
+          path: |
+            artifacts/provider-smoke-fast/**
+            .data/exports/latest-provider-smoke-fast.json
+            .data/exports/latest-provider-smoke-fast.txt
+          if-no-files-found: error
+          retention-days: 7
