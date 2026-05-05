@@ -1,6 +1,12 @@
 from sitecustomize import *
 
 try:
+    from app.services import api_runtime_enhancements
+    api_runtime_enhancements.install()
+except Exception:
+    pass
+
+try:
     from app.services import day_inventory_runtime_guard
     day_inventory_runtime_guard.install()
 except Exception:
