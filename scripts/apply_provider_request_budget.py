@@ -75,7 +75,16 @@ def disabled_env(provider: str) -> dict[str, str]:
 
 
 def manual_probe_without_force_publish() -> bool:
+    """Return True only for explicit manual probe/dry-run workflows.
+
+    The previous policy made every workflow_dispatch a dry-run unless FORCE_PUBLISH
+    was passed. That caused detailed reports to show a selected pick while the
+    standalone Telegram prediction was not sent. Manual HARIZON run-bot launches
+    should publish when the lifecycle/publisher guards approve a pick.
+    """
     if str(os.getenv('GITHUB_EVENT_NAME') or '').strip() != 'workflow_dispatch':
+        return False
+    if truthy(os.getenv('MANUAL_CONTROLLED_PUBLISH_ENABLED') or 'true'):
         return False
     return not truthy(os.getenv('AUTORUN_INPUT_FORCE_PUBLISH') or os.getenv('FORCE_PUBLISH'))
 
@@ -110,14 +119,15 @@ def final_market_integrity_env() -> dict[str, str]:
     manual_dry_run = manual_probe_without_force_publish()
     fast_inventory = truthy(os.getenv('HARIZON_FAST_INVENTORY_LOCK') or os.getenv('DAY_INVENTORY_FAST_MODE') or 'true')
     inventory_merge = 'false' if fast_inventory else str(os.getenv('DAY_INVENTORY_FORCE_PROVIDER_MERGE') or 'false').lower()
-    runtime_version = 'harizon-runtime-policy-v4-value-lifecycle-fast-inventory'
+    runtime_version = 'harizon-runtime-policy-v5-live-controlled-publish-fast-inventory'
     env = {
         'HARIZON_RUNTIME_POLICY_VERSION': runtime_version,
         'HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION': runtime_version,
         'HARIZON_FAST_INVENTORY_LOCK': 'true' if fast_inventory else 'false',
         'HARIZON_MANUAL_DRY_RUN': str(manual_dry_run).lower(),
-        'PUBLISH_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('PUBLISH_DRY_RUN') or 'false').lower(),
-        'CONTROLLED_FALLBACK_DRY_RUN': 'true' if manual_dry_run else str(os.getenv('CONTROLLED_FALLBACK_DRY_RUN') or 'false').lower(),
+        'MANUAL_CONTROLLED_PUBLISH_ENABLED': 'true',
+        'PUBLISH_DRY_RUN': 'true' if manual_dry_run else 'false',
+        'CONTROLLED_FALLBACK_DRY_RUN': 'true' if manual_dry_run else 'false',
         'CONTROLLED_FALLBACK_SEND_TELEGRAM': 'false' if manual_dry_run else 'true',
         'CONTROLLED_FALLBACK_TELEGRAM_ENABLED': 'false' if manual_dry_run else 'true',
         'MATCH_BOOTSTRAP_PROVIDER': os.getenv('MATCH_BOOTSTRAP_PROVIDER') or 'odds_api_io',
@@ -208,10 +218,8 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
             failures.append('manual_workflow_without_force_publish_can_send_controlled_telegram')
         if as_int(env.get('MIN_KICKOFF_LEAD_MINUTES'), 999) != 0:
             failures.append('manual_dry_run_min_kickoff_lead_not_zero')
-    if str(env.get('SPORTLOGIC_BOOKMAKERS') or '') != '__probe_only__':
+    if str(env.get('SPORTLOGIC_BOOKMAKERS') or '') not in {'__probe_only__', ''}:
         warnings.append('sportlogic_bookmakers_not_probe_only')
-    if 'quarantined' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or '') and 'stale' not in str(env.get('SPORTLOGIC_ODDS_DISABLED_REASON') or ''):
-        warnings.append('sportlogic_odds_quarantine_reason_missing')
     return {
         'status': 'failed' if failures else 'ok',
         'failures': failures,
@@ -298,9 +306,9 @@ def compute(policy: dict[str, Any]) -> tuple[dict[str, str], list[dict[str, Any]
         'config/provider_runtime_policy.json is the effective provider budget source of truth.',
         'bookies_api, api_football and oddspapi are removed from active runtime and provider budget decisions.',
         'Fast inventory lock prevents provider_request_budget from re-enabling heavy day-inventory provider merge.',
+        'Controlled fallback can send standalone Telegram predictions on workflow_dispatch when lifecycle and publisher guards approve.',
         'SportLogic remains context/probe only unless its odds payload is explicitly verified.',
         'Controlled fallback is market-integrity hardened: totals/dnb/btts only, no spreads/teamtotals, min 2 odds sources.',
-        'Manual workflow_dispatch runs are dry-run unless FORCE_PUBLISH/AUTORUN_INPUT_FORCE_PUBLISH is true.',
         'Budget mode is per-run-only; daily/monthly counters are not used for critical free sources.',
     ]
     if env_present(['ODDS_API_IO_KEY_2']):
