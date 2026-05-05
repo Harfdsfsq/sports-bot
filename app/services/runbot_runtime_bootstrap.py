@@ -1,15 +1,6 @@
 from __future__ import annotations
 
-"""Lightweight bootstrap for the normal GitHub Actions bot run.
-
-Do not import usercustomize here.  usercustomize contains many historical patch
-modules and can make a normal run too heavy.  This bootstrap loads only the
-runtime pieces needed for the current provider integration and price-safety
-work.
-"""
-
 from typing import Callable
-
 
 INSTALLED: list[str] = []
 FAILED: list[str] = []
@@ -24,6 +15,10 @@ def _try_install(name: str, installer: Callable[[], object]) -> None:
 
 
 def install() -> dict[str, list[str]]:
+    _try_install(
+        "bookmaker_universe_runtime_guard",
+        lambda: __import__("app.services.bookmaker_universe_runtime_guard", fromlist=["install"]).install(),
+    )
     _try_install(
         "runtime_provider_budget_guard",
         lambda: __import__("app.services.runtime_provider_budget_guard", fromlist=["install"]).install(),
