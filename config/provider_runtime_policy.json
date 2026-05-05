@@ -1,6 +1,6 @@
 {
-  "version": "v22-near-window-context-priority",
-  "description": "Provider request grants with near-window context priority. Removed providers stay disabled. Odds coverage remains broad, while context providers are forced to spend their first targets on matches starting soon.",
+  "version": "v23-full-api-visibility-near-window",
+  "description": "Provider request grants with near-window context priority plus visibility for optional APIs. Removed providers stay disabled. Weather and optional APIs are reported through runtime and health probes.",
   "mode": "per_run_only",
   "deleted_providers": ["api_football", "bookies_api", "oddspapi"],
   "base_env": {
@@ -16,7 +16,11 @@
     "NEAR_WINDOW_CONTEXT_HOURS": "12",
     "NEAR_WINDOW_CONTEXT_MIN_MATCHES": "48",
     "NEAR_WINDOW_PROVIDER_CONTEXT_MIN_MATCHES": "36",
-    "NEAR_WINDOW_PRIORITY_MIN_LEAD_MINUTES": "25"
+    "NEAR_WINDOW_PRIORITY_MIN_LEAD_MINUTES": "25",
+    "API_HEALTH_DURING_RUN_ENABLED": "true",
+    "API_HEALTH_MODE": "quick",
+    "API_HEALTH_GUARD_TIMEOUT_SECONDS": "55",
+    "FIXTURE_EXPANSION_ENABLED": "true"
   },
   "deleted_provider_env": {
     "ENABLE_API_FOOTBALL": "false",
@@ -59,6 +63,19 @@
         "ODDS_API_IO_PAGE_LIMIT": "100",
         "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36",
         "MAX_MATCHES_FOR_ODDS_FETCH": "520"
+      }
+    },
+    "allsportsapi": {
+      "status": "fixture_and_secondary_odds_probe",
+      "grant": 20,
+      "secret_env_keys": ["ALLSPORTSAPI_API_KEY"],
+      "env": {
+        "ENABLE_ALLSPORTSAPI": "true",
+        "ALLSPORTSAPI_ENABLED": "true",
+        "ALLSPORTSAPI_PER_RUN_MAX": "20",
+        "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "20",
+        "ALLSPORTSAPI_MATCH_LIMIT": "16",
+        "ALLSPORTSAPI_REQUESTS_MAX_PER_RUN": "20"
       }
     },
     "bzzoiro": {
@@ -154,6 +171,16 @@
         "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED": "true"
       }
     },
+    "highlightly": {
+      "status": "health_probe_only_until_endpoint_verified",
+      "grant": 0,
+      "secret_env_keys": ["HIGHLIGHTLY_API_KEY"],
+      "reason": "health_probe_only:not_integrated_into_prediction_runtime",
+      "env": {
+        "HIGHLIGHTLY_PER_RUN_MAX": "0",
+        "HIGHLIGHTLY_CONTEXT_MATCH_LIMIT": "0"
+      }
+    },
     "sportlogic": {
       "status": "context_probe_odds_quarantined",
       "grant": 20,
@@ -202,6 +229,39 @@
         "GNEWS_MAX_HTTP_REQUESTS_PER_RUN": "0",
         "GNEWS_CONTEXT_MATCH_LIMIT": "0",
         "GNEWS_MATCH_LIMIT": "0"
+      }
+    },
+    "newsdata": {
+      "status": "health_probe_only_news_rotation",
+      "grant": 0,
+      "secret_env_keys": ["NEWSDATA_API_KEY"],
+      "reason": "health_probe_only:news_context_not_every_run",
+      "env": {
+        "NEWSDATA_PER_RUN_MAX": "0",
+        "NEWSDATA_MAX_HTTP_REQUESTS_PER_RUN": "0"
+      }
+    },
+    "guardian": {
+      "status": "health_probe_only_news_rotation",
+      "grant": 0,
+      "secret_env_keys": ["GUARDIAN_API_KEY"],
+      "reason": "health_probe_only:news_context_not_every_run",
+      "env": {
+        "GUARDIAN_PER_RUN_MAX": "0",
+        "GUARDIAN_MAX_HTTP_REQUESTS_PER_RUN": "0"
+      }
+    },
+    "sharpapi": {
+      "status": "text_enrichment_probe_only",
+      "grant": 0,
+      "secret_env_keys": ["SHARPAPI_API_KEY"],
+      "reason": "health_probe_only:text_enrichment_not_core_prediction",
+      "env": {
+        "ENABLE_SHARPAPI": "false",
+        "SHARPAPI_ENABLED": "false",
+        "SHARPAPI_PER_RUN_MAX": "0",
+        "SHARPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+        "SHARPAPI_TEXT_ENRICHMENT_ENABLED": "true"
       }
     },
     "meteostat": {
