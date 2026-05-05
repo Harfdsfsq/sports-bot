@@ -1,6 +1,18 @@
 from sitecustomize import *
 
 try:
+    from app.services import runtime_provider_budget_guard
+    runtime_provider_budget_guard.install()
+except Exception:
+    pass
+
+try:
+    from app.services import free_context_runtime_enrichment
+    free_context_runtime_enrichment.install()
+except Exception:
+    pass
+
+try:
     from app.services import api_matching_quality_runtime_guard
     api_matching_quality_runtime_guard.install()
 except Exception:
