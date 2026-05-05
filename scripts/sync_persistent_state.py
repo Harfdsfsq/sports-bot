@@ -14,6 +14,7 @@ ROOT = Path(".").resolve()
 STATE_FILES = [
     ".data/state.json",
     ".data/fallback-sent-index.json",
+    ".data/candidate-lifecycle-state.json",
     ".data/provider_quota_governor_state.json",
     ".data/provider_quota_state.json",
     ".data/daily-ops-report-sent.json",
@@ -30,6 +31,8 @@ STATE_FILES = [
     ".data/exports/latest-day-inventory-policy.json",
     ".data/exports/latest-day-inventory-coverage-merge.json",
     ".data/exports/latest-near-miss-enrichment-queue.json",
+    ".data/exports/latest-candidate-lifecycle-report.json",
+    ".data/exports/latest-candidate-lifecycle-report.md",
     ".data/exports/latest-bankroll-control-audit.json",
     ".data/exports/latest-bankroll-report-block.json",
     ".data/exports/latest-bankroll-report-block.txt",
@@ -47,22 +50,10 @@ STATE_GLOBS = [
 
 def run(cmd: list[str], *, check: bool = False) -> subprocess.CompletedProcess[str]:
     print("+", " ".join(cmd), flush=True)
-    return subprocess.run(
-        cmd,
-        cwd=ROOT,
-        text=True,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        check=check,
-    )
+    return subprocess.run(cmd, cwd=ROOT, text=True, stdout=sys.stdout, stderr=sys.stderr, check=check)
 
 
 def run_bankroll_report_block() -> None:
-    """Emit the compact bankroll/risk block after run artifacts exist.
-
-    This is intentionally best-effort: financial reporting must not break the run,
-    but when it succeeds the generated JSON/TXT and sent-state are persisted below.
-    """
     if str(os.getenv("AUTORUN_SKIP_MAIN") or "").strip().lower() == "true":
         print("Skipping bankroll report block because AUTORUN_SKIP_MAIN=true.")
         return
@@ -70,27 +61,13 @@ def run_bankroll_report_block() -> None:
     if not script.exists():
         print("Bankroll report block script is missing; skipping.")
         return
-    proc = subprocess.run(
-        [sys.executable, str(script)],
-        cwd=ROOT,
-        text=True,
-        stdout=sys.stdout,
-        stderr=sys.stderr,
-        check=False,
-    )
+    proc = subprocess.run([sys.executable, str(script)], cwd=ROOT, text=True, stdout=sys.stdout, stderr=sys.stderr, check=False)
     print(f"Bankroll report block finished with returncode={proc.returncode}")
 
 
 def is_git_repo() -> bool:
     try:
-        result = subprocess.run(
-            ["git", "rev-parse", "--is-inside-work-tree"],
-            cwd=ROOT,
-            text=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            check=False,
-        )
+        result = subprocess.run(["git", "rev-parse", "--is-inside-work-tree"], cwd=ROOT, text=True, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, check=False)
         return result.stdout.strip() == "true"
     except Exception:
         return False
@@ -195,32 +172,25 @@ def main() -> int:
     if not is_git_repo():
         print("Not a git repository; skipping persistent state sync.")
         return 0
-
     configure_git()
     run_bankroll_report_block()
-
     with tempfile.TemporaryDirectory(prefix="bot-state-sync-") as raw_tmp:
         tmp = Path(raw_tmp)
         copied = copy_existing_state(tmp)
         if not copied:
             print("No state files copied; skipping.")
             return 0
-
         print(json.dumps({"persistent_state_files": copied}, ensure_ascii=False, indent=2))
-
         message = os.getenv("PERSISTENT_STATE_COMMIT_MESSAGE") or "Update persistent bot state"
-
         ok = sync_once(tmp, copied, message, reset_first=True)
         if ok:
             print("Persistent state sync completed or nothing changed.")
             return 0
-
         print("First push failed. Retrying once from latest origin/main...")
         ok = sync_once(tmp, copied, message, reset_first=True)
         if ok:
             print("Persistent state sync completed on retry.")
             return 0
-
         print("WARNING: persistent state push failed after retry; leaving workflow successful.")
         return 0
 
