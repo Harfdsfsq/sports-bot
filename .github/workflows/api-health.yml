@@ -1,0 +1,97 @@
+name: API Health Run
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "quick = endpoint/auth check, deep = also tiny odds samples"
+        required: false
+        default: "quick"
+        type: choice
+        options:
+          - quick
+          - deep
+      fail_on_critical:
+        description: "Fail workflow when a critical provider is not usable"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: api-health-run
+  cancel-in-progress: true
+
+jobs:
+  api-health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      TZ: ${{ secrets.TZ || 'Europe/Moscow' }}
+      API_HEALTH_MODE: ${{ inputs.mode }}
+      API_HEALTH_FAIL_ON_CRITICAL: ${{ inputs.fail_on_critical }}
+      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
+      BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
+      BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
+      BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
+      BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
+      FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+      GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+      GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
+      HIGHLIGHTLY_API_KEY: ${{ secrets.HIGHLIGHTLY_API_KEY }}
+      METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+      NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
+      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+      OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+      SHARPAPI_API_KEY: ${{ secrets.SHARPAPI_API_KEY }}
+      SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+      WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install runtime dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install httpx pydantic pydantic-settings; fi
+
+      - name: Run API health check
+        run: |
+          python scripts/api_health_run.py --mode "${API_HEALTH_MODE:-quick}" $([ "${API_HEALTH_FAIL_ON_CRITICAL}" = "true" ] && echo "--fail-on-critical" || true)
+
+      - name: Upload API health report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: api-health-run
+          path: |
+            .data/exports/latest-api-health-run.json
+            .data/exports/latest-api-health-run.md
+          if-no-files-found: warn
+
+      - name: Add summary
+        if: always()
+        run: |
+          if [ -f .data/exports/latest-api-health-run.md ]; then
+            cat .data/exports/latest-api-health-run.md >> "$GITHUB_STEP_SUMMARY"
+          fi
