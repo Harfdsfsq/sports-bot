@@ -99,7 +99,6 @@ jobs:
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
       FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
@@ -131,6 +130,13 @@ jobs:
       API_FOOTBALL_PER_RUN_MAX: "0"
       API_FOOTBALL_CONTEXT_MATCH_LIMIT: "0"
       API_FOOTBALL_PREDICTIONS_LIMIT: "0"
+      ENABLE_BOOKIES_API: "false"
+      BOOKIES_API_ENABLED: "false"
+      BOOKIES_API_ODDS_FETCH_LIMIT: "0"
+      ENABLE_ODDSPAPI: "false"
+      ODDSPAPI_ENABLED: "false"
+      ODDSPAPI_MATCH_LIMIT: "0"
+      ODDSPAPI_PER_RUN_MAX: "0"
       ENABLE_SPORTLOGIC: "true"
       SPORTLOGIC_ENABLED: "true"
       SPORTLOGIC_PER_RUN_MAX: "2"
@@ -200,6 +206,17 @@ jobs:
       CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS: "true"
       CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES: "2"
       CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS: "3"
+      CANDIDATE_LIFECYCLE_ENABLED: "true"
+      CANDIDATE_RECHECK_MIN_CONFIRMATIONS: "2"
+      CANDIDATE_RECHECK_MIN_SEEN_COUNT: "2"
+      CANDIDATE_RECHECK_FINAL_WINDOW_MINUTES: "90"
+      CANDIDATE_RECHECK_WATCH_WINDOW_MINUTES: "720"
+      CANDIDATE_RECHECK_MIN_EV_PCT: "5.0"
+      CANDIDATE_RECHECK_MIN_EDGE_PP: "2.2"
+      CANDIDATE_RECHECK_MIN_CONFIDENCE: "62.0"
+      CANDIDATE_RECHECK_MIN_BOOKS: "2"
+      CANDIDATE_RECHECK_MIN_SOURCES: "1"
+      CANDIDATE_RECHECK_MAX_ODDS_MOVE_PCT: "12.0"
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: odds_api_io
       DAY_INVENTORY_FULL_BOOTSTRAP_HOURS_LOCAL: "0"
       DAY_INVENTORY_REFRESH_INTERVAL_HOURS: "6"
@@ -246,7 +263,7 @@ jobs:
           rm -f .data/exports/latest-day-inventory-coverage-audit.json .data/exports/latest-coverage-audit.json
           rm -f .data/exports/latest-history-guard-audit.json .data/exports/latest-history-guard-audit.err
           rm -f .data/exports/latest-training-dataset.json .data/exports/latest-reporting-sqlite.json
-          rm -f .data/exports/latest-controlled-fallback-report.json
+          rm -f .data/exports/latest-controlled-fallback-report.json .data/exports/latest-candidate-lifecycle-report.json .data/exports/latest-candidate-lifecycle-report.md
           rm -rf artifacts/run-bot/*
       - name: Autorun slot gate preflight
         shell: bash
@@ -284,7 +301,7 @@ jobs:
       - name: Apply autorun coverage policy
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
-        run: python scripts/apply_autorun_policy.py
+        run: python scripts/autorun_gate.py
       - name: Apply volume governor policy
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
@@ -312,7 +329,7 @@ jobs:
         env:
           PYTHONPATH: ${{ github.workspace }}
         run: |
-          python scripts/build_day_inventory.py || true
+          timeout ${DAY_INVENTORY_BUILD_TIMEOUT_SECONDS:-180}s python scripts/build_day_inventory.py || true
           cat .data/exports/latest-day-inventory-summary.json || true
       - name: Show existing day inventory summary
         if: env.AUTORUN_SKIP_MAIN != 'true' && env.DAY_INVENTORY_SKIP_BUILD == 'true'
@@ -333,6 +350,12 @@ jobs:
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
         run: python -m app.cli run-once
+      - name: Candidate lifecycle recheck gate
+        if: env.AUTORUN_SKIP_MAIN != 'true'
+        shell: bash
+        run: |
+          python scripts/candidate_lifecycle_gate.py || true
+          cat .data/exports/latest-candidate-lifecycle-report.md || true
       - name: Refresh publication guard state
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
@@ -340,11 +363,18 @@ jobs:
           python scripts/refresh_publication_guard_state.py || true
           cat .data/exports/latest-publication-guard-state-refresh.json || true
       - name: Publish controlled pick
-        if: env.AUTORUN_SKIP_MAIN != 'true'
+        if: env.AUTORUN_SKIP_MAIN != 'true' && env.CANDIDATE_LIFECYCLE_ALLOW_PUBLISH == 'true'
         shell: bash
         run: |
+          echo "Candidate lifecycle allowed publish: ${CANDIDATE_LIFECYCLE_SELECTED_MATCH_KEY}"
           python scripts/publish_controlled_fallback.py || true
           cat artifacts/controlled-fallback-report.json || true
+      - name: Skip controlled pick by lifecycle
+        if: env.AUTORUN_SKIP_MAIN != 'true' && env.CANDIDATE_LIFECYCLE_ALLOW_PUBLISH != 'true'
+        shell: bash
+        run: |
+          echo "Controlled publication skipped by candidate lifecycle gate: ${CANDIDATE_LIFECYCLE_REASON:-unknown}"
+          cat .data/exports/latest-candidate-lifecycle-report.json || true
       - name: Build near-miss enrichment queue
         if: env.AUTORUN_SKIP_MAIN != 'true'
         shell: bash
@@ -402,6 +432,7 @@ jobs:
             artifacts/run-bot/**
             .data/exports/**
             .data/day_inventory/**
+            .data/candidate-lifecycle-state.json
             .logs/debug-last-run.json
             .data/exports/latest-run-summary.json
           if-no-files-found: ignore
