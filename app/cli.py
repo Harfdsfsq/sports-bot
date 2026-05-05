@@ -22,31 +22,43 @@ logging.basicConfig(
 
 
 def _parse_bool(value: str) -> bool:
-    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on'}
+    return str(value or '').strip().lower() in {'1', 'true', 'yes', 'on', 'force'}
 
 
 def _parse_int(value: str) -> int:
     return int(float(str(value).strip()))
 
 
-def _apply_api_max_runtime_overrides() -> None:
-    values = {
-        'ENABLE_API_FOOTBALL': 'true',
-        'API_FOOTBALL_ENABLED': 'true',
-        'API_FOOTBALL_PER_RUN_MAX': '6',
-        'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '6',
-        'API_FOOTBALL_PREDICTIONS_LIMIT': '3',
-        'STRICT_PRICE_INTEGRITY_ENABLED': 'true',
-        'STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES': '2',
-        'STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS': '2',
-        'PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION': 'true',
-        'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
-        'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '2',
-        'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.65',
-        'MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS': '3',
-    }
+def _setdefault_env(values: dict[str, str]) -> None:
     for key, value in values.items():
-        os.environ[key] = value
+        os.environ.setdefault(key, value)
+
+
+def _apply_api_max_runtime_overrides() -> None:
+    """Install safe runtime defaults without clobbering workflow/governor policy.
+
+    Older versions overwrote env on every CLI start and re-enabled strict
+    Telegram/source-diversity guards. That made GitHub workflow values and the
+    quota governor ineffective. This function now sets only compatibility
+    defaults when the caller did not already provide a value.
+    """
+    _setdefault_env(
+        {
+            'STRICT_PRICE_INTEGRITY_ENABLED': 'true',
+            'STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES': '2',
+            'STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS': '2',
+            'PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION': 'false',
+            'PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE': 'true',
+            'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
+            'CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY': 'false',
+            'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '1',
+            'TELEGRAM_MIN_ODDS_SOURCES': '1',
+            'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.65',
+            'MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS': '3',
+            'ENABLE_QUARTER_TOTAL_LINES': 'true',
+            'QUARTER_TOTAL_MIN_BOOKS': '2',
+        }
+    )
     try:
         from app.services import market_integrity
         market_integrity.install()
@@ -69,6 +81,7 @@ def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
 
 def _apply_runtime_env_overrides(settings: Any) -> Any:
     overrides: list[tuple[str, str, Any]] = [
+        ('publish_dry_run', 'PUBLISH_DRY_RUN', _parse_bool),
         ('prediction_publication_enabled', 'PREDICTION_PUBLICATION_ENABLED', _parse_bool),
         ('run_report_enabled', 'RUN_REPORT_ENABLED', _parse_bool),
         ('daily_report_enabled', 'DAILY_REPORT_ENABLED', _parse_bool),
@@ -77,6 +90,9 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
         ('daily_report_target_offset_days', 'DAILY_REPORT_TARGET_OFFSET_DAYS', _parse_int),
         ('daily_report_min_bets', 'DAILY_REPORT_MIN_BETS', _parse_int),
         ('daily_report_resend_on_change', 'DAILY_REPORT_RESEND_ON_CHANGE', _parse_bool),
+        ('publish_window_hours', 'PUBLISH_WINDOW_HOURS', _parse_int),
+        ('min_kickoff_lead_minutes', 'MIN_KICKOFF_LEAD_MINUTES', _parse_int),
+        ('max_picks_per_run', 'MAX_PICKS_PER_RUN', _parse_int),
     ]
     for attr_name, env_name, parser in overrides:
         raw = os.getenv(env_name)
