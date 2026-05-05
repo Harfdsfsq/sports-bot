@@ -20,15 +20,17 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 50
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      PYTHONUNBUFFERED: "1"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
       RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       FREE_CONTEXT_RUNTIME_ENABLED: "true"
+      FREE_CONTEXT_RUNTIME_TIMEOUT_SECONDS: "6"
       PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
       RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED: "true"
       ODDS_API_IO_MAX_REQUESTS_PER_RUN: "140"
@@ -49,7 +51,7 @@ jobs:
       SPORTLOGIC_QUERY_GUARD_ENABLED: "true"
       SPORTLOGIC_BROAD_FALLBACK_ENABLED: "true"
       SPORTLOGIC_MAX_REQUESTS_PER_RUN: "8"
-      SPORTLOGIC_PER_PAGE: "100"
+      SPORTLOGIC_PER_PAGE: "40"
       WEATHERAPI_MAX_REQUESTS_PER_RUN: "40"
       OPENWEATHERMAP_MAX_REQUESTS_PER_RUN: "20"
       OPEN_METEO_ENABLED: "true"
@@ -116,7 +118,10 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .data/exports .data/cache artifacts/run-bot
-          python -c "import runpy, sys, usercustomize; sys.argv=['python -m app.cli','run-once']; runpy.run_module('app.cli', run_name='__main__')"
+          echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          timeout 45m python -c "import runpy, sys, usercustomize; sys.argv=['python -m app.cli','run-once']; runpy.run_module('app.cli', run_name='__main__')"
+          echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          find .data/exports -maxdepth 2 -type f -printf '%p\n' | sort || true
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
       - name: Commit runtime artifacts
