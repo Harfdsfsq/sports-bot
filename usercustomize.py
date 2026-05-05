@@ -31,6 +31,12 @@ except Exception:
     pass
 
 try:
+    from app.services import api_health_runtime_guard
+    api_health_runtime_guard.install()
+except Exception:
+    pass
+
+try:
     from app.services import rapidapi_probe_runtime_guard
     rapidapi_probe_runtime_guard.install()
 except Exception:
