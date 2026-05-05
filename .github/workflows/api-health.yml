@@ -33,10 +33,6 @@ jobs:
       API_HEALTH_MODE: ${{ inputs.mode }}
       API_HEALTH_FAIL_ON_CRITICAL: ${{ inputs.fail_on_critical }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-      BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
-      BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
-      BOOKIES_API_LOGIN: ${{ secrets.BOOKIES_API_LOGIN }}
-      BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
@@ -51,7 +47,6 @@ jobs:
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
       ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
-      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
       OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
       SHARPAPI_API_KEY: ${{ secrets.SHARPAPI_API_KEY }}
@@ -75,9 +70,9 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; else pip install httpx pydantic pydantic-settings; fi
 
-      - name: Run strict API health check
+      - name: Run API health check
         run: |
-          python scripts/api_health_run_strict.py --mode "${API_HEALTH_MODE:-quick}" $([ "${API_HEALTH_FAIL_ON_CRITICAL}" = "true" ] && echo "--fail-on-critical" || true)
+          python scripts/api_health_run.py --mode "${API_HEALTH_MODE:-quick}" $([ "${API_HEALTH_FAIL_ON_CRITICAL}" = "true" ] && echo "--fail-on-critical" || true)
 
       - name: Upload API health report
         uses: actions/upload-artifact@v4
