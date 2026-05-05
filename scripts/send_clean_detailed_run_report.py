@@ -13,7 +13,15 @@ TXT_PATH = Path(".data/exports/latest-detailed-run-report.txt")
 JSON_PATH = Path(".data/exports/latest-detailed-run-report.json")
 OUT_PATH = Path(".data/exports/latest-detailed-run-report-cleaned.txt")
 STATE_PATH = Path(".data/detailed-run-report-sent.json")
+DEBUG_PATH = Path(".logs/debug-last-run.json")
+HEALTH_PATH = Path(".data/exports/latest-api-health-run.json")
 REMOVED_PROVIDERS = {"api_football", "bookies_api", "oddspapi"}
+API_ORDER = [
+    "odds_api_io", "allsportsapi", "bzzoiro", "sstats", "football_data", "thesportsdb",
+    "weather", "weatherapi", "openweathermap", "meteostat", "sportlogic", "openfootball",
+    "futrixmetrics", "highlightly", "newsapi", "currents", "gnews", "newsdata", "guardian",
+    "sharpapi_configured_base", "oddsfeed", "sportsbook_api", "sportapi", "freeapilivefootball",
+]
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -27,6 +35,15 @@ def env_int(name: str, default: int) -> int:
     try:
         raw = os.getenv(name)
         return int(float(str(raw))) if raw not in (None, "") else default
+    except Exception:
+        return default
+
+
+def as_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ""):
+            return default
+        return int(float(str(value)))
     except Exception:
         return default
 
@@ -66,19 +83,16 @@ def remove_deleted_provider_lines(text: str) -> str:
 
 
 def candidate_section(text: str) -> str:
-    marker = "⚠️ Пограничные кандидаты"
-    idx = text.find(marker)
-    if idx < 0:
-        marker = "⚠️ Остальные пограничные кандидаты"
+    for marker in ("⚠️ Пограничные кандидаты", "⚠️ Остальные пограничные кандидаты"):
         idx = text.find(marker)
-    if idx < 0:
-        return ""
-    tail = text[idx:]
-    for stop in ("\n🧠 ", "\n🔌 ", "\n📌 "):
-        j = tail.find(stop)
-        if j > 0:
-            return tail[:j]
-    return tail
+        if idx >= 0:
+            tail = text[idx:]
+            for stop in ("\n🧠 ", "\n🧩 ", "\n🔌 ", "\n📌 "):
+                j = tail.find(stop)
+                if j > 0:
+                    return tail[:j]
+            return tail
+    return ""
 
 
 def count_reason(text: str, reason: str) -> int:
@@ -124,11 +138,10 @@ def extract_provider_lines(text: str) -> list[str]:
     idx = text.find(marker)
     if idx < 0:
         return []
-    tail = text[idx:].splitlines()[1:]
     lines: list[str] = []
-    for line in tail:
+    for line in text[idx:].splitlines()[1:]:
         if not line.startswith("• "):
-            if line.strip().startswith(("📈", "🚫", "⚠️", "✅", "🧠", "🔌", "📌")):
+            if line.strip().startswith(("📈", "🚫", "⚠️", "✅", "🧠", "🧩", "🔌", "📌")):
                 break
             continue
         stripped = line.strip().lower()
@@ -142,68 +155,174 @@ def provider_name(line: str) -> str:
     return line.split(":", 1)[0].replace("•", "").strip()
 
 
-def provider_meaning(name: str, line: str) -> str:
+def quota_lines_from_text(text: str) -> list[str]:
+    marker = "🔌 API / квоты последнего run"
+    idx = text.find(marker)
+    out: list[str] = []
+    if idx < 0:
+        return out
+    for line in text[idx:].splitlines()[1:]:
+        if not line.startswith("• "):
+            if line.strip().startswith("📌"):
+                break
+            continue
+        stripped = line.strip().lower()
+        if any(stripped.startswith(f"• {provider}:") for provider in REMOVED_PROVIDERS):
+            continue
+        out.append(line.strip())
+    return out
+
+
+def provider_meaning(name: str) -> str:
     low = name.lower()
-    if low == "odds_api_io":
-        return "главный источник линий и списка матчей; даёт букмекерские предложения и покрытие по Bet365/Unibet/Betfair/Sbobet"
-    if low == "bzzoiro":
-        return "контекст/прогнозы; полезен как независимое подтверждение, но матчинг сейчас даёт мало exact/fuzzy совпадений"
-    if low == "sstats":
-        return "форма/статистика команд; сейчас основной поставщик контекста для near-window матчей"
-    if low == "football_data":
-        return "fixture/league календарь; нужен для добора матчей и алиасов, не как источник коэффициентов"
-    if low == "thesportsdb":
-        return "fixture и алиасы команд/лиг; бюджет быстро расходуется, но помогает расширять inventory"
-    if low == "sportlogic":
-        return "пока probe/context-кандидат; games получает, но events_matched/odds parsed = 0, значит нужен mapping/parser"
-    if low == "openfootball":
-        return "публичный календарь/алиасы; в этом run данных не дал"
-    if low == "weather":
-        return "погодный overlay для ближайших матчей"
-    return "вспомогательный источник; смотри data/req/reason в строке"
+    meanings = {
+        "odds_api_io": "главный источник линий и списка матчей по целевым букмекерам",
+        "allsportsapi": "fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии",
+        "bzzoiro": "контекст/прогнозы; независимое подтверждение, но матчинг пока даёт мало совпадений",
+        "sstats": "форма/статистика команд; основной near-window context provider",
+        "football_data": "fixture/league calendar; добор матчей и алиасы",
+        "thesportsdb": "fixture/алиасы команд и лиг",
+        "weather": "агрегированный погодный overlay: WeatherAPI первым, OpenWeatherMap fallback",
+        "weatherapi": "основной погодный API",
+        "openweathermap": "fallback погоды; используется если WeatherAPI не дал payload",
+        "meteostat": "резервный weather source; сейчас выключен, потому что weatherapi first",
+        "sportlogic": "probe/context; games получает, но odds/parser ещё не подтверждён",
+        "openfootball": "публичный календарь/алиасы",
+        "futrixmetrics": "доп. context provider; сейчас low_recent_yield",
+        "highlightly": "health-probe only: endpoint/key проверяется, в прогнозирование ещё не интегрирован",
+        "newsapi": "news context rotation; не нужен каждый run",
+        "currents": "news context rotation",
+        "gnews": "news context rotation; не нужен каждый run",
+        "newsdata": "news context health-probe/rotation",
+        "guardian": "news context health-probe/rotation",
+        "sharpapi_configured_base": "text/utility probe; не источник спортивных данных для модели",
+        "oddsfeed": "RapidAPI odds discovery; выключен до проверки схемы endpoint",
+        "sportsbook_api": "RapidAPI sportsbook discovery; выключен до проверки схемы endpoint",
+        "sportapi": "RapidAPI SportAPI discovery; выключен до проверки схемы endpoint",
+        "freeapilivefootball": "RapidAPI free football discovery; выключен до проверки схемы endpoint",
+    }
+    return meanings.get(low, "вспомогательный источник/health probe")
+
+
+def debug_provider_rows() -> dict[str, dict[str, Any]]:
+    debug = load_json(DEBUG_PATH, {})
+    diag = debug.get("provider_diagnostics") if isinstance(debug, dict) else {}
+    if not isinstance(diag, dict):
+        return {}
+    summary = diag.get("summary") if isinstance(diag.get("summary"), dict) else {}
+    providers = summary.get("providers") if isinstance(summary.get("providers"), dict) else diag.get("providers")
+    statuses = summary.get("provider_status") if isinstance(summary.get("provider_status"), dict) else diag.get("provider_status")
+    out: dict[str, dict[str, Any]] = {}
+    if isinstance(providers, dict):
+        for name, row in providers.items():
+            if isinstance(row, dict):
+                out[str(name)] = dict(row)
+    if isinstance(statuses, dict):
+        for name, row in statuses.items():
+            if isinstance(row, dict):
+                out.setdefault(str(name), {})["status"] = row
+    return out
+
+
+def health_rows() -> dict[str, dict[str, Any]]:
+    payload = load_json(HEALTH_PATH, {})
+    rows = payload.get("results") if isinstance(payload, dict) else []
+    out: dict[str, dict[str, Any]] = {}
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict):
+                out[str(row.get("provider") or "")] = row
+    return out
+
+
+def compact_runtime(name: str, row: dict[str, Any]) -> str:
+    stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}
+    status = row.get("status") if isinstance(row.get("status"), dict) else {}
+    src = stats or status or row
+    matches = row.get("matches_with_data", src.get("contexts_built", src.get("matches_built", src.get("offers_parsed"))))
+    items = row.get("items_total")
+    parts: list[str] = []
+    if matches is not None:
+        parts.append(f"data {matches}/{items if items is not None else matches}")
+    for key in ("requests", "response_errors", "contexts_built", "matches_considered", "weatherapi_requests", "openweathermap_requests", "weatherapi_enriched", "openweathermap_enriched", "cache_hits", "no_weather_payload", "budget_exhausted", "events_matched", "offers_parsed", "fixtures_fetched", "matches_built"):
+        value = src.get(key)
+        if value not in (None, "", [], {}):
+            label = {"requests": "req", "response_errors": "err"}.get(key, key)
+            parts.append(f"{label} {value}")
+    enabled = src.get("enabled")
+    if enabled is False and not parts:
+        parts.append("disabled")
+    return ", ".join(parts) if parts else "нет runtime-строки"
+
+
+def compact_health(name: str, row: dict[str, Any]) -> str:
+    if not row:
+        return "нет health-probe"
+    bits = [str(row.get("status") or "unknown")]
+    if row.get("requests") is not None:
+        bits.append(f"req {row.get('requests')}")
+    if row.get("useful_rows") is not None:
+        bits.append(f"rows {row.get('useful_rows')}")
+    msg = str(row.get("message") or "")
+    if msg and msg != "ok":
+        bits.append(msg[:80])
+    return ", ".join(bits)
 
 
 def build_api_work_block(text: str) -> str:
-    provider_lines = extract_provider_lines(text)
-    quota_lines: list[str] = []
-    marker = "🔌 API / квоты последнего run"
-    idx = text.find(marker)
-    if idx >= 0:
-        for line in text[idx:].splitlines()[1:]:
-            if not line.startswith("• "):
-                if line.strip().startswith("📌"):
-                    break
-                continue
-            stripped = line.strip().lower()
-            if any(stripped.startswith(f"• {provider}:") for provider in REMOVED_PROVIDERS):
-                continue
-            quota_lines.append(line.strip())
-    if not provider_lines and not quota_lines:
-        return ""
     by_provider: dict[str, dict[str, str]] = {}
-    for line in provider_lines:
+    for line in extract_provider_lines(text):
         name = provider_name(line)
         by_provider.setdefault(name, {})["work"] = line.replace(f"• {name}: ", "")
-    for line in quota_lines:
+    for line in quota_lines_from_text(text):
         name = provider_name(line)
         by_provider.setdefault(name, {})["quota"] = line.replace(f"• {name}: ", "")
-    order = ["odds_api_io", "bzzoiro", "sstats", "football_data", "thesportsdb", "sportlogic", "openfootball", "weatherapi", "openweathermap", "futrixmetrics", "gnews", "meteostat", "oddsfeed", "sportsbook_api"]
-    names = sorted(by_provider, key=lambda x: (order.index(x.lower()) if x.lower() in order else 99, x.lower()))
+
+    debug_rows = debug_provider_rows()
+    for name, row in debug_rows.items():
+        if name.lower() in REMOVED_PROVIDERS:
+            continue
+        by_provider.setdefault(name, {})["runtime"] = compact_runtime(name, row)
+
+    health = health_rows()
+    for name, row in health.items():
+        if name.lower() in REMOVED_PROVIDERS:
+            continue
+        by_provider.setdefault(name, {})["health"] = compact_health(name, row)
+
+    for required in API_ORDER:
+        if required not in REMOVED_PROVIDERS:
+            by_provider.setdefault(required, {})
+
+    names = sorted(by_provider, key=lambda x: (API_ORDER.index(x.lower()) if x.lower() in API_ORDER else 99, x.lower()))
     lines = ["🧩 Работа API — разбор", ""]
     for name in names:
         item = by_provider[name]
-        work = item.get("work", "нет runtime-строки")
-        quota = item.get("quota", "нет quota-строки")
-        lines.append(f"• {name}: {provider_meaning(name, work)}")
-        lines.append(f"  - работа: {work}")
-        lines.append(f"  - квота: {quota}")
+        if not any(item.values()) and name.lower() not in {"highlightly", "newsdata", "guardian", "sharpapi_configured_base"}:
+            continue
+        lines.append(f"• {name}: {provider_meaning(name)}")
+        lines.append(f"  - runtime: {item.get('runtime') or item.get('work') or 'не участвовал в прогнозном runtime'}")
+        lines.append(f"  - health: {item.get('health') or 'нет health-probe'}")
+        lines.append(f"  - квота: {item.get('quota') or 'нет quota-строки'}")
     return "\n".join(lines)
 
 
-def insert_api_work_block(text: str) -> str:
-    block = build_api_work_block(text)
-    if not block:
+def strip_old_api_work_block(text: str) -> str:
+    marker = "🧩 Работа API — разбор"
+    idx = text.find(marker)
+    if idx < 0:
         return text
+    tail = text[idx:]
+    next_markers = [m for m in [tail.find("\n🔌 "), tail.find("\n📌 ")] if m > 0]
+    if not next_markers:
+        return text[:idx].rstrip() + "\n"
+    cut = min(next_markers)
+    return text[:idx].rstrip() + "\n\n" + tail[cut + 1:].lstrip()
+
+
+def insert_api_work_block(text: str) -> str:
+    text = strip_old_api_work_block(text)
+    block = build_api_work_block(text)
     marker = "🔌 API / квоты последнего run"
     idx = text.find(marker)
     if idx < 0:
@@ -276,7 +395,7 @@ def main() -> int:
             sent.append({"ok": ok, "response_preview": body})
     else:
         sent.append({"ok": False, "response_preview": "send_disabled_or_missing_telegram_credentials"})
-    payload = {"status": "sent" if sent and all(item.get("ok") for item in sent) else "not_sent_or_partial", "created_at_utc": datetime.now(UTC).isoformat(), "source_path": str(TXT_PATH), "cleaned_path": str(OUT_PATH), "chunks": len(chunks), "removed_providers": sorted(REMOVED_PROVIDERS), "api_work_block_added": bool(build_api_work_block(cleaned)), "sent": sent, "json_report_present": JSON_PATH.exists()}
+    payload = {"status": "sent" if sent and all(item.get("ok") for item in sent) else "not_sent_or_partial", "created_at_utc": datetime.now(UTC).isoformat(), "source_path": str(TXT_PATH), "cleaned_path": str(OUT_PATH), "chunks": len(chunks), "removed_providers": sorted(REMOVED_PROVIDERS), "api_work_block_added": "🧩 Работа API" in cleaned, "api_health_present": HEALTH_PATH.exists(), "sent": sent, "json_report_present": JSON_PATH.exists()}
     write_json(Path(".data/exports/latest-detailed-run-report-send-clean.json"), payload)
     write_json(STATE_PATH, {"last_sent_at_utc": payload["created_at_utc"], "chunks": len(chunks), "cleaned_path": str(OUT_PATH)})
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
