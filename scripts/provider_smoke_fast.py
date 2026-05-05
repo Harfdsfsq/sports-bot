@@ -29,9 +29,6 @@ def _set_or_replace_arg(name: str, value: str) -> None:
         sys.argv.extend([name, value])
 
 
-# The GitHub workflow still passes the legacy fast-smoke defaults.  For real
-# provider diagnostics we need a little more time and at least two attempts so
-# unstable APIs are separated from broken APIs.
 try:
     current_timeout = float(_arg_value("--timeout") or os.getenv("PROVIDER_SMOKE_FAST_TIMEOUT") or "0")
 except Exception:
@@ -42,7 +39,7 @@ if current_timeout < 18.0:
 if _arg_value("--repeats") is None and not os.getenv("PROVIDER_SMOKE_REPEATS"):
     _set_or_replace_arg("--repeats", "2")
 
-from scripts.provider_smoke_diagnostics_v2 import main
+from scripts.provider_smoke_diagnostics_v3 import main
 
 
 if __name__ == "__main__":
