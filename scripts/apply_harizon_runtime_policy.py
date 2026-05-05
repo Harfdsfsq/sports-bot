@@ -10,12 +10,8 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(".").resolve()
 UTC = timezone.utc
-POLICY_VERSION = "harizon-runtime-policy-v2-near-window"
+POLICY_VERSION = "harizon-runtime-policy-v3-fast-inventory"
 OUT_PATH = ROOT / ".data" / "exports" / "latest-harizon-runtime-policy.json"
-
-
-def truthy(value: object) -> bool:
-    return str(value or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def app_tz() -> ZoneInfo:
@@ -68,9 +64,6 @@ def base_env() -> dict[str, str]:
     return {
         "HARIZON_RUNTIME_POLICY_VERSION": POLICY_VERSION,
         "HARIZON_IGNORE_STALE_PROVIDER_BUDGET": "true",
-
-        # Run window / coverage priority. The goal is to spend provider requests
-        # on matches that can actually be published soon, not on a broad stale day list.
         "PUBLISH_WINDOW_HOURS": policy_value("PUBLISH_WINDOW_HOURS", "12"),
         "MIN_KICKOFF_LEAD_MINUTES": policy_value("MIN_KICKOFF_LEAD_MINUTES", "25"),
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
@@ -84,20 +77,32 @@ def base_env() -> dict[str, str]:
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": policy_value("DAY_INVENTORY_NEAR_WINDOW_HOURS", "12"),
         "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
 
+        # Removed providers must stay hard-disabled and must not appear as live sources.
+        "ENABLE_BOOKIES_API": "false",
+        "BOOKIES_API_ENABLED": "false",
+        "BOOKIES_API_ODDS_FETCH_LIMIT": "0",
         "ENABLE_API_FOOTBALL": "false",
         "API_FOOTBALL_ENABLED": "false",
         "API_FOOTBALL_KEY": "",
         "API_FOOTBALL_PER_RUN_MAX": "0",
         "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "0",
         "API_FOOTBALL_PREDICTIONS_LIMIT": "0",
+        "ENABLE_ODDSPAPI": "false",
+        "ODDSPAPI_ENABLED": "false",
+        "ODDSPAPI_MATCH_LIMIT": "0",
+        "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
+        "ODDSPAPI_PER_RUN_MAX": "0",
+        "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+
         "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
         "ENABLE_ODDS_API_IO": "true",
         "ODDS_API_IO_ENABLED": "true",
         "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
-        "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
-        "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true",
+        "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false",
+        "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
         "DAY_INVENTORY_USE_FOR_RUN": "true",
-        "DAY_INVENTORY_MIN_READY_RATIO_PCT": os.getenv("DAY_INVENTORY_MIN_READY_RATIO_PCT") or "90",
+        "DAY_INVENTORY_BUILD_TIMEOUT_SECONDS": policy_value("DAY_INVENTORY_BUILD_TIMEOUT_SECONDS", "180"),
+        "DAY_INVENTORY_MIN_READY_RATIO_PCT": os.getenv("DAY_INVENTORY_MIN_READY_RATIO_PCT") or "55",
         "COVERAGE_MAXIMIZE_TODAY": "true",
         "COVERAGE_MAXIMIZE_UNTIL_LOCAL_DATE": today,
         "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
@@ -106,13 +111,12 @@ def base_env() -> dict[str, str]:
         "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": policy_value("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX", "100"),
         "ODDS_API_IO_PER_RUN_MAX": policy_value("ODDS_API_IO_PER_RUN_MAX", "200"),
         "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": policy_value("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", "200"),
-        "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": policy_value("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT", "36"),
-        "MAX_MATCHES_FOR_ODDS_FETCH": policy_value("MAX_MATCHES_FOR_ODDS_FETCH", "520"),
+        "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": policy_value("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT", "18"),
+        "MAX_MATCHES_FOR_ODDS_FETCH": policy_value("MAX_MATCHES_FOR_ODDS_FETCH", "420"),
         "TARGET_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "SHARP_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
 
-        # Context providers: spend requests on near-window + priced matches first.
         "SSTATS_ENABLED": "true",
         "ENABLE_SSTATS_CONTEXT": "true",
         "SSTATS_TARGET_NEAR_MISS_FIRST": "true",
@@ -135,16 +139,12 @@ def base_env() -> dict[str, str]:
         "THESPORTSDB_REQUESTS_MAX_PER_RUN": os.getenv("THESPORTSDB_REQUESTS_MAX_PER_RUN") or "12",
         "THESPORTSDB_CONTEXT_MATCH_LIMIT": os.getenv("THESPORTSDB_CONTEXT_MATCH_LIMIT") or "60",
 
-        # SportLogic odds currently returns payloads without valid price fields.
-        # Disable the provider completely until parser is fixed; this saves requests.
         "ENABLE_SPORTLOGIC": "false",
         "SPORTLOGIC_ENABLED": "false",
         "SPORTLOGIC_PER_RUN_MAX": "0",
         "SPORTLOGIC_MATCH_LIMIT": "0",
         "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
         "SPORTLOGIC_ODDS_DISABLED_REASON": "missing_or_invalid_price_payload",
-
-        # Weather/news: use for candidate context, not broad match inventory.
         "WEATHER_CONTEXT_MATCH_LIMIT": policy_value("WEATHER_CONTEXT_MATCH_LIMIT", "24"),
         "WEATHERAPI_PER_RUN_MAX": policy_value("WEATHERAPI_PER_RUN_MAX", "12"),
         "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": policy_value("WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN", "12"),
@@ -166,12 +166,6 @@ def base_env() -> dict[str, str]:
         "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE": "62.0",
         "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": "62.0",
         "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
-        "CONTROLLED_FALLBACK_TIER_B_DNB_MIN_EV_PCT": "5.5",
-        "CONTROLLED_FALLBACK_TIER_B_DNB_MIN_EDGE_PP": "2.5",
-        "CONTROLLED_FALLBACK_TIER_B_BTTS_MIN_EV_PCT": "5.5",
-        "CONTROLLED_FALLBACK_TIER_B_BTTS_MIN_EDGE_PP": "2.5",
-        "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "teamtotals,spreads",
-        "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "false",
         "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "5.0",
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.2",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "false",
@@ -185,7 +179,6 @@ def base_env() -> dict[str, str]:
 def main() -> int:
     applied_env = base_env()
     append_github_env(applied_env)
-
     ordered_scripts = [
         ("scripts/apply_api_capacity_and_keypool_policy.py", False),
         ("scripts/apply_enrichment_cycle_policy.py", False),
@@ -203,9 +196,9 @@ def main() -> int:
         "env_updates": applied_env,
         "script_results": script_results,
         "notes": [
-            "Near-window coverage mode prioritizes matches with odds inside the next 6-12 hours.",
+            "Fast inventory mode disables heavy provider merge so Build day inventory cannot consume the whole run.",
+            "Removed providers are hard-disabled: bookies_api, api_football, oddspapi.",
             "Context requests are concentrated on priced matches and near-miss/value-first candidates.",
-            "SportLogic is disabled while its odds payload lacks parseable prices, so requests are not wasted.",
             "Odds-api.io remains routed as two account-specific bookmaker groups and merged by the provider.",
         ],
     }
