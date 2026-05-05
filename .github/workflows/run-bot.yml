@@ -128,7 +128,7 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p .data/exports .data/cache artifacts/run-bot
-          python -m app.cli
+          python -m app.cli run-once
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
 
@@ -138,7 +138,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add .data/exports .data/cache || true
+          git add -f .data/exports .data/cache || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
 
@@ -151,4 +151,5 @@ jobs:
             artifacts/run-bot/**
             .data/exports/**
           if-no-files-found: ignore
+          include-hidden-files: true
           retention-days: 7
