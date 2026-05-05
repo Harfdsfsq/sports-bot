@@ -29,6 +29,31 @@ def _parse_int(value: str) -> int:
     return int(float(str(value).strip()))
 
 
+def _apply_api_max_runtime_overrides() -> None:
+    values = {
+        'ENABLE_API_FOOTBALL': 'true',
+        'API_FOOTBALL_ENABLED': 'true',
+        'API_FOOTBALL_PER_RUN_MAX': '6',
+        'API_FOOTBALL_CONTEXT_MATCH_LIMIT': '6',
+        'API_FOOTBALL_PREDICTIONS_LIMIT': '3',
+        'STRICT_PRICE_INTEGRITY_ENABLED': 'true',
+        'STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES': '2',
+        'STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS': '2',
+        'PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION': 'true',
+        'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
+        'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '2',
+        'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.65',
+        'MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS': '3',
+    }
+    for key, value in values.items():
+        os.environ[key] = value
+    try:
+        from app.services import market_integrity
+        market_integrity.install()
+    except Exception:
+        pass
+
+
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
     value = getattr(settings, attr_name, None)
     if str(value or '').strip():
@@ -97,6 +122,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
 
 
 async def _main(argv: Sequence[str] | None = None) -> int:
+    _apply_api_max_runtime_overrides()
     args = list(argv if argv is not None else sys.argv[1:])
     settings = _apply_runtime_env_overrides(get_settings())
     command = args[0] if args else ''
