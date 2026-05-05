@@ -4,7 +4,7 @@ import json
 import os
 import re
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
@@ -12,8 +12,10 @@ from urllib import parse, request
 UTC = timezone.utc
 EXPORT_DIR = Path(".data/exports")
 DEBUG_PATH = Path(".logs/debug-last-run.json")
+RUN_BOT_LOG_PATH = EXPORT_DIR / "latest-run-bot.log"
 OUT_TXT = EXPORT_DIR / "latest-enhanced-telegram-run-report.txt"
 OUT_JSON = EXPORT_DIR / "latest-enhanced-telegram-run-report.json"
+FRESHNESS_MINUTES = 45
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -58,7 +60,7 @@ def load_json(path: str | Path, default: Any) -> Any:
 
 def read_text(path: str | Path) -> str:
     try:
-        return Path(path).read_text(encoding="utf-8")
+        return Path(path).read_text(encoding="utf-8", errors="replace")
     except Exception:
         return ""
 
@@ -79,7 +81,9 @@ def parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
         return None
     try:
-        text = str(value)
+        text = str(value).strip()
+        if not text:
+            return None
         if text.endswith("Z"):
             text = text[:-1] + "+00:00"
         dt = datetime.fromisoformat(text)
@@ -90,8 +94,80 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def fmt_pct(value: Any) -> str:
-    return f"{as_float(value):.1f}%"
+def payload_timestamp(payload: dict[str, Any]) -> datetime | None:
+    if not isinstance(payload, dict):
+        return None
+    candidates = [
+        payload.get("created_at_utc"),
+        payload.get("created_at"),
+        payload.get("updated_at"),
+        payload.get("reference_run_utc"),
+    ]
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    candidates.extend([
+        summary.get("current_time_utc"),
+        summary.get("started_time_utc"),
+        summary.get("current_time_local"),
+        summary.get("started_time_local"),
+    ])
+    for value in candidates:
+        dt = parse_dt(value)
+        if dt is not None:
+            return dt
+    return None
+
+
+def is_fresh(payload: dict[str, Any], reference: datetime | None, max_minutes: int = FRESHNESS_MINUTES) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    ts = payload_timestamp(payload)
+    if ts is None:
+        return False
+    if reference is None:
+        return ts >= datetime.now(UTC) - timedelta(minutes=max_minutes)
+    return abs((reference - ts).total_seconds()) <= max_minutes * 60
+
+
+def clean_gha_log(text: str) -> str:
+    lines: list[str] = []
+    for line in str(text or "").splitlines():
+        match = re.match(r"^\ufeff?\d{4}-\d{2}-\d{2}T[^Z]+Z\s+(.*)$", line)
+        if match:
+            line = match.group(1)
+        line = re.sub(r"\x1b\[[0-9;]*m", "", line)
+        lines.append(line)
+    return "\n".join(lines)
+
+
+def extract_json_objects(text: str) -> list[dict[str, Any]]:
+    cleaned = clean_gha_log(text)
+    decoder = json.JSONDecoder()
+    out: list[dict[str, Any]] = []
+    idx = 0
+    while True:
+        start = cleaned.find("{", idx)
+        if start < 0:
+            break
+        try:
+            payload, end = decoder.raw_decode(cleaned[start:])
+            if isinstance(payload, dict):
+                out.append(payload)
+            idx = start + max(end, 1)
+        except Exception:
+            idx = start + 1
+    return out
+
+
+def load_stdout_summary() -> dict[str, Any]:
+    for payload in reversed(extract_json_objects(read_text(RUN_BOT_LOG_PATH))):
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+        if isinstance(summary, dict) and (
+            "matches_seen" in summary
+            or "matches_with_offers" in summary
+            or "candidates_before_quality" in summary
+        ):
+            return payload if "summary" in payload else {"summary": summary}
+    return {}
 
 
 def compact_value(value: Any) -> str:
@@ -127,47 +203,63 @@ def reason_ru(reason: str) -> str:
         "missing_context_spreads": "нет контекста для handicap-модели",
         "market_integrity_insufficient_market_depth": "market integrity: малая глубина рынка",
         "market_integrity_spreads_quarantined": "market integrity: форы в карантине",
+        "fallback_publish_no_candidate": "fallback-публикация: нет кандидата",
     }
     return mapping.get(reason, reason.replace("_", " "))
 
 
-def get_summary(debug: dict[str, Any], detailed: dict[str, Any], run_summary: dict[str, Any]) -> dict[str, Any]:
-    for candidate in (
+def get_summary(debug: dict[str, Any], stdout_payload: dict[str, Any], detailed: dict[str, Any], run_summary: dict[str, Any], reference: datetime | None) -> dict[str, Any]:
+    candidates = [
         debug.get("summary") if isinstance(debug, dict) else None,
-        detailed.get("summary") if isinstance(detailed, dict) else None,
-        run_summary.get("summary") if isinstance(run_summary, dict) else None,
-    ):
+        stdout_payload.get("summary") if isinstance(stdout_payload, dict) else None,
+    ]
+    if is_fresh(detailed, reference):
+        candidates.append(detailed.get("summary") if isinstance(detailed.get("summary"), dict) else None)
+    if is_fresh(run_summary, reference):
+        candidates.append(run_summary.get("summary") if isinstance(run_summary.get("summary"), dict) else None)
+    for candidate in candidates:
         if isinstance(candidate, dict) and candidate:
             return candidate
     return {}
 
 
-def get_source_stats(summary: dict[str, Any], debug: dict[str, Any], detailed: dict[str, Any]) -> dict[str, Any]:
-    for candidate in (
+def get_source_stats(summary: dict[str, Any], debug: dict[str, Any], stdout_payload: dict[str, Any], detailed: dict[str, Any], reference: datetime | None) -> dict[str, Any]:
+    candidates = [
         summary.get("source_stats"),
         debug.get("source_stats") if isinstance(debug, dict) else None,
-        (detailed.get("summary") or {}).get("source_stats") if isinstance(detailed.get("summary"), dict) else None,
-    ):
+        (stdout_payload.get("summary") or {}).get("source_stats") if isinstance(stdout_payload.get("summary"), dict) else None,
+    ]
+    if is_fresh(detailed, reference):
+        candidates.append((detailed.get("summary") or {}).get("source_stats") if isinstance(detailed.get("summary"), dict) else None)
+    for candidate in candidates:
         if isinstance(candidate, dict):
             return candidate
     return {}
 
 
-def get_rejections(summary: dict[str, Any], debug: dict[str, Any], detailed: dict[str, Any]) -> dict[str, Any]:
-    for candidate in (
+def get_rejections(summary: dict[str, Any], debug: dict[str, Any], stdout_payload: dict[str, Any], detailed: dict[str, Any], reference: datetime | None) -> dict[str, Any]:
+    candidates = [
         debug.get("rejections") if isinstance(debug, dict) else None,
+        stdout_payload.get("rejections") if isinstance(stdout_payload, dict) else None,
+        (stdout_payload.get("summary") or {}).get("rejections") if isinstance(stdout_payload.get("summary"), dict) else None,
         summary.get("rejections"),
-        detailed.get("rejections") if isinstance(detailed, dict) else None,
-        (detailed.get("summary") or {}).get("rejections") if isinstance(detailed.get("summary"), dict) else None,
-    ):
+    ]
+    if is_fresh(detailed, reference):
+        candidates.extend([
+            detailed.get("rejections") if isinstance(detailed, dict) else None,
+            (detailed.get("summary") or {}).get("rejections") if isinstance(detailed.get("summary"), dict) else None,
+        ])
+    for candidate in candidates:
         if isinstance(candidate, dict) and candidate:
             return candidate
     return {}
 
 
-def get_provider_diag(summary: dict[str, Any], debug: dict[str, Any]) -> dict[str, Any]:
+def get_provider_diag(summary: dict[str, Any], debug: dict[str, Any], stdout_payload: dict[str, Any]) -> dict[str, Any]:
     for candidate in (
         debug.get("provider_diagnostics") if isinstance(debug, dict) else None,
+        stdout_payload.get("provider_diagnostics") if isinstance(stdout_payload, dict) else None,
+        (stdout_payload.get("summary") or {}).get("provider_diagnostics") if isinstance(stdout_payload.get("summary"), dict) else None,
         summary.get("provider_diagnostics"),
     ):
         if isinstance(candidate, dict):
@@ -260,8 +352,10 @@ def quota_lines() -> list[str]:
     return out
 
 
-def lifecycle_lines(limit: int = 5) -> list[str]:
+def lifecycle_lines(reference: datetime | None, limit: int = 5) -> list[str]:
     payload = load_json(EXPORT_DIR / "latest-candidate-lifecycle-report.json", {})
+    if not is_fresh(payload, reference):
+        return []
     decision = payload.get("decision") if isinstance(payload, dict) else {}
     blocked = decision.get("blocked_top") if isinstance(decision, dict) else []
     if not isinstance(blocked, list):
@@ -290,12 +384,16 @@ def lifecycle_lines(limit: int = 5) -> list[str]:
 
 def build_report() -> str:
     debug = load_json(DEBUG_PATH, {})
-    detailed = load_json(EXPORT_DIR / "latest-detailed-run-report.json", {})
-    run_summary = load_json(EXPORT_DIR / "latest-run-summary.json", {})
-    summary = get_summary(debug, detailed, run_summary)
-    source_stats = get_source_stats(summary, debug, detailed)
-    rejections = get_rejections(summary, debug, detailed)
-    provider_diag = get_provider_diag(summary, debug)
+    stdout_payload = load_stdout_summary()
+    detailed_raw = load_json(EXPORT_DIR / "latest-detailed-run-report.json", {})
+    run_summary_raw = load_json(EXPORT_DIR / "latest-run-summary.json", {})
+    reference = payload_timestamp(debug) or payload_timestamp(stdout_payload) or datetime.now(UTC)
+    detailed = detailed_raw if is_fresh(detailed_raw, reference) else {}
+    run_summary = run_summary_raw if is_fresh(run_summary_raw, reference) else {}
+    summary = get_summary(debug, stdout_payload, detailed, run_summary, reference)
+    source_stats = get_source_stats(summary, debug, stdout_payload, detailed, reference)
+    rejections = get_rejections(summary, debug, stdout_payload, detailed, reference)
+    provider_diag = get_provider_diag(summary, debug, stdout_payload)
 
     started = summary.get("started_time_local") or summary.get("current_time_local") or run_summary.get("created_at_utc") or datetime.now(UTC).isoformat()
     publish_window = summary.get("publish_window_hours") or ((summary.get("filtering") or {}).get("publish_window_hours") if isinstance(summary.get("filtering"), dict) else None) or os.getenv("PUBLISH_WINDOW_HOURS") or "12"
@@ -304,26 +402,28 @@ def build_report() -> str:
     current_bank = bankroll.get("current_balance", summary.get("bankroll_current_balance", 0)) if isinstance(bankroll, dict) else 0
     open_risk = bankroll.get("open_exposure", summary.get("bankroll_open_exposure", 0)) if isinstance(bankroll, dict) else 0
 
-    matches_before = summary.get("matches_before_publish_window") or summary.get("matches_seen") or run_summary.get("summary", {}).get("matches_seen", 0)
-    matches_seen = summary.get("matches_seen") or run_summary.get("summary", {}).get("matches_seen", 0)
-    matches_with_offers = summary.get("matches_with_offers") or run_summary.get("summary", {}).get("matches_with_offers", 0)
-    contexts = summary.get("contexts_built") or run_summary.get("summary", {}).get("contexts_built", 0)
-    candidates_raw = summary.get("candidates_raw") or run_summary.get("summary", {}).get("candidates_raw", 0)
-    candidates_before_quality = summary.get("candidates_before_quality") or run_summary.get("summary", {}).get("candidates_before_quality", 0)
-    candidates_after_quality = summary.get("candidates") or run_summary.get("summary", {}).get("candidates_after_quality", 0)
-    publishable = summary.get("candidates_publishable") or run_summary.get("summary", {}).get("candidates_publishable", 0)
-    published = summary.get("published") or run_summary.get("selected_count", 0)
+    matches_before = summary.get("matches_before_publish_window") or summary.get("matches_seen") or 0
+    matches_seen = summary.get("matches_seen") or 0
+    matches_with_offers = summary.get("matches_with_offers") if summary.get("matches_with_offers") is not None else 0
+    contexts = summary.get("contexts_built") or 0
+    candidates_raw = summary.get("candidates_raw") if summary.get("candidates_raw") is not None else 0
+    candidates_before_quality = summary.get("candidates_before_quality") if summary.get("candidates_before_quality") is not None else 0
+    candidates_after_quality = summary.get("candidates") if summary.get("candidates") is not None else 0
+    publishable = summary.get("candidates_publishable") if summary.get("candidates_publishable") is not None else 0
+    published = summary.get("published") if summary.get("published") is not None else 0
 
     filtering = summary.get("filtering") if isinstance(summary.get("filtering"), dict) else {}
     context_enrichment = summary.get("context_enrichment") if isinstance(summary.get("context_enrichment"), dict) else {}
     provider_targets = summary.get("provider_context_targets") if isinstance(summary.get("provider_context_targets"), dict) else {}
-    mapping = summary.get("mapping") if isinstance(summary.get("mapping"), dict) else debug.get("mapping", {}) if isinstance(debug, dict) else {}
+    mapping = summary.get("mapping") if isinstance(summary.get("mapping"), dict) else {}
 
     lines: list[str] = []
     lines.append("🧾 Подробный отчёт run")
     lines.append(f"🕒 Время запуска: {started}")
     lines.append(f"📅 Окно публикации: {publish_window} ч | Мин. запас до матча: {min_lead} мин")
     lines.append(f"💼 Банк: {as_float(current_bank):.2f} | Открытый риск: {as_float(open_risk):.2f}")
+    if not debug and not stdout_payload:
+        lines.append("⚠️ Внимание: нет свежего debug/stdout payload; отчёт может быть неполным.")
     lines.append("")
     lines.append("⚙️ Воронка run")
     lines.append(f"• Матчи всего/до фильтра: {matches_before}")
@@ -378,9 +478,9 @@ def build_report() -> str:
         for reason, count in top_reasons:
             lines.append(f"• {reason_ru(reason)} — {count}")
     else:
-        lines.append("• Нет детальных reject reasons в артефактах run.")
+        lines.append("• Нет детальных reject reasons в свежих артефактах run.")
 
-    lifecycle = lifecycle_lines(6)
+    lifecycle = lifecycle_lines(reference, 6)
     if lifecycle:
         lines.append("")
         lines.append("⚠️ Пограничные кандидаты / watchlist")
@@ -388,12 +488,16 @@ def build_report() -> str:
 
     lines.append("")
     lines.append("📌 Диагноз")
-    if as_int(matches_with_offers) >= max(1, as_int(matches_seen) - 3):
+    if as_int(matches_with_offers) <= 0:
+        lines.append("• Главный стопор этого run — нет свежих odds-offers. Модель не должна строить прогнозы без актуальной линии.")
+    elif as_int(matches_with_offers) >= max(1, as_int(matches_seen) - 3):
         lines.append("• Инвентарь и odds-matching работают: почти все матчи в окне получили офферы.")
     elif as_int(matches_seen) > 0:
         lines.append("• Инвентарь частично просел: мало матчей с офферами относительно окна публикации.")
     if as_int(candidates_before_quality) == 0:
-        if "quarter_total_line_removed" in rejections:
+        if as_int(matches_with_offers) <= 0:
+            lines.append("• Кандидаты не построились, потому что актуальные odds были отключены или не получены.")
+        elif "quarter_total_line_removed" in rejections:
             lines.append("• Главный стопор кандидатов — старый guard quarter totals; он уже заменён на поддержку .25/.75 при 2+ букмекерах.")
         else:
             lines.append("• Кандидаты не построились до quality: надо смотреть market-family guards и supported lines.")
