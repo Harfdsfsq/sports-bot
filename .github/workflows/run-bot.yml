@@ -20,7 +20,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 50
+    timeout-minutes: 35
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
@@ -116,14 +116,17 @@ jobs:
       - name: Run bot
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           mkdir -p .data/exports .data/cache artifacts/run-bot
           echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          timeout 45m python -c "import runpy, sys, usercustomize; sys.argv=['python -m app.cli','run-once']; runpy.run_module('app.cli', run_name='__main__')"
+          timeout 25m python -X faulthandler -c "import runpy, sys; import app.services.runbot_runtime_bootstrap as boot; print('runtime bootstrap', {'installed': boot.INSTALLED, 'failed': boot.FAILED}, flush=True); sys.argv=['python -m app.cli','run-once']; runpy.run_module('app.cli', run_name='__main__')"
+          status=$?
+          echo "runtime status ${status}"
           echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           find .data/exports -maxdepth 2 -type f -printf '%p\n' | sort || true
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
+          exit ${status}
       - name: Commit runtime artifacts
         if: always()
         shell: bash
