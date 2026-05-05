@@ -121,59 +121,31 @@ class ExternalSignalsContextProvider:
         elo = signals.get("clubelo") or {}
         fduk = signals.get("football_data_co_uk") or {}
         highlightly = signals.get("highlightly") or {}
-
-        # Low-confidence xG proxy. It should support existing context, not replace strong APIs.
-        total_goal_estimates: list[tuple[float, float]] = []
+        estimates: list[tuple[float, float]] = []
         if fduk.get("home_goals_for") is not None and fduk.get("away_goals_for") is not None:
             home_base = (float(fduk["home_goals_for"]) + float(fduk.get("away_goals_against") or fduk["home_goals_for"])) / 2.0
             away_base = (float(fduk["away_goals_for"]) + float(fduk.get("home_goals_against") or fduk["away_goals_for"])) / 2.0
-            total_goal_estimates.append((clamp(home_base, 0.35, 2.8), clamp(away_base, 0.35, 2.8)))
+            estimates.append((clamp(home_base, 0.35, 2.8), clamp(away_base, 0.35, 2.8)))
         if elo.get("elo_diff") is not None:
             diff = float(elo["elo_diff"])
             base_total = 2.55
             home_share = clamp(0.52 + diff / 1200.0, 0.34, 0.70)
-            total_goal_estimates.append((base_total * home_share, base_total * (1.0 - home_share)))
+            estimates.append((base_total * home_share, base_total * (1.0 - home_share)))
         if highlightly.get("expected_home") is not None and highlightly.get("expected_away") is not None:
-            total_goal_estimates.append((float(highlightly["expected_home"]), float(highlightly["expected_away"])))
-
+            estimates.append((float(highlightly["expected_home"]), float(highlightly["expected_away"])))
         expected_home = expected_away = None
-        if total_goal_estimates:
-            expected_home = round(sum(item[0] for item in total_goal_estimates) / len(total_goal_estimates), 3)
-            expected_away = round(sum(item[1] for item in total_goal_estimates) / len(total_goal_estimates), 3)
-
-        home_win_probability = None
-        away_win_probability = None
+        if estimates:
+            expected_home = round(sum(item[0] for item in estimates) / len(estimates), 3)
+            expected_away = round(sum(item[1] for item in estimates) / len(estimates), 3)
+        home_win_probability = away_win_probability = None
         if elo.get("elo_diff") is not None:
             diff = float(elo["elo_diff"])
             p_home_no_draw = 1.0 / (1.0 + math.exp(-diff / 260.0))
             draw = 0.25
             home_win_probability = clamp((1.0 - draw) * p_home_no_draw, 0.05, 0.82)
             away_win_probability = clamp((1.0 - draw) * (1.0 - p_home_no_draw), 0.05, 0.82)
-
-        source_count = len(signals)
-        confidence = 50.0 + min(8.0, source_count * 1.6)
-        if expected_home is not None and expected_away is not None:
-            confidence += 2.0
-        if "football_data_co_uk" in signals and "clubelo" in signals:
-            confidence += 2.0
-        if "newsdata" in signals or "guardian" in signals:
-            confidence += 0.5
-        confidence = clamp(confidence, 50.0, 63.0)
-
-        return MatchContext(
-            source="external_signals",
-            payload={"signals": signals},
-            expected_home=expected_home,
-            expected_away=expected_away,
-            home_win_probability=home_win_probability,
-            away_win_probability=away_win_probability,
-            confidence=confidence,
-            details={
-                "external_signal_sources": sorted(signals.keys()),
-                "signal_count": source_count,
-                "note": "Low-confidence independent signal layer; used as confirmation, not standalone publication proof.",
-            },
-        )
+        confidence = clamp(50.0 + min(8.0, len(signals) * 1.6) + (2.0 if expected_home is not None else 0.0), 50.0, 63.0)
+        return MatchContext(source="external_signals", payload={"signals": signals}, expected_home=expected_home, expected_away=expected_away, home_win_probability=home_win_probability, away_win_probability=away_win_probability, confidence=confidence, details={"external_signal_sources": sorted(signals.keys()), "signal_count": len(signals), "note": "Low-confidence independent signal layer; used as confirmation, not standalone publication proof."})
 
     async def _clubelo_match_signal(self, client: httpx.AsyncClient, match: Match, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         if not self._env_bool("ENABLE_CLUBELO_CONTEXT", True):
@@ -182,13 +154,7 @@ class ExternalSignalsContextProvider:
         away = await self._clubelo_team(client, match.away_team, stats, preview)
         if not home and not away:
             return None
-        return {
-            "home_elo": home.get("elo") if home else None,
-            "away_elo": away.get("elo") if away else None,
-            "elo_diff": (float(home["elo"]) - float(away["elo"])) if home and away and home.get("elo") is not None and away.get("elo") is not None else None,
-            "home_rank": home.get("rank") if home else None,
-            "away_rank": away.get("rank") if away else None,
-        }
+        return {"home_elo": home.get("elo") if home else None, "away_elo": away.get("elo") if away else None, "elo_diff": (float(home["elo"]) - float(away["elo"])) if home and away and home.get("elo") is not None and away.get("elo") is not None else None}
 
     async def _clubelo_team(self, client: httpx.AsyncClient, team: str, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         key = re.sub(r"[^a-z0-9]+", "", canonicalize_team_name(team).lower())
@@ -199,10 +165,9 @@ class ExternalSignalsContextProvider:
             return cached or None
         if not self._budget_left():
             return None
-        url = f"http://api.clubelo.com/{quote(team)}"
         try:
             self.requests += 1
-            response = await client.get(url)
+            response = await client.get(f"http://api.clubelo.com/{quote(team)}")
             if response.status_code != 200 or not response.text.strip():
                 self._cache_put("clubelo", key, {})
                 return None
@@ -211,13 +176,7 @@ class ExternalSignalsContextProvider:
                 self._cache_put("clubelo", key, {})
                 return None
             row = rows[-1]
-            payload = {
-                "team": row.get("Club") or team,
-                "elo": self._float(row.get("Elo")),
-                "rank": self._int(row.get("Rank")),
-                "from": row.get("From"),
-                "to": row.get("To"),
-            }
+            payload = {"team": row.get("Club") or team, "elo": self._float(row.get("Elo")), "rank": self._int(row.get("Rank"))}
             self._cache_put("clubelo", key, payload)
             return payload
         except Exception as exc:
@@ -234,24 +193,20 @@ class ExternalSignalsContextProvider:
         cached = self._cache_get("football_data_uk", cache_key, ttl_hours=self._env_int("FOOTBALL_DATA_UK_CACHE_TTL_HOURS", 12))
         if isinstance(cached, dict):
             return cached
-        index: dict[str, dict[str, Any]] = {}
+        index: dict[str, list[dict[str, Any]]] = {}
         for code in codes[: self._env_int("FOOTBALL_DATA_UK_MAX_LEAGUES_PER_RUN", 12)]:
             if not self._budget_left():
                 break
-            url = f"https://www.football-data.co.uk/mmz4281/{season}/{code}.csv"
             try:
                 self.requests += 1
-                response = await client.get(url)
+                response = await client.get(f"https://www.football-data.co.uk/mmz4281/{season}/{code}.csv")
                 if response.status_code != 200 or not response.text.strip():
                     continue
                 for row in csv.DictReader(io.StringIO(response.text)):
                     home = str(row.get("HomeTeam") or "").strip()
                     away = str(row.get("AwayTeam") or "").strip()
-                    if not home or not away:
-                        continue
-                    hg = self._float(row.get("FTHG"))
-                    ag = self._float(row.get("FTAG"))
-                    if hg is None or ag is None:
+                    hg = self._float(row.get("FTHG")); ag = self._float(row.get("FTAG"))
+                    if not home or not away or hg is None or ag is None:
                         continue
                     self._add_team_result(index, home, gf=hg, ga=ag, home=True, league_code=code)
                     self._add_team_result(index, away, gf=ag, ga=hg, home=False, league_code=code)
@@ -267,16 +222,7 @@ class ExternalSignalsContextProvider:
         away = self._best_team_index_match(match.away_team, index)
         if not home and not away:
             return None
-        return {
-            "home_match_name": home[0] if home else None,
-            "away_match_name": away[0] if away else None,
-            "home_goals_for": (home[1] or {}).get("goals_for") if home else None,
-            "home_goals_against": (home[1] or {}).get("goals_against") if home else None,
-            "away_goals_for": (away[1] or {}).get("goals_for") if away else None,
-            "away_goals_against": (away[1] or {}).get("goals_against") if away else None,
-            "home_sample": (home[1] or {}).get("sample") if home else 0,
-            "away_sample": (away[1] or {}).get("sample") if away else 0,
-        }
+        return {"home_match_name": home[0] if home else None, "away_match_name": away[0] if away else None, "home_goals_for": (home[1] or {}).get("goals_for") if home else None, "home_goals_against": (home[1] or {}).get("goals_against") if home else None, "away_goals_for": (away[1] or {}).get("goals_for") if away else None, "away_goals_against": (away[1] or {}).get("goals_against") if away else None, "home_sample": (home[1] or {}).get("sample") if home else 0, "away_sample": (away[1] or {}).get("sample") if away else 0}
 
     async def _open_meteo_signal(self, client: httpx.AsyncClient, match: Match, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         if not self._env_bool("ENABLE_OPEN_METEO_CONTEXT", True):
@@ -294,20 +240,10 @@ class ExternalSignalsContextProvider:
             return None
         try:
             self.requests += 1
-            response = await client.get(
-                "https://api.open-meteo.com/v1/forecast",
-                params={
-                    "latitude": lat,
-                    "longitude": lon,
-                    "hourly": "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m",
-                    "timezone": "UTC",
-                    "forecast_days": 3,
-                },
-            )
+            response = await client.get("https://api.open-meteo.com/v1/forecast", params={"latitude": lat, "longitude": lon, "hourly": "temperature_2m,precipitation,wind_speed_10m,wind_gusts_10m", "timezone": "UTC", "forecast_days": 3})
             if response.status_code != 200:
                 return None
-            payload = response.json()
-            signal = self._nearest_open_meteo_hour(payload, match.commence_time)
+            signal = self._nearest_open_meteo_hour(response.json(), match.commence_time)
             self._cache_put("open_meteo", cache_key, signal or {})
             return signal
         except Exception as exc:
@@ -317,18 +253,14 @@ class ExternalSignalsContextProvider:
 
     async def _newsdata_signal(self, client: httpx.AsyncClient, match: Match, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         api_key = os.getenv("NEWSDATA_API_KEY") or os.getenv("NEWSDATA_IO_KEY")
-        if not api_key or not self._env_bool("ENABLE_NEWSDATA_CONTEXT", True):
+        if not api_key or not self._env_bool("ENABLE_NEWSDATA_CONTEXT", True) or not self._budget_left():
             return None
-        if not self._budget_left():
-            return None
-        query = f'"{match.home_team}" OR "{match.away_team}" football'
         try:
             self.requests += 1
-            response = await client.get("https://newsdata.io/api/1/news", params={"apikey": api_key, "q": query, "language": "en", "size": 5})
+            response = await client.get("https://newsdata.io/api/1/news", params={"apikey": api_key, "q": f'"{match.home_team}" OR "{match.away_team}" football', "language": "en", "size": 5})
             if response.status_code != 200:
                 return None
-            payload = response.json()
-            results = payload.get("results") if isinstance(payload, dict) else []
+            results = response.json().get("results")
             if not isinstance(results, list) or not results:
                 return None
             return {"article_count": len(results), "titles": [str((item or {}).get("title") or "")[:120] for item in results[:3] if isinstance(item, dict)]}
@@ -339,18 +271,14 @@ class ExternalSignalsContextProvider:
 
     async def _guardian_signal(self, client: httpx.AsyncClient, match: Match, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         api_key = os.getenv("GUARDIAN_API_KEY") or os.getenv("GUARDIAN_OPEN_PLATFORM_KEY")
-        if not api_key or not self._env_bool("ENABLE_GUARDIAN_CONTEXT", True):
+        if not api_key or not self._env_bool("ENABLE_GUARDIAN_CONTEXT", True) or not self._budget_left():
             return None
-        if not self._budget_left():
-            return None
-        query = f'"{match.home_team}" OR "{match.away_team}" football'
         try:
             self.requests += 1
-            response = await client.get("https://content.guardianapis.com/search", params={"api-key": api_key, "q": query, "page-size": 5, "section": "football"})
+            response = await client.get("https://content.guardianapis.com/search", params={"api-key": api_key, "q": f'"{match.home_team}" OR "{match.away_team}" football', "page-size": 5, "section": "football"})
             if response.status_code != 200:
                 return None
-            payload = response.json()
-            results = ((payload.get("response") or {}).get("results") if isinstance(payload, dict) else []) or []
+            results = ((response.json().get("response") or {}).get("results")) or []
             if not isinstance(results, list) or not results:
                 return None
             return {"article_count": len(results), "titles": [str((item or {}).get("webTitle") or "")[:120] for item in results[:3] if isinstance(item, dict)]}
@@ -362,7 +290,6 @@ class ExternalSignalsContextProvider:
     async def _wikidata_signal(self, client: httpx.AsyncClient, match: Match, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         if not self._env_bool("ENABLE_WIKIDATA_CONTEXT", True):
             return None
-        # Cheap, cacheable metadata check. Avoids heavy SPARQL on every run.
         found: dict[str, Any] = {}
         for side, team in (("home", match.home_team), ("away", match.away_team)):
             key = re.sub(r"[^a-z0-9]+", "_", canonicalize_team_name(team).lower()).strip("_")
@@ -378,8 +305,7 @@ class ExternalSignalsContextProvider:
                 response = await client.get("https://www.wikidata.org/w/api.php", params={"action": "wbsearchentities", "search": team, "language": "en", "format": "json", "limit": 1})
                 if response.status_code != 200:
                     continue
-                payload = response.json()
-                rows = payload.get("search") if isinstance(payload, dict) else []
+                rows = response.json().get("search")
                 item = rows[0] if isinstance(rows, list) and rows else {}
                 data = {"id": item.get("id"), "label": item.get("label"), "description": item.get("description")} if isinstance(item, dict) and item.get("id") else {}
                 self._cache_put("wikidata", key, data)
@@ -392,43 +318,50 @@ class ExternalSignalsContextProvider:
 
     async def _highlightly_signal(self, client: httpx.AsyncClient, match: Match, stats: dict[str, Any], preview: dict[str, Any]) -> dict[str, Any] | None:
         api_key = os.getenv("HIGHLIGHTLY_API_KEY") or os.getenv("HIGHLIGHTLY_RAPIDAPI_KEY")
-        if not api_key or not self._env_bool("ENABLE_HIGHLIGHTLY_CONTEXT", True):
+        if not api_key or not self._env_bool("ENABLE_HIGHLIGHTLY_CONTEXT", True) or not self._budget_left():
             return None
-        base = (os.getenv("HIGHLIGHTLY_BASE_URL") or "https://highlightly.net/api").rstrip("/")
-        path = os.getenv("HIGHLIGHTLY_FIXTURES_PATH") or "/football/matches"
-        if not self._budget_left():
-            return None
-        headers = {"Authorization": f"Bearer {api_key}"}
+        base = (os.getenv("HIGHLIGHTLY_BASE_URL") or "https://soccer.highlightly.net").rstrip("/")
+        path = os.getenv("HIGHLIGHTLY_FIXTURES_PATH") or "/matches"
+        headers = {"x-rapidapi-key": api_key}
         if os.getenv("HIGHLIGHTLY_RAPIDAPI_HOST"):
-            headers = {"x-rapidapi-key": api_key, "x-rapidapi-host": os.getenv("HIGHLIGHTLY_RAPIDAPI_HOST", "")}
+            headers["x-rapidapi-host"] = os.getenv("HIGHLIGHTLY_RAPIDAPI_HOST", "")
         try:
             self.requests += 1
-            response = await client.get(f"{base}{path}", headers=headers, params={"date": match.commence_time.date().isoformat()})
-            if response.status_code != 200:
+            response = await client.get(f"{base}{path}", headers=headers, params={"date": match.commence_time.date().isoformat(), "limit": 40})
+            ctype = str(response.headers.get("content-type") or "").lower()
+            if response.status_code != 200 or "json" not in ctype:
                 return None
-            payload = response.json()
-            rows = self._extract_list(payload)
-            best: dict[str, Any] | None = None
-            best_score = 0.0
+            rows = self._extract_list(response.json())
+            best = None; best_score = 0.0
             for row in rows:
-                home = str(row.get("homeTeam") or row.get("home_team") or row.get("home") or "")
-                away = str(row.get("awayTeam") or row.get("away_team") or row.get("away") or "")
+                home = self._team_name_from_highlightly(row, "home")
+                away = self._team_name_from_highlightly(row, "away")
                 score = min(team_similarity(match.home_team, home), team_similarity(match.away_team, away))
                 if score > best_score:
-                    best_score = score
-                    best = row
+                    best_score = score; best = row
             if not best or best_score < 0.58:
                 return None
-            return {
-                "match_score": round(best_score, 3),
-                "expected_home": self._float(best.get("expected_home") or best.get("home_xg")),
-                "expected_away": self._float(best.get("expected_away") or best.get("away_xg")),
-                "status": best.get("status"),
-            }
+            return {"match_score": round(best_score, 3), "expected_home": self._float(best.get("expected_home") or best.get("home_xg")), "expected_away": self._float(best.get("expected_away") or best.get("away_xg")), "status": best.get("status")}
         except Exception as exc:
             stats["response_errors"] += 1
             self._preview_error(preview, "highlightly", exc)
             return None
+
+    @staticmethod
+    def _team_name_from_highlightly(row: dict[str, Any], side: str) -> str:
+        direct_keys = [f"{side}Team", f"{side}_team", side]
+        for key in direct_keys:
+            value = row.get(key)
+            if isinstance(value, str):
+                return value
+            if isinstance(value, dict):
+                return str(value.get("name") or value.get("teamName") or "")
+        teams = row.get("teams")
+        if isinstance(teams, dict):
+            value = teams.get(side)
+            if isinstance(value, dict):
+                return str(value.get("name") or "")
+        return ""
 
     def _budget_left(self) -> bool:
         return self.max_http_requests <= 0 or self.requests < self.max_http_requests
@@ -447,8 +380,8 @@ class ExternalSignalsContextProvider:
             return None
 
     def _cache_put(self, group: str, key: str, data: Any) -> None:
-        path = self.cache_root / group / f"{key}.json"
         try:
+            path = self.cache_root / group / f"{key}.json"
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps({"created_at": datetime.now(UTC).isoformat(), "data": data}, ensure_ascii=False), encoding="utf-8")
         except Exception:
@@ -495,34 +428,24 @@ class ExternalSignalsContextProvider:
     @staticmethod
     def _add_team_result(index: dict[str, list[dict[str, Any]]], team: str, *, gf: float, ga: float, home: bool, league_code: str) -> None:
         key = canonicalize_team_name(team)
-        if not key:
-            return
-        index.setdefault(key, []).append({"goals_for": gf, "goals_against": ga, "home": home, "league_code": league_code})
+        if key:
+            index.setdefault(key, []).append({"goals_for": gf, "goals_against": ga, "home": home, "league_code": league_code})
 
     @staticmethod
     def _summarize_team_results(rows: list[dict[str, Any]]) -> dict[str, Any]:
         sample = rows[-8:] if len(rows) > 8 else rows
         if not sample:
             return {"sample": 0}
-        return {
-            "sample": len(sample),
-            "goals_for": round(sum(float(x["goals_for"]) for x in sample) / len(sample), 3),
-            "goals_against": round(sum(float(x["goals_against"]) for x in sample) / len(sample), 3),
-            "league_codes": sorted({str(x.get("league_code") or "") for x in sample if x.get("league_code")}),
-        }
+        return {"sample": len(sample), "goals_for": round(sum(float(x["goals_for"]) for x in sample) / len(sample), 3), "goals_against": round(sum(float(x["goals_against"]) for x in sample) / len(sample), 3), "league_codes": sorted({str(x.get("league_code") or "") for x in sample if x.get("league_code")})}
 
     @staticmethod
     def _best_team_index_match(team: str, index: dict[str, dict[str, Any]]) -> tuple[str, dict[str, Any]] | None:
-        best_name = ""
-        best_score = 0.0
+        best_name = ""; best_score = 0.0
         for name in index:
             score = team_similarity(team, name)
             if score > best_score:
-                best_score = score
-                best_name = name
-        if not best_name or best_score < 0.66:
-            return None
-        return best_name, index[best_name]
+                best_score = score; best_name = name
+        return (best_name, index[best_name]) if best_name and best_score >= 0.66 else None
 
     @staticmethod
     def _nearest_open_meteo_hour(payload: dict[str, Any], commence_time: datetime) -> dict[str, Any] | None:
@@ -533,8 +456,7 @@ class ExternalSignalsContextProvider:
         if not isinstance(times, list) or not times:
             return None
         target = commence_time.astimezone(UTC).replace(minute=0, second=0, microsecond=0)
-        best_idx = None
-        best_diff = 999999.0
+        best_idx = None; best_diff = 999999.0
         for idx, raw in enumerate(times):
             try:
                 dt = parse_datetime(str(raw).replace("T", " "))
@@ -545,19 +467,13 @@ class ExternalSignalsContextProvider:
                     continue
             diff = abs((dt - target).total_seconds())
             if diff < best_diff:
-                best_idx = idx
-                best_diff = diff
+                best_idx = idx; best_diff = diff
         if best_idx is None:
             return None
         def at(key: str) -> Any:
             arr = hourly.get(key) or []
             return arr[best_idx] if isinstance(arr, list) and best_idx < len(arr) else None
-        return {
-            "temperature_c": at("temperature_2m"),
-            "precipitation_mm": at("precipitation"),
-            "wind_speed_kmh": at("wind_speed_10m"),
-            "wind_gusts_kmh": at("wind_gusts_10m"),
-        }
+        return {"temperature_c": at("temperature_2m"), "precipitation_mm": at("precipitation"), "wind_speed_kmh": at("wind_speed_10m"), "wind_gusts_kmh": at("wind_gusts_10m")}
 
     @staticmethod
     def _extract_list(payload: Any) -> list[dict[str, Any]]:
