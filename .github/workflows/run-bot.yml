@@ -3,464 +3,152 @@ name: run-bot
 on:
   workflow_dispatch:
     inputs:
-      slot_key:
-        description: Autorun slot key, for example 2026-05-01T14:00:00+03:00
-        required: false
-        default: ""
-      run_reason:
-        description: primary/watchdog_recovery/catchup/manual/external_watchdog
-        required: false
-        default: "manual"
-      missed_slots:
-        description: Comma-separated missed slot keys for catchup runs
-        required: false
-        default: ""
-      catchup_from:
-        description: First missed slot key for catchup runs
-        required: false
-        default: ""
-      catchup_to:
-        description: Last missed slot key for catchup runs
-        required: false
-        default: ""
-      profile:
-        description: Runtime profile
-        type: choice
-        required: false
-        default: balanced
-        options:
-          - balanced
-          - conservative
-          - default
-      publish_window_hours:
-        description: Manual scan window in hours; empty uses autorun policy
-        required: false
-        default: "9"
-      min_kickoff_lead_minutes:
-        description: Manual minimum kickoff lead; empty uses autorun policy
-        required: false
-        default: "25"
-      send_detailed_report:
-        description: Send detailed Telegram run report for manual run
-        type: boolean
-        required: false
-        default: true
-      volume_mode:
-        description: Volume policy mode
-        type: choice
-        required: false
-        default: target_5
-        options:
-          - target_3
-          - target_5
-          - target_7
+      mode:
+        description: "Run mode"
+        required: true
+        default: "normal"
+  schedule:
+    - cron: "0 */2 * * *"
 
 permissions:
   contents: write
-  actions: read
 
 concurrency:
-  group: run-bot-main
+  group: run-bot
   cancel-in-progress: false
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 20
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      AUTORUN_POLICY_VERSION: v26-supervisor-only
-      AUTORUN_DIRECT_SCHEDULE_ENABLED: "false"
-      AUTORUN_INPUT_SLOT_KEY: ${{ github.event.inputs.slot_key }}
-      AUTORUN_INPUT_RUN_REASON: ${{ github.event.inputs.run_reason }}
-      AUTORUN_INPUT_MISSED_SLOTS: ${{ github.event.inputs.missed_slots }}
-      AUTORUN_INPUT_CATCHUP_FROM: ${{ github.event.inputs.catchup_from }}
-      AUTORUN_INPUT_CATCHUP_TO: ${{ github.event.inputs.catchup_to }}
-      AUTORUN_WATCHDOG_DELAY_MINUTES: "10"
-      AUTORUN_CATCHUP_DELAY_MINUTES: "999"
-      COVERAGE_MAXIMIZE_TODAY: "true"
-      DAY_INVENTORY_MIN_READY_RATIO_PCT: "90"
-      VOLUME_POLICY_MODE: ${{ github.event.inputs.volume_mode || 'target_5' }}
-      DAILY_TOP5_TARGET_PICKS: "5"
-      DAILY_TOP5_HARD_CAP_PICKS: "999"
-      DAILY_TOP5_NO_HARD_CAP: "true"
-      DAILY_TOP5_MAX_PICKS_PER_RUN: "2"
-      DAILY_TOP5_MANUAL_MAX_PICKS_PER_RUN: "2"
-      DAILY_TOP5_EXTRA_PICK_MIN_EV_PCT: "6.0"
-      DAILY_TOP5_EXTRA_PICK_MIN_EDGE_PP: "3.0"
-      DAILY_TOP5_EXTRA_PICK_MIN_CONFIDENCE: "64.0"
-      PROVIDER_REQUEST_BUDGET_MODE: per_run_only
-      PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
-      ALL_SOURCES_FREE_MAXIMIZE: "true"
-      TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
+      APP_ENV: production
+      RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
+
+      PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
+      FREE_CONTEXT_RUNTIME_ENABLED: "true"
+      PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
+      RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED: "true"
+      ODDS_API_IO_MAX_REQUESTS_PER_RUN: "140"
+      ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN: "140"
+      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "1"
+      BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "1"
+      BZZOIRO_PAGE_SIZE: "3"
+      BZZOIRO_TIMEOUT_SECONDS: "18"
+      SSTATS_MAX_REQUESTS_PER_RUN: "12"
+      FOOTBALL_DATA_MAX_REQUESTS_PER_RUN: "4"
+      THESPORTSDB_MAX_REQUESTS_PER_RUN: "4"
+      ALLSPORTSAPI_MAX_REQUESTS_PER_RUN: "1"
+      FUTRIXMETRICS_MAX_REQUESTS_PER_RUN: "6"
+      HIGHLIGHTLY_MAX_REQUESTS_PER_RUN: "4"
+      HIGHLIGHTLY_BASE_URL: "https://soccer.highlightly.net"
+      HIGHLIGHTLY_SMOKE_PATH: "/leagues"
+      FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN: "2"
+      SPORTLOGIC_QUERY_GUARD_ENABLED: "true"
+      SPORTLOGIC_BROAD_FALLBACK_ENABLED: "true"
+      SPORTLOGIC_MAX_REQUESTS_PER_RUN: "8"
+      SPORTLOGIC_PER_PAGE: "100"
+      WEATHERAPI_MAX_REQUESTS_PER_RUN: "40"
+      OPENWEATHERMAP_MAX_REQUESTS_PER_RUN: "20"
+      OPEN_METEO_ENABLED: "true"
+      OPEN_METEO_MAX_REQUESTS_PER_RUN: "60"
+      METEOSTAT_RAPIDAPI_MAX_REQUESTS_PER_RUN: "2"
+      NEWSAPI_MAX_REQUESTS_PER_RUN: "2"
+      CURRENTS_MAX_REQUESTS_PER_RUN: "2"
+      GNEWS_MAX_REQUESTS_PER_RUN: "2"
+      NEWSDATA_MAX_REQUESTS_PER_RUN: "2"
+      GUARDIAN_MAX_REQUESTS_PER_RUN: "3"
+      CLUBELO_ENABLED: "true"
+      CLUBELO_BASE_URL: "http://api.clubelo.com"
+      CLUBELO_MAX_REQUESTS_PER_DAY: "1"
+      FOOTBALL_DATA_CO_UK_ENABLED: "true"
+      FOOTBALL_DATA_CO_UK_MAX_REQUESTS_PER_DAY: "1"
+      WIKIDATA_ENABLED: "true"
+      WIKIDATA_MAX_REQUESTS_PER_DAY: "4"
+      WIKIDATA_SPARQL_MAX_REQUESTS_PER_DAY: "2"
+      ODDSPAPI_ENABLED: "false"
+      API_FOOTBALL_ENABLED: "false"
+      API_SPORTS_ENABLED: "false"
+      BOOKIES_API_ENABLED: "false"
+      SPORTAPI7_ENABLED: "false"
+      ODDS_FEED_RAPIDAPI_ENABLED: "false"
+      SPORTSBOOK_RAPIDAPI_ENABLED: "false"
+
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
-      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-      FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
-      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-      CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
-      CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
-      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-      GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
       WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
       WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
       WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
       OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+      CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
+      GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+      NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}
+      GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
+      FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+      HIGHLIGHTLY_API_KEY: ${{ secrets.HIGHLIGHTLY_API_KEY }}
       METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
-      METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
       RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
-      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
-      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
-      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
-      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
-      ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
       FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
-      SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
-      ENABLE_API_FOOTBALL: "false"
-      API_FOOTBALL_ENABLED: "false"
-      API_FOOTBALL_KEY: ""
-      API_FOOTBALL_PER_RUN_MAX: "0"
-      API_FOOTBALL_CONTEXT_MATCH_LIMIT: "0"
-      API_FOOTBALL_PREDICTIONS_LIMIT: "0"
-      ENABLE_BOOKIES_API: "false"
-      BOOKIES_API_ENABLED: "false"
-      BOOKIES_API_ODDS_FETCH_LIMIT: "0"
-      ENABLE_ODDSPAPI: "false"
-      ODDSPAPI_ENABLED: "false"
-      ODDSPAPI_MATCH_LIMIT: "0"
-      ODDSPAPI_PER_RUN_MAX: "0"
-      ENABLE_SPORTLOGIC: "true"
-      SPORTLOGIC_ENABLED: "true"
-      SPORTLOGIC_PER_RUN_MAX: "2"
-      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "2"
-      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "2"
-      SPORTLOGIC_REQUEST_BUDGET_REASON: stale_inventory_probe_only
-      SPORTLOGIC_MATCH_LIMIT: "8"
-      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "0"
-      SPORTLOGIC_ODDS_MATCH_LIMIT: "0"
-      SPORTLOGIC_BOOKMAKERS: __probe_only__
-      SPORTLOGIC_ODDS_DISABLED_REASON: stale_inventory_probe_only
-      SPORTLOGIC_TIMEOUT_SECONDS: "20"
-      SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1
-      SPORTLOGIC_HEADER_NAME: X-API-Key
-      SPORTLOGIC_FIXTURE_CURSOR_SCAN_MAX: "1"
-      ENABLE_SSTATS: "true"
-      ENABLE_SSTATS_CONTEXT: "true"
-      SSTATS_ENABLED: "true"
-      SSTATS_PER_RUN_MAX: "150"
-      SSTATS_REQUESTS_MAX_PER_RUN: "150"
-      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
-      SSTATS_CONTEXT_MATCH_LIMIT: "320"
-      ENABLE_BZZOIRO: "true"
-      ENABLE_BZZOIRO_CONTEXT: "true"
-      BZZOIRO_ENABLED: "true"
-      BZZOIRO_PER_RUN_MAX: "1000"
-      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "1000"
-      BZZOIRO_CONTEXT_MATCH_LIMIT: "520"
-      BZZOIRO_MAX_PAGES: "80"
-      ENABLE_WEATHERAPI: "true"
-      WEATHERAPI_ENABLED: "true"
-      WEATHERAPI_PER_RUN_MAX: "24"
-      WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN: "24"
-      WEATHER_CONTEXT_ENABLED: "true"
-      WEATHER_CONTEXT_MATCH_LIMIT: "48"
-      ENABLE_OPENWEATHERMAP: "true"
-      OPENWEATHERMAP_ENABLED: "true"
-      OPENWEATHERMAP_PER_RUN_MAX: "12"
-      OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN: "12"
-      WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED: "true"
-      PUBLISH_DRY_RUN: "false"
-      PREDICTION_PUBLICATION_ENABLED: "false"
-      RUN_REPORT_ENABLED: "false"
-      RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS: "false"
-      DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
-      DETAILED_RUN_REPORT_SEND_WHEN_PUBLISHED: "true"
-      DETAILED_RUN_REPORT_FORCE_SEND: "true"
-      CLEAN_DETAILED_RUN_REPORT_SEND_TELEGRAM: "true"
-      DETAILED_RUN_REPORT_MIN_INTERVAL_MINUTES: "0"
-      SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
-      DAILY_REPORT_ENABLED: "true"
-      DAILY_REPORT_SEND_TELEGRAM: "true"
-      DAILY_REPORT_HOUR_LOCAL: "22"
-      DAILY_REPORT_TARGET_OFFSET_DAYS: "0"
-      DAILY_REPORT_RESEND_ON_CHANGE: "false"
-      NIGHTLY_REVIEW_REPORT_ONLY_ENABLED: "false"
-      TARGET_BOOKMAKERS: Bet365,Unibet,Betfair Exchange,Sbobet
-      CONSENSUS_BOOKMAKERS: Bet365,Unibet,Betfair Exchange,Sbobet
-      SHARP_BOOKMAKERS: Bet365,Unibet,Betfair Exchange,Sbobet
-      ODDS_API_IO_BOOKMAKERS_ACCOUNT1: Bet365,Unibet
-      ODDS_API_IO_BOOKMAKERS_ACCOUNT2: Betfair Exchange,Sbobet
-      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "100"
-      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "100"
-      MATCH_BOOTSTRAP_PROVIDER: odds_api_io
-      PUBLISH_WINDOW_HOURS: "9"
-      MIN_KICKOFF_LEAD_MINUTES: "25"
-      MAX_PICKS_PER_RUN: "2"
-      CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS: "true"
-      CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES: "2"
-      CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS: "3"
-      CANDIDATE_LIFECYCLE_ENABLED: "true"
-      CANDIDATE_RECHECK_MIN_CONFIRMATIONS: "2"
-      CANDIDATE_RECHECK_MIN_SEEN_COUNT: "2"
-      CANDIDATE_RECHECK_FINAL_WINDOW_MINUTES: "90"
-      CANDIDATE_RECHECK_WATCH_WINDOW_MINUTES: "720"
-      CANDIDATE_RECHECK_MIN_EV_PCT: "5.0"
-      CANDIDATE_RECHECK_MIN_EDGE_PP: "2.2"
-      CANDIDATE_RECHECK_MIN_CONFIDENCE: "62.0"
-      CANDIDATE_RECHECK_MIN_BOOKS: "2"
-      CANDIDATE_RECHECK_MIN_SOURCES: "1"
-      CANDIDATE_RECHECK_MAX_ODDS_MOVE_PCT: "12.0"
-      DAY_INVENTORY_BOOTSTRAP_PROVIDER: odds_api_io
-      DAY_INVENTORY_FULL_BOOTSTRAP_HOURS_LOCAL: "0"
-      DAY_INVENTORY_REFRESH_INTERVAL_HOURS: "6"
-      DAY_INVENTORY_MIN_MATCHES_FOR_SKIP: "40"
-      DAY_INVENTORY_DIRECT_WINDOW_DAYS: "1"
-      DAY_INVENTORY_DIRECT_MIN_MATCHES: "8"
-      DAY_INVENTORY_MIDNIGHT_FRESH_MINUTES: "75"
-      NEAR_MISS_ENRICHMENT_QUEUE_LIMIT: "60"
-      NEAR_MISS_ENRICHMENT_MIN_EV_PCT: "5.0"
-      NEAR_MISS_ENRICHMENT_MIN_EDGE_PP: "2.0"
-      SELECTED_PROFILE: ${{ github.event.inputs.profile || 'balanced' }}
-      AUTORUN_MANUAL_PUBLISH_WINDOW_HOURS: ${{ github.event.inputs.publish_window_hours }}
-      AUTORUN_MANUAL_MIN_KICKOFF_LEAD_MINUTES: ${{ github.event.inputs.min_kickoff_lead_minutes }}
-      AUTORUN_MANUAL_SEND_DETAILED_REPORT: ${{ github.event.inputs.send_detailed_report }}
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 1
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
       - name: Install dependencies
         shell: bash
-        run: pip install -r requirements.txt
-      - name: Runtime structure healthcheck
-        shell: bash
-        run: python scripts/runtime_healthcheck.py || true
-      - name: Prepare local state folders
-        shell: bash
-        run: mkdir -p .data .data/exports .data/day_inventory .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/run-bot artifacts
-      - name: Clear stale runtime outputs
-        shell: bash
         run: |
-          rm -f .logs/debug-last-run.json artifacts/controlled-fallback-report.json
-          rm -f .data/exports/latest-run-summary.json .data/exports/latest-detailed-run-report.json .data/exports/latest-detailed-run-report-cleaned.txt .data/exports/latest-detailed-run-report-send-clean.json
-          rm -f .data/exports/latest-day-inventory-summary.json .data/exports/latest-day-inventory-policy.json
-          rm -f .data/exports/latest-harizon-runtime-policy.json
-          rm -f .data/exports/latest-day-inventory-coverage-merge.json .data/exports/latest-day-inventory-accumulation.json .data/exports/latest-rules-api-budget-policy.json
-          rm -f .data/exports/latest-daily-top5-publish-policy.json .data/exports/latest-per-run-only-runtime-policy.json
-          rm -f .data/exports/latest-quality-first-runtime-policy.json .data/exports/latest-publication-guard-state-refresh.json
-          rm -f .data/exports/latest-day-inventory-coverage-audit.json .data/exports/latest-coverage-audit.json
-          rm -f .data/exports/latest-history-guard-audit.json .data/exports/latest-history-guard-audit.err
-          rm -f .data/exports/latest-training-dataset.json .data/exports/latest-reporting-sqlite.json
-          rm -f .data/exports/latest-controlled-fallback-report.json .data/exports/latest-candidate-lifecycle-report.json .data/exports/latest-candidate-lifecycle-report.md .data/exports/latest-candidate-lifecycle-sent-filter.json
-          rm -rf artifacts/run-bot/*
-      - name: Autorun slot gate preflight
-        shell: bash
-        run: python scripts/autorun_gate.py
-      - name: Apply selected runtime profile
-        if: env.AUTORUN_SKIP_MAIN != 'true'
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run bot
         shell: bash
         run: |
           set -euo pipefail
-          echo "SELECTED_PROFILE=${SELECTED_PROFILE}" >> "$GITHUB_ENV"
-          case "$SELECTED_PROFILE" in
-            balanced) PROFILE_FILE="config/balanced_output.env" ;;
-            conservative) PROFILE_FILE="config/conservative_passability.env" ;;
-            default) PROFILE_FILE="" ;;
-            *) echo "Unknown profile: $SELECTED_PROFILE" >&2; exit 1 ;;
-          esac
-          if [ -n "$PROFILE_FILE" ] && [ -f "$PROFILE_FILE" ]; then
-            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' "$PROFILE_FILE" >> "$GITHUB_ENV"
-          fi
-      - name: Apply final runtime overrides
-        if: env.AUTORUN_SKIP_MAIN != 'true'
+          mkdir -p .data/exports .data/cache artifacts/run-bot
+          python -m app.cli
+          cp -r .data/exports artifacts/run-bot/exports || true
+          cp -r .data/cache artifacts/run-bot/cache || true
+
+      - name: Commit runtime artifacts
+        if: always()
         shell: bash
         run: |
-          if [ -f config/final_runtime_overrides.env ]; then
-            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' config/final_runtime_overrides.env >> "$GITHUB_ENV"
-          fi
-      - name: Apply auto-learning runtime overrides
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          if [ -f .data/auto_learning_runtime_overrides.env ]; then
-            grep -E '^[A-Za-z_][A-Za-z0-9_]*=' .data/auto_learning_runtime_overrides.env >> "$GITHUB_ENV"
-            echo "Applied auto-learning runtime overrides: .data/auto_learning_runtime_overrides.env"
-          fi
-      - name: Apply autorun coverage policy
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: python scripts/apply_autorun_policy.py
-      - name: Apply volume governor policy
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/apply_volume_policy.py
-          cat .data/exports/latest-volume-governor.json || true
-      - name: Apply Harizon runtime policy
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/apply_harizon_runtime_policy.py
-          cat .data/exports/latest-harizon-runtime-policy.json || true
-          cat .data/exports/latest-day-inventory-policy.json || true
-      - name: Apply API budget and enrichment target patches
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/api_max_usage_patch.py || true
-          python scripts/patch_near_miss_enrichment_targets.py || true
-          python scripts/apply_provider_request_budget.py || true
-          cat .data/exports/latest-provider-request-budget.json || true
-      - name: Build day inventory
-        if: env.AUTORUN_SKIP_MAIN != 'true' && env.DAY_INVENTORY_SKIP_BUILD != 'true'
-        shell: bash
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          timeout ${DAY_INVENTORY_BUILD_TIMEOUT_SECONDS:-180}s python scripts/build_day_inventory.py || true
-          cat .data/exports/latest-day-inventory-summary.json || true
-      - name: Show existing day inventory summary
-        if: env.AUTORUN_SKIP_MAIN != 'true' && env.DAY_INVENTORY_SKIP_BUILD == 'true'
-        shell: bash
-        run: |
-          echo "Daily inventory is fresh enough; skipping fixture bootstrap."
-          cat .data/exports/latest-day-inventory-policy.json || true
-          cat .data/exports/latest-day-inventory-summary.json || true
-      - name: Ensure calibration profile exists
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          mkdir -p .data
-          if [ ! -f .data/calibration-profile.json ] && [ -f config/calibration-profile.example.json ]; then
-            cp config/calibration-profile.example.json .data/calibration-profile.json
-          fi
-      - name: Run bot once
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: python -m app.cli run-once
-      - name: Candidate lifecycle recheck gate
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/candidate_lifecycle_gate.py || true
-          cat .data/exports/latest-candidate-lifecycle-report.md || true
-      - name: Refresh publication guard state
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/refresh_publication_guard_state.py || true
-          cat .data/exports/latest-publication-guard-state-refresh.json || true
-      - name: Publish controlled pick
-        if: env.AUTORUN_SKIP_MAIN != 'true' && env.CANDIDATE_LIFECYCLE_ALLOW_PUBLISH == 'true'
-        shell: bash
-        run: |
-          echo "Candidate lifecycle allowed publish: ${CANDIDATE_LIFECYCLE_SELECTED_MATCH_KEY}"
-          python scripts/publish_controlled_fallback.py || true
-          cat artifacts/controlled-fallback-report.json || true
-      - name: Skip controlled pick by lifecycle
-        if: env.AUTORUN_SKIP_MAIN != 'true' && env.CANDIDATE_LIFECYCLE_ALLOW_PUBLISH != 'true'
-        shell: bash
-        run: |
-          echo "Controlled publication skipped by candidate lifecycle gate: ${CANDIDATE_LIFECYCLE_REASON:-unknown}"
-          cat .data/exports/latest-candidate-lifecycle-report.json || true
-      - name: Build near-miss enrichment queue
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/build_near_miss_enrichment_queue.py || true
-          cat .data/exports/latest-near-miss-enrichment-queue.json || true
-      - name: Build ledgers and coverage reports
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/profit_distance_ledger.py || true
-          python scripts/match_data_coverage_report.py || true
-          python scripts/rapidapi_quota_probe.py || true
-          python scripts/rapidapi_endpoint_discovery.py || true
-      - name: Merge run coverage into day inventory
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/accumulate_latest_matches_into_day_inventory.py || true
-          python scripts/merge_run_coverage_into_day_inventory.py || true
-          python scripts/day_inventory_coverage_audit.py || true
-          cat .data/exports/latest-day-inventory-accumulation.json || true
-          cat .data/exports/latest-day-inventory-coverage-merge.json || true
-          cat .data/exports/latest-day-inventory-coverage-audit.json || true
-      - name: Generate audit payloads
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python -m app.cli coverage-audit > .data/exports/latest-coverage-audit.json || true
-          python -m app.cli history-guard-audit > .data/exports/latest-history-guard-audit.json 2> .data/exports/latest-history-guard-audit.err || true
-          python -m app.cli training-dataset > .data/exports/latest-training-dataset.json || true
-          python -m app.cli reporting-sqlite > .data/exports/latest-reporting-sqlite.json || true
-      - name: Run auto-learning feedback loop
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: python scripts/auto_learning_engine.py || true
-      - name: Build detailed run report
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        env:
-          DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
-          DETAILED_RUN_REPORT_FORCE_SEND: "false"
-        run: python scripts/build_detailed_run_report.py || true
-      - name: Send cleaned detailed run report
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        env:
-          DETAILED_RUN_REPORT_SEND_TELEGRAM: "true"
-          DETAILED_RUN_REPORT_FORCE_SEND: "true"
-        run: |
-          python scripts/send_clean_detailed_run_report.py || true
-          cat .data/exports/latest-detailed-run-report-send-clean.json || true
-      - name: Export latest run summary
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: |
-          python scripts/export_latest_run_summary.py || true
-          cat .data/exports/latest-run-summary.json || true
-      - name: Build run-bot bundle
-        if: env.AUTORUN_SKIP_MAIN != 'true'
-        shell: bash
-        run: bash scripts/build_run_bot_bundle.sh || true
-      - name: Upload run-bot current artifact
-        if: env.AUTORUN_SKIP_MAIN != 'true'
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .data/exports .data/cache || true
+          git commit -m "Update runtime artifacts [skip ci]" || true
+          git push || true
+
+      - name: Upload run artifact
+        if: always()
         uses: actions/upload-artifact@v5
         with:
-          name: run-bot-current-${{ github.run_id }}
+          name: run-bot-${{ github.run_id }}
           path: |
             artifacts/run-bot/**
             .data/exports/**
-            .data/day_inventory/**
-            .data/candidate-lifecycle-state.json
-            .logs/debug-last-run.json
-            .data/exports/latest-run-summary.json
           if-no-files-found: ignore
           retention-days: 7
-      - name: Mark successful autorun slot
-        if: env.AUTORUN_SKIP_MAIN != 'true' && (github.event_name == 'schedule' || env.AUTORUN_RUN_REASON == 'watchdog_recovery' || env.AUTORUN_RUN_REASON == 'catchup' || env.AUTORUN_RUN_REASON == 'external_watchdog' || env.AUTORUN_RUN_REASON == 'external_catchup')
-        shell: bash
-        run: python scripts/autorun_gate.py --mark-success || true
-      - name: Mark failed autorun slot
-        if: failure() && env.AUTORUN_SKIP_MAIN != 'true' && (github.event_name == 'schedule' || env.AUTORUN_RUN_REASON == 'watchdog_recovery' || env.AUTORUN_RUN_REASON == 'catchup' || env.AUTORUN_RUN_REASON == 'external_watchdog' || env.AUTORUN_RUN_REASON == 'external_catchup')
-        shell: bash
-        run: python scripts/autorun_gate.py --mark-failed || true
-      - name: Sync persistent state
-        if: always()
-        shell: bash
-        run: python scripts/sync_persistent_state.py || true
