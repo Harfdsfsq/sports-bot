@@ -19,6 +19,18 @@ except Exception:
     pass
 
 try:
+    from app.services import context_family_matching_runtime_patch
+    context_family_matching_runtime_patch.install()
+except Exception:
+    pass
+
+try:
+    from app.services import runner_step_trace
+    runner_step_trace.install()
+except Exception:
+    pass
+
+try:
     from app.services import lifecycle_sent_index_runtime_guard
     lifecycle_sent_index_runtime_guard.install()
 except Exception:
@@ -33,6 +45,12 @@ except Exception:
 try:
     from app.services import api_health_runtime_guard
     api_health_runtime_guard.install()
+except Exception:
+    pass
+
+try:
+    from app.services import post_run_analytics_runtime_guard
+    post_run_analytics_runtime_guard.install()
 except Exception:
     pass
 
