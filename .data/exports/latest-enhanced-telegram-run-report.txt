@@ -1,0 +1,65 @@
+🧾 Подробный отчёт run
+🕒 Время запуска: 2026-05-06T01:55:19.707796+03:00
+📅 Окно публикации: 12 ч | Мин. запас до матча: 30 мин
+💼 Банк: 1000.00 | Открытый риск: 28.75
+
+⚙️ Воронка run
+• Матчи всего/до фильтра: 100
+• Матчи в окне: 44 | с офферами: 44 | контекстов: 12
+• Кандидаты: raw 6 | до quality 6 | после quality 0 | publishable 0 | published 0
+• Фильтр времени: after 44/100, outside 49, too soon 2, started 5
+• Context shortlist: eligible 44, selected 44, value_hint 0, limit 402
+• Provider targets: sstats:44, bzzoiro:24, espn:9, thesportsdb:44, football_data:44, openligadb:24, futrixmetrics:20, sportlogic:44, weather:29
+• Matching: odds exact 0, loose 0, fuzzy 0; sstats exact 0, bzzoiro ctx 0, thesportsdb ctx 7
+
+📡 Источники / фактическая работа
+• odds_api_io: disabled
+• odds_api_io_bootstrap: disabled
+• allsportsapi: req 1, err 0, matched 0, offers 0
+• sportlogic: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, 429 0, budget_exhausted 0
+• sstats: req 6, err 0, ctx 0, rows 5507, budget_exhausted
+• bzzoiro: req 4, err 1, events 0, ctx 0, budget_exhausted
+• api_football: disabled
+• espn: err 0, events 56, matched 5, ctx 5
+• football_data: req 3, err 0, matched 2, ctx 2
+• thesportsdb: req 5, err 0, ctx 7
+• futrixmetrics: req 40, err 2, ctx 0
+• openfootball: req 0, err 0, ctx 0
+• newsapi: disabled
+• gnews: disabled
+• weather: req 12, err 0, ctx 12, weatherapi 12, owm 0, cache 0
+• self_history: ctx 0
+• market_monitor: нет данных
+• bookies_bootstrap: disabled
+• openligadb: req 0, err 0, ctx 0
+
+🔌 Квоты / grants
+• odds_api_io: grant 0, tokens_after 3524.56, skip spacing_active:11.7m
+• bzzoiro: grant 4, tokens_after 89.941
+• sstats: grant 6, tokens_after 61.165
+• football_data: grant 12, tokens_after 158.912
+• thesportsdb: grant 18, tokens_after 207.882
+• sportlogic: grant 6, tokens_after 28.308
+• weatherapi: grant 29, tokens_after 70.649
+• openweathermap: grant 12, tokens_after 50.617
+• newsapi: grant 0, tokens_after 74.262, skip spacing_active:21.7m
+• gnews: grant 0, tokens_after 74.262, skip spacing_active:21.7m
+• currents: grant 12, tokens_after 50.617
+• guardian: grant 6, tokens_after 25.308
+
+🚫 Почему не прошли
+• fallback publish no candidate — 1
+
+⚠️ Пограничные кандидаты / watchlist
+• Always Ready — CA Lanus: totals Меньше (2.5) @ 2.0; EV +29.1% | edge +13.0 п.п. | block: not_in_final_publication_window
+• Recoleta FC — Santos FC SP: totals Меньше (2.5) @ 2.04; EV +27.7% | edge +13.9 п.п. | block: not_seen_enough:1/2; not_rechecked_enough:1/2; not_in_final_publication_window
+• New York City FC II — Chicago Fire FC II: totals Меньше (3.5) @ 1.95; EV +25.6% | edge +13.4 п.п. | block: not_seen_enough:1/2; not_rechecked_enough:1/2; not_in_final_publication_window
+• Sporting Cristal — SE Palmeiras SP: btts Обе забьют: Да @ 2.16; EV +9.6% | edge +4.0 п.п. | block: not_in_final_publication_window
+• UCV FC — CSD Independiente del Valle: btts Обе забьют: Да @ 1.909; EV +6.3% | edge +4.2 п.п. | block: not_in_final_publication_window
+• CD Cuenca — CA San Lorenzo de Almagro: btts Обе забьют: Да @ 2.2; EV +3.9% | edge +3.2 п.п. | block: ev_below_min:3.858<5.0; not_seen_enough:1/2; not_rechecked_enough:0/2
+
+📌 Диагноз
+• Инвентарь и odds-matching работают: почти все матчи в окне получили офферы.
+• Кандидаты строятся, но финальные quality/publication guards их не выпускают — это защита качества, не ошибка API.
+• Контекст покрывает не все матчи с офферами; приоритет — усилить SStats/Bzzoiro/TheSportsDB matching и self-history.
+• Прогноз не отправлен, потому что не было publishable-кандидата после guards.
