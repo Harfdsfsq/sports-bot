@@ -4,244 +4,80 @@ on:
   workflow_dispatch:
     inputs:
       providers:
-        description: "Choose provider smoke target"
-        type: choice
+        description: "core/all/odds/context/weather/news/rapidapi or comma-separated provider names"
         required: true
         default: "core"
-        options:
-          - core
-          - sportlogic
-          - sharpapi
-          - rapidapi
-          - odds
-          - context
-          - all
-          - odds_api_io
-          - sstats
-          - bzzoiro
-          - football_data
-          - thesportsdb
-          - espn
-          - openfootball
-          - openligadb
-          - futrixmetrics
-          - newsapi
-          - gnews
-          - bookies_api
-          - oddspapi
-          - allsportsapi
-      match_limit:
-        description: "Number of bootstrap matches passed to offer/context providers"
-        type: choice
+      max_seconds:
+        description: "Hard script limit in seconds"
         required: true
-        default: "24"
-        options:
-          - "8"
-          - "12"
-          - "24"
-          - "40"
-          - "80"
-      context_match_limit:
-        description: "Number of matches passed to context providers"
-        type: choice
-        required: true
-        default: "12"
-        options:
-          - "4"
-          - "8"
-          - "12"
-          - "24"
-          - "40"
-      send_telegram:
-        description: "Send compact provider smoke report to Telegram"
+        default: "105"
+      send_samples:
+        description: "Show small OK samples in txt report"
         type: boolean
         required: false
-        default: true
+        default: false
 
 permissions:
   contents: read
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
-  TZ: Europe/Moscow
-  APP_TIMEZONE: Europe/Moscow
-  APP_ENV: provider-smoke
-  PUBLISH_DRY_RUN: "true"
-  PREDICTION_PUBLICATION_ENABLED: "false"
-  CONTROLLED_FALLBACK_SEND_TELEGRAM: "false"
-  CONTROLLED_FALLBACK_TELEGRAM_ENABLED: "false"
-  RUN_REPORT_ENABLED: "false"
-  DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
-  DAILY_REPORT_ENABLED: "false"
-  SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
-  PROVIDER_SMOKE_PROVIDERS: ${{ github.event.inputs.providers || 'core' }}
-  PROVIDER_SMOKE_MATCH_LIMIT: ${{ github.event.inputs.match_limit || '24' }}
-  PROVIDER_SMOKE_CONTEXT_MATCH_LIMIT: ${{ github.event.inputs.context_match_limit || '12' }}
-  PROVIDER_SMOKE_SEND_TELEGRAM: ${{ github.event.inputs.send_telegram || 'true' }}
-
-  PROVIDER_REQUEST_BUDGET_MODE: per_run_only
-  PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
-  ALL_SOURCES_FREE_MAXIMIZE: "true"
-  MATCH_BOOTSTRAP_PROVIDER: odds_api_io
-  DAY_INVENTORY_USE_FOR_RUN: "false"
-  DAY_INVENTORY_SKIP_BUILD: "true"
-  RUN_DAYS_AHEAD: "2"
-  PUBLISH_WINDOW_HOURS: "12"
-  MIN_KICKOFF_LEAD_MINUTES: "0"
-  MANUAL_LATE_MODE_ENABLED: "true"
-
-  ENABLE_ODDS_API_IO: "true"
-  ODDS_API_IO_ENABLED: "true"
-  ODDS_API_IO_PER_RUN_MAX: "12"
-  ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "12"
-  ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "6"
-  ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "6"
-  ODDS_API_IO_BOOKMAKERS_ACCOUNT1: Bet365,Unibet
-  ODDS_API_IO_BOOKMAKERS_ACCOUNT2: Betfair Exchange,Sbobet
-  ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "2"
-  MAX_MATCHES_FOR_ODDS_FETCH: "24"
-
-  ENABLE_SHARPAPI: "true"
-  SHARPAPI_ENABLED: "true"
-  SHARPAPI_BASE_URL: https://sharpapi.com
-  SHARPAPI_API_PREFIX: /api/v1
-  SHARPAPI_ODDS_ENDPOINTS: /api/v1/odds
-  SHARPAPI_LEAGUE: Soccer
-  SHARPAPI_PER_RUN_MAX: "1"
-  SHARPAPI_MAX_HTTP_REQUESTS_PER_RUN: "1"
-  SHARPAPI_MATCH_LIMIT: "24"
-  SHARPAPI_TIMEOUT_SECONDS: "6"
-  MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS: "1.65"
-
-  ENABLE_SPORTLOGIC: "true"
-  SPORTLOGIC_ENABLED: "true"
-  SPORTLOGIC_PER_RUN_MAX: "20"
-  SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "20"
-  SPORTLOGIC_MATCH_LIMIT: "80"
-  SPORTLOGIC_CONTEXT_MATCH_LIMIT: "80"
-  SPORTLOGIC_ODDS_MATCH_LIMIT: "16"
-  SPORTLOGIC_TIMEOUT_SECONDS: "12"
-  SPORTLOGIC_BASE_URL: https://api.sportlogic.io/api/v1
-  SPORTLOGIC_HEADER_NAME: X-API-Key
-
-  ENABLE_SSTATS: "true"
-  ENABLE_SSTATS_CONTEXT: "true"
-  SSTATS_ENABLED: "true"
-  SSTATS_PER_RUN_MAX: "20"
-  SSTATS_REQUESTS_MAX_PER_RUN: "20"
-  SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "20"
-  SSTATS_CONTEXT_MATCH_LIMIT: "24"
-
-  ENABLE_BZZOIRO: "true"
-  ENABLE_BZZOIRO_CONTEXT: "true"
-  BZZOIRO_ENABLED: "true"
-  BZZOIRO_PER_RUN_MAX: "40"
-  BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "40"
-  BZZOIRO_CONTEXT_MATCH_LIMIT: "24"
-  BZZOIRO_MAX_PAGES: "6"
-
-  ENABLE_FOOTBALL_DATA_CONTEXT: "true"
-  FOOTBALL_DATA_ENABLED: "true"
-  FOOTBALL_DATA_PER_RUN_MAX: "4"
-  FOOTBALL_DATA_REQUESTS_MAX_PER_RUN: "4"
-  FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: "24"
-
-  ENABLE_THESPORTSDB_CONTEXT: "true"
-  THESPORTSDB_CONTEXT_ENABLED: "true"
-  THESPORTSDB_PER_RUN_MAX: "4"
-  THESPORTSDB_REQUESTS_MAX_PER_RUN: "4"
-  THESPORTSDB_CONTEXT_MATCH_LIMIT: "24"
-
-  ENABLE_ESPN_CONTEXT: "true"
-  ESPN_CONTEXT_MATCH_LIMIT: "24"
-  ESPN_MAX_MATCHES: "24"
-  ESPN_MAX_HTTP_REQUESTS_PER_RUN: "8"
-  ESPN_SCOREBOARD_MAX_REQUESTS_PER_RUN: "6"
-  ESPN_PROBABILITY_MAX_REQUESTS_PER_RUN: "1"
-  ESPN_SUMMARY_MAX_REQUESTS_PER_RUN: "1"
-
-  ENABLE_API_FOOTBALL: "false"
-  API_FOOTBALL_ENABLED: "false"
-  API_FOOTBALL_KEY: ""
-  API_FOOTBALL_PER_RUN_MAX: "0"
-  API_FOOTBALL_CONTEXT_MATCH_LIMIT: "0"
-
-  ENABLE_OPENFOOTBALL_CONTEXT: "true"
-  OPENFOOTBALL_ENABLED: "true"
-  OPENFOOTBALL_CONTEXT_MATCH_LIMIT: "24"
-  OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN: "2"
-
-  ENABLE_FUTRIXMETRICS_CONTEXT: "true"
-  FUTRIXMETRICS_ENABLED: "true"
-  FUTRIXMETRICS_PER_RUN_MAX: "1"
-  FUTRIXMETRICS_REQUESTS_MAX_PER_RUN: "1"
-  FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: "4"
-
-  ENABLE_NEWSAPI_CONTEXT: "true"
-  NEWSAPI_ENABLED: "true"
-  NEWSAPI_PER_RUN_MAX: "1"
-  NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN: "1"
-  NEWSAPI_MATCH_LIMIT: "2"
-
-  ENABLE_GNEWS_CONTEXT: "true"
-  GNEWS_ENABLED: "true"
-  GNEWS_PER_RUN_MAX: "1"
-  GNEWS_MAX_HTTP_REQUESTS_PER_RUN: "1"
-  GNEWS_CONTEXT_MATCH_LIMIT: "2"
-
-  WEATHER_CONTEXT_ENABLED: "true"
-  ENABLE_WEATHERAPI: "true"
-  WEATHERAPI_ENABLED: "true"
-  WEATHERAPI_PER_RUN_MAX: "2"
-  WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN: "2"
-  WEATHER_CONTEXT_MATCH_LIMIT: "4"
-  ENABLE_OPENWEATHERMAP: "true"
-  OPENWEATHERMAP_ENABLED: "true"
-  OPENWEATHERMAP_PER_RUN_MAX: "1"
-  OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN: "1"
-
-  TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
-  TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-  ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-  ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
-  SHARPAPI_API_KEY: ${{ secrets.SHARPAPI_API_KEY }}
-  SHARPAPI_KEY: ${{ secrets.SHARPAPI_API_KEY }}
-  SHARP_API_KEY: ${{ secrets.SHARPAPI_API_KEY }}
-  ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-  ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
-  FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
-  SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-  BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
-  FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-  THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-  CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
-  CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
-  NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
-  GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
-  WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
-  WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
-  WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
-  OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
-  OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
-  OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
-  METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
-  METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
-  RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
-  SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
-  SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
-  SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
-  SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
-  ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
-  FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
-  SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+concurrency:
+  group: provider-smoke
+  cancel-in-progress: true
 
 jobs:
   provider-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
-    concurrency:
-      group: provider-smoke
-      cancel-in-progress: true
+    timeout-minutes: 3
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      TZ: Europe/Moscow
+      APP_TIMEZONE: Europe/Moscow
+      APP_ENV: provider-smoke-fast
+      PUBLISH_DRY_RUN: "true"
+      PREDICTION_PUBLICATION_ENABLED: "false"
+      RUN_REPORT_ENABLED: "false"
+      DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
+      DAILY_REPORT_ENABLED: "false"
+      SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
+      PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'core' }}
+      PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '105' }}
+      PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'false' }}
+      PROVIDER_SMOKE_FAST_TIMEOUT: "7"
+      PROVIDER_SMOKE_FAST_CONCURRENCY: "6"
+
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      API_SPORTS_KEY: ${{ secrets.API_FOOTBALL_KEY }}
+      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
+      WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
+      NEWSAPI_KEY: ${{ secrets.NEWSAPI_KEY }}
+      CURRENTS_API_KEY: ${{ secrets.CURRENTS_API_KEY }}
+      CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
+      GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
+      NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}
+      GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
+      METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
+      METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
+      RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
+      ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
+      ODDS_FEED_RAPIDAPI_HOST: odds-feed.p.rapidapi.com
+      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
+      SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+      FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -253,72 +89,24 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install dependencies
+      - name: Install minimal dependencies
         shell: bash
-        run: pip install -r requirements.txt
+        run: pip install httpx==0.28.1
 
-      - name: Prepare smoke folders
+      - name: Run fast provider smoke
         shell: bash
-        run: mkdir -p .data .data/exports artifacts/provider-smoke .logs
-
-      - name: Apply explicit provider runtime patches
-        if: github.event.inputs.providers != 'sharpapi' && github.event.inputs.providers != 'rapidapi'
-        shell: bash
-        run: |
-          python scripts/api_max_usage_patch.py || true
-          cat .data/exports/latest-api-max-usage-patch.json || true
-
-      - name: Run standalone SharpAPI smoke diagnostics
-        if: github.event.inputs.providers == 'sharpapi'
-        shell: bash
-        env:
-          PYTHONPATH: ""
-          PYTHONSAFEPATH: "1"
         run: |
           set -euo pipefail
-          timeout 20s python -S -u scripts/sharpapi_smoke_run.py
-          echo "----- sharpapi smoke txt -----"
-          cat .data/exports/latest-provider-smoke.txt || true
-
-      - name: Run standalone RapidAPI smoke diagnostics
-        if: github.event.inputs.providers == 'rapidapi'
-        shell: bash
-        env:
-          PYTHONPATH: ""
-          PYTHONSAFEPATH: "1"
-          RAPIDAPI_SMOKE_RESET_STATE: "true"
-        run: |
-          set -euo pipefail
-          timeout 80s python -S -u scripts/rapidapi_smoke_run.py
-          echo "----- rapidapi smoke txt -----"
-          cat .data/exports/latest-provider-smoke.txt || true
-
-      - name: Run SportLogic raw API debug
-        if: github.event.inputs.providers == 'sportlogic' || github.event.inputs.providers == 'core' || github.event.inputs.providers == 'all'
-        shell: bash
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          python scripts/sportlogic_raw_debug.py || true
-          echo "----- sportlogic raw debug txt -----"
-          cat .data/exports/latest-sportlogic-debug.txt || true
-
-      - name: Run provider smoke diagnostics
-        if: github.event.inputs.providers != 'sharpapi' && github.event.inputs.providers != 'rapidapi'
-        shell: bash
-        env:
-          PYTHONPATH: ${{ github.workspace }}
-        run: |
-          set -euo pipefail
-          args=(
-            --providers "${PROVIDER_SMOKE_PROVIDERS}"
-            --match-limit "${PROVIDER_SMOKE_MATCH_LIMIT}"
-            --context-match-limit "${PROVIDER_SMOKE_CONTEXT_MATCH_LIMIT}"
-          )
-          if [ "${PROVIDER_SMOKE_SEND_TELEGRAM}" = "true" ]; then
-            args+=(--send-telegram)
-          fi
-          timeout 8m python -u scripts/provider_smoke_run.py "${args[@]}"
+          mkdir -p .data/exports artifacts/provider-smoke artifacts/provider-smoke-fast
+          python -u scripts/provider_smoke_fast.py \
+            --providers "${PROVIDER_SMOKE_FAST_PROVIDERS}" \
+            --max-seconds "${PROVIDER_SMOKE_FAST_MAX_SECONDS}" \
+            --timeout "${PROVIDER_SMOKE_FAST_TIMEOUT}" \
+            --concurrency "${PROVIDER_SMOKE_FAST_CONCURRENCY}"
+          cp .data/exports/latest-provider-smoke-fast.json .data/exports/latest-provider-smoke.json
+          cp .data/exports/latest-provider-smoke-fast.txt .data/exports/latest-provider-smoke.txt
+          cp .data/exports/latest-provider-smoke-fast.json artifacts/provider-smoke/provider-smoke.json
+          cp .data/exports/latest-provider-smoke-fast.txt artifacts/provider-smoke/provider-smoke.txt
           echo "----- provider smoke txt -----"
           cat .data/exports/latest-provider-smoke.txt || true
 
@@ -328,15 +116,10 @@ jobs:
           name: provider-smoke-${{ github.run_id }}
           path: |
             artifacts/provider-smoke/**
+            artifacts/provider-smoke-fast/**
             .data/exports/latest-provider-smoke.json
             .data/exports/latest-provider-smoke.txt
-            .data/exports/latest-api-max-usage-patch.json
-            .data/exports/latest-sportlogic-debug.json
-            .data/exports/latest-sportlogic-debug.txt
-            .data/exports/latest-sportlogic-odds-sample.json
-            .data/exports/latest-rapidapi-provider-probe.json
-            .data/exports/latest-rapidapi-provider-summary.json
-            .data/exports/latest-rapidapi-endpoint-discovery.json
-            .data/exports/latest-rapidapi-endpoint-discovery-summary.json
-          if-no-files-found: ignore
+            .data/exports/latest-provider-smoke-fast.json
+            .data/exports/latest-provider-smoke-fast.txt
+          if-no-files-found: error
           retention-days: 7
