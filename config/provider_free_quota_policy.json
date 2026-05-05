@@ -1,5 +1,5 @@
 {
-  "policy_version": "2026-05-06.pdf-free-limits-v2",
+  "policy_version": "2026-05-06.pdf-free-limits-v3",
   "source_document": "api_free_limits_ru.pdf / api_free_limits_ru.docx, checked 2026-05-05",
   "runs_per_day_assumption": 12,
   "safety_factor_default": 0.78,
@@ -8,6 +8,7 @@
     "Daily/monthly providers are not spent on mass scans; they are reserved for shortlist/context/fallback checks.",
     "Context/news/weather providers must not count as independent price confirmation.",
     "odds-api.io has an official free-limit contradiction in the source document. The runtime uses the conservative 100 requests/hour/account basis until the account dashboard confirms otherwise.",
+    "Primary odds must never be disabled solely by spacing on manual reruns; token bucket already protects the daily/hourly budget.",
     "api-football and API-Sports football are treated as the same backend, not independent football confirmations.",
     "ClubElo and Football-Data.co.uk are cache sources, not high-frequency APIs."
   ],
@@ -20,7 +21,7 @@
       "max_requests_per_run": 280,
       "account1_max_requests_per_run": 140,
       "account2_max_requests_per_run": 140,
-      "min_spacing_minutes": 35,
+      "min_spacing_minutes": 0,
       "priority": "core"
     },
     "bzzoiro": {
