@@ -1,0 +1,25 @@
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+exclude = [
+  ".git",
+  ".data",
+  "artifacts",
+  "__pycache__",
+]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]
+ignore = [
+  "E501",
+  "B008",
+]
+
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+warn_unused_ignores = false
+warn_return_any = false
+check_untyped_defs = false
+no_strict_optional = true
+exclude = "(artifacts|.data)/"
