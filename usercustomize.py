@@ -25,6 +25,12 @@ except Exception:
     pass
 
 try:
+    from app.services import fixture_expansion_runtime_guard
+    fixture_expansion_runtime_guard.install()
+except Exception:
+    pass
+
+try:
     from app.services import rapidapi_probe_runtime_guard
     rapidapi_probe_runtime_guard.install()
 except Exception:
