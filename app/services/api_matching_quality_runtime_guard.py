@@ -1,45 +1,17 @@
 from __future__ import annotations
 
-"""Runtime guard for API matching, request quality and exact price integrity.
-
-This module deliberately patches existing runtime code instead of rewriting the
-main runner.  It fixes three production issues:
-
-1. market confirmation must be counted from exact odds-line offers only;
-2. context providers must never inflate the source count of a selected price;
-3. odds-api.io must not parse HT/corners/cards/player props as full-match lines.
-"""
+"""Runtime guard for API matching, request quality and exact price integrity."""
 
 import os
 import re
-from dataclasses import replace
-from datetime import datetime
 from typing import Any
 
-
-PATCH_MARKER = "_harizon_api_matching_quality_guard_v1"
+PATCH_MARKER = "_harizon_api_matching_quality_guard_v2"
 
 CONTEXT_ONLY_SOURCES = {
-    "sstats",
-    "clubelo",
-    "football_data",
-    "football_data_org",
-    "thesportsdb",
-    "openligadb",
-    "openfootball",
-    "weather",
-    "weatherapi",
-    "openweathermap",
-    "meteostat",
-    "newsapi",
-    "currents",
-    "gnews",
-    "newsdata",
-    "guardian",
-    "self_history",
-    "futrixmetrics",
-    "bzzoiro",
-    "api_football_context",
+    "sstats", "clubelo", "football_data", "football_data_org", "thesportsdb", "openligadb", "openfootball",
+    "weather", "weatherapi", "openweathermap", "meteostat", "newsapi", "currents", "gnews", "newsdata",
+    "guardian", "self_history", "futrixmetrics", "bzzoiro",
 }
 
 PRICE_SOURCE_ALIASES = {
@@ -49,17 +21,13 @@ PRICE_SOURCE_ALIASES = {
     "bzzoiro_event_odds": "bzzoiro",
     "bzzoiro_odds": "bzzoiro",
     "bzzoiro": "bzzoiro",
-    "api_football": "api_football",
-    "api-football": "api_football",
     "allsportsapi": "allsportsapi",
     "all_sports_api": "allsportsapi",
     "sportlogic": "sportlogic",
-    "oddspapi": "oddspapi",
-    "odds_papi": "oddspapi",
-    "bookies_api": "bookies_api",
     "sportsbook_api": "sportsbook_api",
     "oddsfeed": "oddsfeed",
     "odds_feed": "oddsfeed",
+    "highlightly": "highlightly",
 }
 
 NON_FULL_TIME_MARKET_RE = re.compile(
@@ -107,9 +75,7 @@ def _norm(value: Any) -> str:
 
 def _canonical_price_source(value: Any) -> str | None:
     key = _norm(value)
-    if not key:
-        return None
-    if key in CONTEXT_ONLY_SOURCES:
+    if not key or key in CONTEXT_ONLY_SOURCES:
         return None
     if key in PRICE_SOURCE_ALIASES:
         return PRICE_SOURCE_ALIASES[key]
@@ -128,19 +94,14 @@ def _field(obj: Any, name: str, default: Any = None) -> Any:
 def _offer_dicts(candidate: Any) -> list[Any]:
     raw = getattr(candidate, "raw_bucket_offers", None)
     if isinstance(raw, list) and raw:
-        return [row for row in raw if isinstance(row, (dict, object))]
-    summary = getattr(candidate, "source_summary", None)
-    if isinstance(summary, dict):
-        for key in ("offers", "bucket_offers", "selected_offers", "raw_bucket_offers"):
-            value = summary.get(key)
-            if isinstance(value, list) and value:
-                return [row for row in value if isinstance(row, (dict, object))]
-    diagnostics = getattr(candidate, "diagnostics", None)
-    if isinstance(diagnostics, dict):
-        for key in ("offers", "bucket_offers", "selected_offers", "raw_bucket_offers"):
-            value = diagnostics.get(key)
-            if isinstance(value, list) and value:
-                return [row for row in value if isinstance(row, (dict, object))]
+        return raw
+    for container_name in ("source_summary", "diagnostics"):
+        container = getattr(candidate, container_name, None)
+        if isinstance(container, dict):
+            for key in ("offers", "bucket_offers", "selected_offers", "raw_bucket_offers"):
+                value = container.get(key)
+                if isinstance(value, list) and value:
+                    return value
     return []
 
 
@@ -162,25 +123,11 @@ def _line_side_from_text(value: Any) -> str:
 
 
 def _candidate_side(candidate: Any) -> str:
-    return _line_side_from_text(
-        " ".join(
-            str(getattr(candidate, attr, "") or "")
-            for attr in ("selection", "selection_key", "team_side")
-        )
-    )
+    return _line_side_from_text(" ".join(str(getattr(candidate, attr, "") or "") for attr in ("selection", "selection_key", "team_side")))
 
 
 def _offer_text(offer: Any) -> str:
-    fields = (
-        "selection",
-        "selection_key",
-        "team_side",
-        "name",
-        "label",
-        "market_name",
-        "market_key",
-        "market_subtype",
-    )
+    fields = ("selection", "selection_key", "team_side", "name", "label", "market_name", "market_key", "market_subtype")
     return " ".join(str(_field(offer, key, "") or "") for key in fields).strip()
 
 
@@ -195,23 +142,17 @@ def _same_exact_line(candidate: Any, offer: Any) -> bool:
     cand_family = _norm(getattr(candidate, "family", ""))
     offer_family = _norm(_field(offer, "family") or _field(offer, "market_key") or _field(offer, "market_name"))
     if cand_family and offer_family and cand_family != offer_family:
-        # odds-api.io may expose market_key='totals' and market_name='Goals Over/Under'.
         if not (cand_family == "totals" and "total" in offer_family):
             return False
-
     if not _is_full_time_market_name(_field(offer, "market_name") or _field(offer, "market_key")):
         return False
-
     cand_point = getattr(candidate, "point", None)
-    offer_point = _field(offer, "point")
-    if offer_point in (None, ""):
-        offer_point = _field(offer, "line") or _field(offer, "handicap") or _field(offer, "hdp")
+    offer_point = _field(offer, "point") or _field(offer, "line") or _field(offer, "handicap") or _field(offer, "hdp")
     if cand_point not in (None, "") or offer_point not in (None, ""):
         cp = _as_float(cand_point, None)
         op = _as_float(offer_point, None)
         if cp is None or op is None or abs(cp - op) > 1e-9:
             return False
-
     side = _candidate_side(candidate)
     text = _offer_text(offer).lower()
     if side == "over" and not any(token in text for token in ("over", "больше", "тб")):
@@ -231,7 +172,6 @@ def _exact_price_inventory(candidate: Any) -> dict[str, Any]:
     prices: list[float] = []
     market_names: set[str] = set()
     exact_offers = 0
-
     for offer in _offer_dicts(candidate):
         if not _same_exact_line(candidate, offer):
             continue
@@ -253,7 +193,6 @@ def _exact_price_inventory(candidate: Any) -> dict[str, Any]:
         market_name = str(_field(offer, "market_name") or _field(offer, "market_key") or "").strip()
         if market_name:
             market_names.add(market_name)
-
     summary = getattr(candidate, "source_summary", None)
     if isinstance(summary, dict):
         for field in ("price_sources", "price_source_names", "odds_sources", "odds_source_names", "selected_odds_sources"):
@@ -266,14 +205,6 @@ def _exact_price_inventory(candidate: Any) -> dict[str, Any]:
         selected = _canonical_price_source(summary.get("selected_source") or summary.get("source"))
         if selected:
             price_sources.add(selected)
-        for field in ("exact_line_bookmakers", "bookmakers", "bookmaker_names", "selected_bookmakers"):
-            value = summary.get(field)
-            values = value if isinstance(value, (list, tuple, set)) else re.split(r"[,;/|]+", str(value or ""))
-            for item in values:
-                book = _norm(item)
-                if book:
-                    books.add(book)
-
     if not price_sources:
         source = _canonical_price_source(getattr(candidate, "source", None))
         if source:
@@ -281,7 +212,6 @@ def _exact_price_inventory(candidate: Any) -> dict[str, Any]:
     selected_book = _norm(getattr(candidate, "bookmaker", None))
     if selected_book:
         books.add(selected_book)
-
     report = {
         "exact_price_sources_count": len(price_sources),
         "exact_price_sources": sorted(price_sources),
@@ -327,15 +257,13 @@ def _patch_market_integrity() -> bool:
         return False
     if getattr(mi, PATCH_MARKER, False):
         return False
-
     original_sources_count = getattr(mi, "_sources_count", None)
     original_books_count = getattr(mi, "_books_count", None)
     original_validate = getattr(mi, "validate_candidate", None)
     decision_cls = getattr(mi, "IntegrityDecision", None)
 
     def sources_count_patched(candidate: Any) -> int:
-        report = _exact_price_inventory(candidate)
-        exact = int(report.get("exact_price_sources_count") or 0)
+        exact = int(_exact_price_inventory(candidate).get("exact_price_sources_count") or 0)
         if exact > 0:
             return exact
         if callable(original_sources_count):
@@ -343,8 +271,7 @@ def _patch_market_integrity() -> bool:
         return 0
 
     def books_count_patched(candidate: Any) -> int:
-        report = _exact_price_inventory(candidate)
-        exact = int(report.get("exact_line_bookmakers_count") or 0)
+        exact = int(_exact_price_inventory(candidate).get("exact_line_bookmakers_count") or 0)
         if exact > 0:
             return exact
         if callable(original_books_count):
@@ -361,34 +288,21 @@ def _patch_market_integrity() -> bool:
             report = {}
         inventory = _exact_price_inventory(candidate)
         report.update(inventory)
-
         family = _norm(getattr(candidate, "family", ""))
         point = _as_float(getattr(candidate, "point", None), None)
         price = _candidate_price(candidate)
         side = _candidate_side(candidate)
         exact_sources = int(inventory.get("exact_price_sources_count") or 0)
         exact_books = int(inventory.get("exact_line_bookmakers_count") or 0)
-
         if family in {"totals", "spreads"}:
             bad_markets = [name for name in inventory.get("exact_line_market_names", []) if not _is_full_time_market_name(name)]
             if bad_markets:
                 reasons.append("non_full_time_or_prop_market:" + ",".join(bad_markets[:3]))
-
         if family == "totals" and side == "over" and point is not None and point <= 1.5:
             max_reasonable = _as_float(os.getenv("MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS"), 1.65) or 1.65
             min_books = max(2, _as_int(os.getenv("MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS"), 3))
             if price > max_reasonable and (exact_sources < 2 or exact_books < min_books):
-                reasons.append(
-                    f"suspicious_total_over_1_5_exact_guard:"
-                    f"odds={price:.2f},max={max_reasonable:.2f},"
-                    f"price_sources={exact_sources},books={exact_books}/{min_books}"
-                )
-
-        reported_sources = _as_int(getattr(candidate, "sources_count", 0), 0)
-        if reported_sources > exact_sources and exact_sources < 2:
-            report["context_sources_excluded_from_price_sources"] = max(0, reported_sources - exact_sources)
-
-        # Deduplicate while preserving order.
+                reasons.append(f"suspicious_total_over_1_5_exact_guard:odds={price:.2f},max={max_reasonable:.2f},price_sources={exact_sources},books={exact_books}/{min_books}")
         deduped: list[str] = []
         seen: set[str] = set()
         for reason in reasons:
@@ -413,11 +327,9 @@ def _patch_odds_api_io_provider() -> bool:
         from app.utils import league_similarity, score_event_match
     except Exception:
         return False
-
     cls = getattr(module, "OddsApiIoProvider", None)
     if cls is None or getattr(cls, PATCH_MARKER, False):
         return False
-
     original_is_supported = getattr(cls, "_is_supported_market", None)
     if callable(original_is_supported):
         def is_supported_market_patched(self: Any, market_key: Any) -> bool:
@@ -462,7 +374,6 @@ def _patch_odds_api_io_provider() -> bool:
                 best_match = match
             elif score > second_score:
                 second_score = score
-
         min_score = float(os.getenv("ODDS_API_IO_MATCH_MIN_SCORE") or 54.0)
         fuzzy_min_score = float(os.getenv("ODDS_API_IO_FUZZY_MATCH_MIN_SCORE") or 68.0)
         min_gap = float(os.getenv("ODDS_API_IO_MATCH_AMBIGUITY_MIN_GAP") or 7.0)
@@ -489,46 +400,22 @@ def _patch_team_aliases() -> bool:
     aliases = getattr(utils, "TEAM_ALIAS_MAP", None)
     stops = getattr(utils, "TEAM_STOP_WORDS", None)
     if isinstance(aliases, dict):
-        aliases.update(
-            {
-                "arsenal fc": "arsenal",
-                "arsenal": "arsenal",
-                "atletico madrid": "atletico madrid",
-                "atletico de madrid": "atletico madrid",
-                "club atletico de madrid": "atletico madrid",
-                "ca atl madrid": "atletico madrid",
-                "psg": "paris saint germain",
-                "paris sg": "paris saint germain",
-                "paris saint germain": "paris saint germain",
-                "inter milan": "internazionale",
-                "internazionale": "internazionale",
-                "man utd": "manchester united",
-                "man united": "manchester united",
-                "manchester utd": "manchester united",
-                "man city": "manchester city",
-                "spurs": "tottenham",
-                "tottenham hotspur": "tottenham",
-                "bayern munich": "bayern munich",
-                "fc bayern munich": "bayern munich",
-                "bayer leverkusen": "bayer leverkusen",
-                "athletic bilbao": "athletic club",
-                "athletic club bilbao": "athletic club",
-            }
-        )
+        aliases.update({
+            "arsenal fc": "arsenal", "arsenal": "arsenal", "atletico madrid": "atletico madrid",
+            "atletico de madrid": "atletico madrid", "club atletico de madrid": "atletico madrid",
+            "psg": "paris saint germain", "paris sg": "paris saint germain", "paris saint germain": "paris saint germain",
+            "inter milan": "internazionale", "internazionale": "internazionale", "man utd": "manchester united",
+            "man united": "manchester united", "manchester utd": "manchester united", "man city": "manchester city",
+            "spurs": "tottenham", "tottenham hotspur": "tottenham", "bayern munich": "bayern munich",
+            "fc bayern munich": "bayern munich", "bayer leverkusen": "bayer leverkusen",
+            "athletic bilbao": "athletic club", "athletic club bilbao": "athletic club",
+        })
     if isinstance(stops, set):
         stops.update({"f c", "football", "soccer", "team", "association"})
     return True
 
 
 def _install_env_defaults() -> None:
-    # More env aliases, before Settings is usually constructed.
-    if not str(os.getenv("API_FOOTBALL_KEY") or "").strip():
-        for alias in ("API_FOOTBALL_API_KEY", "API_SPORTS_KEY", "API_SPORTS_API_KEY", "APISPORTS_API_KEY"):
-            value = str(os.getenv(alias) or "").strip()
-            if value:
-                os.environ["API_FOOTBALL_KEY"] = value
-                break
-
     os.environ.setdefault("API_MATCHING_QUALITY_GUARD_ENABLED", "true")
     os.environ.setdefault("ODDS_API_IO_MATCH_MIN_SCORE", "54")
     os.environ.setdefault("ODDS_API_IO_FUZZY_MATCH_MIN_SCORE", "68")
