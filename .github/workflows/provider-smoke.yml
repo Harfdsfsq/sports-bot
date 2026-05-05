@@ -42,8 +42,9 @@ jobs:
       PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'all' }}
       PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '180' }}
       PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'true' }}
-      PROVIDER_SMOKE_FAST_TIMEOUT: "10"
+      PROVIDER_SMOKE_FAST_TIMEOUT: "18"
       PROVIDER_SMOKE_FAST_CONCURRENCY: "8"
+      PROVIDER_SMOKE_REPEATS: "2"
 
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
@@ -53,11 +54,6 @@ jobs:
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
-      API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
-      API_SPORTS_KEY: ${{ secrets.API_SPORTS_KEY }}
-      API_SPORTS_API_KEY: ${{ secrets.API_SPORTS_API_KEY }}
-      APISPORTS_API_KEY: ${{ secrets.APISPORTS_API_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
       SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
       SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
@@ -83,14 +79,8 @@ jobs:
       HIGHLIGHTLY_KEY: ${{ secrets.HIGHLIGHTLY_KEY }}
       HIGHLIGHTLY_BASE_URL: ${{ secrets.HIGHLIGHTLY_BASE_URL }}
       HIGHLIGHTLY_SMOKE_PATH: ${{ secrets.HIGHLIGHTLY_SMOKE_PATH }}
-      BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
-      BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
-      BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
-      BOOKIES_API_SMOKE_PATH: ${{ secrets.BOOKIES_API_SMOKE_PATH }}
-      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
-      ODDS_PAPI_API_KEY: ${{ secrets.ODDS_PAPI_API_KEY }}
-      ODDSPAPI_RAPIDAPI_HOST: ${{ secrets.ODDSPAPI_RAPIDAPI_HOST }}
-      ODDSPAPI_RAPIDAPI_PATH: ${{ secrets.ODDSPAPI_RAPIDAPI_PATH }}
+      HIGHLIGHTLY_USE_RAPIDAPI: ${{ secrets.HIGHLIGHTLY_USE_RAPIDAPI }}
+      HIGHLIGHTLY_RAPIDAPI_HOST: ${{ secrets.HIGHLIGHTLY_RAPIDAPI_HOST }}
       METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
       METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
       METEOSTAT_RAPIDAPI_PATH: ${{ secrets.METEOSTAT_RAPIDAPI_PATH }}
@@ -123,7 +113,7 @@ jobs:
         shell: bash
         run: pip install httpx==0.28.1
 
-      - name: Run fast provider smoke
+      - name: Run provider diagnostics
         shell: bash
         run: |
           set -euo pipefail
@@ -137,8 +127,10 @@ jobs:
           cp .data/exports/latest-provider-smoke-fast.txt .data/exports/latest-provider-smoke.txt
           cp .data/exports/latest-provider-smoke-fast.json artifacts/provider-smoke/provider-smoke.json
           cp .data/exports/latest-provider-smoke-fast.txt artifacts/provider-smoke/provider-smoke.txt
-          echo "----- provider smoke txt -----"
-          cat .data/exports/latest-provider-smoke.txt || true
+          if [ -f .data/exports/latest-provider-smoke-diagnostics.json ]; then cp .data/exports/latest-provider-smoke-diagnostics.json artifacts/provider-smoke/provider-smoke-diagnostics.json; fi
+          if [ -f .data/exports/latest-provider-smoke-diagnostics.txt ]; then cp .data/exports/latest-provider-smoke-diagnostics.txt artifacts/provider-smoke/provider-smoke-diagnostics.txt; fi
+          echo "----- provider smoke diagnostics txt -----"
+          cat .data/exports/latest-provider-smoke-diagnostics.txt || cat .data/exports/latest-provider-smoke.txt || true
 
       - name: Upload provider smoke artifact
         uses: actions/upload-artifact@v5
@@ -151,5 +143,7 @@ jobs:
             .data/exports/latest-provider-smoke.txt
             .data/exports/latest-provider-smoke-fast.json
             .data/exports/latest-provider-smoke-fast.txt
+            .data/exports/latest-provider-smoke-diagnostics.json
+            .data/exports/latest-provider-smoke-diagnostics.txt
           if-no-files-found: error
           retention-days: 7
