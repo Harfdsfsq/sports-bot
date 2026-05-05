@@ -62,6 +62,12 @@ def _apply_controlled_fallback_prepublish_guard() -> None:
     controlled_fallback_prepublish_guard.install()
 
 
+def _apply_telegram_controlled_pick_safety() -> None:
+    import telegram_controlled_pick_safety
+
+    telegram_controlled_pick_safety.install()
+
+
 def _install_import_hook() -> None:
     import runtime_startup_patches
 
@@ -69,6 +75,7 @@ def _install_import_hook() -> None:
 
 
 _safe_run("controlled_fallback_prepublish_guard", _apply_controlled_fallback_prepublish_guard)
+_safe_run("telegram_controlled_pick_safety", _apply_telegram_controlled_pick_safety)
 _safe_run("api_max_usage_patch", _apply_api_patch)
 _safe_run("sportlogic_policy_unquarantine", _apply_sportlogic_unquarantine)
 _safe_run("runtime_startup_patches.apply_all", _apply_runtime_patches)
