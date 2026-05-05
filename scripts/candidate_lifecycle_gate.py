@@ -2,16 +2,9 @@ from __future__ import annotations
 
 """Candidate lifecycle gate for controlled publication.
 
-Purpose:
-1. Accumulate candidate observations across runs.
-2. Prioritize matches that will start soon.
-3. Require repeated value confirmation before Telegram publication.
-4. Avoid missing a good pick by allowing publication only in the final safe window.
-
-The script is intentionally independent from the main model pipeline. It reads
-fresh run artifacts, updates `.data/candidate-lifecycle-state.json`, writes a
-human-readable report, and exports `CANDIDATE_LIFECYCLE_ALLOW_PUBLISH` through
-GITHUB_ENV for the following workflow step.
+This gate accumulates candidate observations across runs, prioritizes near-kickoff
+matches, requires repeated value confirmation, and allows controlled publication
+only in the final safe window before kickoff.
 """
 
 import hashlib
@@ -120,6 +113,19 @@ def as_float(value: Any, default: float = 0.0) -> float:
         return default
 
 
+def first_float(*values: Any, default: float = 0.0) -> float:
+    for value in values:
+        try:
+            if value is None or value == "":
+                continue
+            parsed = float(str(value).replace(",", "."))
+            if not math.isnan(parsed):
+                return parsed
+        except Exception:
+            continue
+    return default
+
+
 def as_int(value: Any, default: int = 0) -> int:
     try:
         if value is None or value == "":
@@ -139,7 +145,7 @@ def is_candidate_like(row: Any) -> bool:
     keys = set(row)
     has_match = any(k in keys for k in ("match_key", "home_team", "away_team", "commence_time", "kickoff", "start_time"))
     has_market = any(k in keys for k in ("family", "selection", "selection_key", "market", "market_family"))
-    has_value = any(k in keys for k in ("ev_pct", "expected_value_pct", "edge_pp", "confidence", "publication_score", "odds"))
+    has_value = any(k in keys for k in ("ev_pct", "expected_value_pct", "edge_pp", "edge_pct", "confidence", "publication_score", "odds"))
     return bool(has_match and has_market and has_value)
 
 
@@ -151,8 +157,7 @@ def recursively_collect_candidates(payload: Any, source: str, out: list[dict[str
             item = dict(payload)
             item.setdefault("_candidate_source_file", source)
             out.append(item)
-        for key, value in payload.items():
-            # Avoid recursively exploding giant raw provider body strings.
+        for _, value in payload.items():
             if isinstance(value, str) and len(value) > 5000:
                 continue
             recursively_collect_candidates(value, source, out, depth + 1)
@@ -169,12 +174,18 @@ def source_candidates() -> list[dict[str, Any]]:
         payload = load_json(path, None)
         recursively_collect_candidates(payload, str(path), out)
     deduped: dict[str, dict[str, Any]] = {}
+    now = now_utc()
     for candidate in out:
         key = candidate_key(candidate)
         if not key:
             continue
+        # Ignore malformed nested fragments; they created noisy rows such as None — None spreads.
+        if not (candidate.get("home_team") or candidate.get("home")) or not (candidate.get("away_team") or candidate.get("away")):
+            continue
+        if get_kickoff(candidate) is None:
+            continue
         old = deduped.get(key)
-        if old is None or candidate_priority_score(candidate, now_utc()) > candidate_priority_score(old, now_utc()):
+        if old is None or candidate_priority_score(candidate, now) > candidate_priority_score(old, now):
             deduped[key] = candidate
     return list(deduped.values())
 
@@ -185,11 +196,9 @@ def canonical_match_key(candidate: dict[str, Any]) -> str:
         return direct
     home = re.sub(r"[^a-zа-яё0-9]+", "_", text_norm(candidate.get("home_team") or candidate.get("home") or "")).strip("_")
     away = re.sub(r"[^a-zа-яё0-9]+", "_", text_norm(candidate.get("away_team") or candidate.get("away") or "")).strip("_")
-    dt = parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
+    dt = get_kickoff(candidate)
     day = dt.date().isoformat() if dt else "unknown_day"
-    if home and away:
-        return f"{day}:{home}:{away}"
-    return ""
+    return f"{day}:{home}:{away}" if home and away else ""
 
 
 def candidate_key(candidate: dict[str, Any]) -> str:
@@ -218,34 +227,25 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
     integrity = candidate.get("integrity_report") if isinstance(candidate.get("integrity_report"), dict) else {}
 
-    ev = as_float(candidate.get("ev_pct"), math.nan)
-    if math.isnan(ev):
-        ev = as_float(candidate.get("expected_value_pct"), math.nan)
-    if math.isnan(ev):
-        ev = as_float(candidate.get("canonical_ev_pct"), math.nan)
-    if math.isnan(ev):
-        ev = as_float(quality.get("ev_pct"), 0.0)
+    final_probability = first_float(candidate.get("adjusted_probability"), candidate.get("final_probability"), candidate.get("model_probability"), default=0.0)
+    odds = first_float(candidate.get("odds"), summary.get("selected_odds"), summary.get("odds"), integrity.get("price"), default=0.0)
+    implied_probability = (1.0 / odds) if odds > 1.0 else first_float(candidate.get("implied_probability"), candidate.get("selected_implied_probability"), default=0.0)
 
-    edge = as_float(candidate.get("edge_pp"), math.nan)
+    ev = first_float(candidate.get("ev_pct"), candidate.get("expected_value_pct"), candidate.get("canonical_ev_pct"), quality.get("ev_pct"), default=math.nan)
+    if math.isnan(ev) and odds > 1.0 and final_probability > 0:
+        ev = ((final_probability * odds) - 1.0) * 100.0
+    if math.isnan(ev):
+        ev = 0.0
+
+    edge = first_float(candidate.get("edge_pp"), candidate.get("edge_pct"), candidate.get("canonical_edge_pp"), candidate.get("canonical_edge_pct"), quality.get("edge_pp"), quality.get("edge_pct"), default=math.nan)
+    if math.isnan(edge) and final_probability > 0 and implied_probability > 0:
+        edge = (final_probability - implied_probability) * 100.0
     if math.isnan(edge):
-        edge = as_float(candidate.get("canonical_edge_pp"), math.nan)
-    if math.isnan(edge):
-        edge = as_float(quality.get("edge_pp"), 0.0)
+        edge = 0.0
 
-    confidence = as_float(candidate.get("confidence"), math.nan)
-    if math.isnan(confidence):
-        confidence = as_float(quality.get("confidence"), math.nan)
-    if math.isnan(confidence):
-        confidence = as_float(candidate.get("publication_score"), 0.0)
-
-    odds = as_float(candidate.get("odds"), 0.0)
-    if odds <= 1.0:
-        odds = as_float(summary.get("selected_odds") or summary.get("odds") or integrity.get("price"), 0.0)
-
-    books = as_int(candidate.get("books_count"), 0)
-    books = max(books, as_int(summary.get("books_count"), 0), as_int(integrity.get("books_count"), 0))
-    sources = as_int(candidate.get("sources_count"), 0)
-    sources = max(sources, as_int(summary.get("sources_count"), 0), as_int(integrity.get("sources_count"), 0))
+    confidence = first_float(candidate.get("confidence"), quality.get("confidence"), candidate.get("publication_score"), default=0.0)
+    books = max(as_int(candidate.get("books_count"), 0), as_int(summary.get("books_count"), 0), as_int(integrity.get("books_count"), 0))
+    sources = max(as_int(candidate.get("sources_count"), 0), as_int(summary.get("sources_count"), 0), as_int(integrity.get("sources_count"), 0))
 
     return {
         "ev_pct": round(float(ev), 3),
@@ -257,6 +257,8 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "family": str(candidate.get("family") or candidate.get("market_family") or candidate.get("market") or ""),
         "selection": str(candidate.get("selection") or candidate.get("selection_key") or candidate.get("pick") or ""),
         "point": candidate.get("point") or candidate.get("line"),
+        "final_probability": round(float(final_probability), 6),
+        "implied_probability": round(float(implied_probability), 6),
     }
 
 
@@ -340,7 +342,6 @@ def candidate_priority_score(candidate: dict[str, Any], now: datetime) -> float:
     minutes = ks.get("minutes_to_kickoff")
     time_score = 0.0
     if isinstance(minutes, (int, float)):
-        # Highest score inside 25-90 min; still decent in 90-180 min watch area.
         if ks.get("in_final_window"):
             time_score = 45.0 + max(0.0, 90.0 - float(minutes)) * 0.12
         elif 90.0 < float(minutes) <= 180.0:
@@ -349,14 +350,7 @@ def candidate_priority_score(candidate: dict[str, Any], now: datetime) -> float:
             time_score = 8.0
         else:
             time_score = -50.0
-    return (
-        time_score
-        + metrics["ev_pct"] * 2.0
-        + metrics["edge_pp"] * 2.5
-        + metrics["confidence"] * 0.35
-        + metrics["books_count"] * 2.0
-        + metrics["sources_count"] * 1.5
-    )
+    return time_score + metrics["ev_pct"] * 2.0 + metrics["edge_pp"] * 2.5 + metrics["confidence"] * 0.35 + metrics["books_count"] * 2.0 + metrics["sources_count"] * 1.5
 
 
 def load_state() -> dict[str, Any]:
@@ -458,14 +452,7 @@ def publication_decision(rows: list[dict[str, Any]], now: datetime) -> dict[str,
     eligible.sort(key=lambda item: float(item.get("priority_score") or 0.0), reverse=True)
     blocked.sort(key=lambda item: float(item.get("priority_score") or 0.0), reverse=True)
     selected = eligible[0] if eligible else None
-    return {
-        "allow_publish": bool(selected),
-        "selected": selected,
-        "eligible_count": len(eligible),
-        "eligible": eligible[:10],
-        "blocked_count": len(blocked),
-        "blocked_top": blocked[:20],
-    }
+    return {"allow_publish": bool(selected), "selected": selected, "eligible_count": len(eligible), "eligible": eligible[:10], "blocked_count": len(blocked), "blocked_top": blocked[:20]}
 
 
 def write_markdown(report: dict[str, Any]) -> None:
@@ -476,6 +463,7 @@ def write_markdown(report: dict[str, Any]) -> None:
         f"- Created UTC: `{report.get('created_at_utc')}`",
         f"- Candidates found this run: **{report.get('candidates_found')}**",
         f"- Candidates tracked: **{report.get('state_candidates_total')}**",
+        f"- Value-ok candidates this run: **{report.get('value_ok_count')}**",
         f"- Allow publish: **{report.get('decision', {}).get('allow_publish')}**",
         f"- Eligible: **{report.get('decision', {}).get('eligible_count')}**",
         f"- Blocked: **{report.get('decision', {}).get('blocked_count')}**",
@@ -483,16 +471,14 @@ def write_markdown(report: dict[str, Any]) -> None:
     ]
     if selected:
         lines.extend([
-            "## Selected for final publication window",
-            "",
+            "## Selected for final publication window", "",
             f"- Match: `{selected.get('home_team')} — {selected.get('away_team')}`",
             f"- League: `{selected.get('league_name')}`",
             f"- Market: `{selected.get('family')} / {selected.get('selection')} / {selected.get('point')}`",
             f"- Kickoff UTC: `{selected.get('kickoff_utc')}`",
             f"- Seen count: `{selected.get('seen_count')}`",
             f"- Value streak: `{selected.get('value_streak')}`",
-            f"- Metrics: `{json.dumps(selected.get('last_metrics'), ensure_ascii=False)}`",
-            "",
+            f"- Metrics: `{json.dumps(selected.get('last_metrics'), ensure_ascii=False)}`", "",
         ])
     lines.extend(["## Top blocked", "", "| Match | Market | Kickoff min | Seen | Streak | Reasons |", "|---|---|---:|---:|---:|---|"])
     for row in report.get("decision", {}).get("blocked_top", [])[:12]:
@@ -534,6 +520,7 @@ def main() -> int:
         "source_paths": [str(path) for path in SOURCE_PATHS if path.exists()],
         "candidates_found": len(candidates),
         "updated_rows": rows[:50],
+        "value_ok_count": sum(1 for row in rows if row.get("last_value_ok")),
         "state_candidates_total": len(state.get("candidates") or {}),
         "decision": decision,
     }
