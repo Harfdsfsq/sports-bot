@@ -27,7 +27,6 @@ jobs:
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
       RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
-
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       FREE_CONTEXT_RUNTIME_ENABLED: "true"
       PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
@@ -69,14 +68,6 @@ jobs:
       WIKIDATA_ENABLED: "true"
       WIKIDATA_MAX_REQUESTS_PER_DAY: "4"
       WIKIDATA_SPARQL_MAX_REQUESTS_PER_DAY: "2"
-      ODDSPAPI_ENABLED: "false"
-      API_FOOTBALL_ENABLED: "false"
-      API_SPORTS_ENABLED: "false"
-      BOOKIES_API_ENABLED: "false"
-      SPORTAPI7_ENABLED: "false"
-      ODDS_FEED_RAPIDAPI_ENABLED: "false"
-      SPORTSBOOK_RAPIDAPI_ENABLED: "false"
-
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
@@ -111,27 +102,23 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Run bot
         shell: bash
         run: |
           set -euo pipefail
           mkdir -p .data/exports .data/cache artifacts/run-bot
-          python -m app.cli run-once
+          python -c "import runpy, sys, usercustomize; sys.argv=['python -m app.cli','run-once']; runpy.run_module('app.cli', run_name='__main__')"
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
-
       - name: Commit runtime artifacts
         if: always()
         shell: bash
@@ -141,7 +128,6 @@ jobs:
           git add -f .data/exports .data/cache || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
-
       - name: Upload run artifact
         if: always()
         uses: actions/upload-artifact@v5
