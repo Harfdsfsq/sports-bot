@@ -1,17 +1,22 @@
 {
-  "version": "v21-sportlogic-context-probe-odds-quarantined",
-  "description": "Single runtime source of truth for provider request grants. SportLogic is enabled only as a low-volume context/matching probe; its odds are quarantined until price payload parsing is fixture-tested.",
+  "version": "v22-near-window-context-priority",
+  "description": "Provider request grants with near-window context priority. Removed providers stay disabled. Odds coverage remains broad, while context providers are forced to spend their first targets on matches starting soon.",
   "mode": "per_run_only",
-  "deleted_providers": ["api_football"],
+  "deleted_providers": ["api_football", "bookies_api", "oddspapi"],
   "base_env": {
     "PROVIDER_REQUEST_BUDGET_MODE": "per_run_only",
     "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "true",
     "ALL_SOURCES_FREE_MAXIMIZE": "true",
     "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
-    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "180",
-    "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "72",
+    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240",
+    "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96",
     "DAY_INVENTORY_NEAR_WINDOW_HOURS": "12",
-    "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true"
+    "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
+    "NEAR_WINDOW_CONTEXT_PRIORITY_ENABLED": "true",
+    "NEAR_WINDOW_CONTEXT_HOURS": "12",
+    "NEAR_WINDOW_CONTEXT_MIN_MATCHES": "48",
+    "NEAR_WINDOW_PROVIDER_CONTEXT_MIN_MATCHES": "36",
+    "NEAR_WINDOW_PRIORITY_MIN_LEAD_MINUTES": "25"
   },
   "deleted_provider_env": {
     "ENABLE_API_FOOTBALL": "false",
@@ -22,7 +27,20 @@
     "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "0",
     "API_FOOTBALL_PREDICTIONS_LIMIT": "0",
     "API_FOOTBALL_REQUEST_BUDGET_GRANTED": "0",
-    "API_FOOTBALL_REQUEST_BUDGET_REASON": "removed_from_project"
+    "API_FOOTBALL_REQUEST_BUDGET_REASON": "removed_from_project",
+    "ENABLE_BOOKIES_API": "false",
+    "BOOKIES_API_ENABLED": "false",
+    "BOOKIES_API_ODDS_FETCH_LIMIT": "0",
+    "BOOKIES_API_REQUEST_BUDGET_GRANTED": "0",
+    "BOOKIES_API_REQUEST_BUDGET_REASON": "removed_from_project",
+    "ENABLE_ODDSPAPI": "false",
+    "ODDSPAPI_ENABLED": "false",
+    "ODDSPAPI_MATCH_LIMIT": "0",
+    "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
+    "ODDSPAPI_PER_RUN_MAX": "0",
+    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+    "ODDSPAPI_REQUEST_BUDGET_GRANTED": "0",
+    "ODDSPAPI_REQUEST_BUDGET_REASON": "removed_from_project"
   },
   "providers": {
     "odds_api_io": {
@@ -44,7 +62,7 @@
       }
     },
     "bzzoiro": {
-      "status": "high_quality_context",
+      "status": "high_quality_context_near_window_first",
       "grant": 1000,
       "secret_env_keys": ["BZZOIRO_API_KEY"],
       "env": {
@@ -53,12 +71,12 @@
         "BZZOIRO_ENABLED": "true",
         "BZZOIRO_PER_RUN_MAX": "1000",
         "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "1000",
-        "BZZOIRO_CONTEXT_MATCH_LIMIT": "180",
+        "BZZOIRO_CONTEXT_MATCH_LIMIT": "240",
         "BZZOIRO_MAX_PAGES": "120"
       }
     },
     "sstats": {
-      "status": "critical_team_form_context",
+      "status": "critical_team_form_context_near_window_first",
       "grant": 150,
       "secret_env_keys": ["SSTATS_API_KEY"],
       "env": {
@@ -69,13 +87,13 @@
         "SSTATS_PER_RUN_MAX": "150",
         "SSTATS_REQUESTS_MAX_PER_RUN": "150",
         "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
-        "SSTATS_CONTEXT_MATCH_LIMIT": "180",
+        "SSTATS_CONTEXT_MATCH_LIMIT": "240",
         "SSTATS_LOOKBACK_DAYS": "45",
         "SSTATS_RECENT_MATCHES": "10"
       }
     },
     "football_data": {
-      "status": "context_only_low_overlap",
+      "status": "context_only_low_overlap_near_window_first",
       "grant": 8,
       "secret_env_keys": ["FOOTBALL_DATA_API_KEY"],
       "env": {
@@ -83,11 +101,11 @@
         "FOOTBALL_DATA_ENABLED": "true",
         "FOOTBALL_DATA_PER_RUN_MAX": "8",
         "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "8",
-        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "48"
+        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "72"
       }
     },
     "thesportsdb": {
-      "status": "context_only_alias_sensitive",
+      "status": "context_only_alias_sensitive_near_window_first",
       "grant": 12,
       "secret_env_keys": ["THESPORTSDB_API_KEY"],
       "env": {
@@ -96,7 +114,7 @@
         "THESPORTSDB_PER_RUN_MAX": "12",
         "THESPORTSDB_REQUESTS_MAX_PER_RUN": "12",
         "THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN": "12",
-        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "60"
+        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "96"
       }
     },
     "openfootball_public": {
@@ -105,34 +123,34 @@
       "env": {
         "ENABLE_OPENFOOTBALL_CONTEXT": "true",
         "OPENFOOTBALL_ENABLED": "true",
-        "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "80",
+        "OPENFOOTBALL_CONTEXT_MATCH_LIMIT": "96",
         "OPENFOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "4",
         "OPENFOOTBALL_SKIP_404_CACHE_TTL_HOURS": "24"
       }
     },
     "weatherapi": {
-      "status": "weather_overlay",
-      "grant": 12,
+      "status": "weather_overlay_near_window_first",
+      "grant": 24,
       "secret_env_keys": ["WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY"],
       "env": {
         "ENABLE_WEATHERAPI": "true",
         "WEATHERAPI_ENABLED": "true",
-        "WEATHERAPI_PER_RUN_MAX": "12",
-        "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": "12",
+        "WEATHERAPI_PER_RUN_MAX": "24",
+        "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": "24",
         "WEATHER_CONTEXT_ENABLED": "true",
-        "WEATHER_CONTEXT_MATCH_LIMIT": "24",
+        "WEATHER_CONTEXT_MATCH_LIMIT": "48",
         "WEATHER_CACHE_TTL_MINUTES": "240"
       }
     },
     "openweathermap": {
-      "status": "weather_fallback",
-      "grant": 8,
+      "status": "weather_fallback_near_window_first",
+      "grant": 12,
       "secret_env_keys": ["OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY"],
       "env": {
         "ENABLE_OPENWEATHERMAP": "true",
         "OPENWEATHERMAP_ENABLED": "true",
-        "OPENWEATHERMAP_PER_RUN_MAX": "8",
-        "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": "8",
+        "OPENWEATHERMAP_PER_RUN_MAX": "12",
+        "OPENWEATHERMAP_MAX_HTTP_REQUESTS_PER_RUN": "12",
         "WEATHER_OPENWEATHERMAP_FALLBACK_ENABLED": "true"
       }
     },
@@ -151,16 +169,6 @@
         "SPORTLOGIC_ODDS_MATCH_LIMIT": "1",
         "SPORTLOGIC_BOOKMAKERS": "__probe_only__",
         "SPORTLOGIC_ODDS_DISABLED_REASON": "odds_quarantined_context_probe_only"
-      }
-    },
-    "oddspapi": {
-      "status": "rate_limited",
-      "grant": 0,
-      "reason": "cooldown_active:fatal_pattern:REQUEST_LIMIT_EXCEEDED",
-      "env": {
-        "ODDSPAPI_PER_RUN_MAX": "0",
-        "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
-        "ODDSPAPI_MATCH_LIMIT": "0"
       }
     },
     "futrixmetrics": {
