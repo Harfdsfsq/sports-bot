@@ -4,6 +4,17 @@
   "last_decisions": [
     {
       "api_key_present": true,
+      "configured_grant": 20,
+      "grant": 20,
+      "provider": "allsportsapi",
+      "reason": "granted",
+      "secret_env_keys": [
+        "ALLSPORTSAPI_API_KEY"
+      ],
+      "status": "fixture_and_secondary_odds_probe"
+    },
+    {
+      "api_key_present": true,
       "configured_grant": 1000,
       "grant": 1000,
       "provider": "bzzoiro",
@@ -52,6 +63,28 @@
       "status": "news_context_rotation"
     },
     {
+      "api_key_present": false,
+      "configured_grant": 0,
+      "grant": 0,
+      "provider": "guardian",
+      "reason": "health_probe_only:news_context_not_every_run",
+      "secret_env_keys": [
+        "GUARDIAN_API_KEY"
+      ],
+      "status": "health_probe_only_news_rotation"
+    },
+    {
+      "api_key_present": false,
+      "configured_grant": 0,
+      "grant": 0,
+      "provider": "highlightly",
+      "reason": "health_probe_only:not_integrated_into_prediction_runtime",
+      "secret_env_keys": [
+        "HIGHLIGHTLY_API_KEY"
+      ],
+      "status": "health_probe_only_until_endpoint_verified"
+    },
+    {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
@@ -68,6 +101,17 @@
       "reason": "disabled_by_useful_request_policy:news_context_not_every_run",
       "secret_env_keys": [],
       "status": "news_context_rotation"
+    },
+    {
+      "api_key_present": false,
+      "configured_grant": 0,
+      "grant": 0,
+      "provider": "newsdata",
+      "reason": "health_probe_only:news_context_not_every_run",
+      "secret_env_keys": [
+        "NEWSDATA_API_KEY"
+      ],
+      "status": "health_probe_only_news_rotation"
     },
     {
       "api_key_present": true,
@@ -110,6 +154,17 @@
         "OPENWEATHERMAP_KEY"
       ],
       "status": "weather_fallback_near_window_first"
+    },
+    {
+      "api_key_present": false,
+      "configured_grant": 0,
+      "grant": 0,
+      "provider": "sharpapi",
+      "reason": "health_probe_only:text_enrichment_not_core_prediction",
+      "secret_env_keys": [
+        "SHARPAPI_API_KEY"
+      ],
+      "status": "text_enrichment_probe_only"
     },
     {
       "api_key_present": null,
@@ -354,6 +409,6 @@
       "monthly": {}
     }
   },
-  "updated_at": "2026-05-05T13:21:07.845943+00:00",
+  "updated_at": "2026-05-05T13:45:51.727797+00:00",
   "version": "v22-sportlogic-odds-enabled-parser-hardened"
 }
