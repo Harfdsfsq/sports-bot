@@ -4,18 +4,18 @@ on:
   workflow_dispatch:
     inputs:
       providers:
-        description: "core/all/odds/context/weather/news/rapidapi or comma-separated provider names"
+        description: "all/core/odds/context/weather/news/mapping/csv/rapidapi or comma-separated provider names"
         required: true
-        default: "core"
+        default: "all"
       max_seconds:
         description: "Hard script limit in seconds"
         required: true
-        default: "105"
+        default: "180"
       send_samples:
         description: "Show small OK samples in txt report"
         type: boolean
         required: false
-        default: false
+        default: true
 
 permissions:
   contents: read
@@ -27,7 +27,7 @@ concurrency:
 jobs:
   smoke-fast:
     runs-on: ubuntu-latest
-    timeout-minutes: 3
+    timeout-minutes: 6
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       TZ: Europe/Moscow
@@ -39,17 +39,19 @@ jobs:
       DETAILED_RUN_REPORT_SEND_TELEGRAM: "false"
       DAILY_REPORT_ENABLED: "false"
       SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
-      PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'core' }}
-      PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '105' }}
-      PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'false' }}
-      PROVIDER_SMOKE_FAST_TIMEOUT: "7"
-      PROVIDER_SMOKE_FAST_CONCURRENCY: "6"
+      PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'all' }}
+      PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '180' }}
+      PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'true' }}
+      PROVIDER_SMOKE_FAST_TIMEOUT: "10"
+      PROVIDER_SMOKE_FAST_CONCURRENCY: "8"
 
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      ODDS_API_IO_KEY2: ${{ secrets.ODDS_API_IO_KEY2 }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
       API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
       API_FOOTBALL_API_KEY: ${{ secrets.API_FOOTBALL_API_KEY }}
@@ -71,15 +73,40 @@ jobs:
       CURRENTS_KEY: ${{ secrets.CURRENTS_KEY }}
       GNEWS_KEY: ${{ secrets.GNEWS_KEY }}
       NEWSDATA_API_KEY: ${{ secrets.NEWSDATA_API_KEY }}
+      NEWSDATA_KEY: ${{ secrets.NEWSDATA_KEY }}
       GUARDIAN_API_KEY: ${{ secrets.GUARDIAN_API_KEY }}
+      GUARDIAN_KEY: ${{ secrets.GUARDIAN_KEY }}
+      FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
+      FUTRIXMETRICS_KEY: ${{ secrets.FUTRIXMETRICS_KEY }}
+      FUTRIXMETRICS_BASE_URL: ${{ secrets.FUTRIXMETRICS_BASE_URL }}
+      HIGHLIGHTLY_API_KEY: ${{ secrets.HIGHLIGHTLY_API_KEY }}
+      HIGHLIGHTLY_KEY: ${{ secrets.HIGHLIGHTLY_KEY }}
+      HIGHLIGHTLY_BASE_URL: ${{ secrets.HIGHLIGHTLY_BASE_URL }}
+      HIGHLIGHTLY_SMOKE_PATH: ${{ secrets.HIGHLIGHTLY_SMOKE_PATH }}
+      BOOKIES_API_BASE_URL: ${{ secrets.BOOKIES_API_BASE_URL }}
+      BOOKIES_API_KEY: ${{ secrets.BOOKIES_API_KEY }}
+      BOOKIES_API_TOKEN: ${{ secrets.BOOKIES_API_TOKEN }}
+      BOOKIES_API_SMOKE_PATH: ${{ secrets.BOOKIES_API_SMOKE_PATH }}
+      ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
+      ODDS_PAPI_API_KEY: ${{ secrets.ODDS_PAPI_API_KEY }}
+      ODDSPAPI_RAPIDAPI_HOST: ${{ secrets.ODDSPAPI_RAPIDAPI_HOST }}
+      ODDSPAPI_RAPIDAPI_PATH: ${{ secrets.ODDSPAPI_RAPIDAPI_PATH }}
       METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
       METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
+      METEOSTAT_RAPIDAPI_PATH: ${{ secrets.METEOSTAT_RAPIDAPI_PATH }}
       RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
       ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
-      ODDS_FEED_RAPIDAPI_HOST: odds-feed.p.rapidapi.com
+      ODDS_FEED_RAPIDAPI_HOST: ${{ secrets.ODDS_FEED_RAPIDAPI_HOST }}
+      ODDS_FEED_RAPIDAPI_PATH: ${{ secrets.ODDS_FEED_RAPIDAPI_PATH }}
       SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
+      SPORTSBOOK_RAPIDAPI_HOST: ${{ secrets.SPORTSBOOK_RAPIDAPI_HOST }}
+      SPORTSBOOK_RAPIDAPI_PATH: ${{ secrets.SPORTSBOOK_RAPIDAPI_PATH }}
       SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
+      SPORTAPI7_RAPIDAPI_HOST: ${{ secrets.SPORTAPI7_RAPIDAPI_HOST }}
+      SPORTAPI7_RAPIDAPI_PATH: ${{ secrets.SPORTAPI7_RAPIDAPI_PATH }}
       FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
+      FREE_FOOTBALL_RAPIDAPI_HOST: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_HOST }}
+      FREE_FOOTBALL_RAPIDAPI_PATH: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_PATH }}
 
     steps:
       - name: Checkout repository
