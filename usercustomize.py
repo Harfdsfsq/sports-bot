@@ -13,6 +13,12 @@ except Exception:
     pass
 
 try:
+    from app.services import near_window_priority_runtime_patch
+    near_window_priority_runtime_patch.install()
+except Exception:
+    pass
+
+try:
     from app.services import rapidapi_probe_runtime_guard
     rapidapi_probe_runtime_guard.install()
 except Exception:
