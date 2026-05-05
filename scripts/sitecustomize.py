@@ -56,12 +56,19 @@ def _apply_confirmation_source_patch() -> None:
     apply_confirmation_source_fallback_patch.main()
 
 
+def _apply_controlled_fallback_prepublish_guard() -> None:
+    import controlled_fallback_prepublish_guard
+
+    controlled_fallback_prepublish_guard.install()
+
+
 def _install_import_hook() -> None:
     import runtime_startup_patches
 
     runtime_startup_patches.install_import_hook()
 
 
+_safe_run("controlled_fallback_prepublish_guard", _apply_controlled_fallback_prepublish_guard)
 _safe_run("api_max_usage_patch", _apply_api_patch)
 _safe_run("sportlogic_policy_unquarantine", _apply_sportlogic_unquarantine)
 _safe_run("runtime_startup_patches.apply_all", _apply_runtime_patches)
