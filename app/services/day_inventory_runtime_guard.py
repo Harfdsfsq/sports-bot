@@ -16,7 +16,7 @@ from pathlib import Path
 from typing import Any
 
 UTC = timezone.utc
-PATCH_MARKER = "_harizon_day_inventory_runtime_guard_v1"
+PATCH_MARKER = "_harizon_day_inventory_runtime_guard_v2_clean_exit"
 SUMMARY_PATH = Path(".data/exports/latest-day-inventory-summary.json")
 
 
@@ -44,6 +44,7 @@ def _write_timeout_summary(timeout_seconds: int) -> None:
         "error": f"day_inventory_timeout_after_{timeout_seconds}s",
         "reason": "day_inventory_build_exceeded_guard_timeout; continuing main run without blocking predictions",
         "bootstrap_provider": os.getenv("DAY_INVENTORY_BOOTSTRAP_PROVIDER") or os.getenv("MATCH_BOOTSTRAP_PROVIDER") or "",
+        "force_provider_merge": os.getenv("DAY_INVENTORY_FORCE_PROVIDER_MERGE") or "",
         "timeout_seconds": timeout_seconds,
     }
     try:
@@ -58,12 +59,12 @@ def install() -> bool:
         return False
     if not _is_day_inventory_process():
         return False
-    timeout_seconds = max(60, _env_int("DAY_INVENTORY_BUILD_TIMEOUT_SECONDS", 540))
+    timeout_seconds = max(30, _env_int("DAY_INVENTORY_BUILD_TIMEOUT_SECONDS", 180))
 
     def _handler(signum, frame):  # type: ignore[no-untyped-def]
         _write_timeout_summary(timeout_seconds)
-        print(f"[day-inventory-guard] timeout after {timeout_seconds}s; continuing workflow", flush=True)
-        raise SystemExit(124)
+        print(f"[day-inventory-guard] timeout after {timeout_seconds}s; exiting cleanly so workflow continues", flush=True)
+        os._exit(0)
 
     try:
         signal.signal(signal.SIGALRM, _handler)
