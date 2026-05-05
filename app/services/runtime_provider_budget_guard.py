@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 from typing import Any
 
-PATCH_MARKER = "_harizon_runtime_provider_budget_guard_v1"
+PATCH_MARKER = "_harizon_runtime_provider_budget_guard_v2"
 POLICY_PATH = Path("config/provider_free_quota_policy.json")
 
 ENV_DEFAULTS = {
@@ -27,18 +27,47 @@ ENV_DEFAULTS = {
     "MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES": "true",
     # Core odds.
     "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "140",
+    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "70",
+    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "70",
     "ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN": "140",
     "ODDS_API_IO_REJECT_NON_FULL_TIME_MARKETS": "true",
-    # Context providers.
+    # BZZOIRO: use the actual aliases read by BzzoiroContextProvider.
+    "ENABLE_BZZOIRO_CONTEXT": "true",
+    "BZZOIRO_ENABLED": "true",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "2",
+    "BZZOIRO_PER_RUN_MAX": "2",
+    "BZZOIRO_CONTEXT_MATCH_LIMIT": "12",
+    "BZZOIRO_MAX_PAGES": "1",
+    "BZZOIRO_REQUEST_RETRIES": "0",
+    "BZZOIRO_RETRY_BACKOFF_SECONDS": "0",
     "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "1",
     "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "1",
     "BZZOIRO_PAGE_SIZE": "3",
-    "BZZOIRO_TIMEOUT_SECONDS": "18",
+    "BZZOIRO_TIMEOUT_SECONDS": "10",
+    # SStats: enable the provider and use the aliases read by Settings.
+    "SSTATS_ENABLED": "true",
+    "ENABLE_SSTATS_CONTEXT": "true",
+    "SSTATS_REQUESTS_MAX_PER_RUN": "12",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "12",
     "SSTATS_MAX_REQUESTS_PER_RUN": "12",
+    "SSTATS_LOOKBACK_DAYS": "18",
+    "SSTATS_RECENT_MATCHES": "6",
+    # Low-cost context/mapping providers.
+    "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
+    "FOOTBALL_DATA_ENABLED": "true",
+    "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "4",
+    "FOOTBALL_DATA_MAX_HTTP_REQUESTS_PER_RUN": "4",
     "FOOTBALL_DATA_MAX_REQUESTS_PER_RUN": "4",
+    "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "40",
+    "ENABLE_THESPORTSDB_CONTEXT": "true",
+    "THESPORTSDB_CONTEXT_ENABLED": "true",
+    "THESPORTSDB_REQUESTS_MAX_PER_RUN": "4",
+    "THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN": "4",
     "THESPORTSDB_MAX_REQUESTS_PER_RUN": "4",
+    "THESPORTSDB_CONTEXT_MATCH_LIMIT": "40",
     "ALLSPORTSAPI_MAX_REQUESTS_PER_RUN": "1",
     "FUTRIXMETRICS_MAX_REQUESTS_PER_RUN": "6",
+    "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "6",
     "HIGHLIGHTLY_MAX_REQUESTS_PER_RUN": "4",
     "HIGHLIGHTLY_BASE_URL": "https://soccer.highlightly.net",
     "HIGHLIGHTLY_SMOKE_PATH": "/leagues",
@@ -47,19 +76,32 @@ ENV_DEFAULTS = {
     "SPORTLOGIC_QUERY_GUARD_ENABLED": "true",
     "SPORTLOGIC_BROAD_FALLBACK_ENABLED": "true",
     "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "8",
-    "SPORTLOGIC_PER_PAGE": "100",
+    "SPORTLOGIC_PER_PAGE": "40",
     # Weather.
     "WEATHERAPI_MAX_REQUESTS_PER_RUN": "40",
     "OPENWEATHERMAP_MAX_REQUESTS_PER_RUN": "20",
     "OPEN_METEO_ENABLED": "true",
     "OPEN_METEO_MAX_REQUESTS_PER_RUN": "60",
     "METEOSTAT_RAPIDAPI_MAX_REQUESTS_PER_RUN": "2",
-    # News.
+    # News: keep tiny caps; only use when shortlisted.
+    "ENABLE_NEWSAPI_CONTEXT": "true",
+    "ENABLE_GNEWS_CONTEXT": "true",
+    "NEWSAPI_PER_RUN_MAX": "2",
+    "NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN": "2",
     "NEWSAPI_MAX_REQUESTS_PER_RUN": "2",
+    "CURRENTS_NEWS_PER_RUN_MAX": "2",
     "CURRENTS_MAX_REQUESTS_PER_RUN": "2",
+    "GNEWS_PER_RUN_MAX": "2",
+    "GNEWS_MAX_HTTP_REQUESTS_PER_RUN": "2",
     "GNEWS_MAX_REQUESTS_PER_RUN": "2",
     "NEWSDATA_MAX_REQUESTS_PER_RUN": "2",
     "GUARDIAN_MAX_REQUESTS_PER_RUN": "3",
+    # Market-derived candidates: allow fresh same-run consensus to create
+    # candidates, but do not relax final EV/confidence/integrity guards.
+    "MARKET_DERIVED_MIN_OBSERVATIONS": "1",
+    "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_OBSERVATIONS": "1",
+    "MARKET_DERIVED_MIN_EDGE_PCT": "1.0",
+    "SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT": "0.55",
     # Daily/no-key caches.
     "CLUBELO_ENABLED": "true",
     "CLUBELO_BASE_URL": "http://api.clubelo.com",
@@ -74,6 +116,7 @@ ENV_DEFAULTS = {
     "API_FOOTBALL_ENABLED": "false",
     "API_SPORTS_ENABLED": "false",
     "BOOKIES_API_ENABLED": "false",
+    "BOOKIES_BOOTSTRAP_ENABLED": "false",
     "SPORTAPI7_ENABLED": "false",
     "ODDS_FEED_RAPIDAPI_ENABLED": "false",
     "SPORTSBOOK_RAPIDAPI_ENABLED": "false",
