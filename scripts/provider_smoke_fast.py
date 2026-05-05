@@ -39,7 +39,7 @@ if current_timeout < 18.0:
 if _arg_value("--repeats") is None and not os.getenv("PROVIDER_SMOKE_REPEATS"):
     _set_or_replace_arg("--repeats", "2")
 
-from scripts.provider_smoke_diagnostics_v3 import main
+from scripts.provider_smoke_diagnostics_v4 import main
 
 
 if __name__ == "__main__":
