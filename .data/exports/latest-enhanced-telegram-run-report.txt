@@ -1,37 +1,37 @@
 🧾 Подробный отчёт run
-🕒 Время запуска: 2026-05-06T20:44:35.452189+03:00
-📅 Окно публикации: 12 ч | Мин. запас до матча: 30 мин
+🕒 Время запуска: 2026-04-27T01:26:52.557947+03:00
+📅 Окно публикации: 12 ч | Мин. запас до матча: 25 мин
 💼 Банк: 1000.00 | Открытый риск: 0.00
 
 ⚙️ Воронка run
-• Матчи всего/до фильтра: 139
-• Матчи в окне: 63 | с офферами: 48 | контекстов: 25
-• Кандидаты: raw 0 | до quality 0 | после quality 0 | publishable 0 | published 0
-• Фильтр времени: after 63/139, outside 0, too soon 15, started 61
-• Context shortlist: eligible 63, selected 63, value_hint 37, limit 508
-• Provider targets: sstats:63, bzzoiro:24, espn:28, thesportsdb:63, football_data:63, openligadb:24, futrixmetrics:26, openfootball:1, newsapi:11, gnews:8, sportlogic:63, weather:63
-• Matching: odds exact 63, loose 0, fuzzy 0; sstats exact 0, bzzoiro ctx 5, thesportsdb ctx 4
+• Матчи всего/до фильтра: 86
+• Матчи в окне: 36 | с офферами: 29 | контекстов: 30
+• Кандидаты: raw 4 | до quality 5 | после quality 4 | publishable 0 | published 0
+• Фильтр времени: after 36/86, outside 48, too soon 2, started 0
+• Context shortlist: eligible 36, selected 36, value_hint 18, limit 134
+• Provider targets: sstats:36, bzzoiro:35, espn:14, thesportsdb:36, football_data:36, futrixmetrics:4, newsapi:1, gnews:1, scorebat:36
+• Matching: odds exact 35, loose 0, fuzzy 1; sstats exact 0, bzzoiro ctx 8, thesportsdb ctx 0
 
 📡 Источники / фактическая работа
-• odds_api_io: events req 0, odds req 14, err 0, events 100, matched 63, offers 4037
-• odds_api_io_bootstrap: events req 2, err 0, events 99, matches 79
+• odds_api_io: events req 0, odds req 4, err 0, events 100, matched 36, offers 881
+• odds_api_io_bootstrap: events req 2, err 0, events 100, matches 86
 • allsportsapi: req 1, err 0, matched 0, offers 0
-• sportlogic: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, 429 0, budget_exhausted 0
-• sstats: req 6, err 0, ctx 23, rows 4837, budget_exhausted
-• bzzoiro: req 2, err 0, events 31, ctx 5
-• api_football: disabled
-• espn: err 1, events 72, matched 10, ctx 10
-• football_data: req 5, err 0, matched 7, ctx 7
-• thesportsdb: req 6, err 0, ctx 4
-• futrixmetrics: req 52, err 0, ctx 0
-• openfootball: req 3, err 0, ctx 0
-• newsapi: req 15, err 0, ctx 1, cache 0
-• gnews: req 5, err 0, ctx 1
-• weather: req 25, err 0, ctx 25, weatherapi 25, owm 0, cache 0
+• sstats: req 31, err 0, ctx 30, rows 26487
+• bzzoiro: req 11, err 0, events 400, ctx 8
+• api_football: req 0, err 0, ctx 0, 429
+• espn: err 0, events 27, matched 1, ctx 1
+• football_data: req 3, err 0, matched 2, ctx 2
+• thesportsdb: req 1, err 0, ctx 0
+• futrixmetrics: req 1, err 0, ctx 0
+• openfootball: req 0, err 0, ctx 0
+• newsapi: req 0, err 0, ctx 0, cache 1
+• gnews: req 1, err 0, ctx 0
 • self_history: ctx 0
 • market_monitor: нет данных
 • bookies_bootstrap: disabled
-• openligadb: req 2, err 0, ctx 1
+• openligadb: req 0, err 0, ctx 0
+• scorebat: req 0, err 0, events 50, ctx 0
+• weather_overlay: req 1, err 0, ctx 24, cache 23
 
 🔌 Квоты / grants
 • odds_api_io: grant 280, tokens_after 3464.0
@@ -39,13 +39,13 @@
 • sstats: grant 6, tokens_after 66.0
 • football_data: grant 12, tokens_after 168.0
 • thesportsdb: grant 18, tokens_after 222.0
-• sportlogic: grant 28, tokens_after 194.15
-• weatherapi: grant 70, tokens_after 1153.107
-• openweathermap: grant 50, tokens_after 410.301
+• sportlogic: grant 28, tokens_after 211.924
+• weatherapi: grant 70, tokens_after 1298.242
+• openweathermap: grant 50, tokens_after 451.848
 • newsapi: grant 5, tokens_after 73.0
 • gnews: grant 5, tokens_after 73.0
-• currents: grant 50, tokens_after 412.301
-• guardian: grant 25, tokens_after 206.15
+• currents: grant 50, tokens_after 453.848
+• guardian: grant 25, tokens_after 226.924
 
 🚫 Почему не прошли
 • quarter total line: мало букмекеров — 1110
@@ -61,6 +61,5 @@
 
 📌 Диагноз
 • Инвентарь частично просел: мало матчей с офферами относительно окна публикации.
-• Кандидаты не построились до quality: надо смотреть market-family guards и supported lines.
-• Контекст покрывает не все матчи с офферами; приоритет — усилить SStats/Bzzoiro/TheSportsDB matching и self-history.
+• Кандидаты строятся, но финальные quality/publication guards их не выпускают — это защита качества, не ошибка API.
 • Прогноз не отправлен, потому что не было publishable-кандидата после guards.
