@@ -12,7 +12,7 @@ STATE_PATH = Path(os.getenv("PROVIDER_QUOTA_STATE_PATH") or ".data/provider_quot
 LEGACY_RAPIDAPI_STATE_PATH = Path(os.getenv("RAPIDAPI_PROVIDER_STATE_PATH") or ".data/provider_quota_state.json")
 OUT_JSON = Path(".data/exports/latest-provider-quota-governor.json")
 OUT_ENV = Path(".data/exports/latest-provider-quota-governor.env")
-RECOVERY_VERSION = os.getenv("PROVIDER_QUOTA_RECOVERY_VERSION") or "pdf-free-limits-2026-05-05-v2"
+RECOVERY_VERSION = os.getenv("PROVIDER_QUOTA_RECOVERY_VERSION") or "pdf-free-limits-2026-05-05-v3"
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -103,9 +103,27 @@ def generic_env(grant: int, *, enable: tuple[str, ...] = (), caps: tuple[str, ..
     return out
 
 
+def strict_market_integrity_env() -> dict[str, str]:
+    return {
+        "MARKET_INTEGRITY_HARD_GUARD_ENABLED": "true",
+        "MARKET_INTEGRITY_CANDIDATE_PATCH_ENABLED": "true",
+        "MARKET_INTEGRITY_MIN_BOOKS": "2",
+        "MARKET_INTEGRITY_MIN_SOURCES": "1",
+        "MARKET_INTEGRITY_SINGLE_SOURCE_MIN_BOOKS": "3",
+        "MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES": "true",
+        "MARKET_INTEGRITY_MAX_PRICE_DISPERSION_PCT": "30",
+        "MARKET_INTEGRITY_MAX_EXACT_PRICE_DISPERSION_PCT": "22",
+        "MARKET_INTEGRITY_MAX_EXACT_LINE_DELTA_PCT": "18",
+        "MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS": "1.65",
+        "MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS": "3",
+        "MATCH_TOTAL_OVER20_MAX_REASONABLE_ODDS": "2.05",
+        "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
+    }
+
+
 def odds_api_io_env(grant: int) -> dict[str, str]:
     account1, account2 = account_split(grant, 140)
-    return {
+    out = {
         "ENABLE_ODDS_API_IO": bool_text(grant > 0),
         "ODDS_API_IO_ENABLED": bool_text(grant > 0),
         "ODDS_API_IO_PER_RUN_MAX": str(grant),
@@ -123,10 +141,9 @@ def odds_api_io_env(grant: int) -> dict[str, str]:
         "ODDS_API_IO_BOOKMAKERS_ACCOUNT1": "Bet365,Unibet",
         "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
         "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet",
-        "MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS": "1.65",
-        "MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS": "3",
-        "MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES": "true",
     }
+    out.update(strict_market_integrity_env())
+    return out
 
 
 def bzzoiro_env(grant: int) -> dict[str, str]:
@@ -334,7 +351,6 @@ def main() -> int:
         "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "true",
         "PROVIDER_FREE_QUOTA_POLICY_ENABLED": "true",
         "FREE_CONTEXT_RUNTIME_ENABLED": "true",
-        "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
         "RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED": "true",
         "RAPIDAPI_DEFAULT_DAILY_LIMIT": os.getenv("RAPIDAPI_DEFAULT_DAILY_LIMIT") or "1",
         "NEWS_CONTEXT_CACHE_TTL_MINUTES": os.getenv("NEWS_CONTEXT_CACHE_TTL_MINUTES") or "240",
@@ -342,6 +358,7 @@ def main() -> int:
         "SCOREBAT_CACHE_TTL_MINUTES": os.getenv("SCOREBAT_CACHE_TTL_MINUTES") or "240",
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
     }
+    exports.update(strict_market_integrity_env())
     for key, spec in provider_specs.items():
         row = refill_and_grant(state, key, spec)
         rows.append(row)
@@ -356,7 +373,7 @@ def main() -> int:
     state.update({"updated_at": datetime.now(UTC).isoformat(), "mode": "pdf_free_limit_continuous_token_bucket", "recovery_version": RECOVERY_VERSION, "policy_version": policy.get("policy_version"), "runs_per_day_assumption": policy.get("runs_per_day_assumption"), "safety_factor_default": policy.get("safety_factor_default")})
     write_json(STATE_PATH, state)
     write_env(exports)
-    payload = {"created_at": datetime.now(UTC).isoformat(), "enabled": True, "mode": "pdf_free_limit_continuous_token_bucket", "recovery_version": RECOVERY_VERSION, "policy_path": str(POLICY_PATH), "state_path": str(STATE_PATH), "local_env_path": str(OUT_ENV), "source_document": policy.get("source_document") or "api_free_limits_ru.pdf / api_free_limits_ru.docx", "note": "High-quota/no-key APIs get broad cached coverage; daily/monthly APIs are reserved for shortlist/fallback checks.", "providers": rows, "exports": exports}
+    payload = {"created_at": datetime.now(UTC).isoformat(), "enabled": True, "mode": "pdf_free_limit_continuous_token_bucket", "recovery_version": RECOVERY_VERSION, "policy_path": str(POLICY_PATH), "state_path": str(STATE_PATH), "local_env_path": str(OUT_ENV), "source_document": policy.get("source_document") or "api_free_limits_ru.pdf / api_free_limits_ru.docx", "note": "High-quota/no-key APIs get broad cached coverage; daily/monthly APIs are reserved for shortlist/fallback checks. Context/news/weather sources are never counted as price confirmations.", "providers": rows, "exports": exports}
     write_json(OUT_JSON, payload)
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
