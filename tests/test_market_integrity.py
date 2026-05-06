@@ -1,8 +1,21 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
 from types import SimpleNamespace
 
-from app.services.market_integrity import validate_candidate
+
+def load_market_integrity_module():
+    module_path = Path(__file__).resolve().parents[1] / "app" / "services" / "market_integrity.py"
+    spec = importlib.util.spec_from_file_location("market_integrity_under_test", module_path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+market_integrity = load_market_integrity_module()
+validate_candidate = market_integrity.validate_candidate
 
 
 def candidate(**overrides):
