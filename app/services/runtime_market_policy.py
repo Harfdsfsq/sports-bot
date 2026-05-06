@@ -239,7 +239,7 @@ def _install_candidate_factory_policy() -> None:
         def required_books_for_bucket_patched(self, family, point, bucket, context=None):
             required = original_required(self, family, point, bucket, context)
             if _family_key(family) in {"totals", "total", "matchtotal"} and is_quarter_total_line(point):
-                if quarter_total_line_level_confirmation_enabled() and _filter_quarter_total_offer_buckets(list(bucket or []), None):
+                if quarter_total_line_level_confirmation_enabled():
                     return min(int(required or 1), 1)
             return required
 
