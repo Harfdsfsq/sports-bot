@@ -24,6 +24,7 @@ jobs:
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
@@ -149,6 +150,12 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+      - name: Prepare clean runtime directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .data/exports artifacts/run-bot
+          mkdir -p .data/exports .data/cache artifacts/run-bot
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -169,7 +176,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          pytest -q tests
+          python -m pytest -q tests
       - name: Run bot
         shell: bash
         run: |
@@ -192,6 +199,10 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip enhanced report: fresh run-bot log was not created"
+            exit 0
+          fi
           python scripts/send_enhanced_telegram_run_report.py || true
           cp .data/exports/latest-enhanced-telegram-run-report.txt artifacts/run-bot/latest-enhanced-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-enhanced-telegram-run-report.json artifacts/run-bot/latest-enhanced-telegram-run-report.json 2>/dev/null || true
@@ -199,6 +210,11 @@ jobs:
         if: always()
         shell: bash
         run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip runtime artifact commit: fresh run-bot log was not created"
+            exit 0
+          fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_quota_state.json || true
