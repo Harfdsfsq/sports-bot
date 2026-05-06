@@ -1,246 +1,239 @@
 runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_provider_budget_guard', 'free_context_runtime_enrichment', 'api_matching_quality_runtime_guard', 'odds_api_io_runtime_compat', 'odds_api_io_h2h_parser_runtime_guard', 'sportlogic_query_runtime_guard'], 'failed': []}
-2026-05-06 06:30:21,400 INFO app.services.runner: Starting prediction run at 2026-05-06T03:30:21.400517+00:00
-2026-05-06 06:30:22,039 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-01&to=2026-05-06&limit=1000&offset=0&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:30:25,342 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-01&dateTo=2026-05-06&status=FINISHED&limit=200 "HTTP/1.1 200 "
-2026-05-06 06:30:44,085 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&sport=football&status=pending%2Clive&from=2026-05-06T03%3A30%3A43Z&to=2026-05-10T03%3A30%3A43Z&limit=100&page=1 "HTTP/1.1 200 OK"
-2026-05-06 06:30:44,201 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&sport=football&status=pending%2Clive&from=2026-05-06T03%3A30%3A43Z&to=2026-05-10T03%3A30%3A43Z&limit=100&page=2 "HTTP/1.1 200 OK"
-2026-05-06 06:31:02,536 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=67645052%2C67645050%2C67648282%2C67648288%2C67648124%2C67648446%2C67648122%2C67648442%2C67648284%2C67647966&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:02,765 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=67645052%2C67645050%2C67648282%2C67648288%2C67648124%2C67648446%2C67648122%2C67648442%2C67648284%2C67647966&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:02,781 INFO httpx: HTTP Request: GET https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=1334cf53b8f47542a4452290971872b233971520d2293a122d4c085ab8939aa4&from=2026-05-06&to=2026-05-06&timezone=UTC "HTTP/1.1 200 OK"
-2026-05-06 06:31:03,309 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?date_from=2026-05-06&date_to=2026-05-06&per_page=50 "HTTP/1.1 200 OK"
-2026-05-06 06:31:03,310 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=67648286%2C67648126%2C67648440%2C67648448%2C67648444%2C67647962%2C67647960%2C67647964%2C67648128%2C67648280&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:03,506 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?from=2026-05-06&to=2026-05-06&per_page=50 "HTTP/1.1 200 OK"
-2026-05-06 06:31:04,985 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=67648286%2C67648126%2C67648440%2C67648448%2C67648444%2C67647962%2C67647960%2C67647964%2C67648128%2C67648280&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:05,226 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=67645534%2C67645054%2C67647968%2C67645538%2C67645536%2C71282920%2C67645540%2C71267582%2C71270460%2C67645542&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:05,518 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=67645534%2C67645054%2C67647968%2C67645538%2C67645536%2C71282920%2C67645540%2C71267582%2C71270460%2C67645542&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:05,735 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=67648130%2C71282922%2C71156310%2C68995116%2C71168996%2C71186524%2C71168666%2C71267584%2C62670373%2C71177260&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:05,886 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=67648130%2C71282922%2C71156310%2C68995116%2C71168996%2C71186524%2C71168666%2C71267584%2C62670373%2C71177260&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:06,224 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=71053014%2C68995120%2C68995118%2C70869392%2C70869406%2C63637913%2C63637911%2C63637917%2C68995122%2C71270520&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:06,462 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=71053014%2C68995120%2C68995118%2C70869392%2C70869406%2C63637913%2C63637911%2C63637917%2C68995122%2C71270520&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:06,668 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=70926636%2C70926638%2C71125270%2C71122856%2C71122710%2C71125472%2C68685844%2C71303866%2C70314450%2C70571054&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:06,837 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=70926636%2C70926638%2C71125270%2C71122856%2C71122710%2C71125472%2C68685844%2C71303866%2C70314450%2C70571054&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:06,967 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=71279088%2C71120528%2C68685842%2C71203902%2C71221138%2C67782890%2C67782886%2C67782884%2C67782888%2C67782892&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:07,101 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=71279088%2C71120528%2C68685842%2C71203902%2C71221138%2C67782890%2C67782886%2C67782884%2C67782888%2C67782892&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:07,250 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=71198100%2C71254148%2C71254140%2C70479308%2C70316142%2C70316144%2C70819054%2C62945439%2C62155438%2C62155440&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:07,383 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=71198100%2C71254148%2C71254140%2C70479308%2C70316142%2C70316144%2C70819054%2C62945439%2C62155438%2C62155440&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:07,561 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=62155434%2C62155432%2C62155436%2C68746484%2C69343008%2C70657102%2C70867590%2C71313960&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-06 06:31:07,739 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=62155434%2C62155432%2C62155436%2C68746484%2C69343008%2C70657102%2C70867590%2C71313960&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-06 06:31:09,901 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:09,905 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Khoromkhon+FC%22+OR+%22Khoromkhon%22+OR+%22Khovd+FC%22+OR+%22Khovd%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T03%3A31%3A08Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
-2026-05-06 06:31:09,906 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:09,911 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:09,976 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:09,981 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/all_leagues.php "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,062 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,171 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,198 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Nagoya+Grampus&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,231 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,278 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,292 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,312 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-22&to=2026-03-28&limit=1000&offset=0&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,333 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Gamba+Osaka&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,378 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,384 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,470 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Avispa+Fukuoka&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,489 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,596 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,615 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,619 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kyoto+Sanga+FC&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,677 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,689 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,701 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,703 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4329 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,758 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Nara+Club&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,768 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,813 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,835 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,887 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/events/?date_from=2026-05-06&date_to=2026-05-06&tz=UTC&page=1 "HTTP/1.1 200 OK"
-2026-05-06 06:31:10,897 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-06&dateTo=2026-05-08&status=SCHEDULED%2CTIMED&limit=200 "HTTP/1.1 200 "
-2026-05-06 06:31:28,145 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,146 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Osaka&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,146 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,147 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Khoromkhon+FC%22+OR+%22Khoromkhon%22+OR+%22Khovd+FC%22+OR+%22Khovd%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,165 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,231 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,258 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,301 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Hokkaido+Consadole+Sapporo&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,324 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,360 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Nara+Club%22+OR+%22Nara%22+OR+%22FC+Osaka%22+OR+%22Osaka%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T03%3A31%3A08Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,365 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,371 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Khoromkhon+FC%22+OR+%22Khoromkhon%22+OR+%22Khovd+FC%22+OR+%22Khovd%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T03%3A31%3A08Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,384 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,431 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=AC+Nagano+Parceiro&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,472 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,566 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Fujieda+MYFC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,581 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,611 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,622 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,634 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/CLI/standings "HTTP/1.1 200 "
-2026-05-06 06:31:28,687 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,707 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Fukushima+United+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,721 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,784 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,795 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,842 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,860 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Tegevajaro+Miyazaki&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,890 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/CLI/matches?limit=220&season=2026 "HTTP/1.1 200 "
-2026-05-06 06:31:28,992 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,993 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:28,993 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-22&to=2026-03-28&limit=1000&offset=1000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,013 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?upcoming=true&date_from=2026-05-06&date_to=2026-05-06&tz=UTC&page=1 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,019 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Ryukyu&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,059 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,100 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,119 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,159 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Tochigi+City+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,182 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,205 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,333 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,335 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Yokohama+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,480 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Vegalta+Sendai&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,538 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Sanfrecce+Hiroshima%22+OR+%22Sanfrecce%22+OR+%22Vissel+Kobe%22+OR+%22Vissel%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T03%3A31%3A08Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
-2026-05-06 06:31:29,555 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-22&to=2026-03-28&limit=1000&offset=2000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,396 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,398 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Tochigi+SC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,398 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-29&to=2026-04-04&limit=1000&offset=0&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,399 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Nara+Club%22+OR+%22Nara%22+OR+%22FC+Osaka%22+OR+%22Osaka%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,411 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,421 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,458 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Nara+Club%22+OR+%22Nara%22+OR+%22FC+Osaka%22+OR+%22Osaka%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T03%3A31%3A08Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,539 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Sagan+Tosu&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,575 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Nagoya+Grampus%22+OR+%22Nagoya%22+OR+%22Gamba+Osaka%22+OR+%22Gamba%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T03%3A31%3A08Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,589 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,655 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,674 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Gainare+Tottori&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,720 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,741 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,749 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-29&to=2026-04-04&limit=1000&offset=1000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,805 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,810 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kataller+Toyama&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,865 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,939 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kamatamare+Sanuki&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:42,942 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:31:43,019 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:31:43,028 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:31:43,044 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:31:43,069 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Zweigen+Kanazawa&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:31:43,112 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-29&to=2026-04-04&limit=1000&offset=2000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
-2026-05-06 06:31:43,119 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,192 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,193 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Ehime+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,194 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Sanfrecce+Hiroshima%22+OR+%22Sanfrecce%22+OR+%22Vissel+Kobe%22+OR+%22Vissel%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,256 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,266 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,287 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Sanfrecce+Hiroshima%22+OR+%22Sanfrecce%22+OR+%22Vissel+Kobe%22+OR+%22Vissel%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T03%3A31%3A08Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,327 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,387 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22FC+Tokyo%22+OR+%22Tokyo%22+OR+%22JEF+United+Chiba%22+OR+%22Jef+United+Chiba%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T03%3A31%3A08Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,402 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,471 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,532 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=RB+Omiya+Ardija&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,548 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,655 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Iwaki+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,796 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Giravanz+Kitakyushu&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:23,927 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Roasso+Kumamoto&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,052 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Ventforet+Kofu&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,189 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Jubilo+Iwata&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,342 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Vanraure+Hachinohe+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,350 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-06&date_to=2026-05-06&upcoming=true&tz=UTC&page=1 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,470 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Shonan+Bellmare&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,592 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Albirex+Niigata&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,716 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Tokushima+Vortis&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:24,846 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Imabari&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,206 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kochi+United+SC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,207 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Nagoya+Grampus%22+OR+%22Nagoya%22+OR+%22Gamba+Osaka%22+OR+%22Gamba%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,269 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Nagoya+Grampus%22+OR+%22Nagoya%22+OR+%22Gamba+Osaka%22+OR+%22Gamba%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T03%3A31%3A08Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,366 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kagoshima+United&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,521 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Oita+Trinita&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,684 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Reilac+Shiga+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,822 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Renofa+Yamaguchi&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:43,952 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Sanfrecce+Hiroshima&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,092 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Vissel+Kobe&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,230 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Tokyo&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,370 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=JEF+United+Chiba&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,497 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Blaublitz+Akita&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,624 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=SC+Sagamihara&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,753 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Machida+Zelvia&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:44,905 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Yokohama+F+Marinos&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,044 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kashima+Antlers&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,179 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Mito+Hollyhock&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,318 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Khoromkhon+FC&league=Mongolia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,447 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Khovd+FC&league=Mongolia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,595 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kawasaki+Frontale&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,732 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Tokyo+Verdy&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,864 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22FC+Tokyo%22+OR+%22Tokyo%22+OR+%22JEF+United+Chiba%22+OR+%22Jef+United+Chiba%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:45,910 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22FC+Tokyo%22+OR+%22Tokyo%22+OR+%22JEF+United+Chiba%22+OR+%22Jef+United+Chiba%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T03%3A31%3A08Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
-2026-05-06 06:33:48,545 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Machida+Zelvia%22+OR+%22Machida%22+OR+%22Yokohama+F+Marinos%22+OR+%22Yokohama+F%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:51,315 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Hokkaido+Consadole+Sapporo%22+OR+%22Hokkaido+Consadole%22+OR+%22AC+Nagano+Parceiro%22+OR+%22Nagano+Parceiro%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:54,014 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Kashima+Antlers%22+OR+%22Kashima%22+OR+%22Mito+Hollyhock%22+OR+%22Mito%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:56,677 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Fujieda+MYFC%22+OR+%22Fujieda+Myfc%22+OR+%22Fukushima+United+FC%22+OR+%22Fukushima+United%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:33:59,707 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Kawasaki+Frontale%22+OR+%22Kawasaki%22+OR+%22Tokyo+Verdy%22+OR+%22Tokyo%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:34:02,258 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Tegevajaro+Miyazaki%22+OR+%22Tegevajaro%22+OR+%22FC+Ryukyu%22+OR+%22Ryukyu%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T03%3A31%3A08Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
-2026-05-06 06:34:03,626 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=FC+Tokyo&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:03,797 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kashima+Antlers&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:03,939 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Fujieda+MYFC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,075 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kawasaki+Frontale&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,212 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Sagan+Tosu&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,352 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=FC+Imabari&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,509 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kagoshima+United&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,654 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Nagoya+Grampus&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,790 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Nara+Club&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:04,936 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kaisar+Kyzylorda&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,079 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Yunnan+Yukun&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,223 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Wuhan+Three+Towns+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,360 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Beijing+Guoan&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,505 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Shanghai+Port+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,651 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Khoromkhon+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,792 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Bandari+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:05,933 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kenya+Police+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:06,081 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Khan+Shaykhun+SC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:06,225 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Mukura+VS&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:06,369 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=AS+Muhanga&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-06 06:34:10,992 INFO app.services.runner: Prediction run finished: matches=88 candidates=0 publishable=0 telegram=0
+2026-05-06 09:32:58,640 INFO app.services.runner: Starting prediction run at 2026-05-06T06:32:58.640070+00:00
+2026-05-06 09:32:59,379 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-01&to=2026-05-06&limit=1000&offset=0&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:33:02,439 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-01&dateTo=2026-05-06&status=FINISHED&limit=200 "HTTP/1.1 200 "
+2026-05-06 09:33:22,078 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&sport=football&status=pending%2Clive&from=2026-05-06T06%3A33%3A21Z&to=2026-05-10T06%3A33%3A21Z&limit=100&page=1 "HTTP/1.1 200 OK"
+2026-05-06 09:33:22,204 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&sport=football&status=pending%2Clive&from=2026-05-06T06%3A33%3A21Z&to=2026-05-10T06%3A33%3A21Z&limit=100&page=2 "HTTP/1.1 200 OK"
+2026-05-06 09:33:40,871 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=67645540%2C71267582%2C71270460%2C67645542%2C67648130%2C71282922%2C71156310%2C68995116%2C71168996%2C71186524&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:40,999 INFO httpx: HTTP Request: GET https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=1334cf53b8f47542a4452290971872b233971520d2293a122d4c085ab8939aa4&from=2026-05-06&to=2026-05-06&timezone=UTC "HTTP/1.1 200 OK"
+2026-05-06 09:33:41,656 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?date_from=2026-05-06&date_to=2026-05-06&per_page=50 "HTTP/1.1 200 OK"
+2026-05-06 09:33:41,657 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=67645540%2C71267582%2C71270460%2C67645542%2C67648130%2C71282922%2C71156310%2C68995116%2C71168996%2C71186524&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:41,869 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?from=2026-05-06&to=2026-05-06&per_page=50 "HTTP/1.1 200 OK"
+2026-05-06 09:33:41,870 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=71168666%2C71267584%2C62670373%2C71177260%2C71053014%2C68995120%2C68995118%2C70869392%2C70869406%2C63637913&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:43,430 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=71168666%2C71267584%2C62670373%2C71177260%2C71053014%2C68995120%2C68995118%2C70869392%2C70869406%2C63637913&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:43,678 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=63637911%2C63637917%2C68995122%2C71270520%2C70926636%2C70926638%2C71125270%2C71122856%2C71122710%2C71125472&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:43,871 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=63637911%2C63637917%2C68995122%2C71270520%2C70926636%2C70926638%2C71125270%2C71122856%2C71122710%2C71125472&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:44,084 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=68685844%2C71303866%2C71328296%2C70314450%2C70571054%2C71279088%2C71120528%2C68685842%2C71203902%2C71221138&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:44,316 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=68685844%2C71303866%2C71328296%2C70314450%2C70571054%2C71279088%2C71120528%2C68685842%2C71203902%2C71221138&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:44,703 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=67782890%2C67782886%2C67782884%2C67782888%2C67782892%2C71198100%2C71254148%2C71254140%2C70479308%2C70316142&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:44,845 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=67782890%2C67782886%2C67782884%2C67782888%2C67782892%2C71198100%2C71254148%2C71254140%2C70479308%2C70316142&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:45,318 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=70316144%2C70819054%2C62945439%2C62155438%2C62155440%2C62155434%2C62155432%2C62155436%2C68746484%2C69343008&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:45,552 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=70316144%2C70819054%2C62945439%2C62155438%2C62155440%2C62155434%2C62155432%2C62155436%2C68746484%2C69343008&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:46,115 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=70657102%2C70867590%2C71313960%2C71002582%2C71303616%2C71293638%2C70906766%2C66613822%2C71135080%2C71135078&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:46,400 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=70657102%2C70867590%2C71313960%2C71002582%2C71303616%2C71293638%2C70906766%2C66613822%2C71135080%2C71135078&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:46,824 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=71135076%2C70851450%2C70314452%2C71296712%2C66613826%2C66613824%2C66613820%2C66614146%2C66613816%2C66614144&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:47,049 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=71135076%2C70851450%2C70314452%2C71296712%2C66613826%2C66613824%2C66613820%2C66614146%2C66613816%2C66614144&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:47,294 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=8aaee64e312da7158c9dcfa9e9ba03f7965e7527e78eac401b5f88f05e006a82&eventIds=66613814%2C66614148%2C71015804&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-06 09:33:47,423 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=d3e3753f73533386e04a326fe41573df18c44fe94fcf3422035f69a399469df4&eventIds=66613814%2C66614148%2C71015804&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,605 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,614 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/all_leagues.php "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,708 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,708 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Fasil+Kenema+SC%22+OR+%22Fasil+Kenema%22+OR+%22Bahir+Dar+Kenema+FC%22+OR+%22Bahir+Dar+Kenema%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T06%3A33%3A48Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,734 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,810 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,846 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,861 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kawasaki+Frontale&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,906 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-22&to=2026-03-28&limit=1000&offset=0&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,980 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:33:49,981 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,002 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Tokyo+Verdy&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,136 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Maharlika+Taguig+FC&league=Philippines+-+Philippines+Footb.+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,237 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,275 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Philippine+Army&league=Philippines+-+Philippines+Footb.+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,307 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,409 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Yeka&league=Ethiopia+-+Higher+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,420 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,553 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,555 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Dessie+Ketema&league=Ethiopia+-+Higher+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,640 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,686 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4329 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,703 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kashiwa+Reysol&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,714 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,820 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,851 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/events/?date_from=2026-05-06&date_to=2026-05-06&tz=UTC&page=1 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,857 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Urawa+Red+Diamonds&league=Japan+-+J.League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,931 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Johor+Darul+Ta%27zim%22+OR+%22Johor+Darul+Ta+Zim%22+OR+%22Buriram+United%22+OR+%22Buriram%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T06%3A33%3A48Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,957 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:33:50,993 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Gifu&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:33:51,017 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:33:51,045 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:33:51,089 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-06&dateTo=2026-05-08&status=SCHEDULED%2CTIMED&limit=200 "HTTP/1.1 200 "
+2026-05-06 09:34:06,969 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:34:06,970 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:34:06,970 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Matsumoto+Yamaga+FC&league=Japan+-+J.League+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:06,971 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Fasil+Kenema+SC%22+OR+%22Fasil+Kenema%22+OR+%22Bahir+Dar+Kenema+FC%22+OR+%22Bahir+Dar+Kenema%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,129 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Fasil+Kenema+SC%22+OR+%22Fasil+Kenema%22+OR+%22Bahir+Dar+Kenema+FC%22+OR+%22Bahir+Dar+Kenema%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T06%3A33%3A48Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,161 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Ulaanbaatar&league=Mongolia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,163 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Sidama+Bunna+SC%22+OR+%22Sidama+Bunna%22+OR+%22Ethiopian+Medhin%22+OR+%22Ethiopian%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T06%3A33%3A48Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,203 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,206 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-22&to=2026-03-28&limit=1000&offset=1000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,308 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Khovd+Western&league=Mongolia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,417 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4336 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,465 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Wuhan+Three+Towns+FC&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,493 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/CL/standings "HTTP/1.1 200 "
+2026-05-06 09:34:07,520 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,608 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Qingdao+Hainiu+FC&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,657 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,750 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Bandari+FC&league=Kenya+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,755 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-22&to=2026-03-28&limit=1000&offset=2000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,790 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,808 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/CL/matches?limit=220&season=2025 "HTTP/1.1 200 "
+2026-05-06 09:34:07,821 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,882 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?upcoming=true&date_from=2026-05-06&date_to=2026-05-06&tz=UTC&page=1 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,887 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Posta+Rangers+FC&league=Kenya+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,893 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,924 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,964 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-29&to=2026-04-04&limit=1000&offset=0&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:34:07,965 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,043 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,053 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Aps+Bomet+FC&league=Kenya+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,057 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,113 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,184 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/den.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,191 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kenya+Commercial+Bank&league=Kenya+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,199 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,263 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,332 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Kenya+Police+FC&league=Kenya+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,334 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,339 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,354 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22FC+Ulaanbaatar%22+OR+%22Ulaanbaatar%22+OR+%22Khovd+Western%22+OR+%22Khovd%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T06%3A33%3A48Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,371 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-29&to=2026-04-04&limit=1000&offset=1000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:34:08,410 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,103 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,104 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Muranga+Seal&league=Kenya+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,105 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,106 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Johor+Darul+Ta%27zim%22+OR+%22Johor+Darul+Ta+Zim%22+OR+%22Buriram+United%22+OR+%22Buriram%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,244 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4338 "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,325 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Don+Bosco+Garelli+United&league=Philippines+-+Philippines+Footb.+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,340 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-29&to=2026-04-04&limit=1000&offset=2000&apikey=5d28lcr3a2d9gaaj "HTTP/1.1 200 OK"
+2026-05-06 09:34:21,350 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,433 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,434 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Mendiola+FC&league=Philippines+-+Philippines+Footb.+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,435 INFO httpx: HTTP Request: GET https://gnews.io/api/v4/search?apikey=1d7347bb2e143672fa57ebb3e52552c3&q=%28%22Bandari+FC%22+OR+%22Bandari%22+OR+%22Posta+Rangers+FC%22+OR+%22Posta+Rangers%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&lang=en&max=2&from=2026-05-03T06%3A33%3A48Z&sortby=publishedAt&in=title%2Cdescription "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,436 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Sidama+Bunna+SC%22+OR+%22Sidama+Bunna%22+OR+%22Ethiopian+Medhin%22+OR+%22Ethiopian%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,516 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,543 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Sidama+Bunna+SC%22+OR+%22Sidama+Bunna%22+OR+%22Ethiopian+Medhin%22+OR+%22Ethiopian%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T06%3A33%3A48Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,736 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,809 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:36:16,851 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Chippa+United+FC&league=South+Africa+-+Premiership&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,007 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Sekhukhune+United&league=South+Africa+-+Premiership&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,024 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,041 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,063 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,135 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,155 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Beijing+Guoan&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,206 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,307 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Dalian+Yingbo+FC&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,454 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Shanghai+Port+FC&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,465 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,489 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,508 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,578 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,601 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Shenzhen+Peng+City&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,643 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-06&date_to=2026-05-06&upcoming=true&tz=UTC&page=1 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,646 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,746 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Simal&league=Azerbaijan+-+First+Division&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,865 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,885 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,887 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Moik+Baku&league=Azerbaijan+-+First+Division&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,906 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:36:17,973 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,044 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Zaqatala+FK&league=Azerbaijan+-+First+Division&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,045 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,114 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,138 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260506 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,202 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Sabail+FK&league=Azerbaijan+-+First+Division&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,208 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260507 "HTTP/1.1 200 OK"
+2026-05-06 09:36:18,284 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260508 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,490 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Yunnan+Yukun&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,491 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260509 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,491 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22FC+Ulaanbaatar%22+OR+%22Ulaanbaatar%22+OR+%22Khovd+Western%22+OR+%22Khovd%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,609 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22FC+Ulaanbaatar%22+OR+%22Ulaanbaatar%22+OR+%22Khovd+Western%22+OR+%22Khovd%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T06%3A33%3A48Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,657 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Zhejiang+FC&league=China+-+Chinese+Super+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,708 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,802 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Gamo+Chencha&league=Ethiopia+-+Higher+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:35,942 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Halaba+Ketema&league=Ethiopia+-+Higher+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,081 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Fasil+Kenema+SC&league=Ethiopia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,223 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Bahir+Dar+Kenema+FC&league=Ethiopia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,363 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Sidama+Bunna+SC&league=Ethiopia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,505 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Ethiopian+Medhin&league=Ethiopia+-+Premier+League&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,644 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Samtredia&league=Georgia+-+Erovnuli+Liga+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,793 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Aragvi+Dusheti&league=Georgia+-+Erovnuli+Liga+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:36,969 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Merani+Martvili&league=Georgia+-+Erovnuli+Liga+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,119 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=SFC+Shturmi+Sartichala&league=Georgia+-+Erovnuli+Liga+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,268 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Gareji+Sagarejo&league=Georgia+-+Erovnuli+Liga+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,406 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Telavi&league=Georgia+-+Erovnuli+Liga+2&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,558 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Johor+Darul+Ta%27zim&league=International+Clubs+-+ASEAN+Club+Championship&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,698 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Buriram+United&league=International+Clubs+-+ASEAN+Club+Championship&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,837 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Bukhoro+Davlat+Universiteti&league=Uzbekistan+-+Pro+Liga&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:37,975 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Fardu+Ferghana&league=Uzbekistan+-+Pro+Liga&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:38,116 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=Pfk+Aral&league=Uzbekistan+-+Pro+Liga&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:38,260 INFO httpx: HTTP Request: GET https://footballperformanceapi.site/database/ratings?team=FC+Yaypan+Fergana&league=Uzbekistan+-+Pro+Liga&limit=80 "HTTP/1.1 200 OK"
+2026-05-06 09:36:38,266 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Bandari+FC%22+OR+%22Bandari%22+OR+%22Posta+Rangers+FC%22+OR+%22Posta+Rangers%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:38,345 INFO httpx: HTTP Request: GET https://newsapi.org/v2/everything?q=%28%22Bandari+FC%22+OR+%22Bandari%22+OR+%22Posta+Rangers+FC%22+OR+%22Posta+Rangers%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&searchIn=title%2Cdescription&language=en&from=2026-05-03T06%3A33%3A48Z&sortBy=publishedAt&pageSize=2 "HTTP/1.1 200 OK"
+2026-05-06 09:36:40,989 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Aps+Bomet+FC%22+OR+%22Aps+Bomet%22+OR+%22Kenya+Commercial+Bank%22+OR+%22Kenya+Commercial%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:43,665 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Kenya+Police+FC%22+OR+%22Kenya+Police%22+OR+%22Muranga+Seal%22+OR+%22Muranga%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:46,440 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Yunnan+Yukun%22+OR+%22Yunnan%22+OR+%22Zhejiang+FC%22+OR+%22Zhejiang%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:49,167 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Beijing+Guoan%22+OR+%22Beijing%22+OR+%22Dalian+Yingbo+FC%22+OR+%22Dalian+Yingbo%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:51,880 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Wuhan+Three+Towns+FC%22+OR+%22Wuhan+Three+Towns%22+OR+%22Qingdao+Hainiu+FC%22+OR+%22Qingdao+Hainiu%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:54,582 INFO httpx: HTTP Request: GET https://api.currentsapi.services/v1/search?query=%28%22Shanghai+Port+FC%22+OR+%22Shanghai+Port%22+OR+%22Shenzhen+Peng+City%22+OR+%22Shenzhen+Peng%22%29+AND+%28football+OR+soccer+OR+match+OR+lineup+OR+injury+OR+suspension%29&language=en&category=sports&type=1&start_date=2026-05-03T06%3A33%3A48Z&page_number=1&page_size=2&limit=2&apiKey=lgZC9eGabc8U3Bh8qX73PiIvhKawbPFN0ZIHUzdCDiIO6mBT "HTTP/1.1 200 OK"
+2026-05-06 09:36:55,562 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Yunnan+Yukun&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:55,761 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Beijing+Guoan&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:55,907 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Wuhan+Three+Towns+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,046 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kawasaki+Frontale&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,192 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Shanghai+Port+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,395 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Johor+Darul+Ta%27zim&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,542 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=PFC+Slavia+Sofia&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,684 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Selangor+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,828 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Bandari+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:56,972 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Kenya+Police+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:57,126 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Soy+United+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:57,269 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Khan+Shaykhun+SC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:57,413 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=Mukura+VS&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:36:57,556 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=8c3ded8f65204877aaa92730262104&q=AS+Muhanga&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-06 09:37:00,564 INFO app.services.runner: Prediction run finished: matches=83 candidates=0 publishable=0 telegram=0
 {
-  "current_time_utc": "2026-05-06T03:34:10.585306+00:00",
-  "current_time_local": "2026-05-06T06:34:10.585306+03:00",
-  "started_time_utc": "2026-05-06T03:30:21.406228+00:00",
-  "started_time_local": "2026-05-06T06:30:21.406228+03:00",
+  "current_time_utc": "2026-05-06T06:37:00.157718+00:00",
+  "current_time_local": "2026-05-06T09:37:00.157718+03:00",
+  "started_time_utc": "2026-05-06T06:32:58.646284+00:00",
+  "started_time_local": "2026-05-06T09:32:58.646284+03:00",
   "app_timezone": "Europe/Moscow",
   "schedule_mode": "forecast",
-  "matches_seen": 88,
-  "matches_before_publish_window": 107,
-  "matches_with_offers": 59,
-  "context_matches_requested": 88,
+  "matches_seen": 83,
+  "matches_before_publish_window": 128,
+  "matches_with_offers": 45,
+  "context_matches_requested": 83,
   "context_enrichment": {
     "requires_offers": false,
     "limit": 508,
-    "eligible_matches": 88,
-    "selected_matches": 88,
+    "eligible_matches": 83,
+    "selected_matches": 83,
     "trimmed_matches": 0,
     "skipped_without_offers": 0,
     "premium_shortlist_limit": 52,
-    "matches_with_value_hint": 47,
+    "matches_with_value_hint": 30,
     "near_miss_queue_items": 29,
     "near_miss_selected": 0,
-    "confirmation_gap_candidates": 59,
-    "confirmation_gap_selected": 59,
+    "confirmation_gap_candidates": 45,
+    "confirmation_gap_selected": 45,
     "min_confirmation_sources": 2
   },
   "provider_context_targets": {
-    "sstats": 88,
+    "sstats": 83,
     "bzzoiro": 24,
     "api_football": 0,
     "espn": 27,
-    "thesportsdb": 88,
-    "football_data": 88,
+    "thesportsdb": 83,
+    "football_data": 83,
     "openligadb": 24,
     "futrixmetrics": 26,
     "openfootball": 0,
     "newsapi": 11,
     "gnews": 8,
-    "sportlogic": 88,
+    "sportlogic": 83,
     "weather": 70
   },
-  "contexts_built": 20,
+  "contexts_built": 14,
   "self_history_contexts_built": 0,
   "candidates": 0,
   "candidates_publishable": 0,
@@ -264,10 +257,10 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
   "run_logs_dir": ".logs/runs",
   "storage_export_dir": ".data/exports",
   "filtering": {
-    "total_before": 107,
-    "total_after": 88,
-    "skipped_started": 17,
-    "skipped_too_soon": 2,
+    "total_before": 128,
+    "total_after": 83,
+    "skipped_started": 42,
+    "skipped_too_soon": 3,
     "skipped_outside_window": 0,
     "publish_window_hours": 12,
     "min_kickoff_lead_minutes": 30,
@@ -287,28 +280,28 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     "manual_late_min_kickoff_lead_minutes": 20,
     "manual_late_adaptive_min_kickoff_lead_minutes": 10,
     "future_matches_in_window": {
-      "count": 90
+      "count": 86
     },
     "too_soon_matches_in_window": {
-      "count": 2
+      "count": 3
     },
-    "too_soon_share_of_future_in_window": 0.0222,
+    "too_soon_share_of_future_in_window": 0.0349,
     "lead_time_snapshot": {
-      "nearest_minutes": 29.6,
-      "farthest_minutes": 629.6,
+      "nearest_minutes": 27.0,
+      "farthest_minutes": 507.0,
       "sample_minutes": [
-        29.6,
-        29.6,
-        89.6,
-        89.6,
-        89.6,
-        89.6,
-        89.6,
-        89.6
+        27.0,
+        27.0,
+        27.0,
+        87.0,
+        87.0,
+        177.0,
+        207.0,
+        207.0
       ]
     },
-    "now_utc": "2026-05-06T03:30:21.406228+00:00",
-    "now_local": "2026-05-06T06:30:21.406228+03:00"
+    "now_utc": "2026-05-06T06:32:58.646284+00:00",
+    "now_local": "2026-05-06T09:32:58.646284+03:00"
   },
   "bootstrap_provider": "odds_api_io+day_inventory",
   "source_stats": {
@@ -320,8 +313,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "event_requests": 2,
         "response_errors": 0,
         "events_fetched": 99,
-        "matches_built": 90,
-        "low_tier_skipped": 9,
+        "matches_built": 86,
+        "low_tier_skipped": 13,
         "simulated_skipped": 2,
         "event_http_statuses": [
           200,
@@ -330,7 +323,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "payload_shapes": [
           "list"
         ],
-        "last_body_preview": "[{\"id\":67645046,\"home\":\"Shimizu S-Pulse\",\"away\":\"Cerezo Osaka\",\"homeId\":3133,\"awayId\":3141,\"date\":\"2026-05-06T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645048,\"home\":\"V-Varen Nagasaki\",\"away\":\"Fagiano Okayama\",\"homeId\":38154,\"awayId\":34034,\"date\":\"2026-05-06T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645050,\"home\":\"Nagoya Grampus\",\"away\":\"Gamba Osaka\",\"homeId\":3136,\"awayId\":3138,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645052,\"home\":\"Avispa Fukuoka\",\"away\":\"Kyoto Sanga FC\",\"homeId\":3143,\"awayId\":3149,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67647960,\"home\":\"Vanraure Hachinohe FC\",\"away\":\"Shonan Bellmare\",\"homeId\":118478,\"awayId\":21905,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League 2\",\"slug\":\"japan-jleague-2\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67647962,\"home\":\"Tochigi City FC\",\"away\":\"Yokohama FC\",\"homeId\":245541,\"awayId\":7061,\"date\":\"2026",
+        "last_body_preview": "[{\"id\":67645536,\"home\":\"Machida Zelvia\",\"away\":\"Yokohama F Marinos\",\"homeId\":44409,\"awayId\":3137,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645538,\"home\":\"Kashima Antlers\",\"away\":\"Mito Hollyhock\",\"homeId\":3134,\"awayId\":21901,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71282920,\"home\":\"Khoromkhon FC\",\"away\":\"Khovd FC\",\"homeId\":219294,\"awayId\":725959,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Mongolia - Premier League\",\"slug\":\"mongolia-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645540,\"home\":\"Kawasaki Frontale\",\"away\":\"Tokyo Verdy\",\"homeId\":5127,\"awayId\":3139,\"date\":\"2026-05-06T08:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71267582,\"home\":\"Maharlika Taguig FC\",\"away\":\"Philippine Army\",\"homeId\":753913,\"awayId\":142200,\"date\":\"2026-05-06T08:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Philippines - Philippines Footb. League\",\"slug\":\"philippines-philippines-footb-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70560732,\"home\":\"Launceston United",
         "rate_limited": false,
         "max_http_requests_per_run": 280,
         "budget_exhausted": false
@@ -342,8 +335,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "event_requests": 2,
           "response_errors": 0,
           "events_fetched": 99,
-          "matches_built": 90,
-          "low_tier_skipped": 9,
+          "matches_built": 86,
+          "low_tier_skipped": 13,
           "simulated_skipped": 2,
           "event_http_statuses": [
             200,
@@ -352,7 +345,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "payload_shapes": [
             "list"
           ],
-          "last_body_preview": "[{\"id\":67645046,\"home\":\"Shimizu S-Pulse\",\"away\":\"Cerezo Osaka\",\"homeId\":3133,\"awayId\":3141,\"date\":\"2026-05-06T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645048,\"home\":\"V-Varen Nagasaki\",\"away\":\"Fagiano Okayama\",\"homeId\":38154,\"awayId\":34034,\"date\":\"2026-05-06T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645050,\"home\":\"Nagoya Grampus\",\"away\":\"Gamba Osaka\",\"homeId\":3136,\"awayId\":3138,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645052,\"home\":\"Avispa Fukuoka\",\"away\":\"Kyoto Sanga FC\",\"homeId\":3143,\"awayId\":3149,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67647960,\"home\":\"Vanraure Hachinohe FC\",\"away\":\"Shonan Bellmare\",\"homeId\":118478,\"awayId\":21905,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League 2\",\"slug\":\"japan-jleague-2\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67647962,\"home\":\"Tochigi City FC\",\"away\":\"Yokohama FC\",\"homeId\":245541,\"awayId\":7061,\"date\":\"2026",
+          "last_body_preview": "[{\"id\":67645536,\"home\":\"Machida Zelvia\",\"away\":\"Yokohama F Marinos\",\"homeId\":44409,\"awayId\":3137,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645538,\"home\":\"Kashima Antlers\",\"away\":\"Mito Hollyhock\",\"homeId\":3134,\"awayId\":21901,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71282920,\"home\":\"Khoromkhon FC\",\"away\":\"Khovd FC\",\"homeId\":219294,\"awayId\":725959,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Mongolia - Premier League\",\"slug\":\"mongolia-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645540,\"home\":\"Kawasaki Frontale\",\"away\":\"Tokyo Verdy\",\"homeId\":5127,\"awayId\":3139,\"date\":\"2026-05-06T08:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71267582,\"home\":\"Maharlika Taguig FC\",\"away\":\"Philippine Army\",\"homeId\":753913,\"awayId\":142200,\"date\":\"2026-05-06T08:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Philippines - Philippines Footb. League\",\"slug\":\"philippines-philippines-footb-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70560732,\"home\":\"Launceston United",
           "rate_limited": false,
           "max_http_requests_per_run": 280,
           "budget_exhausted": false
@@ -371,13 +364,13 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "odds_requests": 18,
       "response_errors": 0,
       "events_fetched": 100,
-      "events_matched": 88,
-      "matched_exact": 88,
+      "events_matched": 83,
+      "matched_exact": 83,
       "matched_loose": 0,
       "matched_fuzzy": 0,
-      "unmatched_offer_events": 22,
-      "markets_parsed": 2649,
-      "offers_parsed": 5013,
+      "unmatched_offer_events": 30,
+      "markets_parsed": 1661,
+      "offers_parsed": 3165,
       "event_http_statuses": [],
       "odds_http_statuses": [
         200,
@@ -403,7 +396,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "list"
       ],
       "bookmakers_seen": 4,
-      "last_body_preview": "[{\"id\":62155434,\"home\":\"Flamurtari Vlore\",\"away\":\"KF Teuta\",\"date\":\"2026-05-06T14:00:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Albania - Kategoria Superiore\",\"slug\":\"albania-kategoria-superiore\"},\"urls\":{\"Betfair Exchange\":\"https://www.betfair.com/exchange/plus/en/e/e/e-e-35574397\"},\"bookmakerIds\":{\"Betfair Exchange\":\"id1000072062155434\"},\"bookmakers\":{\"Betfair Exchange\":[{\"name\":\"ML\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"home\":\"1.56\",\"draw\":\"3.85\",\"away\":\"6.40\",\"layHome\":\"1.65\",\"layAway\":\"8.20\",\"layDraw\":\"4.90\",\"depthHome\":\"21.83\",\"depthAway\":\"1.5\",\"depthDraw\":\"2.8\",\"depthLayHome\":\"2.05\",\"depthLayAway\":\"3.93\",\"depthLayDraw\":\"6.95\"}]},{\"name\":\"Draw No Bet\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.20\",\"away\":\"4.80\",\"layHome\":\"1.27\",\"layAway\":\"5.80\",\"depthHome\":\"58.82\",\"depthAway\":\"1.2\",\"depthLayHome\":\"7.56\",\"depthLayAway\":\"1.97\"}]},{\"name\":\"Double Chance\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"hdp\":0,\"1X\":\"1.15\",\"12\":\"1.27\",\"X2\":\"2.40\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.38\",\"away\":\"3.04\",\"layHome\":\"1.48\",\"layAway\":\"3.61\",\"depthHome\":\"40.88\",\"depthAway\":\"3.14\",\"depthLayHome\":\"1.23\",\"depthLayAway\":\"7.25\"},{\"hdp\":0.25,\"home\":\"1.17\",\"away\":\"5.60\",\"layHome\":\"1.22\",\"layAway\":\"6.77\",\"depthHome\":\"21.73\",\"depthAway\":\"1.71\",\"depthLayHome\":\"7.87\",\"depthLayAway\":\"1.69\"},{\"hdp\":-0.5,\"home\":\"1.56\",\"away\":\"2.40\",\"layHome\":\"1.65\",\"layAway\":\"2.79\",\"depthHome\":\"21.83\",\"depthAway\":\"3.99\",\"depthLayHome\":\"2.05\",\"depthLayAway\":\"12.21\"},{\"hdp\":0.5,\"home\":\"1.15\",\"away\":\"6.40\",\"layHome\":\"1.19\",\"layAway\":\"8.20\",\"depthHome\":\"12.17\",\"depthAway\":\"1.5\",\"depthLayHome\":\"8.07\",\"depthLayAway\":\"3.93\"},{\"hdp\":-0.75,\"home\":\"1.70\",\"away\":\"2.07\",\"layHome\":\"1.85\",\"layAway\":\"2.43\",\"depthHome\":\"2.85\",\"depthAway\":\"6.08\",\"depthLayHome\":\"2.85\",\"depthLayAway\":\"1.99\"},{\"hdp\":0.75,\"home\":\"1.09\",\"away\":\"9.00\",\"layHome\":\"1.13\",\"layAway\":\"11.50\",\"depthHome\":\"119.65\",\"depth",
+      "last_body_preview": "[]",
       "simulated_skipped": 2,
       "requested_bookmakers": "Bet365,Unibet,Betfair Exchange,Sbobet",
       "requested_bookmakers_by_account": [
@@ -422,8 +415,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "api_key_present": true,
           "odds_requests": 9,
           "response_errors": 0,
-          "offers_parsed": 933,
-          "events_matched": 57,
+          "offers_parsed": 622,
+          "events_matched": 43,
           "rate_limited": false,
           "http_statuses": [
             200,
@@ -442,8 +435,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "api_key_present": true,
           "odds_requests": 9,
           "response_errors": 0,
-          "offers_parsed": 4080,
-          "events_matched": 46,
+          "offers_parsed": 2543,
+          "events_matched": 27,
           "rate_limited": false,
           "http_statuses": [
             200,
@@ -468,13 +461,13 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "Sbobet",
         "Unibet"
       ],
-      "matches_with_2plus_books": 47,
-      "matches_with_1_book": 12,
+      "matches_with_2plus_books": 30,
+      "matches_with_1_book": 15,
       "offers_by_family": {
-        "h2h": 509,
-        "spreads": 1696,
-        "teamTotals": 142,
-        "totals": 2666
+        "h2h": 297,
+        "spreads": 1162,
+        "teamTotals": 68,
+        "totals": 1638
       }
     },
     "odds_api_io_bootstrap": {
@@ -483,8 +476,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "event_requests": 2,
       "response_errors": 0,
       "events_fetched": 99,
-      "matches_built": 90,
-      "low_tier_skipped": 9,
+      "matches_built": 86,
+      "low_tier_skipped": 13,
       "simulated_skipped": 2,
       "event_http_statuses": [
         200,
@@ -493,7 +486,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "payload_shapes": [
         "list"
       ],
-      "last_body_preview": "[{\"id\":67645046,\"home\":\"Shimizu S-Pulse\",\"away\":\"Cerezo Osaka\",\"homeId\":3133,\"awayId\":3141,\"date\":\"2026-05-06T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645048,\"home\":\"V-Varen Nagasaki\",\"away\":\"Fagiano Okayama\",\"homeId\":38154,\"awayId\":34034,\"date\":\"2026-05-06T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645050,\"home\":\"Nagoya Grampus\",\"away\":\"Gamba Osaka\",\"homeId\":3136,\"awayId\":3138,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645052,\"home\":\"Avispa Fukuoka\",\"away\":\"Kyoto Sanga FC\",\"homeId\":3143,\"awayId\":3149,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67647960,\"home\":\"Vanraure Hachinohe FC\",\"away\":\"Shonan Bellmare\",\"homeId\":118478,\"awayId\":21905,\"date\":\"2026-05-06T05:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League 2\",\"slug\":\"japan-jleague-2\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67647962,\"home\":\"Tochigi City FC\",\"away\":\"Yokohama FC\",\"homeId\":245541,\"awayId\":7061,\"date\":\"2026",
+      "last_body_preview": "[{\"id\":67645536,\"home\":\"Machida Zelvia\",\"away\":\"Yokohama F Marinos\",\"homeId\":44409,\"awayId\":3137,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645538,\"home\":\"Kashima Antlers\",\"away\":\"Mito Hollyhock\",\"homeId\":3134,\"awayId\":21901,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71282920,\"home\":\"Khoromkhon FC\",\"away\":\"Khovd FC\",\"homeId\":219294,\"awayId\":725959,\"date\":\"2026-05-06T07:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Mongolia - Premier League\",\"slug\":\"mongolia-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67645540,\"home\":\"Kawasaki Frontale\",\"away\":\"Tokyo Verdy\",\"homeId\":5127,\"awayId\":3139,\"date\":\"2026-05-06T08:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Japan - J.League\",\"slug\":\"japan-jleague\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71267582,\"home\":\"Maharlika Taguig FC\",\"away\":\"Philippine Army\",\"homeId\":753913,\"awayId\":142200,\"date\":\"2026-05-06T08:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Philippines - Philippines Footb. League\",\"slug\":\"philippines-philippines-footb-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70560732,\"home\":\"Launceston United",
       "rate_limited": false,
       "max_http_requests_per_run": 280,
       "budget_exhausted": false
@@ -664,7 +657,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         200,
         200
       ],
-      "last_body_preview": "{\"db\":\"pro_rating.db\",\"filters\":{\"league\":\"Japan - J.League\",\"Current Club\":\"Tokyo Verdy\"},\"base_scores\":{\"count\":0,\"rows\":[]},\"pro_scores\":{\"count\":0,\"rows\":[]}}"
+      "last_body_preview": "{\"db\":\"pro_rating.db\",\"filters\":{\"league\":\"Uzbekistan - Pro Liga\",\"Current Club\":\"FC Yaypan Fergana\"},\"base_scores\":{\"count\":0,\"rows\":[]},\"pro_scores\":{\"count\":0,\"rows\":[]}}"
     },
     "sstats": {
       "enabled": true,
@@ -675,7 +668,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "days_requested": 46,
       "chunk_windows_requested": 2,
       "rows_fetched": 4837,
-      "contexts_built": 4,
+      "contexts_built": 5,
       "matched_exact": 0,
       "matched_loose": 0,
       "matched_fuzzy": 0,
@@ -685,11 +678,11 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "bzzoiro_requests": 1,
       "bzzoiro_response_errors": 0,
       "bzzoiro_events_fetched": 30,
-      "bzzoiro_contexts_built": 4,
+      "bzzoiro_contexts_built": 5,
       "bzzoiro_matched_exact": 0,
       "bzzoiro_matched_loose": 0,
-      "bzzoiro_matched_fuzzy": 4,
-      "bzzoiro_unmatched_rows": 26,
+      "bzzoiro_matched_fuzzy": 5,
+      "bzzoiro_unmatched_rows": 25,
       "http_statuses": [
         200,
         200,
@@ -720,29 +713,29 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "target_matches": 24,
       "pages_requested": 2,
       "rows_seen": 61,
-      "contexts_built": 0,
+      "contexts_built": 4,
       "matched_exact": 0,
       "matched_loose": 0,
-      "matched_fuzzy": 0,
+      "matched_fuzzy": 4,
       "exact_matches": 0,
-      "fuzzy_matches": 0,
-      "near_miss_matches_closed": 0,
+      "fuzzy_matches": 4,
+      "near_miss_matches_closed": 4,
       "stop_reason": "no_more_data",
       "stop_reasons": {
         "/events/": "no_more_data",
         "/predictions/": "no_more_data"
       },
-      "event_matches": 0,
-      "prediction_links": 0,
+      "event_matches": 4,
+      "prediction_links": 4,
       "fallback_prediction_matches": 0,
       "prediction_param_fallbacks": 0,
       "event_context_fallbacks": 0,
-      "unmatched_predictions": 24,
+      "unmatched_predictions": 20,
       "event_rejected_low_score": 0,
-      "event_rejected_league_mismatch": 7,
+      "event_rejected_league_mismatch": 2,
       "event_rejected_no_quality": 0,
       "prediction_rejected_low_score": 0,
-      "prediction_rejected_league_mismatch": 7,
+      "prediction_rejected_league_mismatch": 2,
       "prediction_rejected_no_quality": 0,
       "http_statuses": [
         200,
@@ -841,12 +834,12 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "enabled": true,
       "requests": 18,
       "response_errors": 0,
-      "leagues_resolved": 21,
+      "leagues_resolved": 23,
       "tables_fetched": 17,
-      "contexts_built": 13,
-      "missing_table_rows": 58,
-      "partial_contexts_built": 12,
-      "last_body_preview": "{\"table\":[{\"idStanding\":\"9493377\",\"intRank\":\"1\",\"idTeam\":\"133643\",\"strTeam\":\"Heart of Midlothian\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/twqvyt1447597939.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWDW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"21\",\"intLoss\":\"5\",\"intDraw\":\"7\",\"intGoalsFor\":\"58\",\"intGoalsAgainst\":\"28\",\"intGoalDifference\":\"30\",\"intPoints\":\"70\",\"dateUpdated\":\"2026-05-05 23:01:29\"},{\"idStanding\":\"9493378\",\"intRank\":\"2\",\"idTeam\":\"133642\",\"strTeam\":\"Rangers\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/ti24j61614290048.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"LLWWW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"19\",\"intLoss\":\"2\",\"intDraw\":\"12\",\"intGoalsFor\":\"66\",\"intGoalsAgainst\":\"31\",\"intGoalDifference\":\"35\",\"intPoints\":\"69\",\"dateUpdated\":\"2026-05-05 23:01:29\"},{\"idStanding\":\"9493379\",\"intRank\":\"3\",\"idTeam\":\"133647\",\"strTeam\":\"Celtic\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/3uv1641758780002.png\\/tiny\",\"idLeague\":\"4330\",\"strLe",
+      "contexts_built": 7,
+      "missing_table_rows": 35,
+      "partial_contexts_built": 7,
+      "last_body_preview": "{\"table\":[{\"idStanding\":\"9492881\",\"intRank\":\"1\",\"idTeam\":\"133789\",\"strTeam\":\"Club Brugge\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/mz8y0q1771129880.png\\/tiny\",\"idLeague\":\"4338\",\"strLeague\":\"Belgian Pro League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWLW\",\"strDescription\":\"Champions League\",\"intPlayed\":\"36\",\"intWin\":\"25\",\"intLoss\":\"8\",\"intDraw\":\"3\",\"intGoalsFor\":\"77\",\"intGoalsAgainst\":\"43\",\"intGoalDifference\":\"34\",\"intPoints\":\"47\",\"dateUpdated\":\"2026-05-05 23:01:24\"},{\"idStanding\":\"9492887\",\"intRank\":\"1\",\"idTeam\":\"133786\",\"strTeam\":\"Zulte Waregem\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/6mdsut1695740517.png\\/tiny\",\"idLeague\":\"4338\",\"strLeague\":\"Belgian Pro League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWWD\",\"strDescription\":\"\",\"intPlayed\":\"35\",\"intWin\":\"12\",\"intLoss\":\"14\",\"intDraw\":\"9\",\"intGoalsFor\":\"51\",\"intGoalsAgainst\":\"52\",\"intGoalDifference\":\"-1\",\"intPoints\":\"45\",\"dateUpdated\":\"2026-05-05 23:01:24\"},{\"idStanding\":\"9492882\",\"intRank\":\"2\",\"idTeam\":\"138141\",\"strTeam\":\"Union Saint-Gilloise\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/ljszp41654601742.png\\/tiny\",\"idLeague\":\"4338\",\"strLeague\":\"Belgian Pro",
       "http_statuses": [
         200,
         200,
@@ -869,16 +862,17 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       ],
       "max_http_requests_per_run": 18,
       "budget_exhausted": true,
-      "rate_limited": false
+      "rate_limited": false,
+      "league_limit_applied": 36
     },
     "football_data": {
       "enabled": true,
       "api_key_present": true,
-      "target_matches": 88,
+      "target_matches": 83,
       "requests": 3,
       "response_errors": 0,
-      "matches_fetched": 13,
-      "history_rows_fetched": 133,
+      "matches_fetched": 10,
+      "history_rows_fetched": 189,
       "events_matched": 1,
       "contexts_built": 1,
       "best_near_miss_score": 0.0,
@@ -886,17 +880,17 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "standings_requests": 1,
       "standings_loaded": 1,
       "history_requests": 1,
-      "history_contexts_built": 1,
+      "history_contexts_built": 0,
       "matched_exact": 0,
       "matched_loose": 0,
       "matched_fuzzy": 1,
-      "unmatched_rows": 12,
+      "unmatched_rows": 9,
       "http_statuses": [
         200,
         200,
         200
       ],
-      "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":133,\"first\":\"2026-02-04\",\"last\":\"2026-11-28\",\"played\":80},\"competition\":{\"id\":2152,\"name\":\"Copa Libertadores\",\"code\":\"CLI\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CLI.svg\"},\"matches\":[{\"area\":{\"id\":2220,\"name\":\"South America\",\"code\":\"SAM\",\"flag\":\"https://crests.football-data.org/CLI.svg\"},\"competition\":{\"id\":2152,\"name\":\"Copa Libertadores\",\"code\":\"CLI\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CLI.svg\"},\"season\":{\"id\":2466,\"startDate\":\"2026-02-04\",\"endDate\":\"2026-11-28\",\"currentMatchday\":4,\"winner\":null},\"id\":553203,\"utcDate\":\"2026-02-04T00:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"ROUND_1\",\"group\":null,\"lastUpdated\":\"2026-05-05T20:21:17Z\",\"homeTeam\":{\"id\":4267,\"name\":\"Club The Strongest\",\"shortName\":\"The Strongest\",\"tla\":\"STR\",\"crest\":\"https://crests.football-data.org/4267.png\"},\"awayTeam\":{\"id\":5171,\"name\":\"Deportivo Táchira FC\",\"shortName\":\"Táchira\",\"tla\":\"TÁC\",\"crest\":\"https://crests.football-data.org/5171.png\"},\"score\":{\"winner\":\"HOME_TEAM\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":1},\"halfTime\":{\"home\":0,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206954,\"name\":\"Paulo Zanovelli da Silva\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2220,\"name\":\"South America\",\"code\":\"SAM\",\"flag\":\"https://crests.football-data.org/CLI.svg\"},\"competition\":{\"id\":2152,\"name\":\"Copa Libertadores\",\"code\":\"CLI\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CLI.svg\"},\"season\":{\"id\":2466,\"startDate\":\"2026-02-04\",\"endDate\":\"2026-11-28\",\"currentMatchday\":4,\"winner\":null},\"id\":553205,\"utcDate\":\"2026-02-05T00:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"ROUND_1\",\"group\":null,\"lastUpdated\":\"2026-05-05T20:21:17Z\",\"homeTeam\":",
+      "last_body_preview": "{\"filters\":{\"season\":2025},\"resultSet\":{\"count\":189,\"first\":\"2025-09-16\",\"last\":\"2026-05-30\",\"played\":187},\"competition\":{\"id\":2001,\"name\":\"UEFA Champions League\",\"code\":\"CL\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CL.png\"},\"matches\":[{\"area\":{\"id\":2077,\"name\":\"Europe\",\"code\":\"EUR\",\"flag\":\"https://crests.football-data.org/EUR.svg\"},\"competition\":{\"id\":2001,\"name\":\"UEFA Champions League\",\"code\":\"CL\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CL.png\"},\"season\":{\"id\":2454,\"startDate\":\"2025-09-16\",\"endDate\":\"2026-05-30\",\"currentMatchday\":8,\"winner\":null},\"id\":551981,\"utcDate\":\"2025-09-16T16:45:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"LEAGUE_STAGE\",\"group\":null,\"lastUpdated\":\"2026-04-11T20:20:48Z\",\"homeTeam\":{\"id\":77,\"name\":\"Athletic Club\",\"shortName\":\"Athletic\",\"tla\":\"ATH\",\"crest\":\"https://crests.football-data.org/77.png\"},\"awayTeam\":{\"id\":57,\"name\":\"Arsenal FC\",\"shortName\":\"Arsenal\",\"tla\":\"ARS\",\"crest\":\"https://crests.football-data.org/57.png\"},\"score\":{\"winner\":\"AWAY_TEAM\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":0,\"away\":2},\"halfTime\":{\"home\":0,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":43952,\"name\":\"Donatas Rumšas\",\"type\":\"REFEREE\",\"nationality\":\"Lithuania\"}]},{\"area\":{\"id\":2077,\"name\":\"Europe\",\"code\":\"EUR\",\"flag\":\"https://crests.football-data.org/EUR.svg\"},\"competition\":{\"id\":2001,\"name\":\"UEFA Champions League\",\"code\":\"CL\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CL.png\"},\"season\":{\"id\":2454,\"startDate\":\"2025-09-16\",\"endDate\":\"2026-05-30\",\"currentMatchday\":8,\"winner\":null},\"id\":552049,\"utcDate\":\"2025-09-16T16:45:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"LEAGUE_STAGE\",\"group\":null,\"lastUpdated\":\"2026-04-11T20:20:48Z\",\"homeTeam\":{\"id\":674,\"name\":\"PSV\",\"shortName",
       "max_http_requests_per_run": 12,
       "budget_exhausted": false,
       "rate_limited": false
@@ -956,15 +950,14 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "api_key_present": true,
       "currents_enabled": true,
       "newsapi_enabled": true,
-      "requests": 16,
+      "requests": 15,
       "currents_requests": 11,
-      "newsapi_requests": 5,
+      "newsapi_requests": 4,
       "cache_hits": 0,
       "response_errors": 0,
       "contexts_built": 2,
-      "articles_seen": 3,
+      "articles_seen": 2,
       "http_statuses": [
-        200,
         200,
         200,
         200,
@@ -991,8 +984,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "api_key_present": true,
       "requests": 5,
       "response_errors": 0,
-      "contexts_built": 3,
-      "articles_seen": 4,
+      "contexts_built": 0,
+      "articles_seen": 0,
       "http_statuses": [
         200,
         200,
@@ -1000,20 +993,20 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         200,
         200
       ],
-      "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":1,\"articles\":[{\"id\":\"b1a45dfc50bd22cdee7eaa7184bb089c\",\"title\":\"The Monster Roars Again: Inoue's Historic Victory in Tokyo\",\"description\":\"Japanese boxer Naoya Inoue retained his undisputed super bantamweight world title by defeating Junto Nakatani in a 12-round epic in Tokyo. Known as 'The Monster', Inoue's unanimous decision boosted his record to 33-0. The match, featuring two undefeated fighters, is hailed as Japan's most significant boxing event.\",\"content\":\"Japanese boxing superstar Naoya Inoue, known as 'The Monster', has successfully defended his undisputed super bantamweight world title. He achieved a unanimous decision victory over compatriot Junto Nakatani in a thrilling 12-round encounter in Tokyo... [615 chars]\",\"url\":\"https://www.devdiscourse.com/article/sports-games/3894753-the-monster-roars-again-inoues-historic-victory-in-tokyo\",\"image\":\"https://www.devdiscourse.com/img?imageUrl=https://devdiscourse.blob.core.windows.net/imagegallery/16_01_2019_13",
+      "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":0,\"articles\":[]}",
       "rate_limited": false
     },
     "weather": {
       "enabled": true,
       "api_key_present": true,
-      "requests": 20,
+      "requests": 14,
       "response_errors": 0,
-      "contexts_built": 20,
-      "matches_considered": 20,
-      "matches_with_base_context": 20,
-      "weatherapi_requests": 20,
+      "contexts_built": 14,
+      "matches_considered": 14,
+      "matches_with_base_context": 14,
+      "weatherapi_requests": 14,
       "openweathermap_requests": 0,
-      "weatherapi_enriched": 20,
+      "weatherapi_enriched": 14,
       "openweathermap_enriched": 0,
       "cache_hits": 0,
       "missing_location": 0,
@@ -1025,16 +1018,16 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       "enabled": true,
       "archives_scanned": 48,
       "history_matches_used": 0,
-      "state_rows_scanned": 28,
+      "state_rows_scanned": 30,
       "state_matches_used": 0,
       "contexts_built": 0
     },
     "market_monitor": {
       "enabled": true,
       "snapshots_written": 1,
-      "matches_snapshotted": 59,
-      "markets_snapshotted": 4010,
-      "signals_built": 4010,
+      "matches_snapshotted": 45,
+      "markets_snapshotted": 2672,
+      "signals_built": 2672,
       "clv_pending": 0,
       "clv_resolved": 0,
       "avg_open_clv_pct": null,
@@ -1042,56 +1035,53 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     }
   },
   "mapping": {
-    "matched_exact": 88,
+    "matched_exact": 83,
     "matched_loose": 0,
     "matched_fuzzy": 0,
-    "unmatched_offer_events": 22,
+    "unmatched_offer_events": 30,
     "sstats_exact": 0,
     "sstats_loose": 0,
     "sstats_fuzzy": 0,
     "sstats_unmatched_rows": 4837,
     "bzzoiro_exact": 0,
     "bzzoiro_loose": 0,
-    "bzzoiro_fuzzy": 0,
-    "bzzoiro_contexts": 0,
+    "bzzoiro_fuzzy": 4,
+    "bzzoiro_contexts": 4,
     "api_football_exact": 0,
     "api_football_loose": 0,
     "api_football_fuzzy": 0,
     "espn_exact": 0,
     "espn_loose": 0,
     "espn_fuzzy": 0,
-    "thesportsdb_contexts": 13,
+    "thesportsdb_contexts": 7,
     "openligadb_contexts": 0
   },
   "rejections": {
-    "quarter_total_line_allowed": 566,
-    "quarter_total_insufficient_books": 1850,
-    "unsupported_total_line": 72,
-    "market_derived_signal_guard_totals": 814,
-    "market_derived_h2h_high_odds_guard": 21,
-    "market_derived_signal_guard_spreads": 1379,
-    "missing_context_totals": 45,
-    "missing_context_h2h": 45,
-    "simple_market_h2h_high_odds_skip": 27,
-    "missing_context_spreads": 48,
-    "missing_context_team_totals": 24,
-    "market_derived_signal_guard_h2h": 62,
-    "publish_books_guard": 128,
-    "confidence_below_threshold": 30,
-    "edge_below_threshold": 15,
-    "ev_below_threshold": 2,
-    "model_relaxed_fallback_used": 1,
-    "market_integrity_insufficient_market_depth": 1,
-    "market_integrity_single_source_market_guard": 1,
-    "market_integrity_spreads_quarantined": 1
+    "quarter_total_line_allowed": 240,
+    "quarter_total_insufficient_books": 1202,
+    "missing_context_totals": 34,
+    "missing_context_h2h": 37,
+    "missing_context_spreads": 37,
+    "missing_context_team_totals": 10,
+    "market_derived_signal_guard_totals": 560,
+    "market_derived_signal_guard_h2h": 49,
+    "market_derived_signal_guard_spreads": 998,
+    "simple_market_h2h_high_odds_skip": 25,
+    "market_derived_h2h_high_odds_guard": 17,
+    "unsupported_total_line": 54,
+    "confidence_below_threshold": 21,
+    "publish_books_guard": 90,
+    "ev_below_threshold": 10,
+    "edge_below_threshold": 9,
+    "market_integrity_insufficient_market_depth": 1
   },
   "candidate_modes": {},
   "provider_diagnostics": {
     "providers": {
       "odds_api_io": {
         "type": "offers",
-        "matches_with_data": 59,
-        "items_total": 5013,
+        "matches_with_data": 45,
+        "items_total": 3165,
         "stats": {
           "enabled": true,
           "api_key_present": true,
@@ -1101,13 +1091,13 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "odds_requests": 18,
           "response_errors": 0,
           "events_fetched": 100,
-          "events_matched": 88,
-          "matched_exact": 88,
+          "events_matched": 83,
+          "matched_exact": 83,
           "matched_loose": 0,
           "matched_fuzzy": 0,
-          "unmatched_offer_events": 22,
-          "markets_parsed": 2649,
-          "offers_parsed": 5013,
+          "unmatched_offer_events": 30,
+          "markets_parsed": 1661,
+          "offers_parsed": 3165,
           "event_http_statuses": [],
           "odds_http_statuses": [
             200,
@@ -1133,7 +1123,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
             "list"
           ],
           "bookmakers_seen": 4,
-          "last_body_preview": "[{\"id\":62155434,\"home\":\"Flamurtari Vlore\",\"away\":\"KF Teuta\",\"date\":\"2026-05-06T14:00:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Albania - Kategoria Superiore\",\"slug\":\"albania-kategoria-superiore\"},\"urls\":{\"Betfair Exchange\":\"https://www.betfair.com/exchange/plus/en/e/e/e-e-35574397\"},\"bookmakerIds\":{\"Betfair Exchange\":\"id1000072062155434\"},\"bookmakers\":{\"Betfair Exchange\":[{\"name\":\"ML\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"home\":\"1.56\",\"draw\":\"3.85\",\"away\":\"6.40\",\"layHome\":\"1.65\",\"layAway\":\"8.20\",\"layDraw\":\"4.90\",\"depthHome\":\"21.83\",\"depthAway\":\"1.5\",\"depthDraw\":\"2.8\",\"depthLayHome\":\"2.05\",\"depthLayAway\":\"3.93\",\"depthLayDraw\":\"6.95\"}]},{\"name\":\"Draw No Bet\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.20\",\"away\":\"4.80\",\"layHome\":\"1.27\",\"layAway\":\"5.80\",\"depthHome\":\"58.82\",\"depthAway\":\"1.2\",\"depthLayHome\":\"7.56\",\"depthLayAway\":\"1.97\"}]},{\"name\":\"Double Chance\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"hdp\":0,\"1X\":\"1.15\",\"12\":\"1.27\",\"X2\":\"2.40\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-05-06T03:31:07.054Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.38\",\"away\":\"3.04\",\"layHome\":\"1.48\",\"layAway\":\"3.61\",\"depthHome\":\"40.88\",\"depthAway\":\"3.14\",\"depthLayHome\":\"1.23\",\"depthLayAway\":\"7.25\"},{\"hdp\":0.25,\"home\":\"1.17\",\"away\":\"5.60\",\"layHome\":\"1.22\",\"layAway\":\"6.77\",\"depthHome\":\"21.73\",\"depthAway\":\"1.71\",\"depthLayHome\":\"7.87\",\"depthLayAway\":\"1.69\"},{\"hdp\":-0.5,\"home\":\"1.56\",\"away\":\"2.40\",\"layHome\":\"1.65\",\"layAway\":\"2.79\",\"depthHome\":\"21.83\",\"depthAway\":\"3.99\",\"depthLayHome\":\"2.05\",\"depthLayAway\":\"12.21\"},{\"hdp\":0.5,\"home\":\"1.15\",\"away\":\"6.40\",\"layHome\":\"1.19\",\"layAway\":\"8.20\",\"depthHome\":\"12.17\",\"depthAway\":\"1.5\",\"depthLayHome\":\"8.07\",\"depthLayAway\":\"3.93\"},{\"hdp\":-0.75,\"home\":\"1.70\",\"away\":\"2.07\",\"layHome\":\"1.85\",\"layAway\":\"2.43\",\"depthHome\":\"2.85\",\"depthAway\":\"6.08\",\"depthLayHome\":\"2.85\",\"depthLayAway\":\"1.99\"},{\"hdp\":0.75,\"home\":\"1.09\",\"away\":\"9.00\",\"layHome\":\"1.13\",\"layAway\":\"11.50\",\"depthHome\":\"119.65\",\"depth",
+          "last_body_preview": "[]",
           "simulated_skipped": 2,
           "requested_bookmakers": "Bet365,Unibet,Betfair Exchange,Sbobet",
           "requested_bookmakers_by_account": [
@@ -1152,8 +1142,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
               "api_key_present": true,
               "odds_requests": 9,
               "response_errors": 0,
-              "offers_parsed": 933,
-              "events_matched": 57,
+              "offers_parsed": 622,
+              "events_matched": 43,
               "rate_limited": false,
               "http_statuses": [
                 200,
@@ -1172,8 +1162,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
               "api_key_present": true,
               "odds_requests": 9,
               "response_errors": 0,
-              "offers_parsed": 4080,
-              "events_matched": 46,
+              "offers_parsed": 2543,
+              "events_matched": 27,
               "rate_limited": false,
               "http_statuses": [
                 200,
@@ -1198,13 +1188,13 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
             "Sbobet",
             "Unibet"
           ],
-          "matches_with_2plus_books": 47,
-          "matches_with_1_book": 12,
+          "matches_with_2plus_books": 30,
+          "matches_with_1_book": 15,
           "offers_by_family": {
-            "h2h": 509,
-            "spreads": 1696,
-            "teamTotals": 142,
-            "totals": 2666
+            "h2h": 297,
+            "spreads": 1162,
+            "teamTotals": 68,
+            "totals": 1638
           }
         }
       },
@@ -1365,13 +1355,13 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
             200,
             200
           ],
-          "last_body_preview": "{\"db\":\"pro_rating.db\",\"filters\":{\"league\":\"Japan - J.League\",\"Current Club\":\"Tokyo Verdy\"},\"base_scores\":{\"count\":0,\"rows\":[]},\"pro_scores\":{\"count\":0,\"rows\":[]}}"
+          "last_body_preview": "{\"db\":\"pro_rating.db\",\"filters\":{\"league\":\"Uzbekistan - Pro Liga\",\"Current Club\":\"FC Yaypan Fergana\"},\"base_scores\":{\"count\":0,\"rows\":[]},\"pro_scores\":{\"count\":0,\"rows\":[]}}"
         }
       },
       "sstats": {
         "type": "context",
-        "matches_with_data": 4,
-        "items_total": 4,
+        "matches_with_data": 5,
+        "items_total": 5,
         "stats": {
           "enabled": true,
           "api_key_present": true,
@@ -1381,7 +1371,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "days_requested": 46,
           "chunk_windows_requested": 2,
           "rows_fetched": 4837,
-          "contexts_built": 4,
+          "contexts_built": 5,
           "matched_exact": 0,
           "matched_loose": 0,
           "matched_fuzzy": 0,
@@ -1391,11 +1381,11 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "bzzoiro_requests": 1,
           "bzzoiro_response_errors": 0,
           "bzzoiro_events_fetched": 30,
-          "bzzoiro_contexts_built": 4,
+          "bzzoiro_contexts_built": 5,
           "bzzoiro_matched_exact": 0,
           "bzzoiro_matched_loose": 0,
-          "bzzoiro_matched_fuzzy": 4,
-          "bzzoiro_unmatched_rows": 26,
+          "bzzoiro_matched_fuzzy": 5,
+          "bzzoiro_unmatched_rows": 25,
           "http_statuses": [
             200,
             200,
@@ -1416,8 +1406,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       },
       "bzzoiro": {
         "type": "context",
-        "matches_with_data": 0,
-        "items_total": 0,
+        "matches_with_data": 4,
+        "items_total": 4,
         "stats": {
           "enabled": true,
           "api_key_present": true,
@@ -1431,29 +1421,29 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "target_matches": 24,
           "pages_requested": 2,
           "rows_seen": 61,
-          "contexts_built": 0,
+          "contexts_built": 4,
           "matched_exact": 0,
           "matched_loose": 0,
-          "matched_fuzzy": 0,
+          "matched_fuzzy": 4,
           "exact_matches": 0,
-          "fuzzy_matches": 0,
-          "near_miss_matches_closed": 0,
+          "fuzzy_matches": 4,
+          "near_miss_matches_closed": 4,
           "stop_reason": "no_more_data",
           "stop_reasons": {
             "/events/": "no_more_data",
             "/predictions/": "no_more_data"
           },
-          "event_matches": 0,
-          "prediction_links": 0,
+          "event_matches": 4,
+          "prediction_links": 4,
           "fallback_prediction_matches": 0,
           "prediction_param_fallbacks": 0,
           "event_context_fallbacks": 0,
-          "unmatched_predictions": 24,
+          "unmatched_predictions": 20,
           "event_rejected_low_score": 0,
-          "event_rejected_league_mismatch": 7,
+          "event_rejected_league_mismatch": 2,
           "event_rejected_no_quality": 0,
           "prediction_rejected_low_score": 0,
-          "prediction_rejected_league_mismatch": 7,
+          "prediction_rejected_league_mismatch": 2,
           "prediction_rejected_no_quality": 0,
           "http_statuses": [
             200,
@@ -1561,18 +1551,18 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       },
       "thesportsdb": {
         "type": "context",
-        "matches_with_data": 13,
-        "items_total": 13,
+        "matches_with_data": 7,
+        "items_total": 7,
         "stats": {
           "enabled": true,
           "requests": 18,
           "response_errors": 0,
-          "leagues_resolved": 21,
+          "leagues_resolved": 23,
           "tables_fetched": 17,
-          "contexts_built": 13,
-          "missing_table_rows": 58,
-          "partial_contexts_built": 12,
-          "last_body_preview": "{\"table\":[{\"idStanding\":\"9493377\",\"intRank\":\"1\",\"idTeam\":\"133643\",\"strTeam\":\"Heart of Midlothian\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/twqvyt1447597939.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWDW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"21\",\"intLoss\":\"5\",\"intDraw\":\"7\",\"intGoalsFor\":\"58\",\"intGoalsAgainst\":\"28\",\"intGoalDifference\":\"30\",\"intPoints\":\"70\",\"dateUpdated\":\"2026-05-05 23:01:29\"},{\"idStanding\":\"9493378\",\"intRank\":\"2\",\"idTeam\":\"133642\",\"strTeam\":\"Rangers\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/ti24j61614290048.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"LLWWW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"19\",\"intLoss\":\"2\",\"intDraw\":\"12\",\"intGoalsFor\":\"66\",\"intGoalsAgainst\":\"31\",\"intGoalDifference\":\"35\",\"intPoints\":\"69\",\"dateUpdated\":\"2026-05-05 23:01:29\"},{\"idStanding\":\"9493379\",\"intRank\":\"3\",\"idTeam\":\"133647\",\"strTeam\":\"Celtic\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/3uv1641758780002.png\\/tiny\",\"idLeague\":\"4330\",\"strLe",
+          "contexts_built": 7,
+          "missing_table_rows": 35,
+          "partial_contexts_built": 7,
+          "last_body_preview": "{\"table\":[{\"idStanding\":\"9492881\",\"intRank\":\"1\",\"idTeam\":\"133789\",\"strTeam\":\"Club Brugge\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/mz8y0q1771129880.png\\/tiny\",\"idLeague\":\"4338\",\"strLeague\":\"Belgian Pro League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWLW\",\"strDescription\":\"Champions League\",\"intPlayed\":\"36\",\"intWin\":\"25\",\"intLoss\":\"8\",\"intDraw\":\"3\",\"intGoalsFor\":\"77\",\"intGoalsAgainst\":\"43\",\"intGoalDifference\":\"34\",\"intPoints\":\"47\",\"dateUpdated\":\"2026-05-05 23:01:24\"},{\"idStanding\":\"9492887\",\"intRank\":\"1\",\"idTeam\":\"133786\",\"strTeam\":\"Zulte Waregem\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/6mdsut1695740517.png\\/tiny\",\"idLeague\":\"4338\",\"strLeague\":\"Belgian Pro League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWWD\",\"strDescription\":\"\",\"intPlayed\":\"35\",\"intWin\":\"12\",\"intLoss\":\"14\",\"intDraw\":\"9\",\"intGoalsFor\":\"51\",\"intGoalsAgainst\":\"52\",\"intGoalDifference\":\"-1\",\"intPoints\":\"45\",\"dateUpdated\":\"2026-05-05 23:01:24\"},{\"idStanding\":\"9492882\",\"intRank\":\"2\",\"idTeam\":\"138141\",\"strTeam\":\"Union Saint-Gilloise\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/ljszp41654601742.png\\/tiny\",\"idLeague\":\"4338\",\"strLeague\":\"Belgian Pro",
           "http_statuses": [
             200,
             200,
@@ -1595,7 +1585,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           ],
           "max_http_requests_per_run": 18,
           "budget_exhausted": true,
-          "rate_limited": false
+          "rate_limited": false,
+          "league_limit_applied": 36
         }
       },
       "football_data": {
@@ -1605,11 +1596,11 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "stats": {
           "enabled": true,
           "api_key_present": true,
-          "target_matches": 88,
+          "target_matches": 83,
           "requests": 3,
           "response_errors": 0,
-          "matches_fetched": 13,
-          "history_rows_fetched": 133,
+          "matches_fetched": 10,
+          "history_rows_fetched": 189,
           "events_matched": 1,
           "contexts_built": 1,
           "best_near_miss_score": 0.0,
@@ -1617,17 +1608,17 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "standings_requests": 1,
           "standings_loaded": 1,
           "history_requests": 1,
-          "history_contexts_built": 1,
+          "history_contexts_built": 0,
           "matched_exact": 0,
           "matched_loose": 0,
           "matched_fuzzy": 1,
-          "unmatched_rows": 12,
+          "unmatched_rows": 9,
           "http_statuses": [
             200,
             200,
             200
           ],
-          "last_body_preview": "{\"filters\":{\"season\":2026},\"resultSet\":{\"count\":133,\"first\":\"2026-02-04\",\"last\":\"2026-11-28\",\"played\":80},\"competition\":{\"id\":2152,\"name\":\"Copa Libertadores\",\"code\":\"CLI\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CLI.svg\"},\"matches\":[{\"area\":{\"id\":2220,\"name\":\"South America\",\"code\":\"SAM\",\"flag\":\"https://crests.football-data.org/CLI.svg\"},\"competition\":{\"id\":2152,\"name\":\"Copa Libertadores\",\"code\":\"CLI\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CLI.svg\"},\"season\":{\"id\":2466,\"startDate\":\"2026-02-04\",\"endDate\":\"2026-11-28\",\"currentMatchday\":4,\"winner\":null},\"id\":553203,\"utcDate\":\"2026-02-04T00:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"ROUND_1\",\"group\":null,\"lastUpdated\":\"2026-05-05T20:21:17Z\",\"homeTeam\":{\"id\":4267,\"name\":\"Club The Strongest\",\"shortName\":\"The Strongest\",\"tla\":\"STR\",\"crest\":\"https://crests.football-data.org/4267.png\"},\"awayTeam\":{\"id\":5171,\"name\":\"Deportivo Táchira FC\",\"shortName\":\"Táchira\",\"tla\":\"TÁC\",\"crest\":\"https://crests.football-data.org/5171.png\"},\"score\":{\"winner\":\"HOME_TEAM\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":2,\"away\":1},\"halfTime\":{\"home\":0,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":206954,\"name\":\"Paulo Zanovelli da Silva\",\"type\":\"REFEREE\",\"nationality\":\"Brazil\"}]},{\"area\":{\"id\":2220,\"name\":\"South America\",\"code\":\"SAM\",\"flag\":\"https://crests.football-data.org/CLI.svg\"},\"competition\":{\"id\":2152,\"name\":\"Copa Libertadores\",\"code\":\"CLI\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CLI.svg\"},\"season\":{\"id\":2466,\"startDate\":\"2026-02-04\",\"endDate\":\"2026-11-28\",\"currentMatchday\":4,\"winner\":null},\"id\":553205,\"utcDate\":\"2026-02-05T00:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"ROUND_1\",\"group\":null,\"lastUpdated\":\"2026-05-05T20:21:17Z\",\"homeTeam\":",
+          "last_body_preview": "{\"filters\":{\"season\":2025},\"resultSet\":{\"count\":189,\"first\":\"2025-09-16\",\"last\":\"2026-05-30\",\"played\":187},\"competition\":{\"id\":2001,\"name\":\"UEFA Champions League\",\"code\":\"CL\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CL.png\"},\"matches\":[{\"area\":{\"id\":2077,\"name\":\"Europe\",\"code\":\"EUR\",\"flag\":\"https://crests.football-data.org/EUR.svg\"},\"competition\":{\"id\":2001,\"name\":\"UEFA Champions League\",\"code\":\"CL\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CL.png\"},\"season\":{\"id\":2454,\"startDate\":\"2025-09-16\",\"endDate\":\"2026-05-30\",\"currentMatchday\":8,\"winner\":null},\"id\":551981,\"utcDate\":\"2025-09-16T16:45:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"LEAGUE_STAGE\",\"group\":null,\"lastUpdated\":\"2026-04-11T20:20:48Z\",\"homeTeam\":{\"id\":77,\"name\":\"Athletic Club\",\"shortName\":\"Athletic\",\"tla\":\"ATH\",\"crest\":\"https://crests.football-data.org/77.png\"},\"awayTeam\":{\"id\":57,\"name\":\"Arsenal FC\",\"shortName\":\"Arsenal\",\"tla\":\"ARS\",\"crest\":\"https://crests.football-data.org/57.png\"},\"score\":{\"winner\":\"AWAY_TEAM\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":0,\"away\":2},\"halfTime\":{\"home\":0,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":43952,\"name\":\"Donatas Rumšas\",\"type\":\"REFEREE\",\"nationality\":\"Lithuania\"}]},{\"area\":{\"id\":2077,\"name\":\"Europe\",\"code\":\"EUR\",\"flag\":\"https://crests.football-data.org/EUR.svg\"},\"competition\":{\"id\":2001,\"name\":\"UEFA Champions League\",\"code\":\"CL\",\"type\":\"CUP\",\"emblem\":\"https://crests.football-data.org/CL.png\"},\"season\":{\"id\":2454,\"startDate\":\"2025-09-16\",\"endDate\":\"2026-05-30\",\"currentMatchday\":8,\"winner\":null},\"id\":552049,\"utcDate\":\"2025-09-16T16:45:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"LEAGUE_STAGE\",\"group\":null,\"lastUpdated\":\"2026-04-11T20:20:48Z\",\"homeTeam\":{\"id\":674,\"name\":\"PSV\",\"shortName",
           "max_http_requests_per_run": 12,
           "budget_exhausted": false,
           "rate_limited": false
@@ -1702,15 +1693,14 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "api_key_present": true,
           "currents_enabled": true,
           "newsapi_enabled": true,
-          "requests": 16,
+          "requests": 15,
           "currents_requests": 11,
-          "newsapi_requests": 5,
+          "newsapi_requests": 4,
           "cache_hits": 0,
           "response_errors": 0,
           "contexts_built": 2,
-          "articles_seen": 3,
+          "articles_seen": 2,
           "http_statuses": [
-            200,
             200,
             200,
             200,
@@ -1735,15 +1725,15 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
       },
       "gnews": {
         "type": "context",
-        "matches_with_data": 3,
-        "items_total": 3,
+        "matches_with_data": 0,
+        "items_total": 0,
         "stats": {
           "enabled": true,
           "api_key_present": true,
           "requests": 5,
           "response_errors": 0,
-          "contexts_built": 3,
-          "articles_seen": 4,
+          "contexts_built": 0,
+          "articles_seen": 0,
           "http_statuses": [
             200,
             200,
@@ -1751,7 +1741,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
             200,
             200
           ],
-          "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":1,\"articles\":[{\"id\":\"b1a45dfc50bd22cdee7eaa7184bb089c\",\"title\":\"The Monster Roars Again: Inoue's Historic Victory in Tokyo\",\"description\":\"Japanese boxer Naoya Inoue retained his undisputed super bantamweight world title by defeating Junto Nakatani in a 12-round epic in Tokyo. Known as 'The Monster', Inoue's unanimous decision boosted his record to 33-0. The match, featuring two undefeated fighters, is hailed as Japan's most significant boxing event.\",\"content\":\"Japanese boxing superstar Naoya Inoue, known as 'The Monster', has successfully defended his undisputed super bantamweight world title. He achieved a unanimous decision victory over compatriot Junto Nakatani in a thrilling 12-round encounter in Tokyo... [615 chars]\",\"url\":\"https://www.devdiscourse.com/article/sports-games/3894753-the-monster-roars-again-inoues-historic-victory-in-tokyo\",\"image\":\"https://www.devdiscourse.com/img?imageUrl=https://devdiscourse.blob.core.windows.net/imagegallery/16_01_2019_13",
+          "last_body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":0,\"articles\":[]}",
           "rate_limited": false
         }
       },
@@ -1763,26 +1753,26 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
           "enabled": true,
           "archives_scanned": 48,
           "history_matches_used": 0,
-          "state_rows_scanned": 28,
+          "state_rows_scanned": 30,
           "state_matches_used": 0,
           "contexts_built": 0
         }
       },
       "weather": {
         "type": "context",
-        "matches_with_data": 20,
-        "items_total": 20,
+        "matches_with_data": 14,
+        "items_total": 14,
         "stats": {
           "enabled": true,
           "api_key_present": true,
-          "requests": 20,
+          "requests": 14,
           "response_errors": 0,
-          "contexts_built": 20,
-          "matches_considered": 20,
-          "matches_with_base_context": 20,
-          "weatherapi_requests": 20,
+          "contexts_built": 14,
+          "matches_considered": 14,
+          "matches_with_base_context": 14,
+          "weatherapi_requests": 14,
           "openweathermap_requests": 0,
-          "weatherapi_enriched": 20,
+          "weatherapi_enriched": 14,
           "openweathermap_enriched": 0,
           "cache_hits": 0,
           "missing_location": 0,
@@ -1811,7 +1801,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "response_errors": 0,
         "max_http_requests_per_run": 280,
         "budget_exhausted": false,
-        "matches_built": 90
+        "matches_built": 86
       },
       "bookies_api": {
         "enabled": false,
@@ -1819,10 +1809,9 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "reason": "disabled_by_config"
       },
       "oddspapi": {
-        "enabled": true,
+        "enabled": false,
         "loaded": false,
-        "class_name": "OddsPapiProvider",
-        "error": "ModuleNotFoundError: No module named 'app.providers.oddspapi'"
+        "reason": "disabled_by_config"
       },
       "allsportsapi": {
         "enabled": true,
@@ -1887,7 +1876,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "response_errors": 0,
         "max_http_requests_per_run": 6,
         "budget_exhausted": true,
-        "contexts_built": 4
+        "contexts_built": 5
       },
       "bzzoiro": {
         "enabled": true,
@@ -1903,7 +1892,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "response_errors": 0,
         "max_http_requests_per_run": 4,
         "budget_exhausted": false,
-        "contexts_built": 0
+        "contexts_built": 4
       },
       "api_football": {
         "enabled": true,
@@ -1944,7 +1933,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "response_errors": 0,
         "max_http_requests_per_run": 18,
         "budget_exhausted": true,
-        "contexts_built": 13
+        "contexts_built": 7
       },
       "football_data": {
         "enabled": true,
@@ -2006,12 +1995,12 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "api_key_present": true,
         "rate_limited": false,
         "cooldown_until": null,
-        "requests": 16,
+        "requests": 15,
         "response_errors": 0,
         "max_http_requests_per_run": null,
         "budget_exhausted": null,
         "contexts_built": 2,
-        "articles_seen": 3,
+        "articles_seen": 2,
         "cache_hits": 0
       },
       "gnews": {
@@ -2028,8 +2017,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "response_errors": 0,
         "max_http_requests_per_run": null,
         "budget_exhausted": null,
-        "contexts_built": 3,
-        "articles_seen": 4
+        "contexts_built": 0,
+        "articles_seen": 0
       },
       "weather": {
         "enabled": true,
@@ -2040,23 +2029,23 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
         "api_key_present": true,
         "rate_limited": null,
         "cooldown_until": null,
-        "requests": 20,
+        "requests": 14,
         "response_errors": 0,
         "max_http_requests_per_run": "70+50",
         "budget_exhausted": false,
-        "contexts_built": 20,
-        "weatherapi_requests": 20,
+        "contexts_built": 14,
+        "weatherapi_requests": 14,
         "openweathermap_requests": 0,
-        "weatherapi_enriched": 20,
+        "weatherapi_enriched": 14,
         "openweathermap_enriched": 0,
         "cache_hits": 0
       }
     },
     "provider_runtime_errors": {},
     "provider_rate_limits": {},
-    "matches_with_any_offer_source": 59,
-    "matches_with_any_context_source": 20,
-    "matches_with_merged_context": 20,
+    "matches_with_any_offer_source": 45,
+    "matches_with_any_context_source": 14,
+    "matches_with_merged_context": 14,
     "raw_candidates_with_derived_market_signal": 0,
     "published_candidates_with_derived_market_signal": 0,
     "matches_with_raw_derived_market_signal": 0,
@@ -2064,24 +2053,25 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     "published_candidates_single_source_context": 0,
     "published_candidates_low_book_support": 0,
     "context_source_combinations": {
-      "gnews+weather": 1,
-      "none": 68,
-      "thesportsdb+weather": 12,
-      "newsapi+gnews+weather": 2,
-      "thesportsdb+football_data+weather": 1,
-      "sstats+weather": 4
+      "thesportsdb+weather": 6,
+      "none": 69,
+      "sstats+bzzoiro+weather": 4,
+      "thesportsdb+newsapi+weather": 1,
+      "newsapi+weather": 1,
+      "football_data+weather": 1,
+      "sstats+weather": 1
     },
     "offer_source_combinations": {
-      "odds_api_io": 59,
-      "none": 29
+      "odds_api_io": 45,
+      "none": 38
     }
   },
   "market_monitor": {
     "enabled": true,
     "snapshots_written": 1,
-    "matches_snapshotted": 59,
-    "markets_snapshotted": 4010,
-    "signals_built": 4010,
+    "matches_snapshotted": 45,
+    "markets_snapshotted": 2672,
+    "signals_built": 2672,
     "clv_pending": 0,
     "clv_resolved": 0,
     "avg_open_clv_pct": null,
@@ -2089,7 +2079,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     "clv_tracked_now": 0
   },
   "settlement": {
-    "checked": 22,
+    "checked": 24,
     "settled_count": 0,
     "shadow_settled_count": 0,
     "rows_fetched": 1089,
@@ -2103,10 +2093,10 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     "manual_overrides_invalid": 0,
     "manual_overrides_matched": 0,
     "reasons": {
-      "no_match": 22
+      "no_match": 24
     },
-    "unsettled_count": 22,
-    "attempts_recorded": 22,
+    "unsettled_count": 24,
+    "attempts_recorded": 24,
     "sample": [
       {
         "prediction_id": "soccer|inter miami|orlando city|2026-05-02|totals|under||4|2026-05-02T23:15:00+00:00",
@@ -2284,7 +2274,7 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
   },
   "quality": {
     "summary": {
-      "total_tracked_bets": 28,
+      "total_tracked_bets": 30,
       "settled_binary_bets": 3,
       "count": 3,
       "wins": 3,
@@ -2404,15 +2394,15 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     "yield_pct": 0.0
   },
   "exports": {
-    "matches_json": ".data/exports/2026-05-06/033410-matches.json",
-    "picks_json": ".data/exports/2026-05-06/033410-picks.json",
-    "bets_json": ".data/exports/2026-05-06/033410-bets.json",
-    "matches_csv": ".data/exports/2026-05-06/033410-matches.csv",
-    "picks_csv": ".data/exports/2026-05-06/033410-picks.csv",
-    "bets_csv": ".data/exports/2026-05-06/033410-bets.csv",
-    "bankroll_json": ".data/exports/2026-05-06/033410-bankroll.json",
-    "pending_bets_json": ".data/exports/2026-05-06/033410-pending-bets.json",
-    "settled_bets_json": ".data/exports/2026-05-06/033410-settled-bets.json",
+    "matches_json": ".data/exports/2026-05-06/063700-matches.json",
+    "picks_json": ".data/exports/2026-05-06/063700-picks.json",
+    "bets_json": ".data/exports/2026-05-06/063700-bets.json",
+    "matches_csv": ".data/exports/2026-05-06/063700-matches.csv",
+    "picks_csv": ".data/exports/2026-05-06/063700-picks.csv",
+    "bets_csv": ".data/exports/2026-05-06/063700-bets.csv",
+    "bankroll_json": ".data/exports/2026-05-06/063700-bankroll.json",
+    "pending_bets_json": ".data/exports/2026-05-06/063700-pending-bets.json",
+    "settled_bets_json": ".data/exports/2026-05-06/063700-settled-bets.json",
     "latest_matches_json": ".data/exports/latest-matches.json",
     "latest_picks_json": ".data/exports/latest-picks.json",
     "latest_bets_json": ".data/exports/latest-bets.json",
@@ -2455,8 +2445,8 @@ runtime bootstrap {'installed': ['bookmaker_universe_runtime_guard', 'runtime_pr
     "webhook_error": null
   },
   "history": {
-    "run_archive_path": ".logs/runs/2026-05-06/033410-run.json",
-    "run_history_count": 13,
+    "run_archive_path": ".logs/runs/2026-05-06/063700-run.json",
+    "run_history_count": 14,
     "message_history_count": 0
   }
 }
