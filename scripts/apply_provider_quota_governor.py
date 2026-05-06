@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -13,6 +14,17 @@ LEGACY_RAPIDAPI_STATE_PATH = Path(os.getenv("RAPIDAPI_PROVIDER_STATE_PATH") or "
 OUT_JSON = Path(".data/exports/latest-provider-quota-governor.json")
 OUT_ENV = Path(".data/exports/latest-provider-quota-governor.env")
 RECOVERY_VERSION = os.getenv("PROVIDER_QUOTA_RECOVERY_VERSION") or "pdf-free-limits-2026-05-05-v3"
+MAX_STATE_BYTES = int(os.getenv("PROVIDER_QUOTA_MAX_STATE_BYTES") or "1048576")
+HARD_TIMEOUT_SECONDS = int(os.getenv("PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS") or "25")
+
+
+def _timeout(_signum: int, _frame: Any) -> None:
+    raise TimeoutError("provider quota governor hard timeout")
+
+
+if hasattr(signal, "SIGALRM"):
+    signal.signal(signal.SIGALRM, _timeout)
+    signal.alarm(max(1, HARD_TIMEOUT_SECONDS))
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -46,8 +58,12 @@ def bool_text(value: bool) -> str:
     return "true" if value else "false"
 
 
+def utc_now() -> datetime:
+    return datetime.now(UTC)
+
+
 def today_key() -> str:
-    return datetime.now(UTC).strftime("%Y-%m-%d")
+    return utc_now().strftime("%Y-%m-%d")
 
 
 def parse_dt(value: Any) -> datetime | None:
@@ -65,8 +81,10 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def load_json(path: Path, default: Any) -> Any:
+def load_json(path: Path, default: Any, *, max_bytes: int | None = None) -> Any:
     try:
+        if max_bytes is not None and path.exists() and path.stat().st_size > max_bytes:
+            return default
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return default
@@ -74,7 +92,9 @@ def load_json(path: Path, default: Any) -> Any:
 
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    tmp.replace(path)
 
 
 def shell_quote(value: Any) -> str:
@@ -82,7 +102,7 @@ def shell_quote(value: Any) -> str:
 
 
 def rapidapi_used_today(provider_key: str) -> int:
-    state = load_json(LEGACY_RAPIDAPI_STATE_PATH, {})
+    state = load_json(LEGACY_RAPIDAPI_STATE_PATH, {}, max_bytes=MAX_STATE_BYTES)
     try:
         return int(((((state.get("providers") or {}).get(provider_key) or {}).get("usage") or {}).get(today_key(), {}) or {}).get("requests") or 0)
     except Exception:
@@ -170,7 +190,7 @@ def api_football_env(grant: int) -> dict[str, str]:
         "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": str(grant),
         "API_FOOTBALL_FETCH_MATCH_DATES_ONLY": "true",
         "API_FOOTBALL_CONTEXT_MATCH_LIMIT": str(clamp_int(grant * 5, 5, 30)) if grant > 0 else "0",
-        "API_FOOTBALL_PREDICTIONS_LIMIT": str(clamp_int(grant // 2, 1, 4)) if grant > 0 else "0",
+        "API_FOOTBALL_PREDICTIONS_LIMIT": str(clamp_int(max(1, grant // 2), 1, 4)) if grant > 0 else "0",
         "API_FOOTBALL_RATE_LIMIT_COOLDOWN_MINUTES": "240",
     }
 
@@ -220,7 +240,6 @@ def news_env(prefix: str, enable_name: str, grant: int) -> dict[str, str]:
         f"{prefix}_MAX_REQUESTS_PER_RUN": str(grant),
         f"{prefix}_MATCH_LIMIT": str(clamp_int(grant * 2, 1, 12)) if grant > 0 else "0",
         f"{prefix}_ARTICLES_PER_MATCH": "2",
-        "PREMIUM_NEWS_SHORTLIST_LIMIT": str(clamp_int(grant, 1, 6)) if grant > 0 else "0",
     }
 
 
@@ -272,10 +291,8 @@ def apply_refill(row: dict[str, Any], *, daily_budget: float, bucket_max: float,
     current = float(row.get("tokens") or 0.0)
     last = parse_dt(row.get("last_refill_at") or row.get("updated_at"))
     if last is None:
-        row["last_refill_at"] = now.isoformat()
         return min(bucket_max, current)
     refill = (daily_budget / 86400.0) * max(0.0, (now - last).total_seconds()) if daily_budget > 0 else 0.0
-    row["last_refill_at"] = now.isoformat()
     return min(bucket_max, current + refill)
 
 
@@ -302,11 +319,11 @@ def maybe_recover(row: dict[str, Any], *, bucket_max: float, min_start_tokens: i
 
 def refill_and_grant(state: dict[str, Any], key: str, spec: dict[str, Any]) -> dict[str, Any]:
     daily_budget, bucket_max, per_run_max, reserve_tokens, spacing_minutes, initial_tokens, min_start_tokens = provider_numbers(key, spec)
-    now = datetime.now(UTC)
+    now = utc_now()
     today = today_key()
     row = state.setdefault("providers", {}).setdefault(key, {})
     if not row:
-        row.update({"tokens": min(bucket_max, float(initial_tokens)), "last_refill_date": today, "last_refill_at": now.isoformat(), "used_today": 0, "created_at": now.isoformat()})
+        row.update({"tokens": min(bucket_max, float(initial_tokens)), "created_at": now.isoformat(), "used_today": 0})
     if str(row.get("last_refill_date") or "") != today:
         row["last_refill_date"] = today
         row["used_today"] = 0
@@ -322,30 +339,69 @@ def refill_and_grant(state: dict[str, Any], key: str, spec: dict[str, Any]) -> d
         if grant > 0:
             row["last_grant_at"] = now.isoformat()
         row["used_today"] = int(row.get("used_today") or 0) + grant
-    row.update({"updated_at": now.isoformat(), "daily_budget": daily_budget, "bucket_max": bucket_max, "per_run_max": per_run_max, "reserve_tokens": reserve_tokens, "minute_spacing": spacing_minutes, "quota_basis": spec.get("free_quota_basis"), "role": spec.get("role")})
-    return {"provider": key, "role": spec.get("role"), "quota_basis": spec.get("free_quota_basis"), "daily_budget": daily_budget, "bucket_max": bucket_max, "per_run_max": per_run_max, "reserve_tokens": reserve_tokens, "minute_spacing": spacing_minutes, "tokens_before": round(tokens_before, 3), "recovered": recovered, "granted": grant, "tokens_after": round(float(row.get("tokens") or 0.0), 3), "enabled_for_run": grant > 0, "skip_reason": skip_reason}
+    row.update({
+        "updated_at": now.isoformat(),
+        "last_refill_at": now.isoformat(),
+        "daily_budget": daily_budget,
+        "bucket_max": bucket_max,
+        "per_run_max": per_run_max,
+        "reserve_tokens": reserve_tokens,
+        "minute_spacing": spacing_minutes,
+        "quota_basis": spec.get("free_quota_basis"),
+        "role": spec.get("role"),
+    })
+    return {
+        "provider": key,
+        "role": spec.get("role"),
+        "quota_basis": spec.get("free_quota_basis"),
+        "daily_budget": daily_budget,
+        "bucket_max": bucket_max,
+        "per_run_max": per_run_max,
+        "reserve_tokens": reserve_tokens,
+        "minute_spacing": spacing_minutes,
+        "tokens_before": round(tokens_before, 3),
+        "recovered": recovered,
+        "granted": grant,
+        "tokens_after": round(float(row.get("tokens") or 0.0), 3),
+        "enabled_for_run": grant > 0,
+        "skip_reason": skip_reason,
+    }
 
 
 def write_env(exports: dict[str, str]) -> None:
-    lines = [f"{key}={value}" for key, value in sorted(exports.items())]
     OUT_ENV.parent.mkdir(parents=True, exist_ok=True)
     OUT_ENV.write_text("\n".join(f"export {key}={shell_quote(value)}" for key, value in sorted(exports.items())) + "\n", encoding="utf-8")
-    if os.getenv("GITHUB_ENV"):
-        with open(str(os.getenv("GITHUB_ENV")), "a", encoding="utf-8") as handle:
-            handle.write("\n".join(lines) + "\n")
-    for line in lines:
-        print(line)
+    github_env = os.getenv("GITHUB_ENV")
+    if github_env:
+        with open(github_env, "a", encoding="utf-8") as handle:
+            for key, value in sorted(exports.items()):
+                safe = str(value).replace("\n", " ")
+                handle.write(f"{key}={safe}\n")
+    print(f"provider quota governor exported {len(exports)} env vars", flush=True)
 
 
-def main() -> int:
-    if not env_bool("PROVIDER_QUOTA_GOVERNOR_ENABLED", True):
-        payload = {"created_at": datetime.now(UTC).isoformat(), "enabled": False, "reason": "PROVIDER_QUOTA_GOVERNOR_ENABLED=false", "exports": {}, "providers": []}
-        write_json(OUT_JSON, payload)
-        print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
-        return 0
-    policy = load_json(POLICY_PATH, {})
+def fallback_exports() -> dict[str, str]:
+    out = {
+        "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "fallback",
+        "PROVIDER_FREE_QUOTA_POLICY_ENABLED": "true",
+        "FREE_CONTEXT_RUNTIME_ENABLED": "true",
+        "RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED": "true",
+        "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
+        "ODDS_API_IO_PER_RUN_MAX": os.getenv("ODDS_API_IO_PER_RUN_MAX") or "160",
+        "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": os.getenv("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN") or "160",
+        "ODDS_API_IO_MAX_REQUESTS_PER_RUN": os.getenv("ODDS_API_IO_MAX_REQUESTS_PER_RUN") or "160",
+        "MAX_MATCHES_FOR_ODDS_FETCH": "360",
+        "ANALYSIS_MATCH_CAP_PER_RUN": "420",
+        "DIAGNOSTICS_MATCH_LIMIT": "420",
+    }
+    out.update(strict_market_integrity_env())
+    return out
+
+
+def build_exports_and_state() -> tuple[dict[str, str], dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
+    policy = load_json(POLICY_PATH, {}, max_bytes=MAX_STATE_BYTES)
     provider_specs: dict[str, dict[str, Any]] = policy.get("providers") or {}
-    state = load_json(STATE_PATH, {"providers": {}})
+    state = load_json(STATE_PATH, {"providers": {}}, max_bytes=MAX_STATE_BYTES)
     rows: list[dict[str, Any]] = []
     exports: dict[str, str] = {
         "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "true",
@@ -362,20 +418,66 @@ def main() -> int:
     for key, spec in provider_specs.items():
         row = refill_and_grant(state, key, spec)
         rows.append(row)
-        if key in EXPORTERS:
-            exports.update(EXPORTERS[key](int(row["granted"])))
+        exporter = EXPORTERS.get(key)
+        if exporter is not None:
+            exports.update(exporter(int(row["granted"])))
     active_context = sum(1 for item in rows if item["enabled_for_run"] and str(item.get("role") or "").endswith("context"))
     active_news = sum(1 for item in rows if item["enabled_for_run"] and "news" in str(item.get("role") or ""))
     active_weather = sum(1 for item in rows if item["enabled_for_run"] and "weather" in str(item.get("role") or ""))
     exports["PREMIUM_CONTEXT_SHORTLIST_LIMIT"] = str(clamp_int(16 + active_context * 3, 16, 70))
     exports["PREMIUM_NEWS_SHORTLIST_LIMIT"] = str(clamp_int(1 + active_news * 2, 1, 12))
     exports["CONTEXT_ENRICHMENT_MATCH_LIMIT"] = str(clamp_int(180 + active_context * 24 + active_weather * 10, 220, 520))
-    state.update({"updated_at": datetime.now(UTC).isoformat(), "mode": "pdf_free_limit_continuous_token_bucket", "recovery_version": RECOVERY_VERSION, "policy_version": policy.get("policy_version"), "runs_per_day_assumption": policy.get("runs_per_day_assumption"), "safety_factor_default": policy.get("safety_factor_default")})
-    write_json(STATE_PATH, state)
+    state.update({
+        "updated_at": utc_now().isoformat(),
+        "mode": "bounded_pdf_free_limit_token_bucket",
+        "recovery_version": RECOVERY_VERSION,
+        "policy_version": policy.get("policy_version"),
+        "runs_per_day_assumption": policy.get("runs_per_day_assumption"),
+        "safety_factor_default": policy.get("safety_factor_default"),
+    })
+    return exports, state, rows, policy
+
+
+def main() -> int:
+    print("provider quota governor starting", flush=True)
+    if not env_bool("PROVIDER_QUOTA_GOVERNOR_ENABLED", True):
+        payload = {"created_at": utc_now().isoformat(), "enabled": False, "reason": "PROVIDER_QUOTA_GOVERNOR_ENABLED=false", "exports": {}, "providers": []}
+        write_json(OUT_JSON, payload)
+        print(json.dumps(payload, ensure_ascii=False, sort_keys=True), flush=True)
+        return 0
+    try:
+        exports, state, rows, policy = build_exports_and_state()
+        write_json(STATE_PATH, state)
+        enabled_count = sum(1 for row in rows if row.get("enabled_for_run"))
+        payload = {
+            "created_at": utc_now().isoformat(),
+            "enabled": True,
+            "mode": "bounded_pdf_free_limit_token_bucket",
+            "recovery_version": RECOVERY_VERSION,
+            "policy_path": str(POLICY_PATH),
+            "state_path": str(STATE_PATH),
+            "local_env_path": str(OUT_ENV),
+            "source_document": policy.get("source_document") or "api_free_limits_ru.pdf / api_free_limits_ru.docx",
+            "note": "Bounded governor: local-only token bucket, capped state reads, context/news/weather never confirm price.",
+            "providers_enabled_for_run": enabled_count,
+            "providers": rows,
+            "exports": exports,
+        }
+    except Exception as exc:
+        exports = fallback_exports()
+        payload = {
+            "created_at": utc_now().isoformat(),
+            "enabled": True,
+            "mode": "fallback_safe_static_limits",
+            "error": f"{type(exc).__name__}: {exc}",
+            "providers": [],
+            "exports": exports,
+        }
     write_env(exports)
-    payload = {"created_at": datetime.now(UTC).isoformat(), "enabled": True, "mode": "pdf_free_limit_continuous_token_bucket", "recovery_version": RECOVERY_VERSION, "policy_path": str(POLICY_PATH), "state_path": str(STATE_PATH), "local_env_path": str(OUT_ENV), "source_document": policy.get("source_document") or "api_free_limits_ru.pdf / api_free_limits_ru.docx", "note": "High-quota/no-key APIs get broad cached coverage; daily/monthly APIs are reserved for shortlist/fallback checks. Context/news/weather sources are never counted as price confirmations.", "providers": rows, "exports": exports}
     write_json(OUT_JSON, payload)
-    print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    print(json.dumps({k: payload[k] for k in ("created_at", "enabled", "mode") if k in payload}, ensure_ascii=False, sort_keys=True), flush=True)
+    if hasattr(signal, "SIGALRM"):
+        signal.alarm(0)
     return 0
 
 
