@@ -568,6 +568,19 @@ class PredictionRunner:
                 reused_candidates=reused_candidates,
                 quality_decisions=quality_debug.get('decisions', []),
             )
+            rescue_export_paths: dict[str, str] = {}
+            try:
+                rescue_export_paths = self._export_rescue_candidates(
+                    candidates_before_quality=candidates_before_quality,
+                    passed_candidates=candidates,
+                    publishable_candidates=publishable_candidates,
+                    zero_stake_candidates=zero_stake_candidates,
+                    reused_candidates=reused_candidates,
+                    quality_decisions=quality_debug.get('decisions', []),
+                    reference_run_utc=decision_now_utc,
+                )
+            except Exception as exc:
+                self.provider_runtime_errors['rescue_candidate_export'].append(self._format_exception(exc))
             export_paths = self.state.export_payloads(
                 self.settings.storage_export_dir,
                 filtered_matches,
@@ -575,6 +588,7 @@ class PredictionRunner:
                 forecast_rows=forecast_rows,
                 settings=self.settings,
             )
+            export_paths.update(rescue_export_paths)
             daily_report_export_paths = self.state.export_daily_report(self.settings.storage_export_dir, daily_report) if daily_report is not None else {}
             export_paths.update(daily_report_export_paths)
             export_paths.update(quality_export_paths)
@@ -1968,6 +1982,137 @@ class PredictionRunner:
             reverse=True,
         )
         return ranked[:max_count]
+
+    def _export_rescue_candidates(
+        self,
+        *,
+        candidates_before_quality: list[CandidateBet],
+        passed_candidates: list[CandidateBet],
+        publishable_candidates: list[CandidateBet],
+        zero_stake_candidates: list[CandidateBet],
+        reused_candidates: list[CandidateBet],
+        quality_decisions: list[dict[str, Any]] | None,
+        reference_run_utc: datetime,
+    ) -> dict[str, str]:
+        """Export fresh near-publish candidates for the controlled fallback publisher.
+
+        The fallback script intentionally runs after the main pipeline. It needs a
+        current candidate pool, including high-value candidates that failed only a
+        quality/stake/pacing guard. Keeping this export tied to the current run
+        prevents stale watchlists from being reused as real Telegram picks.
+        """
+        root = Path(self.settings.storage_export_dir)
+        root.mkdir(parents=True, exist_ok=True)
+        out_path = root / 'latest-rescue-candidates.json'
+
+        published = {self._candidate_fingerprint(item) for item in publishable_candidates}
+        published.discard(None)
+        passed = {self._candidate_fingerprint(item) for item in passed_candidates}
+        passed.discard(None)
+        zero_stake = {self._candidate_fingerprint(item) for item in zero_stake_candidates}
+        zero_stake.discard(None)
+        reused = {self._candidate_fingerprint(item) for item in reused_candidates}
+        reused.discard(None)
+        quality_by_key = {
+            (
+                str(item.get('match_key') or ''),
+                str(item.get('family') or ''),
+                str(item.get('selection_key') or ''),
+                item.get('point'),
+                str(item.get('team_side') or ''),
+            ): item
+            for item in (quality_decisions or [])
+            if isinstance(item, dict)
+        }
+
+        now_utc = reference_run_utc
+        min_lead = max(0, int(getattr(self.settings, 'min_kickoff_lead_minutes', 30) or 30))
+        horizon = now_utc + timedelta(hours=max(1, int(getattr(self.settings, 'publish_window_hours', 12) or 12)))
+        earliest = now_utc + timedelta(minutes=min_lead)
+        max_count = max(10, int(getattr(self.settings, 'rescue_candidate_export_limit', 80) or 80))
+
+        rows: list[dict[str, Any]] = []
+        seen: set[str] = set()
+        for candidate in candidates_before_quality:
+            fingerprint = self._candidate_fingerprint(candidate)
+            if not fingerprint or fingerprint in seen or fingerprint in published:
+                continue
+            seen.add(fingerprint)
+            kickoff = ensure_utc(candidate.commence_time)
+            if kickoff < earliest or kickoff > horizon:
+                continue
+            if float(getattr(candidate, 'ev_pct', 0.0) or 0.0) <= 0.0:
+                continue
+            if float(getattr(candidate, 'edge_pct', 0.0) or 0.0) <= 0.0:
+                continue
+            if int(getattr(candidate, 'books_count', 0) or 0) <= 0:
+                continue
+
+            key = (
+                str(candidate.match_key or ''),
+                str(candidate.family or ''),
+                str(candidate.selection_key or ''),
+                candidate.point,
+                str(candidate.team_side or ''),
+            )
+            quality = dict(quality_by_key.get(key) or {})
+            status = 'quality_rejected'
+            if fingerprint in passed:
+                status = 'passed_not_published'
+            if fingerprint in zero_stake:
+                status = 'zero_stake'
+            if fingerprint in reused:
+                status = 'reused_already_in_state'
+
+            row = self._serialize_candidate(candidate)
+            row['_candidate_source'] = 'latest_rescue_candidates'
+            row['rescue_status'] = status
+            row['rescue_exported_at'] = now_utc.isoformat()
+            row['quality_status'] = quality.get('status') or candidate.source_summary.get('quality_status') or ''
+            row['quality_score'] = quality.get('quality_score') or candidate.source_summary.get('quality_score') or 0.0
+            row['quality_reasons'] = list(quality.get('reasons') or candidate.source_summary.get('quality_reasons') or [])
+            row['diagnostics'] = {
+                **dict(row.get('diagnostics') or {}),
+                'quality': {
+                    **dict((row.get('diagnostics') or {}).get('quality') or {}),
+                    **quality,
+                } if quality else dict((row.get('diagnostics') or {}).get('quality') or {}),
+                'rescue': {
+                    'status': status,
+                    'fingerprint': fingerprint,
+                    'passed_quality': fingerprint in passed,
+                    'zero_stake': fingerprint in zero_stake,
+                    'reused_already_in_state': fingerprint in reused,
+                },
+            }
+            rows.append(row)
+
+        rows.sort(
+            key=lambda item: (
+                float(item.get('publication_score') or 0.0),
+                float(item.get('ev_pct') or 0.0),
+                float(item.get('edge_pct') or 0.0),
+                float(item.get('confidence') or 0.0),
+            ),
+            reverse=True,
+        )
+        payload = {
+            'created_at_utc': datetime.now(UTC).isoformat(),
+            'reference_run_utc': now_utc.isoformat(),
+            'freshness_minutes': 90,
+            'source': 'PredictionRunner._export_rescue_candidates',
+            'counts': {
+                'candidates_before_quality': len(candidates_before_quality),
+                'passed_candidates': len(passed_candidates),
+                'publishable_candidates': len(publishable_candidates),
+                'zero_stake_candidates': len(zero_stake_candidates),
+                'reused_candidates': len(reused_candidates),
+                'exported': min(len(rows), max_count),
+            },
+            'candidates': rows[:max_count],
+        }
+        out_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+        return {'latest_rescue_candidates': str(out_path)}
 
     def _build_self_history_contexts(
         self,

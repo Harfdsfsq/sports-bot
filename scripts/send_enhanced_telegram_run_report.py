@@ -128,6 +128,41 @@ def is_fresh(payload: dict[str, Any], reference: datetime | None, max_minutes: i
     return abs((reference - ts).total_seconds()) <= max_minutes * 60
 
 
+def newest_timestamp(*payloads: dict[str, Any]) -> datetime | None:
+    timestamps = [payload_timestamp(payload) for payload in payloads if isinstance(payload, dict)]
+    timestamps = [ts for ts in timestamps if ts is not None]
+    return max(timestamps) if timestamps else None
+
+
+def freshness_row(name: str, payload: dict[str, Any], reference: datetime | None) -> dict[str, Any]:
+    ts = payload_timestamp(payload) if isinstance(payload, dict) else None
+    fresh = is_fresh(payload, reference)
+    age_minutes = None
+    if ts is not None and reference is not None:
+        age_minutes = round((reference - ts).total_seconds() / 60.0, 1)
+    return {
+        "name": name,
+        "present": bool(isinstance(payload, dict) and payload),
+        "fresh": fresh,
+        "timestamp_utc": ts.isoformat() if ts else None,
+        "age_minutes_vs_reference": age_minutes,
+    }
+
+
+def source_freshness_lines(rows: list[dict[str, Any]]) -> list[str]:
+    important = [row for row in rows if row.get("present") or row.get("name") in {"debug", "run_summary", "detailed", "fallback"}]
+    if not important:
+        return []
+    lines = ["🧭 Состояние артефактов"]
+    for row in important:
+        status = "свежий" if row.get("fresh") else ("устарел" if row.get("present") else "нет")
+        age = row.get("age_minutes_vs_reference")
+        suffix = f", Δ {age:+.1f} мин" if isinstance(age, (int, float)) else ""
+        ts = row.get("timestamp_utc") or "н/д"
+        lines.append(f"• {row.get('name')}: {status} | {ts}{suffix}")
+    return lines
+
+
 def clean_gha_log(text: str) -> str:
     lines: list[str] = []
     for line in str(text or "").splitlines():
@@ -252,6 +287,14 @@ def get_rejections(summary: dict[str, Any], debug: dict[str, Any], stdout_payloa
     for candidate in candidates:
         if isinstance(candidate, dict) and candidate:
             return candidate
+    return {}
+
+
+def get_run_summary_rejections(run_summary: dict[str, Any]) -> dict[str, Any]:
+    for key in ("top_reject_reasons", "reason_counts", "reject_reasons", "rejections"):
+        raw = run_summary.get(key) if isinstance(run_summary, dict) else None
+        if isinstance(raw, dict) and raw:
+            return raw
     return {}
 
 
@@ -387,13 +430,24 @@ def build_report() -> str:
     stdout_payload = load_stdout_summary()
     detailed_raw = load_json(EXPORT_DIR / "latest-detailed-run-report.json", {})
     run_summary_raw = load_json(EXPORT_DIR / "latest-run-summary.json", {})
-    reference = payload_timestamp(debug) or payload_timestamp(stdout_payload) or datetime.now(UTC)
+    fallback_raw = load_json(EXPORT_DIR / "latest-controlled-fallback-report.json", {})
+    reference = newest_timestamp(debug, stdout_payload, detailed_raw, run_summary_raw, fallback_raw) or datetime.now(UTC)
+    debug_fresh = debug if is_fresh(debug, reference) else {}
+    stdout_fresh = stdout_payload if is_fresh(stdout_payload, reference) else {}
     detailed = detailed_raw if is_fresh(detailed_raw, reference) else {}
     run_summary = run_summary_raw if is_fresh(run_summary_raw, reference) else {}
-    summary = get_summary(debug, stdout_payload, detailed, run_summary, reference)
-    source_stats = get_source_stats(summary, debug, stdout_payload, detailed, reference)
-    rejections = get_rejections(summary, debug, stdout_payload, detailed, reference)
-    provider_diag = get_provider_diag(summary, debug, stdout_payload)
+    fallback = fallback_raw if is_fresh(fallback_raw, reference) else {}
+    freshness_rows = [
+        freshness_row("debug", debug, reference),
+        freshness_row("stdout", stdout_payload, reference),
+        freshness_row("detailed", detailed_raw, reference),
+        freshness_row("run_summary", run_summary_raw, reference),
+        freshness_row("fallback", fallback_raw, reference),
+    ]
+    summary = get_summary(debug_fresh, stdout_fresh, detailed, run_summary, reference)
+    source_stats = get_source_stats(summary, debug_fresh, stdout_fresh, detailed, reference)
+    rejections = get_rejections(summary, debug_fresh, stdout_fresh, detailed, reference) or get_run_summary_rejections(run_summary)
+    provider_diag = get_provider_diag(summary, debug_fresh, stdout_fresh)
 
     started = summary.get("started_time_local") or summary.get("current_time_local") or run_summary.get("created_at_utc") or datetime.now(UTC).isoformat()
     publish_window = summary.get("publish_window_hours") or ((summary.get("filtering") or {}).get("publish_window_hours") if isinstance(summary.get("filtering"), dict) else None) or os.getenv("PUBLISH_WINDOW_HOURS") or "12"
@@ -422,9 +476,13 @@ def build_report() -> str:
     lines.append(f"🕒 Время запуска: {started}")
     lines.append(f"📅 Окно публикации: {publish_window} ч | Мин. запас до матча: {min_lead} мин")
     lines.append(f"💼 Банк: {as_float(current_bank):.2f} | Открытый риск: {as_float(open_risk):.2f}")
-    if not debug and not stdout_payload:
-        lines.append("⚠️ Внимание: нет свежего debug/stdout payload; отчёт может быть неполным.")
+    if not debug_fresh and not stdout_fresh:
+        lines.append("⚠️ Внимание: свежего debug/stdout payload нет; отчёт собран по последнему run-summary.")
     lines.append("")
+    freshness = source_freshness_lines(freshness_rows)
+    if freshness:
+        lines.extend(freshness)
+        lines.append("")
     lines.append("⚙️ Воронка run")
     lines.append(f"• Матчи всего/до фильтра: {matches_before}")
     lines.append(f"• Матчи в окне: {matches_seen} | с офферами: {matches_with_offers} | контекстов: {contexts}")
@@ -478,7 +536,10 @@ def build_report() -> str:
         for reason, count in top_reasons:
             lines.append(f"• {reason_ru(reason)} — {count}")
     else:
-        lines.append("• Нет детальных reject reasons в свежих артефактах run.")
+        if as_int(candidates_before_quality) > 0 and as_int(publishable) == 0:
+            lines.append("• Кандидаты были, но свежий fallback/detailed отчёт не дал расшифровку reject reasons.")
+        else:
+            lines.append("• Нет детальных reject reasons в свежих артефактах run.")
 
     lifecycle = lifecycle_lines(reference, 6)
     if lifecycle:
@@ -503,12 +564,22 @@ def build_report() -> str:
             lines.append("• Кандидаты не построились до quality: надо смотреть market-family guards и supported lines.")
     elif as_int(publishable) == 0:
         lines.append("• Кандидаты строятся, но финальные quality/publication guards их не выпускают — это защита качества, не ошибка API.")
+        if not fallback and not detailed:
+            lines.append("• Диагностический пробел: для текущего run нет свежего fallback/detailed отчёта с причинами отказа.")
     if as_int(contexts) < as_int(matches_with_offers):
         lines.append("• Контекст покрывает не все матчи с офферами; приоритет — усилить SStats/Bzzoiro/TheSportsDB matching и self-history.")
     if as_int(published) <= 0:
         lines.append("• Прогноз не отправлен, потому что не было publishable-кандидата после guards.")
     else:
         lines.append("• Прогноз опубликован; подробности по ставке ушли отдельным сообщением.")
+
+    lines.append("")
+    lines.append("🛠 Исправления по аудиту")
+    lines.append("• Отчёт больше не смешивает старый debug/fallback с новым run-summary.")
+    lines.append("• Если reject reasons не выгрузились, это показывается как отдельная проблема отчётности.")
+    lines.append("• Следующий приоритет: unit-тесты daily top-5/fallback, общий модуль дневной квоты и перенос истории run в SQLite.")
+    lines.append("")
+    lines.append("⚖️ Дисклеймер: это аналитический отчёт бота, не гарантия результата и не финансовая рекомендация.")
 
     return "\n".join(lines).strip() + "\n"
 

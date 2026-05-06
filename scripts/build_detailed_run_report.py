@@ -4,7 +4,7 @@ import hashlib
 import json
 import os
 from collections import Counter
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 from urllib import parse, request
@@ -137,6 +137,7 @@ EXPORT_DIR = Path(".data/exports")
 OUT_JSON = EXPORT_DIR / "latest-detailed-run-report.json"
 OUT_TXT = EXPORT_DIR / "latest-detailed-run-report.txt"
 SENT_STATE = Path(".data/detailed-run-report-sent.json")
+FRESHNESS_MINUTES = 45
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -206,6 +207,60 @@ def parse_dt(value: Any):
         return None
 
 
+def payload_timestamp(payload: dict[str, Any]) -> datetime | None:
+    if not isinstance(payload, dict):
+        return None
+    candidates = [
+        payload.get("created_at_utc"),
+        payload.get("created_at"),
+        payload.get("updated_at"),
+        payload.get("reference_run_utc"),
+    ]
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    candidates.extend([
+        summary.get("current_time_utc"),
+        summary.get("started_time_utc"),
+        summary.get("current_time_local"),
+        summary.get("started_time_local"),
+    ])
+    for value in candidates:
+        dt = parse_dt(value)
+        if dt is not None:
+            return dt
+    return None
+
+
+def newest_timestamp(*payloads: dict[str, Any]) -> datetime | None:
+    timestamps = [payload_timestamp(payload) for payload in payloads if isinstance(payload, dict)]
+    timestamps = [ts for ts in timestamps if ts is not None]
+    return max(timestamps) if timestamps else None
+
+
+def is_fresh(payload: dict[str, Any], reference: datetime | None, max_minutes: int = FRESHNESS_MINUTES) -> bool:
+    if not isinstance(payload, dict) or not payload:
+        return False
+    ts = payload_timestamp(payload)
+    if ts is None:
+        return False
+    if reference is None:
+        return ts >= datetime.now(UTC) - timedelta(minutes=max_minutes)
+    return abs((reference - ts).total_seconds()) <= max_minutes * 60
+
+
+def freshness_row(name: str, payload: dict[str, Any], reference: datetime | None) -> dict[str, Any]:
+    ts = payload_timestamp(payload) if isinstance(payload, dict) else None
+    age_minutes = None
+    if ts is not None and reference is not None:
+        age_minutes = round((reference - ts).total_seconds() / 60.0, 1)
+    return {
+        "name": name,
+        "present": bool(isinstance(payload, dict) and payload),
+        "fresh": is_fresh(payload, reference),
+        "timestamp_utc": ts.isoformat() if ts else None,
+        "age_minutes_vs_reference": age_minutes,
+    }
+
+
 def app_tz():
     try:
         return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
@@ -228,15 +283,22 @@ def latest_existing(paths: list[str | Path]) -> dict[str, Any]:
     return {}
 
 
-def fallback_report() -> dict[str, Any]:
-    return latest_existing([
+def fallback_report(reference: datetime | None = None) -> dict[str, Any]:
+    payload = latest_existing([
         "artifacts/controlled-fallback-report.json",
         ".data/exports/latest-controlled-fallback-report.json",
     ])
+    if reference is not None and not is_fresh(payload, reference):
+        return {}
+    return payload
 
 
 def debug_last_run() -> dict[str, Any]:
     return load_json(".logs/debug-last-run.json", {})
+
+
+def run_summary_report() -> dict[str, Any]:
+    return load_json(".data/exports/latest-run-summary.json", {})
 
 
 def quota_report() -> dict[str, Any]:
@@ -772,9 +834,17 @@ def learning_lines() -> list[str]:
     return lines
 
 def build_payload() -> dict[str, Any]:
-    report = fallback_report()
-    debug = debug_last_run()
-    summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
+    debug_raw = debug_last_run()
+    run_summary_raw = run_summary_report()
+    reference = newest_timestamp(debug_raw, run_summary_raw, fallback_report()) or datetime.now(UTC)
+    debug = debug_raw if is_fresh(debug_raw, reference) else {}
+    run_summary = run_summary_raw if is_fresh(run_summary_raw, reference) else {}
+    report = fallback_report(reference)
+    summary = {}
+    if isinstance(debug.get("summary"), dict):
+        summary = debug.get("summary") or {}
+    elif isinstance(run_summary.get("summary"), dict):
+        summary = run_summary.get("summary") or {}
     evaluated = extract_evaluated(report)
     reasons = reason_counter(report, evaluated)
     selected = selected_rows(report)
@@ -783,10 +853,16 @@ def build_payload() -> dict[str, Any]:
     published = bool(report.get("published") or report.get("telegram_sent") or report.get("selected_count"))
     return {
         "created_at": datetime.now(UTC).isoformat(),
+        "reference_run_utc": reference.isoformat(),
+        "source_freshness": [
+            freshness_row("debug", debug_raw, reference),
+            freshness_row("run_summary", run_summary_raw, reference),
+            freshness_row("fallback", fallback_report(), reference),
+        ],
         "runtime_policy": runtime_policy_report(),
         "day_inventory": day_inventory_summary(),
         "published": published,
-        "status": report.get("status") or ("published" if published else "no_pick"),
+        "status": report.get("status") or run_summary.get("status") or ("published" if published else "no_pick"),
         "summary": summary,
         "candidate_counts": {
             "evaluated": len(evaluated),
@@ -796,6 +872,12 @@ def build_payload() -> dict[str, Any]:
         "reason_counts": dict(reasons.most_common(20)),
         "selected": selected,
         "near_misses": near,
+        "diagnostic_gap": {
+            "fresh_fallback_present": bool(report),
+            "fresh_debug_present": bool(debug),
+            "fresh_run_summary_present": bool(run_summary),
+            "reason_counts_present": bool(reasons),
+        },
         "diagnostic_lines": run_diagnostic_lines(debug),
         "provider_work_lines": provider_work_lines(debug),
         "coverage_pipeline_lines": coverage_pipeline_lines({"day_inventory": day_inventory_summary()}),
@@ -822,6 +904,18 @@ def render(payload: dict[str, Any]) -> str:
         title += " — прогнозов нет"
     lines.append(title)
     lines.append("")
+
+    source_freshness = payload.get("source_freshness") if isinstance(payload.get("source_freshness"), list) else []
+    if source_freshness:
+        lines.append("🧭 Состояние артефактов")
+        for row in source_freshness:
+            if not isinstance(row, dict):
+                continue
+            status = "свежий" if row.get("fresh") else ("устарел" if row.get("present") else "нет")
+            age = row.get("age_minutes_vs_reference")
+            suffix = f", Δ {age:+.1f} мин" if isinstance(age, (int, float)) else ""
+            lines.append(f"• {row.get('name')}: {status} | {row.get('timestamp_utc') or 'н/д'}{suffix}")
+        lines.append("")
 
     runtime_policy = payload.get("runtime_policy") if isinstance(payload.get("runtime_policy"), dict) else {}
     if runtime_policy:
@@ -864,6 +958,16 @@ def render(payload: dict[str, Any]) -> str:
             pct = count / total * 100.0 if total else 0.0
             lines.append(f"• {translate_reject_reason(reason)} — {count} ({pct:.0f}%)")
         lines.append("")
+    else:
+        gap = payload.get("diagnostic_gap") if isinstance(payload.get("diagnostic_gap"), dict) else {}
+        lines.append("🚫 Почему не прошли")
+        if as_int(summary.get("candidates_before_quality")) > 0 and as_int(summary.get("candidates_publishable")) == 0:
+            lines.append("• Воронка видит кандидатов, но свежий fallback/detailed слой не выгрузил причины отказа.")
+        elif not gap.get("fresh_fallback_present"):
+            lines.append("• Нет свежего fallback-отчёта для текущего run; старые кандидаты намеренно не подмешиваются.")
+        else:
+            lines.append("• В свежих артефактах нет детальной расшифровки reject reasons.")
+        lines.append("")
 
     if selected:
         lines.append("✅ Опубликовано")
@@ -900,7 +1004,10 @@ def render(payload: dict[str, Any]) -> str:
                 lines.append(f"   • {part}")
         lines.append("")
     else:
-        lines.append("⚠️ Пограничные кандидаты: не найдено ставок с положительным EV/edge после жёстких guard’ов.")
+        if not (payload.get("diagnostic_gap") or {}).get("fresh_fallback_present"):
+            lines.append("⚠️ Пограничные кандидаты: нет свежего fallback-отчёта, поэтому старый watchlist скрыт.")
+        else:
+            lines.append("⚠️ Пограничные кандидаты: не найдено ставок с положительным EV/edge после жёстких guard’ов.")
         lines.append("")
 
     lines.extend(learning_lines())
@@ -937,6 +1044,21 @@ def render(payload: dict[str, Any]) -> str:
             lines.append("• Прогнозов нет из-за комбинации value, xG, качества и ограничений семейств рынков.")
         if has_duplicate_block:
             lines.append("• Уже опубликованный ранее матч не дублировался повторно.")
+    else:
+        lines.append("📌 Вывод")
+        if as_int(summary.get("candidates_before_quality")) > 0 and as_int(summary.get("candidates_publishable")) == 0:
+            lines.append("• Главная проблема текущего состояния — не качество отчёта Telegram, а диагностический разрыв: candidates есть, publishable нет, но причины отказа не попали в свежие артефакты.")
+        else:
+            lines.append("• Прогнозов нет, а свежих reject reasons для уверенной причины недостаточно.")
+        lines.append("• Исправлено: отчёт больше не смешивает старый fallback/watchlist с новым run-summary.")
+
+    lines.append("")
+    lines.append("🛠 Исправления по аудиту")
+    lines.append("• Нужны unit-тесты daily top-5/fallback и общий модуль подсчёта дневной квоты.")
+    lines.append("• Историю run лучше перенести из JSON в SQLite, чтобы отчётность и backtest не зависели от одиночных stale-файлов.")
+    lines.append("• API/матчинг надо оценивать по свежести, покрытию контекста и причинам отказа, а не только по числу запросов.")
+    lines.append("")
+    lines.append("⚖️ Дисклеймер: аналитика бота не гарантирует результат и не является финансовой рекомендацией.")
     return normalize_telegram_text("\n".join(lines))
 
 

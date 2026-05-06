@@ -75,6 +75,48 @@ def write_json(path: str | Path, payload: Any) -> None:
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+def payload_timestamp(payload: Any) -> datetime | None:
+    if not isinstance(payload, dict):
+        return None
+    candidates = [
+        payload.get("created_at_utc"),
+        payload.get("created_at"),
+        payload.get("reference_run_utc"),
+        payload.get("updated_at"),
+    ]
+    summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else {}
+    candidates.extend([
+        summary.get("current_time_utc"),
+        summary.get("started_time_utc"),
+        summary.get("current_time_local"),
+        summary.get("started_time_local"),
+    ])
+    for value in candidates:
+        dt = parse_dt(value)
+        if dt is not None:
+            return dt
+    return None
+
+
+def newest_timestamp(*payloads: Any) -> datetime | None:
+    timestamps = [payload_timestamp(payload) for payload in payloads if isinstance(payload, dict)]
+    timestamps = [item for item in timestamps if item is not None]
+    return max(timestamps) if timestamps else None
+
+
+def is_payload_fresh(payload: Any, reference: datetime | None, max_minutes: int | None = None) -> bool:
+    if max_minutes is None:
+        max_minutes = env_int("CONTROLLED_FALLBACK_ARTIFACT_FRESHNESS_MINUTES", 90)
+    if not isinstance(payload, dict) or not payload:
+        return False
+    ts = payload_timestamp(payload)
+    if ts is None:
+        return False
+    if reference is None:
+        return ts >= datetime.now(UTC) - timedelta(minutes=max_minutes)
+    return abs((reference - ts).total_seconds()) <= max_minutes * 60
+
+
 _CONTEXT_SOURCE_INDEX_CACHE: dict[str, Any] | None = None
 
 
@@ -1184,6 +1226,11 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     now = datetime.now(UTC)
     earliest = now + timedelta(minutes=effective_min_kickoff_lead_minutes())
     latest = now + timedelta(hours=max(1, env_int("PUBLISH_WINDOW_HOURS", 24)))
+    run_summary = load_json(".data/exports/latest-run-summary.json", {})
+    debug = load_json(".logs/debug-last-run.json", {})
+    rescue_payload = load_json(".data/exports/latest-rescue-candidates.json", [])
+    artifact_rescue_payload = load_json("artifacts/run-bot/latest-rescue-candidates.json", [])
+    reference = newest_timestamp(run_summary, debug, rescue_payload, artifact_rescue_payload) or now
 
     def row_in_current_window(row: dict[str, Any]) -> bool:
         if not filter_by_time or not env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True):
@@ -1193,7 +1240,21 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
             return env_bool("CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME", False)
         return earliest <= kickoff <= latest
 
+    def payload_is_usable(source: str, payload: Any) -> bool:
+        if not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True):
+            return True
+        if isinstance(payload, dict):
+            if is_payload_fresh(payload, reference):
+                return True
+            counts[f"{source}_stale_payload"] += 1
+            return False
+        # Legacy list payloads have no run timestamp. Keep them only when the
+        # current-window check can prove that rows are about upcoming matches.
+        return True
+
     def add_rows(source: str, rows: Any) -> None:
+        if not payload_is_usable(source, rows):
+            return
         if isinstance(rows, dict):
             rows_iter = rows.get("candidates") or rows.get("rows") or rows.get("items") or []
         else:
@@ -1215,12 +1276,13 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
             pool.append(row)
             counts[source] += 1
 
-    add_rows("latest_rescue_candidates", load_json(".data/exports/latest-rescue-candidates.json", []))
-    add_rows("artifact_rescue_candidates", load_json("artifacts/run-bot/latest-rescue-candidates.json", []))
-    debug = load_json(".logs/debug-last-run.json", {})
-    if isinstance(debug, dict):
+    add_rows("latest_rescue_candidates", rescue_payload)
+    add_rows("artifact_rescue_candidates", artifact_rescue_payload)
+    if isinstance(debug, dict) and (not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True) or is_payload_fresh(debug, reference)):
         add_rows("debug_candidates_before_quality", debug.get("candidates_before_quality") or [])
         add_rows("debug_candidates_after_quality", debug.get("candidates_after_quality") or [])
+    elif isinstance(debug, dict) and debug:
+        counts["debug_stale_payload"] += 1
     # Shadow rows are historical learning material. They are NOT a fresh publication source by default:
     # they often contain already-started matches and can drown the current candidate pool.
     if env_bool("CONTROLLED_FALLBACK_INCLUDE_STATE_SHADOW", False):
@@ -1247,6 +1309,10 @@ def already_has_picks() -> bool:
             if kickoff is not None and now <= kickoff <= latest:
                 return True
     debug = load_json(".logs/debug-last-run.json", {})
+    run_summary = load_json(".data/exports/latest-run-summary.json", {})
+    reference = newest_timestamp(debug, run_summary) or datetime.now(UTC)
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True) and not is_payload_fresh(debug, reference):
+        return False
     summary = debug.get("summary") if isinstance(debug, dict) else {}
     return isinstance(summary, dict) and as_int(summary.get("published"), 0) > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_INTERNAL_PUBLISHED", True)
 
@@ -1715,7 +1781,13 @@ def main() -> int:
 
     viable: list[tuple[tuple[float, float, float, float, float], dict[str, Any], dict[str, Any], str]] = []
     for candidate in candidates:
-        ok, reasons, metrics, tier = evaluate_candidate(candidate, sent_index)
+        try:
+            ok, reasons, metrics, tier = evaluate_candidate(candidate, sent_index)
+        except Exception as exc:
+            ok = False
+            reasons = [f"candidate_evaluation_error:{type(exc).__name__}"]
+            metrics = {"error": str(exc)[:300]}
+            tier = None
         row = {
             "match_key": candidate.get("match_key"),
             "home_team": candidate.get("home_team"),

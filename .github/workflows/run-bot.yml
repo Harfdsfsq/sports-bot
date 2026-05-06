@@ -49,6 +49,21 @@ jobs:
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
+      CONTROLLED_FALLBACK_ENABLED: "true"
+      CONTROLLED_FALLBACK_SEND_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT: "false"
+      CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS: "true"
+      CONTROLLED_FALLBACK_ARTIFACT_FRESHNESS_MINUTES: "90"
+      CONTROLLED_FALLBACK_ALLOWED_FAMILIES: "totals,dnb,teamtotals,btts,h2h"
+      CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN: "2"
+      CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "1"
+      CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT: "true"
+      CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP: "3.0"
+      CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT: "7.0"
+      CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE: "68.0"
+      CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP: "1.8"
+      CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT: "4.0"
       SETTLEMENT_ENABLED: "true"
       SETTLEMENT_SEND_TELEGRAM_SUMMARY: "true"
       BANKROLL_ENABLED: "true"
@@ -237,6 +252,17 @@ jobs:
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           exit ${status}
+      - name: Publish controlled fallback
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip controlled fallback: fresh run-bot log was not created"
+            exit 0
+          fi
+          python scripts/publish_controlled_fallback.py || true
+          cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
+          cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
       - name: Send enhanced Telegram run report
         if: always()
         shell: bash
