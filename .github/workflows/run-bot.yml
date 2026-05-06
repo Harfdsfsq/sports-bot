@@ -38,7 +38,7 @@ jobs:
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
       PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
-      PROVIDER_QUOTA_RECOVERY_VERSION: "pdf-free-limits-2026-05-05-v2"
+      PROVIDER_QUOTA_RECOVERY_VERSION: "pdf-free-limits-2026-05-05-v3"
       FREE_CONTEXT_RUNTIME_ENABLED: "true"
       FREE_CONTEXT_RUNTIME_TIMEOUT_SECONDS: "6"
       PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
@@ -56,9 +56,18 @@ jobs:
       PARTIAL_CONTEXT_MARKET_FALLBACK_ENABLED: "true"
       SHADOW_TRACKING_ENABLED: "true"
       SELF_HISTORY_CONTEXT_ENABLED: "true"
+      MARKET_INTEGRITY_HARD_GUARD_ENABLED: "true"
+      MARKET_INTEGRITY_CANDIDATE_PATCH_ENABLED: "true"
+      MARKET_INTEGRITY_MIN_BOOKS: "2"
+      MARKET_INTEGRITY_MIN_SOURCES: "1"
+      MARKET_INTEGRITY_SINGLE_SOURCE_MIN_BOOKS: "3"
+      MARKET_INTEGRITY_MAX_PRICE_DISPERSION_PCT: "30"
+      MARKET_INTEGRITY_MAX_EXACT_PRICE_DISPERSION_PCT: "22"
+      MARKET_INTEGRITY_MAX_EXACT_LINE_DELTA_PCT: "18"
+      MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES: "true"
       MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS: "1.65"
       MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS: "3"
-      MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES: "true"
+      MATCH_TOTAL_OVER20_MAX_REASONABLE_ODDS: "2.05"
       ENABLE_QUARTER_TOTAL_LINES: "true"
       QUARTER_TOTAL_MIN_BOOKS: "2"
       ODDS_API_IO_MAX_REQUESTS_PER_RUN: "280"
@@ -156,6 +165,11 @@ jobs:
           mkdir -p .data/exports .data/cache artifacts/run-bot
           python scripts/apply_provider_quota_governor.py
           echo "provider quota governor applied"
+      - name: Run tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          pytest -q tests
       - name: Run bot
         shell: bash
         run: |
