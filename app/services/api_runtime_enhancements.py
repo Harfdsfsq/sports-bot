@@ -237,6 +237,16 @@ def install_env_defaults() -> None:
     _set_default("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", "1")
     _set_default("CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS", "true")
     _set_default("CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS", "3")
+    _set_default("CONTROLLED_CONSENSUS_CANDIDATE_RESCUE_ENABLED", "true")
+    _set_default("CONTROLLED_RESCUE_ALLOWED_FAMILIES", "totals,dnb,btts")
+    _set_default("CONTROLLED_RESCUE_MIN_PAIRED_BOOKS", "2")
+    _set_default("CONTROLLED_RESCUE_MIN_ODDS", "1.45")
+    _set_default("CONTROLLED_RESCUE_MAX_ODDS", "2.75")
+    _set_default("CONTROLLED_RESCUE_MIN_EDGE_PP", "1.2")
+    _set_default("CONTROLLED_RESCUE_MIN_EV_PCT", "2.5")
+    _set_default("CONTROLLED_RESCUE_RETURN_LIMIT", "24")
+    _set_default("CONTROLLED_RESCUE_MAX_TOTAL", "40")
+    _set_default("CONTROLLED_RESCUE_MAX_PER_MATCH", "2")
 
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Betfair Exchange,Sbobet")
@@ -255,9 +265,6 @@ def install_env_defaults() -> None:
         _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 200)
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 520)
 
-    # Controlled secondary odds rescue. These providers are not allowed to
-    # publish alone unless market-integrity confirms line depth; they only try to
-    # prevent a dead run when odds-api.io returns HTTP 200 with an empty payload.
     _set_default("SECONDARY_ODDS_RESCUE_ENABLED", "true")
     _set_default("SECONDARY_ODDS_RESCUE_TRIGGER", "odds_api_io_empty")
     if _env_present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY"):
@@ -330,6 +337,11 @@ def install() -> None:
     try:
         from app.providers import odds_api_io_startup_compat
         odds_api_io_startup_compat.install()
+    except Exception:
+        pass
+    try:
+        from app.services import controlled_candidate_rescue
+        controlled_candidate_rescue.install()
     except Exception:
         pass
     try:
