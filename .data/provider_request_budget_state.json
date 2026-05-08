@@ -4,30 +4,53 @@
   "last_decisions": [
     {
       "api_key_present": true,
-      "configured_grant": 200,
-      "grant": 200,
+      "configured_grant": 120,
+      "grant": 120,
       "provider": "odds_api_io",
       "reason": "granted",
       "secret_env_keys": [
-        "ODDS_API_IO_KEY"
+        "ODDS_API_IO_KEY",
+        "ODDS_API_IO_KEY_2"
       ],
-      "status": "critical_live_odds"
+      "status": "critical_inventory_and_primary_live_odds"
     },
     {
       "api_key_present": true,
-      "configured_grant": 20,
-      "grant": 20,
+      "configured_grant": 24,
+      "grant": 24,
       "provider": "allsportsapi",
       "reason": "granted",
       "secret_env_keys": [
         "ALLSPORTSAPI_API_KEY"
       ],
-      "status": "fixture_and_secondary_odds_probe"
+      "status": "secondary_fixture_and_odds_rescue"
     },
     {
       "api_key_present": true,
-      "configured_grant": 1000,
-      "grant": 1000,
+      "configured_grant": 30,
+      "grant": 30,
+      "provider": "sportlogic",
+      "reason": "free_limit_500_day_10_min_use_only_near_window_or_primary_odds_empty",
+      "secret_env_keys": [
+        "SPORTLOGIC_API_KEY",
+        "SPORTLOGIC_KEY",
+        "SPORTLOGIC_TOKEN"
+      ],
+      "status": "secondary_odds_rescue_and_context_probe"
+    },
+    {
+      "api_key_present": null,
+      "configured_grant": 0,
+      "grant": 0,
+      "provider": "oddspapi",
+      "reason": "removed_from_project",
+      "secret_env_keys": [],
+      "status": "removed"
+    },
+    {
+      "api_key_present": true,
+      "configured_grant": 24,
+      "grant": 24,
       "provider": "bzzoiro",
       "reason": "granted",
       "secret_env_keys": [
@@ -37,8 +60,8 @@
     },
     {
       "api_key_present": true,
-      "configured_grant": 150,
-      "grant": 150,
+      "configured_grant": 36,
+      "grant": 36,
       "provider": "sstats",
       "reason": "granted",
       "secret_env_keys": [
@@ -48,30 +71,30 @@
     },
     {
       "api_key_present": true,
-      "configured_grant": 8,
-      "grant": 8,
+      "configured_grant": 6,
+      "grant": 6,
       "provider": "football_data",
       "reason": "granted",
       "secret_env_keys": [
         "FOOTBALL_DATA_API_KEY"
       ],
-      "status": "context_only_low_overlap_near_window_first"
+      "status": "context_only_cached_league_calendar"
     },
     {
       "api_key_present": true,
-      "configured_grant": 12,
-      "grant": 12,
+      "configured_grant": 10,
+      "grant": 10,
       "provider": "thesportsdb",
       "reason": "granted",
       "secret_env_keys": [
         "THESPORTSDB_API_KEY"
       ],
-      "status": "context_only_alias_sensitive_near_window_first"
+      "status": "alias_and_fixture_context_cached"
     },
     {
       "api_key_present": null,
-      "configured_grant": 4,
-      "grant": 4,
+      "configured_grant": 2,
+      "grant": 2,
       "provider": "openfootball_public",
       "reason": "granted",
       "secret_env_keys": [],
@@ -79,8 +102,8 @@
     },
     {
       "api_key_present": true,
-      "configured_grant": 24,
-      "grant": 24,
+      "configured_grant": 12,
+      "grant": 12,
       "provider": "weatherapi",
       "reason": "granted",
       "secret_env_keys": [
@@ -88,12 +111,12 @@
         "WEATHER_API_KEY",
         "WEATHERAPI_API_KEY"
       ],
-      "status": "weather_overlay_near_window_first"
+      "status": "weather_overlay_top_candidates_only"
     },
     {
       "api_key_present": true,
-      "configured_grant": 12,
-      "grant": 12,
+      "configured_grant": 4,
+      "grant": 4,
       "provider": "openweathermap",
       "reason": "granted",
       "secret_env_keys": [
@@ -101,136 +124,123 @@
         "OPENWEATHER_API_KEY",
         "OPENWEATHERMAP_KEY"
       ],
-      "status": "weather_fallback_near_window_first"
+      "status": "weather_fallback_only"
     },
     {
       "api_key_present": true,
-      "configured_grant": 0,
-      "grant": 0,
+      "configured_grant": 2,
+      "grant": 2,
       "provider": "highlightly",
-      "reason": "health_probe_only:not_integrated_into_prediction_runtime",
+      "reason": "100_day_free_use_probe_only_until_parser_verified",
       "secret_env_keys": [
         "HIGHLIGHTLY_API_KEY"
       ],
-      "status": "health_probe_only_until_endpoint_verified"
-    },
-    {
-      "api_key_present": true,
-      "configured_grant": 20,
-      "grant": 20,
-      "provider": "sportlogic",
-      "reason": "enabled_for_context_matching_probe:odds_quarantined_until_parser_verified",
-      "secret_env_keys": [
-        "SPORTLOGIC_API_KEY",
-        "SPORTLOGIC_KEY",
-        "SPORTLOGIC_TOKEN"
-      ],
-      "status": "context_probe_odds_quarantined"
+      "status": "health_probe_then_fixture_rescue"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "futrixmetrics",
-      "reason": "disabled_by_useful_request_policy:low_recent_yield",
+      "reason": "low_recent_yield_do_not_spend_until_mapping_fixed",
       "secret_env_keys": [],
-      "status": "spacing_limited_low_yield"
+      "status": "disabled_by_low_recent_yield"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "newsapi_currents",
-      "reason": "disabled_by_useful_request_policy:news_context_not_every_run",
+      "reason": "news_context_not_every_run",
       "secret_env_keys": [],
-      "status": "news_context_rotation"
+      "status": "news_context_rotation_only"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "gnews",
-      "reason": "disabled_by_useful_request_policy:news_context_not_every_run",
+      "reason": "news_context_not_every_run",
       "secret_env_keys": [],
-      "status": "news_context_rotation"
+      "status": "news_context_rotation_only"
     },
     {
       "api_key_present": true,
       "configured_grant": 0,
       "grant": 0,
       "provider": "newsdata",
-      "reason": "health_probe_only:news_context_not_every_run",
+      "reason": "news_context_not_every_run",
       "secret_env_keys": [
         "NEWSDATA_API_KEY"
       ],
-      "status": "health_probe_only_news_rotation"
+      "status": "health_probe_news_rotation"
     },
     {
       "api_key_present": true,
       "configured_grant": 0,
       "grant": 0,
       "provider": "guardian",
-      "reason": "health_probe_only:news_context_not_every_run",
+      "reason": "news_context_not_every_run",
       "secret_env_keys": [
         "GUARDIAN_API_KEY"
       ],
-      "status": "health_probe_only_news_rotation"
-    },
-    {
-      "api_key_present": false,
-      "configured_grant": 0,
-      "grant": 0,
-      "provider": "sharpapi",
-      "reason": "health_probe_only:text_enrichment_not_core_prediction",
-      "secret_env_keys": [
-        "SHARPAPI_API_KEY"
-      ],
-      "status": "text_enrichment_probe_only"
+      "status": "health_probe_news_rotation"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "meteostat",
-      "reason": "disabled_by_useful_request_policy:weatherapi_first",
+      "reason": "weatherapi_and_openmeteo_first",
       "secret_env_keys": [],
-      "status": "weather_rotation"
+      "status": "weather_rotation_disabled_weatherapi_first"
     },
     {
       "api_key_present": null,
-      "configured_grant": 0,
-      "grant": 0,
+      "configured_grant": 1,
+      "grant": 1,
       "provider": "oddsfeed",
-      "reason": "disabled_until_endpoint_schema_verified",
+      "reason": "500_month_rapidapi_probe_only_until_endpoint_schema_verified",
       "secret_env_keys": [],
-      "status": "discovery_only"
+      "status": "monthly_limited_discovery_only"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "sportsbook_api",
-      "reason": "disabled_until_endpoint_schema_verified",
+      "reason": "50_day_too_small_for_every_run",
       "secret_env_keys": [],
-      "status": "discovery_only"
+      "status": "daily_limited_discovery_only"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "sportapi",
-      "reason": "disabled_until_endpoint_schema_verified",
+      "reason": "overlaps_with_api_football_backend",
       "secret_env_keys": [],
-      "status": "discovery_only"
+      "status": "api_sports_overlap_disabled"
     },
     {
       "api_key_present": null,
       "configured_grant": 0,
       "grant": 0,
       "provider": "freeapilivefootball",
-      "reason": "disabled_until_endpoint_schema_verified",
+      "reason": "100_month_too_small_for_every_run",
       "secret_env_keys": [],
-      "status": "discovery_only"
+      "status": "monthly_limited_discovery_only"
+    },
+    {
+      "api_key_present": false,
+      "configured_grant": 0,
+      "grant": 0,
+      "provider": "sharpapi",
+      "reason": "text_enrichment_not_core_prediction",
+      "secret_env_keys": [
+        "SHARPAPI_API_KEY"
+      ],
+      "status": "text_enrichment_probe_only"
     }
   ],
   "period_budgets_disabled": true,
@@ -409,6 +419,6 @@
       "monthly": {}
     }
   },
-  "updated_at": "2026-05-08T23:01:12.718746+00:00",
-  "version": "v23-full-api-visibility-near-window"
+  "updated_at": "2026-05-08T23:21:27.277997+00:00",
+  "version": "v24-free-limit-balanced-odds-rescue"
 }

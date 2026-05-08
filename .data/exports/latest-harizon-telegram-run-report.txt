@@ -7,18 +7,18 @@
 📦 Дневной inventory
 • Матчей всего: 49
 • С линиями: 0/49
-• С контекстом: 30/49
+• С контекстом: 37/49
 • Готово к модели: 0/49
 • Ближайшие 6 часов: 0/45 готово
 • Следующие 12 часов: 0/45 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 45 | с линиями: 0 | контекстов: 30
+• Матчи: 45 | с линиями: 0 | контекстов: 37
 • Кандидаты: raw 0 | до качества 0 | publishable 0
 • Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
 • матчей с линиями из любого источника: 0
-• матчей с любым контекстом: 30
-• матчей с объединенным контекстом: 30
+• матчей с любым контекстом: 37
+• матчей с объединенным контекстом: 37
 • raw с market-derived сигналом: 0
 • Фильтр времени: after 45/49, outside 3, too soon 1, started 0
 • Matching: odds exact 42, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 2, thesportsdb ctx 4
@@ -27,8 +27,8 @@
 • odds_api_io: events req 0, odds req 10, err 0, events 100, matched 45, offers 0
 • odds_api_io_bootstrap: events req 2, err 0, events 100, matches 46
 • allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 0
-• bzzoiro: req 5, err 0, events 51, ctx 2
-• sstats: req 29, err 0, ctx 30, rows 24359
+• bzzoiro: req 4, err 0, events 50, ctx 2
+• sstats: req 29, err 0, ctx 37, rows 24359
 • football_data: req 1, err 0, matched 0, ctx 0
 • thesportsdb: req 8, err 0, ctx 4
 • sportlogic: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
@@ -36,9 +36,9 @@
 • openligadb: req 0, err 0, ctx 0
 • openfootball: req 0, err 0, ctx 0
 • futrixmetrics: req 12, err 0, ctx 0
-• weather: req 30, err 6, ctx 24, weatherapi 24, owm 6, cache 0, budget_exhausted
-• newsapi: req 0, err 0, ctx 0, cache 0, budget_exhausted
-• gnews: req 0, err 0, ctx 0, budget_exhausted
+• weather: req 16, err 4, ctx 12, weatherapi 12, owm 4, cache 0, budget_exhausted
+• newsapi: disabled
+• gnews: disabled
 • self_history: ctx 0
 • market_monitor: нет данных
 • match_bootstrap: events req 2, err 0, events 100, matches 46
@@ -52,7 +52,7 @@
 • account1: Bet365,Unibet | req 5 | offers 0
 • account2: Betfair Exchange,Sbobet | req 5 | offers 0
 • Матчи с 2+ букмекерами: 0; с 1 букмекером: 0
-• Последний ответ odds: [{"id":67817678,"home":"Jeju SK FC","away":"FC Seoul","date":"2026-05-09T05:00:00Z","status":"pending","sport":{"name":"Football","slug":"football"},"league":{"name":"Republic of Korea - K-League 1","slug":"republic-of-k
+• Последний ответ odds: [{"id":68916280,"home":"Busan Transportation Corporation FC","away":"FC Mokpo","date":"2026-05-09T05:00:00Z","status":"pending","sport":{"name":"Football","slug":"football"},"league":{"name":"Republic of Korea - K3 Leagu
 
 🚫 Почему не прошли
 • Нет свежей расшифровки reject reasons.
@@ -65,55 +65,56 @@
 🧩 Работа API — разбор
 • odds_api_io: главный источник линий и списка матчей по целевым букмекерам
   - runtime: events req 0, odds req 10, err 0, events 100, matched 45, offers 0
-  - квота: grant 200, reason granted, status critical_live_odds
+  - квота: grant 120, reason granted, status critical_inventory_and_primary_live_odds
 • allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
   - runtime: req 1, err 0, matched 0, offers 0, fixtures 0
-  - квота: grant 20, reason granted, status fixture_and_secondary_odds_probe
+  - квота: grant 24, reason granted, status secondary_fixture_and_odds_rescue
 • bzzoiro: контекст/прогнозы; независимое подтверждение
-  - runtime: req 5, err 0, events 51, ctx 2
-  - квота: grant 1000, reason granted, status high_quality_context_near_window_first
+  - runtime: req 4, err 0, events 50, ctx 2
+  - квота: grant 24, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: req 29, err 0, ctx 30, rows 24359
-  - квота: grant 150, reason granted, status critical_team_form_context_near_window_first
+  - runtime: req 29, err 0, ctx 37, rows 24359
+  - квота: grant 36, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
   - runtime: req 1, err 0, matched 0, ctx 0
-  - квота: grant 8, reason granted, status context_only_low_overlap_near_window_first
+  - квота: grant 6, reason granted, status context_only_cached_league_calendar
 • thesportsdb: fixture/алиасы команд и лиг
   - runtime: req 8, err 0, ctx 4
-  - квота: grant 12, reason granted, status context_only_alias_sensitive_near_window_first
+  - квота: grant 10, reason granted, status alias_and_fixture_context_cached
 • weather: погодный overlay: WeatherAPI first, OpenWeatherMap fallback
-  - runtime: req 30, err 6, ctx 24, weatherapi 24, owm 6, cache 0, budget_exhausted
+  - runtime: req 16, err 4, ctx 12, weatherapi 12, owm 4, cache 0, budget_exhausted
 • sportlogic: probe/context; odds остаются под контролем до подтверждения схемы
   - runtime: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
-  - квота: grant 20, reason enabled_for_context_matching_probe:odds_quarantined_until_parser_verified, status context_probe_odds_quarantined
+  - квота: grant 30, reason free_limit_500_day_10_min_use_only_near_window_or_primary_odds_empty, status secondary_odds_rescue_and_context_probe
 • espn: вспомогательный публичный контекст и алиасы
   - runtime: err 0, events 72, matched 0, ctx 0
 • openligadb: вспомогательный календарь/контекст
   - runtime: req 0, err 0, ctx 0
 
 🔌 API / квоты последнего run
-• odds_api_io: grant 200, reason granted
-• allsportsapi: grant 20, reason granted
-• bzzoiro: grant 1000, reason granted
-• sstats: grant 150, reason granted
-• football_data: grant 8, reason granted
-• thesportsdb: grant 12, reason granted
-• openfootball_public: grant 4, reason granted
-• weatherapi: grant 24, reason granted
-• openweathermap: grant 12, reason granted
-• highlightly: grant 0, reason health_probe_only:not_integrated_into_prediction_runtime
-• sportlogic: grant 20, reason enabled_for_context_matching_probe:odds_quarantined_until_parser_verified
-• futrixmetrics: grant 0, reason disabled_by_useful_request_policy:low_recent_yield
-• newsapi_currents: grant 0, reason disabled_by_useful_request_policy:news_context_not_every_run
-• gnews: grant 0, reason disabled_by_useful_request_policy:news_context_not_every_run
-• newsdata: grant 0, reason health_probe_only:news_context_not_every_run
-• guardian: grant 0, reason health_probe_only:news_context_not_every_run
-• sharpapi: grant 0, reason health_probe_only:text_enrichment_not_core_prediction
-• meteostat: grant 0, reason disabled_by_useful_request_policy:weatherapi_first
-• oddsfeed: grant 0, reason disabled_until_endpoint_schema_verified
-• sportsbook_api: grant 0, reason disabled_until_endpoint_schema_verified
-• sportapi: grant 0, reason disabled_until_endpoint_schema_verified
-• freeapilivefootball: grant 0, reason disabled_until_endpoint_schema_verified
+• odds_api_io: grant 120, reason granted
+• allsportsapi: grant 24, reason granted
+• sportlogic: grant 30, reason free_limit_500_day_10_min_use_only_near_window_or_primary_odds_empty
+• oddspapi: grant 0, reason removed_from_project
+• bzzoiro: grant 24, reason granted
+• sstats: grant 36, reason granted
+• football_data: grant 6, reason granted
+• thesportsdb: grant 10, reason granted
+• openfootball_public: grant 2, reason granted
+• weatherapi: grant 12, reason granted
+• openweathermap: grant 4, reason granted
+• highlightly: grant 2, reason 100_day_free_use_probe_only_until_parser_verified
+• futrixmetrics: grant 0, reason low_recent_yield_do_not_spend_until_mapping_fixed
+• newsapi_currents: grant 0, reason news_context_not_every_run
+• gnews: grant 0, reason news_context_not_every_run
+• newsdata: grant 0, reason news_context_not_every_run
+• guardian: grant 0, reason news_context_not_every_run
+• meteostat: grant 0, reason weatherapi_and_openmeteo_first
+• oddsfeed: grant 1, reason 500_month_rapidapi_probe_only_until_endpoint_schema_verified
+• sportsbook_api: grant 0, reason 50_day_too_small_for_every_run
+• sportapi: grant 0, reason overlaps_with_api_football_backend
+• freeapilivefootball: grant 0, reason 100_month_too_small_for_every_run
+• sharpapi: grant 0, reason text_enrichment_not_core_prediction
 
 📌 Вывод
 • Главный стопор этого run — нет свежих odds-offers. Модель не должна строить прогнозы без актуальной линии.
