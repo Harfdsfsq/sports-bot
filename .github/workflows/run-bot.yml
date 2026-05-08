@@ -25,56 +25,75 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
       PYTHONPATH: ${{ github.workspace }}
-      RUNBOT_RUNTIME_BOOTSTRAP_AUTOINSTALL: "false"
-      HARIZON_RUNTIME_MARKET_POLICY_AUTOINSTALL: "false"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
       RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
+
+      # Core publishing/runtime mode
       PUBLISH_DRY_RUN: "false"
       PREDICTION_PUBLICATION_ENABLED: "true"
+      RUN_REPORT_ENABLED: "false"
+      ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
+      TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
       PUBLISH_WINDOW_HOURS: "12"
       RUN_DAYS_AHEAD: "4"
       MIN_KICKOFF_LEAD_MINUTES: "30"
       MAX_PICKS_PER_RUN: "2"
-      PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
-      PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
-      PROVIDER_QUOTA_RUNS_PER_DAY: "12"
-      PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
-      PROVIDER_QUOTA_RECOVERY_VERSION: "pdf-free-limits-2026-05-05-v3"
-      PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "25"
-      FREE_CONTEXT_RUNTIME_ENABLED: "true"
-      FREE_CONTEXT_RUNTIME_TIMEOUT_SECONDS: "6"
-      PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
-      RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED: "true"
-      ENABLE_PROVIDER_DIAGNOSTICS: "true"
-      RUN_REPORT_ENABLED: "false"
-      ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
-      TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
+      MANUAL_CONTROLLED_PUBLISH_ENABLED: "true"
+      HARIZON_FAST_INVENTORY_LOCK: "true"
+      HARIZON_RUNTIME_POLICY_VERSION: "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory"
+      HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION: "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory"
+
+      # Daily inventory / near-window model readiness
+      MATCH_BOOTSTRAP_PROVIDER: "odds_api_io"
+      DAY_INVENTORY_BOOTSTRAP_PROVIDER: "odds_api_io"
+      DAY_INVENTORY_USE_FOR_RUN: "true"
+      DAY_INVENTORY_FORCE_PROVIDER_MERGE: "false"
+      DAY_INVENTORY_NEAR_WINDOW_PRIORITY: "true"
+      DAY_INVENTORY_NEAR_WINDOW_HOURS: "12"
+      CONTEXT_ENRICHMENT_REQUIRES_OFFERS: "true"
+      CONTEXT_ENRICHMENT_MATCH_LIMIT: "240"
+      ANALYSIS_MATCH_CAP_PER_RUN: "420"
+      DIAGNOSTICS_MATCH_LIMIT: "420"
+      MAX_MATCHES_FOR_ODDS_FETCH: "520"
+
+      # Controlled reserve: publish only guarded, confirmed picks
       CONTROLLED_FALLBACK_ENABLED: "true"
       CONTROLLED_FALLBACK_SEND_TELEGRAM: "true"
       CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT: "false"
       CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS: "true"
       CONTROLLED_FALLBACK_ARTIFACT_FRESHNESS_MINUTES: "90"
-      CONTROLLED_FALLBACK_ALLOWED_FAMILIES: "totals,dnb,teamtotals,btts,h2h"
+      CONTROLLED_FALLBACK_ALLOWED_FAMILIES: "totals,dnb,btts"
+      CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES: "totals,dnb,btts"
+      CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES: "totals,dnb,btts"
+      CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES: ""
+      CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED: "false"
       CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN: "2"
       CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES: "1"
+      CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES: "2"
+      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "2"
       CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS: "true"
+      CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS: "3"
       CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT: "true"
       CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP: "3.0"
       CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT: "7.0"
       CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE: "68.0"
-      CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP: "1.8"
-      CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT: "4.0"
-      SETTLEMENT_ENABLED: "true"
-      SETTLEMENT_SEND_TELEGRAM_SUMMARY: "true"
-      BANKROLL_ENABLED: "true"
+      CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP: "3.0"
+      CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT: "6.0"
+
+      # Market integrity. Spreads/team totals remain blocked until parser is verified.
       MARKET_MONITOR_ENABLED: "true"
       MARKET_DERIVED_CANDIDATES_ENABLED: "true"
       SIMPLE_MARKET_FALLBACK_ENABLED: "true"
       PARTIAL_CONTEXT_MARKET_FALLBACK_ENABLED: "true"
       SHADOW_TRACKING_ENABLED: "true"
       SELF_HISTORY_CONTEXT_ENABLED: "true"
+      BANKROLL_ENABLED: "true"
+      SETTLEMENT_ENABLED: "true"
+      SETTLEMENT_SEND_TELEGRAM_SUMMARY: "true"
       MARKET_INTEGRITY_HARD_GUARD_ENABLED: "true"
       MARKET_INTEGRITY_CANDIDATE_PATCH_ENABLED: "true"
       MARKET_INTEGRITY_MIN_BOOKS: "2"
@@ -84,54 +103,88 @@ jobs:
       MARKET_INTEGRITY_MAX_EXACT_PRICE_DISPERSION_PCT: "22"
       MARKET_INTEGRITY_MAX_EXACT_LINE_DELTA_PCT: "18"
       MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES: "true"
+      PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE: "true"
       MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS: "1.65"
+      MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED: "true"
+      MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS: "1.85"
       MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS: "3"
       MATCH_TOTAL_OVER20_MAX_REASONABLE_ODDS: "2.05"
       ENABLE_QUARTER_TOTAL_LINES: "true"
       QUARTER_TOTAL_MIN_BOOKS: "2"
-      ODDS_API_IO_MAX_REQUESTS_PER_RUN: "280"
-      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "280"
-      ODDS_API_IO_PER_RUN_MAX: "280"
-      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "140"
-      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "140"
-      ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN: "140"
-      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "1"
+      DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED: "true"
+      HANDICAP_PAIR_INTEGRITY_REQUIRED: "true"
+      SPREADS_PUBLICATION_ENABLED: "false"
+      TEAM_TOTALS_PUBLICATION_ENABLED: "false"
+
+      # odds-api.io baseline routing from the last working run.
+      ENABLE_ODDS_API_IO: "true"
+      ODDS_API_IO_ENABLED: "true"
+      ODDS_API_IO_BOOKMAKERS: "Bet365,Unibet,Betfair Exchange,Sbobet"
+      TARGET_BOOKMAKERS: "Bet365,Unibet,Betfair Exchange,Sbobet"
+      CONSENSUS_BOOKMAKERS: "Bet365,Unibet,Betfair Exchange,Sbobet"
+      SHARP_BOOKMAKERS: "Bet365,Unibet,Betfair Exchange,Sbobet"
+      ODDS_API_IO_BOOKMAKERS_ACCOUNT1: "Bet365,Unibet"
+      ODDS_API_IO_BOOKMAKERS_ACCOUNT2: "Betfair Exchange,Sbobet"
+      ODDS_API_IO_MAX_REQUESTS_PER_RUN: "200"
+      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "200"
+      ODDS_API_IO_PER_RUN_MAX: "200"
+      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "100"
+      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "100"
+      ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN: "100"
+      ODDS_API_IO_PAGE_LIMIT: "100"
+      ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "36"
+      ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED: "false"
+      ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED: "false"
+
+      # Provider budgets; apply_provider_request_budget.py rewrites exact values from config.
+      PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
+      PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
+      PROVIDER_QUOTA_RUNS_PER_DAY: "12"
+      PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
+      PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "25"
+      PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
+      PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+      ALL_SOURCES_FREE_MAXIMIZE: "true"
+      FREE_CONTEXT_RUNTIME_ENABLED: "true"
+      FREE_CONTEXT_RUNTIME_TIMEOUT_SECONDS: "6"
+      RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED: "true"
+      ENABLE_PROVIDER_DIAGNOSTICS: "true"
+      API_HEALTH_DURING_RUN_ENABLED: "true"
+      API_HEALTH_MODE: "quick"
+      API_HEALTH_GUARD_TIMEOUT_SECONDS: "55"
+
+      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "3"
       BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "3"
       BZZOIRO_PAGE_SIZE: "5"
       BZZOIRO_TIMEOUT_SECONDS: "12"
-      SSTATS_MAX_REQUESTS_PER_RUN: "6"
-      FOOTBALL_DATA_MAX_REQUESTS_PER_RUN: "12"
-      THESPORTSDB_MAX_REQUESTS_PER_RUN: "18"
-      API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN: "6"
-      ALLSPORTSAPI_MAX_REQUESTS_PER_RUN: "10"
-      FUTRIXMETRICS_MAX_REQUESTS_PER_RUN: "24"
-      HIGHLIGHTLY_MAX_REQUESTS_PER_RUN: "6"
-      HIGHLIGHTLY_BASE_URL: "https://soccer.highlightly.net"
-      HIGHLIGHTLY_SMOKE_PATH: "/leagues"
-      FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN: "1"
+      SSTATS_MAX_REQUESTS_PER_RUN: "150"
+      FOOTBALL_DATA_MAX_REQUESTS_PER_RUN: "8"
+      THESPORTSDB_MAX_REQUESTS_PER_RUN: "12"
+      ALLSPORTSAPI_MAX_REQUESTS_PER_RUN: "20"
       SPORTLOGIC_QUERY_GUARD_ENABLED: "true"
       SPORTLOGIC_BROAD_FALLBACK_ENABLED: "true"
-      SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "true"
-      SPORTLOGIC_MAX_REQUESTS_PER_RUN: "28"
+      SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "false"
+      SPORTLOGIC_BOOKMAKERS: "__probe_only__"
+      SPORTLOGIC_MAX_REQUESTS_PER_RUN: "20"
       SPORTLOGIC_PER_PAGE: "50"
-      WEATHERAPI_MAX_REQUESTS_PER_RUN: "70"
-      OPENWEATHERMAP_MAX_REQUESTS_PER_RUN: "50"
+      FUTRIXMETRICS_MAX_REQUESTS_PER_RUN: "0"
+      WEATHERAPI_MAX_REQUESTS_PER_RUN: "24"
+      OPENWEATHERMAP_MAX_REQUESTS_PER_RUN: "12"
       OPEN_METEO_ENABLED: "true"
       OPEN_METEO_MAX_REQUESTS_PER_RUN: "120"
-      METEOSTAT_RAPIDAPI_MAX_REQUESTS_PER_RUN: "1"
-      NEWSAPI_MAX_REQUESTS_PER_RUN: "5"
-      CURRENTS_MAX_REQUESTS_PER_RUN: "50"
-      GNEWS_MAX_REQUESTS_PER_RUN: "5"
-      NEWSDATA_MAX_REQUESTS_PER_RUN: "10"
-      GUARDIAN_MAX_REQUESTS_PER_RUN: "25"
+      NEWSAPI_MAX_REQUESTS_PER_RUN: "0"
+      CURRENTS_MAX_REQUESTS_PER_RUN: "0"
+      GNEWS_MAX_REQUESTS_PER_RUN: "0"
+      NEWSDATA_MAX_REQUESTS_PER_RUN: "0"
+      GUARDIAN_MAX_REQUESTS_PER_RUN: "0"
       CLUBELO_ENABLED: "true"
       CLUBELO_BASE_URL: "http://api.clubelo.com"
-      CLUBELO_MAX_REQUESTS_PER_DAY: "1"
       FOOTBALL_DATA_CO_UK_ENABLED: "true"
-      FOOTBALL_DATA_CO_UK_MAX_REQUESTS_PER_DAY: "1"
       WIKIDATA_ENABLED: "true"
       WIKIDATA_MAX_REQUESTS_PER_DAY: "8"
       WIKIDATA_SPARQL_MAX_REQUESTS_PER_DAY: "2"
+
+      # Secrets
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -139,7 +192,6 @@ jobs:
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
-      API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY || secrets.API_FOOTBALL_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
@@ -168,21 +220,25 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-      - name: Prepare clean runtime directories
+
+      - name: Prepare runtime directories
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .data/exports artifacts/run-bot
           mkdir -p .data/exports .data/cache artifacts/run-bot
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
       - name: Apply provider quota governor
         shell: bash
         run: |
@@ -193,39 +249,43 @@ jobs:
             echo "provider quota governor applied"
           else
             status=$?
-            echo "provider quota governor failed or timed out with status ${status}; applying workflow fallback env"
-            cat >> "${GITHUB_ENV}" <<'EOF'
-          PROVIDER_QUOTA_GOVERNOR_ACTIVE=fallback_workflow
-          PROVIDER_FREE_QUOTA_POLICY_ENABLED=true
-          FREE_CONTEXT_RUNTIME_ENABLED=true
-          RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED=true
-          CONTEXT_ENRICHMENT_REQUIRES_OFFERS=false
-          PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE=true
-          MARKET_INTEGRITY_HARD_GUARD_ENABLED=true
-          MARKET_INTEGRITY_CANDIDATE_PATCH_ENABLED=true
-          MARKET_INTEGRITY_MIN_BOOKS=2
-          MARKET_INTEGRITY_MIN_SOURCES=1
-          MARKET_INTEGRITY_SINGLE_SOURCE_MIN_BOOKS=3
-          MARKET_INTEGRITY_USE_EXACT_PRICE_SOURCES=true
-          MARKET_INTEGRITY_MAX_PRICE_DISPERSION_PCT=30
-          MARKET_INTEGRITY_MAX_EXACT_PRICE_DISPERSION_PCT=22
-          MARKET_INTEGRITY_MAX_EXACT_LINE_DELTA_PCT=18
-          MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS=1.65
-          MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS=3
-          MATCH_TOTAL_OVER20_MAX_REASONABLE_ODDS=2.05
-          ODDS_API_IO_PER_RUN_MAX=160
-          ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN=160
-          ODDS_API_IO_MAX_REQUESTS_PER_RUN=160
-          ODDS_API_IO_ACCOUNT1_PER_RUN_MAX=80
-          ODDS_API_IO_ACCOUNT2_PER_RUN_MAX=80
-          MAX_MATCHES_FOR_ODDS_FETCH=360
-          ANALYSIS_MATCH_CAP_PER_RUN=420
-          DIAGNOSTICS_MATCH_LIMIT=420
-          EOF
-            cat > .data/exports/latest-provider-quota-governor.json <<'JSON'
-          {"enabled": true, "mode": "fallback_workflow_static_limits", "reason": "provider quota governor failed or timed out before bot run"}
-          JSON
+            echo "provider quota governor failed or timed out with status ${status}; continuing with request-budget policy"
           fi
+
+      - name: Apply provider request budget
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache artifacts/run-bot
+          echo "provider request budget start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 45s python -u scripts/apply_provider_request_budget.py; then
+            echo "provider request budget applied"
+          else
+            status=$?
+            echo "provider request budget failed or timed out with status ${status}; applying minimal baseline env"
+            cat >> "${GITHUB_ENV}" <<'EOF'
+          HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION=harizon-runtime-policy-v5-live-controlled-publish-fast-inventory
+          MATCH_BOOTSTRAP_PROVIDER=odds_api_io
+          DAY_INVENTORY_BOOTSTRAP_PROVIDER=odds_api_io
+          DAY_INVENTORY_USE_FOR_RUN=true
+          DAY_INVENTORY_FORCE_PROVIDER_MERGE=false
+          CONTEXT_ENRICHMENT_REQUIRES_OFFERS=true
+          ENABLE_ODDS_API_IO=true
+          ODDS_API_IO_ENABLED=true
+          ODDS_API_IO_BOOKMAKERS_ACCOUNT1=Bet365,Unibet
+          ODDS_API_IO_BOOKMAKERS_ACCOUNT2=Betfair Exchange,Sbobet
+          ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED=false
+          ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED=false
+          ENABLE_SSTATS=true
+          SSTATS_ENABLED=true
+          ENABLE_BZZOIRO_CONTEXT=true
+          BZZOIRO_ENABLED=true
+          CONTROLLED_FALLBACK_ALLOWED_FAMILIES=totals,dnb,btts
+          SPREADS_PUBLICATION_ENABLED=false
+          TEAM_TOTALS_PUBLICATION_ENABLED=false
+          EOF
+          fi
+
       - name: Run tests
         shell: bash
         run: |
@@ -237,6 +297,7 @@ jobs:
             status=$?
             echo "unit tests failed or timed out with status ${status}; continuing production run"
           fi
+
       - name: Run bot
         shell: bash
         run: |
@@ -259,7 +320,9 @@ jobs:
           cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
+          cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
+
       - name: Publish controlled fallback
         shell: bash
         run: |
@@ -271,6 +334,7 @@ jobs:
           python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
+
       - name: Send enhanced Telegram run report
         if: always()
         shell: bash
@@ -283,6 +347,7 @@ jobs:
           python scripts/send_enhanced_telegram_run_report.py || true
           cp .data/exports/latest-enhanced-telegram-run-report.txt artifacts/run-bot/latest-enhanced-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-enhanced-telegram-run-report.json artifacts/run-bot/latest-enhanced-telegram-run-report.json 2>/dev/null || true
+
       - name: Commit runtime artifacts
         if: always()
         shell: bash
@@ -294,9 +359,10 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_quota_state.json || true
+          git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
+
       - name: Upload run artifact
         if: always()
         uses: actions/upload-artifact@v5
@@ -305,7 +371,9 @@ jobs:
           path: |
             artifacts/run-bot/**
             .data/exports/**
+            .data/cache/**
             .data/provider_quota_governor_state.json
+            .data/provider_request_budget_state.json
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 7
