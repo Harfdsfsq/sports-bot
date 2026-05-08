@@ -55,10 +55,17 @@ def _apply_api_max_runtime_overrides() -> None:
             'TELEGRAM_MIN_ODDS_SOURCES': '1',
             'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.65',
             'MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS': '3',
+            'MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED': 'true',
+            'MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS': '1.85',
             'ENABLE_QUARTER_TOTAL_LINES': 'true',
             'QUARTER_TOTAL_MIN_BOOKS': '2',
         }
     )
+    try:
+        from app.services import api_runtime_enhancements
+        api_runtime_enhancements.install()
+    except Exception:
+        pass
     try:
         from app.services import market_integrity
         market_integrity.install()
