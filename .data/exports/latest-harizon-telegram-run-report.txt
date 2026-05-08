@@ -7,18 +7,18 @@
 📦 Дневной inventory
 • Матчей всего: 49
 • С линиями: 0/49
-• С контекстом: 35/49
+• С контекстом: 30/49
 • Готово к модели: 0/49
 • Ближайшие 6 часов: 0/45 готово
 • Следующие 12 часов: 0/45 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 45 | с линиями: 0 | контекстов: 35
+• Матчи: 45 | с линиями: 0 | контекстов: 30
 • Кандидаты: raw 0 | до качества 0 | publishable 0
 • Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
 • матчей с линиями из любого источника: 0
-• матчей с любым контекстом: 35
-• матчей с объединенным контекстом: 35
+• матчей с любым контекстом: 30
+• матчей с объединенным контекстом: 30
 • raw с market-derived сигналом: 0
 • Фильтр времени: after 45/49, outside 3, too soon 1, started 0
 • Matching: odds exact 42, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 2, thesportsdb ctx 4
@@ -26,17 +26,17 @@
 📡 Источники / фактическая работа
 • odds_api_io: events req 0, odds req 10, err 0, events 100, matched 45, offers 0
 • odds_api_io_bootstrap: events req 2, err 0, events 100, matches 46
-• allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 9
-• bzzoiro: req 6, err 0, events 50, ctx 2
-• sstats: req 29, err 0, ctx 35, rows 24359
+• allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 0
+• bzzoiro: req 5, err 0, events 51, ctx 2
+• sstats: req 29, err 0, ctx 30, rows 24359
 • football_data: req 1, err 0, matched 0, ctx 0
 • thesportsdb: req 8, err 0, ctx 4
-• sportlogic: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
-• espn: err 0, events 78, matched 0, ctx 0
+• sportlogic: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
+• espn: err 0, events 72, matched 0, ctx 0
 • openligadb: req 0, err 0, ctx 0
 • openfootball: req 0, err 0, ctx 0
 • futrixmetrics: req 12, err 0, ctx 0
-• weather: req 31, err 6, ctx 25, weatherapi 24, owm 7, cache 0, budget_exhausted
+• weather: req 30, err 6, ctx 24, weatherapi 24, owm 6, cache 0, budget_exhausted
 • newsapi: req 0, err 0, ctx 0, cache 0, budget_exhausted
 • gnews: req 0, err 0, ctx 0, budget_exhausted
 • self_history: ctx 0
@@ -52,7 +52,7 @@
 • account1: Bet365,Unibet | req 5 | offers 0
 • account2: Betfair Exchange,Sbobet | req 5 | offers 0
 • Матчи с 2+ букмекерами: 0; с 1 букмекером: 0
-• Последний ответ odds: [{"id":67647970,"home":"Thespakusatsu","away":"Tochigi City FC","date":"2026-05-09T05:00:00Z","status":"pending","sport":{"name":"Football","slug":"football"},"league":{"name":"Japan - J.League 2","slug":"japan-jleague-2
+• Последний ответ odds: [{"id":67817678,"home":"Jeju SK FC","away":"FC Seoul","date":"2026-05-09T05:00:00Z","status":"pending","sport":{"name":"Football","slug":"football"},"league":{"name":"Republic of Korea - K-League 1","slug":"republic-of-k
 
 🚫 Почему не прошли
 • Нет свежей расшифровки reject reasons.
@@ -67,13 +67,13 @@
   - runtime: events req 0, odds req 10, err 0, events 100, matched 45, offers 0
   - квота: grant 200, reason granted, status critical_live_odds
 • allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
-  - runtime: req 1, err 0, matched 0, offers 0, fixtures 9
+  - runtime: req 1, err 0, matched 0, offers 0, fixtures 0
   - квота: grant 20, reason granted, status fixture_and_secondary_odds_probe
 • bzzoiro: контекст/прогнозы; независимое подтверждение
-  - runtime: req 6, err 0, events 50, ctx 2
+  - runtime: req 5, err 0, events 51, ctx 2
   - квота: grant 1000, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: req 29, err 0, ctx 35, rows 24359
+  - runtime: req 29, err 0, ctx 30, rows 24359
   - квота: grant 150, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
   - runtime: req 1, err 0, matched 0, ctx 0
@@ -82,12 +82,12 @@
   - runtime: req 8, err 0, ctx 4
   - квота: grant 12, reason granted, status context_only_alias_sensitive_near_window_first
 • weather: погодный overlay: WeatherAPI first, OpenWeatherMap fallback
-  - runtime: req 31, err 6, ctx 25, weatherapi 24, owm 7, cache 0, budget_exhausted
+  - runtime: req 30, err 6, ctx 24, weatherapi 24, owm 6, cache 0, budget_exhausted
 • sportlogic: probe/context; odds остаются под контролем до подтверждения схемы
-  - runtime: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
+  - runtime: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
   - квота: grant 20, reason enabled_for_context_matching_probe:odds_quarantined_until_parser_verified, status context_probe_odds_quarantined
 • espn: вспомогательный публичный контекст и алиасы
-  - runtime: err 0, events 78, matched 0, ctx 0
+  - runtime: err 0, events 72, matched 0, ctx 0
 • openligadb: вспомогательный календарь/контекст
   - runtime: req 0, err 0, ctx 0
 
