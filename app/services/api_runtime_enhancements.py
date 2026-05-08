@@ -217,6 +217,20 @@ def install_env_defaults() -> None:
     _set_default("DAY_INVENTORY_FORCE_PROVIDER_MERGE", "false")
     _set_default("DAY_INVENTORY_NEAR_WINDOW_PRIORITY", "true")
     _set_default("DAY_INVENTORY_NEAR_WINDOW_HOURS", "12")
+    _set_default("DAY_INVENTORY_ACCUMULATION_ENABLED", "true")
+    _set_default("FIXTURE_EXPANSION_ENABLED", "true")
+    _set_default("RUNTIME_PRE_PREDICTION_INVENTORY_HOOKS_ENABLED", "true")
+    _set_default("RUNTIME_POST_PREDICTION_INVENTORY_HOOKS_ENABLED", "true")
+    _set_default("LINE_MOVEMENT_GUARD_ENABLED", "true")
+    _set_default("LINE_MOVEMENT_DROP_BAD_CANDIDATES", "true")
+    _set_default("CRON_EXPECTED_INTERVAL_MINUTES", "120")
+    _set_default("FINAL_PRE_KICKOFF_REFRESH_WINDOW_MINUTES", "150")
+    _set_default("FINAL_PRE_KICKOFF_MAX_LINE_AGE_MINUTES", "18")
+    _set_default("URGENT_KICKOFF_WINDOW_MINUTES", "180")
+    _set_default("URGENT_ODDS_MAX_AGE_MINUTES", "35")
+    _set_default("LINE_MOVEMENT_MAX_NEGATIVE_PRICE_MOVE_PCT", "8.0")
+    _set_default("LINE_MOVEMENT_MIN_CURRENT_EV_PCT", "3.0")
+    _set_default("LINE_MOVEMENT_MIN_CURRENT_EDGE_PP", "1.5")
 
     _set_default("VOLUME_POLICY_MODE", "target_5")
     _set_default("DAILY_TARGET_PICKS", "5")
@@ -333,6 +347,11 @@ def install_env_defaults() -> None:
 
 def install() -> None:
     install_env_defaults()
+    try:
+        from app.services import runtime_inventory_hooks
+        runtime_inventory_hooks.install()
+    except Exception:
+        pass
     patch_runner_provider_policy()
     try:
         from app.providers import odds_api_io_startup_compat
