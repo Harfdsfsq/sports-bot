@@ -6,39 +6,39 @@
 
 📦 Дневной inventory
 • Матчей всего: 48
-• С линиями: 30/48
-• С контекстом: 31/48
-• Готово к модели: 30/48
-• Ближайшие 6 часов: 30/40 готово
-• Следующие 12 часов: 30/40 готово
+• С линиями: 31/48
+• С контекстом: 28/48
+• Готово к модели: 28/48
+• Ближайшие 6 часов: 31/39 готово
+• Следующие 12 часов: 28/39 готово
 
 ⚙️ Что сделал скрипт
-• Матчи: 40 | с линиями: 30 | контекстов: 31
+• Матчи: 39 | с линиями: 31 | контекстов: 28
 • Кандидаты: raw 0 | до качества 0 | publishable 0
 • Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
-• матчей с линиями из любого источника: 30
-• матчей с любым контекстом: 31
-• матчей с объединенным контекстом: 31
+• матчей с линиями из любого источника: 31
+• матчей с любым контекстом: 28
+• матчей с объединенным контекстом: 28
 • raw с market-derived сигналом: 0
-• Фильтр времени: after 40/48, outside 3, too soon 5, started 0
-• Matching: odds exact 37, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 2, thesportsdb ctx 2
+• Фильтр времени: after 39/48, outside 3, too soon 6, started 0
+• Matching: odds exact 36, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 2, thesportsdb ctx 1
 
 📡 Источники / фактическая работа
-• odds_api_io: events req 0, odds req 8, err 0, events 100, matched 40, offers 2263
+• odds_api_io: events req 0, odds req 8, err 0, events 100, matched 39, offers 2464
 • odds_api_io_bootstrap: events req 2, err 0, events 100, matches 45
 • allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 0
-• bzzoiro: req 5, err 0, events 51, ctx 2
-• sstats: req 29, err 0, ctx 31, rows 24359
+• bzzoiro: req 6, err 0, events 52, ctx 2
+• sstats: req 29, err 0, ctx 28, rows 24359
 • football_data: req 1, err 0, matched 0, ctx 0
-• thesportsdb: req 7, err 0, ctx 2
+• thesportsdb: req 3, err 0, ctx 1
 • sportlogic: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
 • espn: err 0, events 74, matched 0, ctx 0
 • openligadb: req 0, err 0, ctx 0
 • openfootball: req 0, err 0, ctx 0
 • futrixmetrics: req 12, err 0, ctx 0
 • weather: req 16, err 4, ctx 12, weatherapi 12, owm 4, cache 0, budget_exhausted
-• newsapi: disabled
-• gnews: disabled
+• newsapi: req 0, err 0, ctx 0, cache 0, budget_exhausted
+• gnews: req 0, err 0, ctx 0, budget_exhausted
 • self_history: ctx 0
 • market_monitor: нет данных
 • match_bootstrap: events req 2, err 0, events 100, matches 45
@@ -49,10 +49,10 @@
 • api_football: disabled
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 4 | offers 1037
-• account2: Betfair Exchange,Sbobet | req 4 | offers 1226
+• account1: Bet365,Unibet | req 4 | offers 1131
+• account2: Betfair Exchange,Sbobet | req 4 | offers 1333
 • Букмекеры в ответах: Bet365, Betfair Exchange, Sbobet, Unibet
-• Матчи с 2+ букмекерами: 17; с 1 букмекером: 13
+• Матчи с 2+ букмекерами: 18; с 1 букмекером: 13
 
 🚫 Почему не прошли
 • Нет свежей расшифровки reject reasons.
@@ -64,22 +64,22 @@
 
 🧩 Работа API — разбор
 • odds_api_io: главный источник линий и списка матчей по целевым букмекерам
-  - runtime: events req 0, odds req 8, err 0, events 100, matched 40, offers 2263
+  - runtime: events req 0, odds req 8, err 0, events 100, matched 39, offers 2464
   - квота: grant 120, reason granted, status critical_inventory_and_primary_live_odds
 • allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
   - runtime: req 1, err 0, matched 0, offers 0, fixtures 0
   - квота: grant 24, reason granted, status secondary_fixture_and_odds_rescue
 • bzzoiro: контекст/прогнозы; независимое подтверждение
-  - runtime: req 5, err 0, events 51, ctx 2
+  - runtime: req 6, err 0, events 52, ctx 2
   - квота: grant 24, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: req 29, err 0, ctx 31, rows 24359
+  - runtime: req 29, err 0, ctx 28, rows 24359
   - квота: grant 36, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
   - runtime: req 1, err 0, matched 0, ctx 0
   - квота: grant 6, reason granted, status context_only_cached_league_calendar
 • thesportsdb: fixture/алиасы команд и лиг
-  - runtime: req 7, err 0, ctx 2
+  - runtime: req 3, err 0, ctx 1
   - квота: grant 10, reason granted, status alias_and_fixture_context_cached
 • weather: погодный overlay: WeatherAPI first, OpenWeatherMap fallback
   - runtime: req 16, err 4, ctx 12, weatherapi 12, owm 4, cache 0, budget_exhausted
