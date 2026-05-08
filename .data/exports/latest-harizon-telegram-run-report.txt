@@ -1,0 +1,122 @@
+🧾 Подробный отчёт run — прогнозов нет
+
+🧭 Runtime policy
+• Версия: harizon-runtime-policy-v5-live-controlled-publish-fast-inventory
+• Inventory bootstrap: odds_api_io | provider merge: false
+
+📦 Дневной inventory
+• Матчей всего: 61
+• С линиями: 0/61
+• С контекстом: 32/61
+• Готово к модели: 0/61
+• Ближайшие 6 часов: 0/40 готово
+• Следующие 12 часов: 0/40 готово
+
+⚙️ Что сделал скрипт
+• Матчи: 40 | с линиями: 0 | контекстов: 32
+• Кандидаты: raw 0 | до качества 0 | publishable 0
+• Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
+• матчей с линиями из любого источника: 0
+• матчей с любым контекстом: 32
+• матчей с объединенным контекстом: 32
+• raw с market-derived сигналом: 0
+• Фильтр времени: after 40/61, outside 0, too soon 8, started 13
+• Matching: odds exact 37, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 0, thesportsdb ctx 3
+
+📡 Источники / фактическая работа
+• odds_api_io: events req 0, odds req 8, err 0, events 100, matched 40, offers 0
+• odds_api_io_bootstrap: events req 2, err 0, events 100, matches 48
+• allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 9
+• bzzoiro: req 5, err 0, events 50, ctx 0
+• sstats: req 29, err 0, ctx 32, rows 24359
+• football_data: req 1, err 0, matched 0, ctx 0
+• thesportsdb: req 5, err 0, ctx 3
+• sportlogic: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
+• espn: err 0, events 78, matched 0, ctx 0
+• openligadb: req 0, err 0, ctx 0
+• openfootball: req 0, err 0, ctx 0
+• futrixmetrics: req 12, err 0, ctx 0
+• weather: req 32, err 8, ctx 24, weatherapi 24, owm 8, cache 0, budget_exhausted
+• newsapi: disabled
+• gnews: disabled
+• self_history: ctx 0
+• market_monitor: нет данных
+• match_bootstrap: events req 2, err 0, events 100, matches 48
+• bookies_bootstrap: disabled
+• bookies_api: disabled
+• oddspapi: disabled
+• sportlogic_context: odds req 0, req 0, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 0, fixtures 0
+• api_football: disabled
+
+📈 odds-api.io routing
+• account1: Bet365,Unibet | req 4 | offers 0
+• account2: Betfair Exchange,Sbobet | req 4 | offers 0
+• Матчи с 2+ букмекерами: 0; с 1 букмекером: 0
+• Последний ответ odds: []
+
+🚫 Почему не прошли
+• Нет свежей расшифровки reject reasons.
+
+🧠 Автообучение
+• Выборка: 0/30 закрытых ставок | sample_ready=false
+• Режим: observe_only
+• Фильтры не менялись: идёт накопление статистики.
+
+🧩 Работа API — разбор
+• odds_api_io: главный источник линий и списка матчей по целевым букмекерам
+  - runtime: events req 0, odds req 8, err 0, events 100, matched 40, offers 0
+  - квота: grant 200, reason granted, status critical_live_odds
+• allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
+  - runtime: req 1, err 0, matched 0, offers 0, fixtures 9
+  - квота: grant 20, reason granted, status fixture_and_secondary_odds_probe
+• bzzoiro: контекст/прогнозы; независимое подтверждение
+  - runtime: req 5, err 0, events 50, ctx 0
+  - квота: grant 1000, reason granted, status high_quality_context_near_window_first
+• sstats: форма/статистика команд; основной near-window context provider
+  - runtime: req 29, err 0, ctx 32, rows 24359
+  - квота: grant 150, reason granted, status critical_team_form_context_near_window_first
+• football_data: fixture/league calendar; добор матчей и алиасы
+  - runtime: req 1, err 0, matched 0, ctx 0
+  - квота: grant 8, reason granted, status context_only_low_overlap_near_window_first
+• thesportsdb: fixture/алиасы команд и лиг
+  - runtime: req 5, err 0, ctx 3
+  - квота: grant 12, reason granted, status context_only_alias_sensitive_near_window_first
+• weather: погодный overlay: WeatherAPI first, OpenWeatherMap fallback
+  - runtime: req 32, err 8, ctx 24, weatherapi 24, owm 8, cache 0, budget_exhausted
+• sportlogic: probe/context; odds остаются под контролем до подтверждения схемы
+  - runtime: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
+  - квота: grant 20, reason enabled_for_context_matching_probe:odds_quarantined_until_parser_verified, status context_probe_odds_quarantined
+• espn: вспомогательный публичный контекст и алиасы
+  - runtime: err 0, events 78, matched 0, ctx 0
+• openligadb: вспомогательный календарь/контекст
+  - runtime: req 0, err 0, ctx 0
+
+🔌 API / квоты последнего run
+• odds_api_io: grant 200, reason granted
+• allsportsapi: grant 20, reason granted
+• bzzoiro: grant 1000, reason granted
+• sstats: grant 150, reason granted
+• football_data: grant 8, reason granted
+• thesportsdb: grant 12, reason granted
+• openfootball_public: grant 4, reason granted
+• weatherapi: grant 24, reason granted
+• openweathermap: grant 12, reason granted
+• highlightly: grant 0, reason health_probe_only:not_integrated_into_prediction_runtime
+• sportlogic: grant 20, reason enabled_for_context_matching_probe:odds_quarantined_until_parser_verified
+• futrixmetrics: grant 0, reason disabled_by_useful_request_policy:low_recent_yield
+• newsapi_currents: grant 0, reason disabled_by_useful_request_policy:news_context_not_every_run
+• gnews: grant 0, reason disabled_by_useful_request_policy:news_context_not_every_run
+• newsdata: grant 0, reason health_probe_only:news_context_not_every_run
+• guardian: grant 0, reason health_probe_only:news_context_not_every_run
+• sharpapi: grant 0, reason health_probe_only:text_enrichment_not_core_prediction
+• meteostat: grant 0, reason disabled_by_useful_request_policy:weatherapi_first
+• oddsfeed: grant 0, reason disabled_until_endpoint_schema_verified
+• sportsbook_api: grant 0, reason disabled_until_endpoint_schema_verified
+• sportapi: grant 0, reason disabled_until_endpoint_schema_verified
+• freeapilivefootball: grant 0, reason disabled_until_endpoint_schema_verified
+
+📌 Вывод
+• Главный стопор этого run — нет свежих odds-offers. Модель не должна строить прогнозы без актуальной линии.
+• Следующий приоритет — восстановить offers_parsed у odds-api.io или включить проверенный резервный odds-source.
+
+⚖️ Дисклеймер: это аналитический отчёт бота, не гарантия результата и не финансовая рекомендация.
