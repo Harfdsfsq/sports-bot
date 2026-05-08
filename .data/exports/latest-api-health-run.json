@@ -1,0 +1,420 @@
+{
+  "active_provider_checks": [
+    "odds_api_io",
+    "allsportsapi",
+    "sportlogic",
+    "sstats",
+    "bzzoiro",
+    "football_data",
+    "thesportsdb",
+    "highlightly",
+    "weatherapi",
+    "openweathermap",
+    "meteostat",
+    "newsapi",
+    "currents",
+    "gnews",
+    "newsdata",
+    "guardian",
+    "sharpapi",
+    "futrixmetrics"
+  ],
+  "by_group": {
+    "context": {
+      "config_only": 1,
+      "ok": 5
+    },
+    "news": {
+      "ok": 5
+    },
+    "odds": {
+      "ok": 2
+    },
+    "odds_context": {
+      "ok": 1
+    },
+    "utility": {
+      "missing_secret": 1
+    },
+    "weather": {
+      "ok": 3
+    }
+  },
+  "by_status": {
+    "config_only": 1,
+    "missing_secret": 1,
+    "ok": 16
+  },
+  "created_at_utc": "2026-05-08T19:17:21.036237+00:00",
+  "critical_failures": [],
+  "mode": "quick",
+  "recommendations": [
+    "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
+    "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
+    "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
+    "TheSportsDB is reachable; use it for team/league alias enrichment.",
+    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
+  ],
+  "removed_providers": [
+    "api_football",
+    "bookies_api",
+    "oddspapi"
+  ],
+  "results": [
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"count\":118,\"next\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-08&date_to=2026-05-09&page=2&tz=UTC&upcoming=true\",\"previous\":null,\"results\":[{\"id\":3583,\"event\":{\"id\":9423,\"league\":{\"id\":32,\"name\":\"Copa Libertadores\",\"country\":\"South America\",\"is_women\":false,\"current_season\":{\"id\":96,\"name\":\"CONMEBOL Libertadores 2026\",\"year\":2026,\"start_date\":\"2026-01-01\",\"end_date\":\"2026-12-31\"}},\"season\":{\"id\":96,\"name\":\"CONMEBOL Libertadores 2026\",\"year\":2026},\"home_team\":\"Coquimbo Unido\",\"away_team\":\"Universitario de Deportes\",\"home_team_obj\":{\"id\":783,\"name\":\"Coquimbo Unido\",\"short_name\":\"\",\"country\":\"Chile\",\"coach\":{\"name\":\"Hernan Caputto\",\"shortName\":\"H. Caputto\"},\"venue\":{\"id\":582,\"name\":\"Francisco Sánchez Rumoroso\",\"city\":\"Coquimbo\",\"country\":\"Chile\",\"capacity\":18750}},\"away_team_obj\":{\"id\":782,\"name\":\"Universitario de Deportes\",\"short_name\":\"Universitario\",\"country\":\"Peru\",\"coach\":{\"name\":\"Jorge Araujo\",\"shortName\":\"J. Araujo\"},\"venue\":{\"id\":581,\"name\":\"Estadio Monumental\",\"city\":\"Lima\",\"country\":\"Peru\",\"capacity\":80093}},\"event_date\":\"2026-05-08T00:00:00Z\",\"round_number\":4,\"round_name\":\"\",\"group_name\":null,\"status\":\"finished\",\"home_score\":2,\"away_score\":1,\"home_score",
+        "payload_shape": "count,next,previous,results"
+      },
+      "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-08&date_to=2026-05-09&upcoming=true&tz=UTC&page=1",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 2184,
+      "message": "ok",
+      "provider": "bzzoiro",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 50
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"count\":13,\"filters\":{\"client\":\"Rick Dalton\"},\"competitions\":[{\"id\":2013,\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":15,\"winner\":null},\"numberOfAvailableSeasons\":10,\"lastUpdated\":\"2024-09-13T16:55:53Z\"},{\"id\":2016,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Championship\",\"code\":\"ELC\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/ELC.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2416,\"startDate\":\"2025-08-08\",\"endDate\":\"2026-05-12\",\"currentMatchday\":46,\"winner\":null},\"numberOfAvailableSeasons\":9,\"lastUpdated\":\"2024-09-13T16:51:18Z\"},{\"id\":2021,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-",
+        "payload_shape": "competitions,count,filters"
+      },
+      "endpoint": "https://api.football-data.org/v4/competitions",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 657,
+      "message": "ok",
+      "provider": "football_data",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 13
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "runtime_effect": "not treated as health failure",
+        "set": "FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT for live probe"
+      },
+      "endpoint": "",
+      "group": "context",
+      "http_statuses": [],
+      "latency_ms": null,
+      "message": "key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured",
+      "provider": "futrixmetrics",
+      "requests": 0,
+      "status": "config_only",
+      "useful_rows": 0
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"data\":[{\"id\":1270962476,\"round\":\"Group Stage\",\"date\":\"2026-05-08T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":15637909,\"logo\":\"https://highlightly.net/soccer/images/teams/15637909.png\",\"name\":\"Monterey Bay\"},\"homeTeam\":{\"id\":17708392,\"logo\":\"https://highlightly.net/soccer/images/teams/17708392.png\",\"name\":\"Lexington\"},\"league\":{\"id\":217789,\"logo\":\"https://highlightly.net/soccer/images/leagues/217789.png\",\"name\":\"USL Championship\",\"season\":2026}},{\"id\":1311595173,\"round\":\"Regular Season - 4\",\"date\":\"2026-05-08T23:00:00.000Z\",\"country\":{\"code\":\"BR\",\"name\":\"Brazil\",\"logo\":\"https://highlightly.net/soccer/images/countries/BR.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":23562421,\"logo\":null,\"name\":\"José Bonifácio\"},\"homeTeam\":{\"id\":21931054,\"logo\":null,\"name\":\"Assisense\"},\"league\":{\"id\":935182,\"logo\":null,\"name\":\"Campeonato Paulista Segunda Divisão\",\"season\":2026}},{\"id\":1287632715,\"round\":\"Group Stage\",\"date\":\"2026-05-08T23:00:00.000Z\",\"",
+        "expected_base": "https://soccer.highlightly.net",
+        "payload_shape": "data,pagination,plan",
+        "rapidapi_base": "https://football-highlights-api.p.rapidapi.com"
+      },
+      "endpoint": "https://soccer.highlightly.net/matches?date=2026-05-08&limit=5",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 288,
+      "message": "ok",
+      "provider": "highlightly",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 5
+    },
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"status\":\"OK\",\"count\":5,\"data\":[{\"id\":1543852,\"flashId\":\"OUKXRWMc\",\"date\":\"2026-05-06T21:00:00+00:00\",\"dateUtc\":1778101200,\"status\":8,\"periods\":[\"2026-05-06T21:00:00+00:00\",\"2026-05-06T22:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":5,\"homeResult\":0,\"awayResult\":2,\"homeHTResult\":0,\"awayHTResult\":0,\"homeFTResult\":0,\"awayFTResult\":2,\"homeTeam\":{\"id\":3645,\"name\":\"Mixco\",\"flashId\":\"deportivo-mixco/px1qQF6N\",\"country\":{\"code\":\"GT\",\"name\":\"Guatemala\"}},\"awayTeam\":{\"id\":3665,\"name\":\"Municipal\",\"flashId\":\"municipal/r5ooNVip\",\"country\":{\"code\":\"GT\",\"name\":\"Guatemala\"}},\"season\":{\"uid\":\"b1d3b841-5716-11f0-9829-3cecef730a49\",\"year\":2025,\"league\":{\"id\":339,\"name\":\"Liga Nacional\",\"country\":{\"code\":\"GT\",\"name\":\"Guatemala\"},\"flashScoreId\":\"guatemala/liga-nacional\"}},\"roundName\":\"Semi-finals\",\"odds\":[{\"marketId\":1,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":2.6,\"openingValue\":null},{\"name\":\"Away\",\"value\":2.9,\"openingValue\":null},{\"name\":\"Draw\",\"value\":2.7,\"openingValue\":null}]},{\"marketId\":2,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.77,\"openingValue\":null},{\"name\":\"Away\",\"value\":1.95,\"openingValue\":null}]},{\"marketId\":12,\"marketName\":null,\"odds\":[{\"name\":\"Home/D",
+        "payload_shape": "count,data,offset,status,traceId"
+      },
+      "endpoint": "https://api.sstats.net/Games/list?apikey=***&from=2026-05-07&to=2026-05-08&limit=5&offset=0",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 521,
+      "message": "ok",
+      "provider": "sstats",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 5
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"countries\":[{\"idLeague\":\"4570\",\"idAPIfootball\":\"7364\",\"idAPIfootballv3\":\"48\",\"strSport\":\"Soccer\",\"strLeague\":\"EFL Cup\",\"strLeagueAlternate\":\"Football League Cup, Carabao Cup\",\"intDivision\":\"99\",\"idCup\":\"1\",\"strCurrentSeason\":\"2025-2026\",\"intFormedYear\":\"1960\",\"dateFirstEvent\":\"2006-02-26\",\"strGender\":\"Male\",\"strCountry\":\"England\",\"strWebsite\":\"www.efl.com\\/carabao-cup\",\"strFacebook\":\"www.facebook.com\\/TheCarabaoCup\\/\",\"strInstagram\":\"\",\"strTwitter\":\"twitter.com\\/carabao_cup\",\"strYoutube\":\"\",\"strRSS\":\"\",\"strDescriptionEN\":\"The EFL Cup (referred to historically, and colloquially, as simply the League Cup), currently known as the Carabao Cup for sponsorship reasons, is an annual knockout football competition in men's domestic English football. Organised by the English Football League (EFL), it is open to any club within the top four levels of the English football league system – 92 clubs in total – comprising the top level Premier League, and the three divisions of the English Football League's own league competition (Championship, League One and League Two).\\r\\n\\r\\nFirst held in 1960–61 as the Football League Cup, it is one of the three top-tier domestic football competitions in En",
+        "free_key_defaulted": true,
+        "payload_shape": "countries"
+      },
+      "endpoint": "https://www.thesportsdb.com/api/v1/json/123/search_all_leagues.php?c=England&s=Soccer",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 171,
+      "message": "ok",
+      "provider": "thesportsdb",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 5
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"a83390cf-696a-5fe9-a3a5-09126d69be0e\",\"title\":\"Clayton McMillan staying on as Munster head coach is in the interest of both parties\",\"description\":\"At a time of instability, changing coaches is not ideal for Munster\",\"url\":\"https://www.irishtimes.com/sport/rugby/2026/05/08/clayton-mcmillan-staying-on-as-munster-head-coach-is-in-the-interest-of-both-parties/\",\"author\":\"Gerry Thornley\",\"image\":\"https://www.irishtimes.com/resizer/v2/7WXJZIJY4S6GUWWPR6LQUEY2W4.jpg?smart=true&auth=6e4f457f9d96dde1accf07fd281bca7df9e115898db00190aae3a8391f2e322a&width=1200&height=630\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-08 19:05:44 +0000\"},{\"id\":\"9654a6d2-7a5a-5490-88f4-5bcf8536f92c\",\"title\":\"Robby Snelling, Marlins' No. 2 prospect, set for MLB debut\",\"description\":\"Pitcher Robby Snelling, the Marlins No. 2 overall prospect, will make his MLB debut Friday against the Nationals.\",\"url\":\"https://www.espn.com/mlb/story/_/id/48713516/marlins-no-2-prospect-snelling-set-mlb-debut-vs-nationals\",\"author\":\"Associated Press\",\"image\":\"https://a3.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0505%2Fr1654025_1296x729_16%2D9.jpg\",\"languag",
+        "payload_shape": "news,page,status"
+      },
+      "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 683,
+      "message": "ok",
+      "provider": "currents",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 30
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318536,\"articles\":[{\"id\":\"86e13e0862441d94c982becff1542adc\",\"title\":\"Everyone says the same thing as Prince William 'goes mental' at football match\",\"description\":\"The Prince of Wales was spotted in Birmingham on Thursday evening\",\"content\":\"Royal fans were delighted after they caught a glimpse of Prince William during a football match in Birmingham. The Prince of Wales was seen celebrating and cheering on Aston Villa as it beat Nottingham Forest and qualified for the Europa League final... [2316 chars]\",\"url\":\"https://www.express.co.uk/news/royal/2203122/prince-william-aston-villa-match-latest\",\"image\":\"https://cdn.images.express.co.uk/img/dynamic/106/1200x630/6908121.jpg\",\"publishedAt\":\"2026-05-08T07:15:00Z\",\"lang\":\"en\",\"source\":{\"id\":\"c97ef3cad273a1993c998ca7ddcc5212\",\"name\":\"Daily Express\",\"url\":\"https://www.express.co.uk\",\"country\":\"gb\"}}]}",
+        "payload_shape": "articles,information,totalArticles"
+      },
+      "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 368,
+      "message": "ok",
+      "provider": "gnews",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134250,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134250,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "payload_shape": "response"
+      },
+      "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 575,
+      "message": "ok",
+      "provider": "guardian",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":23743,\"articles\":[{\"source\":{\"id\":null,\"name\":\"New York Post\"},\"author\":\"Sean Treppedi\",\"title\":\"Polymarket promo code NYPMAX: Deposit $20, get $20 for Phillies vs. Athletics\",\"description\":\"Deposit $20 get $20 bonus with Polymarket promo code NYPMAX. Use our code to skip the waitlist.\",\"url\":\"https://nypost.com/2026/05/07/betting/polymarket-promo-code-nypmax-deposit-20-get-20-for-phillies-vs-athletics/\",\"urlToImage\":\"https://nypost.com/wp-content/uploads/sites/2/2026/05/crop-39311474_1d6056.jpg?quality=75&strip=all&w=1200\",\"publishedAt\":\"2026-05-07T19:15:00Z\",\"content\":\"Gambling content 21+. The New York Post may receive an affiliate commission if you sign up through our links. Read our editorial standards for more information.\\r\\nNo team is hotter than the Phillies h… [+2211 chars]\"}]}",
+        "payload_shape": "articles,status,totalResults"
+      },
+      "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 125,
+      "message": "ok",
+      "provider": "newsapi",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"status\":\"success\",\"totalResults\":9004,\"results\":[{\"article_id\":\"62d20096ebd1ab12e61ef84677964202\",\"link\":\"https://neweralive.na/top-8-semi-finals-set-for-saturday-in-outjo/\",\"title\":\"Top 8 semi-finals set for Saturday in Outjo\",\"description\":\"Excitement is building ahead of this weekend’s Standard Bank Top 8 semi-finals in Outjo, where four teams will battle for a place in the final of one of Namibia’s most prestigious knockout football competitions. The first semi-final will see Unam FC take on FC Ongos at 14h00, while Eleven Arrows and Mighty Gunners will square... The post Top 8 semi-finals set for Saturday in Outjo appeared first on New Era .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":[\"staff reporter\"],\"language\":\"english\",\"country\":[\"namibia\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-08 07:16:43\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-08 07:43:42\",\"image_url\":\"https://neweralive.na/wp-content/uploads/2026/05/Top-8-1-1.jpeg\",\"video_url\":null,\"source_id\":\"neweralive_na\",\"source_name\":\"Neweralive\",\"source_priority\":471710,\"source_url\":\"https://neweralive.na\",\"source_icon\":\"https://n.bytvi.com/neweralive_na.png\",\"sentiment\":\"ONL",
+        "payload_shape": "nextPage,results,status,totalResults"
+      },
+      "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 333,
+      "message": "ok",
+      "provider": "newsdata",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "[{\"id\":71166706,\"home\":\"Resistencia SC\",\"away\":\"Paraguari AC\",\"homeId\":90968,\"awayId\":1336072,\"date\":\"2026-05-08T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Paraguay - Segunda Division\",\"slug\":\"paraguay-segunda-division\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70881332,\"home\":\"UTC de Cajamarca\",\"away\":\"FC Cajamarca\",\"homeId\":87854,\"awayId\":1065398,\"date\":\"2026-05-08T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Peru - Liga 1\",\"slug\":\"peru-liga-1\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71334938,\"home\":\"Boca Juniors de Cali\",\"away\":\"Alianza FC Valledupar\",\"homeId\":89366,\"awayId\":1098993,\"date\":\"2026-05-08T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Colombia - Copa Colombia\",\"slug\":\"colombia-copa-colombia\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71334948,\"home\":\"Fortaleza FC\",\"away\":\"Itagui Leones FC\",\"homeId\":89368,\"awayId\":89362,\"date\":\"2026-05-08T20:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Colombia - Copa Colombia\",\"slug\":\"colombia-copa-colombia\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71169570,\"ho",
+        "bookmakers_account1": "Bet365,Unibet",
+        "bookmakers_account2": "Betfair Exchange,Sbobet",
+        "key2_present": true,
+        "payload_shape": "list"
+      },
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-08T19%3A17%3A18Z&to=2026-05-10T19%3A17%3A18Z&limit=10&page=1",
+      "group": "odds",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 170,
+      "message": "ok",
+      "provider": "odds_api_io_events",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 10
+    },
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"success\":true,\"data\":[{\"id\":51480,\"sport_id\":null,\"external_id\":null,\"league_id\":894,\"season\":2026,\"home_team_id\":12147,\"away_team_id\":11298,\"home_team\":{\"id\":12147,\"sport_id\":1,\"name\":\"Oriente Petrolero\",\"short_name\":\"ORI\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/3707.png\",\"country\":\"Bolivia\",\"founded\":1955,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:29.000000Z\",\"updated_at\":\"2026-01-27T20:13:29.000000Z\"},\"away_team\":{\"id\":11298,\"sport_id\":1,\"name\":\"Real Tomayapo\",\"short_name\":\"Real Tomayapo\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/15708.png\",\"country\":\"Bolivia\",\"founded\":1999,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:27.000000Z\",\"updated_at\":\"2026-01-27T20:13:27.000000Z\"},\"start_time\":\"2026-05-02T23:30:00.000000Z\",\"bet_start_time\":\"2026-05-02T22:30:00.000000Z\",\"bet_end_time\":\"2026-05-02T23:30:00.000000Z\",\"status\":\"scheduled\",\"status_short\":\"NS\",\"is_live\":false,\"completed\":false,\"events_synced_at\":null,\"elapsed_time\":null,\"home_score\":null,\"away_score\":null,\"home_score_ht\":null,\"away_score_ht\":null,\"extra_time_score\":null,\"penalty_s",
+        "controlled_odds_enabled": true,
+        "payload_shape": "data,pagination,success"
+      },
+      "endpoint": "https://api.sportlogic.io/api/v1/games?sport=football&limit=5",
+      "group": "odds",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 489,
+      "message": "ok",
+      "provider": "sportlogic",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 50
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1688551,\"event_date\":\"2026-05-08\",\"event_time\":\"15:00\",\"event_home_team\":\"Young Apostles\",\"home_team_key\":34126,\"event_away_team\":\"Nations\",\"away_team_key\":32824,\"event_halftime_result\":\"\",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 32\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Wenchi Sports Stadium (Wenchi)\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/34126_young-apostles.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/32824_nations.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[],\"substitutes\":[],\"cards\":[],\"vars\":{\"home_team\":[],\"away_team\":[]},\"lineups\":{\"home_team\":{\"starting_lineups\":[],\"substitutes\":[],\"coaches\":[],\"missing_players\":[]},\"away_team\":{\"st",
+        "payload_shape": "result,success"
+      },
+      "endpoint": "https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-05-08&to=2026-05-09&timezone=UTC",
+      "group": "odds_context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 396,
+      "message": "ok",
+      "provider": "allsportsapi",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 9
+    },
+    {
+      "configured": false,
+      "critical": false,
+      "details": {
+        "note": "configured base; current runtime treats SharpAPI as text-enrichment only"
+      },
+      "endpoint": "https://sharpapi.com/api/v1/quota",
+      "group": "utility",
+      "http_statuses": [],
+      "latency_ms": null,
+      "message": "required secret is not configured",
+      "provider": "sharpapi_configured_base",
+      "requests": 0,
+      "status": "missing_secret",
+      "useful_rows": 0
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-08 19:17:19\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "payload_shape": "data,meta"
+      },
+      "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
+      "group": "weather",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 650,
+      "message": "ok",
+      "provider": "meteostat",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":15.66,\"feels_like\":14.77,\"temp_min\":14.86,\"temp_max\":16.66,\"pressure\":1017,\"humidity\":57,\"sea_level\":1017,\"grnd_level\":1013},\"visibility\":10000,\"wind\":{\"speed\":6.17,\"deg\":90},\"clouds\":{\"all\":69},\"dt\":1778267487,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778214004,\"sunset\":1778268836},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
+      },
+      "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
+      "group": "weather",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 144,
+      "message": "ok",
+      "provider": "openweathermap",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 0
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778267871,\"localtime\":\"2026-05-08 20:17\"},\"current\":{\"last_updated_epoch\":1778267700,\"last_updated\":\"2026-05-08 20:15\",\"temp_c\":17.1,\"temp_f\":62.8,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/113.png\",\"code\":1000},\"wind_mph\":6.7,\"wind_kph\":10.8,\"wind_degree\":88,\"wind_dir\":\"E\",\"pressure_mb\":1016.0,\"pressure_in\":30.0,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":52,\"cloud\":25,\"feelslike_c\":17.1,\"feelslike_f\":62.8,\"windchill_c\":13.2,\"windchill_f\":55.7,\"heatindex_c\":13.9,\"heatindex_f\":57.0,\"dewpoint_c\":6.1,\"dewpoint_f\":43.0,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":9.8,\"gust_kph\":15.7,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-08\",\"date_epoch\":1778198400,\"day\":{\"maxtemp_c\":17.8,\"maxtemp_f\":64.0,\"mintemp_c\":7.5,\"mintemp_f\":45.5,\"avgtemp_c\":12.7,\"avgtemp_f\":54.8,\"maxwind_mph\":8.7,\"maxwind_kph\":14.0,\"totalprecip_mm\":0.33,\"totalprecip_in\":0.01,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_miles\":6.0,\"avghumi",
+        "payload_shape": "current,forecast,location"
+      },
+      "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
+      "group": "weather",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 247,
+      "message": "ok",
+      "provider": "weatherapi",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    }
+  ],
+  "summary": {
+    "auth_error": 0,
+    "config_only": 1,
+    "critical_failures": 0,
+    "degraded": 0,
+    "healthy_or_config_only": 17,
+    "missing_secret": 1,
+    "ok": 16,
+    "providers_checked": 18,
+    "rate_limited": 0
+  }
+}
