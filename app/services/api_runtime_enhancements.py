@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-import inspect
 import os
+import re
 from typing import Any, Callable
 
-
-# Providers are no longer globally removed from the runtime. Older recovery
-# patches disabled api-football and OddsPapi to avoid noisy failures, but that
-# also prevented the bot from using valid keys and matching extra context/odds.
-# Keep this tuple as an emergency kill-switch only.
 REMOVED_PROVIDERS: tuple[str, ...] = tuple(
     item.strip().lower()
     for item in str(os.getenv("HARIZON_FORCE_DISABLED_PROVIDERS") or "").split(",")
@@ -64,15 +59,13 @@ def _env_present(*names: str) -> bool:
 
 
 def _set_default(name: str, value: str) -> None:
-    raw = str(os.getenv(name) or "").strip()
-    if not raw:
+    if not str(os.getenv(name) or "").strip():
         os.environ[name] = value
 
 
 def _set_if_lower(name: str, minimum: int) -> None:
-    raw = str(os.getenv(name) or "").strip()
     try:
-        current = int(float(raw))
+        current = int(float(str(os.getenv(name) or 0)))
     except Exception:
         current = 0
     if current < minimum:
@@ -80,9 +73,8 @@ def _set_if_lower(name: str, minimum: int) -> None:
 
 
 def _set_if_higher(name: str, maximum: int) -> None:
-    raw = str(os.getenv(name) or "").strip()
     try:
-        current = int(float(raw))
+        current = int(float(str(os.getenv(name) or maximum)))
     except Exception:
         current = maximum
     if current > maximum:
@@ -90,9 +82,8 @@ def _set_if_higher(name: str, maximum: int) -> None:
 
 
 def _set_float_if_higher(name: str, maximum: float) -> None:
-    raw = str(os.getenv(name) or "").strip()
     try:
-        current = float(raw)
+        current = float(str(os.getenv(name) or maximum))
     except Exception:
         current = maximum
     if current > maximum:
@@ -102,7 +93,6 @@ def _set_float_if_higher(name: str, maximum: float) -> None:
 def _provider_auth_available(provider_key: str) -> bool:
     key = str(provider_key or "").strip().lower()
     if key == "thesportsdb":
-        # Public key 123 is valid for free methods and is set as a default below.
         return True
     return _env_present(*(PROVIDER_KEY_ENVS.get(key) or tuple()))
 
@@ -114,11 +104,6 @@ def _provider_explicitly_disabled(provider_key: str) -> bool:
     return any(_falsey(os.getenv(name)) for name in PROVIDER_ENABLE_ENVS.get(key, tuple()) if os.getenv(name) is not None)
 
 
-def _provider_explicitly_enabled(provider_key: str) -> bool:
-    key = str(provider_key or "").strip().lower()
-    return any(_truthy(os.getenv(name)) for name in PROVIDER_ENABLE_ENVS.get(key, tuple()) if os.getenv(name) is not None)
-
-
 def _should_enable_provider(provider_key: str, original_result: bool) -> bool:
     key = str(provider_key or "").strip().lower()
     if _provider_explicitly_disabled(key):
@@ -127,22 +112,7 @@ def _should_enable_provider(provider_key: str, original_result: bool) -> bool:
         return True
     if key == "sportlogic" and not _truthy(os.getenv("SPORTLOGIC_CONTROLLED_ODDS_ENABLED"), False):
         return False
-    if _provider_auth_available(key):
-        return True
-    return _provider_explicitly_enabled(key)
-
-
-def disable_removed_providers_env() -> None:
-    """Apply only the explicit emergency provider kill-switch.
-
-    The previous implementation always disabled api-football and OddsPapi. That
-    made the run reports look like the keys existed but the pipeline never used
-    them. Now a provider is disabled only when HARIZON_FORCE_DISABLED_PROVIDERS
-    contains its canonical name.
-    """
-    for provider in REMOVED_PROVIDERS:
-        for name in PROVIDER_ENABLE_ENVS.get(provider, tuple()):
-            os.environ[name] = "false"
+    return _provider_auth_available(key) or any(_truthy(os.getenv(name)) for name in PROVIDER_ENABLE_ENVS.get(key, tuple()) if os.getenv(name) is not None)
 
 
 def patch_runner_provider_policy() -> None:
@@ -153,17 +123,17 @@ def patch_runner_provider_policy() -> None:
     cls = getattr(runner_module, "PredictionRunner", None)
     if cls is None or getattr(cls, "_harizon_provider_activation_patch", False):
         return
-
     original_instance_by_key = getattr(cls, "_provider_instance_by_key", None)
+    original_has_auth = getattr(cls, "_provider_has_required_auth", None)
+    original_provider_enabled = getattr(cls, "_provider_enabled", None)
+
     if callable(original_instance_by_key):
         def provider_instance_by_key_patched(self, provider_key: str):
-            key = str(provider_key or "").strip().lower()
-            if key in REMOVED_PROVIDERS:
+            if str(provider_key or "").strip().lower() in REMOVED_PROVIDERS:
                 return None
             return original_instance_by_key(self, provider_key)
         cls._provider_instance_by_key = provider_instance_by_key_patched
 
-    original_has_auth = getattr(cls, "_provider_has_required_auth", None)
     if callable(original_has_auth):
         def provider_has_required_auth_patched(self, provider_key: str) -> bool:
             key = str(provider_key or "").strip().lower()
@@ -174,70 +144,12 @@ def patch_runner_provider_policy() -> None:
             return bool(original_has_auth(self, provider_key))
         cls._provider_has_required_auth = provider_has_required_auth_patched
 
-    original_provider_enabled = getattr(cls, "_provider_enabled", None)
     if callable(original_provider_enabled):
         def provider_enabled_patched(self, provider_name: str, default: bool = True) -> bool:
-            key = str(provider_name or "").strip().lower()
-            original = bool(original_provider_enabled(self, provider_name, default))
-            return _should_enable_provider(key, original)
+            return _should_enable_provider(str(provider_name or ""), bool(original_provider_enabled(self, provider_name, default)))
         cls._provider_enabled = provider_enabled_patched
 
     cls._harizon_provider_activation_patch = True
-
-
-def patch_odds_api_io_provider_compat() -> None:
-    """Repair legacy odds-api.io parser helpers that were declared without self.
-
-    The run from 2026-05-08 reached /odds/multi, then dropped all odds because
-    ``self._is_supported_market(market_key)`` raised:
-    ``TypeError: ... takes 1 positional argument but 2 were given``.
-    This patch preserves the original helper logic and only converts accidental
-    one-argument instance methods into normal bound instance methods.
-    """
-    try:
-        from app.providers import odds_api_io as odds_module
-    except Exception:
-        return
-    cls = getattr(odds_module, "OddsApiIoProvider", None)
-    if cls is None or getattr(cls, "_harizon_parser_signature_compat_patch", False):
-        return
-
-    helper_names = (
-        "_is_supported_market",
-        "_family_for_market",
-        "_line_from_value",
-        "_map_h2h_selection",
-        "_normalize_yes_no",
-        "_normalize_double_chance_selection",
-        "_normalize_team_total_selection",
-        "_infer_team_total_side",
-        "_canonical_bookmaker",
-    )
-    patched: list[str] = []
-    for name in helper_names:
-        raw = cls.__dict__.get(name)
-        if raw is None or isinstance(raw, (staticmethod, classmethod)) or not callable(raw):
-            continue
-        try:
-            params = list(inspect.signature(raw).parameters.values())
-        except Exception:
-            continue
-        if not params:
-            continue
-        first_name = str(params[0].name or "")
-        if first_name in {"self", "cls"}:
-            continue
-
-        def make_wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
-            def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
-                return func(*args, **kwargs)
-            return wrapper
-
-        setattr(cls, name, make_wrapper(raw))
-        patched.append(name)
-
-    cls._harizon_parser_signature_compat_patch = True
-    cls._harizon_parser_signature_compat_methods = patched
 
 
 def patch_market_integrity_policy() -> None:
@@ -260,10 +172,7 @@ def patch_market_integrity_policy() -> None:
             return default
 
     def _candidate_selection(candidate: Any) -> str:
-        text = " ".join(
-            str(getattr(candidate, attr, "") or "")
-            for attr in ("selection", "selection_key", "market", "label")
-        ).lower()
+        text = " ".join(str(getattr(candidate, attr, "") or "") for attr in ("selection", "selection_key", "market", "label")).lower()
         if "over" in text or "больше" in text or "тб" in text:
             return "over"
         if "under" in text or "меньше" in text or "тм" in text:
@@ -289,11 +198,6 @@ def patch_market_integrity_policy() -> None:
             reason = f"suspicious_low_total_absolute_price:point={point:g},odds={price:.2f},max={absolute_max:.2f}"
             if reason not in decision.reasons:
                 decision.reasons.append(reason)
-            try:
-                decision.report["low_total_absolute_max_odds"] = absolute_max
-                decision.report["low_total_absolute_guard"] = True
-            except Exception:
-                pass
             decision.passed = False
         return decision
 
@@ -302,11 +206,10 @@ def patch_market_integrity_policy() -> None:
 
 
 def install_env_defaults() -> None:
-    disable_removed_providers_env()
+    for provider in REMOVED_PROVIDERS:
+        for name in PROVIDER_ENABLE_ENVS.get(provider, tuple()):
+            os.environ[name] = "false"
 
-    # Daily selection policy: scan broadly, publish gradually. The bot should
-    # collect the day inventory at night, enrich during the day, and normally
-    # release only the best 1-2 picks per run toward a ~5/day target.
     _set_default("VOLUME_POLICY_MODE", "target_5")
     _set_default("DAILY_TARGET_PICKS", "5")
     _set_default("DAILY_HARD_CAP_PICKS", "7")
@@ -316,11 +219,7 @@ def install_env_defaults() -> None:
     _set_if_lower("ANALYSIS_MATCH_CAP_PER_RUN", 420)
     _set_if_lower("DIAGNOSTICS_MATCH_LIMIT", 420)
     _set_if_lower("CONTEXT_ENRICHMENT_MATCH_LIMIT", 420)
-    _set_if_lower("MAX_CANDIDATES_PER_MATCH_PRE_FILTER", 4)
-    _set_if_lower("MAX_INTERNAL_CANDIDATES_PER_RUN", 16)
 
-    # Top-5 reserve thresholds. Keep Tier C off, but do not demand A-level
-    # confidence from every reserve candidate when EV and edge are strong.
     _set_default("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", "true")
     _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 64.0)
     _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 6.0)
@@ -329,26 +228,26 @@ def install_env_defaults() -> None:
     _set_default("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", "true")
     _set_default("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", "1")
 
-    # odds-api.io dual-account mode. Free accounts are usually limited to two
-    # bookmakers each, so split bookmakers by account instead of asking one key
-    # for more books than the free plan actually returns.
+    # odds-api.io: Betfair is rejected by the API in current logs, so do not use
+    # it as a default. Raise alias attempts enough to reach single-book Sbobet.
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
-    _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Betfair Exchange,Sbobet")
+    _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Sbobet")
+    _set_default("ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED", "true")
+    _set_default("ODDS_API_IO_BOOKMAKER_ALIAS_RETRY_MAX", "12")
+    _set_default("ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED", "false")
     if _env_present("ODDS_API_IO_KEY"):
         os.environ.setdefault("ENABLE_ODDS_API_IO", "true")
         _set_if_lower("ODDS_API_IO_ACCOUNT1_PER_RUN_MAX", 100)
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 420)
     if _env_present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2"):
-        _set_default("ODDS_API_IO_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
-        _set_default("TARGET_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
-        _set_default("CONSENSUS_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
+        _set_default("ODDS_API_IO_BOOKMAKERS", "Bet365,Unibet,Sbobet")
+        _set_default("TARGET_BOOKMAKERS", "Bet365,Unibet,Sbobet")
+        _set_default("CONSENSUS_BOOKMAKERS", "Bet365,Unibet,Sbobet")
         _set_if_lower("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX", 100)
         _set_if_lower("ODDS_API_IO_PER_RUN_MAX", 160)
         _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 160)
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 420)
 
-    # Re-enable useful APIs only when a key is actually present. This keeps the
-    # run quiet on missing secrets but stops valid keys from being ignored.
     if _env_present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY"):
         os.environ.setdefault("ENABLE_ODDSPAPI", "true")
         _set_if_lower("ODDSPAPI_MAX_REQUESTS_PER_RUN", 2)
@@ -367,16 +266,11 @@ def install_env_defaults() -> None:
         _set_if_lower("FOOTBALL_DATA_MAX_REQUESTS_PER_RUN", 12)
         _set_if_lower("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT", 120)
 
-    # TheSportsDB public key is usable in free mode. This prevents false
-    # api_key_missing diagnostics when no private key was configured.
     _set_default("THESPORTSDB_API_KEY", "123")
     os.environ.setdefault("ENABLE_THESPORTSDB_CONTEXT", "true")
     _set_if_lower("THESPORTSDB_REQUESTS_MAX_PER_RUN", 12)
     _set_if_lower("THESPORTSDB_CONTEXT_MATCH_LIMIT", 120)
 
-    # Context and matching improvements. Futrix is useful but expensive per
-    # match because it can call once per team; cap it until odds have produced a
-    # shortlist so it does not burn 90+ requests and hit 429.
     _set_default("ENABLE_EXTERNAL_SIGNALS", "true")
     _set_default("ENABLE_CLUBELO_CONTEXT", "true")
     _set_default("ENABLE_FOOTBALL_DATA_UK_CONTEXT", "true")
@@ -388,9 +282,6 @@ def install_env_defaults() -> None:
     _set_if_higher("FUTRIXMETRICS_MAX_HTTP_REQUESTS_PER_RUN", 16)
     _set_if_higher("FUTRIXMETRICS_PER_RUN_MAX", 16)
 
-    # Market integrity defaults. The absolute Over 1.5 guard blocks the exact
-    # failure mode where a wrong market is parsed as match total Over 1.5 at an
-    # impossible-looking price such as 1.90-2.00.
     _set_default("MARKET_INTEGRITY_HARD_GUARD_ENABLED", "true")
     _set_default("MARKET_INTEGRITY_CANDIDATE_PATCH_ENABLED", "true")
     _set_default("MARKET_INTEGRITY_MIN_BOOKS", "2")
@@ -409,8 +300,6 @@ def install_env_defaults() -> None:
     _set_default("SPREADS_PUBLICATION_ENABLED", "false")
     _set_default("TEAM_TOTALS_PUBLICATION_ENABLED", "false")
 
-    # SportLogic is useful, but only when explicitly switched to controlled
-    # odds mode. Otherwise it stays as a light probe/context source.
     _set_default("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1")
     _set_default("SPORTLOGIC_HEADER_NAME", "X-API-Key")
     if _truthy(os.getenv("SPORTLOGIC_CONTROLLED_ODDS_ENABLED"), False) and _env_present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"):
@@ -421,7 +310,6 @@ def install_env_defaults() -> None:
         _set_if_lower("SPORTLOGIC_CONTEXT_MATCH_LIMIT", 20)
         _set_if_lower("SPORTLOGIC_ODDS_MATCH_LIMIT", 20)
 
-    # Keep run diagnostics usable during manual iterations.
     _set_default("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS", "false")
     _set_default("ENHANCED_RUN_REPORT_SEND_TELEGRAM", "true")
     _set_default("RUNTIME_PROVIDER_DIAGNOSTICS_ENABLED", "true")
@@ -430,8 +318,12 @@ def install_env_defaults() -> None:
 
 def install() -> None:
     install_env_defaults()
-    patch_odds_api_io_provider_compat()
     patch_runner_provider_policy()
+    try:
+        from app.providers import odds_api_io_startup_compat
+        odds_api_io_startup_compat.install()
+    except Exception:
+        pass
     try:
         from app.services import market_integrity
         market_integrity.install()
