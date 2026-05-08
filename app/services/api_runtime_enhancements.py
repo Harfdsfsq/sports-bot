@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import os
 from typing import Any, Callable
 
@@ -76,6 +77,16 @@ def _set_if_lower(name: str, minimum: int) -> None:
         current = 0
     if current < minimum:
         os.environ[name] = str(minimum)
+
+
+def _set_if_higher(name: str, maximum: int) -> None:
+    raw = str(os.getenv(name) or "").strip()
+    try:
+        current = int(float(raw))
+    except Exception:
+        current = maximum
+    if current > maximum:
+        os.environ[name] = str(maximum)
 
 
 def _set_float_if_higher(name: str, maximum: float) -> None:
@@ -172,6 +183,61 @@ def patch_runner_provider_policy() -> None:
         cls._provider_enabled = provider_enabled_patched
 
     cls._harizon_provider_activation_patch = True
+
+
+def patch_odds_api_io_provider_compat() -> None:
+    """Repair legacy odds-api.io parser helpers that were declared without self.
+
+    The run from 2026-05-08 reached /odds/multi, then dropped all odds because
+    ``self._is_supported_market(market_key)`` raised:
+    ``TypeError: ... takes 1 positional argument but 2 were given``.
+    This patch preserves the original helper logic and only converts accidental
+    one-argument instance methods into normal bound instance methods.
+    """
+    try:
+        from app.providers import odds_api_io as odds_module
+    except Exception:
+        return
+    cls = getattr(odds_module, "OddsApiIoProvider", None)
+    if cls is None or getattr(cls, "_harizon_parser_signature_compat_patch", False):
+        return
+
+    helper_names = (
+        "_is_supported_market",
+        "_family_for_market",
+        "_line_from_value",
+        "_map_h2h_selection",
+        "_normalize_yes_no",
+        "_normalize_double_chance_selection",
+        "_normalize_team_total_selection",
+        "_infer_team_total_side",
+        "_canonical_bookmaker",
+    )
+    patched: list[str] = []
+    for name in helper_names:
+        raw = cls.__dict__.get(name)
+        if raw is None or isinstance(raw, (staticmethod, classmethod)) or not callable(raw):
+            continue
+        try:
+            params = list(inspect.signature(raw).parameters.values())
+        except Exception:
+            continue
+        if not params:
+            continue
+        first_name = str(params[0].name or "")
+        if first_name in {"self", "cls"}:
+            continue
+
+        def make_wrapper(func: Callable[..., Any]) -> Callable[..., Any]:
+            def wrapper(self: Any, *args: Any, **kwargs: Any) -> Any:
+                return func(*args, **kwargs)
+            return wrapper
+
+        setattr(cls, name, make_wrapper(raw))
+        patched.append(name)
+
+    cls._harizon_parser_signature_compat_patch = True
+    cls._harizon_parser_signature_compat_methods = patched
 
 
 def patch_market_integrity_policy() -> None:
@@ -308,7 +374,9 @@ def install_env_defaults() -> None:
     _set_if_lower("THESPORTSDB_REQUESTS_MAX_PER_RUN", 12)
     _set_if_lower("THESPORTSDB_CONTEXT_MATCH_LIMIT", 120)
 
-    # Context and matching improvements.
+    # Context and matching improvements. Futrix is useful but expensive per
+    # match because it can call once per team; cap it until odds have produced a
+    # shortlist so it does not burn 90+ requests and hit 429.
     _set_default("ENABLE_EXTERNAL_SIGNALS", "true")
     _set_default("ENABLE_CLUBELO_CONTEXT", "true")
     _set_default("ENABLE_FOOTBALL_DATA_UK_CONTEXT", "true")
@@ -316,6 +384,9 @@ def install_env_defaults() -> None:
     _set_default("ENABLE_WIKIDATA_CONTEXT", "true")
     _set_if_lower("EXTERNAL_SIGNALS_PER_RUN_MAX", 80)
     _set_if_lower("EXTERNAL_SIGNALS_CONTEXT_MATCH_LIMIT", 120)
+    _set_if_higher("FUTRIXMETRICS_CONTEXT_MATCH_LIMIT", 8)
+    _set_if_higher("FUTRIXMETRICS_MAX_HTTP_REQUESTS_PER_RUN", 16)
+    _set_if_higher("FUTRIXMETRICS_PER_RUN_MAX", 16)
 
     # Market integrity defaults. The absolute Over 1.5 guard blocks the exact
     # failure mode where a wrong market is parsed as match total Over 1.5 at an
@@ -359,6 +430,7 @@ def install_env_defaults() -> None:
 
 def install() -> None:
     install_env_defaults()
+    patch_odds_api_io_provider_compat()
     patch_runner_provider_policy()
     try:
         from app.services import market_integrity
