@@ -86,3 +86,27 @@ def test_passes_normal_over_15_when_price_is_reasonable_and_depth_exists(monkeyp
 
     assert decision.passed, decision.reasons
     assert decision.report["exact_books_count"] == 3
+
+
+def test_runtime_patch_rejects_impossible_over_15_even_with_three_books(monkeypatch):
+    monkeypatch.setenv("MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED", "true")
+    monkeypatch.setenv("MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS", "1.85")
+
+    from app.services import api_runtime_enhancements
+
+    api_runtime_enhancements.patch_market_integrity_policy()
+    item = candidate(
+        odds=1.92,
+        sources_count=2,
+        books_count=3,
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Over", "point": 1.5, "price": 1.92},
+            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Over", "point": 1.5, "price": 1.91},
+            {"source": "sportlogic", "bookmaker": "Sbobet", "family": "totals", "selection": "Over", "point": 1.5, "price": 1.93},
+        ],
+    )
+
+    decision = market_integrity.validate_candidate(item)
+
+    assert not decision.passed
+    assert any(reason.startswith("suspicious_low_total_absolute_price") for reason in decision.reasons)
