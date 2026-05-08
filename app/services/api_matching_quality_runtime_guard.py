@@ -321,6 +321,25 @@ def _patch_market_integrity() -> bool:
     return True
 
 
+def _call_supported_market_helper(helper: Any, self_obj: Any, market_key: Any) -> bool:
+    if not callable(helper):
+        return True
+    attempts = (
+        (market_key,),
+        (self_obj, market_key),
+    )
+    last_type_error: TypeError | None = None
+    for args in attempts:
+        try:
+            return bool(helper(*args))
+        except TypeError as exc:
+            last_type_error = exc
+            continue
+    if last_type_error is not None:
+        raise last_type_error
+    return True
+
+
 def _patch_odds_api_io_provider() -> bool:
     try:
         from app.providers import odds_api_io as module
@@ -332,11 +351,20 @@ def _patch_odds_api_io_provider() -> bool:
         return False
     original_is_supported = getattr(cls, "_is_supported_market", None)
     if callable(original_is_supported):
-        def is_supported_market_patched(self: Any, market_key: Any) -> bool:
+        def is_supported_market_patched(*args: Any, **kwargs: Any) -> bool:
+            if len(args) >= 2:
+                self_obj = args[0]
+                market_key = args[1]
+            elif len(args) == 1:
+                self_obj = None
+                market_key = args[0]
+            else:
+                self_obj = kwargs.get("self")
+                market_key = kwargs.get("market_key")
             text = str(market_key or "")
             if not _is_full_time_market_name(text):
                 return False
-            return bool(original_is_supported(self, market_key))
+            return _call_supported_market_helper(original_is_supported, self_obj, market_key)
         cls._is_supported_market = is_supported_market_patched
 
     def match_event_patched(self: Any, event: dict[str, Any], matches: list[Any]) -> Any | None:
