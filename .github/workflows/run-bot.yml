@@ -29,8 +29,6 @@ jobs:
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
       RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
-
-      # Core publishing/runtime mode
       PUBLISH_DRY_RUN: "false"
       PREDICTION_PUBLICATION_ENABLED: "true"
       RUN_REPORT_ENABLED: "false"
@@ -44,8 +42,6 @@ jobs:
       HARIZON_FAST_INVENTORY_LOCK: "true"
       HARIZON_RUNTIME_POLICY_VERSION: "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory"
       HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION: "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory"
-
-      # Daily inventory / near-window model readiness
       MATCH_BOOTSTRAP_PROVIDER: "odds_api_io"
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: "odds_api_io"
       DAY_INVENTORY_USE_FOR_RUN: "true"
@@ -57,8 +53,6 @@ jobs:
       ANALYSIS_MATCH_CAP_PER_RUN: "420"
       DIAGNOSTICS_MATCH_LIMIT: "420"
       MAX_MATCHES_FOR_ODDS_FETCH: "520"
-
-      # Controlled reserve: publish only guarded, confirmed picks
       CONTROLLED_FALLBACK_ENABLED: "true"
       CONTROLLED_FALLBACK_SEND_TELEGRAM: "true"
       CONTROLLED_FALLBACK_SEND_NO_PICK_REPORT: "false"
@@ -83,8 +77,6 @@ jobs:
       CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE: "68.0"
       CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP: "3.0"
       CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT: "6.0"
-
-      # Market integrity. Spreads/team totals remain blocked until parser is verified.
       MARKET_MONITOR_ENABLED: "true"
       MARKET_DERIVED_CANDIDATES_ENABLED: "true"
       SIMPLE_MARKET_FALLBACK_ENABLED: "true"
@@ -115,8 +107,6 @@ jobs:
       HANDICAP_PAIR_INTEGRITY_REQUIRED: "true"
       SPREADS_PUBLICATION_ENABLED: "false"
       TEAM_TOTALS_PUBLICATION_ENABLED: "false"
-
-      # odds-api.io baseline routing from the last working run.
       ENABLE_ODDS_API_IO: "true"
       ODDS_API_IO_ENABLED: "true"
       ODDS_API_IO_BOOKMAKERS: "Bet365,Unibet,Betfair Exchange,Sbobet"
@@ -135,8 +125,6 @@ jobs:
       ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "36"
       ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED: "false"
       ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED: "false"
-
-      # Provider budgets; apply_provider_request_budget.py rewrites exact values from config.
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
@@ -152,7 +140,6 @@ jobs:
       API_HEALTH_DURING_RUN_ENABLED: "true"
       API_HEALTH_MODE: "quick"
       API_HEALTH_GUARD_TIMEOUT_SECONDS: "55"
-
       BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "3"
       BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "3"
       BZZOIRO_PAGE_SIZE: "5"
@@ -183,8 +170,6 @@ jobs:
       WIKIDATA_ENABLED: "true"
       WIKIDATA_MAX_REQUESTS_PER_DAY: "8"
       WIKIDATA_SPARQL_MAX_REQUESTS_PER_DAY: "2"
-
-      # Secrets
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -220,25 +205,21 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
-
       - name: Prepare runtime directories
         shell: bash
         run: |
           set -euo pipefail
           rm -rf .data/exports artifacts/run-bot
           mkdir -p .data/exports .data/cache artifacts/run-bot
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
       - name: Apply provider quota governor
         shell: bash
         run: |
@@ -251,7 +232,6 @@ jobs:
             status=$?
             echo "provider quota governor failed or timed out with status ${status}; continuing with request-budget policy"
           fi
-
       - name: Apply provider request budget
         shell: bash
         run: |
@@ -262,30 +242,8 @@ jobs:
             echo "provider request budget applied"
           else
             status=$?
-            echo "provider request budget failed or timed out with status ${status}; applying minimal baseline env"
-            cat >> "${GITHUB_ENV}" <<'EOF'
-          HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION=harizon-runtime-policy-v5-live-controlled-publish-fast-inventory
-          MATCH_BOOTSTRAP_PROVIDER=odds_api_io
-          DAY_INVENTORY_BOOTSTRAP_PROVIDER=odds_api_io
-          DAY_INVENTORY_USE_FOR_RUN=true
-          DAY_INVENTORY_FORCE_PROVIDER_MERGE=false
-          CONTEXT_ENRICHMENT_REQUIRES_OFFERS=true
-          ENABLE_ODDS_API_IO=true
-          ODDS_API_IO_ENABLED=true
-          ODDS_API_IO_BOOKMAKERS_ACCOUNT1=Bet365,Unibet
-          ODDS_API_IO_BOOKMAKERS_ACCOUNT2=Betfair Exchange,Sbobet
-          ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED=false
-          ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED=false
-          ENABLE_SSTATS=true
-          SSTATS_ENABLED=true
-          ENABLE_BZZOIRO_CONTEXT=true
-          BZZOIRO_ENABLED=true
-          CONTROLLED_FALLBACK_ALLOWED_FAMILIES=totals,dnb,btts
-          SPREADS_PUBLICATION_ENABLED=false
-          TEAM_TOTALS_PUBLICATION_ENABLED=false
-          EOF
+            echo "provider request budget failed or timed out with status ${status}; continuing with workflow env"
           fi
-
       - name: Run tests
         shell: bash
         run: |
@@ -297,7 +255,6 @@ jobs:
             status=$?
             echo "unit tests failed or timed out with status ${status}; continuing production run"
           fi
-
       - name: Run bot
         shell: bash
         run: |
@@ -322,7 +279,6 @@ jobs:
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
-
       - name: Publish controlled fallback
         shell: bash
         run: |
@@ -334,20 +290,18 @@ jobs:
           python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
-
-      - name: Send enhanced Telegram run report
+      - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
         run: |
           set -uo pipefail
           if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip enhanced report: fresh run-bot log was not created"
+            echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_enhanced_telegram_run_report.py || true
-          cp .data/exports/latest-enhanced-telegram-run-report.txt artifacts/run-bot/latest-enhanced-telegram-run-report.txt 2>/dev/null || true
-          cp .data/exports/latest-enhanced-telegram-run-report.json artifacts/run-bot/latest-enhanced-telegram-run-report.json 2>/dev/null || true
-
+          python scripts/send_harizon_telegram_run_report.py || true
+          cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
+          cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
       - name: Commit runtime artifacts
         if: always()
         shell: bash
@@ -362,7 +316,6 @@ jobs:
           git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
-
       - name: Upload run artifact
         if: always()
         uses: actions/upload-artifact@v5
