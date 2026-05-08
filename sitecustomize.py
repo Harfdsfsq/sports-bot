@@ -16,6 +16,17 @@ def _truthy(value: object) -> bool:
     return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
+def _sitecustomize_enabled() -> bool:
+    """Keep Python interpreter startup safe by default.
+
+    Python imports ``sitecustomize`` before executing user code. Heavy runtime
+    monkey-patches here can block GitHub Actions before the bot prints its first
+    diagnostic line. Runtime policies should be installed by explicit CLI or
+    workflow steps, so repository-wide startup hooks are opt-in only.
+    """
+    return _truthy(os.getenv("HARIZON_SITECUSTOMIZE_HOOKS_ENABLED") or os.getenv("HARIZON_SITECUSTOMIZE_ENABLED"))
+
+
 def _apply_provider_aliases() -> None:
     try:
         from app import utils
@@ -63,9 +74,6 @@ def _apply_provider_aliases() -> None:
 
 
 def _apply_sportlogic_env_defaults() -> None:
-    # SportLogic is currently verified as API-alive but stale-inventory for the
-    # active runtime window.  Defaults must therefore be cheap probe-only values.
-    # Existing explicit env values are preserved unless they are empty/disabled.
     defaults = {
         "ENABLE_SPORTLOGIC": "true",
         "SPORTLOGIC_ENABLED": "true",
@@ -413,14 +421,15 @@ def _install_telegram_runtime_safety() -> None:
         return
 
 
-try:
-    _apply_provider_aliases()
-    _apply_sportlogic_env_defaults()
-    _install_sportlogic_hardening()
-    _install_provider_import_hook()
-    _install_telegram_runtime_safety()
-    _install_telegram_stake_percent_formatter()
-    _install_telegram_request_guard()
-    _install_httpx_telegram_guard()
-except Exception:
-    pass
+if _sitecustomize_enabled():
+    try:
+        _apply_provider_aliases()
+        _apply_sportlogic_env_defaults()
+        _install_sportlogic_hardening()
+        _install_provider_import_hook()
+        _install_telegram_runtime_safety()
+        _install_telegram_stake_percent_formatter()
+        _install_telegram_request_guard()
+        _install_httpx_telegram_guard()
+    except Exception:
+        pass
