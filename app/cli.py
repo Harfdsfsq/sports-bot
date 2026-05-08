@@ -64,6 +64,11 @@ def _apply_api_max_runtime_overrides() -> None:
         market_integrity.install()
     except Exception:
         pass
+    try:
+        from app.providers import odds_api_io_startup_compat
+        odds_api_io_startup_compat.install()
+    except Exception:
+        pass
 
 
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
