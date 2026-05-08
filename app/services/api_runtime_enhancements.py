@@ -89,50 +89,6 @@ def _set_float_if_higher(name: str, maximum: float) -> None:
         os.environ[name] = str(maximum)
 
 
-def _clean_bookmakers(value: Any, fallback: str) -> str:
-    raw_items = [item.strip() for item in str(value or "").split(",") if item.strip()]
-    clean: list[str] = []
-    for item in raw_items:
-        key = item.lower().replace("_", " ").replace("-", " ")
-        if "betfair" in key:
-            continue
-        if item not in clean:
-            clean.append(item)
-    return ",".join(clean) or fallback
-
-
-def _force_sanitize_odds_api_io_bookmakers() -> None:
-    """Override invalid bookmaker values injected by workflow/env.
-
-    Production logs show odds-api.io rejects Betfair/Betfair Exchange with:
-    "Betfair is not a valid bookmaker". Since workflow env already contains
-    values before defaults run, this must overwrite, not setdefault.
-    """
-    os.environ["ODDS_API_IO_BOOKMAKERS_ACCOUNT1"] = _clean_bookmakers(
-        os.getenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT1") or "Bet365,Unibet",
-        "Bet365,Unibet",
-    )
-    os.environ["ODDS_API_IO_BOOKMAKERS_ACCOUNT2"] = _clean_bookmakers(
-        os.getenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT2") or "Sbobet",
-        "Sbobet",
-    )
-    combined = ",".join(
-        item
-        for item in (
-            os.environ.get("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", ""),
-            os.environ.get("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", ""),
-        )
-        if item
-    )
-    clean_combined = _clean_bookmakers(os.getenv("ODDS_API_IO_BOOKMAKERS") or combined, combined or "Bet365,Unibet,Sbobet")
-    os.environ["ODDS_API_IO_BOOKMAKERS"] = clean_combined
-    os.environ["TARGET_BOOKMAKERS"] = _clean_bookmakers(os.getenv("TARGET_BOOKMAKERS") or clean_combined, clean_combined)
-    os.environ["CONSENSUS_BOOKMAKERS"] = _clean_bookmakers(os.getenv("CONSENSUS_BOOKMAKERS") or clean_combined, clean_combined)
-    os.environ["ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED"] = "false"
-    os.environ.setdefault("ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED", "true")
-    os.environ.setdefault("ODDS_API_IO_BOOKMAKER_ALIAS_RETRY_MAX", "12")
-
-
 def _provider_auth_available(provider_key: str) -> bool:
     key = str(provider_key or "").strip().lower()
     if key == "thesportsdb":
@@ -253,34 +209,54 @@ def install_env_defaults() -> None:
         for name in PROVIDER_ENABLE_ENVS.get(provider, tuple()):
             os.environ[name] = "false"
 
+    _set_default("HARIZON_RUNTIME_POLICY_VERSION", "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory")
+    _set_default("HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION", "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory")
+    _set_default("MATCH_BOOTSTRAP_PROVIDER", "odds_api_io")
+    _set_default("DAY_INVENTORY_BOOTSTRAP_PROVIDER", "odds_api_io")
+    _set_default("DAY_INVENTORY_USE_FOR_RUN", "true")
+    _set_default("DAY_INVENTORY_FORCE_PROVIDER_MERGE", "false")
+    _set_default("DAY_INVENTORY_NEAR_WINDOW_PRIORITY", "true")
+    _set_default("DAY_INVENTORY_NEAR_WINDOW_HOURS", "12")
+
     _set_default("VOLUME_POLICY_MODE", "target_5")
     _set_default("DAILY_TARGET_PICKS", "5")
     _set_default("DAILY_HARD_CAP_PICKS", "7")
     _set_default("MAX_PICKS_PER_RUN", "2")
     _set_default("CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN", "2")
-    _set_default("CONTEXT_ENRICHMENT_REQUIRES_OFFERS", "false")
+    _set_default("CONTEXT_ENRICHMENT_REQUIRES_OFFERS", "true")
     _set_if_lower("ANALYSIS_MATCH_CAP_PER_RUN", 420)
     _set_if_lower("DIAGNOSTICS_MATCH_LIMIT", 420)
-    _set_if_lower("CONTEXT_ENRICHMENT_MATCH_LIMIT", 420)
+    _set_if_lower("CONTEXT_ENRICHMENT_MATCH_LIMIT", 240)
 
     _set_default("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", "true")
-    _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 64.0)
-    _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 6.0)
+    _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0)
+    _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0)
     _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0)
-    _set_default("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,btts,h2h")
+    _set_default("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,btts")
     _set_default("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", "true")
     _set_default("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", "1")
+    _set_default("CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS", "true")
+    _set_default("CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS", "3")
 
-    _force_sanitize_odds_api_io_bookmakers()
+    # Restore the successful two-account odds-api.io routing. Do not perform
+    # alias retries by default: the baseline worked with exact display labels and
+    # alias probing can create invalid bookmaker requests such as plain Betfair.
+    _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
+    _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Betfair Exchange,Sbobet")
+    _set_default("ODDS_API_IO_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
+    _set_default("TARGET_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
+    _set_default("CONSENSUS_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
+    os.environ["ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED"] = "false"
+    os.environ["ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED"] = "false"
     if _env_present("ODDS_API_IO_KEY"):
         os.environ.setdefault("ENABLE_ODDS_API_IO", "true")
         _set_if_lower("ODDS_API_IO_ACCOUNT1_PER_RUN_MAX", 100)
-        _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 420)
+        _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 520)
     if _env_present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2"):
         _set_if_lower("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX", 100)
-        _set_if_lower("ODDS_API_IO_PER_RUN_MAX", 160)
-        _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 160)
-        _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 420)
+        _set_if_lower("ODDS_API_IO_PER_RUN_MAX", 200)
+        _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 200)
+        _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 520)
 
     if _env_present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY"):
         os.environ.setdefault("ENABLE_ODDSPAPI", "true")
@@ -288,22 +264,17 @@ def install_env_defaults() -> None:
         _set_if_lower("ODDSPAPI_MATCH_LIMIT", 20)
     if _env_present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY"):
         os.environ.setdefault("ENABLE_ALLSPORTSAPI", "true")
-        _set_if_lower("ALLSPORTSAPI_MAX_REQUESTS_PER_RUN", 6)
-        _set_if_lower("ALLSPORTSAPI_MATCH_LIMIT", 40)
-    if _env_present("API_FOOTBALL_KEY", "API_FOOTBALL_API_KEY"):
-        os.environ.setdefault("ENABLE_API_FOOTBALL", "true")
-        os.environ.setdefault("API_FOOTBALL_ENABLED", "true")
-        _set_if_lower("API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN", 6)
-        _set_if_lower("API_FOOTBALL_CONTEXT_MATCH_LIMIT", 28)
+        _set_if_lower("ALLSPORTSAPI_MAX_REQUESTS_PER_RUN", 20)
+        _set_if_lower("ALLSPORTSAPI_MATCH_LIMIT", 16)
     if _env_present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY"):
         os.environ.setdefault("ENABLE_FOOTBALL_DATA_CONTEXT", "true")
-        _set_if_lower("FOOTBALL_DATA_MAX_REQUESTS_PER_RUN", 12)
-        _set_if_lower("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT", 120)
+        _set_if_lower("FOOTBALL_DATA_MAX_REQUESTS_PER_RUN", 8)
+        _set_if_lower("FOOTBALL_DATA_CONTEXT_MATCH_LIMIT", 72)
 
     _set_default("THESPORTSDB_API_KEY", "123")
     os.environ.setdefault("ENABLE_THESPORTSDB_CONTEXT", "true")
     _set_if_lower("THESPORTSDB_REQUESTS_MAX_PER_RUN", 12)
-    _set_if_lower("THESPORTSDB_CONTEXT_MATCH_LIMIT", 120)
+    _set_if_lower("THESPORTSDB_CONTEXT_MATCH_LIMIT", 96)
 
     _set_default("ENABLE_EXTERNAL_SIGNALS", "true")
     _set_default("ENABLE_CLUBELO_CONTEXT", "true")
@@ -336,13 +307,14 @@ def install_env_defaults() -> None:
 
     _set_default("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1")
     _set_default("SPORTLOGIC_HEADER_NAME", "X-API-Key")
-    if _truthy(os.getenv("SPORTLOGIC_CONTROLLED_ODDS_ENABLED"), False) and _env_present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"):
-        os.environ["ENABLE_SPORTLOGIC"] = "true"
-        os.environ["SPORTLOGIC_ENABLED"] = "true"
-        _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 28)
-        _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 28)
-        _set_if_lower("SPORTLOGIC_CONTEXT_MATCH_LIMIT", 20)
-        _set_if_lower("SPORTLOGIC_ODDS_MATCH_LIMIT", 20)
+    _set_default("SPORTLOGIC_BOOKMAKERS", "__probe_only__")
+    if _env_present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"):
+        os.environ.setdefault("ENABLE_SPORTLOGIC", "true")
+        os.environ.setdefault("SPORTLOGIC_ENABLED", "true")
+        _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 20)
+        _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 20)
+        _set_if_lower("SPORTLOGIC_CONTEXT_MATCH_LIMIT", 60)
+        _set_if_lower("SPORTLOGIC_ODDS_MATCH_LIMIT", 1)
 
     _set_default("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS", "false")
     _set_default("ENHANCED_RUN_REPORT_SEND_TELEGRAM", "true")
