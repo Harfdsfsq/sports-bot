@@ -1,12 +1,24 @@
 from __future__ import annotations
 
+import os
 from typing import Callable
 
 INSTALLED: list[str] = []
 FAILED: list[str] = []
+SKIPPED: list[str] = []
+
+
+def _truthy(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
 def _try_install(name: str, installer: Callable[[], object]) -> None:
+    if not _truthy(f"RUNBOT_BOOTSTRAP_{name.upper()}_ENABLED", False):
+        SKIPPED.append(name)
+        return
     try:
         installer()
         INSTALLED.append(name)
@@ -43,8 +55,8 @@ def install() -> dict[str, list[str]]:
         "sportlogic_query_runtime_guard",
         lambda: __import__("app.services.sportlogic_query_runtime_guard", fromlist=["install"]).install(),
     )
-    return {"installed": INSTALLED, "failed": FAILED}
+    return {"installed": INSTALLED, "failed": FAILED, "skipped": SKIPPED}
 
 
-if not INSTALLED and not FAILED:
+if _truthy("RUNBOT_RUNTIME_BOOTSTRAP_AUTOINSTALL", False) and not INSTALLED and not FAILED and not SKIPPED:
     install()
