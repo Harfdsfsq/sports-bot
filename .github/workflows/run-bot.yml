@@ -25,6 +25,8 @@ jobs:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
       PYTHONPATH: ${{ github.workspace }}
+      RUNBOT_RUNTIME_BOOTSTRAP_AUTOINSTALL: "false"
+      HARIZON_RUNTIME_MARKET_POLICY_AUTOINSTALL: "false"
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: production
@@ -241,7 +243,13 @@ jobs:
           set -uo pipefail
           mkdir -p .data/exports .data/cache artifacts/run-bot
           echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          timeout 25m python -X faulthandler -c "import runpy, sys; import app.services.runbot_runtime_bootstrap as boot; print('runtime bootstrap', {'installed': boot.INSTALLED, 'failed': boot.FAILED}, flush=True); sys.argv=['python -m app.cli','run-once']; runpy.run_module('app.cli', run_name='__main__')" 2>&1 | tee .data/exports/latest-run-bot.log
+          python - <<'PY' 2>&1 | tee .data/exports/latest-run-bot.log
+          import runpy
+          import sys
+          print('runtime cli direct start', flush=True)
+          sys.argv = ['python -m app.cli', 'run-once']
+          runpy.run_module('app.cli', run_name='__main__')
+          PY
           status=${PIPESTATUS[0]}
           echo "runtime status ${status}"
           echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
