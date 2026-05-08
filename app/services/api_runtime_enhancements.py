@@ -109,8 +109,8 @@ def _should_enable_provider(provider_key: str, original_result: bool) -> bool:
         return False
     if original_result:
         return True
-    if key == "sportlogic" and not _truthy(os.getenv("SPORTLOGIC_CONTROLLED_ODDS_ENABLED"), False):
-        return False
+    if key == "sportlogic" and _provider_auth_available(key):
+        return True
     return _provider_auth_available(key) or any(_truthy(os.getenv(name)) for name in PROVIDER_ENABLE_ENVS.get(key, tuple()) if os.getenv(name) is not None)
 
 
@@ -238,9 +238,6 @@ def install_env_defaults() -> None:
     _set_default("CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS", "true")
     _set_default("CONTROLLED_FALLBACK_SINGLE_SOURCE_MIN_BOOKS", "3")
 
-    # Restore the successful two-account odds-api.io routing. Do not perform
-    # alias retries by default: the baseline worked with exact display labels and
-    # alias probing can create invalid bookmaker requests such as plain Betfair.
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Betfair Exchange,Sbobet")
     _set_default("ODDS_API_IO_BOOKMAKERS", "Bet365,Unibet,Betfair Exchange,Sbobet")
@@ -258,14 +255,30 @@ def install_env_defaults() -> None:
         _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 200)
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 520)
 
+    # Controlled secondary odds rescue. These providers are not allowed to
+    # publish alone unless market-integrity confirms line depth; they only try to
+    # prevent a dead run when odds-api.io returns HTTP 200 with an empty payload.
+    _set_default("SECONDARY_ODDS_RESCUE_ENABLED", "true")
+    _set_default("SECONDARY_ODDS_RESCUE_TRIGGER", "odds_api_io_empty")
     if _env_present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY"):
         os.environ.setdefault("ENABLE_ODDSPAPI", "true")
-        _set_if_lower("ODDSPAPI_MAX_REQUESTS_PER_RUN", 2)
-        _set_if_lower("ODDSPAPI_MATCH_LIMIT", 20)
+        os.environ.setdefault("ODDSPAPI_ENABLED", "true")
+        _set_if_lower("ODDSPAPI_MAX_REQUESTS_PER_RUN", 3)
+        _set_if_lower("ODDSPAPI_MATCH_LIMIT", 24)
     if _env_present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY"):
         os.environ.setdefault("ENABLE_ALLSPORTSAPI", "true")
+        os.environ.setdefault("ALLSPORTSAPI_ENABLED", "true")
         _set_if_lower("ALLSPORTSAPI_MAX_REQUESTS_PER_RUN", 20)
-        _set_if_lower("ALLSPORTSAPI_MATCH_LIMIT", 16)
+        _set_if_lower("ALLSPORTSAPI_MATCH_LIMIT", 48)
+    if _env_present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"):
+        os.environ.setdefault("ENABLE_SPORTLOGIC", "true")
+        os.environ.setdefault("SPORTLOGIC_ENABLED", "true")
+        os.environ.setdefault("SPORTLOGIC_CONTROLLED_ODDS_ENABLED", "true")
+        _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 30)
+        _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 30)
+        _set_if_lower("SPORTLOGIC_CONTEXT_MATCH_LIMIT", 60)
+        _set_if_lower("SPORTLOGIC_ODDS_MATCH_LIMIT", 24)
+
     if _env_present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY"):
         os.environ.setdefault("ENABLE_FOOTBALL_DATA_CONTEXT", "true")
         _set_if_lower("FOOTBALL_DATA_MAX_REQUESTS_PER_RUN", 8)
@@ -304,17 +317,6 @@ def install_env_defaults() -> None:
     _set_default("DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED", "true")
     _set_default("SPREADS_PUBLICATION_ENABLED", "false")
     _set_default("TEAM_TOTALS_PUBLICATION_ENABLED", "false")
-
-    _set_default("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1")
-    _set_default("SPORTLOGIC_HEADER_NAME", "X-API-Key")
-    _set_default("SPORTLOGIC_BOOKMAKERS", "__probe_only__")
-    if _env_present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN"):
-        os.environ.setdefault("ENABLE_SPORTLOGIC", "true")
-        os.environ.setdefault("SPORTLOGIC_ENABLED", "true")
-        _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 20)
-        _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 20)
-        _set_if_lower("SPORTLOGIC_CONTEXT_MATCH_LIMIT", 60)
-        _set_if_lower("SPORTLOGIC_ODDS_MATCH_LIMIT", 1)
 
     _set_default("RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS", "false")
     _set_default("ENHANCED_RUN_REPORT_SEND_TELEGRAM", "true")
