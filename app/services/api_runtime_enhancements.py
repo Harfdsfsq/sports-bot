@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-import re
 from typing import Any, Callable
 
 REMOVED_PROVIDERS: tuple[str, ...] = tuple(
@@ -88,6 +87,50 @@ def _set_float_if_higher(name: str, maximum: float) -> None:
         current = maximum
     if current > maximum:
         os.environ[name] = str(maximum)
+
+
+def _clean_bookmakers(value: Any, fallback: str) -> str:
+    raw_items = [item.strip() for item in str(value or "").split(",") if item.strip()]
+    clean: list[str] = []
+    for item in raw_items:
+        key = item.lower().replace("_", " ").replace("-", " ")
+        if "betfair" in key:
+            continue
+        if item not in clean:
+            clean.append(item)
+    return ",".join(clean) or fallback
+
+
+def _force_sanitize_odds_api_io_bookmakers() -> None:
+    """Override invalid bookmaker values injected by workflow/env.
+
+    Production logs show odds-api.io rejects Betfair/Betfair Exchange with:
+    "Betfair is not a valid bookmaker". Since workflow env already contains
+    values before defaults run, this must overwrite, not setdefault.
+    """
+    os.environ["ODDS_API_IO_BOOKMAKERS_ACCOUNT1"] = _clean_bookmakers(
+        os.getenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT1") or "Bet365,Unibet",
+        "Bet365,Unibet",
+    )
+    os.environ["ODDS_API_IO_BOOKMAKERS_ACCOUNT2"] = _clean_bookmakers(
+        os.getenv("ODDS_API_IO_BOOKMAKERS_ACCOUNT2") or "Sbobet",
+        "Sbobet",
+    )
+    combined = ",".join(
+        item
+        for item in (
+            os.environ.get("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", ""),
+            os.environ.get("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", ""),
+        )
+        if item
+    )
+    clean_combined = _clean_bookmakers(os.getenv("ODDS_API_IO_BOOKMAKERS") or combined, combined or "Bet365,Unibet,Sbobet")
+    os.environ["ODDS_API_IO_BOOKMAKERS"] = clean_combined
+    os.environ["TARGET_BOOKMAKERS"] = _clean_bookmakers(os.getenv("TARGET_BOOKMAKERS") or clean_combined, clean_combined)
+    os.environ["CONSENSUS_BOOKMAKERS"] = _clean_bookmakers(os.getenv("CONSENSUS_BOOKMAKERS") or clean_combined, clean_combined)
+    os.environ["ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED"] = "false"
+    os.environ.setdefault("ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED", "true")
+    os.environ.setdefault("ODDS_API_IO_BOOKMAKER_ALIAS_RETRY_MAX", "12")
 
 
 def _provider_auth_available(provider_key: str) -> bool:
@@ -228,21 +271,12 @@ def install_env_defaults() -> None:
     _set_default("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", "true")
     _set_default("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", "1")
 
-    # odds-api.io: Betfair is rejected by the API in current logs, so do not use
-    # it as a default. Raise alias attempts enough to reach single-book Sbobet.
-    _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
-    _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Sbobet")
-    _set_default("ODDS_API_IO_BOOKMAKER_ALIAS_EMPTY_RETRY_ENABLED", "true")
-    _set_default("ODDS_API_IO_BOOKMAKER_ALIAS_RETRY_MAX", "12")
-    _set_default("ODDS_API_IO_UNFILTERED_EMPTY_RETRY_ENABLED", "false")
+    _force_sanitize_odds_api_io_bookmakers()
     if _env_present("ODDS_API_IO_KEY"):
         os.environ.setdefault("ENABLE_ODDS_API_IO", "true")
         _set_if_lower("ODDS_API_IO_ACCOUNT1_PER_RUN_MAX", 100)
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 420)
     if _env_present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2"):
-        _set_default("ODDS_API_IO_BOOKMAKERS", "Bet365,Unibet,Sbobet")
-        _set_default("TARGET_BOOKMAKERS", "Bet365,Unibet,Sbobet")
-        _set_default("CONSENSUS_BOOKMAKERS", "Bet365,Unibet,Sbobet")
         _set_if_lower("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX", 100)
         _set_if_lower("ODDS_API_IO_PER_RUN_MAX", 160)
         _set_if_lower("ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN", 160)
