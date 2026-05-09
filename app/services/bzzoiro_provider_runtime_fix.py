@@ -2,10 +2,14 @@ from __future__ import annotations
 
 import os
 import re
+from datetime import timezone
 from typing import Any
+
+from app.schemas import MatchContext
 
 _INSTALLED = False
 _DATE_RE = re.compile(r'^\d{4}-\d{2}-\d{2}$')
+UTC = timezone.utc
 
 
 def _ensure_stats(stats: Any) -> dict[str, Any]:
@@ -39,6 +43,15 @@ def _extract_rows(payload: Any, rows_fn: Any = None) -> list[dict[str, Any]]:
             if isinstance(value, list):
                 return [row for row in value if isinstance(row, dict)]
     return []
+
+
+def _to_float(value: Any) -> float | None:
+    try:
+        if value in (None, ''):
+            return None
+        return float(str(value).strip().replace(',', '.'))
+    except Exception:
+        return None
 
 
 def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> None:
@@ -127,6 +140,107 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
     BzzoiroContextProvider._fetch_rows = _fetch_rows
     BzzoiroContextProvider._harizon_fetch_rows_alias_patch = True
 
+    # SStats-style helpers expected by older generic enrichment/matching layers.
+    # They delegate to the predictions-v2 provider when available and otherwise
+    # parse the common Bzzoiro prediction/event payload shapes directly.
+    if not hasattr(BzzoiroContextProvider, '_extract_team_name'):
+        def _extract_team_name(self, row, side):  # type: ignore[no-untyped-def]
+            side_text = str(side or '').strip().lower()
+            try:
+                teams_fn = getattr(self, '_prediction_teams', None)
+                if callable(teams_fn):
+                    home, away = teams_fn(row if isinstance(row, dict) else {})
+                    return home if side_text == 'home' else away
+            except Exception:
+                pass
+            data = row if isinstance(row, dict) else {}
+            event = data.get('event') if isinstance(data.get('event'), dict) else data
+            keys = [f'{side_text}_team', f'{side_text}Team', side_text, 'home' if side_text == 'home' else 'away']
+            for key in keys:
+                value = event.get(key) if isinstance(event, dict) else None
+                if isinstance(value, dict):
+                    value = value.get('name') or value.get('Name') or value.get('short_name') or value.get('shortName')
+                if isinstance(value, str) and value.strip():
+                    return value.strip()
+            obj = event.get(f'{side_text}_team_obj') if isinstance(event, dict) else None
+            if isinstance(obj, dict):
+                for key in ('name', 'Name', 'short_name', 'shortName', 'display_name', 'displayName'):
+                    value = obj.get(key)
+                    if isinstance(value, str) and value.strip():
+                        return value.strip()
+            return ''
+        BzzoiroContextProvider._extract_team_name = _extract_team_name
+        BzzoiroContextProvider._harizon_extract_team_name_patch = True
+
+    if not hasattr(BzzoiroContextProvider, '_extract_league_name'):
+        def _extract_league_name(self, row):  # type: ignore[no-untyped-def]
+            try:
+                league_fn = getattr(self, '_prediction_league', None)
+                if callable(league_fn):
+                    value = league_fn(row if isinstance(row, dict) else {})
+                    if value:
+                        return str(value)
+            except Exception:
+                pass
+            data = row if isinstance(row, dict) else {}
+            event = data.get('event') if isinstance(data.get('event'), dict) else data
+            league = event.get('league') if isinstance(event, dict) else None
+            if isinstance(league, dict):
+                return str(league.get('name') or league.get('Name') or league.get('league_name') or league.get('displayName') or '')
+            return str((event.get('league_name') or event.get('leagueName') or data.get('league_name') or data.get('leagueName') or league or '') if isinstance(event, dict) else '')
+        BzzoiroContextProvider._extract_league_name = _extract_league_name
+        BzzoiroContextProvider._harizon_extract_league_name_patch = True
+
+    if not hasattr(BzzoiroContextProvider, '_extract_start'):
+        def _extract_start(self, row):  # type: ignore[no-untyped-def]
+            try:
+                start_fn = getattr(self, '_prediction_start', None)
+                if callable(start_fn):
+                    value = start_fn(row if isinstance(row, dict) else {})
+                    if value is not None:
+                        return value
+            except Exception:
+                pass
+            try:
+                from app.utils import parse_datetime
+                data = row if isinstance(row, dict) else {}
+                event = data.get('event') if isinstance(data.get('event'), dict) else data
+                for key in ('event_date', 'date', 'start', 'startTime', 'commence_time', 'kickoff'):
+                    value = event.get(key, data.get(key)) if isinstance(event, dict) else data.get(key)
+                    if value not in (None, ''):
+                        dt = parse_datetime(value)
+                        if getattr(dt, 'tzinfo', None) is None:
+                            dt = dt.replace(tzinfo=UTC)
+                        return dt.astimezone(UTC)
+            except Exception:
+                return None
+            return None
+        BzzoiroContextProvider._extract_start = _extract_start
+        BzzoiroContextProvider._harizon_extract_start_patch = True
+
+    if not hasattr(BzzoiroContextProvider, '_row_to_context'):
+        def _row_to_context(self, row):  # type: ignore[no-untyped-def]
+            pred_to_context = getattr(self, '_prediction_to_context', None)
+            if callable(pred_to_context):
+                context = pred_to_context(row if isinstance(row, dict) else {}, 'loose')
+                if context is not None:
+                    return context
+            data = row if isinstance(row, dict) else {}
+            expected_home = _to_float(data.get('expected_home_goals') or data.get('expected_home') or data.get('home_xg') or data.get('homeXg'))
+            expected_away = _to_float(data.get('expected_away_goals') or data.get('expected_away') or data.get('away_xg') or data.get('awayXg'))
+            if expected_home is None and expected_away is None:
+                return MatchContext(source='bzzoiro_predictions_v2', payload=data, confidence=56.0, details={'bzzoiro_provider_mode': 'compat_row_empty'})
+            return MatchContext(
+                source='bzzoiro_predictions_v2',
+                payload=data,
+                expected_home=expected_home,
+                expected_away=expected_away,
+                confidence=60.0,
+                details={'bzzoiro_provider_mode': 'compat_row_to_context'},
+            )
+        BzzoiroContextProvider._row_to_context = _row_to_context
+        BzzoiroContextProvider._harizon_row_to_context_patch = True
+
     if not hasattr(BzzoiroContextProvider, '_build_team_form_contexts'):
         def _build_team_form_contexts(self, matches=None, rows=None, preview=None):  # type: ignore[no-untyped-def]
             if isinstance(preview, dict):
@@ -195,6 +309,7 @@ def install() -> dict[str, Any]:
         'patches': [
             'bzzoiro_symbol_predictions_v2' if forced_v2 else 'bzzoiro_symbol_current',
             'bzzoiro_date_signature_fetch_rows_to_predictions',
+            'bzzoiro_sstats_style_helper_shims',
             'bzzoiro_url_alias',
             'bzzoiro_team_form_noop',
             'bzzoiro_nested_context_noop',
