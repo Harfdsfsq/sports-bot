@@ -43,6 +43,12 @@ except Exception:
     pass
 
 try:
+    from app.services import day_inventory_bucketed_top_v2_runtime_patch
+    day_inventory_bucketed_top_v2_runtime_patch.install()
+except Exception:
+    pass
+
+try:
     from app.services import day_inventory_runtime_guard
     day_inventory_runtime_guard.install()
 except Exception:
