@@ -1,19 +1,11 @@
 from __future__ import annotations
 
-"""Apply the HARIZON exact-core per-run API contract.
+"""Apply the HARIZON per-run API contract.
 
-Allowed normal-runtime providers only:
-- odds_api_io
-- sstats
-- bzzoiro
-- football_data
-- thesportsdb
-- WeatherAPI
-- Open-Meteo
-- ClubElo
-
-Everything else is forced to disabled/0 in normal runs, regardless of secrets
-present in the GitHub workflow environment.
+Normal runtime now maximizes useful lines/context from verified providers while
+keeping publication strict. The contract keeps daily/monthly-limited or broken
+providers off, but allows controlled secondary odds rescue from AllSportsAPI and
+SportLogic when primary odds coverage is thin.
 """
 
 import json
@@ -37,6 +29,8 @@ ALLOWED_CORE = [
     "weatherapi",
     "open_meteo",
     "clubelo",
+    "allsportsapi",
+    "sportlogic",
 ]
 
 
@@ -89,32 +83,37 @@ def _disable_provider(env: dict[str, str], prefix: str, reason: str) -> None:
 
 def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     if phase == "full_inventory":
-        odds_total, odds_account = 160, 80
+        odds_total, odds_account = 170, 85
         max_matches_for_odds, analysis_cap = 900, 900
-        context_limit, premium_context = 120, 48
-        bzzoiro, sstats, football_data, thesportsdb = 10, 18, 6, 12
-        weatherapi, open_meteo, clubelo = 4, 80, 2
+        context_limit, premium_context = 300, 140
+        bzzoiro, sstats, football_data, thesportsdb = 18, 36, 8, 14
+        weatherapi, open_meteo, clubelo = 8, 80, 3
+        allsportsapi, sportlogic = 8, 8
     elif phase == "morning_backfill":
-        odds_total, odds_account = 140, 70
-        max_matches_for_odds, analysis_cap = 650, 650
-        context_limit, premium_context = 240, 84
-        bzzoiro, sstats, football_data, thesportsdb = 16, 28, 6, 10
-        weatherapi, open_meteo, clubelo = 6, 80, 2
+        odds_total, odds_account = 150, 75
+        max_matches_for_odds, analysis_cap = 700, 700
+        context_limit, premium_context = 260, 120
+        bzzoiro, sstats, football_data, thesportsdb = 20, 34, 8, 12
+        weatherapi, open_meteo, clubelo = 8, 80, 3
+        allsportsapi, sportlogic = 6, 6
     else:
-        odds_total, odds_account = 120, 60
-        max_matches_for_odds, analysis_cap = 520, 520
-        context_limit, premium_context = 220, 84
-        bzzoiro, sstats, football_data, thesportsdb = 18, 30, 4, 8
-        weatherapi, open_meteo, clubelo = 6, 80, 2
+        odds_total, odds_account = 130, 65
+        max_matches_for_odds, analysis_cap = 560, 560
+        context_limit, premium_context = 260, 120
+        bzzoiro, sstats, football_data, thesportsdb = 20, 32, 6, 10
+        weatherapi, open_meteo, clubelo = 8, 80, 3
+        allsportsapi, sportlogic = 4, 4
 
+    odds_key_present = _present("ODDS_API_IO_KEY")
+    odds_key2_present = _present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2")
     env: dict[str, str] = {
-        "HARIZON_API_QUOTA_CONTRACT_VERSION": "v3-exact-core-only-2026-05-09",
+        "HARIZON_API_QUOTA_CONTRACT_VERSION": "v4-max-lines-context-2026-05-09",
         "HARIZON_RUN_PHASE_EFFECTIVE": phase,
         "HARIZON_ALLOWED_PROVIDER_SET": ",".join(ALLOWED_CORE),
         "HARIZON_PROVIDER_PROBE_MODE": "false",
         "PROVIDER_REQUEST_BUDGET_MODE": "per_run_only",
         "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "true",
-        "ALL_SOURCES_FREE_MAXIMIZE": "false",
+        "ALL_SOURCES_FREE_MAXIMIZE": "true",
         "RUN_DAYS_AHEAD": "1",
         "PUBLISH_WINDOW_HOURS": "24" if phase == "full_inventory" else "12",
         "MAX_MATCHES_FOR_ODDS_FETCH": str(max_matches_for_odds),
@@ -122,17 +121,23 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "DIAGNOSTICS_MATCH_LIMIT": str(analysis_cap),
         "CONTEXT_ENRICHMENT_MATCH_LIMIT": str(context_limit),
         "PREMIUM_CONTEXT_SHORTLIST_LIMIT": str(premium_context),
-        "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
+        # Context should be collected for near-window inventory matches even if
+        # odds are not yet matched. Publication still requires strict market guards.
+        "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
+        "DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED": "true",
+        "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": "160",
         "DAY_INVENTORY_USE_FOR_RUN": "true",
         "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": "12",
         "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
         "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
-        "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true" if phase == "full_inventory" else "false",
-        "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true" if phase == "full_inventory" else "false",
-        "SECONDARY_ODDS_RESCUE_ENABLED": "false",
-        "SECONDARY_ODDS_RESCUE_TRIGGER": "disabled_exact_core_only_runtime",
-        "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "999999",
+        "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false",
+        "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
+        # Secondary odds rescue is controlled and does not relax publication.
+        "SECONDARY_ODDS_RESCUE_ENABLED": "true",
+        "SECONDARY_ODDS_RESCUE_TRIGGER": "odds_api_io_empty_or_thin",
+        "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "80",
+        "SECONDARY_ODDS_RESCUE_NEAR_WINDOW_HOURS": "12",
         "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
         "MIN_BOOKS_PUBLISH": "2",
@@ -152,6 +157,10 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EV_PCT": "8.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_CONFIDENCE": "78.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_QUALITY": "78.0",
+        "ODDS_API_IO_RELAXED_INVENTORY_MATCHING_ENABLED": "true",
+        "ODDS_API_IO_RELAXED_EXACT_TOLERANCE_HOURS": "16",
+        "ODDS_API_IO_RELAXED_FUZZY_TOLERANCE_HOURS": "16",
+        "ODDS_API_IO_RELAXED_MIN_SCORE": "42",
         "ENABLE_ODDS_API_IO": "true",
         "ODDS_API_IO_ENABLED": "true",
         "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
@@ -161,12 +170,12 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "ODDS_API_IO_PAGE_LIMIT": "100",
         "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36" if phase == "full_inventory" else "24" if phase == "morning_backfill" else "18",
-        "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": str(odds_account if _present("ODDS_API_IO_KEY") else 0),
-        "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": str(odds_account if _present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2") else 0),
-        "ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN": str(odds_account if _present("ODDS_API_IO_KEY") else 0),
-        "ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN": str(odds_account if _present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2") else 0),
+        "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": str(odds_account if odds_key_present else 0),
+        "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": str(odds_account if odds_key2_present else 0),
+        "ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN": str(odds_account if odds_key_present else 0),
+        "ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN": str(odds_account if odds_key2_present else 0),
     }
-    _put_limit(env, "ODDS_API_IO", odds_total if _present("ODDS_API_IO_KEY") else 0)
+    _put_limit(env, "ODDS_API_IO", odds_total if odds_key_present else 0)
 
     env.update({
         "ENABLE_SSTATS_CONTEXT": "true" if _present("SSTATS_API_KEY") else "false",
@@ -174,7 +183,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "SSTATS_ENABLED": "true" if _present("SSTATS_API_KEY") else "false",
         "SSTATS_RECENT_MATCHES": "10",
         "SSTATS_LOOKBACK_DAYS": "45",
-        "SSTATS_CONTEXT_MATCH_LIMIT": "72",
+        "SSTATS_CONTEXT_MATCH_LIMIT": "120",
     })
     _put_limit(env, "SSTATS", sstats if _present("SSTATS_API_KEY") else 0)
 
@@ -182,8 +191,8 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "ENABLE_BZZOIRO_CONTEXT": "true" if _present("BZZOIRO_API_KEY") else "false",
         "ENABLE_BZZOIRO": "true" if _present("BZZOIRO_API_KEY") else "false",
         "BZZOIRO_ENABLED": "true" if _present("BZZOIRO_API_KEY") else "false",
-        "BZZOIRO_CONTEXT_MATCH_LIMIT": "60",
-        "BZZOIRO_MAX_PAGES": "5",
+        "BZZOIRO_CONTEXT_MATCH_LIMIT": "96",
+        "BZZOIRO_MAX_PAGES": "8",
         "BZZOIRO_PAGE_SIZE": "10",
     })
     _put_limit(env, "BZZOIRO", bzzoiro if _present("BZZOIRO_API_KEY") else 0, "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN", "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN")
@@ -191,7 +200,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     env.update({
         "ENABLE_FOOTBALL_DATA_CONTEXT": "true" if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else "false",
         "FOOTBALL_DATA_ENABLED": "true" if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else "false",
-        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "48",
+        "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "120",
         "FOOTBALL_DATA_CACHE_TTL_MINUTES": "720",
     })
     _put_limit(env, "FOOTBALL_DATA", football_data if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else 0)
@@ -201,7 +210,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "THESPORTSDB_CONTEXT_ENABLED": "true",
         "THESPORTSDB_ENABLED": "true",
         "THESPORTSDB_API_KEY": os.getenv("THESPORTSDB_API_KEY") or "123",
-        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "72",
+        "THESPORTSDB_CONTEXT_MATCH_LIMIT": "120",
     })
     _put_limit(env, "THESPORTSDB", thesportsdb)
 
@@ -219,10 +228,28 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     _put_limit(env, "OPEN_METEO", open_meteo)
     _put_limit(env, "CLUBELO", clubelo)
 
+    env.update({
+        "ENABLE_ALLSPORTSAPI": "true" if _present("ALLSPORTSAPI_API_KEY") else "false",
+        "ALLSPORTSAPI_ENABLED": "true" if _present("ALLSPORTSAPI_API_KEY") else "false",
+        "ALLSPORTSAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "true",
+        "ALLSPORTSAPI_MATCH_LIMIT": "40",
+    })
+    _put_limit(env, "ALLSPORTSAPI", allsportsapi if _present("ALLSPORTSAPI_API_KEY") else 0)
+
+    env.update({
+        "ENABLE_SPORTLOGIC": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false",
+        "SPORTLOGIC_ENABLED": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false",
+        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
+        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "true",
+        "SPORTLOGIC_MATCH_LIMIT": "40",
+        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "60",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "20",
+        "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": "7",
+    })
+    _put_limit(env, "SPORTLOGIC", sportlogic if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0)
+
     disabled = {
         "OPENWEATHERMAP": "not_in_allowed_core_use_weatherapi_openmeteo",
-        "ALLSPORTSAPI": "not_in_allowed_core_zero_recent_yield",
-        "SPORTLOGIC": "not_in_allowed_core_zero_recent_matched_offers",
         "ODDSPAPI": "not_in_allowed_core_monthly_limited_unverified",
         "RAPIDAPI_ODDS_FEED": "not_in_allowed_core_unverified",
         "HIGHLIGHTLY": "not_in_allowed_core_unverified",
@@ -258,9 +285,9 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "disabled_providers": disabled,
         "free_limits_reference": "api_free_limits_ru.pdf/docx",
         "per_run_grants": {
-            "odds_api_io": odds_total if _present("ODDS_API_IO_KEY") else 0,
-            "odds_api_io_account1": odds_account if _present("ODDS_API_IO_KEY") else 0,
-            "odds_api_io_account2": odds_account if _present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2") else 0,
+            "odds_api_io": odds_total if odds_key_present else 0,
+            "odds_api_io_account1": odds_account if odds_key_present else 0,
+            "odds_api_io_account2": odds_account if odds_key2_present else 0,
             "sstats": sstats if _present("SSTATS_API_KEY") else 0,
             "bzzoiro": bzzoiro if _present("BZZOIRO_API_KEY") else 0,
             "football_data": football_data if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else 0,
@@ -268,12 +295,14 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
             "weatherapi": weatherapi if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else 0,
             "open_meteo": open_meteo,
             "clubelo": clubelo,
+            "allsportsapi": allsportsapi if _present("ALLSPORTSAPI_API_KEY") else 0,
+            "sportlogic": sportlogic if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0,
         },
         "notes": [
-            "Production runtime is exact-core-only.",
-            "Only odds_api_io is a live odds source right now; publication still requires strong market-depth guards.",
-            "Weather source set is WeatherAPI + Open-Meteo only; OpenWeatherMap is disabled.",
-            "All non-core secrets may remain in GitHub, but runtime limits are forced to 0/off here.",
+            "Runtime maximizes verified odds/context coverage while publication remains strict.",
+            "Odds API IO inventory source IDs are used for exact odds matching before fuzzy matching.",
+            "Context no longer requires already-matched offers; near-window inventory rows are enriched first.",
+            "AllSportsAPI and SportLogic are controlled secondary odds rescue providers only.",
         ],
     }
     return env, contract
