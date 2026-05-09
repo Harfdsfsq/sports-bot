@@ -9,7 +9,7 @@
 | --- | --- | --- | --- | ---: | ---: |
 | odds_api_io | True | True | ok | 5 | 200 |
 | sstats | True | True | ok | 5 | 200 |
-| bzzoiro | True | True | ok | 50 | 200 |
+| bzzoiro | True | True | skipped_preserve_runtime_quota |  |  |
 | football_data | True | True | ok | 0 | 200 |
 | thesportsdb | True | True | ok | 1 | 200 |
 | weatherapi | True | True | ok | 2 | 200 |
