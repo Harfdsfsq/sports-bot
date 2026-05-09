@@ -37,14 +37,7 @@ def _parse_date(value: Any) -> date | None:
 
 
 def _compat_date_window(date_from: str, date_to: str, stats: dict[str, Any]) -> tuple[str, str]:
-    """Clamp legacy SStats-style Bzzoiro ranges to a small predictions window.
-
-    Generic enrichment layers sometimes call Bzzoiro with SStats historical
-    windows, for example 2026-03-25..2026-05-09. The Bzzoiro predictions endpoint
-    is a current/upcoming prematch feed, not a historical games feed; asking for
-    a 40+ day window can timeout and then poison the provider summary as
-    bzzoiro err=1 ctx=0. Use the target to-date and, by default, only that day.
-    """
+    """Clamp legacy SStats-style Bzzoiro ranges to a small predictions window."""
     start = _parse_date(date_from)
     end = _parse_date(date_to) or start
     if start is None or end is None:
@@ -94,6 +87,33 @@ def _to_float(value: Any) -> float | None:
         return None
 
 
+def _direct_bzzoiro_stats(self: Any, matches: Any) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
+    stats = {
+        'provider_version': getattr(self, 'VERSION', 'bzzoiro-direct-skip'),
+        'api_version': 'v2_predictions',
+        'enabled': bool(getattr(self, 'api_key', None)),
+        'api_key_present': bool(getattr(self, 'api_key', None)),
+        'direct_context_fetch_skipped': True,
+        'skip_reason': 'bzzoiro_predictions_are_fetched_inside_sstats_provider_to_avoid_duplicate_timeout',
+        'delegated_to_sstats_nested_bzzoiro': True,
+        'requests': 0,
+        'response_errors': 0,
+        'predictions_fetched': 0,
+        'events_fetched': 0,
+        'contexts_built': 0,
+        'matched_exact': 0,
+        'matched_loose': 0,
+        'matched_fuzzy': 0,
+        'unmatched_predictions': 0,
+        'unmatched_matches': 0,
+        'last_error': None,
+        'last_url': None,
+        'target_matches': len(matches or []) if isinstance(matches, list) else 0,
+    }
+    preview = {'direct_context_fetch_skipped': True, 'delegated_to_sstats_nested_bzzoiro': True, 'sample_predictions': [], 'matched_examples': []}
+    return {}, stats, preview
+
+
 def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> None:
     if not getattr(BzzoiroContextProvider, '_harizon_url_alias_patch', False):
         original_init = BzzoiroContextProvider.__init__
@@ -122,14 +142,29 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
         BzzoiroContextProvider.__init__ = patched_init
         BzzoiroContextProvider._harizon_url_alias_patch = True
 
+    # Direct Bzzoiro fetch duplicates the SStats nested Bzzoiro request. Runtime
+    # logs showed that the nested path succeeds, while the direct generic path can
+    # timeout and overwrite source_stats as bzzoiro err=1 ctx=0. Default to a
+    # clean no-op for the direct provider; set BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED=true
+    # to restore standalone direct fetch for debugging.
+    if not getattr(BzzoiroContextProvider, '_harizon_direct_fetch_skip_patch', False):
+        original_fetch_context = getattr(BzzoiroContextProvider, 'fetch_context', None)
+
+        async def fetch_context_patched(self, matches):  # type: ignore[no-untyped-def]
+            if not _truthy(os.getenv('BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED'), False):
+                return _direct_bzzoiro_stats(self, matches)
+            if callable(original_fetch_context):
+                return await original_fetch_context(self, matches)
+            return _direct_bzzoiro_stats(self, matches)
+
+        BzzoiroContextProvider.fetch_context = fetch_context_patched
+        BzzoiroContextProvider._harizon_direct_fetch_skip_patch = True
+
     async def _fetch_rows(self, client, path='/predictions/', *args, **kwargs):  # type: ignore[no-untyped-def]
         headers = kwargs.pop('headers', None) or {}
         params = kwargs.pop('params', None) or {}
         stats = _ensure_stats(kwargs.pop('stats', None))
 
-        # SStats-compatible legacy call shape:
-        #   _fetch_rows(client, from_date, to_date, stats)
-        # Route it to /predictions/ and clamp historical lookback ranges.
         if _looks_like_date(path):
             raw_from = str(path).strip()
             raw_to = str(args[0]).strip() if args and _looks_like_date(args[0]) else raw_from
@@ -178,7 +213,6 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
     BzzoiroContextProvider._fetch_rows = _fetch_rows
     BzzoiroContextProvider._harizon_fetch_rows_alias_patch = True
 
-    # SStats-style helpers expected by older generic enrichment/matching layers.
     if not hasattr(BzzoiroContextProvider, '_extract_team_name'):
         def _extract_team_name(self, row, side):  # type: ignore[no-untyped-def]
             side_text = str(side or '').strip().lower()
@@ -303,14 +337,7 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
 
 
 def install() -> dict[str, Any]:
-    """Apply compatibility fixes for Bzzoiro provider runtime.
-
-    The runner imports Bzzoiro through ``app.providers.bzzoiro``. Runtime patches
-    may also call provider-private helpers with SStats-style signatures. This
-    shim forces the public provider symbol to predictions-v2 and makes legacy
-    helper calls route to ``/api/predictions/`` instead of constructing invalid
-    date paths like ``/api/2026-03-25``.
-    """
+    """Apply compatibility fixes for Bzzoiro provider runtime."""
     global _INSTALLED
     if _INSTALLED:
         return {'status': 'already_installed'}
@@ -344,6 +371,7 @@ def install() -> dict[str, Any]:
         'patched_modules': sorted(set(patched_modules)),
         'patches': [
             'bzzoiro_symbol_predictions_v2' if forced_v2 else 'bzzoiro_symbol_current',
+            'bzzoiro_direct_context_fetch_skip_default',
             'bzzoiro_date_signature_fetch_rows_to_predictions',
             'bzzoiro_compat_date_range_clamp',
             'bzzoiro_sstats_style_helper_shims',
