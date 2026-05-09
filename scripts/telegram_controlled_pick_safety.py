@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-"""Last-mile Telegram safety for controlled fallback picks.
+"""Last-mile Telegram safety for HARIZON picks.
 
-This guard is intentionally narrow: it is active for publish_controlled_fallback.py
-only.  It validates the exact Telegram payload, so a controlled pick with
-`odds sources: 1` cannot be sent even if upstream candidate filtering/regression
-misses it.
+Keeps weak borderline candidates in artifacts, but prevents weak single-source
+picks from being published as real Telegram bets.
 """
 
 import json
@@ -15,89 +13,281 @@ import sys
 from pathlib import Path
 from typing import Any
 
-AUDIT_PATH = Path(__file__).resolve().parents[1] / ".data" / "exports" / "latest-telegram-controlled-pick-safety.json"
-TARGET_SCRIPT = "publish_controlled_fallback.py"
+ROOT = Path(__file__).resolve().parents[1]
+AUDIT_PATH = ROOT / ".data" / "exports" / "latest-telegram-controlled-pick-safety.json"
+TARGET_SCRIPT_NAMES = {"publish_controlled_fallback.py", "-"}
 
 
-def _as_float(value: Any, default: float = 0.0) -> float:
+def _f(value: Any, default: float = 0.0) -> float:
     try:
-        if value is None or value == "":
+        if value in (None, ""):
             return default
         return float(str(value).replace(",", "."))
     except Exception:
         return default
 
 
-def _as_int(value: Any, default: int = 0) -> int:
+def _i(value: Any, default: int = 0) -> int:
     try:
-        if value is None or value == "":
+        if value in (None, ""):
             return default
         return int(float(str(value).replace(",", ".")))
     except Exception:
         return default
 
 
-def _env_int(name: str, default: int) -> int:
-    return _as_int(os.getenv(name), default)
+def _b(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
-def _env_float(name: str, default: float) -> float:
-    return _as_float(os.getenv(name), default)
+def _ef(name: str, default: float) -> float:
+    return _f(os.getenv(name), default)
 
 
-def _write_audit(payload: dict[str, Any]) -> None:
+def _ei(name: str, default: int) -> int:
+    return _i(os.getenv(name), default)
+
+
+def _write(event: dict[str, Any]) -> None:
     try:
+        payload = json.loads(AUDIT_PATH.read_text(encoding="utf-8")) if AUDIT_PATH.exists() else {}
+        if not isinstance(payload, dict):
+            payload = {}
+        payload.setdefault("active", True)
+        payload.setdefault("events", [])
+        if isinstance(payload["events"], list):
+            payload["events"].append(event)
+            payload["events"] = payload["events"][-80:]
         AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
         AUDIT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
         pass
 
 
-def _is_controlled_pick_text(text: str) -> bool:
-    low = str(text or "").lower()
+def _summary(candidate: Any) -> dict[str, Any]:
+    value = candidate.get("source_summary") if isinstance(candidate, dict) else getattr(candidate, "source_summary", None)
+    return value if isinstance(value, dict) else {}
+
+
+def _get(candidate: Any, name: str, default: Any = None) -> Any:
+    if isinstance(candidate, dict) and candidate.get(name) not in (None, ""):
+        return candidate.get(name)
+    if hasattr(candidate, name):
+        value = getattr(candidate, name)
+        if value not in (None, ""):
+            return value
+    summary = _summary(candidate)
+    return summary.get(name, default) if summary.get(name) not in (None, "") else default
+
+
+def _count_from_list(value: Any) -> int:
+    if isinstance(value, list):
+        return len({str(item).strip().lower() for item in value if str(item).strip()})
+    if isinstance(value, str):
+        return len({item.strip().lower() for item in re.split(r"[,+;/|]+", value) if item.strip()})
+    return 0
+
+
+def _sources(candidate: Any) -> int:
+    s = _summary(candidate)
+    values = [
+        _get(candidate, "sources_count", 0), _get(candidate, "source_count", 0),
+        _get(candidate, "odds_sources_count", 0), _get(candidate, "independent_odds_sources_count", 0),
+        s.get("sources_count"), s.get("source_count"), s.get("odds_sources_count"),
+        s.get("independent_odds_sources_count"), _count_from_list(s.get("odds_sources")),
+        _count_from_list(s.get("sources")), _count_from_list(s.get("source_names")),
+    ]
+    if s.get("selected_source") or s.get("source"):
+        values.append(1)
+    return max(_i(v, 0) for v in values)
+
+
+def _books(candidate: Any) -> int:
+    s = _summary(candidate)
+    values = [
+        _get(candidate, "books_count", 0), _get(candidate, "bookmakers_count", 0),
+        _get(candidate, "bookmaker_count", 0), _get(candidate, "lines_count", 0),
+        s.get("books_count"), s.get("bookmakers_count"), s.get("bookmaker_count"),
+        s.get("lines_count"), _count_from_list(s.get("selected_bookmakers")),
+        _count_from_list(s.get("bookmakers")), _count_from_list(s.get("books")),
+    ]
+    if s.get("selected_bookmaker") or s.get("bookmaker"):
+        values.append(1)
+    return max(_i(v, 0) for v in values)
+
+
+def _edge(candidate: Any) -> float:
+    direct = _get(candidate, "edge_pct", None)
+    if direct not in (None, ""):
+        return _f(direct)
+    model = _f(_get(candidate, "adjusted_probability", 0.0))
+    market = _f(_get(candidate, "consensus_probability", 0.0)) or _f(_get(candidate, "market_probability", 0.0))
+    return (model - market) * 100.0 if 0 < model < 1 and 0 < market < 1 else 0.0
+
+
+def _quality(candidate: Any) -> float:
+    return _f(_get(candidate, "quality_score", None), _f(_summary(candidate).get("quality_score"), 0.0))
+
+
+def _reasons(candidate: Any) -> list[str]:
+    sources = _sources(candidate)
+    books = _books(candidate)
+    edge = _edge(candidate)
+    ev = _f(_get(candidate, "ev_pct", 0.0))
+    conf = _f(_get(candidate, "confidence", 0.0))
+    quality = _quality(candidate)
+    reasons: list[str] = []
+
+    min_edge = _ef("TELEGRAM_MAIN_PICK_MIN_EDGE_PP", 3.0)
+    if edge < min_edge:
+        reasons.append(f"main_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
+
+    min_sources = max(1, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2))
+    if sources < min_sources:
+        if _b("TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE", True):
+            min_books = _ei("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_BOOKS", 3)
+            min_single_edge = _ef("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EDGE_PP", 4.0)
+            min_ev = _ef("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EV_PCT", 8.0)
+            min_conf = _ef("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_CONFIDENCE", 78.0)
+            min_quality = _ef("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_QUALITY", 78.0)
+            ok = books >= min_books and edge >= min_single_edge and ev >= min_ev and conf >= min_conf and quality >= min_quality
+            if not ok:
+                reasons.append(
+                    "main_pick_single_source_below_exception:"
+                    f"sources={sources}/{min_sources},books={books}/{min_books},edge={edge:.2f}/{min_single_edge:.2f},"
+                    f"ev={ev:.2f}/{min_ev:.2f},conf={conf:.2f}/{min_conf:.2f},quality={quality:.2f}/{min_quality:.2f}"
+                )
+        else:
+            reasons.append(f"main_pick_odds_sources_below_min:{sources}/{min_sources}")
+    return reasons
+
+
+def _label(candidate: Any) -> str:
     return (
-        "контролируемый прогноз" in low
-        or "контролируемый резерв" in low
-        or "контрольная ценность" in low
-        or "controlled fallback" in low
+        f"{_get(candidate, 'home_team', '?')} — {_get(candidate, 'away_team', '?')} | "
+        f"{_get(candidate, 'family', '?')} {_get(candidate, 'selection', '?')} {_get(candidate, 'point', '')} @{_get(candidate, 'odds', '')}"
     )
 
 
+def _filter_bets(bets: Any) -> tuple[Any, list[dict[str, Any]]]:
+    if not isinstance(bets, list) or not bets:
+        return bets, []
+    kept: list[Any] = []
+    rejected: list[dict[str, Any]] = []
+    for bet in bets:
+        reasons = _reasons(bet)
+        if reasons:
+            rejected.append({
+                "label": _label(bet), "reasons": reasons, "sources_count": _sources(bet),
+                "books_count": _books(bet), "edge_pp": round(_edge(bet), 3),
+                "ev_pct": round(_f(_get(bet, "ev_pct", 0.0)), 3),
+                "confidence": round(_f(_get(bet, "confidence", 0.0)), 3),
+                "quality_score": round(_quality(bet), 3),
+            })
+        else:
+            kept.append(bet)
+    return kept, rejected
+
+
+def _patch_publisher() -> None:
+    try:
+        from app.services.telegram import TelegramPublisher
+    except Exception as exc:
+        _write({"publisher_patch": "import_failed", "error": f"{type(exc).__name__}: {exc}"})
+        return
+    if getattr(TelegramPublisher, "_harizon_main_pick_safety", False):
+        return
+    original_publish = TelegramPublisher.publish
+
+    async def publish_patched(self, bets, bankroll_summary=None):
+        kept, rejected = _filter_bets(bets)
+        if rejected:
+            _write({"main_publish_filter": True, "before": len(bets or []), "after": len(kept or []), "rejected": rejected})
+        if isinstance(bets, list) and bets and not kept:
+            return 0, []
+        return await original_publish(self, kept, bankroll_summary=bankroll_summary)
+
+    TelegramPublisher.publish = publish_patched
+    TelegramPublisher._harizon_main_pick_safety = True
+    _write({"publisher_patch": "installed"})
+
+
+def _pick_text(text: str) -> bool:
+    low = str(text or "").lower()
+    return any(token in low for token in (
+        "контролируемый прогноз", "контролируемый резерв", "controlled fallback",
+        "лучшая ставка", "лучшие ставки", "🛡 профиль сигнала",
+    ))
+
+
+def _text_sources(text: str) -> list[int]:
+    found = [int(m.group(1)) for m in re.finditer(r"odds\s+sources\s*:?\s*(\d+)", text, re.I)]
+    found += [int(m.group(1)) for m in re.finditer(r"источники\s*:?\s*(\d+)", text, re.I)]
+    return found
+
+
+def _text_reasons(text: str) -> list[str]:
+    if not _pick_text(text):
+        return []
+    reasons: list[str] = []
+    min_sources = max(2, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2))
+    for value in _text_sources(text):
+        if value < min_sources and "single-source" in text.lower():
+            reasons.append(f"telegram_pick_single_source_below_min:{value}/{min_sources}")
+    match = re.search(r"запас\s*([+\-]?[0-9]+(?:[.,][0-9]+)?)\s*п\.п", text, re.I)
+    if match:
+        edge = _f(match.group(1))
+        min_edge = _ef("TELEGRAM_MAIN_PICK_MIN_EDGE_PP", 3.0)
+        if edge < min_edge:
+            reasons.append(f"telegram_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
+    over15 = re.search(r"Ставка:\s*Тотал\s*[—-]\s*(?:Больше|Over|ТБ)\s*\(?1[,.]5\)?", text, re.I)
+    odds = re.search(r"Коэффициент:\s*([0-9]+(?:[.,][0-9]+)?)", text)
+    if over15 and odds:
+        value = _f(odds.group(1))
+        max_odds = _ef("TELEGRAM_TOTAL_OVER15_MAX_ODDS", 1.65)
+        actual_sources = max(_text_sources(text) or [0])
+        if value > max_odds and actual_sources < 3:
+            reasons.append(f"controlled_total_over_1_5_suspicious_price:{value:.2f}>{max_odds:.2f};sources={actual_sources}/3")
+    return reasons
+
+
 def _format_stake_percent(text: str) -> str:
-    if "% банка" in text:
+    if "% банка" in text or "💰" not in text or "Сумма ставки" not in text:
         return text
-    if "💰" not in text or "Сумма ставки" not in text:
+    bank = re.search(r"💼\s*Банк:\s*([0-9]+(?:[.,][0-9]+)?)", text)
+    stake = re.search(r"(💰\s*Сумма ставки:\s*)([0-9]+(?:[.,][0-9]+)?)(?:\s*\(([^)]*)\))?", text)
+    if not bank or not stake:
         return text
-    bank_match = re.search(r"💼\s*Банк:\s*([0-9]+(?:[.,][0-9]+)?)", text)
-    stake_match = re.search(r"(💰\s*Сумма ставки:\s*)([0-9]+(?:[.,][0-9]+)?)(?:\s*\(([^)]*)\))?", text)
-    if not bank_match or not stake_match:
+    bank_value = _f(bank.group(1)); stake_value = _f(stake.group(2))
+    if bank_value <= 0 or stake_value <= 0:
         return text
-    bank = _as_float(bank_match.group(1))
-    stake = _as_float(stake_match.group(2))
-    if bank <= 0 or stake <= 0:
-        return text
-    pct = stake * 100.0 / bank
-    note = str(stake_match.group(3) or "").strip()
-    if note:
-        repl = f"{stake_match.group(1)}{stake:.2f} ({pct:.2f}% банка, {note})"
-    else:
-        repl = f"{stake_match.group(1)}{stake:.2f} ({pct:.2f}% банка)"
-    return text[: stake_match.start()] + repl + text[stake_match.end() :]
+    pct = stake_value * 100.0 / bank_value
+    note = str(stake.group(3) or "").strip()
+    repl = f"{stake.group(1)}{stake_value:.2f} ({pct:.2f}% банка" + (f", {note})" if note else ")")
+    return text[: stake.start()] + repl + text[stake.end():]
 
 
-def _extract_text_from_any_payload(payload: Any) -> str:
-    if payload is None:
-        return ""
-    if isinstance(payload, dict):
-        text = payload.get("text")
-        return str(text or "") if isinstance(text, str) else ""
+def _validate_text(text: str) -> str:
+    text = _format_stake_percent(str(text or ""))
+    reasons = _text_reasons(text)
+    if reasons:
+        _write({"blocked_text_send": True, "reasons": reasons, "text_preview": text[:1200]})
+        raise RuntimeError("blocked Telegram pick: " + "; ".join(reasons))
+    return text
+
+
+def _extract_text(payload: Any) -> str:
+    if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+        return payload["text"]
     if isinstance(payload, (bytes, bytearray)):
         try:
-            raw = payload.decode("utf-8")
+            payload = payload.decode("utf-8")
         except Exception:
             return ""
-    else:
-        raw = str(payload or "")
+    raw = str(payload or "")
     if not raw:
         return ""
     try:
@@ -108,123 +298,27 @@ def _extract_text_from_any_payload(payload: Any) -> str:
         pass
     try:
         from urllib import parse
-        parsed = parse.parse_qs(raw, keep_blank_values=True)
-        values = parsed.get("text") or []
-        return str(values[0] or "") if values else ""
+        values = parse.parse_qs(raw, keep_blank_values=True).get("text") or []
+        return str(values[0]) if values else ""
     except Exception:
         return ""
 
 
-def _guard_reasons(text: str) -> list[str]:
-    reasons: list[str] = []
-    if not _is_controlled_pick_text(text):
-        return reasons
-
-    min_odds_sources = max(2, _env_int("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2))
-    odds_sources_found = [int(m.group(1)) for m in re.finditer(r"odds\s+sources\s*:?\s*(\d+)", text, re.IGNORECASE)]
-    for value in odds_sources_found:
-        if value < min_odds_sources:
-            reasons.append(f"controlled_pick_odds_sources_below_min:{value}/{min_odds_sources}")
-
-    # Fallback for text variants that may not expose an explicit odds-sources line.
-    if not odds_sources_found:
-        one_source_hints = (
-            " / odds_api_io" in text
-            and not any(book in text for book in ("Betfair Exchange / odds_api_io", "Sbobet / odds_api_io", "Unibet,", "Bet365,"))
-        )
-        if one_source_hints and "Подтверждения:" in text:
-            reasons.append("controlled_pick_price_confirmation_unclear_single_odds_api_io")
-
-    # Specific historical failure mode: total over 1.5 at an outlier price.
-    total_over_15 = re.search(
-        r"Ставка:\s*Тотал\s*[—-]\s*(?:Больше|Over)\s*\(?1[,.]5\)?",
-        text,
-        re.IGNORECASE,
-    )
-    odds_match = re.search(r"Коэффициент:\s*([0-9]+(?:[.,][0-9]+)?)", text)
-    if total_over_15 and odds_match:
-        odds = _as_float(odds_match.group(1))
-        max_reasonable = _env_float("TELEGRAM_TOTAL_OVER15_MAX_ODDS", 1.65)
-        min_over15_sources = max(3, _env_int("TELEGRAM_TOTAL_OVER15_MIN_ODDS_SOURCES", 3))
-        actual_sources = max(odds_sources_found or [0])
-        if odds > max_reasonable and actual_sources < min_over15_sources:
-            reasons.append(f"controlled_total_over_1_5_suspicious_price:{odds:.2f}>{max_reasonable:.2f};sources={actual_sources}/{min_over15_sources}")
-
-    return reasons
-
-
-def _validate_and_format_text(text: str) -> str:
-    formatted = _format_stake_percent(str(text or ""))
-    reasons = _guard_reasons(formatted)
-    if reasons:
-        _write_audit({"active": True, "blocked": True, "reasons": reasons, "text_preview": formatted[:1200]})
-        raise RuntimeError("blocked controlled Telegram pick: " + "; ".join(reasons))
-    return formatted
-
-
-def install() -> None:
-    if Path(sys.argv[0] or "").name != TARGET_SCRIPT:
-        return
-
-    _write_audit({"active": True, "blocked": False, "target_script": TARGET_SCRIPT})
-
-    # urllib/form payloads.
-    try:
-        from urllib import parse, request
-        if not getattr(parse, "_harizon_controlled_pick_safety", False):
-            original_urlencode = parse.urlencode
-
-            def urlencode_patched(query, doseq=False, safe="", encoding=None, errors=None, quote_via=parse.quote_plus):
-                if isinstance(query, dict) and isinstance(query.get("text"), str):
-                    query = dict(query)
-                    query["text"] = _validate_and_format_text(query["text"])
-                elif isinstance(query, (list, tuple)):
-                    updated = []
-                    for item in query:
-                        if isinstance(item, (list, tuple)) and len(item) == 2 and item[0] == "text" and isinstance(item[1], str):
-                            updated.append((item[0], _validate_and_format_text(item[1])))
-                        else:
-                            updated.append(item)
-                    query = updated
-                return original_urlencode(query, doseq=doseq, safe=safe, encoding=encoding, errors=errors, quote_via=quote_via)
-
-            parse.urlencode = urlencode_patched
-            parse._harizon_controlled_pick_safety = True
-
-        if not getattr(request, "_harizon_controlled_pick_safety", False):
-            original_urlopen = request.urlopen
-
-            def urlopen_patched(url, data=None, timeout=None, *args, **kwargs):
-                target = getattr(url, "full_url", url)
-                if isinstance(target, str) and "api.telegram.org" in target and "sendMessage" in target:
-                    text = _extract_text_from_any_payload(getattr(url, "data", None)) or _extract_text_from_any_payload(data)
-                    if text:
-                        _validate_and_format_text(text)
-                return original_urlopen(url, data=data, timeout=timeout, *args, **kwargs)
-
-            request.urlopen = urlopen_patched
-            request._harizon_controlled_pick_safety = True
-    except Exception:
-        pass
-
-    # httpx JSON payloads, used by app/services/telegram.py.
+def _patch_http() -> None:
     try:
         import httpx
         if not getattr(httpx.AsyncClient, "_harizon_controlled_pick_safety", False):
             original_post = httpx.AsyncClient.post
 
             async def post_patched(self, url, *args, **kwargs):
-                target = str(url or "")
-                if "api.telegram.org" in target and "sendMessage" in target:
-                    json_payload = kwargs.get("json")
-                    if isinstance(json_payload, dict) and isinstance(json_payload.get("text"), str):
-                        json_payload = dict(json_payload)
-                        json_payload["text"] = _validate_and_format_text(json_payload["text"])
-                        kwargs["json"] = json_payload
+                if "api.telegram.org" in str(url or "") and "sendMessage" in str(url or ""):
+                    payload = kwargs.get("json")
+                    if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+                        payload = dict(payload); payload["text"] = _validate_text(payload["text"]); kwargs["json"] = payload
                     else:
-                        text = _extract_text_from_any_payload(kwargs.get("data"))
+                        text = _extract_text(kwargs.get("data"))
                         if text:
-                            _validate_and_format_text(text)
+                            _validate_text(text)
                 return await original_post(self, url, *args, **kwargs)
 
             httpx.AsyncClient.post = post_patched
@@ -232,7 +326,15 @@ def install() -> None:
     except Exception:
         pass
 
+
+def install() -> None:
+    script_name = Path(sys.argv[0] or "").name
+    if not _b("HARIZON_TELEGRAM_PICK_SAFETY_ENABLED", False) and script_name not in TARGET_SCRIPT_NAMES:
+        return
+    _write({"active": True, "target_script": script_name})
+    _patch_publisher()
+    _patch_http()
     try:
-        print("telegram controlled pick safety active")
+        print("telegram pick safety active")
     except Exception:
         pass
