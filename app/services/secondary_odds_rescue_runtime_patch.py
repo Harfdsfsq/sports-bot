@@ -54,7 +54,7 @@ def _provider_name(runner: Any, provider: Any) -> str:
         module = getattr(provider.__class__, '__module__', '')
         name = getattr(provider.__class__, '__name__', '')
         text = f'{module}.{name}'.lower()
-        if 'odds_api_io' in text or 'oddsapiio' in text:
+        if 'odds_api_io' in text or 'oddsapiio' in text or 'odds_api' in text:
             return 'odds_api_io'
         if 'sportlogic' in text:
             return 'sportlogic'
@@ -146,17 +146,34 @@ def _select_matches(matches: Any) -> list[Any]:
     return [m for _, m in filtered[:max_matches]]
 
 
+def _trigger_mode() -> str:
+    return str(os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER_PROVIDER') or os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER') or 'primary_odds_non_empty').strip().lower()
+
+
 def _should_trigger(provider_name: str, base_offers: Any) -> tuple[bool, str]:
-    mode = str(os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER_PROVIDER') or os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER') or 'primary_odds_non_empty').strip().lower()
+    mode = _trigger_mode()
     base_count = _count_offers(base_offers)
     min_primary = max(1, _to_int(os.getenv('SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS') or 80, 80))
-    if mode in {'auto', 'primary', 'primary_odds', 'primary_odds_non_empty', 'odds_api_io_empty_or_thin'}:
+    auto_modes = {
+        'auto',
+        'primary',
+        'primary_odds',
+        'primary_odds_non_empty',
+        'odds_api_io_empty_or_thin',
+        'thin_primary_market_depth',
+        'thin_primary_depth',
+        'market_depth_rescue',
+        'secondary_odds_rescue',
+    }
+    if mode in auto_modes:
         if base_count >= min_primary:
-            return True, f'primary_offers:{base_count}>={min_primary}'
-        return False, f'base_offers_below_min:{base_count}/{min_primary}'
+            return True, f'{mode}:primary_offers:{base_count}>={min_primary}'
+        return False, f'{mode}:base_offers_below_min:{base_count}/{min_primary}'
     allowed = {item.strip().lower() for item in mode.split(',') if item.strip()}
     if provider_name in allowed:
-        return True, f'explicit_provider:{provider_name}'
+        if base_count <= 0:
+            return False, f'explicit_provider:{provider_name};base_offers_empty'
+        return True, f'explicit_provider:{provider_name};base_offers={base_count}'
     return False, f'provider_not_trigger:{provider_name};allowed={sorted(allowed)};base_offers={base_count}'
 
 
@@ -195,11 +212,12 @@ def install() -> dict[str, Any]:
         result = await original_fetch_provider(self, provider, method_name, *args, **kwargs)
         if str(method_name) != 'fetch_offers':
             return result
+        if getattr(self, '_secondary_odds_rescue_done', False):
+            return result
         provider_name = _provider_name(self, provider)
         base_offers, base_stats, base_preview = result if isinstance(result, tuple) and len(result) == 3 else ({}, {}, {})
         trigger, trigger_reason = _should_trigger(provider_name, base_offers)
         if not trigger:
-            # Keep the install report, but record the latest non-trigger reason for diagnostics.
             _write_report({
                 'created_at_utc': datetime.now(UTC).isoformat(),
                 'installed': True,
@@ -209,10 +227,8 @@ def install() -> dict[str, Any]:
                 'method_name': str(method_name),
                 'base_offers': _count_offers(base_offers),
                 'trigger_reason': trigger_reason,
-                'trigger_mode': str(os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER_PROVIDER') or os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER') or 'primary_odds_non_empty'),
+                'trigger_mode': _trigger_mode(),
             })
-            return result
-        if getattr(self, '_secondary_odds_rescue_done', False):
             return result
         lock = getattr(self, '_secondary_odds_rescue_lock', None)
         if lock is None:
@@ -230,6 +246,7 @@ def install() -> dict[str, Any]:
                 'executed': True,
                 'trigger_provider': provider_name,
                 'trigger_reason': trigger_reason,
+                'trigger_mode': _trigger_mode(),
                 'base_offers': _count_offers(base_offers),
                 'target_matches': len(matches),
                 'target_match_sample': [
@@ -287,6 +304,6 @@ def install() -> dict[str, Any]:
         'installed': True,
         'enabled': True,
         'executed': False,
-        'trigger_mode': os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER_PROVIDER') or os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER') or 'primary_odds_non_empty',
+        'trigger_mode': _trigger_mode(),
     })
-    return {'status': 'installed', 'trigger_mode': os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER_PROVIDER') or os.getenv('SECONDARY_ODDS_RESCUE_TRIGGER') or 'primary_odds_non_empty'}
+    return {'status': 'installed', 'trigger_mode': _trigger_mode()}
