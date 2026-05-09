@@ -38,6 +38,16 @@ jobs:
       PREDICTION_PUBLICATION_ENABLED: "false"
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "false"
+      # This workflow is inventory-only. Disable run-bot runtime hooks so it
+      # does not execute post-run coverage repair, line guards or prediction
+      # artifact mutations while building the fixture pool.
+      RUNTIME_PRE_PREDICTION_INVENTORY_HOOKS_ENABLED: "false"
+      RUNTIME_POST_PREDICTION_INVENTORY_HOOKS_ENABLED: "false"
+      FIXTURE_EXPANSION_ENABLED: "false"
+      DAY_INVENTORY_ACCUMULATION_ENABLED: "false"
+      DAY_INVENTORY_COVERAGE_REPAIR_ENABLED: "false"
+      LINE_MOVEMENT_GUARD_ENABLED: "false"
+      REFRESH_PLAN_COUNT_REPAIR_ENABLED: "false"
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
       MATCH_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
@@ -126,6 +136,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-build-day-inventory.log || true
           git commit -m "Update day inventory [skip ci]" || true
+          if git push; then
+            echo "day inventory pushed"
+            exit 0
+          fi
+          echo "initial push rejected; rebasing on latest main and retrying"
+          git pull --rebase --autostash origin main || true
           git push || true
 
       - name: Upload day inventory artifact
