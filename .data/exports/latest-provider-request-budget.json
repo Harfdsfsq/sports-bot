@@ -37,13 +37,17 @@
       "status": "secondary_odds_rescue_and_context_probe"
     },
     {
-      "api_key_present": null,
-      "configured_grant": 0,
+      "api_key_present": false,
+      "configured_grant": 2,
       "grant": 0,
       "provider": "oddspapi",
-      "reason": "removed_from_project",
-      "secret_env_keys": [],
-      "status": "removed"
+      "reason": "missing_key",
+      "secret_env_keys": [
+        "ODDSPAPI_API_KEY",
+        "ODDSPAPI_KEY",
+        "ODDS_PAPI_API_KEY"
+      ],
+      "status": "last_resort_odds_rescue_monthly_limited"
     },
     {
       "api_key_present": true,
@@ -242,20 +246,11 @@
     }
   ],
   "deleted_providers": [
-    "api_football",
-    "bookies_api",
-    "oddspapi"
+    "bookies_api"
   ],
-  "env_written_count": 256,
+  "env_written_count": 245,
   "event": "workflow_dispatch",
   "integrity_env": {
-    "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "0",
-    "API_FOOTBALL_ENABLED": "false",
-    "API_FOOTBALL_KEY": "",
-    "API_FOOTBALL_MAX_HTTP_REQUESTS_PER_RUN": "0",
-    "API_FOOTBALL_PER_RUN_MAX": "0",
-    "API_FOOTBALL_REQUEST_BUDGET_GRANTED": "0",
-    "API_FOOTBALL_REQUEST_BUDGET_REASON": "removed_from_project",
     "BOOKIES_API_ENABLED": "false",
     "BOOKIES_API_ODDS_FETCH_LIMIT": "0",
     "BOOKIES_API_REQUEST_BUDGET_GRANTED": "0",
@@ -290,9 +285,7 @@
     "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
     "DAY_INVENTORY_USE_FOR_RUN": "true",
     "DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED": "true",
-    "ENABLE_API_FOOTBALL": "false",
     "ENABLE_BOOKIES_API": "false",
-    "ENABLE_ODDSPAPI": "false",
     "HANDICAP_PAIR_INTEGRITY_REQUIRED": "true",
     "HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION": "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory",
     "HARIZON_FAST_INVENTORY_LOCK": "true",
@@ -304,13 +297,6 @@
     "MARKET_DERIVED_MIN_BOOKS": "2",
     "MARKET_DERIVED_MIN_SOURCES": "2",
     "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
-    "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
-    "ODDSPAPI_ENABLED": "false",
-    "ODDSPAPI_MATCH_LIMIT": "0",
-    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
-    "ODDSPAPI_PER_RUN_MAX": "0",
-    "ODDSPAPI_REQUEST_BUDGET_GRANTED": "0",
-    "ODDSPAPI_REQUEST_BUDGET_REASON": "removed_from_project",
     "PUBLISH_DRY_RUN": "false",
     "SPREADS_PUBLICATION_ENABLED": "false",
     "TEAM_TOTALS_PUBLICATION_ENABLED": "false"
@@ -322,13 +308,9 @@
         "dnb",
         "totals"
       ],
-      "controlled_send_telegram": "true",
       "inventory_bootstrap": "odds_api_io",
       "inventory_provider_merge": "false",
-      "manual_dry_run": "false",
-      "min_kickoff_lead_minutes": null,
-      "min_odds_sources": 2,
-      "sportlogic_bookmakers": null,
+      "min_odds_sources": "2",
       "tier_a": [
         "btts",
         "dnb",
@@ -348,18 +330,15 @@
     "warnings": []
   },
   "mode": "per_run_with_daily_guards",
-  "msk_now": "2026-05-09T12:15:37.334627+03:00",
+  "msk_now": "2026-05-09T14:01:23.500499+03:00",
   "notes": [
-    "config/provider_runtime_policy.json is the effective provider budget source of truth.",
-    "bookies_api, api_football and oddspapi are removed from active runtime and provider budget decisions.",
-    "Fast inventory lock prevents provider_request_budget from re-enabling heavy day-inventory provider merge.",
-    "Controlled fallback can send standalone Telegram predictions on workflow_dispatch when lifecycle and publisher guards approve.",
-    "SportLogic remains context/probe only unless its odds payload is explicitly verified.",
-    "Controlled fallback is market-integrity hardened: totals/dnb/btts only, no spreads/teamtotals, min 2 odds sources.",
-    "Budget mode is per-run-only; daily/monthly counters are not used for critical free sources."
+    "config/provider_runtime_policy.json is the base provider budget source.",
+    "Final per-run grants are applied after this step by scripts/apply_per_run_api_quota_contract.py.",
+    "Only bookies_api is forcibly removed. API-Football and OddsPapi are controlled by per-run free-limit grants.",
+    "Context sources do not confirm price; publication requires market depth."
   ],
   "policy_path": "/home/runner/work/sports-bot/sports-bot/config/provider_runtime_policy.json",
-  "slot_msk": "12:15 MSK",
-  "utc_now": "2026-05-09T09:15:37.334627+00:00",
+  "slot_msk": "14:01 MSK",
+  "utc_now": "2026-05-09T11:01:23.500499+00:00",
   "version": "v24-free-limit-balanced-odds-rescue"
 }
