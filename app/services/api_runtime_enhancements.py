@@ -209,8 +209,8 @@ def install_env_defaults() -> None:
         for name in PROVIDER_ENABLE_ENVS.get(provider, tuple()):
             os.environ[name] = "false"
 
-    _set_default("HARIZON_RUNTIME_POLICY_VERSION", "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory")
-    _set_default("HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION", "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory")
+    _set_default("HARIZON_RUNTIME_POLICY_VERSION", "harizon-runtime-policy-v6-max-lines-context")
+    _set_default("HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION", "harizon-runtime-policy-v6-max-lines-context")
     _set_default("MATCH_BOOTSTRAP_PROVIDER", "odds_api_io")
     _set_default("DAY_INVENTORY_BOOTSTRAP_PROVIDER", "odds_api_io")
     _set_default("DAY_INVENTORY_USE_FOR_RUN", "true")
@@ -237,10 +237,12 @@ def install_env_defaults() -> None:
     _set_default("DAILY_HARD_CAP_PICKS", "7")
     _set_default("MAX_PICKS_PER_RUN", "2")
     _set_default("CONTROLLED_FALLBACK_MAX_PICKS_PER_RUN", "2")
-    _set_default("CONTEXT_ENRICHMENT_REQUIRES_OFFERS", "true")
+    _set_default("CONTEXT_ENRICHMENT_REQUIRES_OFFERS", "false")
+    _set_default("DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED", "true")
+    _set_default("DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT", "160")
     _set_if_lower("ANALYSIS_MATCH_CAP_PER_RUN", 420)
     _set_if_lower("DIAGNOSTICS_MATCH_LIMIT", 420)
-    _set_if_lower("CONTEXT_ENRICHMENT_MATCH_LIMIT", 240)
+    _set_if_lower("CONTEXT_ENRICHMENT_MATCH_LIMIT", 260)
 
     _set_default("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", "true")
     _set_float_if_higher("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0)
@@ -283,7 +285,7 @@ def install_env_defaults() -> None:
         _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 520)
 
     _set_default("SECONDARY_ODDS_RESCUE_ENABLED", "true")
-    _set_default("SECONDARY_ODDS_RESCUE_TRIGGER", "odds_api_io_empty")
+    _set_default("SECONDARY_ODDS_RESCUE_TRIGGER", "single_source_candidate_or_primary_thin")
     if _env_present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY"):
         os.environ.setdefault("ENABLE_ODDSPAPI", "true")
         os.environ.setdefault("ODDSPAPI_ENABLED", "true")
