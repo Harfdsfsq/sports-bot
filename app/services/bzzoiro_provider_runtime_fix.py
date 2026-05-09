@@ -13,12 +13,12 @@ def install() -> dict[str, Any]:
     """Apply compatibility fixes for Bzzoiro provider runtime.
 
     Runtime diagnostics/patch layers historically expected Bzzoiro providers to
-    expose `.url`, `_fetch_rows()` and sometimes the SStats-specific
-    `_build_team_form_contexts()` helper. The current Bzzoiro provider uses
-    `.base_url` and `_fetch_paginated_rows()` and already builds its own contexts.
-    Missing compatibility methods caused AttributeError after successful Bzzoiro
-    HTTP responses, so the provider was reported as `нет данных` despite returning
-    events/contexts.
+    expose `.url`, `_fetch_rows()`, `_fetch_bzzoiro_contexts()` and sometimes the
+    SStats-specific `_build_team_form_contexts()` helper. The current Bzzoiro
+    provider uses `.base_url` and `_fetch_paginated_rows()` and already builds its
+    own current-event prediction contexts. Missing compatibility methods caused
+    AttributeError after successful Bzzoiro HTTP responses, so the provider was
+    reported as `нет данных` despite returning events/contexts.
     """
     global _INSTALLED
     if _INSTALLED:
@@ -84,5 +84,42 @@ def install() -> dict[str, Any]:
         BzzoiroContextProvider._build_team_form_contexts = _build_team_form_contexts
         BzzoiroContextProvider._harizon_team_form_noop_patch = True
 
+    if not hasattr(BzzoiroContextProvider, '_fetch_bzzoiro_contexts'):
+        async def _fetch_bzzoiro_contexts(self, client=None, matches=None, *args, **kwargs):  # type: ignore[no-untyped-def]
+            """SStats nested-provider compatibility wrapper.
+
+            Some generic enrichment layers call `_fetch_bzzoiro_contexts()` on
+            whichever context provider is active. For the real Bzzoiro provider,
+            the correct implementation is simply `fetch_context(matches)`. The
+            unused client argument is accepted for compatibility with the SStats
+            embedded Bzzoiro helper signature.
+            """
+            target_matches = matches
+            if target_matches is None and args:
+                for item in args:
+                    if isinstance(item, list):
+                        target_matches = item
+                        break
+            if target_matches is None:
+                target_matches = []
+            contexts, stats, preview = await self.fetch_context(target_matches)
+            if isinstance(preview, dict):
+                preview.setdefault('bzzoiro_nested_context_compat', True)
+                preview_payload = preview.get('matched_examples') or preview.get('sample_predictions') or preview
+            else:
+                preview_payload = preview
+            return contexts, stats, preview_payload if isinstance(preview_payload, list) else [preview_payload]
+
+        BzzoiroContextProvider._fetch_bzzoiro_contexts = _fetch_bzzoiro_contexts
+        BzzoiroContextProvider._harizon_nested_context_alias_patch = True
+
     _INSTALLED = True
-    return {'status': 'installed', 'patches': ['bzzoiro_url_alias', 'bzzoiro_fetch_rows_alias', 'bzzoiro_team_form_noop']}
+    return {
+        'status': 'installed',
+        'patches': [
+            'bzzoiro_url_alias',
+            'bzzoiro_fetch_rows_alias',
+            'bzzoiro_team_form_noop',
+            'bzzoiro_nested_context_alias',
+        ],
+    }
