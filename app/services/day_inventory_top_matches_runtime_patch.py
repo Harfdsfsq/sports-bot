@@ -122,7 +122,6 @@ def _top_match_score(row: dict[str, Any]) -> float:
     status = _status_text(row)
     score = float(row.get('priority') or 0.0)
 
-    # Real odds provider / stronger fixture confidence first.
     if 'odds_api_io' in sources:
         score += 190.0
     if 'bzzoiro' in sources:
@@ -164,7 +163,6 @@ def _top_match_score(row: dict[str, Any]) -> float:
     elif any(term in status for term in _SCHEDULED_TERMS):
         score += 45.0
 
-    # If SStats row has odds inside provider metadata, keep it above blind long-tail rows.
     if meta.get('odds_count') or meta.get('has_sstats_odds'):
         score += 25.0
 
@@ -183,6 +181,56 @@ def _top_match_score(row: dict[str, Any]) -> float:
             score -= 60.0
 
     return round(score, 4)
+
+
+def _recompute_selected_coverage_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
+    now = datetime.now(UTC)
+    counts = {
+        'matches_with_odds': 0,
+        'matches_with_context': 0,
+        'matches_with_weather': 0,
+        'matches_with_news': 0,
+        'matches_with_xg': 0,
+        'matches_with_form': 0,
+        'matches_ready_for_model': 0,
+        'matches_ready_for_publish': 0,
+        'matches_next_6h': 0,
+        'matches_next_6h_ready': 0,
+        'matches_next_12h': 0,
+        'matches_next_12h_ready': 0,
+    }
+    for row in rows:
+        coverage = _coverage(row)
+        if bool(coverage.get('odds')):
+            counts['matches_with_odds'] += 1
+        if bool(coverage.get('context')):
+            counts['matches_with_context'] += 1
+        if bool(coverage.get('weather')):
+            counts['matches_with_weather'] += 1
+        if bool(coverage.get('news')):
+            counts['matches_with_news'] += 1
+        if bool(coverage.get('xg')):
+            counts['matches_with_xg'] += 1
+        if bool(coverage.get('form')):
+            counts['matches_with_form'] += 1
+        ready = bool(coverage.get('ready_for_model'))
+        if ready:
+            counts['matches_ready_for_model'] += 1
+        if bool(coverage.get('ready_for_publish')):
+            counts['matches_ready_for_publish'] += 1
+        kickoff = _parse_dt(row.get('kickoff_utc'))
+        if kickoff is None:
+            continue
+        hours = (kickoff - now).total_seconds() / 3600.0
+        if 0 <= hours <= 6:
+            counts['matches_next_6h'] += 1
+            if ready:
+                counts['matches_next_6h_ready'] += 1
+        if 0 <= hours <= 12:
+            counts['matches_next_12h'] += 1
+            if ready:
+                counts['matches_next_12h_ready'] += 1
+    return counts
 
 
 def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, raw_total_before_selection: int, max_matches: int) -> None:
@@ -208,6 +256,8 @@ def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, ra
 
     counts = dict(payload.get('counts') or {})
     original_counts = dict(counts)
+    selected_coverage_counts = _recompute_selected_coverage_counts(rows)
+    counts.update(selected_coverage_counts)
     counts['matches_total_raw_before_top_selection'] = raw_total_before_selection
     counts['matches_total_before_top_selection'] = raw_total_before_selection
     counts['matches_total'] = len(rows)
@@ -230,7 +280,7 @@ def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, ra
         'raw_total_before_selection': raw_total_before_selection,
         'selected_matches': len(rows),
         'pruned_matches': max(0, raw_total_before_selection - len(rows)),
-        'score_version': 'top300_v1',
+        'score_version': 'top300_v2_recomputed_coverage',
     }
 
 
@@ -247,7 +297,7 @@ def _select_top_matches(payload: dict[str, Any], max_matches: int) -> dict[str, 
             'raw_total_before_selection': raw_total,
             'selected_matches': raw_total,
             'pruned_matches': 0,
-            'score_version': 'top300_v1',
+            'score_version': 'top300_v2_recomputed_coverage',
         }
         return payload
 
