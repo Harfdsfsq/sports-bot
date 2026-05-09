@@ -25,6 +25,12 @@ except Exception:
     pass
 
 try:
+    from app.services import market_family_publication_guard
+    market_family_publication_guard.install()
+except Exception:
+    pass
+
+try:
     from app.services import runtime_odds_inventory_matching_patch
     runtime_odds_inventory_matching_patch.install()
 except Exception:
