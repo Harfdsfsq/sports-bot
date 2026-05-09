@@ -1,79 +1,78 @@
-🧾 Подробный отчёт run — прогноз опубликован
+🧾 Подробный отчёт run — прогнозов нет
 
 🚦 Быстрый статус
-• Итог: ✅ прогноз опубликован
-• Покрытие: матчи 72, линии 51, контекст 59, offers 7237
-• Воронка: raw 6, до качества 20, опубликовано 1
-• Pre-kickoff: final checks 0, line-guard dropped 0
+• Итог: 🟡 кандидаты есть, guards не выпустили
+• Покрытие: матчи 242, линии 51, контекст 115, offers 7440
+• Воронка: raw 2, до качества 16, опубликовано 0
+• Pre-kickoff: final checks 37, line-guard dropped 0
 
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v7-signals-totals-spreads
-• Время запуска: 2026-05-09T23:30:05.340370+03:00
-• Inventory bootstrap: odds_api_io | provider merge: false
-• Окно публикации: 12 ч | min lead: 30 мин | cron interval: 120 мин
+• Время запуска: 2026-05-10T02:02:16.338451+03:00
+• Inventory bootstrap: odds_api_io | provider merge: true
+• Окно публикации: 24 ч | min lead: 30 мин | cron interval: 120 мин
 • Банк: 1000.00 | открытый риск: 0.00 | доступно: 1000.00
 
 📦 Дневной inventory
-• Матчей всего: 489
-• С линиями: 51/489
-• С контекстом: 59/489
-• Готово к модели: 51/489
-• Ближайшие 6 часов: 51/72 готово
-• Следующие 12 часов: 51/72 готово
+• Матчей всего: 298
+• С линиями: 51/298
+• С контекстом: 115/298
+• Готово к модели: 51/298
+• Ближайшие 6 часов: 51/242 готово
+• Следующие 12 часов: 51/242 готово
 
 ⏱️ Накопление inventory и ближайшие матчи
-• Активных матчей: 1 | требуют odds refresh: 0
-• Final pre-kickoff checks: 0 | без ещё одного обычного run до старта: 0
-• Priority state updated: 2026-05-09T20:38:12.030112+00:00
+• Активных матчей: 266 | требуют odds refresh: 232
+• Final pre-kickoff checks: 37 | без ещё одного обычного run до старта: 37
+• Priority state updated: 2026-05-09T23:11:03.200291+00:00
 • Top priority upcoming:
-  - CS 2 de Mayo — Rubio Nu | до старта 7 мин | too_soon | odds_refresh=False | final_check=False
-  - CS Dinamo București — ASA Targu Mures | до старта -758 мин | started | odds_refresh=False | final_check=False
-  - HNK Cibalia Vinkovci — NK Sesvete | до старта -563 мин | started | odds_refresh=False | final_check=False
-  - FA Siauliai — FC Hegelmann Kaunas | до старта -563 мин | started | odds_refresh=False | final_check=False
-  - Middlesbrough — Southampton | до старта -548 мин | started | odds_refresh=False | final_check=False
-  - Jiangxi Dingnan United — Changchun Yatai | до старта -548 мин | started | odds_refresh=False | final_check=False
+  - EC Bahia — Cruzeiro EC | до старта 49 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - CSD Municipal — Deportivo Mixco | до старта 49 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Bahia — Cruzeiro | до старта 49 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Minnesota United FC 2 — North Texas SC | до старта 49 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Union Omaha SC — Portland Hearts of Pine | до старта 49 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Almaden FC — San Francisco City | до старта 49 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
 
 ⚙️ Что сделал скрипт
-• Матчи: 72 | с линиями: 51 | контекстов: 59
-• Кандидаты: raw 6 | до качества 20 | publishable 0
-• Резерв проверил: 10 | оценено в отчёте: 10 | выбрано: 1
+• Матчи: 242 | с линиями: 51 | контекстов: 115
+• Кандидаты: raw 2 | до качества 16 | publishable 1
+• Резерв проверил: 16 | оценено в отчёте: 16 | выбрано: 0
 • матчей с линиями из любого источника: 51
-• матчей с любым контекстом: 59
-• матчей с объединенным контекстом: 59
+• матчей с любым контекстом: 115
+• матчей с объединенным контекстом: 115
 • raw с market-derived сигналом: 0
-• Фильтр времени: after 72/489, outside 0, too soon 18, started 399
-• Matching: odds exact 0, loose 0, fuzzy 0; sstats exact 0, bzzoiro ctx 9, thesportsdb ctx 7
+• Фильтр времени: after 242/298, outside 0, too soon 15, started 41
+• Matching: odds exact 1, loose 0, fuzzy 0; sstats exact 0, bzzoiro ctx 32, thesportsdb ctx 24
 
 🧪 Candidate factory / модель
 • model_debug rows: matches 46 | candidates 0
-• controlled rescue: enabled True | built 34 | returned 24
+• controlled rescue: enabled True | built 40 | returned 24
 • pre-filter sample:
-  - soccer|cr brasil al|operario ferrovia… | totals | Меньше | conf 66.6 | score 37.7
-  - soccer|cr brasil al|operario ferrovia… | h2h | Operario Ferroviario EC PR | conf 72.0 | score 34.5
-  - soccer|cr brasil al|operario ferrovia… | btts | Обе забьют: Да | conf 68.7 | score 25.6
-  - soccer|bahia ba|cruzeiro mg|2026-05-10 | totals | Больше | conf 66.7 | score 34.0
-  - soccer|bahia ba|cruzeiro mg|2026-05-10 | h2h | Cruzeiro EC MG | conf 68.7 | score 31.0
+  - soccer|san jose earthquakes|vancouver… | btts | Обе забьют: Да | conf 67.5 | score 35.2
+  - soccer|san jose earthquakes|vancouver… | h2h | San Jose Earthquakes | conf 72.2 | score 38.5
+  - soccer|san jose earthquakes|vancouver… | totals | Меньше | conf 69.1 | score 35.0
+  - soccer|atlas|cruz azul|2026-05-10 | totals | Больше | conf 68.4 | score 42.8
+  - soccer|atlas|cruz azul|2026-05-10 | btts | Обе забьют: Да | conf 68.5 | score 28.1
 
 🛡️ Line movement / pre-publish guard
-• candidates seen 3 | kept 3 | dropped 0
-• drop_bad_candidates=True | updated 2026-05-09T20:38:12.030112+00:00
-• latest-rescue-candidates.json: seen 3, kept 3, dropped 0
+• candidates seen 0 | kept 0 | dropped 0
+• drop_bad_candidates=True | updated 2026-05-09T23:11:03.200291+00:00
 
 📡 Источники / фактическая работа
-• odds_api_io: events req 0, odds req 16, err 0, events 100, matched 72, offers 7237
-• odds_api_io_bootstrap: events req 2, err 0, events 100, matches 90
-• match_bootstrap: events req 2, err 0, events 100, matches 90
-• allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 0
-• bzzoiro: req 5, err 0, events 219, ctx 9, rows 219
-• sstats: req 30, err 0, ctx 54, rows 25853
-• football_data: req 1, err 0, matched 0, ctx 0
-• thesportsdb: req 3, err 0, ctx 7
-• sportlogic: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
-• espn: err 0, events 55, matched 3, ctx 3
+• odds_api_io: events req 0, odds req 14, err 0, events 100, matched 61, offers 7440
+• odds_api_io_bootstrap: events req 2, err 0, events 100, matches 74
+• match_bootstrap: events req 2, err 0, events 100, matches 74
+• allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 9
+• bzzoiro: req 3, err 0, events 126, ctx 32, rows 126
+• sstats: req 30, err 0, ctx 109, rows 25853
+• football_data: req 8, err 0, matched 11, ctx 11, budget_exhausted
+• thesportsdb: req 11, err 0, ctx 24
+• sportlogic: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
+• espn: err 1, events 55, matched 5, ctx 5
 • openligadb: req 0, err 0, ctx 0
 • openfootball: req 0, err 0, ctx 0
 • futrixmetrics: req 0, err 0, ctx 0, budget_exhausted
-• weather: req 8, err 1, ctx 7, weatherapi 8, owm 0, cache 0, budget_exhausted
+• weather: req 8, err 0, ctx 8, weatherapi 8, owm 0, cache 0, budget_exhausted
 • newsapi: disabled
 • gnews: disabled
 • self_history: ctx 0
@@ -85,87 +84,13 @@
 • api_football: disabled
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 8 | offers 3542
-• account2: Betfair Exchange,Sbobet | req 8 | offers 3695
+• account1: Bet365,Unibet | req 7 | offers 3552
+• account2: Betfair Exchange,Sbobet | req 7 | offers 3888
 • Букмекеры в ответах: Bet365, Betfair Exchange, Sbobet, Unibet
-• Матчи с 2+ букмекерами: 35; с 1 букмекером: 16
+• Матчи с 2+ букмекерами: 37; с 1 букмекером: 14
 
 🚫 Почему не прошли
-• canonical negative value — 5 (16%)
-• quality bad historical segment guard — 3 (9%)
-• final edge below min — 2 (6%)
-• final ev below min — 2 (6%)
-• tier a quality below min — 2 (6%)
-• tier a canonical edge below min — 2 (6%)
-• tier b quality below min — 2 (6%)
-• tier b canonical edge below min — 2 (6%)
-• tier c quality below min — 2 (6%)
-• tier c canonical edge below min — 2 (6%)
-• quality: вероятность после калибровки ниже порога — 2 (6%)
-• направление ставки конфликтует с xG — 1 (3%)
-• quality market sanity totals xg contradiction — 1 (3%)
-• tier a canonical ev below min — 1 (3%)
-• tier b canonical ev below min — 1 (3%)
-• tier c canonical ev below min — 1 (3%)
-
-✅ Опубликовано
-1. EC Bahia BA — Cruzeiro EC MG
-   🏆 Brazil - Brasileiro Serie A
-   🎯 Меньше 2.5 @2.05 | 🕒 2026-05-10T00:00:00+00:00
-   • odds sources 1, books/lines 3, confirmation sources 2
-   • confirmation sources: bzzoiro, sstats
-   • уровень уровень A | EV +15.3% | запас +7.5 п.п. | уверенность 78.5% | качество 85.9
-   • рынок 51.9% | модель 56.3%
-   • xG sanity: ok | xG prob 49.9% | model gap +6.3 п.п. | xG total 2.68
-   • ставка 5.00
-
-⚠️ Остальные пограничные кандидаты
-1. EC Bahia BA — Cruzeiro EC MG
-   🏆 Brazil - Brasileiro Serie A
-   🎯 Меньше 2.5 @2.05 | 🕒 2026-05-10T00:00:00+00:00
-   • odds sources 1, books/lines 3, confirmation sources 2
-   • confirmation sources: bzzoiro, sstats
-   • уровень уровень A | EV +15.3% | запас +7.5 п.п. | уверенность 78.5% | качество 85.9
-   • рынок 51.9% | модель 56.3%
-   • xG sanity: ok | xG prob 49.9% | model gap +6.3 п.п. | xG total 2.68
-2. CD Real Tomayapo — San Antonio Bulo Bulo
-   🏆 Bolivia - Division Profesional
-   🎯 Меньше 3.5 @1.98 | 🕒 2026-05-09T23:30:00+00:00
-   • odds sources 1, books/lines 3, confirmation sources 1
-   • confirmation sources: sstats
-   • уровень уровень A | EV +5.7% | запас +2.9 п.п. | уверенность 74.2% | качество 60.2
-   • рынок 51.6% | модель 53.4%
-   • xG sanity: ok | xG prob 58.4% | model gap -5.0 п.п. | xG total 3.28
-   • не прошло: final_edge_below_min; final_ev_below_min
-3. EC Juventude RS — Criciuma EC SC
-   🏆 Brazil - Brasileiro Serie B
-   🎯 Меньше 2 (2.0) @1.97 | 🕒 2026-05-10T00:15:00+00:00
-   • odds sources 1, books/lines 3, confirmation sources 2
-   • confirmation sources: bzzoiro, sstats
-   • уровень уровень A | EV +4.4% | запас +2.2 п.п. | уверенность 73.5% | качество 65.2
-   • рынок 51.4% | модель 53.0%
-   • xG sanity: ok | xG prob 53.8% | model gap -0.8 п.п. | xG total 1.56
-   • не прошло: final_edge_below_min; final_ev_below_min
-4. Charlotte FC — FC Cincinnati
-   🏆 USA - MLS
-   🎯 Меньше 3 (3.0) @2.12 | 🕒 2026-05-09T23:30:00+00:00
-   • odds sources 1, books/lines 4, confirmation sources 3
-   • confirmation sources: bzzoiro, espn, sstats
-   • уровень A | EV -1.4% | запас -0.7 п.п. | уверенность 75.9% | качество 57.8
-   • рынок 49.2% | модель 46.5%
-   • xG sanity: ok | xG prob 47.8% | model gap -1.3 п.п. | xG total 2.76
-   • quality reasons: bad historical segment guard
-   • не прошло: canonical_negative_value
-5. Atlanta United FC — Los Angeles Galaxy
-   🏆 USA - MLS
-   🎯 Меньше 2.75 @2.07 | 🕒 2026-05-09T23:30:00+00:00
-   • odds sources 1, books/lines 4, confirmation sources 3
-   • confirmation sources: bzzoiro, espn, sstats
-   • уровень A | EV -3.9% | запас -1.9 п.п. | уверенность 74.5% | качество 57.9
-   • рынок 49.5% | модель 46.4%
-   • xG sanity: ok | xG prob 55.4% | model gap -9.0 п.п. | xG total 2.46
-   • quality reasons: bad historical segment guard
-   • не прошло: canonical_negative_value
+• Нет свежей расшифровки reject reasons.
 
 🧠 Автообучение
 • Выборка: 0/30 закрытых ставок | sample_ready=false
@@ -174,30 +99,30 @@
 
 🧩 Работа API — разбор
 • odds_api_io: главный источник линий и списка матчей по целевым букмекерам
-  - runtime: events req 0, odds req 16, err 0, events 100, matched 72, offers 7237
+  - runtime: events req 0, odds req 14, err 0, events 100, matched 61, offers 7440
   - квота: grant 120, reason granted, status critical_inventory_and_primary_live_odds
 • allsportsapi: fixture/secondary odds probe; расширяет inventory и проверяет доп. линии
-  - runtime: req 1, err 0, matched 0, offers 0, fixtures 0
+  - runtime: req 1, err 0, matched 0, offers 0, fixtures 9
   - квота: grant 24, reason granted, status secondary_fixture_and_odds_rescue
 • bzzoiro: контекст/прогнозы; независимое подтверждение
-  - runtime: req 5, err 0, events 219, ctx 9, rows 219
+  - runtime: req 3, err 0, events 126, ctx 32, rows 126
   - квота: grant 24, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: req 30, err 0, ctx 54, rows 25853
+  - runtime: req 30, err 0, ctx 109, rows 25853
   - квота: grant 36, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
-  - runtime: req 1, err 0, matched 0, ctx 0
+  - runtime: req 8, err 0, matched 11, ctx 11, budget_exhausted
   - квота: grant 6, reason granted, status context_only_cached_league_calendar
 • thesportsdb: fixture/алиасы команд и лиг
-  - runtime: req 3, err 0, ctx 7
+  - runtime: req 11, err 0, ctx 24
   - квота: grant 10, reason granted, status alias_and_fixture_context_cached
 • weather: погодный overlay: WeatherAPI first, OpenWeatherMap fallback
-  - runtime: req 8, err 1, ctx 7, weatherapi 8, owm 0, cache 0, budget_exhausted
+  - runtime: req 8, err 0, ctx 8, weatherapi 8, owm 0, cache 0, budget_exhausted
 • sportlogic: probe/context; secondary odds rescue только под контролем
-  - runtime: odds req 0, req 4, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
+  - runtime: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
   - квота: grant 30, reason free_limit_500_day_10_min_use_only_near_window_or_primary_odds_empty, status secondary_odds_rescue_and_context_probe
 • espn: вспомогательный публичный контекст и алиасы
-  - runtime: err 0, events 55, matched 3, ctx 3
+  - runtime: err 1, events 55, matched 5, ctx 5
 • openligadb: вспомогательный календарь/контекст
   - runtime: req 0, err 0, ctx 0
 • futrixmetrics: доп. context provider; держим отключённым при low yield
@@ -230,25 +155,24 @@
 • sharpapi: grant 0, reason text_enrichment_not_core_prediction
 
 📂 Артефакты run
-• debug-last-run.json: есть | 916901 bytes, Δ 0.2 мин
-• latest-run-bot.log: есть | 152681 bytes, Δ 0.2 мин
-• latest-controlled-fallback-report.json: есть | 35129 bytes, Δ 0.1 мин
-• latest-provider-request-budget.json: есть | 10688 bytes, Δ 9.1 мин
-• latest-provider-quota-governor.json: есть | 20464 bytes, Δ 9.2 мин
-• latest-harizon-runtime-policy.json: есть | 19879 bytes, Δ 9.1 мин
-• latest-day-inventory-priority-and-line-state.json: есть | 32752 bytes, Δ 0.1 мин
-• latest-day-inventory-refresh-plan.json: есть | 30105 bytes, Δ 0.1 мин
-• latest-line-movement-guard-report.json: есть | 491 bytes, Δ 0.1 мин
-• latest-rescue-candidates.json: есть | 25491 bytes, Δ 0.1 мин
+• debug-last-run.json: есть | 1452703 bytes, Δ 0.2 мин
+• latest-run-bot.log: есть | 154533 bytes, Δ 0.1 мин
+• latest-controlled-fallback-report.json: есть | 643 bytes, Δ 0.1 мин
+• latest-provider-request-budget.json: есть | 10688 bytes, Δ 9.7 мин
+• latest-provider-quota-governor.json: есть | 20349 bytes, Δ 9.7 мин
+• latest-harizon-runtime-policy.json: есть | 19879 bytes, Δ 9.7 мин
+• latest-day-inventory-priority-and-line-state.json: есть | 33772 bytes, Δ 0.0 мин
+• latest-day-inventory-refresh-plan.json: есть | 31377 bytes, Δ 0.0 мин
+• latest-line-movement-guard-report.json: есть | 257 bytes, Δ 0.0 мин
+• latest-rescue-candidates.json: есть | 418 bytes, Δ 0.1 мин
 • latest-candidates-before-quality.json: нет
 • latest-candidates-after-quality.json: нет
 • latest-candidates.json: нет
-• latest.json: есть | 598649 bytes, Δ 0.1 мин
+• latest.json: есть | 3704 bytes, Δ 0.0 мин
 
 📌 Вывод
-• Controlled fallback реально проверил 10 кандидата(ов), но публикация запрещена guards.
-• Главный стопор — xG sanity: направление ставки конфликтует с расчётным xG, поэтому отправлять такие прогнозы нельзя.
-• Quality-layer тоже не дал зелёный свет: кандидатам не хватает качества после калибровки.
-• Текущий результат корректный: API и candidate rescue работают, публикации нет из-за качества, а не из-за поломки.
+• Run прошёл, но публикации нет: проверь duplicate guard, Telegram publish flag и controlled fallback report.
+• Есть 37 final pre-kickoff checks: эти матчи нужно проверять особенно внимательно, потому что следующий cron-run может не успеть.
+• Guards не должны ослабляться: лучше 0 прогнозов, чем ставка без свежей линии и подтверждения.
 
 ⚖️ Дисклеймер: это аналитический отчёт бота, не гарантия результата и не финансовая рекомендация.
