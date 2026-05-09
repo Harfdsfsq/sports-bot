@@ -13,10 +13,12 @@ def install() -> dict[str, Any]:
     """Apply compatibility fixes for Bzzoiro provider runtime.
 
     Runtime diagnostics/patch layers historically expected Bzzoiro providers to
-    expose `.url` and `_fetch_rows()`. The current provider uses `.base_url` and
-    `_fetch_paginated_rows()`. Missing aliases caused AttributeError after
-    successful Bzzoiro HTTP responses, so the provider was reported as `нет данных`
-    despite returning events/contexts.
+    expose `.url`, `_fetch_rows()` and sometimes the SStats-specific
+    `_build_team_form_contexts()` helper. The current Bzzoiro provider uses
+    `.base_url` and `_fetch_paginated_rows()` and already builds its own contexts.
+    Missing compatibility methods caused AttributeError after successful Bzzoiro
+    HTTP responses, so the provider was reported as `нет данных` despite returning
+    events/contexts.
     """
     global _INSTALLED
     if _INSTALLED:
@@ -51,7 +53,6 @@ def install() -> dict[str, Any]:
             params = kwargs.pop('params', None) or {}
             stats = _ensure_stats(kwargs.pop('stats', None))
             if args:
-                # Tolerate old positional `(params, stats)` style.
                 if isinstance(args[0], dict) and not params:
                     params = args[0]
                 if len(args) > 1 and isinstance(args[1], dict) and not stats:
@@ -67,5 +68,21 @@ def install() -> dict[str, Any]:
         BzzoiroContextProvider._fetch_rows = _fetch_rows
         BzzoiroContextProvider._harizon_fetch_rows_alias_patch = True
 
+    if not hasattr(BzzoiroContextProvider, '_build_team_form_contexts'):
+        def _build_team_form_contexts(self, matches=None, rows=None, preview=None):  # type: ignore[no-untyped-def]
+            """SStats-compatible no-op.
+
+            Bzzoiro is not a historical team-form provider; it already builds
+            current-event prediction contexts in `fetch_context()`. Returning an
+            empty mapping lets generic enrichment/diagnostic layers proceed
+            without treating Bzzoiro as failed.
+            """
+            if isinstance(preview, dict):
+                preview.setdefault('bzzoiro_team_form_compat', 'no_op_current_event_provider')
+            return {}
+
+        BzzoiroContextProvider._build_team_form_contexts = _build_team_form_contexts
+        BzzoiroContextProvider._harizon_team_form_noop_patch = True
+
     _INSTALLED = True
-    return {'status': 'installed', 'patches': ['bzzoiro_url_alias', 'bzzoiro_fetch_rows_alias']}
+    return {'status': 'installed', 'patches': ['bzzoiro_url_alias', 'bzzoiro_fetch_rows_alias', 'bzzoiro_team_form_noop']}
