@@ -42,6 +42,15 @@ try:
 except Exception:
     pass
 
+# Must run after provider_payload_mining_runtime_patch_v2 because that layer can
+# wrap the old direct Bzzoiro fetch. This final guard disables the duplicate
+# direct fetch while keeping the SStats-integrated Bzzoiro signal path alive.
+try:
+    from app.services import bzzoiro_direct_fetch_final_guard
+    bzzoiro_direct_fetch_final_guard.install()
+except Exception:
+    pass
+
 try:
     from app.services import signal_stack_runtime_patch
     signal_stack_runtime_patch.install()
