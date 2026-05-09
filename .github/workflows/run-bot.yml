@@ -297,7 +297,7 @@ jobs:
             echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_harizon_telegram_run_report.py || true
+          python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
       - name: Commit runtime artifacts
