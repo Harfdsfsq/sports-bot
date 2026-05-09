@@ -19,6 +19,12 @@ except Exception:
     pass
 
 try:
+    from app.services import runtime_odds_inventory_matching_patch
+    runtime_odds_inventory_matching_patch.install()
+except Exception:
+    pass
+
+try:
     from app.services import sportlogic_query_runtime_guard
     sportlogic_query_runtime_guard.install()
 except Exception:
