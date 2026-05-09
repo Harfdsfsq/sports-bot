@@ -22,7 +22,8 @@
   "by_group": {
     "context": {
       "config_only": 1,
-      "ok": 5
+      "error": 1,
+      "ok": 4
     },
     "news": {
       "ok": 5
@@ -42,11 +43,27 @@
   },
   "by_status": {
     "config_only": 1,
+    "error": 1,
     "missing_secret": 1,
-    "ok": 16
+    "ok": 15
   },
-  "created_at_utc": "2026-05-09T14:28:09.291537+00:00",
-  "critical_failures": [],
+  "created_at_utc": "2026-05-09T14:40:49.203436+00:00",
+  "critical_failures": [
+    {
+      "configured": true,
+      "critical": true,
+      "details": {},
+      "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-09&date_to=2026-05-10&upcoming=true&tz=UTC&page=1",
+      "group": "context",
+      "http_statuses": [],
+      "latency_ms": 22412,
+      "message": "ReadTimeout: ",
+      "provider": "bzzoiro",
+      "requests": 1,
+      "status": "error",
+      "useful_rows": 0
+    }
+  ],
   "mode": "quick",
   "recommendations": [
     "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
@@ -64,21 +81,16 @@
     {
       "configured": true,
       "critical": true,
-      "details": {
-        "body_preview": "{\"count\":219,\"next\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-09&date_to=2026-05-10&page=2&tz=UTC&upcoming=true\",\"previous\":null,\"results\":[{\"id\":3615,\"event\":{\"id\":205064,\"league\":{\"id\":50,\"name\":\"K League 1\",\"country\":\"South Korea\",\"is_women\":false,\"current_season\":null},\"season\":null,\"home_team\":\"Jeju SK\",\"away_team\":\"FC Seoul\",\"home_team_obj\":{\"id\":1956,\"name\":\"Jeju SK\",\"short_name\":\"Jeju\",\"country\":\"South Korea\",\"coach\":{\"name\":\"Sergio Costa\",\"shortName\":\"S. Costa\"},\"venue\":null},\"away_team_obj\":{\"id\":1949,\"name\":\"FC Seoul\",\"short_name\":\"FC Seoul\",\"country\":\"South Korea\",\"coach\":{\"name\":\"Gi Dong Kim\",\"shortName\":\"G. D. Kim\"},\"venue\":null},\"event_date\":\"2026-05-09T05:00:00Z\",\"round_number\":13,\"round_name\":\"\",\"group_name\":null,\"status\":\"finished\",\"home_score\":2,\"away_score\":1,\"home_score_ht\":1,\"away_score_ht\":0,\"current_minute\":90,\"period\":\"FT\",\"odds_home\":3.2,\"odds_draw\":3.11,\"odds_away\":2.43,\"odds_over_15\":1.38,\"odds_over_25\":2.21,\"odds_over_35\":4.07,\"odds_under_15\":2.94,\"odds_under_25\":1.62,\"odds_under_35\":1.22,\"odds_btts_yes\":1.88,\"odds_btts_no\":1.87,\"actual_home_xg\":null,\"actual_away_xg\":null,\"home_xg_live\":null,\"away_xg_live\":null,\"penalty_shootout\":nu",
-        "payload_shape": "count,next,previous,results"
-      },
+      "details": {},
       "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-09&date_to=2026-05-10&upcoming=true&tz=UTC&page=1",
       "group": "context",
-      "http_statuses": [
-        200
-      ],
-      "latency_ms": 4093,
-      "message": "ok",
+      "http_statuses": [],
+      "latency_ms": 22412,
+      "message": "ReadTimeout: ",
       "provider": "bzzoiro",
       "requests": 1,
-      "status": "ok",
-      "useful_rows": 50
+      "status": "error",
+      "useful_rows": 0
     },
     {
       "configured": true,
@@ -92,7 +104,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 783,
+      "latency_ms": 651,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -130,7 +142,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 271,
+      "latency_ms": 247,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -149,7 +161,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 640,
+      "latency_ms": 483,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -169,7 +181,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 299,
+      "latency_ms": 125,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -180,7 +192,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"0374ee7b-bca9-5576-b28c-5fc2cf4db1d0\",\"title\":\"Anfield losing patience with Liverpool's Slot; Chelsea snap streak\",\"description\":\"Liverpool were booed off by their own fans at Anfield as they drew 1-1 to Chelsea, who snapped their six-game losing streak.\",\"url\":\"https://www.espn.com/soccer/story/_/id/48720758/anfield-losing-patience-liverpool-slot-chelsea-snap-streak\",\"author\":\"Mark Ogden; Beth Lindop\",\"image\":\"https://a2.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0509%2Fr1655696_1296x729_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-09 14:23:36 +0000\"},{\"id\":\"b1fd715b-6da2-5998-97dd-d1e35c8e9855\",\"title\":\"Liverpool limps into Champions League after draw with Chelsea\",\"description\":\"Liverpool missed the chance to all but secure Champions League football next season after a 1-1 draw against a wounded Chelsea on Saturday.\",\"url\":\"https://www.news.com.au/sport/liverpool-secures-champions-league-for-next-season-following-draw-with-chelsea/news-story/ad664b479f0f7deae134a62e2cb11cad\",\"author\":\"AFP\",\"image\":\"https://content.api.news/v3/images/bin/2a2c70c7107f495f9ac48ff77764ebbc\",\"language\":\"en\",\"catego",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"d6521232-023e-54d1-91fe-8dfe18c02239\",\"title\":\"D'Amico to Milan rumours gather steam as Atalanta should appoint Giuntoli\",\"description\":\"Atalanta are set to appoint Cristiano Giuntoli as their new sporting director, according to a report, which would make it possible for Tony D'Amico to join AC Milan.\",\"url\":\"https://sempremilan.com/damico-milan-steam-atalanta-giuntoli\",\"author\":\"Isak M\\u00f6ller\",\"image\":\"https://icdn.sempremilan.com/wp-content/uploads/2026/05/damico-giuntoli.jpg\",\"language\":\"en\",\"category\":[\"football\",\"sports\"],\"source_category\":[\"football\",\"sports\"],\"published\":\"2026-05-09 14:30:00 +0000\"},{\"id\":\"234d5324-86e8-57e2-afc8-508c04d00470\",\"title\":\"Navratilova blasts Newsom over biological male in girls' track meet\",\"description\":\"The 18-time Grand Slam champion's fury comes as a biological male athlete, representing Jurupa Valley High School, prepares to compete in the girls' track and field championships.\",\"url\":\"https://www.dailymail.com/sport/othersports/article-15804005/martina-navratilova-gavin-newsom-california-track.html?ns_campaign=1490&ito=1490\",\"author\":\"James Cohen\",\"image\":\"https://i.dailymail.com/1s/2026/05/09/15/108491605-0",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -188,7 +200,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 575,
+      "latency_ms": 651,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -199,7 +211,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318764,\"articles\":[{\"id\":\"4e34bcc7a70660d1305982b8e1243666\",\"title\":\"Lionel Messi bestows Lamine Yamal with the deepest praise\",\"description\":\"For nearly two decades, Lionel Messi set the standard at FC Barcelona and across global football. His dominance, creativity, and consistency created a level many believed nobody could touch again.\",\"content\":\"For nearly two decades, Lionel Messi set the standard at FC Barcelona and across global football. His dominance, creativity, and consistency created a level many believed nobody could touch again. But now, Messi himself sees something special in risi... [1582 chars]\",\"url\":\"https://www.yardbarker.com/soccer/articles/lionel_messi_bestows_lamine_yamal_with_the_deepest_praise/s1_17121_43822347\",\"image\":\"https://us-west-2-gw-2.yardbarker.com/images/yb_white_on_black_medium.jpg\",\"publishedAt\":\"2026-05-09T02:13:57Z\",\"lang\":\"en\",\"source\":{\"id\":\"8d71923b22fd94776aed4dd1c611fd91\",\"name\":\"Yardbarker\",\"url\":\"https://www.yardbark",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318766,\"articles\":[{\"id\":\"e8f568aa2e0b77feb97a999f5b846d8e\",\"title\":\"Ann Arbor Pioneer students host 2026 prom at the Big House\",\"description\":\"It was a short trip across the street for about 200 students to celebrate on the field where Michigan football plays.\",\"content\":\"ANN ARBOR, MI – Ann Arbor Pioneer High students took the field at the nation’s largest stadium for their 2026 prom.\\nAbout 200 students from the city’s largest high school headed to Michigan Stadium for a “Tangled”-themed prom. The Rapunzel-inspired t... [310 chars]\",\"url\":\"https://www.mlive.com/prom/2026/05/ann-arbor-pioneer-students-host-2026-prom-at-the-big-house.html\",\"image\":\"https://www.mlive.com/resizer/v2/VNGLQE4PGBER3LB6YKTFCM6NLE.JPG?auth=94387c5452da3a7ed6458ce8028812cff35631dc4c1403328f6164a19e06f287&width=1280&smart=true&quality=90\",\"publishedAt\":\"2026-05-09T02:35:02Z\",\"lang\":\"en\",\"source\":{\"id\":\"d86acd5a472cad336b1f19dca3331ef5\",\"name\":\"M Live Michigan \",\"url\":\"https://www.mlive.c",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -207,7 +219,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 369,
+      "latency_ms": 194,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -226,7 +238,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 680,
+      "latency_ms": 491,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -237,7 +249,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":23699,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Yahoo Entertainment\"},\"author\":\"Sean Leahy\",\"title\":\"Browns LB Jeremiah Owusu-Koramoah ruled out for second straight season with neck injury\",\"description\":\"The 2021 second-round draft pick last played an NFL game in Oct. 2024.\",\"url\":\"https://sports.yahoo.com/nfl/article/browns-lb-jeremiah-owusu-koramoah-ruled-out-for-second-straight-season-with-neck-injury-142506651.html\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/UkGky5A6iTz8u.lhEmtghQ--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04MDA7Y2Y9d2VicA--/https://d29szjachogqwa.cloudfront.net/images/2026-05/e8afc235-515a-47a8-9164-7cbfff252bd6\",\"publishedAt\":\"2026-05-08T14:25:06Z\",\"content\":\"Cleveland Browns linebacker Jeremiah Owusu-Koramoah will not play for a second straight season after the team placed him on the reserve/physically unable to perform list on Friday.\\r\\nThe transaction r… [+1506 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":23715,\"articles\":[]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -245,18 +257,18 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 152,
+      "latency_ms": 75,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
       "status": "ok",
-      "useful_rows": 1
+      "useful_rows": 0
     },
     {
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":10103,\"results\":[{\"article_id\":\"32a1c9b1fa16b61eeb9c125a93a3418f\",\"link\":\"https://www.3aw.com.au/michael-voss-knows-hes-finished-as-coach-at-carlton/\",\"title\":\"Michael Voss ‘knows he’s finished’ as coach at Carlton\",\"description\":\"It was a valiant second-half comeback from the Blues, but they fell short against Brisbane by 11 points. Despite a brave fightback against the reigning premiers, Caroline Wilson says Michael Voss knows his time as coach is almost up. “He knows he’s finished,” Wilson said on 3AW Football. Press PLAY to listen to Caroline Wilson’s [...]\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"football featured\"],\"creator\":[\"ethandaffey\"],\"language\":\"english\",\"country\":[\"australia\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-09 02:27:54\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-09 02:45:09\",\"image_url\":\"https://www.3aw.com.au/wp-content/uploads/sites/12/2026/05/GettyImages-2275157889-scaled.jpg\",\"video_url\":null,\"source_id\":\"aw3_au\",\"source_name\":\"3aw - Melbourne's Favourite News And Talk Station\",\"source_priority\":230074,\"source_url\":\"https://www.3aw.com.au\",\"source_icon\":\"https://n.bytvi.com/aw3_au.png\"",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":10053,\"results\":[{\"article_id\":\"2803ca10631895efb75e790a3071ec4f\",\"link\":\"https://www.thehindu.com/sport/football/fifa-to-stage-separate-world-cup-opening-ceremonies-in-mexico-canada-and-us/article70958013.ece\",\"title\":\"FIFA to stage separate World Cup opening ceremonies in Mexico, Canada and U.S.\",\"description\":\"FIFA announces separate World Cup opening ceremonies in Mexico, Canada, and the U.S., featuring top musical performances.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"sport\",\"canada\",\"usa\",\"breaking news\",\"football\",\"mexico\"],\"creator\":[\"reuters\"],\"language\":\"english\",\"country\":[\"india\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-09 02:39:05\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-09 03:54:31\",\"image_url\":\"https://th-i.thgim.com/public/incoming/8nkykl/article70958018.ece/alternates/FREE_1200/2026-05-08T230750Z_1344745318_RC245LAP6K2W_RTRMADP_3_SOCCER-WORLDCUP-USA-HOUSTON.JPG\",\"video_url\":null,\"source_id\":\"thehindu\",\"source_name\":\"The Hindu\",\"source_priority\":2972,\"source_url\":\"https://www.thehindu.com\",\"source_icon\":\"https://n.bytvi.com/thehindu.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORAT",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -264,7 +276,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 342,
+      "latency_ms": 124,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -275,18 +287,18 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":66054208,\"home\":\"Sfk Elko Holesov\",\"away\":\"CSK Uhersky Brod\",\"homeId\":274757,\"awayId\":35249,\"date\":\"2026-05-09T14:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Czechia - Divize E\",\"slug\":\"czechia-divize-e\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":66054214,\"home\":\"MSK Breclav\",\"away\":\"SK Batov 1930\",\"homeId\":6669,\"awayId\":388618,\"date\":\"2026-05-09T14:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Czechia - Divize E\",\"slug\":\"czechia-divize-e\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":66054218,\"home\":\"Sternberk\",\"away\":\"FC Brumov\",\"homeId\":355348,\"awayId\":24774,\"date\":\"2026-05-09T14:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Czechia - Divize E\",\"slug\":\"czechia-divize-e\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":66054454,\"home\":\"Tj Valasske Mezirici\",\"away\":\"FC Irp Cesky Tesin\",\"homeId\":37116,\"awayId\":36486,\"date\":\"2026-05-09T14:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Czechia - Divize F\",\"slug\":\"czechia-divize-f\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71242238,\"home\":\"Willem II Tilburg\",\"away\":\"RKC Waalwijk\",\"",
+        "body_preview": "[{\"id\":71183086,\"home\":\"NK Grobnican\",\"away\":\"NK Lucko\",\"homeId\":35240,\"awayId\":25531,\"date\":\"2026-05-09T15:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Croatia - Druga NL\",\"slug\":\"croatia-druga-nl\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67790438,\"home\":\"Pogon Tczew\",\"away\":\"Pogon Szczecin\",\"homeId\":755451,\"awayId\":919575,\"date\":\"2026-05-09T15:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - Ekstraliga, Women\",\"slug\":\"poland-ekstraliga-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71289806,\"home\":\"Guelson FC\",\"away\":\"Atletico Petroleos de Luanda\",\"homeId\":1286559,\"awayId\":148072,\"date\":\"2026-05-09T15:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Angola - Girabola\",\"slug\":\"angola-girabola\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71183088,\"home\":\"NK Uskok\",\"away\":\"NK Trnje\",\"homeId\":443452,\"awayId\":35223,\"date\":\"2026-05-09T15:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Croatia - Druga NL\",\"slug\":\"croatia-druga-nl\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71183090,\"home\":\"NK Bjelovar\",\"away\":\"NK Uljanik\",\"home",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-09T14%3A28%3A05Z&to=2026-05-11T14%3A28%3A05Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-09T14%3A40%3A25Z&to=2026-05-11T14%3A40%3A25Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 327,
+      "latency_ms": 169,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -306,7 +318,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 688,
+      "latency_ms": 23890,
       "message": "ok",
       "provider": "sportlogic",
       "requests": 1,
@@ -325,7 +337,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 549,
+      "latency_ms": 350,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -352,7 +364,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-05-05 07:51:52\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-08 19:17:19\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -360,7 +372,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 188,
+      "latency_ms": 71,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -371,7 +383,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":20.86,\"feels_like\":19.97,\"temp_min\":19.86,\"temp_max\":22.23,\"pressure\":1016,\"humidity\":37,\"sea_level\":1016,\"grnd_level\":1012},\"visibility\":10000,\"wind\":{\"speed\":6.69,\"deg\":80},\"clouds\":{\"all\":94},\"dt\":1778336598,\"sys\":{\"type\":2,\"id\":268730,\"country\":\"GB\",\"sunrise\":1778300303,\"sunset\":1778355333},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":21.13,\"feels_like\":20.26,\"temp_min\":19.44,\"temp_max\":21.98,\"pressure\":1016,\"humidity\":37,\"sea_level\":1016,\"grnd_level\":1012},\"visibility\":10000,\"wind\":{\"speed\":6.69,\"deg\":80},\"clouds\":{\"all\":96},\"dt\":1778337151,\"sys\":{\"type\":2,\"id\":268730,\"country\":\"GB\",\"sunrise\":1778300303,\"sunset\":1778355333},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -379,7 +391,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 98,
+      "latency_ms": 69,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -390,7 +402,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778336861,\"localtime\":\"2026-05-09 15:27\"},\"current\":{\"last_updated_epoch\":1778336100,\"last_updated\":\"2026-05-09 15:15\",\"temp_c\":21.3,\"temp_f\":70.3,\"is_day\":1,\"condition\":{\"text\":\"Cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/119.png\",\"code\":1006},\"wind_mph\":9.2,\"wind_kph\":14.8,\"wind_degree\":79,\"wind_dir\":\"E\",\"pressure_mb\":1016.0,\"pressure_in\":30.0,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":35,\"cloud\":0,\"feelslike_c\":21.3,\"feelslike_f\":70.3,\"windchill_c\":19.2,\"windchill_f\":66.5,\"heatindex_c\":19.2,\"heatindex_f\":66.5,\"dewpoint_c\":5.7,\"dewpoint_f\":42.3,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":3.1,\"gust_mph\":10.6,\"gust_kph\":17.0,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-09\",\"date_epoch\":1778284800,\"day\":{\"maxtemp_c\":19.2,\"maxtemp_f\":66.5,\"mintemp_c\":8.6,\"mintemp_f\":47.5,\"avgtemp_c\":13.7,\"avgtemp_f\":56.7,\"maxwind_mph\":10.7,\"maxwind_kph\":17.3,\"totalprecip_mm\":0.0,\"totalprecip_in\":0.0,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_miles\":6.0,\"avghumi",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778337650,\"localtime\":\"2026-05-09 15:40\"},\"current\":{\"last_updated_epoch\":1778337000,\"last_updated\":\"2026-05-09 15:30\",\"temp_c\":21.3,\"temp_f\":70.3,\"is_day\":1,\"condition\":{\"text\":\"Cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/119.png\",\"code\":1006},\"wind_mph\":9.2,\"wind_kph\":14.8,\"wind_degree\":79,\"wind_dir\":\"E\",\"pressure_mb\":1016.0,\"pressure_in\":30.0,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":33,\"cloud\":0,\"feelslike_c\":21.3,\"feelslike_f\":70.3,\"windchill_c\":19.2,\"windchill_f\":66.5,\"heatindex_c\":19.2,\"heatindex_f\":66.5,\"dewpoint_c\":5.7,\"dewpoint_f\":42.3,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":3.1,\"gust_mph\":10.6,\"gust_kph\":17.0,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-09\",\"date_epoch\":1778284800,\"day\":{\"maxtemp_c\":19.2,\"maxtemp_f\":66.5,\"mintemp_c\":8.6,\"mintemp_f\":47.5,\"avgtemp_c\":13.7,\"avgtemp_f\":56.7,\"maxwind_mph\":10.7,\"maxwind_kph\":17.3,\"totalprecip_mm\":0.0,\"totalprecip_in\":0.0,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_miles\":6.0,\"avghumi",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -398,7 +410,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 217,
+      "latency_ms": 182,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -409,11 +421,11 @@
   "summary": {
     "auth_error": 0,
     "config_only": 1,
-    "critical_failures": 0,
+    "critical_failures": 1,
     "degraded": 0,
-    "healthy_or_config_only": 17,
+    "healthy_or_config_only": 16,
     "missing_secret": 1,
-    "ok": 16,
+    "ok": 15,
     "providers_checked": 18,
     "rate_limited": 0
   }
