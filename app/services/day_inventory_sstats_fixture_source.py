@@ -77,7 +77,19 @@ def _extract_team(row: dict[str, Any], side: str) -> str:
             value = _string(team_obj.get(key))
             if value:
                 return value
-    for key in (f'{side}TeamName', f'{side}_team_name', f'{side}Name', f'{side}_name', side):
+    elif isinstance(team_obj, str) and team_obj.strip() and not team_obj.strip().startswith('{'):
+        return team_obj.strip()
+    for key in (
+        f'{side}Team',
+        f'{side}_team',
+        f'{side}TeamName',
+        f'{side}_team_name',
+        f'{side}Name',
+        f'{side}_name',
+        f'{side}Club',
+        f'{side}_club',
+        side,
+    ):
         value = _string(row.get(key))
         if value and not value.startswith('{'):
             return value
@@ -89,9 +101,15 @@ def _extract_league(row: dict[str, Any]) -> str:
         value = _string(_dig(row, *path))
         if value:
             return value
-    for key in ('leagueName', 'league_name', 'competitionName', 'tournamentName'):
+    season_league = _dig(row, 'season', 'league')
+    if isinstance(season_league, str) and season_league.strip():
+        return season_league.strip()
+    league_value = row.get('league')
+    if isinstance(league_value, str) and league_value.strip():
+        return league_value.strip()
+    for key in ('leagueName', 'league_name', 'competitionName', 'tournamentName', 'competition', 'tournament'):
         value = _string(row.get(key))
-        if value:
+        if value and not value.startswith('{'):
             return value
     return ''
 
@@ -108,7 +126,7 @@ def _extract_country(row: dict[str, Any]) -> str:
 
 
 def _extract_start(row: dict[str, Any]) -> datetime | None:
-    for key in ('dateUtc', 'dateUTC', 'utcDate', 'startTime', 'start_time', 'date'):
+    for key in ('dateUtc', 'dateUTC', 'utcDate', 'startTime', 'start_time', 'date', 'kickoff', 'kickoffUtc'):
         value = row.get(key)
         if value in (None, ''):
             continue
@@ -150,6 +168,24 @@ def _match_preview(matches: list[Match], limit: int = 5) -> list[dict[str, Any]]
         }
         for item in matches[:limit]
     ]
+
+
+def _row_parse_fail_reason(row: dict[str, Any], settings: Settings) -> str:
+    home = _extract_team(row, 'home')
+    away = _extract_team(row, 'away')
+    league = _extract_league(row)
+    start = _extract_start(row)
+    if not home:
+        return 'missing_home_team'
+    if not away:
+        return 'missing_away_team'
+    if not league:
+        return 'missing_league'
+    if start is None:
+        return 'missing_or_unparseable_start'
+    if not bool(getattr(settings, 'allow_low_tier', False)) and is_low_tier_league(league):
+        return 'low_tier_filtered'
+    return 'unknown'
 
 
 def _row_to_match(row: dict[str, Any], settings: Settings) -> Match | None:
@@ -197,15 +233,19 @@ async def _fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match
         'response_errors': 0,
         'http_statuses': [],
         'rows_fetched': 0,
+        'rows_parsed_as_match': 0,
+        'parse_fail_reasons': {},
         'matches_built': 0,
         'matches_for_target_local_date': 0,
+        'rows_outside_target_local_date': 0,
+        'duplicates_inside_sstats': 0,
         'low_tier_skipped': 0,
         'budget_exhausted': False,
         'last_error': None,
         'last_body_preview': None,
         'request_date': local_date,
     }
-    preview: dict[str, Any] = {'sample_rows': [], 'sample_matches': []}
+    preview: dict[str, Any] = {'sample_rows': [], 'sample_matches': [], 'parse_fail_examples': []}
     if not api_key:
         return [], {'stats': stats, 'preview': preview}
 
@@ -242,7 +282,7 @@ async def _fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match
                 stats['response_errors'] = int(stats['response_errors']) + 1
                 stats['last_error'] = f'json:{type(exc).__name__}: {exc}'
                 break
-            data = payload.get('data') or payload.get('results') if isinstance(payload, dict) else payload if isinstance(payload, list) else []
+            data = (payload.get('data') or payload.get('results')) if isinstance(payload, dict) else payload if isinstance(payload, list) else []
             if not isinstance(data, list) or not data:
                 break
             batch = [row for row in data if isinstance(row, dict)]
@@ -260,13 +300,21 @@ async def _fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match
     for row in rows:
         match = _row_to_match(row, settings)
         if match is None:
-            league = _extract_league(row)
-            if league and is_low_tier_league(league):
+            reason = _row_parse_fail_reason(row, settings)
+            fail_map = dict(stats.get('parse_fail_reasons') or {})
+            fail_map[reason] = int(fail_map.get(reason) or 0) + 1
+            stats['parse_fail_reasons'] = fail_map
+            if reason == 'low_tier_filtered':
                 stats['low_tier_skipped'] = int(stats['low_tier_skipped']) + 1
+            if len(preview['parse_fail_examples']) < 8:
+                preview['parse_fail_examples'].append({'reason': reason, 'row': _safe_preview([row], 1)[0]})
             continue
+        stats['rows_parsed_as_match'] = int(stats['rows_parsed_as_match']) + 1
         if _store_local_date(settings, match.commence_time) != local_date:
+            stats['rows_outside_target_local_date'] = int(stats['rows_outside_target_local_date']) + 1
             continue
         if match.match_key in seen:
+            stats['duplicates_inside_sstats'] = int(stats['duplicates_inside_sstats']) + 1
             continue
         seen.add(match.match_key)
         matches.append(match)
