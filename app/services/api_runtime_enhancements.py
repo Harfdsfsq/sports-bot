@@ -261,6 +261,9 @@ def install_env_defaults() -> None:
     _set_default("CONTROLLED_RESCUE_RETURN_LIMIT", "24")
     _set_default("CONTROLLED_RESCUE_MAX_TOTAL", "40")
     _set_default("CONTROLLED_RESCUE_MAX_PER_MATCH", "2")
+    _set_default("POST_INTEGRITY_CANDIDATE_RESCUE_ENABLED", "true")
+    _set_default("POST_INTEGRITY_RESCUE_APPLY_MARKET_GUARD", "true")
+    _set_default("POST_INTEGRITY_RESCUE_RETURN_LIMIT", "24")
 
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT1", "Bet365,Unibet")
     _set_default("ODDS_API_IO_BOOKMAKERS_ACCOUNT2", "Betfair Exchange,Sbobet")
@@ -369,3 +372,8 @@ def install() -> None:
     except Exception:
         pass
     patch_market_integrity_policy()
+    try:
+        from app.services import post_integrity_candidate_rescue
+        post_integrity_candidate_rescue.install()
+    except Exception:
+        pass
