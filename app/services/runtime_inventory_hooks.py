@@ -3,11 +3,17 @@ from __future__ import annotations
 import atexit
 import importlib.util
 import os
+import shutil
 from pathlib import Path
 from typing import Any
 
 _INSTALLED = False
 _RAN_POST_HOOKS = False
+
+RUNTIME_STATE_DIRS: tuple[tuple[str, str], ...] = (
+    (".data/cache/day_inventory", ".data/day_inventory"),
+    (".data/cache/line_history", ".data/line_history"),
+)
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -15,6 +21,38 @@ def _truthy(value: Any, default: bool = False) -> bool:
     if not raw:
         return default
     return raw in {"1", "true", "yes", "on", "force"}
+
+
+def _copy_tree(src: Path, dst: Path) -> dict[str, Any]:
+    if not src.exists():
+        return {"status": "missing", "src": str(src), "dst": str(dst), "files": 0}
+    files = [p for p in src.rglob("*") if p.is_file()]
+    dst.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for file_path in files:
+        rel = file_path.relative_to(src)
+        target = dst / rel
+        try:
+            target.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(file_path, target)
+            copied += 1
+        except Exception:
+            continue
+    return {"status": "ok", "src": str(src), "dst": str(dst), "files": copied}
+
+
+def _sync_persistent_runtime_state(direction: str) -> list[dict[str, Any]]:
+    if not _truthy(os.getenv("PERSIST_RUNTIME_INVENTORY_STATE_ENABLED"), True):
+        return []
+    results: list[dict[str, Any]] = []
+    for cache_dir_raw, runtime_dir_raw in RUNTIME_STATE_DIRS:
+        cache_dir = Path(cache_dir_raw)
+        runtime_dir = Path(runtime_dir_raw)
+        if direction == "restore":
+            results.append(_copy_tree(cache_dir, runtime_dir))
+        elif direction == "persist":
+            results.append(_copy_tree(runtime_dir, cache_dir))
+    return results
 
 
 def _run_script(path: str) -> dict[str, Any]:
@@ -46,6 +84,7 @@ def run_pre_prediction_hooks() -> list[dict[str, Any]]:
     if not _truthy(os.getenv("RUNTIME_PRE_PREDICTION_INVENTORY_HOOKS_ENABLED"), True):
         return []
     results: list[dict[str, Any]] = []
+    results.extend({"hook": "restore_persistent_state", **item} for item in _sync_persistent_runtime_state("restore"))
     # Expand the daily inventory before run-once decides which matches to scan.
     # This is bounded by provider runtime policy and fixture-only; it never creates picks.
     if _truthy(os.getenv("FIXTURE_EXPANSION_ENABLED"), True):
@@ -68,6 +107,7 @@ def run_post_prediction_hooks() -> list[dict[str, Any]]:
     # controlled fallback publication step reads candidate artifacts.
     if _truthy(os.getenv("LINE_MOVEMENT_GUARD_ENABLED"), True):
         results.append(_run_script("scripts/update_day_inventory_priority_and_line_state.py"))
+    results.extend({"hook": "persist_persistent_state", **item} for item in _sync_persistent_runtime_state("persist"))
     return results
 
 
