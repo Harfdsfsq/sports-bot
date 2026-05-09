@@ -103,6 +103,11 @@ def run_post_prediction_hooks() -> list[dict[str, Any]]:
     # Accumulate the just-seen matches into the persistent daily inventory.
     if _truthy(os.getenv("DAY_INVENTORY_ACCUMULATION_ENABLED"), True):
         results.append(_run_script("scripts/accumulate_latest_matches_into_day_inventory.py"))
+    # Repair coverage before the priority planner decides which rows still need
+    # odds/context refresh. Without this, accumulated fixtures stay odds=false
+    # even after the run produced offers, candidates or line snapshots.
+    if _truthy(os.getenv("DAY_INVENTORY_COVERAGE_REPAIR_ENABLED"), True):
+        results.append(_run_script("scripts/repair_day_inventory_coverage.py"))
     # Update kickoff priority and line movement guard before the workflow's
     # controlled fallback publication step reads candidate artifacts.
     if _truthy(os.getenv("LINE_MOVEMENT_GUARD_ENABLED"), True):
