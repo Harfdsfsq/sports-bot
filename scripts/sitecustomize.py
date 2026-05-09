@@ -1,10 +1,3 @@
-"""Startup hook for scripts executed as `python scripts/*.py`.
-
-For script entrypoints Python imports this file from the scripts directory.
-Every patch is isolated: failure in one patch must not prevent the controlled
-fallback confirmation-source patch from running.
-"""
-
 from __future__ import annotations
 
 import sys
@@ -27,50 +20,50 @@ def _safe_run(label: str, func) -> None:
 
 def _apply_api_patch() -> None:
     import api_max_usage_patch
-
     api_max_usage_patch.apply_api_max_usage_patch()
 
 
 def _apply_sportlogic_unquarantine() -> None:
     import apply_sportlogic_policy_unquarantine
-
     apply_sportlogic_policy_unquarantine.main()
 
 
 def _apply_runtime_patches() -> None:
     import runtime_startup_patches
-
     runtime_startup_patches.apply_all()
 
 
 def _apply_sportlogic_hardening() -> None:
     from app.providers import sportlogic_hardening
-
     sportlogic_hardening.patch_provider_file(ROOT)
     sportlogic_hardening.install()
 
 
 def _apply_confirmation_source_patch() -> None:
     import apply_confirmation_source_fallback_patch
-
     apply_confirmation_source_fallback_patch.main()
 
 
 def _apply_controlled_fallback_prepublish_guard() -> None:
-    import controlled_fallback_prepublish_guard
-
-    controlled_fallback_prepublish_guard.install()
+    import controlled_fallback_prepublish_guard as guard
+    try:
+        import controlled_fallback_price_source_patch as price_patch
+        price_patch.apply(guard)
+    except Exception as exc:
+        try:
+            print(f"sitecustomize patch skipped: controlled_fallback_price_source_patch: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+    guard.install()
 
 
 def _apply_telegram_controlled_pick_safety() -> None:
     import telegram_controlled_pick_safety
-
     telegram_controlled_pick_safety.install()
 
 
 def _install_import_hook() -> None:
     import runtime_startup_patches
-
     runtime_startup_patches.install_import_hook()
 
 
