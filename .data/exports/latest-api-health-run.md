@@ -1,12 +1,12 @@
 # API Health Run
 
-- Created UTC: `2026-05-09T07:01:41.112644+00:00`
+- Created UTC: `2026-05-09T07:35:24.472971+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
-- OK: **15**
+- OK: **16**
 - Config-only: **1**
-- Healthy or config-only: **16**
+- Healthy or config-only: **17**
 - Degraded: **0**
 - Rate-limited: **0**
 - Auth errors: **0**
@@ -40,6 +40,6 @@
 | `sportlogic` | `odds` | `ok` | 1 | 50 | ok |
 | `allsportsapi` | `odds_context` | `ok` | 1 | 9 | ok |
 | `sharpapi_configured_base` | `utility` | `missing_secret` | 0 | 0 | required secret is not configured |
-| `meteostat` | `weather` | `error` | 1 | 0 | ReadTimeout:  |
+| `meteostat` | `weather` | `ok` | 1 | 1 | ok |
 | `openweathermap` | `weather` | `ok` | 1 | 0 | ok |
 | `weatherapi` | `weather` | `ok` | 1 | 1 | ok |
