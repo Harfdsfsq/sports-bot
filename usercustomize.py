@@ -37,6 +37,12 @@ except Exception:
     pass
 
 try:
+    from app.services import day_inventory_top_matches_runtime_patch
+    day_inventory_top_matches_runtime_patch.install()
+except Exception:
+    pass
+
+try:
     from app.services import day_inventory_runtime_guard
     day_inventory_runtime_guard.install()
 except Exception:
