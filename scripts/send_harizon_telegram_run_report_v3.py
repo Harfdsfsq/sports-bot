@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-"""HARIZON Telegram run report v3.
+"""HARIZON Telegram run report v3 compatibility wrapper.
 
-This is a compatibility wrapper over send_harizon_telegram_run_report.py.
-It keeps the full observability report, but fixes live-run blind spots:
-- controlled fallback may write detailed evaluated rows while the report says no reject reasons;
-- Bzzoiro may be consumed through the SStats-integrated nested path while direct Bzzoiro fetch is intentionally skipped.
+Fixes live-run observability blind spots without changing prediction logic:
+- controlled fallback reject reasons are shown from evaluated rows;
+- Bzzoiro direct fetch may be intentionally skipped, while useful Bzzoiro
+  contexts are produced inside the SStats nested path;
+- both source_stats and summary/debug mapping counters expose that nested
+  Bzzoiro signal, so the report no longer says `bzzoiro ctx 0` while the API
+  section says `bzzoiro ctx > 0`.
 """
 
 import importlib.util
-import json
 from collections import Counter
 from pathlib import Path
 from typing import Any
@@ -54,29 +56,23 @@ def _nested_int(row: dict[str, Any], key: str, default: int = 0) -> int:
 
 
 def _normalize_nested_bzzoiro(source_stats: dict[str, Any]) -> dict[str, Any]:
-    """Expose SStats-integrated Bzzoiro as the visible Bzzoiro provider row.
-
-    Runtime intentionally disables the old direct Bzzoiro fetch because it can
-    duplicate requests and overwrite source_stats after a timeout. The useful
-    Bzzoiro signal is stored inside the SStats row as bzzoiro_* counters. The
-    Telegram report must show that nested signal instead of the direct no-op row.
-    """
     if not isinstance(source_stats, dict):
         return {}
     normalized = dict(source_stats)
     sstats = _as_dict(normalized.get("sstats"))
     direct = _as_dict(normalized.get("bzzoiro"))
-    nested_ctx = _nested_int(sstats, "bzzoiro_contexts_built")
+
     nested_req = _nested_int(sstats, "bzzoiro_requests")
     nested_err = _nested_int(sstats, "bzzoiro_response_errors")
     nested_events = _nested_int(sstats, "bzzoiro_events_fetched")
-    nested_fuzzy = _nested_int(sstats, "bzzoiro_matched_fuzzy")
-    nested_loose = _nested_int(sstats, "bzzoiro_matched_loose")
+    nested_ctx = _nested_int(sstats, "bzzoiro_contexts_built")
     nested_exact = _nested_int(sstats, "bzzoiro_matched_exact")
+    nested_loose = _nested_int(sstats, "bzzoiro_matched_loose")
+    nested_fuzzy = _nested_int(sstats, "bzzoiro_matched_fuzzy")
     if nested_req <= 0 and nested_ctx <= 0 and nested_events <= 0:
         return normalized
+
     merged = dict(direct)
-    # Prefer nested counters when direct fetch is a no-op or has no contexts.
     direct_skipped = bool(merged.get("direct_context_fetch_skipped"))
     direct_ctx = _nested_int(merged, "contexts_built")
     if direct_skipped or direct_ctx <= 0:
@@ -109,21 +105,24 @@ def _normalize_nested_bzzoiro(source_stats: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
-def _normalize_debug_mapping(debug: dict[str, Any], source_stats: dict[str, Any]) -> dict[str, Any]:
-    if not isinstance(debug, dict):
-        return debug
-    mapping = debug.get("mapping") if isinstance(debug.get("mapping"), dict) else {}
+def _normalize_mapping(mapping: dict[str, Any], source_stats: dict[str, Any]) -> dict[str, Any]:
+    mapping = dict(mapping) if isinstance(mapping, dict) else {}
     bzz = _as_dict(source_stats.get("bzzoiro"))
     ctx = _nested_int(bzz, "contexts_built")
     if ctx <= 0:
-        return debug
-    updated = dict(debug)
-    new_mapping = dict(mapping)
-    new_mapping["bzzoiro_contexts"] = max(_nested_int(new_mapping, "bzzoiro_contexts"), ctx)
-    new_mapping["bzzoiro_exact"] = max(_nested_int(new_mapping, "bzzoiro_exact"), _nested_int(bzz, "matched_exact"))
-    new_mapping["bzzoiro_loose"] = max(_nested_int(new_mapping, "bzzoiro_loose"), _nested_int(bzz, "matched_loose"))
-    new_mapping["bzzoiro_fuzzy"] = max(_nested_int(new_mapping, "bzzoiro_fuzzy"), _nested_int(bzz, "matched_fuzzy"))
-    updated["mapping"] = new_mapping
+        return mapping
+    mapping["bzzoiro_contexts"] = max(_nested_int(mapping, "bzzoiro_contexts"), ctx)
+    mapping["bzzoiro_exact"] = max(_nested_int(mapping, "bzzoiro_exact"), _nested_int(bzz, "matched_exact"))
+    mapping["bzzoiro_loose"] = max(_nested_int(mapping, "bzzoiro_loose"), _nested_int(bzz, "matched_loose"))
+    mapping["bzzoiro_fuzzy"] = max(_nested_int(mapping, "bzzoiro_fuzzy"), _nested_int(bzz, "matched_fuzzy"))
+    return mapping
+
+
+def _normalize_container_mapping(container: dict[str, Any], source_stats: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(container, dict):
+        return container
+    updated = dict(container)
+    updated["mapping"] = _normalize_mapping(_as_dict(updated.get("mapping")), source_stats)
     return updated
 
 
@@ -135,12 +134,11 @@ def summary_payload_v3() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]
     summary, debug, fallback, request_budget, quota, refresh_plan, line_guard, priority_state = _original_summary_payload()
     source_stats = _normalize_nested_bzzoiro(_original_source_stats_from(summary, debug))
     if isinstance(summary, dict):
-        summary = dict(summary)
+        summary = _normalize_container_mapping(summary, source_stats)
         summary["source_stats"] = source_stats
     if isinstance(debug, dict):
-        debug = dict(debug)
+        debug = _normalize_container_mapping(debug, source_stats)
         debug["source_stats"] = source_stats
-        debug = _normalize_debug_mapping(debug, source_stats)
     return summary, debug, fallback, request_budget, quota, refresh_plan, line_guard, priority_state
 
 
@@ -232,7 +230,7 @@ def _with_metric_fields(candidate: dict[str, Any]) -> dict[str, Any]:
     if not metrics:
         return candidate
     enriched = dict(candidate)
-    field_map = {
+    for src_key, dst_key in {
         "odds": "odds",
         "canonical_ev_pct": "ev_pct",
         "canonical_edge_pp": "edge_pp",
@@ -245,8 +243,7 @@ def _with_metric_fields(candidate: dict[str, Any]) -> dict[str, Any]:
         "adjusted_probability": "adjusted_probability",
         "model_probability": "model_probability",
         "market_probability": "market_probability",
-    }
-    for src_key, dst_key in field_map.items():
+    }.items():
         if enriched.get(dst_key) in (None, "", 0, 0.0) and metrics.get(src_key) not in (None, ""):
             enriched[dst_key] = metrics.get(src_key)
     if metrics.get("confirmation_sources") and not enriched.get("confirmation_sources"):
