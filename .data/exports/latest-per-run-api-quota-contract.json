@@ -7,11 +7,12 @@
     "thesportsdb",
     "weatherapi",
     "open_meteo",
-    "clubelo"
+    "clubelo",
+    "allsportsapi",
+    "sportlogic"
   ],
-  "created_at_utc": "2026-05-09T12:46:28.310938+00:00",
+  "created_at_utc": "2026-05-09T13:02:12.571081+00:00",
   "disabled_providers": {
-    "ALLSPORTSAPI": "not_in_allowed_core_zero_recent_yield",
     "API_FOOTBALL": "not_in_allowed_core_daily_limited",
     "BOOKIES_API": "removed_from_project",
     "CURRENTS": "not_in_allowed_core_news_not_runtime",
@@ -32,28 +33,29 @@
     "RAPIDAPI_SPORTSBOOK": "not_in_allowed_core_daily_limit_too_small",
     "SHARPAPI": "not_in_allowed_core_text_enrichment",
     "SPORTAPI": "not_in_allowed_core",
-    "SPORTLOGIC": "not_in_allowed_core_zero_recent_matched_offers",
     "WIKIDATA": "not_in_allowed_core"
   },
-  "env_written_count": 315,
+  "env_written_count": 328,
   "free_limits_reference": "api_free_limits_ru.pdf/docx",
   "notes": [
-    "Production runtime is exact-core-only.",
-    "Only odds_api_io is a live odds source right now; publication still requires strong market-depth guards.",
-    "Weather source set is WeatherAPI + Open-Meteo only; OpenWeatherMap is disabled.",
-    "All non-core secrets may remain in GitHub, but runtime limits are forced to 0/off here."
+    "Runtime maximizes verified odds/context coverage while publication remains strict.",
+    "Odds API IO inventory source IDs are used for exact odds matching before fuzzy matching.",
+    "Context no longer requires already-matched offers; near-window inventory rows are enriched first.",
+    "AllSportsAPI and SportLogic are controlled secondary odds rescue providers only."
   ],
   "per_run_grants": {
-    "bzzoiro": 18,
-    "clubelo": 2,
-    "football_data": 4,
-    "odds_api_io": 120,
-    "odds_api_io_account1": 60,
-    "odds_api_io_account2": 60,
+    "allsportsapi": 4,
+    "bzzoiro": 20,
+    "clubelo": 3,
+    "football_data": 6,
+    "odds_api_io": 130,
+    "odds_api_io_account1": 65,
+    "odds_api_io_account2": 65,
     "open_meteo": 80,
-    "sstats": 30,
-    "thesportsdb": 8,
-    "weatherapi": 6
+    "sportlogic": 4,
+    "sstats": 32,
+    "thesportsdb": 10,
+    "weatherapi": 8
   },
   "phase": "live_refresh"
 }
