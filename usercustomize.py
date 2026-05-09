@@ -31,6 +31,12 @@ except Exception:
     pass
 
 try:
+    from app.services import day_inventory_extra_fixture_sources
+    day_inventory_extra_fixture_sources.install()
+except Exception:
+    pass
+
+try:
     from app.services import day_inventory_runtime_guard
     day_inventory_runtime_guard.install()
 except Exception:
