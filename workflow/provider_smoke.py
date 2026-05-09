@@ -73,20 +73,19 @@ NON_CORE_ENV_PREFIXES = [
 ]
 
 
+def _truthy(name: str, default: bool = False) -> bool:
+    raw = str(os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on", "force"}
+
+
 def _secret(*names: str) -> str:
     for name in names:
         value = str(os.getenv(name) or "").strip()
         if value:
             return value
     return ""
-
-
-def _mask(value: str) -> str:
-    if not value:
-        return ""
-    if len(value) <= 6:
-        return "***"
-    return value[:3] + "***" + value[-3:]
 
 
 def _safe_json(response: httpx.Response) -> Any:
@@ -175,6 +174,16 @@ async def check_bzzoiro(client: httpx.AsyncClient) -> dict[str, Any]:
     key = _secret("BZZOIRO_API_KEY")
     if not key:
         return _row("bzzoiro", enabled=False, ok=False, status="missing_key", key_present=False)
+    if not _truthy("BZZOIRO_PROVIDER_SMOKE_ENABLED", default=False):
+        return _row(
+            "bzzoiro",
+            enabled=True,
+            ok=True,
+            status="skipped_preserve_runtime_quota",
+            key_present=True,
+            smoke_skipped=True,
+            note="Main runtime fetch uses /api/predictions/; smoke is skipped to avoid spending scarce Bzzoiro quota or triggering short cooldowns.",
+        )
     today = datetime.now(UTC).date().isoformat()
     params = {"date_from": today, "date_to": today, "upcoming": "true", "tz": "UTC", "page": 1}
     headers = {"Authorization": f"Token {key}"}
