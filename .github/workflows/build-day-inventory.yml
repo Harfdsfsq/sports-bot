@@ -1,0 +1,144 @@
+name: build-day-inventory
+
+on:
+  workflow_dispatch:
+    inputs:
+      target_date:
+        description: "Local Moscow date to build, YYYY-MM-DD. Empty = today in Europe/Moscow."
+        required: false
+        default: ""
+      bootstrap_provider:
+        description: "Inventory bootstrap provider"
+        required: false
+        default: "odds_api_io"
+      force_provider_merge:
+        description: "Merge odds-api.io + football-data + TheSportsDB fixture inventory"
+        required: false
+        default: "true"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-day-inventory
+  cancel-in-progress: false
+
+jobs:
+  build-day-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      PYTHONUNBUFFERED: "1"
+      PYTHONPATH: ${{ github.workspace }}
+      TZ: Europe/Moscow
+      APP_TIMEZONE: Europe/Moscow
+      APP_ENV: production
+      PUBLISH_DRY_RUN: "true"
+      PREDICTION_PUBLICATION_ENABLED: "false"
+      RUN_REPORT_ENABLED: "false"
+      ENHANCED_RUN_REPORT_SEND_TELEGRAM: "false"
+      DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
+      DAY_INVENTORY_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
+      MATCH_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
+      DAY_INVENTORY_FORCE_PROVIDER_MERGE: ${{ github.event.inputs.force_provider_merge || 'true' }}
+      DAY_INVENTORY_BUILD_TIMEOUT_SECONDS: "900"
+      DAY_INVENTORY_DIRECT_WINDOW_DAYS: "1"
+      DAY_INVENTORY_DIRECT_MIN_MATCHES: "1"
+      PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
+      PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
+      PROVIDER_QUOTA_RUNS_PER_DAY: "12"
+      PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
+      PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
+      PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+      ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+      ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+      BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
+      SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Prepare inventory directories
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p .data/day_inventory .data/cache/day_inventory .data/exports artifacts/day-inventory
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Apply provider quota governor
+        shell: bash
+        run: |
+          set -uo pipefail
+          if timeout 45s python -u scripts/apply_provider_quota_governor.py; then
+            echo "provider quota governor applied"
+          else
+            status=$?
+            echo "provider quota governor failed or timed out with status ${status}; continuing inventory build"
+          fi
+
+      - name: Build day inventory only
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo "build day inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -u scripts/build_day_inventory.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
+          status=${PIPESTATUS[0]}
+          echo "build day inventory status ${status}"
+          echo "build day inventory finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          mkdir -p .data/cache/day_inventory
+          cp -f .data/day_inventory/*.json .data/cache/day_inventory/ 2>/dev/null || true
+          cp -r .data/day_inventory artifacts/day-inventory/day_inventory || true
+          cp -r .data/cache/day_inventory artifacts/day-inventory/cache_day_inventory || true
+          cp .data/exports/latest-day-inventory-summary.json artifacts/day-inventory/latest-day-inventory-summary.json 2>/dev/null || true
+          cp .data/exports/latest-build-day-inventory.log artifacts/day-inventory/latest-build-day-inventory.log 2>/dev/null || true
+          exit ${status}
+
+      - name: Commit day inventory
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-day-inventory-summary.json ]]; then
+            echo "skip inventory commit: summary was not created"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-build-day-inventory.log || true
+          git commit -m "Update day inventory [skip ci]" || true
+          git push || true
+
+      - name: Upload day inventory artifact
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: day-inventory-${{ github.run_id }}
+          path: |
+            artifacts/day-inventory/**
+            .data/day_inventory/**
+            .data/cache/day_inventory/**
+            .data/exports/latest-day-inventory-summary.json
+            .data/exports/latest-build-day-inventory.log
+          if-no-files-found: ignore
+          include-hidden-files: true
+          retention-days: 14
