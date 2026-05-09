@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import asyncio
+import json
 import os
 import sys
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
@@ -15,6 +17,7 @@ from app.utils import canonicalize_league_name, canonicalize_team_name, is_low_t
 
 UTC = timezone.utc
 _INSTALLED = False
+SSTATS_DIAG_PATH = Path('.data/exports/latest-day-inventory-sstats-fixture-summary.json')
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -324,6 +327,51 @@ async def _fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match
     return matches, {'stats': stats, 'preview': preview}
 
 
+def _write_compact_diag(local_date: str, sstats_meta: dict[str, Any], base_count: int, merged_count: int, added_raw: int) -> dict[str, Any]:
+    stats = dict(sstats_meta.get('stats') or {})
+    preview = dict(sstats_meta.get('preview') or {})
+    compact = {
+        'provider': 'sstats',
+        'date_local': local_date,
+        'base_matches_before_sstats': base_count,
+        'sstats_matches_added_raw': added_raw,
+        'matches_after_sstats_deduped': merged_count,
+        'stats': {
+            'enabled': stats.get('enabled'),
+            'api_key_present': stats.get('api_key_present'),
+            'endpoint': stats.get('endpoint'),
+            'request_date': stats.get('request_date'),
+            'requests': stats.get('requests'),
+            'http_statuses': stats.get('http_statuses'),
+            'response_errors': stats.get('response_errors'),
+            'rows_fetched': stats.get('rows_fetched'),
+            'rows_parsed_as_match': stats.get('rows_parsed_as_match'),
+            'matches_built': stats.get('matches_built'),
+            'matches_for_target_local_date': stats.get('matches_for_target_local_date'),
+            'rows_outside_target_local_date': stats.get('rows_outside_target_local_date'),
+            'duplicates_inside_sstats': stats.get('duplicates_inside_sstats'),
+            'low_tier_skipped': stats.get('low_tier_skipped'),
+            'budget_exhausted': stats.get('budget_exhausted'),
+            'parse_fail_reasons': stats.get('parse_fail_reasons'),
+            'last_error': stats.get('last_error'),
+            'last_body_preview': stats.get('last_body_preview'),
+        },
+        'sample_rows': preview.get('sample_rows') or [],
+        'sample_matches': preview.get('sample_matches') or [],
+        'parse_fail_examples': preview.get('parse_fail_examples') or [],
+    }
+    try:
+        SSTATS_DIAG_PATH.parent.mkdir(parents=True, exist_ok=True)
+        SSTATS_DIAG_PATH.write_text(json.dumps(compact, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    except Exception:
+        pass
+    try:
+        print('[day-inventory-sstats] ' + json.dumps(compact, ensure_ascii=False, sort_keys=True), flush=True)
+    except Exception:
+        pass
+    return compact
+
+
 def _source_rank(source: str) -> int:
     order = {
         'odds_api_io': 0,
@@ -433,6 +481,7 @@ def install() -> dict[str, Any]:
         local_date = _target_local_date(settings)
         sstats_matches, sstats_meta = await _fetch_sstats(settings, local_date)
         combined = _dedupe([*list(base_matches or []), *sstats_matches])
+        _write_compact_diag(local_date, sstats_meta, len(base_matches or []), len(combined), len(sstats_matches))
         merged_meta = _merge_meta(base_meta, sstats_meta, len(base_matches or []), len(combined), len(sstats_matches))
         return combined, merged_meta
 
