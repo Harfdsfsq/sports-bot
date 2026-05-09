@@ -10,7 +10,6 @@ from zoneinfo import ZoneInfo
 import httpx
 
 from app.config import Settings
-from app.providers.allsportsapi import AllSportsApiOddsProvider
 from app.providers.sportlogic_provider import SportLogicProvider
 from app.schemas import Match
 from app.utils import canonicalize_league_name, canonicalize_team_name, is_low_tier_league, parse_datetime
@@ -296,6 +295,118 @@ async def _fetch_bzzoiro(settings: Settings, local_date: str) -> tuple[list[Matc
     return matches, {'stats': stats, 'preview': preview}
 
 
+def _allsportsapi_row_to_match(row: dict[str, Any], settings: Settings) -> Match | None:
+    home = str(row.get('event_home_team') or '').strip()
+    away = str(row.get('event_away_team') or '').strip()
+    league = str(row.get('league_name') or '').strip()
+    if not home or not away or not league:
+        return None
+    if not bool(getattr(settings, 'allow_low_tier', False)) and is_low_tier_league(league):
+        return None
+    raw_date = str(row.get('event_date') or '').strip()
+    raw_time = str(row.get('event_time') or '').strip() or '12:00'
+    if not raw_date:
+        return None
+    try:
+        time_value = raw_time if len(raw_time.split(':')) == 3 else f'{raw_time}:00'
+        commence = parse_datetime(f'{raw_date}T{time_value}+00:00')
+    except Exception:
+        return None
+    return Match(
+        source='allsportsapi',
+        source_event_id=str(row.get('event_key') or row.get('match_id') or ''),
+        sport_key='soccer',
+        league_name=league,
+        home_team=home,
+        away_team=away,
+        commence_time=commence,
+        home_team_norm=canonicalize_team_name(home),
+        away_team_norm=canonicalize_team_name(away),
+        league_key=canonicalize_league_name(league),
+        tier='low' if is_low_tier_league(league) else 'mid',
+        metadata={
+            'provider': 'allsportsapi',
+            'country': str(row.get('country_name') or '').strip(),
+            'round': str(row.get('league_round') or '').strip(),
+            'season': str(row.get('league_season') or '').strip(),
+            'venue': str(row.get('event_stadium') or '').strip(),
+            'status': str(row.get('event_status') or '').strip(),
+        },
+    )
+
+
+async def _fetch_allsportsapi(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
+    stats: dict[str, Any] = {
+        'enabled': True,
+        'api_key_present': bool(os.getenv('ALLSPORTSAPI_API_KEY') or os.getenv('ALLSPORTSAPI_KEY') or getattr(settings, 'allsportsapi_api_key', None)),
+        'requests': 0,
+        'response_errors': 0,
+        'http_statuses': [],
+        'fixtures_fetched': 0,
+        'matches_built': 0,
+        'matches_for_target_local_date': 0,
+        'low_tier_skipped': 0,
+        'last_error': None,
+        'last_body_preview': None,
+        'request_date': local_date,
+    }
+    preview: dict[str, Any] = {'sample_fixtures': [], 'sample_matches': []}
+    api_key = str(os.getenv('ALLSPORTSAPI_API_KEY') or os.getenv('ALLSPORTSAPI_KEY') or getattr(settings, 'allsportsapi_api_key', '') or '').strip()
+    if not api_key:
+        stats['enabled'] = False
+        return [], {'stats': stats, 'preview': preview}
+    base_url = str(getattr(settings, 'allsportsapi_base_url', 'https://apiv2.allsportsapi.com/football/') or 'https://apiv2.allsportsapi.com/football/').rstrip('/')
+    window_days = _env_int('DAY_INVENTORY_ALLSPORTSAPI_WINDOW_DAYS', 0, 0)
+    target_day = date.fromisoformat(local_date)
+    request_from = (target_day - timedelta(days=window_days)).isoformat()
+    request_to = (target_day + timedelta(days=window_days)).isoformat()
+    rows: list[dict[str, Any]] = []
+    try:
+        async with httpx.AsyncClient(timeout=float(getattr(settings, 'allsportsapi_timeout_seconds', 12.0) or 12.0)) as client:
+            stats['requests'] = 1
+            response = await client.get(
+                f'{base_url}/',
+                params={'met': 'Fixtures', 'APIkey': api_key, 'from': request_from, 'to': request_to, 'timezone': 'UTC'},
+            )
+    except Exception as exc:
+        stats['response_errors'] = 1
+        stats['last_error'] = f'{type(exc).__name__}: {exc}'
+        return [], {'stats': stats, 'preview': preview}
+    stats['http_statuses'].append(int(response.status_code))
+    stats['last_body_preview'] = response.text[:1800]
+    if response.status_code != 200:
+        stats['response_errors'] = 1
+        stats['last_error'] = f'http_status={response.status_code}'
+        return [], {'stats': stats, 'preview': preview}
+    try:
+        payload = response.json()
+    except Exception as exc:
+        stats['response_errors'] = 1
+        stats['last_error'] = f'json:{type(exc).__name__}: {exc}'
+        return [], {'stats': stats, 'preview': preview}
+    result = payload.get('result') if isinstance(payload, dict) else []
+    if isinstance(result, list):
+        rows = [row for row in result if isinstance(row, dict)]
+    stats['fixtures_fetched'] = len(rows)
+    preview['sample_fixtures'] = _safe_preview(rows, 3)
+    matches: list[Match] = []
+    for row in rows:
+        match = _allsportsapi_row_to_match(row, settings)
+        if match is None:
+            league = str(row.get('league_name') or '').strip()
+            if league and is_low_tier_league(league):
+                stats['low_tier_skipped'] = int(stats['low_tier_skipped']) + 1
+            continue
+        if _store_local_date(settings, match.commence_time) == local_date:
+            matches.append(match)
+    max_matches = _env_int('DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT', 500, 1)
+    matches = matches[:max_matches]
+    stats['matches_built'] = len(matches)
+    stats['matches_for_target_local_date'] = len(matches)
+    preview['sample_matches'] = _match_preview(matches, 5)
+    return matches, {'stats': stats, 'preview': preview}
+
+
 async def _fetch_provider_matches(provider_name: str, provider: Any, settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
     stats: dict[str, Any] = {'enabled': True, 'requests': 0, 'response_errors': 0, 'matches_built': 0, 'matches_for_target_local_date': 0, 'last_error': None}
     preview: dict[str, Any] = {'sample_matches': []}
@@ -314,12 +425,6 @@ async def _fetch_provider_matches(provider_name: str, provider: Any, settings: S
     stats['matches_built'] = len(matches_for_day)
     preview['sample_matches'] = _match_preview(matches_for_day, 5)
     return matches_for_day, {'stats': stats, 'preview': preview}
-
-
-async def _fetch_allsportsapi(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
-    provider = AllSportsApiOddsProvider(settings)
-    provider.match_limit = _env_int('DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT', 500, 1)
-    return await _fetch_provider_matches('allsportsapi', provider, settings, local_date)
 
 
 async def _fetch_sportlogic(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
