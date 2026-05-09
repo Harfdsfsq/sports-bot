@@ -2,11 +2,10 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v3.
 
-This is a thin compatibility wrapper over send_harizon_telegram_run_report.py.
-It keeps the full observability report, but fixes the main blind spot seen in
-live runs: controlled fallback may write detailed `evaluated` rows while the
-Telegram report still says "no fresh reject reasons" and shows raw artifact
-candidates instead of the actual fallback evaluation.
+This is a compatibility wrapper over send_harizon_telegram_run_report.py.
+It keeps the full observability report, but fixes live-run blind spots:
+- controlled fallback may write detailed evaluated rows while the report says no reject reasons;
+- Bzzoiro may be consumed through the SStats-integrated nested path while direct Bzzoiro fetch is intentionally skipped.
 """
 
 import importlib.util
@@ -32,12 +31,117 @@ _original_as_int = base.as_int
 _original_reason_text = base.reason_text
 _original_candidate_lines = base.candidate_lines
 _original_diagnosis_lines = base.diagnosis_lines
+_original_source_stats_from = base.source_stats_from
+_original_summary_payload = base.summary_payload
 
 
 def as_int_v3(value: Any, default: int = 0) -> int:
     if isinstance(value, (list, tuple, set, dict)):
         return len(value)
     return _original_as_int(value, default)
+
+
+def _as_dict(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def _nested_int(row: dict[str, Any], key: str, default: int = 0) -> int:
+    value = row.get(key)
+    if value in (None, ""):
+        stats = row.get("stats") if isinstance(row.get("stats"), dict) else {}
+        value = stats.get(key)
+    return as_int_v3(value, default)
+
+
+def _normalize_nested_bzzoiro(source_stats: dict[str, Any]) -> dict[str, Any]:
+    """Expose SStats-integrated Bzzoiro as the visible Bzzoiro provider row.
+
+    Runtime intentionally disables the old direct Bzzoiro fetch because it can
+    duplicate requests and overwrite source_stats after a timeout. The useful
+    Bzzoiro signal is stored inside the SStats row as bzzoiro_* counters. The
+    Telegram report must show that nested signal instead of the direct no-op row.
+    """
+    if not isinstance(source_stats, dict):
+        return {}
+    normalized = dict(source_stats)
+    sstats = _as_dict(normalized.get("sstats"))
+    direct = _as_dict(normalized.get("bzzoiro"))
+    nested_ctx = _nested_int(sstats, "bzzoiro_contexts_built")
+    nested_req = _nested_int(sstats, "bzzoiro_requests")
+    nested_err = _nested_int(sstats, "bzzoiro_response_errors")
+    nested_events = _nested_int(sstats, "bzzoiro_events_fetched")
+    nested_fuzzy = _nested_int(sstats, "bzzoiro_matched_fuzzy")
+    nested_loose = _nested_int(sstats, "bzzoiro_matched_loose")
+    nested_exact = _nested_int(sstats, "bzzoiro_matched_exact")
+    if nested_req <= 0 and nested_ctx <= 0 and nested_events <= 0:
+        return normalized
+    merged = dict(direct)
+    # Prefer nested counters when direct fetch is a no-op or has no contexts.
+    direct_skipped = bool(merged.get("direct_context_fetch_skipped"))
+    direct_ctx = _nested_int(merged, "contexts_built")
+    if direct_skipped or direct_ctx <= 0:
+        merged.update(
+            {
+                "enabled": sstats.get("bzzoiro_enabled", merged.get("enabled", True)),
+                "api_key_present": sstats.get("bzzoiro_api_key_present", merged.get("api_key_present", True)),
+                "requests": nested_req,
+                "response_errors": nested_err,
+                "events_fetched": nested_events,
+                "predictions_fetched": nested_events,
+                "rows_fetched": nested_events,
+                "rows_seen": nested_events,
+                "contexts_built": nested_ctx,
+                "matched_exact": nested_exact,
+                "matched_loose": nested_loose,
+                "matched_fuzzy": nested_fuzzy,
+                "exact_matches": nested_exact,
+                "fuzzy_matches": nested_fuzzy,
+                "source_stats_from": "sstats_nested_bzzoiro",
+                "direct_context_fetch_skipped": direct_skipped or bool(merged.get("direct_context_fetch_skipped")),
+                "delegated_to_sstats_nested_bzzoiro": True,
+                "last_error": None if nested_err == 0 else merged.get("last_error"),
+                "budget_exhausted": False,
+            }
+        )
+        if merged.get("provider_version") in (None, ""):
+            merged["provider_version"] = "sstats-nested-bzzoiro"
+        normalized["bzzoiro"] = merged
+    return normalized
+
+
+def _normalize_debug_mapping(debug: dict[str, Any], source_stats: dict[str, Any]) -> dict[str, Any]:
+    if not isinstance(debug, dict):
+        return debug
+    mapping = debug.get("mapping") if isinstance(debug.get("mapping"), dict) else {}
+    bzz = _as_dict(source_stats.get("bzzoiro"))
+    ctx = _nested_int(bzz, "contexts_built")
+    if ctx <= 0:
+        return debug
+    updated = dict(debug)
+    new_mapping = dict(mapping)
+    new_mapping["bzzoiro_contexts"] = max(_nested_int(new_mapping, "bzzoiro_contexts"), ctx)
+    new_mapping["bzzoiro_exact"] = max(_nested_int(new_mapping, "bzzoiro_exact"), _nested_int(bzz, "matched_exact"))
+    new_mapping["bzzoiro_loose"] = max(_nested_int(new_mapping, "bzzoiro_loose"), _nested_int(bzz, "matched_loose"))
+    new_mapping["bzzoiro_fuzzy"] = max(_nested_int(new_mapping, "bzzoiro_fuzzy"), _nested_int(bzz, "matched_fuzzy"))
+    updated["mapping"] = new_mapping
+    return updated
+
+
+def source_stats_from_v3(summary: dict[str, Any], debug: dict[str, Any]) -> dict[str, Any]:
+    return _normalize_nested_bzzoiro(_original_source_stats_from(summary, debug))
+
+
+def summary_payload_v3() -> tuple[dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any], dict[str, Any]]:
+    summary, debug, fallback, request_budget, quota, refresh_plan, line_guard, priority_state = _original_summary_payload()
+    source_stats = _normalize_nested_bzzoiro(_original_source_stats_from(summary, debug))
+    if isinstance(summary, dict):
+        summary = dict(summary)
+        summary["source_stats"] = source_stats
+    if isinstance(debug, dict):
+        debug = dict(debug)
+        debug["source_stats"] = source_stats
+        debug = _normalize_debug_mapping(debug, source_stats)
+    return summary, debug, fallback, request_budget, quota, refresh_plan, line_guard, priority_state
 
 
 REASON_MAP = {
@@ -55,6 +159,7 @@ REASON_MAP = {
     "controlled_rescue_odds_range_guard": "controlled rescue: коэффициент вне допустимого диапазона",
     "controlled_rescue_edge_guard": "controlled rescue: value-запас ниже минимума",
     "controlled_rescue_ev_guard": "controlled rescue: EV ниже минимума",
+    "insufficient_publication_odds_sources": "публикация заблокирована: меньше 2 независимых odds sources",
 }
 
 
@@ -192,6 +297,8 @@ def diagnosis_lines_v3(summary: dict[str, Any], fallback: dict[str, Any], source
 
 
 base.as_int = as_int_v3
+base.source_stats_from = source_stats_from_v3
+base.summary_payload = summary_payload_v3
 base.reason_text = reason_text_v3
 base.rejection_lines = rejection_lines_v3
 base.border_candidates = border_candidates_v3
