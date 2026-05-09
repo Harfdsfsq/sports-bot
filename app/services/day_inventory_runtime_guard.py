@@ -54,11 +54,20 @@ def _write_timeout_summary(timeout_seconds: int) -> None:
         pass
 
 
+def _install_sstats_fixture_source() -> None:
+    try:
+        from app.services import day_inventory_sstats_fixture_source
+        day_inventory_sstats_fixture_source.install()
+    except Exception:
+        pass
+
+
 def install() -> bool:
     if getattr(sys, PATCH_MARKER, False):
         return False
     if not _is_day_inventory_process():
         return False
+    _install_sstats_fixture_source()
     timeout_seconds = max(30, _env_int("DAY_INVENTORY_BUILD_TIMEOUT_SECONDS", 180))
 
     def _handler(signum, frame):  # type: ignore[no-untyped-def]
