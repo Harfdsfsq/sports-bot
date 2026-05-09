@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-"""Apply the HARIZON per-run API quota contract.
+"""Apply the HARIZON top-provider per-run API contract.
 
-This is the final env layer after provider quota governor/request budget.  The
-repo has accumulated several aliases for the same limit
-(`*_PER_RUN_MAX`, `*_MAX_HTTP_REQUESTS_PER_RUN`, `*_MAX_REQUESTS_PER_RUN`,
-`*_REQUESTS_MAX_PER_RUN`).  Providers read different aliases, so this script
-writes all known aliases from one per-run source of truth.
+Runtime policy after live evidence:
+- CORE providers run every normal run because they repeatedly produce useful data.
+- WATCHLIST providers are cheap/cache/fallback only.
+- QUARANTINE providers are disabled in normal runs until a parser/matching fix is
+  tested with HARIZON_PROVIDER_PROBE_MODE=true.
 
-Policy goals:
-- 00:00-02:59 local: inventory-first, collect the full day.
-- morning: backfill lines/context from day inventory.
-- live: near-window odds refresh + context shortlist.
-- channel publication: normally 2 odds sources and >=2 bookmakers.
+This script is the final GitHub Actions env layer after quota governor and base
+request budget. It writes every common alias for per-run limits because different
+providers read different setting names.
 """
 
 import json
@@ -28,12 +26,15 @@ EXPORT_PATH = ROOT / ".data" / "exports" / "latest-per-run-api-quota-contract.js
 GITHUB_ENV = os.getenv("GITHUB_ENV")
 
 
-def _truthy(value: object) -> bool:
-    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
-
-
 def _present(*names: str) -> bool:
     return any(str(os.getenv(name) or "").strip() for name in names)
+
+
+def _truthy(name: str, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
 def _local_now() -> datetime:
@@ -57,14 +58,6 @@ def _phase() -> str:
     return "live_refresh"
 
 
-def _daily_to_per_run(daily: int, runs_per_day: int = 12, safety: float = 0.78) -> int:
-    return max(0, int((daily * safety) // max(1, runs_per_day)))
-
-
-def _monthly_to_per_run(monthly: int, runs_per_day: int = 12, safety: float = 0.78) -> int:
-    return max(0, int((monthly * safety) // max(1, runs_per_day * 30)))
-
-
 def _put_limit(env: dict[str, str], provider_prefix: str, value: int, *extra_aliases: str) -> None:
     prefix = provider_prefix.upper()
     aliases = {
@@ -79,72 +72,52 @@ def _put_limit(env: dict[str, str], provider_prefix: str, value: int, *extra_ali
         env[alias] = str(max(0, int(value)))
 
 
+def _disable_provider(env: dict[str, str], prefix: str, reason: str) -> None:
+    upper = prefix.upper()
+    _put_limit(env, upper, 0)
+    env[f"{upper}_REQUEST_BUDGET_REASON"] = reason
+    for key in (f"ENABLE_{upper}", f"{upper}_ENABLED"):
+        env[key] = "false"
+
+
 def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
-    runs_per_day = int(float(os.getenv("PROVIDER_QUOTA_RUNS_PER_DAY") or 12))
-    safety = float(os.getenv("PROVIDER_QUOTA_SAFETY_FACTOR") or 0.78)
+    probe_mode = _truthy("HARIZON_PROVIDER_PROBE_MODE", False)
 
-    # Conservative free limits from api_free_limits_ru.*.  Values are grants per
-    # run, not hard free limits.  They are intentionally below public limits and
-    # adapted by phase.
     if phase == "full_inventory":
-        odds_total = 160
-        odds_account = 80
-        max_matches_for_odds = 900
-        analysis_cap = 900
-        context_limit = 120
-        premium_context = 48
-        weather_limit = 8
-        bzzoiro = 12
-        sstats = 20
-        football_data = 8
-        thesportsdb = 18
-        sportlogic = 32
-        allsports = 18
+        odds_total, odds_account = 160, 80
+        max_matches_for_odds, analysis_cap = 900, 900
+        context_limit, premium_context = 120, 48
+        bzzoiro, sstats, football_data, thesportsdb = 10, 18, 6, 12
+        weatherapi, openweathermap, open_meteo = 6, 0, 80
     elif phase == "morning_backfill":
-        odds_total = 140
-        odds_account = 70
-        max_matches_for_odds = 650
-        analysis_cap = 650
-        context_limit = 260
-        premium_context = 96
-        weather_limit = 16
-        bzzoiro = 18
-        sstats = 30
-        football_data = 8
-        thesportsdb = 16
-        sportlogic = 28
-        allsports = 18
+        odds_total, odds_account = 140, 70
+        max_matches_for_odds, analysis_cap = 650, 650
+        context_limit, premium_context = 240, 84
+        bzzoiro, sstats, football_data, thesportsdb = 16, 28, 6, 10
+        weatherapi, openweathermap, open_meteo = 8, 2, 80
     else:
-        odds_total = 120
-        odds_account = 60
-        max_matches_for_odds = 520
-        analysis_cap = 520
-        context_limit = 240
-        premium_context = 96
-        weather_limit = 12
-        bzzoiro = 24
-        sstats = 36
-        football_data = 6
-        thesportsdb = 10
-        sportlogic = 24
-        allsports = 12
+        odds_total, odds_account = 120, 60
+        max_matches_for_odds, analysis_cap = 520, 520
+        context_limit, premium_context = 220, 84
+        bzzoiro, sstats, football_data, thesportsdb = 18, 30, 4, 8
+        weatherapi, openweathermap, open_meteo = 8, 2, 80
 
-    # Daily/monthly limited sources.  Use per-run budget only when useful and
-    # keep monthly-limited APIs as probe/rescue, never mass scan.
-    api_football = min(6, _daily_to_per_run(100, runs_per_day, safety)) if _present("API_FOOTBALL_KEY", "API_FOOTBALL_API_KEY") else 0
-    highlightly = min(6, _daily_to_per_run(100, runs_per_day, safety)) if _present("HIGHLIGHTLY_API_KEY") else 0
-    sportsbook = min(3, _daily_to_per_run(50, runs_per_day, safety)) if _present("SPORTSBOOK_API_KEY", "SPORTSBOOK_KEY", "RAPIDAPI_KEY") else 0
-    oddspapi = 1 if _present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY") and phase in {"morning_backfill", "live_refresh"} else 0
-    oddsfeed = 1 if _present("ODDS_FEED_RAPIDAPI_KEY", "RAPIDAPI_KEY") and phase == "live_refresh" else 0
-    free_live = 0  # 100/month: too small for scheduled runs.
-    meteostat = 0  # 500/month: keep disabled; Open-Meteo/WeatherAPI first.
+    # Quarantined sources: they have secrets/free limits, but live runs show
+    # zero matched offers or zero useful contexts. They must not spend quota in
+    # normal runs. Probe mode gives tiny controlled budgets for parser work.
+    allsportsapi = 2 if probe_mode and _present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY") else 0
+    sportlogic = 2 if probe_mode and _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0
+    oddspapi = 1 if probe_mode and _present("ODDSPAPI_API_KEY", "ODDSPAPI_KEY", "ODDS_PAPI_API_KEY") else 0
+    oddsfeed = 1 if probe_mode and _present("ODDS_FEED_RAPIDAPI_KEY", "RAPIDAPI_KEY") else 0
+    highlightly = 1 if probe_mode and _present("HIGHLIGHTLY_API_KEY") else 0
 
     env: dict[str, str] = {
-        "HARIZON_API_QUOTA_CONTRACT_VERSION": "v1-per-run-free-limits-2026-05-09",
+        "HARIZON_API_QUOTA_CONTRACT_VERSION": "v2-top-providers-core-only-2026-05-09",
         "HARIZON_RUN_PHASE_EFFECTIVE": phase,
+        "HARIZON_PROVIDER_PROBE_MODE": "true" if probe_mode else "false",
         "PROVIDER_REQUEST_BUDGET_MODE": "per_run_only",
         "PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY": "true",
-        "ALL_SOURCES_FREE_MAXIMIZE": "true",
+        "ALL_SOURCES_FREE_MAXIMIZE": "false",
         "RUN_DAYS_AHEAD": "1",
         "PUBLISH_WINDOW_HOURS": "24" if phase == "full_inventory" else "12",
         "MAX_MATCHES_FOR_ODDS_FETCH": str(max_matches_for_odds),
@@ -160,19 +133,16 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
         "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true" if phase == "full_inventory" else "false",
         "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true" if phase == "full_inventory" else "false",
-        "SECONDARY_ODDS_RESCUE_ENABLED": "true",
-        "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth" if phase != "full_inventory" else "odds_api_io_empty_or_thin",
+        "SECONDARY_ODDS_RESCUE_ENABLED": "true" if probe_mode else "false",
+        "SECONDARY_ODDS_RESCUE_TRIGGER": "probe_mode_only" if probe_mode else "disabled_until_secondary_parser_fixed",
         "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "40",
         "SECONDARY_ODDS_RESCUE_NEAR_WINDOW_HOURS": "12",
-        # Publication/market-depth contract.
         "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
         "MIN_BOOKS_PUBLISH": "2",
         "MIN_SOURCES_PUBLISH": "2",
         "MARKET_DERIVED_MIN_BOOKS": "2",
         "MARKET_DERIVED_MIN_SOURCES": "2",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "2",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES": "2",
         "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "2",
         "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
@@ -186,7 +156,6 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EV_PCT": "8.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_CONFIDENCE": "78.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_QUALITY": "78.0",
-        # odds-api.io account routing.
         "ENABLE_ODDS_API_IO": "true",
         "ODDS_API_IO_ENABLED": "true",
         "ODDS_API_IO_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
@@ -203,61 +172,59 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     }
     _put_limit(env, "ODDS_API_IO", odds_total if _present("ODDS_API_IO_KEY") else 0)
 
-    # Core context/fixtures.
+    # CORE: produces useful data repeatedly.
     env.update({"ENABLE_SSTATS_CONTEXT": "true" if _present("SSTATS_API_KEY") else "false", "SSTATS_ENABLED": "true" if _present("SSTATS_API_KEY") else "false", "SSTATS_RECENT_MATCHES": "10", "SSTATS_LOOKBACK_DAYS": "45", "SSTATS_CONTEXT_MATCH_LIMIT": "72"})
     _put_limit(env, "SSTATS", sstats if _present("SSTATS_API_KEY") else 0)
-    env.update({"ENABLE_BZZOIRO_CONTEXT": "true" if _present("BZZOIRO_API_KEY") else "false", "BZZOIRO_ENABLED": "true" if _present("BZZOIRO_API_KEY") else "false", "BZZOIRO_CONTEXT_MATCH_LIMIT": "72", "BZZOIRO_MAX_PAGES": "6", "BZZOIRO_PAGE_SIZE": "10"})
+    env.update({"ENABLE_BZZOIRO_CONTEXT": "true" if _present("BZZOIRO_API_KEY") else "false", "BZZOIRO_ENABLED": "true" if _present("BZZOIRO_API_KEY") else "false", "BZZOIRO_CONTEXT_MATCH_LIMIT": "60", "BZZOIRO_MAX_PAGES": "5", "BZZOIRO_PAGE_SIZE": "10"})
     _put_limit(env, "BZZOIRO", bzzoiro if _present("BZZOIRO_API_KEY") else 0, "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN", "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN")
-    env.update({"ENABLE_FOOTBALL_DATA_CONTEXT": "true" if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else "false", "FOOTBALL_DATA_ENABLED": "true" if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else "false", "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "72", "FOOTBALL_DATA_CACHE_TTL_MINUTES": "720"})
+    env.update({"ENABLE_FOOTBALL_DATA_CONTEXT": "true" if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else "false", "FOOTBALL_DATA_ENABLED": "true" if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else "false", "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "48", "FOOTBALL_DATA_CACHE_TTL_MINUTES": "720"})
     _put_limit(env, "FOOTBALL_DATA", football_data if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else 0)
-    env.update({"ENABLE_THESPORTSDB_CONTEXT": "true", "THESPORTSDB_CONTEXT_ENABLED": "true", "THESPORTSDB_API_KEY": os.getenv("THESPORTSDB_API_KEY") or "123", "THESPORTSDB_CONTEXT_MATCH_LIMIT": "96"})
+    env.update({"ENABLE_THESPORTSDB_CONTEXT": "true", "THESPORTSDB_CONTEXT_ENABLED": "true", "THESPORTSDB_API_KEY": os.getenv("THESPORTSDB_API_KEY") or "123", "THESPORTSDB_CONTEXT_MATCH_LIMIT": "72"})
     _put_limit(env, "THESPORTSDB", thesportsdb)
 
-    # Secondary odds/rescue sources.
-    env.update({"ENABLE_ALLSPORTSAPI": "true" if _present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY") else "false", "ALLSPORTSAPI_ENABLED": "true" if _present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY") else "false", "ALLSPORTSAPI_MATCH_LIMIT": "48", "ALLSPORTSAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false" if phase != "full_inventory" else "true"})
-    _put_limit(env, "ALLSPORTSAPI", allsports if _present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY") else 0)
-    env.update({"ENABLE_SPORTLOGIC": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false", "SPORTLOGIC_ENABLED": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true", "SPORTLOGIC_ODDS_MATCH_LIMIT": "24", "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "60", "SPORTLOGIC_MATCH_LIMIT": "60", "SPORTLOGIC_PER_PAGE": "50", "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": "7", "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false" if phase != "full_inventory" else "true"})
-    _put_limit(env, "SPORTLOGIC", sportlogic if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0)
-    env.update({"ENABLE_ODDSPAPI": "true" if oddspapi else "false", "ODDSPAPI_ENABLED": "true" if oddspapi else "false", "ODDSPAPI_MATCH_LIMIT": "12", "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0", "ODDSPAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"})
+    # WATCHLIST/FALLBACK: only cheap and only when useful.
+    env.update({"WEATHER_CONTEXT_ENABLED": "true", "WEATHER_CONTEXT_MATCH_LIMIT": str(weatherapi), "ENABLE_WEATHERAPI": "true" if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else "false", "WEATHERAPI_ENABLED": "true" if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else "false"})
+    _put_limit(env, "WEATHERAPI", weatherapi if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else 0)
+    _put_limit(env, "OPENWEATHERMAP", openweathermap if _present("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY") else 0)
+    _put_limit(env, "OPEN_METEO", open_meteo)
+    env.update({"CLUBELO_ENABLED": "true", "FOOTBALL_DATA_CO_UK_ENABLED": "true", "WIKIDATA_ENABLED": "false", "WIKIDATA_MAX_REQUESTS_PER_DAY": "0", "WIKIDATA_SPARQL_MAX_REQUESTS_PER_DAY": "0"})
+
+    # QUARANTINE: zero-yield or monthly-limited providers. Tiny grants only in probe mode.
+    env.update({"ENABLE_ALLSPORTSAPI": "true" if allsportsapi else "false", "ALLSPORTSAPI_ENABLED": "true" if allsportsapi else "false", "ALLSPORTSAPI_MATCH_LIMIT": "8", "ALLSPORTSAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"})
+    _put_limit(env, "ALLSPORTSAPI", allsportsapi)
+    env.update({"ENABLE_SPORTLOGIC": "true" if sportlogic else "false", "SPORTLOGIC_ENABLED": "true" if sportlogic else "false", "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true" if sportlogic else "false", "SPORTLOGIC_ODDS_MATCH_LIMIT": "4", "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "8", "SPORTLOGIC_MATCH_LIMIT": "8", "SPORTLOGIC_PER_PAGE": "50", "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": "7", "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"})
+    _put_limit(env, "SPORTLOGIC", sportlogic)
+    env.update({"ENABLE_ODDSPAPI": "true" if oddspapi else "false", "ODDSPAPI_ENABLED": "true" if oddspapi else "false", "ODDSPAPI_MATCH_LIMIT": "4", "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0", "ODDSPAPI_ONLY_IF_PRIMARY_ODDS_EMPTY": "false"})
     _put_limit(env, "ODDSPAPI", oddspapi)
-
-    # Daily/monthly limited football context/probes.
-    env.update({"ENABLE_API_FOOTBALL": "true" if api_football else "false", "API_FOOTBALL_ENABLED": "true" if api_football else "false", "API_FOOTBALL_CONTEXT_MATCH_LIMIT": "12", "API_FOOTBALL_PREDICTIONS_LIMIT": "0"})
-    _put_limit(env, "API_FOOTBALL", api_football)
-    env.update({"HIGHLIGHTLY_CONTEXT_MATCH_LIMIT": "8"})
-    _put_limit(env, "HIGHLIGHTLY", highlightly)
-    _put_limit(env, "RAPIDAPI_SPORTSBOOK", sportsbook)
     _put_limit(env, "RAPIDAPI_ODDS_FEED", oddsfeed)
-    _put_limit(env, "RAPIDAPI_FREE_FOOTBALL", free_live)
+    _put_limit(env, "HIGHLIGHTLY", highlightly)
 
-    # Weather/news/reference.
-    env.update({"WEATHER_CONTEXT_ENABLED": "true", "WEATHER_CONTEXT_MATCH_LIMIT": str(weather_limit), "ENABLE_WEATHERAPI": "true" if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else "false", "WEATHERAPI_ENABLED": "true" if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else "false"})
-    _put_limit(env, "WEATHERAPI", weather_limit if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else 0)
-    _put_limit(env, "OPENWEATHERMAP", 4 if _present("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY") else 0)
-    _put_limit(env, "OPEN_METEO", 80)
-    # News rotation: off in full inventory, tiny per-run in live if keys exist.
-    news_grant = 0 if phase == "full_inventory" else 2
-    gnews_grant = 0 if phase == "full_inventory" else 2
-    currents_grant = 0 if phase == "full_inventory" else 2
-    newsdata_grant = 0 if phase == "full_inventory" else 2
-    guardian_grant = 0 if phase == "full_inventory" else 2
-    _put_limit(env, "NEWSAPI", news_grant if _present("NEWSAPI_KEY") else 0)
-    _put_limit(env, "CURRENTS", currents_grant if _present("CURRENTS_API_KEY", "CURRENTS_KEY") else 0)
-    _put_limit(env, "GNEWS", gnews_grant if _present("GNEWS_KEY") else 0)
-    _put_limit(env, "NEWSDATA", newsdata_grant if _present("NEWSDATA_API_KEY") else 0)
-    _put_limit(env, "GUARDIAN", guardian_grant if _present("GUARDIAN_API_KEY") else 0)
-    _put_limit(env, "METEOSTAT", meteostat)
-
-    # Known low-yield or cache-first sources.
-    env.update({"ENABLE_FUTRIXMETRICS_CONTEXT": "false", "FUTRIXMETRICS_ENABLED": "false", "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "0"})
-    _put_limit(env, "FUTRIXMETRICS", 0)
-    env.update({"CLUBELO_ENABLED": "true", "FOOTBALL_DATA_CO_UK_ENABLED": "true", "WIKIDATA_ENABLED": "true", "WIKIDATA_MAX_REQUESTS_PER_DAY": "8", "WIKIDATA_SPARQL_MAX_REQUESTS_PER_DAY": "2"})
+    # OFF: not core for prediction quality or historically zero-yield.
+    for prefix, reason in {
+        "API_FOOTBALL": "no_secret_or_daily_limited_not_core_live_runtime",
+        "FUTRIXMETRICS": "zero_context_yield_until_mapping_fixed",
+        "NEWSAPI": "news_not_core_prediction_runtime",
+        "CURRENTS": "news_not_core_prediction_runtime",
+        "GNEWS": "news_not_core_prediction_runtime",
+        "NEWSDATA": "news_not_core_prediction_runtime",
+        "GUARDIAN": "news_not_core_prediction_runtime",
+        "METEOSTAT": "weatherapi_openmeteo_first",
+        "RAPIDAPI_SPORTSBOOK": "daily_limit_too_small_and_not_integrated",
+        "RAPIDAPI_FREE_FOOTBALL": "monthly_limit_too_small",
+        "SHARPAPI": "text_enrichment_not_core_prediction",
+    }.items():
+        _disable_provider(env, prefix, reason)
 
     contract = {
         "phase": phase,
-        "runs_per_day": runs_per_day,
-        "safety_factor": safety,
-        "free_limits_reference": "api_free_limits_ru.pdf/docx checked into project docs/upload",
+        "provider_probe_mode": probe_mode,
+        "free_limits_reference": "api_free_limits_ru.pdf/docx",
+        "tiers": {
+            "core_every_run": ["odds_api_io", "sstats", "bzzoiro", "football_data", "thesportsdb"],
+            "watchlist_fallback": ["weatherapi", "openweathermap", "open_meteo", "clubelo", "football_data_co_uk"],
+            "quarantine_probe_only": ["allsportsapi", "sportlogic", "oddspapi", "oddsfeed", "highlightly"],
+            "off": ["api_football", "futrixmetrics", "newsapi", "currents", "gnews", "newsdata", "guardian", "meteostat", "sportsbook_api", "freeapilivefootball", "sharpapi"],
+        },
         "per_run_grants": {
             "odds_api_io": odds_total if _present("ODDS_API_IO_KEY") else 0,
             "odds_api_io_account1": odds_account if _present("ODDS_API_IO_KEY") else 0,
@@ -266,24 +233,21 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
             "bzzoiro": bzzoiro if _present("BZZOIRO_API_KEY") else 0,
             "football_data": football_data if _present("FOOTBALL_DATA_API_KEY", "FOOTBALL_DATA_KEY") else 0,
             "thesportsdb": thesportsdb,
-            "allsportsapi": allsports if _present("ALLSPORTSAPI_API_KEY", "ALLSPORTSAPI_KEY") else 0,
-            "sportlogic": sportlogic if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0,
+            "weatherapi": weatherapi if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else 0,
+            "openweathermap": openweathermap if _present("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY") else 0,
+            "open_meteo": open_meteo,
+            "allsportsapi": allsportsapi,
+            "sportlogic": sportlogic,
             "oddspapi": oddspapi,
-            "api_football": api_football,
+            "oddsfeed": oddsfeed,
             "highlightly": highlightly,
-            "weatherapi": weather_limit if _present("WEATHERAPI_KEY", "WEATHER_API_KEY", "WEATHERAPI_API_KEY") else 0,
-            "openweathermap": 4 if _present("OPENWEATHERMAP_API_KEY", "OPENWEATHER_API_KEY", "OPENWEATHERMAP_KEY") else 0,
-            "futrixmetrics": 0,
-            "newsapi": news_grant if _present("NEWSAPI_KEY") else 0,
-            "gnews": gnews_grant if _present("GNEWS_KEY") else 0,
-            "newsdata": newsdata_grant if _present("NEWSDATA_API_KEY") else 0,
-            "guardian": guardian_grant if _present("GUARDIAN_API_KEY") else 0,
         },
         "notes": [
-            "Limits are per-run env grants. Providers must read one of the written aliases.",
-            "Context providers do not count as price confirmation.",
-            "FutrixMetrics is hard-disabled until mapping yields contexts.",
-            "Oddspapi/OddsFeed are monthly-limited and kept as 1-call shortlist probes only.",
+            "Core providers are the only normal-run spenders.",
+            "AllSportsAPI and SportLogic are quarantined because latest runs show fixtures/games but 0 matched offers.",
+            "Monthly-limited odds APIs are probe-only until their endpoint schema is verified.",
+            "News APIs are off for normal prediction runs; they can be reintroduced only for special top-match news risk.",
+            "Publication still prefers 2 odds sources and at least 2 bookmakers; single-source is exception-only.",
         ],
     }
     return env, contract
