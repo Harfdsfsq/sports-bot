@@ -43,6 +43,12 @@ except Exception:
     pass
 
 try:
+    from app.services import signal_stack_runtime_patch
+    signal_stack_runtime_patch.install()
+except Exception:
+    pass
+
+try:
     from app.services import sportlogic_query_runtime_guard
     sportlogic_query_runtime_guard.install()
 except Exception:
@@ -138,12 +144,6 @@ except Exception:
 try:
     from app.providers import sharpapi_runtime_patch
     sharpapi_runtime_patch.install()
-except Exception:
-    pass
-
-try:
-    from app.providers import sharpapi_official_patch
-    sharpapi_official_patch.install()
 except Exception:
     pass
 
