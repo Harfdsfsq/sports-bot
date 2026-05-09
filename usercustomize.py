@@ -19,6 +19,12 @@ except Exception:
     pass
 
 try:
+    from app.services import bzzoiro_provider_runtime_fix
+    bzzoiro_provider_runtime_fix.install()
+except Exception:
+    pass
+
+try:
     from app.services import runtime_odds_inventory_matching_patch
     runtime_odds_inventory_matching_patch.install()
 except Exception:
