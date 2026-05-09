@@ -25,8 +25,8 @@ except Exception:
     pass
 
 try:
-    from app.services import provider_payload_mining_runtime_patch
-    provider_payload_mining_runtime_patch.install()
+    from app.services import provider_payload_mining_runtime_patch_v2
+    provider_payload_mining_runtime_patch_v2.install()
 except Exception:
     pass
 
