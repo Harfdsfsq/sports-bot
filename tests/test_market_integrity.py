@@ -1,26 +1,9 @@
 from __future__ import annotations
 
-import importlib.util
-import sys
-from pathlib import Path
 from types import SimpleNamespace
 
+from app.services import market_integrity
 
-def load_market_integrity_module():
-    module_path = Path(__file__).resolve().parents[1] / "app" / "services" / "market_integrity.py"
-    spec = importlib.util.spec_from_file_location("market_integrity_under_test", module_path)
-    assert spec is not None and spec.loader is not None
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    try:
-        spec.loader.exec_module(module)
-    except Exception:
-        sys.modules.pop(spec.name, None)
-        raise
-    return module
-
-
-market_integrity = load_market_integrity_module()
 validate_candidate = market_integrity.validate_candidate
 
 
