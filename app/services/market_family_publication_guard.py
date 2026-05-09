@@ -9,6 +9,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[2]
 AUDIT_PATH = ROOT / '.data' / 'exports' / 'latest-market-family-publication-guard.json'
 _ALLOWED_DEFAULT = {'totals', 'spreads'}
+_PRICE_CONTEXT_SOURCES = {'newsapi', 'gnews', 'newsdata', 'guardian', 'weatherapi', 'openweathermap', 'open_meteo', 'weather', 'sstats_form', 'ensemble', 'market'}
 _INSTALLED = False
 
 
@@ -19,10 +20,23 @@ def _truthy(value: Any, default: bool = False) -> bool:
     return raw in {'1', 'true', 'yes', 'on', 'force'}
 
 
+def _to_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ''):
+            return default
+        return int(float(str(value).strip()))
+    except Exception:
+        return default
+
+
 def _allowed() -> set[str]:
     raw = str(os.getenv('PUBLICATION_ALLOWED_MARKET_FAMILIES') or os.getenv('HARIZON_ALLOWED_PUBLICATION_FAMILIES') or 'totals,spreads')
     values = {item.strip().lower() for item in raw.split(',') if item.strip()}
     return values or set(_ALLOWED_DEFAULT)
+
+
+def _min_odds_sources() -> int:
+    return max(1, _to_int(os.getenv('PUBLICATION_MIN_ODDS_SOURCES') or os.getenv('TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES') or '2', 2))
 
 
 def _write(event: dict[str, Any]) -> None:
@@ -33,21 +47,28 @@ def _write(event: dict[str, Any]) -> None:
             payload = {}
         payload.setdefault('active', True)
         payload['allowed_families'] = sorted(_allowed())
+        payload['min_odds_sources'] = _min_odds_sources()
         payload.setdefault('events', [])
         if isinstance(payload['events'], list):
             payload['events'].append(event)
-            payload['events'] = payload['events'][-200:]
+            payload['events'] = payload['events'][-300:]
         AUDIT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     except Exception:
         pass
 
 
-def _family(candidate: Any) -> str:
+def _get(candidate: Any, name: str, default: Any = None) -> Any:
     try:
         if isinstance(candidate, dict):
-            value = candidate.get('family') or candidate.get('market_family') or candidate.get('market')
-        else:
-            value = getattr(candidate, 'family', None) or getattr(candidate, 'market_family', None) or getattr(candidate, 'market', None)
+            return candidate.get(name, default)
+        return getattr(candidate, name, default)
+    except Exception:
+        return default
+
+
+def _family(candidate: Any) -> str:
+    try:
+        value = _get(candidate, 'family') or _get(candidate, 'market_family') or _get(candidate, 'market')
         return str(value or '').strip().lower()
     except Exception:
         return ''
@@ -55,21 +76,69 @@ def _family(candidate: Any) -> str:
 
 def _label(candidate: Any) -> str:
     try:
-        if isinstance(candidate, dict):
-            home = candidate.get('home_team') or '?'
-            away = candidate.get('away_team') or '?'
-            fam = candidate.get('family') or '?'
-            sel = candidate.get('selection') or '?'
-            odds = candidate.get('odds') or ''
-        else:
-            home = getattr(candidate, 'home_team', '?')
-            away = getattr(candidate, 'away_team', '?')
-            fam = getattr(candidate, 'family', '?')
-            sel = getattr(candidate, 'selection', '?')
-            odds = getattr(candidate, 'odds', '')
+        home = _get(candidate, 'home_team', '?') or '?'
+        away = _get(candidate, 'away_team', '?') or '?'
+        fam = _get(candidate, 'family', '?') or '?'
+        sel = _get(candidate, 'selection', '?') or '?'
+        odds = _get(candidate, 'odds', '') or ''
         return f'{home} — {away} | {fam} | {sel} @{odds}'
     except Exception:
         return repr(candidate)[:500]
+
+
+def _source_summary(candidate: Any) -> dict[str, Any]:
+    value = _get(candidate, 'source_summary', {})
+    return value if isinstance(value, dict) else {}
+
+
+def _raw_bucket_offers(candidate: Any) -> list[dict[str, Any]]:
+    value = _get(candidate, 'raw_bucket_offers', [])
+    return [item for item in value if isinstance(item, dict)] if isinstance(value, list) else []
+
+
+def _seq_len(value: Any) -> int:
+    if isinstance(value, (list, tuple, set)):
+        return len([x for x in value if str(x or '').strip()])
+    if isinstance(value, dict):
+        return len(value)
+    if isinstance(value, str):
+        return len([x for x in re.split(r'[,;+|/]', value) if x.strip()])
+    return 0
+
+
+def _odds_source_count(candidate: Any) -> tuple[int, str]:
+    summary = _source_summary(candidate)
+    for key in ('odds_sources_count', 'odds_source_count', 'independent_odds_sources', 'independent_odds_source_count'):
+        if key in summary:
+            value = _to_int(summary.get(key), -1)
+            if value >= 0:
+                return value, f'source_summary.{key}'
+    for key in ('odds_sources', 'offer_sources', 'price_sources', 'independent_sources'):
+        if key in summary:
+            count = _seq_len(summary.get(key))
+            if count > 0:
+                return count, f'source_summary.{key}'
+    sources: set[str] = set()
+    candidate_family = _family(candidate)
+    candidate_point = _get(candidate, 'point', None)
+    for offer in _raw_bucket_offers(candidate):
+        source = str(offer.get('source') or '').strip().lower()
+        if not source or source in _PRICE_CONTEXT_SOURCES:
+            continue
+        family = str(offer.get('family') or '').strip().lower()
+        if candidate_family and family and family != candidate_family:
+            continue
+        if candidate_point not in (None, '') and offer.get('point') not in (None, ''):
+            try:
+                if abs(float(str(candidate_point).replace(',', '.')) - float(str(offer.get('point')).replace(',', '.'))) > 0.01:
+                    continue
+            except Exception:
+                pass
+        sources.add(source)
+    if sources:
+        return len(sources), 'raw_bucket_offers.sources'
+    count = _to_int(_get(candidate, 'sources_count', 0), 0)
+    return count, 'candidate.sources_count'
 
 
 def _reject_reason(candidate: Any) -> str | None:
@@ -78,6 +147,11 @@ def _reject_reason(candidate: Any) -> str | None:
         return 'missing_market_family'
     if family not in _allowed():
         return f'blocked_market_family:{family};allowed={"/".join(sorted(_allowed()))}'
+    if _truthy(os.getenv('PUBLICATION_REQUIRE_MIN_ODDS_SOURCES'), True):
+        count, basis = _odds_source_count(candidate)
+        required = _min_odds_sources()
+        if count < required:
+            return f'insufficient_publication_odds_sources:{count}<{required};basis={basis}'
     return None
 
 
@@ -111,6 +185,10 @@ def _install_env() -> None:
         'CONTROLLED_RESCUE_ALLOWED_FAMILIES': allowed_csv,
         'POST_INTEGRITY_RESCUE_ALLOWED_FAMILIES': allowed_csv,
         'MARKET_FAMILY_PUBLICATION_GUARD_ENABLED': 'true',
+        'PUBLICATION_REQUIRE_MIN_ODDS_SOURCES': 'true',
+        'PUBLICATION_MIN_ODDS_SOURCES': str(_min_odds_sources()),
+        'TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES': str(_min_odds_sources()),
+        'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
         'H2H_PUBLICATION_ENABLED': 'false',
         'BTTS_PUBLICATION_ENABLED': 'false',
         'DNB_PUBLICATION_ENABLED': 'false',
@@ -142,6 +220,7 @@ def _patch_candidate_factory() -> None:
             debug['market_family_publication_guard'] = {
                 'enabled': True,
                 'allowed_families': sorted(_allowed()),
+                'min_odds_sources': _min_odds_sources(),
                 'blocked_count': len(blocked),
                 'blocked_sample': blocked[:25],
             }
@@ -189,10 +268,13 @@ def _text_block_reasons(text: str) -> list[str]:
         return []
     low = str(text or '').lower()
     reasons: list[str] = []
-    # Allowed textual markets: totals and handicaps/spreads only.
     has_allowed_market = bool(re.search(r'🎯\s*ставка:\s*(?:тотал|фора|handicap|spread)', low, re.I))
     if not has_allowed_market:
         reasons.append('telegram_market_not_totals_or_spreads')
+    # Last-mile text guard for reports/messages that include source counts.
+    match = re.search(r'odds\s+sources\s+(\d+)', low)
+    if match and int(match.group(1)) < _min_odds_sources():
+        reasons.append(f'telegram_insufficient_odds_sources:{match.group(1)}<{_min_odds_sources()}')
     blocked_patterns = [
         (r'🎯\s*ставка:\s*исход', 'telegram_h2h_outcome_blocked'),
         (r'\bп\s*[12]\b|\bп1\b|\bп2\b|\b1x2\b|\bh2h\b', 'telegram_h2h_selection_blocked'),
@@ -211,16 +293,7 @@ def _text_block_reasons(text: str) -> list[str]:
 def _fake_response(url: Any, reasons: list[str] | None = None):
     try:
         import httpx
-        payload = {
-            'ok': True,
-            'result': {
-                'message_id': 0,
-                'date': 0,
-                'text': 'blocked_by_market_family_publication_guard',
-                'blocked_by_market_family_publication_guard': True,
-                'reasons': reasons or [],
-            },
-        }
+        payload = {'ok': True, 'result': {'message_id': 0, 'date': 0, 'text': 'blocked_by_market_family_publication_guard', 'blocked_by_market_family_publication_guard': True, 'reasons': reasons or []}}
         return httpx.Response(200, json=payload, request=httpx.Request('POST', str(url or 'https://api.telegram.org/bot/sendMessage')))
     except Exception:
         return None
@@ -303,5 +376,5 @@ def install() -> dict[str, Any]:
     _patch_httpx()
     _patch_requests()
     _INSTALLED = True
-    _write({'install': 'done', 'allowed_families': sorted(_allowed())})
-    return {'status': 'installed', 'allowed_families': sorted(_allowed())}
+    _write({'install': 'done', 'allowed_families': sorted(_allowed()), 'min_odds_sources': _min_odds_sources()})
+    return {'status': 'installed', 'allowed_families': sorted(_allowed()), 'min_odds_sources': _min_odds_sources()}
