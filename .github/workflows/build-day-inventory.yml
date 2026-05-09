@@ -63,7 +63,9 @@ jobs:
       DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT: "500"
       DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "500"
       DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "12"
-      DAY_INVENTORY_SSTATS_WINDOW_DAYS: "0"
+      # SStats returned count=0 for exact from=target/to=target. Query a small
+      # UTC-adjacent window and keep only matches whose local date is target.
+      DAY_INVENTORY_SSTATS_WINDOW_DAYS: "1"
       DAY_INVENTORY_SSTATS_LIMIT: "1000"
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "3"
       ALLSPORTSAPI_MATCH_LIMIT: "500"
@@ -142,6 +144,7 @@ jobs:
           cp -r .data/day_inventory artifacts/day-inventory/day_inventory || true
           cp -r .data/cache/day_inventory artifacts/day-inventory/cache_day_inventory || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/day-inventory/latest-day-inventory-summary.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-sstats-fixture-summary.json artifacts/day-inventory/latest-day-inventory-sstats-fixture-summary.json 2>/dev/null || true
           cp .data/exports/latest-build-day-inventory.log artifacts/day-inventory/latest-build-day-inventory.log 2>/dev/null || true
           exit ${status}
 
@@ -156,7 +159,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-build-day-inventory.log || true
+          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-day-inventory-sstats-fixture-summary.json .data/exports/latest-build-day-inventory.log || true
           git commit -m "Update day inventory [skip ci]" || true
           if git push; then
             echo "day inventory pushed"
@@ -176,6 +179,7 @@ jobs:
             .data/day_inventory/**
             .data/cache/day_inventory/**
             .data/exports/latest-day-inventory-summary.json
+            .data/exports/latest-day-inventory-sstats-fixture-summary.json
             .data/exports/latest-build-day-inventory.log
           if-no-files-found: ignore
           include-hidden-files: true
