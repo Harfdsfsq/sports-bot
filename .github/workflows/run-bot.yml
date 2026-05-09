@@ -33,6 +33,24 @@ jobs:
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
       MANUAL_CONTROLLED_PUBLISH_ENABLED: "true"
+      MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
+      PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
+      HARIZON_ALLOWED_PUBLICATION_FAMILIES: "totals,spreads"
+      CONTROLLED_FALLBACK_ALLOWED_FAMILIES: "totals,spreads"
+      CONTROLLED_RESCUE_ALLOWED_FAMILIES: "totals,spreads"
+      H2H_PUBLICATION_ENABLED: "false"
+      BTTS_PUBLICATION_ENABLED: "false"
+      DNB_PUBLICATION_ENABLED: "false"
+      DOUBLE_CHANCE_PUBLICATION_ENABLED: "false"
+      TEAM_TOTALS_PUBLICATION_ENABLED: "false"
+      TOTALS_PUBLICATION_ENABLED: "true"
+      SPREADS_PUBLICATION_ENABLED: "true"
+      ODDS_MOVEMENT_SNAPSHOTS_ENABLED: "true"
+      NEWS_INJURY_SHORTLIST_ENABLED: "true"
+      NEWS_INJURY_SHORTLIST_LIMIT: "8"
+      BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
+      SSTATS_ROLLING_METRICS_ENABLED: "true"
+      SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
@@ -96,6 +114,12 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+      - name: Apply publication family policy
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache artifacts/run-bot
+          python -u scripts/apply_publication_family_policy.py
       - name: Apply provider quota governor
         shell: bash
         run: |
@@ -132,6 +156,7 @@ jobs:
             status=$?
             echo "per-run API quota contract failed or timed out with status ${status}; continuing with previous env"
           fi
+          python -u scripts/apply_publication_family_policy.py || true
       - name: Provider smoke
         shell: bash
         run: |
@@ -162,6 +187,7 @@ jobs:
         run: |
           set -uo pipefail
           mkdir -p .data/exports .data/cache artifacts/run-bot
+          python -u scripts/apply_publication_family_policy.py || true
           echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           python - <<'PY' 2>&1 | tee .data/exports/latest-run-bot.log
           import runpy
@@ -189,6 +215,7 @@ jobs:
             echo "skip controlled fallback: fresh run-bot log was not created"
             exit 0
           fi
+          python -u scripts/apply_publication_family_policy.py || true
           python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
@@ -215,7 +242,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json .data/odds_movement_snapshots.jsonl || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
       - name: Upload run artifact
@@ -227,6 +254,7 @@ jobs:
             artifacts/run-bot/**
             .data/exports/**
             .data/cache/**
+            .data/odds_movement_snapshots.jsonl
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
           if-no-files-found: ignore
