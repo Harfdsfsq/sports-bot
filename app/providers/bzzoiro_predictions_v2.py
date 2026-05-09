@@ -22,7 +22,7 @@ class BzzoiroContextProvider:
     prob_draw, prob_away_win, prob_over_25, prob_btts_yes and confidence.
     """
 
-    VERSION = "bzzoiro-predictions-v2-clean-2026-04-29"
+    VERSION = "bzzoiro-predictions-v2-clean-2026-05-09-budget-compatible"
 
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -32,6 +32,17 @@ class BzzoiroContextProvider:
         self.timeout = float(os.getenv("BZZOIRO_TIMEOUT_SECONDS") or getattr(settings, "bzzoiro_timeout_seconds", 20.0) or 20.0)
         self.page_size = max(20, min(200, int(float(os.getenv("BZZOIRO_PREDICTIONS_PAGE_SIZE", "100") or 100))))
         self.max_pages = max(1, int(float(os.getenv("BZZOIRO_PREDICTIONS_MAX_PAGES", "6") or 6)))
+        self.max_http_requests = max(
+            0,
+            int(float(
+                os.getenv("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN")
+                or os.getenv("BZZOIRO_REQUEST_BUDGET_GRANTED")
+                or os.getenv("BZZOIRO_PER_RUN_MAX")
+                or self.max_pages
+                or 1
+            )),
+        )
+        self._requests_used = 0
         self.enforce_context_limit = str(os.getenv("BZZOIRO_ENFORCE_CONTEXT_LIMIT", "false")).lower() in {"1", "true", "yes", "on"}
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
@@ -40,12 +51,15 @@ class BzzoiroContextProvider:
             "api_version": "v2_predictions",
             "enabled": bool(self.api_key),
             "api_key_present": bool(self.api_key),
-            "request_limit_removed": True,
+            "request_limit_removed": False,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
             "context_limit_enforced": self.enforce_context_limit,
             "api_root_url": self.api_root_url,
             "requests": 0,
             "response_errors": 0,
             "predictions_fetched": 0,
+            "events_fetched": 0,
             "contexts_built": 0,
             "matched_exact": 0,
             "matched_loose": 0,
@@ -77,6 +91,7 @@ class BzzoiroContextProvider:
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             predictions = await self._fetch_predictions(client, headers, min_dt.date().isoformat(), max_dt.date().isoformat(), stats)
         stats["predictions_fetched"] = len(predictions)
+        stats["events_fetched"] = len(predictions)
         preview["sample_predictions"] = predictions[:3]
 
         contexts: dict[str, MatchContext] = {}
@@ -129,6 +144,9 @@ class BzzoiroContextProvider:
         rows: list[dict[str, Any]] = []
         seen: set[str] = set()
         for page in range(1, self.max_pages + 1):
+            if self.max_http_requests <= 0 or self._requests_used >= self.max_http_requests:
+                stats["budget_exhausted"] = True
+                break
             payload = await self._get_json(client, "/predictions/", headers, {
                 "date_from": date_from,
                 "date_to": date_to,
@@ -154,6 +172,7 @@ class BzzoiroContextProvider:
     async def _get_json(self, client: httpx.AsyncClient, path: str, headers: dict[str, str], params: dict[str, Any], stats: dict[str, Any]) -> Any | None:
         url = f"{self.api_root_url}{path}"
         stats["requests"] += 1
+        self._requests_used += 1
         stats["last_url"] = url
         try:
             response = await client.get(url, headers=headers, params=params)
