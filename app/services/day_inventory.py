@@ -10,6 +10,7 @@ from zoneinfo import ZoneInfo
 from app.schemas import Match
 
 UTC = timezone.utc
+LEGACY_PLACEHOLDER_SOURCES = {"", "day_inventory", "inventory", "unknown", "none", "null"}
 
 
 class DayInventoryStore:
@@ -42,19 +43,33 @@ class DayInventoryStore:
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     @staticmethod
-    def _split_sources(value: Any) -> list[str]:
-        if isinstance(value, list):
-            return [str(item).strip() for item in value if str(item).strip()]
-        return [item.strip() for item in str(value or "").split(",") if item.strip()]
+    def _normalize_source(value: Any) -> str:
+        source = str(value or "").strip()
+        if source.lower() in LEGACY_PLACEHOLDER_SOURCES:
+            return ""
+        return source
 
-    @staticmethod
-    def _source_ids_from_metadata(metadata: dict[str, Any]) -> dict[str, str]:
+    @classmethod
+    def _split_sources(cls, value: Any) -> list[str]:
+        if isinstance(value, list):
+            raw_values = value
+        else:
+            raw_values = str(value or "").split(",")
+        out: list[str] = []
+        for item in raw_values:
+            source = cls._normalize_source(item)
+            if source:
+                out.append(source)
+        return out
+
+    @classmethod
+    def _source_ids_from_metadata(cls, metadata: dict[str, Any]) -> dict[str, str]:
         raw = metadata.get("provider_source_ids") if isinstance(metadata, dict) else None
         if not isinstance(raw, dict):
             return {}
         out: dict[str, str] = {}
         for key, value in raw.items():
-            provider = str(key or "").strip()
+            provider = cls._normalize_source(key)
             source_id = str(value or "").strip()
             if provider and source_id:
                 out[provider] = source_id
@@ -80,13 +95,14 @@ class DayInventoryStore:
         commence_time = match.commence_time if isinstance(match.commence_time, datetime) else None
         metadata = dict(payload.get("metadata") or {}) if isinstance(payload.get("metadata"), dict) else {}
         source_ids = self._source_ids_from_metadata(metadata)
-        if match.source:
-            source_ids.setdefault(str(match.source), str(match.source_event_id or ""))
+        match_source = self._normalize_source(match.source)
+        if match_source and str(match.source_event_id or "").strip():
+            source_ids.setdefault(match_source, str(match.source_event_id or ""))
         source_ids = {key: value for key, value in source_ids.items() if str(key).strip() and str(value).strip()}
         sources_seen = set(self._split_sources(metadata.get("sources_seen")))
         sources_seen.update(source_ids.keys())
-        if match.source:
-            sources_seen.add(str(match.source))
+        if match_source:
+            sources_seen.add(match_source)
         local_date = self.local_date_for_dt(commence_time) if commence_time is not None else ""
         priority = self._priority_score(match)
         return {
@@ -183,7 +199,7 @@ class DayInventoryStore:
             league_name = str(row.get("league_name") or "")
             if league_name:
                 leagues[league_name] = leagues.get(league_name, 0) + 1
-            provider_name = str(match.source or "")
+            provider_name = self._normalize_source(match.source)
             if provider_name:
                 primary_source_counts[provider_name] = primary_source_counts.get(provider_name, 0) + 1
             if current is None:
@@ -193,7 +209,8 @@ class DayInventoryStore:
 
             new_source_ids = dict(current.get("source_ids") or {})
             new_source_ids.update(row.get("source_ids") or {})
-            sources_seen = sorted({*(current.get("sources_seen") or []), *(row.get("sources_seen") or [])})
+            new_source_ids = {self._normalize_source(k): v for k, v in new_source_ids.items() if self._normalize_source(k) and str(v or "").strip()}
+            sources_seen = sorted({*self._split_sources(current.get("sources_seen")), *self._split_sources(row.get("sources_seen")), *new_source_ids.keys()})
             metadata = dict(current.get("metadata") or {})
             metadata.update(row.get("metadata") or {})
             coverage = dict(current.get("coverage") or {})
@@ -234,12 +251,14 @@ class DayInventoryStore:
         )
 
         for row in sorted_matches:
-            sources = [str(item).strip() for item in (row.get("sources_seen") or []) if str(item).strip()]
+            sources = self._split_sources(row.get("sources_seen"))
             if not sources and isinstance(row.get("source_ids"), dict):
-                sources = [str(item).strip() for item in row["source_ids"].keys() if str(item).strip()]
-            if len(set(sources)) >= 2:
+                sources = [self._normalize_source(item) for item in row["source_ids"].keys()]
+                sources = [item for item in sources if item]
+            unique_sources = set(sources)
+            if len(unique_sources) >= 2:
                 multi_source_matches += 1
-            for source in set(sources):
+            for source in unique_sources:
                 all_source_counts[source] = all_source_counts.get(source, 0) + 1
 
         coverage_counts = self._coverage_counts(sorted_matches)
