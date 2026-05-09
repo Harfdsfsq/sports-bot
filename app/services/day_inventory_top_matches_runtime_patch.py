@@ -7,6 +7,7 @@ from typing import Any
 
 UTC = timezone.utc
 _INSTALLED = False
+_PLACEHOLDER_SOURCES = {'day_inventory', 'inventory', 'unknown', 'none', 'null', ''}
 
 _TOP_LEAGUE_TERMS = (
     'premier league', 'championship', 'serie a', 'serie b', 'la liga', 'segunda división',
@@ -56,13 +57,13 @@ def _split_sources(row: dict[str, Any]) -> set[str]:
         values = str(raw_seen or '').split(',')
     for item in values:
         source = str(item or '').strip()
-        if source and source.lower() not in {'day_inventory', 'inventory', 'unknown', 'none', 'null'}:
+        if source and source.lower() not in _PLACEHOLDER_SOURCES:
             sources.add(source)
     source_ids = row.get('source_ids')
     if isinstance(source_ids, dict):
         for item in source_ids.keys():
             source = str(item or '').strip()
-            if source and source.lower() not in {'day_inventory', 'inventory', 'unknown', 'none', 'null'}:
+            if source and source.lower() not in _PLACEHOLDER_SOURCES:
                 sources.add(source)
     return sources
 
@@ -113,6 +114,17 @@ def _team_text(row: dict[str, Any]) -> str:
     return f"{row.get('home_team') or ''} {row.get('away_team') or ''}".lower()
 
 
+def _is_bad_or_finished(row: dict[str, Any]) -> bool:
+    status = _status_text(row)
+    return any(term in status for term in _BAD_STATUS_TERMS) or any(term in status for term in _FINISHED_TERMS)
+
+
+def _is_low_value(row: dict[str, Any]) -> bool:
+    league = _league_text(row)
+    teams = _team_text(row)
+    return str(row.get('tier') or '').lower() == 'low' or any(term in league or term in teams for term in _LOW_VALUE_TERMS)
+
+
 def _top_match_score(row: dict[str, Any]) -> float:
     sources = _split_sources(row)
     coverage = _coverage(row)
@@ -123,11 +135,11 @@ def _top_match_score(row: dict[str, Any]) -> float:
     score = float(row.get('priority') or 0.0)
 
     if 'odds_api_io' in sources:
-        score += 190.0
+        score += 215.0
     if 'bzzoiro' in sources:
-        score += 85.0
+        score += 95.0
     if 'football_data' in sources:
-        score += 65.0
+        score += 70.0
     if 'thesportsdb' in sources:
         score += 40.0
     if 'sportlogic' in sources:
@@ -135,33 +147,33 @@ def _top_match_score(row: dict[str, Any]) -> float:
     if 'allsportsapi' in sources:
         score += 30.0
     if 'sstats' in sources:
-        score += 22.0
+        score += 18.0
 
     if len(sources) >= 2:
-        score += 75.0 + min(30.0, (len(sources) - 2) * 10.0)
+        score += 90.0 + min(40.0, (len(sources) - 2) * 12.0)
 
     if bool(coverage.get('odds')):
-        score += 80.0
+        score += 90.0
     if bool(coverage.get('context')):
-        score += 30.0
+        score += 35.0
     if bool(coverage.get('xg')):
-        score += 20.0
+        score += 25.0
     if bool(coverage.get('form')):
-        score += 12.0
+        score += 15.0
 
     if any(term in league for term in _TOP_LEAGUE_TERMS):
-        score += 65.0
+        score += 75.0
     if any(term in league or term in teams for term in _LOW_VALUE_TERMS):
-        score -= 85.0
+        score -= 120.0
     if str(row.get('tier') or '').lower() == 'low':
-        score -= 70.0
+        score -= 95.0
 
     if any(term in status for term in _BAD_STATUS_TERMS):
-        score -= 400.0
+        score -= 500.0
     elif any(term in status for term in _FINISHED_TERMS):
-        score -= 240.0
+        score -= 320.0
     elif any(term in status for term in _SCHEDULED_TERMS):
-        score += 45.0
+        score += 55.0
 
     if meta.get('odds_count') or meta.get('has_sstats_odds'):
         score += 25.0
@@ -170,17 +182,119 @@ def _top_match_score(row: dict[str, Any]) -> float:
     if kickoff is not None:
         hours = (kickoff - datetime.now(UTC)).total_seconds() / 3600.0
         if 0 <= hours <= 6:
-            score += 45.0
+            score += 50.0
         elif 6 < hours <= 12:
-            score += 35.0
+            score += 40.0
         elif 12 < hours <= 24:
-            score += 25.0
+            score += 28.0
         elif hours < -2:
-            score -= 180.0
+            score -= 240.0
         elif hours < 0:
-            score -= 60.0
+            score -= 85.0
 
     return round(score, 4)
+
+
+def _bucket_name(row: dict[str, Any]) -> str:
+    sources = _split_sources(row)
+    if 'odds_api_io' in sources:
+        return 'odds_api_io'
+    if 'bzzoiro' in sources or len(sources) >= 2:
+        return 'multi_source_or_bzzoiro'
+    if sources == {'sstats'} or ('sstats' in sources and not {'odds_api_io', 'bzzoiro', 'football_data', 'thesportsdb'} & sources):
+        return 'sstats_only'
+    return 'other'
+
+
+def _sort_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    scored: list[tuple[float, str, str, dict[str, Any]]] = []
+    for row in rows:
+        score = _top_match_score(row)
+        row['inventory_top_score'] = score
+        row['inventory_selection_bucket'] = _bucket_name(row)
+        kickoff = str(row.get('kickoff_utc') or '')
+        key = str(row.get('canonical_match_id') or row.get('match_key') or '')
+        scored.append((score, kickoff, key, row))
+    return [item[3] for item in sorted(scored, key=lambda item: (-item[0], item[1], item[2]))]
+
+
+def _take_unique(pool: list[dict[str, Any]], selected: list[dict[str, Any]], selected_keys: set[str], limit: int) -> list[dict[str, Any]]:
+    taken: list[dict[str, Any]] = []
+    if limit <= 0:
+        return taken
+    for row in pool:
+        key = str(row.get('canonical_match_id') or row.get('match_key') or '')
+        if not key or key in selected_keys:
+            continue
+        selected.append(row)
+        selected_keys.add(key)
+        taken.append(row)
+        if len(taken) >= limit:
+            break
+    return taken
+
+
+def _select_bucketed(rows: list[dict[str, Any]], max_matches: int) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    odds_target = min(max_matches, _env_int('DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES', 160, 0))
+    multi_max = min(max_matches, _env_int('DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES', 80, 0))
+    sstats_max = min(max_matches, _env_int('DAY_INVENTORY_SSTATS_ONLY_MAX_MATCHES', 60, 0))
+    other_max = min(max_matches, _env_int('DAY_INVENTORY_OTHER_MAX_MATCHES', 60, 0))
+    exclude_bad = _truthy(os.getenv('DAY_INVENTORY_EXCLUDE_BAD_STATUS_FROM_TOP'), True)
+    exclude_low_value_first = _truthy(os.getenv('DAY_INVENTORY_EXCLUDE_LOW_VALUE_FROM_FIRST_PASS'), True)
+
+    sorted_rows = _sort_rows([row for row in rows if isinstance(row, dict)])
+    candidate_rows = [row for row in sorted_rows if not (exclude_bad and _is_bad_or_finished(row))]
+    if exclude_low_value_first:
+        first_pass = [row for row in candidate_rows if not _is_low_value(row)]
+        fallback_pass = [row for row in candidate_rows if _is_low_value(row)]
+    else:
+        first_pass = candidate_rows
+        fallback_pass = []
+
+    buckets: dict[str, list[dict[str, Any]]] = {
+        'odds_api_io': [],
+        'multi_source_or_bzzoiro': [],
+        'sstats_only': [],
+        'other': [],
+    }
+    for row in first_pass:
+        buckets.setdefault(str(row.get('inventory_selection_bucket') or _bucket_name(row)), []).append(row)
+
+    selected: list[dict[str, Any]] = []
+    selected_keys: set[str] = set()
+    bucket_selected_counts: dict[str, int] = {}
+
+    bucket_selected_counts['odds_api_io'] = len(_take_unique(buckets.get('odds_api_io', []), selected, selected_keys, odds_target))
+    bucket_selected_counts['multi_source_or_bzzoiro'] = len(_take_unique(buckets.get('multi_source_or_bzzoiro', []), selected, selected_keys, min(multi_max, max_matches - len(selected))))
+    bucket_selected_counts['sstats_only'] = len(_take_unique(buckets.get('sstats_only', []), selected, selected_keys, min(sstats_max, max_matches - len(selected))))
+    bucket_selected_counts['other'] = len(_take_unique(buckets.get('other', []), selected, selected_keys, min(other_max, max_matches - len(selected))))
+
+    # If the required 300 is not full, fill by global score from the remaining good rows.
+    remaining_first_pass = [row for row in first_pass if str(row.get('canonical_match_id') or row.get('match_key') or '') not in selected_keys]
+    fill_good = _take_unique(remaining_first_pass, selected, selected_keys, max_matches - len(selected))
+    bucket_selected_counts['global_good_fill'] = len(fill_good)
+
+    # Last-resort fallback: low-value rows, still sorted by score, only if there are not enough good rows.
+    fill_low = _take_unique(fallback_pass, selected, selected_keys, max_matches - len(selected))
+    bucket_selected_counts['low_value_fallback_fill'] = len(fill_low)
+
+    selection_meta = {
+        'bucket_mode': 'odds_multi_sstats_caps_v1',
+        'bucket_targets': {
+            'odds_api_io_target': odds_target,
+            'multi_source_or_bzzoiro_max': multi_max,
+            'sstats_only_max': sstats_max,
+            'other_max': other_max,
+        },
+        'bucket_selected_counts': bucket_selected_counts,
+        'candidate_counts_by_bucket': {name: len(values) for name, values in buckets.items()},
+        'excluded_bad_status_from_first_pass': exclude_bad,
+        'excluded_low_value_from_first_pass': exclude_low_value_first,
+        'candidate_rows_after_bad_status_filter': len(candidate_rows),
+        'candidate_rows_first_pass': len(first_pass),
+        'candidate_rows_low_value_fallback': len(fallback_pass),
+    }
+    return selected[:max_matches], selection_meta
 
 
 def _recompute_selected_coverage_counts(rows: list[dict[str, Any]]) -> dict[str, int]:
@@ -233,15 +347,18 @@ def _recompute_selected_coverage_counts(rows: list[dict[str, Any]]) -> dict[str,
     return counts
 
 
-def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, raw_total_before_selection: int, max_matches: int) -> None:
+def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, raw_total_before_selection: int, max_matches: int, selection_meta: dict[str, Any]) -> None:
     source_counts: dict[str, int] = {}
     all_source_counts: dict[str, int] = {}
     league_counts: dict[str, int] = {}
+    selected_bucket_counts: dict[str, int] = {}
     multi_source = 0
     for row in rows:
         sources = _split_sources(row)
+        bucket = str(row.get('inventory_selection_bucket') or _bucket_name(row))
+        selected_bucket_counts[bucket] = selected_bucket_counts.get(bucket, 0) + 1
         primary_source = str(row.get('source') or '').strip()
-        if primary_source and primary_source.lower() not in {'day_inventory', 'inventory', 'unknown', 'none', 'null'}:
+        if primary_source and primary_source.lower() not in _PLACEHOLDER_SOURCES:
             source_counts[primary_source] = source_counts.get(primary_source, 0) + 1
         elif sources:
             first = sorted(sources)[0]
@@ -268,6 +385,9 @@ def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, ra
     counts['multi_source_fixture_matches'] = multi_source
     counts['providers_seen'] = len(source_counts)
     counts['leagues_seen'] = len(league_counts)
+    for bucket_name, bucket_count in selected_bucket_counts.items():
+        counts[f'matches_selected_bucket_{bucket_name}'] = bucket_count
+
     payload['counts_before_top_selection'] = original_counts
     payload['counts'] = counts
     payload['source_match_counts'] = dict(sorted(source_counts.items(), key=lambda item: (-item[1], item[0])))
@@ -275,12 +395,13 @@ def _recompute_counts(payload: dict[str, Any], rows: list[dict[str, Any]], *, ra
     payload['league_match_counts'] = dict(sorted(league_counts.items(), key=lambda item: (-item[1], item[0]))[:50])
     payload['inventory_selection'] = {
         'enabled': True,
-        'mode': 'top_matches_by_priority',
+        'mode': 'bucketed_top_matches_by_priority',
         'max_matches': max_matches,
         'raw_total_before_selection': raw_total_before_selection,
         'selected_matches': len(rows),
         'pruned_matches': max(0, raw_total_before_selection - len(rows)),
-        'score_version': 'top300_v2_recomputed_coverage',
+        'score_version': 'top300_v3_bucketed_caps',
+        **selection_meta,
     }
 
 
@@ -292,28 +413,19 @@ def _select_top_matches(payload: dict[str, Any], max_matches: int) -> dict[str, 
     if max_matches <= 0 or raw_total <= max_matches:
         payload['inventory_selection'] = {
             'enabled': True,
-            'mode': 'top_matches_by_priority',
+            'mode': 'bucketed_top_matches_by_priority',
             'max_matches': max_matches,
             'raw_total_before_selection': raw_total,
             'selected_matches': raw_total,
             'pruned_matches': 0,
-            'score_version': 'top300_v2_recomputed_coverage',
+            'score_version': 'top300_v3_bucketed_caps',
         }
         return payload
 
-    scored: list[tuple[float, str, str, dict[str, Any]]] = []
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        score = _top_match_score(row)
-        row['inventory_top_score'] = score
-        kickoff = str(row.get('kickoff_utc') or '')
-        key = str(row.get('canonical_match_id') or row.get('match_key') or '')
-        scored.append((score, kickoff, key, row))
-    selected = [item[3] for item in sorted(scored, key=lambda item: (-item[0], item[1], item[2]))[:max_matches]]
+    selected, selection_meta = _select_bucketed([row for row in rows if isinstance(row, dict)], max_matches)
     selected.sort(key=lambda row: (str(row.get('kickoff_utc') or ''), -float(row.get('inventory_top_score') or 0.0), str(row.get('league_name') or ''), str(row.get('home_team') or '')))
     payload['matches'] = selected
-    _recompute_counts(payload, selected, raw_total_before_selection=raw_total, max_matches=max_matches)
+    _recompute_counts(payload, selected, raw_total_before_selection=raw_total, max_matches=max_matches, selection_meta=selection_meta)
     return payload
 
 
