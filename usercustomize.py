@@ -36,12 +36,9 @@ try:
 except Exception:
     pass
 
-try:
-    from app.services import day_inventory_top_matches_runtime_patch
-    day_inventory_top_matches_runtime_patch.install()
-except Exception:
-    pass
-
+# Day inventory top selection must be handled by the strict bucketed selector only.
+# The older selector is intentionally not installed here because it selects 300
+# matches before the strict selector can apply SStats caps.
 try:
     from app.services import day_inventory_bucketed_top_v2_runtime_patch
     day_inventory_bucketed_top_v2_runtime_patch.install()
