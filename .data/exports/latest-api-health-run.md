@@ -1,17 +1,17 @@
 # API Health Run
 
-- Created UTC: `2026-05-09T14:40:49.203436+00:00`
+- Created UTC: `2026-05-09T14:49:20.970700+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
-- OK: **15**
+- OK: **16**
 - Config-only: **1**
-- Healthy or config-only: **16**
+- Healthy or config-only: **17**
 - Degraded: **0**
 - Rate-limited: **0**
 - Auth errors: **0**
 - Missing secrets: **1**
-- Critical failures: **1**
+- Critical failures: **0**
 
 ## Recommendations
 
@@ -25,7 +25,7 @@
 
 | Provider | Group | Status | Requests | Useful rows | Message |
 |---|---|---:|---:|---:|---|
-| `bzzoiro` | `context` | `error` | 1 | 0 | ReadTimeout:  |
+| `bzzoiro` | `context` | `ok` | 1 | 50 | ok |
 | `football_data` | `context` | `ok` | 1 | 13 | ok |
 | `futrixmetrics` | `context` | `config_only` | 0 | 0 | key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured |
 | `highlightly` | `context` | `ok` | 1 | 5 | ok |
@@ -34,7 +34,7 @@
 | `currents` | `news` | `ok` | 1 | 30 | ok |
 | `gnews` | `news` | `ok` | 1 | 1 | ok |
 | `guardian` | `news` | `ok` | 1 | 1 | ok |
-| `newsapi` | `news` | `ok` | 1 | 0 | ok |
+| `newsapi` | `news` | `ok` | 1 | 1 | ok |
 | `newsdata` | `news` | `ok` | 1 | 1 | ok |
 | `odds_api_io_events` | `odds` | `ok` | 1 | 10 | ok |
 | `sportlogic` | `odds` | `ok` | 1 | 50 | ok |
