@@ -2,7 +2,7 @@ from __future__ import annotations
 
 """Last-mile Telegram safety for HARIZON picks.
 
-Keeps weak borderline candidates in artifacts, but prevents weak single-source
+Keeps weak borderline candidates in artifacts, but prevents weak or single-source
 picks from being published as real Telegram bets. Blocking a Telegram message
 must never crash the whole run; blocked sends are converted to successful no-op
 Telegram responses and written to the audit file.
@@ -14,10 +14,13 @@ import re
 import sys
 from pathlib import Path
 from typing import Any
+from urllib import parse as url_parse
+from urllib import request as url_request
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_PATH = ROOT / ".data" / "exports" / "latest-telegram-controlled-pick-safety.json"
 TARGET_SCRIPT_NAMES = {"publish_controlled_fallback.py", "-"}
+_ORIGINAL_URLOPEN = url_request.urlopen
 
 
 def _f(value: Any, default: float = 0.0) -> float:
@@ -62,7 +65,7 @@ def _write(event: dict[str, Any]) -> None:
         payload.setdefault("events", [])
         if isinstance(payload["events"], list):
             payload["events"].append(event)
-            payload["events"] = payload["events"][-120:]
+            payload["events"] = payload["events"][-160:]
         AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
         AUDIT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
@@ -74,6 +77,11 @@ def _summary(candidate: Any) -> dict[str, Any]:
     return value if isinstance(value, dict) else {}
 
 
+def _metrics(candidate: Any) -> dict[str, Any]:
+    value = candidate.get("metrics") if isinstance(candidate, dict) else getattr(candidate, "metrics", None)
+    return value if isinstance(value, dict) else {}
+
+
 def _get(candidate: Any, name: str, default: Any = None) -> Any:
     if isinstance(candidate, dict) and candidate.get(name) not in (None, ""):
         return candidate.get(name)
@@ -81,6 +89,9 @@ def _get(candidate: Any, name: str, default: Any = None) -> Any:
         value = getattr(candidate, name)
         if value not in (None, ""):
             return value
+    metrics = _metrics(candidate)
+    if metrics.get(name) not in (None, ""):
+        return metrics.get(name)
     summary = _summary(candidate)
     return summary.get(name, default) if summary.get(name) not in (None, "") else default
 
@@ -95,26 +106,42 @@ def _count_from_list(value: Any) -> int:
 
 def _sources(candidate: Any) -> int:
     s = _summary(candidate)
-    values = [
-        _get(candidate, "sources_count", 0), _get(candidate, "source_count", 0),
-        _get(candidate, "odds_sources_count", 0), _get(candidate, "independent_odds_sources_count", 0),
-        s.get("sources_count"), s.get("source_count"), s.get("odds_sources_count"),
-        s.get("independent_odds_sources_count"), _count_from_list(s.get("odds_sources")),
-        _count_from_list(s.get("sources")), _count_from_list(s.get("source_names")),
+    m = _metrics(candidate)
+    # Strict price-source count: prefer explicit odds-source fields and never let
+    # context source counters (sstats/bzzoiro/espn/weather) satisfy Telegram odds-source requirements.
+    explicit = [
+        _get(candidate, "odds_sources_count", 0),
+        _get(candidate, "independent_odds_sources_count", 0),
+        s.get("odds_sources_count"),
+        s.get("independent_odds_sources_count"),
+        m.get("odds_sources_count"),
+        m.get("independent_odds_sources_count"),
+        _count_from_list(s.get("odds_sources")),
+        _count_from_list(s.get("price_sources")),
+        _count_from_list(s.get("selected_odds_sources")),
+        _count_from_list(m.get("odds_sources")),
+        _count_from_list(m.get("price_sources")),
     ]
+    explicit_count = max(_i(v, 0) for v in explicit)
+    if explicit_count > 0:
+        return explicit_count
+    # Fallback only when no explicit odds-source metadata exists.
     if s.get("selected_source") or s.get("source"):
-        values.append(1)
-    return max(_i(v, 0) for v in values)
+        return 1
+    return 0
 
 
 def _books(candidate: Any) -> int:
     s = _summary(candidate)
+    m = _metrics(candidate)
     values = [
         _get(candidate, "books_count", 0), _get(candidate, "bookmakers_count", 0),
         _get(candidate, "bookmaker_count", 0), _get(candidate, "lines_count", 0),
         s.get("books_count"), s.get("bookmakers_count"), s.get("bookmaker_count"),
-        s.get("lines_count"), _count_from_list(s.get("selected_bookmakers")),
-        _count_from_list(s.get("bookmakers")), _count_from_list(s.get("books")),
+        s.get("lines_count"), m.get("books_count"), m.get("bookmakers_count"),
+        m.get("bookmaker_count"), m.get("lines_count"),
+        _count_from_list(s.get("selected_bookmakers")), _count_from_list(s.get("bookmakers")),
+        _count_from_list(s.get("books")), _count_from_list(m.get("bookmakers")),
     ]
     if s.get("selected_bookmaker") or s.get("bookmaker"):
         values.append(1)
@@ -125,6 +152,9 @@ def _edge(candidate: Any) -> float:
     direct = _get(candidate, "edge_pct", None)
     if direct not in (None, ""):
         return _f(direct)
+    canonical = _get(candidate, "canonical_edge_pp", None)
+    if canonical not in (None, ""):
+        return _f(canonical)
     model = _f(_get(candidate, "adjusted_probability", 0.0))
     market = _f(_get(candidate, "consensus_probability", 0.0)) or _f(_get(candidate, "market_probability", 0.0))
     return (model - market) * 100.0 if 0 < model < 1 and 0 < market < 1 else 0.0
@@ -138,7 +168,7 @@ def _reasons(candidate: Any) -> list[str]:
     sources = _sources(candidate)
     books = _books(candidate)
     edge = _edge(candidate)
-    ev = _f(_get(candidate, "ev_pct", 0.0))
+    ev = _f(_get(candidate, "ev_pct", _get(candidate, "canonical_ev_pct", 0.0)))
     conf = _f(_get(candidate, "confidence", 0.0))
     quality = _quality(candidate)
     reasons: list[str] = []
@@ -147,8 +177,9 @@ def _reasons(candidate: Any) -> list[str]:
     if edge < min_edge:
         reasons.append(f"main_pick_edge_below_min:{edge:.2f}/{min_edge:.2f}")
 
-    min_sources = max(1, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2))
+    min_sources = max(2, _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2), _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2))
     if sources < min_sources:
+        reasons.append(f"main_pick_odds_sources_below_min:{sources}/{min_sources}")
         if _b("TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE", True):
             min_books = _ei("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_BOOKS", 3)
             min_single_edge = _ef("TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EDGE_PP", 4.0)
@@ -162,8 +193,6 @@ def _reasons(candidate: Any) -> list[str]:
                     f"sources={sources}/{min_sources},books={books}/{min_books},edge={edge:.2f}/{min_single_edge:.2f},"
                     f"ev={ev:.2f}/{min_ev:.2f},conf={conf:.2f}/{min_conf:.2f},quality={quality:.2f}/{min_quality:.2f}"
                 )
-        else:
-            reasons.append(f"main_pick_odds_sources_below_min:{sources}/{min_sources}")
     return reasons
 
 
@@ -185,7 +214,7 @@ def _filter_bets(bets: Any) -> tuple[Any, list[dict[str, Any]]]:
             rejected.append({
                 "label": _label(bet), "reasons": reasons, "sources_count": _sources(bet),
                 "books_count": _books(bet), "edge_pp": round(_edge(bet), 3),
-                "ev_pct": round(_f(_get(bet, "ev_pct", 0.0)), 3),
+                "ev_pct": round(_f(_get(bet, "ev_pct", _get(bet, "canonical_ev_pct", 0.0))), 3),
                 "confidence": round(_f(_get(bet, "confidence", 0.0)), 3),
                 "quality_score": round(_quality(bet), 3),
             })
@@ -221,13 +250,13 @@ def _pick_text(text: str) -> bool:
     low = str(text or "").lower()
     return any(token in low for token in (
         "контролируемый прогноз", "контролируемый резерв", "controlled fallback",
-        "лучшая ставка", "лучшие ставки", "🛡 профиль сигнала",
+        "лучшая ставка", "лучшие ставки", "🛡 профиль сигнала", "🎯 ставка:",
     ))
 
 
 def _text_sources(text: str) -> list[int]:
     found = [int(m.group(1)) for m in re.finditer(r"odds\s+sources\s*:?\s*(\d+)", text, re.I)]
-    found += [int(m.group(1)) for m in re.finditer(r"источники\s*:?\s*(\d+)", text, re.I)]
+    found += [int(m.group(1)) for m in re.finditer(r"источники\s+коэффициентов\s*:?\s*(\d+)", text, re.I)]
     return found
 
 
@@ -235,10 +264,11 @@ def _text_reasons(text: str) -> list[str]:
     if not _pick_text(text):
         return []
     reasons: list[str] = []
-    min_sources = max(2, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2))
-    for value in _text_sources(text):
-        if value < min_sources and "single-source" in text.lower():
-            reasons.append(f"telegram_pick_single_source_below_min:{value}/{min_sources}")
+    min_sources = max(2, _ei("TELEGRAM_CONTROLLED_MIN_ODDS_SOURCES", 2), _ei("TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES", 2))
+    source_values = _text_sources(text)
+    for value in source_values:
+        if value < min_sources:
+            reasons.append(f"telegram_pick_odds_sources_below_min:{value}/{min_sources}")
     match = re.search(r"запас\s*([+\-]?[0-9]+(?:[.,][0-9]+)?)\s*п\.п", text, re.I)
     if match:
         edge = _f(match.group(1))
@@ -250,10 +280,10 @@ def _text_reasons(text: str) -> list[str]:
     if over15 and odds:
         value = _f(odds.group(1))
         max_odds = _ef("TELEGRAM_TOTAL_OVER15_MAX_ODDS", 1.65)
-        actual_sources = max(_text_sources(text) or [0])
+        actual_sources = max(source_values or [0])
         if value > max_odds and actual_sources < 3:
             reasons.append(f"controlled_total_over_1_5_suspicious_price:{value:.2f}>{max_odds:.2f};sources={actual_sources}/3")
-    return reasons
+    return sorted(set(reasons))
 
 
 def _format_stake_percent(text: str) -> str:
@@ -299,8 +329,7 @@ def _extract_text(payload: Any) -> str:
     except Exception:
         pass
     try:
-        from urllib import parse
-        values = parse.parse_qs(raw, keep_blank_values=True).get("text") or []
+        values = url_parse.parse_qs(raw, keep_blank_values=True).get("text") or []
         return str(values[0]) if values else ""
     except Exception:
         return ""
@@ -322,6 +351,22 @@ def _fake_blocked_response(url: Any, reasons: list[str] | None = None):
         return httpx.Response(200, json=payload, request=httpx.Request("POST", str(url or "https://api.telegram.org/bot/sendMessage")))
     except Exception:
         return None
+
+
+class _UrlopenBlockedResponse:
+    def __init__(self, reasons: list[str] | None = None):
+        self.reasons = reasons or []
+        self.status = 200
+        self.code = 200
+
+    def read(self, *args: Any, **kwargs: Any) -> bytes:
+        return json.dumps({"ok": True, "result": {"message_id": 0, "blocked_by_harizon_pick_safety": True, "reasons": self.reasons}}, ensure_ascii=False).encode("utf-8")
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
 
 
 def _patch_http() -> None:
@@ -348,12 +393,7 @@ def _patch_http() -> None:
                         else:
                             text = _extract_text(kwargs.get("data"))
                         reasons = _text_reasons(text)
-                        _write({
-                            "blocked_text_send_noop": True,
-                            "error": str(exc),
-                            "reasons": reasons,
-                            "text_preview": str(text or "")[:1200],
-                        })
+                        _write({"blocked_text_send_noop": True, "transport": "httpx", "error": str(exc), "reasons": reasons, "text_preview": str(text or "")[:1200]})
                         fake = _fake_blocked_response(url, reasons)
                         if fake is not None:
                             return fake
@@ -365,12 +405,39 @@ def _patch_http() -> None:
     except Exception:
         pass
 
+    if not getattr(url_request, "_harizon_controlled_pick_safety", False):
+        def urlopen_patched(req, *args, **kwargs):  # type: ignore[no-untyped-def]
+            url = getattr(req, "full_url", None) or getattr(req, "get_full_url", lambda: "")()
+            if "api.telegram.org" in str(url or "") and "sendMessage" in str(url or ""):
+                data = getattr(req, "data", None)
+                text = _extract_text(data)
+                try:
+                    if text:
+                        new_text = _validate_text(text)
+                        if new_text != text:
+                            parsed = url_parse.parse_qs(data.decode("utf-8") if isinstance(data, (bytes, bytearray)) else str(data), keep_blank_values=True)
+                            parsed["text"] = [new_text]
+                            encoded = url_parse.urlencode(parsed, doseq=True).encode("utf-8")
+                            try:
+                                req.data = encoded
+                                req.headers["Content-length"] = str(len(encoded))
+                            except Exception:
+                                pass
+                except RuntimeError as exc:
+                    reasons = _text_reasons(text)
+                    _write({"blocked_text_send_noop": True, "transport": "urllib", "error": str(exc), "reasons": reasons, "text_preview": str(text or "")[:1200]})
+                    return _UrlopenBlockedResponse(reasons)
+            return _ORIGINAL_URLOPEN(req, *args, **kwargs)
+
+        url_request.urlopen = urlopen_patched
+        url_request._harizon_controlled_pick_safety = True
+
 
 def install() -> None:
     script_name = Path(sys.argv[0] or "").name
     if not _b("HARIZON_TELEGRAM_PICK_SAFETY_ENABLED", False) and script_name not in TARGET_SCRIPT_NAMES:
         return
-    _write({"active": True, "target_script": script_name})
+    _write({"active": True, "target_script": script_name, "strict_odds_source_text_guard": True})
     _patch_publisher()
     _patch_http()
     try:
