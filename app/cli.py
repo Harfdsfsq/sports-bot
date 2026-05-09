@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import re
 import sys
 from pathlib import Path
 from typing import Any, Sequence
@@ -19,6 +20,46 @@ logging.basicConfig(
     level=getattr(logging, LOG_LEVEL, logging.INFO),
     format='%(asctime)s %(levelname)s %(name)s: %(message)s',
 )
+
+_SECRET_QUERY_RE = re.compile(
+    r'(?i)([?&](?:apiKey|apikey|APIkey|api_key|key|appid|token|access_token|auth_token|secret)=)([^&\s\"]+)'
+)
+_SECRET_HEADER_RE = re.compile(
+    r'(?i)((?:authorization|x-auth-token|x-apisports-key|x-rapidapi-key)\s*[:=]\s*)([^,\s\"]+)'
+)
+
+
+def _redact_log_text(value: Any) -> str:
+    text = str(value)
+    text = _SECRET_QUERY_RE.sub(r'\1***', text)
+    text = _SECRET_HEADER_RE.sub(r'\1***', text)
+    return text
+
+
+class _SecretRedactionFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        try:
+            message = record.getMessage()
+        except Exception:
+            return True
+        redacted = _redact_log_text(message)
+        if redacted != message:
+            record.msg = redacted
+            record.args = ()
+        return True
+
+
+def _install_log_redaction() -> None:
+    redaction_filter = _SecretRedactionFilter()
+    root_logger = logging.getLogger()
+    root_logger.addFilter(redaction_filter)
+    for handler in root_logger.handlers:
+        handler.addFilter(redaction_filter)
+    for logger_name in ('httpx', 'httpcore'):
+        logging.getLogger(logger_name).addFilter(redaction_filter)
+
+
+_install_log_redaction()
 
 
 def _parse_bool(value: str) -> bool:
@@ -49,14 +90,19 @@ def _apply_api_max_runtime_overrides() -> None:
             'STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS': '2',
             'PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION': 'false',
             'PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE': 'true',
-            'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
-            'CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY': 'false',
-            'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '1',
-            'TELEGRAM_MIN_ODDS_SOURCES': '1',
-            'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.65',
+            'MIN_BOOKS_FOR_CONSENSUS': '2',
+            'MIN_BOOKS_PUBLISH': '2',
+            'MIN_SOURCES_PUBLISH': '2',
+            'MARKET_DERIVED_MIN_BOOKS': '2',
+            'MARKET_DERIVED_MIN_SOURCES': '2',
+            'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
+            'CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY': 'true',
+            'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '2',
+            'TELEGRAM_MIN_ODDS_SOURCES': '2',
+            'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.45',
             'MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS': '3',
             'MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED': 'true',
-            'MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS': '1.85',
+            'MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS': '1.55',
             'ENABLE_QUARTER_TOTAL_LINES': 'true',
             'QUARTER_TOTAL_MIN_BOOKS': '2',
         }
