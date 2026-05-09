@@ -47,6 +47,8 @@ REASON_MAP = {
     "no_bet_quality_score_guard": "quality: итоговый quality score ниже порога",
     "quality_post_calibration_probability_guard": "quality: вероятность после калибровки ниже порога",
     "quality_no_bet_quality_score_guard": "quality: итоговый quality score ниже порога",
+    "market_sanity_totals_xg_contradiction": "quality market sanity totals xg contradiction",
+    "quality_market_sanity_totals_xg_contradiction": "quality market sanity totals xg contradiction",
     "post_integrity_rescue_built": "post-integrity rescue построил кандидатов",
     "post_integrity_rescue_after_market_integrity": "post-integrity rescue прошёл market-integrity",
     "controlled_rescue_books_guard": "controlled rescue: мало paired bookmakers",
@@ -79,7 +81,7 @@ def _counter_from_evaluated(fallback: dict[str, Any]) -> Counter[str]:
                 counters["quality_" + str(reason).strip()] += 1
         xg = metrics.get("xg_sanity") if isinstance(metrics.get("xg_sanity"), dict) else {}
         if xg and xg.get("enabled") and not bool(xg.get("xg_direction_ok", True)):
-            counters["xg_direction_conflict"] += 0  # already present in reject_reasons, keeps key discoverable
+            counters["xg_direction_conflict"] += 0
     return counters
 
 
@@ -120,16 +122,35 @@ def border_candidates_v3(fallback: dict[str, Any], limit: int = 5) -> list[dict[
     return []
 
 
-def _with_metric_confirmation_sources(candidate: dict[str, Any]) -> dict[str, Any]:
+def _with_metric_fields(candidate: dict[str, Any]) -> dict[str, Any]:
     metrics = candidate.get("metrics") if isinstance(candidate.get("metrics"), dict) else {}
-    if metrics.get("confirmation_sources") and not candidate.get("confirmation_sources"):
-        candidate = dict(candidate)
-        candidate["confirmation_sources"] = metrics.get("confirmation_sources")
-    return candidate
+    if not metrics:
+        return candidate
+    enriched = dict(candidate)
+    field_map = {
+        "odds": "odds",
+        "canonical_ev_pct": "ev_pct",
+        "canonical_edge_pp": "edge_pp",
+        "confidence": "confidence",
+        "quality_score": "quality_score",
+        "publication_score": "publication_score",
+        "books_count": "books_count",
+        "odds_sources_count": "odds_sources_count",
+        "sources_count": "sources_count",
+        "adjusted_probability": "adjusted_probability",
+        "model_probability": "model_probability",
+        "market_probability": "market_probability",
+    }
+    for src_key, dst_key in field_map.items():
+        if enriched.get(dst_key) in (None, "", 0, 0.0) and metrics.get(src_key) not in (None, ""):
+            enriched[dst_key] = metrics.get(src_key)
+    if metrics.get("confirmation_sources") and not enriched.get("confirmation_sources"):
+        enriched["confirmation_sources"] = metrics.get("confirmation_sources")
+    return enriched
 
 
 def candidate_lines_v3(candidate: dict[str, Any], idx: int, compact_mode: bool = False) -> list[str]:
-    enriched = _with_metric_confirmation_sources(candidate)
+    enriched = _with_metric_fields(candidate)
     lines = _original_candidate_lines(enriched, idx, compact_mode)
     metrics = enriched.get("metrics") if isinstance(enriched.get("metrics"), dict) else {}
     xg = metrics.get("xg_sanity") if isinstance(metrics.get("xg_sanity"), dict) else {}
