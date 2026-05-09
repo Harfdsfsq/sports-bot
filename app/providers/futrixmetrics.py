@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 UTC = timezone.utc
@@ -14,6 +15,16 @@ from app.schemas import Match, MatchContext
 from app.utils import clamp, normalize_text
 
 
+def _env_int(name: str, default: int | None = None) -> int | None:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    try:
+        return int(float(str(raw).strip()))
+    except Exception:
+        return default
+
+
 class FutrixMetricsContextProvider:
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
@@ -22,12 +33,42 @@ class FutrixMetricsContextProvider:
         self.timeout = float(getattr(settings, "futrixmetrics_timeout_seconds", 12.0) or 12.0)
         self.cache_ttl_hours = max(12, int(getattr(settings, "futrixmetrics_team_cache_ttl_hours", 168) or 168))
         self.limit_per_team = max(20, int(getattr(settings, "futrixmetrics_limit_per_team", 80) or 80))
+        self.max_requests_per_run = self._effective_max_requests_per_run()
+
+    def _effective_max_requests_per_run(self) -> int:
+        """Respect both static max and runtime quota grants.
+
+        Recent runs showed FutrixMetrics spending 12 HTTP requests while the
+        request-budget layer granted 0 because the provider currently has 0
+        useful context yield.  Treat any explicit zero max/grant as a hard stop.
+        """
+        candidates: list[int] = []
+        setting_value = getattr(self.settings, "futrixmetrics_max_requests_per_run", None)
+        if setting_value not in (None, ""):
+            try:
+                candidates.append(int(float(str(setting_value))))
+            except Exception:
+                pass
+        for name in (
+            "FUTRIXMETRICS_MAX_REQUESTS_PER_RUN",
+            "FUTRIXMETRICS_PER_RUN_MAX",
+            "FUTRIXMETRICS_REQUEST_BUDGET_GRANTED",
+            "FUTRIXMETRICS_REQUESTS_GRANTED",
+        ):
+            value = _env_int(name, None)
+            if value is not None:
+                candidates.append(value)
+        if not candidates:
+            return 12
+        return max(0, min(candidates))
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
         stats: dict[str, Any] = {
-            "enabled": bool(self.api_key),
+            "enabled": bool(self.api_key) and self.max_requests_per_run > 0,
             "api_key_present": bool(self.api_key),
             "requests": 0,
+            "max_requests_per_run": self.max_requests_per_run,
+            "budget_exhausted": False,
             "response_errors": 0,
             "team_cache_hits": 0,
             "contexts_built": 0,
@@ -36,19 +77,29 @@ class FutrixMetricsContextProvider:
         }
         preview: dict[str, Any] = {"sample_rows": [], "sample_contexts": []}
         if not self.api_key:
+            stats["disabled_reason"] = "missing_api_key"
+            return {}, stats, preview
+        if self.max_requests_per_run <= 0:
+            stats["disabled_reason"] = "zero_runtime_budget"
+            stats["budget_exhausted"] = True
             return {}, stats, preview
 
         soccer_matches = [m for m in matches if m.sport_key == "soccer"]
         if not soccer_matches:
             return {}, stats, preview
 
-        limit = max(1, int(getattr(self.settings, "futrixmetrics_context_match_limit", 6) or 6))
+        configured_limit = max(1, int(getattr(self.settings, "futrixmetrics_context_match_limit", 6) or 6))
+        request_limited_match_cap = max(1, (self.max_requests_per_run + 1) // 2)
+        limit = min(configured_limit, request_limited_match_cap)
         target_matches = self._prioritize_matches(soccer_matches)[:limit]
 
         cache = self._load_cache()
         team_data: dict[str, list[dict[str, Any]]] = {}
         async with httpx.AsyncClient(timeout=self.timeout, headers={"X-API-Key": self.api_key}) as client:
             for match in target_matches:
+                if stats["requests"] >= self.max_requests_per_run:
+                    stats["budget_exhausted"] = True
+                    break
                 league = self._league_name(match.league_name)
                 for team in [match.home_team, match.away_team]:
                     team_key = self._cache_team_key(team, league)
@@ -57,6 +108,9 @@ class FutrixMetricsContextProvider:
                         stats["team_cache_hits"] += 1
                         team_data[team_key] = rows
                         continue
+                    if stats["requests"] >= self.max_requests_per_run:
+                        stats["budget_exhausted"] = True
+                        break
                     rows = await self._fetch_team_rows(client, team, league, stats)
                     if rows is not None:
                         team_data[team_key] = rows
@@ -233,7 +287,7 @@ class FutrixMetricsContextProvider:
 
     def _write_cache(self, cache: dict[str, Any]) -> None:
         path = self._cache_path()
-        path.parent.mkdir(parents=True, exist_ok=True)
+        path.parent.mkdir(parents=True)
         try:
             path.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
         except Exception:
