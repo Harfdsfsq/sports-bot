@@ -69,6 +69,15 @@ try:
 except Exception:
     pass
 
+# Secondary odds rescue must be installed before PredictionRunner.run_once calls
+# fetch_offers. It hooks the SportLogic odds slot and runs a tiny RapidAPI odds
+# bridge probe only for near-window soccer matches, preserving publication guards.
+try:
+    from app.services import secondary_odds_rescue_runtime_patch
+    secondary_odds_rescue_runtime_patch.install()
+except Exception:
+    pass
+
 try:
     from app.services import day_inventory_extra_fixture_sources
     day_inventory_extra_fixture_sources.install()
