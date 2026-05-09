@@ -10,8 +10,9 @@ from zoneinfo import ZoneInfo
 
 ROOT = Path(".").resolve()
 UTC = timezone.utc
-POLICY_VERSION = "harizon-runtime-policy-v6-max-lines-context"
+POLICY_VERSION = "harizon-runtime-policy-v7-signals-totals-spreads"
 OUT_PATH = ROOT / ".data" / "exports" / "latest-harizon-runtime-policy.json"
+PUBLICATION_FAMILIES = "totals,spreads"
 
 
 def app_tz() -> ZoneInfo:
@@ -58,30 +59,53 @@ def policy_value(name: str, default: str) -> str:
     return os.getenv(f"HARIZON_{name}") or os.getenv(name) or default
 
 
+def publication_family_env() -> dict[str, str]:
+    return {
+        "MARKET_FAMILY_PUBLICATION_GUARD_ENABLED": "true",
+        "PUBLICATION_ALLOWED_MARKET_FAMILIES": PUBLICATION_FAMILIES,
+        "HARIZON_ALLOWED_PUBLICATION_FAMILIES": PUBLICATION_FAMILIES,
+        "MAIN_PUBLISH_ALLOWED_FAMILIES": PUBLICATION_FAMILIES,
+        "TELEGRAM_ALLOWED_MARKET_FAMILIES": PUBLICATION_FAMILIES,
+        "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": PUBLICATION_FAMILIES,
+        "CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES": PUBLICATION_FAMILIES,
+        "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": PUBLICATION_FAMILIES,
+        "CONTROLLED_RESCUE_ALLOWED_FAMILIES": PUBLICATION_FAMILIES,
+        "POST_INTEGRITY_RESCUE_ALLOWED_FAMILIES": PUBLICATION_FAMILIES,
+        "QUALITY_FIRST_ALLOWED_PUBLICATION_FAMILIES": PUBLICATION_FAMILIES,
+        "CANDIDATE_FACTORY_ALLOWED_PUBLICATION_FAMILIES": PUBLICATION_FAMILIES,
+        "H2H_PUBLICATION_ENABLED": "false",
+        "BTTS_PUBLICATION_ENABLED": "false",
+        "DNB_PUBLICATION_ENABLED": "false",
+        "DOUBLE_CHANCE_PUBLICATION_ENABLED": "false",
+        "TEAM_TOTALS_PUBLICATION_ENABLED": "false",
+        "TOTALS_PUBLICATION_ENABLED": "true",
+        "SPREADS_PUBLICATION_ENABLED": "true",
+    }
+
+
 def base_env() -> dict[str, str]:
     now_local = datetime.now(UTC).astimezone(app_tz())
     today = now_local.date().isoformat()
-    return {
+    env = {
         "HARIZON_RUNTIME_POLICY_VERSION": POLICY_VERSION,
         "HARIZON_IGNORE_STALE_PROVIDER_BUDGET": "true",
         "PUBLISH_WINDOW_HOURS": policy_value("PUBLISH_WINDOW_HOURS", "12"),
         "MIN_KICKOFF_LEAD_MINUTES": policy_value("MIN_KICKOFF_LEAD_MINUTES", "25"),
-        # Context must not be gated by already-matched offers. Lines are still
-        # required for publication, but context should be collected for the
-        # prioritized near-window inventory pool first.
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
         "DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED": "true",
         "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": policy_value("DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT", "160"),
         "CONTEXT_ENRICHMENT_MATCH_LIMIT": policy_value("CONTEXT_ENRICHMENT_MATCH_LIMIT", "260"),
         "PREMIUM_CONTEXT_SHORTLIST_LIMIT": policy_value("PREMIUM_CONTEXT_SHORTLIST_LIMIT", "120"),
         "PREMIUM_NEWS_SHORTLIST_LIMIT": policy_value("PREMIUM_NEWS_SHORTLIST_LIMIT", "6"),
+        "NEWS_INJURY_SHORTLIST_ENABLED": "true",
+        "NEWS_INJURY_SHORTLIST_LIMIT": "8",
+        "ODDS_MOVEMENT_SNAPSHOTS_ENABLED": "true",
         "VALUE_HINT_MIN_EDGE_PCT": policy_value("VALUE_HINT_MIN_EDGE_PCT", "0.8"),
         "NEAR_MISS_ENRICHMENT_QUEUE_LIMIT": policy_value("NEAR_MISS_ENRICHMENT_QUEUE_LIMIT", "120"),
         "NEAR_MISS_ENRICHMENT_MIN_EV_PCT": policy_value("NEAR_MISS_ENRICHMENT_MIN_EV_PCT", "3.0"),
         "NEAR_MISS_ENRICHMENT_MIN_EDGE_PP": policy_value("NEAR_MISS_ENRICHMENT_MIN_EDGE_PP", "1.5"),
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": policy_value("DAY_INVENTORY_NEAR_WINDOW_HOURS", "12"),
         "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
-
         "ENABLE_BOOKIES_API": "false",
         "BOOKIES_API_ENABLED": "false",
         "BOOKIES_API_ODDS_FETCH_LIMIT": "0",
@@ -97,7 +121,6 @@ def base_env() -> dict[str, str]:
         "ODDSPAPI_CONTEXT_MATCH_LIMIT": "0",
         "ODDSPAPI_PER_RUN_MAX": "0",
         "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
-
         "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
         "ENABLE_ODDS_API_IO": "true",
         "ODDS_API_IO_ENABLED": "true",
@@ -120,13 +143,12 @@ def base_env() -> dict[str, str]:
         "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": policy_value("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT", "18"),
         "MAX_MATCHES_FOR_ODDS_FETCH": policy_value("MAX_MATCHES_FOR_ODDS_FETCH", "560"),
         "TARGET_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
-        "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
+        "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet,Bzzoiro",
         "SHARP_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
         "ODDS_API_IO_RELAXED_INVENTORY_MATCHING_ENABLED": "true",
         "ODDS_API_IO_RELAXED_EXACT_TOLERANCE_HOURS": policy_value("ODDS_API_IO_RELAXED_EXACT_TOLERANCE_HOURS", "16"),
         "ODDS_API_IO_RELAXED_FUZZY_TOLERANCE_HOURS": policy_value("ODDS_API_IO_RELAXED_FUZZY_TOLERANCE_HOURS", "16"),
         "ODDS_API_IO_RELAXED_MIN_SCORE": policy_value("ODDS_API_IO_RELAXED_MIN_SCORE", "42"),
-
         "SSTATS_ENABLED": "true",
         "ENABLE_SSTATS_CONTEXT": "true",
         "SSTATS_TARGET_NEAR_MISS_FIRST": "true",
@@ -134,10 +156,13 @@ def base_env() -> dict[str, str]:
         "SSTATS_REQUESTS_MAX_PER_RUN": policy_value("SSTATS_REQUESTS_MAX_PER_RUN", "36"),
         "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": policy_value("SSTATS_MAX_HTTP_REQUESTS_PER_RUN", "36"),
         "SSTATS_CONTEXT_MATCH_LIMIT": policy_value("SSTATS_CONTEXT_MATCH_LIMIT", "120"),
+        "SSTATS_ROLLING_METRICS_ENABLED": "true",
+        "SSTATS_HISTORICAL_ODDS_AS_LINES": "false",
         "BZZOIRO_PER_RUN_MAX": policy_value("BZZOIRO_PER_RUN_MAX", "24"),
         "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": policy_value("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN", "24"),
         "BZZOIRO_CONTEXT_MATCH_LIMIT": policy_value("BZZOIRO_CONTEXT_MATCH_LIMIT", "96"),
         "BZZOIRO_MAX_PAGES": policy_value("BZZOIRO_MAX_PAGES", "8"),
+        "BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE": "true",
         "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
         "FOOTBALL_DATA_ENABLED": "true",
         "FOOTBALL_DATA_PER_RUN_MAX": os.getenv("FOOTBALL_DATA_PER_RUN_MAX") or "6",
@@ -148,7 +173,6 @@ def base_env() -> dict[str, str]:
         "THESPORTSDB_PER_RUN_MAX": os.getenv("THESPORTSDB_PER_RUN_MAX") or "10",
         "THESPORTSDB_REQUESTS_MAX_PER_RUN": os.getenv("THESPORTSDB_REQUESTS_MAX_PER_RUN") or "10",
         "THESPORTSDB_CONTEXT_MATCH_LIMIT": os.getenv("THESPORTSDB_CONTEXT_MATCH_LIMIT") or "120",
-
         "SECONDARY_ODDS_RESCUE_ENABLED": "true",
         "SECONDARY_ODDS_RESCUE_TRIGGER": "single_source_candidate_or_primary_thin",
         "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": policy_value("SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS", "80"),
@@ -169,7 +193,6 @@ def base_env() -> dict[str, str]:
         "SPORTLOGIC_CONTEXT_MATCH_LIMIT": policy_value("SPORTLOGIC_CONTEXT_MATCH_LIMIT", "60"),
         "SPORTLOGIC_ODDS_MATCH_LIMIT": policy_value("SPORTLOGIC_ODDS_MATCH_LIMIT", "20"),
         "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": policy_value("SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS", "7"),
-
         "WEATHER_CONTEXT_MATCH_LIMIT": policy_value("WEATHER_CONTEXT_MATCH_LIMIT", "8"),
         "WEATHERAPI_PER_RUN_MAX": policy_value("WEATHERAPI_PER_RUN_MAX", "8"),
         "WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN": policy_value("WEATHERAPI_MAX_HTTP_REQUESTS_PER_RUN", "8"),
@@ -180,26 +203,14 @@ def base_env() -> dict[str, str]:
         "OPEN_METEO_PER_RUN_MAX": policy_value("OPEN_METEO_PER_RUN_MAX", "80"),
         "CLUBELO_ENABLED": "true",
         "CLUBELO_PER_RUN_MAX": policy_value("CLUBELO_PER_RUN_MAX", "3"),
-
+        "TOURNAMENT_MOTIVATION_CONTEXT_ENABLED": "true",
+        "ELO_MOTIVATION_CONTEXT_ENABLED": "true",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
         "MIN_BOOKS_PUBLISH": "2",
         "MIN_SOURCES_PUBLISH": "2",
         "MARKET_DERIVED_MIN_BOOKS": "2",
         "MARKET_DERIVED_MIN_SOURCES": "2",
         "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "2",
-        "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,dnb,btts,teamtotals,spreads",
-        "CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES": "totals,dnb,btts",
-        "CONTROLLED_FALLBACK_TIER_A_MIN_EV_PCT": "7.0",
-        "CONTROLLED_FALLBACK_TIER_A_MIN_EDGE_PP": "3.5",
-        "CONTROLLED_FALLBACK_TIER_A_MIN_CONFIDENCE": "65.0",
-        "CONTROLLED_FALLBACK_TIER_A_MIN_QUALITY": "65.0",
-        "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
-        "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": "totals,dnb,btts",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT": "5.0",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "2.2",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE": "62.0",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": "62.0",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
         "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "5.0",
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "2.2",
         "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "2",
@@ -219,6 +230,8 @@ def base_env() -> dict[str, str]:
         "DETAILED_RUN_REPORT_INCLUDE_RUNTIME_POLICY": "true",
         "DETAILED_RUN_REPORT_INCLUDE_BANKROLL_BLOCK": "true",
     }
+    env.update(publication_family_env())
+    return env
 
 
 def main() -> int:
@@ -230,6 +243,7 @@ def main() -> int:
         ("scripts/apply_day_inventory_policy.py", True),
         ("scripts/apply_quality_first_runtime_policy.py", False),
         ("scripts/apply_provider_request_budget.py", False),
+        ("scripts/apply_publication_family_policy.py", False),
         ("scripts/check_publication_runtime_syntax.py", True),
     ]
     script_results = [run_script(path, required=required) for path, required in ordered_scripts]
@@ -242,9 +256,9 @@ def main() -> int:
         "script_results": script_results,
         "notes": [
             "Runtime maximizes verified odds/context coverage while publication remains strict.",
-            "Context enrichment is no longer gated by already-matched odds offers.",
-            "Odds-api.io remains routed as two account-specific bookmaker groups and merged by event id.",
-            "AllSportsAPI and SportLogic are controlled secondary confirmation/rescue providers, not publish relaxers.",
+            "Only totals and spreads/handicaps may be published.",
+            "Bzzoiro current odds can be used as a secondary source; SStats historical odds remain blocked as fresh lines.",
+            "Odds movement snapshots and news/injury shortlist artifacts are enabled.",
         ],
     }
     write_json(OUT_PATH, payload)
