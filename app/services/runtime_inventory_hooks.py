@@ -112,6 +112,10 @@ def run_post_prediction_hooks() -> list[dict[str, Any]]:
     # controlled fallback publication step reads candidate artifacts.
     if _truthy(os.getenv("LINE_MOVEMENT_GUARD_ENABLED"), True):
         results.append(_run_script("scripts/update_day_inventory_priority_and_line_state.py"))
+    # Make the exported top-level counters match row-level refresh_plan flags.
+    # This runs after priority planning because that script mutates row refresh plans.
+    if _truthy(os.getenv("REFRESH_PLAN_COUNT_REPAIR_ENABLED"), True):
+        results.append(_run_script("scripts/repair_inventory_refresh_plan_counts.py"))
     results.extend({"hook": "persist_persistent_state", **item} for item in _sync_persistent_runtime_state("persist"))
     return results
 
