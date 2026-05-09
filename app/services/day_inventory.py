@@ -41,6 +41,25 @@ class DayInventoryStore:
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
+    @staticmethod
+    def _split_sources(value: Any) -> list[str]:
+        if isinstance(value, list):
+            return [str(item).strip() for item in value if str(item).strip()]
+        return [item.strip() for item in str(value or "").split(",") if item.strip()]
+
+    @staticmethod
+    def _source_ids_from_metadata(metadata: dict[str, Any]) -> dict[str, str]:
+        raw = metadata.get("provider_source_ids") if isinstance(metadata, dict) else None
+        if not isinstance(raw, dict):
+            return {}
+        out: dict[str, str] = {}
+        for key, value in raw.items():
+            provider = str(key or "").strip()
+            source_id = str(value or "").strip()
+            if provider and source_id:
+                out[provider] = source_id
+        return out
+
     def _date_file(self, local_date: str) -> Path:
         return self.base_dir / f"{local_date}.json"
 
@@ -59,8 +78,15 @@ class DayInventoryStore:
     def serialize_match(self, match: Match) -> dict[str, Any]:
         payload = asdict(match) if is_dataclass(match) else dict(match)
         commence_time = match.commence_time if isinstance(match.commence_time, datetime) else None
-        source_ids = {str(match.source): str(match.source_event_id)} if match.source else {}
         metadata = dict(payload.get("metadata") or {}) if isinstance(payload.get("metadata"), dict) else {}
+        source_ids = self._source_ids_from_metadata(metadata)
+        if match.source:
+            source_ids.setdefault(str(match.source), str(match.source_event_id or ""))
+        source_ids = {key: value for key, value in source_ids.items() if str(key).strip() and str(value).strip()}
+        sources_seen = set(self._split_sources(metadata.get("sources_seen")))
+        sources_seen.update(source_ids.keys())
+        if match.source:
+            sources_seen.add(str(match.source))
         local_date = self.local_date_for_dt(commence_time) if commence_time is not None else ""
         priority = self._priority_score(match)
         return {
@@ -79,7 +105,7 @@ class DayInventoryStore:
             "away_team_norm": str(match.away_team_norm),
             "tier": str(match.tier),
             "source_ids": source_ids,
-            "sources_seen": [str(match.source)] if match.source else [],
+            "sources_seen": sorted(sources_seen),
             "coverage": {
                 "fixture_core": True,
                 "odds": False,
@@ -146,7 +172,9 @@ class DayInventoryStore:
         added = 0
         updated = 0
         leagues: dict[str, int] = {}
-        source_counts: dict[str, int] = {}
+        primary_source_counts: dict[str, int] = {}
+        all_source_counts: dict[str, int] = {}
+        multi_source_matches = 0
 
         for match in matches:
             row = self.serialize_match(match)
@@ -157,7 +185,7 @@ class DayInventoryStore:
                 leagues[league_name] = leagues.get(league_name, 0) + 1
             provider_name = str(match.source or "")
             if provider_name:
-                source_counts[provider_name] = source_counts.get(provider_name, 0) + 1
+                primary_source_counts[provider_name] = primary_source_counts.get(provider_name, 0) + 1
             if current is None:
                 merged[key] = row
                 added += 1
@@ -205,6 +233,15 @@ class DayInventoryStore:
             ),
         )
 
+        for row in sorted_matches:
+            sources = [str(item).strip() for item in (row.get("sources_seen") or []) if str(item).strip()]
+            if not sources and isinstance(row.get("source_ids"), dict):
+                sources = [str(item).strip() for item in row["source_ids"].keys() if str(item).strip()]
+            if len(set(sources)) >= 2:
+                multi_source_matches += 1
+            for source in set(sources):
+                all_source_counts[source] = all_source_counts.get(source, 0) + 1
+
         coverage_counts = self._coverage_counts(sorted_matches)
 
         payload = {
@@ -218,11 +255,14 @@ class DayInventoryStore:
                 "matches_total": len(sorted_matches),
                 "matches_added": added,
                 "matches_updated": updated,
-                "providers_seen": len(source_counts),
+                "providers_seen": len(primary_source_counts),
+                "fixture_sources_seen": len(all_source_counts),
+                "multi_source_fixture_matches": multi_source_matches,
                 "leagues_seen": len(leagues),
                 **coverage_counts,
             },
-            "source_match_counts": source_counts,
+            "source_match_counts": primary_source_counts,
+            "all_source_match_counts": dict(sorted(all_source_counts.items(), key=lambda item: (-item[1], item[0]))),
             "league_match_counts": dict(sorted(leagues.items(), key=lambda item: (-item[1], item[0]))[:50]),
             "matches": sorted_matches,
         }
@@ -316,9 +356,12 @@ class DayInventoryStore:
                 "matches_added": 0,
                 "matches_updated": 0,
                 "providers_seen": 0,
+                "fixture_sources_seen": 0,
+                "multi_source_fixture_matches": 0,
                 "leagues_seen": 0,
             },
             "source_match_counts": {},
+            "all_source_match_counts": {},
             "league_match_counts": {},
             "sources": source_meta or {},
         }
@@ -341,6 +384,7 @@ class DayInventoryStore:
             "build_status": payload.get("build_status") or "ok",
             "counts": dict(payload.get("counts") or {}),
             "source_match_counts": dict(payload.get("source_match_counts") or {}),
+            "all_source_match_counts": dict(payload.get("all_source_match_counts") or {}),
             "league_match_counts": dict(payload.get("league_match_counts") or {}),
             "sources": dict(payload.get("sources") or {}),
         }
