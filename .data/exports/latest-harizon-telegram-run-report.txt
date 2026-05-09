@@ -1,47 +1,81 @@
 🧾 Подробный отчёт run — прогнозов нет
 
+🚦 Быстрый статус
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Покрытие: матчи 38, линии 30, контекст 28, offers 2428
+• Воронка: raw 0, до качества 0, опубликовано 0
+• Pre-kickoff: final checks 5, line-guard dropped 0
+
 🧭 Runtime policy
 • Версия: harizon-runtime-policy-v5-live-controlled-publish-fast-inventory
+• Время запуска: 2026-05-09T03:13:22.889462+03:00
 • Inventory bootstrap: odds_api_io | provider merge: false
+• Окно публикации: 12 ч | min lead: 30 мин | cron interval: 120 мин
+• Банк: 1000.00 | открытый риск: 0.00 | доступно: 1000.00
 
 📦 Дневной inventory
-• Матчей всего: 48
-• С линиями: 31/48
-• С контекстом: 28/48
-• Готово к модели: 28/48
-• Ближайшие 6 часов: 31/39 готово
-• Следующие 12 часов: 28/39 готово
+• Матчей всего: 43
+• С линиями: 30/43
+• С контекстом: 28/43
+• Готово к модели: 28/43
+• Ближайшие 6 часов: 30/38 готово
+• Следующие 12 часов: 28/38 готово
+
+⏱️ Накопление inventory и ближайшие матчи
+• Активных матчей: 41 | требуют odds refresh: 41
+• Final pre-kickoff checks: 5 | без ещё одного обычного run до старта: 5
+• Priority state updated: 2026-05-09T00:17:30.650884+00:00
+• Top priority upcoming:
+  - Colorado Springs Switchbacks FC — Orange County SC | до старта 42 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Arabe Unido B — San Martin FC | до старта 72 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - CD Plaza Amador — Academia Costa Del Este | до старта 72 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Launceston United SC 2 — Burnie United | до старта 117 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Oakland Stompers — Real San Jose | до старта 147 мин | urgent_near_kickoff | odds_refresh=True | final_check=True
+  - Auckland City FC — East Coast Bays | до старта 162 мин | urgent_near_kickoff | odds_refresh=True | final_check=False
 
 ⚙️ Что сделал скрипт
-• Матчи: 39 | с линиями: 31 | контекстов: 28
+• Матчи: 38 | с линиями: 30 | контекстов: 28
 • Кандидаты: raw 0 | до качества 0 | publishable 0
 • Резерв проверил: 0 | оценено в отчёте: 0 | выбрано: 0
-• матчей с линиями из любого источника: 31
+• матчей с линиями из любого источника: 30
 • матчей с любым контекстом: 28
 • матчей с объединенным контекстом: 28
 • raw с market-derived сигналом: 0
-• Фильтр времени: after 39/48, outside 3, too soon 6, started 0
-• Matching: odds exact 36, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 2, thesportsdb ctx 1
+• Фильтр времени: after 38/43, outside 3, too soon 2, started 0
+• Matching: odds exact 35, loose 0, fuzzy 3; sstats exact 0, bzzoiro ctx 2, thesportsdb ctx 1
+
+🧪 Candidate factory / модель
+• model_debug rows: matches 89 | candidates 0
+• pre-filter sample:
+  - soccer|arabe unido b|san martin|2026-… | spreads | San Martin FC | conf 53.1 | score 14.6
+  - soccer|arabe unido b|san martin|2026-… | spreads | Arabe Unido B | conf 53.1 | score 14.6
+  - soccer|arabe unido b|san martin|2026-… | totals | Меньше | conf 53.1 | score 8.7
+  - soccer|academia costa este|plaza amad… | spreads | CD Plaza Amador | conf 56.9 | score 16.1
+  - soccer|academia costa este|plaza amad… | spreads | Academia Costa Del Este | conf 57.4 | score 13.0
+
+🛡️ Line movement / pre-publish guard
+• candidates seen 0 | kept 0 | dropped 0
+• drop_bad_candidates=True | updated 2026-05-09T00:17:30.650884+00:00
 
 📡 Источники / фактическая работа
-• odds_api_io: events req 0, odds req 8, err 0, events 100, matched 39, offers 2464
-• odds_api_io_bootstrap: events req 2, err 0, events 100, matches 45
+• odds_api_io: events req 0, odds req 8, err 0, events 100, matched 38, offers 2428
+• odds_api_io_bootstrap: events req 2, err 0, events 100, matches 40
+• match_bootstrap: events req 2, err 0, events 100, matches 40
 • allsportsapi: req 1, err 0, matched 0, offers 0, fixtures 0
-• bzzoiro: req 6, err 0, events 52, ctx 2
-• sstats: req 29, err 0, ctx 28, rows 24359
+• bzzoiro: req 7, err 0, events 53, ctx 2
+• sstats: req 28, err 0, ctx 28, rows 24475
 • football_data: req 1, err 0, matched 0, ctx 0
 • thesportsdb: req 3, err 0, ctx 1
 • sportlogic: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
-• espn: err 0, events 74, matched 0, ctx 0
+• espn: err 0, events 65, matched 0, ctx 0
 • openligadb: req 0, err 0, ctx 0
 • openfootball: req 0, err 0, ctx 0
 • futrixmetrics: req 12, err 0, ctx 0
 • weather: req 16, err 4, ctx 12, weatherapi 12, owm 4, cache 0, budget_exhausted
-• newsapi: req 0, err 0, ctx 0, cache 0, budget_exhausted
-• gnews: req 0, err 0, ctx 0, budget_exhausted
+• newsapi: disabled
+• gnews: disabled
 • self_history: ctx 0
 • market_monitor: нет данных
-• match_bootstrap: events req 2, err 0, events 100, matches 45
 • bookies_bootstrap: disabled
 • bookies_api: disabled
 • oddspapi: disabled
@@ -49,10 +83,10 @@
 • api_football: disabled
 
 📈 odds-api.io routing
-• account1: Bet365,Unibet | req 4 | offers 1131
-• account2: Betfair Exchange,Sbobet | req 4 | offers 1333
+• account1: Bet365,Unibet | req 4 | offers 1092
+• account2: Betfair Exchange,Sbobet | req 4 | offers 1336
 • Букмекеры в ответах: Bet365, Betfair Exchange, Sbobet, Unibet
-• Матчи с 2+ букмекерами: 18; с 1 букмекером: 13
+• Матчи с 2+ букмекерами: 18; с 1 букмекером: 12
 
 🚫 Почему не прошли
 • Нет свежей расшифровки reject reasons.
@@ -64,16 +98,16 @@
 
 🧩 Работа API — разбор
 • odds_api_io: главный источник линий и списка матчей по целевым букмекерам
-  - runtime: events req 0, odds req 8, err 0, events 100, matched 39, offers 2464
+  - runtime: events req 0, odds req 8, err 0, events 100, matched 38, offers 2428
   - квота: grant 120, reason granted, status critical_inventory_and_primary_live_odds
-• allsportsapi: fixture/secondary odds probe; помогает расширять inventory и проверять доп. линии
+• allsportsapi: fixture/secondary odds probe; расширяет inventory и проверяет доп. линии
   - runtime: req 1, err 0, matched 0, offers 0, fixtures 0
   - квота: grant 24, reason granted, status secondary_fixture_and_odds_rescue
 • bzzoiro: контекст/прогнозы; независимое подтверждение
-  - runtime: req 6, err 0, events 52, ctx 2
+  - runtime: req 7, err 0, events 53, ctx 2
   - квота: grant 24, reason granted, status high_quality_context_near_window_first
 • sstats: форма/статистика команд; основной near-window context provider
-  - runtime: req 29, err 0, ctx 28, rows 24359
+  - runtime: req 28, err 0, ctx 28, rows 24475
   - квота: grant 36, reason granted, status critical_team_form_context_near_window_first
 • football_data: fixture/league calendar; добор матчей и алиасы
   - runtime: req 1, err 0, matched 0, ctx 0
@@ -83,13 +117,16 @@
   - квота: grant 10, reason granted, status alias_and_fixture_context_cached
 • weather: погодный overlay: WeatherAPI first, OpenWeatherMap fallback
   - runtime: req 16, err 4, ctx 12, weatherapi 12, owm 4, cache 0, budget_exhausted
-• sportlogic: probe/context; odds остаются под контролем до подтверждения схемы
+• sportlogic: probe/context; secondary odds rescue только под контролем
   - runtime: odds req 0, req 2, err 0, matches 0, matched 0, offers 0, ctx 0, games_fetched 50, fixtures 50, budget_exhausted 0
   - квота: grant 30, reason free_limit_500_day_10_min_use_only_near_window_or_primary_odds_empty, status secondary_odds_rescue_and_context_probe
 • espn: вспомогательный публичный контекст и алиасы
-  - runtime: err 0, events 74, matched 0, ctx 0
+  - runtime: err 0, events 65, matched 0, ctx 0
 • openligadb: вспомогательный календарь/контекст
   - runtime: req 0, err 0, ctx 0
+• futrixmetrics: доп. context provider; держим отключённым при low yield
+  - runtime: req 12, err 0, ctx 0
+  - квота: grant 0, reason low_recent_yield_do_not_spend_until_mapping_fixed, status disabled_by_low_recent_yield
 
 🔌 API / квоты последнего run
 • odds_api_io: grant 120, reason granted
@@ -116,7 +153,25 @@
 • freeapilivefootball: grant 0, reason 100_month_too_small_for_every_run
 • sharpapi: grant 0, reason text_enrichment_not_core_prediction
 
+📂 Артефакты run
+• debug-last-run.json: есть | 620572 bytes, Δ 0.1 мин
+• latest-run-bot.log: есть | 147052 bytes, Δ 0.1 мин
+• latest-controlled-fallback-report.json: есть | 691 bytes, Δ 0.0 мин
+• latest-provider-request-budget.json: есть | 11820 bytes, Δ 4.4 мин
+• latest-provider-quota-governor.json: есть | 20607 bytes, Δ 4.5 мин
+• latest-harizon-runtime-policy.json: есть | 20770 bytes, Δ 4.4 мин
+• latest-day-inventory-priority-and-line-state.json: есть | 32847 bytes, Δ 0.0 мин
+• latest-day-inventory-refresh-plan.json: есть | 30468 bytes, Δ 0.0 мин
+• latest-line-movement-guard-report.json: есть | 257 bytes, Δ 0.0 мин
+• latest-rescue-candidates.json: есть | 417 bytes, Δ 0.1 мин
+• latest-candidates-before-quality.json: нет
+• latest-candidates-after-quality.json: нет
+• latest-candidates.json: нет
+• latest.json: есть | 104 bytes, Δ 0.0 мин
+
 📌 Вывод
-• Линии есть, но кандидаты не построились: следующий приоритет — market-family parser и candidate factory.
+• Линии есть, но raw pool пустой. Приоритет: candidate factory / controlled prefilter rescue / market-family mapping.
+• Есть 5 final pre-kickoff checks: эти матчи нужно проверять особенно внимательно, потому что следующий cron-run может не успеть.
+• Guards не должны ослабляться: лучше 0 прогнозов, чем ставка без свежей линии и подтверждения.
 
 ⚖️ Дисклеймер: это аналитический отчёт бота, не гарантия результата и не финансовая рекомендация.
