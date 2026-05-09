@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-"""Apply the HARIZON publication-market family contract.
+"""Apply the HARIZON publication-market family and runtime signal contract.
 
 The bot may analyze all supported markets, but public Telegram picks are limited
-strictly to totals and spreads/handicaps. This prevents H2H/P1/P2/X, BTTS, DNB,
-double chance and team totals from leaking through main publishing or controlled
-fallback.
+strictly to totals and spreads/handicaps. This script is intentionally called at
+multiple workflow points, so it also pins the lightweight runtime switches that
+must not be overwritten by older policy/budget layers.
 """
 
 import json
@@ -16,8 +16,11 @@ from pathlib import Path
 ROOT = Path('.').resolve()
 OUT_PATH = ROOT / '.data' / 'exports' / 'latest-publication-family-policy.json'
 ALLOWED = 'totals,spreads'
+RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v7-signals-totals-spreads'
 
 ENV_UPDATES = {
+    'HARIZON_RUNTIME_POLICY_VERSION': RUNTIME_POLICY_VERSION,
+    'HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION': RUNTIME_POLICY_VERSION,
     'MARKET_FAMILY_PUBLICATION_GUARD_ENABLED': 'true',
     'PUBLICATION_ALLOWED_MARKET_FAMILIES': ALLOWED,
     'HARIZON_ALLOWED_PUBLICATION_FAMILIES': ALLOWED,
@@ -40,6 +43,21 @@ ENV_UPDATES = {
     # Analysis remains broad so diagnostics can still show why non-public
     # markets looked attractive, but publication remains narrow.
     'ANALYSIS_ALLOWED_MARKET_FAMILIES': 'h2h,totals,spreads,btts,dnb,doubleChance,teamTotals',
+    # Runtime signal-stack switches. These are repeated here because older
+    # workflow/budget layers call this script but not always the full runtime
+    # policy script.
+    'ODDS_MOVEMENT_SNAPSHOTS_ENABLED': 'true',
+    'NEWS_INJURY_SHORTLIST_ENABLED': 'true',
+    'NEWS_INJURY_SHORTLIST_LIMIT': os.getenv('NEWS_INJURY_SHORTLIST_LIMIT') or '8',
+    'BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE': 'true',
+    'BZZOIRO_FORCE_PREDICTIONS_V2': 'true',
+    'BZZOIRO_PROVIDER_SMOKE_ENABLED': 'false',
+    'BZZOIRO_API_ROOT_URL': os.getenv('BZZOIRO_API_ROOT_URL') or 'https://sports.bzzoiro.com/api',
+    'BZZOIRO_BASE_URL': os.getenv('BZZOIRO_BASE_URL') or 'https://sports.bzzoiro.com/api/v2',
+    'BZZOIRO_PREDICTIONS_MAX_PAGES': os.getenv('BZZOIRO_PREDICTIONS_MAX_PAGES') or '8',
+    'SSTATS_ROLLING_METRICS_ENABLED': 'true',
+    'SSTATS_HISTORICAL_ODDS_AS_LINES': 'false',
+    'CONTEXT_ENRICHMENT_REQUIRES_OFFERS': 'false',
 }
 
 
@@ -61,7 +79,8 @@ def main() -> int:
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
-        'policy': 'publication_totals_spreads_only',
+        'policy': 'publication_totals_spreads_only_with_signal_runtime_contract',
+        'runtime_policy_version': RUNTIME_POLICY_VERSION,
         'allowed_publication_families': ['totals', 'spreads'],
         'blocked_publication_families': ['h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'],
         'env_updates': ENV_UPDATES,
@@ -69,6 +88,8 @@ def main() -> int:
             'Only totals and spreads/handicaps may be published.',
             'H2H/P1/P2/X, BTTS, DNB, double chance and team totals are analysis-only.',
             'market_family_publication_guard also blocks Telegram text as last-mile safety.',
+            'Runtime signal-stack switches are pinned here because the workflow calls this script before run and fallback.',
+            'Bzzoiro is forced through the predictions endpoint and smoke calls are skipped to preserve request budget.',
         ],
     }
     OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
