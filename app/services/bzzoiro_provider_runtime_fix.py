@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import re
-from datetime import timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Any
 
 from app.schemas import MatchContext
@@ -25,6 +25,46 @@ def _truthy(value: Any, default: bool = False) -> bool:
 
 def _looks_like_date(value: Any) -> bool:
     return bool(_DATE_RE.match(str(value or '').strip()))
+
+
+def _parse_date(value: Any) -> date | None:
+    try:
+        if not _looks_like_date(value):
+            return None
+        return datetime.strptime(str(value).strip(), '%Y-%m-%d').date()
+    except Exception:
+        return None
+
+
+def _compat_date_window(date_from: str, date_to: str, stats: dict[str, Any]) -> tuple[str, str]:
+    """Clamp legacy SStats-style Bzzoiro ranges to a small predictions window.
+
+    Generic enrichment layers sometimes call Bzzoiro with SStats historical
+    windows, for example 2026-03-25..2026-05-09. The Bzzoiro predictions endpoint
+    is a current/upcoming prematch feed, not a historical games feed; asking for
+    a 40+ day window can timeout and then poison the provider summary as
+    bzzoiro err=1 ctx=0. Use the target to-date and, by default, only that day.
+    """
+    start = _parse_date(date_from)
+    end = _parse_date(date_to) or start
+    if start is None or end is None:
+        return date_from, date_to
+    if start > end:
+        start, end = end, start
+    try:
+        keep_days = max(0, int(float(os.getenv('BZZOIRO_COMPAT_DATE_RANGE_DAYS') or 0)))
+    except Exception:
+        keep_days = 0
+    min_start = end - timedelta(days=keep_days)
+    clamped_start = max(start, min_start)
+    if clamped_start != start:
+        stats['compat_date_range_clamped'] = True
+        stats['compat_original_date_from'] = start.isoformat()
+        stats['compat_original_date_to'] = end.isoformat()
+        stats['compat_clamped_date_from'] = clamped_start.isoformat()
+        stats['compat_clamped_date_to'] = end.isoformat()
+        stats['compat_date_range_days_kept'] = keep_days + 1
+    return clamped_start.isoformat(), end.isoformat()
 
 
 def _extract_rows(payload: Any, rows_fn: Any = None) -> list[dict[str, Any]]:
@@ -82,10 +122,6 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
         BzzoiroContextProvider.__init__ = patched_init
         BzzoiroContextProvider._harizon_url_alias_patch = True
 
-    # Always override _fetch_rows. Older runs proved that a previous loose alias
-    # can interpret SStats-style date arguments as URL paths, causing calls like
-    # https://sports.bzzoiro.com/api/2026-03-25. This wrapper explicitly detects
-    # _fetch_rows(client, from_date, to_date, stats) and maps it to /predictions/.
     async def _fetch_rows(self, client, path='/predictions/', *args, **kwargs):  # type: ignore[no-untyped-def]
         headers = kwargs.pop('headers', None) or {}
         params = kwargs.pop('params', None) or {}
@@ -93,11 +129,13 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
 
         # SStats-compatible legacy call shape:
         #   _fetch_rows(client, from_date, to_date, stats)
+        # Route it to /predictions/ and clamp historical lookback ranges.
         if _looks_like_date(path):
-            date_from = str(path).strip()
-            date_to = str(args[0]).strip() if args and _looks_like_date(args[0]) else date_from
+            raw_from = str(path).strip()
+            raw_to = str(args[0]).strip() if args and _looks_like_date(args[0]) else raw_from
             if len(args) > 1 and isinstance(args[1], dict) and not stats:
                 stats = args[1]
+            date_from, date_to = _compat_date_window(raw_from, raw_to, stats)
             params = {
                 'date_from': date_from,
                 'date_to': date_to,
@@ -141,8 +179,6 @@ def _apply_provider_shims(BzzoiroContextProvider: type, *, forced_v2: bool) -> N
     BzzoiroContextProvider._harizon_fetch_rows_alias_patch = True
 
     # SStats-style helpers expected by older generic enrichment/matching layers.
-    # They delegate to the predictions-v2 provider when available and otherwise
-    # parse the common Bzzoiro prediction/event payload shapes directly.
     if not hasattr(BzzoiroContextProvider, '_extract_team_name'):
         def _extract_team_name(self, row, side):  # type: ignore[no-untyped-def]
             side_text = str(side or '').strip().lower()
@@ -309,6 +345,7 @@ def install() -> dict[str, Any]:
         'patches': [
             'bzzoiro_symbol_predictions_v2' if forced_v2 else 'bzzoiro_symbol_current',
             'bzzoiro_date_signature_fetch_rows_to_predictions',
+            'bzzoiro_compat_date_range_clamp',
             'bzzoiro_sstats_style_helper_shims',
             'bzzoiro_url_alias',
             'bzzoiro_team_form_noop',
