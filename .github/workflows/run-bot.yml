@@ -40,7 +40,9 @@ jobs:
       PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "25"
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
-      ALL_SOURCES_FREE_MAXIMIZE: "true"
+      ALL_SOURCES_FREE_MAXIMIZE: "false"
+      PROVIDER_SMOKE_FAIL_ON_ERROR: "false"
+      PROVIDER_SMOKE_TIMEOUT_SECONDS: "10"
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
@@ -50,15 +52,15 @@ jobs:
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+      WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
+      WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
       SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
       SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
       SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
       API_FOOTBALL_KEY: ${{ secrets.API_FOOTBALL_KEY }}
       ODDSPAPI_API_KEY: ${{ secrets.ODDSPAPI_API_KEY }}
-      WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
-      WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
-      WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
       OPENWEATHERMAP_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       OPENWEATHER_API_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
       OPENWEATHERMAP_KEY: ${{ secrets.OPENWEATHERMAP_API_KEY }}
@@ -130,6 +132,20 @@ jobs:
             status=$?
             echo "per-run API quota contract failed or timed out with status ${status}; continuing with previous env"
           fi
+      - name: Provider smoke
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache artifacts/run-bot
+          echo "provider smoke start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 90s python -u workflow/provider_smoke.py; then
+            echo "provider smoke completed"
+          else
+            status=$?
+            echo "provider smoke failed or timed out with status ${status}; continuing production run"
+          fi
+          cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
+          cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
       - name: Run tests
         shell: bash
         run: |
