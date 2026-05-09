@@ -35,13 +35,13 @@ def _inc(rejections: dict[str, int], key: str, by: int = 1) -> None:
         pass
 
 
-def _to_float(value: Any) -> float | None:
+def _to_float(value: Any, default: float | None = None) -> float | None:
     try:
         if value in (None, ""):
-            return None
+            return default
         return float(str(value).replace(",", "."))
     except Exception:
-        return None
+        return default
 
 
 def _clamp(value: float, lo: float, hi: float) -> float:
@@ -50,6 +50,34 @@ def _clamp(value: float, lo: float, hi: float) -> float:
 
 def _norm_book(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", "", str(value or "").lower())
+
+
+def _obj_float(obj: Any, *names: str, default: float = 0.0) -> float:
+    for name in names:
+        value = _to_float(getattr(obj, name, None), None)
+        if value is not None:
+            return float(value)
+    diag = getattr(obj, "diagnostics", None)
+    if isinstance(diag, dict):
+        for name in names:
+            value = _to_float(diag.get(name), None)
+            if value is not None:
+                return float(value)
+    return default
+
+
+def _obj_int(obj: Any, *names: str, default: int = 0) -> int:
+    for name in names:
+        value = _to_float(getattr(obj, name, None), None)
+        if value is not None:
+            return int(value)
+    summary = getattr(obj, "source_summary", None)
+    if isinstance(summary, dict):
+        for name in names:
+            value = _to_float(summary.get(name), None)
+            if value is not None:
+                return int(value)
+    return default
 
 
 def _best_by_book(offers: list[Offer]) -> dict[str, Offer]:
@@ -145,8 +173,6 @@ def _make_candidate(
         return None
     implied = 1.0 / odds
     raw_edge = float(consensus_prob) - implied
-    # This is a controlled reserve signal: it only promotes clear best-price vs
-    # paired-book consensus situations into the normal downstream guards.
     model_prob = _clamp(float(consensus_prob) + min(0.035, max(0.0, raw_edge) * 0.55 + 0.012), 0.02, 0.98)
     edge_pp = (model_prob - implied) * 100.0
     ev_pct = (model_prob * odds - 1.0) * 100.0
@@ -208,11 +234,7 @@ def _make_candidate(
             "paired_books_count": paired_books,
         },
         bookmaker=best.bookmaker,
-        diagnostics={
-            "controlled_consensus_rescue": True,
-            "raw_consensus_edge_pp": raw_edge * 100.0,
-            "paired_books_count": paired_books,
-        },
+        diagnostics={"controlled_consensus_rescue": True, "raw_consensus_edge_pp": raw_edge * 100.0, "paired_books_count": paired_books},
         analysis={"controlled_consensus_rescue": True},
         publication_score=confidence + min(12.0, max(0.0, ev_pct)) + min(5.0, paired_books),
         source_event_id=best.source_event_id,
@@ -261,53 +283,109 @@ def _build_rescue(factory: Any, matches: list[Any], offers_by_match: dict[str, l
                 p_over, paired = _paired_fair_probability(over, under)
                 if p_over is None:
                     continue
-                current.extend([
-                    item for item in (
-                        _make_candidate(match=match, family="totals", selection="Over", point=float(point), bucket=over, opposite=under, consensus_prob=p_over, paired_books=paired, context=context, rejections=rejections),
-                        _make_candidate(match=match, family="totals", selection="Under", point=float(point), bucket=under, opposite=over, consensus_prob=1.0 - p_over, paired_books=paired, context=context, rejections=rejections),
-                    ) if item is not None
-                ])
+                current.extend([item for item in (
+                    _make_candidate(match=match, family="totals", selection="Over", point=float(point), bucket=over, opposite=under, consensus_prob=p_over, paired_books=paired, context=context, rejections=rejections),
+                    _make_candidate(match=match, family="totals", selection="Under", point=float(point), bucket=under, opposite=over, consensus_prob=1.0 - p_over, paired_books=paired, context=context, rejections=rejections),
+                ) if item is not None])
         if "btts" in allowed and families.get("btts"):
             yes = [x for x in families["btts"] if str(x.selection).lower().startswith("y")]
             no = [x for x in families["btts"] if str(x.selection).lower().startswith("n")]
             if yes and no:
                 p_yes, paired = _paired_fair_probability(yes, no)
                 if p_yes is not None:
-                    current.extend([
-                        item for item in (
-                            _make_candidate(match=match, family="btts", selection="Yes", point=None, bucket=yes, opposite=no, consensus_prob=p_yes, paired_books=paired, context=context, rejections=rejections),
-                            _make_candidate(match=match, family="btts", selection="No", point=None, bucket=no, opposite=yes, consensus_prob=1.0 - p_yes, paired_books=paired, context=context, rejections=rejections),
-                        ) if item is not None
-                    ])
+                    current.extend([item for item in (
+                        _make_candidate(match=match, family="btts", selection="Yes", point=None, bucket=yes, opposite=no, consensus_prob=p_yes, paired_books=paired, context=context, rejections=rejections),
+                        _make_candidate(match=match, family="btts", selection="No", point=None, bucket=no, opposite=yes, consensus_prob=1.0 - p_yes, paired_books=paired, context=context, rejections=rejections),
+                    ) if item is not None])
         if "dnb" in allowed and families.get("dnb"):
             home = [x for x in families["dnb"] if str(x.team_side or "").lower() == "home"]
             away = [x for x in families["dnb"] if str(x.team_side or "").lower() == "away"]
             if home and away:
                 p_home, paired = _paired_fair_probability(home, away)
                 if p_home is not None:
-                    current.extend([
-                        item for item in (
-                            _make_candidate(match=match, family="dnb", selection=match.home_team, point=0.0, bucket=home, opposite=away, consensus_prob=p_home, paired_books=paired, context=context, rejections=rejections, team_side="home"),
-                            _make_candidate(match=match, family="dnb", selection=match.away_team, point=0.0, bucket=away, opposite=home, consensus_prob=1.0 - p_home, paired_books=paired, context=context, rejections=rejections, team_side="away"),
-                        ) if item is not None
-                    ])
+                    current.extend([item for item in (
+                        _make_candidate(match=match, family="dnb", selection=match.home_team, point=0.0, bucket=home, opposite=away, consensus_prob=p_home, paired_books=paired, context=context, rejections=rejections, team_side="home"),
+                        _make_candidate(match=match, family="dnb", selection=match.away_team, point=0.0, bucket=away, opposite=home, consensus_prob=1.0 - p_home, paired_books=paired, context=context, rejections=rejections, team_side="away"),
+                    ) if item is not None])
         current.sort(key=lambda item: (float(item.publication_score), float(item.ev_pct), float(item.edge_pct)), reverse=True)
         for candidate in current[:max_per_match]:
             out.append(candidate)
-            debug.append({
-                "match_key": match_key,
-                "selection": candidate.selection,
-                "family": candidate.family,
-                "point": candidate.point,
-                "model_mode": candidate.model_mode,
-                "market_probability": round(float(candidate.market_probability), 4),
-                "adjusted_probability": round(float(candidate.adjusted_probability), 4),
-                "confidence": round(float(candidate.confidence), 2),
-                "publication_score": round(float(candidate.publication_score), 3),
-            })
+            debug.append({"match_key": match_key, "selection": candidate.selection, "family": candidate.family, "point": candidate.point, "model_mode": candidate.model_mode, "market_probability": round(float(candidate.market_probability), 4), "adjusted_probability": round(float(candidate.adjusted_probability), 4), "confidence": round(float(candidate.confidence), 2), "publication_score": round(float(candidate.publication_score), 3)})
             if len(out) >= max_total:
                 break
     return out, debug
+
+
+def _controlled_prefilter_allowed(candidate: CandidateBet, rejections: dict[str, int]) -> bool:
+    allowed = {item.strip().lower() for item in os.getenv("CONTROLLED_PREFILTER_RESCUE_ALLOWED_FAMILIES", "totals,dnb,btts").split(",") if item.strip()}
+    family = str(getattr(candidate, "family", "") or "").lower()
+    if family not in allowed:
+        _inc(rejections, "controlled_prefilter_family_guard")
+        return False
+    odds = _obj_float(candidate, "odds", default=0.0)
+    if odds < _env_float("CONTROLLED_PREFILTER_MIN_ODDS", 1.35) or odds > _env_float("CONTROLLED_PREFILTER_MAX_ODDS", 3.4):
+        _inc(rejections, "controlled_prefilter_odds_guard")
+        return False
+    books = _obj_int(candidate, "books_count", "odds_books_count", default=0)
+    if books < _env_int("CONTROLLED_PREFILTER_MIN_BOOKS", 1):
+        _inc(rejections, "controlled_prefilter_books_guard")
+        return False
+    confidence = _obj_float(candidate, "confidence", default=0.0)
+    if confidence < _env_float("CONTROLLED_PREFILTER_MIN_CONFIDENCE", 50.0):
+        _inc(rejections, "controlled_prefilter_confidence_guard")
+        return False
+    edge = _obj_float(candidate, "edge_pct", "edge_pp", default=0.0)
+    ev = _obj_float(candidate, "ev_pct", default=0.0)
+    if edge < _env_float("CONTROLLED_PREFILTER_MIN_EDGE_PP", 0.0):
+        _inc(rejections, "controlled_prefilter_edge_guard")
+        return False
+    if ev < _env_float("CONTROLLED_PREFILTER_MIN_EV_PCT", 0.0):
+        _inc(rejections, "controlled_prefilter_ev_guard")
+        return False
+    selection_text = f"{getattr(candidate, 'selection', '')} {getattr(candidate, 'selection_key', '')}".lower()
+    point = _to_float(getattr(candidate, "point", None), None)
+    if family == "totals" and point is not None and point <= 1.5 and ("over" in selection_text or "больше" in selection_text or "тб" in selection_text) and odds > _env_float("MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS", 1.85):
+        _inc(rejections, "controlled_prefilter_low_total_price_guard")
+        return False
+    return True
+
+
+def _patch_filter_and_rank(cls: type[Any]) -> bool:
+    if getattr(cls, "_harizon_controlled_prefilter_patch", False):
+        return False
+    original = getattr(cls, "_filter_and_rank", None)
+    if not callable(original):
+        return False
+
+    def filter_and_rank_patched(self: Any, candidates: list[CandidateBet], rejections: dict[str, int]):
+        filtered = original(self, candidates, rejections)
+        if filtered or not _env_bool("CONTROLLED_PREFILTER_RESCUE_ENABLED", True) or not candidates:
+            return filtered
+        rescue = [c for c in candidates if _controlled_prefilter_allowed(c, rejections)]
+        if not rescue:
+            _inc(rejections, "controlled_prefilter_rescue_empty")
+            return filtered
+        rescue.sort(key=lambda c: (_obj_float(c, "publication_score", default=0.0), _obj_float(c, "ev_pct", default=0.0), _obj_float(c, "confidence", default=0.0)), reverse=True)
+        limit = _env_int("CONTROLLED_PREFILTER_RETURN_LIMIT", 24)
+        for c in rescue[:limit]:
+            reasons = list(getattr(c, "reasons", []) or [])
+            reasons.append("controlled_prefilter_rescue:passed_to_quality_and_fallback_guards")
+            try:
+                c.reasons = reasons
+                diag = getattr(c, "diagnostics", None)
+                if isinstance(diag, dict):
+                    diag["controlled_prefilter_rescue"] = True
+                summary = getattr(c, "source_summary", None)
+                if isinstance(summary, dict):
+                    summary["controlled_prefilter_rescue"] = True
+            except Exception:
+                pass
+        _inc(rejections, "controlled_prefilter_rescue_candidates_built", len(rescue[:limit]))
+        return rescue[:limit]
+
+    cls._filter_and_rank = filter_and_rank_patched
+    cls._harizon_controlled_prefilter_patch = True
+    return True
 
 
 def install() -> dict[str, Any]:
@@ -318,11 +396,12 @@ def install() -> dict[str, Any]:
     cls = getattr(model, "CandidateFactory", None)
     if cls is None:
         return {"status": "skipped", "reason": "candidate_factory_missing"}
+    filter_patch = _patch_filter_and_rank(cls)
     if getattr(cls, "_harizon_controlled_rescue_patch", False):
-        return {"status": "already_installed"}
+        return {"status": "already_installed", "filter_patch": filter_patch}
     original = getattr(cls, "build_candidates", None)
     if not callable(original):
-        return {"status": "skipped", "reason": "build_candidates_missing"}
+        return {"status": "skipped", "reason": "build_candidates_missing", "filter_patch": filter_patch}
 
     def build_candidates_patched(self: Any, matches: list[Any], offers_by_match: dict[str, list[Offer]], contexts_by_match: dict[str, Any], market_signals_by_match: dict[str, dict[str, Any]] | None = None):
         candidates, rejections, debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match)
@@ -337,14 +416,10 @@ def install() -> dict[str, Any]:
         rescue_candidates.sort(key=lambda item: (float(item.publication_score), float(item.ev_pct), float(item.confidence)), reverse=True)
         debug = dict(debug or {})
         debug["matches"] = (list(debug.get("matches") or []) + rescue_debug)[:200]
-        debug["controlled_consensus_rescue"] = {
-            "enabled": True,
-            "built": len(rescue_candidates),
-            "returned": min(len(rescue_candidates), _env_int("CONTROLLED_RESCUE_RETURN_LIMIT", 24)),
-        }
+        debug["controlled_consensus_rescue"] = {"enabled": True, "built": len(rescue_candidates), "returned": min(len(rescue_candidates), _env_int("CONTROLLED_RESCUE_RETURN_LIMIT", 24))}
         _inc(rejections, "controlled_rescue_candidates_built", len(rescue_candidates))
         return rescue_candidates[: _env_int("CONTROLLED_RESCUE_RETURN_LIMIT", 24)], rejections, debug
 
     cls.build_candidates = build_candidates_patched
     cls._harizon_controlled_rescue_patch = True
-    return {"status": "installed", "version": "controlled-consensus-rescue-v1"}
+    return {"status": "installed", "version": "controlled-consensus-rescue-v2-prefilter", "filter_patch": filter_patch}
