@@ -49,21 +49,27 @@ jobs:
       LINE_MOVEMENT_GUARD_ENABLED: "false"
       REFRESH_PLAN_COUNT_REPAIR_ENABLED: "false"
       # Extra fixture sources are installed into the existing
-      # scripts/build_day_inventory.py process by usercustomize.py. This keeps
-      # the old inventory entrypoint while expanding its source coverage.
+      # scripts/build_day_inventory.py process by usercustomize/runtime guard.
+      # This keeps the old inventory entrypoint while expanding source coverage.
       DAY_INVENTORY_EXTRA_FIXTURES_ENABLED: "true"
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
       DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "true"
       DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
+      DAY_INVENTORY_ENABLE_SSTATS: "true"
       DAY_INVENTORY_BZZOIRO_WINDOW_DAYS: "1"
       DAY_INVENTORY_BZZOIRO_MAX_PAGES: "10"
       DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "12"
+      DAY_INVENTORY_ALLSPORTSAPI_WINDOW_DAYS: "0"
       DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT: "500"
       DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "500"
       DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "12"
+      DAY_INVENTORY_SSTATS_WINDOW_DAYS: "0"
+      DAY_INVENTORY_SSTATS_LIMIT: "1000"
+      DAY_INVENTORY_SSTATS_MAX_REQUESTS: "3"
       ALLSPORTSAPI_MATCH_LIMIT: "500"
       SPORTLOGIC_MATCH_LIMIT: "500"
       SPORTLOGIC_PER_RUN_MAX: "12"
+      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "3"
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
       MATCH_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
