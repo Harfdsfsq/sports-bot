@@ -16,9 +16,16 @@ def install() -> dict[str, Any]:
     expose `.url`, `_fetch_rows()`, `_fetch_bzzoiro_contexts()` and sometimes the
     SStats-specific `_build_team_form_contexts()` helper. The current Bzzoiro
     provider uses `.base_url` and `_fetch_paginated_rows()` and already builds its
-    own current-event prediction contexts. Missing compatibility methods caused
-    AttributeError after successful Bzzoiro HTTP responses, so the provider was
-    reported as `нет данных` despite returning events/contexts.
+    own current-event prediction contexts in fetch_context(). Missing
+    compatibility methods caused AttributeError after successful Bzzoiro HTTP
+    responses, so the provider was reported as `нет данных` despite returning
+    events/contexts.
+
+    Important: `_fetch_bzzoiro_contexts()` must not call `fetch_context()` here.
+    Some generic enrichment layers call it from inside/around `fetch_context()`;
+    calling `fetch_context()` again creates recursion. The alias is diagnostic-
+    safe and returns empty nested results while the normal Bzzoiro fetch_context
+    path remains the source of real contexts.
     """
     global _INSTALLED
     if _INSTALLED:
@@ -86,29 +93,22 @@ def install() -> dict[str, Any]:
 
     if not hasattr(BzzoiroContextProvider, '_fetch_bzzoiro_contexts'):
         async def _fetch_bzzoiro_contexts(self, client=None, matches=None, *args, **kwargs):  # type: ignore[no-untyped-def]
-            """SStats nested-provider compatibility wrapper.
+            """Nested-provider compatibility no-op.
 
-            Some generic enrichment layers call `_fetch_bzzoiro_contexts()` on
-            whichever context provider is active. For the real Bzzoiro provider,
-            the correct implementation is simply `fetch_context(matches)`. The
-            unused client argument is accepted for compatibility with the SStats
-            embedded Bzzoiro helper signature.
+            This method exists only because generic SStats-style enrichment code
+            probes for it. Real Bzzoiro data is produced by `fetch_context()`.
+            Returning an empty nested result avoids recursion and avoids spending
+            duplicate Bzzoiro requests.
             """
-            target_matches = matches
-            if target_matches is None and args:
-                for item in args:
-                    if isinstance(item, list):
-                        target_matches = item
-                        break
-            if target_matches is None:
-                target_matches = []
-            contexts, stats, preview = await self.fetch_context(target_matches)
-            if isinstance(preview, dict):
-                preview.setdefault('bzzoiro_nested_context_compat', True)
-                preview_payload = preview.get('matched_examples') or preview.get('sample_predictions') or preview
-            else:
-                preview_payload = preview
-            return contexts, stats, preview_payload if isinstance(preview_payload, list) else [preview_payload]
+            return {}, {
+                'enabled': bool(getattr(self, 'api_key', None)),
+                'compat_noop': True,
+                'reason': 'real_bzzoiro_contexts_are_built_by_fetch_context',
+                'requests': 0,
+                'contexts_built': 0,
+                'events_fetched': 0,
+                'response_errors': 0,
+            }, []
 
         BzzoiroContextProvider._fetch_bzzoiro_contexts = _fetch_bzzoiro_contexts
         BzzoiroContextProvider._harizon_nested_context_alias_patch = True
@@ -120,6 +120,6 @@ def install() -> dict[str, Any]:
             'bzzoiro_url_alias',
             'bzzoiro_fetch_rows_alias',
             'bzzoiro_team_form_noop',
-            'bzzoiro_nested_context_alias',
+            'bzzoiro_nested_context_noop',
         ],
     }
