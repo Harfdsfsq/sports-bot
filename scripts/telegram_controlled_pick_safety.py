@@ -3,7 +3,9 @@ from __future__ import annotations
 """Last-mile Telegram safety for HARIZON picks.
 
 Keeps weak borderline candidates in artifacts, but prevents weak single-source
-picks from being published as real Telegram bets.
+picks from being published as real Telegram bets. Blocking a Telegram message
+must never crash the whole run; blocked sends are converted to successful no-op
+Telegram responses and written to the audit file.
 """
 
 import json
@@ -60,7 +62,7 @@ def _write(event: dict[str, Any]) -> None:
         payload.setdefault("events", [])
         if isinstance(payload["events"], list):
             payload["events"].append(event)
-            payload["events"] = payload["events"][-80:]
+            payload["events"] = payload["events"][-120:]
         AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
         AUDIT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
@@ -304,6 +306,24 @@ def _extract_text(payload: Any) -> str:
         return ""
 
 
+def _fake_blocked_response(url: Any, reasons: list[str] | None = None):
+    try:
+        import httpx
+        payload = {
+            "ok": True,
+            "result": {
+                "message_id": 0,
+                "date": 0,
+                "text": "blocked_by_harizon_pick_safety",
+                "blocked_by_harizon_pick_safety": True,
+                "reasons": reasons or [],
+            },
+        }
+        return httpx.Response(200, json=payload, request=httpx.Request("POST", str(url or "https://api.telegram.org/bot/sendMessage")))
+    except Exception:
+        return None
+
+
 def _patch_http() -> None:
     try:
         import httpx
@@ -312,13 +332,32 @@ def _patch_http() -> None:
 
             async def post_patched(self, url, *args, **kwargs):
                 if "api.telegram.org" in str(url or "") and "sendMessage" in str(url or ""):
-                    payload = kwargs.get("json")
-                    if isinstance(payload, dict) and isinstance(payload.get("text"), str):
-                        payload = dict(payload); payload["text"] = _validate_text(payload["text"]); kwargs["json"] = payload
-                    else:
-                        text = _extract_text(kwargs.get("data"))
-                        if text:
-                            _validate_text(text)
+                    try:
+                        payload = kwargs.get("json")
+                        if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+                            payload = dict(payload); payload["text"] = _validate_text(payload["text"]); kwargs["json"] = payload
+                        else:
+                            text = _extract_text(kwargs.get("data"))
+                            if text:
+                                _validate_text(text)
+                    except RuntimeError as exc:
+                        text = ""
+                        payload = kwargs.get("json")
+                        if isinstance(payload, dict) and isinstance(payload.get("text"), str):
+                            text = payload.get("text") or ""
+                        else:
+                            text = _extract_text(kwargs.get("data"))
+                        reasons = _text_reasons(text)
+                        _write({
+                            "blocked_text_send_noop": True,
+                            "error": str(exc),
+                            "reasons": reasons,
+                            "text_preview": str(text or "")[:1200],
+                        })
+                        fake = _fake_blocked_response(url, reasons)
+                        if fake is not None:
+                            return fake
+                        raise
                 return await original_post(self, url, *args, **kwargs)
 
             httpx.AsyncClient.post = post_patched
