@@ -1,16 +1,13 @@
 from __future__ import annotations
 
-"""Runtime aliases for cross-provider football matching.
+"""Runtime aliases and strict guards for cross-provider football matching.
 
-This layer targets the concrete failure mode visible in run reports: providers
-return the same fixture under different team spellings, abbreviations, or local
-characters, so odds/context rows do not attach to the inventory match.
+This layer targets concrete run-report failures:
+- providers return the same fixture under different team spellings;
+- fuzzy matching can over-accept unrelated teams with similar text/time.
 
-The patch is intentionally narrow:
-- it only changes normalization/matching helpers;
-- it does not relax publication, EV, xG, or market-integrity guards;
-- it records SportLogic source-id matches when the day inventory already knows
-  the provider fixture id.
+The patch only changes normalization/matching helpers. It does not relax
+publication, EV, xG, market-integrity, or risk guards.
 """
 
 import os
@@ -18,83 +15,20 @@ import re
 import unicodedata
 from typing import Any
 
-PATCH_MARKER = "_harizon_provider_matching_alias_runtime_patch_v1"
+PATCH_MARKER = "_harizon_provider_matching_alias_runtime_patch_v2"
 
 SPECIAL_LATIN_TRANSLATION = str.maketrans(
     {
-        "ø": "o",
-        "Ø": "O",
-        "ö": "o",
-        "Ö": "O",
-        "ó": "o",
-        "Ó": "O",
-        "ò": "o",
-        "Ò": "O",
-        "ô": "o",
-        "Ô": "O",
-        "õ": "o",
-        "Õ": "O",
-        "å": "a",
-        "Å": "A",
-        "ä": "a",
-        "Ä": "A",
-        "á": "a",
-        "Á": "A",
-        "à": "a",
-        "À": "A",
-        "â": "a",
-        "Â": "A",
-        "ã": "a",
-        "Ã": "A",
-        "æ": "ae",
-        "Æ": "AE",
-        "œ": "oe",
-        "Œ": "OE",
-        "é": "e",
-        "É": "E",
-        "è": "e",
-        "È": "E",
-        "ê": "e",
-        "Ê": "E",
-        "ë": "e",
-        "Ë": "E",
-        "í": "i",
-        "Í": "I",
-        "ì": "i",
-        "Ì": "I",
-        "î": "i",
-        "Î": "I",
-        "ï": "i",
-        "Ï": "I",
-        "ú": "u",
-        "Ú": "U",
-        "ù": "u",
-        "Ù": "U",
-        "û": "u",
-        "Û": "U",
-        "ü": "u",
-        "Ü": "U",
-        "ý": "y",
-        "Ý": "Y",
-        "ÿ": "y",
-        "ç": "c",
-        "Ç": "C",
-        "ñ": "n",
-        "Ñ": "N",
-        "ğ": "g",
-        "Ğ": "G",
-        "ş": "s",
-        "Ş": "S",
-        "ı": "i",
-        "İ": "I",
-        "ł": "l",
-        "Ł": "L",
-        "đ": "d",
-        "Đ": "D",
-        "ð": "d",
-        "Ð": "D",
-        "þ": "th",
-        "Þ": "TH",
+        "ø": "o", "Ø": "O", "ö": "o", "Ö": "O", "ó": "o", "Ó": "O", "ò": "o", "Ò": "O",
+        "ô": "o", "Ô": "O", "õ": "o", "Õ": "O", "å": "a", "Å": "A", "ä": "a", "Ä": "A",
+        "á": "a", "Á": "A", "à": "a", "À": "A", "â": "a", "Â": "A", "ã": "a", "Ã": "A",
+        "æ": "ae", "Æ": "AE", "œ": "oe", "Œ": "OE", "é": "e", "É": "E", "è": "e", "È": "E",
+        "ê": "e", "Ê": "E", "ë": "e", "Ë": "E", "í": "i", "Í": "I", "ì": "i", "Ì": "I",
+        "î": "i", "Î": "I", "ï": "i", "Ï": "I", "ú": "u", "Ú": "U", "ù": "u", "Ù": "U",
+        "û": "u", "Û": "U", "ü": "u", "Ü": "U", "ý": "y", "Ý": "Y", "ÿ": "y",
+        "ç": "c", "Ç": "C", "ñ": "n", "Ñ": "N", "ğ": "g", "Ğ": "G", "ş": "s", "Ş": "S",
+        "ı": "i", "İ": "I", "ł": "l", "Ł": "L", "đ": "d", "Đ": "D", "ð": "d", "Ð": "D",
+        "þ": "th", "Þ": "TH",
     }
 )
 
@@ -104,15 +38,12 @@ TEAM_STOP_WORDS_EXTRA = {
 }
 
 TEAM_ALIASES_EXTRA = {
-    # Kenya / aliases seen in the latest run priority list.
     "kcb": "kenya commercial bank",
     "kcb bank": "kenya commercial bank",
     "kenya commercial bank": "kenya commercial bank",
-    "kenya commercial bank bandari": "kenya commercial bank bandari",
     "bandari": "bandari",
     "bandari fc": "bandari",
 
-    # Norway: providers alternate o/oe/ø and keep/remove legal suffixes.
     "lillestrom": "lillestrom",
     "lillestroem": "lillestrom",
     "lillestrom sk": "lillestrom",
@@ -121,7 +52,6 @@ TEAM_ALIASES_EXTRA = {
     "rosenborg": "rosenborg",
     "rosenborg bk": "rosenborg",
 
-    # Poland / Central Europe.
     "wisla plock": "wisla plock",
     "wisła płock": "wisla plock",
     "motor lublin": "motor lublin",
@@ -129,20 +59,17 @@ TEAM_ALIASES_EXTRA = {
     "banik ostrava b": "banik ostrava b",
     "usti nad labem": "usti nad labem",
     "usti n labem": "usti nad labem",
-    "usti nad labem b": "usti nad labem b",
     "zamora": "zamora",
     "zamora cf": "zamora",
     "lugo": "lugo",
     "cd lugo": "lugo",
 
-    # Uruguay / LATAM.
     "ca river plate uru": "river plate montevideo",
     "river plate uru": "river plate montevideo",
     "river plate montevideo": "river plate montevideo",
     "ca river plate": "river plate montevideo",
     "miramar misiones": "miramar misiones",
 
-    # Malaysia / Vietnam.
     "kuala lumpur city": "kuala lumpur city",
     "kuala lumpur city fc": "kuala lumpur city",
     "negeri sembilan": "negeri sembilan",
@@ -151,7 +78,6 @@ TEAM_ALIASES_EXTRA = {
     "nam dinh": "nam dinh",
     "nam dinh fc": "nam dinh",
 
-    # Germany lower leagues seen in priority rows.
     "eintracht hohkeppel": "eintracht hohkeppel",
     "sv eintracht hohkeppel": "eintracht hohkeppel",
     "konigsdorf": "konigsdorf",
@@ -159,7 +85,6 @@ TEAM_ALIASES_EXTRA = {
     "tus bw konigsdorf": "konigsdorf",
     "tus bw koenigsdorf": "konigsdorf",
 
-    # Generic high-value European aliases from previous reports.
     "atletico de madrid": "atletico madrid",
     "club atletico de madrid": "atletico madrid",
     "athletic bilbao": "athletic club",
@@ -176,6 +101,10 @@ TEAM_ALIASES_EXTRA = {
     "paris sg": "paris saint germain",
     "spurs": "tottenham",
     "tottenham hotspur": "tottenham",
+    "ac fiorentina": "fiorentina",
+    "fiorentina": "fiorentina",
+    "genoa cfc": "genoa",
+    "genoa": "genoa",
 }
 
 LEAGUE_ALIASES_EXTRA = {
@@ -215,16 +144,68 @@ def _compact_tokens(value: str, stop_words: set[str]) -> str:
     return " ".join(token for token in _norm_simple(value).split() if token and token not in stop_words).strip()
 
 
+def _canonical_tokens(value: str) -> set[str]:
+    return {token for token in str(value or "").split() if token and not token.isdigit()}
+
+
+def _has_token_overlap(left: str, right: str) -> bool:
+    lt = _canonical_tokens(left)
+    rt = _canonical_tokens(right)
+    return bool(lt and rt and (lt & rt))
+
+
+def _strong_side_match(utils: Any, left: str, right: str, score: float) -> bool:
+    if score >= 0.90:
+        return True
+    if score >= 0.78 and _has_token_overlap(utils.canonicalize_team_name(left), utils.canonicalize_team_name(right)):
+        return True
+    try:
+        return bool(utils.soft_contains_team(left, right))
+    except Exception:
+        return False
+
+
+def _fuzzy_pair_is_safe(utils: Any, match_home: str, match_away: str, event_home: str, event_away: str, league_related: bool) -> bool:
+    direct_home = utils.team_similarity(match_home, event_home)
+    direct_away = utils.team_similarity(match_away, event_away)
+    reverse_home = utils.team_similarity(match_home, event_away)
+    reverse_away = utils.team_similarity(match_away, event_home)
+
+    candidates = [
+        (direct_home, direct_away, match_home, event_home, match_away, event_away),
+        (reverse_home, reverse_away, match_home, event_away, match_away, event_home),
+    ]
+    best = max(candidates, key=lambda item: item[0] + item[1])
+    a, b, left_a, right_a, left_b, right_b = best
+    floor = min(a, b)
+    ceiling = max(a, b)
+
+    if _strong_side_match(utils, left_a, right_a, a) and _strong_side_match(utils, left_b, right_b, b):
+        return True
+    if league_related and floor >= 0.66 and ceiling >= 0.86 and (a + b) >= 1.56:
+        return True
+    if floor >= 0.74 and ceiling >= 0.88 and (a + b) >= 1.66:
+        return True
+    return False
+
+
 def _patch_utils() -> bool:
     import app.utils as utils
 
     if getattr(utils, PATCH_MARKER, False):
         return False
 
-    original_normalize_text = utils.normalize_text
-    original_canonicalize_team_name = utils.canonicalize_team_name
-    original_canonicalize_league_name = utils.canonicalize_league_name
-    original_team_similarity = utils.team_similarity
+    original_normalize_text = getattr(utils, "_harizon_original_normalize_text", utils.normalize_text)
+    original_canonicalize_team_name = getattr(utils, "_harizon_original_canonicalize_team_name", utils.canonicalize_team_name)
+    original_canonicalize_league_name = getattr(utils, "_harizon_original_canonicalize_league_name", utils.canonicalize_league_name)
+    original_team_similarity = getattr(utils, "_harizon_original_team_similarity", utils.team_similarity)
+    original_score_event_match = getattr(utils, "_harizon_original_score_event_match", utils.score_event_match)
+
+    setattr(utils, "_harizon_original_normalize_text", original_normalize_text)
+    setattr(utils, "_harizon_original_canonicalize_team_name", original_canonicalize_team_name)
+    setattr(utils, "_harizon_original_canonicalize_league_name", original_canonicalize_league_name)
+    setattr(utils, "_harizon_original_team_similarity", original_team_similarity)
+    setattr(utils, "_harizon_original_score_event_match", original_score_event_match)
 
     aliases = getattr(utils, "TEAM_ALIAS_MAP", None)
     if isinstance(aliases, dict):
@@ -251,7 +232,6 @@ def _patch_utils() -> bool:
             for item in candidates:
                 if item in alias_map:
                     return str(alias_map[item])
-        # Handle Scandinavian oe/o and German oe/o drift after the main aliases.
         for item in candidates:
             simplified = item.replace("oe", "o").replace("ae", "a").replace("ue", "u")
             if isinstance(alias_map, dict) and simplified in alias_map:
@@ -277,10 +257,35 @@ def _patch_utils() -> bool:
                     return max(0.96, original_team_similarity(a, b))
         return original_team_similarity(_prepare_text(a), _prepare_text(b))
 
+    def score_event_match_patched(**kwargs: Any) -> tuple[float, str | None]:
+        score, quality = original_score_event_match(**kwargs)
+        if quality != "fuzzy" or score <= 0:
+            return score, quality
+        league_score = utils.league_similarity(str(kwargs.get("match_league") or ""), str(kwargs.get("event_league") or ""))
+        league_related = league_score >= 0.52
+        safe = _fuzzy_pair_is_safe(
+            utils,
+            str(kwargs.get("match_home") or ""),
+            str(kwargs.get("match_away") or ""),
+            str(kwargs.get("event_home") or ""),
+            str(kwargs.get("event_away") or ""),
+            league_related,
+        )
+        if not safe:
+            return 0.0, None
+        # Penalize fuzzy matches without a related league so mediocre cross-league
+        # text similarities cannot beat exact candidates in another competition.
+        if not league_related:
+            score -= 12.0
+            if score < 62.0:
+                return 0.0, None
+        return score, quality
+
     utils.normalize_text = normalize_text_patched
     utils.canonicalize_team_name = canonicalize_team_name_patched
     utils.canonicalize_league_name = canonicalize_league_name_patched
     utils.team_similarity = team_similarity_patched
+    utils.score_event_match = score_event_match_patched
     setattr(utils, PATCH_MARKER, True)
     return True
 
@@ -342,13 +347,7 @@ def _patch_sportlogic_source_id_matching() -> bool:
                 event_id = str(self._event_id(row) or "").strip()
             except Exception:
                 event_id = ""
-            mapping[key] = {
-                "match": match,
-                "row": row,
-                "event_id": event_id,
-                "score": 120.0,
-                "quality": "source_id",
-            }
+            mapping[key] = {"match": match, "row": row, "event_id": event_id, "score": 120.0, "quality": "source_id"}
             added += 1
         if added:
             stats["matched_source_id"] = int(stats.get("matched_source_id") or 0) + added
