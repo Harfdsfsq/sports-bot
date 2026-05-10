@@ -28,8 +28,7 @@
       "ok": 5
     },
     "odds": {
-      "ok": 1,
-      "rate_limited": 1
+      "ok": 2
     },
     "odds_context": {
       "ok": 1
@@ -44,37 +43,13 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 15,
-    "rate_limited": 1
+    "ok": 16
   },
-  "created_at_utc": "2026-05-10T15:01:30.190667+00:00",
-  "critical_failures": [
-    {
-      "configured": true,
-      "critical": true,
-      "details": {
-        "body_preview": "{\"error\":\"You have exceeded your rate limit of 100 requests per hour. It resets in 6 minutes and 16 seconds.\"}",
-        "bookmakers_account1": "Bet365,Unibet",
-        "bookmakers_account2": "Betfair Exchange,Sbobet",
-        "key2_present": true,
-        "payload_shape": "error",
-        "semantic_message": "provider_payload_error"
-      },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T15%3A01%3A25Z&to=2026-05-12T15%3A01%3A25Z&limit=10&page=1",
-      "group": "odds",
-      "http_statuses": [
-        429
-      ],
-      "latency_ms": 373,
-      "message": "provider_payload_error",
-      "provider": "odds_api_io_events",
-      "requests": 1,
-      "status": "rate_limited",
-      "useful_rows": 0
-    }
-  ],
+  "created_at_utc": "2026-05-10T17:01:34.999181+00:00",
+  "critical_failures": [],
   "mode": "quick",
   "recommendations": [
+    "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
     "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
@@ -98,7 +73,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 4262,
+      "latency_ms": 4222,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -117,7 +92,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 482,
+      "latency_ms": 729,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -145,7 +120,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"data\":[{\"id\":1297295820,\"round\":\"Group Stage\",\"date\":\"2026-05-10T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":18121127,\"logo\":\"https://highlightly.net/soccer/images/teams/18121127.png\",\"name\":\"Virginia Marauders\"},\"homeTeam\":{\"id\":3446483,\"logo\":\"https://highlightly.net/soccer/images/teams/3446483.png\",\"name\":\"Evergreen\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name\":\"USL League Two\",\"season\":2026}},{\"id\":1309154505,\"round\":\"Apertura - 6\",\"date\":\"2026-05-10T23:30:00.000Z\",\"country\":{\"code\":\"BO\",\"name\":\"Bolivia\",\"logo\":\"https://highlightly.net/soccer/images/countries/BO.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":3151186,\"logo\":\"https://highlightly.net/soccer/images/teams/3151186.png\",\"name\":\"Bolívar\"},\"homeTeam\":{\"id\":3150335,\"logo\":\"https://highlightly.net/soccer/images/teams/3150335.png\",\"name\":\"Blooming\"},\"league\":{\"id\":293528,\"logo\":\"https://highlightly.net/soccer/images/leagues/",
+        "body_preview": "{\"data\":[{\"id\":1309154505,\"round\":\"Apertura - 6\",\"date\":\"2026-05-10T23:30:00.000Z\",\"country\":{\"code\":\"BO\",\"name\":\"Bolivia\",\"logo\":\"https://highlightly.net/soccer/images/countries/BO.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":3151186,\"logo\":\"https://highlightly.net/soccer/images/teams/3151186.png\",\"name\":\"Bolívar\"},\"homeTeam\":{\"id\":3150335,\"logo\":\"https://highlightly.net/soccer/images/teams/3150335.png\",\"name\":\"Blooming\"},\"league\":{\"id\":293528,\"logo\":\"https://highlightly.net/soccer/images/leagues/293528.png\",\"name\":\"Primera División\",\"season\":2026}},{\"id\":1297295820,\"round\":\"Group Stage\",\"date\":\"2026-05-10T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":18121127,\"logo\":\"https://highlightly.net/soccer/images/teams/18121127.png\",\"name\":\"Virginia Marauders\"},\"homeTeam\":{\"id\":3446483,\"logo\":\"https://highlightly.net/soccer/images/teams/3446483.png\",\"name\":\"Evergreen\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/league",
         "expected_base": "https://soccer.highlightly.net",
         "payload_shape": "data,pagination,plan",
         "rapidapi_base": "https://football-highlights-api.p.rapidapi.com"
@@ -155,7 +130,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 296,
+      "latency_ms": 316,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -174,7 +149,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 557,
+      "latency_ms": 736,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -194,7 +169,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 212,
+      "latency_ms": 209,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -205,7 +180,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"99650349-6099-5df0-8e44-8e152c6ba62a\",\"title\":\"Neuville makes most of Ogier puncture to win in Portugal\",\"description\":\"Belgian Thierry Neuville gave Hyundai a first win of the season in the Rally of Portugal after Toyota's overnight leader Sebastien Ogier suffered a puncture on the penultimate stage.\",\"url\":\"https://www.rte.ie/sport/motorsport/2026/0510/1572646-neuville-makes-most-of-ogier-puncture-to-win-in-portugal/\",\"author\":\"\",\"image\":\"https://www.rte.ie/images/002457a1-1600.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-10 14:50:21 +0000\"},{\"id\":\"853d3c93-23e6-58a0-ac9f-21881b02a64d\",\"title\":\"Alexander Zverev beats Alexander Blockx for the second time in nine days\",\"description\":\"The German world No. 3's 6-1, 6-4 Italian Open last-32 win follows his semi-final success over the Belgian in Madrid. Read more at straitstimes.com. Read more at straitstimes.com.\",\"url\":\"https://www.straitstimes.com/sport/tennis/alexander-zverev-beats-alexander-blockx-for-the-second-time-in-nine-days\",\"author\":\"\",\"image\":\"https://cassette.sphdigital.com.sg/image/straitstimes/25929897c89789d7daf934160f20475e29ddef3a4d7218bf54",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"0904d98d-c362-5302-9613-cdd1fcb99146\",\"title\":\"IPL 2026: Virat Kohli falls for back-to-back ducks as Deepak Chahar stuns RCB early | Cricket News - The Times of India\",\"description\":\"Cricket News: Virat Kohli endured another rare batting failure in IPL 2026 after falling for a golden duck against Mumbai Indians during Royal Challengers Bengaluru.\",\"url\":\"https://timesofindia.indiatimes.com/sports/cricket/ipl/ipl-2026/ipl-2026-virat-kohli-falls-for-back-to-back-ducks-as-deepak-chahar-stuns-rcb-early/articleshow/130995728.cms\",\"author\":\"TOI Sports Desk\",\"image\":\"https://static.toiimg.com/thumb/msid-130995848,width-1280,height-720,imgsize-844563,resizemode-6,overlay-toi_sw,pt-32,y_pad-600/photo.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-10 16:42:34 +0000\"},{\"id\":\"0178c73c-7041-5296-a83b-7f5e50b139e1\",\"title\":\"Everton's European hopes fade further, but Moyes not waving white flag\",\"description\":\"LONDON, May 10 : Everton's hopes of European football suffered another setback as David Moyes' side were held to a 2-2 draw at Crystal Palace on Sunday, extending their winless run to five Premier League matches.The",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -213,7 +188,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 493,
+      "latency_ms": 1014,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -224,7 +199,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318946,\"articles\":[{\"id\":\"7af7ebf15849681af944d029205ad34c\",\"title\":\"‘I regret bringing Messi to Kolkata. What if something happened to him?’ Satadru Dutta opens up on Salt Lake fiasco\",\"description\":\"Satadru Dutta breaks the silence in an explosive interview, blaming the police, administration and politicians for the Lionel Messi event chaos. | Football News\",\"content\":\"Question: We had spoken a couple of weeks before the Messi event, and you passionately explained the effort that went into convincing Lionel Messi to come to India. At what point did you realise things were beginning to spiral towards a crisis, and w... [6722 chars]\",\"url\":\"https://www.hindustantimes.com/sports/football/i-regret-bringing-lionel-messi-to-kolkata-what-if-something-happened-to-him-satadru-dutta-opens-up-on-salt-lake-fiasco-101778256519298.html\",\"image\":\"https://www.hindustantimes.com/ht-img/img/2026/05/08/550x309/Messi-Chaos-12_1765695482863_1765695494398_1778257685313.jpg\",\"publish",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318957,\"articles\":[{\"id\":\"ad9412eda4fcd242df092053d7e8f21b\",\"title\":\"Trio with 120 Premier League goals can still be signed without spending a penny\",\"description\":\"Everybody loves a bargain - even football clubs!\",\"content\":\"Everybody loves a bargain, and football clubs are no different. Despite spending in windows being at an all-time high, there’s still money to be saved with sensible scouting in the transfer market.\\nOne of the best ways clubs like to do this is throug... [2512 chars]\",\"url\":\"https://www.express.co.uk/sport/football/2202634/premier-league-free-agents-dele-coutinho-origi\",\"image\":\"https://cdn.images.express.co.uk/img/dynamic/67/1200x630/6905636.jpg\",\"publishedAt\":\"2026-05-10T05:00:00Z\",\"lang\":\"en\",\"source\":{\"id\":\"c97ef3cad273a1993c998ca7ddcc5212\",\"name\":\"Daily Express\",\"url\":\"https://www.express.co.uk\",\"country\":\"gb\"}}]}",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -232,7 +207,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 240,
+      "latency_ms": 394,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -243,7 +218,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134274,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134274,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134275,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134275,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
         "payload_shape": "response"
       },
       "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
@@ -251,7 +226,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 824,
+      "latency_ms": 692,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -262,7 +237,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":23662,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Managing Madrid\"},\"author\":\"Managing Madrid\",\"title\":\"Real Madrid’s Coaching Search Intensifies As Mourinho Emerges As Leading Candidate\",\"description\":\"Real Madrid are narrowing their managerial shortlist — and José Mourinho is increasingly viewed as the frontrunner\",\"url\":\"https://www.managingmadrid.com/real-madrid-cf-transfer-talk/107490/real-madrids-coaching-search-intensifies-as-mourinho-emerges-as-leading-candidate\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/D8fjrBetJe86DBv0H8clYw--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04OTI7Y2Y9d2VicA--/https://media.zenfs.com/en/sb_nation_articles_115/1be6e0cf154856c5575aafe52aed5d34\",\"publishedAt\":\"2026-05-09T15:00:57Z\",\"content\":\"Real Madrid are approaching a pivotal summer, and after a season that now appears destined to end without silverware, the clubs focus has shifted fully toward rebuilding for next year.\\r\\nThe aftermath… [+4086 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":23745,\"articles\":[{\"source\":{\"id\":\"techradar\",\"name\":\"TechRadar\"},\"author\":\"Andy Murray\",\"title\":\"How to watch Fabio Wardley vs Daniel Dubois: live stream boxing online, start time, ringwalks, fight card, PPV cost\",\"description\":\"All the ways to watch Wardley vs Dubois live streams online, including PPV options as the Suffolk heavyweight defends his WBO belt against ex-champion Dynamite.\",\"url\":\"https://www.techradar.com/how-to-watch/boxing/fabio-wardley-vs-daniel-dubois-live-stream-ppv-cost\",\"urlToImage\":\"https://cdn.mos.cms.futurecdn.net/eXjbdAqBNnVfptjLHKjMWL-1920-80.jpg\",\"publishedAt\":\"2026-05-09T17:00:00Z\",\"content\":\"<ul><li>Watch Wardley vs Dubois on DAZN (worldwide)</li><li>Undercard start time: Saturday, May 9 at 1pm ET / 10am PT / 6pm BST / 3am AEST (Sun)</li><li>Wardley vs Dubois ringwalks (approx): 6pm ET /… [+6441 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -270,7 +245,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 145,
+      "latency_ms": 195,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -281,7 +256,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":8457,\"results\":[{\"article_id\":\"3f7655da796d205b1d4da8c927bdb80b\",\"link\":\"https://www.bordermail.com.au/story/9243024/wangaratta-secures-thumping-win-after-controversial-send-offs/?src=rss\",\"title\":\"Two send-offs in a controversial clash as the Pies enhance their reputation\",\"description\":\"Wangaratta and Myrtleford met in a top three clash.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"subscriber-only\",\"ovens-murray\",\"news\",\"ovens-and-murray-league\",\"australian-rules\",\"facebook\",\"sports-updates-list\",\"daily-newsletter-list\",\"sport\",\"video\"],\"creator\":[\"andrew moir\"],\"language\":\"english\",\"country\":[\"australia\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-10 03:00:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-10 03:18:50\",\"image_url\":null,\"video_url\":null,\"source_id\":\"bordermail\",\"source_name\":\"The Border Mail\",\"source_priority\":2185061,\"source_url\":\"https://www.bordermail.com.au\",\"source_icon\":\"https://n.bytvi.com/bordermail.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_tag\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLAN",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":7889,\"results\":[{\"article_id\":\"35a18625d0301768d6d74355ec4e94cf\",\"link\":\"https://www.jamaicaobserver.com/2026/05/10/mckay-eyes-bold-taiwan-mission/\",\"title\":\"McKay eyes bold Taiwan mission\",\"description\":null,\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":null,\"language\":\"english\",\"country\":[\"gabon\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-10 05:01:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-10 05:04:43\",\"image_url\":\"https://www.jamaicaobserver.com/jamaicaobserver/news/wp-content/uploads/sites/4/2026/05/246d9bd317992c03594534217b735048-1024x579.jpg\",\"video_url\":null,\"source_id\":\"jamaicaobserver\",\"source_name\":\"Jamaica Observer\",\"source_priority\":14529,\"source_url\":\"https://www.jamaicaobserver.com\",\"source_icon\":\"https://n.bytvi.com/jamaicaobserver.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_tag\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_region\":\"ONLY AVAILABLE IN CORPORATE PLANS\",\"ai_org\":\"ONLY AVAILABLE IN CORPORATE PLANS\",\"ai_summary\":\"ONLY AVAILABLE IN PAID PLANS\",\"duplicate\":false}],\"nextPag",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -289,7 +264,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 217,
+      "latency_ms": 346,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -300,24 +275,23 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "{\"error\":\"You have exceeded your rate limit of 100 requests per hour. It resets in 6 minutes and 16 seconds.\"}",
+        "body_preview": "[{\"id\":70207496,\"home\":\"KRC Genk\",\"away\":\"KVC Westerlo\",\"homeId\":2890,\"awayId\":2893,\"date\":\"2026-05-10T17:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Belgium - Pro League\",\"slug\":\"belgium-pro-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71305164,\"home\":\"AL Hazem U21\",\"away\":\"AL Hilal (Ksa)\",\"homeId\":1282215,\"awayId\":379550,\"date\":\"2026-05-10T17:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Saudi Arabia - U21 Elite League\",\"slug\":\"saudi-arabia-u21-elite-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61514186,\"home\":\"FSV Mainz\",\"away\":\"Union Berlin\",\"homeId\":2556,\"awayId\":2547,\"date\":\"2026-05-10T17:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Germany - Bundesliga\",\"slug\":\"germany-bundesliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61467271,\"home\":\"Unia Skierniewice\",\"away\":\"CWKS Resovia\",\"homeId\":458143,\"awayId\":37204,\"date\":\"2026-05-10T17:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - II Liga\",\"slug\":\"poland-ii-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71349832,\"home\":\"Montevideo Wanderers\",\"away\":\"",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
-        "payload_shape": "error",
-        "semantic_message": "provider_payload_error"
+        "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T15%3A01%3A25Z&to=2026-05-12T15%3A01%3A25Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T17%3A01%3A30Z&to=2026-05-12T17%3A01%3A30Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
-        429
+        200
       ],
-      "latency_ms": 373,
-      "message": "provider_payload_error",
+      "latency_ms": 1459,
+      "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
-      "status": "rate_limited",
-      "useful_rows": 0
+      "status": "ok",
+      "useful_rows": 10
     },
     {
       "configured": true,
@@ -332,7 +306,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 509,
+      "latency_ms": 712,
       "message": "ok",
       "provider": "sportlogic",
       "requests": 1,
@@ -343,7 +317,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1702480,\"event_date\":\"2026-05-10\",\"event_time\":\"15:00\",\"event_home_team\":\"Asante Kotoko\",\"home_team_key\":4284,\"event_away_team\":\"Eleven Wonders\",\"away_team_key\":4294,\"event_halftime_result\":\"\",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 32\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Baba Yara Stadium\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4284_asante-kotoko.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4294_eleven-wonders.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[],\"substitutes\":[],\"cards\":[],\"vars\":{\"home_team\":[],\"away_team\":[]},\"lineups\":{\"home_team\":{\"starting_lineups\":[{\"player\":null,\"player_number\":null,\"player_position\":0,\"player_country\":nu",
+        "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1702480,\"event_date\":\"2026-05-10\",\"event_time\":\"15:00\",\"event_home_team\":\"Asante Kotoko\",\"home_team_key\":4284,\"event_away_team\":\"Eleven Wonders\",\"away_team_key\":4294,\"event_halftime_result\":\"1 - 0\",\"event_final_result\":\"2 - 0\",\"event_ft_result\":\"2 - 0\",\"event_penalty_result\":\"\",\"event_status\":\"Finished\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 32\",\"league_season\":\"2025\\/2026\",\"event_live\":\"1\",\"event_stadium\":\"Baba Yara Stadium\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4284_asante-kotoko.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/4294_eleven-wonders.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[{\"time\":\"36\",\"home_scorer\":\"J. K. Manu L.\",\"home_scorer_id\":\"\",\"home_assist\":\"\",\"home_assist_id\":\"\",\"score\":\"1 - 0\",\"away_scorer\":\"\",\"away_scorer_id\":\"\",\"away_assist\"",
         "payload_shape": "result,success"
       },
       "endpoint": "https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-05-10&to=2026-05-11&timezone=UTC",
@@ -351,7 +325,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 390,
+      "latency_ms": 548,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -378,7 +352,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-05-08 19:17:19\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-05 07:51:52\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -386,7 +360,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 177,
+      "latency_ms": 289,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -397,7 +371,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":12.38,\"feels_like\":11.37,\"temp_min\":11.64,\"temp_max\":13.08,\"pressure\":1015,\"humidity\":65,\"sea_level\":1015,\"grnd_level\":1011},\"visibility\":10000,\"wind\":{\"speed\":5.66,\"deg\":30},\"clouds\":{\"all\":100},\"dt\":1778425170,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778386604,\"sunset\":1778441828},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":12.67,\"feels_like\":11.51,\"temp_min\":11.86,\"temp_max\":13.49,\"pressure\":1014,\"humidity\":58,\"sea_level\":1014,\"grnd_level\":1010},\"visibility\":10000,\"wind\":{\"speed\":5.14,\"deg\":30},\"clouds\":{\"all\":75},\"dt\":1778432029,\"sys\":{\"type\":2,\"id\":268730,\"country\":\"GB\",\"sunrise\":1778386604,\"sunset\":1778441828},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -405,7 +379,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 128,
+      "latency_ms": 139,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -416,7 +390,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778425288,\"localtime\":\"2026-05-10 16:01\"},\"current\":{\"last_updated_epoch\":1778425200,\"last_updated\":\"2026-05-10 16:00\",\"temp_c\":13.2,\"temp_f\":55.8,\"is_day\":1,\"condition\":{\"text\":\"Partly cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":13.0,\"wind_kph\":20.9,\"wind_degree\":38,\"wind_dir\":\"NE\",\"pressure_mb\":1016.0,\"pressure_in\":30.0,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":54,\"cloud\":75,\"feelslike_c\":11.4,\"feelslike_f\":52.4,\"windchill_c\":10.2,\"windchill_f\":50.4,\"heatindex_c\":12.3,\"heatindex_f\":54.2,\"dewpoint_c\":4.3,\"dewpoint_f\":39.7,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":2.0,\"gust_mph\":15.5,\"gust_kph\":24.9,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-10\",\"date_epoch\":1778371200,\"day\":{\"maxtemp_c\":14.0,\"maxtemp_f\":57.1,\"mintemp_c\":6.8,\"mintemp_f\":44.3,\"avgtemp_c\":10.7,\"avgtemp_f\":51.3,\"maxwind_mph\":14.1,\"maxwind_kph\":22.7,\"totalprecip_mm\":0.1,\"totalprecip_in\":0.0,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_miles\":6.",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778432461,\"localtime\":\"2026-05-10 18:01\"},\"current\":{\"last_updated_epoch\":1778432400,\"last_updated\":\"2026-05-10 18:00\",\"temp_c\":13.4,\"temp_f\":56.1,\"is_day\":1,\"condition\":{\"text\":\"Partly cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":11.4,\"wind_kph\":18.4,\"wind_degree\":40,\"wind_dir\":\"NE\",\"pressure_mb\":1015.0,\"pressure_in\":29.97,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":51,\"cloud\":75,\"feelslike_c\":11.8,\"feelslike_f\":53.2,\"windchill_c\":10.6,\"windchill_f\":51.1,\"heatindex_c\":12.4,\"heatindex_f\":54.4,\"dewpoint_c\":2.5,\"dewpoint_f\":36.5,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.4,\"gust_mph\":14.4,\"gust_kph\":23.1,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-10\",\"date_epoch\":1778371200,\"day\":{\"maxtemp_c\":14.0,\"maxtemp_f\":57.1,\"mintemp_c\":6.8,\"mintemp_f\":44.3,\"avgtemp_c\":10.7,\"avgtemp_f\":51.3,\"maxwind_mph\":14.1,\"maxwind_kph\":22.7,\"totalprecip_mm\":0.1,\"totalprecip_in\":0.0,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_miles\":6",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -424,7 +398,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 458,
+      "latency_ms": 205,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -435,12 +409,12 @@
   "summary": {
     "auth_error": 0,
     "config_only": 1,
-    "critical_failures": 1,
+    "critical_failures": 0,
     "degraded": 0,
-    "healthy_or_config_only": 16,
+    "healthy_or_config_only": 17,
     "missing_secret": 1,
-    "ok": 15,
+    "ok": 16,
     "providers_checked": 18,
-    "rate_limited": 1
+    "rate_limited": 0
   }
 }

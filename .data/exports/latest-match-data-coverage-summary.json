@@ -8,8 +8,8 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 80,
+      "rows_seen": 80,
       "rows_stale": 0
     },
     "lifecycle": {
@@ -26,27 +26,37 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 8,
+      "rows_seen": 8,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 0,
-    "candidates_publishable": 0,
-    "candidates_raw": 0,
-    "contexts_built": 8,
+    "candidates_before_quality": 20,
+    "candidates_publishable": 2,
+    "candidates_raw": 6,
+    "contexts_built": 67,
     "controlled_candidates_seen": null,
     "controlled_published": false,
-    "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 0,
-    "matches_seen": 8,
-    "matches_with_offers": 0
+    "controlled_status": "skipped_existing_pick",
+    "coverage_candidates_current_date": 14,
+    "matches_seen": 81,
+    "matches_with_offers": 44
   },
-  "created_at": "2026-05-10T15:03:58.547093+00:00",
-  "family_counts": {},
-  "matches_with_candidates": 0,
-  "missing_data_flags": {},
+  "created_at": "2026-05-10T17:10:34.105196+00:00",
+  "family_counts": {
+    "h2h": 2,
+    "totals": 12
+  },
+  "matches_with_candidates": 13,
+  "missing_data_flags": {
+    "confidence_below_micro_c": 6,
+    "edge_below_micro_c": 14,
+    "ev_below_micro_c": 9,
+    "single_book": 4,
+    "single_context_source": 14,
+    "single_odds_source": 14
+  },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
     "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
@@ -59,18 +69,58 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 0,
+  "positive_near_miss_count": 10,
   "provider_gap_summary": [
     {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 38,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 3154,
+      "provider": "account1",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": null,
+      "events_fetched": null,
+      "events_matched": 27,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 2594,
+      "provider": "account2",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
       "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": 8,
-      "direct_event_contexts_built": 8,
+      "budget_exhausted": true,
+      "contexts_built": 19,
+      "direct_event_contexts_built": 19,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "budget_exhausted"
+      ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "clubelo",
@@ -83,8 +133,8 @@
     {
       "api_key_present": null,
       "budget_exhausted": null,
-      "contexts_built": 8,
-      "direct_event_contexts_built": 8,
+      "contexts_built": 7,
+      "direct_event_contexts_built": 7,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -102,8 +152,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": true,
-      "contexts_built": 7,
-      "direct_event_contexts_built": 7,
+      "contexts_built": 17,
+      "direct_event_contexts_built": 17,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -121,16 +171,54 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": null,
-      "contexts_built": 8,
-      "direct_event_contexts_built": 8,
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 9,
+      "matches_built": 89,
+      "offers_parsed": null,
+      "provider": "odds_api_io",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": true,
+      "budget_exhausted": false,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 100,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": 89,
+      "offers_parsed": null,
+      "provider": "odds_api_io_bootstrap",
+      "rate_limited": false,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": null,
+      "contexts_built": 4,
+      "direct_event_contexts_built": 4,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
       "offers_parsed": null,
       "provider": "openfootball",
       "rate_limited": null,
@@ -140,29 +228,10 @@
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": null,
-      "budget_exhausted": false,
-      "contexts_built": 2,
-      "direct_event_contexts_built": 2,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [],
-      "matches_built": null,
-      "offers_parsed": null,
-      "provider": "openligadb",
-      "rate_limited": null,
-      "response_errors": 0,
-      "rows_fetched": null,
-      "status_category": "working",
-      "team_form_contexts_built": null
-    },
-    {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 8,
-      "direct_event_contexts_built": 8,
+      "contexts_built": 63,
+      "direct_event_contexts_built": 63,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -181,14 +250,16 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
+      "budget_exhausted": true,
       "contexts_built": 8,
       "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "budget_exhausted"
+      ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "stats",
@@ -201,8 +272,8 @@
     {
       "api_key_present": null,
       "budget_exhausted": false,
-      "contexts_built": 6,
-      "direct_event_contexts_built": 6,
+      "contexts_built": 7,
+      "direct_event_contexts_built": 7,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -219,14 +290,16 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
+      "budget_exhausted": true,
       "contexts_built": 8,
       "direct_event_contexts_built": 8,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "budget_exhausted"
+      ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "weather",
@@ -259,90 +332,44 @@
     },
     {
       "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": null,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "rate_limited",
-        "response_errors",
-        "no_useful_rows"
-      ],
-      "matches_built": 0,
-      "offers_parsed": null,
-      "provider": "odds_api_io",
-      "rate_limited": true,
-      "response_errors": 1,
-      "rows_fetched": null,
-      "status_category": "rate_limited",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
-      "budget_exhausted": false,
-      "contexts_built": null,
-      "direct_event_contexts_built": 0,
-      "enabled": true,
-      "events_fetched": 0,
-      "events_matched": null,
-      "fixtures_fetched": null,
-      "gap_flags": [
-        "rate_limited",
-        "response_errors",
-        "no_useful_rows"
-      ],
-      "matches_built": 0,
-      "offers_parsed": null,
-      "provider": "odds_api_io_bootstrap",
-      "rate_limited": true,
-      "response_errors": 1,
-      "rows_fetched": null,
-      "status_category": "rate_limited",
-      "team_form_contexts_built": null
-    },
-    {
-      "api_key_present": true,
       "budget_exhausted": null,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": null,
-      "events_fetched": null,
+      "events_fetched": 100,
       "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
-        "no_useful_rows"
+        "low_overlap_or_matching_failed"
       ],
       "matches_built": null,
       "offers_parsed": 0,
-      "provider": "account1",
-      "rate_limited": false,
-      "response_errors": 0,
+      "provider": "odds_feed",
+      "rate_limited": null,
+      "response_errors": null,
       "rows_fetched": null,
-      "status_category": "no_data",
+      "status_category": "low_overlap_or_matching_issue",
       "team_form_contexts_built": null
     },
     {
-      "api_key_present": true,
-      "budget_exhausted": null,
+      "api_key_present": null,
+      "budget_exhausted": false,
       "contexts_built": null,
       "direct_event_contexts_built": 0,
-      "enabled": null,
-      "events_fetched": null,
+      "enabled": true,
+      "events_fetched": 100,
       "events_matched": 0,
       "fixtures_fetched": null,
       "gap_flags": [
-        "no_useful_rows"
+        "low_overlap_or_matching_failed"
       ],
       "matches_built": null,
       "offers_parsed": 0,
-      "provider": "account2",
-      "rate_limited": false,
+      "provider": "secondary_odds_rescue",
+      "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
-      "status_category": "no_data",
+      "status_category": "low_overlap_or_matching_issue",
       "team_form_contexts_built": null
     },
     {
@@ -403,6 +430,27 @@
       "matches_built": null,
       "offers_parsed": null,
       "provider": "futrixmetrics",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "no_data",
+      "team_form_contexts_built": null
+    },
+    {
+      "api_key_present": null,
+      "budget_exhausted": false,
+      "contexts_built": 0,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": null,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [
+        "no_useful_rows"
+      ],
+      "matches_built": null,
+      "offers_parsed": null,
+      "provider": "openligadb",
       "rate_limited": null,
       "response_errors": 0,
       "rows_fetched": null,
@@ -475,12 +523,510 @@
     }
   ],
   "provider_status_counts": {
-    "low_overlap_or_matching_issue": 1,
-    "no_data": 8,
-    "rate_limited": 2,
-    "working": 9
+    "low_overlap_or_matching_issue": 3,
+    "no_data": 7,
+    "working": 12
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "market_sanity_totals_xg_contradiction": 2,
+    "post_calibration_probability_guard": 5
+  },
   "target_date": "2026-05-10",
-  "top_near_miss": []
+  "top_near_miss": [
+    {
+      "away_team": "Strasbourg Alsace",
+      "best_candidate": {
+        "adjusted_probability": 0.452106,
+        "books_count": 3,
+        "canonical_edge_pp": 3.869,
+        "canonical_ev_pct": 15.287,
+        "confidence": 76.744,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.55,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.25,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Меньше 2.25",
+        "sources_count": 1
+      },
+      "best_confidence": 76.744,
+      "best_edge_pp": 3.869,
+      "best_ev_pct": 15.287,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Angers SCO",
+      "league_name": "France - Ligue 1",
+      "match_key": "soccer|angers sco|strasbourg alsace|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Atalanta BC",
+      "best_candidate": {
+        "adjusted_probability": 0.408521,
+        "books_count": 3,
+        "canonical_edge_pp": 3.335,
+        "canonical_ev_pct": 12.343,
+        "confidence": 75.012,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.75,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.0,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Больше 3",
+        "sources_count": 1
+      },
+      "best_confidence": 75.012,
+      "best_edge_pp": 3.335,
+      "best_ev_pct": 12.343,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T18:45:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AC Milan",
+      "league_name": "Italy - Serie A",
+      "match_key": "soccer|atalanta|milan|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Olympique Lyon",
+      "best_candidate": {
+        "adjusted_probability": 0.481747,
+        "books_count": 4,
+        "canonical_edge_pp": 3.135,
+        "canonical_ev_pct": 8.875,
+        "confidence": 76.666,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.26,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Меньше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 76.666,
+      "best_edge_pp": 3.135,
+      "best_ev_pct": 8.875,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Toulouse FC",
+      "league_name": "France - Ligue 1",
+      "match_key": "soccer|olympique lyon|toulouse|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "FC Lorient",
+      "best_candidate": {
+        "adjusted_probability": 0.459865,
+        "books_count": 3,
+        "canonical_edge_pp": 3.024,
+        "canonical_ev_pct": 8.528,
+        "confidence": 74.006,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.36,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Меньше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 74.006,
+      "best_edge_pp": 3.024,
+      "best_ev_pct": 8.528,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FC Metz",
+      "league_name": "France - Ligue 1",
+      "match_key": "soccer|lorient|metz|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Huachipato",
+      "best_candidate": {
+        "adjusted_probability": 0.488002,
+        "books_count": 3,
+        "canonical_edge_pp": 3.074,
+        "canonical_ev_pct": 8.337,
+        "confidence": 74.168,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.22,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 74.168,
+      "best_edge_pp": 3.074,
+      "best_ev_pct": 8.337,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Coquimbo Unido",
+      "league_name": "Chile - Copa de la Liga",
+      "match_key": "soccer|coquimbo unido|huachipato|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Olympique Marseille",
+      "best_candidate": {
+        "adjusted_probability": 0.511599,
+        "books_count": 4,
+        "canonical_edge_pp": 3.078,
+        "canonical_ev_pct": 7.947,
+        "confidence": 76.481,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.11,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.0,
+        "reject_reasons": [],
+        "selection": "Больше 3",
+        "sources_count": 1
+      },
+      "best_confidence": 76.481,
+      "best_edge_pp": 3.078,
+      "best_ev_pct": 7.947,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Le Havre AC",
+      "league_name": "France - Ligue 1",
+      "match_key": "soccer|le havre|olympique marseille|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "US Salernitana",
+      "best_candidate": {
+        "adjusted_probability": 0.459763,
+        "books_count": 3,
+        "canonical_edge_pp": 2.892,
+        "canonical_ev_pct": 7.585,
+        "confidence": 73.577,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.34,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 73.577,
+      "best_edge_pp": 2.892,
+      "best_ev_pct": 7.585,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Casertana FC",
+      "league_name": "Italy - Serie C,  Promotion Playoffs",
+      "match_key": "soccer|casertana|us salernitana|2026-05-10",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Real Madrid",
+      "best_candidate": {
+        "adjusted_probability": 0.520187,
+        "books_count": 4,
+        "canonical_edge_pp": 2.975,
+        "canonical_ev_pct": 7.159,
+        "confidence": 76.146,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.06,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.5,
+        "reject_reasons": [],
+        "selection": "Меньше 3.5",
+        "sources_count": 1
+      },
+      "best_confidence": 76.146,
+      "best_edge_pp": 2.975,
+      "best_ev_pct": 7.159,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "FC Barcelona",
+      "league_name": "Spain - LaLiga",
+      "match_key": "soccer|barcelona|real madrid|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Stade Brest 29",
+      "best_candidate": {
+        "adjusted_probability": 0.451692,
+        "books_count": 3,
+        "canonical_edge_pp": 2.734,
+        "canonical_ev_pct": 6.599,
+        "confidence": 73.066,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.36,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 3.25,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Меньше 3.25",
+        "sources_count": 1
+      },
+      "best_confidence": 73.066,
+      "best_edge_pp": 2.734,
+      "best_ev_pct": 6.599,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Paris Saint-Germain",
+      "league_name": "France - Ligue 1",
+      "match_key": "soccer|paris saint germain|stade brest 29|2026-05-10",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "OGC Nice",
+      "best_candidate": {
+        "adjusted_probability": 0.525808,
+        "books_count": 4,
+        "canonical_edge_pp": 2.833,
+        "canonical_ev_pct": 6.213,
+        "confidence": 75.687,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.02,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.687,
+      "best_edge_pp": 2.833,
+      "best_ev_pct": 6.213,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-05-10T19:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AJ Auxerre",
+      "league_name": "France - Ligue 1",
+      "match_key": "soccer|aj auxerre|ogc nice|2026-05-10",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    }
+  ]
 }
