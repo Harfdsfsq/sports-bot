@@ -89,6 +89,21 @@ def deep_int(payload: Any, names: set[str], default: int = 0) -> int:
     return best
 
 
+def max_int_from(row: dict[str, Any], *names: str) -> int:
+    best = 0
+    containers: list[Any] = [row]
+    for key in ('best_candidate', 'source_summary', 'integrity_report', 'metadata'):
+        value = row.get(key)
+        if isinstance(value, dict):
+            containers.append(value)
+    for container in containers:
+        if not isinstance(container, dict):
+            continue
+        for name in names:
+            best = max(best, as_int(container.get(name)))
+    return best
+
+
 def runtime_counts_from_debug(debug: Any) -> dict[str, int]:
     if not isinstance(debug, dict):
         return {}
@@ -158,8 +173,11 @@ def recompute_counts(matches: list[dict[str, Any]], now: datetime, runtime_count
         if not isinstance(row, dict):
             continue
         coverage = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
-        has_odds = bool(coverage.get('odds'))
-        has_context = bool(coverage.get('context'))
+        metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
+        odds_sources = max_int_from(metadata, 'odds_sources_count', 'independent_odds_sources_count', 'price_sources_count')
+        context_sources = max_int_from(metadata, 'context_sources_count', 'confirmation_sources_count')
+        has_odds = bool(coverage.get('odds')) or odds_sources > 0
+        has_context = bool(coverage.get('context')) or context_sources > 0
         ready = bool(coverage.get('ready_for_model')) or (has_odds and has_context)
         counts['matches_with_odds'] += int(has_odds)
         counts['matches_with_context'] += int(has_context)
@@ -180,8 +198,6 @@ def recompute_counts(matches: list[dict[str, Any]], now: datetime, runtime_count
             counts['matches_next_12h'] += 1
             counts['matches_next_12h_ready'] += int(ready)
 
-    # Runtime debug can prove that context/model-ready rows existed even when
-    # sparse per-match coverage rows did not map one-to-one back into inventory.
     runtime_ready = as_int(runtime_counts.get('matches_ready_for_model'))
     runtime_odds = as_int(runtime_counts.get('matches_with_odds'))
     runtime_context = as_int(runtime_counts.get('matches_with_context'))
@@ -247,10 +263,27 @@ def main() -> int:
         if row:
             candidate_count = as_int(row.get('candidate_count'))
             controlled_count = as_int(row.get('controlled_count'))
-            books_max = as_int(row.get('books_max'))
-            sources_max = as_int(row.get('sources_max'))
-            has_odds = candidate_count > 0 or books_max > 0
-            has_context = candidate_count > 0 or sources_max > 1
+            books_max = max_int_from(row, 'books_max', 'books_count', 'odds_books_count')
+            odds_sources_max = max_int_from(
+                row,
+                'odds_sources_max',
+                'odds_sources_count',
+                'price_sources_count',
+                'independent_odds_sources_count',
+                'sources_max',
+                'sources_count',
+            )
+            context_sources_max = max_int_from(
+                row,
+                'context_sources_max',
+                'confirmation_sources_max',
+                'context_sources_count',
+                'confirmation_sources_count',
+            )
+            # Backward compatibility: old coverage rows used sources_max for odds sources.
+            sources_max = max(odds_sources_max, context_sources_max, as_int(row.get('sources_max')))
+            has_odds = candidate_count > 0 or books_max > 0 or odds_sources_max > 0
+            has_context = candidate_count > 0 or context_sources_max > 0
             ready_for_model = candidate_count > 0 or (has_odds and has_context)
             ready_for_publish = key in selected_keys or controlled_count > 0
             coverage['fixture_core'] = True
@@ -267,6 +300,15 @@ def main() -> int:
             metadata['latest_controlled_count'] = controlled_count
             metadata['latest_books_max'] = books_max
             metadata['latest_sources_max'] = sources_max
+            metadata['latest_odds_sources_max'] = odds_sources_max
+            metadata['latest_context_sources_max'] = context_sources_max
+            metadata['latest_confirmation_sources_max'] = context_sources_max
+            metadata['odds_sources_count'] = max(as_int(metadata.get('odds_sources_count')), odds_sources_max)
+            metadata['independent_odds_sources_count'] = max(as_int(metadata.get('independent_odds_sources_count')), odds_sources_max)
+            metadata['price_sources_count'] = max(as_int(metadata.get('price_sources_count')), odds_sources_max)
+            metadata['context_sources_count'] = max(as_int(metadata.get('context_sources_count')), context_sources_max)
+            metadata['confirmation_sources_count'] = max(as_int(metadata.get('confirmation_sources_count')), context_sources_max)
+            metadata['sources_count'] = max(as_int(metadata.get('sources_count')), sources_max)
             metadata['latest_best_ev_pct'] = round(as_float(row.get('best_ev_pct')), 3)
             metadata['latest_best_edge_pp'] = round(as_float(row.get('best_edge_pp')), 3)
             metadata['latest_best_confidence'] = round(as_float(row.get('best_confidence')), 3)
@@ -344,6 +386,7 @@ def main() -> int:
             'Near-window inventory is recomputed from now, not from the inventory calendar boundary.',
             'The Telegram detailed report now reads the post-merge summary instead of stale pre-run bootstrap counts.',
             'If per-match coverage rows are sparse, runtime debug counters are used as a conservative readiness floor for 6h/12h windows.',
+            'Separate odds/context source counters are persisted in match metadata for cumulative coverage and publish-readiness audits.',
         ],
     }
     write_json(EXPORT_PATH, report)
