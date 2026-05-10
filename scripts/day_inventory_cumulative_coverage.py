@@ -134,6 +134,11 @@ def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
     steps: list[dict[str, Any]] = []
     steps.append(run_python_script(ROOT / 'scripts' / 'match_data_coverage_report.py'))
     steps.append(run_python_script(ROOT / 'scripts' / 'merge_run_coverage_into_day_inventory.py'))
+    # Repair per-match source counters after the run/fallback artifacts exist.
+    # This is intentionally after merge_run_coverage_into_day_inventory.py so
+    # cumulative coverage sees bookmaker-confirmed price depth and independent
+    # context confirmations instead of stale bootstrap counters.
+    steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_source_counts.py'))
     return steps
 
 
@@ -161,6 +166,9 @@ def main() -> int:
         slot['seen'] += 1
         odds_sources = source_count(
             row,
+            'price_confirmation_sources_count',
+            'latest_books_max',
+            'books_count',
             'odds_sources_count',
             'latest_odds_sources_max',
             'price_sources_count',
@@ -213,8 +221,9 @@ def main() -> int:
         'notes': [
             'current_by_kickoff_window is the live rolling window and can shrink when matches start.',
             'by_kickoff_window is the cumulative high watermark and should only grow during the local day.',
-            'ready_for_publish requires at least 2 odds sources and 2 context/confirmation sources by default.',
-            'Before calculating cumulative coverage this script rebuilds latest-match-data coverage and merges it into day inventory.',
+            'ready_for_publish requires at least 2 price confirmations and 2 context/confirmation sources by default.',
+            'Price confirmations can come from distinct bookmakers/lines even when the API provider is still odds_api_io.',
+            'Before calculating cumulative coverage this script rebuilds latest-match-data coverage, merges it into day inventory, and repairs source counters.',
         ],
     }
     inv['coverage_progress'] = progress
