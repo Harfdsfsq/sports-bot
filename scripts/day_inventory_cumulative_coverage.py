@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import runpy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -63,7 +64,7 @@ def as_int(value: Any, default: int = 0) -> int:
 def source_count(row: dict[str, Any], *names: str) -> int:
     best = 0
     containers = [row]
-    for key in ('metadata', 'source_summary', 'market_summary', 'price_summary'):
+    for key in ('metadata', 'source_summary', 'market_summary', 'price_summary', 'integrity_report'):
         val = row.get(key)
         if isinstance(val, dict):
             containers.append(val)
@@ -104,7 +105,40 @@ def empty_bucket() -> dict[str, Any]:
     }
 
 
+def run_python_script(path: Path) -> dict[str, Any]:
+    started = datetime.now(UTC).isoformat()
+    try:
+        if not path.exists():
+            return {'path': str(path), 'status': 'skipped', 'reason': 'missing', 'started_at_utc': started}
+        runpy.run_path(str(path), run_name='__main__')
+        return {'path': str(path), 'status': 'ok', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat()}
+    except SystemExit as exc:
+        code = getattr(exc, 'code', 0)
+        if code in (0, None):
+            return {'path': str(path), 'status': 'ok', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'code': code}
+        return {'path': str(path), 'status': 'error', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'code': code}
+    except Exception as exc:
+        return {
+            'path': str(path),
+            'status': 'error',
+            'started_at_utc': started,
+            'finished_at_utc': datetime.now(UTC).isoformat(),
+            'error': f'{type(exc).__name__}: {exc}',
+        }
+
+
+def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
+    # The workflow calls only this script after the bot run. Make this script
+    # self-contained so the cumulative audit cannot accidentally read stale
+    # source counters from the bootstrap inventory.
+    steps: list[dict[str, Any]] = []
+    steps.append(run_python_script(ROOT / 'scripts' / 'match_data_coverage_report.py'))
+    steps.append(run_python_script(ROOT / 'scripts' / 'merge_run_coverage_into_day_inventory.py'))
+    return steps
+
+
 def main() -> int:
+    pipeline_steps = ensure_latest_run_coverage_merged()
     now = datetime.now(UTC)
     d = target_date()
     inv_path = ROOT / '.data' / 'day_inventory' / f'{d}.json'
@@ -125,8 +159,22 @@ def main() -> int:
         b = bucket((kickoff - now).total_seconds() / 60.0)
         slot = current.setdefault(b, empty_bucket())
         slot['seen'] += 1
-        odds_sources = source_count(row, 'odds_sources_count', 'price_sources_count', 'independent_odds_sources_count')
-        context_sources = source_count(row, 'context_sources_count', 'sources_count', 'confirmation_sources_count')
+        odds_sources = source_count(
+            row,
+            'odds_sources_count',
+            'latest_odds_sources_max',
+            'price_sources_count',
+            'independent_odds_sources_count',
+            'exact_price_sources_count',
+            'exact_sources_count',
+        )
+        context_sources = source_count(
+            row,
+            'context_sources_count',
+            'latest_context_sources_max',
+            'confirmation_sources_count',
+            'latest_confirmation_sources_max',
+        )
         has_odds = bool_cov(row, 'odds') or odds_sources > 0
         has_context = bool_cov(row, 'context') or context_sources > 0
         ready_model = bool_cov(row, 'ready_for_model') or (has_odds and has_context)
@@ -159,12 +207,14 @@ def main() -> int:
         'date_local': d,
         'min_odds_sources': min_odds_sources,
         'min_context_sources': min_context_sources,
+        'coverage_pipeline_steps': pipeline_steps,
         'current_by_kickoff_window': current,
         'by_kickoff_window': high_watermark,
         'notes': [
             'current_by_kickoff_window is the live rolling window and can shrink when matches start.',
             'by_kickoff_window is the cumulative high watermark and should only grow during the local day.',
             'ready_for_publish requires at least 2 odds sources and 2 context/confirmation sources by default.',
+            'Before calculating cumulative coverage this script rebuilds latest-match-data coverage and merges it into day inventory.',
         ],
     }
     inv['coverage_progress'] = progress
@@ -183,6 +233,7 @@ def main() -> int:
         'matches_total': len(matches),
         'min_odds_sources': min_odds_sources,
         'min_context_sources': min_context_sources,
+        'coverage_pipeline_steps': pipeline_steps,
         'current_by_kickoff_window': current,
         'cumulative_high_watermark_by_kickoff_window': high_watermark,
         'missing_2plus_source_examples': samples_missing,
