@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""Repository-wide startup hook for the main HARIZON runtime.
-
-GitHub Actions starts the bot with `python - <<PY`, so Python imports this file
-from the repository root before `app.cli` is executed.  Keep this hook narrow:
-1. apply the HARIZON phase policy for the main run;
-2. install the final Telegram pick safety guard.
-"""
-
 import os
 import sys
 from datetime import datetime, timezone
@@ -20,17 +12,8 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 
-def _truthy(value: object) -> bool:
-    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
-
-
 def _set(name: str, value: str) -> None:
     os.environ[name] = str(value)
-
-
-def _set_default(name: str, value: str) -> None:
-    if not str(os.getenv(name) or "").strip():
-        os.environ[name] = str(value)
 
 
 def _local_hour() -> int:
@@ -55,9 +38,6 @@ def _runtime_phase() -> str:
 
 
 def _apply_common_prediction_contract() -> None:
-    # Publication contract: the channel should receive only picks with enough
-    # independent market evidence. Context sources can explain the bet, but they
-    # must not count as price confirmation.
     common = {
         "HARIZON_PHASE_POLICY_ENABLED": "true",
         "DAY_INVENTORY_USE_FOR_RUN": "true",
@@ -85,26 +65,26 @@ def _apply_common_prediction_contract() -> None:
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EV_PCT": "8.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_CONFIDENCE": "78.0",
         "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_QUALITY": "78.0",
+        "SECONDARY_ODDS_RESCUE_ENABLED": "true",
+        "SECONDARY_ODDS_RESCUE_FORCE_RAPIDAPI_REFRESH": "true",
+        "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "80",
     }
     for key, value in common.items():
         _set(key, value)
 
 
-def _apply_phase_policy() -> None:
-    phase = _runtime_phase()
-    _set("HARIZON_RUN_PHASE_EFFECTIVE", phase)
-    _apply_common_prediction_contract()
-
+def _phase_env(phase: str) -> dict[str, str]:
+    base = {
+        "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
+        "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
+        "FIXTURE_EXPANSION_ENABLED": "true",
+        "RUN_DAYS_AHEAD": "1",
+        "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth",
+    }
     if phase == "full_inventory":
-        # First daily run: spend requests on discovering the whole football day.
-        # Do not waste the night slot on heavy context for matches with no price.
-        env = {
-            "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
-            "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
+        base.update({
             "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
             "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true",
-            "FIXTURE_EXPANSION_ENABLED": "true",
-            "RUN_DAYS_AHEAD": "1",
             "PUBLISH_WINDOW_HOURS": "24",
             "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36",
             "ODDS_API_IO_PAGE_LIMIT": "100",
@@ -116,19 +96,12 @@ def _apply_phase_policy() -> None:
             "WEATHER_CONTEXT_MATCH_LIMIT": "12",
             "NEWSAPI_MATCH_LIMIT": "0",
             "GNEWS_MATCH_LIMIT": "0",
-            "SECONDARY_ODDS_RESCUE_ENABLED": "true",
             "SECONDARY_ODDS_RESCUE_TRIGGER": "odds_api_io_empty_or_thin",
-        }
+        })
     elif phase == "morning_backfill":
-        # Morning: odds for near-window first, then fill missing line/context on
-        # the rest of the active day inventory if quota remains.
-        env = {
-            "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
-            "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
+        base.update({
             "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false",
             "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
-            "FIXTURE_EXPANSION_ENABLED": "true",
-            "RUN_DAYS_AHEAD": "1",
             "PUBLISH_WINDOW_HOURS": "12",
             "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "24",
             "ODDS_API_IO_PAGE_LIMIT": "100",
@@ -138,19 +111,11 @@ def _apply_phase_policy() -> None:
             "CONTEXT_ENRICHMENT_MATCH_LIMIT": "260",
             "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96",
             "WEATHER_CONTEXT_MATCH_LIMIT": "24",
-            "SECONDARY_ODDS_RESCUE_ENABLED": "true",
-            "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth",
-        }
+        })
     else:
-        # Day/evening live refresh: protect quotas and concentrate on matches
-        # that can still be published in the next 12 hours.
-        env = {
-            "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
-            "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
+        base.update({
             "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false",
             "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
-            "FIXTURE_EXPANSION_ENABLED": "true",
-            "RUN_DAYS_AHEAD": "1",
             "PUBLISH_WINDOW_HOURS": "12",
             "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "18",
             "ODDS_API_IO_PAGE_LIMIT": "100",
@@ -160,13 +125,17 @@ def _apply_phase_policy() -> None:
             "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240",
             "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96",
             "WEATHER_CONTEXT_MATCH_LIMIT": "24",
-            "SECONDARY_ODDS_RESCUE_ENABLED": "true",
-            "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth",
-        }
+        })
+    return base
 
+
+def _apply_phase_policy() -> None:
+    phase = _runtime_phase()
+    _set("HARIZON_RUN_PHASE_EFFECTIVE", phase)
+    _apply_common_prediction_contract()
+    env = _phase_env(phase)
     for key, value in env.items():
         _set(key, value)
-
     try:
         out = ROOT / ".data" / "exports" / "latest-run-phase-policy.env"
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -174,6 +143,33 @@ def _apply_phase_policy() -> None:
         out.write_text("\n".join(lines) + "\n", encoding="utf-8")
     except Exception:
         pass
+
+
+def _install_runtime_guards() -> None:
+    try:
+        import telegram_controlled_pick_safety
+        telegram_controlled_pick_safety.install()
+    except Exception as exc:
+        try:
+            print(f"root sitecustomize telegram safety skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+    try:
+        from app.providers import rapidapi_odds_bridge_schema_patch
+        rapidapi_odds_bridge_schema_patch.install()
+    except Exception as exc:
+        try:
+            print(f"root sitecustomize rapidapi schema skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+    try:
+        from app.providers import odds_api_io_secondary_rescue_patch
+        odds_api_io_secondary_rescue_patch.install()
+    except Exception as exc:
+        try:
+            print(f"root sitecustomize odds secondary skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
 
 
 try:
@@ -184,12 +180,4 @@ except Exception as exc:
     except Exception:
         pass
 
-try:
-    import telegram_controlled_pick_safety
-
-    telegram_controlled_pick_safety.install()
-except Exception as exc:
-    try:
-        print(f"root sitecustomize telegram safety skipped: {type(exc).__name__}: {exc}")
-    except Exception:
-        pass
+_install_runtime_guards()
