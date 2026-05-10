@@ -155,15 +155,9 @@ def _should_trigger(provider_name: str, base_offers: Any) -> tuple[bool, str]:
     base_count = _count_offers(base_offers)
     min_primary = max(1, _to_int(os.getenv('SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS') or 80, 80))
     auto_modes = {
-        'auto',
-        'primary',
-        'primary_odds',
-        'primary_odds_non_empty',
-        'odds_api_io_empty_or_thin',
-        'thin_primary_market_depth',
-        'thin_primary_depth',
-        'market_depth_rescue',
-        'secondary_odds_rescue',
+        'auto', 'primary', 'primary_odds', 'primary_odds_non_empty',
+        'odds_api_io_empty_or_thin', 'thin_primary_market_depth',
+        'thin_primary_depth', 'market_depth_rescue', 'secondary_odds_rescue',
     }
     if mode in auto_modes:
         if base_count >= min_primary:
@@ -194,19 +188,19 @@ async def _fetch_rapidapi_secondary(runner: Any, matches: list[Any]) -> tuple[di
 
 def install() -> dict[str, Any]:
     global _INSTALLED
-    if _INSTALLED:
-        return {'status': 'already_installed'}
     if not _truthy(os.getenv('SECONDARY_ODDS_RESCUE_ENABLED'), True):
         return {'status': 'disabled'}
     try:
         from app.services.runner import PredictionRunner
     except Exception as exc:
         return {'status': 'import_error', 'error': f'{type(exc).__name__}: {exc}'}
-    if getattr(PredictionRunner, '_harizon_secondary_odds_rescue_patch', False):
-        _INSTALLED = True
-        return {'status': 'already_patched'}
 
-    original_fetch_provider = PredictionRunner._fetch_provider
+    current_fetch_provider = PredictionRunner._fetch_provider
+    if getattr(current_fetch_provider, '_harizon_secondary_odds_rescue_wrapper', False):
+        _INSTALLED = True
+        return {'status': 'already_wrapped', 'trigger_mode': _trigger_mode()}
+
+    original_fetch_provider = current_fetch_provider
 
     async def _fetch_provider_patched(self, provider, method_name, *args, **kwargs):  # type: ignore[no-untyped-def]
         result = await original_fetch_provider(self, provider, method_name, *args, **kwargs)
@@ -228,6 +222,7 @@ def install() -> dict[str, Any]:
                 'base_offers': _count_offers(base_offers),
                 'trigger_reason': trigger_reason,
                 'trigger_mode': _trigger_mode(),
+                'wrapper_active': True,
             })
             return result
         lock = getattr(self, '_secondary_odds_rescue_lock', None)
@@ -249,6 +244,7 @@ def install() -> dict[str, Any]:
                 'trigger_mode': _trigger_mode(),
                 'base_offers': _count_offers(base_offers),
                 'target_matches': len(matches),
+                'wrapper_active': True,
                 'target_match_sample': [
                     {
                         'match_key': getattr(m, 'match_key', ''),
@@ -296,6 +292,7 @@ def install() -> dict[str, Any]:
             _write_report(payload)
             return merged_offers, base_stats, base_preview
 
+    _fetch_provider_patched._harizon_secondary_odds_rescue_wrapper = True  # type: ignore[attr-defined]
     PredictionRunner._fetch_provider = _fetch_provider_patched
     PredictionRunner._harizon_secondary_odds_rescue_patch = True
     _INSTALLED = True
@@ -305,5 +302,6 @@ def install() -> dict[str, Any]:
         'enabled': True,
         'executed': False,
         'trigger_mode': _trigger_mode(),
+        'wrapper_active': True,
     })
-    return {'status': 'installed', 'trigger_mode': _trigger_mode()}
+    return {'status': 'installed_or_rewrapped', 'trigger_mode': _trigger_mode()}
