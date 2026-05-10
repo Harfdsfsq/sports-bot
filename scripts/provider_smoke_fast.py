@@ -16,6 +16,8 @@ DIAG_JSON = OUT_DIR / "latest-provider-smoke-diagnostics.json"
 DIAG_TXT = OUT_DIR / "latest-provider-smoke-diagnostics.txt"
 MATCH_JSON = OUT_DIR / "latest-provider-smoke-matching-diagnostics.json"
 MATCH_TXT = OUT_DIR / "latest-provider-smoke-matching-diagnostics.txt"
+FULL_DATA_JSON = OUT_DIR / "latest-api-full-data-enrichment.json"
+FULL_DATA_TXT = OUT_DIR / "latest-api-full-data-enrichment.txt"
 
 
 def _arg_value(name: str) -> str | None:
@@ -55,6 +57,19 @@ if current_timeout < 18.0:
 if _arg_value("--repeats") is None and not os.getenv("PROVIDER_SMOKE_REPEATS"):
     _set_or_replace_arg("--repeats", "2")
 
+# Install runtime layers before provider smoke imports/instantiates providers.
+try:
+    from app.services import provider_matching_alias_runtime_patch
+    provider_matching_alias_runtime_patch.install()
+except Exception:
+    pass
+
+try:
+    from app.services import api_full_data_runtime_patch
+    api_full_data_runtime_patch.install()
+except Exception:
+    pass
+
 from scripts.provider_smoke_diagnostics_v4 import main as diagnostics_main  # noqa: E402
 
 
@@ -74,23 +89,19 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 def _append_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     current = path.read_text(encoding="utf-8") if path.exists() else ""
-    if "🧬 Provider matching diagnostics" in current:
+    first_line = text.strip().splitlines()[0] if text.strip().splitlines() else ""
+    if first_line and first_line in current:
         return
     path.write_text(current.rstrip() + "\n\n---\n\n" + text.strip() + "\n", encoding="utf-8")
 
 
 def _summarize_matching(payload: dict[str, Any]) -> dict[str, Any]:
     providers = payload.get("providers") if isinstance(payload.get("providers"), list) else []
-    return {
-        "providers_total": len(providers),
-        "matching_ok": sum(1 for row in providers if row.get("failure_stage") == "matching_ok"),
-        "partial_matching_low_yield": sum(1 for row in providers if row.get("failure_stage") == "partial_matching_low_yield"),
-        "normalization_or_time_matching_failed": sum(1 for row in providers if row.get("failure_stage") == "normalization_or_time_matching_failed"),
-        "no_fixture_overlap_with_odds_inventory": sum(1 for row in providers if row.get("failure_stage") == "no_fixture_overlap_with_odds_inventory"),
-        "team_form_coverage_ok": sum(1 for row in providers if row.get("failure_stage") == "team_form_coverage_ok"),
-        "parser_extract_failed": sum(1 for row in providers if row.get("failure_stage") == "parser_extract_failed"),
-        "request_or_empty_query": sum(1 for row in providers if row.get("failure_stage") == "request_or_empty_query"),
-    }
+    stages = [str(row.get("failure_stage") or "unknown") for row in providers]
+    out: dict[str, Any] = {"providers_total": len(providers)}
+    for stage in sorted(set(stages)):
+        out[stage] = stages.count(stage)
+    return out
 
 
 def _event_label(event: dict[str, Any] | None) -> str:
@@ -140,10 +151,13 @@ def _render_sample_block(provider: dict[str, Any]) -> list[str]:
             for sample in samples[:4]:
                 lines.append(f"    - {_event_label(sample)}")
     attempts = provider.get("attempts") if isinstance(provider.get("attempts"), list) else []
-    if stage in {"request_or_empty_query", "no_fixture_overlap_with_odds_inventory", "parser_extract_failed"} and attempts:
+    if stage in {"request_or_empty_query", "no_fixture_overlap_with_odds_inventory", "parser_extract_failed", "stale_provider_rows_date_filter_ignored"} and attempts:
         lines.append(f"  attempts for {name}:")
         for attempt in attempts[:3]:
             lines.append(f"    * http={attempt.get('http_status')} shape={attempt.get('payload_shape')} keys={attempt.get('params_keys')} url={attempt.get('url')}")
+    note = provider.get("diagnostic_note")
+    if note:
+        lines.append(f"  diagnostic_note: {note}")
     return lines
 
 
@@ -174,10 +188,39 @@ def _render_matching_text(payload: dict[str, Any]) -> str:
     return "\n".join(lines) + "\n"
 
 
+def _render_full_data_text(payload: dict[str, Any]) -> str:
+    lines = [
+        "🧩 API full-data enrichment diagnostics",
+        f"• updated_at_utc: {payload.get('updated_at_utc')}",
+        "",
+        "| api | requests | errors | cache files | key rows |",
+        "| --- | ---: | ---: | ---: | --- |",
+    ]
+    for api_name in ("bzzoiro", "football_data", "odds_api_io"):
+        section = payload.get(api_name)
+        if not isinstance(section, dict):
+            continue
+        requests = section.get("requests", 0)
+        errors = section.get("errors", 0)
+        cache_files = len(section.get("raw_cache_files") or [])
+        if api_name == "bzzoiro":
+            key_rows = f"live={section.get('live_rows_count', 0)}, events={len(section.get('event_ids') or [])}, teams={len(section.get('team_ids') or [])}, leagues={len(section.get('league_ids') or [])}"
+        elif api_name == "football_data":
+            key_rows = f"competitions={len(section.get('competition_refs') or [])}, teams_payloads={len(section.get('teams_by_competition') or {})}, scorers_payloads={len(section.get('scorers_by_competition') or {})}"
+        else:
+            key_rows = f"events={len(section.get('event_ids') or [])}, updated={section.get('updated_rows_count', 0)}, movements={len(section.get('movements_by_event') or {})}"
+        lines.append(f"| {api_name} | {requests} | {errors} | {cache_files} | {key_rows} |")
+    lines += ["", "🔎 Raw cache files are saved under .cache/api_raw/<api>/<date>/ and summarized in latest-api-full-data-enrichment.json."]
+    return "\n".join(lines) + "\n"
+
+
 async def _run_matching_diagnostics() -> dict[str, Any]:
     try:
-        from app.services import provider_smoke_matching_diagnostics
-        payload = await provider_smoke_matching_diagnostics.run()
+        try:
+            from app.services import provider_smoke_matching_diagnostics_v2 as matching_module
+        except Exception:
+            from app.services import provider_smoke_matching_diagnostics as matching_module
+        payload = await matching_module.run()
         MATCH_TXT.write_text(_render_matching_text(payload), encoding="utf-8")
         return payload
     except Exception as exc:
@@ -205,8 +248,26 @@ def _merge_matching_into_existing_reports(matching_payload: dict[str, Any]) -> N
         _append_text(DIAG_TXT, MATCH_TXT.read_text(encoding="utf-8"))
 
 
+def _merge_full_data_into_existing_reports() -> dict[str, Any]:
+    payload = _load_json(FULL_DATA_JSON)
+    if not payload:
+        return {}
+    FULL_DATA_TXT.write_text(_render_full_data_text(payload), encoding="utf-8")
+    diag = _load_json(DIAG_JSON)
+    if diag:
+        diag["api_full_data_enrichment"] = payload
+        _write_json(DIAG_JSON, diag)
+    if FULL_DATA_TXT.exists():
+        _append_text(DIAG_TXT, FULL_DATA_TXT.read_text(encoding="utf-8"))
+    return payload
+
+
 def main() -> int:
     status = diagnostics_main()
+    full_payload = _merge_full_data_into_existing_reports()
+    if full_payload and FULL_DATA_TXT.exists():
+        print("\n----- api full-data enrichment diagnostics txt -----")
+        print(FULL_DATA_TXT.read_text(encoding="utf-8"))
     if not _truthy("PROVIDER_SMOKE_MATCHING_DIAGNOSTICS_ENABLED", True):
         return status
     matching_payload = asyncio.run(_run_matching_diagnostics())
