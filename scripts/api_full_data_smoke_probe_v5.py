@@ -43,17 +43,15 @@ def _sport_candidates(event_rows: list[dict[str, Any]]) -> list[str]:
             if value in (None, ""):
                 continue
             if isinstance(value, dict):
-                for subkey in ("key", "id", "slug", "name"):
+                for subkey in ("key", "id", "slug"):
                     item = value.get(subkey)
                     if item not in (None, "") and str(item) not in values:
                         values.append(str(item))
             elif str(value) not in values:
                 values.append(str(value))
-    for fallback in str(os.getenv("API_FULL_SMOKE_ODDS_UPDATED_SPORTS") or "football,soccer").split(","):
-        item = fallback.strip()
-        if item and item not in values:
-            values.append(item)
-    return values[:4]
+    # Do not blindly add football/soccer here: /odds/updated can reject those.
+    # Event-derived sport ids/slugs are the reliable candidates.
+    return values[:3]
 
 
 async def _limited_get(client: httpx.AsyncClient, section: dict[str, Any], root: str, endpoint: str, params: dict[str, Any]) -> Any | None:
@@ -66,9 +64,6 @@ async def _limited_get(client: httpx.AsyncClient, section: dict[str, Any], root:
     before_errors = int(section.get("errors") or 0)
     payload = await base._get(client, "odds_api_io", f"{root}{endpoint}", endpoint=endpoint, params=params, section=section)
     if payload is None and endpoint == "/odds/movements":
-        # A 404/no-data response is useful information for a sampled event/market,
-        # not a provider outage. Keep it visible but do not let it dominate the
-        # full-data smoke status.
         section["errors"] = before_errors
         section.setdefault("diagnostic_examples", []).append(f"{endpoint}: no sampled movement for params")
     return payload
@@ -83,10 +78,13 @@ async def _probe_updated(
     event_rows: list[dict[str, Any]],
     now: datetime,
 ) -> None:
-    since_unix = str(int((now - timedelta(hours=6)).timestamp()))
+    # odds-api.io rejects stale `since`; keep it inside the last minute.
+    since_unix = str(int((now - timedelta(seconds=30)).timestamp()))
     rows: list[dict[str, Any]] = []
     used: dict[str, Any] = {}
-    for sport in _sport_candidates(event_rows):
+    candidates = _sport_candidates(event_rows)
+    section["updated_sport_candidates"] = candidates
+    for sport in candidates:
         params = {KEY_PARAM: secret, "since": since_unix, "sport": sport, BOOK_PARAM: book}
         payload = await _limited_get(client, section, root, "/odds/updated", params)
         if payload is not None:
@@ -94,6 +92,8 @@ async def _probe_updated(
             used = {"since": since_unix, "sport": sport, BOOK_PARAM: book}
             break
         await asyncio.sleep(0.1)
+    if not candidates:
+        section.setdefault("diagnostic_examples", []).append("/odds/updated: skipped because events did not expose a sport id")
     section["updated_rows_count"] = len(rows)
     section["updated_sample"] = rows[:5]
     section["updated_params_used"] = base._sanitize(used)
@@ -124,11 +124,12 @@ async def _probe_odds_api_io_safe(client: httpx.AsyncClient) -> dict[str, Any]:
 
     await _probe_updated(client, section, root, secret, book, event_rows, now)
 
+    # In the latest smoke, totals 2.5 was the first useful sampled movement; try it first.
     movement_variants = [
-        {"market": "1x2", LINE_PARAM: "0"},
-        {"market": "h2h", LINE_PARAM: "0"},
         {"market": "totals", LINE_PARAM: "2.5"},
         {"market": "spreads", LINE_PARAM: "0"},
+        {"market": "1x2", LINE_PARAM: "0"},
+        {"market": "h2h", LINE_PARAM: "0"},
     ]
     for event_id in event_ids:
         result = {"rows_count": 0, "sample": [], "params_used": {}}
