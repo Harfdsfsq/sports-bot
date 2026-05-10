@@ -114,8 +114,11 @@ def _prepare_args() -> None:
 
 async def _run_full_data_probe() -> dict[str, Any]:
     try:
-        from scripts import api_full_data_smoke_probe
-        return await api_full_data_smoke_probe.run()
+        try:
+            from scripts import api_full_data_smoke_probe_v2 as probe_module
+        except Exception:
+            from scripts import api_full_data_smoke_probe as probe_module
+        return await probe_module.run()
     except Exception as exc:
         payload = {
             "mode": "direct_full_data_smoke_probe",
