@@ -118,6 +118,12 @@ def _parse_text_metrics(text: str) -> dict[str, Any]:
     m = re.search(r"confirmation\s*sources\s*[:=]\s*(\d+)", low)
     if m:
         out["confirmation_sources"] = _as_int(m.group(1))
+    m = re.search(r"контекст\s*[:=]\s*(\d+)", low)
+    if m:
+        out["context_sources"] = _as_int(m.group(1))
+    m = re.search(r"подтверждени[яй]\s*[:=]\s*(\d+)", low)
+    if m:
+        out["confirmation_sources"] = max(_as_int(out.get("confirmation_sources")), _as_int(m.group(1)))
     m = re.search(r"качество\s+([0-9]+(?:[\.,][0-9]+)?)", low)
     if not m:
         m = re.search(r"quality\s+([0-9]+(?:[\.,][0-9]+)?)", low)
@@ -169,10 +175,22 @@ def _set_request_text(req: Any, text: str) -> Any:
 def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
     text_metrics = _parse_text_metrics(text)
     min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES", 2))
+    min_context_sources = max(
+        1,
+        _env_int(
+            "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES",
+            _env_int("PUBLISH_MIN_CONTEXT_SOURCES", _env_int("MIN_CONTEXT_SOURCES_PUBLISH", 2)),
+        ),
+    )
     min_quality = _env_float("CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY", 70.0)
     odds_sources = max(
         _as_int(text_metrics.get("odds_sources")),
-        _as_int(_metric(selected, "odds_sources_count", "price_sources_count", "independent_odds_sources_count")),
+        _as_int(_metric(selected, "odds_sources_count", "price_sources_count", "independent_odds_sources_count", "price_confirmation_sources_count", "books_count")),
+    )
+    context_sources = max(
+        _as_int(text_metrics.get("confirmation_sources")),
+        _as_int(text_metrics.get("context_sources")),
+        _as_int(_metric(selected, "confirmation_sources_count", "context_sources_count", "independent_context_sources_count", "latest_confirmation_sources_max", "latest_context_sources_max")),
     )
     quality = max(
         _as_float(text_metrics.get("quality")),
@@ -184,12 +202,16 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
         "selected_match_key": selected.get("match_key"),
         "odds_sources": odds_sources,
         "min_odds_sources": min_odds_sources,
+        "context_sources": context_sources,
+        "min_context_sources": min_context_sources,
         "quality": quality,
         "min_quality": min_quality,
         "tier": tier,
     }
     if _env_bool("CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM", True) and odds_sources < min_odds_sources:
         return True, f"telegram_price_odds_sources_below_min:{odds_sources}/{min_odds_sources}", details
+    if _env_bool("CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM", True) and context_sources < min_context_sources:
+        return True, f"telegram_context_sources_below_min:{context_sources}/{min_context_sources}", details
     if quality > 0 and quality < min_quality:
         return True, f"telegram_quality_below_min:{quality:.1f}/{min_quality:.1f}", details
     if tier == "B" and not _env_bool("CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B", False):
@@ -208,7 +230,9 @@ def install() -> None:
         "selected_match_key": selected.get("match_key"),
         "telegram_stake_percent_patch": True,
         "blocked_telegram_sends": 0,
-        "guard_version": "telegram-hard-odds-sources-quality-v2",
+        "telegram_send_attempts": 0,
+        "telegram_sends_succeeded": 0,
+        "guard_version": "telegram-hard-odds-context-sources-quality-v3",
     }
     _write_audit(audit)
 
@@ -216,6 +240,7 @@ def install() -> None:
         url = getattr(req, "full_url", None) or getattr(req, "get_full_url", lambda: "")()
         if "api.telegram.org" not in str(url) or "sendMessage" not in str(url):
             return _ORIGINAL_URL_OPEN(req, *args, **kwargs)
+        audit["telegram_send_attempts"] = int(audit.get("telegram_send_attempts") or 0) + 1
         text = _telegram_text(req)
         block, reason, details = _should_block_send(text, selected)
         audit["last_text_metrics"] = details
@@ -226,12 +251,21 @@ def install() -> None:
             _write_audit(audit)
             raise RuntimeError(f"controlled fallback telegram send blocked by prepublish guard: {reason}")
         req = _set_request_text(req, _enhance_stake_percent(text))
-        _write_audit(audit)
-        return _ORIGINAL_URL_OPEN(req, *args, **kwargs)
+        try:
+            response = _ORIGINAL_URL_OPEN(req, *args, **kwargs)
+            audit["telegram_sends_succeeded"] = int(audit.get("telegram_sends_succeeded") or 0) + 1
+            audit["last_send_status"] = "ok"
+            _write_audit(audit)
+            return response
+        except Exception as exc:
+            audit["last_send_status"] = "error"
+            audit["last_send_error"] = f"{type(exc).__name__}: {exc}"
+            _write_audit(audit)
+            raise
 
     url_request.urlopen = guarded_urlopen
     os.environ["CONTROLLED_FALLBACK_PREPUBLISH_GUARD_ACTIVE"] = "true"
     try:
-        print("controlled fallback prepublish guard active: telegram-hard-odds-sources-quality-v2")
+        print("controlled fallback prepublish guard active: telegram-hard-odds-context-sources-quality-v3")
     except Exception:
         pass
