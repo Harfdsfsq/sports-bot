@@ -1,22 +1,21 @@
 from __future__ import annotations
 
-"""Quota-safe wrapper around api_full_data_smoke_probe_v4.
+"""Quota-safe full-data smoke wrapper.
 
-v4 is useful for discovering odds-api.io extra endpoints, but a smoke run showed
-it can spend too many failed variant requests.  This wrapper keeps Bzzoiro and
-Football-Data full probes intact and caps odds-api.io extra endpoint probing so
-provider-smoke cannot burn the hourly quota before matching diagnostics runs.
+provider_smoke_fast currently imports v4, and v4 routes here. Therefore this
+file must not import v4. It wraps v3 with a hard request cap for odds-api.io extra
+endpoints so the smoke test cannot burn the hourly quota before matching
+inventory diagnostics run.
 """
 
 import asyncio
 import os
-from typing import Any
 
 from scripts import api_full_data_smoke_probe as base
-from scripts import api_full_data_smoke_probe_v4 as v4
+from scripts import api_full_data_smoke_probe_v3 as probe_base
 
 
-async def run() -> dict[str, Any]:
+async def run() -> dict:
     os.environ.setdefault("API_FULL_SMOKE_ODDS_EVENT_LIMIT", "1")
     os.environ.setdefault("API_FULL_SMOKE_ODDS_MARKETS", "1x2,h2h,totals")
     os.environ.setdefault("API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS", "12")
@@ -36,7 +35,7 @@ async def run() -> dict[str, Any]:
 
     base._get = capped_get
     try:
-        payload = await v4.run()
+        payload = await probe_base.run()
     finally:
         base._get = original_get
     payload["quota_safe_wrapper"] = {"odds_extra_requests_attempted": counter["odds_extra"], "cap": cap}
