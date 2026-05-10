@@ -28,7 +28,8 @@
       "ok": 5
     },
     "odds": {
-      "ok": 2
+      "ok": 1,
+      "rate_limited": 1
     },
     "odds_context": {
       "ok": 1
@@ -43,13 +44,37 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 16
+    "ok": 15,
+    "rate_limited": 1
   },
-  "created_at_utc": "2026-05-10T11:39:45.561652+00:00",
-  "critical_failures": [],
+  "created_at_utc": "2026-05-10T15:01:30.190667+00:00",
+  "critical_failures": [
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"error\":\"You have exceeded your rate limit of 100 requests per hour. It resets in 6 minutes and 16 seconds.\"}",
+        "bookmakers_account1": "Bet365,Unibet",
+        "bookmakers_account2": "Betfair Exchange,Sbobet",
+        "key2_present": true,
+        "payload_shape": "error",
+        "semantic_message": "provider_payload_error"
+      },
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T15%3A01%3A25Z&to=2026-05-12T15%3A01%3A25Z&limit=10&page=1",
+      "group": "odds",
+      "http_statuses": [
+        429
+      ],
+      "latency_ms": 373,
+      "message": "provider_payload_error",
+      "provider": "odds_api_io_events",
+      "requests": 1,
+      "status": "rate_limited",
+      "useful_rows": 0
+    }
+  ],
   "mode": "quick",
   "recommendations": [
-    "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
     "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
@@ -73,7 +98,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 4390,
+      "latency_ms": 4262,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -92,7 +117,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 918,
+      "latency_ms": 482,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -130,7 +155,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 293,
+      "latency_ms": 296,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -149,7 +174,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 571,
+      "latency_ms": 557,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -169,7 +194,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 191,
+      "latency_ms": 212,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -180,7 +205,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"f9152c99-3b5e-5619-9645-90ef53b164fa\",\"title\":\"\\u2018Fantastic\\u2019 star explodes in role shift\",\"description\":\"Izak Rankine was at his blistering best Adelaide fired in a nine-goal second half to fight off a plucky Richmond at the MCG, 14.14 (98) to 9.7 (61).\",\"url\":\"https://www.news.com.au/sport/afl/fantastic-star-explodes-in-role-shift-crows-flex-after-coachs-bake-321/news-story/62939fd99c68893d32e0bacc7387df4e\",\"author\":\"Ben Cotton\",\"image\":\"https://content.api.news/v3/images/bin/6861865b708a2a568950d2072235efdd\",\"language\":\"en\",\"category\":[\"sports\",\"regional\"],\"source_category\":[\"sports\",\"regional\"],\"published\":\"2026-05-10 11:32:59 +0000\"},{\"id\":\"05609224-4fce-525d-b870-d58964797a03\",\"title\":\"Horror crash as MotoGP star goes for surgery\",\"description\":\"MotoGP world champion Marc Marquez suffered a horrendous high-speed crash at the French Grand Prix sprint race on Saturday.\",\"url\":\"https://www.news.com.au/sport/motorsport/moto-gp/horror-crash-as-motogp-world-champion-goes-for-surgery/news-story/e2bee0e97c7e6d7e51c051f3279ed954\",\"author\":\"Dylan Terry\",\"image\":\"https://content.api.news/v3/images/bin/5ce6b2a6ea90afbd169ac380337f51b2\",\"language\":\"en\"",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"99650349-6099-5df0-8e44-8e152c6ba62a\",\"title\":\"Neuville makes most of Ogier puncture to win in Portugal\",\"description\":\"Belgian Thierry Neuville gave Hyundai a first win of the season in the Rally of Portugal after Toyota's overnight leader Sebastien Ogier suffered a puncture on the penultimate stage.\",\"url\":\"https://www.rte.ie/sport/motorsport/2026/0510/1572646-neuville-makes-most-of-ogier-puncture-to-win-in-portugal/\",\"author\":\"\",\"image\":\"https://www.rte.ie/images/002457a1-1600.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-10 14:50:21 +0000\"},{\"id\":\"853d3c93-23e6-58a0-ac9f-21881b02a64d\",\"title\":\"Alexander Zverev beats Alexander Blockx for the second time in nine days\",\"description\":\"The German world No. 3's 6-1, 6-4 Italian Open last-32 win follows his semi-final success over the Belgian in Madrid. Read more at straitstimes.com. Read more at straitstimes.com.\",\"url\":\"https://www.straitstimes.com/sport/tennis/alexander-zverev-beats-alexander-blockx-for-the-second-time-in-nine-days\",\"author\":\"\",\"image\":\"https://cassette.sphdigital.com.sg/image/straitstimes/25929897c89789d7daf934160f20475e29ddef3a4d7218bf54",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -188,7 +213,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 979,
+      "latency_ms": 493,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -199,7 +224,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318934,\"articles\":[{\"id\":\"ed41434241a9459b5d5446c3d55286c3\",\"title\":\"“I will never forget those words”: Hailee Steinfeld reveals emotional wedding moment with Josh Allen that changed everything\",\"description\":\"NFL News: Josh Allen and Hailee Steinfeld have spent the past year balancing fame, football, and a growing family. Now, the Buffalo Bills quarterback and the Ho.\",\"content\":\"Hailee Steinfeld shared an emotional memory from her 2025 wedding to Buffalo Bills quarterback Josh Allen, revealing that poet Amanda Gorman performed a custom poem during the ceremony. Steinfeld said the words deeply moved her and remains one of her... [3376 chars]\",\"url\":\"https://timesofindia.indiatimes.com/sports/nfl/news/i-will-never-forget-those-words-hailee-steinfeld-reveals-emotional-wedding-moment-with-josh-allen-that-changed-everything/articleshow/130978170.cms\",\"image\":\"https://static.toiimg.com/thumb/msid-130978170,width-1280,height-720,imgsize-45502,resizemode-6,overlay-toi_",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":318946,\"articles\":[{\"id\":\"7af7ebf15849681af944d029205ad34c\",\"title\":\"‘I regret bringing Messi to Kolkata. What if something happened to him?’ Satadru Dutta opens up on Salt Lake fiasco\",\"description\":\"Satadru Dutta breaks the silence in an explosive interview, blaming the police, administration and politicians for the Lionel Messi event chaos. | Football News\",\"content\":\"Question: We had spoken a couple of weeks before the Messi event, and you passionately explained the effort that went into convincing Lionel Messi to come to India. At what point did you realise things were beginning to spiral towards a crisis, and w... [6722 chars]\",\"url\":\"https://www.hindustantimes.com/sports/football/i-regret-bringing-lionel-messi-to-kolkata-what-if-something-happened-to-him-satadru-dutta-opens-up-on-salt-lake-fiasco-101778256519298.html\",\"image\":\"https://www.hindustantimes.com/ht-img/img/2026/05/08/550x309/Messi-Chaos-12_1765695482863_1765695494398_1778257685313.jpg\",\"publish",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -207,7 +232,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 391,
+      "latency_ms": 240,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -218,7 +243,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134269,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134269,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134274,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134274,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
         "payload_shape": "response"
       },
       "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
@@ -226,7 +251,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 707,
+      "latency_ms": 824,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -237,7 +262,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":23711,\"articles\":[{\"source\":{\"id\":null,\"name\":\"The Punch\"},\"author\":\"Punch Newspapers\",\"title\":\"FC Barcelona signs MoU to establish football academy in Bayelsa\",\"description\":\"FC Barcelona signs an MoU with Bayelsa State to establish a football academy, aiming to develop local youth talent and promote grassroots sports in Nigeria\\n\\nRead More: https://punchng.com/fc-barcelona-signs-mou-to-establish-football-academy-in-bayelsa/\",\"url\":\"https://punchng.com/fc-barcelona-signs-mou-to-establish-football-academy-in-bayelsa/\",\"urlToImage\":\"https://cdn.punchng.com/wp-content/uploads/2021/08/05233649/FC-Bacelona.jpg\",\"publishedAt\":\"2026-05-09T11:38:51Z\",\"content\":\"Bayelsa State and Spainish football giant, Barcelona, have signed a Memorandum of Understanding to establish a football academy in the state.\\r\\nThe Commissioner for Sports, Dr Daniel Igali, signed on … [+4615 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":23662,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Managing Madrid\"},\"author\":\"Managing Madrid\",\"title\":\"Real Madrid’s Coaching Search Intensifies As Mourinho Emerges As Leading Candidate\",\"description\":\"Real Madrid are narrowing their managerial shortlist — and José Mourinho is increasingly viewed as the frontrunner\",\"url\":\"https://www.managingmadrid.com/real-madrid-cf-transfer-talk/107490/real-madrids-coaching-search-intensifies-as-mourinho-emerges-as-leading-candidate\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/D8fjrBetJe86DBv0H8clYw--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04OTI7Y2Y9d2VicA--/https://media.zenfs.com/en/sb_nation_articles_115/1be6e0cf154856c5575aafe52aed5d34\",\"publishedAt\":\"2026-05-09T15:00:57Z\",\"content\":\"Real Madrid are approaching a pivotal summer, and after a season that now appears destined to end without silverware, the clubs focus has shifted fully toward rebuilding for next year.\\r\\nThe aftermath… [+4086 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -245,7 +270,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 247,
+      "latency_ms": 145,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -256,7 +281,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":9323,\"results\":[{\"article_id\":\"88e5c8e5522c2b87dc3b29793fc7293c\",\"link\":\"https://www.ghanamma.com/2026/05/09/black-starlets-end-preparations-with-narrow-defeat-to-mali/\",\"title\":\"Black Starlets End Preparations with Narrow Defeat to Mali\",\"description\":\"The Black Starlets wrapped up their preparations for the 2026 U17 Africa Cup of Nations with a narrow 1-0 defeat to Mali in their final friendly game played on Sunday in Mohammadia, Morocco. A solitary own goal in the 65th minute separated the two sides in a fiercely contested encounter, as the Starlets produced an [...] The post Black Starlets End Preparations with Narrow Defeat to Mali appeared first on Ghanamma.com .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":[\"ghana news\"],\"language\":\"english\",\"country\":[\"ghana\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-09 23:38:33\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-09 23:47:18\",\"image_url\":\"https://www.ghanamma.com/wp-content/uploads/2026/05/WhatsApp-Image-2026-05-09-at-20.47.43-2-610x400.jpeg\",\"video_url\":null,\"source_id\":\"ghanamma\",\"source_name\":\"Ghanamma\",\"source_priority\":1255021,\"source_url\":\"https://",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":8457,\"results\":[{\"article_id\":\"3f7655da796d205b1d4da8c927bdb80b\",\"link\":\"https://www.bordermail.com.au/story/9243024/wangaratta-secures-thumping-win-after-controversial-send-offs/?src=rss\",\"title\":\"Two send-offs in a controversial clash as the Pies enhance their reputation\",\"description\":\"Wangaratta and Myrtleford met in a top three clash.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"subscriber-only\",\"ovens-murray\",\"news\",\"ovens-and-murray-league\",\"australian-rules\",\"facebook\",\"sports-updates-list\",\"daily-newsletter-list\",\"sport\",\"video\"],\"creator\":[\"andrew moir\"],\"language\":\"english\",\"country\":[\"australia\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-10 03:00:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-10 03:18:50\",\"image_url\":null,\"video_url\":null,\"source_id\":\"bordermail\",\"source_name\":\"The Border Mail\",\"source_priority\":2185061,\"source_url\":\"https://www.bordermail.com.au\",\"source_icon\":\"https://n.bytvi.com/bordermail.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_tag\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLAN",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -264,7 +289,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 369,
+      "latency_ms": 217,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -275,23 +300,24 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":69972716,\"home\":\"NK Hrvace\",\"away\":\"NK Opatija\",\"homeId\":6670,\"awayId\":44480,\"date\":\"2026-05-10T11:45:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Croatia - Prva NL\",\"slug\":\"croatia-prva-nl\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":66636940,\"home\":\"Csm Unirea Alba Iulia\",\"away\":\"VASAS FEMINA FC\",\"homeId\":1049457,\"awayId\":293954,\"date\":\"2026-05-10T12:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Romania - Superliga, Women\",\"slug\":\"romania-superliga-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70906478,\"home\":\"Ararat Yerevan FC\",\"away\":\"FC Urartu Yerevan\",\"homeId\":5377,\"awayId\":5225,\"date\":\"2026-05-10T12:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Armenia - Premier League\",\"slug\":\"armenia-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67126534,\"home\":\"AIK\",\"away\":\"Djurgardens IF\",\"homeId\":1764,\"awayId\":1759,\"date\":\"2026-05-10T12:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Sweden - Allsvenskan\",\"slug\":\"sweden-allsvenskan\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67126548,\"home\":\"Kalmar FF\",\"away\":\"Halm",
+        "body_preview": "{\"error\":\"You have exceeded your rate limit of 100 requests per hour. It resets in 6 minutes and 16 seconds.\"}",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
-        "payload_shape": "list"
+        "payload_shape": "error",
+        "semantic_message": "provider_payload_error"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T11%3A39%3A41Z&to=2026-05-12T11%3A39%3A41Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T15%3A01%3A25Z&to=2026-05-12T15%3A01%3A25Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
-        200
+        429
       ],
-      "latency_ms": 540,
-      "message": "ok",
+      "latency_ms": 373,
+      "message": "provider_payload_error",
       "provider": "odds_api_io_events",
       "requests": 1,
-      "status": "ok",
-      "useful_rows": 10
+      "status": "rate_limited",
+      "useful_rows": 0
     },
     {
       "configured": true,
@@ -306,7 +332,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 633,
+      "latency_ms": 509,
       "message": "ok",
       "provider": "sportlogic",
       "requests": 1,
@@ -325,7 +351,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 461,
+      "latency_ms": 390,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -352,7 +378,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-05-05 07:27:34\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-08 19:17:19\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -360,7 +386,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 304,
+      "latency_ms": 177,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -371,7 +397,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":12.74,\"feels_like\":11.79,\"temp_min\":11.86,\"temp_max\":14.16,\"pressure\":1016,\"humidity\":66,\"sea_level\":1016,\"grnd_level\":1012},\"visibility\":10000,\"wind\":{\"speed\":5.66,\"deg\":40},\"clouds\":{\"all\":100},\"dt\":1778412849,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778386604,\"sunset\":1778441828},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":12.38,\"feels_like\":11.37,\"temp_min\":11.64,\"temp_max\":13.08,\"pressure\":1015,\"humidity\":65,\"sea_level\":1015,\"grnd_level\":1011},\"visibility\":10000,\"wind\":{\"speed\":5.66,\"deg\":30},\"clouds\":{\"all\":100},\"dt\":1778425170,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778386604,\"sunset\":1778441828},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -379,7 +405,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 193,
+      "latency_ms": 128,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -390,7 +416,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778413162,\"localtime\":\"2026-05-10 12:39\"},\"current\":{\"last_updated_epoch\":1778412600,\"last_updated\":\"2026-05-10 12:30\",\"temp_c\":12.3,\"temp_f\":54.1,\"is_day\":1,\"condition\":{\"text\":\"Partly cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":13.0,\"wind_kph\":20.9,\"wind_degree\":43,\"wind_dir\":\"NE\",\"pressure_mb\":1017.0,\"pressure_in\":30.03,\"precip_mm\":0.03,\"precip_in\":0.0,\"humidity\":67,\"cloud\":75,\"feelslike_c\":10.2,\"feelslike_f\":50.4,\"windchill_c\":11.4,\"windchill_f\":52.5,\"heatindex_c\":13.2,\"heatindex_f\":55.8,\"dewpoint_c\":5.3,\"dewpoint_f\":41.6,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":4.7,\"gust_mph\":14.9,\"gust_kph\":24.0,\"will_it_rain\":0,\"chance_of_rain\":62,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-10\",\"date_epoch\":1778371200,\"day\":{\"maxtemp_c\":13.9,\"maxtemp_f\":57.1,\"mintemp_c\":6.7,\"mintemp_f\":44.1,\"avgtemp_c\":10.7,\"avgtemp_f\":51.2,\"maxwind_mph\":14.3,\"maxwind_kph\":23.0,\"totalprecip_mm\":0.21,\"totalprecip_in\":0.01,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_mile",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778425288,\"localtime\":\"2026-05-10 16:01\"},\"current\":{\"last_updated_epoch\":1778425200,\"last_updated\":\"2026-05-10 16:00\",\"temp_c\":13.2,\"temp_f\":55.8,\"is_day\":1,\"condition\":{\"text\":\"Partly cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":13.0,\"wind_kph\":20.9,\"wind_degree\":38,\"wind_dir\":\"NE\",\"pressure_mb\":1016.0,\"pressure_in\":30.0,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":54,\"cloud\":75,\"feelslike_c\":11.4,\"feelslike_f\":52.4,\"windchill_c\":10.2,\"windchill_f\":50.4,\"heatindex_c\":12.3,\"heatindex_f\":54.2,\"dewpoint_c\":4.3,\"dewpoint_f\":39.7,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":2.0,\"gust_mph\":15.5,\"gust_kph\":24.9,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-10\",\"date_epoch\":1778371200,\"day\":{\"maxtemp_c\":14.0,\"maxtemp_f\":57.1,\"mintemp_c\":6.8,\"mintemp_f\":44.3,\"avgtemp_c\":10.7,\"avgtemp_f\":51.3,\"maxwind_mph\":14.1,\"maxwind_kph\":22.7,\"totalprecip_mm\":0.1,\"totalprecip_in\":0.0,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgvis_miles\":6.",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -398,7 +424,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 461,
+      "latency_ms": 458,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -409,12 +435,12 @@
   "summary": {
     "auth_error": 0,
     "config_only": 1,
-    "critical_failures": 0,
+    "critical_failures": 1,
     "degraded": 0,
-    "healthy_or_config_only": 17,
+    "healthy_or_config_only": 16,
     "missing_secret": 1,
-    "ok": 16,
+    "ok": 15,
     "providers_checked": 18,
-    "rate_limited": 0
+    "rate_limited": 1
   }
 }
