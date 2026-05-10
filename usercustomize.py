@@ -177,3 +177,12 @@ try:
     secondary_odds_rescue_runtime_patch.install()
 except Exception:
     pass
+
+# Final CandidateFactory wrapper. Must be the last build_candidates layer:
+# signal_stack creates Bzzoiro odds hints, then this bridge attaches them to
+# canonical odds_api_io match keys so candidates can show 2+ odds sources.
+try:
+    from app.services import bzzoiro_final_odds_bridge_patch
+    bzzoiro_final_odds_bridge_patch.install()
+except Exception:
+    pass
