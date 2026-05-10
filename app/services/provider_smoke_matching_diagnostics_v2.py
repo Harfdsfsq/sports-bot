@@ -2,15 +2,9 @@ from __future__ import annotations
 
 """Refined wrapper for provider smoke matching diagnostics.
 
-The first diagnostic layer proved useful, but the latest run showed two false
-signals:
-- past Bzzoiro/Football-Data rows were counted as eligible because the lower
-  bound was odds_min -18h;
-- providers with no team-pair overlap in the current odds inventory were shown
-  as normalizer failures.
-
 This wrapper patches the base diagnostic module without duplicating the whole
-script.
+script. It must keep references to the original base functions before patching;
+otherwise fallback notes recursively call the patched function.
 """
 
 from datetime import datetime, timedelta, timezone
@@ -20,7 +14,10 @@ UTC = timezone.utc
 
 from app.services import provider_smoke_matching_diagnostics as base
 
-_ORIGINAL_MATCH = base._match_provider_to_inventory
+_ORIGINAL_MATCH = getattr(base, "_harizon_original_match_provider_to_inventory", base._match_provider_to_inventory)
+_ORIGINAL_DIAGNOSIS_NOTE = getattr(base, "_harizon_original_diagnosis_note", base._diagnosis_note)
+setattr(base, "_harizon_original_match_provider_to_inventory", _ORIGINAL_MATCH)
+setattr(base, "_harizon_original_diagnosis_note", _ORIGINAL_DIAGNOSIS_NOTE)
 
 
 def _future_inventory_window(inventory: list[Any], slack_hours: float = 18.0):
@@ -48,9 +45,6 @@ def _patched_match_provider_to_inventory(provider_payload: dict[str, Any], inven
         except Exception:
             best_scores.append(0.0)
 
-    # If every sampled fixture has no even weak team-pair candidate in odds inventory,
-    # the provider is not breaking normalization; it is covering matches/leagues that
-    # the odds source does not cover in the smoke window.
     if (
         stage == "normalization_or_time_matching_failed"
         and int(result.get("matched_to_odds_inventory") or 0) <= 0
@@ -60,8 +54,6 @@ def _patched_match_provider_to_inventory(provider_payload: dict[str, Any], inven
         result["failure_stage"] = "no_team_pair_overlap_with_odds_inventory"
         result["diagnostic_note"] = "provider events are in time window but their team pairs are absent from the current odds inventory"
 
-    # SportLogic currently returns old /games rows even when date filters are supplied.
-    # Mark that explicitly so we do not waste time tuning aliases for stale rows.
     if provider == "sportlogic" and stage == "no_fixture_overlap_with_odds_inventory":
         samples = result.get("samples") if isinstance(result.get("samples"), list) else []
         stale = 0
@@ -87,7 +79,7 @@ def _diagnosis_note(item: dict[str, Any]) -> str:
         return f"{provider}: события в актуальном окне есть, но таких пар нет в odds inventory. Это не ошибка алиасов; источник покрывает другой пласт матчей/лиг."
     if stage == "stale_provider_rows_date_filter_ignored":
         return f"{provider}: API отдал старые матчи при date params. Нужен фильтр stale rows и/или другой параметр даты endpoint-а."
-    return base._diagnosis_note(item)
+    return _ORIGINAL_DIAGNOSIS_NOTE(item)
 
 
 def install() -> None:
