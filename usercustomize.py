@@ -69,9 +69,8 @@ try:
 except Exception:
     pass
 
-# Secondary odds rescue must be installed before PredictionRunner.run_once calls
-# fetch_offers. It hooks the SportLogic odds slot and runs a tiny RapidAPI odds
-# bridge probe only for near-window soccer matches, preserving publication guards.
+# Early install is kept for compatibility, but the definitive wrap is repeated
+# at the very end because later runtime patches can replace _fetch_provider.
 try:
     from app.services import secondary_odds_rescue_runtime_patch
     secondary_odds_rescue_runtime_patch.install()
@@ -168,5 +167,13 @@ except Exception:
 try:
     from app.services import sharpapi_text_runtime_patch
     sharpapi_text_runtime_patch.install()
+except Exception:
+    pass
+
+# Definitive install: this must be the last _fetch_provider wrapper so secondary
+# odds rescue is not silently overwritten by other runtime modules.
+try:
+    from app.services import secondary_odds_rescue_runtime_patch
+    secondary_odds_rescue_runtime_patch.install()
 except Exception:
     pass
