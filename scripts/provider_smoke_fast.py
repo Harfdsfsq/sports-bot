@@ -74,10 +74,9 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 def _append_text(path: Path, text: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     current = path.read_text(encoding="utf-8") if path.exists() else ""
-    marker = "\n\n---\n\n🧬 Provider matching diagnostics"
     if "🧬 Provider matching diagnostics" in current:
         return
-    path.write_text(current.rstrip() + marker + "\n" + text.strip() + "\n", encoding="utf-8")
+    path.write_text(current.rstrip() + "\n\n---\n\n" + text.strip() + "\n", encoding="utf-8")
 
 
 def _summarize_matching(payload: dict[str, Any]) -> dict[str, Any]:
@@ -87,15 +86,100 @@ def _summarize_matching(payload: dict[str, Any]) -> dict[str, Any]:
         "matching_ok": sum(1 for row in providers if row.get("failure_stage") == "matching_ok"),
         "partial_matching_low_yield": sum(1 for row in providers if row.get("failure_stage") == "partial_matching_low_yield"),
         "normalization_or_time_matching_failed": sum(1 for row in providers if row.get("failure_stage") == "normalization_or_time_matching_failed"),
+        "no_fixture_overlap_with_odds_inventory": sum(1 for row in providers if row.get("failure_stage") == "no_fixture_overlap_with_odds_inventory"),
+        "team_form_coverage_ok": sum(1 for row in providers if row.get("failure_stage") == "team_form_coverage_ok"),
         "parser_extract_failed": sum(1 for row in providers if row.get("failure_stage") == "parser_extract_failed"),
         "request_or_empty_query": sum(1 for row in providers if row.get("failure_stage") == "request_or_empty_query"),
     }
 
 
+def _event_label(event: dict[str, Any] | None) -> str:
+    if not isinstance(event, dict):
+        return "n/a"
+    teams = f"{event.get('home')} — {event.get('away')}"
+    league = event.get("league") or ""
+    start = event.get("start") or ""
+    sid = event.get("source_id") or ""
+    return f"{teams} | {league} | {start} | id={sid}".strip()
+
+
+def _render_sample_block(provider: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    stage = str(provider.get("failure_stage") or "")
+    name = str(provider.get("provider") or "")
+    if stage in {"matching_ok", "team_form_coverage_ok"}:
+        samples = provider.get("matched_samples") if isinstance(provider.get("matched_samples"), list) else []
+        if samples:
+            lines.append(f"  matched samples for {name}:")
+            for sample in samples[:3]:
+                if "provider_event" in sample:
+                    lines.append(f"    + provider: {_event_label(sample.get('provider_event'))}")
+                    lines.append(f"      odds:     {_event_label(sample.get('odds_event'))} | score={sample.get('score')} | quality={sample.get('quality')}")
+                elif "match" in sample:
+                    lines.append(f"    + team-form: {_event_label(sample.get('match'))}")
+        return lines
+
+    unmatched = provider.get("unmatched_samples") if isinstance(provider.get("unmatched_samples"), list) else []
+    if unmatched:
+        lines.append(f"  unmatched samples for {name}:")
+        for sample in unmatched[:4]:
+            provider_event = sample.get("provider_event") or sample.get("match")
+            lines.append(f"    - provider: {_event_label(provider_event)}")
+            if isinstance(sample.get("best_odds_event"), dict):
+                lines.append(f"      best odds: {_event_label(sample.get('best_odds_event'))} | score={sample.get('best_score')} | quality={sample.get('best_quality')}")
+            if isinstance(sample.get("provider_norm"), dict):
+                lines.append(f"      provider_norm={sample.get('provider_norm')}")
+            if isinstance(sample.get("odds_norm"), dict):
+                lines.append(f"      odds_norm={sample.get('odds_norm')}")
+            if sample.get("home_norm") or sample.get("away_norm"):
+                lines.append(f"      missing_norm=home:{sample.get('home_norm')} away:{sample.get('away_norm')}")
+    else:
+        samples = provider.get("samples") if isinstance(provider.get("samples"), list) else []
+        if samples:
+            lines.append(f"  raw samples for {name}:")
+            for sample in samples[:4]:
+                lines.append(f"    - {_event_label(sample)}")
+    attempts = provider.get("attempts") if isinstance(provider.get("attempts"), list) else []
+    if stage in {"request_or_empty_query", "no_fixture_overlap_with_odds_inventory", "parser_extract_failed"} and attempts:
+        lines.append(f"  attempts for {name}:")
+        for attempt in attempts[:3]:
+            lines.append(f"    * http={attempt.get('http_status')} shape={attempt.get('payload_shape')} keys={attempt.get('params_keys')} url={attempt.get('url')}")
+    return lines
+
+
+def _render_matching_text(payload: dict[str, Any]) -> str:
+    inv = payload.get("odds_inventory") if isinstance(payload.get("odds_inventory"), dict) else {}
+    providers = payload.get("providers") if isinstance(payload.get("providers"), list) else []
+    lines = [
+        "🧬 Provider matching diagnostics",
+        f"• UTC: {payload.get('created_at_utc')}",
+        f"• odds inventory: rows {inv.get('raw_rows', 0)} | parsed {inv.get('parsed_events', 0)} | pages {inv.get('pages_requested', 0)} | status {inv.get('status')}",
+        f"• duplicate canonical pairs in odds inventory: {len(payload.get('inventory_duplicate_pairs') or [])}",
+        "",
+        "| provider | role | status | raw | parsed | eligible | matched | rate | stage |",
+        "| --- | --- | --- | ---: | ---: | ---: | ---: | ---: | --- |",
+    ]
+    for row in providers:
+        lines.append(
+            f"| {row.get('provider')} | {row.get('provider_role')} | {row.get('status')} | {row.get('raw_rows')} | {row.get('parsed_events')} | "
+            f"{row.get('eligible_events', '')} | {row.get('matched_to_odds_inventory')} | {row.get('match_rate_pct')}% | {row.get('failure_stage')} |"
+        )
+    lines += ["", "🔎 Samples / reasons"]
+    for row in providers:
+        block = _render_sample_block(row)
+        if block:
+            lines.append(f"• {row.get('provider')}: {row.get('failure_stage')}")
+            lines.extend(block)
+    lines += ["", "📎 Send this text plus latest-provider-smoke-diagnostics.json for exact parser/matching fixes."]
+    return "\n".join(lines) + "\n"
+
+
 async def _run_matching_diagnostics() -> dict[str, Any]:
     try:
         from app.services import provider_smoke_matching_diagnostics
-        return await provider_smoke_matching_diagnostics.run()
+        payload = await provider_smoke_matching_diagnostics.run()
+        MATCH_TXT.write_text(_render_matching_text(payload), encoding="utf-8")
+        return payload
     except Exception as exc:
         payload = {
             "mode": "provider_smoke_matching_diagnostics",
