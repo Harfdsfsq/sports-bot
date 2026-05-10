@@ -45,6 +45,14 @@ jobs:
       TEAM_TOTALS_PUBLICATION_ENABLED: "false"
       TOTALS_PUBLICATION_ENABLED: "true"
       SPREADS_PUBLICATION_ENABLED: "true"
+      PUBLISH_MIN_ODDS_SOURCES: "2"
+      PUBLISH_MIN_CONTEXT_SOURCES: "2"
+      MIN_CONTEXT_SOURCES_PUBLISH: "2"
+      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "2"
+      CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "true"
+      CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
+      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "false"
+      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
       ODDS_MOVEMENT_SNAPSHOTS_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_LIMIT: "8"
@@ -104,7 +112,7 @@ jobs:
         run: |
           set -euo pipefail
           rm -rf .data/exports artifacts/run-bot
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -118,13 +126,13 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py
       - name: Apply provider quota governor
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
           echo "provider quota governor shell start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 45s python -u scripts/apply_provider_quota_governor.py; then
             echo "provider quota governor applied"
@@ -136,7 +144,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
           echo "provider request budget start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 45s python -u scripts/apply_provider_request_budget.py; then
             echo "provider request budget applied"
@@ -148,7 +156,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
           echo "per-run API quota contract start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 45s python -u scripts/apply_per_run_api_quota_contract.py; then
             echo "per-run API quota contract applied"
@@ -161,7 +169,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
           echo "provider smoke start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 90s python -u workflow/provider_smoke.py; then
             echo "provider smoke completed"
@@ -186,7 +194,7 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py || true
           echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           python - <<'PY' 2>&1 | tee .data/exports/latest-run-bot.log
@@ -202,6 +210,7 @@ jobs:
           find .data/exports -maxdepth 2 -type f -printf '%p\n' | sort || true
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
+          cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
           cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
@@ -218,7 +227,21 @@ jobs:
           python -u scripts/apply_publication_family_policy.py || true
           python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
+          cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
+      - name: Update cumulative day inventory coverage
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip cumulative day inventory coverage: fresh run-bot log was not created"
+            exit 0
+          fi
+          mkdir -p .data/exports .data/day_inventory artifacts/run-bot
+          python -u scripts/day_inventory_cumulative_coverage.py || true
+          cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
+          cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
       - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
@@ -228,7 +251,8 @@ jobs:
             echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+          python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+          cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
       - name: Commit runtime artifacts
@@ -242,7 +266,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/exports .data/cache .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json .data/odds_movement_snapshots.jsonl || true
+          git add -f .data/exports .data/cache .data/day_inventory .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json .data/odds_movement_snapshots.jsonl || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
       - name: Upload run artifact
@@ -254,6 +278,7 @@ jobs:
             artifacts/run-bot/**
             .data/exports/**
             .data/cache/**
+            .data/day_inventory/**
             .data/odds_movement_snapshots.jsonl
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
