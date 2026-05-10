@@ -84,50 +84,11 @@ def _phase_env(phase: str) -> dict[str, str]:
         "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth",
     }
     if phase == "full_inventory":
-        base.update({
-            "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
-            "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true",
-            "PUBLISH_WINDOW_HOURS": "24",
-            "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36",
-            "ODDS_API_IO_PAGE_LIMIT": "100",
-            "MAX_MATCHES_FOR_ODDS_FETCH": "900",
-            "ANALYSIS_MATCH_CAP_PER_RUN": "900",
-            "DIAGNOSTICS_MATCH_LIMIT": "900",
-            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "120",
-            "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "48",
-            "WEATHER_CONTEXT_MATCH_LIMIT": "12",
-            "NEWSAPI_MATCH_LIMIT": "0",
-            "GNEWS_MATCH_LIMIT": "0",
-            "SECONDARY_ODDS_RESCUE_TRIGGER": "odds_api_io_empty_or_thin",
-        })
+        base.update({"DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true", "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true", "PUBLISH_WINDOW_HOURS": "24", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36", "ODDS_API_IO_PAGE_LIMIT": "100", "MAX_MATCHES_FOR_ODDS_FETCH": "900", "ANALYSIS_MATCH_CAP_PER_RUN": "900", "DIAGNOSTICS_MATCH_LIMIT": "900", "CONTEXT_ENRICHMENT_MATCH_LIMIT": "120", "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "48", "WEATHER_CONTEXT_MATCH_LIMIT": "12", "NEWSAPI_MATCH_LIMIT": "0", "GNEWS_MATCH_LIMIT": "0", "SECONDARY_ODDS_RESCUE_TRIGGER": "odds_api_io_empty_or_thin"})
     elif phase == "morning_backfill":
-        base.update({
-            "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false",
-            "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
-            "PUBLISH_WINDOW_HOURS": "12",
-            "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "24",
-            "ODDS_API_IO_PAGE_LIMIT": "100",
-            "MAX_MATCHES_FOR_ODDS_FETCH": "650",
-            "ANALYSIS_MATCH_CAP_PER_RUN": "650",
-            "DIAGNOSTICS_MATCH_LIMIT": "650",
-            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "260",
-            "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96",
-            "WEATHER_CONTEXT_MATCH_LIMIT": "24",
-        })
+        base.update({"DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false", "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false", "PUBLISH_WINDOW_HOURS": "12", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "24", "ODDS_API_IO_PAGE_LIMIT": "100", "MAX_MATCHES_FOR_ODDS_FETCH": "650", "ANALYSIS_MATCH_CAP_PER_RUN": "650", "DIAGNOSTICS_MATCH_LIMIT": "650", "CONTEXT_ENRICHMENT_MATCH_LIMIT": "260", "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96", "WEATHER_CONTEXT_MATCH_LIMIT": "24"})
     else:
-        base.update({
-            "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false",
-            "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
-            "PUBLISH_WINDOW_HOURS": "12",
-            "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "18",
-            "ODDS_API_IO_PAGE_LIMIT": "100",
-            "MAX_MATCHES_FOR_ODDS_FETCH": "520",
-            "ANALYSIS_MATCH_CAP_PER_RUN": "520",
-            "DIAGNOSTICS_MATCH_LIMIT": "520",
-            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240",
-            "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96",
-            "WEATHER_CONTEXT_MATCH_LIMIT": "24",
-        })
+        base.update({"DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false", "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false", "PUBLISH_WINDOW_HOURS": "12", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "18", "ODDS_API_IO_PAGE_LIMIT": "100", "MAX_MATCHES_FOR_ODDS_FETCH": "520", "ANALYSIS_MATCH_CAP_PER_RUN": "520", "DIAGNOSTICS_MATCH_LIMIT": "520", "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240", "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96", "WEATHER_CONTEXT_MATCH_LIMIT": "24"})
     return base
 
 
@@ -147,39 +108,23 @@ def _apply_phase_policy() -> None:
         pass
 
 
+def _safe_install(label: str, installer) -> None:
+    try:
+        installer()
+    except Exception as exc:
+        try:
+            print(f"root sitecustomize {label} skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+
+
 def _install_runtime_guards() -> None:
-    try:
-        import telegram_controlled_pick_safety
-        telegram_controlled_pick_safety.install()
-    except Exception as exc:
-        try:
-            print(f"root sitecustomize telegram safety skipped: {type(exc).__name__}: {exc}")
-        except Exception:
-            pass
-    try:
-        from app.providers import rapidapi_odds_bridge_schema_patch
-        rapidapi_odds_bridge_schema_patch.install()
-    except Exception as exc:
-        try:
-            print(f"root sitecustomize rapidapi schema skipped: {type(exc).__name__}: {exc}")
-        except Exception:
-            pass
-    try:
-        from app.providers import odds_api_io_secondary_rescue_patch
-        odds_api_io_secondary_rescue_patch.install()
-    except Exception as exc:
-        try:
-            print(f"root sitecustomize odds secondary skipped: {type(exc).__name__}: {exc}")
-        except Exception:
-            pass
-    try:
-        from app.services import bzzoiro_odds_rekey_runtime_patch
-        bzzoiro_odds_rekey_runtime_patch.install()
-    except Exception as exc:
-        try:
-            print(f"root sitecustomize bzzoiro odds rekey skipped: {type(exc).__name__}: {exc}")
-        except Exception:
-            pass
+    _safe_install("telegram safety", lambda: __import__("telegram_controlled_pick_safety").install())
+    _safe_install("rapidapi schema", lambda: __import__("app.providers.rapidapi_odds_bridge_schema_patch", fromlist=["install"]).install())
+    _safe_install("odds secondary", lambda: __import__("app.providers.odds_api_io_secondary_rescue_patch", fromlist=["install"]).install())
+    # Important order: signal_stack creates Bzzoiro offer hints; rekey must wrap on top of it.
+    _safe_install("signal stack", lambda: __import__("app.services.signal_stack_runtime_patch", fromlist=["install"]).install())
+    _safe_install("bzzoiro odds rekey", lambda: __import__("app.services.bzzoiro_odds_rekey_runtime_patch", fromlist=["install"]).install())
 
 
 try:
