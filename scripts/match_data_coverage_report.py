@@ -115,7 +115,7 @@ def value_from(row: dict[str, Any], *keys: str, default: Any = None) -> Any:
     for key in keys:
         if key in row and row.get(key) not in (None, ""):
             return row.get(key)
-    for parent in ("metrics", "last_metrics", "best_candidate"):
+    for parent in ("metrics", "last_metrics", "best_candidate", "source_summary", "integrity_report"):
         obj = nested(row, parent)
         for key in keys:
             if key in obj and obj.get(key) not in (None, ""):
@@ -174,6 +174,78 @@ def list_field(row: dict[str, Any], key: str) -> list[str]:
     return []
 
 
+def _norm_source(value: Any) -> str:
+    text = re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
+    aliases = {
+        "oddsapiio": "odds_api_io",
+        "odds_api": "odds_api_io",
+        "the_odds_api": "odds_api_io",
+        "bzzoiro_predictions": "bzzoiro",
+    }
+    return aliases.get(text, text)
+
+
+def _list_from_any(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, tuple):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, str) and value.strip():
+        return [v.strip() for v in re.split(r"[,|]", value) if v.strip()]
+    return []
+
+
+def raw_bucket_offers(row: dict[str, Any]) -> list[dict[str, Any]]:
+    value = row.get("raw_bucket_offers")
+    if isinstance(value, list):
+        return [x for x in value if isinstance(x, dict)]
+    diagnostics = nested(row, "diagnostics")
+    value = diagnostics.get("raw_bucket_offers") if isinstance(diagnostics, dict) else None
+    return [x for x in value if isinstance(x, dict)] if isinstance(value, list) else []
+
+
+def odds_source_count(row: dict[str, Any]) -> int:
+    sources = {_norm_source(o.get("source")) for o in raw_bucket_offers(row) if _norm_source(o.get("source"))}
+    for key in ("odds_sources", "price_sources", "exact_price_sources"):
+        for src in _list_from_any(value_from(row, key, default=[])):
+            srcn = _norm_source(src)
+            if srcn:
+                sources.add(srcn)
+    # Top-level sources_count is the most reliable after Bzzoiro bridge; older
+    # source_summary.odds_sources_count can stay stale at 1, so use it only as a floor.
+    best_numeric = max(
+        as_int(row.get("sources_count")),
+        as_int(value_from(row, "odds_sources_count", "price_sources_count", "exact_price_sources_count", default=0)),
+        as_int(value_from(row, "exact_sources_count", default=0)),
+    )
+    return max(len(sources), best_numeric)
+
+
+def context_source_count(row: dict[str, Any]) -> int:
+    summary = nested(row, "source_summary")
+    sources = set()
+    for key in ("confirmation_sources", "context_sources", "source_contexts"):
+        for src in _list_from_any(summary.get(key) if key in summary else row.get(key)):
+            srcn = _norm_source(src)
+            if srcn:
+                sources.add(srcn)
+    if not sources:
+        context_source = summary.get("context_source") or row.get("context_source")
+        srcn = _norm_source(context_source)
+        if srcn and srcn != "ensemble":
+            sources.add(srcn)
+    # ensemble is a context mode, not an independent provider. Count it as one
+    # only when no concrete sources are exposed.
+    if not sources and str(summary.get("context_source") or "").lower() == "ensemble":
+        sources.add("ensemble")
+    return max(len(sources), as_int(value_from(row, "confirmation_sources_count", "context_sources_count", default=0)))
+
+
+def bookmaker_count(row: dict[str, Any]) -> int:
+    books = {str(o.get("bookmaker") or "").strip().lower() for o in raw_bucket_offers(row) if str(o.get("bookmaker") or "").strip()}
+    return max(len(books), as_int(value_from(row, "books_count", "odds_books_count", "exact_line_bookmakers_count", default=0)))
+
+
 def reject_reasons(row: dict[str, Any]) -> list[str]:
     reasons: list[str] = []
     for key in ("final_reject_reasons", "reject_reasons", "hard_reject_reasons", "quality_reasons", "last_reasons", "block_reasons", "needs_confirmation_reasons"):
@@ -201,8 +273,9 @@ def candidate_score(row: dict[str, Any]) -> dict[str, Any]:
     edge = as_float(value_from(row, "canonical_edge_pp", "edge_pp", "edge_pct", default=(adjusted - implied) * 100 if adjusted > 0 and implied > 0 else 0.0))
     ev = as_float(value_from(row, "canonical_ev_pct", "ev_pct", "expected_value_pct", default=((adjusted * odds) - 1) * 100 if odds > 1 and adjusted > 0 else 0.0))
     confidence = as_float(value_from(row, "confidence", default=0.0))
-    books = as_int(value_from(row, "books_count", default=0))
-    sources = as_int(value_from(row, "sources_count", default=0))
+    books = bookmaker_count(row)
+    odds_sources = odds_source_count(row)
+    context_sources = context_source_count(row)
     return {
         "odds": round(odds, 4),
         "adjusted_probability": round(adjusted, 6),
@@ -210,7 +283,10 @@ def candidate_score(row: dict[str, Any]) -> dict[str, Any]:
         "canonical_ev_pct": round(ev, 3),
         "confidence": round(confidence, 3),
         "books_count": books,
-        "sources_count": sources,
+        "sources_count": odds_sources,
+        "odds_sources_count": odds_sources,
+        "context_sources_count": context_sources,
+        "confirmation_sources_count": context_sources,
     }
 
 
@@ -388,6 +464,9 @@ def build_match_rows(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
             "families": Counter(),
             "books_max": 0,
             "sources_max": 0,
+            "odds_sources_max": 0,
+            "context_sources_max": 0,
+            "confirmation_sources_max": 0,
             "best_ev_pct": -999.0,
             "best_edge_pp": -999.0,
             "best_confidence": 0.0,
@@ -405,11 +484,16 @@ def build_match_rows(candidates: list[dict[str, Any]]) -> list[dict[str, Any]]:
         score = candidate_score(row)
         item["books_max"] = max(item["books_max"], score["books_count"])
         item["sources_max"] = max(item["sources_max"], score["sources_count"])
+        item["odds_sources_max"] = max(item["odds_sources_max"], score["odds_sources_count"])
+        item["context_sources_max"] = max(item["context_sources_max"], score["context_sources_count"])
+        item["confirmation_sources_max"] = max(item["confirmation_sources_max"], score["confirmation_sources_count"])
         item["best_confidence"] = max(item["best_confidence"], score["confidence"])
         for reason in reject_reasons(row):
             item["reject_reasons"].update([reason])
-        if score["sources_count"] <= 1:
-            item["missing_flags"].update(["single_source"])
+        if score["odds_sources_count"] <= 1:
+            item["missing_flags"].update(["single_odds_source"])
+        if score["context_sources_count"] <= 1:
+            item["missing_flags"].update(["single_context_source"])
         if score["books_count"] <= 1:
             item["missing_flags"].update(["single_book"])
         if score["confidence"] < 74:
@@ -547,6 +631,8 @@ def main() -> int:
         "notes": [
             "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
             "Current-date lifecycle and near-miss rows are now used as the primary coverage signal.",
+            "Odds source counts are recomputed from raw_bucket_offers, so Bzzoiro rekeyed offers count even when older source_summary fields remain stale.",
+            "Context source counts are recomputed from source_summary.confirmation_sources, not from odds source counters.",
         ],
     }
     write_json(OUT_SUMMARY, summary)
