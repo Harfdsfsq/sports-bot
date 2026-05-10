@@ -68,6 +68,8 @@ def _apply_common_prediction_contract() -> None:
         "SECONDARY_ODDS_RESCUE_ENABLED": "true",
         "SECONDARY_ODDS_RESCUE_FORCE_RAPIDAPI_REFRESH": "true",
         "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "80",
+        "BZZOIRO_ODDS_REKEY_ENABLED": "true",
+        "BZZOIRO_ODDS_REKEY_MIN_SCORE": "70",
     }
     for key, value in common.items():
         _set(key, value)
@@ -168,6 +170,14 @@ def _install_runtime_guards() -> None:
     except Exception as exc:
         try:
             print(f"root sitecustomize odds secondary skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+    try:
+        from app.services import bzzoiro_odds_rekey_runtime_patch
+        bzzoiro_odds_rekey_runtime_patch.install()
+    except Exception as exc:
+        try:
+            print(f"root sitecustomize bzzoiro odds rekey skipped: {type(exc).__name__}: {exc}")
         except Exception:
             pass
 
