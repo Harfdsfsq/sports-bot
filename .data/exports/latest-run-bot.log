@@ -1,7 +1,7 @@
 telegram pick safety active
 {
   "counts": {
-    "coverage_progress_updated_utc": "2026-05-10T09:40:44.607017+00:00",
+    "coverage_progress_updated_utc": "2026-05-10T09:55:19.377829+00:00",
     "day_inventory_top_match_limit": 300,
     "fixture_sources_seen": 5,
     "leagues_seen": 69,
@@ -40,12 +40,12 @@ telegram pick safety active
   "matches_added": 0,
   "matches_after": 493,
   "matches_before": 493,
-  "matches_updated": 13,
+  "matches_updated": 12,
   "notes": [
     "Runs before prediction so run-once can see a broader daily fixture inventory.",
     "Fixture-only expansion does not create publishable predictions by itself; odds/context guards still apply."
   ],
-  "provider_rows_fetched": 13,
+  "provider_rows_fetched": 12,
   "providers": {
     "allsportsapi": {
       "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1702480,\"event_date\":\"2026-05-10\",\"event_time\":\"15:00\",\"event_home_team\":\"Asante Kotoko\",\"home_team_key\":4284,\"event_away_team\":\"Eleven Wonders\",\"away_team_key\":4294,\"event_halftime_result\":\"\",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 32\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Baba Yara Stadium\",\"e",
@@ -54,10 +54,10 @@ telegram pick safety active
       "rows_parsed": 9
     },
     "football_data": {
-      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-05-10\",\"dateTo\":\"2026-05-10\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":1,\"competitions\":\"BSA\",\"first\":\"2026-05-10\",\"last\":\"2026-05-10\",\"played\":1},\"matches\":[{\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"competition\":{\"id\":2013,\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\"},\"season\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-",
-      "http_status": 200,
+      "body_preview": "{\"message\":\"You reached your request limit. Wait 7 seconds.\",\"errorCode\":429}",
+      "http_status": 429,
       "payload_type": "dict",
-      "rows_parsed": 1
+      "rows_parsed": 0
     },
     "thesportsdb": {
       "body_preview": "{\"events\":[{\"idEvent\":\"2265387\",\"idAPIfootball\":\"1378215\",\"strTimestamp\":\"2026-05-10T13:00:00\",\"strEvent\":\"Cremonese vs Pisa\",\"strEventAlternate\":\"Pisa @ Cremonese\",\"strFilename\":\"Italian Serie A 2026-05-10 Cremonese vs Pisa\",\"strSport\":\"Soccer\",\"idLeague\":\"4332\",\"strLeague\":\"Italian Serie A\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/67q3q21679951383.png\",\"strSeason\":\"2025-2026\",\"strDescriptionEN\":\"\",\"strHomeTeam\":\"Cremonese\",\"strAwayTeam\":\"Pisa\",\"intHomeScore",
@@ -70,198 +70,197 @@ telegram pick safety active
   "target_date": "2026-05-10"
 }
 runtime cli direct start
-2026-05-10 12:48:52,581 INFO app.services.runner: Starting prediction run at 2026-05-10T09:48:52.581051+00:00
-2026-05-10 12:48:53,061 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-04&to=2026-05-10&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:48:56,382 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-04&dateTo=2026-05-10&status=FINISHED&limit=200 "HTTP/1.1 200 "
-2026-05-10 12:49:32,554 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T09%3A49%3A32Z&to=2026-05-11T09%3A49%3A32Z&limit=100&page=1 "HTTP/1.1 200 OK"
-2026-05-10 12:49:32,669 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T09%3A49%3A32Z&to=2026-05-11T09%3A49%3A32Z&limit=100&page=2 "HTTP/1.1 200 OK"
-2026-05-10 12:50:07,732 INFO httpx: HTTP Request: GET https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-05-10&to=2026-05-10&timezone=UTC "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,230 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61061663%2C63135389%2C63144041%2C63138787%2C63138773%2C63138779%2C63376161%2C63138785%2C63138771%2C62778607&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,339 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61061663%2C63135389%2C63144041%2C63138787%2C63138773%2C63138779%2C63376161%2C63138785%2C63138771%2C62778607&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,354 INFO httpx: HTTP Request: GET https://apiv2.allsportsapi.com/football/?met=Odds&APIkey=***&matchId=1702482 "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,491 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=62778609%2C61735018%2C61537650%2C67915802%2C67915798%2C67915560%2C71267592%2C70674824%2C70476952%2C67207992&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,691 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=62778609%2C61735018%2C61537650%2C67915802%2C67915798%2C67915560%2C71267592%2C70674824%2C70476952%2C67207992&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,822 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=63143423%2C63145327%2C71314824%2C63145333%2C71314516&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
-2026-05-10 12:50:08,947 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=63143423%2C63145327%2C71314824%2C63145333%2C71314516&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
-2026-05-10 12:50:09,590 INFO httpx: HTTP Request: GET https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100 "HTTP/1.1 200 OK"
-2026-05-10 12:50:10,091 INFO httpx: HTTP Request: GET https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100 "HTTP/1.1 200 OK"
-2026-05-10 12:50:41,453 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?from=2026-05-10&to=2026-05-10&per_page=50 "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,737 INFO httpx: HTTP Request: GET https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,818 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/all_leagues.php "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,847 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,852 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,858 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,862 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,930 INFO httpx: HTTP Request: GET https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/en.1.json "HTTP/1.1 200 OK"
-2026-05-10 12:50:44,940 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-10 12:50:45,020 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:45,029 INFO httpx: HTTP Request: GET https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/nl.1.json "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,270 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4337 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,271 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,273 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,287 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,368 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,381 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,478 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/sco.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,536 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/sco.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,596 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/swe.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,655 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/swe.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,662 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,722 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,726 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,785 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,789 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:47,795 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,014 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,074 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,333 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/events/740955/competitions/740955/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,338 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740955 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,386 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/eng.1/events/740947/competitions/740947/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,391 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/summary?event=740947 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,470 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/ita.1/events/737139/competitions/737139/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,475 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/summary?event=737139 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,494 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,510 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/ita.1/events/737139/competitions/737139/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,519 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/summary?event=737139 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,561 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/sco.1/events/401867712/competitions/401867712/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,619 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/sco.1/summary?event=401867712 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,711 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/swe.1/events/401842706/competitions/401842706/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,773 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/swe.1/summary?event=401842706 "HTTP/1.1 200 OK"
-2026-05-10 12:50:48,811 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/ned.1/events/741270/competitions/741270/probabilities "HTTP/1.1 400 Bad Request"
-2026-05-10 12:50:48,869 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/summary?event=741270 "HTTP/1.1 200 OK"
-2026-05-10 12:50:49,302 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:50:49,303 INFO httpx: HTTP Request: GET http://api.clubelo.com/2026-05-10 "HTTP/1.1 200 OK"
-2026-05-10 12:50:49,304 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-10&dateTo=2026-05-12&status=SCHEDULED%2CTIMED&limit=200 "HTTP/1.1 200 "
-2026-05-10 12:51:43,098 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:43,281 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:43,336 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/PL/standings "HTTP/1.1 200 "
-2026-05-10 12:51:43,497 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/DED/standings "HTTP/1.1 200 "
-2026-05-10 12:51:43,635 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:43,890 INFO httpx: HTTP Request: GET http://api.clubelo.com/2026-05-09 "HTTP/1.1 200 OK"
-2026-05-10 12:51:44,142 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:44,205 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/PL/matches?limit=220&season=2025 "HTTP/1.1 200 "
-2026-05-10 12:51:44,435 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:44,787 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=4000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:44,939 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/DED/matches?limit=220&season=2025 "HTTP/1.1 200 "
-2026-05-10 12:51:44,971 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:45,167 INFO httpx: HTTP Request: GET http://api.clubelo.com/NewTaipeiHangYuan "HTTP/1.1 200 OK"
-2026-05-10 12:51:49,833 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:49,834 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/SA/matches?limit=220&season=2025 "HTTP/1.1 200 "
-2026-05-10 12:51:50,526 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:50,902 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:51,301 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=4000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:51,497 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:51,827 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:52,186 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:52,552 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:52,912 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:53,273 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:53,517 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:53,770 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:53,986 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:54,340 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:54,711 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:55,084 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:55,285 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-07&to=2026-05-10&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:51:55,631 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-07&to=2026-05-10&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
-2026-05-10 12:53:07,271 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-10&date_to=2026-05-10&upcoming=true&tz=UTC&page=1 "HTTP/1.1 200 OK"
-2026-05-10 12:53:09,400 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-10&date_to=2026-05-10&upcoming=true&tz=UTC&page=2 "HTTP/1.1 200 OK"
-2026-05-10 12:53:10,935 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-10&date_to=2026-05-10&upcoming=true&tz=UTC&page=3 "HTTP/1.1 200 OK"
-2026-05-10 12:54:51,713 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Hellas+Verona&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:51,854 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=CF+Can+Vidalet&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:51,997 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=CE+Europa+B&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:52,137 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=CE+L%27Hospitalet&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:52,283 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=FE+Grama&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:52,437 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Celtic+Glasgow&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:52,591 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Tatung+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:52,743 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Taiwan+Power+Company&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
-2026-05-10 12:54:56,366 INFO app.services.runner: Prediction run finished: matches=89 candidates=0 publishable=0 telegram=0
+2026-05-10 12:59:58,142 INFO app.services.runner: Starting prediction run at 2026-05-10T09:59:58.142013+00:00
+2026-05-10 12:59:58,696 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-04&to=2026-05-10&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:00:00,193 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-04&dateTo=2026-05-10&status=FINISHED&limit=200 "HTTP/1.1 429 "
+2026-05-10 13:00:31,387 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T10%3A00%3A30Z&to=2026-05-11T10%3A00%3A30Z&limit=100&page=1 "HTTP/1.1 200 OK"
+2026-05-10 13:00:31,486 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-10T10%3A00%3A30Z&to=2026-05-11T10%3A00%3A30Z&limit=100&page=2 "HTTP/1.1 200 OK"
+2026-05-10 13:00:46,300 INFO httpx: HTTP Request: GET https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-05-10&to=2026-05-10&timezone=UTC "HTTP/1.1 200 OK"
+2026-05-10 13:00:46,766 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?date_from=2026-05-10&date_to=2026-05-10&per_page=50 "HTTP/1.1 200 OK"
+2026-05-10 13:00:46,872 INFO httpx: HTTP Request: GET https://apiv2.allsportsapi.com/football/?met=Odds&APIkey=***&matchId=1702482 "HTTP/1.1 200 OK"
+2026-05-10 13:00:46,936 INFO httpx: HTTP Request: GET https://api.sportlogic.io/api/v1/games?from=2026-05-10&to=2026-05-10&per_page=50 "HTTP/1.1 200 OK"
+2026-05-10 13:00:49,382 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61061663%2C63135389%2C63144041%2C63138787%2C63138773%2C63138779%2C63376161%2C63138785%2C63138771%2C70986720&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:00:49,476 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61061663%2C63135389%2C63144041%2C63138787%2C63138773%2C63138779%2C63376161%2C63138785%2C63138771%2C70986720&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:00:51,309 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=69221024%2C69221026%2C69455852%2C68995130%2C62778607%2C62778609%2C61735018%2C61537650%2C69342830%2C63097517&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:00:52,532 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=69221024%2C69221026%2C69455852%2C68995130%2C62778607%2C62778609%2C61735018%2C61537650%2C69342830%2C63097517&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:00:55,461 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=67915802%2C67915798%2C67915560%2C71267592%2C69280592%2C69280588%2C70228228%2C70252084%2C70252076%2C70674824&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:00:56,078 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=67915802%2C67915798%2C67915560%2C71267592%2C69280592%2C69280588%2C70228228%2C70252084%2C70252076%2C70674824&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:00:56,168 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=63145993%2C63145991%2C63145999%2C63146007%2C63146001%2C63145995%2C63145997%2C63146003%2C66918118%2C68320780&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:00:56,253 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=63145993%2C63145991%2C63145999%2C63146007%2C63146001%2C63145995%2C63145997%2C63146003%2C66918118%2C68320780&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:00:57,402 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=68377522%2C68344638%2C68344642%2C68344640%2C69539678%2C68311576%2C70476952%2C66707794%2C66707784%2C66707788&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:00:58,208 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=68377522%2C68344638%2C68344642%2C68344640%2C69539678%2C68311576%2C70476952%2C66707794%2C66707784%2C66707788&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:00:59,097 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=66707792%2C66707786%2C66707782%2C66707796%2C66707790%2C68663466%2C68663468%2C68664042%2C70906770%2C62280176&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:01:00,161 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=66707792%2C66707786%2C66707782%2C66707796%2C66707790%2C68663466%2C68663468%2C68664042%2C70906770%2C62280176&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:01:03,386 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=68954826%2C70207426%2C69455872%2C69455876%2C69910924%2C69910658%2C68214644%2C61515230%2C61515236%2C61515238&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:01:10,178 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=68954826%2C70207426%2C69455872%2C69455876%2C69910924%2C69910658%2C68214644%2C61515230%2C61515236%2C61515238&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:01:14,389 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61709692%2C62280178%2C68746492%2C62040888%2C62040890%2C68995136%2C68995134%2C69972716%2C67208102&bookmakers=Bet365%2CUnibet "HTTP/1.1 500 Internal Server Error"
+2026-05-10 13:01:18,152 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61709692%2C62280178%2C68746492%2C62040888&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:01:19,265 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=62040890%2C68995136%2C68995134%2C69972716%2C67208102&bookmakers=Bet365%2CUnibet "HTTP/1.1 200 OK"
+2026-05-10 13:01:20,640 INFO httpx: HTTP Request: GET https://api.odds-api.io/v3/odds/multi?apiKey=***&eventIds=61709692%2C62280178%2C68746492%2C62040888%2C62040890%2C68995136%2C68995134%2C69972716%2C67208102&bookmakers=Betfair+Exchange%2CSbobet "HTTP/1.1 200 OK"
+2026-05-10 13:01:21,146 INFO httpx: HTTP Request: GET https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100 "HTTP/1.1 200 OK"
+2026-05-10 13:01:21,641 INFO httpx: HTTP Request: GET https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100 "HTTP/1.1 200 OK"
+2026-05-10 13:01:23,852 INFO httpx: HTTP Request: GET https://raw.githubusercontent.com/openfootball/football.json/master/2025-26/it.1.json "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,195 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/all_leagues.php "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,232 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,304 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,315 INFO httpx: HTTP Request: GET https://www.thesportsdb.com/api/v1/json/123/lookuptable.php?l=4330 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,374 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,378 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.4/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,382 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,389 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,460 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/sco.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,466 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/sco.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,481 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,522 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,551 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.2/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,558 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,561 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.3/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,631 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,703 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/eng.5/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,709 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,782 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,853 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:24,932 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/esp.2/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:25,006 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260510 "HTTP/1.1 200 OK"
+2026-05-10 13:01:25,010 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard?dates=20260511 "HTTP/1.1 200 OK"
+2026-05-10 13:01:25,127 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/ita.1/events/737139/competitions/737139/probabilities "HTTP/1.1 400 Bad Request"
+2026-05-10 13:01:25,198 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/summary?event=737139 "HTTP/1.1 200 OK"
+2026-05-10 13:01:25,284 INFO httpx: HTTP Request: GET https://sports.core.api.espn.com/v2/sports/soccer/leagues/sco.1/events/401867712/competitions/401867712/probabilities "HTTP/1.1 400 Bad Request"
+2026-05-10 13:01:25,356 INFO httpx: HTTP Request: GET https://site.api.espn.com/apis/site/v2/sports/soccer/sco.1/summary?event=401867712 "HTTP/1.1 200 OK"
+2026-05-10 13:01:26,268 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:26,724 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:27,085 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-03-26&to=2026-04-01&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:27,269 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:27,614 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:27,998 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:28,384 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:28,746 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-02&to=2026-04-08&limit=1000&offset=4000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:28,933 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:29,267 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:29,618 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:29,973 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:30,333 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-09&to=2026-04-15&limit=1000&offset=4000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:30,511 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:30,857 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:31,188 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:31,520 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-16&to=2026-04-22&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:31,847 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:32,175 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:32,405 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:32,644 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-23&to=2026-04-29&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:32,829 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:33,163 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:33,521 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=2000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:33,861 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-04-30&to=2026-05-06&limit=1000&offset=3000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:34,049 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-07&to=2026-05-10&limit=1000&offset=0&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:01:34,373 INFO httpx: HTTP Request: GET https://api.sstats.net/Games/list?from=2026-05-07&to=2026-05-10&limit=1000&offset=1000&apikey=*** "HTTP/1.1 200 OK"
+2026-05-10 13:04:04,029 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/matches?dateFrom=2026-05-10&dateTo=2026-05-12&status=SCHEDULED%2CTIMED&limit=200 "HTTP/1.1 200 "
+2026-05-10 13:04:04,030 INFO httpx: HTTP Request: GET http://api.clubelo.com/2026-05-10 "HTTP/1.1 200 OK"
+2026-05-10 13:04:54,368 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/DED/standings "HTTP/1.1 200 "
+2026-05-10 13:04:54,507 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/FL1/standings "HTTP/1.1 200 "
+2026-05-10 13:04:55,234 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/DED/matches?limit=220&season=2025 "HTTP/1.1 200 "
+2026-05-10 13:04:55,796 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/FL1/matches?limit=220&season=2025 "HTTP/1.1 200 "
+2026-05-10 13:04:56,417 INFO httpx: HTTP Request: GET https://api.football-data.org/v4/competitions/PL/matches?limit=220&season=2025 "HTTP/1.1 200 "
+2026-05-10 13:04:57,177 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-10&date_to=2026-05-10&upcoming=true&tz=UTC&page=1 "HTTP/1.1 200 OK"
+2026-05-10 13:04:59,165 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-10&date_to=2026-05-10&upcoming=true&tz=UTC&page=2 "HTTP/1.1 200 OK"
+2026-05-10 13:05:00,182 INFO httpx: HTTP Request: GET https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-10&date_to=2026-05-10&upcoming=true&tz=UTC&page=3 "HTTP/1.1 200 OK"
+2026-05-10 13:07:02,964 INFO httpx: HTTP Request: GET http://api.clubelo.com/2026-05-09 "HTTP/1.1 200 OK"
+2026-05-10 13:07:08,815 INFO httpx: HTTP Request: GET http://api.clubelo.com/KanchanaburiPower "HTTP/1.1 200 OK"
+2026-05-10 13:07:12,954 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Hellas+Verona&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,082 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=CF+Can+Vidalet&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,211 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=CE+Europa+B&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,352 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=CE+L%27Hospitalet&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,466 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=FE+Grama&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,591 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=FC+Altai+Oskemen&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,719 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Ayutthaya+United+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:13,844 INFO httpx: HTTP Request: GET https://api.weatherapi.com/v1/forecast.json?key=***&q=Rayong+FC&days=2&aqi=no&alerts=no "HTTP/1.1 200 OK"
+2026-05-10 13:07:22,836 INFO app.services.runner: Prediction run finished: matches=147 candidates=2 publishable=1 telegram=0
 {
-  "current_time_utc": "2026-05-10T09:54:55.960859+00:00",
-  "current_time_local": "2026-05-10T12:54:55.960859+03:00",
-  "started_time_utc": "2026-05-10T09:48:52.593412+00:00",
-  "started_time_local": "2026-05-10T12:48:52.593412+03:00",
+  "current_time_utc": "2026-05-10T10:07:22.194777+00:00",
+  "current_time_local": "2026-05-10T13:07:22.194777+03:00",
+  "started_time_utc": "2026-05-10T09:59:58.154831+00:00",
+  "started_time_local": "2026-05-10T12:59:58.154831+03:00",
   "app_timezone": "Europe/Moscow",
   "schedule_mode": "forecast",
-  "matches_seen": 89,
-  "matches_before_publish_window": 399,
-  "matches_with_offers": 13,
-  "context_matches_requested": 89,
+  "matches_seen": 147,
+  "matches_before_publish_window": 457,
+  "matches_with_offers": 48,
+  "context_matches_requested": 147,
   "context_enrichment": {
     "requires_offers": false,
     "limit": 260,
-    "eligible_matches": 89,
-    "selected_matches": 89,
+    "eligible_matches": 147,
+    "selected_matches": 147,
     "trimmed_matches": 0,
     "skipped_without_offers": 0,
     "premium_shortlist_limit": 96,
-    "matches_with_value_hint": 9,
+    "matches_with_value_hint": 40,
     "near_miss_queue_items": 0,
     "near_miss_selected": 0,
-    "confirmation_gap_candidates": 13,
-    "confirmation_gap_selected": 13,
+    "confirmation_gap_candidates": 48,
+    "confirmation_gap_selected": 48,
     "min_confirmation_sources": 2,
     "near_window_priority_patch": true,
-    "near_window_matches_available": 89,
-    "near_window_matches_selected": 89,
+    "near_window_matches_available": 147,
+    "near_window_matches_selected": 147,
     "near_window_context_min_matches": 48,
-    "context_target_count_after_patch": 89,
+    "context_target_count_after_patch": 147,
     "near_window_first_keys": [
       "soccer|como 1907|hellas verona|2026-05-10",
       "soccer|can vidalet|cerdanyola valles|2026-05-10",
       "soccer|ce europa b|cfj mollerussa|2026-05-10",
       "soccer|ce l hospitalet|ue cornella|2026-05-10",
       "soccer|fe grama|ue vilassar mar|2026-05-10",
+      "soccer|altai oskemen|ordabasy|2026-05-10",
+      "soccer|ayutthaya united|port|2026-05-10",
+      "soccer|bangkok united|rayong|2026-05-10",
+      "soccer|buriram united|lamphun warriors|2026-05-10",
       "soccer|celtic glasgow|glasgow rangers|2026-05-10",
-      "soccer|new taipei hang yuan|tatung|2026-05-10",
-      "soccer|taichung futuro|taiwan power company|2026-05-10",
-      "soccer|arendal|brattvaag|2026-05-10",
-      "soccer|eik toensberg 871|sotra sk|2026-05-10",
-      "soccer|loerenskog if|rana|2026-05-10",
-      "soccer|aston villa|burnley|2026-05-10"
+      "soccer|chiangrai united|uthai thani|2026-05-10",
+      "soccer|chonburi|nakhon ratchasima|2026-05-10"
     ]
   },
   "provider_context_targets": {
-    "sstats": 89,
-    "bzzoiro": 89,
+    "sstats": 120,
+    "bzzoiro": 96,
     "api_football": 0,
     "espn": 36,
-    "thesportsdb": 89,
-    "football_data": 89,
+    "thesportsdb": 120,
+    "football_data": 120,
     "openligadb": 24,
-    "futrixmetrics": 89,
-    "openfootball": 89,
-    "newsapi": 89,
-    "gnews": 89,
+    "futrixmetrics": 147,
+    "openfootball": 96,
+    "newsapi": 147,
+    "gnews": 147,
     "sportlogic": 60,
     "weather": 24
   },
-  "contexts_built": 87,
+  "contexts_built": 110,
   "self_history_contexts_built": 0,
-  "candidates": 0,
-  "candidates_publishable": 0,
+  "candidates": 2,
+  "candidates_publishable": 1,
   "candidates_zero_stake": 0,
-  "candidates_raw": 0,
-  "candidates_before_quality": 2,
-  "candidates_rejected_by_quality": 2,
-  "shadow_candidates_tracked": 0,
-  "candidates_before_quality_with_derived_market_signal": 2,
-  "publishable_with_derived_market_signal": 0,
+  "candidates_raw": 2,
+  "candidates_before_quality": 16,
+  "candidates_rejected_by_quality": 14,
+  "shadow_candidates_tracked": 4,
+  "candidates_before_quality_with_derived_market_signal": 16,
+  "publishable_with_derived_market_signal": 1,
   "skipped_already_in_state": 0,
   "reused_already_in_state": 0,
   "published": 0,
   "published_to_telegram": 0,
   "prediction_publication_enabled": true,
   "telegram_messages_sent": 0,
-  "published_unique_state": 0,
+  "published_unique_state": 1,
   "dry_run": false,
   "state_path": ".data/state.json",
   "debug_path": ".logs/debug-last-run.json",
   "run_logs_dir": ".logs/runs",
   "storage_export_dir": ".data/exports",
   "filtering": {
-    "total_before": 399,
-    "total_after": 89,
+    "total_before": 457,
+    "total_after": 147,
     "skipped_started": 246,
     "skipped_too_soon": 64,
     "skipped_outside_window": 0,
@@ -283,28 +282,28 @@ runtime cli direct start
     "manual_late_min_kickoff_lead_minutes": 20,
     "manual_late_adaptive_min_kickoff_lead_minutes": 10,
     "future_matches_in_window": {
-      "count": 153
+      "count": 211
     },
     "too_soon_matches_in_window": {
       "count": 64
     },
-    "too_soon_share_of_future_in_window": 0.4183,
+    "too_soon_share_of_future_in_window": 0.3033,
     "lead_time_snapshot": {
-      "nearest_minutes": 11.1,
-      "farthest_minutes": 311.1,
+      "nearest_minutes": 0.0,
+      "farthest_minutes": 300.0,
       "sample_minutes": [
-        11.1,
-        11.1,
-        11.1,
-        11.1,
-        11.1,
-        11.1,
-        11.1,
-        11.1
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0,
+        0.0
       ]
     },
-    "now_utc": "2026-05-10T09:48:52.593412+00:00",
-    "now_local": "2026-05-10T12:48:52.593412+03:00",
+    "now_utc": "2026-05-10T09:59:58.154831+00:00",
+    "now_local": "2026-05-10T12:59:58.154831+03:00",
     "near_window_priority_filter_patch": true,
     "near_window_priority_first_keys": [
       "soccer|atletico coruna montaneros|juventud cambados|2026-05-10",
@@ -329,8 +328,8 @@ runtime cli direct start
         "event_requests": 2,
         "response_errors": 0,
         "events_fetched": 100,
-        "matches_built": 80,
-        "low_tier_skipped": 20,
+        "matches_built": 81,
+        "low_tier_skipped": 19,
         "simulated_skipped": 0,
         "event_http_statuses": [
           200,
@@ -339,7 +338,7 @@ runtime cli direct start
         "payload_shapes": [
           "list"
         ],
-        "last_body_preview": "[{\"id\":63097511,\"home\":\"Mathare United FC\",\"away\":\"Aps Bomet FC\",\"homeId\":138482,\"awayId\":633002,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Kenya - Premier League\",\"slug\":\"kenya-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70813638,\"home\":\"Hong Kong FC\",\"away\":\"Hong Kong Rangers\",\"homeId\":180864,\"awayId\":78447,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Hong Kong, China - Premier League\",\"slug\":\"hong-kong-china-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67802914,\"home\":\"Rio Ave FC\",\"away\":\"Sporting CP\",\"homeId\":78123,\"awayId\":78151,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Portugal - U19 Campeonato Nacional\",\"slug\":\"portugal-u19-campeonato-nacional\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71048140,\"home\":\"FC Sokol Saratov\",\"away\":\"Spartak Kostroma\",\"homeId\":2314,\"awayId\":36393,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 1. Liga\",\"slug\":\"russia-1-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67149478,\"home\":\"Kolding IF\",\"away\":\"FC Nordsjaelland\",\"homeId\":278019,\"awayId\":460433,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Denmark - Kvindeligaen, Women\",\"slug\":\"denmark-kvindeligaen-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}",
+        "last_body_preview": "[{\"id\":61467273,\"home\":\"Warta Poznan\",\"away\":\"Sandecja Nowy Sacz\",\"homeId\":7922,\"awayId\":36766,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - II Liga\",\"slug\":\"poland-ii-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":65310902,\"home\":\"Znicz Pruszkow\",\"away\":\"Slask Wroclaw\",\"homeId\":275605,\"awayId\":114745,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - CLJ\",\"slug\":\"poland-clj\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61062315,\"home\":\"GKS Piast Gliwice\",\"away\":\"GKS Katowice\",\"homeId\":7918,\"awayId\":3112,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - Ekstraklasa\",\"slug\":\"poland-ekstraklasa\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":62352460,\"home\":\"AC Milan\",\"away\":\"Parma Calcio\",\"homeId\":502832,\"awayId\":924573,\"date\":\"2026-05-10T10:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Italy - Serie A, Women\",\"slug\":\"italy-serie-a-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67207992,\"home\":\"Fortuna Cologne\",\"away\":\"MSV Duisburg\",\"homeId\":74433,\"awayId\":43714,\"date\":\"2026-05-10T10:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Germany Amateur - U19 DFB Nachwuchsliga\",\"slug\":\"germany-amateur-u19-dfb-nachwuchsliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71296962,\"home\":\"Nacional Asuncion\",\"away\":\"Spo",
         "rate_limited": false,
         "max_http_requests_per_run": 200,
         "budget_exhausted": false
@@ -351,8 +350,8 @@ runtime cli direct start
           "event_requests": 2,
           "response_errors": 0,
           "events_fetched": 100,
-          "matches_built": 80,
-          "low_tier_skipped": 20,
+          "matches_built": 81,
+          "low_tier_skipped": 19,
           "simulated_skipped": 0,
           "event_http_statuses": [
             200,
@@ -361,7 +360,7 @@ runtime cli direct start
           "payload_shapes": [
             "list"
           ],
-          "last_body_preview": "[{\"id\":63097511,\"home\":\"Mathare United FC\",\"away\":\"Aps Bomet FC\",\"homeId\":138482,\"awayId\":633002,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Kenya - Premier League\",\"slug\":\"kenya-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70813638,\"home\":\"Hong Kong FC\",\"away\":\"Hong Kong Rangers\",\"homeId\":180864,\"awayId\":78447,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Hong Kong, China - Premier League\",\"slug\":\"hong-kong-china-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67802914,\"home\":\"Rio Ave FC\",\"away\":\"Sporting CP\",\"homeId\":78123,\"awayId\":78151,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Portugal - U19 Campeonato Nacional\",\"slug\":\"portugal-u19-campeonato-nacional\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71048140,\"home\":\"FC Sokol Saratov\",\"away\":\"Spartak Kostroma\",\"homeId\":2314,\"awayId\":36393,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 1. Liga\",\"slug\":\"russia-1-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67149478,\"home\":\"Kolding IF\",\"away\":\"FC Nordsjaelland\",\"homeId\":278019,\"awayId\":460433,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Denmark - Kvindeligaen, Women\",\"slug\":\"denmark-kvindeligaen-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}",
+          "last_body_preview": "[{\"id\":61467273,\"home\":\"Warta Poznan\",\"away\":\"Sandecja Nowy Sacz\",\"homeId\":7922,\"awayId\":36766,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - II Liga\",\"slug\":\"poland-ii-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":65310902,\"home\":\"Znicz Pruszkow\",\"away\":\"Slask Wroclaw\",\"homeId\":275605,\"awayId\":114745,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - CLJ\",\"slug\":\"poland-clj\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61062315,\"home\":\"GKS Piast Gliwice\",\"away\":\"GKS Katowice\",\"homeId\":7918,\"awayId\":3112,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - Ekstraklasa\",\"slug\":\"poland-ekstraklasa\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":62352460,\"home\":\"AC Milan\",\"away\":\"Parma Calcio\",\"homeId\":502832,\"awayId\":924573,\"date\":\"2026-05-10T10:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Italy - Serie A, Women\",\"slug\":\"italy-serie-a-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67207992,\"home\":\"Fortuna Cologne\",\"away\":\"MSV Duisburg\",\"homeId\":74433,\"awayId\":43714,\"date\":\"2026-05-10T10:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Germany Amateur - U19 DFB Nachwuchsliga\",\"slug\":\"germany-amateur-u19-dfb-nachwuchsliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71296962,\"home\":\"Nacional Asuncion\",\"away\":\"Spo",
           "rate_limited": false,
           "max_http_requests_per_run": 200,
           "budget_exhausted": false
@@ -377,21 +376,33 @@ runtime cli direct start
       "api_key_2_present": true,
       "account2_missing": false,
       "event_requests": 0,
-      "odds_requests": 6,
+      "odds_requests": 18,
       "response_errors": 0,
       "events_fetched": 100,
-      "events_matched": 25,
+      "events_matched": 79,
       "matched_exact": 0,
       "matched_loose": 0,
-      "matched_fuzzy": 1,
-      "unmatched_offer_events": 142,
-      "markets_parsed": 548,
-      "offers_parsed": 909,
+      "matched_fuzzy": 0,
+      "unmatched_offer_events": 36,
+      "markets_parsed": 3008,
+      "offers_parsed": 5207,
       "event_http_statuses": [],
       "odds_http_statuses": [
         200,
         200,
         200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        500,
         200,
         200,
         200
@@ -400,7 +411,7 @@ runtime cli direct start
         "list"
       ],
       "bookmakers_seen": 4,
-      "last_body_preview": "[{\"id\":63145327,\"home\":\"CD Binissalem\",\"away\":\"CD Son Cladera\",\"date\":\"2026-05-10T10:00:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Spain Amateur - Tercera Federacion, Group 11\",\"slug\":\"spain-amateur-tercera-federacion-group-11\"},\"urls\":{\"Sbobet\":\"N/A\"},\"bookmakerIds\":{\"Sbobet\":\"9900378\"},\"bookmakers\":{\"Sbobet\":[{\"name\":\"Spread\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.810\",\"away\":\"1.950\"}]},{\"name\":\"Totals\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":2.25,\"over\":\"1.790\",\"under\":\"1.970\"}]}]}},{\"id\":71314516,\"home\":\"CF Valencia\",\"away\":\"Granada CF\",\"date\":\"2026-05-10T10:00:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Spain - U19 Division de Honor Juvenil\",\"slug\":\"spain-u19-division-de-honor-juvenil\"},\"urls\":{\"Sbobet\":\"N/A\"},\"bookmakerIds\":{\"Sbobet\":\"9902055\"},\"bookmakers\":{\"Sbobet\":[{\"name\":\"ML\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"home\":\"2.250\",\"draw\":\"3.200\",\"away\":\"2.540\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.780\",\"away\":\"2.020\"}]},{\"name\":\"Totals\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":2.75,\"over\":\"1.800\",\"under\":\"2.000\"}]},{\"name\":\"Spread HT\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.820\",\"away\":\"1.980\"}]},{\"name\":\"Totals HT\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":1.25,\"over\":\"2.060\",\"under\":\"1.740\"}]}]}}]",
+      "last_body_preview": "[{\"id\":68995136,\"home\":\"Beijing Guoan\",\"away\":\"Shanghai Port FC\",\"date\":\"2026-05-10T11:35:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"China - Chinese Super League\",\"slug\":\"china-chinese-super-league\"},\"urls\":{\"Betfair Exchange\":\"https://www.betfair.com/exchange/plus/en/e/e/e-e-35574439\",\"Sbobet\":\"N/A\"},\"bookmakerIds\":{\"Betfair Exchange\":\"id1000064968995136\",\"Sbobet\":\"9847290\"},\"bookmakers\":{\"Betfair Exchange\":[{\"name\":\"ML\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"home\":\"1.55\",\"draw\":\"4.80\",\"away\":\"6.40\",\"layHome\":\"1.57\",\"layAway\":\"6.60\",\"layDraw\":\"5.00\",\"depthHome\":\"78.48\",\"depthAway\":\"40.47\",\"depthDraw\":\"61.29\",\"depthLayHome\":\"8.46\",\"depthLayAway\":\"8.79\",\"depthLayDraw\":\"28.33\"}]},{\"name\":\"Draw No Bet\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.24\",\"away\":\"5.00\",\"layHome\":\"1.25\",\"layAway\":\"5.20\",\"depthHome\":\"8.61\",\"depthAway\":\"59.96\",\"depthLayHome\":\"168.96\",\"depthLayAway\":\"2.05\"}]},{\"name\":\"Double Chance\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"hdp\":0,\"1X\":\"1.18\",\"12\":\"1.25\",\"X2\":\"2.74\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.39\",\"away\":\"3.45\",\"layHome\":\"1.41\",\"layAway\":\"3.50\",\"depthHome\":\"127.61\",\"depthAway\":\"5.97\",\"depthLayHome\":\"193.11\",\"depthLayAway\":\"2.93\"},{\"hdp\":0.25,\"home\":\"1.20\",\"away\":\"5.73\",\"layHome\":\"1.22\",\"layAway\":\"5.85\",\"depthHome\":\"72.99\",\"depthAway\":\"47.52\",\"depthLayHome\":\"1072.38\",\"depthLayAway\":\"1.83\"},{\"hdp\":-0.5,\"home\":\"1.55\",\"away\":\"2.75\",\"layHome\":\"1.57\",\"layAway\":\"2.79\",\"depthHome\":\"78.48\",\"depthAway\":\"4.83\",\"depthLayHome\":\"8.46\",\"depthLayAway\":\"2.05\"},{\"hdp\":0.5,\"home\":\"1.18\",\"away\":\"6.40\",\"layHome\":\"1.19\",\"layAway\":\"6.53\",\"depthHome\":\"33.98\",\"depthAway\":\"40.47\",\"depthLayHome\":\"203.98\",\"depthLayAway\":\"1.64\"},{\"hdp\":-0.75,\"home\":\"1.67\",\"away\":\"2.43\",\"layHome\":\"1.70\",\"layAway\":\"2.47\",\"depthHome\":\"45.33\",\"depthAway\":\"7.45\",\"depthLayHome\":\"10.66\",\"depthLayAway\":\"2.9\"},{\"hdp\":0.75,\"home\":\"1.12\",\"away\":\"8.84\",\"layHome\":\"1.1",
       "simulated_skipped": 0,
       "requested_bookmakers": "Bet365,Unibet,Betfair Exchange,Sbobet",
       "requested_bookmakers_by_account": [
@@ -417,13 +428,20 @@ runtime cli direct start
         "account1": {
           "bookmakers": "Bet365,Unibet",
           "api_key_present": true,
-          "odds_requests": 3,
+          "odds_requests": 10,
           "response_errors": 0,
-          "offers_parsed": 621,
-          "events_matched": 9,
+          "offers_parsed": 3077,
+          "events_matched": 40,
           "rate_limited": false,
           "http_statuses": [
             200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            500,
             200,
             200
           ]
@@ -431,12 +449,17 @@ runtime cli direct start
         "account2": {
           "bookmakers": "Betfair Exchange,Sbobet",
           "api_key_present": true,
-          "odds_requests": 3,
+          "odds_requests": 8,
           "response_errors": 0,
-          "offers_parsed": 288,
-          "events_matched": 13,
+          "offers_parsed": 2130,
+          "events_matched": 44,
           "rate_limited": false,
           "http_statuses": [
+            200,
+            200,
+            200,
+            200,
+            200,
             200,
             200,
             200
@@ -453,16 +476,16 @@ runtime cli direct start
         "Sbobet",
         "Unibet"
       ],
-      "matches_with_2plus_books": 9,
-      "matches_with_1_book": 4,
+      "matches_with_2plus_books": 37,
+      "matches_with_1_book": 11,
       "offers_by_family": {
-        "btts": 24,
-        "dnb": 32,
-        "doubleChance": 21,
-        "h2h": 72,
-        "spreads": 420,
-        "teamTotals": 149,
-        "totals": 191
+        "btts": 154,
+        "dnb": 172,
+        "doubleChance": 150,
+        "h2h": 392,
+        "spreads": 2301,
+        "teamTotals": 814,
+        "totals": 1224
       },
       "secondary_odds_rescue": {
         "provider_version": "rapidapi-odds-bridge-v1-2026-04-29",
@@ -494,7 +517,7 @@ runtime cli direct start
         ],
         "last_url": "https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100",
         "last_error": null,
-        "last_body_preview": "{\"total\":562328,\"per_page\":100,\"current_page\":0,\"last_page\":5623,\"data\":[{\"id\":21183,\"sport\":{\"id\":2,\"name\":\"Tennis\",\"slug\":\"tennis\"},\"category\":{\"id\":149,\"name\":\"Spain\",\"slug\":\"spain\",\"code\":\"es\"},\"tournament\":{\"id\":6670,\"name\":\"ITF M15 Madrid Men\",\"slug\":\"tennis-spain-itf-m15-madrid-men\"},\"season\":{\"id\":19157,\"slug\":\"2024\",\"year_start\":2024,\"year_end\":null},\"team_home\":{\"id\":883953,\"name\":\"Cesar Porras J.\",\"slug\":\"tennis-cesar-porras-j\",\"team_type\":\"SINGLE\"},\"team_away\":{\"id\":879281,\"name\":\"De Krom M.\",\"slug\":\"tennis-de-krom-m\",\"team_type\":\"SINGLE\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2024-09-08 09:10:00\",\"winner\":\"AWAY_WIN\",\"score_home\":1,\"score_away\":2,\"score_details\":\"1:6, 6:3, 6^2:7\",\"comments\":\"1:2 (1:6, 6:3, 6^2:7)\",\"final_result_only\":false,\"main_outcome_0\":1.88,\"main_outcome_1\":1.84,\"main_outcome_2\":null,\"main_volume_1\":null,\"main_volume_2\":null},{\"id\":21184,\"sport\":{\"id\":3,\"name\":\"Basketball\",\"slug\":\"basketball\"},\"category\":{\"id\":149,\"name\":\"Spain\",\"slug\":\"spain\",\"code\":\"es\"},\"tournament\":{\"id\":11093,\"name\":\"Copa Espana\",\"slug\":\"basketball-spain-copa-espana\"},\"season\":{\"id\":19209,\"slug\":\"2024-2025\",\"year_start\":2024,\"year_end\":2025},\"team_home\":{\"id\":38992,\"name\":\"Palmer Basket\",\"slug\":\"basketball-palmer-basket\",\"team_type\":\"TEAM\"},\"team_away\":{\"id\":38993,\"name\":\"Castello\",\"slug\":\"basketball-castello\",\"team_type\":\"TEAM\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2024-09-08 10:00:00\",\"winner\":\"AWAY_WIN\",\"score_home\":69,\"score_away\":94,\"score_details\":\"17:29, 20:21, 16:17, 16:27\",\"comments\":\"69:94 (17:29, 20:21, 16:17, 16:27)\",\"final_r"
+        "last_body_preview": "{\"total\":562329,\"per_page\":100,\"current_page\":0,\"last_page\":5623,\"data\":[{\"id\":33363,\"sport\":{\"id\":1,\"name\":\"Football\",\"slug\":\"football\"},\"category\":{\"id\":133,\"name\":\"Russia\",\"slug\":\"russia\",\"code\":\"ru\"},\"tournament\":{\"id\":1041,\"name\":\"FNL 2 - Division B - Group 4\",\"slug\":\"football-russia-fnl-2-division-b-group-4\"},\"season\":{\"id\":3331,\"slug\":\"2024\",\"year_start\":2024,\"year_end\":null},\"team_home\":{\"id\":878000,\"name\":\"Kazan 2\",\"slug\":\"football-kazan-2\",\"team_type\":\"TEAM\"},\"team_away\":{\"id\":879752,\"name\":\"Uralets Nizhny Tagil\",\"slug\":\"football-uralets-nizhny-tagil-no3i3\",\"team_type\":\"TEAM\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2024-09-21 13:00:00\",\"winner\":\"HOME_WIN\",\"score_home\":2,\"score_away\":1,\"score_details\":\"0:0, 2:1\",\"comments\":\"2:1 (0:0, 2:1)\",\"final_result_only\":false,\"main_outcome_0\":1.64,\"main_outcome_1\":3.8,\"main_outcome_2\":4.63,\"main_volume_1\":null,\"main_volume_2\":null},{\"id\":430788,\"sport\":{\"id\":6,\"name\":\"Volleyball\",\"slug\":\"volleyball\"},\"category\":{\"id\":133,\"name\":\"Russia\",\"slug\":\"russia\",\"code\":\"ru\"},\"tournament\":{\"id\":10212,\"name\":\"Vysshaya Liga А\",\"slug\":\"volleyball-russia-vysshaya-liga-a\"},\"season\":{\"id\":25447,\"slug\":\"2025-2026\",\"year_start\":2025,\"year_end\":2026},\"team_home\":{\"id\":673827,\"name\":\"Dinskaya-RCSP\",\"slug\":\"volleyball-dinskaya-rcsp\",\"team_type\":\"TEAM\"},\"team_away\":{\"id\":16022,\"name\":\"Chelyabinsk\",\"slug\":\"volleyball-chelyabinsk\",\"team_type\":\"TEAM\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2025-12-07 13:00:00\",\"winner\":\"AWAY_WIN\",\"score_home\":1,\"score_away\":3,\"score_details\":\"\",\"comments\":null,\"final_result_only\":false,\"m"
       },
       "secondary_odds_rescue_requests": 1,
       "secondary_odds_rescue_offers": 0,
@@ -508,8 +531,8 @@ runtime cli direct start
       "event_requests": 2,
       "response_errors": 0,
       "events_fetched": 100,
-      "matches_built": 80,
-      "low_tier_skipped": 20,
+      "matches_built": 81,
+      "low_tier_skipped": 19,
       "simulated_skipped": 0,
       "event_http_statuses": [
         200,
@@ -518,7 +541,7 @@ runtime cli direct start
       "payload_shapes": [
         "list"
       ],
-      "last_body_preview": "[{\"id\":63097511,\"home\":\"Mathare United FC\",\"away\":\"Aps Bomet FC\",\"homeId\":138482,\"awayId\":633002,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Kenya - Premier League\",\"slug\":\"kenya-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70813638,\"home\":\"Hong Kong FC\",\"away\":\"Hong Kong Rangers\",\"homeId\":180864,\"awayId\":78447,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Hong Kong, China - Premier League\",\"slug\":\"hong-kong-china-premier-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67802914,\"home\":\"Rio Ave FC\",\"away\":\"Sporting CP\",\"homeId\":78123,\"awayId\":78151,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Portugal - U19 Campeonato Nacional\",\"slug\":\"portugal-u19-campeonato-nacional\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71048140,\"home\":\"FC Sokol Saratov\",\"away\":\"Spartak Kostroma\",\"homeId\":2314,\"awayId\":36393,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 1. Liga\",\"slug\":\"russia-1-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67149478,\"home\":\"Kolding IF\",\"away\":\"FC Nordsjaelland\",\"homeId\":278019,\"awayId\":460433,\"date\":\"2026-05-10T10:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Denmark - Kvindeligaen, Women\",\"slug\":\"denmark-kvindeligaen-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}",
+      "last_body_preview": "[{\"id\":61467273,\"home\":\"Warta Poznan\",\"away\":\"Sandecja Nowy Sacz\",\"homeId\":7922,\"awayId\":36766,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - II Liga\",\"slug\":\"poland-ii-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":65310902,\"home\":\"Znicz Pruszkow\",\"away\":\"Slask Wroclaw\",\"homeId\":275605,\"awayId\":114745,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - CLJ\",\"slug\":\"poland-clj\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61062315,\"home\":\"GKS Piast Gliwice\",\"away\":\"GKS Katowice\",\"homeId\":7918,\"awayId\":3112,\"date\":\"2026-05-10T10:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - Ekstraklasa\",\"slug\":\"poland-ekstraklasa\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":62352460,\"home\":\"AC Milan\",\"away\":\"Parma Calcio\",\"homeId\":502832,\"awayId\":924573,\"date\":\"2026-05-10T10:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Italy - Serie A, Women\",\"slug\":\"italy-serie-a-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67207992,\"home\":\"Fortuna Cologne\",\"away\":\"MSV Duisburg\",\"homeId\":74433,\"awayId\":43714,\"date\":\"2026-05-10T10:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Germany Amateur - U19 DFB Nachwuchsliga\",\"slug\":\"germany-amateur-u19-dfb-nachwuchsliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71296962,\"home\":\"Nacional Asuncion\",\"away\":\"Spo",
       "rate_limited": false,
       "max_http_requests_per_run": 200,
       "budget_exhausted": false
@@ -554,7 +577,7 @@ runtime cli direct start
       "requests": 2,
       "max_requests_per_run": 60,
       "budget_exhausted": 0,
-      "response_errors": 1,
+      "response_errors": 0,
       "auth_error": 0,
       "rate_limited": 0,
       "fixtures_fetched": 50,
@@ -577,6 +600,7 @@ runtime cli direct start
       "matched_loose": 0,
       "matched_fuzzy": 0,
       "http_statuses": [
+        200,
         200
       ],
       "top_level_keys": [],
@@ -650,21 +674,21 @@ runtime cli direct start
       "days_requested": 46,
       "chunk_windows_requested": 7,
       "rows_fetched": 25021,
-      "contexts_built": 85,
+      "contexts_built": 110,
       "matched_exact": 0,
       "matched_loose": 0,
       "matched_fuzzy": 0,
       "unmatched_rows": 25021,
-      "team_form_contexts_built": 85,
+      "team_form_contexts_built": 108,
       "bzzoiro_enabled": true,
-      "bzzoiro_requests": 3,
+      "bzzoiro_requests": 4,
       "bzzoiro_response_errors": 0,
       "bzzoiro_events_fetched": 126,
-      "bzzoiro_contexts_built": 28,
-      "bzzoiro_matched_exact": 8,
+      "bzzoiro_contexts_built": 20,
+      "bzzoiro_matched_exact": 4,
       "bzzoiro_matched_loose": 0,
-      "bzzoiro_matched_fuzzy": 20,
-      "bzzoiro_unmatched_rows": 98,
+      "bzzoiro_matched_fuzzy": 16,
+      "bzzoiro_unmatched_rows": 106,
       "http_statuses": [
         200,
         200,
@@ -704,7 +728,7 @@ runtime cli direct start
       "max_http_requests_per_run": 32,
       "budget_exhausted": false,
       "provider_odds_hints": 0,
-      "provider_metric_hints": 440,
+      "provider_metric_hints": 318,
       "provider_payload_mining_v2": true,
       "sstats_historical_odds_not_used_as_lines": true
     },
@@ -729,7 +753,7 @@ runtime cli direct start
       "matched_fuzzy": 0,
       "exact_matches": 0,
       "fuzzy_matches": 0,
-      "target_matches": 89,
+      "target_matches": 96,
       "http_statuses": [],
       "payload_shapes": [],
       "last_error": null,
@@ -742,31 +766,31 @@ runtime cli direct start
     "espn": {
       "enabled": true,
       "scoreboard_requests": 20,
-      "probability_requests": 7,
-      "summary_requests": 7,
+      "probability_requests": 2,
+      "summary_requests": 2,
       "response_errors": 0,
-      "events_fetched": 32,
-      "events_matched": 7,
-      "contexts_built": 7,
-      "matched_exact": 2,
+      "events_fetched": 26,
+      "events_matched": 2,
+      "contexts_built": 2,
+      "matched_exact": 0,
       "matched_loose": 0,
-      "matched_fuzzy": 5,
+      "matched_fuzzy": 2,
       "league_slugs_used": [
         "eng.1",
-        "ger.1",
         "eng.4",
         "ita.1",
         "sco.1",
-        "swe.1",
-        "ned.1",
         "eng.2",
         "eng.3",
-        "eng.5"
+        "eng.5",
+        "esp.1",
+        "esp.2",
+        "ita.2"
       ],
       "injury_counts_seen": 0,
-      "soft_failures": 7,
+      "soft_failures": 2,
       "partial_contexts_built": 0,
-      "last_body_preview": "{\"boxscore\":{\"form\":[{\"displayOrder\":1,\"team\":{\"id\":\"145\",\"uid\":\"s:600~t:145\",\"displayName\":\"FC Groningen\",\"abbreviation\":\"GRO\",\"links\":[{\"href\":\"https://www.espn.com/soccer/club/_/id/145/fc-groningen\",\"text\":\"Clubhouse\"},{\"href\":\"https://www.espn.com/soccer/team/fixtures/_/id/145/fc-groningen\",\"text\":\"Fixtures\"}],\"logo\":\"https://a.espncdn.com/i/teamlogos/soccer/500/145.png\",\"logos\":[{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500/145.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"default\"],\"lastUpdated\":\"2022-08-09T20:49Z\"},{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500-dark/145.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"dark\"],\"lastUpdated\":\"2022-08-09T20:49Z\"}]},\"events\":[{\"id\":\"741257\",\"links\":[{\"href\":\"https://www.espn.com/soccer/match/_/gameId/741257/excelsior-fc-groningen\",\"text\":\"Summary\"}],\"atVs\":\"vs\",\"gameDate\":\"2026-05-02T16:45Z\",\"score\":\"3-2\",\"homeTeamId\":\"145\",\"awayTeamId\":\"2566\",\"homeTeamScore\":\"2\",\"awayTeamScore\":\"3\",\"homeAggregateScore\":\"0\",\"awayAggregateScore\":\"0\",\"homeShootoutScore\":\"0\",\"awayShootoutScore\":\"0\",\"gameResult\":\"L\",\"competitionName\":\"2025-26 Dutch Eredivisie\",\"roundName\":\"Regular Season\",\"leagueName\":\"Dutch Eredivisie\",\"l",
+      "last_body_preview": "{\"boxscore\":{\"form\":[{\"displayOrder\":1,\"team\":{\"id\":\"256\",\"uid\":\"s:600~t:256\",\"displayName\":\"Celtic\",\"abbreviation\":\"CEL\",\"links\":[{\"href\":\"https://www.espn.com/soccer/club/_/id/256/celtic\",\"text\":\"Clubhouse\"},{\"href\":\"https://www.espn.com/soccer/team/fixtures/_/id/256/celtic\",\"text\":\"Fixtures\"}],\"logo\":\"https://a.espncdn.com/i/teamlogos/soccer/500/256.png\",\"logos\":[{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500/256.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"default\"],\"lastUpdated\":\"2019-05-08T16:07Z\"},{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500-dark/256.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"dark\"],\"lastUpdated\":\"2019-05-08T16:07Z\"}]},\"events\":[{\"id\":\"401867705\",\"links\":[{\"href\":\"https://www.espn.com/soccer/match/_/gameId/401867705/celtic-hibernian\",\"text\":\"Summary\"}],\"atVs\":\"@\",\"gameDate\":\"2026-05-03T11:00Z\",\"score\":\"2-1\",\"homeTeamId\":\"258\",\"awayTeamId\":\"256\",\"homeTeamScore\":\"1\",\"awayTeamScore\":\"2\",\"homeAggregateScore\":\"0\",\"awayAggregateScore\":\"0\",\"homeShootoutScore\":\"0\",\"awayShootoutScore\":\"0\",\"gameResult\":\"W\",\"competitionName\":\"2025-26 Scottish Premiership\",\"leagueName\":\"Scottish Premiership\",\"leagueAbbreviation\":\"SPFL Premiership\",\"op",
       "http_statuses": [
         200,
         200,
@@ -787,16 +811,6 @@ runtime cli direct start
         200,
         200,
         200,
-        200,
-        400,
-        200,
-        400,
-        200,
-        400,
-        200,
-        400,
-        200,
-        400,
         200,
         400,
         200,
@@ -806,17 +820,15 @@ runtime cli direct start
     },
     "thesportsdb": {
       "enabled": true,
-      "requests": 4,
+      "requests": 2,
       "response_errors": 0,
-      "leagues_resolved": 3,
-      "tables_fetched": 3,
-      "contexts_built": 23,
-      "missing_table_rows": 40,
-      "partial_contexts_built": 20,
+      "leagues_resolved": 1,
+      "tables_fetched": 1,
+      "contexts_built": 9,
+      "missing_table_rows": 19,
+      "partial_contexts_built": 8,
       "last_body_preview": "{\"table\":[{\"idStanding\":\"9514604\",\"intRank\":\"1\",\"idTeam\":\"133643\",\"strTeam\":\"Heart of Midlothian\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/twqvyt1447597939.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWDW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"21\",\"intLoss\":\"5\",\"intDraw\":\"7\",\"intGoalsFor\":\"58\",\"intGoalsAgainst\":\"28\",\"intGoalDifference\":\"30\",\"intPoints\":\"70\",\"dateUpdated\":\"2026-05-09 23:01:10\"},{\"idStanding\":\"9514605\",\"intRank\":\"2\",\"idTeam\":\"133642\",\"strTeam\":\"Rangers\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/ti24j61614290048.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"LLWWW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"19\",\"intLoss\":\"2\",\"intDraw\":\"12\",\"intGoalsFor\":\"66\",\"intGoalsAgainst\":\"31\",\"intGoalDifference\":\"35\",\"intPoints\":\"69\",\"dateUpdated\":\"2026-05-09 23:01:10\"},{\"idStanding\":\"9514606\",\"intRank\":\"3\",\"idTeam\":\"133647\",\"strTeam\":\"Celtic\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/3uv1641758780002.png\\/tiny\",\"idLeague\":\"4330\",\"strLe",
       "http_statuses": [
-        200,
-        200,
         200,
         200
       ],
@@ -832,19 +844,19 @@ runtime cli direct start
       "requests": 6,
       "response_errors": 0,
       "matches_fetched": 53,
-      "history_rows_fetched": 1066,
-      "events_matched": 6,
-      "contexts_built": 5,
+      "history_rows_fetched": 992,
+      "events_matched": 4,
+      "contexts_built": 3,
       "best_near_miss_score": 0.0,
       "near_miss_count": 0,
       "standings_requests": 2,
       "standings_loaded": 2,
-      "history_requests": 5,
+      "history_requests": 4,
       "history_contexts_built": 1,
       "matched_exact": 0,
       "matched_loose": 0,
-      "matched_fuzzy": 6,
-      "unmatched_rows": 44,
+      "matched_fuzzy": 4,
+      "unmatched_rows": 49,
       "http_statuses": [
         200,
         200,
@@ -853,7 +865,7 @@ runtime cli direct start
         200,
         200
       ],
-      "last_body_preview": "{\"filters\":{\"season\":2025},\"resultSet\":{\"count\":380,\"first\":\"2025-08-23\",\"last\":\"2026-05-24\",\"played\":354},\"competition\":{\"id\":2019,\"name\":\"Serie A\",\"code\":\"SA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/c111.png\"},\"matches\":[{\"area\":{\"id\":2114,\"name\":\"Italy\",\"code\":\"ITA\",\"flag\":\"https://crests.football-data.org/784.svg\"},\"competition\":{\"id\":2019,\"name\":\"Serie A\",\"code\":\"SA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/c111.png\"},\"season\":{\"id\":2395,\"startDate\":\"2025-08-24\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":536819,\"utcDate\":\"2025-08-23T16:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":107,\"name\":\"Genoa CFC\",\"shortName\":\"Genoa\",\"tla\":\"GEN\",\"crest\":\"https://crests.football-data.org/107.png\"},\"awayTeam\":{\"id\":5890,\"name\":\"US Lecce\",\"shortName\":\"Lecce\",\"tla\":\"USL\",\"crest\":\"https://crests.football-data.org/5890.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":0,\"away\":0},\"halfTime\":{\"home\":0,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":11029,\"name\":\"Davide Massa\",\"type\":\"REFEREE\",\"nationality\":\"Italy\"}]},{\"area\":{\"id\":2114,\"name\":\"Italy\",\"code\":\"ITA\",\"flag\":\"https://crests.football-data.org/784.svg\"},\"competition\":{\"id\":2019,\"name\":\"Serie A\",\"code\":\"SA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/c111.png\"},\"season\":{\"id\":2395,\"startDate\":\"2025-08-24\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":536823,\"utcDate\":\"2025-08-23T16:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":471,\"name\":\"US Sassuolo Calcio\",\"shortName\":\"Sassuolo\",\"tla\":\"SAS\"",
+      "last_body_preview": "{\"filters\":{\"season\":2025},\"resultSet\":{\"count\":380,\"first\":\"2025-08-15\",\"last\":\"2026-05-24\",\"played\":354},\"competition\":{\"id\":2021,\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\"},\"matches\":[{\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"competition\":{\"id\":2021,\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\"},\"season\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":537785,\"utcDate\":\"2025-08-15T19:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":64,\"name\":\"Liverpool FC\",\"shortName\":\"Liverpool\",\"tla\":\"LIV\",\"crest\":\"https://crests.football-data.org/64.png\"},\"awayTeam\":{\"id\":1044,\"name\":\"AFC Bournemouth\",\"shortName\":\"Bournemouth\",\"tla\":\"BOU\",\"crest\":\"https://crests.football-data.org/bournemouth.png\"},\"score\":{\"winner\":\"HOME_TEAM\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":4,\"away\":2},\"halfTime\":{\"home\":1,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":11580,\"name\":\"Anthony Taylor\",\"type\":\"REFEREE\",\"nationality\":\"England\"}]},{\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"competition\":{\"id\":2021,\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\"},\"season\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":537786,\"utcDate\":\"2025-08-16T11:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":58,\"name\":\"As",
       "max_http_requests_per_run": 6,
       "budget_exhausted": true,
       "rate_limited": false
@@ -871,8 +883,8 @@ runtime cli direct start
       "matched_loose": 0,
       "matched_fuzzy": 0,
       "clubelo_sidecar_enabled": true,
-      "clubelo_contexts_built": 22,
-      "clubelo_only_contexts": 22,
+      "clubelo_contexts_built": 18,
+      "clubelo_only_contexts": 18,
       "merged_with_clubelo": 0,
       "budget_exhausted": false,
       "max_http_requests_per_run": 14,
@@ -889,12 +901,12 @@ runtime cli direct start
         ],
         "target_matches": 24,
         "snapshot_requests": 2,
-        "team_history_requests": 4,
+        "team_history_requests": 16,
         "snapshot_rows": 1260,
         "team_rows": 0,
-        "ratings_resolved": 44,
-        "contexts_built": 22,
-        "missing_ratings": 2,
+        "ratings_resolved": 36,
+        "contexts_built": 18,
+        "missing_ratings": 6,
         "budget_exhausted": true,
         "last_body_preview": "Rank,Club,Country,Level,Elo,From,To\n\n\n",
         "max_http_requests_per_run": 3
@@ -902,19 +914,17 @@ runtime cli direct start
     },
     "openfootball": {
       "enabled": true,
-      "requests": 3,
+      "requests": 1,
       "response_errors": 0,
-      "datasets_loaded": 3,
-      "contexts_built": 4,
+      "datasets_loaded": 1,
+      "contexts_built": 1,
       "matched_exact": 0,
       "matched_loose": 0,
-      "matched_fuzzy": 4,
+      "matched_fuzzy": 1,
       "http_statuses": [
-        200,
-        200,
         200
       ],
-      "last_body_preview": "{\n  \"name\": \"Netherlands Eredivisie 2025/26\",\n  \"matches\": [\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-08\",\n      \"time\": \"20:00\",\n      \"team1\": \"Fortuna Sittard\",\n      \"team2\": \"Go Ahead Eagles\",\n      \"score\": {\n        \"ht\": [\n          1,\n          1\n        ],\n        \"ft\": [\n          2,\n          2\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-09\",\n      \"time\": \"16:30\",\n      \"team1\": \"NEC\",\n      \"team2\": \"SBV Excelsior\",\n      \"score\": {\n        \"ht\": [\n          1,\n          0\n        ],\n        \"ft\": [\n          5,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-09\",\n      \"time\": \"18:45\",\n      \"team1\": \"Feyenoord Rotterdam\",\n      \"team2\": \"NAC Breda\",\n      \"score\": {\n        \"ht\": [\n          1,\n          0\n        ],\n        \"ft\": [\n          2,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-09\",\n      \"time\": \"20:00\",\n      \"team1\": \"SC Heerenveen\",\n      \"team2\": \"FC Volendam\",\n      \"score\": {\n        \"ht\": [\n          1,\n          0\n        ],\n        \"ft\": [\n          1,\n          1\n        ]\n      }\n    },\n    {"
+      "last_body_preview": "{\n  \"name\": \"Italian Serie A 2025/26\",\n  \"matches\": [\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"18:30\",\n      \"team1\": \"Genoa CFC\",\n      \"team2\": \"US Lecce\",\n      \"score\": {\n        \"ft\": [\n          0,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"18:30\",\n      \"team1\": \"US Sassuolo Calcio\",\n      \"team2\": \"SSC Napoli\",\n      \"score\": {\n        \"ht\": [\n          0,\n          1\n        ],\n        \"ft\": [\n          0,\n          2\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"20:45\",\n      \"team1\": \"AC Milan\",\n      \"team2\": \"US Cremonese\",\n      \"score\": {\n        \"ht\": [\n          1,\n          1\n        ],\n        \"ft\": [\n          1,\n          2\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"20:45\",\n      \"team1\": \"AS Roma\",\n      \"team2\": \"Bologna FC 1909\",\n      \"score\": {\n        \"ht\": [\n          0,\n          0\n        ],\n        \"ft\": [\n          1,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-24\",\n      \"time\""
     },
     "newsapi": {
       "enabled": false
@@ -927,16 +937,16 @@ runtime cli direct start
       "api_key_present": true,
       "requests": 8,
       "response_errors": 0,
-      "contexts_built": 9,
+      "contexts_built": 8,
       "matches_considered": 24,
-      "matches_with_base_context": 87,
+      "matches_with_base_context": 110,
       "weatherapi_requests": 8,
       "openweathermap_requests": 0,
       "weatherapi_enriched": 8,
       "openweathermap_enriched": 0,
-      "cache_hits": 1,
+      "cache_hits": 0,
       "missing_location": 0,
-      "no_weather_payload": 8,
+      "no_weather_payload": 16,
       "max_http_requests_per_run": "8+0",
       "budget_exhausted": true
     },
@@ -951,9 +961,9 @@ runtime cli direct start
     "market_monitor": {
       "enabled": true,
       "snapshots_written": 1,
-      "matches_snapshotted": 13,
-      "markets_snapshotted": 527,
-      "signals_built": 527,
+      "matches_snapshotted": 48,
+      "markets_snapshotted": 3102,
+      "signals_built": 3102,
       "clv_pending": 0,
       "clv_resolved": 0,
       "avg_open_clv_pct": null,
@@ -963,8 +973,8 @@ runtime cli direct start
   "mapping": {
     "matched_exact": 0,
     "matched_loose": 0,
-    "matched_fuzzy": 1,
-    "unmatched_offer_events": 142,
+    "matched_fuzzy": 0,
+    "unmatched_offer_events": 36,
     "sstats_exact": 0,
     "sstats_loose": 0,
     "sstats_fuzzy": 0,
@@ -976,57 +986,92 @@ runtime cli direct start
     "api_football_exact": 0,
     "api_football_loose": 0,
     "api_football_fuzzy": 0,
-    "espn_exact": 2,
+    "espn_exact": 0,
     "espn_loose": 0,
-    "espn_fuzzy": 5,
-    "thesportsdb_contexts": 23,
+    "espn_fuzzy": 2,
+    "thesportsdb_contexts": 9,
     "openligadb_contexts": 0
   },
   "rejections": {
-    "unsupported_total_line": 17,
-    "simple_market_h2h_high_odds_skip": 14,
-    "no_candidate_for_match": 28,
-    "market_derived_signal_guard_totals": 90,
-    "market_derived_signal_guard_h2h": 27,
-    "simple_market_signal_missing_totals": 90,
-    "simple_market_signal_missing_h2h": 23,
-    "market_derived_h2h_high_odds_guard": 3,
-    "fallback_publish_no_candidate": 1,
-    "controlled_rescue_books_guard": 368,
-    "controlled_rescue_edge_guard": 56,
-    "controlled_rescue_odds_range_guard": 16,
-    "controlled_rescue_candidates_built": 4,
-    "market_integrity_single_source_market_guard": 2,
-    "quality_post_calibration_probability_guard": 2
+    "unsupported_total_line": 123,
+    "simple_market_h2h_high_odds_skip": 35,
+    "no_candidate_for_match": 55,
+    "market_derived_signal_guard_totals": 229,
+    "market_derived_signal_guard_h2h": 30,
+    "market_derived_signal_guard_spreads": 304,
+    "missing_context_totals": 4,
+    "missing_context_h2h": 4,
+    "missing_context_spreads": 4,
+    "missing_context_dnb": 4,
+    "market_derived_h2h_high_odds_guard": 7,
+    "missing_context_double_chance": 3,
+    "missing_context_btts": 2,
+    "missing_context_team_totals": 3,
+    "market_derived_probability_guard_totals": 9,
+    "market_derived_probability_guard_h2h": 3,
+    "simple_market_signal_missing_totals": 66,
+    "simple_market_signal_missing_h2h": 17,
+    "non_core_context_guard": 1,
+    "non_core_edge_guard": 3,
+    "confidence_below_threshold": 4,
+    "edge_below_threshold": 1,
+    "ev_below_threshold": 2,
+    "non_core_confidence_guard": 1,
+    "model_relaxed_fallback_used": 1,
+    "blocked_market_family:btts;allowed=spreads/totals": 1,
+    "publication_family_guard_blocked": 1,
+    "controlled_rescue_books_guard": 1412,
+    "controlled_rescue_edge_guard": 294,
+    "controlled_rescue_odds_range_guard": 146,
+    "controlled_rescue_ev_guard": 2,
+    "controlled_rescue_candidates_built": 26,
+    "market_integrity_single_source_market_guard": 8,
+    "quality_market_sanity_totals_xg_contradiction": 4,
+    "quality_post_calibration_probability_guard": 8,
+    "quality_post_calibration_edge_guard": 2
   },
-  "candidate_modes": {},
+  "candidate_modes": {
+    "controlled_consensus_rescue": 1
+  },
   "provider_diagnostics": {
     "providers": {
       "odds_api_io": {
         "type": "offers",
-        "matches_with_data": 13,
-        "items_total": 909,
+        "matches_with_data": 48,
+        "items_total": 5207,
         "stats": {
           "enabled": true,
           "api_key_present": true,
           "api_key_2_present": true,
           "account2_missing": false,
           "event_requests": 0,
-          "odds_requests": 6,
+          "odds_requests": 18,
           "response_errors": 0,
           "events_fetched": 100,
-          "events_matched": 25,
+          "events_matched": 79,
           "matched_exact": 0,
           "matched_loose": 0,
-          "matched_fuzzy": 1,
-          "unmatched_offer_events": 142,
-          "markets_parsed": 548,
-          "offers_parsed": 909,
+          "matched_fuzzy": 0,
+          "unmatched_offer_events": 36,
+          "markets_parsed": 3008,
+          "offers_parsed": 5207,
           "event_http_statuses": [],
           "odds_http_statuses": [
             200,
             200,
             200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            200,
+            500,
             200,
             200,
             200
@@ -1035,7 +1080,7 @@ runtime cli direct start
             "list"
           ],
           "bookmakers_seen": 4,
-          "last_body_preview": "[{\"id\":63145327,\"home\":\"CD Binissalem\",\"away\":\"CD Son Cladera\",\"date\":\"2026-05-10T10:00:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Spain Amateur - Tercera Federacion, Group 11\",\"slug\":\"spain-amateur-tercera-federacion-group-11\"},\"urls\":{\"Sbobet\":\"N/A\"},\"bookmakerIds\":{\"Sbobet\":\"9900378\"},\"bookmakers\":{\"Sbobet\":[{\"name\":\"Spread\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.810\",\"away\":\"1.950\"}]},{\"name\":\"Totals\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":2.25,\"over\":\"1.790\",\"under\":\"1.970\"}]}]}},{\"id\":71314516,\"home\":\"CF Valencia\",\"away\":\"Granada CF\",\"date\":\"2026-05-10T10:00:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Spain - U19 Division de Honor Juvenil\",\"slug\":\"spain-u19-division-de-honor-juvenil\"},\"urls\":{\"Sbobet\":\"N/A\"},\"bookmakerIds\":{\"Sbobet\":\"9902055\"},\"bookmakers\":{\"Sbobet\":[{\"name\":\"ML\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"home\":\"2.250\",\"draw\":\"3.200\",\"away\":\"2.540\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.780\",\"away\":\"2.020\"}]},{\"name\":\"Totals\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":2.75,\"over\":\"1.800\",\"under\":\"2.000\"}]},{\"name\":\"Spread HT\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.820\",\"away\":\"1.980\"}]},{\"name\":\"Totals HT\",\"updatedAt\":\"2026-05-10T09:48:58.956Z\",\"odds\":[{\"hdp\":1.25,\"over\":\"2.060\",\"under\":\"1.740\"}]}]}}]",
+          "last_body_preview": "[{\"id\":68995136,\"home\":\"Beijing Guoan\",\"away\":\"Shanghai Port FC\",\"date\":\"2026-05-10T11:35:00Z\",\"status\":\"pending\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"China - Chinese Super League\",\"slug\":\"china-chinese-super-league\"},\"urls\":{\"Betfair Exchange\":\"https://www.betfair.com/exchange/plus/en/e/e/e-e-35574439\",\"Sbobet\":\"N/A\"},\"bookmakerIds\":{\"Betfair Exchange\":\"id1000064968995136\",\"Sbobet\":\"9847290\"},\"bookmakers\":{\"Betfair Exchange\":[{\"name\":\"ML\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"home\":\"1.55\",\"draw\":\"4.80\",\"away\":\"6.40\",\"layHome\":\"1.57\",\"layAway\":\"6.60\",\"layDraw\":\"5.00\",\"depthHome\":\"78.48\",\"depthAway\":\"40.47\",\"depthDraw\":\"61.29\",\"depthLayHome\":\"8.46\",\"depthLayAway\":\"8.79\",\"depthLayDraw\":\"28.33\"}]},{\"name\":\"Draw No Bet\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"hdp\":0,\"home\":\"1.24\",\"away\":\"5.00\",\"layHome\":\"1.25\",\"layAway\":\"5.20\",\"depthHome\":\"8.61\",\"depthAway\":\"59.96\",\"depthLayHome\":\"168.96\",\"depthLayAway\":\"2.05\"}]},{\"name\":\"Double Chance\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"hdp\":0,\"1X\":\"1.18\",\"12\":\"1.25\",\"X2\":\"2.74\"}]},{\"name\":\"Spread\",\"updatedAt\":\"2026-05-10T10:00:52.9Z\",\"odds\":[{\"hdp\":-0.25,\"home\":\"1.39\",\"away\":\"3.45\",\"layHome\":\"1.41\",\"layAway\":\"3.50\",\"depthHome\":\"127.61\",\"depthAway\":\"5.97\",\"depthLayHome\":\"193.11\",\"depthLayAway\":\"2.93\"},{\"hdp\":0.25,\"home\":\"1.20\",\"away\":\"5.73\",\"layHome\":\"1.22\",\"layAway\":\"5.85\",\"depthHome\":\"72.99\",\"depthAway\":\"47.52\",\"depthLayHome\":\"1072.38\",\"depthLayAway\":\"1.83\"},{\"hdp\":-0.5,\"home\":\"1.55\",\"away\":\"2.75\",\"layHome\":\"1.57\",\"layAway\":\"2.79\",\"depthHome\":\"78.48\",\"depthAway\":\"4.83\",\"depthLayHome\":\"8.46\",\"depthLayAway\":\"2.05\"},{\"hdp\":0.5,\"home\":\"1.18\",\"away\":\"6.40\",\"layHome\":\"1.19\",\"layAway\":\"6.53\",\"depthHome\":\"33.98\",\"depthAway\":\"40.47\",\"depthLayHome\":\"203.98\",\"depthLayAway\":\"1.64\"},{\"hdp\":-0.75,\"home\":\"1.67\",\"away\":\"2.43\",\"layHome\":\"1.70\",\"layAway\":\"2.47\",\"depthHome\":\"45.33\",\"depthAway\":\"7.45\",\"depthLayHome\":\"10.66\",\"depthLayAway\":\"2.9\"},{\"hdp\":0.75,\"home\":\"1.12\",\"away\":\"8.84\",\"layHome\":\"1.1",
           "simulated_skipped": 0,
           "requested_bookmakers": "Bet365,Unibet,Betfair Exchange,Sbobet",
           "requested_bookmakers_by_account": [
@@ -1052,13 +1097,20 @@ runtime cli direct start
             "account1": {
               "bookmakers": "Bet365,Unibet",
               "api_key_present": true,
-              "odds_requests": 3,
+              "odds_requests": 10,
               "response_errors": 0,
-              "offers_parsed": 621,
-              "events_matched": 9,
+              "offers_parsed": 3077,
+              "events_matched": 40,
               "rate_limited": false,
               "http_statuses": [
                 200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                200,
+                500,
                 200,
                 200
               ]
@@ -1066,12 +1118,17 @@ runtime cli direct start
             "account2": {
               "bookmakers": "Betfair Exchange,Sbobet",
               "api_key_present": true,
-              "odds_requests": 3,
+              "odds_requests": 8,
               "response_errors": 0,
-              "offers_parsed": 288,
-              "events_matched": 13,
+              "offers_parsed": 2130,
+              "events_matched": 44,
               "rate_limited": false,
               "http_statuses": [
+                200,
+                200,
+                200,
+                200,
+                200,
                 200,
                 200,
                 200
@@ -1088,16 +1145,16 @@ runtime cli direct start
             "Sbobet",
             "Unibet"
           ],
-          "matches_with_2plus_books": 9,
-          "matches_with_1_book": 4,
+          "matches_with_2plus_books": 37,
+          "matches_with_1_book": 11,
           "offers_by_family": {
-            "btts": 24,
-            "dnb": 32,
-            "doubleChance": 21,
-            "h2h": 72,
-            "spreads": 420,
-            "teamTotals": 149,
-            "totals": 191
+            "btts": 154,
+            "dnb": 172,
+            "doubleChance": 150,
+            "h2h": 392,
+            "spreads": 2301,
+            "teamTotals": 814,
+            "totals": 1224
           },
           "secondary_odds_rescue": {
             "provider_version": "rapidapi-odds-bridge-v1-2026-04-29",
@@ -1129,7 +1186,7 @@ runtime cli direct start
             ],
             "last_url": "https://odds-feed.p.rapidapi.com/api/v1/events?sport=football&per_page=100",
             "last_error": null,
-            "last_body_preview": "{\"total\":562328,\"per_page\":100,\"current_page\":0,\"last_page\":5623,\"data\":[{\"id\":21183,\"sport\":{\"id\":2,\"name\":\"Tennis\",\"slug\":\"tennis\"},\"category\":{\"id\":149,\"name\":\"Spain\",\"slug\":\"spain\",\"code\":\"es\"},\"tournament\":{\"id\":6670,\"name\":\"ITF M15 Madrid Men\",\"slug\":\"tennis-spain-itf-m15-madrid-men\"},\"season\":{\"id\":19157,\"slug\":\"2024\",\"year_start\":2024,\"year_end\":null},\"team_home\":{\"id\":883953,\"name\":\"Cesar Porras J.\",\"slug\":\"tennis-cesar-porras-j\",\"team_type\":\"SINGLE\"},\"team_away\":{\"id\":879281,\"name\":\"De Krom M.\",\"slug\":\"tennis-de-krom-m\",\"team_type\":\"SINGLE\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2024-09-08 09:10:00\",\"winner\":\"AWAY_WIN\",\"score_home\":1,\"score_away\":2,\"score_details\":\"1:6, 6:3, 6^2:7\",\"comments\":\"1:2 (1:6, 6:3, 6^2:7)\",\"final_result_only\":false,\"main_outcome_0\":1.88,\"main_outcome_1\":1.84,\"main_outcome_2\":null,\"main_volume_1\":null,\"main_volume_2\":null},{\"id\":21184,\"sport\":{\"id\":3,\"name\":\"Basketball\",\"slug\":\"basketball\"},\"category\":{\"id\":149,\"name\":\"Spain\",\"slug\":\"spain\",\"code\":\"es\"},\"tournament\":{\"id\":11093,\"name\":\"Copa Espana\",\"slug\":\"basketball-spain-copa-espana\"},\"season\":{\"id\":19209,\"slug\":\"2024-2025\",\"year_start\":2024,\"year_end\":2025},\"team_home\":{\"id\":38992,\"name\":\"Palmer Basket\",\"slug\":\"basketball-palmer-basket\",\"team_type\":\"TEAM\"},\"team_away\":{\"id\":38993,\"name\":\"Castello\",\"slug\":\"basketball-castello\",\"team_type\":\"TEAM\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2024-09-08 10:00:00\",\"winner\":\"AWAY_WIN\",\"score_home\":69,\"score_away\":94,\"score_details\":\"17:29, 20:21, 16:17, 16:27\",\"comments\":\"69:94 (17:29, 20:21, 16:17, 16:27)\",\"final_r"
+            "last_body_preview": "{\"total\":562329,\"per_page\":100,\"current_page\":0,\"last_page\":5623,\"data\":[{\"id\":33363,\"sport\":{\"id\":1,\"name\":\"Football\",\"slug\":\"football\"},\"category\":{\"id\":133,\"name\":\"Russia\",\"slug\":\"russia\",\"code\":\"ru\"},\"tournament\":{\"id\":1041,\"name\":\"FNL 2 - Division B - Group 4\",\"slug\":\"football-russia-fnl-2-division-b-group-4\"},\"season\":{\"id\":3331,\"slug\":\"2024\",\"year_start\":2024,\"year_end\":null},\"team_home\":{\"id\":878000,\"name\":\"Kazan 2\",\"slug\":\"football-kazan-2\",\"team_type\":\"TEAM\"},\"team_away\":{\"id\":879752,\"name\":\"Uralets Nizhny Tagil\",\"slug\":\"football-uralets-nizhny-tagil-no3i3\",\"team_type\":\"TEAM\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2024-09-21 13:00:00\",\"winner\":\"HOME_WIN\",\"score_home\":2,\"score_away\":1,\"score_details\":\"0:0, 2:1\",\"comments\":\"2:1 (0:0, 2:1)\",\"final_result_only\":false,\"main_outcome_0\":1.64,\"main_outcome_1\":3.8,\"main_outcome_2\":4.63,\"main_volume_1\":null,\"main_volume_2\":null},{\"id\":430788,\"sport\":{\"id\":6,\"name\":\"Volleyball\",\"slug\":\"volleyball\"},\"category\":{\"id\":133,\"name\":\"Russia\",\"slug\":\"russia\",\"code\":\"ru\"},\"tournament\":{\"id\":10212,\"name\":\"Vysshaya Liga А\",\"slug\":\"volleyball-russia-vysshaya-liga-a\"},\"season\":{\"id\":25447,\"slug\":\"2025-2026\",\"year_start\":2025,\"year_end\":2026},\"team_home\":{\"id\":673827,\"name\":\"Dinskaya-RCSP\",\"slug\":\"volleyball-dinskaya-rcsp\",\"team_type\":\"TEAM\"},\"team_away\":{\"id\":16022,\"name\":\"Chelyabinsk\",\"slug\":\"volleyball-chelyabinsk\",\"team_type\":\"TEAM\"},\"status\":\"FINISHED\",\"status_details\":null,\"start_at\":\"2025-12-07 13:00:00\",\"winner\":\"AWAY_WIN\",\"score_home\":1,\"score_away\":3,\"score_details\":\"\",\"comments\":null,\"final_result_only\":false,\"m"
           },
           "secondary_odds_rescue_requests": 1,
           "secondary_odds_rescue_offers": 0,
@@ -1188,7 +1245,7 @@ runtime cli direct start
           "requests": 2,
           "max_requests_per_run": 60,
           "budget_exhausted": 0,
-          "response_errors": 1,
+          "response_errors": 0,
           "auth_error": 0,
           "rate_limited": 0,
           "fixtures_fetched": 50,
@@ -1211,6 +1268,7 @@ runtime cli direct start
           "matched_loose": 0,
           "matched_fuzzy": 0,
           "http_statuses": [
+            200,
             200
           ],
           "top_level_keys": [],
@@ -1250,8 +1308,8 @@ runtime cli direct start
       },
       "sstats": {
         "type": "context",
-        "matches_with_data": 85,
-        "items_total": 85,
+        "matches_with_data": 110,
+        "items_total": 110,
         "stats": {
           "enabled": true,
           "api_key_present": true,
@@ -1261,21 +1319,21 @@ runtime cli direct start
           "days_requested": 46,
           "chunk_windows_requested": 7,
           "rows_fetched": 25021,
-          "contexts_built": 85,
+          "contexts_built": 110,
           "matched_exact": 0,
           "matched_loose": 0,
           "matched_fuzzy": 0,
           "unmatched_rows": 25021,
-          "team_form_contexts_built": 85,
+          "team_form_contexts_built": 108,
           "bzzoiro_enabled": true,
-          "bzzoiro_requests": 3,
+          "bzzoiro_requests": 4,
           "bzzoiro_response_errors": 0,
           "bzzoiro_events_fetched": 126,
-          "bzzoiro_contexts_built": 28,
-          "bzzoiro_matched_exact": 8,
+          "bzzoiro_contexts_built": 20,
+          "bzzoiro_matched_exact": 4,
           "bzzoiro_matched_loose": 0,
-          "bzzoiro_matched_fuzzy": 20,
-          "bzzoiro_unmatched_rows": 98,
+          "bzzoiro_matched_fuzzy": 16,
+          "bzzoiro_unmatched_rows": 106,
           "http_statuses": [
             200,
             200,
@@ -1315,7 +1373,7 @@ runtime cli direct start
           "max_http_requests_per_run": 32,
           "budget_exhausted": false,
           "provider_odds_hints": 0,
-          "provider_metric_hints": 440,
+          "provider_metric_hints": 318,
           "provider_payload_mining_v2": true,
           "sstats_historical_odds_not_used_as_lines": true
         }
@@ -1345,7 +1403,7 @@ runtime cli direct start
           "matched_fuzzy": 0,
           "exact_matches": 0,
           "fuzzy_matches": 0,
-          "target_matches": 89,
+          "target_matches": 96,
           "http_statuses": [],
           "payload_shapes": [],
           "last_error": null,
@@ -1363,36 +1421,36 @@ runtime cli direct start
       },
       "espn": {
         "type": "context",
-        "matches_with_data": 7,
-        "items_total": 7,
+        "matches_with_data": 2,
+        "items_total": 2,
         "stats": {
           "enabled": true,
           "scoreboard_requests": 20,
-          "probability_requests": 7,
-          "summary_requests": 7,
+          "probability_requests": 2,
+          "summary_requests": 2,
           "response_errors": 0,
-          "events_fetched": 32,
-          "events_matched": 7,
-          "contexts_built": 7,
-          "matched_exact": 2,
+          "events_fetched": 26,
+          "events_matched": 2,
+          "contexts_built": 2,
+          "matched_exact": 0,
           "matched_loose": 0,
-          "matched_fuzzy": 5,
+          "matched_fuzzy": 2,
           "league_slugs_used": [
             "eng.1",
-            "ger.1",
             "eng.4",
             "ita.1",
             "sco.1",
-            "swe.1",
-            "ned.1",
             "eng.2",
             "eng.3",
-            "eng.5"
+            "eng.5",
+            "esp.1",
+            "esp.2",
+            "ita.2"
           ],
           "injury_counts_seen": 0,
-          "soft_failures": 7,
+          "soft_failures": 2,
           "partial_contexts_built": 0,
-          "last_body_preview": "{\"boxscore\":{\"form\":[{\"displayOrder\":1,\"team\":{\"id\":\"145\",\"uid\":\"s:600~t:145\",\"displayName\":\"FC Groningen\",\"abbreviation\":\"GRO\",\"links\":[{\"href\":\"https://www.espn.com/soccer/club/_/id/145/fc-groningen\",\"text\":\"Clubhouse\"},{\"href\":\"https://www.espn.com/soccer/team/fixtures/_/id/145/fc-groningen\",\"text\":\"Fixtures\"}],\"logo\":\"https://a.espncdn.com/i/teamlogos/soccer/500/145.png\",\"logos\":[{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500/145.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"default\"],\"lastUpdated\":\"2022-08-09T20:49Z\"},{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500-dark/145.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"dark\"],\"lastUpdated\":\"2022-08-09T20:49Z\"}]},\"events\":[{\"id\":\"741257\",\"links\":[{\"href\":\"https://www.espn.com/soccer/match/_/gameId/741257/excelsior-fc-groningen\",\"text\":\"Summary\"}],\"atVs\":\"vs\",\"gameDate\":\"2026-05-02T16:45Z\",\"score\":\"3-2\",\"homeTeamId\":\"145\",\"awayTeamId\":\"2566\",\"homeTeamScore\":\"2\",\"awayTeamScore\":\"3\",\"homeAggregateScore\":\"0\",\"awayAggregateScore\":\"0\",\"homeShootoutScore\":\"0\",\"awayShootoutScore\":\"0\",\"gameResult\":\"L\",\"competitionName\":\"2025-26 Dutch Eredivisie\",\"roundName\":\"Regular Season\",\"leagueName\":\"Dutch Eredivisie\",\"l",
+          "last_body_preview": "{\"boxscore\":{\"form\":[{\"displayOrder\":1,\"team\":{\"id\":\"256\",\"uid\":\"s:600~t:256\",\"displayName\":\"Celtic\",\"abbreviation\":\"CEL\",\"links\":[{\"href\":\"https://www.espn.com/soccer/club/_/id/256/celtic\",\"text\":\"Clubhouse\"},{\"href\":\"https://www.espn.com/soccer/team/fixtures/_/id/256/celtic\",\"text\":\"Fixtures\"}],\"logo\":\"https://a.espncdn.com/i/teamlogos/soccer/500/256.png\",\"logos\":[{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500/256.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"default\"],\"lastUpdated\":\"2019-05-08T16:07Z\"},{\"href\":\"https://a.espncdn.com/i/teamlogos/soccer/500-dark/256.png\",\"width\":500,\"height\":500,\"alt\":\"\",\"rel\":[\"full\",\"dark\"],\"lastUpdated\":\"2019-05-08T16:07Z\"}]},\"events\":[{\"id\":\"401867705\",\"links\":[{\"href\":\"https://www.espn.com/soccer/match/_/gameId/401867705/celtic-hibernian\",\"text\":\"Summary\"}],\"atVs\":\"@\",\"gameDate\":\"2026-05-03T11:00Z\",\"score\":\"2-1\",\"homeTeamId\":\"258\",\"awayTeamId\":\"256\",\"homeTeamScore\":\"1\",\"awayTeamScore\":\"2\",\"homeAggregateScore\":\"0\",\"awayAggregateScore\":\"0\",\"homeShootoutScore\":\"0\",\"awayShootoutScore\":\"0\",\"gameResult\":\"W\",\"competitionName\":\"2025-26 Scottish Premiership\",\"leagueName\":\"Scottish Premiership\",\"leagueAbbreviation\":\"SPFL Premiership\",\"op",
           "http_statuses": [
             200,
             200,
@@ -1413,16 +1471,6 @@ runtime cli direct start
             200,
             200,
             200,
-            200,
-            400,
-            200,
-            400,
-            200,
-            400,
-            200,
-            400,
-            200,
-            400,
             200,
             400,
             200,
@@ -1433,21 +1481,19 @@ runtime cli direct start
       },
       "thesportsdb": {
         "type": "context",
-        "matches_with_data": 23,
-        "items_total": 23,
+        "matches_with_data": 9,
+        "items_total": 9,
         "stats": {
           "enabled": true,
-          "requests": 4,
+          "requests": 2,
           "response_errors": 0,
-          "leagues_resolved": 3,
-          "tables_fetched": 3,
-          "contexts_built": 23,
-          "missing_table_rows": 40,
-          "partial_contexts_built": 20,
+          "leagues_resolved": 1,
+          "tables_fetched": 1,
+          "contexts_built": 9,
+          "missing_table_rows": 19,
+          "partial_contexts_built": 8,
           "last_body_preview": "{\"table\":[{\"idStanding\":\"9514604\",\"intRank\":\"1\",\"idTeam\":\"133643\",\"strTeam\":\"Heart of Midlothian\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/twqvyt1447597939.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"WWWDW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"21\",\"intLoss\":\"5\",\"intDraw\":\"7\",\"intGoalsFor\":\"58\",\"intGoalsAgainst\":\"28\",\"intGoalDifference\":\"30\",\"intPoints\":\"70\",\"dateUpdated\":\"2026-05-09 23:01:10\"},{\"idStanding\":\"9514605\",\"intRank\":\"2\",\"idTeam\":\"133642\",\"strTeam\":\"Rangers\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/ti24j61614290048.png\\/tiny\",\"idLeague\":\"4330\",\"strLeague\":\"Scottish Premier League\",\"strSeason\":\"2025-2026\",\"strForm\":\"LLWWW\",\"strDescription\":\"Championship round\",\"intPlayed\":\"33\",\"intWin\":\"19\",\"intLoss\":\"2\",\"intDraw\":\"12\",\"intGoalsFor\":\"66\",\"intGoalsAgainst\":\"31\",\"intGoalDifference\":\"35\",\"intPoints\":\"69\",\"dateUpdated\":\"2026-05-09 23:01:10\"},{\"idStanding\":\"9514606\",\"intRank\":\"3\",\"idTeam\":\"133647\",\"strTeam\":\"Celtic\",\"strBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/team\\/badge\\/3uv1641758780002.png\\/tiny\",\"idLeague\":\"4330\",\"strLe",
           "http_statuses": [
-            200,
-            200,
             200,
             200
           ],
@@ -1459,8 +1505,8 @@ runtime cli direct start
       },
       "football_data": {
         "type": "context",
-        "matches_with_data": 5,
-        "items_total": 5,
+        "matches_with_data": 3,
+        "items_total": 3,
         "stats": {
           "enabled": true,
           "api_key_present": true,
@@ -1468,19 +1514,19 @@ runtime cli direct start
           "requests": 6,
           "response_errors": 0,
           "matches_fetched": 53,
-          "history_rows_fetched": 1066,
-          "events_matched": 6,
-          "contexts_built": 5,
+          "history_rows_fetched": 992,
+          "events_matched": 4,
+          "contexts_built": 3,
           "best_near_miss_score": 0.0,
           "near_miss_count": 0,
           "standings_requests": 2,
           "standings_loaded": 2,
-          "history_requests": 5,
+          "history_requests": 4,
           "history_contexts_built": 1,
           "matched_exact": 0,
           "matched_loose": 0,
-          "matched_fuzzy": 6,
-          "unmatched_rows": 44,
+          "matched_fuzzy": 4,
+          "unmatched_rows": 49,
           "http_statuses": [
             200,
             200,
@@ -1489,7 +1535,7 @@ runtime cli direct start
             200,
             200
           ],
-          "last_body_preview": "{\"filters\":{\"season\":2025},\"resultSet\":{\"count\":380,\"first\":\"2025-08-23\",\"last\":\"2026-05-24\",\"played\":354},\"competition\":{\"id\":2019,\"name\":\"Serie A\",\"code\":\"SA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/c111.png\"},\"matches\":[{\"area\":{\"id\":2114,\"name\":\"Italy\",\"code\":\"ITA\",\"flag\":\"https://crests.football-data.org/784.svg\"},\"competition\":{\"id\":2019,\"name\":\"Serie A\",\"code\":\"SA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/c111.png\"},\"season\":{\"id\":2395,\"startDate\":\"2025-08-24\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":536819,\"utcDate\":\"2025-08-23T16:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":107,\"name\":\"Genoa CFC\",\"shortName\":\"Genoa\",\"tla\":\"GEN\",\"crest\":\"https://crests.football-data.org/107.png\"},\"awayTeam\":{\"id\":5890,\"name\":\"US Lecce\",\"shortName\":\"Lecce\",\"tla\":\"USL\",\"crest\":\"https://crests.football-data.org/5890.png\"},\"score\":{\"winner\":\"DRAW\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":0,\"away\":0},\"halfTime\":{\"home\":0,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":11029,\"name\":\"Davide Massa\",\"type\":\"REFEREE\",\"nationality\":\"Italy\"}]},{\"area\":{\"id\":2114,\"name\":\"Italy\",\"code\":\"ITA\",\"flag\":\"https://crests.football-data.org/784.svg\"},\"competition\":{\"id\":2019,\"name\":\"Serie A\",\"code\":\"SA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/c111.png\"},\"season\":{\"id\":2395,\"startDate\":\"2025-08-24\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":536823,\"utcDate\":\"2025-08-23T16:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":471,\"name\":\"US Sassuolo Calcio\",\"shortName\":\"Sassuolo\",\"tla\":\"SAS\"",
+          "last_body_preview": "{\"filters\":{\"season\":2025},\"resultSet\":{\"count\":380,\"first\":\"2025-08-15\",\"last\":\"2026-05-24\",\"played\":354},\"competition\":{\"id\":2021,\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\"},\"matches\":[{\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"competition\":{\"id\":2021,\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\"},\"season\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":537785,\"utcDate\":\"2025-08-15T19:00:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":64,\"name\":\"Liverpool FC\",\"shortName\":\"Liverpool\",\"tla\":\"LIV\",\"crest\":\"https://crests.football-data.org/64.png\"},\"awayTeam\":{\"id\":1044,\"name\":\"AFC Bournemouth\",\"shortName\":\"Bournemouth\",\"tla\":\"BOU\",\"crest\":\"https://crests.football-data.org/bournemouth.png\"},\"score\":{\"winner\":\"HOME_TEAM\",\"duration\":\"REGULAR\",\"fullTime\":{\"home\":4,\"away\":2},\"halfTime\":{\"home\":1,\"away\":0}},\"odds\":{\"msg\":\"Activate Odds-Package in User-Panel to retrieve odds.\"},\"referees\":[{\"id\":11580,\"name\":\"Anthony Taylor\",\"type\":\"REFEREE\",\"nationality\":\"England\"}]},{\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"competition\":{\"id\":2021,\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\"},\"season\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-24\",\"currentMatchday\":36,\"winner\":null},\"id\":537786,\"utcDate\":\"2025-08-16T11:30:00Z\",\"status\":\"FINISHED\",\"matchday\":1,\"stage\":\"REGULAR_SEASON\",\"group\":null,\"lastUpdated\":\"2026-05-10T00:21:11Z\",\"homeTeam\":{\"id\":58,\"name\":\"As",
           "max_http_requests_per_run": 6,
           "budget_exhausted": true,
           "rate_limited": false
@@ -1497,8 +1543,8 @@ runtime cli direct start
       },
       "openligadb": {
         "type": "context",
-        "matches_with_data": 22,
-        "items_total": 22,
+        "matches_with_data": 18,
+        "items_total": 18,
         "stats": {
           "enabled": true,
           "requests": 0,
@@ -1512,8 +1558,8 @@ runtime cli direct start
           "matched_loose": 0,
           "matched_fuzzy": 0,
           "clubelo_sidecar_enabled": true,
-          "clubelo_contexts_built": 22,
-          "clubelo_only_contexts": 22,
+          "clubelo_contexts_built": 18,
+          "clubelo_only_contexts": 18,
           "merged_with_clubelo": 0,
           "budget_exhausted": false,
           "max_http_requests_per_run": 14,
@@ -1530,12 +1576,12 @@ runtime cli direct start
             ],
             "target_matches": 24,
             "snapshot_requests": 2,
-            "team_history_requests": 4,
+            "team_history_requests": 16,
             "snapshot_rows": 1260,
             "team_rows": 0,
-            "ratings_resolved": 44,
-            "contexts_built": 22,
-            "missing_ratings": 2,
+            "ratings_resolved": 36,
+            "contexts_built": 18,
+            "missing_ratings": 6,
             "budget_exhausted": true,
             "last_body_preview": "Rank,Club,Country,Level,Elo,From,To\n\n\n",
             "max_http_requests_per_run": 3
@@ -1544,23 +1590,21 @@ runtime cli direct start
       },
       "openfootball": {
         "type": "context",
-        "matches_with_data": 4,
-        "items_total": 4,
+        "matches_with_data": 1,
+        "items_total": 1,
         "stats": {
           "enabled": true,
-          "requests": 3,
+          "requests": 1,
           "response_errors": 0,
-          "datasets_loaded": 3,
-          "contexts_built": 4,
+          "datasets_loaded": 1,
+          "contexts_built": 1,
           "matched_exact": 0,
           "matched_loose": 0,
-          "matched_fuzzy": 4,
+          "matched_fuzzy": 1,
           "http_statuses": [
-            200,
-            200,
             200
           ],
-          "last_body_preview": "{\n  \"name\": \"Netherlands Eredivisie 2025/26\",\n  \"matches\": [\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-08\",\n      \"time\": \"20:00\",\n      \"team1\": \"Fortuna Sittard\",\n      \"team2\": \"Go Ahead Eagles\",\n      \"score\": {\n        \"ht\": [\n          1,\n          1\n        ],\n        \"ft\": [\n          2,\n          2\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-09\",\n      \"time\": \"16:30\",\n      \"team1\": \"NEC\",\n      \"team2\": \"SBV Excelsior\",\n      \"score\": {\n        \"ht\": [\n          1,\n          0\n        ],\n        \"ft\": [\n          5,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-09\",\n      \"time\": \"18:45\",\n      \"team1\": \"Feyenoord Rotterdam\",\n      \"team2\": \"NAC Breda\",\n      \"score\": {\n        \"ht\": [\n          1,\n          0\n        ],\n        \"ft\": [\n          2,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-09\",\n      \"time\": \"20:00\",\n      \"team1\": \"SC Heerenveen\",\n      \"team2\": \"FC Volendam\",\n      \"score\": {\n        \"ht\": [\n          1,\n          0\n        ],\n        \"ft\": [\n          1,\n          1\n        ]\n      }\n    },\n    {"
+          "last_body_preview": "{\n  \"name\": \"Italian Serie A 2025/26\",\n  \"matches\": [\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"18:30\",\n      \"team1\": \"Genoa CFC\",\n      \"team2\": \"US Lecce\",\n      \"score\": {\n        \"ft\": [\n          0,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"18:30\",\n      \"team1\": \"US Sassuolo Calcio\",\n      \"team2\": \"SSC Napoli\",\n      \"score\": {\n        \"ht\": [\n          0,\n          1\n        ],\n        \"ft\": [\n          0,\n          2\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"20:45\",\n      \"team1\": \"AC Milan\",\n      \"team2\": \"US Cremonese\",\n      \"score\": {\n        \"ht\": [\n          1,\n          1\n        ],\n        \"ft\": [\n          1,\n          2\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-23\",\n      \"time\": \"20:45\",\n      \"team1\": \"AS Roma\",\n      \"team2\": \"Bologna FC 1909\",\n      \"score\": {\n        \"ht\": [\n          0,\n          0\n        ],\n        \"ft\": [\n          1,\n          0\n        ]\n      }\n    },\n    {\n      \"round\": \"Matchday 1\",\n      \"date\": \"2025-08-24\",\n      \"time\""
         }
       },
       "newsapi": {
@@ -1594,23 +1638,23 @@ runtime cli direct start
       },
       "weather": {
         "type": "context",
-        "matches_with_data": 9,
-        "items_total": 9,
+        "matches_with_data": 8,
+        "items_total": 8,
         "stats": {
           "enabled": true,
           "api_key_present": true,
           "requests": 8,
           "response_errors": 0,
-          "contexts_built": 9,
+          "contexts_built": 8,
           "matches_considered": 24,
-          "matches_with_base_context": 87,
+          "matches_with_base_context": 110,
           "weatherapi_requests": 8,
           "openweathermap_requests": 0,
           "weatherapi_enriched": 8,
           "openweathermap_enriched": 0,
-          "cache_hits": 1,
+          "cache_hits": 0,
           "missing_location": 0,
-          "no_weather_payload": 8,
+          "no_weather_payload": 16,
           "max_http_requests_per_run": "8+0",
           "budget_exhausted": true
         }
@@ -1635,7 +1679,7 @@ runtime cli direct start
         "response_errors": 0,
         "max_http_requests_per_run": 200,
         "budget_exhausted": false,
-        "matches_built": 80
+        "matches_built": 81
       },
       "bookies_api": {
         "enabled": false,
@@ -1710,7 +1754,7 @@ runtime cli direct start
         "response_errors": 0,
         "max_http_requests_per_run": 32,
         "budget_exhausted": false,
-        "contexts_built": 85
+        "contexts_built": 110
       },
       "bzzoiro": {
         "enabled": true,
@@ -1737,10 +1781,10 @@ runtime cli direct start
         "response_errors": 0,
         "max_http_requests_per_run": null,
         "budget_exhausted": null,
-        "contexts_built": 7,
+        "contexts_built": 2,
         "scoreboard_requests": 20,
-        "probability_requests": 7,
-        "summary_requests": 7
+        "probability_requests": 2,
+        "summary_requests": 2
       },
       "thesportsdb": {
         "enabled": true,
@@ -1752,11 +1796,11 @@ runtime cli direct start
         "api_key_present": null,
         "rate_limited": false,
         "cooldown_until": null,
-        "requests": 4,
+        "requests": 2,
         "response_errors": 0,
         "max_http_requests_per_run": 12,
         "budget_exhausted": false,
-        "contexts_built": 23
+        "contexts_built": 9
       },
       "football_data": {
         "enabled": true,
@@ -1772,7 +1816,7 @@ runtime cli direct start
         "response_errors": 0,
         "max_http_requests_per_run": 6,
         "budget_exhausted": true,
-        "contexts_built": 5
+        "contexts_built": 3
       },
       "openligadb": {
         "enabled": true,
@@ -1801,12 +1845,12 @@ runtime cli direct start
         "api_key_present": null,
         "rate_limited": null,
         "cooldown_until": null,
-        "requests": 3,
+        "requests": 1,
         "response_errors": 0,
         "max_http_requests_per_run": null,
         "budget_exhausted": null,
-        "contexts_built": 4,
-        "datasets_loaded": 3
+        "contexts_built": 1,
+        "datasets_loaded": 1
       },
       "newsapi": {
         "enabled": false,
@@ -1843,54 +1887,47 @@ runtime cli direct start
         "response_errors": 0,
         "max_http_requests_per_run": "8+0",
         "budget_exhausted": true,
-        "contexts_built": 9,
+        "contexts_built": 8,
         "weatherapi_requests": 8,
         "openweathermap_requests": 0,
         "weatherapi_enriched": 8,
         "openweathermap_enriched": 0,
-        "cache_hits": 1
+        "cache_hits": 0
       }
     },
     "provider_runtime_errors": {},
     "provider_rate_limits": {},
-    "matches_with_any_offer_source": 13,
-    "matches_with_any_context_source": 87,
-    "matches_with_merged_context": 87,
-    "raw_candidates_with_derived_market_signal": 0,
-    "published_candidates_with_derived_market_signal": 0,
-    "matches_with_raw_derived_market_signal": 0,
-    "matches_with_published_derived_market_signal": 0,
-    "published_candidates_single_source_context": 0,
+    "matches_with_any_offer_source": 48,
+    "matches_with_any_context_source": 110,
+    "matches_with_merged_context": 110,
+    "raw_candidates_with_derived_market_signal": 2,
+    "published_candidates_with_derived_market_signal": 1,
+    "matches_with_raw_derived_market_signal": 1,
+    "matches_with_published_derived_market_signal": 1,
+    "published_candidates_single_source_context": 1,
     "published_candidates_low_book_support": 0,
     "context_source_combinations": {
-      "openligadb": 1,
-      "sstats+openligadb": 10,
-      "sstats+openligadb+weather": 3,
-      "openligadb+weather": 1,
+      "sstats": 82,
+      "sstats+openligadb+weather": 5,
       "sstats+espn+openligadb+openfootball+weather": 1,
-      "sstats+espn+football_data+openligadb+openfootball+weather": 1,
-      "sstats+thesportsdb+openligadb": 2,
-      "sstats+espn+openligadb+weather": 1,
-      "none": 2,
-      "sstats+football_data+weather": 1,
-      "sstats": 43,
-      "sstats+weather": 1,
-      "sstats+espn+thesportsdb+football_data": 1,
-      "sstats+espn": 1,
-      "sstats+thesportsdb": 18,
-      "sstats+espn+thesportsdb+football_data+openligadb+openfootball": 2
+      "sstats+openligadb": 9,
+      "sstats+thesportsdb": 9,
+      "sstats+football_data+openligadb+weather": 2,
+      "none": 37,
+      "sstats+espn+openligadb": 1,
+      "sstats+football_data": 1
     },
     "offer_source_combinations": {
-      "none": 76,
-      "odds_api_io": 13
+      "none": 99,
+      "odds_api_io": 48
     }
   },
   "market_monitor": {
     "enabled": true,
     "snapshots_written": 1,
-    "matches_snapshotted": 13,
-    "markets_snapshotted": 527,
-    "signals_built": 527,
+    "matches_snapshotted": 48,
+    "markets_snapshotted": 3102,
+    "signals_built": 3102,
     "clv_pending": 0,
     "clv_resolved": 0,
     "avg_open_clv_pct": null,
@@ -1901,10 +1938,9 @@ runtime cli direct start
     "checked": 36,
     "settled_count": 0,
     "shadow_settled_count": 21,
-    "rows_fetched": 1049,
+    "rows_fetched": 1000,
     "rows_by_source": {
-      "sstats": 1000,
-      "football_data": 49
+      "sstats": 1000
     },
     "manual_overrides_loaded": 1,
     "manual_overrides_valid": 1,
@@ -2325,8 +2361,8 @@ runtime cli direct start
       }
     },
     "decisions": {
-      "passed": 0,
-      "rejected": 2,
+      "passed": 2,
+      "rejected": 14,
       "enough_history": true
     },
     "exports": {
@@ -2358,15 +2394,15 @@ runtime cli direct start
     "yield_pct": 0.0
   },
   "exports": {
-    "matches_json": ".data/exports/2026-05-10/095455-matches.json",
-    "picks_json": ".data/exports/2026-05-10/095455-picks.json",
-    "bets_json": ".data/exports/2026-05-10/095455-bets.json",
-    "matches_csv": ".data/exports/2026-05-10/095455-matches.csv",
-    "picks_csv": ".data/exports/2026-05-10/095455-picks.csv",
-    "bets_csv": ".data/exports/2026-05-10/095455-bets.csv",
-    "bankroll_json": ".data/exports/2026-05-10/095455-bankroll.json",
-    "pending_bets_json": ".data/exports/2026-05-10/095455-pending-bets.json",
-    "settled_bets_json": ".data/exports/2026-05-10/095455-settled-bets.json",
+    "matches_json": ".data/exports/2026-05-10/100722-matches.json",
+    "picks_json": ".data/exports/2026-05-10/100722-picks.json",
+    "bets_json": ".data/exports/2026-05-10/100722-bets.json",
+    "matches_csv": ".data/exports/2026-05-10/100722-matches.csv",
+    "picks_csv": ".data/exports/2026-05-10/100722-picks.csv",
+    "bets_csv": ".data/exports/2026-05-10/100722-bets.csv",
+    "bankroll_json": ".data/exports/2026-05-10/100722-bankroll.json",
+    "pending_bets_json": ".data/exports/2026-05-10/100722-pending-bets.json",
+    "settled_bets_json": ".data/exports/2026-05-10/100722-settled-bets.json",
     "latest_matches_json": ".data/exports/latest-matches.json",
     "latest_picks_json": ".data/exports/latest-picks.json",
     "latest_bets_json": ".data/exports/latest-bets.json",
@@ -2390,7 +2426,7 @@ runtime cli direct start
     "telegram_messages_sent": 0
   },
   "sheet_export": {
-    "rows": 0,
+    "rows": 1,
     "json_path": ".data/sheet-export.json",
     "csv_path": ".data/sheet-export.csv",
     "summary_json_path": ".data/sheet-run-summary.json",
@@ -2410,38 +2446,38 @@ runtime cli direct start
     "webhook_error": null
   },
   "history": {
-    "run_archive_path": ".logs/runs/2026-05-10/095456-run.json",
+    "run_archive_path": ".logs/runs/2026-05-10/100722-run.json",
     "run_history_count": 26,
     "message_history_count": 0
   }
 }
 {
   "counts": {
-    "coverage_progress_updated_utc": "2026-05-10T09:40:44.607017+00:00",
+    "coverage_progress_updated_utc": "2026-05-10T09:55:19.377829+00:00",
     "day_inventory_top_match_limit": 300,
     "fixture_sources_seen": 5,
     "leagues_seen": 69,
     "matches_added": 1246,
-    "matches_added_from_latest_run": 0,
-    "matches_next_12h": 246,
-    "matches_next_12h_ready": 8,
-    "matches_next_6h": 182,
-    "matches_next_6h_ready": 7,
+    "matches_added_from_latest_run": 58,
+    "matches_next_12h": 244,
+    "matches_next_12h_ready": 5,
+    "matches_next_6h": 196,
+    "matches_next_6h_ready": 5,
     "matches_pruned_by_top_selection": 966,
     "matches_ready_for_model": 26,
     "matches_ready_for_publish": 0,
-    "matches_seen_latest_run": 89,
+    "matches_seen_latest_run": 147,
     "matches_selected_bucket_multi_source_or_bzzoiro": 23,
     "matches_selected_bucket_odds_api_io": 90,
     "matches_selected_bucket_other": 27,
     "matches_selected_bucket_sstats_only": 140,
     "matches_selected_top": 280,
-    "matches_total": 493,
+    "matches_total": 551,
     "matches_total_before_top_selection": 1246,
-    "matches_total_high_watermark": 493,
+    "matches_total_high_watermark": 551,
     "matches_total_raw_before_top_selection": 1246,
     "matches_updated": 0,
-    "matches_updated_from_latest_run": 0,
+    "matches_updated_from_latest_run": 1,
     "matches_with_context": 26,
     "matches_with_form": 19,
     "matches_with_news": 0,
@@ -2454,95 +2490,95 @@ runtime cli direct start
     "publish_min_odds_sources": 2
   },
   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-10.json",
-  "latest_rows_seen": 89,
-  "matches_added": 0,
-  "matches_after": 493,
+  "latest_rows_seen": 147,
+  "matches_added": 58,
+  "matches_after": 551,
   "matches_before": 493,
   "matches_rejected_not_target_date_or_malformed": 0,
-  "matches_updated": 0,
+  "matches_updated": 1,
   "notes": [
     "This runs after run-once, so the day inventory grows from actual latest-matches exports, not only from the pre-run bootstrap.",
     "Telegram detailed report reads latest-day-inventory-summary.json, so matches_total now represents the cumulative daily high watermark."
   ],
   "status": "ok",
   "target_date": "2026-05-10",
-  "updated_at_utc": "2026-05-10T09:54:56.376979+00:00"
+  "updated_at_utc": "2026-05-10T10:07:22.848646+00:00"
 }
 {
   "counts": {
-    "coverage_progress_updated_utc": "2026-05-10T09:40:44.607017+00:00",
+    "coverage_progress_updated_utc": "2026-05-10T09:55:19.377829+00:00",
     "day_inventory_top_match_limit": 300,
     "fixture_sources_seen": 5,
     "leagues_seen": 69,
     "matches_added": 1246,
-    "matches_added_from_latest_run": 0,
-    "matches_next_12h": 246,
-    "matches_next_12h_ready": 8,
-    "matches_next_6h": 182,
-    "matches_next_6h_ready": 7,
+    "matches_added_from_latest_run": 58,
+    "matches_next_12h": 244,
+    "matches_next_12h_ready": 14,
+    "matches_next_6h": 196,
+    "matches_next_6h_ready": 14,
     "matches_pruned_by_top_selection": 966,
-    "matches_ready_for_model": 26,
+    "matches_ready_for_model": 35,
     "matches_ready_for_publish": 0,
-    "matches_seen_latest_run": 89,
+    "matches_seen_latest_run": 147,
     "matches_selected_bucket_multi_source_or_bzzoiro": 23,
     "matches_selected_bucket_odds_api_io": 90,
     "matches_selected_bucket_other": 27,
     "matches_selected_bucket_sstats_only": 140,
     "matches_selected_top": 280,
-    "matches_total": 493,
+    "matches_total": 551,
     "matches_total_before_top_selection": 1246,
-    "matches_total_high_watermark": 493,
+    "matches_total_high_watermark": 551,
     "matches_total_raw_before_top_selection": 1246,
     "matches_updated": 0,
-    "matches_updated_from_latest_run": 0,
-    "matches_with_context": 26,
-    "matches_with_form": 19,
+    "matches_updated_from_latest_run": 1,
+    "matches_with_context": 35,
+    "matches_with_form": 22,
     "matches_with_news": 0,
-    "matches_with_odds": 64,
+    "matches_with_odds": 78,
     "matches_with_weather": 0,
-    "matches_with_xg": 26,
+    "matches_with_xg": 35,
     "multi_source_fixture_matches": 56,
     "providers_seen": 4,
     "publish_min_context_sources": 2,
     "publish_min_odds_sources": 2
   },
   "date_local": "2026-05-10",
-  "evidence_matches": 109,
+  "evidence_matches": 167,
   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-10.json",
   "notes": [
     "Coverage is repaired from latest-matches forecast fields, rescue/evaluated candidates, and line_history snapshots.",
     "Priority planner now sees real last_odds_refresh_utc / last_context_refresh_utc instead of treating every row as stale."
   ],
-  "rows_repaired": 2,
+  "rows_repaired": 16,
   "status": "ok",
-  "updated_at_utc": "2026-05-10T09:54:56.570859+00:00"
+  "updated_at_utc": "2026-05-10T10:07:23.063534+00:00"
 }
 {
   "date_local": "2026-05-10",
   "line_movement_guard": {
     "candidate_files_seen": 1,
-    "candidates_dropped": 1,
-    "candidates_kept": 0,
-    "candidates_seen": 1,
+    "candidates_dropped": 3,
+    "candidates_kept": 4,
+    "candidates_seen": 7,
     "date_local": "2026-05-10",
     "drop_bad_candidates": true,
     "files": [
       {
         "container_key": "candidates",
-        "dropped": 1,
+        "dropped": 3,
         "dropped_sample": [
           {
             "guard": {
-              "current_edge_pp": 1.1617992157110735,
-              "current_ev_pct": 5.480788985570562,
+              "current_edge_pp": 1.1888100970281201,
+              "current_ev_pct": 5.684794805554216,
               "current_odds": 2.68,
               "final_pre_kickoff_check": true,
-              "lead_minutes": 65.07,
+              "lead_minutes": 52.63,
               "line_move_pct": 0.0,
               "no_more_cron_before_kickoff": true,
               "passed": false,
               "previous_odds": 2.68,
-              "previous_snapshot_at_utc": "2026-05-10T09:40:30.468353+00:00",
+              "previous_snapshot_at_utc": "2026-05-10T09:54:55.960859+00:00",
               "reasons": [
                 "current_edge_below_floor:1.2<1.5"
               ]
@@ -2550,37 +2586,79 @@ runtime cli direct start
             "match_key": "soccer|celtic glasgow|glasgow rangers|2026-05-10",
             "odds": 2.68,
             "selection": "Меньше 2.5"
+          },
+          {
+            "guard": {
+              "current_edge_pp": 0.3373362506610911,
+              "current_ev_pct": 2.5440233070049167,
+              "current_odds": 2.54,
+              "final_pre_kickoff_check": true,
+              "lead_minutes": 52.63,
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": false,
+              "previous_odds": null,
+              "previous_snapshot_at_utc": null,
+              "reasons": [
+                "current_ev_below_floor:2.5<3.0",
+                "current_edge_below_floor:0.3<1.5"
+              ]
+            },
+            "match_key": "soccer|bangkok united|rayong|2026-05-10",
+            "odds": 2.54,
+            "selection": "Меньше 2.5"
+          },
+          {
+            "guard": {
+              "current_edge_pp": 0.5624357339716224,
+              "current_ev_pct": 1.7506786119025675,
+              "current_odds": 1.9,
+              "final_pre_kickoff_check": true,
+              "lead_minutes": 52.63,
+              "line_move_pct": 0.0,
+              "no_more_cron_before_kickoff": true,
+              "passed": false,
+              "previous_odds": null,
+              "previous_snapshot_at_utc": null,
+              "reasons": [
+                "current_ev_below_floor:1.8<3.0",
+                "current_edge_below_floor:0.6<1.5"
+              ]
+            },
+            "match_key": "soccer|buriram united|lamphun warriors|2026-05-10",
+            "odds": 1.9,
+            "selection": "Меньше 3.5"
           }
         ],
-        "kept": 0,
+        "kept": 4,
         "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
-        "seen": 1
+        "seen": 7
       }
     ],
     "status": "ok",
-    "updated_at_utc": "2026-05-10T09:54:55.960859+00:00"
+    "updated_at_utc": "2026-05-10T10:07:22.194777+00:00"
   },
   "notes": [
     "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
     "Candidate files are guarded before Telegram fallback publication. If the current line loses EV/edge or moves sharply against the bet, the candidate is dropped."
   ],
   "refresh_plan": {
-    "active_matches": 246,
+    "active_matches": 244,
     "date_local": "2026-05-10",
-    "final_pre_kickoff_checks": 41,
-    "matches_needing_odds_refresh": 429,
-    "no_more_regular_run_before_kickoff": 41,
+    "final_pre_kickoff_checks": 91,
+    "matches_needing_odds_refresh": 473,
+    "no_more_regular_run_before_kickoff": 91,
     "status": "ok",
     "top_priority_matches": [
       {
-        "away_team": "Como",
-        "home_team": "Hellas Verona",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Serie A",
-        "match_key": "soccer|como|hellas verona|2026-05-10",
-        "minutes_to_kickoff": 35.07,
+        "away_team": "FK Bumprom",
+        "home_team": "FC SKA-1938",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Belarus - Pervaya Liga",
+        "match_key": "soccer|bumprom|ska 1938|2026-05-10",
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2593,14 +2671,14 @@ runtime cli direct start
         }
       },
       {
-        "away_team": "Club Juventud Cambados",
-        "home_team": "Atletico Coruna Montaneros CF",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 1",
-        "match_key": "soccer|atletico coruna montaneros|juventud cambados|2026-05-10",
-        "minutes_to_kickoff": 35.07,
+        "away_team": "Angkor Tiger FC",
+        "home_team": "MOI Kompong Dewa FC",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Cambodia - Cambodian Premier League",
+        "match_key": "soccer|angkor tiger|moi kompong dewa|2026-05-10",
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2613,14 +2691,14 @@ runtime cli direct start
         }
       },
       {
-        "away_team": "Dos Hermanas CF 1971",
-        "home_team": "CD Ciudad de Lucena",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 10",
-        "match_key": "soccer|ciudad lucena|dos hermanas 1971|2026-05-10",
-        "minutes_to_kickoff": 35.07,
+        "away_team": "Nagaworld FC",
+        "home_team": "Phnom Penh Crown FC",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Cambodia - Cambodian Premier League",
+        "match_key": "soccer|nagaworld|phnom penh crown|2026-05-10",
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2633,14 +2711,14 @@ runtime cli direct start
         }
       },
       {
-        "away_team": "CFJ Mollerussa",
-        "home_team": "CE Europa B",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 5",
-        "match_key": "soccer|ce europa b|cfj mollerussa|2026-05-10",
-        "minutes_to_kickoff": 35.07,
+        "away_team": "Yunnan Yukun",
+        "home_team": "Liaoning Tieren FC",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "China - Chinese Super League",
+        "match_key": "soccer|liaoning tieren|yunnan yukun|2026-05-10",
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2649,126 +2727,6 @@ runtime cli direct start
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "UE Cornella",
-        "home_team": "CE L'Hospitalet",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 5",
-        "match_key": "soccer|ce l hospitalet|ue cornella|2026-05-10",
-        "minutes_to_kickoff": 35.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Cerdanyola del Valles",
-        "home_team": "CF Can Vidalet",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 5",
-        "match_key": "soccer|can vidalet|cerdanyola valles|2026-05-10",
-        "minutes_to_kickoff": 35.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "UE Vilassar de Mar",
-        "home_team": "FE Grama",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 5",
-        "match_key": "soccer|fe grama|ue vilassar mar|2026-05-10",
-        "minutes_to_kickoff": 35.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CF Vilanova I LA Geltru",
-        "home_team": "Lleida CF",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 5",
-        "match_key": "soccer|lleida|vilanova i la geltru|2026-05-10",
-        "minutes_to_kickoff": 35.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CF Badalona",
-        "home_team": "Unio Esportiva Vic",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Spain Amateur - Tercera Federacion, Group 5",
-        "match_key": "soccer|badalona|unio esportiva vic|2026-05-10",
-        "minutes_to_kickoff": 35.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Como 1907",
-        "home_team": "Hellas Verona FC",
-        "kickoff_utc": "2026-05-10T10:30:00+00:00",
-        "league_name": "Serie A",
-        "match_key": "soccer|como 1907|hellas verona|2026-05-10",
-        "minutes_to_kickoff": 35.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 156.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-10T09:54:56.570859+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": false,
           "no_more_regular_run_before_kickoff": true
         }
       },
@@ -2778,9 +2736,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Chinese Taipei - Premier League",
         "match_key": "soccer|taichung futuro|taiwan power company|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2798,9 +2756,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Chinese Taipei - Premier League",
         "match_key": "soccer|new taipei hang yuan|tatung|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2818,9 +2776,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "FKF Premier League",
         "match_key": "soccer|kariobangi sharks|nairobi united|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2838,9 +2796,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Germany Amateur - Oberliga Hamburg",
         "match_key": "soccer|sv halstenbek rellingen|turkiye wilhelmsburg|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2858,9 +2816,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Italy - Primavera 1",
         "match_key": "soccer|acf fiorentina|us cremonese|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2878,9 +2836,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Norway - 2nd Division Group 1",
         "match_key": "soccer|arendal|brattvaag|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2898,9 +2856,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Norway - 2nd Division Group 1",
         "match_key": "soccer|eik toensberg 871|sotra sk|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2918,9 +2876,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Norway - 2nd Division Group 2",
         "match_key": "soccer|loerenskog if|rana|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2938,9 +2896,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Philippines - Philippines Footb. League",
         "match_key": "soccer|mendiola|philippine army|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2958,9 +2916,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Premier League",
         "match_key": "soccer|altay|ordabasy|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2978,9 +2936,429 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Premier League",
         "match_key": "soccer|lifofane|limkokwing university|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Rodina-2",
+        "home_team": "FC Irtysh Omsk",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Russia - 2. Liga, Division A",
+        "match_key": "soccer|irtysh omsk|rodina 2|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "FC Tekstilshchik Ivanovo",
+        "home_team": "FC Kaluga",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Russia - 2. Liga, Division A",
+        "match_key": "soccer|kaluga|tekstilshchik ivanovo|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Ska-Khabarovsk-2",
+        "home_team": "Arsenal-2 Tula",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Russia - 2. Liga, Division B, Group 3",
+        "match_key": "soccer|arsenal 2 tula|ska khabarovsk 2|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Kdv Tomsk",
+        "home_team": "FC Nosta Novotroitsk",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Russia - 2. Liga, Division B, Group 4",
+        "match_key": "soccer|kdv tomsk|nosta novotroitsk|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "FC Chelyabinsk 2",
+        "home_team": "Pobeda Nizhny Novgorod",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Russia - 2. Liga, Division B, Group 4",
+        "match_key": "soccer|chelyabinsk 2|pobeda nizhny novgorod|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CD Atletico Paso",
+        "home_team": "CD Herbania",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|atletico paso|herbania|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Arucas CF",
+        "home_team": "CD Marino",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|arucas|marino|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "UD San Fernando",
+        "home_team": "CD Mensajero",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|mensajero|san fernando|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "San Bartolome CF",
+        "home_team": "CD Tenerife C",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|san bartolome|tenerife c|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CD Union Sur Yaiza",
+        "home_team": "CF Panaderia Pulido",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|panaderia pulido|union sur yaiza|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Real Union de Tenerife Santa Cruz",
+        "home_team": "UD Lanzarote",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|lanzarote|real union tenerife santa cruz|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CD San Miguel",
+        "home_team": "UD Las Palmas C",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|las palmas c|san miguel|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "SD Tenisca",
+        "home_team": "UD Tamaraceite",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Spain Amateur - Tercera Federacion, Group 12",
+        "match_key": "soccer|tamaraceite|tenisca|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "FC Rosengaard Malmo",
+        "home_team": "Piteaa IF DFF",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Damallsvenskan",
+        "match_key": "soccer|piteaa if dff|rosengaard malmo|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "IFK Lidingo FK",
+        "home_team": "Angby IF",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Division 2, Promotion Playoffs",
+        "match_key": "soccer|angby if|ifk lidingo|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Nykopings BIS",
+        "home_team": "IF Eker Orebro",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Division 2, Promotion Playoffs",
+        "match_key": "soccer|if eker orebro|nykopings bis|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Nosaby IF",
+        "home_team": "Linero IF",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Division 2, Promotion Playoffs",
+        "match_key": "soccer|linero if|nosaby if|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "IFK Trelleborg",
+        "home_team": "Solvesborgs GIF",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Division 2, Promotion Playoffs",
+        "match_key": "soccer|ifk trelleborg|solvesborgs gif|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "IFK Karlshamn",
+        "home_team": "Staffanstorp United",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Division 2, Promotion Playoffs",
+        "match_key": "soccer|ifk karlshamn|staffanstorp united|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Skellefteaa FF",
+        "home_team": "Umeaa FC Akademi",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Division 2, Promotion Playoffs",
+        "match_key": "soccer|skellefteaa ff|umeaa akademi|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Trelleborgs FF",
+        "home_team": "Aatvidabergs FF",
+        "kickoff_utc": "2026-05-10T11:00:00+00:00",
+        "league_name": "Sweden - Ettan, Relegation/Promotion",
+        "match_key": "soccer|aatvidabergs ff|trelleborgs ff|2026-05-10",
+        "minutes_to_kickoff": 52.63,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -2998,9 +3376,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Taiwan Football Premier League",
         "match_key": "soccer|taichung futuro|taipower|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -3018,9 +3396,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Taiwan Football Premier League",
         "match_key": "soccer|hang yuen|tatung|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -3038,9 +3416,9 @@ runtime cli direct start
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
         "league_name": "Tanzania - Premier League",
         "match_key": "soccer|fountain gate|kmc|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 154.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -3053,314 +3431,14 @@ runtime cli direct start
         }
       },
       {
-        "away_team": "SV Elversberg",
-        "home_team": "Fortuna Düsseldorf",
-        "kickoff_utc": "2026-05-10T11:30:00+00:00",
-        "league_name": "2. Bundesliga",
-        "match_key": "soccer|fortuna dusseldorf|sv elversberg|2026-05-10",
-        "minutes_to_kickoff": 95.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "SpVgg Greuther Fürth",
-        "home_team": "Hertha BSC",
-        "kickoff_utc": "2026-05-10T11:30:00+00:00",
-        "league_name": "2. Bundesliga",
-        "match_key": "soccer|hertha bsc|spvgg greuther furth|2026-05-10",
-        "minutes_to_kickoff": 95.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "SV Darmstadt 98",
-        "home_team": "Preußen Münster",
-        "kickoff_utc": "2026-05-10T11:30:00+00:00",
-        "league_name": "2. Bundesliga",
-        "match_key": "soccer|preu en munster|sv darmstadt 98|2026-05-10",
-        "minutes_to_kickoff": 95.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Tampines Rovers",
-        "home_team": "Hougang United",
-        "kickoff_utc": "2026-05-10T11:30:00+00:00",
-        "league_name": "Premier League",
-        "match_key": "soccer|hougang united|tampines rovers|2026-05-10",
-        "minutes_to_kickoff": 95.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 144.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Glasgow Rangers",
-        "home_team": "Celtic Glasgow",
+        "away_team": "Muang Thong United",
+        "home_team": "Sukhothai FC",
         "kickoff_utc": "2026-05-10T11:00:00+00:00",
-        "league_name": "Scotland - Premiership",
-        "match_key": "soccer|celtic glasgow|glasgow rangers|2026-05-10",
-        "minutes_to_kickoff": 65.07,
+        "league_name": "Thailand - Thai League 1",
+        "match_key": "soccer|muang thong united|sukhothai|2026-05-10",
+        "minutes_to_kickoff": 52.63,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 138.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-10T09:40:30.468353+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Albirex Niigata S",
-        "home_team": "Home United",
-        "kickoff_utc": "2026-05-10T11:30:00+00:00",
-        "league_name": "Premier League",
-        "match_key": "soccer|albirex niigata s|home united|2026-05-10",
-        "minutes_to_kickoff": 95.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 136.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-10T01:10:00.143033+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Djurgardens IF",
-        "home_team": "AIK Stockholm",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Allsvenskan",
-        "match_key": "soccer|aik stockholm|djurgardens if|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Halmstad",
-        "home_team": "Kalmar FF",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Allsvenskan",
-        "match_key": "soccer|halmstad|kalmar ff|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Homeboyz",
-        "home_team": "Murang'a SEAL",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "FKF Premier League",
-        "match_key": "soccer|homeboyz|murang a seal|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Bidco United",
-        "home_team": "Tusker",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "FKF Premier League",
-        "match_key": "soccer|bidco united|tusker|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Villarreal",
-        "home_team": "Mallorca",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "La Liga",
-        "match_key": "soccer|mallorca|villarreal|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Kaisar",
-        "home_team": "Aktobe",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Premier League",
-        "match_key": "soccer|aktobe|kaisar|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Urartu",
-        "home_team": "Ararat",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Premier League",
-        "match_key": "soccer|ararat|urartu|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Sochi",
-        "home_team": "Zenit",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Premier League",
-        "match_key": "soccer|sochi|zenit|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Villarreal CF",
-        "home_team": "RCD Mallorca",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Primera Division",
-        "match_key": "soccer|rcd mallorca|villarreal|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Las Palmas",
-        "home_team": "FC Andorra",
-        "kickoff_utc": "2026-05-10T12:00:00+00:00",
-        "league_name": "Segunda División",
-        "match_key": "soccer|andorra|las palmas|2026-05-10",
-        "minutes_to_kickoff": 125.07,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 134.311,
+        "priority": 158.457,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -3373,23 +3451,23 @@ runtime cli direct start
         }
       }
     ],
-    "updated_at_utc": "2026-05-10T09:54:55.960859+00:00"
+    "updated_at_utc": "2026-05-10T10:07:22.194777+00:00"
   },
   "status": "ok",
-  "updated_at_utc": "2026-05-10T09:54:55.960859+00:00"
+  "updated_at_utc": "2026-05-10T10:07:22.194777+00:00"
 }
 {
-  "active_matches": 246,
+  "active_matches": 244,
   "date_local": "2026-05-10",
-  "final_pre_kickoff_checks": 41,
-  "matches_missing_odds_coverage": 235,
-  "matches_needing_odds_refresh": 180,
+  "final_pre_kickoff_checks": 91,
+  "matches_missing_odds_coverage": 223,
+  "matches_needing_odds_refresh": 215,
   "matches_stale_odds_refresh": 3,
-  "no_more_regular_run_before_kickoff": 41,
+  "no_more_regular_run_before_kickoff": 91,
   "notes": [
     "Top-level refresh counters now match row-level refresh_plan flags.",
     "Missing coverage and stale/final-refresh are separated so Telegram no longer exaggerates odds refresh load."
   ],
   "status": "ok",
-  "updated_at_utc": "2026-05-10T09:54:55.960859+00:00"
+  "updated_at_utc": "2026-05-10T10:07:22.194777+00:00"
 }
