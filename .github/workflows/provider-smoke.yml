@@ -319,12 +319,12 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          echo "provider signal coverage blueprint start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if python -u scripts/provider_signal_coverage_blueprint.py 2>&1 | tee .data/exports/provider-signal-coverage-blueprint-run.log; then
-            echo "provider signal coverage blueprint completed"
+          echo "provider signal coverage blueprint v2 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if python -u scripts/provider_signal_coverage_blueprint_v2.py 2>&1 | tee .data/exports/provider-signal-coverage-blueprint-run.log; then
+            echo "provider signal coverage blueprint v2 completed"
           else
             status=$?
-            echo "provider signal coverage blueprint failed with status ${status}; continuing"
+            echo "provider signal coverage blueprint v2 failed with status ${status}; continuing"
           fi
 
       - name: Collect provider smoke artifacts
