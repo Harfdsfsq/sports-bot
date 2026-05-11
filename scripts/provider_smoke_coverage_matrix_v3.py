@@ -2,18 +2,21 @@ from __future__ import annotations
 
 """Provider smoke coverage matrix v3.
 
-v3 keeps the base 300-match matrix and adds an SStats-deep projection from
-latest-sstats-crosswalk.json. It does not mutate inventory yet; it tells us how
-much coverage can be lifted once provider_source_ids.sstats is persisted and
-SStats deep endpoints are wired into runtime enrichment.
+v3 keeps the base 300-match matrix and adds an SStats-deep projection. It can
+run the SStats crosswalk itself because provider-smoke builds the coverage matrix
+before the blueprint step. This keeps the workflow order intact and avoids stale
+or missing crosswalk artifacts.
 """
 
+import asyncio
 import json
+import os
 from collections import Counter
 from pathlib import Path
 from typing import Any
 
 from scripts import provider_smoke_coverage_matrix as base
+from scripts import sstats_crosswalk_probe
 
 OUT_DIR = Path(".data/exports")
 JSON_OUT = OUT_DIR / "provider-smoke-coverage-matrix.json"
@@ -26,6 +29,28 @@ def load(path: Path) -> dict[str, Any]:
         return value if isinstance(value, dict) else {}
     except Exception:
         return {}
+
+
+def truthy(name: str, default: bool = True) -> bool:
+    raw = str(os.getenv(name) or "").strip().lower()
+    if not raw:
+        return default
+    return raw in {"1", "true", "yes", "on", "force"}
+
+
+def ensure_crosswalk() -> dict[str, Any]:
+    existing = load(OUT_DIR / "latest-sstats-crosswalk.json")
+    if existing and (existing.get("summary") or existing.get("status") == "error"):
+        return existing
+    if not truthy("SSTATS_CROSSWALK_ENABLED", True):
+        return {}
+    try:
+        return asyncio.run(sstats_crosswalk_probe.run())
+    except Exception as exc:
+        payload = {"mode": "sstats_crosswalk_probe_failed", "status": "error", "error": f"{type(exc).__name__}: {exc}", "summary": {}}
+        (OUT_DIR / "latest-sstats-crosswalk.json").write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        (OUT_DIR / "latest-sstats-crosswalk.txt").write_text(f"# SStats inventory crosswalk probe\nERROR: {payload['error']}\n", encoding="utf-8")
+        return payload
 
 
 def collect_rows(payload: Any) -> list[dict[str, Any]]:
@@ -86,8 +111,7 @@ def queue_key(item: dict[str, Any]) -> tuple[int, str, int, int]:
     return (order.get(bucket, 5), str(item.get("kickoff_utc") or ""), -len(missing), int(item.get("odds_sources") or 0) + int(item.get("context_sources") or 0))
 
 
-def sstats_projection(payload: dict[str, Any]) -> dict[str, Any]:
-    crosswalk = load(OUT_DIR / "latest-sstats-crosswalk.json")
+def sstats_projection(payload: dict[str, Any], crosswalk: dict[str, Any]) -> dict[str, Any]:
     summary = crosswalk.get("summary") if isinstance(crosswalk.get("summary"), dict) else {}
     by_bucket = crosswalk.get("by_bucket") if isinstance(crosswalk.get("by_bucket"), dict) else {}
     totals = payload.get("totals") if isinstance(payload.get("totals"), dict) else {}
@@ -148,13 +172,14 @@ def main() -> int:
     payload = load(JSON_OUT)
     if not payload:
         return status
+    crosswalk = ensure_crosswalk()
     payload["matrix_version"] = "v3_sstats_crosswalk_projection"
     payload["provider_status_summary"] = provider_status_summary()
     queue = payload.get("next_enrichment_queue") if isinstance(payload.get("next_enrichment_queue"), list) else []
     payload["next_enrichment_queue"] = sorted([item for item in queue if isinstance(item, dict)], key=queue_key)
-    payload["sstats_crosswalk_projection"] = sstats_projection(payload)
+    payload["sstats_crosswalk_projection"] = sstats_projection(payload, crosswalk)
     notes = payload.get("notes") if isinstance(payload.get("notes"), list) else []
-    notes.append("v3: adds SStats crosswalk projection from latest-sstats-crosswalk.json; does not mutate inventory yet.")
+    notes.append("v3: runs/reuses SStats crosswalk before projection; does not mutate inventory yet.")
     payload["notes"] = notes
     JSON_OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     TXT_OUT.write_text(render(payload), encoding="utf-8")
