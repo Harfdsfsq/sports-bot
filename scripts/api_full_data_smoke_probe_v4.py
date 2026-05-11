@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from scripts.api_full_data_smoke_probe_v8 import main, run
+from scripts.api_full_data_smoke_probe_v9 import main, run
 
 __all__ = ["run", "main"]
 
