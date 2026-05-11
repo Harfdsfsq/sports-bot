@@ -89,6 +89,7 @@ def _stage_counts(payload: dict[str, Any]) -> dict[str, Any]:
 
 def _install_runtime_patches() -> None:
     for module_name in (
+        "app.providers.sportlogic_docs_runtime_patch",
         "app.services.provider_matching_alias_runtime_patch",
         "app.services.provider_match_time_league_guard",
         "app.services.api_full_data_runtime_patch",
