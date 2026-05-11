@@ -16,6 +16,7 @@ from typing import Any
 from scripts import api_full_data_smoke_probe_v9 as v9
 from scripts import api_full_data_smoke_probe_v7 as base
 
+_BASE_RENDER = base.render
 _ORIG_BUILD_CALLS = base.build_calls
 _ORIG_DETAIL_CALLS = v9.detail_calls
 
@@ -31,8 +32,6 @@ def _sportlogic_lite_calls(calls: list[base.CallSpec]) -> list[base.CallSpec]:
     sportlogic = [call for call in calls if call.provider == "sportlogic"]
     if not sportlogic:
         return []
-    # Prefer active odds because it proves odds discovery path and usually has
-    # game_id for follow-up parsing. Fall back to first available SportLogic call.
     for call in sportlogic:
         if call.command == "active_odds":
             return [call]
@@ -49,15 +48,16 @@ def build_calls() -> list[base.CallSpec]:
 
 async def detail_calls(client, results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     if not _truthy("API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED", False):
-        # Keep Bzzoiro and odds-api details from v9/base, but avoid SportLogic
-        # game detail fan-out unless explicitly requested.
         filtered_results = [row for row in results if row.get("provider") != "sportlogic"]
         return await _ORIG_DETAIL_CALLS(client, filtered_results)
     return await _ORIG_DETAIL_CALLS(client, results)
 
 
 def _render(payload: dict[str, Any]) -> str:
-    return base.render(payload).replace("diagnostics v9", "diagnostics v10").replace("diagnostics v7", "diagnostics v10")
+    # Use the original v7 renderer captured before install(); do not call
+    # base.render here because install() intentionally replaces base.render with
+    # this function.
+    return _BASE_RENDER(payload).replace("diagnostics v9", "diagnostics v10").replace("diagnostics v7", "diagnostics v10")
 
 
 def install() -> None:
