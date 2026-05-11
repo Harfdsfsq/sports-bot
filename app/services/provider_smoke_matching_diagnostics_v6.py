@@ -5,9 +5,9 @@ import json
 from typing import Any
 
 from app.services import provider_smoke_matching_diagnostics as base
-from app.services import provider_smoke_matching_diagnostics_v5 as v5
+from app.services import provider_smoke_matching_diagnostics_v3 as upstream
 
-ADAPTER_VERSION = "v6_preserve_sportlogic_active_odds_diagnostics"
+ADAPTER_VERSION = "v6_preserve_sportlogic_active_odds_diagnostics_no_recursion"
 _MARK = "_harizon_provider_smoke_matching_diagnostics_v6_installed"
 
 DIAG_KEYS = (
@@ -26,7 +26,7 @@ DIAG_KEYS = (
 
 
 def install() -> None:
-    v5.install()
+    upstream.install()
     if getattr(base, _MARK, False):
         return
     original_match = base._match_provider_to_inventory
