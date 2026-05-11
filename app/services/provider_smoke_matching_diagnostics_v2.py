@@ -41,6 +41,28 @@ def _future_events(events: list[Any], days: int = 2) -> list[Any]:
     return out
 
 
+def _sportlogic_variants() -> list[tuple[str, dict[str, Any]]]:
+    now = datetime.now(UTC)
+    today = now.date().isoformat()
+    tomorrow = (now + timedelta(days=1)).date().isoformat()
+    day_after = (now + timedelta(days=2)).date().isoformat()
+    return [
+        ("/games", {"date_from": today, "date_to": day_after, "status": "scheduled", "per_page": 100}),
+        ("/games", {"date_from": today, "date_to": day_after, "status": "upcoming", "per_page": 100}),
+        ("/games", {"dateFrom": today, "dateTo": day_after, "per_page": 100}),
+        ("/games", {"start_date": today, "end_date": day_after, "status": "scheduled", "per_page": 100}),
+        ("/games", {"starts_after": today, "starts_before": day_after, "per_page": 100}),
+        ("/games", {"from": today, "to": day_after, "status": "scheduled", "per_page": 100}),
+        ("/games", {"date": today, "status": "scheduled", "per_page": 100}),
+        ("/games", {"per_page": 100, "status": "scheduled", "sort": "start_time"}),
+        ("/games", {"per_page": 100, "status": "upcoming", "sort": "start_time"}),
+        ("/games", {"per_page": 100, "sort": "start_time"}),
+        ("/fixtures", {"date_from": today, "date_to": day_after, "per_page": 100}),
+        ("/matches", {"date_from": today, "date_to": day_after, "per_page": 100}),
+        ("/games/upcoming", {"per_page": 100}),
+    ]
+
+
 async def _fetch_rows(client: Any, provider: str) -> dict[str, Any]:
     payload = await _ORIGINAL_FETCH_ROWS(client, provider)
     if provider != "sportlogic":
@@ -54,23 +76,35 @@ async def _fetch_rows(client: Any, provider: str) -> dict[str, Any]:
     root = __import__("os").getenv("SPORTLOGIC_BASE_URL") or "https://api.sportlogic.io/api/v1"
     root = str(root).rstrip("/")
     headers = {str(__import__("os").getenv("SPORTLOGIC_HEADER_NAME") or "X-API-Key"): key}
+    attempts = payload.setdefault("attempts", [])
+    best_future: list[Any] = []
+    best_rows_count = 0
+    best_path = ""
     try:
-        broad, attempt = await base._get(client, f"{root}/games", params={"per_page": 100}, headers=headers)
-        rows = base._rows(broad)
-        parsed = [event for row in rows if (event := base._event_from_generic("sportlogic", row)) is not None]
-        future = _future_events(parsed)
-        payload.setdefault("attempts", []).append(attempt)
-        payload["broad_fallback_used"] = True
-        payload["broad_rows"] = len(rows)
-        payload["broad_future_rows"] = len(future)
-        if future:
-            payload["raw_rows"] = len(rows)
-            payload["parsed_events"] = len(future)
-            payload["events"] = future
-            payload["samples"] = [event.sample() for event in future[:8]]
+        for path, params in _sportlogic_variants()[:8]:
+            raw, attempt = await base._get(client, f"{root}{path}", params=params, headers=headers)
+            attempts.append(attempt)
+            rows = base._rows(raw)
+            parsed = [event for row in rows if (event := base._event_from_generic("sportlogic", row)) is not None]
+            future = _future_events(parsed)
+            if len(future) > len(best_future):
+                best_future = future
+                best_rows_count = len(rows)
+                best_path = path
+            if future:
+                break
+        payload["future_fallback_used"] = True
+        payload["future_fallback_best_path"] = best_path
+        payload["future_fallback_rows"] = best_rows_count
+        payload["future_fallback_future_rows"] = len(best_future)
+        if best_future:
+            payload["raw_rows"] = best_rows_count
+            payload["parsed_events"] = len(best_future)
+            payload["events"] = best_future
+            payload["samples"] = [event.sample() for event in best_future[:8]]
             payload["status"] = "ok"
     except Exception as exc:
-        payload["broad_fallback_error"] = f"{type(exc).__name__}: {exc}"
+        payload["future_fallback_error"] = f"{type(exc).__name__}: {exc}"
     return payload
 
 
