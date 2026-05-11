@@ -35,7 +35,7 @@ concurrency:
 jobs:
   provider-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 22
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
@@ -78,6 +78,10 @@ jobs:
       API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT: "1"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
+      SSTATS_DEEP_SMOKE_DETAIL_GAMES: "2"
+      SSTATS_DEEP_SMOKE_CONCURRENCY: "2"
+      SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "18"
+      SSTATS_DEEP_SMOKE_INCLUDE_APIKEY: "true"
 
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       PROVIDER_SMOKE_TARGET_DATE: ${{ github.event.inputs.target_date }}
@@ -283,6 +287,22 @@ jobs:
             echo "explicit full-data probe v10 failed or timed out with status ${status}; continuing"
           fi
 
+      - name: Run SStats deep endpoint probe
+        shell: bash
+        env:
+          SSTATS_DEEP_SMOKE_DETAIL_GAMES: "2"
+          SSTATS_DEEP_SMOKE_CONCURRENCY: "2"
+          SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "18"
+        run: |
+          set -uo pipefail
+          echo "sstats deep smoke start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 180s python -u scripts/sstats_deep_smoke_probe.py 2>&1 | tee .data/exports/sstats-deep-smoke-run.log; then
+            echo "sstats deep smoke completed"
+          else
+            status=$?
+            echo "sstats deep smoke failed or timed out with status ${status}; continuing"
+          fi
+
       - name: Build 300-match coverage matrix
         shell: bash
         run: |
@@ -295,6 +315,18 @@ jobs:
             echo "coverage matrix v2 failed with status ${status}; continuing"
           fi
 
+      - name: Build provider signal coverage blueprint
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo "provider signal coverage blueprint start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if python -u scripts/provider_signal_coverage_blueprint.py 2>&1 | tee .data/exports/provider-signal-coverage-blueprint-run.log; then
+            echo "provider signal coverage blueprint completed"
+          else
+            status=$?
+            echo "provider signal coverage blueprint failed with status ${status}; continuing"
+          fi
+
       - name: Collect provider smoke artifacts
         if: always()
         shell: bash
@@ -305,6 +337,12 @@ jobs:
           cp .data/exports/latest-provider-smoke*.txt artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-api-full-data-enrichment.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-api-full-data-enrichment.txt artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-sstats-deep-smoke.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-sstats-deep-smoke.txt artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/sstats-deep-smoke-run.log artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/provider-signal-coverage-blueprint.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/provider-signal-coverage-blueprint.txt artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/provider-signal-coverage-blueprint-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/api-full-data-smoke-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-fast-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-coverage-matrix.json artifacts/provider-smoke/ 2>/dev/null || true
@@ -319,6 +357,10 @@ jobs:
           cat .data/exports/latest-provider-smoke-diagnostics.txt 2>/dev/null || cat .data/exports/latest-provider-smoke.txt 2>/dev/null || true
           echo "----- API full-data enrichment -----"
           cat .data/exports/latest-api-full-data-enrichment.txt 2>/dev/null || true
+          echo "----- SStats deep smoke -----"
+          cat .data/exports/latest-sstats-deep-smoke.txt 2>/dev/null || true
+          echo "----- Provider signal coverage blueprint -----"
+          cat .data/exports/provider-signal-coverage-blueprint.txt 2>/dev/null || true
 
       - name: Upload provider smoke artifact
         if: always()
