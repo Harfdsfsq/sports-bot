@@ -13,6 +13,42 @@ UTC = timezone.utc
 ADAPTER_VERSION = "v5_sportlogic_adapter_error_safe_active_odds"
 
 
+def _text(value: Any) -> str:
+    if isinstance(value, dict):
+        for key in ("name", "display_name", "displayName", "short_name", "shortName"):
+            item = value.get(key)
+            if item not in (None, ""):
+                return str(item).strip()
+        return ""
+    return str(value or "").strip()
+
+
+def _parse_start(value: Any):
+    try:
+        from app.utils import parse_datetime
+        return parse_datetime(value)
+    except Exception:
+        return None
+
+
+def _sportlogic_game_event(row: dict[str, Any]):
+    home = _text(row.get("home_team") or row.get("home") or row.get("homeTeam"))
+    away = _text(row.get("away_team") or row.get("away") or row.get("awayTeam"))
+    league = _text(row.get("league") or row.get("competition") or row.get("tournament"))
+    start = _parse_start(row.get("start_time") or row.get("date") or row.get("start") or row.get("starts_at"))
+    if not home or not away:
+        return None
+    return base.EventRow(
+        provider="sportlogic",
+        home=home,
+        away=away,
+        league=league,
+        start=start,
+        source_id=str(row.get("id") or row.get("game_id") or "").strip(),
+        raw_shape="sportlogic_documented_game",
+    )
+
+
 def _future(events: list[Any]) -> list[Any]:
     now = datetime.now(UTC)
     upper = now + timedelta(days=2)
@@ -60,6 +96,8 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
         if gid and gid not in game_ids:
             game_ids.append(gid)
     events = []
+    missing_team = 0
+    missing_start = 0
     for gid in game_ids[:12]:
         game_payload, game_attempt = await base._get(client, f"{root}/games/{gid}", params={}, headers=headers)
         attempts.append(game_attempt)
@@ -67,9 +105,13 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
         if not rows and isinstance(game_payload, dict) and isinstance(game_payload.get("data"), dict):
             rows = [game_payload["data"]]
         for row in rows:
-            event = base._event_from_generic("sportlogic", row)
-            if event is not None:
-                events.append(event)
+            event = _sportlogic_game_event(row) or base._event_from_generic("sportlogic", row)
+            if event is None:
+                missing_team += 1
+                continue
+            if event.start is None:
+                missing_start += 1
+            events.append(event)
     future = _future(events)
     status = "ok" if future else "documented_active_odds_no_future_games" if odds_rows else "documented_active_odds_empty"
     return {
@@ -77,8 +119,8 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
         "status": status,
         "raw_rows": len(odds_rows),
         "parsed_events": len(future),
-        "missing_team_rows": 0,
-        "missing_start_rows": max(0, len(events) - len(future)),
+        "missing_team_rows": missing_team,
+        "missing_start_rows": missing_start,
         "events": future,
         "samples": [event.sample() for event in future[:8]],
         "attempts": attempts[:10],
