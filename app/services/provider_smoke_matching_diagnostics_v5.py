@@ -38,15 +38,7 @@ def _sportlogic_game_event(row: dict[str, Any]):
     start = _parse_start(row.get("start_time") or row.get("date") or row.get("start") or row.get("starts_at"))
     if not home or not away:
         return None
-    return base.EventRow(
-        provider="sportlogic",
-        home=home,
-        away=away,
-        league=league,
-        start=start,
-        source_id=str(row.get("id") or row.get("game_id") or "").strip(),
-        raw_shape="sportlogic_documented_game",
-    )
+    return base.EventRow(provider="sportlogic", home=home, away=away, league=league, start=start, source_id=str(row.get("id") or row.get("game_id") or "").strip(), raw_shape="sportlogic_documented_game")
 
 
 def _future(events: list[Any]) -> list[Any]:
@@ -66,17 +58,35 @@ def _future(events: list[Any]) -> list[Any]:
     return out
 
 
+def _game_id_candidates(value: Any, depth: int = 0) -> list[str]:
+    if depth > 5:
+        return []
+    out: list[str] = []
+    if isinstance(value, dict):
+        for key, item in value.items():
+            low = str(key).lower()
+            if low in {"game", "game_id", "gameid", "fixture", "fixture_id", "fixtureid", "event", "event_id", "eventid", "match", "match_id", "matchid"}:
+                if isinstance(item, dict):
+                    for subkey in ("id", "game_id", "gameId", "fixture_id", "fixtureId", "event_id", "eventId", "match_id", "matchId"):
+                        sub = item.get(subkey)
+                        if sub not in (None, ""):
+                            out.append(str(sub).strip())
+                    out.extend(_game_id_candidates(item, depth + 1))
+                elif item not in (None, ""):
+                    out.append(str(item).strip())
+            elif isinstance(item, (dict, list)):
+                out.extend(_game_id_candidates(item, depth + 1))
+    elif isinstance(value, list):
+        for item in value[:30]:
+            out.extend(_game_id_candidates(item, depth + 1))
+    return [item for item in out if item]
+
+
 def _game_id(row: dict[str, Any]) -> str:
-    for key in ("game_id", "gameId", "fixture_id", "fixtureId", "event_id", "eventId"):
-        value = row.get(key)
-        if value not in (None, ""):
-            return str(value).strip()
-    game = row.get("game")
-    if isinstance(game, dict):
-        for key in ("id", "game_id", "gameId"):
-            value = game.get(key)
-            if value not in (None, ""):
-                return str(value).strip()
+    candidates = _game_id_candidates(row)
+    for item in candidates:
+        if item and item.lower() not in {"none", "null"}:
+            return item
     return ""
 
 
@@ -93,6 +103,10 @@ def _next_cursor(payload: Any) -> str:
     return str(value) if value not in (None, "") else ""
 
 
+def _sample_keys(rows: list[dict[str, Any]]) -> list[list[str]]:
+    return [sorted(str(key) for key in row.keys())[:30] for row in rows[:5]]
+
+
 async def _active_odds_events(client: Any) -> dict[str, Any]:
     key = base._secret("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN")
     if not key:
@@ -102,6 +116,8 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
     attempts: list[dict[str, Any]] = []
     game_ids: list[str] = []
     odds_rows_count = 0
+    odds_sample_keys: list[list[str]] = []
+    odds_id_candidates_sample: list[list[str]] = []
     cursor = ""
     max_pages = max(1, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES") or 4)))
     max_games = max(6, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT") or 24)))
@@ -113,6 +129,9 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
         attempts.append(attempt)
         odds_rows = base._rows(odds_payload)
         odds_rows_count += len(odds_rows)
+        if not odds_sample_keys:
+            odds_sample_keys = _sample_keys(odds_rows)
+            odds_id_candidates_sample = [_game_id_candidates(row)[:8] for row in odds_rows[:5]]
         for row in odds_rows:
             gid = _game_id(row)
             if gid and gid not in game_ids:
@@ -145,21 +164,7 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
             events.append(event)
     future = _future(events)
     status = "ok" if future else "documented_active_odds_no_future_games" if odds_rows_count else "documented_active_odds_empty"
-    return {
-        "provider": "sportlogic",
-        "status": status,
-        "raw_rows": odds_rows_count,
-        "parsed_events": len(future),
-        "missing_team_rows": missing_team,
-        "missing_start_rows": missing_start,
-        "events": future,
-        "samples": [event.sample() for event in future[:8]],
-        "attempts": attempts[:16],
-        "documented_active_odds_rows": odds_rows_count,
-        "documented_active_odds_pages_scanned": len([a for a in attempts if str(a.get("url", "")).endswith("/odds")]),
-        "documented_active_game_ids_checked": game_ids[:max_games],
-        "documented_active_game_samples_all": all_game_samples,
-    }
+    return {"provider": "sportlogic", "status": status, "raw_rows": odds_rows_count, "parsed_events": len(future), "missing_team_rows": missing_team, "missing_start_rows": missing_start, "events": future, "samples": [event.sample() for event in future[:8]], "attempts": attempts[:16], "documented_active_odds_rows": odds_rows_count, "documented_active_odds_pages_scanned": len([a for a in attempts if str(a.get("url", "")).endswith("/odds")]), "documented_active_game_ids_checked": game_ids[:max_games], "documented_active_odds_sample_keys": odds_sample_keys, "documented_active_id_candidates_sample": odds_id_candidates_sample, "documented_active_game_samples_all": all_game_samples}
 
 
 async def _provider_adapter_events() -> tuple[list[Any], dict[str, Any], dict[str, Any], str | None]:
@@ -167,7 +172,6 @@ async def _provider_adapter_events() -> tuple[list[Any], dict[str, Any], dict[st
         from app.config import Settings
         from app.providers import sportlogic_docs_runtime_patch
         from app.providers.sportlogic_provider import SportLogicProvider
-
         sportlogic_docs_runtime_patch.install()
         matches, stats, preview = await SportLogicProvider(Settings()).fetch_matches()
         events = [event for item in matches if (event := v3._event_from_match(item)) is not None and event.start is not None]
@@ -181,20 +185,7 @@ async def _fetch_rows_v5(client: Any, provider: str) -> dict[str, Any]:
         return await v3._ORIGINAL_FETCH_ROWS(client, provider)
     events, stats, preview, adapter_error = await _provider_adapter_events()
     if events:
-        return {
-            "provider": "sportlogic",
-            "status": "ok",
-            "adapter_version": ADAPTER_VERSION,
-            "raw_rows": int(stats.get("fixtures_fetched") or stats.get("games_fetched") or len(events) or 0),
-            "parsed_events": len(events),
-            "missing_team_rows": 0,
-            "missing_start_rows": 0,
-            "events": events,
-            "samples": [event.sample() for event in events[:8]],
-            "attempts": [{"ok": True, "http_status": 200, "url": "SportLogicProvider.fetch_matches", "params_keys": ["documented_adapter"], "payload_shape": "matches"}],
-            "provider_stats": stats,
-            "provider_preview": preview,
-        }
+        return {"provider": "sportlogic", "status": "ok", "adapter_version": ADAPTER_VERSION, "raw_rows": int(stats.get("fixtures_fetched") or stats.get("games_fetched") or len(events) or 0), "parsed_events": len(events), "missing_team_rows": 0, "missing_start_rows": 0, "events": events, "samples": [event.sample() for event in events[:8]], "attempts": [{"ok": True, "http_status": 200, "url": "SportLogicProvider.fetch_matches", "params_keys": ["documented_adapter"], "payload_shape": "matches"}], "provider_stats": stats, "provider_preview": preview}
     odds = await _active_odds_events(client)
     odds["adapter_version"] = ADAPTER_VERSION
     odds["documented_adapter_status"] = "error_then_active_odds" if adapter_error else "empty_then_active_odds"
