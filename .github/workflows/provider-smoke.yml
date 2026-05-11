@@ -60,13 +60,15 @@ jobs:
       PROVIDER_SMOKE_REPEATS: "1"
       PROVIDER_SMOKE_MATCHING_DIAGNOSTICS_ENABLED: "true"
       PROVIDER_SMOKE_MATCHING_TIMEOUT_SECONDS: "35"
-      PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,football_data,sportlogic,allsportsapi"
+      PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,football_data,allsportsapi"
       PROVIDER_SMOKE_MATCHING_ODDS_LIMIT: "100"
       PROVIDER_SMOKE_MATCHING_ODDS_PAGES: "3"
       PROVIDER_SMOKE_MATCHING_DAYS_AHEAD: "2"
       PROVIDER_SMOKE_SSTATS_LOOKBACK_DAYS: "45"
       BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
       API_FULL_SMOKE_ENABLED: "false"
+      API_FULL_SMOKE_SPORTLOGIC_ENABLED: "false"
+      API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED: "false"
       API_FULL_SMOKE_MAX_SECONDS: "180"
       API_FULL_SMOKE_TIMEOUT_SECONDS: "22"
       API_FULL_SMOKE_CONCURRENCY: "4"
@@ -74,8 +76,8 @@ jobs:
       API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS: "4"
       API_FULL_SMOKE_ODDS_EVENT_LIMIT: "2"
       API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT: "1"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "1"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "5"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
 
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       PROVIDER_SMOKE_TARGET_DATE: ${{ github.event.inputs.target_date }}
@@ -90,7 +92,7 @@ jobs:
       DAY_INVENTORY_EXTRA_FIXTURES_ENABLED: "true"
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
       DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "true"
-      DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
+      DAY_INVENTORY_ENABLE_SPORTLOGIC: "false"
       DAY_INVENTORY_ENABLE_SSTATS: "true"
       DAY_INVENTORY_TOP_MATCHES_ENABLED: "true"
       DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "180"
@@ -108,8 +110,8 @@ jobs:
       DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "12"
       DAY_INVENTORY_ALLSPORTSAPI_WINDOW_DAYS: "0"
       DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT: "500"
-      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "500"
-      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "12"
+      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "0"
+      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "0"
       DAY_INVENTORY_SSTATS_WINDOW_DAYS: "1"
       DAY_INVENTORY_SSTATS_LIMIT: "1000"
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "3"
@@ -241,6 +243,7 @@ jobs:
         env:
           API_FULL_SMOKE_ENABLED: "false"
           PROVIDER_SMOKE_REPEATS: "1"
+          PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,football_data,allsportsapi"
           SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
           SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
         run: |
@@ -266,16 +269,18 @@ jobs:
         env:
           API_FULL_SMOKE_ENABLED: "true"
           API_FULL_SMOKE_DETAIL_CONCURRENCY: "1"
-          SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "1"
-          SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "3"
+          API_FULL_SMOKE_SPORTLOGIC_ENABLED: "false"
+          API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED: "false"
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
         run: |
           set -uo pipefail
-          echo "explicit full-data probe v9 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 220s python -u scripts/api_full_data_smoke_probe_v9.py 2>&1 | tee .data/exports/api-full-data-smoke-run.log; then
-            echo "explicit full-data probe v9 completed"
+          echo "explicit full-data probe v10 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 220s python -u scripts/api_full_data_smoke_probe_v10.py 2>&1 | tee .data/exports/api-full-data-smoke-run.log; then
+            echo "explicit full-data probe v10 completed"
           else
             status=$?
-            echo "explicit full-data probe v9 failed or timed out with status ${status}; continuing"
+            echo "explicit full-data probe v10 failed or timed out with status ${status}; continuing"
           fi
 
       - name: Build 300-match coverage matrix
