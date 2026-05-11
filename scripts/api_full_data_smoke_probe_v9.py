@@ -13,6 +13,8 @@ from typing import Any
 from scripts import api_full_data_smoke_probe_v8 as v8
 from scripts import api_full_data_smoke_probe_v7 as base
 
+_BASE_RENDER = base.render
+
 
 def _unique(values: list[str]) -> list[str]:
     out: list[str] = []
@@ -77,13 +79,14 @@ async def detail_calls(client, results: list[dict[str, Any]]) -> list[dict[str, 
 
 
 def _render(payload: dict[str, Any]) -> str:
-    return base.render(payload).replace("diagnostics v7", "diagnostics v9")
+    return _BASE_RENDER(payload).replace("diagnostics v7", "diagnostics v9")
 
 
 def install() -> None:
     v8.install()
     base.ids_from = ids_from
     base.detail_calls = detail_calls
+    base.render = _render
 
 
 async def run() -> dict[str, Any]:
