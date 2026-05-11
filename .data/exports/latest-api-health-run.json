@@ -28,7 +28,8 @@
       "ok": 5
     },
     "odds": {
-      "ok": 2
+      "ok": 1,
+      "rate_limited": 1
     },
     "odds_context": {
       "ok": 1
@@ -43,14 +44,36 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 16
+    "ok": 15,
+    "rate_limited": 1
   },
-  "created_at_utc": "2026-05-11T13:01:38.397287+00:00",
-  "critical_failures": [],
+  "created_at_utc": "2026-05-11T15:01:52.682807+00:00",
+  "critical_failures": [
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"success\":false,\"error\":{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"Daily limit of 500 requests exceeded. Used: 524. Resets at midnight UTC.\",\"doc_url\":\"https:\\/\\/api.sportlogic.io\\/docs#errors\",\"errors\":{\"current\":524,\"limit\":500,\"retry_after_seconds\":32288,\"upgrade_hint\":\"Upgrade to Basic ($19\\/mo) for 7,500 req\\/day.\"},\"request_id\":\"req_0b3ab5836d62\"}}",
+        "controlled_odds_enabled": true,
+        "payload_shape": "error,success",
+        "semantic_message": "provider_payload_error"
+      },
+      "endpoint": "https://api.sportlogic.io/api/v1/games?sport=football&limit=5",
+      "group": "odds",
+      "http_statuses": [
+        429
+      ],
+      "latency_ms": 598,
+      "message": "provider_payload_error",
+      "provider": "sportlogic",
+      "requests": 1,
+      "status": "rate_limited",
+      "useful_rows": 0
+    }
+  ],
   "mode": "quick",
   "recommendations": [
     "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
-    "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
     "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
@@ -73,7 +96,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 2182,
+      "latency_ms": 2167,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -84,7 +107,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"count\":13,\"filters\":{\"client\":\"Rick Dalton\"},\"competitions\":[{\"id\":2013,\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":15,\"winner\":null},\"numberOfAvailableSeasons\":10,\"lastUpdated\":\"2024-09-13T16:55:53Z\"},{\"id\":2016,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Championship\",\"code\":\"ELC\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/ELC.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2416,\"startDate\":\"2025-08-08\",\"endDate\":\"2026-05-12\",\"currentMatchday\":46,\"winner\":null},\"numberOfAvailableSeasons\":9,\"lastUpdated\":\"2026-05-11T08:32:38Z\"},{\"id\":2021,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-",
+        "body_preview": "{\"count\":13,\"filters\":{\"client\":\"Rick Dalton\"},\"competitions\":[{\"id\":2013,\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":15,\"winner\":null},\"numberOfAvailableSeasons\":10,\"lastUpdated\":\"2024-09-13T16:55:53Z\"},{\"id\":2016,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Championship\",\"code\":\"ELC\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/ELC.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2416,\"startDate\":\"2025-08-08\",\"endDate\":\"2026-05-12\",\"currentMatchday\":46,\"winner\":null},\"numberOfAvailableSeasons\":9,\"lastUpdated\":\"2026-05-11T15:45:39Z\"},{\"id\":2021,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-",
         "payload_shape": "competitions,count,filters"
       },
       "endpoint": "https://api.football-data.org/v4/competitions",
@@ -92,7 +115,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 781,
+      "latency_ms": 797,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -149,7 +172,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 667,
+      "latency_ms": 705,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -169,7 +192,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 170,
+      "latency_ms": 174,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -180,7 +203,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"d4540279-ec05-568b-b4e1-685a525f59db\",\"title\":\"A first since 1943: All the key stats from AC Milan vs. Atalanta\",\"description\":\"AC Milan's collapse continued at San Siro on Sunday night as they were beaten by Atalanta, putting top four at serious risk.\",\"url\":\"https://sempremilan.com/all-key-stats-ac-milan-2-3-atalanta\",\"author\":\"Oliver Fisher\",\"image\":\"https://icdn.sempremilan.com/wp-content/uploads/2026/05/ac-milan-v-atalanta-bc-serie-a-63.jpg\",\"language\":\"en\",\"category\":[\"football\",\"sports\"],\"source_category\":[\"football\",\"sports\"],\"published\":\"2026-05-11 13:00:00 +0000\"},{\"id\":\"6116eb04-653d-5ecb-b971-2da20120486c\",\"title\":\"John Harbaugh, Giants to host Cowboys in Week 1 on 'Sunday Night Football'\",\"description\":\"The Giants will host the Cowboys on Sept. 13 in the first \\\"Sunday Night Football\\\" game of the 2026 season.\",\"url\":\"https://www.espn.com/nfl/story/_/id/48740437/john-harbaugh-giants-host-cowboys-week-1-sunday-night-football\",\"author\":\"ESPN\",\"image\":\"https://a3.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0511%2Fr1656648_1296x729_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"jobs\",\"sports\"],\"source_category\":[\"jobs\",\"sports\"],\"published\":\"2026-0",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"844e190d-8a34-59c5-90f1-ad38ee04816a\",\"title\":\"Moretto: Tare has 'uncertain future' future at Milan - D'Amico seen as a 'good fit'\",\"description\":\"Matteo Moretto has confirmed that Igli Tare's position as AC Milan's sporting director is under threat, with Tony D'Amico a candidate to replace him.\",\"url\":\"https://sempremilan.com/tare-uncertain-future-damico-good-fit\",\"author\":\"Oliver Fisher\",\"image\":\"https://icdn.sempremilan.com/wp-content/uploads/2026/05/fc-internazionale-v-atalanta-italian-super-cup-9.jpg\",\"language\":\"en\",\"category\":[\"football\",\"sports\"],\"source_category\":[\"football\",\"sports\"],\"published\":\"2026-05-11 15:00:00 +0000\"},{\"id\":\"01383a04-65eb-536d-b8cc-2ab043c53f32\",\"title\":\"Offaly captain Charlie Mitchell hospitalised after becoming unwell following Kilkenny match | BreakingNews\",\"description\":\"He was treated at Midlands Regional Hospital in Tullamore before being moved to St James's Hospital in Dublin.\",\"url\":\"https://www.breakingnews.ie/sport/offaly-captain-charlie-mitchell-hospitalised-after-becoming-unwell-following-kilkenny-match-1898340.html\",\"author\":\"Michael Bolton\",\"image\":\"https://img.resized.co/breaking-news/eyJkYXRhIjoie1widXJs",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -188,7 +211,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 876,
+      "latency_ms": 573,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -199,7 +222,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":319107,\"articles\":[{\"id\":\"bc644a500f39aad9e7ae8205bedb44ab\",\"title\":\"Arsenal within touching distance of first Premier League title in 22 years after win over West Ham\",\"description\":\"Arsenal defeated West Ham United 1-0 on Sunday night.  | Football News\",\"content\":\"Mikel Arteta's side were embroiled in a controversial stoppage-time incident that looked set to derail their title bid before a VAR intervention tilted the balance of power back to north London.\\nLeading through Leandro Trossard's deflected 83rd minut... [3243 chars]\",\"url\":\"https://www.hindustantimes.com/sports/football/arsenal-within-touching-distance-of-first-premier-league-title-in-22-years-after-win-over-west-ham-101778460066985.html\",\"image\":\"https://www.hindustantimes.com/ht-img/img/2026/05/11/550x309/SOCCER-ENGLAND-WHU-ARS--1_1778460140478_1778460148171.JPG\",\"publishedAt\":\"2026-05-11T00:43:02Z\",\"lang\":\"en\",\"source\":{\"id\":\"21468bec836de1ebb209ff6f78fbfe3e\",\"name\":\"Hindustan Times\",\"url\":\"https:",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":319113,\"articles\":[{\"id\":\"eb81cc9029db851f74553f7308cb93e8\",\"title\":\"What football taught me about life\",\"description\":\"Do young people today learn from sports, or are they overburdened by stress and the pressure to perform?\",\"content\":\"I recently received the Distinguished 2026 Alumni Award from Brigham Young University. I’m deeply grateful. Not because of the recognition itself, but because of what it represents.\\nThe award for me is a reminder that the story God is writing in our ... [3027 chars]\",\"url\":\"https://www.deseret.com/opinion/2026/05/10/derwin-gray-football-as-a-classroom/\",\"image\":\"https://www.deseret.com/resizer/v2/B6HFQJDYSG3H6ZM3DCSRNWLIFM.jpg?focal=661%2C342&auth=986cd8e8b24b1e801980dac9a0dfa1829b259431e3974a59de47c46b0f14f402&width=630&height=331\",\"publishedAt\":\"2026-05-11T02:47:56Z\",\"lang\":\"en\",\"source\":{\"id\":\"aaa6f2928e430ec2ed450ed89cc822f5\",\"name\":\"Salt Lake City Deseret News\",\"url\":\"https://www.deseret.com\",\"country\":\"us\"}}]}",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -207,7 +230,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 389,
+      "latency_ms": 395,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -218,7 +241,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134284,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134284,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134285,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134285,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
         "payload_shape": "response"
       },
       "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
@@ -226,7 +249,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 683,
+      "latency_ms": 806,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -237,7 +260,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":24164,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Anfieldindex.com\"},\"author\":\"Anfield Index\",\"title\":\"Report: Liverpool look to Premier League for Alisson replacement\",\"description\":\"Liverpool Goalkeeper Plans Gather PaceThere is always a moment when even the strongest football dynasties begin to shift beneath the surface. At Liverpool, that moment may be arriving between the post...\",\"url\":\"https://anfieldindex.com/94011/report-liverpool-look-to-premier-league-for-alisson-replacement.html\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/oHA1d4uRrrmQCoN3Zv8McQ--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04MDg7Y2Y9d2VicA--/https://media.zenfs.com/en/anfield_index_166/96d72bf9551ef85ac78c8bc59546a963\",\"publishedAt\":\"2026-05-10T12:55:00Z\",\"content\":\"There is always a moment when even the strongest football dynasties begin to shift beneath the surface. At Liverpool, that moment may be arriving between the posts. Alisson has been one of the defini… [+4561 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":23464,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Land-Grant Holy Land\"},\"author\":\"Brett Ludwiczak\",\"title\":\"You’re Nuts: Which Ohio State game have you been most hyped while watching?\",\"description\":\"﻿Your (almost) daily dose of good-natured, Ohio State banter.\",\"url\":\"https://www.landgrantholyland.com/youre-nuts/116458/youre-nuts-ohio-state-buckeyes-game-most-hyped-during-oregon-rose-bowl-2025-football-basketball-college-sports\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/Z5vKmChUEnczC2U0.YnC2Q--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04MDM7Y2Y9d2VicA--/https://media.zenfs.com/en/sb_nation_articles_115/93e9007a9957ae9d9e32c15fee03d657\",\"publishedAt\":\"2026-05-10T15:01:00Z\",\"content\":\"From now until preseason camp starts in August, Land-Grant Holy Land will be writing articles around a different theme every week. This week is all about hype. What are you most hyped about heading i… [+8453 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -245,7 +268,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 135,
+      "latency_ms": 159,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -256,7 +279,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":7320,\"results\":[{\"article_id\":\"2bf0072244da6e1c5450dd539f496f97\",\"link\":\"https://wacotrib.com/sports/college/baylor/article_ffac0c48-231b-4271-9bc4-338ece42ac8e.html\",\"title\":\"Baylor earns NCAA Tournament bid; will face Wisconsin in Austin Regional\",\"description\":\"Baylor softball earned an NCAA Tournament bid for the fourth time in six seasons on Sunday and will open the tournament against Wisconsin in the Austin Regional on Friday.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":null,\"language\":\"english\",\"country\":[\"united states of america\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-11 01:01:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-11 01:35:03\",\"image_url\":\"https://bloximages.chicago2.vip.townnews.com/wacotrib.com/content/tncms/assets/v3/editorial/e/1c/e1c0bf9d-7bdb-4d41-aeb2-975da6f224bb/6a012b53ca872.image.jpg?crop=1920%2C1008%2C0%2C35&resize=1200%2C630&order=crop%2Cresize\",\"video_url\":null,\"source_id\":\"wacotrib\",\"source_name\":\"Waco Tribune-herald\",\"source_priority\":29226,\"source_url\":\"https://wacotrib.com\",\"source_icon\":\"https://n.bytvi.com/wacotrib.jpg\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND C",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":6988,\"results\":[{\"article_id\":\"6ce9f990902a97f9be0bd04a75d123fc\",\"link\":\"https://cbnc.com/trump-criticizes-cost-of-watching-nfl-games-as-doj-investigates/\",\"title\":\"Trump Criticizes Cost of Watching NFL Games as DoJ Investigates\",\"description\":\"President Trump criticized the rising costs for regular fans to watch NFL games as his Department of Justice investigates potential anti-competitive pricing. The president revealed his thoughts during an interview with Full Measure on Sunday, adding that the package costs of watching a season of NFL could “ruin the game” for regular, working-class fans. “You’ve [...] The post Trump Criticizes Cost of Watching NFL Games as DoJ Investigates appeared first on CBNC .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":[\"breitbart\"],\"language\":\"english\",\"country\":[\"india\"],\"category\":[\"politics\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-11 03:01:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-11 08:20:54\",\"image_url\":\"https://cbnc.com/wp-content/uploads/2026/05/Kent-NISHIMURA-_-AFP-via-Getty-Images-640x335.jpg\",\"video_url\":null,\"source_id\":\"cbnc\",\"source_name\":\"Cbnc\",\"source_priority\":3307222,\"sour",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -264,7 +287,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 376,
+      "latency_ms": 357,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -275,18 +298,18 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":71403670,\"home\":\"FC Kaysar Kyzylorda\",\"away\":\"FC Kairat\",\"homeId\":1245730,\"awayId\":1245724,\"date\":\"2026-05-11T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Kazakhstan - Premier League, Women\",\"slug\":\"kazakhstan-premier-league-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71048146,\"home\":\"FC Shinnik Yaroslavl\",\"away\":\"Torpedo Moscow\",\"homeId\":2330,\"awayId\":2319,\"date\":\"2026-05-11T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 1. Liga\",\"slug\":\"russia-1-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71415710,\"home\":\"FK Neftchi Fargona\",\"away\":\"FK Guliston\",\"homeId\":36256,\"awayId\":87002,\"date\":\"2026-05-11T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Uzbekistan - Cup\",\"slug\":\"uzbekistan-cup\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71415712,\"home\":\"FC Bunyodkor\",\"away\":\"PFC Terdu\",\"homeId\":23481,\"awayId\":1126619,\"date\":\"2026-05-11T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Uzbekistan - Cup\",\"slug\":\"uzbekistan-cup\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70432770,\"home\":\"Finland\",\"away\":\"Franc",
+        "body_preview": "[{\"id\":70162016,\"home\":\"FK Banga B\",\"away\":\"FC Neptunas B\",\"homeId\":540007,\"awayId\":794684,\"date\":\"2026-05-11T15:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Lithuania - II Lyga\",\"slug\":\"lithuania-ii-lyga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61970266,\"home\":\"RB Leipzig\",\"away\":\"Bayer Leverkusen\",\"homeId\":599780,\"awayId\":36623,\"date\":\"2026-05-11T16:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Germany Amateur - Women Bundesliga\",\"slug\":\"germany-amateur-women-bundesliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":66918116,\"home\":\"Malmo FF\",\"away\":\"Hacken Gothenburg\",\"homeId\":675109,\"awayId\":1889,\"date\":\"2026-05-11T16:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Sweden - Damallsvenskan\",\"slug\":\"sweden-damallsvenskan\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68774140,\"home\":\"Nomme Kalju FC\",\"away\":\"FCI Levadia Tallinn\",\"homeId\":37570,\"awayId\":406019,\"date\":\"2026-05-11T16:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Estonia - Esiliiga\",\"slug\":\"estonia-esiliiga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71255138,\"home\":\"T",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-11T13%3A01%3A36Z&to=2026-05-13T13%3A01%3A36Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-11T15%3A01%3A50Z&to=2026-05-13T15%3A01%3A50Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 1006,
+      "latency_ms": 1057,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -297,21 +320,22 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "{\"success\":true,\"data\":[{\"id\":51480,\"sport_id\":null,\"external_id\":null,\"league_id\":894,\"season\":2026,\"home_team_id\":12147,\"away_team_id\":11298,\"home_team\":{\"id\":12147,\"sport_id\":1,\"name\":\"Oriente Petrolero\",\"short_name\":\"ORI\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/3707.png\",\"country\":\"Bolivia\",\"founded\":1955,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:29.000000Z\",\"updated_at\":\"2026-01-27T20:13:29.000000Z\"},\"away_team\":{\"id\":11298,\"sport_id\":1,\"name\":\"Real Tomayapo\",\"short_name\":\"Real Tomayapo\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/15708.png\",\"country\":\"Bolivia\",\"founded\":1999,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:27.000000Z\",\"updated_at\":\"2026-01-27T20:13:27.000000Z\"},\"start_time\":\"2026-05-02T23:30:00.000000Z\",\"bet_start_time\":\"2026-05-02T22:30:00.000000Z\",\"bet_end_time\":\"2026-05-02T23:30:00.000000Z\",\"status\":\"scheduled\",\"status_short\":\"NS\",\"is_live\":false,\"completed\":false,\"events_synced_at\":null,\"elapsed_time\":null,\"home_score\":null,\"away_score\":null,\"home_score_ht\":null,\"away_score_ht\":null,\"extra_time_score\":null,\"penalty_s",
+        "body_preview": "{\"success\":false,\"error\":{\"code\":\"RATE_LIMIT_EXCEEDED\",\"message\":\"Daily limit of 500 requests exceeded. Used: 524. Resets at midnight UTC.\",\"doc_url\":\"https:\\/\\/api.sportlogic.io\\/docs#errors\",\"errors\":{\"current\":524,\"limit\":500,\"retry_after_seconds\":32288,\"upgrade_hint\":\"Upgrade to Basic ($19\\/mo) for 7,500 req\\/day.\"},\"request_id\":\"req_0b3ab5836d62\"}}",
         "controlled_odds_enabled": true,
-        "payload_shape": "data,pagination,success"
+        "payload_shape": "error,success",
+        "semantic_message": "provider_payload_error"
       },
       "endpoint": "https://api.sportlogic.io/api/v1/games?sport=football&limit=5",
       "group": "odds",
       "http_statuses": [
-        200
+        429
       ],
-      "latency_ms": 672,
-      "message": "ok",
+      "latency_ms": 598,
+      "message": "provider_payload_error",
       "provider": "sportlogic",
       "requests": 1,
-      "status": "ok",
-      "useful_rows": 50
+      "status": "rate_limited",
+      "useful_rows": 0
     },
     {
       "configured": true,
@@ -325,7 +349,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 532,
+      "latency_ms": 541,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -352,7 +376,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-05-08 23:21:28\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-05 07:51:52\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -360,7 +384,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 166,
+      "latency_ms": 170,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -371,7 +395,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":9.09,\"feels_like\":8.79,\"temp_min\":8.28,\"temp_max\":9.99,\"pressure\":1012,\"humidity\":83,\"sea_level\":1012,\"grnd_level\":1008},\"visibility\":10000,\"wind\":{\"speed\":1.34,\"deg\":235,\"gust\":1.79},\"clouds\":{\"all\":100},\"dt\":1778503924,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778472907,\"sunset\":1778528323},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":10.86,\"feels_like\":9.78,\"temp_min\":9.58,\"temp_max\":11.66,\"pressure\":1012,\"humidity\":68,\"sea_level\":1012,\"grnd_level\":1008},\"visibility\":10000,\"wind\":{\"speed\":4.12,\"deg\":340},\"clouds\":{\"all\":75},\"dt\":1778510922,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778472907,\"sunset\":1778528323},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -379,7 +403,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 91,
+      "latency_ms": 104,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -390,7 +414,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778504282,\"localtime\":\"2026-05-11 13:58\"},\"current\":{\"last_updated_epoch\":1778503500,\"last_updated\":\"2026-05-11 13:45\",\"temp_c\":9.3,\"temp_f\":48.7,\"is_day\":1,\"condition\":{\"text\":\"Partly cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":8.1,\"wind_kph\":13.0,\"wind_degree\":353,\"wind_dir\":\"N\",\"pressure_mb\":1012.0,\"pressure_in\":29.88,\"precip_mm\":0.15,\"precip_in\":0.01,\"humidity\":81,\"cloud\":75,\"feelslike_c\":7.3,\"feelslike_f\":45.2,\"windchill_c\":5.7,\"windchill_f\":42.2,\"heatindex_c\":7.9,\"heatindex_f\":46.3,\"dewpoint_c\":4.3,\"dewpoint_f\":39.7,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":2.1,\"gust_mph\":9.7,\"gust_kph\":15.6,\"will_it_rain\":1,\"chance_of_rain\":100,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-11\",\"date_epoch\":1778457600,\"day\":{\"maxtemp_c\":11.3,\"maxtemp_f\":52.4,\"mintemp_c\":4.6,\"mintemp_f\":40.2,\"avgtemp_c\":7.5,\"avgtemp_f\":45.5,\"maxwind_mph\":11.2,\"maxwind_kph\":18.0,\"totalprecip_mm\":0.66,\"totalprecip_in\":0.03,\"totalsnow_cm\":0.0,\"avgvis_km\":9.7,\"avgvis_miles\":6.0",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778511712,\"localtime\":\"2026-05-11 16:01\"},\"current\":{\"last_updated_epoch\":1778511600,\"last_updated\":\"2026-05-11 16:00\",\"temp_c\":11.1,\"temp_f\":52.0,\"is_day\":1,\"condition\":{\"text\":\"Partly cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":8.1,\"wind_kph\":13.0,\"wind_degree\":359,\"wind_dir\":\"N\",\"pressure_mb\":1012.0,\"pressure_in\":29.88,\"precip_mm\":0.04,\"precip_in\":0.0,\"humidity\":58,\"cloud\":50,\"feelslike_c\":9.5,\"feelslike_f\":49.1,\"windchill_c\":8.9,\"windchill_f\":48.0,\"heatindex_c\":10.6,\"heatindex_f\":51.0,\"dewpoint_c\":2.9,\"dewpoint_f\":37.2,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":2.8,\"gust_mph\":10.3,\"gust_kph\":16.6,\"will_it_rain\":1,\"chance_of_rain\":73,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-11\",\"date_epoch\":1778457600,\"day\":{\"maxtemp_c\":12.3,\"maxtemp_f\":54.1,\"mintemp_c\":4.6,\"mintemp_f\":40.2,\"avgtemp_c\":7.7,\"avgtemp_f\":45.8,\"maxwind_mph\":11.6,\"maxwind_kph\":18.7,\"totalprecip_mm\":1.33,\"totalprecip_in\":0.05,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -398,7 +422,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 344,
+      "latency_ms": 288,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -409,12 +433,12 @@
   "summary": {
     "auth_error": 0,
     "config_only": 1,
-    "critical_failures": 0,
+    "critical_failures": 1,
     "degraded": 0,
-    "healthy_or_config_only": 17,
+    "healthy_or_config_only": 16,
     "missing_secret": 1,
-    "ok": 16,
+    "ok": 15,
     "providers_checked": 18,
-    "rate_limited": 0
+    "rate_limited": 1
   }
 }
