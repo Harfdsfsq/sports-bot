@@ -259,24 +259,24 @@ jobs:
         shell: bash
         run: |
           set -uo pipefail
-          echo "explicit full-data probe start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 220s python -u scripts/api_full_data_smoke_probe_v4.py 2>&1 | tee .data/exports/api-full-data-smoke-run.log; then
-            echo "explicit full-data probe completed"
+          echo "explicit full-data probe v9 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 220s python -u scripts/api_full_data_smoke_probe_v9.py 2>&1 | tee .data/exports/api-full-data-smoke-run.log; then
+            echo "explicit full-data probe v9 completed"
           else
             status=$?
-            echo "explicit full-data probe failed or timed out with status ${status}; continuing"
+            echo "explicit full-data probe v9 failed or timed out with status ${status}; continuing"
           fi
 
       - name: Build 300-match coverage matrix
         shell: bash
         run: |
           set -uo pipefail
-          echo "coverage matrix start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if python -u scripts/provider_smoke_coverage_matrix.py 2>&1 | tee .data/exports/provider-smoke-coverage-matrix-run.log; then
-            echo "coverage matrix completed"
+          echo "coverage matrix v2 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if python -u scripts/provider_smoke_coverage_matrix_v2.py 2>&1 | tee .data/exports/provider-smoke-coverage-matrix-run.log; then
+            echo "coverage matrix v2 completed"
           else
             status=$?
-            echo "coverage matrix failed with status ${status}; continuing"
+            echo "coverage matrix v2 failed with status ${status}; continuing"
           fi
 
       - name: Collect provider smoke artifacts
