@@ -11,13 +11,22 @@ Business rule:
 
 This module is intentionally installed at the end of usercustomize.py. It
 rewrites both os.environ and GITHUB_ENV so older quota scripts cannot silently
-restore conservative defaults such as BZZOIRO=2 or SSTATS=12.
+restore conservative defaults such as BZZOIRO=2 or SSTATS=12. It also exports the
+effective tier contract so provider-smoke/run-bot artifacts show the real final
+contract, not the earlier conservative contract written by older scripts.
 """
 
 import atexit
+import json
 import os
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+UTC = timezone.utc
+OUT_DIR = Path(".data/exports")
+PRIMARY_CONTRACT_OUT = OUT_DIR / "latest-primary-provider-tier-contract.json"
+PER_RUN_CONTRACT_OUT = OUT_DIR / "latest-per-run-api-quota-contract.json"
 
 PRIMARY_PROVIDERS = "odds_api_io,bzzoiro,sstats"
 SUPPLEMENTAL_PROVIDERS = (
@@ -26,9 +35,6 @@ SUPPLEMENTAL_PROVIDERS = (
     "football_data_co_uk,sportlogic,futrixmetrics,meteostat"
 )
 
-# Request budgets. odds-api.io has two configured accounts; each account can be
-# used up to 100/hour in the user's current setup, so the total project-level
-# primary odds budget can be 200 when both keys exist.
 PRIMARY_ENV = {
     "HARIZON_PROVIDER_TIER_STRATEGY_VERSION": "primary-three-v1-100-per-run",
     "HARIZON_PRIMARY_PROVIDERS": PRIMARY_PROVIDERS,
@@ -51,7 +57,6 @@ PRIMARY_ENV = {
     "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
     "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
     "DAY_INVENTORY_FORCE_FULL_300": "true",
-    # odds-api.io primary odds/fixture backbone.
     "ENABLE_ODDS_API_IO": "true",
     "ODDS_API_IO_ENABLED": "true",
     "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "200",
@@ -69,7 +74,6 @@ PRIMARY_ENV = {
     "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
     "TARGET_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
     "CONSENSUS_BOOKMAKERS": "Bet365,Unibet,Betfair Exchange,Sbobet",
-    # Bzzoiro primary context/prediction/xG provider.
     "ENABLE_BZZOIRO": "true",
     "BZZOIRO_ENABLED": "true",
     "ENABLE_BZZOIRO_CONTEXT": "true",
@@ -85,7 +89,6 @@ PRIMARY_ENV = {
     "BZZOIRO_PAGE_SIZE": "50",
     "BZZOIRO_REQUEST_RETRIES": "1",
     "BZZOIRO_RETRY_BACKOFF_SECONDS": "1",
-    # SStats primary fixture/context/form/xG/odds-rescue provider.
     "ENABLE_SSTATS": "true",
     "SSTATS_ENABLED": "true",
     "ENABLE_SSTATS_CONTEXT": "true",
@@ -111,8 +114,6 @@ PRIMARY_ENV = {
 }
 
 SUPPLEMENTAL_ENV = {
-    # These are no longer broad enrichment providers. They are allowed only for
-    # shortlisted/top candidate backfill and missing roles.
     "THESPORTSDB_CONTEXT_MATCH_LIMIT": "30",
     "THESPORTSDB_MAX_REQUESTS_PER_RUN": "10",
     "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "30",
@@ -153,8 +154,6 @@ SUPPLEMENTAL_ENV = {
 }
 
 PRESERVE_IF_SET = {
-    # Provider-smoke uses these to intentionally keep SportLogic disabled and to
-    # control explicit full-data probes.
     "API_FULL_SMOKE_ENABLED",
     "API_FULL_SMOKE_SPORTLOGIC_ENABLED",
     "API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED",
@@ -193,10 +192,63 @@ def _write_github_env(values: dict[str, str]) -> None:
         pass
 
 
+def _contract(values: dict[str, str]) -> dict[str, Any]:
+    return {
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "contract_version": values.get("HARIZON_PROVIDER_TIER_STRATEGY_VERSION"),
+        "source": "app.services.primary_provider_tier_runtime_guard final env layer",
+        "primary_providers": PRIMARY_PROVIDERS.split(","),
+        "supplemental_providers": SUPPLEMENTAL_PROVIDERS.split(","),
+        "pipeline_order": values.get("HARIZON_PROVIDER_PIPELINE_ORDER"),
+        "supplemental_mode": values.get("HARIZON_SUPPLEMENTAL_API_MODE"),
+        "per_run_grants": {
+            "odds_api_io": int(values.get("ODDS_API_IO_MAX_REQUESTS_PER_RUN") or 0),
+            "odds_api_io_account1": int(values.get("ODDS_API_IO_ACCOUNT1_PER_RUN_MAX") or 0),
+            "odds_api_io_account2": int(values.get("ODDS_API_IO_ACCOUNT2_PER_RUN_MAX") or 0),
+            "bzzoiro": int(values.get("BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN") or 0),
+            "sstats": int(values.get("SSTATS_MAX_HTTP_REQUESTS_PER_RUN") or 0),
+            "thesportsdb": int(values.get("THESPORTSDB_MAX_REQUESTS_PER_RUN") or 0),
+            "football_data": int(values.get("FOOTBALL_DATA_MAX_REQUESTS_PER_RUN") or 0),
+            "allsportsapi": int(values.get("ALLSPORTSAPI_MAX_REQUESTS_PER_RUN") or 0),
+            "clubelo": int(values.get("CLUBELO_MAX_REQUESTS_PER_RUN") or 0),
+            "open_meteo": int(values.get("OPEN_METEO_MAX_REQUESTS_PER_RUN") or 0),
+            "weatherapi": int(values.get("WEATHERAPI_MAX_REQUESTS_PER_RUN") or 0),
+            "newsapi": int(values.get("NEWSAPI_MAX_REQUESTS_PER_RUN") or 0),
+            "currents": int(values.get("CURRENTS_MAX_REQUESTS_PER_RUN") or 0),
+            "guardian": int(values.get("GUARDIAN_MAX_REQUESTS_PER_RUN") or 0),
+            "newsdata": int(values.get("NEWSDATA_MAX_REQUESTS_PER_RUN") or 0),
+            "wikidata_day": int(values.get("WIKIDATA_MAX_REQUESTS_PER_DAY") or 0),
+            "highlightly": int(values.get("HIGHLIGHTLY_MAX_REQUESTS_PER_RUN") or 0),
+            "sportlogic": int(values.get("SPORTLOGIC_MAX_REQUESTS_PER_RUN") or 0),
+        },
+        "policy": {
+            "primary_api_budget": "up to 100 requests/run each for Bzzoiro and SStats; odds-api.io up to 100/account/run",
+            "supplemental_api_budget": "shortlist/backfill only after primary providers produce candidates or missing-role queue",
+            "publication_guard": "unchanged: publication still requires 2 odds sources and allowed market families",
+        },
+        "env_written_count": len(values),
+    }
+
+
+def _write_contract_snapshot(values: dict[str, str]) -> None:
+    try:
+        OUT_DIR.mkdir(parents=True, exist_ok=True)
+        payload = _contract(values)
+        text = json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
+        PRIMARY_CONTRACT_OUT.write_text(text, encoding="utf-8")
+        # Overwrite the older per-run contract artifact with the effective final
+        # contract so logs match runtime behavior after all guards have run.
+        PER_RUN_CONTRACT_OUT.write_text(text, encoding="utf-8")
+    except Exception:
+        pass
+
+
 def install() -> bool:
     values = _effective_env()
     for key, value in values.items():
         os.environ[str(key)] = str(value)
     _write_github_env(values)
+    _write_contract_snapshot(values)
     atexit.register(lambda: _write_github_env(_effective_env()))
+    atexit.register(lambda: _write_contract_snapshot(_effective_env()))
     return True
