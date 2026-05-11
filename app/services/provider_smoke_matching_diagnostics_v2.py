@@ -27,10 +27,21 @@ def _future_inventory_window(inventory: list[Any], slack_hours: float = 18.0):
 def _future_events(events: list[Any], days: int = 2) -> list[Any]:
     now = datetime.now(UTC)
     upper = now + timedelta(days=days)
-    return [event for event in events if getattr(event, "start", None) is not None and now - timedelta(hours=2) <= event.start.astimezone(UTC) <= upper]
+    out: list[Any] = []
+    for event in events:
+        start = getattr(event, "start", None)
+        if start is None:
+            continue
+        try:
+            start_utc = start.astimezone(UTC)
+        except Exception:
+            continue
+        if now - timedelta(hours=2) <= start_utc <= upper:
+            out.append(event)
+    return out
 
 
-async def _fetch_rows(provider: str, client: Any) -> dict[str, Any]:
+async def _fetch_rows(client: Any, provider: str) -> dict[str, Any]:
     payload = await _ORIGINAL_FETCH_ROWS(client, provider)
     if provider != "sportlogic":
         return payload
