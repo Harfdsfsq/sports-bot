@@ -212,3 +212,12 @@ try:
     provider_smoke_repair_env_guard.install()
 except Exception:
     pass
+
+# Absolute final provider-tier contract. The three primary providers must carry
+# inventory, odds and context: odds-api.io + Bzzoiro + SStats. Supplemental APIs
+# are shortlist/backfill-only and must not consume broad-run quota.
+try:
+    from app.services import primary_provider_tier_runtime_guard
+    primary_provider_tier_runtime_guard.install()
+except Exception:
+    pass
