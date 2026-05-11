@@ -22,6 +22,9 @@ DIAG_KEYS = (
     "documented_active_odds_sample_keys",
     "documented_active_id_candidates_sample",
     "documented_active_game_samples_all",
+    "documented_active_linked_games_count",
+    "documented_active_future_games_count",
+    "documented_active_latest_game_start",
     "documented_adapter_stats",
     "documented_adapter_preview",
 )
@@ -78,6 +81,18 @@ def _future(events: list[Any]) -> list[Any]:
         if now - timedelta(hours=2) <= start <= upper:
             out.append(event)
     return out
+
+
+def _latest_start(events: list[Any]) -> str:
+    starts = []
+    for event in events:
+        start = getattr(event, "start", None)
+        if start is not None:
+            try:
+                starts.append(start.astimezone(UTC))
+            except Exception:
+                pass
+    return max(starts).isoformat() if starts else ""
 
 
 def _sample_keys(rows: list[dict[str, Any]]) -> list[list[str]]:
@@ -170,7 +185,7 @@ async def _active_odds(client: Any) -> dict[str, Any]:
         if len(game_ids) >= max_games or not rows or not cursor:
             break
 
-    events = []
+    linked_events = []
     missing_team = 0
     missing_start = 0
     all_game_samples = []
@@ -189,20 +204,30 @@ async def _active_odds(client: Any) -> dict[str, Any]:
                 missing_start += 1
             if len(all_game_samples) < 8:
                 all_game_samples.append(event.sample())
-            events.append(event)
-    future = _future(events)
-    status = "ok" if future else "documented_active_odds_no_future_games" if odds_count else "documented_active_odds_empty"
-    if odds_count and not game_ids:
+            linked_events.append(event)
+    future_events = _future(linked_events)
+    if future_events:
+        status = "ok"
+    elif linked_events:
+        status = "documented_active_odds_stale_only"
+    elif odds_count and not game_ids:
         status = "documented_active_odds_no_game_ids"
+    elif odds_count:
+        status = "documented_active_odds_no_linked_games"
+    else:
+        status = "documented_active_odds_empty"
+
+    # Return parsed linked events, not only future events. The matcher will mark
+    # stale linked games as outside inventory window instead of parser failures.
     return {
         "provider": "sportlogic",
         "status": status,
         "raw_rows": odds_count,
-        "parsed_events": len(future),
+        "parsed_events": len(linked_events),
         "missing_team_rows": missing_team,
         "missing_start_rows": missing_start,
-        "events": future,
-        "samples": [event.sample() for event in future[:8]],
+        "events": linked_events,
+        "samples": [event.sample() for event in linked_events[:8]],
         "attempts": attempts[:16],
         "documented_active_odds_rows": odds_count,
         "documented_active_odds_pages_scanned": len([a for a in attempts if str(a.get("url", "")).endswith("/odds")]),
@@ -210,6 +235,9 @@ async def _active_odds(client: Any) -> dict[str, Any]:
         "documented_active_odds_sample_keys": sample_keys,
         "documented_active_id_candidates_sample": candidate_samples,
         "documented_active_game_samples_all": all_game_samples,
+        "documented_active_linked_games_count": len(linked_events),
+        "documented_active_future_games_count": len(future_events),
+        "documented_active_latest_game_start": _latest_start(linked_events),
     }
 
 
@@ -239,6 +267,9 @@ def _patch_result_copy() -> None:
                 result[key] = value
         if str(provider_payload.get("provider") or "") == "sportlogic":
             result["adapter_version"] = ADAPTER_VERSION
+            if provider_payload.get("status") == "documented_active_odds_stale_only" and result.get("failure_stage") == "no_fixture_overlap_with_odds_inventory":
+                result["failure_stage"] = "stale_active_odds_only"
+                result["diagnostic_note"] = "SportLogic active odds are linked to old games only; endpoint works but has no future football odds in the current smoke window."
         return result
     base._match_provider_to_inventory = patched
 
