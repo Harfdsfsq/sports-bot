@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Provider day discovery canonical pool v2.
 
-v1 proved the discovery-first idea, but SStats got 429 because provider-smoke had
-already spent SStats quota on crosswalk/deep enrichment. v2 treats the existing
-`latest-sstats-crosswalk.json` as the SStats fixture-discovery cache and merges
-those gameIds into the canonical pool without another SStats API call.
+Uses cached `latest-sstats-crosswalk.json` as the SStats fixture-discovery source
+so provider-smoke does not spend extra SStats requests and hit 429. v2 also
+persists the full canonical pool, not only the sample, so discovery-first can be
+merged into day_inventory completely.
 """
 
 import asyncio
@@ -37,7 +37,7 @@ def crosswalk_events() -> tuple[list[dict[str, Any]], dict[str, Any]]:
     payload = load(OUT_DIR / "latest-sstats-crosswalk.json")
     events: list[dict[str, Any]] = []
     seen: set[str] = set()
-    for key in ("matched_sample", "enrichment_queue"):
+    for key in ("matched", "matched_rows", "matched_full", "matched_sample", "enrichment_queue"):
         rows = payload.get(key) if isinstance(payload.get(key), list) else []
         for row in rows:
             if not isinstance(row, dict):
@@ -74,7 +74,7 @@ def crosswalk_events() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "duration_ms": 0.0,
         "rows_count": int(summary.get("matched") or len(events)),
         "event_like_rows": len(events),
-        "events": events[:1000],
+        "events": events[:2000],
         "error": "",
     }
 
@@ -102,17 +102,18 @@ async def run() -> dict[str, Any]:
     canonical = sorted(canonical, key=lambda item: (str(item.get("kickoff_utc") or ""), -len(item.get("providers") or [])))
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
-        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats",
+        "mode": "provider_day_discovery_canonical_pool_v2_cached_sstats_full_pool",
         "status": "ok",
         "target_date": v1.target_date(),
         "duration_seconds": round(time.perf_counter() - started, 2),
         "summary": v1.summarize(results, canonical),
         "results_summary": [{k: val for k, val in result.items() if k != "events"} for result in results],
+        "canonical_matches": canonical,
         "canonical_matches_sample": canonical[:80],
         "targeted_enrichment_plan": v1.enrichment_plan(canonical),
         "notes": [
             "v2 does not call SStats discovery endpoints when latest-sstats-crosswalk.json exists; it reuses cached gameIds from the earlier crosswalk step.",
-            "This avoids 429 during provider-smoke and shows whether discovery-first can preserve odds-api.io/Bzzoiro/SStats source_ids together.",
+            "The full canonical_matches list is persisted so inventory merge can use the entire discovery-first pool, not only the txt/sample slice.",
         ],
     }
     JSON_OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
