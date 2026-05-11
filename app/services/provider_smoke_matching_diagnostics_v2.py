@@ -10,8 +10,10 @@ from app.services import provider_smoke_matching_diagnostics as base
 
 _ORIGINAL_MATCH = getattr(base, "_harizon_original_match_provider_to_inventory", base._match_provider_to_inventory)
 _ORIGINAL_NOTE = getattr(base, "_harizon_original_diagnosis_note", base._diagnosis_note)
+_ORIGINAL_FETCH_ROWS = getattr(base, "_harizon_original_fetch_provider_rows", base._fetch_provider_rows)
 setattr(base, "_harizon_original_match_provider_to_inventory", _ORIGINAL_MATCH)
 setattr(base, "_harizon_original_diagnosis_note", _ORIGINAL_NOTE)
+setattr(base, "_harizon_original_fetch_provider_rows", _ORIGINAL_FETCH_ROWS)
 
 
 def _future_inventory_window(inventory: list[Any], slack_hours: float = 18.0):
@@ -20,6 +22,45 @@ def _future_inventory_window(inventory: list[Any], slack_hours: float = 18.0):
         return None, None
     now = datetime.now(UTC)
     return max(min(starts) - timedelta(hours=1), now - timedelta(minutes=45)), max(starts) + timedelta(hours=slack_hours)
+
+
+def _future_events(events: list[Any], days: int = 2) -> list[Any]:
+    now = datetime.now(UTC)
+    upper = now + timedelta(days=days)
+    return [event for event in events if getattr(event, "start", None) is not None and now - timedelta(hours=2) <= event.start.astimezone(UTC) <= upper]
+
+
+async def _fetch_rows(provider: str, client: Any) -> dict[str, Any]:
+    payload = await _ORIGINAL_FETCH_ROWS(client, provider)
+    if provider != "sportlogic":
+        return payload
+    events = list(payload.get("events") or [])
+    if _future_events(events):
+        return payload
+    key = base._secret("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN")
+    if not key:
+        return payload
+    root = __import__("os").getenv("SPORTLOGIC_BASE_URL") or "https://api.sportlogic.io/api/v1"
+    root = str(root).rstrip("/")
+    headers = {str(__import__("os").getenv("SPORTLOGIC_HEADER_NAME") or "X-API-Key"): key}
+    try:
+        broad, attempt = await base._get(client, f"{root}/games", params={"per_page": 100}, headers=headers)
+        rows = base._rows(broad)
+        parsed = [event for row in rows if (event := base._event_from_generic("sportlogic", row)) is not None]
+        future = _future_events(parsed)
+        payload.setdefault("attempts", []).append(attempt)
+        payload["broad_fallback_used"] = True
+        payload["broad_rows"] = len(rows)
+        payload["broad_future_rows"] = len(future)
+        if future:
+            payload["raw_rows"] = len(rows)
+            payload["parsed_events"] = len(future)
+            payload["events"] = future
+            payload["samples"] = [event.sample() for event in future[:8]]
+            payload["status"] = "ok"
+    except Exception as exc:
+        payload["broad_fallback_error"] = f"{type(exc).__name__}: {exc}"
+    return payload
 
 
 def _patched_match(provider_payload: dict[str, Any], inventory: list[Any]) -> dict[str, Any]:
@@ -66,6 +107,7 @@ def _note(item: dict[str, Any]) -> str:
 
 def install() -> None:
     base._inventory_window = _future_inventory_window
+    base._fetch_provider_rows = _fetch_rows
     base._match_provider_to_inventory = _patched_match
     base._diagnosis_note = _note
 
