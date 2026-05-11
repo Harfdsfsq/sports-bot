@@ -6,11 +6,6 @@ The provider-day discovery pool asks fixture-capable APIs for daily matches,
 normalizes them, and preserves provider source_ids. This script applies that
 pool to `.data/day_inventory/*.json` before coverage/enrichment so downstream
 steps can use source_ids instead of late fuzzy matching.
-
-It is intentionally conservative:
-- merge to an existing inventory row when teams/kickoff are close;
-- append only minimal canonical rows when the match is missing;
-- mark provider/fixture/context/odds sources but leave publication guards intact.
 """
 
 import asyncio
@@ -19,9 +14,8 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
-from scripts import provider_day_discovery_canonical_pool_v2 as discovery
 from scripts import provider_day_discovery_canonical_pool as base_discovery
-from scripts import sstats_crosswalk_probe
+from scripts import provider_day_discovery_canonical_pool_v2 as discovery
 
 UTC = timezone.utc
 OUT_DIR = Path(".data/exports")
@@ -104,27 +98,14 @@ def event_from_inventory(row: dict[str, Any]) -> dict[str, Any]:
     home = str(row.get("home_team") or row.get("home") or row.get("home_name") or "")
     away = str(row.get("away_team") or row.get("away") or row.get("away_name") or "")
     league = str(row.get("league_name") or row.get("league") or row.get("competition_name") or "")
-    return {
-        "home_team": home,
-        "away_team": away,
-        "league_name": league,
-        "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time") or row.get("start_time"),
-        "home_norm": base_discovery.normalize(home),
-        "away_norm": base_discovery.normalize(away),
-        "league_norm": base_discovery.normalize(league),
-    }
+    return {"home_team": home, "away_team": away, "league_name": league, "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time") or row.get("start_time"), "home_norm": base_discovery.normalize(home), "away_norm": base_discovery.normalize(away), "league_norm": base_discovery.normalize(league)}
 
 
 def best_inventory_match(canon: dict[str, Any], rows: list[dict[str, Any]], min_score: float = 0.74) -> tuple[dict[str, Any] | None, float, dict[str, Any]]:
     best_row: dict[str, Any] | None = None
     best_score = 0.0
     best_debug: dict[str, Any] = {}
-    canon_event = {
-        "home_norm": canon.get("home_norm") or base_discovery.normalize(canon.get("home_team")),
-        "away_norm": canon.get("away_norm") or base_discovery.normalize(canon.get("away_team")),
-        "league_norm": canon.get("league_norm") or base_discovery.normalize(canon.get("league_name")),
-        "kickoff_utc": canon.get("kickoff_utc"),
-    }
+    canon_event = {"home_norm": canon.get("home_norm") or base_discovery.normalize(canon.get("home_team")), "away_norm": canon.get("away_norm") or base_discovery.normalize(canon.get("away_team")), "league_norm": canon.get("league_norm") or base_discovery.normalize(canon.get("league_name")), "kickoff_utc": canon.get("kickoff_utc")}
     for row in rows:
         score, debug = base_discovery.match_score(event_from_inventory(row), canon_event)
         if score > best_score:
@@ -135,17 +116,7 @@ def best_inventory_match(canon: dict[str, Any], rows: list[dict[str, Any]], min_
 
 
 def make_inventory_row(canon: dict[str, Any]) -> dict[str, Any]:
-    return {
-        "match_key": canon.get("canonical_match_key"),
-        "canonical_match_id": canon.get("canonical_match_key"),
-        "home_team": canon.get("home_team"),
-        "away_team": canon.get("away_team"),
-        "league_name": canon.get("league_name"),
-        "kickoff_utc": canon.get("kickoff_utc"),
-        "source": "provider_day_discovery_canonical_pool",
-        "priority": len(canon.get("providers") or []),
-        "coverage": {},
-    }
+    return {"match_key": canon.get("canonical_match_key"), "canonical_match_id": canon.get("canonical_match_key"), "home_team": canon.get("home_team"), "away_team": canon.get("away_team"), "league_name": canon.get("league_name"), "kickoff_utc": canon.get("kickoff_utc"), "source": "provider_day_discovery_canonical_pool", "priority": len(canon.get("providers") or []), "coverage": {}}
 
 
 def apply_sources(row: dict[str, Any], canon: dict[str, Any]) -> dict[str, Any]:
@@ -177,8 +148,6 @@ def apply_sources(row: dict[str, Any], canon: dict[str, Any]) -> dict[str, Any]:
         set_count(row, "context_sources_count", len(sources(row.get("context_sources"))))
         row["xg_sources_count"] = max(as_int(row.get("xg_sources_count")), len(sources(row.get("xg_sources"))))
     if "sstats" in providers:
-        # SStats source_id is saved here; actual context/form/xG source is added
-        # later by SStats deep enrichment after endpoint calls succeed.
         row["sstats_game_id"] = source_ids.get("sstats") or row.get("sstats_game_id")
     row["fixture_sources_count"] = max(as_int(row.get("fixture_sources_count")), len(sources(row.get("fixture_sources"))))
     row["provider_day_discovery_merged"] = True
@@ -190,7 +159,8 @@ def apply_sources(row: dict[str, Any], canon: dict[str, Any]) -> dict[str, Any]:
 async def run() -> dict[str, Any]:
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     pool = load(OUT_DIR / "provider-day-discovery-canonical-pool.json", {})
-    if not isinstance(pool.get("summary"), dict) or pool.get("mode") != "provider_day_discovery_canonical_pool_v2_cached_sstats":
+    mode = str(pool.get("mode") or "")
+    if not isinstance(pool.get("summary"), dict) or not mode.startswith("provider_day_discovery_canonical_pool_v2"):
         pool = await discovery.run()
     primary = inventory_path()
     inventory = load(primary, {})
@@ -198,9 +168,9 @@ async def run() -> dict[str, Any]:
         inventory = {"matches": []}
     matches = inventory.get("matches") if isinstance(inventory.get("matches"), list) else []
     inventory["matches"] = matches
-    canonical_rows = pool.get("canonical_matches_sample") if isinstance(pool.get("canonical_matches_sample"), list) else []
-    # The sample is capped; enough for smoke validation. Production replacement
-    # should use the full canonical pool once promoted out of diagnostics.
+    canonical_rows = pool.get("canonical_matches") if isinstance(pool.get("canonical_matches"), list) else []
+    if not canonical_rows:
+        canonical_rows = pool.get("canonical_matches_sample") if isinstance(pool.get("canonical_matches_sample"), list) else []
     matched_existing = 0
     appended = 0
     updated_rows: list[dict[str, Any]] = []
@@ -225,23 +195,10 @@ async def run() -> dict[str, Any]:
             unmatched_low_score.append({"score": round(score, 4), "debug": debug, "home_team": canon.get("home_team"), "away_team": canon.get("away_team")})
     meta = inventory.setdefault("metadata", {})
     if isinstance(meta, dict):
-        meta["provider_day_discovery_inventory_merge"] = {"created_at_utc": datetime.now(UTC).isoformat(), "matched_existing": matched_existing, "appended": appended, "canonical_rows_seen": len(canonical_rows)}
+        meta["provider_day_discovery_inventory_merge"] = {"created_at_utc": datetime.now(UTC).isoformat(), "matched_existing": matched_existing, "appended": appended, "canonical_rows_seen": len(canonical_rows), "full_pool_used": bool(pool.get("canonical_matches"))}
     for path in inventory_aliases(primary):
         write(path, inventory)
-    payload = {
-        "created_at_utc": datetime.now(UTC).isoformat(),
-        "mode": "provider_day_discovery_inventory_merge_v1",
-        "status": "ok",
-        "inventory_path": str(primary),
-        "aliases_written": [str(p) for p in inventory_aliases(primary)],
-        "inventory_matches_after": len(matches),
-        "canonical_rows_seen": len(canonical_rows),
-        "matched_existing": matched_existing,
-        "appended": appended,
-        "updated_sample": updated_rows[:50],
-        "unmatched_low_score_sample": unmatched_low_score[:20],
-        "pool_summary": pool.get("summary") or {},
-    }
+    payload = {"created_at_utc": datetime.now(UTC).isoformat(), "mode": "provider_day_discovery_inventory_merge_v2_full_pool", "status": "ok", "inventory_path": str(primary), "aliases_written": [str(p) for p in inventory_aliases(primary)], "inventory_matches_after": len(matches), "canonical_rows_seen": len(canonical_rows), "matched_existing": matched_existing, "appended": appended, "full_pool_used": bool(pool.get("canonical_matches")), "updated_sample": updated_rows[:50], "unmatched_low_score_sample": unmatched_low_score[:20], "pool_summary": pool.get("summary") or {}}
     write(JSON_OUT, payload)
     TXT_OUT.write_text(render(payload), encoding="utf-8")
     print(render(payload))
@@ -249,18 +206,7 @@ async def run() -> dict[str, Any]:
 
 
 def render(payload: dict[str, Any]) -> str:
-    lines = [
-        "# Provider day discovery inventory merge",
-        f"status: {payload.get('status')}",
-        f"inventory_path: {payload.get('inventory_path')}",
-        f"aliases_written: {', '.join(payload.get('aliases_written') or [])}",
-        f"canonical_rows_seen: {payload.get('canonical_rows_seen')}",
-        f"matched_existing: {payload.get('matched_existing')}",
-        f"appended: {payload.get('appended')}",
-        f"inventory_matches_after: {payload.get('inventory_matches_after')}",
-        "",
-        "## Updated sample",
-    ]
+    lines = ["# Provider day discovery inventory merge", f"status: {payload.get('status')}", f"inventory_path: {payload.get('inventory_path')}", f"aliases_written: {', '.join(payload.get('aliases_written') or [])}", f"canonical_rows_seen: {payload.get('canonical_rows_seen')}", f"full_pool_used: {payload.get('full_pool_used')}", f"matched_existing: {payload.get('matched_existing')}", f"appended: {payload.get('appended')}", f"inventory_matches_after: {payload.get('inventory_matches_after')}", "", "## Updated sample"]
     for item in payload.get("updated_sample") or []:
         lines.append(f"- {item.get('merge_type')} score={item.get('score')} | {item.get('home_team')} — {item.get('away_team')} | providers={','.join(item.get('providers') or [])} context={item.get('context_sources_count')} odds={item.get('odds_sources_count')}")
     return "\n".join(lines) + "\n"
