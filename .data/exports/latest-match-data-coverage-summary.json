@@ -8,8 +8,8 @@
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 7,
-      "rows_seen": 7,
+      "rows_kept": 67,
+      "rows_seen": 67,
       "rows_stale": 0
     },
     "lifecycle": {
@@ -26,32 +26,35 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 6,
+      "rows_seen": 6,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 2,
-    "candidates_publishable": 1,
-    "candidates_raw": 2,
-    "contexts_built": 86,
+    "candidates_before_quality": 16,
+    "candidates_publishable": 2,
+    "candidates_raw": 8,
+    "contexts_built": 106,
     "controlled_candidates_seen": null,
     "controlled_published": false,
     "controlled_status": "skipped_existing_pick",
-    "coverage_candidates_current_date": 1,
-    "matches_seen": 98,
-    "matches_with_offers": 29
+    "coverage_candidates_current_date": 10,
+    "matches_seen": 150,
+    "matches_with_offers": 45
   },
-  "created_at": "2026-05-11T03:07:14.058163+00:00",
+  "created_at": "2026-05-11T05:08:44.837493+00:00",
   "family_counts": {
-    "totals": 1
+    "totals": 10
   },
-  "matches_with_candidates": 1,
+  "matches_with_candidates": 10,
   "missing_data_flags": {
-    "edge_below_micro_c": 1,
-    "single_context_source": 1,
-    "single_odds_source": 1
+    "confidence_below_micro_c": 3,
+    "edge_below_micro_c": 9,
+    "ev_below_micro_c": 5,
+    "single_book": 2,
+    "single_context_source": 10,
+    "single_odds_source": 10
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -65,7 +68,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 1,
+  "positive_near_miss_count": 8,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -74,11 +77,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 23,
+      "events_matched": 37,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 647,
+      "offers_parsed": 1523,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -93,11 +96,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 17,
+      "events_matched": 31,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1388,
+      "offers_parsed": 2970,
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 0,
@@ -108,8 +111,8 @@
     {
       "api_key_present": null,
       "budget_exhausted": true,
-      "contexts_built": 17,
-      "direct_event_contexts_built": 17,
+      "contexts_built": 18,
+      "direct_event_contexts_built": 18,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -129,8 +132,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 3,
-      "direct_event_contexts_built": 3,
+      "contexts_built": 4,
+      "direct_event_contexts_built": 4,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -186,8 +189,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 81,
-      "direct_event_contexts_built": 81,
+      "contexts_built": 103,
+      "direct_event_contexts_built": 103,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -228,8 +231,8 @@
     {
       "api_key_present": null,
       "budget_exhausted": true,
-      "contexts_built": 10,
-      "direct_event_contexts_built": 10,
+      "contexts_built": 9,
+      "direct_event_contexts_built": 9,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -527,21 +530,25 @@
     "no_data": 10,
     "working": 10
   },
-  "reject_reason_counts_from_rows": {},
+  "reject_reason_counts_from_rows": {
+    "market_sanity_totals_xg_contradiction": 1,
+    "no_bet_quality_score_guard": 1,
+    "post_calibration_probability_guard": 2
+  },
   "target_date": "2026-05-11",
   "top_near_miss": [
     {
-      "away_team": "FS Jelgava",
+      "away_team": "Al Hidd",
       "best_candidate": {
-        "adjusted_probability": 0.518881,
-        "books_count": 4,
-        "canonical_edge_pp": 3.877,
-        "canonical_ev_pct": 13.116,
-        "confidence": 79.069,
+        "adjusted_probability": 0.523297,
+        "books_count": 3,
+        "canonical_edge_pp": 4.181,
+        "canonical_ev_pct": 15.125,
+        "confidence": 77.756,
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.18,
+        "odds": 2.2,
         "odds_sources_count": 1,
         "origin": ".logs/debug-last-run.json",
         "point": 2.5,
@@ -549,9 +556,251 @@
         "selection": "Больше 2.5",
         "sources_count": 1
       },
-      "best_confidence": 79.069,
-      "best_edge_pp": 3.877,
-      "best_ev_pct": 13.116,
+      "best_confidence": 77.756,
+      "best_edge_pp": 4.181,
+      "best_ev_pct": 15.125,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Al-Ahli SC Manama",
+      "league_name": "Bahrain - Premier League",
+      "match_key": "soccer|al ahli manama|al hidd|2026-05-11",
+      "missing_flags": {
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Al-Muharraq SC",
+      "best_candidate": {
+        "adjusted_probability": 0.476115,
+        "books_count": 3,
+        "canonical_edge_pp": 3.851,
+        "canonical_ev_pct": 14.268,
+        "confidence": 76.687,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.4,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 76.687,
+      "best_edge_pp": 3.851,
+      "best_ev_pct": 14.268,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "AL-Khaldiya SC",
+      "league_name": "Bahrain - Premier League",
+      "match_key": "soccer|al khaldiya|al muharraq|2026-05-11",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Madura United",
+      "best_candidate": {
+        "adjusted_probability": 0.51576,
+        "books_count": 4,
+        "canonical_edge_pp": 3.615,
+        "canonical_ev_pct": 11.404,
+        "confidence": 78.222,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.16,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Меньше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 78.222,
+      "best_edge_pp": 3.615,
+      "best_ev_pct": 11.404,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T12:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Bhayangkara Presisi Indonesia FC",
+      "league_name": "Indonesia - Liga 1",
+      "match_key": "soccer|bhayangkara presisi indonesia|madura united|2026-05-11",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Hapoel Rishon Lezion FC",
+      "best_candidate": {
+        "adjusted_probability": 0.490327,
+        "books_count": 3,
+        "canonical_edge_pp": 3.3,
+        "canonical_ev_pct": 9.833,
+        "confidence": 74.898,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.24,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Меньше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 74.898,
+      "best_edge_pp": 3.3,
+      "best_ev_pct": 9.833,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Maccabi Petah Tikva FC",
+      "league_name": "Israel - National League",
+      "match_key": "soccer|hapoel rishon lezion|maccabi petah tikva|2026-05-11",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "FUS Rabat",
+      "best_candidate": {
+        "adjusted_probability": 0.397287,
+        "books_count": 3,
+        "canonical_edge_pp": 2.889,
+        "canonical_ev_pct": 8.857,
+        "confidence": 73.567,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.74,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 73.567,
+      "best_edge_pp": 2.889,
+      "best_ev_pct": 8.857,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T16:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Olympique Club de Safi",
+      "league_name": "Morocco - Botola Pro D1",
+      "match_key": "soccer|fus rabat|olympique safi|2026-05-11",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "FS Jelgava",
+      "best_candidate": {
+        "adjusted_probability": 0.499688,
+        "books_count": 4,
+        "canonical_edge_pp": 2.892,
+        "canonical_ev_pct": 6.933,
+        "confidence": 75.876,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.14,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.876,
+      "best_edge_pp": 2.892,
+      "best_ev_pct": 6.933,
       "books_max": 4,
       "candidate_count": 1,
       "commence_time": "2026-05-11T15:00:00+00:00",
@@ -566,6 +815,106 @@
       "match_key": "soccer|fs jelgava|grobinas lfs|2026-05-11",
       "missing_flags": {
         "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {},
+      "sources_max": 1
+    },
+    {
+      "away_team": "Ittihad Kalba FC",
+      "best_candidate": {
+        "adjusted_probability": 0.568579,
+        "books_count": 3,
+        "canonical_edge_pp": 2.19,
+        "canonical_ev_pct": 4.619,
+        "confidence": 73.217,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.84,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [
+          "no_bet_quality_score_guard"
+        ],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 73.217,
+      "best_edge_pp": 2.19,
+      "best_ev_pct": 4.619,
+      "books_max": 3,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T14:10:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "Al-Nasr Dubai CSC",
+      "league_name": "United Arab Emirates - Arabian Gulf League",
+      "match_key": "soccer|al nasr dubai csc|ittihad kalba|2026-05-11",
+      "missing_flags": {
+        "confidence_below_micro_c": 1,
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
+        "single_context_source": 1,
+        "single_odds_source": 1
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 1
+      },
+      "reject_reasons": {
+        "no_bet_quality_score_guard": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Punjab FC",
+      "best_candidate": {
+        "adjusted_probability": 0.533709,
+        "books_count": 4,
+        "canonical_edge_pp": 2.133,
+        "canonical_ev_pct": 4.607,
+        "confidence": 75.333,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 1.96,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 2.5,
+        "reject_reasons": [],
+        "selection": "Больше 2.5",
+        "sources_count": 1
+      },
+      "best_confidence": 75.333,
+      "best_edge_pp": 2.133,
+      "best_ev_pct": 4.607,
+      "books_max": 4,
+      "candidate_count": 1,
+      "commence_time": "2026-05-11T14:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "totals": 1
+      },
+      "home_team": "SC East Bengal",
+      "league_name": "India - Indian Super League",
+      "match_key": "soccer|east bengal|punjab|2026-05-11",
+      "missing_flags": {
+        "edge_below_micro_c": 1,
+        "ev_below_micro_c": 1,
         "single_context_source": 1,
         "single_odds_source": 1
       },
