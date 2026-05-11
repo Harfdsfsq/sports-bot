@@ -2,8 +2,8 @@ from __future__ import annotations
 
 """Provider signal coverage blueprint v3.
 
-Self-contained blueprint with SStats inventory crosswalk. The workflow calls v2,
-and v2 delegates here. Therefore v3 must not import helper functions from v2.
+Self-contained blueprint with SStats inventory crosswalk and top-provider-first
+backfill plan. The workflow calls v2, and v2 delegates here.
 """
 
 import asyncio
@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from scripts import provider_backfill_priority_plan
 from scripts import provider_signal_coverage_blueprint as base
 from scripts import sstats_crosswalk_probe
 
@@ -59,6 +60,7 @@ def current_coverage() -> dict[str, Any]:
         "matrix_version": matrix.get("matrix_version") or matrix.get("mode") or "base",
         "summary": coverage_summary(matrix),
         "coverage_by_kickoff_window": matrix.get("coverage_by_kickoff_window") if isinstance(matrix.get("coverage_by_kickoff_window"), dict) else {},
+        "sstats_crosswalk_projection": matrix.get("sstats_crosswalk_projection") if isinstance(matrix.get("sstats_crosswalk_projection"), dict) else {},
         "queue_top": queue[:20],
         "missing_counter": dict(Counter(m for item in queue if isinstance(item, dict) for m in (item.get("missing") or []))),
     }
@@ -96,6 +98,9 @@ def sstats_deep_capability_plan() -> dict[str, Any]:
 
 
 def run_crosswalk() -> dict[str, Any]:
+    existing = load_json(OUT_DIR / "latest-sstats-crosswalk.json")
+    if existing and isinstance(existing.get("summary"), dict):
+        return existing
     try:
         return asyncio.run(sstats_crosswalk_probe.run())
     except Exception as exc:
@@ -124,6 +129,13 @@ def crosswalk_plan(crosswalk: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def run_backfill_plan() -> dict[str, Any]:
+    try:
+        return provider_backfill_priority_plan.build_plan()
+    except Exception as exc:
+        return {"mode": "provider_backfill_priority_plan_failed", "status": "error", "error": f"{type(exc).__name__}: {exc}", "summary": {}}
+
+
 def recommendations(provider_status: dict[str, Any], coverage: dict[str, Any], sstats_plan: dict[str, Any], cross: dict[str, Any]) -> list[str]:
     recs = base.recommendations(provider_status, coverage)
     matched = int(cross.get("matched") or 0)
@@ -141,6 +153,7 @@ def render(payload: dict[str, Any]) -> str:
     summary = coverage.get("summary") or {}
     sstats = payload.get("sstats_deep_capability_plan") or {}
     cross = payload.get("sstats_crosswalk_plan") or {}
+    backfill = payload.get("provider_backfill_priority_plan") or {}
     lines = [
         "# Provider signal coverage blueprint v3",
         f"UTC: {payload.get('created_at_utc')}",
@@ -150,6 +163,10 @@ def render(payload: dict[str, Any]) -> str:
     for key in ("total", "fixture_2plus_sources", "odds_any", "odds_2plus_sources", "context_any", "context_2plus_sources", "xg", "form", "weather", "news", "ready_for_model", "publishable_like"):
         if key in summary:
             lines.append(f"- {key}: {summary.get(key)}")
+    proj = coverage.get("sstats_crosswalk_projection") if isinstance(coverage.get("sstats_crosswalk_projection"), dict) else {}
+    if proj:
+        upper = proj.get("projected_upper_bound_after_sstats_deep") or {}
+        lines.append(f"- projected after SStats deep: context_2plus={upper.get('context_2plus_sources', 0)} xg={upper.get('xg', 0)} form={upper.get('form', 0)} odds_2plus={upper.get('odds_2plus_sources', 0)}")
     lines += ["", "## SStats deep integration plan"]
     lines.append(f"- commands: {sstats.get('ok_commands', 0)} OK / {sstats.get('commands_total', 0)} total")
     caps = sstats.get("capability_hits") or {}
@@ -161,14 +178,16 @@ def render(payload: dict[str, Any]) -> str:
     lines.append(f"- checked: {cross.get('inventory_matches_checked', 0)} inventory matches | SStats events: {cross.get('sstats_events_seen', 0)}")
     lines.append(f"- matched: {cross.get('matched', 0)} | unmatched: {cross.get('unmatched', 0)} | rate={cross.get('match_rate_pct', 0)}%")
     lines.append(f"- potential uplift: context_deep={cross.get('potential_context_deep', 0)} xg_or_rating={cross.get('potential_xg_or_rating', 0)} form={cross.get('potential_form', 0)} odds_rescue={cross.get('potential_odds_rescue', 0)}")
-    by_bucket = cross.get("by_bucket") if isinstance(cross.get("by_bucket"), dict) else {}
-    if by_bucket:
-        lines.append("- by bucket: " + "; ".join(f"{k}=matched:{v.get('matched', 0)}" for k, v in sorted(by_bucket.items())))
-    queue = cross.get("queue_top") if isinstance(cross.get("queue_top"), list) else []
-    if queue:
-        lines.append("- next deep queue:")
-        for item in queue[:10]:
-            lines.append(f"  - {item.get('bucket')} | {item.get('home_team')} — {item.get('away_team')} | gameId={item.get('sstats_game_id')} score={item.get('score')}")
+    lines += ["", "## Top-provider-first backfill plan"]
+    bsum = backfill.get("summary") if isinstance(backfill.get("summary"), dict) else {}
+    lines.append(f"- tasks_total: {bsum.get('tasks_total', 0)}")
+    for role, count in sorted((bsum.get("missing_role_counts") or {}).items(), key=lambda kv: (-kv[1], kv[0]))[:12]:
+        lines.append(f"- missing {role}: {count}")
+    tasks = backfill.get("tasks") if isinstance(backfill.get("tasks"), list) else []
+    if tasks:
+        lines.append("- top tasks:")
+        for task in tasks[:10]:
+            lines.append(f"  - {task.get('bucket')} | {task.get('home_team')} — {task.get('away_team')} | roles={','.join(task.get('missing_roles') or [])} | sstats={task.get('sstats_game_id') or '-'}")
     lines += ["", "## Recommendations"]
     for rec in payload.get("recommendations") or []:
         lines.append(f"- {rec}")
@@ -185,6 +204,9 @@ def main() -> int:
     coverage = current_coverage()
     sstats_plan = sstats_deep_capability_plan()
     cross = crosswalk_plan(crosswalk)
+    backfill = run_backfill_plan()
+    provider_backfill_priority_plan.JSON_OUT.write_text(json.dumps(backfill, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    provider_backfill_priority_plan.TXT_OUT.write_text(provider_backfill_priority_plan.render(backfill), encoding="utf-8")
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "mode": "provider_signal_coverage_blueprint_v3",
@@ -194,6 +216,7 @@ def main() -> int:
         "current_coverage": coverage,
         "sstats_deep_capability_plan": sstats_plan,
         "sstats_crosswalk_plan": cross,
+        "provider_backfill_priority_plan": backfill,
         "recommendations": recommendations(provider_status, coverage, sstats_plan, cross),
     }
     JSON_OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
