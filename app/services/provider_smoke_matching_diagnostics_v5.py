@@ -80,6 +80,19 @@ def _game_id(row: dict[str, Any]) -> str:
     return ""
 
 
+def _next_cursor(payload: Any) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    for key in ("meta", "pagination"):
+        meta = payload.get(key)
+        if isinstance(meta, dict):
+            value = meta.get("next_cursor") or meta.get("next") or meta.get("cursor")
+            if value not in (None, ""):
+                return str(value)
+    value = payload.get("next_cursor") or payload.get("next")
+    return str(value) if value not in (None, "") else ""
+
+
 async def _active_odds_events(client: Any) -> dict[str, Any]:
     key = base._secret("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN")
     if not key:
@@ -87,18 +100,34 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
     root = str(os.getenv("SPORTLOGIC_BASE_URL") or "https://api.sportlogic.io/api/v1").rstrip("/")
     headers = {str(os.getenv("SPORTLOGIC_HEADER_NAME") or "X-API-Key"): key}
     attempts: list[dict[str, Any]] = []
-    odds_payload, attempt = await base._get(client, f"{root}/odds", params={"is_active": "true", "per_page": 100}, headers=headers)
-    attempts.append(attempt)
-    odds_rows = base._rows(odds_payload)
     game_ids: list[str] = []
-    for row in odds_rows:
-        gid = _game_id(row)
-        if gid and gid not in game_ids:
-            game_ids.append(gid)
+    odds_rows_count = 0
+    cursor = ""
+    max_pages = max(1, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES") or 4)))
+    max_games = max(6, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT") or 24)))
+    for _ in range(max_pages):
+        params = {"is_active": "true", "per_page": 100}
+        if cursor:
+            params["cursor"] = cursor
+        odds_payload, attempt = await base._get(client, f"{root}/odds", params=params, headers=headers)
+        attempts.append(attempt)
+        odds_rows = base._rows(odds_payload)
+        odds_rows_count += len(odds_rows)
+        for row in odds_rows:
+            gid = _game_id(row)
+            if gid and gid not in game_ids:
+                game_ids.append(gid)
+                if len(game_ids) >= max_games:
+                    break
+        cursor = _next_cursor(odds_payload)
+        if len(game_ids) >= max_games or not cursor or not odds_rows:
+            break
+
     events = []
     missing_team = 0
     missing_start = 0
-    for gid in game_ids[:12]:
+    all_game_samples = []
+    for gid in game_ids[:max_games]:
         game_payload, game_attempt = await base._get(client, f"{root}/games/{gid}", params={}, headers=headers)
         attempts.append(game_attempt)
         rows = base._rows(game_payload)
@@ -109,23 +138,27 @@ async def _active_odds_events(client: Any) -> dict[str, Any]:
             if event is None:
                 missing_team += 1
                 continue
+            if len(all_game_samples) < 8:
+                all_game_samples.append(event.sample())
             if event.start is None:
                 missing_start += 1
             events.append(event)
     future = _future(events)
-    status = "ok" if future else "documented_active_odds_no_future_games" if odds_rows else "documented_active_odds_empty"
+    status = "ok" if future else "documented_active_odds_no_future_games" if odds_rows_count else "documented_active_odds_empty"
     return {
         "provider": "sportlogic",
         "status": status,
-        "raw_rows": len(odds_rows),
+        "raw_rows": odds_rows_count,
         "parsed_events": len(future),
         "missing_team_rows": missing_team,
         "missing_start_rows": missing_start,
         "events": future,
         "samples": [event.sample() for event in future[:8]],
-        "attempts": attempts[:10],
-        "documented_active_odds_rows": len(odds_rows),
-        "documented_active_game_ids_checked": game_ids[:12],
+        "attempts": attempts[:16],
+        "documented_active_odds_rows": odds_rows_count,
+        "documented_active_odds_pages_scanned": len([a for a in attempts if str(a.get("url", "")).endswith("/odds")]),
+        "documented_active_game_ids_checked": game_ids[:max_games],
+        "documented_active_game_samples_all": all_game_samples,
     }
 
 
