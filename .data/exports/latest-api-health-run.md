@@ -1,6 +1,6 @@
 # API Health Run
 
-- Created UTC: `2026-05-11T19:01:38.506744+00:00`
+- Created UTC: `2026-05-11T23:01:28.683697+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
@@ -34,7 +34,7 @@
 | `currents` | `news` | `ok` | 1 | 30 | ok |
 | `gnews` | `news` | `auth_error` | 1 | 0 | provider_payload_errors |
 | `guardian` | `news` | `ok` | 1 | 1 | ok |
-| `newsapi` | `news` | `ok` | 1 | 1 | ok |
+| `newsapi` | `news` | `ok` | 1 | 0 | ok |
 | `newsdata` | `news` | `ok` | 1 | 1 | ok |
 | `odds_api_io_events` | `odds` | `ok` | 1 | 10 | ok |
 | `sportlogic` | `odds` | `rate_limited` | 1 | 0 | provider_payload_error |
