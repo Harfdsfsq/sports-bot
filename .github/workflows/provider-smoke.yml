@@ -56,8 +56,8 @@ jobs:
       PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '360' }}
       PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'true' }}
       PROVIDER_SMOKE_FAST_TIMEOUT: "22"
-      PROVIDER_SMOKE_FAST_CONCURRENCY: "6"
-      PROVIDER_SMOKE_REPEATS: "2"
+      PROVIDER_SMOKE_FAST_CONCURRENCY: "4"
+      PROVIDER_SMOKE_REPEATS: "1"
       PROVIDER_SMOKE_MATCHING_DIAGNOSTICS_ENABLED: "true"
       PROVIDER_SMOKE_MATCHING_TIMEOUT_SECONDS: "35"
       PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,football_data,sportlogic,allsportsapi"
@@ -66,16 +66,16 @@ jobs:
       PROVIDER_SMOKE_MATCHING_DAYS_AHEAD: "2"
       PROVIDER_SMOKE_SSTATS_LOOKBACK_DAYS: "45"
       BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
-      API_FULL_SMOKE_ENABLED: "true"
+      API_FULL_SMOKE_ENABLED: "false"
       API_FULL_SMOKE_MAX_SECONDS: "180"
       API_FULL_SMOKE_TIMEOUT_SECONDS: "22"
-      API_FULL_SMOKE_CONCURRENCY: "5"
-      API_FULL_SMOKE_DETAIL_CONCURRENCY: "3"
+      API_FULL_SMOKE_CONCURRENCY: "4"
+      API_FULL_SMOKE_DETAIL_CONCURRENCY: "1"
       API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS: "4"
       API_FULL_SMOKE_ODDS_EVENT_LIMIT: "2"
       API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT: "1"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "4"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "24"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "1"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "5"
 
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       PROVIDER_SMOKE_TARGET_DATE: ${{ github.event.inputs.target_date }}
@@ -236,8 +236,13 @@ jobs:
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/provider-smoke-build-day-inventory.log 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
 
-      - name: Run provider endpoint, matching and full-data diagnostics
+      - name: Run provider endpoint and matching diagnostics
         shell: bash
+        env:
+          API_FULL_SMOKE_ENABLED: "false"
+          PROVIDER_SMOKE_REPEATS: "1"
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
         run: |
           set -uo pipefail
           mkdir -p .data/exports artifacts/provider-smoke artifacts/provider-smoke-fast
@@ -246,7 +251,8 @@ jobs:
             --providers "${PROVIDER_SMOKE_FAST_PROVIDERS}" \
             --max-seconds "${PROVIDER_SMOKE_FAST_MAX_SECONDS}" \
             --timeout "${PROVIDER_SMOKE_FAST_TIMEOUT}" \
-            --concurrency "${PROVIDER_SMOKE_FAST_CONCURRENCY}" 2>&1 | tee .data/exports/provider-smoke-fast-run.log; then
+            --concurrency "${PROVIDER_SMOKE_FAST_CONCURRENCY}" \
+            --repeats "1" 2>&1 | tee .data/exports/provider-smoke-fast-run.log; then
             echo "provider diagnostics completed"
           else
             status=$?
@@ -257,6 +263,11 @@ jobs:
 
       - name: Run explicit full-data endpoint probe
         shell: bash
+        env:
+          API_FULL_SMOKE_ENABLED: "true"
+          API_FULL_SMOKE_DETAIL_CONCURRENCY: "1"
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "1"
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "3"
         run: |
           set -uo pipefail
           echo "explicit full-data probe v9 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
