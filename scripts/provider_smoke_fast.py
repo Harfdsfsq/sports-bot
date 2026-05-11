@@ -115,9 +115,12 @@ def _prepare_args() -> None:
 async def _run_matching_diagnostics() -> dict[str, Any]:
     try:
         try:
-            from app.services import provider_smoke_matching_diagnostics_v2 as matching_module
+            from app.services import provider_smoke_matching_diagnostics_v3 as matching_module
         except Exception:
-            from app.services import provider_smoke_matching_diagnostics as matching_module
+            try:
+                from app.services import provider_smoke_matching_diagnostics_v2 as matching_module
+            except Exception:
+                from app.services import provider_smoke_matching_diagnostics as matching_module
         payload = await matching_module.run()
         try:
             from scripts import provider_smoke_matching_samples
