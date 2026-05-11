@@ -1,6 +1,6 @@
 # API Health Run
 
-- Created UTC: `2026-05-10T23:01:29.878988+00:00`
+- Created UTC: `2026-05-11T01:01:45.910789+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
@@ -25,7 +25,7 @@
 
 | Provider | Group | Status | Requests | Useful rows | Message |
 |---|---|---:|---:|---:|---|
-| `bzzoiro` | `context` | `ok` | 1 | 50 | ok |
+| `bzzoiro` | `context` | `ok` | 1 | 48 | ok |
 | `football_data` | `context` | `ok` | 1 | 13 | ok |
 | `futrixmetrics` | `context` | `config_only` | 0 | 0 | key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured |
 | `highlightly` | `context` | `ok` | 1 | 5 | ok |
@@ -34,11 +34,11 @@
 | `currents` | `news` | `ok` | 1 | 30 | ok |
 | `gnews` | `news` | `ok` | 1 | 1 | ok |
 | `guardian` | `news` | `ok` | 1 | 1 | ok |
-| `newsapi` | `news` | `ok` | 1 | 0 | ok |
+| `newsapi` | `news` | `ok` | 1 | 1 | ok |
 | `newsdata` | `news` | `ok` | 1 | 1 | ok |
 | `odds_api_io_events` | `odds` | `ok` | 1 | 10 | ok |
 | `sportlogic` | `odds` | `ok` | 1 | 50 | ok |
-| `allsportsapi` | `odds_context` | `ok` | 1 | 9 | ok |
+| `allsportsapi` | `odds_context` | `ok` | 1 | 0 | ok |
 | `sharpapi_configured_base` | `utility` | `missing_secret` | 0 | 0 | required secret is not configured |
 | `meteostat` | `weather` | `ok` | 1 | 1 | ok |
 | `openweathermap` | `weather` | `ok` | 1 | 0 | ok |
