@@ -295,12 +295,12 @@ jobs:
           SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "18"
         run: |
           set -uo pipefail
-          echo "sstats deep smoke start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 180s python -u scripts/sstats_deep_smoke_probe.py 2>&1 | tee .data/exports/sstats-deep-smoke-run.log; then
-            echo "sstats deep smoke completed"
+          echo "sstats deep smoke v2 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 180s python -u scripts/sstats_deep_smoke_probe_v2.py 2>&1 | tee .data/exports/sstats-deep-smoke-run.log; then
+            echo "sstats deep smoke v2 completed"
           else
             status=$?
-            echo "sstats deep smoke failed or timed out with status ${status}; continuing"
+            echo "sstats deep smoke v2 failed or timed out with status ${status}; continuing"
           fi
 
       - name: Build 300-match coverage matrix
