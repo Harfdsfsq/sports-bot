@@ -68,6 +68,7 @@ def install_runtime_patches() -> dict[str, Any]:
     result: dict[str, Any] = {
         "sportlogic_hardening": False,
         "sportlogic_fixture_discovery": False,
+        "sportlogic_docs_runtime_patch": False,
         "sharpapi_runtime_patch": False,
         "sharpapi_official_patch": False,
         "errors": [],
@@ -88,6 +89,11 @@ def install_runtime_patches() -> dict[str, Any]:
         result["sportlogic_fixture_patch_marker"] = getattr(sportlogic_fixture_discovery_v9, "PATCH_MARKER", "")
     except Exception as exc:
         result["errors"].append(f"sportlogic_fixture_discovery_v9:{type(exc).__name__}:{exc}")
+    try:
+        from app.providers import sportlogic_docs_runtime_patch
+        result["sportlogic_docs_runtime_patch"] = bool(sportlogic_docs_runtime_patch.install())
+    except Exception as exc:
+        result["errors"].append(f"sportlogic_docs_runtime_patch:{type(exc).__name__}:{exc}")
     try:
         from app.providers import sharpapi_runtime_patch
         result["sharpapi_runtime_patch"] = bool(sharpapi_runtime_patch.install())
@@ -168,6 +174,7 @@ def compact_stats(stats: Any) -> dict[str, Any]:
         "fixture_parse_rejects", "sample_fixture_keys", "fixture_stale_rows_filtered", "fixture_window_start",
         "fixture_window_end", "fixture_page_scan_max", "fixture_cursor_scan_max", "inventory_status", "stale_inventory",
         "inventory_min_start", "inventory_max_start", "inventory_sample_start_times", "no_match_reason",
+        "sportlogic_docs_attempts", "sportlogic_docs_future_rows", "future_fallback_used", "future_fallback_future_rows",
     ]
     for key in keep:
         if key in stats:
@@ -351,7 +358,7 @@ def build_text(payload: dict[str, Any]) -> str:
             for check in checks.values():
                 stats = check.get("stats") or {}
                 preview = check.get("preview") or {}
-                for key in ("base_url", "schema_mode", "api_key_present", "requests", "http_statuses", "odds_endpoint_used", "events_fetched", "events_matched", "offers_parsed", "markets_parsed", "bookmakers_seen_names", "offers_by_family", "payload_shapes", "last_body_preview", "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "fixtures_fetched", "matches_built", "fixture_parse_rejects", "fixture_out_of_window", "attempted_paths", "fixture_query_attempts", "no_match_reason"):
+                for key in ("base_url", "schema_mode", "api_key_present", "requests", "http_statuses", "odds_endpoint_used", "events_fetched", "events_matched", "offers_parsed", "markets_parsed", "bookmakers_seen_names", "offers_by_family", "payload_shapes", "last_body_preview", "inventory_status", "stale_inventory", "inventory_min_start", "inventory_max_start", "fixtures_fetched", "matches_built", "sportlogic_docs_attempts", "sportlogic_docs_future_rows", "fixture_parse_rejects", "fixture_out_of_window", "attempted_paths", "fixture_query_attempts", "no_match_reason"):
                     if stats.get(key) not in (None, "", [], {}):
                         value = stats.get(key)
                         rendered = json.dumps(value, ensure_ascii=False) if key != "last_body_preview" else str(value)
