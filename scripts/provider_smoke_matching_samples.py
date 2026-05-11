@@ -13,6 +13,14 @@ def _load(path: Path) -> dict[str, Any]:
         return {}
 
 
+def _short(value: Any, limit: int = 1200) -> str:
+    try:
+        text = json.dumps(value, ensure_ascii=False)
+    except Exception:
+        text = str(value)
+    return text[:limit]
+
+
 def _event_label(event: Any) -> str:
     if not isinstance(event, dict):
         return "n/a"
@@ -24,10 +32,33 @@ def _event_label(event: Any) -> str:
     return f"{home} — {away} | {league} | {start} | id={source_id}"
 
 
+def _diagnostic_fields(provider: dict[str, Any]) -> list[str]:
+    lines: list[str] = []
+    keys = [
+        "adapter_version",
+        "documented_adapter_status",
+        "documented_adapter_error",
+        "documented_active_odds_rows",
+        "documented_active_odds_pages_scanned",
+        "documented_active_game_ids_checked",
+        "documented_active_odds_sample_keys",
+        "documented_active_id_candidates_sample",
+        "documented_active_game_samples_all",
+        "documented_adapter_stats",
+        "unified_inventory_error",
+    ]
+    for key in keys:
+        value = provider.get(key)
+        if value not in (None, "", [], {}):
+            lines.append(f"  {key}: {_short(value)}")
+    return lines
+
+
 def _block(provider: dict[str, Any]) -> list[str]:
     name = provider.get("provider") or "unknown"
     stage = provider.get("failure_stage") or "unknown"
     lines = [f"• {name}: {stage}"]
+    lines.extend(_diagnostic_fields(provider))
 
     matched = provider.get("matched_samples") if isinstance(provider.get("matched_samples"), list) else []
     if matched:
@@ -59,7 +90,7 @@ def _block(provider: dict[str, Any]) -> list[str]:
     attempts = provider.get("attempts") if isinstance(provider.get("attempts"), list) else []
     if stage in {"request_or_empty_query", "parser_extract_failed", "stale_provider_rows_date_filter_ignored"} and attempts:
         lines.append("  attempts:")
-        for attempt in attempts[:4]:
+        for attempt in attempts[:8]:
             if isinstance(attempt, dict):
                 lines.append(f"    * http={attempt.get('http_status')} shape={attempt.get('payload_shape')} keys={attempt.get('params_keys')} url={attempt.get('url')}")
     note = provider.get("diagnostic_note")
