@@ -90,6 +90,7 @@ def _stage_counts(payload: dict[str, Any]) -> dict[str, Any]:
 def _install_runtime_patches() -> None:
     for module_name in (
         "app.services.provider_matching_alias_runtime_patch",
+        "app.services.provider_match_time_league_guard",
         "app.services.api_full_data_runtime_patch",
     ):
         try:
@@ -131,8 +132,6 @@ async def _run_matching_diagnostics() -> dict[str, Any]:
 
 
 async def _run_full_data_probe() -> dict[str, Any]:
-    # Keep smoke quota-friendly. Full-depth provider extraction belongs to runtime,
-    # not to a repeated diagnostic workflow.
     os.environ.setdefault("API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS", "4")
     os.environ.setdefault("API_FULL_SMOKE_ODDS_EVENT_LIMIT", "1")
     os.environ.setdefault("API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT", "1")
