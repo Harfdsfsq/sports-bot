@@ -271,3 +271,11 @@ try:
     progressive_upcoming_gap_finalizer.install()
 except Exception:
     pass
+
+# Targeted fix for the current v8 bottleneck: many matches have SStats context
+# but miss Bzzoiro. This pass enriches only upcoming progressive context gaps.
+try:
+    from app.services import bzzoiro_context_gap_finalizer
+    bzzoiro_context_gap_finalizer.install()
+except Exception:
+    pass
