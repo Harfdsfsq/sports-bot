@@ -263,3 +263,11 @@ try:
     progressive_fetch_provider_signature_finalizer.install()
 except Exception:
     pass
+
+# Operational finalizer: gap plan should prioritize upcoming matches only and
+# retry Bzzoiro/SStats sooner when core context gaps remain.
+try:
+    from app.services import progressive_upcoming_gap_finalizer
+    progressive_upcoming_gap_finalizer.install()
+except Exception:
+    pass
