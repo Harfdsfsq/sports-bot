@@ -3,51 +3,51 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Покрытие
-• Матчи в run: 155 | day inventory: 238
-• С линиями: 57 | с контекстом: 129 | ready model: 14
-• odds-api.io offers: 8786 | Bzzoiro secondary offers: 275
-• 2+ букмекера odds-api.io: 45 | 2-source overlap Bzzoiro+odds-api.io: 11
-• Source combinations: odds_api_io: 46, bzzoiro: 14, bzzoiro+odds_api_io: 11
+• Матчи в run: 118 | day inventory: 226
+• С линиями: 42 | с контекстом: 103 | ready model: 16
+• odds-api.io offers: 6116 | Bzzoiro secondary offers: 209
+• 2+ букмекера odds-api.io: 30 | 2-source overlap Bzzoiro+odds-api.io: 7
+• Source combinations: odds_api_io: 35, bzzoiro: 12, bzzoiro+odds_api_io: 7
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 14 / 14
+• Raw/candidates before quality: 16 / 16
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 7 | evaluated 7 | published False
-• Windowed coverage: audit 14 | allowed 0 | blocked 14 | publish-filter input 0
+• Controlled fallback: seen 8 | evaluated 8 | published False
+• Windowed coverage: audit 16 | allowed 0 | blocked 16 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 52 | no next regular run: 52
+• Final pre-kickoff checks: 78 | no next regular run: 78
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 20, matched 98, offers 8786, 2+ books 45, err 0
-• sstats: req 27, ctx 121, rows 24658, err 0, deep enriched 15
-• bzzoiro: direct req 0, v2 req 61, v2 ctx 15, v2 odds 15, secondary offers 275, overlap odds-api.io 11, err 0
+• odds_api_io: events req 0, odds req 16, matched 80, offers 6116, 2+ books 30, err 0
+• sstats: req 27, ctx 99, rows 24658, err 0, deep enriched 13
+• bzzoiro: direct req 0, v2 req 45, v2 ctx 11, v2 odds 11, secondary offers 209, overlap odds-api.io 7, err 0
 • sportlogic: enabled True, req 2, fixtures 50, matched 0, odds req 0, offers 0, sample_dates 2026-05-02, diag games_endpoint_returned_unmatched_or_stale_rows, err 0
 
 🧭 Progressive core coverage
 • Core odds/line: bzzoiro,odds_api_io,sstats
 • Core context: bzzoiro,sstats
-• Tracked: 172 | core odds 2+: 91 | core context 2+: 12 | core-ready both: 12
-• 0–4ч: 2/106 core-ready
-• 0–12ч: 12/157 core-ready
+• Tracked: 177 | core odds 2+: 99 | core context 2+: 12 | core-ready both: 12
+• 0–4ч: 11/135 core-ready
+• 0–12ч: 12/145 core-ready
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 7 (41%)
-• quality: вероятность после калибровки ниже порога: 5 (29%)
-• направление ставки конфликтует с xG: 3 (18%)
-• quality: market sanity totals/xG contradiction: 2 (12%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 8 (38%)
+• направление ставки конфликтует с xG: 5 (24%)
+• quality: вероятность после калибровки ниже порога: 5 (24%)
+• quality: market sanity totals/xG contradiction: 3 (14%)
 
 🔎 Проверенные reserve-кандидаты
-1. Modena FC — Juve Stabia | Больше 2.5 @2.48 | EV -10.4% | edge -4.2 п.п. | q 35.2
+1. Riga FC — FK Auda Riga | Меньше 2.5 @2.60 | EV -8.9% | edge -3.4 п.п. | q 36.9
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
+2. FK Mlada Boleslav — Dukla Prague | Меньше 2.5 @2.20 | EV -3.8% | edge -1.7 п.п. | q 53.7
    • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
-2. Beitar Jerusalem FC — Hapoel Be`er Sheva FC | Меньше 2.5 @2.68 | EV -3.7% | edge -1.4 п.п. | q 38.3
+3. Real Betis Seville — Elche CF | Меньше 2.5 @2.40 | EV -6.0% | edge -2.5 п.п. | q 57.4
    • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
-3. PFC Cherno More Varna — PFC Lokomotiv Plovdiv | Больше 2.5 @2.50 | EV -9.6% | edge -3.8 п.п. | q 27.8
-   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
-4. Landskrona BoIS — Norrby IF | Больше 2.5 @1.92 | EV -12.0% | edge -6.2 п.п. | q 35.2
+4. Asteras Tripolis — Panserraikos FC | Больше 2.5 @2.52 | EV -10.7% | edge -4.3 п.п. | q 38.7
    • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Вывод
-• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 12; 0–4ч: 2/106; 0–12ч: 12/157.
+• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 12; 0–4ч: 11/135; 0–12ч: 12/145.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
