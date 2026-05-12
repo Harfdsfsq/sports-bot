@@ -76,13 +76,7 @@ def _setdefault_env(values: dict[str, str]) -> None:
 
 
 def _apply_api_max_runtime_overrides() -> None:
-    """Install safe runtime defaults without clobbering workflow/governor policy.
-
-    Older versions overwrote env on every CLI start and re-enabled strict
-    Telegram/source-diversity guards. That made GitHub workflow values and the
-    quota governor ineffective. This function now sets only compatibility
-    defaults when the caller did not already provide a value.
-    """
+    """Install safe runtime defaults without clobbering workflow/governor policy."""
     _setdefault_env(
         {
             'STRICT_PRICE_INTEGRITY_ENABLED': 'true',
@@ -164,8 +158,68 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
     return settings
 
 
+def _prepare_discovery_first_inventory_for_run_once() -> None:
+    """Prepare canonical primary-provider inventory before the model run.
+
+    The old run-bot workflow reached `run-once` with an odds-first inventory and
+    then tried to fuzzy-match context later. This fail-soft runtime hook applies
+    the discovery-first stack directly before PredictionRunner starts:
+    odds-api.io/Bzzoiro/SStats daily discovery, canonical merge, post-merge
+    SStats crosswalk, SStats deep enrichment and source-aware coverage artifact.
+    """
+    if not _parse_bool(os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED', 'true')):
+        return
+    if os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING') == '1':
+        return
+    os.environ['RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING'] = '1'
+    _setdefault_env(
+        {
+            'HARIZON_PROVIDER_TIER_STRATEGY_VERSION': 'primary-three-v1-100-per-run',
+            'HARIZON_PRIMARY_PROVIDERS': 'odds_api_io,bzzoiro,sstats',
+            'HARIZON_SUPPLEMENTAL_API_MODE': 'top_pick_backfill_only',
+            'SUPPLEMENTAL_PROVIDERS_REQUIRE_SHORTLIST': 'true',
+            'SUPPLEMENTAL_PROVIDERS_REQUIRE_MISSING_ROLE': 'true',
+            'SUPPLEMENTAL_BACKFILL_AFTER_PRIMARY_SHORTLIST': 'true',
+            'ODDS_API_IO_MAX_REQUESTS_PER_RUN': '200',
+            'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': '200',
+            'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': '100',
+            'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': '100',
+            'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '100',
+            'BZZOIRO_MAX_REQUESTS_PER_RUN': '100',
+            'BZZOIRO_CONTEXT_MATCH_LIMIT': '300',
+            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '100',
+            'SSTATS_MAX_REQUESTS_PER_RUN': '100',
+            'SSTATS_CONTEXT_MATCH_LIMIT': '300',
+            'SSTATS_DEEP_ENRICHMENT_ENABLED': 'true',
+            'SSTATS_DEEP_DETAIL_LIMIT_PER_RUN': '80',
+            'SSTATS_GAME_DETAIL_LIMIT_PER_RUN': '8',
+            'SSTATS_ODDS_RESCUE_LIMIT_PER_RUN': '20',
+            'SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT': '2',
+            'PROVIDER_DAY_DISCOVERY_MAX_SECONDS': '120',
+            'PROVIDER_DAY_DISCOVERY_TIMEOUT_SECONDS': '16',
+            'PROVIDER_DAY_DISCOVERY_CONCURRENCY': '5',
+            'PROVIDER_DAY_DISCOVERY_MIN_SCORE': '0.74',
+            'SPORTLOGIC_ENABLED': 'false',
+            'ENABLE_SPORTLOGIC': 'false',
+            'SPORTLOGIC_MAX_REQUESTS_PER_RUN': '0',
+        }
+    )
+    try:
+        from scripts import runbot_discovery_first_prepare
+        runbot_discovery_first_prepare.main()
+    except Exception as exc:
+        logging.getLogger(__name__).warning(
+            'discovery-first runbot preparation failed; continuing run-once: %s: %s',
+            type(exc).__name__,
+            exc,
+        )
+    finally:
+        os.environ.pop('RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING', None)
+
+
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
+        _prepare_discovery_first_inventory_for_run_once()
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
         return 0, summary
