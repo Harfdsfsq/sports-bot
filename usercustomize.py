@@ -223,10 +223,9 @@ except Exception:
     pass
 
 # The true final layer must be installed after every provider and runner wrapper.
-# It restores the 4-hour window priority, Bzzoiro v2 enrichment, SStats deep
-# endpoints and final 2+ odds / 2+ context / line-movement publication guard.
+# This finalizer resets wrapper markers and force-reinstalls windowed coverage.
 try:
-    from app.services import windowed_core_coverage_runtime_patch
-    windowed_core_coverage_runtime_patch.install()
+    from app.services import windowed_core_coverage_finalizer
+    windowed_core_coverage_finalizer.install()
 except Exception:
     pass
