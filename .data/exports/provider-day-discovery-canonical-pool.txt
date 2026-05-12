@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-12T21:06:58.827026+00:00
+UTC: 2026-05-12T21:20:50.516573+00:00
 target_date: 2026-05-13
-canonical_matches: 329
-2+ provider sources: 104
-2+ primary sources: 102
+canonical_matches: 322
+2+ provider sources: 100
+2+ primary sources: 95
 all 3 primary sources: 14
 
 ## Provider fixture discovery
@@ -12,20 +12,20 @@ all 3 primary sources: 14
 - football_data: commands=1 ok=1 rows=7 event_like=7 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=280 event_like=261 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=266 event_like=247 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 225, "2": 83, "3": 20, "4": 1}
-- primary providers: {"1": 227, "2": 88, "3": 14}
+- all providers: {"1": 222, "2": 81, "3": 19}
+- primary providers: {"1": 227, "2": 81, "3": 14}
 
 ## Top canonical matches
 - 2026-05-12T22:00:00+00:00 | Belgrano Cordoba — Union Santa Fe | providers=sstats ids={"sstats": "1544849"}
-- 2026-05-12T22:00:00+00:00 | Deportivo Tachira FC — Metropolitanos FC | providers=sstats ids={"sstats": "1543198"}
 - 2026-05-12T22:00:00+00:00 | Gualberto Villarroel SJ — Real Tomayapo | providers=sstats ids={"sstats": "1538374"}
+- 2026-05-12T22:00:00+00:00 | Deportivo Tachira FC — Metropolitanos FC | providers=sstats ids={"sstats": "1543198"}
+- 2026-05-12T22:30:00+00:00 | Nação — Tubarao | providers=sstats ids={"sstats": "1541958"}
 - 2026-05-12T22:30:00+00:00 | Londrina — São Bernardo | providers=sstats ids={"sstats": "1520676"}
 - 2026-05-12T22:30:00+00:00 | Internacional — Athletic Club | providers=sstats ids={"sstats": "1537014"}
-- 2026-05-12T22:30:00+00:00 | Nação — Tubarao | providers=sstats ids={"sstats": "1541958"}
 - 2026-05-12T23:00:00+00:00 | Baños Ciudad de Fuego — Delfin SC | providers=sstats ids={"sstats": "1542922"}
 - 2026-05-12T23:00:00+00:00 | Boston Legacy W — Orlando Pride W | providers=sstats ids={"sstats": "1508422"}
 - 2026-05-12T23:00:00+00:00 | Lehigh Valley United — West Chester United | providers=sstats ids={"sstats": "1524439"}
@@ -56,11 +56,15 @@ all 3 primary sources: 14
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Gualberto Villarroel SJ — Real Tomayapo | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Deportivo Tachira FC — Metropolitanos FC | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Gualberto Villarroel SJ — Real Tomayapo | primary=1 providers=sstats
+- Nação — Tubarao | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -69,10 +73,6 @@ all 3 primary sources: 14
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Internacional — Athletic Club | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Nação — Tubarao | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
