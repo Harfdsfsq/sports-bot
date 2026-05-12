@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-05-12T14:58:27.621835+00:00",
+  "created_at": "2026-05-12T15:14:30.552268+00:00",
   "enabled": true,
   "exports": {
     "ALLSPORTSAPI_ENABLED": "true",
@@ -16,20 +16,20 @@
     "API_FOOTBALL_PREDICTIONS_LIMIT": "0",
     "API_FOOTBALL_RATE_LIMIT_COOLDOWN_MINUTES": "240",
     "API_SPORTS_ENABLED": "false",
-    "BZZOIRO_CONTEXT_MATCH_LIMIT": "0",
-    "BZZOIRO_ENABLED": "false",
-    "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "0",
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "0",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "0",
+    "BZZOIRO_CONTEXT_MATCH_LIMIT": "20",
+    "BZZOIRO_ENABLED": "true",
+    "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "1",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "3",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "3",
     "BZZOIRO_PAGE_SIZE": "5",
-    "BZZOIRO_PER_RUN_MAX": "0",
-    "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "0",
+    "BZZOIRO_PER_RUN_MAX": "3",
+    "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "2",
     "BZZOIRO_TIMEOUT_SECONDS": "12",
     "CLUBELO_BASE_URL": "http://api.clubelo.com",
     "CLUBELO_ENABLED": "false",
     "CLUBELO_MAX_REQUESTS_PER_DAY": "0",
     "CLUBELO_MAX_REQUESTS_PER_RUN": "0",
-    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "330",
+    "CONTEXT_ENRICHMENT_MATCH_LIMIT": "378",
     "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
     "CURRENTS_ARTICLES_PER_MATCH": "2",
     "CURRENTS_MATCH_LIMIT": "80",
@@ -40,7 +40,7 @@
     "DIAGNOSTICS_MATCH_LIMIT": "380",
     "ENABLE_ALLSPORTSAPI": "true",
     "ENABLE_API_FOOTBALL": "false",
-    "ENABLE_BZZOIRO_CONTEXT": "false",
+    "ENABLE_BZZOIRO_CONTEXT": "true",
     "ENABLE_FOOTBALL_DATA_CONTEXT": "true",
     "ENABLE_FUTRIXMETRICS_CONTEXT": "true",
     "ENABLE_GNEWS_CONTEXT": "false",
@@ -103,10 +103,10 @@
     "NEWSAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
     "NEWSAPI_MAX_REQUESTS_PER_RUN": "0",
     "NEWSAPI_PER_RUN_MAX": "0",
-    "NEWSDATA_ENABLED": "false",
-    "NEWSDATA_MAX_HTTP_REQUESTS_PER_RUN": "0",
-    "NEWSDATA_MAX_REQUESTS_PER_RUN": "0",
-    "NEWSDATA_PER_RUN_MAX": "0",
+    "NEWSDATA_ENABLED": "true",
+    "NEWSDATA_MAX_HTTP_REQUESTS_PER_RUN": "10",
+    "NEWSDATA_MAX_REQUESTS_PER_RUN": "10",
+    "NEWSDATA_PER_RUN_MAX": "10",
     "NEWS_CONTEXT_CACHE_TTL_MINUTES": "240",
     "ODDSPAPI_ENABLED": "false",
     "ODDSPAPI_MATCH_LIMIT": "0",
@@ -139,8 +139,8 @@
     "OPEN_METEO_MAX_HTTP_REQUESTS_PER_RUN": "120",
     "OPEN_METEO_MAX_REQUESTS_PER_RUN": "120",
     "OPEN_METEO_PER_RUN_MAX": "120",
-    "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "31",
-    "PREMIUM_NEWS_SHORTLIST_LIMIT": "5",
+    "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "37",
+    "PREMIUM_NEWS_SHORTLIST_LIMIT": "7",
     "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
     "PROVIDER_FREE_QUOTA_POLICY_ENABLED": "true",
     "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "true",
@@ -207,14 +207,14 @@
       "reserve_tokens": 200,
       "role": "primary_odds",
       "skip_reason": null,
-      "tokens_after": 2408.739,
-      "tokens_before": 2608.739
+      "tokens_after": 2250.466,
+      "tokens_before": 2450.466
     },
     {
       "bucket_max": 300.0,
       "daily_budget": 120.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 3,
       "minute_spacing": 20,
       "per_run_max": 100,
       "provider": "bzzoiro",
@@ -222,9 +222,9 @@
       "recovered": false,
       "reserve_tokens": 100,
       "role": "prediction_context",
-      "skip_reason": "spacing_active:1.9m",
-      "tokens_after": 101.746,
-      "tokens_before": 101.746
+      "skip_reason": null,
+      "tokens_after": 100.084,
+      "tokens_before": 103.084
     },
     {
       "bucket_max": 300.0,
@@ -239,8 +239,8 @@
       "reserve_tokens": 100,
       "role": "form_xg_context",
       "skip_reason": null,
-      "tokens_after": 100.112,
-      "tokens_before": 100.112
+      "tokens_after": 100.915,
+      "tokens_before": 100.915
     },
     {
       "bucket_max": 78.0,
@@ -254,9 +254,9 @@
       "recovered": false,
       "reserve_tokens": 6,
       "role": "football_context",
-      "skip_reason": "spacing_active:26.9m",
-      "tokens_after": 66.015,
-      "tokens_before": 66.015
+      "skip_reason": "spacing_active:10.8m",
+      "tokens_after": 66.885,
+      "tokens_before": 66.885
     },
     {
       "bucket_max": 160.0,
@@ -271,8 +271,8 @@
       "reserve_tokens": 10,
       "role": "fixtures_context",
       "skip_reason": null,
-      "tokens_after": 96.955,
-      "tokens_before": 106.955
+      "tokens_after": 88.738,
+      "tokens_before": 98.738
     },
     {
       "bucket_max": 6.0,
@@ -286,9 +286,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "odds_fallback",
-      "skip_reason": "spacing_active:32.8m",
-      "tokens_after": 5.863,
-      "tokens_before": 5.863
+      "skip_reason": "spacing_active:16.8m",
+      "tokens_after": 5.93,
+      "tokens_before": 5.93
     },
     {
       "bucket_max": 360.0,
@@ -303,8 +303,8 @@
       "reserve_tokens": 24,
       "role": "player_team_ratings",
       "skip_reason": null,
-      "tokens_after": 170.562,
-      "tokens_before": 194.562
+      "tokens_after": 150.574,
+      "tokens_before": 174.574
     },
     {
       "bucket_max": 180.0,
@@ -319,8 +319,8 @@
       "reserve_tokens": 12,
       "role": "fixtures_standings_context",
       "skip_reason": null,
-      "tokens_after": 85.281,
-      "tokens_before": 97.281
+      "tokens_after": 75.287,
+      "tokens_before": 87.287
     },
     {
       "bucket_max": 240.0,
@@ -335,8 +335,8 @@
       "reserve_tokens": 18,
       "role": "mapping_context",
       "skip_reason": null,
-      "tokens_after": 63.375,
-      "tokens_before": 81.375
+      "tokens_after": 48.05,
+      "tokens_before": 66.05
     },
     {
       "bucket_max": 390.0,
@@ -351,8 +351,8 @@
       "reserve_tokens": 30,
       "role": "fixtures_odds_outcomes",
       "skip_reason": null,
-      "tokens_after": 114.109,
-      "tokens_before": 144.109
+      "tokens_after": 88.456,
+      "tokens_before": 118.456
     },
     {
       "bucket_max": 78.0,
@@ -366,9 +366,9 @@
       "recovered": false,
       "reserve_tokens": 6,
       "role": "live_scores_match_context",
-      "skip_reason": "spacing_active:26.9m",
-      "tokens_after": 66.015,
-      "tokens_before": 66.015
+      "skip_reason": "spacing_active:10.8m",
+      "tokens_after": 66.885,
+      "tokens_before": 66.885
     },
     {
       "bucket_max": 39.0,
@@ -382,9 +382,9 @@
       "recovered": false,
       "reserve_tokens": 2,
       "role": "odds_fallback",
-      "skip_reason": "spacing_active:101.9m",
-      "tokens_after": 37.491,
-      "tokens_before": 37.491
+      "skip_reason": "spacing_active:85.8m",
+      "tokens_after": 37.926,
+      "tokens_before": 37.926
     },
     {
       "bucket_max": 13.0,
@@ -398,9 +398,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "odds_fallback",
-      "skip_reason": "spacing_active:101.9m",
-      "tokens_after": 12.164,
-      "tokens_before": 12.164
+      "skip_reason": "spacing_active:85.8m",
+      "tokens_after": 12.309,
+      "tokens_before": 12.309
     },
     {
       "bucket_max": 3.0,
@@ -414,9 +414,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rapidapi_probe_fallback",
-      "skip_reason": "spacing_active:243.0m",
-      "tokens_after": 1.17,
-      "tokens_before": 1.17
+      "skip_reason": "spacing_active:227.0m",
+      "tokens_after": 1.192,
+      "tokens_before": 1.192
     },
     {
       "bucket_max": 1680.0,
@@ -431,8 +431,8 @@
       "reserve_tokens": 70,
       "role": "weather_forecast",
       "skip_reason": null,
-      "tokens_after": 1333.362,
-      "tokens_before": 1403.362
+      "tokens_after": 1283.791,
+      "tokens_before": 1353.791
     },
     {
       "bucket_max": 780.0,
@@ -447,8 +447,8 @@
       "reserve_tokens": 50,
       "role": "weather_fallback",
       "skip_reason": null,
-      "tokens_after": 410.154,
-      "tokens_before": 460.154
+      "tokens_after": 368.847,
+      "tokens_before": 418.847
     },
     {
       "bucket_max": 1800.0,
@@ -463,8 +463,8 @@
       "reserve_tokens": 120,
       "role": "weather_primary_or_fallback",
       "skip_reason": null,
-      "tokens_after": 848.811,
-      "tokens_before": 968.811
+      "tokens_after": 748.872,
+      "tokens_before": 868.872
     },
     {
       "bucket_max": 13.0,
@@ -478,9 +478,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "historical_weather_fallback",
-      "skip_reason": "spacing_active:101.9m",
-      "tokens_after": 12.164,
-      "tokens_before": 12.164
+      "skip_reason": "spacing_active:85.8m",
+      "tokens_after": 12.309,
+      "tokens_before": 12.309
     },
     {
       "bucket_max": 48.0,
@@ -494,9 +494,9 @@
       "recovered": false,
       "reserve_tokens": 2,
       "role": "news_context",
-      "skip_reason": "spacing_active:26.9m",
-      "tokens_after": 46.982,
-      "tokens_before": 46.982
+      "skip_reason": "spacing_active:10.8m",
+      "tokens_after": 47.852,
+      "tokens_before": 47.852
     },
     {
       "bucket_max": 48.0,
@@ -510,9 +510,9 @@
       "recovered": false,
       "reserve_tokens": 2,
       "role": "news_context",
-      "skip_reason": "spacing_active:26.9m",
-      "tokens_after": 46.982,
-      "tokens_before": 46.982
+      "skip_reason": "spacing_active:10.8m",
+      "tokens_after": 47.852,
+      "tokens_before": 47.852
     },
     {
       "bucket_max": 780.0,
@@ -527,14 +527,14 @@
       "reserve_tokens": 50,
       "role": "news_context",
       "skip_reason": null,
-      "tokens_after": 460.154,
-      "tokens_before": 510.154
+      "tokens_after": 418.847,
+      "tokens_before": 468.847
     },
     {
       "bucket_max": 156.0,
       "daily_budget": 156.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 10,
       "minute_spacing": 20,
       "per_run_max": 10,
       "provider": "newsdata",
@@ -542,9 +542,9 @@
       "recovered": false,
       "reserve_tokens": 10,
       "role": "news_context",
-      "skip_reason": "spacing_active:1.9m",
-      "tokens_after": 122.031,
-      "tokens_before": 122.031
+      "skip_reason": null,
+      "tokens_after": 113.769,
+      "tokens_before": 123.769
     },
     {
       "bucket_max": 390.0,
@@ -559,8 +559,8 @@
       "reserve_tokens": 25,
       "role": "news_context",
       "skip_reason": null,
-      "tokens_after": 205.077,
-      "tokens_before": 230.077
+      "tokens_after": 184.424,
+      "tokens_before": 209.424
     },
     {
       "bucket_max": 3.0,
@@ -574,9 +574,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rating_cache",
-      "skip_reason": "spacing_active:1083.1m",
-      "tokens_after": 1.767,
-      "tokens_before": 1.767
+      "skip_reason": "spacing_active:1067.0m",
+      "tokens_after": 1.778,
+      "tokens_before": 1.778
     },
     {
       "bucket_max": 3.0,
@@ -590,9 +590,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "historical_csv_cache",
-      "skip_reason": "spacing_active:1083.1m",
-      "tokens_after": 1.767,
-      "tokens_before": 1.767
+      "skip_reason": "spacing_active:1067.0m",
+      "tokens_after": 1.778,
+      "tokens_before": 1.778
     },
     {
       "bucket_max": 120.0,
@@ -607,11 +607,11 @@
       "reserve_tokens": 8,
       "role": "mapping_cache",
       "skip_reason": null,
-      "tokens_after": 57.187,
-      "tokens_before": 65.187
+      "tokens_after": 50.525,
+      "tokens_before": 58.525
     }
   ],
-  "providers_enabled_for_run": 12,
+  "providers_enabled_for_run": 14,
   "recovery_version": "pdf-free-limits-2026-05-05-v3",
   "source_document": "api_free_limits_ru.pdf / api_free_limits_ru.docx, checked 2026-05-05",
   "state_path": ".data/provider_quota_governor_state.json"
