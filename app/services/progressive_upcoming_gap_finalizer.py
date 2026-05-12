@@ -2,19 +2,21 @@ from __future__ import annotations
 
 """Upcoming-window finalizer for progressive coverage.
 
-The first v8 report proved that core coverage is tracked correctly, but the gap
-sample still surfaced already-started matches first because negative
-`hours_to_kickoff` sorts before upcoming rows. This finalizer keeps historical
-state intact but makes the operational plan focus on not-started matches only.
+This finalizer makes the operational gap plan focus on not-started matches. The
+first version filtered `core_gap_sample` after it had already been truncated to
+80 rows. Late-day runs could therefore suppress ~78 started rows and leave only
+2 upcoming gaps visible, even when many more upcoming gaps existed in the full
+state.
 
-It also lowers retry friction for the two core context providers, Bzzoiro and
-SStats, because current coverage shows core odds are much healthier than core
-context.
+This version rebuilds the upcoming gap sample from the full progressive state.
+Started matches remain in history/state, but they no longer consume the visible
+sample or provider priority.
 """
 
 import atexit
 import json
 import os
+from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -66,13 +68,6 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def _hours_to(row: dict[str, Any], now: datetime) -> float | None:
-    dt = _parse_dt(row.get("kickoff_utc"))
-    if dt is None:
-        return None
-    return (dt - now).total_seconds() / 3600.0
-
-
 def _as_int(value: Any) -> int:
     try:
         if value in (None, ""):
@@ -82,40 +77,119 @@ def _as_int(value: Any) -> int:
         return 0
 
 
-def _patch_plan_file() -> None:
+def _tokens(value: Any) -> set[str]:
+    tokens: set[str] = set()
+    if value in (None, ""):
+        return tokens
+    if isinstance(value, str):
+        tokens.update(x.strip().lower() for x in value.replace(";", ",").replace("|", ",").split(",") if x.strip())
+    elif isinstance(value, dict):
+        tokens.update(str(k).strip().lower() for k, v in value.items() if v not in (None, "", False, [], {}))
+    elif isinstance(value, (list, tuple, set)):
+        for item in value:
+            tokens |= _tokens(item)
+    return {t for t in tokens if t}
+
+
+def _rebuild_plan_from_state(p: Any) -> None:
     plan = _read_json(PLAN_PATH)
-    if not plan:
+    state = p._load_state()
+    matches = state.get("matches") if isinstance(state.get("matches"), dict) else {}
+    if not matches:
         return
+
     now = _now()
-    sample = plan.get("core_gap_sample") or plan.get("gap_sample") or []
-    if not isinstance(sample, list):
-        return
-    upcoming: list[dict[str, Any]] = []
-    started: list[dict[str, Any]] = []
-    for row in sample:
+    min_odds = max(1, _as_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_ODDS_SOURCES") or 2))
+    min_context = max(1, _as_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_CONTEXT_SOURCES") or 2))
+    counts = Counter()
+    upcoming_gaps: list[dict[str, Any]] = []
+    started_gap_rows = 0
+    all_gap_rows = 0
+
+    for key, row in matches.items():
         if not isinstance(row, dict):
             continue
-        hours = _hours_to(row, now)
-        if hours is not None:
-            row["hours_to_kickoff"] = round(hours, 2)
+        odds = _tokens(row.get("odds_sources"))
+        context = _tokens(row.get("context_sources"))
+        core_odds = odds & CORE_ODDS
+        core_context = context & CORE_CONTEXT
+        odds_count = len(core_odds)
+        context_count = len(core_context)
+        counts["matches_tracked"] += 1
+        counts["core_odds_1plus"] += int(odds_count >= 1)
+        counts["core_odds_2plus"] += int(odds_count >= min_odds)
+        counts["core_context_1plus"] += int(context_count >= 1)
+        counts["core_context_2plus"] += int(context_count >= min_context)
+        counts["core_ready_2plus_both"] += int(odds_count >= min_odds and context_count >= min_context)
+        counts["all_odds_1plus"] += int(len(odds) >= 1)
+        counts["all_odds_2plus"] += int(len(odds) >= min_odds)
+        counts["all_context_1plus"] += int(len(context) >= 1)
+        counts["all_context_2plus"] += int(len(context) >= min_context)
+        # Backward-compatible names intentionally mean core coverage.
+        counts["odds_1plus"] += int(odds_count >= 1)
+        counts["odds_2plus"] += int(odds_count >= min_odds)
+        counts["context_1plus"] += int(context_count >= 1)
+        counts["context_2plus"] += int(context_count >= min_context)
+        counts["ready_2plus_both"] += int(odds_count >= min_odds and context_count >= min_context)
+
+        kickoff = _parse_dt(row.get("kickoff_utc"))
+        hours = (kickoff - now).total_seconds() / 3600.0 if kickoff else None
+        if hours is not None and 0 <= hours <= 4:
+            counts["window_0_4h"] += 1
+            counts["window_0_4h_core_ready_2plus_both"] += int(odds_count >= min_odds and context_count >= min_context)
+            counts["window_0_4h_ready_2plus_both"] += int(odds_count >= min_odds and context_count >= min_context)
+        if hours is not None and 0 <= hours <= 12:
+            counts["window_0_12h"] += 1
+            counts["window_0_12h_core_ready_2plus_both"] += int(odds_count >= min_odds and context_count >= min_context)
+            counts["window_0_12h_ready_2plus_both"] += int(odds_count >= min_odds and context_count >= min_context)
+
+        odds_needed = max(0, min_odds - odds_count)
+        context_needed = max(0, min_context - context_count)
+        if odds_needed <= 0 and context_needed <= 0:
+            continue
+        all_gap_rows += 1
         if hours is not None and hours < 0:
-            started.append(row)
-        else:
-            upcoming.append(row)
-    upcoming.sort(key=lambda r: (
+            started_gap_rows += 1
+            continue
+        upcoming_gaps.append({
+            "match_key": key,
+            "home_team": row.get("home_team"),
+            "away_team": row.get("away_team"),
+            "kickoff_utc": row.get("kickoff_utc"),
+            "hours_to_kickoff": round(hours, 2) if hours is not None else None,
+            "core_odds_sources": sorted(core_odds),
+            "core_context_sources": sorted(core_context),
+            "supplemental_odds_sources": sorted(odds - core_odds),
+            "supplemental_context_sources": sorted(context - core_context),
+            "core_odds_needed": odds_needed,
+            "core_context_needed": context_needed,
+        })
+
+    upcoming_gaps.sort(key=lambda r: (
         r.get("hours_to_kickoff") is None,
         r.get("hours_to_kickoff") if r.get("hours_to_kickoff") is not None else 999999,
-        -_as_int(r.get("core_context_needed") or r.get("context_needed")),
-        -_as_int(r.get("core_odds_needed") or r.get("odds_needed")),
+        -_as_int(r.get("core_context_needed")),
+        -_as_int(r.get("core_odds_needed")),
     ))
-    plan["core_gap_sample"] = upcoming[:80]
-    plan["gap_sample"] = upcoming[:80]
+
+    plan.setdefault("contract", {
+        "core_context_providers": sorted(CORE_CONTEXT),
+        "core_odds_providers": sorted(CORE_ODDS),
+        "core_providers": sorted(CORE_CONTEXT | CORE_ODDS),
+    })
+    plan["counts"] = dict(counts)
+    plan["core_gap_sample"] = upcoming_gaps[:80]
+    plan["gap_sample"] = upcoming_gaps[:80]
+    plan["created_at_utc"] = now.isoformat()
+    plan["enabled"] = True
     plan.setdefault("diagnostics", {})
     plan["diagnostics"].update({
-        "upcoming_gap_finalizer": "applied",
-        "started_gap_rows_suppressed_from_sample": len(started),
-        "upcoming_gap_rows_in_sample": len(upcoming[:80]),
-        "reason": "started matches remain in state/history but are not operational targets",
+        "upcoming_gap_finalizer": "applied_full_state_rebuild",
+        "all_gap_rows_before_started_filter": all_gap_rows,
+        "started_gap_rows_suppressed_from_sample": started_gap_rows,
+        "upcoming_gap_rows_total": len(upcoming_gaps),
+        "upcoming_gap_rows_in_sample": len(upcoming_gaps[:80]),
+        "reason": "started matches remain in state/history but are not operational targets; sample rebuilt from full state",
     })
     _write_json(PLAN_PATH, plan)
 
@@ -129,7 +203,6 @@ def install() -> dict[str, Any]:
         _write_json(REPORT_PATH, payload)
         return payload
 
-    old_window_score = getattr(p, "_window_score", None)
     old_stale_bonus = getattr(p, "_stale_bonus", None)
     old_write_plan = getattr(p, "_write_plan_report", None)
 
@@ -138,7 +211,6 @@ def install() -> dict[str, Any]:
         if kickoff is None:
             return (0, 999999.0)
         hours = (kickoff - now).total_seconds() / 3600.0
-        # Already-started matches should never outrank upcoming coverage gaps.
         if hours < 0:
             return (-500, abs(hours))
         window_hours = max(1, p._to_int(os.getenv("CORE_COVERAGE_WINDOW_HOURS") or 4, 4))
@@ -161,8 +233,6 @@ def install() -> dict[str, Any]:
         gap = row.get("coverage_gap") if isinstance(row.get("coverage_gap"), dict) else {}
         context_needed = _as_int(gap.get("core_context_needed") or gap.get("context_needed"))
         odds_needed = _as_int(gap.get("core_odds_needed") or gap.get("odds_needed"))
-        # Bzzoiro is both core odds and core context; when any core gap remains,
-        # make it retry sooner in the near window.
         if provider_l == "bzzoiro" and (context_needed > 0 or odds_needed > 0):
             return max(base, 18.0)
         if provider_l == "sstats" and context_needed > 0:
@@ -172,17 +242,18 @@ def install() -> dict[str, Any]:
     def write_plan_report_upcoming() -> None:
         if callable(old_write_plan):
             old_write_plan()
-        _patch_plan_file()
+        _rebuild_plan_from_state(p)
 
     p._window_score = window_score_upcoming_only
     p._stale_bonus = stale_bonus_core_context
     p._write_plan_report = write_plan_report_upcoming
-    atexit.register(_patch_plan_file)
-    _patch_plan_file()
+    atexit.register(lambda: _rebuild_plan_from_state(p))
+    _rebuild_plan_from_state(p)
     payload.update({
         "status": "installed",
         "started_matches_deprioritized": True,
         "gap_sample_upcoming_only": True,
+        "gap_sample_rebuilt_from_full_state": True,
         "bzzoiro_core_gap_retry_boost": True,
         "sstats_context_gap_retry_boost": True,
     })
