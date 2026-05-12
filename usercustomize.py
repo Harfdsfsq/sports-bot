@@ -248,11 +248,18 @@ try:
 except Exception:
     pass
 
-# Final contract for progressive coverage: the primary sources are
-# odds_api_io + bzzoiro for lines and sstats + bzzoiro for context. Supplemental
-# providers can help but do not satisfy the core 2+ target by themselves.
+# Final contract for progressive coverage: core line/odds sources are
+# odds_api_io + bzzoiro + sstats; core context sources are sstats + bzzoiro.
 try:
     from app.services import progressive_core_sources_finalizer
     progressive_core_sources_finalizer.install()
+except Exception:
+    pass
+
+# Last compatibility layer: progressive coverage must not break bootstrap
+# _fetch_provider calls that do not pass an explicit match list.
+try:
+    from app.services import progressive_fetch_provider_signature_finalizer
+    progressive_fetch_provider_signature_finalizer.install()
 except Exception:
     pass
