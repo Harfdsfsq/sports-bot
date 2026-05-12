@@ -4,12 +4,12 @@ from __future__ import annotations
 
 The betting bot has three primary APIs:
 - odds_api_io: primary live odds/current lines;
-- bzzoiro: secondary live odds + context;
-- sstats: primary statistical/team context.
+- bzzoiro: secondary odds + context;
+- sstats: statistical context and core historical/model line signal.
 
 Supplemental providers may still be queried, but they must not hide gaps in the
 primary coverage plan. A match is considered core-ready only when it has:
-- 2+ core line sources from {odds_api_io, bzzoiro};
+- 2+ core line/odds sources from {odds_api_io, bzzoiro, sstats};
 - 2+ core context sources from {sstats, bzzoiro}.
 """
 
@@ -19,7 +19,7 @@ import os
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[2]
@@ -28,7 +28,7 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = EXPORT_DIR / "latest-progressive-core-sources-finalizer.json"
 
 CORE_PROVIDERS = {"odds_api_io", "sstats", "bzzoiro"}
-CORE_ODDS_PROVIDERS = {"odds_api_io", "bzzoiro"}
+CORE_ODDS_PROVIDERS = {"odds_api_io", "sstats", "bzzoiro"}
 CORE_CONTEXT_PROVIDERS = {"sstats", "bzzoiro"}
 SUPPLEMENTAL_ODDS_PROVIDERS = {"sportlogic", "allsportsapi", "oddspapi", "bookies_api"}
 SUPPLEMENTAL_CONTEXT_PROVIDERS = {"api_football", "espn", "thesportsdb", "football_data", "openligadb", "futrixmetrics", "openfootball", "newsapi", "gnews", "sportlogic", "weather", "self_history"}
@@ -68,6 +68,33 @@ def _install_patch() -> dict[str, Any]:
     def all_tokens(row: dict[str, Any], field: str) -> set[str]:
         return set(p._provider_tokens(row.get(field)))
 
+    def sources_from_inventory_match_core(match: Any) -> tuple[set[str], set[str]]:
+        meta = p._match_meta(match)
+        source_ids = meta.get("provider_source_ids") if isinstance(meta.get("provider_source_ids"), dict) else {}
+        sources_seen = p._provider_tokens(meta.get("sources_seen")) | p._provider_tokens(source_ids)
+        if isinstance(match, dict):
+            sources_seen |= p._provider_tokens(match.get("sources_seen")) | p._provider_tokens(match.get("source_ids"))
+            coverage = match.get("coverage") if isinstance(match.get("coverage"), dict) else {}
+        else:
+            sources_seen.add(str(getattr(match, "source", "") or "").strip().lower())
+            coverage = {}
+        odds_sources: set[str] = set()
+        context_sources: set[str] = set()
+        # User contract: odds_api_io + bzzoiro + sstats are all primary line/odds
+        # sources. SStats may arrive through context/list endpoints, but its
+        # matched source id still counts as a core line/model signal source.
+        odds_sources |= sources_seen & CORE_ODDS_PROVIDERS
+        if coverage.get("odds"):
+            odds_sources.add("odds_api_io")
+        context_sources |= sources_seen & CORE_CONTEXT_PROVIDERS
+        if meta.get("bzzoiro_has_context_hint"):
+            context_sources.add("bzzoiro")
+            odds_sources.add("bzzoiro")
+        if meta.get("sstats_has_context_hint"):
+            context_sources.add("sstats")
+            odds_sources.add("sstats")
+        return odds_sources, context_sources
+
     def coverage_counts_core(row: dict[str, Any]) -> tuple[int, int]:
         return len(core_tokens(row, "odds_sources", CORE_ODDS_PROVIDERS)), len(core_tokens(row, "context_sources", CORE_CONTEXT_PROVIDERS))
 
@@ -106,8 +133,10 @@ def _install_patch() -> dict[str, Any]:
                 score -= 40
             if provider == "odds_api_io" and "odds_api_io" not in core_odds:
                 score += 40
-            if provider == "bzzoiro" and odds_count == 1 and "bzzoiro" not in core_odds:
+            if provider == "bzzoiro" and "bzzoiro" not in core_odds:
                 score += 65
+            if provider == "sstats" and "sstats" not in core_odds:
+                score += 45
         elif method_name == "fetch_context":
             deficit = max(0, min_context - context_count)
             score += deficit * 105
@@ -125,9 +154,13 @@ def _install_patch() -> dict[str, Any]:
                     score += 6
             else:
                 score -= 35
+            # Context calls from SStats/Bzzoiro also satisfy core odds-source
+            # coverage by contract, so prioritize them when core odds are thin.
+            if provider in CORE_ODDS_PROVIDERS and provider not in core_odds:
+                score += 45
             if provider == "sstats" and "sstats" not in core_context:
                 score += 45
-            if provider == "bzzoiro" and context_count == 1 and "bzzoiro" not in core_context:
+            if provider == "bzzoiro" and ("bzzoiro" not in core_context or "bzzoiro" not in core_odds):
                 score += 65
 
         score += p._stale_bonus(row, provider, now)
@@ -148,9 +181,98 @@ def _install_patch() -> dict[str, Any]:
             "context_sources": context_count,
             "odds_needed": max(0, min_odds - odds_count),
             "context_needed": max(0, min_context - context_count),
-            "core_contract": "odds_api_io+bzzoiro lines; sstats+bzzoiro context",
+            "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
         }
         return score
+
+    def iter_map_keys(data: Any) -> Iterable[tuple[str, Any]]:
+        if isinstance(data, dict):
+            for key, value in data.items():
+                yield str(key), value
+
+    def value_has_data(value: Any) -> bool:
+        if value in (None, "", [], {}):
+            return False
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value) > 0
+        return True
+
+    def record_provider_success_core(data: Any, provider: str, method_name: str, stats: Any | None = None) -> None:
+        provider = str(provider or "unknown").lower()
+        method_name = str(method_name or "").lower()
+        if method_name not in {"fetch_offers", "fetch_context"}:
+            return
+        state = p._load_state()
+        now = _now().isoformat()
+        successes = 0
+        for key, value in iter_map_keys(data):
+            if not key or not value_has_data(value):
+                continue
+            row = state.setdefault("matches", {}).setdefault(key, {"match_key": key})
+            odds_sources = set(p._provider_tokens(row.get("odds_sources")))
+            context_sources = set(p._provider_tokens(row.get("context_sources")))
+            if method_name == "fetch_offers":
+                if provider in CORE_ODDS_PROVIDERS or provider in SUPPLEMENTAL_ODDS_PROVIDERS:
+                    odds_sources.add(provider)
+                if isinstance(value, list):
+                    for item in value[:200]:
+                        src = getattr(item, "source", None) if not isinstance(item, dict) else item.get("source")
+                        if src:
+                            odds_sources.add(str(src).strip().lower())
+            elif method_name == "fetch_context":
+                if provider in CORE_CONTEXT_PROVIDERS or provider in SUPPLEMENTAL_CONTEXT_PROVIDERS:
+                    context_sources.add(provider)
+                # User contract: successful SStats/Bzzoiro context coverage also
+                # counts as a core line/odds source for coverage planning.
+                if provider in CORE_ODDS_PROVIDERS:
+                    odds_sources.add(provider)
+                if isinstance(value, list):
+                    for item in value[:50]:
+                        src = getattr(item, "source", None) if not isinstance(item, dict) else item.get("source")
+                        if src:
+                            src_l = str(src).strip().lower()
+                            if src_l in CORE_CONTEXT_PROVIDERS or src_l in SUPPLEMENTAL_CONTEXT_PROVIDERS:
+                                context_sources.add(src_l)
+                            if src_l in CORE_ODDS_PROVIDERS or src_l in SUPPLEMENTAL_ODDS_PROVIDERS:
+                                odds_sources.add(src_l)
+                else:
+                    src = getattr(value, "source", None) if not isinstance(value, dict) else value.get("source")
+                    if src:
+                        src_l = str(src).strip().lower()
+                        if src_l in CORE_CONTEXT_PROVIDERS or src_l in SUPPLEMENTAL_CONTEXT_PROVIDERS:
+                            context_sources.add(src_l)
+                        if src_l in CORE_ODDS_PROVIDERS or src_l in SUPPLEMENTAL_ODDS_PROVIDERS:
+                            odds_sources.add(src_l)
+            row["odds_sources"] = sorted(odds_sources)
+            row["context_sources"] = sorted(context_sources)
+            row.setdefault("last_success_utc_by_provider", {})[provider] = now
+            row["last_success_method"] = method_name
+            odds_count, context_count = coverage_counts_core(row)
+            row["coverage_gap"] = {
+                "core_odds_sources": odds_count,
+                "core_context_sources": context_count,
+                "all_odds_sources": len(odds_sources),
+                "all_context_sources": len(context_sources),
+                "core_odds_needed": max(0, _to_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_ODDS_SOURCES") or 2, 2) - odds_count),
+                "core_context_needed": max(0, _to_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_CONTEXT_SOURCES") or 2, 2) - context_count),
+                "odds_sources": odds_count,
+                "context_sources": context_count,
+                "odds_needed": max(0, _to_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_ODDS_SOURCES") or 2, 2) - odds_count),
+                "context_needed": max(0, _to_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_CONTEXT_SOURCES") or 2, 2) - context_count),
+                "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
+            }
+            successes += 1
+        state.setdefault("runs", []).append({
+            "created_at_utc": now,
+            "provider": provider,
+            "method": method_name,
+            "matches_with_data": successes,
+            "stats": {k: v for k, v in dict(stats or {}).items() if k not in {"last_body_preview"}} if isinstance(stats, dict) else {},
+            "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
+        })
+        state["runs"] = state.get("runs", [])[-120:]
+        p._save_state(state)
+        write_plan_report_core()
 
     def write_plan_report_core() -> None:
         state = p._load_state()
@@ -269,7 +391,7 @@ def _install_patch() -> dict[str, Any]:
                     "all_context_sources_count": len(all_context),
                     "ready_for_model": len(core_odds) >= 1 and len(core_context) >= 1,
                     "ready_for_publish_coverage": len(core_odds) >= 2 and len(core_context) >= 2,
-                    "core_contract": "odds_api_io+bzzoiro lines; sstats+bzzoiro context",
+                    "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
                 })
                 row["coverage"] = coverage
                 row["progressive_coverage"] = {
@@ -288,8 +410,10 @@ def _install_patch() -> dict[str, Any]:
                 payload["progressive_coverage_updated_at_utc"] = _now().isoformat()
                 p._write_json(path, payload)
 
+    p._sources_from_inventory_match = sources_from_inventory_match_core
     p._coverage_counts = coverage_counts_core
     p._priority_for = priority_for_core
+    p._record_provider_success = record_provider_success_core
     p._write_plan_report = write_plan_report_core
     p._sync_inventory_rows_from_state = sync_inventory_rows_core
     atexit.register(sync_inventory_rows_core)
