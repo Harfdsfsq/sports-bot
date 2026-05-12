@@ -118,6 +118,34 @@ def _apply_api_max_runtime_overrides() -> None:
         pass
 
 
+def _install_prediction_candidate_runtime_patches(stage: str = 'cli') -> None:
+    """Re-apply candidate filters after discovery/bootstrap wrappers.
+
+    sitecustomize/usercustomize install these early, but runbot discovery can import
+    modules that wrap CandidateFactory again before PredictionRunner is created.
+    This call is intentionally placed immediately before PredictionRunner(...).
+    """
+    try:
+        from app.services import candidate_value_final_reinstall
+        result = candidate_value_final_reinstall.install()
+        try:
+            export_dir = Path('.data/exports')
+            export_dir.mkdir(parents=True, exist_ok=True)
+            (export_dir / 'latest-cli-final-candidate-value-install.json').write_text(
+                json.dumps({'stage': stage, 'result': result}, ensure_ascii=False, indent=2) + '\n',
+                encoding='utf-8',
+            )
+        except Exception:
+            pass
+    except Exception as exc:
+        logging.getLogger(__name__).warning(
+            'candidate value final install failed at %s; continuing: %s: %s',
+            stage,
+            type(exc).__name__,
+            exc,
+        )
+
+
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
     value = getattr(settings, attr_name, None)
     if str(value or '').strip():
@@ -218,6 +246,7 @@ def _prepare_discovery_first_inventory_for_run_once() -> None:
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
         await asyncio.to_thread(_prepare_discovery_first_inventory_for_run_once)
+        _install_prediction_candidate_runtime_patches(stage='after_discovery_before_runner')
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
         return 0, summary
