@@ -122,9 +122,11 @@ def _install_runtime_guards() -> None:
     _safe_install("telegram safety", lambda: __import__("telegram_controlled_pick_safety").install())
     _safe_install("rapidapi schema", lambda: __import__("app.providers.rapidapi_odds_bridge_schema_patch", fromlist=["install"]).install())
     _safe_install("odds secondary", lambda: __import__("app.providers.odds_api_io_secondary_rescue_patch", fromlist=["install"]).install())
-    # Important order: signal_stack creates Bzzoiro offer hints; rekey must wrap on top of it.
+    # Important order: signal_stack creates Bzzoiro offer hints; rekey wraps on top of it;
+    # windowed coverage is last so it is the final publication gate.
     _safe_install("signal stack", lambda: __import__("app.services.signal_stack_runtime_patch", fromlist=["install"]).install())
     _safe_install("bzzoiro odds rekey", lambda: __import__("app.services.bzzoiro_odds_rekey_runtime_patch", fromlist=["install"]).install())
+    _safe_install("windowed core coverage", lambda: __import__("app.services.windowed_core_coverage_runtime_patch", fromlist=["install"]).install())
 
 
 try:
