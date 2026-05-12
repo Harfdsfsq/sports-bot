@@ -57,6 +57,8 @@ def _apply_common_prediction_contract() -> None:
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "true",
+        "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EV_PCT": "0.0",
+        "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EDGE_PP": "0.0",
         "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "2",
         "TELEGRAM_MAIN_PICK_MIN_EDGE_PP": "3.0",
         "TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE": "true",
@@ -128,11 +130,9 @@ def _install_runtime_guards() -> None:
     # run report is sent by send_harizon_telegram_run_report_v5/v6.
     _safe_install("telegram no-pick suppressor", lambda: __import__("telegram_no_pick_summary_suppressor").install())
     _safe_install("telegram safety", lambda: __import__("telegram_controlled_pick_safety").install())
+    _safe_install("fallback value filter", lambda: __import__("app.services.controlled_fallback_value_filter_runtime", fromlist=["install"]).install())
     _safe_install("rapidapi schema", lambda: __import__("app.providers.rapidapi_odds_bridge_schema_patch", fromlist=["install"]).install())
     _safe_install("odds secondary", lambda: __import__("app.providers.odds_api_io_secondary_rescue_patch", fromlist=["install"]).install())
-    # Install value-first candidate filtering before windowed wrappers. This
-    # prevents negative calibrated-EV candidates from dominating the pre-quality
-    # slice and controlled fallback.
     _safe_install("candidate value", lambda: __import__("app.services.candidate_value_runtime_patch", fromlist=["install"]).install())
     # Important order: signal_stack creates Bzzoiro offer hints; rekey wraps on top of it;
     # windowed coverage is last so it is the final publication gate.
