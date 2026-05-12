@@ -119,31 +119,29 @@ def _apply_api_max_runtime_overrides() -> None:
 
 
 def _install_prediction_candidate_runtime_patches(stage: str = 'cli') -> None:
-    """Re-apply candidate filters after discovery/bootstrap wrappers.
-
-    sitecustomize/usercustomize install these early, but runbot discovery can import
-    modules that wrap CandidateFactory again before PredictionRunner is created.
-    This call is intentionally placed immediately before PredictionRunner(...).
-    """
+    """Re-apply runtime patches after discovery/bootstrap wrappers."""
+    results: dict[str, Any] = {}
+    try:
+        from app.services import sstats_bzzoiro_odds_merge_patch
+        results['sstats_bzzoiro_odds_merge'] = sstats_bzzoiro_odds_merge_patch.install()
+    except Exception as exc:
+        results['sstats_bzzoiro_odds_merge'] = f'{type(exc).__name__}: {exc}'
+        logging.getLogger(__name__).warning('odds merge install failed at %s: %s: %s', stage, type(exc).__name__, exc)
     try:
         from app.services import candidate_value_final_reinstall
-        result = candidate_value_final_reinstall.install()
-        try:
-            export_dir = Path('.data/exports')
-            export_dir.mkdir(parents=True, exist_ok=True)
-            (export_dir / 'latest-cli-final-candidate-value-install.json').write_text(
-                json.dumps({'stage': stage, 'result': result}, ensure_ascii=False, indent=2) + '\n',
-                encoding='utf-8',
-            )
-        except Exception:
-            pass
+        results['candidate_value_final_reinstall'] = candidate_value_final_reinstall.install()
     except Exception as exc:
-        logging.getLogger(__name__).warning(
-            'candidate value final install failed at %s; continuing: %s: %s',
-            stage,
-            type(exc).__name__,
-            exc,
+        results['candidate_value_final_reinstall'] = f'{type(exc).__name__}: {exc}'
+        logging.getLogger(__name__).warning('candidate value final install failed at %s: %s: %s', stage, type(exc).__name__, exc)
+    try:
+        export_dir = Path('.data/exports')
+        export_dir.mkdir(parents=True, exist_ok=True)
+        (export_dir / 'latest-cli-final-runtime-install.json').write_text(
+            json.dumps({'stage': stage, 'results': results}, ensure_ascii=False, indent=2) + '\n',
+            encoding='utf-8',
         )
+    except Exception:
+        pass
 
 
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
@@ -187,12 +185,6 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
 
 
 def _prepare_discovery_first_inventory_for_run_once() -> None:
-    """Prepare canonical primary-provider inventory before the model run.
-
-    This function is intentionally synchronous and may call scripts that use
-    asyncio.run(). It must therefore be executed before the event loop starts or
-    from a worker thread. `_dispatch_async` uses `asyncio.to_thread` for this.
-    """
     if not _parse_bool(os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED', 'true')):
         return
     if os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING') == '1':
@@ -219,7 +211,7 @@ def _prepare_discovery_first_inventory_for_run_once() -> None:
             'SSTATS_DEEP_ENRICHMENT_ENABLED': 'true',
             'SSTATS_DEEP_DETAIL_LIMIT_PER_RUN': '80',
             'SSTATS_GAME_DETAIL_LIMIT_PER_RUN': '8',
-            'SSTATS_ODDS_RESCUE_LIMIT_PER_RUN': '20',
+            'SSTATS_ODDS_RESCUE_LIMIT_PER_RUN': '120',
             'SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT': '2',
             'PROVIDER_DAY_DISCOVERY_MAX_SECONDS': '120',
             'PROVIDER_DAY_DISCOVERY_TIMEOUT_SECONDS': '16',
@@ -269,9 +261,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
         return 0, result
     if command == 'history-guard-audit':
         history_root = [str(path) for path in resolve_run_history_roots(settings)]
-        result = HistoryGuardAuditService(
-            _reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')
-        ).build(history_root=history_root)
+        result = HistoryGuardAuditService(_reporting_path(settings, 'history_guard_audit_path', 'history-guard-audit.json')).build(history_root=history_root)
         return 0, result
     return 1, None
 
@@ -292,7 +282,7 @@ async def _main(argv: Sequence[str] | None = None) -> int:
         print(json.dumps(payload, ensure_ascii=False, indent=2))
         return exit_code
 
-    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset | history-guard-audit')
+    print('Usage: python -m app.cli run-once | coverage-audit | reporting-sqlite | training-dataset')
     return 1
 
 
