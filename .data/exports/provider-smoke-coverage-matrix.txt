@@ -3,7 +3,7 @@
 - status: **ok**
 - target_date: 2026-05-12
 - inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-12.json`
-- inventory_matches_total: 325
+- inventory_matches_total: 329
 - matrix_matches: 300/300
 - full target reached: True
 - min odds/context sources: 2/2
@@ -12,17 +12,17 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 78 | 74 | 77 | 31 | 58 | 38 | 45 | 0 | 57 | 23 |
-| 2_6h | 71 | 62 | 70 | 41 | 62 | 51 | 56 | 0 | 61 | 38 |
-| 6_12h | 8 | 8 | 6 | 3 | 6 | 6 | 6 | 0 | 4 | 3 |
-| 12_24h | 19 | 19 | 16 | 16 | 19 | 16 | 19 | 0 | 16 | 16 |
-| 24h_plus | 33 | 33 | 12 | 12 | 33 | 33 | 33 | 0 | 12 | 12 |
-| started | 91 | 65 | 73 | 46 | 73 | 59 | 67 | 0 | 55 | 39 |
+| 0_2h | 79 | 74 | 78 | 32 | 58 | 40 | 46 | 0 | 57 | 25 |
+| 2_6h | 64 | 56 | 63 | 35 | 56 | 45 | 50 | 0 | 55 | 32 |
+| 6_12h | 11 | 11 | 10 | 6 | 9 | 9 | 9 | 0 | 8 | 6 |
+| 12_24h | 22 | 22 | 19 | 19 | 22 | 19 | 22 | 0 | 19 | 19 |
+| 24h_plus | 30 | 30 | 9 | 9 | 30 | 30 | 30 | 0 | 9 | 9 |
+| started | 94 | 71 | 76 | 47 | 75 | 60 | 68 | 0 | 57 | 40 |
 
 ## Totals
 
-- fixture_2plus_sources: 261/300
-- odds_2plus_sources: 149/300
+- fixture_2plus_sources: 264/300
+- odds_2plus_sources: 148/300
 - context_2plus_sources: 203/300
 - ready_for_model: 205/300
 - ready_for_publish: 131/300
@@ -37,8 +37,6 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-05-12T15:30:00+00:00 | Sogndal FK — SK Brann | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-12T15:30:00+00:00 | Sogndal FK — SK Brann | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T16:00:00+00:00 | FC Osa — Sol FC | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T16:00:00+00:00 | Black Bulls FC — Costa Do Sol | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T16:00:00+00:00 | Alta — Roea | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
@@ -67,12 +65,14 @@
 - 0_2h | 2026-05-12T16:00:00+00:00 | FC Elva — Paide Linnameeskond | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T16:00:00+00:00 | Sarpsborg 08 FF — Hoenefoss BK | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T16:00:00+00:00 | Viking FK — Haugesund | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T16:00:00+00:00 | GFS Panetolikos — AEL Novibet | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather
+- 0_2h | 2026-05-12T16:30:00+00:00 | Salon Palloilijat 2 — IFK Mariehamn Akademi | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=215 / checked=300 | rate=71.67% | SStats events=1086
-- potential_add: context_deep=215 xg_or_rating=215 form=215 odds_rescue=26
-- projected_upper_bound: context_2plus=300 xg=231 form=223 odds_2plus=175
+- crosswalk: matched=214 / checked=300 | rate=71.33% | SStats events=1090
+- potential_add: context_deep=214 xg_or_rating=214 form=214 odds_rescue=21
+- projected_upper_bound: context_2plus=300 xg=228 form=220 odds_2plus=169
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
