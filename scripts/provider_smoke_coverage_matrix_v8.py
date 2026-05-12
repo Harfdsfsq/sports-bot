@@ -1,0 +1,54 @@
+from __future__ import annotations
+
+"""Coverage matrix v8.
+
+Discovery-first final diagnostic order:
+1. Prebuild SStats crosswalk for cached SStats discovery.
+2. Merge full provider-day canonical pool into inventory.
+3. Rebuild SStats crosswalk on the merged 300-match inventory.
+4. Apply full SStats IDs into inventory rows.
+5. Run SStats actual deep enrichment.
+6. Build source-aware coverage matrix.
+"""
+
+import asyncio
+
+from scripts import apply_provider_day_discovery_to_inventory
+from scripts import apply_sstats_crosswalk_to_inventory
+from scripts import apply_sstats_deep_inventory_enrichment_v4
+from scripts import provider_smoke_coverage_matrix as base
+from scripts import provider_smoke_coverage_matrix_v3
+from scripts.provider_smoke_coverage_matrix_v5 import _ORIG_SOURCE_COUNT, _patched_source_count
+from scripts import sstats_crosswalk_probe_v2
+
+
+def main() -> int:
+    try:
+        asyncio.run(sstats_crosswalk_probe_v2.run())
+    except Exception as exc:
+        print(f"SStats pre-merge crosswalk v2 failed; continuing discovery merge: {type(exc).__name__}: {exc}")
+    try:
+        asyncio.run(apply_provider_day_discovery_to_inventory.run())
+    except Exception as exc:
+        print(f"Provider day discovery inventory merge failed; continuing: {type(exc).__name__}: {exc}")
+    try:
+        asyncio.run(sstats_crosswalk_probe_v2.run())
+    except Exception as exc:
+        print(f"SStats post-merge crosswalk v2 failed; continuing apply/enrichment: {type(exc).__name__}: {exc}")
+    try:
+        asyncio.run(apply_sstats_crosswalk_to_inventory.run())
+    except Exception as exc:
+        print(f"SStats crosswalk inventory apply failed; continuing enrichment: {type(exc).__name__}: {exc}")
+    try:
+        asyncio.run(apply_sstats_deep_inventory_enrichment_v4.run())
+    except Exception as exc:
+        print(f"SStats actual enrichment v4 failed; continuing matrix: {type(exc).__name__}: {exc}")
+    base._source_count = _patched_source_count
+    try:
+        return provider_smoke_coverage_matrix_v3.main()
+    finally:
+        base._source_count = _ORIG_SOURCE_COUNT
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
