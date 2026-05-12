@@ -247,3 +247,12 @@ try:
     progressive_coverage_runtime_patch.install()
 except Exception:
     pass
+
+# Final contract for progressive coverage: the primary sources are
+# odds_api_io + bzzoiro for lines and sstats + bzzoiro for context. Supplemental
+# providers can help but do not satisfy the core 2+ target by themselves.
+try:
+    from app.services import progressive_core_sources_finalizer
+    progressive_core_sources_finalizer.install()
+except Exception:
+    pass
