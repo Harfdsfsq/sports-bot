@@ -6,12 +6,16 @@ The factual run report is now sent by `send_harizon_telegram_run_report_v5.py`.
 `publish_controlled_fallback.py` may still send an older generic no-pick message
 before v5. This patch intercepts only those no-pick sendMessage calls and leaves
 actual pick messages untouched.
+
+This module is imported first from root sitecustomize, so it also installs the
+core source coverage runtime patch before the runner imports providers.
 """
 
 from urllib import parse
 from urllib import request as urllib_request
 
 _INSTALLED = False
+_CORE_PATCH_INSTALLED = False
 _ORIGINAL_URLOPEN = urllib_request.urlopen
 
 
@@ -71,10 +75,28 @@ def _urlopen(req, *args, **kwargs):
     return _ORIGINAL_URLOPEN(req, *args, **kwargs)
 
 
+def _install_core_source_coverage() -> dict[str, object]:
+    global _CORE_PATCH_INSTALLED
+    if _CORE_PATCH_INSTALLED:
+        return {"status": "already_installed"}
+    try:
+        from app.services.core_source_coverage_runtime_patch import install as install_core_patch
+        install_core_patch()
+        _CORE_PATCH_INSTALLED = True
+        return {"status": "installed"}
+    except Exception as exc:
+        return {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
+
+
 def install() -> dict[str, object]:
     global _INSTALLED
+    core_status = _install_core_source_coverage()
     if _INSTALLED:
-        return {"status": "already_installed"}
+        return {"status": "already_installed", "core_source_coverage": core_status}
     urllib_request.urlopen = _urlopen
     _INSTALLED = True
-    return {"status": "installed", "suppresses": "legacy_no_pick_summary_only"}
+    return {
+        "status": "installed",
+        "suppresses": "legacy_no_pick_summary_only",
+        "core_source_coverage": core_status,
+    }
