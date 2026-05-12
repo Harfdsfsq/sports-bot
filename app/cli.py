@@ -161,11 +161,9 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
 def _prepare_discovery_first_inventory_for_run_once() -> None:
     """Prepare canonical primary-provider inventory before the model run.
 
-    The old run-bot workflow reached `run-once` with an odds-first inventory and
-    then tried to fuzzy-match context later. This fail-soft runtime hook applies
-    the discovery-first stack directly before PredictionRunner starts:
-    odds-api.io/Bzzoiro/SStats daily discovery, canonical merge, post-merge
-    SStats crosswalk, SStats deep enrichment and source-aware coverage artifact.
+    This function is intentionally synchronous and may call scripts that use
+    asyncio.run(). It must therefore be executed before the event loop starts or
+    from a worker thread. `_dispatch_async` uses `asyncio.to_thread` for this.
     """
     if not _parse_bool(os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED', 'true')):
         return
@@ -219,7 +217,7 @@ def _prepare_discovery_first_inventory_for_run_once() -> None:
 
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
-        _prepare_discovery_first_inventory_for_run_once()
+        await asyncio.to_thread(_prepare_discovery_first_inventory_for_run_once)
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
         return 0, summary
