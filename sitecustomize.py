@@ -119,6 +119,10 @@ def _safe_install(label: str, installer) -> None:
 
 
 def _install_runtime_guards() -> None:
+    # Must be first: suppresses only the legacy no-pick summary from controlled
+    # fallback while leaving actual pick Telegram messages untouched. The factual
+    # run report is sent by send_harizon_telegram_run_report_v5/v6.
+    _safe_install("telegram no-pick suppressor", lambda: __import__("telegram_no_pick_summary_suppressor").install())
     _safe_install("telegram safety", lambda: __import__("telegram_controlled_pick_safety").install())
     _safe_install("rapidapi schema", lambda: __import__("app.providers.rapidapi_odds_bridge_schema_patch", fromlist=["install"]).install())
     _safe_install("odds secondary", lambda: __import__("app.providers.odds_api_io_secondary_rescue_patch", fromlist=["install"]).install())
