@@ -1,30 +1,30 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 23,
-      "contexts_total_effective": 23,
+      "contexts": 20,
+      "contexts_total_effective": 20,
       "errors": 0,
       "events": 0,
       "events_total_effective": 29,
-      "overlap": 16,
+      "overlap": 17,
       "requests": 0,
-      "requests_total_effective": 85,
-      "secondary_offers_added": 253,
-      "v2_contexts": 21,
+      "requests_total_effective": 81,
+      "secondary_offers_added": 264,
+      "v2_contexts": 20,
       "v2_errors": 0,
       "v2_events": 29,
-      "v2_lineups_resources": 21,
-      "v2_odds_resources": 21,
-      "v2_requests": 85,
-      "v2_stats_resources": 21
+      "v2_lineups_resources": 20,
+      "v2_odds_resources": 20,
+      "v2_requests": 81,
+      "v2_stats_resources": 20
     },
     "odds_api_io": {
-      "books_2plus": 43,
+      "books_2plus": 42,
       "errors": 0,
       "events_req": 0,
-      "matched": 69,
+      "matched": 68,
       "odds_req": 14,
-      "offers": 9399
+      "offers": 9179
     },
     "sportlogic": {
       "diagnosis": "games_endpoint_returned_unmatched_or_stale_rows",
@@ -50,39 +50,39 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.34747905731201173,
-    "fallback_age_min": 0.1739423116048177,
-    "run_log_age_min": 0.3215082208315531,
-    "signal_stack_age_min": 0.4459045569101969
+    "debug_age_min": 0.43091607093811035,
+    "fallback_age_min": 0.2555365244547526,
+    "run_log_age_min": 0.3996016542116801,
+    "signal_stack_age_min": 0.53059002161026
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 16,
-    "bzzoiro_secondary_offers_added": 253,
+    "bzzoiro_odds_overlap_with_odds_api_io": 17,
+    "bzzoiro_secondary_offers_added": 264,
     "day_inventory_total": 164,
-    "matches_seen": 86,
-    "matches_with_2plus_books": 43,
+    "matches_seen": 85,
+    "matches_with_2plus_books": 42,
     "matches_with_context": 72,
-    "matches_with_offers": 58,
-    "odds_offers_primary": 9399,
+    "matches_with_offers": 57,
+    "odds_offers_primary": 9179,
     "ready_for_model": 22,
     "secondary_combinations": {
       "bzzoiro": 7,
-      "bzzoiro+odds_api_io": 16,
-      "odds_api_io": 42
+      "bzzoiro+odds_api_io": 17,
+      "odds_api_io": 40
     }
   },
-  "created_at_utc": "2026-05-12T16:46:24.526843+00:00",
+  "created_at_utc": "2026-05-12T16:58:12.619101+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 21,
+      "contexts_built": 20,
       "enabled": true,
       "errors": 0,
       "events_fetched": 29,
-      "lineups_resources": 21,
-      "metadata_resources": 21,
-      "odds_resources": 21,
-      "requests": 85,
-      "stats_resources": 21,
+      "lineups_resources": 20,
+      "metadata_resources": 20,
+      "odds_resources": 20,
+      "requests": 81,
+      "stats_resources": 20,
       "target_matches": 64
     },
     "progressive_core_coverage": {
@@ -214,19 +214,24 @@
       "reason_ru": "quality: вероятность после калибровки ниже порога"
     },
     {
-      "count": 3,
+      "count": 2,
       "reason": "xg_direction_conflict",
       "reason_ru": "направление ставки конфликтует с xG"
     },
     {
       "count": 2,
+      "reason": "quality_market_sanity_totals_xg_contradiction",
+      "reason_ru": "quality: market sanity totals/xG contradiction"
+    },
+    {
+      "count": 1,
       "reason": "quality_post_calibration_edge_guard",
       "reason_ru": "quality post calibration edge guard"
     },
     {
       "count": 1,
-      "reason": "quality_market_sanity_totals_xg_contradiction",
-      "reason_ru": "quality: market sanity totals/xG contradiction"
+      "reason": "xg_probability_gap_hard_reject",
+      "reason_ru": "модель слишком оптимистична относительно xG-ориентира"
     }
   ],
   "samples": {
@@ -244,15 +249,15 @@
         "league_name_ru": "Бразилия - Брасилейро Серия B",
         "match_key": "soccer|londrina pr|sao bernardo|2026-05-12",
         "metrics": {
-          "adjusted_probability": 0.342037,
+          "adjusted_probability": 0.340655,
           "books_count": 4,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": -4.556,
-          "canonical_ev_pct": -11.754,
-          "confidence": 72.954,
+          "canonical_edge_pp": -4.694,
+          "canonical_ev_pct": -12.111,
+          "confidence": 72.795,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": true,
@@ -270,26 +275,26 @@
             "enabled": false,
             "reason": "family_not_dnb"
           },
-          "market_edge_pp": -5.445,
-          "market_probability": 0.396487,
-          "model_probability": 0.413377,
+          "market_edge_pp": -5.494,
+          "market_probability": 0.395595,
+          "model_probability": 0.411995,
           "odds": 2.58,
           "odds_sources_count": 2,
-          "publication_score": 77.185,
+          "publication_score": 76.669,
           "quality_reasons": [
             "post_calibration_probability_guard"
           ],
-          "quality_score": 42.864,
-          "quality_score_raw": 42.864,
+          "quality_score": 42.829,
+          "quality_score_raw": 42.829,
           "quality_score_source": "raw",
           "selected_implied_probability": 0.387597,
           "sources_count": 2,
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 10.257,
+            "xg_abs_gap_pp": 10.395,
             "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 10.257,
-            "xg_model_gap_pp": -10.257,
+            "xg_model_conservative_gap_pp": 10.395,
+            "xg_model_gap_pp": -10.395,
             "xg_model_optimism_gap_pp": 0.0,
             "xg_probability": 0.444608,
             "xg_probability_pct": 44.461,
@@ -320,15 +325,15 @@
         "league_name_ru": "Испания - Ла Лига",
         "match_key": "soccer|elche|real betis seville|2026-05-12",
         "metrics": {
-          "adjusted_probability": 0.398061,
+          "adjusted_probability": 0.397508,
           "books_count": 4,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": -2.211,
-          "canonical_ev_pct": -5.262,
-          "confidence": 73.81,
+          "canonical_edge_pp": -2.266,
+          "canonical_ev_pct": -5.393,
+          "confidence": 73.747,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": false,
@@ -348,26 +353,26 @@
             "enabled": false,
             "reason": "family_not_dnb"
           },
-          "market_edge_pp": -2.916,
-          "market_probability": 0.427221,
-          "model_probability": 0.443101,
+          "market_edge_pp": -2.936,
+          "market_probability": 0.426865,
+          "model_probability": 0.442548,
           "odds": 2.38,
           "odds_sources_count": 1,
-          "publication_score": 79.215,
+          "publication_score": 79.02,
           "quality_reasons": [
             "post_calibration_probability_guard"
           ],
-          "quality_score": 58.686,
-          "quality_score_raw": 58.686,
+          "quality_score": 58.672,
+          "quality_score_raw": 58.672,
           "quality_score_source": "raw",
           "selected_implied_probability": 0.420168,
           "sources_count": 4,
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 18.453,
+            "xg_abs_gap_pp": 18.508,
             "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 18.453,
-            "xg_model_gap_pp": -18.453,
+            "xg_model_conservative_gap_pp": 18.508,
+            "xg_model_gap_pp": -18.508,
             "xg_model_optimism_gap_pp": 0.0,
             "xg_probability": 0.582592,
             "xg_probability_pct": 58.259,
@@ -381,84 +386,6 @@
         ],
         "reject_reasons_ru": [
           "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
-        ],
-        "selection": "Меньше 2.5",
-        "tier": null
-      },
-      {
-        "away_team": "Athletic Club Sjdr MG",
-        "away_team_ru": "Атлетик Клуб Сдждр MG",
-        "candidate_source": "debug_candidates_before_quality",
-        "commence_time": "2026-05-12T22:30:00+00:00",
-        "commence_time_display": "13.05.2026 01:30 MSK",
-        "family": "totals",
-        "home_team": "SC Internacional RS",
-        "home_team_ru": "Интернакионал RS",
-        "league_name": "Brazil - Copa do Brasil",
-        "league_name_ru": "Бразилия - Копа до Брасил",
-        "match_key": "soccer|athletic sjdr mg|internacional rs|2026-05-12",
-        "metrics": {
-          "adjusted_probability": 0.427262,
-          "books_count": 4,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": -3.57,
-          "canonical_ev_pct": -7.711,
-          "confidence": 73.17,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": true,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "bzzoiro",
-            "sstats"
-          ],
-          "confirmation_sources_count": 2,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "market_edge_pp": -4.249,
-          "market_probability": 0.469749,
-          "model_probability": 0.485482,
-          "odds": 2.16,
-          "odds_sources_count": 2,
-          "publication_score": 76.794,
-          "quality_reasons": [
-            "post_calibration_probability_guard"
-          ],
-          "quality_score": 52.915,
-          "quality_score_raw": 52.915,
-          "quality_score_source": "raw",
-          "selected_implied_probability": 0.462963,
-          "sources_count": 2,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 0.965,
-            "xg_direction_ok": false,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 0.965,
-            "xg_model_optimism_gap_pp": 0.965,
-            "xg_probability": 0.417612,
-            "xg_probability_pct": 41.761,
-            "xg_total": 3.025
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "canonical_negative_value",
-          "xg_direction_conflict"
-        ],
-        "reject_reasons_ru": [
-          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
-          "направление ставки конфликтует с xG"
         ],
         "selection": "Меньше 2.5",
         "tier": null
@@ -541,27 +468,105 @@
         "tier": null
       },
       {
-        "away_team": "Atletico Madrid",
-        "away_team_ru": "Атлетико Мадрид",
+        "away_team": "St Mirren FC",
+        "away_team_ru": "Ст Миррен",
         "candidate_source": "debug_candidates_before_quality",
-        "commence_time": "2026-05-12T19:30:00+00:00",
-        "commence_time_display": "12.05.2026 22:30 MSK",
+        "commence_time": "2026-05-12T18:45:00+00:00",
+        "commence_time_display": "12.05.2026 21:45 MSK",
         "family": "totals",
-        "home_team": "CA Osasuna",
-        "home_team_ru": "Осасуна",
-        "league_name": "Spain - LaLiga",
-        "league_name_ru": "Испания - Ла Лига",
-        "match_key": "soccer|atletico madrid|ca osasuna|2026-05-12",
+        "home_team": "Aberdeen FC",
+        "home_team_ru": "Абердин",
+        "league_name": "Scotland - Premiership",
+        "league_name_ru": "Скотланд - Премиершип",
+        "match_key": "soccer|aberdeen|saint mirren|2026-05-12",
         "metrics": {
-          "adjusted_probability": 0.42654,
+          "adjusted_probability": 0.44138,
           "books_count": 4,
           "btts_sanity": {
             "enabled": false,
             "reason": "family_not_btts"
           },
-          "canonical_edge_pp": -1.989,
-          "canonical_ev_pct": -4.455,
-          "confidence": 73.548,
+          "canonical_edge_pp": -6.113,
+          "canonical_ev_pct": -12.165,
+          "confidence": 71.77,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "clubelo",
+            "sstats",
+            "thesportsdb"
+          ],
+          "confirmation_sources_count": 4,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -6.556,
+          "market_probability": 0.506943,
+          "model_probability": 0.52138,
+          "odds": 1.99,
+          "odds_sources_count": 1,
+          "publication_score": 69.531,
+          "quality_reasons": [
+            "post_calibration_probability_guard"
+          ],
+          "quality_score": 43.238,
+          "quality_score_raw": 43.238,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.502513,
+          "sources_count": 4,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 2.344,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 2.344,
+            "xg_model_optimism_gap_pp": 2.344,
+            "xg_probability": 0.417944,
+            "xg_probability_pct": 41.794,
+            "xg_total": 2.353
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "canonical_negative_value"
+        ],
+        "reject_reasons_ru": [
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
+        ],
+        "selection": "Больше 2.5",
+        "tier": null
+      },
+      {
+        "away_team": "FC Winterthur",
+        "away_team_ru": "Уинтертур",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-12T18:30:00+00:00",
+        "commence_time_display": "12.05.2026 21:30 MSK",
+        "family": "totals",
+        "home_team": "Grasshopper Club Zurich",
+        "home_team_ru": "Грасшоппер Клуб Зурич",
+        "league_name": "Switzerland - Super League",
+        "league_name_ru": "Швейцария - Супер Лигуе",
+        "match_key": "soccer|grasshopper zurich|winterthur|2026-05-12",
+        "metrics": {
+          "adjusted_probability": 0.357531,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -4.247,
+          "canonical_ev_pct": -10.617,
+          "confidence": 70.733,
           "confirmation_meta": {
             "weather_confirmation_relevant": false,
             "weather_dropped_as_neutral": true,
@@ -572,7 +577,7 @@
           },
           "confirmation_sources": [
             "bzzoiro",
-            "football_data",
+            "clubelo",
             "sstats"
           ],
           "confirmation_sources_count": 3,
@@ -580,30 +585,30 @@
             "enabled": false,
             "reason": "family_not_dnb"
           },
-          "market_edge_pp": -2.361,
-          "market_probability": 0.450146,
-          "model_probability": 0.46419,
-          "odds": 2.24,
+          "market_edge_pp": -5.08,
+          "market_probability": 0.40833,
+          "model_probability": 0.424911,
+          "odds": 2.5,
           "odds_sources_count": 1,
-          "publication_score": 78.138,
+          "publication_score": 72.596,
           "quality_reasons": [
             "post_calibration_probability_guard"
           ],
-          "quality_score": 59.227,
-          "quality_score_raw": 59.227,
+          "quality_score": 50.536,
+          "quality_score_raw": 50.536,
           "quality_score_source": "raw",
-          "selected_implied_probability": 0.446429,
+          "selected_implied_probability": 0.4,
           "sources_count": 3,
           "xg_sanity": {
             "enabled": true,
-            "xg_abs_gap_pp": 15.594,
+            "xg_abs_gap_pp": 28.002,
             "xg_direction_ok": true,
-            "xg_model_conservative_gap_pp": 15.594,
-            "xg_model_gap_pp": -15.594,
+            "xg_model_conservative_gap_pp": 28.002,
+            "xg_model_gap_pp": -28.002,
             "xg_model_optimism_gap_pp": 0.0,
-            "xg_probability": 0.582478,
-            "xg_probability_pct": 58.248,
-            "xg_total": 2.351
+            "xg_probability": 0.637552,
+            "xg_probability_pct": 63.755,
+            "xg_total": 2.145
           }
         },
         "ok": false,
@@ -625,9 +630,9 @@
         "kickoff_utc": "2026-05-12T17:30:00+00:00",
         "league_name": "Finland - Kolmonen",
         "match_key": "soccer|piikkion palloseura|salon palloilijat 2|2026-05-12",
-        "minutes_to_kickoff": 43.94,
+        "minutes_to_kickoff": 32.23,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 153.352,
+        "priority": 157.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -645,9 +650,9 @@
         "kickoff_utc": "2026-05-12T17:30:00+00:00",
         "league_name": "Finland - Kolmonen",
         "match_key": "2026-05-12|salon palloilijat 2|piikkion palloseura",
-        "minutes_to_kickoff": 43.94,
+        "minutes_to_kickoff": 32.23,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 153.352,
+        "priority": 157.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -665,13 +670,13 @@
         "kickoff_utc": "2026-05-12T17:30:00+00:00",
         "league_name": "Israel - Premier League",
         "match_key": "soccer|beitar jerusalem|hapoel be er sheva|2026-05-12",
-        "minutes_to_kickoff": 43.94,
+        "minutes_to_kickoff": 32.23,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.352,
+        "priority": 149.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-12T16:46:19.804174+00:00",
+          "last_odds_refresh_utc": "2026-05-12T16:58:08.474363+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
@@ -685,17 +690,17 @@
         "kickoff_utc": "2026-05-12T17:30:00+00:00",
         "league_name": "Jordan - Jordan Cup",
         "match_key": "soccer|al hussein irbid|al wehdat|2026-05-12",
-        "minutes_to_kickoff": 43.94,
+        "minutes_to_kickoff": 32.23,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.352,
+        "priority": 149.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-12T11:09:40.112284+00:00",
+          "last_odds_refresh_utc": "2026-05-12T16:58:08.474363+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
-          "needs_odds_refresh": true,
+          "needs_odds_refresh": false,
           "no_more_regular_run_before_kickoff": true
         }
       },
@@ -705,9 +710,9 @@
         "kickoff_utc": "2026-05-12T17:30:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|al hussein|al wihdat|2026-05-12",
-        "minutes_to_kickoff": 43.94,
+        "minutes_to_kickoff": 32.23,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.352,
+        "priority": 149.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -725,9 +730,9 @@
         "kickoff_utc": "2026-05-12T17:30:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|beitar jerusalem|hapoel beer sheva|2026-05-12",
-        "minutes_to_kickoff": 43.94,
+        "minutes_to_kickoff": 32.23,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.352,
+        "priority": 149.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -744,7 +749,7 @@
   "status": "candidates_but_quality_rejected",
   "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 2887,
+  "text_length": 2897,
   "top_reason": "canonical_negative_value",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
