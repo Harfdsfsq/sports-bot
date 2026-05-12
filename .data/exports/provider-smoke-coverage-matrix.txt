@@ -12,18 +12,18 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 15 | 11 | 15 | 9 | 10 | 9 | 10 | 0 | 10 | 9 |
-| 2_6h | 17 | 15 | 15 | 11 | 14 | 10 | 14 | 0 | 12 | 10 |
-| 6_12h | 5 | 5 | 5 | 2 | 2 | 2 | 2 | 0 | 2 | 2 |
-| 12_24h | 263 | 253 | 100 | 22 | 233 | 54 | 84 | 0 | 71 | 22 |
+| 0_2h | 16 | 12 | 16 | 10 | 11 | 10 | 11 | 0 | 11 | 10 |
+| 2_6h | 16 | 14 | 14 | 10 | 13 | 9 | 13 | 0 | 11 | 9 |
+| 6_12h | 9 | 9 | 9 | 2 | 6 | 6 | 6 | 0 | 6 | 2 |
+| 12_24h | 259 | 249 | 107 | 42 | 229 | 86 | 115 | 0 | 78 | 42 |
 
 ## Totals
 
 - fixture_2plus_sources: 284/300
-- odds_2plus_sources: 44/300
-- context_2plus_sources: 75/300
-- ready_for_model: 95/300
-- ready_for_publish: 43/300
+- odds_2plus_sources: 64/300
+- context_2plus_sources: 111/300
+- ready_for_model: 106/300
+- ready_for_publish: 63/300
 
 ## Provider endpoint status
 - by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
@@ -51,10 +51,10 @@
 - 6_12h | 2026-05-13T07:30:00+00:00 | Turkmenistan — Tajikistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-13T07:30:00+00:00 | Turkmenistan — Tajikistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-13T09:00:00+00:00 | Gainare Tottori — Reilac Shiga FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 12_24h | 2026-05-13T09:30:00+00:00 | Brindabella Blues FC — Canberra Juventus FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
-- 12_24h | 2026-05-13T09:30:00+00:00 | Canberra Olympic — O'Connor Knights FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
-- 12_24h | 2026-05-13T09:30:00+00:00 | Tigers FC — Monaro Panthers FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
-- 12_24h | 2026-05-13T09:30:00+00:00 | Tuggeranong Utd — Canberra Croatia FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 6_12h | 2026-05-13T09:30:00+00:00 | Brindabella Blues FC — Canberra Juventus FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 6_12h | 2026-05-13T09:30:00+00:00 | Canberra Olympic — O'Connor Knights FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 6_12h | 2026-05-13T09:30:00+00:00 | Tigers FC — Monaro Panthers FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 6_12h | 2026-05-13T09:30:00+00:00 | Tuggeranong Utd — Canberra Croatia FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
 - 12_24h | 2026-05-13T10:00:00+00:00 | Machida Zelvia — Tokyo Verdy | odds=1 context=1 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather
 - 12_24h | 2026-05-13T10:00:00+00:00 | Vissel Kobe — Kyoto Sanga FC | odds=1 context=1 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather
 - 12_24h | 2026-05-13T10:00:00+00:00 | Tensung — Transport United | odds=0 context=2 fixtures=2 missing=odds_source_2plus,weather
@@ -71,6 +71,6 @@ Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data di
 
 ## SStats deep projection
 - crosswalk: matched=266 / checked=300 | rate=88.67% | SStats events=1005
-- potential_add: context_deep=266 xg_or_rating=266 form=266 odds_rescue=176
-- projected_upper_bound: context_2plus=300 xg=300 form=266 odds_2plus=220
+- potential_add: context_deep=266 xg_or_rating=266 form=266 odds_rescue=165
+- projected_upper_bound: context_2plus=300 xg=300 form=267 odds_2plus=229
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
