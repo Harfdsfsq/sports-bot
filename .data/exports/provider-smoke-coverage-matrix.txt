@@ -1,0 +1,78 @@
+# Provider smoke 300-match coverage matrix v3
+
+- status: **ok**
+- target_date: 2026-05-12
+- inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-12.json`
+- inventory_matches_total: 299
+- matrix_matches: 299/300
+- full target reached: False
+- min odds/context sources: 2/2
+
+## Coverage by kickoff window
+
+| window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0_2h | 22 | 21 | 20 | 4 | 4 | 4 | 4 | 0 | 4 | 4 |
+| 2_6h | 80 | 74 | 50 | 12 | 15 | 12 | 14 | 0 | 14 | 12 |
+| 6_12h | 98 | 95 | 40 | 15 | 22 | 19 | 22 | 0 | 16 | 14 |
+| 12_24h | 4 | 4 | 0 | 0 | 4 | 4 | 4 | 0 | 0 | 0 |
+| 24h_plus | 52 | 52 | 0 | 0 | 52 | 7 | 52 | 0 | 0 | 0 |
+| started | 43 | 22 | 9 | 4 | 6 | 4 | 4 | 0 | 6 | 4 |
+
+## Totals
+
+- fixture_2plus_sources: 268/299
+- odds_2plus_sources: 35/299
+- context_2plus_sources: 50/299
+- ready_for_model: 40/299
+- ready_for_publish: 34/299
+
+## Provider endpoint status
+- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
+- not_ok:
+  - clubelo: ConnectTimeout:  http=None rows=None reason=None
+
+## Matching diagnostics
+- odds_inventory: `{"parsed_events": null, "raw_rows": null, "status": null}`
+- by_stage: `{}`
+
+## Next enrichment queue
+- 0_2h | 2026-05-12T09:30:00+00:00 | Football Queensland QAS — Souths Strikers | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T09:30:00+00:00 | Queensland State Team — Queensland Lions FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T09:45:00+00:00 | Sunshine Coast Wanderers FC — Eastern Suburbs FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:00:00+00:00 | Oleksandria — Zorya Luhansk | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:00:00+00:00 | FC Oleksandriya — FC Zorya Luhansk | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:00:00+00:00 | FC Irtysh Pavlodar — Shakhtar Karagandy | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:00:00+00:00 | IK Oddevold — Varbergs BoIS | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:00:00+00:00 | FC Dynamo Kyiv — Kolos Kovalivka | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:30:00+00:00 | Hellenic Athletic Club — Darwin Hearts FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:30:00+00:00 | Gangwon FC — Daejeon Hana Citizen | odds=0 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:30:00+00:00 | Gold Coast Knights — Gold Coast United FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:30:00+00:00 | Souths Strikers — Football Queensland QAS | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T10:30:00+00:00 | Sportivo Ameliano — Deportivo Recoleta Reserve | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T11:00:00+00:00 | Al Ansar — Al Ahed | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T11:00:00+00:00 | Singida Black Stars SC — Namungo FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T11:00:00+00:00 | Gwelup Croatia SC Reserves — Cockburn City SC Reserves | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T11:00:00+00:00 | Aktobe — FC Zhenis | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T11:15:00+00:00 | Murdoch University Melville FC Reserves — Joondalup City FC Reserve | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T11:30:00+00:00 | Hayq — Araks Ararat | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T11:30:00+00:00 | FC Hayq — FC Ararati Araks | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T11:30:00+00:00 | IK Sirius — IF Brommapojkarna | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T12:00:00+00:00 | Fardu Ferghana — Xorazm Fk Urganch | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T12:00:00+00:00 | Atyrau Reserve — Jas Qyran | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T12:00:00+00:00 | Asteras Aktor — AE Kifisia | odds=0 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-05-12T12:30:00+00:00 | FC Epitsentr Kamianets-Podilskyi — FC Polissya Zhytomyr | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T12:30:00+00:00 | Epitsentr Dunayivtsi — Polessya | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T13:00:00+00:00 | Mika — Shirak II | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T13:00:00+00:00 | Namdhari — Gokulam | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T13:00:00+00:00 | Al Nejmeh — Jwaaya FC | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-12T13:00:00+00:00 | Al Shouleh — Hottin | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+
+Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
+
+
+## SStats deep projection
+- crosswalk: matched=236 / checked=299 | rate=78.93% | SStats events=1034
+- potential_add: context_deep=236 xg_or_rating=236 form=236 odds_rescue=175
+- projected_upper_bound: context_2plus=286 xg=249 form=272 odds_2plus=210
+- next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
