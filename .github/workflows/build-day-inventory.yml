@@ -12,7 +12,7 @@ on:
         required: false
         default: "odds_api_io"
       force_provider_merge:
-        description: "Merge odds-api.io + football-data + TheSportsDB fixture inventory"
+        description: "Merge odds-api.io + Bzzoiro + SStats core inventory"
         required: false
         default: "true"
 
@@ -38,9 +38,8 @@ jobs:
       PREDICTION_PUBLICATION_ENABLED: "false"
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "false"
-      # This workflow is inventory-only. Disable run-bot runtime hooks so it
-      # does not execute post-run coverage repair, line guards or prediction
-      # artifact mutations while building the fixture pool.
+
+      # Inventory-only mode. No prediction/model/publish mutations.
       RUNTIME_PRE_PREDICTION_INVENTORY_HOOKS_ENABLED: "false"
       RUNTIME_POST_PREDICTION_INVENTORY_HOOKS_ENABLED: "false"
       FIXTURE_EXPANSION_ENABLED: "false"
@@ -48,59 +47,62 @@ jobs:
       DAY_INVENTORY_COVERAGE_REPAIR_ENABLED: "false"
       LINE_MOVEMENT_GUARD_ENABLED: "false"
       REFRESH_PLAN_COUNT_REPAIR_ENABLED: "false"
-      # Extra fixture sources are installed into the existing
-      # scripts/build_day_inventory.py process by usercustomize/runtime guard.
-      # This keeps the old inventory entrypoint while expanding source coverage.
-      DAY_INVENTORY_EXTRA_FIXTURES_ENABLED: "true"
-      DAY_INVENTORY_ENABLE_BZZOIRO: "true"
-      DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "true"
-      DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
-      DAY_INVENTORY_ENABLE_SSTATS: "true"
-      DAY_INVENTORY_TOP_MATCHES_ENABLED: "true"
+
+      # Core inventory policy: discover broadly from 3 main APIs, merge/crosswalk,
+      # then cut to <=300. Deep detail endpoints are reserved for 2-hour runtime.
+      DAY_INVENTORY_CORE_BUILDER_ENABLED: "true"
+      DAY_INVENTORY_REBUILD_FROM_SCRATCH: "true"
       DAY_INVENTORY_MAX_MATCHES: "300"
-      DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "180"
-      DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: "80"
-      DAY_INVENTORY_OTHER_MAX_MATCHES: "80"
-      DAY_INVENTORY_SSTATS_ONLY_MAX_MATCHES: "70"
-      DAY_INVENTORY_SSTATS_OVERFLOW_MAX_MATCHES: "70"
-      DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: "140"
-      DAY_INVENTORY_FORCE_FULL_300: "true"
-      DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP: "false"
-      DAY_INVENTORY_EXCLUDE_BAD_STATUS_FROM_TOP: "true"
-      DAY_INVENTORY_EXCLUDE_LOW_VALUE_FROM_FIRST_PASS: "true"
-      DAY_INVENTORY_BZZOIRO_WINDOW_DAYS: "1"
-      DAY_INVENTORY_BZZOIRO_MAX_PAGES: "10"
-      DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "12"
-      DAY_INVENTORY_ALLSPORTSAPI_WINDOW_DAYS: "0"
-      DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT: "500"
-      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "500"
-      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "12"
-      # SStats returned count=0 for exact from=target/to=target. Query a small
-      # UTC-adjacent window and keep only matches whose local date is target.
-      DAY_INVENTORY_SSTATS_WINDOW_DAYS: "1"
-      DAY_INVENTORY_SSTATS_LIMIT: "1000"
-      DAY_INVENTORY_SSTATS_MAX_REQUESTS: "3"
-      ALLSPORTSAPI_MATCH_LIMIT: "500"
-      SPORTLOGIC_MATCH_LIMIT: "500"
-      SPORTLOGIC_PER_RUN_MAX: "12"
-      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "3"
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
       MATCH_BOOTSTRAP_PROVIDER: ${{ github.event.inputs.bootstrap_provider || 'odds_api_io' }}
       DAY_INVENTORY_FORCE_PROVIDER_MERGE: ${{ github.event.inputs.force_provider_merge || 'true' }}
       DAY_INVENTORY_BUILD_TIMEOUT_SECONDS: "900"
-      DAY_INVENTORY_DIRECT_WINDOW_DAYS: "1"
-      DAY_INVENTORY_DIRECT_MIN_MATCHES: "1"
+      DAY_INVENTORY_ALLOW_LOW_TIER: "false"
+
+      # odds-api.io: two accounts / four bookmakers. Use as primary current-line
+      # discovery, but stay under the 100 req/hour/account user limit.
+      ENABLE_ODDS_API_IO: "true"
+      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "160"
+      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "80"
+      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "80"
+      ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "18"
+      ODDS_API_IO_PAGE_LIMIT: "100"
+      MAX_MATCHES_FOR_ODDS_FETCH: "900"
+
+      # Bzzoiro: list endpoints only in inventory build. v2 events + v1 predictions.
+      DAY_INVENTORY_ENABLE_BZZOIRO: "true"
+      DAY_INVENTORY_BZZOIRO_WINDOW_DAYS: "1"
+      DAY_INVENTORY_BZZOIRO_MAX_PAGES: "4"
+      DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "8"
+      ENABLE_BZZOIRO_CONTEXT: "true"
+      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "8"
+
+      # SStats: Games/list only in inventory build. Deep endpoints later in run-bot.
+      DAY_INVENTORY_ENABLE_SSTATS: "true"
+      DAY_INVENTORY_SSTATS_WINDOW_DAYS: "1"
+      DAY_INVENTORY_SSTATS_LIMIT: "1000"
+      DAY_INVENTORY_SSTATS_MAX_REQUESTS: "3"
+      SSTATS_ENABLED: "true"
+      ENABLE_SSTATS_CONTEXT: "true"
+      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "3"
+
+      # Other APIs are not part of nightly broad inventory. They remain runtime
+      # shortlist/backfill only, so they do not waste quota on 300-match discovery.
+      DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "false"
+      DAY_INVENTORY_ENABLE_SPORTLOGIC: "false"
+      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
+      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
+
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
       PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
-      FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
-      THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
@@ -142,21 +144,22 @@ jobs:
             echo "provider quota governor failed or timed out with status ${status}; continuing inventory build"
           fi
 
-      - name: Build day inventory only
+      - name: Build core day inventory only
         shell: bash
         run: |
           set -uo pipefail
-          echo "build day inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python -u scripts/build_day_inventory.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
+          echo "core build day inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -u scripts/build_day_inventory_core.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
           status=${PIPESTATUS[0]}
-          echo "build day inventory status ${status}"
-          echo "build day inventory finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "core build day inventory status ${status}"
+          echo "core build day inventory finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           mkdir -p .data/cache/day_inventory
           cp -f .data/day_inventory/*.json .data/cache/day_inventory/ 2>/dev/null || true
           cp -r .data/day_inventory artifacts/day-inventory/day_inventory || true
           cp -r .data/cache/day_inventory artifacts/day-inventory/cache_day_inventory || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/day-inventory/latest-day-inventory-summary.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-sstats-fixture-summary.json artifacts/day-inventory/latest-day-inventory-sstats-fixture-summary.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-build-report.json artifacts/day-inventory/latest-day-inventory-core-build-report.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-crosswalk.json artifacts/day-inventory/latest-day-inventory-core-crosswalk.json 2>/dev/null || true
           cp .data/exports/latest-build-day-inventory.log artifacts/day-inventory/latest-build-day-inventory.log 2>/dev/null || true
           exit ${status}
 
@@ -171,7 +174,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-day-inventory-sstats-fixture-summary.json .data/exports/latest-build-day-inventory.log || true
+          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-build-day-inventory.log || true
           git commit -m "Update day inventory [skip ci]" || true
           if git push; then
             echo "day inventory pushed"
@@ -191,7 +194,8 @@ jobs:
             .data/day_inventory/**
             .data/cache/day_inventory/**
             .data/exports/latest-day-inventory-summary.json
-            .data/exports/latest-day-inventory-sstats-fixture-summary.json
+            .data/exports/latest-day-inventory-core-build-report.json
+            .data/exports/latest-day-inventory-core-crosswalk.json
             .data/exports/latest-build-day-inventory.log
           if-no-files-found: ignore
           include-hidden-files: true
