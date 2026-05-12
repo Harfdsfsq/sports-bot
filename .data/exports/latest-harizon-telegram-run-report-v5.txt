@@ -3,43 +3,43 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Покрытие
-• Матчи в run: 165 | day inventory: 251
-• С линиями: 51 | с контекстом: 147 | ready model: 18
-• odds-api.io offers: 7983 | Bzzoiro secondary offers: 240
+• Матчи в run: 165 | day inventory: 245
+• С линиями: 51 | с контекстом: 142 | ready model: 14
+• odds-api.io offers: 7975 | Bzzoiro secondary offers: 242
 • 2+ букмекера odds-api.io: 41 | 2-source overlap Bzzoiro+odds-api.io: 7
 • Source combinations: odds_api_io: 44, bzzoiro: 15, bzzoiro+odds_api_io: 7
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 18 / 18
+• Raw/candidates before quality: 14 / 14
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 9 | evaluated 9 | published False
-• Windowed coverage: audit 18 | allowed 0 | blocked 18 | publish-filter input 0
+• Controlled fallback: seen 7 | evaluated 7 | published False
+• Windowed coverage: audit 14 | allowed 0 | blocked 14 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 32 | no next regular run: 32
+• Final pre-kickoff checks: 33 | no next regular run: 33
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 20, matched 98, offers 7983, 2+ books 41, err 0
-• sstats: req 27, ctx 142, rows 24658, err 0, deep enriched 15
-• bzzoiro: direct req 0, v2 req 45, v2 ctx 11, v2 odds 11, secondary offers 240, overlap odds-api.io 7, err 0
+• odds_api_io: events req 0, odds req 20, matched 98, offers 7975, 2+ books 41, err 0
+• sstats: req 27, ctx 135, rows 24658, err 0, deep enriched 15
+• bzzoiro: direct req 0, v2 req 45, v2 ctx 11, v2 odds 11, secondary offers 242, overlap odds-api.io 7, err 0
 • sportlogic: enabled True, req 2, fixtures 50, matched 0, odds req 0, offers 0, sample_dates 2026-05-02, diag games_endpoint_returned_unmatched_or_stale_rows, err 0
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 9 (43%)
-• quality: вероятность после калибровки ниже порога: 8 (38%)
-• направление ставки конфликтует с xG: 3 (14%)
-• quality: market sanity totals/xG contradiction: 1 (5%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 7 (41%)
+• quality: вероятность после калибровки ниже порога: 6 (35%)
+• направление ставки конфликтует с xG: 3 (18%)
+• quality: market sanity totals/xG contradiction: 1 (6%)
 
 🔎 Проверенные reserve-кандидаты
-1. IFK Varnamo — Orebro SK | Больше 2.5 @2.02 | EV -10.4% | edge -5.2 п.п. | q 35.4
+1. Asteras Tripolis — Panserraikos FC | Больше 2.5 @2.54 | EV -5.5% | edge -2.2 п.п. | q 39.2
    • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
-2. Landskrona BoIS — Norrby IF | Больше 2.5 @1.92 | EV -11.1% | edge -5.8 п.п. | q 35.3
+2. Al-Kholood — Al-Okhdood Club | Меньше 2.5 @2.20 | EV -8.2% | edge -3.7 п.п. | q 52.9
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
+3. Modena FC — Juve Stabia | Больше 2.5 @2.44 | EV -12.8% | edge -5.2 п.п. | q 34.9
    • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
-3. Modena FC — Juve Stabia | Больше 2.5 @2.44 | EV -13.1% | edge -5.4 п.п. | q 34.9
-   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
-4. Asteras Tripolis — Panserraikos FC | Больше 2.5 @2.42 | EV -9.9% | edge -4.1 п.п. | q 38.7
-   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
+4. RC Celta de Vigo — Levante UD | Меньше 2.5 @2.12 | EV -4.7% | edge -2.2 п.п. | q 58.0
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
 
 📌 Вывод
 • Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.
