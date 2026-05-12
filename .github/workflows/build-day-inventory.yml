@@ -149,7 +149,7 @@ jobs:
         run: |
           set -uo pipefail
           echo "core build day inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python -u scripts/build_day_inventory_core.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
+          python -u scripts/build_day_inventory_core_v2.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
           status=${PIPESTATUS[0]}
           echo "core build day inventory status ${status}"
           echo "core build day inventory finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
