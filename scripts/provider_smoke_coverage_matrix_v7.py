@@ -3,8 +3,8 @@ from __future__ import annotations
 """Coverage matrix v7.
 
 Correct order for discovery-first pipeline:
-1. Build/reuse SStats crosswalk first, so provider-day discovery can use cached
-   SStats gameIds instead of seeing `sstats: EMPTY`.
+1. Build/reuse full SStats crosswalk first, so provider-day discovery can use all
+   cached SStats gameIds instead of only sample/queue rows.
 2. Merge full provider-day canonical pool into inventory.
 3. Apply SStats actual deep enrichment using the same crosswalk cache.
 4. Build source-aware coverage matrix.
@@ -17,14 +17,14 @@ from scripts import apply_sstats_deep_inventory_enrichment_v4
 from scripts import provider_smoke_coverage_matrix as base
 from scripts import provider_smoke_coverage_matrix_v3
 from scripts.provider_smoke_coverage_matrix_v5 import _ORIG_SOURCE_COUNT, _patched_source_count
-from scripts import sstats_crosswalk_probe
+from scripts import sstats_crosswalk_probe_v2
 
 
 def main() -> int:
     try:
-        asyncio.run(sstats_crosswalk_probe.run())
+        asyncio.run(sstats_crosswalk_probe_v2.run())
     except Exception as exc:
-        print(f"SStats crosswalk prebuild failed; continuing discovery merge: {type(exc).__name__}: {exc}")
+        print(f"SStats crosswalk v2 prebuild failed; continuing discovery merge: {type(exc).__name__}: {exc}")
     try:
         asyncio.run(apply_provider_day_discovery_to_inventory.run())
     except Exception as exc:
