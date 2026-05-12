@@ -2,13 +2,14 @@ from __future__ import annotations
 
 """Source-id bridge for Bzzoiro context gap pass.
 
-Provider day discovery already preserves Bzzoiro source ids in day inventory, but
+Provider day discovery can preserve Bzzoiro source ids in day inventory, but
 runtime Match objects passed to Bzzoiro gap-pass may not carry those ids in their
-metadata. That forces the gap pass into fuzzy matching and keeps contexts_added
-low.
+metadata. This bridge falls back to `.data/day_inventory/*.json` by match_key and
+canonical ids.
 
-This finalizer patches bzzoiro_context_gap_finalizer._bzzoiro_id_from_match so it
-falls back to .data/day_inventory/*.json by match_key and canonical_match_id.
+Important: only Bzzoiro aliases are accepted as Bzzoiro ids. Odds/SStats ids must
+never be used in `/api/v2/events/{id}/`; doing so produces 404s and can make the
+whole pass waste requests.
 """
 
 import json
@@ -22,6 +23,8 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = ROOT / ".data" / "exports" / "latest-bzzoiro-context-gap-source-id-finalizer.json"
 
 _CACHE: dict[str, str] | None = None
+BZZ_KEYS = {"bzzoiro", "bzzoiro_v1", "bzzoiro_v2", "bzzoiro_predictions", "bzzoiro_predictions_v2", "bsd", "bsd_v2"}
+ID_KEYS = {"id", "event_id", "source_event_id", "api_id", "uuid"}
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -41,45 +44,78 @@ def _read_json(path: Path) -> Any:
         return None
 
 
-def _extract_bzzoiro_id(value: Any) -> str | None:
+def _clean_id(value: Any) -> str | None:
     if value in (None, "", False, [], {}):
         return None
     if isinstance(value, dict):
-        for key in ("bzzoiro", "bzzoiro_v1", "bzzoiro_v2", "bsd", "bsd_v2"):
-            if key in value:
-                nested = _extract_bzzoiro_id(value.get(key))
-                if nested:
-                    return nested
-        for key in ("id", "event_id", "source_event_id", "api_id", "uuid"):
+        for key in ID_KEYS:
             nested = value.get(key)
-            if nested not in (None, ""):
-                return str(nested)
+            if nested not in (None, "", False, [], {}):
+                return _clean_id(nested)
+        return None
     if isinstance(value, (list, tuple, set)):
         for item in value:
-            nested = _extract_bzzoiro_id(item)
+            nested = _clean_id(item)
             if nested:
                 return nested
         return None
-    return str(value)
+    text = str(value).strip()
+    if not text or text.lower() in {"none", "null", "unknown"}:
+        return None
+    # Prevent accidental stringified dict/list ids like "{'sstats': '1544266'}".
+    if text.startswith("{") or text.startswith("[") or ":" in text:
+        return None
+    return text
+
+
+def _extract_bzzoiro_id_from_container(value: Any) -> str | None:
+    if not isinstance(value, dict):
+        return None
+    for key in BZZ_KEYS:
+        if key in value:
+            nested = _clean_id(value.get(key))
+            if nested:
+                return nested
+    return None
+
+
+def _row_has_bzzoiro_source(row: dict[str, Any]) -> bool:
+    for key in ("sources_seen", "fixture_sources", "context_sources", "xg_sources", "odds_sources"):
+        raw = row.get(key)
+        parts = raw if isinstance(raw, list) else str(raw or "").replace(";", ",").replace("|", ",").split(",")
+        if any(str(item).strip().lower().startswith(("bzzoiro", "bsd")) for item in parts):
+            return True
+    meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    raw = meta.get("sources_seen") or meta.get("fixture_sources") or meta.get("context_sources")
+    parts = raw if isinstance(raw, list) else str(raw or "").replace(";", ",").replace("|", ",").split(",")
+    return any(str(item).strip().lower().startswith(("bzzoiro", "bsd")) for item in parts)
 
 
 def _row_bzzoiro_id(row: dict[str, Any]) -> str | None:
+    # 1) Explicit Bzzoiro keys in source-id containers.
     for container_key in ("provider_source_ids", "source_ids", "provider_ids"):
         value = row.get(container_key)
-        if isinstance(value, dict):
-            found = _extract_bzzoiro_id(value)
-            if found:
-                return found
+        found = _extract_bzzoiro_id_from_container(value) if isinstance(value, dict) else None
+        if found:
+            return found
     meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     for container_key in ("provider_source_ids", "source_ids", "provider_ids"):
         value = meta.get(container_key)
-        if isinstance(value, dict):
-            found = _extract_bzzoiro_id(value)
+        found = _extract_bzzoiro_id_from_container(value) if isinstance(value, dict) else None
+        if found:
+            return found
+    # 2) Raw source_event_id only if row itself is explicitly from Bzzoiro.
+    raw = row.get("source_event_id")
+    if str(row.get("source") or "").lower() in {"bzzoiro", "bzzoiro_v1", "bzzoiro_v2", "bsd", "bsd_v2"} and raw not in (None, ""):
+        return _clean_id(raw)
+    # 3) Some discovery rows store a generic event id. Accept it only when the
+    # row sources explicitly include Bzzoiro; never use generic day_inventory,
+    # odds_api_io or sstats ids as Bzzoiro ids.
+    if _row_has_bzzoiro_source(row):
+        for key in ("bzzoiro_event_id", "event_id", "id"):
+            found = _clean_id(row.get(key))
             if found:
                 return found
-    raw = row.get("source_event_id")
-    if str(row.get("source") or "").lower() in {"bzzoiro", "bsd"} and raw not in (None, ""):
-        return str(raw)
     return None
 
 
@@ -112,6 +148,7 @@ def _load_map() -> dict[str, str]:
     mapping: dict[str, str] = {}
     rows_seen = 0
     rows_with_id = 0
+    skipped_non_bzz_rows = 0
     for path in _inventory_paths():
         payload = _read_json(path)
         if not isinstance(payload, dict):
@@ -123,6 +160,7 @@ def _load_map() -> dict[str, str]:
             rows_seen += 1
             bzz_id = _row_bzzoiro_id(row)
             if not bzz_id:
+                skipped_non_bzz_rows += 1
                 continue
             rows_with_id += 1
             for key in _row_keys(row):
@@ -135,6 +173,8 @@ def _load_map() -> dict[str, str]:
         "rows_seen": rows_seen,
         "rows_with_bzzoiro_id": rows_with_id,
         "keys_indexed": len(mapping),
+        "skipped_without_bzzoiro_id": skipped_non_bzz_rows,
+        "note": "only explicit Bzzoiro aliases are accepted; odds_api_io/sstats ids are ignored",
     })
     return mapping
 
@@ -154,6 +194,12 @@ def _match_key(match: Any) -> str:
     return ""
 
 
+def _direct_is_safe(value: Any) -> str | None:
+    # Direct value from the old gap helper is accepted only when it is a scalar
+    # clean id, not a stringified provider dict.
+    return _clean_id(value)
+
+
 def install() -> dict[str, Any]:
     payload: dict[str, Any] = {"created_at_utc": datetime.now(UTC).isoformat(), "status": "starting"}
     try:
@@ -164,7 +210,7 @@ def install() -> dict[str, Any]:
         return payload
 
     current = getattr(gap, "_bzzoiro_id_from_match", None)
-    if getattr(current, "_harizon_inventory_source_id_bridge", False):
+    if getattr(current, "_harizon_inventory_source_id_bridge_v2", False):
         payload.update({"status": "already_installed"})
         _write_json(REPORT_PATH, payload)
         return payload
@@ -174,14 +220,15 @@ def install() -> dict[str, Any]:
             direct = current(match) if callable(current) else None
         except Exception:
             direct = None
-        if direct:
-            return str(direct)
+        safe_direct = _direct_is_safe(direct)
+        if safe_direct:
+            return safe_direct
         key = _match_key(match)
         if not key:
             return None
         return _load_map().get(key)
 
-    bzzoiro_id_from_match_inventory_bridge._harizon_inventory_source_id_bridge = True  # type: ignore[attr-defined]
+    bzzoiro_id_from_match_inventory_bridge._harizon_inventory_source_id_bridge_v2 = True  # type: ignore[attr-defined]
     gap._bzzoiro_id_from_match = bzzoiro_id_from_match_inventory_bridge
     indexed = _load_map()
     payload.update({"status": "installed", "keys_indexed": len(indexed)})
