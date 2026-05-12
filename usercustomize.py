@@ -45,6 +45,10 @@ for _module in [
     'app.services.runner_bzzoiro_bridge_runtime_patch',
     'app.services.provider_smoke_repair_env_guard',
     'app.services.primary_provider_tier_runtime_guard',
+    # Value-first candidate ordering must be active before windowed audit wraps
+    # CandidateFactory, otherwise negative-EV raw model candidates dominate the
+    # pre-quality slice.
+    'app.services.candidate_value_runtime_patch',
     'app.services.windowed_core_coverage_finalizer',
     'app.services.windowed_core_report_and_sportlogic_final_guard',
     'app.services.progressive_coverage_runtime_patch',
