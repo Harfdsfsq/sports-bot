@@ -68,5 +68,8 @@ for _module in [
     # evidence computed in the same run and relieve impossible next-cron movement
     # checks for final-pre-kickoff matches.
     'app.services.windowed_coverage_state_bridge',
+    # Absolute final wrapper: later modules can replace CandidateFactory again,
+    # so reinstall value-first build_candidates as the outermost wrapper.
+    'app.services.candidate_value_final_reinstall',
 ]:
     _install(_module)
