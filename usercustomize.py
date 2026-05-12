@@ -45,6 +45,10 @@ for _module in [
     'app.services.runner_bzzoiro_bridge_runtime_patch',
     'app.services.provider_smoke_repair_env_guard',
     'app.services.primary_provider_tier_runtime_guard',
+    # Keep SStats/Bzzoiro odds rescue sane before app.cli installs the merge wrapper:
+    # limits requests, filters low-line/low-price injected offers, and fixes Bzzoiro
+    # score_event_match compatibility.
+    'app.services.core_odds_merge_safety_patch',
     # Value-first candidate ordering must be active before windowed audit wraps
     # CandidateFactory, otherwise negative-EV raw model candidates dominate the
     # pre-quality slice.
