@@ -229,3 +229,12 @@ try:
     windowed_core_coverage_finalizer.install()
 except Exception:
     pass
+
+# Absolute final diagnostics/policy guard. It preserves the rich windowed-core
+# candidate audit and enables SportLogic only as a controlled near-window
+# secondary odds source when a key is present.
+try:
+    from app.services import windowed_core_report_and_sportlogic_final_guard
+    windowed_core_report_and_sportlogic_final_guard.install()
+except Exception:
+    pass
