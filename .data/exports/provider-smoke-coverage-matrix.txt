@@ -12,20 +12,20 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 64 | 59 | 63 | 37 | 55 | 47 | 51 | 0 | 54 | 33 |
-| 2_6h | 43 | 38 | 42 | 21 | 38 | 32 | 34 | 0 | 37 | 19 |
+| 0_2h | 62 | 57 | 61 | 35 | 53 | 46 | 49 | 0 | 52 | 32 |
+| 2_6h | 43 | 38 | 42 | 22 | 38 | 33 | 34 | 0 | 37 | 20 |
 | 6_12h | 14 | 14 | 13 | 8 | 11 | 11 | 11 | 0 | 10 | 8 |
 | 12_24h | 24 | 24 | 19 | 19 | 24 | 21 | 24 | 0 | 19 | 19 |
 | 24h_plus | 28 | 28 | 9 | 9 | 28 | 28 | 28 | 0 | 9 | 9 |
-| started | 127 | 102 | 109 | 65 | 93 | 67 | 76 | 0 | 75 | 51 |
+| started | 129 | 103 | 111 | 67 | 95 | 68 | 77 | 0 | 77 | 52 |
 
 ## Totals
 
-- fixture_2plus_sources: 265/300
-- odds_2plus_sources: 159/300
-- context_2plus_sources: 206/300
+- fixture_2plus_sources: 264/300
+- odds_2plus_sources: 160/300
+- context_2plus_sources: 207/300
 - ready_for_model: 204/300
-- ready_for_publish: 139/300
+- ready_for_publish: 140/300
 
 ## Provider endpoint status
 - by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
@@ -56,7 +56,6 @@
 - 0_2h | 2026-05-12T17:00:00+00:00 | Niendorfer TSV — Vorwärts-Wacker 04 | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
 - 0_2h | 2026-05-12T17:00:00+00:00 | Saudi Arabia U17 — Tajikistan U17 | odds=1 context=2 fixtures=3 missing=odds_source_2plus,weather
 - 0_2h | 2026-05-12T17:00:00+00:00 | Thailand U17 — Myanmar U17 | odds=1 context=2 fixtures=3 missing=odds_source_2plus,weather
-- 0_2h | 2026-05-12T17:00:00+00:00 | IFK Varnamo — Orebro SK | odds=4 context=1 fixtures=2 missing=context_source_2plus,weather
 - 0_2h | 2026-05-12T17:00:00+00:00 | Landskrona BoIS — Norrby IF | odds=4 context=1 fixtures=2 missing=context_source_2plus,weather
 - 0_2h | 2026-05-12T17:15:00+00:00 | Botev Plovdiv — Arda Kardzhali | odds=1 context=1 fixtures=4 missing=odds_source_2plus,context_source_2plus,weather
 - 0_2h | 2026-05-12T17:30:00+00:00 | Salon Palloilijat 2 — Piikkion Palloseura | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
@@ -67,12 +66,13 @@
 - 0_2h | 2026-05-12T18:00:00+00:00 | La Capital CF — Xbuyer Team | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T18:00:00+00:00 | Colon FC Reserve — Liverpool Montevideo | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-12T18:00:00+00:00 | Colon FC Reserve — Liverpool Montevideo | odds=2 context=1 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-12T18:00:00+00:00 | Al Nassr Club — Al Hilal SFC | odds=1 context=1 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=212 / checked=300 | rate=70.67% | SStats events=1099
+- crosswalk: matched=212 / checked=300 | rate=70.67% | SStats events=1101
 - potential_add: context_deep=212 xg_or_rating=212 form=212 odds_rescue=20
-- projected_upper_bound: context_2plus=300 xg=228 form=220 odds_2plus=179
+- projected_upper_bound: context_2plus=300 xg=223 form=215 odds_2plus=180
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
