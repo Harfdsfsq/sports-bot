@@ -197,7 +197,7 @@ except Exception:
 
 # Absolute final layer: wraps the concrete PredictionRunner.factory instance
 # used by run_once. This is the effective Bzzoiro odds bridge for rescue/main
-# candidate generation and must remain the last runtime install.
+# candidate generation and must remain after generic bridge layers.
 try:
     from app.services import runner_bzzoiro_bridge_runtime_patch
     runner_bzzoiro_bridge_runtime_patch.install()
@@ -219,5 +219,14 @@ except Exception:
 try:
     from app.services import primary_provider_tier_runtime_guard
     primary_provider_tier_runtime_guard.install()
+except Exception:
+    pass
+
+# The true final layer must be installed after every provider and runner wrapper.
+# It restores the 4-hour window priority, Bzzoiro v2 enrichment, SStats deep
+# endpoints and final 2+ odds / 2+ context / line-movement publication guard.
+try:
+    from app.services import windowed_core_coverage_runtime_patch
+    windowed_core_coverage_runtime_patch.install()
 except Exception:
     pass
