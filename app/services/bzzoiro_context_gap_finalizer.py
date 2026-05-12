@@ -2,14 +2,15 @@ from __future__ import annotations
 
 """Bzzoiro context-gap finalizer.
 
-After v8 reporting, the real bottleneck is not core line coverage anymore:
-SStats now counts as a core line source. The weak metric is core context 2+,
-which means matches often have SStats context but no Bzzoiro context.
+The v8 reports showed a precise bottleneck: core odds 2+ is healthy, while core
+context 2+ stays low because many matches have SStats context but no Bzzoiro
+context. The first gap pass used only Bzzoiro v2 /events/ and fetched too small a
+universe for matching. This version uses both:
+- v1 /events/ and /predictions/ for broad daily coverage;
+- v2 /events/ + subresources for stats/metadata/lineups/odds hints.
 
-This finalizer wraps BzzoiroContextProvider.fetch_context and performs an extra
-Bzzoiro v2 pass only for upcoming matches whose progressive plan says
-`core_context_needed > 0`. It does not relax publication guards; it only tries to
-fill missing Bzzoiro context/odds hints for the nearest windows.
+It does not relax publication guards. It only increases Bzzoiro context coverage
+for upcoming progressive gaps.
 """
 
 import json
@@ -26,7 +27,8 @@ UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[2]
 EXPORT_DIR = ROOT / ".data" / "exports"
 PLAN_PATH = EXPORT_DIR / "latest-progressive-coverage-plan.json"
-REPORT_PATH = EXPORT_DIR / "latest-bzzoiro-context-gap-finalizer.json"
+RUNTIME_REPORT_PATH = EXPORT_DIR / "latest-bzzoiro-context-gap-finalizer.json"
+INSTALL_REPORT_PATH = EXPORT_DIR / "latest-bzzoiro-context-gap-finalizer-install.json"
 
 
 def _write_json(path: Path, payload: Any) -> None:
@@ -90,7 +92,8 @@ def _gap_keys() -> set[str]:
     for row in rows:
         if not isinstance(row, dict):
             continue
-        if _to_float(row.get("hours_to_kickoff")) is not None and _to_float(row.get("hours_to_kickoff")) < 0:
+        hours = _to_float(row.get("hours_to_kickoff"))
+        if hours is not None and hours < 0:
             continue
         if _to_int(row.get("core_context_needed") or row.get("context_needed"), 0) <= 0:
             continue
@@ -112,7 +115,7 @@ def _source_ids(match: Match) -> dict[str, Any]:
 
 def _bzzoiro_id_from_match(match: Match) -> str | None:
     ids = _source_ids(match)
-    for key in ("bzzoiro", "bzzoiro_v2", "bsd", "bsd_v2"):
+    for key in ("bzzoiro", "bzzoiro_v1", "bzzoiro_v2", "bsd", "bsd_v2"):
         value = ids.get(key)
         if value not in (None, ""):
             if isinstance(value, dict):
@@ -124,7 +127,7 @@ def _bzzoiro_id_from_match(match: Match) -> str | None:
             else:
                 return str(value)
     raw = getattr(match, "source_event_id", None)
-    if getattr(match, "source", "") == "bzzoiro" and raw not in (None, ""):
+    if str(getattr(match, "source", "")).lower() in {"bzzoiro", "bsd"} and raw not in (None, ""):
         return str(raw)
     return None
 
@@ -178,7 +181,7 @@ def _context_from_resources(event: dict[str, Any], resources: dict[str, Any], sc
             "event": event,
             "resources": resources,
             "odds_hints": odds_hints,
-            "provider": "bzzoiro_v2_gap_pass",
+            "provider": "bzzoiro_context_gap_pass",
         },
         expected_home=home_xg,
         expected_away=away_xg,
@@ -210,13 +213,14 @@ async def _fetch_json(client: httpx.AsyncClient, url: str, headers: dict[str, st
     if response.status_code != 200:
         stats["errors"] = _to_int(stats.get("errors"), 0) + 1
         stats["last_error"] = f"http_status={response.status_code}"
-        stats["last_body_preview"] = response.text[:600]
+        stats["last_body_preview"] = response.text[:800]
         return None
     try:
         return response.json()
     except Exception as exc:
         stats["errors"] = _to_int(stats.get("errors"), 0) + 1
         stats["last_error"] = f"json:{type(exc).__name__}: {exc}"
+        stats["last_body_preview"] = response.text[:800]
         return None
 
 
@@ -231,6 +235,104 @@ def _results(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+async def _fetch_paginated(
+    client: httpx.AsyncClient,
+    base_url: str,
+    path: str,
+    headers: dict[str, str],
+    params: dict[str, Any],
+    stats: dict[str, Any],
+    *,
+    mode: str,
+    max_pages: int,
+    max_requests: int,
+) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    if mode == "page":
+        for page in range(1, max_pages + 1):
+            if _to_int(stats.get("requests"), 0) >= max_requests:
+                break
+            payload = await _fetch_json(client, f"{base_url}{path}", headers, stats, {**params, "page": page})
+            batch = _results(payload)
+            if not batch:
+                break
+            for row in batch:
+                sig = str(row.get("id") or row.get("uuid") or row.get("api_id") or row.get("event_id") or row)
+                if sig in seen:
+                    continue
+                seen.add(sig)
+                rows.append(row)
+            if not isinstance(payload, dict) or not payload.get("next"):
+                break
+    else:
+        offset = 0
+        while _to_int(stats.get("requests"), 0) < max_requests and offset <= 1200:
+            payload = await _fetch_json(client, f"{base_url}{path}", headers, stats, {**params, "limit": 200, "offset": offset})
+            batch = _results(payload)
+            if not batch:
+                break
+            for row in batch:
+                sig = str(row.get("id") or row.get("uuid") or row.get("api_id") or row.get("event_id") or row)
+                if sig in seen:
+                    continue
+                seen.add(sig)
+                rows.append(row)
+            if not isinstance(payload, dict) or not payload.get("next"):
+                break
+            offset += 200
+    return rows
+
+
+async def _fetch_v2_resources(
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    event_id: Any,
+    stats: dict[str, Any],
+    max_requests: int,
+) -> dict[str, Any]:
+    resources: dict[str, Any] = {}
+    if event_id in (None, ""):
+        return resources
+    for name, url in [
+        ("stats", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/stats/"),
+        ("metadata", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/metadata/"),
+        ("lineups", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/lineups/"),
+        ("odds", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/odds/"),
+    ]:
+        if _to_int(stats.get("requests"), 0) >= max_requests:
+            break
+        payload = await _fetch_json(client, url, headers, stats)
+        if isinstance(payload, dict):
+            resources[name] = payload
+            stats[f"{name}_resources"] = _to_int(stats.get(f"{name}_resources"), 0) + 1
+    return resources
+
+
+def _merge_context(base: MatchContext | None, resources_context: MatchContext | None) -> MatchContext | None:
+    if base is None:
+        return resources_context
+    if resources_context is None:
+        return base
+    payload = dict(base.payload or {})
+    payload["gap_resources_context"] = resources_context.payload
+    details = dict(base.details or {})
+    details.update(resources_context.details or {})
+    return MatchContext(
+        source="bzzoiro",
+        payload=payload,
+        expected_home=base.expected_home if base.expected_home is not None else resources_context.expected_home,
+        expected_away=base.expected_away if base.expected_away is not None else resources_context.expected_away,
+        home_win_probability=base.home_win_probability if base.home_win_probability is not None else resources_context.home_win_probability,
+        away_win_probability=base.away_win_probability if base.away_win_probability is not None else resources_context.away_win_probability,
+        home_starting=base.home_starting if base.home_starting is not None else resources_context.home_starting,
+        away_starting=base.away_starting if base.away_starting is not None else resources_context.away_starting,
+        confidence=max(float(base.confidence or 0), float(resources_context.confidence or 0)),
+        profits=dict(base.profits or {}),
+        details=details,
+    )
+
+
 async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str, MatchContext]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
     from app.services import windowed_core_coverage_runtime_patch as wc
 
@@ -243,9 +345,13 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         "matched": 0,
         "contexts_added": 0,
         "contexts_already_present": 0,
-        "events_fetched": 0,
+        "v1_events_fetched": 0,
+        "v1_predictions_fetched": 0,
+        "v2_events_fetched": 0,
         "matched_by_source_id": 0,
-        "matched_by_fuzzy": 0,
+        "matched_by_v1_prediction": 0,
+        "matched_by_v1_event": 0,
+        "matched_by_v2_fuzzy": 0,
         "stats_resources": 0,
         "metadata_resources": 0,
         "lineups_resources": 0,
@@ -255,6 +361,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
     preview: dict[str, Any] = {"added": [], "unmatched": [], "target_sample": []}
     if not token or not matches:
         return {}, stats, preview
+
     gap_keys = _gap_keys()
     now = datetime.now(UTC)
     candidates: list[Match] = []
@@ -275,101 +382,144 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
             continue
         candidates.append(match)
     candidates.sort(key=lambda m: ((m.commence_time.astimezone(UTC) - now).total_seconds(), 0 if _bzzoiro_id_from_match(m) else 1, m.league_name.lower()))
-    limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 48, 48))
+    limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 72, 72))
     candidates = candidates[:limit]
     stats["target_matches"] = len(candidates)
-    preview["target_sample"] = [{"match_key": _match_key(m), "home": m.home_team, "away": m.away_team, "bzzoiro_id": _bzzoiro_id_from_match(m)} for m in candidates[:20]]
+    preview["target_sample"] = [{"match_key": _match_key(m), "home": m.home_team, "away": m.away_team, "bzzoiro_id": _bzzoiro_id_from_match(m)} for m in candidates[:25]]
     if not candidates:
         stats["stop_reason"] = "no_gap_targets"
         return {}, stats, preview
 
-    max_requests = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 80, 80))
+    max_requests = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 140, 140))
     headers = {"Authorization": f"Token {token}"}
     added: dict[str, MatchContext] = {}
-    events: list[dict[str, Any]] = []
-    event_by_id: dict[str, dict[str, Any]] = {}
+    min_dt = min(m.commence_time for m in candidates).astimezone(UTC)
+    max_dt = max(m.commence_time for m in candidates).astimezone(UTC)
 
     async with httpx.AsyncClient(timeout=float(getattr(getattr(self, "settings", None), "bzzoiro_timeout_seconds", 20.0) or 20.0)) as client:
-        # Fetch broad event list once. The v2 docs support date_from/date_to + limit/offset.
-        min_dt = min(m.commence_time for m in candidates).astimezone(UTC)
-        max_dt = max(m.commence_time for m in candidates).astimezone(UTC)
-        offset = 0
-        while stats["requests"] < max_requests and offset <= 800:
-            payload = await _fetch_json(
-                client,
-                "https://sports.bzzoiro.com/api/v2/events/",
-                headers,
-                stats,
-                params={"date_from": min_dt.date().isoformat(), "date_to": max_dt.date().isoformat(), "limit": 200, "offset": offset},
-            )
-            batch = _results(payload)
-            if not batch:
-                break
-            events.extend(batch)
-            for row in batch:
-                row_id = row.get("id") or row.get("event_id")
-                if row_id not in (None, ""):
-                    event_by_id[str(row_id)] = row
-            if not isinstance(payload, dict) or not payload.get("next"):
-                break
-            offset += 200
-        stats["events_fetched"] = len(events)
+        v1_base = str(getattr(self, "base_url", "https://sports.bzzoiro.com/api") or "https://sports.bzzoiro.com/api").rstrip("/")
+        v1_params = {"date_from": min_dt.date().isoformat(), "date_to": max_dt.date().isoformat(), "tz": "UTC"}
+        v1_events = await _fetch_paginated(client, v1_base, "/events/", headers, v1_params, stats, mode="page", max_pages=8, max_requests=max_requests)
+        stats["v1_events_fetched"] = len(v1_events)
+        v1_predictions = await _fetch_paginated(client, v1_base, "/predictions/", headers, {**v1_params, "upcoming": "true"}, stats, mode="page", max_pages=8, max_requests=max_requests)
+        if not v1_predictions and _to_int(stats.get("requests"), 0) < max_requests:
+            v1_predictions = await _fetch_paginated(client, v1_base, "/predictions/", headers, v1_params, stats, mode="page", max_pages=8, max_requests=max_requests)
+        stats["v1_predictions_fetched"] = len(v1_predictions)
 
+        v2_events = await _fetch_paginated(client, "https://sports.bzzoiro.com", "/api/v2/events/", headers, {"date_from": min_dt.date().isoformat(), "date_to": max_dt.date().isoformat()}, stats, mode="offset", max_pages=8, max_requests=max_requests)
+        stats["v2_events_fetched"] = len(v2_events)
+        v2_by_id: dict[str, dict[str, Any]] = {}
+        for row in v2_events:
+            row_id = row.get("id") or row.get("event_id")
+            if row_id not in (None, ""):
+                v2_by_id[str(row_id)] = row
+
+        used_prediction_ids: set[str] = set()
         for match in candidates:
-            if stats["requests"] >= max_requests:
+            if _to_int(stats.get("requests"), 0) >= max_requests:
                 stats["stop_reason"] = "request_budget_exhausted"
                 break
-            event = None
-            score = 100.0
-            quality = "source_id"
-            bzz_id = _bzzoiro_id_from_match(match)
-            if bzz_id and bzz_id in event_by_id:
-                event = event_by_id[bzz_id]
-                stats["matched_by_source_id"] += 1
-            elif bzz_id:
-                payload = await _fetch_json(client, f"https://sports.bzzoiro.com/api/v2/events/{bzz_id}/", headers, stats)
-                if isinstance(payload, dict) and (payload.get("id") or payload.get("event_id")):
-                    event = payload
-                    stats["matched_by_source_id"] += 1
-            if event is None:
-                event, score, quality = wc._match_bzzoiro_event(match, events, getattr(self, "settings", None))
+            context: MatchContext | None = None
+            event_for_resources: dict[str, Any] | None = None
+            score = 0.0
+            quality: str | None = None
+
+            # 1) Broad v1 prediction coverage. This is the richest context path.
+            try:
+                pred, pred_quality, pred_score, _ = self._match_prediction(match, v1_predictions, used_prediction_ids)
+            except Exception:
+                pred, pred_quality, pred_score = None, None, 0.0
+            if pred is not None:
+                pred_id = None
+                try:
+                    pred_id = self._prediction_identity(pred)
+                except Exception:
+                    pred_id = None
+                if pred_id:
+                    used_prediction_ids.add(pred_id)
+                try:
+                    event_for_resources = self._prediction_event(pred, v1_events)
+                except Exception:
+                    event_for_resources = pred.get("event") if isinstance(pred.get("event"), dict) else None
+                try:
+                    context = self._prediction_to_context(pred, event_for_resources, pred_quality)
+                    stats["matched_by_v1_prediction"] += 1
+                    score = float(pred_score or 0.0)
+                    quality = pred_quality
+                except Exception:
+                    context = None
+
+            # 2) v1 event fallback: still useful because event has odds/basic context.
+            if context is None:
+                try:
+                    event, event_quality, event_score, _ = self._match_event(match, v1_events)
+                except Exception:
+                    event, event_quality, event_score = None, None, 0.0
                 if event is not None:
-                    stats["matched_by_fuzzy"] += 1
-            if event is None:
-                if len(preview["unmatched"]) < 20:
+                    event_for_resources = event
+                    try:
+                        context = self._event_to_context(event, event_quality)
+                    except Exception:
+                        context = None
+                    if context is not None:
+                        stats["matched_by_v1_event"] += 1
+                        score = float(event_score or 0.0)
+                        quality = event_quality
+
+            # 3) v2 direct/fuzzy fallback.
+            if context is None:
+                event = None
+                bzz_id = _bzzoiro_id_from_match(match)
+                if bzz_id and bzz_id in v2_by_id:
+                    event = v2_by_id[bzz_id]
+                    score = 100.0
+                    quality = "source_id"
+                    stats["matched_by_source_id"] += 1
+                elif bzz_id and _to_int(stats.get("requests"), 0) < max_requests:
+                    payload = await _fetch_json(client, f"https://sports.bzzoiro.com/api/v2/events/{bzz_id}/", headers, stats)
+                    if isinstance(payload, dict) and (payload.get("id") or payload.get("event_id")):
+                        event = payload
+                        score = 100.0
+                        quality = "source_id"
+                        stats["matched_by_source_id"] += 1
+                if event is None:
+                    event, score, quality = wc._match_bzzoiro_event(match, v2_events, getattr(self, "settings", None))
+                    if event is not None:
+                        stats["matched_by_v2_fuzzy"] += 1
+                if event is not None:
+                    event_for_resources = event
+                    event_id = event.get("id") or event.get("event_id")
+                    resources = {"event": event}
+                    resources.update(await _fetch_v2_resources(client, headers, event_id, stats, max_requests))
+                    context = _context_from_resources(event, resources, float(score or 0.0), quality)
+
+            # 4) If v1 gave a context and we can cheaply enrich it through v2 ids, merge.
+            if context is not None and event_for_resources is not None and _to_int(stats.get("requests"), 0) < max_requests:
+                event_id = event_for_resources.get("id") or event_for_resources.get("event_id")
+                if event_id not in (None, ""):
+                    resources = {"event": event_for_resources}
+                    resources.update(await _fetch_v2_resources(client, headers, event_id, stats, max_requests))
+                    if len(resources) > 1:
+                        resources_context = _context_from_resources(event_for_resources, resources, float(score or 0.0), quality)
+                        context = _merge_context(context, resources_context)
+
+            if context is None:
+                if len(preview["unmatched"]) < 25:
                     preview["unmatched"].append({"match_key": _match_key(match), "home": match.home_team, "away": match.away_team})
                 continue
-            event_id = event.get("id") or event.get("event_id")
-            if event_id in (None, ""):
-                continue
-            resources: dict[str, Any] = {"event": event}
-            endpoint_plan = [
-                ("stats", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/stats/"),
-                ("metadata", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/metadata/"),
-                ("lineups", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/lineups/"),
-                ("odds", f"https://sports.bzzoiro.com/api/v2/events/{event_id}/odds/"),
-            ]
-            for name, url in endpoint_plan:
-                if stats["requests"] >= max_requests:
-                    break
-                payload = await _fetch_json(client, url, headers, stats)
-                if isinstance(payload, dict):
-                    resources[name] = payload
-                    stats[f"{name}_resources"] = _to_int(stats.get(f"{name}_resources"), 0) + 1
-            context = _context_from_resources(event, resources, float(score or 0.0), quality)
             added[_match_key(match)] = context
             stats["matched"] += 1
             stats["contexts_added"] = len(added)
-            if len(preview["added"]) < 20:
+            if len(preview["added"]) < 25:
                 preview["added"].append({
                     "match_key": _match_key(match),
                     "home": match.home_team,
                     "away": match.away_team,
-                    "event_id": event_id,
                     "score": round(float(score or 0.0), 2),
                     "quality": quality,
                     "has_xg": context.expected_home is not None or context.expected_away is not None,
-                    "odds_hints": context.details.get("bzzoiro_odds_hint_count"),
+                    "odds_hints": (context.details or {}).get("bzzoiro_odds_hint_count"),
+                    "context_confidence": round(float(context.confidence or 0.0), 2),
                 })
     return added, stats, preview
 
@@ -380,12 +530,12 @@ def install() -> dict[str, Any]:
         from app.providers.bzzoiro import BzzoiroContextProvider
     except Exception as exc:
         payload.update({"status": "error", "error": f"import:{type(exc).__name__}: {exc}"})
-        _write_json(REPORT_PATH, payload)
+        _write_json(INSTALL_REPORT_PATH, payload)
         return payload
     current = BzzoiroContextProvider.fetch_context
     if getattr(current, "_harizon_bzzoiro_context_gap_finalizer", False):
         payload.update({"status": "already_installed"})
-        _write_json(REPORT_PATH, payload)
+        _write_json(INSTALL_REPORT_PATH, payload)
         return payload
 
     async def fetch_context_with_gap_pass(self, matches: list[Match]):  # type: ignore[no-untyped-def]
@@ -403,11 +553,17 @@ def install() -> dict[str, Any]:
             preview["context_gap_pass"] = gap_preview
         except Exception as exc:
             stats["context_gap_pass"] = {"enabled": True, "error": f"{type(exc).__name__}: {exc}"}
-        _write_json(REPORT_PATH, {"status": "ran", "stats": stats.get("context_gap_pass", {}), "preview": preview.get("context_gap_pass", {})})
+            preview["context_gap_pass"] = {"error": f"{type(exc).__name__}: {exc}"}
+        _write_json(RUNTIME_REPORT_PATH, {"status": "ran", "created_at_utc": datetime.now(UTC).isoformat(), "stats": stats.get("context_gap_pass", {}), "preview": preview.get("context_gap_pass", {})})
         return contexts, stats, preview
 
     fetch_context_with_gap_pass._harizon_bzzoiro_context_gap_finalizer = True  # type: ignore[attr-defined]
     BzzoiroContextProvider.fetch_context = fetch_context_with_gap_pass  # type: ignore[assignment]
-    payload.update({"status": "installed", "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 48, 48), "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 80, 80)})
-    _write_json(REPORT_PATH, payload)
+    payload.update({
+        "status": "installed",
+        "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 72, 72),
+        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 140, 140),
+        "runtime_report": str(RUNTIME_REPORT_PATH),
+    })
+    _write_json(INSTALL_REPORT_PATH, payload)
     return payload
