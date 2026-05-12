@@ -149,7 +149,7 @@ jobs:
         run: |
           set -uo pipefail
           echo "core build day inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python -u scripts/build_day_inventory_core_v2.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
+          python -u scripts/build_day_inventory_core_v3.py 2>&1 | tee .data/exports/latest-build-day-inventory.log
           status=${PIPESTATUS[0]}
           echo "core build day inventory status ${status}"
           echo "core build day inventory finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -160,6 +160,7 @@ jobs:
           cp .data/exports/latest-day-inventory-summary.json artifacts/day-inventory/latest-day-inventory-summary.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-core-build-report.json artifacts/day-inventory/latest-day-inventory-core-build-report.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-core-crosswalk.json artifacts/day-inventory/latest-day-inventory-core-crosswalk.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-strict-merge-report.json artifacts/day-inventory/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           cp .data/exports/latest-build-day-inventory.log artifacts/day-inventory/latest-build-day-inventory.log 2>/dev/null || true
           exit ${status}
 
@@ -174,7 +175,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-build-day-inventory.log || true
+          git add -f .data/day_inventory .data/cache/day_inventory .data/exports/latest-day-inventory-summary.json .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json .data/exports/latest-build-day-inventory.log || true
           git commit -m "Update day inventory [skip ci]" || true
           if git push; then
             echo "day inventory pushed"
@@ -196,6 +197,7 @@ jobs:
             .data/exports/latest-day-inventory-summary.json
             .data/exports/latest-day-inventory-core-build-report.json
             .data/exports/latest-day-inventory-core-crosswalk.json
+            .data/exports/latest-day-inventory-core-strict-merge-report.json
             .data/exports/latest-build-day-inventory.log
           if-no-files-found: ignore
           include-hidden-files: true
