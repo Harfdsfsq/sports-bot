@@ -238,3 +238,12 @@ try:
     windowed_core_report_and_sportlogic_final_guard.install()
 except Exception:
     pass
+
+# Progressive coverage planner must wrap _fetch_provider after all provider
+# bridges/rescue layers. It accumulates per-match line/context coverage across
+# 2-hour runs and sorts targets by remaining gaps.
+try:
+    from app.services import progressive_coverage_runtime_patch
+    progressive_coverage_runtime_patch.install()
+except Exception:
+    pass
