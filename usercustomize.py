@@ -279,3 +279,11 @@ try:
     bzzoiro_context_gap_finalizer.install()
 except Exception:
     pass
+
+# The Bzzoiro context gap pass uses several Bzzoiro endpoints. Slow endpoints
+# must not abort the whole pass; timeouts are counted and skipped instead.
+try:
+    from app.services import bzzoiro_context_gap_timeout_guard
+    bzzoiro_context_gap_timeout_guard.install()
+except Exception:
+    pass
