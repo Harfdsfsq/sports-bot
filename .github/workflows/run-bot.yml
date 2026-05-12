@@ -111,8 +111,14 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          mkdir -p /tmp/harizon-preserve-exports
+          cp .data/exports/latest-build-day-inventory.log /tmp/harizon-preserve-exports/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-build-report.json /tmp/harizon-preserve-exports/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-crosswalk.json /tmp/harizon-preserve-exports/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-core-strict-merge-report.json /tmp/harizon-preserve-exports/ 2>/dev/null || true
           rm -rf .data/exports artifacts/run-bot
           mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          cp /tmp/harizon-preserve-exports/* .data/exports/ 2>/dev/null || true
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -270,6 +276,8 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add -f .data/exports .data/cache .data/day_inventory .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
+          git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
+          git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
       - name: Upload run artifact
