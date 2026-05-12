@@ -60,5 +60,9 @@ for _module in [
     'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
     # Absolute last accounting repair: bzzoiro_predictions_v2 => bzzoiro.
     'app.services.progressive_provider_alias_finalizer',
+    # Final bridge: let windowed publication audit reuse progressive coverage
+    # evidence computed in the same run and relieve impossible next-cron movement
+    # checks for final-pre-kickoff matches.
+    'app.services.windowed_coverage_state_bridge',
 ]:
     _install(_module)
