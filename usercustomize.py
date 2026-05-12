@@ -56,6 +56,8 @@ for _module in [
     # Bridge inventory source_ids into Bzzoiro context-gap matching before final
     # progressive accounting is recomputed.
     'app.services.bzzoiro_context_gap_source_id_finalizer',
+    # Controlled relaxed matching only inside Bzzoiro context gap-pass.
+    'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
     # Absolute last accounting repair: bzzoiro_predictions_v2 => bzzoiro.
     'app.services.progressive_provider_alias_finalizer',
 ]:
