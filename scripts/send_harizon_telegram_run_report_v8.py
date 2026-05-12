@@ -6,9 +6,9 @@ Extends v7 with progressive core coverage metrics. The core contract is:
 - core line/odds sources: odds_api_io + bzzoiro + sstats;
 - core context sources: sstats + bzzoiro.
 
-The old v7 conclusion looked only at Bzzoiro+odds-api.io overlap. That is still
-useful for live-price independence, but it no longer represents the user's full
-core odds/source contract because SStats is also a core line/model source.
+The report also normalizes runtime-patched SStats counters: the provider wrapper
+stores real v1 numbers under source_stats.sstats.v1_stats / v1_* fields, while
+older renderers only read top-level requests/contexts/rows.
 """
 
 import importlib.util
@@ -32,9 +32,6 @@ def _load_v7() -> Any:
 
 
 v7 = _load_v7()
-# Important: v7 itself is a wrapper that installs its build/render functions into
-# v5.main(). Therefore v8 must preserve the already-installed v7 functions from
-# v7.v5, then replace v7.v5 with v8 functions before calling v7.v5.main().
 _base_build_payload = v7.v5.build_payload
 _base_render = v7.v5.render
 
@@ -43,6 +40,10 @@ def _as_int(value: Any) -> int:
     try:
         if value in (None, ""):
             return 0
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
         return int(float(str(value)))
     except Exception:
         return 0
@@ -66,8 +67,49 @@ def _write_status(payload: dict[str, Any]) -> None:
         pass
 
 
+def _first_dict(*values: Any) -> dict[str, Any]:
+    for value in values:
+        if isinstance(value, dict):
+            return value
+    return {}
+
+
+def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
+    """Expose nested SStats v1 counters at the top-level report API row."""
+    try:
+        data = v7.v5.artifacts()
+        stats = v7.v5.source_stats(data)
+    except Exception:
+        return
+    row = _first_dict(stats.get("sstats"))
+    if not row:
+        return
+    v1 = _first_dict(row.get("v1_stats"))
+    requests = _as_int(row.get("requests")) or _as_int(row.get("v1_requests")) or _as_int(v1.get("requests"))
+    contexts = _as_int(row.get("contexts_built")) or _as_int(row.get("v1_contexts_built")) or _as_int(v1.get("contexts_built"))
+    rows = _as_int(row.get("rows_fetched")) or _as_int(row.get("v1_games_list_rows_fetched")) or _as_int(v1.get("games_list_rows_fetched"))
+    errors = _as_int(row.get("response_errors")) or _as_int(row.get("v1_response_errors")) or _as_int(v1.get("response_errors"))
+    deep = _as_int(_first_dict(row.get("sstats_deep")).get("contexts_enriched"))
+    deep = deep or _as_int(row.get("v1_last_games_stats_fetched")) or _as_int(v1.get("last_games_stats_fetched"))
+    api = payload.setdefault("api", {})
+    sstats_api = dict(api.get("sstats") or {})
+    if requests:
+        sstats_api["requests"] = requests
+    if contexts or _as_int(sstats_api.get("contexts")) == 0:
+        sstats_api["contexts"] = contexts
+    if rows:
+        sstats_api["rows"] = rows
+    sstats_api["errors"] = errors
+    sstats_api["deep_enriched"] = deep
+    sstats_api["runtime_patch"] = row.get("runtime_patch") or ""
+    sstats_api["team_form_contexts"] = _as_int(row.get("v1_team_form_contexts_built")) or _as_int(v1.get("team_form_contexts_built"))
+    sstats_api["direct_contexts"] = _as_int(row.get("v1_direct_contexts_built")) or _as_int(v1.get("direct_contexts_built"))
+    api["sstats"] = sstats_api
+
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
+    _normalize_runtime_patched_sstats(payload)
     plan = _load_progressive_plan()
     payload["version"] = "harizon-telegram-report-v8-progressive-core-coverage"
     payload.setdefault("diagnostics", {})["progressive_core_coverage"] = {
@@ -106,8 +148,30 @@ def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
     return text.replace(old, new)
 
 
+def _patch_sstats_line(text: str, payload: dict[str, Any]) -> str:
+    api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
+    sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
+    if not sstats:
+        return text
+    import re
+    new_line = (
+        f"• sstats: req {_as_int(sstats.get('requests'))}, ctx {_as_int(sstats.get('contexts'))}, "
+        f"rows {_as_int(sstats.get('rows'))}, err {_as_int(sstats.get('errors'))}, "
+        f"deep enriched {_as_int(sstats.get('deep_enriched'))}"
+    )
+    extra = []
+    if sstats.get("runtime_patch"):
+        extra.append(f"patch {sstats.get('runtime_patch')}")
+    if _as_int(sstats.get("team_form_contexts")) or _as_int(sstats.get("direct_contexts")):
+        extra.append(f"direct {_as_int(sstats.get('direct_contexts'))}, form {_as_int(sstats.get('team_form_contexts'))}")
+    if extra:
+        new_line += " | " + "; ".join(extra)
+    return re.sub(r"• sstats: req \d+, ctx \d+, rows \d+, err \d+, deep enriched \d+(?: \| [^\n]*)?", new_line, text)
+
+
 def render(payload: dict[str, Any]) -> str:
     text = _base_render(payload).replace("HARIZON run report v7", "HARIZON run report v8")
+    text = _patch_sstats_line(text, payload)
     diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
     prog = diag.get("progressive_core_coverage") if isinstance(diag.get("progressive_core_coverage"), dict) else {}
     contract = prog.get("contract") if isinstance(prog.get("contract"), dict) else {}
@@ -129,12 +193,11 @@ def render(payload: dict[str, Any]) -> str:
     return text
 
 
-# Install v8 functions into the module whose main() is actually executed.
 v7.v5.build_payload = build_payload
 v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
-_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5"})
+_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5", "sstats_nested_normalizer": True})
 
 
 if __name__ == "__main__":
