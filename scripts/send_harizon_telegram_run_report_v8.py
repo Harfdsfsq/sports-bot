@@ -19,6 +19,7 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
+V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 
 
 def _load_v7() -> Any:
@@ -31,8 +32,11 @@ def _load_v7() -> Any:
 
 
 v7 = _load_v7()
-_base_build_payload = v7.build_payload
-_base_render = v7.render
+# Important: v7 itself is a wrapper that installs its build/render functions into
+# v5.main(). Therefore v8 must preserve the already-installed v7 functions from
+# v7.v5, then replace v7.v5 with v8 functions before calling v7.v5.main().
+_base_build_payload = v7.v5.build_payload
+_base_render = v7.v5.render
 
 
 def _as_int(value: Any) -> int:
@@ -52,6 +56,14 @@ def _load_progressive_plan() -> dict[str, Any]:
     except Exception:
         return {}
     return {}
+
+
+def _write_status(payload: dict[str, Any]) -> None:
+    try:
+        V8_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
+        V8_STATUS_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
 
 
 def build_payload() -> dict[str, Any]:
@@ -117,8 +129,12 @@ def render(payload: dict[str, Any]) -> str:
     return text
 
 
+# Install v8 functions into the module whose main() is actually executed.
+v7.v5.build_payload = build_payload
+v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
+_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5"})
 
 
 if __name__ == "__main__":
