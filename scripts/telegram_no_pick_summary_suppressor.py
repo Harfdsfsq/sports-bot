@@ -79,13 +79,20 @@ def _install_core_source_coverage() -> dict[str, object]:
     global _CORE_PATCH_INSTALLED
     if _CORE_PATCH_INSTALLED:
         return {"status": "already_installed"}
+    result: dict[str, object] = {}
     try:
         from app.services.core_source_coverage_runtime_patch import install as install_core_patch
         install_core_patch()
-        _CORE_PATCH_INSTALLED = True
-        return {"status": "installed"}
+        result["core_source_coverage"] = "installed"
     except Exception as exc:
-        return {"status": "failed", "error": f"{type(exc).__name__}: {exc}"}
+        result["core_source_coverage"] = f"failed:{type(exc).__name__}: {exc}"
+    try:
+        from app.services.core_source_coverage_fixups import install as install_fixups
+        result["core_source_fixups"] = install_fixups()
+    except Exception as exc:
+        result["core_source_fixups"] = f"failed:{type(exc).__name__}: {exc}"
+    _CORE_PATCH_INSTALLED = True
+    return result
 
 
 def install() -> dict[str, object]:
