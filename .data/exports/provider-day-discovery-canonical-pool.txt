@@ -1,23 +1,23 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-13T17:03:51.826015+00:00
+UTC: 2026-05-13T19:03:49.580323+00:00
 target_date: 2026-05-13
-canonical_matches: 307
-2+ provider sources: 39
-2+ primary sources: 36
+canonical_matches: 276
+2+ provider sources: 40
+2+ primary sources: 37
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 statuses={"OK": 1}
 - bzzoiro: commands=3 ok=3 rows=224 event_like=224 statuses={"OK": 3}
-- football_data: commands=1 ok=1 rows=7 event_like=7 statuses={"OK": 1}
+- football_data: commands=1 ok=1 rows=4 event_like=4 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
-- odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
+- odds_api_io: commands=2 ok=2 rows=142 event_like=142 statuses={"OK": 2}
 - sstats: commands=1 ok=1 rows=206 event_like=156 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 268, "2": 33, "3": 5, "4": 1}
-- primary providers: {"1": 271, "2": 36}
+- all providers: {"1": 236, "2": 36, "3": 4}
+- primary providers: {"1": 239, "2": 37}
 
 ## Top canonical matches
 - 2026-05-12T22:00:00+00:00 | Belgrano Cordoba — Union Santa Fe | providers=sstats ids={"sstats": "1544849"}
@@ -34,8 +34,8 @@ all 3 primary sources: 0
 - 2026-05-13T00:00:00+00:00 | Aurora — Real Oruro | providers=sstats ids={"sstats": "1538375"}
 - 2026-05-13T00:00:00+00:00 | Olancho — CD Motagua | providers=sstats ids={"sstats": "1543723"}
 - 2026-05-13T00:10:00+00:00 | San Martin Tucuman — Gimnasia Jujuy | providers=sstats ids={"sstats": "1498518"}
-- 2026-05-13T00:30:00+00:00 | Cruzeiro — Goiás | providers=bzzoiro,sstats ids={"bzzoiro": "9600", "sstats": "1537016"}
 - 2026-05-13T00:30:00+00:00 | Fluminense — Operário-PR | providers=bzzoiro,sstats ids={"bzzoiro": "9599", "sstats": "1537015"}
+- 2026-05-13T00:30:00+00:00 | Cruzeiro — Goiás | providers=bzzoiro,sstats ids={"bzzoiro": "9600", "sstats": "1537016"}
 - 2026-05-13T00:30:00+00:00 | Argentinos JRS — Huracan | providers=sstats ids={"sstats": "1544850"}
 - 2026-05-13T00:30:00+00:00 | Brazil Juniors — Estrella | providers=sstats ids={"sstats": "1543811"}
 - 2026-05-13T01:30:00+00:00 | Santa Fe — America de Cali | providers=sstats ids={"sstats": "1544228"}
@@ -108,11 +108,11 @@ all 3 primary sources: 0
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Cruzeiro — Goiás | primary=2 providers=bzzoiro,sstats
+- Fluminense — Operário-PR | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Fluminense — Operário-PR | primary=2 providers=bzzoiro,sstats
+- Cruzeiro — Goiás | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

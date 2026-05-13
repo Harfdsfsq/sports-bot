@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":70905774,\"home\":\"PFC Ludogorets 1945 Razgrad\",\"away\":\"PFC Levski Sofia\",\"homeId\":43840,\"awayId\":3273,\"date\":\"2026-05-13T17:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Bulgaria - Parva Liga\",\"slug\":\"bulgaria-parva-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":",
+      "body_preview": "[{\"id\":71194350,\"home\":\"CA Platense\",\"away\":\"San Martin de San Juan\",\"homeId\":36837,\"awayId\":7772,\"date\":\"2026-05-13T19:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Argentina - Copa Argentina\",\"slug\":\"argentina-copa-argentina\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778691764,\"localtime\":\"2026-05-13 18:02\"},\"current\":{\"last_updated_epoch\":1778691600,\"last_updated\":\"2026-05-13 18:00\",\"temp_c\":11.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778698908,\"localtime\":\"2026-05-13 20:01\"},\"current\":{\"last_updated_epoch\":1778698800,\"last_updated\":\"2026-05-13 20:00\",\"temp_c\":9.3",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,7 +77,7 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.04124641418457031,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curr",
+      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.0718832015991211,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curre",
       "enabled": true,
       "http_status": 200,
       "item_count": 9,
@@ -96,7 +96,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-05-13T17:02:35.417316+00:00",
+  "created_at_utc": "2026-05-13T19:02:40.736676+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -113,6 +113,7 @@
     },
     {
       "bad_enabled": {
+        "SPORTLOGIC_BROAD_FALLBACK_ENABLED": "true",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
         "SPORTLOGIC_ENABLED": "true",
         "SPORTLOGIC_QUERY_GUARD_ENABLED": "true"
@@ -133,15 +134,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -169,9 +174,11 @@
       "prefix": "NEWSAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "CURRENTS_NEWS_CONTEXT_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "CURRENTS"
     },
     {
@@ -193,9 +200,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -205,9 +216,11 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
@@ -251,7 +264,7 @@
     "enabled_checks": 8,
     "failed_enabled_checks": 1,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 4,
+    "non_core_bad_env_prefixes": 9,
     "ok_enabled_checks": 7,
     "status": "warning"
   }
