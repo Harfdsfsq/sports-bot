@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":61624638,\"home\":\"Deportivo Alaves\",\"away\":\"FC Barcelona\",\"homeId\":2885,\"awayId\":2817,\"date\":\"2026-05-13T19:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Spain - LaLiga\",\"slug\":\"spain-laliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61624644,\"home\":\"Get",
+      "body_preview": "[{\"id\":68156604,\"home\":\"Real Monarchs SLC\",\"away\":\"San Jose Earthquakes II\",\"homeId\":206019,\"awayId\":885975,\"date\":\"2026-05-13T23:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS Next Pro\",\"slug\":\"usa-mls-next-pro\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778699865,\"localtime\":\"2026-05-13 20:17\"},\"current\":{\"last_updated_epoch\":1778699700,\"last_updated\":\"2026-05-13 20:15\",\"temp_c\":9.3",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778712831,\"localtime\":\"2026-05-13 23:53\"},\"current\":{\"last_updated_epoch\":1778712300,\"last_updated\":\"2026-05-13 23:45\",\"temp_c\":7.4",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,7 +77,7 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.04029273986816406,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curr",
+      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.06079673767089844,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curr",
       "enabled": true,
       "http_status": 200,
       "item_count": 9,
@@ -96,17 +96,17 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-05-13T19:17:32.491182+00:00",
+  "created_at_utc": "2026-05-13T22:54:50.464193+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
         "ALLSPORTSAPI_ENABLED": "true"
       },
       "bad_limits": {
-        "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "4",
-        "ALLSPORTSAPI_PER_RUN_MAX": "4",
-        "ALLSPORTSAPI_REQUESTS_MAX_PER_RUN": "4",
-        "ALLSPORTSAPI_REQUEST_BUDGET_GRANTED": "4"
+        "ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN": "8",
+        "ALLSPORTSAPI_PER_RUN_MAX": "8",
+        "ALLSPORTSAPI_REQUESTS_MAX_PER_RUN": "8",
+        "ALLSPORTSAPI_REQUEST_BUDGET_GRANTED": "8"
       },
       "ok": false,
       "prefix": "ALLSPORTSAPI"
@@ -121,8 +121,8 @@
       "bad_limits": {
         "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "30",
         "SPORTLOGIC_PER_RUN_MAX": "30",
-        "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "4",
-        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "4"
+        "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "8",
+        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "8"
       },
       "ok": false,
       "prefix": "SPORTLOGIC"
@@ -134,15 +134,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -196,9 +200,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -208,9 +216,11 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
@@ -254,7 +264,7 @@
     "enabled_checks": 8,
     "failed_enabled_checks": 1,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 5,
+    "non_core_bad_env_prefixes": 9,
     "ok_enabled_checks": 7,
     "status": "warning"
   }
