@@ -1,13 +1,5 @@
 from __future__ import annotations
 
-"""Install candidate value filter after every other runtime wrapper.
-
-`candidate_value_runtime_patch` is installed early from sitecustomize, but later
-runtime finalizers can wrap/replace `CandidateFactory.build_candidates`. This
-module is intentionally loaded at the very end of usercustomize and forces a
-second install so the calibrated value filter is the outermost wrapper.
-"""
-
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -30,18 +22,27 @@ def install() -> dict[str, Any]:
     payload: dict[str, Any] = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "status": "starting",
-        "purpose": "force candidate_value_runtime_patch after all wrappers",
+        "purpose": "final runtime wrappers before PredictionRunner",
     }
     try:
         from app.services.model import CandidateFactory
+
+        # Must be installed immediately before the final value wrapper. It expands
+        # CandidateFactory's bookmaker universe for multi-source SStats/Bzzoiro/
+        # SportLogic line buckets, otherwise coverage sees 2-source lines but model
+        # generation silently drops external books.
+        try:
+            import app.services.core_line_bookmaker_universe_patch as line_universe_patch
+            payload["core_line_bookmaker_universe_install"] = line_universe_patch.install()
+        except Exception as exc:
+            payload["core_line_bookmaker_universe_install"] = f"failed:{type(exc).__name__}: {exc}"
+
         import app.services.candidate_value_runtime_patch as value_patch
 
         current_build = getattr(CandidateFactory, "build_candidates", None)
         payload["build_before"] = getattr(current_build, "__name__", str(current_build))
         payload["had_value_patch_flag_before"] = bool(getattr(CandidateFactory, "_harizon_candidate_value_patch", False))
 
-        # Force the existing patch to wrap the current build_candidates method.
-        # This is needed because late runtime modules can replace the earlier wrapper.
         try:
             setattr(value_patch, "_INSTALLED", False)
         except Exception:
