@@ -6,7 +6,7 @@
       "errors": 0,
       "events": 0,
       "events_total_effective": 54,
-      "overlap": 0,
+      "overlap": 3,
       "requests": 0,
       "requests_total_effective": 37,
       "secondary_offers_added": 88,
@@ -19,12 +19,12 @@
       "v2_stats_resources": 9
     },
     "odds_api_io": {
-      "books_2plus": 13,
+      "books_2plus": 42,
       "errors": 0,
       "events_req": 0,
-      "matched": 95,
+      "matched": 96,
       "odds_req": 20,
-      "offers": 4730
+      "offers": 8742
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -51,30 +51,30 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.388222340742747,
-    "fallback_age_min": 0.06022458076477051,
-    "run_log_age_min": 0.35520565112431846,
-    "signal_stack_age_min": 0.4219482421875
+    "debug_age_min": 0.30256680250167844,
+    "fallback_age_min": 0.052358861764272055,
+    "run_log_age_min": 0.2747804919878642,
+    "signal_stack_age_min": 0.32392541964848837
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 0,
+    "bzzoiro_odds_overlap_with_odds_api_io": 3,
     "bzzoiro_secondary_offers_added": 88,
-    "day_inventory_total": 354,
-    "matches_seen": 293,
-    "matches_with_2plus_books": 13,
-    "matches_with_context": 176,
-    "matches_with_offers": 27,
-    "odds_offers_primary": 4730,
-    "ready_for_model": 0,
+    "day_inventory_total": 357,
+    "matches_seen": 294,
+    "matches_with_2plus_books": 42,
+    "matches_with_context": 170,
+    "matches_with_offers": 57,
+    "odds_offers_primary": 8742,
+    "ready_for_model": 1,
     "secondary_combinations": {
-      "bzzoiro": 2,
-      "bzzoiro+odds_api_io+sstats": 6,
-      "odds_api_io": 5,
-      "odds_api_io+sstats": 11,
-      "sstats": 3
+      "bzzoiro": 3,
+      "bzzoiro+odds_api_io": 3,
+      "bzzoiro+odds_api_io+sstats": 5,
+      "odds_api_io": 29,
+      "odds_api_io+sstats": 17
     }
   },
-  "created_at_utc": "2026-05-13T07:15:25.207708+00:00",
+  "created_at_utc": "2026-05-13T09:06:25.925157+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
       "contexts_built": 9,
@@ -126,25 +126,25 @@
         ]
       },
       "counts": {
-        "all_context_1plus": 455,
-        "all_context_2plus": 157,
-        "all_odds_1plus": 503,
-        "all_odds_2plus": 227,
+        "all_context_1plus": 457,
+        "all_context_2plus": 162,
+        "all_odds_1plus": 509,
+        "all_odds_2plus": 230,
         "context_1plus": 433,
         "context_2plus": 75,
         "core_context_1plus": 433,
         "core_context_2plus": 75,
-        "core_odds_1plus": 503,
-        "core_odds_2plus": 227,
+        "core_odds_1plus": 509,
+        "core_odds_2plus": 230,
         "core_ready_2plus_both": 75,
-        "matches_tracked": 513,
-        "odds_1plus": 503,
-        "odds_2plus": 227,
+        "matches_tracked": 518,
+        "odds_1plus": 509,
+        "odds_2plus": 230,
         "ready_2plus_both": 75,
-        "window_0_12h": 294,
-        "window_0_12h_core_ready_2plus_both": 28,
-        "window_0_12h_ready_2plus_both": 28,
-        "window_0_4h": 30,
+        "window_0_12h": 298,
+        "window_0_12h_core_ready_2plus_both": 29,
+        "window_0_12h_ready_2plus_both": 29,
+        "window_0_4h": 71,
         "window_0_4h_core_ready_2plus_both": 5,
         "window_0_4h_ready_2plus_both": 5
       },
@@ -160,9 +160,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 1,
+    "fallback_candidates_seen": 1,
+    "fallback_evaluated": 1,
     "fallback_published": false,
     "passed_candidates": 0,
     "publish_filter_blocked": 0,
@@ -170,80 +170,128 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 0,
-    "windowed_audit_candidates": 0,
-    "windowed_publish_allowed": 0,
+    "raw_candidates": 1,
+    "windowed_audit_candidates": 1,
+    "windowed_publish_allowed": 1,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 6,
+    "final_pre_kickoff_checks": 22,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 6,
+    "no_more_regular_run_before_kickoff": 22,
     "seen": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 1,
+      "reason": "odds_above_global_max",
+      "reason_ru": "odds above global max"
+    },
+    {
+      "count": 1,
+      "reason": "quality_quality_high_odds_confidence_guard",
+      "reason_ru": "quality quality high odds confidence guard"
+    }
+  ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "FC Rukh Lviv",
+        "away_team_ru": "Рух Лвив",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-13T10:00:00+00:00",
+        "commence_time_display": "13.05.2026 13:00 MSK",
+        "family": "totals",
+        "home_team": "FK Kudrivka",
+        "home_team_ru": "Кудривка",
+        "league_name": "Ukraine - Premier League",
+        "league_name_ru": "Украина - Премьер-лига",
+        "match_key": "soccer|kudrivka|rukh lviv|2026-05-13",
+        "metrics": {
+          "adjusted_probability": 0.73302,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 46.42,
+          "canonical_ev_pct": 172.684,
+          "confidence": 63.982,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "clubelo",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -4.796,
+          "market_probability": 0.78098,
+          "model_probability": 0.854059,
+          "odds": 3.72,
+          "odds_sources_count": 2,
+          "publication_score": 255.184,
+          "quality_reasons": [
+            "quality_high_odds_confidence_guard"
+          ],
+          "quality_score": 100.0,
+          "quality_score_raw": 100.0,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.268817,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 12.104,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 12.104,
+            "xg_model_gap_pp": -12.104,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.854059,
+            "xg_probability_pct": 85.406,
+            "xg_total": 2.759
+          }
+        },
+        "ok": false,
+        "point": 4.5,
+        "reject_reasons": [
+          "odds_above_global_max"
+        ],
+        "reject_reasons_ru": [
+          "коэффициент выше общего максимума"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
-      {
-        "away_team": "Reilac Shiga FC",
-        "home_team": "Gainare Tottori",
-        "kickoff_utc": "2026-05-13T09:00:00+00:00",
-        "league_name": "Japan - J.League 2",
-        "match_key": "soccer|gainare tottori|reilac shiga|2026-05-13",
-        "minutes_to_kickoff": 104.99,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 125.005,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-13T05:08:25.008257+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Biwako Shiga",
-        "home_team": "Gainare Tottori",
-        "kickoff_utc": "2026-05-13T09:00:00+00:00",
-        "league_name": "Unknown",
-        "match_key": "soccer|biwako shiga|gainare tottori|2026-05-13",
-        "minutes_to_kickoff": 104.99,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 125.005,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-13T05:08:25.008257+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
       {
         "away_team": "Transport United",
         "home_team": "Tensung",
         "kickoff_utc": "2026-05-13T10:00:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|tensung|transport united|2026-05-13",
-        "minutes_to_kickoff": 164.99,
+        "minutes_to_kickoff": 53.89,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 121.005,
+        "priority": 158.038,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
+          "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
@@ -252,29 +300,9 @@
         "kickoff_utc": "2026-05-13T10:00:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|hungary|turkey|2026-05-13",
-        "minutes_to_kickoff": 164.99,
+        "minutes_to_kickoff": 53.89,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 121.005,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "Canberra Juventus FC",
-        "home_team": "Brindabella Blues FC",
-        "kickoff_utc": "2026-05-13T09:30:00+00:00",
-        "league_name": "Australia - Capital NPL 1",
-        "match_key": "soccer|brindabella blues|canberra juventus|2026-05-13",
-        "minutes_to_kickoff": 134.99,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 115.005,
+        "priority": 158.038,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -287,31 +315,91 @@
         }
       },
       {
-        "away_team": "O'Connor Knights FC",
-        "home_team": "Canberra Olympic",
-        "kickoff_utc": "2026-05-13T09:30:00+00:00",
-        "league_name": "Australia - Capital NPL 1",
-        "match_key": "soccer|canberra olympic|o connor knights|2026-05-13",
-        "minutes_to_kickoff": 134.99,
+        "away_team": "Tokyo Verdy",
+        "home_team": "Machida Zelvia",
+        "kickoff_utc": "2026-05-13T10:00:00+00:00",
+        "league_name": "Japan - J.League",
+        "match_key": "soccer|machida zelvia|tokyo verdy|2026-05-13",
+        "minutes_to_kickoff": 53.89,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 115.005,
+        "priority": 142.038,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-13T07:15:21.055922+00:00",
+          "last_odds_refresh_utc": "2026-05-13T07:15:26.919616+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Kyoto Sanga FC",
+        "home_team": "Vissel Kobe",
+        "kickoff_utc": "2026-05-13T10:00:00+00:00",
+        "league_name": "Japan - J.League",
+        "match_key": "soccer|kyoto sanga|vissel kobe|2026-05-13",
+        "minutes_to_kickoff": 53.89,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 142.038,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-13T09:06:22.272712+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
           "no_more_regular_run_before_kickoff": true
         }
+      },
+      {
+        "away_team": "FC Rukh Lviv",
+        "home_team": "FK Kudrivka",
+        "kickoff_utc": "2026-05-13T10:00:00+00:00",
+        "league_name": "Ukraine - Premier League",
+        "match_key": "soccer|kudrivka|rukh lviv|2026-05-13",
+        "minutes_to_kickoff": 53.89,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 142.038,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-13T09:06:22.272712+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Prizreni",
+        "home_team": "2 Korriku",
+        "kickoff_utc": "2026-05-13T11:00:00+00:00",
+        "league_name": "Unknown",
+        "match_key": "soccer|2 korriku|prizreni|2026-05-13",
+        "minutes_to_kickoff": 113.89,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 138.038,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 2014,
-  "top_reason": "no_positive_canonical_value_candidates",
+  "text_length": 2225,
+  "top_reason": "odds_above_global_max",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
