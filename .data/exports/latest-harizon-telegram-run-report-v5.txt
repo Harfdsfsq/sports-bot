@@ -1,56 +1,40 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
-• Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: quality: вероятность после калибровки ниже порога
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Главная причина: no positive canonical value candidates
 
 📦 Покрытие
-• Матчи в run: 279 | day inventory: 339
-• С линиями: 54 | с контекстом: 161 | ready model: 8
-• odds-api.io offers: 8404 | Bzzoiro secondary offers: 33
-• 2+ букмекера odds-api.io: 41 | 2-source overlap Bzzoiro+odds-api.io: 2
-• Source combinations: odds_api_io: 29, odds_api_io+sstats: 19, bzzoiro+odds_api_io+sstats: 3, bzzoiro+odds_api_io: 2, bzzoiro: 1
+• Матчи в run: 259 | day inventory: 334
+• С линиями: 70 | с контекстом: 133 | ready model: 0
+• odds-api.io offers: 10464 | Bzzoiro secondary offers: 66
+• 2+ букмекера odds-api.io: 51 | 2-source overlap Bzzoiro+odds-api.io: 4
+• Source combinations: odds_api_io: 37, odds_api_io+sstats: 20, bzzoiro: 5, bzzoiro+odds_api_io: 4, bzzoiro+odds_api_io+sstats: 4
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8 / 8
+• Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published False
-• Windowed coverage: audit 10 | allowed 0 | blocked 10 | publish-filter input 0
+• Controlled fallback: seen 0 | evaluated 0 | published False
+• Windowed coverage: audit 18 | allowed 0 | blocked 18 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 56 | no next regular run: 56
+• Final pre-kickoff checks: 162 | no next regular run: 162
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 20, matched 100, offers 8404, 2+ books 41, err 0
-• sstats: req 20, ctx 144, rows 17297, err 0, deep enriched 5 | patch sstats_v1_first_then_legacy_gapfill; direct 0, form 144
-• bzzoiro: direct req 0, v2 req 13, v2 ctx 3, v2 odds 3, secondary offers 33, overlap odds-api.io 2, err 0
+• odds_api_io: events req 0, odds req 20, matched 94, offers 10464, 2+ books 51, err 0
+• sstats: req 20, ctx 115, rows 17298, err 0, deep enriched 2 | patch sstats_v1_first_then_legacy_gapfill; direct 0, form 115
+• bzzoiro: direct req 0, v2 req 33, v2 ctx 8, v2 odds 8, secondary offers 66, overlap odds-api.io 4, err 0
 • sportlogic: enabled True, req 12, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
 🧭 Progressive core coverage
 • Core odds/line: bzzoiro,odds_api_io,sstats
 • Core context: bzzoiro,sstats
-• Tracked: 526 | core odds 2+: 240 | core context 2+: 75 | core-ready both: 75
-• 0–4ч: 6/167 core-ready
-• 0–12ч: 24/279 core-ready
+• Tracked: 556 | core odds 2+: 255 | core context 2+: 75 | core-ready both: 75
+• 0–4ч: 17/247 core-ready
+• 0–12ч: 24/264 core-ready
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 3 (30%)
-• missing total xg sanity: 2 (20%)
-• направление ставки конфликтует с xG: 1 (10%)
-• tier a quality below min: 1 (10%)
-• tier b quality below min: 1 (10%)
-• tier c quality below min: 1 (10%)
-• quality post calibration edge guard: 1 (10%)
-
-🔎 Проверенные reserve-кандидаты
-1. KS Warta Sieradz — Wisla Plock II | Меньше 2.5 @2.55 | EV +13.2% | edge +5.2 п.п. | q 68.6
-   • reject: missing total xg sanity
-2. Legia Warszawa II — GKS Wikielec | Меньше 2.5 @2.60 | EV +10.1% | edge +3.9 п.п. | q 64.8
-   • reject: missing total xg sanity
-3. Al-Raed Club — Abha Club | Меньше 2.5 @2.46 | EV +9.1% | edge +3.7 п.п. | q 63.5
-   • reject: направление ставки конфликтует с xG
-4. Sks Unia Swarzedz — MKS Viktoria Wrzesnia | Меньше 2.5 @2.12 | EV +5.9% | edge +2.8 п.п. | q 59.5
-   • reject: tier a quality below min, tier b quality below min, tier c quality below min
+• Нет reject reasons в свежих артефактах.
 
 📌 Вывод
-• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 75; 0–4ч: 6/167; 0–12ч: 24/279.
+• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 75; 0–4ч: 17/247; 0–12ч: 24/264.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
