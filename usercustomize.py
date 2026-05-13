@@ -87,5 +87,9 @@ for _module in [
     # True final publication-candidate gate: rebase odds to exact-line consensus and
     # reject candidates without verified price/context coverage.
     'app.services.api_coverage_consensus_runtime_patch',
+    # Must be after api_coverage_consensus_runtime_patch: it changes exact price-source
+    # accounting inside that module so odds-api.io account1/account2 are independent
+    # sources when the exact line is confirmed by their separate bookmaker groups.
+    'app.services.odds_api_io_account_source_split_patch',
 ]:
     _install(_module)
