@@ -91,5 +91,9 @@ for _module in [
     # accounting inside that module so odds-api.io account1/account2 are independent
     # sources when the exact line is confirmed by their separate bookmaker groups.
     'app.services.odds_api_io_account_source_split_patch',
+    # Final quality safety relief: only after consensus/source validation wrappers are
+    # installed. It can rescue a candidate rejected by calibration only if consensus
+    # EV/edge remain >= 0 and 2+ odds/context sources are present.
+    'app.services.quality_consensus_safe_relief_patch',
 ]:
     _install(_module)
