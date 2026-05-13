@@ -54,6 +54,10 @@ def _offer_key(offer: Any) -> tuple[Any, ...]:
     )
 
 
+def _offer_sources(offers: list[Any]) -> set[str]:
+    return {str(getattr(o, 'source', '') or '').strip().lower() for o in offers or [] if str(getattr(o, 'source', '') or '').strip()}
+
+
 def _safe_offers(offers: list[Any]) -> list[Any]:
     allowed = _allowed_families()
     min_price = _as_float(os.getenv('CORE_ODDS_MERGE_MIN_PRICE', '1.56'), 1.56)
@@ -75,7 +79,6 @@ def _safe_offers(offers: list[Any]) -> list[Any]:
         prev = best.get(key)
         if prev is None or _as_float(getattr(offer, 'price', None), 0.0) > _as_float(getattr(prev, 'price', None), 0.0):
             best[key] = offer
-    # Keep a compact useful set: best prices first, then stable market key.
     return sorted(best.values(), key=lambda o: (-_as_float(getattr(o, 'price', None), 0.0), str(_offer_key(o))))[:max_per_event]
 
 
@@ -100,6 +103,49 @@ def _install_parse_filter(module: Any, report: dict[str, Any]) -> None:
     parse_any_safe._harizon_core_odds_safety = True  # type: ignore[attr-defined]
     module.parse_any = parse_any_safe
     report['parse_filter'] = 'wrapped'
+
+
+def _install_rescue_priority(module: Any, report: dict[str, Any]) -> None:
+    current = getattr(module, 'selected_matches', None)
+    if not callable(current) or getattr(current, '_harizon_overlap_priority', False):
+        report['rescue_priority'] = 'already_wrapped_or_missing'
+        return
+
+    def selected_matches_overlap_first(matches: list[Any], base: dict[str, list[Any]]) -> list[Any]:
+        now = datetime.now(UTC)
+        try:
+            limit = max(1, int(float(os.getenv('CORE_ODDS_PATCH_MATCH_LIMIT', '90'))))
+        except Exception:
+            limit = 90
+
+        def priority(match: Any) -> tuple[Any, ...]:
+            offers = list(base.get(getattr(match, 'match_key', ''), []) or [])
+            sources = _offer_sources(offers)
+            source_count = len(sources)
+            has_primary_line = bool(sources & {'odds_api_io', 'bzzoiro'})
+            has_only_sstats = sources == {'sstats'}
+            if source_count == 1 and has_primary_line:
+                bucket = 0  # best use of SStats/Bzzoiro rescue: create 2-source overlap
+            elif source_count == 1 and has_only_sstats:
+                bucket = 1  # useful only if Bzzoiro can add a second source
+            elif source_count == 0:
+                bucket = 2  # single-source rescue; lower priority
+            else:
+                bucket = 3  # already 2+ sources, fetchers will skip
+            kickoff = getattr(match, 'commence_time', now)
+            try:
+                seconds = abs((kickoff.astimezone(UTC) - now).total_seconds())
+            except Exception:
+                seconds = 999999999
+            return (bucket, seconds, str(getattr(match, 'league_name', '') or '').lower())
+
+        pool = [m for m in matches if getattr(m, 'sport_key', '') == 'soccer']
+        pool.sort(key=priority)
+        return pool[:limit]
+
+    selected_matches_overlap_first._harizon_overlap_priority = True  # type: ignore[attr-defined]
+    module.selected_matches = selected_matches_overlap_first
+    report['rescue_priority'] = 'overlap_first'
 
 
 def _install_score_event_match_compat(module: Any, report: dict[str, Any]) -> None:
@@ -139,8 +185,6 @@ def install() -> dict[str, Any]:
     if _INSTALLED:
         return {'status': 'already_installed'}
     _INSTALLED = True
-    # Protect SStats context phase: odds rescue is supplemental and must not spend
-    # the entire SStats request pool before context extraction.
     os.environ['SSTATS_ODDS_RESCUE_LIMIT_PER_RUN'] = os.getenv('SSTATS_ODDS_RESCUE_LIMIT_PER_RUN_SAFE', '24')
     os.environ.setdefault('CORE_ODDS_PATCH_MATCH_LIMIT', '90')
     os.environ.setdefault('CORE_ODDS_MERGE_ALLOWED_FAMILIES', 'totals,spreads')
@@ -151,6 +195,7 @@ def install() -> dict[str, Any]:
     try:
         from app.services import sstats_bzzoiro_odds_merge_patch as module
         _install_parse_filter(module, report)
+        _install_rescue_priority(module, report)
         _install_score_event_match_compat(module, report)
         report['status'] = 'installed'
     except Exception as exc:
