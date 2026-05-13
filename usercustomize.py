@@ -15,7 +15,7 @@ for _module in [
     'app.services.runtime_provider_budget_guard',
     # Raise only the three core provider budgets before settings/providers are built:
     # odds_api_io 100+100 per run, sstats 150 per run, bzzoiro 150 per run.
-    # Publication guards remain strict and still require 2 exact odds sources + 2 context sources.
+    # Publication guards remain strict and still require verified price/context coverage.
     'app.services.core_coverage_quota_runtime_override',
     'app.services.free_context_runtime_enrichment',
     'app.services.api_matching_quality_runtime_guard',
@@ -56,9 +56,12 @@ for _module in [
     # Re-apply core quotas after provider-tier/runtime-budget wrappers because some
     # older layers still write conservative Bzzoiro/SStats limits.
     'app.services.core_coverage_quota_runtime_override',
-    # Value-first candidate ordering must be active before windowed audit wraps
-    # CandidateFactory, otherwise negative-EV raw model candidates dominate the
-    # pre-quality slice.
+    # Keep near-zero candidates alive until final consensus validation. This must
+    # run before candidate_value_runtime_patch so the pre-quality filter uses the
+    # widened holding-pen thresholds, while final consensus still requires EV>=0.
+    'app.services.prequality_final_consensus_bridge',
+    # Value-first candidate ordering must be active before later candidate wrappers,
+    # otherwise negative-EV raw model candidates dominate the pre-quality slice.
     'app.services.candidate_value_runtime_patch',
     'app.services.windowed_core_coverage_finalizer',
     'app.services.windowed_core_report_and_sportlogic_final_guard',
@@ -75,15 +78,14 @@ for _module in [
     'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
     # Absolute last accounting repair: bzzoiro_predictions_v2 => bzzoiro.
     'app.services.progressive_provider_alias_finalizer',
-    # Final bridge: let windowed publication audit reuse progressive coverage
-    # evidence computed in the same run and relieve impossible next-cron movement
-    # checks for final-pre-kickoff matches.
-    'app.services.windowed_coverage_state_bridge',
     # Absolute final wrapper: later modules can replace CandidateFactory again,
-    # so reinstall value-first build_candidates as the outermost wrapper.
+    # so reinstall value-first build_candidates as the outermost wrapper first.
     'app.services.candidate_value_final_reinstall',
+    # Then bridge progressive coverage into the final CandidateFactory wrapper.
+    # This must be AFTER candidate_value_final_reinstall; otherwise it is overwritten.
+    'app.services.windowed_coverage_state_bridge',
     # True final publication-candidate gate: rebase odds to exact-line consensus and
-    # reject candidates without 2 independent odds sources + 2 context sources.
+    # reject candidates without verified price/context coverage.
     'app.services.api_coverage_consensus_runtime_patch',
 ]:
     _install(_module)
