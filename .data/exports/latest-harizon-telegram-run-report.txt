@@ -5,9 +5,9 @@
 📦 Покрытие
 • Матчи в run: 294 | day inventory: 357
 • С линиями: 57 | с контекстом: 170 | ready model: 1
-• odds-api.io offers: 8742 | Bzzoiro secondary offers: 88
-• 2+ букмекера odds-api.io: 42 | 2-source overlap Bzzoiro+odds-api.io: 3
-• Source combinations: odds_api_io: 29, odds_api_io+sstats: 17, bzzoiro+odds_api_io+sstats: 5, bzzoiro: 3, bzzoiro+odds_api_io: 3
+• odds-api.io offers: 9159 | Bzzoiro secondary offers: 88
+• 2+ букмекера odds-api.io: 44 | 2-source overlap Bzzoiro+odds-api.io: 3
+• Source combinations: odds_api_io: 30, odds_api_io+sstats: 16, bzzoiro+odds_api_io+sstats: 6, bzzoiro+odds_api_io: 3, bzzoiro: 2
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1 / 1
@@ -16,11 +16,11 @@
 • Windowed coverage: audit 1 | allowed 1 | blocked 0 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 22 | no next regular run: 22
+• Final pre-kickoff checks: 24 | no next regular run: 24
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 20, matched 96, offers 8742, 2+ books 42, err 0
+• odds_api_io: events req 0, odds req 20, matched 96, offers 9159, 2+ books 44, err 0
 • sstats: req 20, ctx 156, rows 17297, err 0, deep enriched 6 | patch sstats_v1_first_then_legacy_gapfill; direct 0, form 156
 • bzzoiro: direct req 0, v2 req 37, v2 ctx 9, v2 odds 9, secondary offers 88, overlap odds-api.io 3, err 0
 • sportlogic: enabled True, req 12, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
@@ -29,7 +29,7 @@
 • Core odds/line: bzzoiro,odds_api_io,sstats
 • Core context: bzzoiro,sstats
 • Tracked: 518 | core odds 2+: 230 | core context 2+: 75 | core-ready both: 75
-• 0–4ч: 5/71 core-ready
+• 0–4ч: 5/73 core-ready
 • 0–12ч: 29/298 core-ready
 
 🚫 Почему не опубликовано
@@ -41,5 +41,5 @@
    • reject: odds above global max
 
 📌 Вывод
-• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 75; 0–4ч: 5/71; 0–12ч: 29/298.
+• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 75; 0–4ч: 5/73; 0–12ч: 29/298.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
