@@ -3,7 +3,7 @@
 - status: **ok**
 - target_date: 2026-05-13
 - inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-13.json`
-- inventory_matches_total: 373
+- inventory_matches_total: 374
 - matrix_matches: 300/300
 - full target reached: True
 - min odds/context sources: 2/2
@@ -12,24 +12,22 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 0 | 4 | 3 |
-| 2_6h | 1 | 1 | 1 | 1 | 1 | 1 | 1 | 0 | 1 | 1 |
-| 6_12h | 77 | 70 | 64 | 26 | 62 | 57 | 62 | 0 | 49 | 26 |
-| 12_24h | 204 | 200 | 149 | 120 | 194 | 165 | 187 | 0 | 139 | 120 |
-| started | 14 | 12 | 12 | 9 | 12 | 8 | 12 | 0 | 10 | 8 |
+| 2_6h | 5 | 5 | 5 | 3 | 3 | 3 | 3 | 0 | 3 | 3 |
+| 6_12h | 177 | 166 | 144 | 76 | 153 | 136 | 152 | 0 | 120 | 76 |
+| 12_24h | 114 | 114 | 68 | 68 | 114 | 84 | 106 | 0 | 68 | 68 |
+| started | 4 | 4 | 4 | 3 | 4 | 3 | 4 | 0 | 4 | 3 |
 
 ## Totals
 
-- fixture_2plus_sources: 287/300
-- odds_2plus_sources: 159/300
-- context_2plus_sources: 234/300
-- ready_for_model: 203/300
-- ready_for_publish: 158/300
+- fixture_2plus_sources: 289/300
+- odds_2plus_sources: 150/300
+- context_2plus_sources: 226/300
+- ready_for_model: 195/300
+- ready_for_publish: 150/300
 
 ## Provider endpoint status
-- by_status: `{"ok": 5, "skipped_preserve_runtime_quota": 1, "request_error": 1, "ConnectTimeout: ": 1}`
+- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
 - not_ok:
-  - open_meteo: request_error http=None rows=None reason=ConnectTimeout: 
   - clubelo: ConnectTimeout:  http=None rows=None reason=None
 
 ## Matching diagnostics
@@ -37,9 +35,8 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-05-13T02:15:00+00:00 | CD Olimpia Tegucigalpa — Real CD Espana San Pedro Sula | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
-- 6_12h | 2026-05-13T07:30:00+00:00 | Turkmenistan — Tajikistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 6_12h | 2026-05-13T07:30:00+00:00 | Turkmenistan — Tajikistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-13T07:30:00+00:00 | Turkmenistan — Tajikistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-13T07:30:00+00:00 | Turkmenistan — Tajikistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-13T09:30:00+00:00 | Brindabella Blues FC — Canberra Juventus FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
 - 6_12h | 2026-05-13T09:30:00+00:00 | Canberra Olympic — O'Connor Knights FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
 - 6_12h | 2026-05-13T09:30:00+00:00 | Tigers FC — Monaro Panthers FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
@@ -67,12 +64,13 @@
 - 6_12h | 2026-05-13T12:00:00+00:00 | Afghanistan — Uzbekistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-13T12:00:00+00:00 | Afghanistan — Uzbekistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-13T13:00:00+00:00 | Ethnikos OFPF — Pas Pyrgos | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-13T13:00:00+00:00 | Po Elassonas — Apollon Kalamarias | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=264 / checked=300 | rate=88.0% | SStats events=1022
-- potential_add: context_deep=264 xg_or_rating=264 form=264 odds_rescue=63
-- projected_upper_bound: context_2plus=300 xg=270 form=273 odds_2plus=222
+- crosswalk: matched=254 / checked=300 | rate=84.67% | SStats events=1025
+- potential_add: context_deep=254 xg_or_rating=254 form=254 odds_rescue=57
+- projected_upper_bound: context_2plus=300 xg=265 form=267 odds_2plus=207
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
