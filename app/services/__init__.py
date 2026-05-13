@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-"""Service package marker.
-
-Keep this package import-light. Runtime policies are installed explicitly from
-CLI/bootstrap code, not from package import side effects.
-"""
-
 __all__: list[str] = []
+
+try:
+    from app.services import core_line_bookmaker_universe_patch as _core_line_universe
+    _core_line_universe.install()
+except Exception:
+    pass
