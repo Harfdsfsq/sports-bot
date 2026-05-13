@@ -7,3 +7,9 @@ try:
     _core_line_universe.install()
 except Exception:
     pass
+
+try:
+    from app.services import model_input_market_sanity_patch as _model_market_sanity
+    _model_market_sanity.install()
+except Exception:
+    pass
