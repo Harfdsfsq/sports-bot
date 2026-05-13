@@ -13,6 +13,10 @@ def _install(module_path: str) -> None:
 for _module in [
     'app.services.provider_smoke_repair_env_guard',
     'app.services.runtime_provider_budget_guard',
+    # Raise only the three core provider budgets before settings/providers are built:
+    # odds_api_io 100+100 per run, sstats 150 per run, bzzoiro 150 per run.
+    # Publication guards remain strict and still require 2 exact odds sources + 2 context sources.
+    'app.services.core_coverage_quota_runtime_override',
     'app.services.free_context_runtime_enrichment',
     'app.services.api_matching_quality_runtime_guard',
     'app.services.bzzoiro_provider_runtime_fix',
@@ -49,6 +53,9 @@ for _module in [
     # limits requests, filters low-line/low-price injected offers, and fixes Bzzoiro
     # score_event_match compatibility.
     'app.services.core_odds_merge_safety_patch',
+    # Re-apply core quotas after provider-tier/runtime-budget wrappers because some
+    # older layers still write conservative Bzzoiro/SStats limits.
+    'app.services.core_coverage_quota_runtime_override',
     # Value-first candidate ordering must be active before windowed audit wraps
     # CandidateFactory, otherwise negative-EV raw model candidates dominate the
     # pre-quality slice.
@@ -75,5 +82,8 @@ for _module in [
     # Absolute final wrapper: later modules can replace CandidateFactory again,
     # so reinstall value-first build_candidates as the outermost wrapper.
     'app.services.candidate_value_final_reinstall',
+    # True final publication-candidate gate: rebase odds to exact-line consensus and
+    # reject candidates without 2 independent odds sources + 2 context sources.
+    'app.services.api_coverage_consensus_runtime_patch',
 ]:
     _install(_module)
