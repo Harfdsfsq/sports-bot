@@ -19,12 +19,12 @@
       "v2_stats_resources": 0
     },
     "odds_api_io": {
-      "books_2plus": 40,
+      "books_2plus": 29,
       "errors": 0,
       "events_req": 0,
       "matched": 100,
       "odds_req": 20,
-      "offers": 8445
+      "offers": 5879
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -51,28 +51,28 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.34598610798517865,
-    "fallback_age_min": 0.04280372063318889,
-    "run_log_age_min": 0.3112287680308024,
-    "signal_stack_age_min": 0.3967884381612142
+    "debug_age_min": 0.33916178544362385,
+    "fallback_age_min": 0.05779718557993571,
+    "run_log_age_min": 0.3097754240036011,
+    "signal_stack_age_min": 0.38007275660832723
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 340,
-    "matches_seen": 273,
-    "matches_with_2plus_books": 40,
-    "matches_with_context": 176,
-    "matches_with_offers": 54,
-    "odds_offers_primary": 8445,
-    "ready_for_model": 2,
+    "matches_seen": 274,
+    "matches_with_2plus_books": 29,
+    "matches_with_context": 171,
+    "matches_with_offers": 42,
+    "odds_offers_primary": 5879,
+    "ready_for_model": 4,
     "secondary_combinations": {
       "bzzoiro": 2,
-      "odds_api_io": 32,
-      "odds_api_io+sstats": 20
+      "odds_api_io": 22,
+      "odds_api_io+sstats": 18
     }
   },
-  "created_at_utc": "2026-05-14T07:09:38.729930+00:00",
+  "created_at_utc": "2026-05-14T08:07:16.774317+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
       "contexts_built": 0,
@@ -124,25 +124,25 @@
         ]
       },
       "counts": {
-        "all_context_1plus": 811,
+        "all_context_1plus": 813,
         "all_context_2plus": 266,
-        "all_odds_1plus": 1001,
-        "all_odds_2plus": 407,
-        "context_1plus": 715,
+        "all_odds_1plus": 1003,
+        "all_odds_2plus": 409,
+        "context_1plus": 716,
         "context_2plus": 119,
-        "core_context_1plus": 715,
+        "core_context_1plus": 716,
         "core_context_2plus": 119,
-        "core_odds_1plus": 1001,
-        "core_odds_2plus": 407,
+        "core_odds_1plus": 1003,
+        "core_odds_2plus": 409,
         "core_ready_2plus_both": 119,
-        "matches_tracked": 1016,
-        "odds_1plus": 1001,
-        "odds_2plus": 407,
+        "matches_tracked": 1018,
+        "odds_1plus": 1003,
+        "odds_2plus": 409,
         "ready_2plus_both": 119,
-        "window_0_12h": 273,
+        "window_0_12h": 277,
         "window_0_12h_core_ready_2plus_both": 12,
         "window_0_12h_ready_2plus_both": 12,
-        "window_0_4h": 40,
+        "window_0_4h": 88,
         "window_0_4h_core_ready_2plus_both": 0,
         "window_0_4h_ready_2plus_both": 0
       },
@@ -158,10 +158,10 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 2,
-    "fallback_candidates_seen": 1,
-    "fallback_evaluated": 1,
-    "fallback_published": true,
+    "candidates_before_quality": 4,
+    "fallback_candidates_seen": 2,
+    "fallback_evaluated": 2,
+    "fallback_published": false,
     "passed_candidates": 1,
     "publish_filter_blocked": 1,
     "publish_filter_input": 1,
@@ -175,16 +175,26 @@
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 8,
+    "final_pre_kickoff_checks": 14,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 8,
+    "no_more_regular_run_before_kickoff": 14,
     "seen": 0
   },
   "reasons": [
     {
-      "count": 1,
+      "count": 2,
       "reason": "quality_post_calibration_edge_guard",
       "reason_ru": "quality post calibration edge guard"
+    },
+    {
+      "count": 1,
+      "reason": "controlled_fallback_windowed_line_movement_recheck_required",
+      "reason_ru": "controlled fallback windowed line movement recheck required"
+    },
+    {
+      "count": 1,
+      "reason": "missing_total_xg_sanity",
+      "reason_ru": "missing total xg sanity"
     }
   ],
   "samples": {
@@ -254,64 +264,96 @@
             "xg_total": 2.448
           }
         },
-        "ok": true,
+        "ok": false,
         "point": 3.5,
-        "reject_reasons": [],
-        "reject_reasons_ru": [],
+        "reject_reasons": [
+          "controlled_fallback_windowed_line_movement_recheck_required"
+        ],
+        "reject_reasons_ru": [
+          "controlled fallback windowed line movement recheck required"
+        ],
+        "selection": "Меньше 3.5",
+        "tier": null
+      },
+      {
+        "away_team": "FK Gjoevik-Lyn",
+        "away_team_ru": "Гджоевик-Лин",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-14T13:00:00+00:00",
+        "commence_time_display": "14.05.2026 16:00 MSK",
+        "family": "totals",
+        "home_team": "Lillehammer FK",
+        "home_team_ru": "Лиллехаммер",
+        "league_name": "Norway - 3rd Division Group 6",
+        "league_name_ru": "Норвегия - 3-й дивизион, группа 6",
+        "match_key": "soccer|gjoevik lyn|lillehammer|2026-05-14",
+        "metrics": {
+          "adjusted_probability": 0.552964,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 4.535,
+          "canonical_ev_pct": 8.934,
+          "confidence": 74.8,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -4.5,
+          "market_probability": 0.597964,
+          "model_probability": 0.632964,
+          "odds": 1.97,
+          "odds_sources_count": 2,
+          "publication_score": 82.6,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 67.83,
+          "quality_score_raw": 67.83,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.507614,
+          "sources_count": 1,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "missing_total_xg_sanity"
+        ],
+        "reject_reasons_ru": [
+          "missing total xg sanity"
+        ],
         "selection": "Меньше 3.5",
         "tier": "уровень A"
       }
     ],
     "top_priority_matches": [
       {
-        "away_team": "FC Kiisto",
-        "home_team": "SJK-J",
-        "kickoff_utc": "2026-05-14T08:00:00+00:00",
-        "league_name": "Finland - Kolmonen",
-        "match_key": "soccer|kiisto|sjk j|2026-05-14",
-        "minutes_to_kickoff": 50.71,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 151.095,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "SC Gofis",
-        "home_team": "Austria Lustenau II",
-        "kickoff_utc": "2026-05-14T08:00:00+00:00",
-        "league_name": "Austria Amateur - Vorarlberg, Eliteliga",
-        "match_key": "soccer|austria lustenau 2|gofis|2026-05-14",
-        "minutes_to_kickoff": 50.71,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 143.095,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
         "away_team": "FC Astana Reserve",
         "home_team": "FC Tobol Kostanay Reserve",
         "kickoff_utc": "2026-05-14T09:00:00+00:00",
         "league_name": "Kazakhstan - Pervaya Liga",
         "match_key": "soccer|astana reserves|tobol kostanay reserves|2026-05-14",
-        "minutes_to_kickoff": 110.71,
+        "minutes_to_kickoff": 53.07,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 131.095,
+        "priority": 150.31,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -329,9 +371,9 @@
         "kickoff_utc": "2026-05-14T09:00:00+00:00",
         "league_name": "Austria Amateur - Vorarlberg, Eliteliga",
         "match_key": "soccer|sv lochau|wolfurt|2026-05-14",
-        "minutes_to_kickoff": 110.71,
+        "minutes_to_kickoff": 53.07,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 123.095,
+        "priority": 142.31,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -349,9 +391,9 @@
         "kickoff_utc": "2026-05-14T09:00:00+00:00",
         "league_name": "Russia - 2. Liga, Division B, Group 2",
         "match_key": "soccer|irkutsk|spartak 2 moscow|2026-05-14",
-        "minutes_to_kickoff": 110.71,
+        "minutes_to_kickoff": 53.07,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 123.095,
+        "priority": 142.31,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -369,9 +411,49 @@
         "kickoff_utc": "2026-05-14T09:00:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|astana 2|tobol 2|2026-05-14",
-        "minutes_to_kickoff": 110.71,
+        "minutes_to_kickoff": 53.07,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 123.095,
+        "priority": 142.31,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Wacker Burghausen U19",
+        "home_team": "Unterhaching U19",
+        "kickoff_utc": "2026-05-14T09:00:00+00:00",
+        "league_name": "Unknown",
+        "match_key": "soccer|unterhaching|wacker burghausen|2026-05-14",
+        "minutes_to_kickoff": 53.07,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 142.31,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Sudeva Delhi FC",
+        "home_team": "Neroca FC",
+        "kickoff_utc": "2026-05-14T09:30:00+00:00",
+        "league_name": "India - I-League 2",
+        "match_key": "soccer|neroca|sudeva delhi|2026-05-14",
+        "minutes_to_kickoff": 83.07,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 132.31,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -388,7 +470,7 @@
   "status": "candidates_but_quality_rejected",
   "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 2103,
+  "text_length": 2412,
   "top_reason": "quality_post_calibration_edge_guard",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
