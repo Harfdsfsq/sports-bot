@@ -100,5 +100,9 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.api_coverage_consensus_runtime_patch',
         'app.services.odds_api_io_account_source_split_patch',
         'app.services.quality_consensus_safe_relief_patch',
+        # Must be last: several older runtime layers can re-enable SportLogic.
+        # The daily-limit guard re-applies the cached marker and zeroes SportLogic
+        # after every other installer has finished.
+        'app.services.sportlogic_daily_limit_guard',
     ]:
         _install(_module)
