@@ -2,14 +2,10 @@ from __future__ import annotations
 
 """Execute the low-quota odds-api.io price backfill plan.
 
-This script is intentionally narrow and auditable.  It reads
-latest-day-inventory-price-backfill-plan.json, calls odds-api.io /odds/multi in
-at most one batch per configured account, and merges returned bookmaker prices
-back into the top-300 day inventory as price confirmations.
-
-It does not generate predictions.  It only improves stored line evidence so the
-next model/publication pass can see which matches have 2+ independent price
-confirmations and 2+ context confirmations.
+The odds-api.io `/odds/multi` endpoint rejects payloads with more than 10
+`eventIds`.  This executor therefore sends compact batches of <=10 events.  In
+provider-smoke-minimal-repair the default is one batch per account, i.e. at most
+2 HTTP requests total: account1 and account2.
 """
 
 import asyncio
@@ -38,6 +34,14 @@ def env_bool(name: str, default: bool = False) -> bool:
     if not raw:
         return default
     return raw in {'1', 'true', 'yes', 'on', 'force'}
+
+
+def env_int(name: str, default: int) -> int:
+    try:
+        raw = str(os.getenv(name) or '').strip()
+        return int(float(raw)) if raw else default
+    except Exception:
+        return default
 
 
 def secret(*names: str) -> str:
@@ -127,7 +131,6 @@ def rows(payload: Any) -> list[dict[str, Any]]:
             nested = rows(value)
             if nested:
                 return nested
-    # Some endpoints return a single event object.
     if any(k in payload for k in ('id', 'eventId', 'event_id', 'bookmakers', 'markets')):
         return [payload]
     return []
@@ -177,7 +180,6 @@ def iter_bookmakers(event: dict[str, Any]) -> list[dict[str, Any]]:
                     item.setdefault('name', name)
                     candidates.append(item)
     if not candidates:
-        # Flat rows still become one synthetic bookmaker payload.
         book = text_value(event.get('bookmaker') or event.get('book') or event.get('sportsbook'))
         if book:
             candidates.append({'name': book, 'markets': [event]})
@@ -189,9 +191,7 @@ def iter_markets(book: dict[str, Any]) -> list[dict[str, Any]]:
     for key in ('markets', 'odds', 'outcomes', 'prices'):
         value = book.get(key)
         if isinstance(value, list):
-            for item in value:
-                if isinstance(item, dict):
-                    out.append(item)
+            out.extend(item for item in value if isinstance(item, dict))
         elif isinstance(value, dict):
             for name, payload in value.items():
                 if isinstance(payload, dict):
@@ -231,9 +231,9 @@ def outcome_price(outcome: dict[str, Any]) -> float | None:
 
 
 def outcome_point(outcome: dict[str, Any], market: dict[str, Any]) -> str:
-    for key in ('point', 'line', 'total', 'handicap', 'value'):
+    for key in ('point', 'line', 'total', 'handicap'):
         value = outcome.get(key)
-        if value not in (None, '') and key != 'value':
+        if value not in (None, ''):
             return str(value).strip()
     for key in ('point', 'line', 'total', 'handicap'):
         value = market.get(key)
@@ -264,20 +264,28 @@ def extract_price_evidence(payload: Any, account: str) -> dict[str, dict[str, An
                         continue
                     selection = norm(outcome.get('name') or outcome.get('selection') or outcome.get('label')) or 'selection'
                     point = outcome_point(outcome, market)
-                    # Count only public-safe market families as strong line confirmations.
-                    public_family = family if family in {'totals', 'spreads'} else family
-                    token = f'odds_api_io:{account}:{book_key}:{public_family}:{selection}:{point}'
+                    token = f'odds_api_io:{account}:{book_key}:{family}:{selection}:{point}'
                     ev['price_confirmations'].add(token)
                     ev['odds_sources'].add(account)
                     samples = ev['samples']
                     if isinstance(samples, list) and len(samples) < 10:
-                        samples.append({'account': account, 'bookmaker': book_key, 'family': public_family, 'selection': selection, 'point': point, 'price': price})
+                        samples.append({'account': account, 'bookmaker': book_key, 'family': family, 'selection': selection, 'point': point, 'price': price})
     return by_event
 
 
-async def fetch_odds_multi(client: httpx.AsyncClient, key: str, event_ids: list[str], bookmakers: str, account: str) -> tuple[Any, dict[str, Any]]:
+def chunk_event_ids(ids: list[str]) -> list[list[str]]:
+    max_per_request = max(1, min(10, env_int('PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST', 10)))
+    batches_per_account = max(1, env_int('PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT', 1))
+    total = max_per_request * batches_per_account
+    trimmed = ids[:total]
+    return [trimmed[i:i + max_per_request] for i in range(0, len(trimmed), max_per_request) if trimmed[i:i + max_per_request]]
+
+
+async def fetch_odds_multi(client: httpx.AsyncClient, key: str, event_ids: list[str], bookmakers: str, account: str, batch_index: int) -> tuple[Any, dict[str, Any]]:
     if not key or not event_ids:
-        return None, {'account': account, 'status': 'skipped', 'reason': 'missing_key_or_event_ids', 'rows': 0}
+        return None, {'account': account, 'batch_index': batch_index, 'status': 'skipped', 'reason': 'missing_key_or_event_ids', 'rows': 0}
+    if len(event_ids) > 10:
+        event_ids = event_ids[:10]
     params = {'apiKey': key, 'eventIds': ','.join(event_ids), 'bookmakers': bookmakers}
     started = datetime.now(UTC)
     try:
@@ -288,6 +296,7 @@ async def fetch_odds_multi(client: httpx.AsyncClient, key: str, event_ids: list[
             payload = None
         return payload, {
             'account': account,
+            'batch_index': batch_index,
             'status': resp.status_code,
             'ok': resp.status_code == 200,
             'event_ids_requested': len(event_ids),
@@ -297,7 +306,7 @@ async def fetch_odds_multi(client: httpx.AsyncClient, key: str, event_ids: list[
             'duration_ms': round((datetime.now(UTC) - started).total_seconds() * 1000, 1),
         }
     except Exception as exc:
-        return None, {'account': account, 'status': 'request_error', 'ok': False, 'error': f'{type(exc).__name__}: {exc}', 'event_ids_requested': len(event_ids), 'bookmakers': bookmakers}
+        return None, {'account': account, 'batch_index': batch_index, 'status': 'request_error', 'ok': False, 'error': f'{type(exc).__name__}: {exc}', 'event_ids_requested': len(event_ids), 'bookmakers': bookmakers}
 
 
 def source_ids(row: dict[str, Any]) -> dict[str, str]:
@@ -320,9 +329,7 @@ def merge_inventory(evidence: dict[str, dict[str, Any]], report: dict[str, Any])
     matches = [row for row in inv.get('matches', []) if isinstance(row, dict)]
     min_price = max(2, as_int(os.getenv('PUBLISH_MIN_ODDS_SOURCES') or os.getenv('CONTROLLED_FALLBACK_MIN_ODDS_SOURCES'), 2))
     min_context = max(2, as_int(os.getenv('PUBLISH_MIN_CONTEXT_SOURCES') or os.getenv('MIN_CONTEXT_SOURCES_PUBLISH'), 2))
-    updated = 0
-    newly_price_ready = 0
-    newly_publish_ready = 0
+    updated = newly_price_ready = newly_publish_ready = 0
     for row in matches:
         eid = source_ids(row).get('odds_api_io')
         if not eid or eid not in evidence:
@@ -377,7 +384,6 @@ def merge_inventory(evidence: dict[str, dict[str, Any]], report: dict[str, Any])
         updated += 1
         newly_price_ready += int((not before_price_ready) and price_count >= min_price)
         newly_publish_ready += int((not before_publish) and bool(cov.get('ready_for_publish')))
-    # recompute core counts
     counts = dict(inv.get('counts') or {})
     price2 = context2 = odds_any = context_any = ready_model = ready_publish = 0
     for row in matches:
@@ -407,13 +413,7 @@ def merge_inventory(evidence: dict[str, dict[str, Any]], report: dict[str, Any])
     inv['updated_at_utc'] = now
     src = inv.setdefault('sources', {})
     if isinstance(src, dict):
-        src['price_backfill_execution'] = {
-            'updated_at_utc': now,
-            'matches_updated': updated,
-            'newly_price_ready': newly_price_ready,
-            'newly_publish_ready': newly_publish_ready,
-            'requests_used': report.get('requests_used'),
-        }
+        src['price_backfill_execution'] = {'updated_at_utc': now, 'matches_updated': updated, 'newly_price_ready': newly_price_ready, 'newly_publish_ready': newly_publish_ready, 'requests_used': report.get('requests_used'), 'event_ids_requested': report.get('event_ids_requested')}
     for path in [inv_path, DAY_INV_DIR / 'latest.json', DAY_INV_DIR / 'current.json', DAY_INV_DIR / 'today.json']:
         write_json(path, inv)
     summary = load_json(SUMMARY, {})
@@ -453,19 +453,19 @@ async def main_async() -> int:
         return 0
     plan = load_json(PLAN_JSON, {})
     ids = [str(x).strip() for x in (plan.get('odds_api_io_event_ids') or []) if str(x).strip()]
-    # Preserve order but remove duplicates.
     seen: set[str] = set()
     ids = [x for x in ids if not (x in seen or seen.add(x))]
-    ids = ids[: max(1, as_int(os.getenv('PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT'), 60))]
+    batches = chunk_event_ids(ids)
+    request_event_ids = [eid for batch in batches for eid in batch]
     key1 = secret('ODDS_API_IO_KEY')
     key2 = secret('ODDS_API_IO_KEY_2', 'ODDS_API_IO_KEY2')
     timeout = httpx.Timeout(float(os.getenv('PRICE_BACKFILL_TIMEOUT_SECONDS', '16')), connect=5.0)
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
-        tasks = [
-            fetch_odds_multi(client, key1, ids, os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1') or 'Bet365,Unibet', 'odds_api_io_account1'),
-            fetch_odds_multi(client, key2, ids, os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2') or 'Betfair Exchange,Sbobet', 'odds_api_io_account2'),
-        ]
-        results = await asyncio.gather(*tasks)
+        tasks = []
+        for idx, batch in enumerate(batches):
+            tasks.append(fetch_odds_multi(client, key1, batch, os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT1') or 'Bet365,Unibet', 'odds_api_io_account1', idx))
+            tasks.append(fetch_odds_multi(client, key2, batch, os.getenv('ODDS_API_IO_BOOKMAKERS_ACCOUNT2') or 'Betfair Exchange,Sbobet', 'odds_api_io_account2', idx))
+        results = await asyncio.gather(*tasks) if tasks else []
     evidence: dict[str, dict[str, Any]] = {}
     attempts = []
     requests_used = 0
@@ -482,17 +482,8 @@ async def main_async() -> int:
             for sample in ev.get('samples') or []:
                 if len(dst['samples']) < 10:
                     dst['samples'].append(sample)
-    report: dict[str, Any] = {
-        'status': 'ok',
-        'updated_at_utc': now.isoformat(),
-        'plan_path': str(PLAN_JSON),
-        'event_ids_requested': len(ids),
-        'event_ids_with_prices': len(evidence),
-        'requests_used': requests_used,
-        'attempts': attempts,
-    }
+    report: dict[str, Any] = {'status': 'ok', 'updated_at_utc': now.isoformat(), 'plan_path': str(PLAN_JSON), 'event_ids_planned': len(ids), 'event_ids_requested': len(request_event_ids), 'event_ids_with_prices': len(evidence), 'batches_per_account': len(batches), 'max_event_ids_per_request': max((len(b) for b in batches), default=0), 'requests_used': requests_used, 'attempts': attempts}
     merge_inventory(evidence, report)
-    # Convert sets for JSON safety.
     write_json(OUT_JSON, report)
     OUT_TXT.write_text(render(report), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
