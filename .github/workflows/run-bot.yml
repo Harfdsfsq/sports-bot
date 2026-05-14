@@ -33,6 +33,30 @@ jobs:
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "true"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
       MANUAL_CONTROLLED_PUBLISH_ENABLED: "true"
+
+      DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: "true"
+      CORE_PROVIDER_INVENTORY_BRIDGE_ENABLED: "true"
+      DAY_INVENTORY_TARGET_SIZE: "300"
+      DAY_INVENTORY_MAX_MATCHES: "300"
+      DAY_INVENTORY_FORCE_TOP_300: "true"
+      DAY_INVENTORY_FORCE_FULL_300: "true"
+      DAY_INVENTORY_FORCE_PROVIDER_MERGE: "true"
+      DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED: "true"
+      DAY_INVENTORY_ENABLE_BZZOIRO: "true"
+      DAY_INVENTORY_ENABLE_SSTATS: "true"
+      DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
+      DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "false"
+      DAY_INVENTORY_TOP_MATCHES_ENABLED: "true"
+      DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "220"
+      DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: "220"
+      DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: "300"
+      DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP: "true"
+      DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "200"
+      DAY_INVENTORY_BZZOIRO_MAX_PAGES: "20"
+      DAY_INVENTORY_SSTATS_MAX_REQUESTS: "150"
+      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "100"
+      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "40"
+
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
       PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
       HARIZON_ALLOWED_PUBLICATION_FAMILIES: "totals,spreads"
@@ -59,6 +83,7 @@ jobs:
       BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
       SSTATS_ROLLING_METRICS_ENABLED: "true"
       SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
+
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
@@ -66,14 +91,79 @@ jobs:
       PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "25"
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
-      ALL_SOURCES_FREE_MAXIMIZE: "false"
+      ALL_SOURCES_FREE_MAXIMIZE: "true"
       PROVIDER_SMOKE_FAIL_ON_ERROR: "false"
       PROVIDER_SMOKE_TIMEOUT_SECONDS: "10"
+      API_HEALTH_DURING_RUN_ENABLED: "true"
+
+      ODDS_API_IO_HOURLY_LIMIT: "100"
+      ODDS_API_IO_PER_RUN_MAX: "100"
+      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "50"
+      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "50"
+      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "100"
+      ODDS_API_IO_MAX_REQUESTS_PER_RUN: "100"
+      ODDS_API_IO_REQUEST_BUDGET_GRANTED: "100"
+      ODDS_API_IO_REQUESTS_MAX_PER_RUN: "100"
+      ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "10"
+      ODDS_API_IO_MAX_PAGES_PER_SPORT: "10"
+      PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT: "5"
+      PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST: "10"
+      PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT: "100"
+      MAX_MATCHES_FOR_ODDS_FETCH: "300"
+
+      BZZOIRO_RATE_LIMIT_PER_MINUTE: "200"
+      BZZOIRO_PER_RUN_MAX: "200"
+      BZZOIRO_MAX_REQUESTS_PER_RUN: "200"
+      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "200"
+      BZZOIRO_REQUESTS_MAX_PER_RUN: "200"
+      BZZOIRO_REQUEST_BUDGET_GRANTED: "200"
+      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "80"
+      BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "40"
+      BZZOIRO_PREDICTIONS_MAX_PAGES: "10"
+      BZZOIRO_MAX_PAGES: "20"
+      BZZOIRO_CONTEXT_MATCH_LIMIT: "300"
+      BZZOIRO_PRICE_BACKFILL_ENABLED: "true"
+      BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "80"
+
+      SSTATS_RATE_LIMIT_PER_MINUTE: "150"
+      SSTATS_PER_RUN_MAX: "150"
+      SSTATS_MAX_REQUESTS_PER_RUN: "150"
+      SSTATS_REQUESTS_MAX_PER_RUN: "150"
+      SSTATS_REQUEST_BUDGET_GRANTED: "150"
+      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
+      SSTATS_CONTEXT_MATCH_LIMIT: "300"
+      SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "40"
+      SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "80"
+      SSTATS_DEEP_ENRICHMENT_ENABLED: "true"
+      SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK: "true"
+      SSTATS_DEEP_SMOKE_DETAIL_GAMES: "30"
+      SSTATS_GAME_DETAIL_ENABLED: "true"
+      SSTATS_LAST_GAMES_STATS_ENABLED: "true"
+      SSTATS_INJURIES_ENABLED: "false"
+      SSTATS_GLICKO_ENABLED: "true"
+      SSTATS_ODDS_RESCUE_ENABLED: "true"
+
+      SPORTLOGIC_DAILY_LIMIT: "500"
+      SPORTLOGIC_ENABLED: "true"
+      ENABLE_SPORTLOGIC: "true"
+      SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "true"
+      SPORTLOGIC_PER_RUN_MAX: "40"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "40"
+      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "40"
+      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "40"
+      SPORTLOGIC_MATCH_LIMIT: "100"
+      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "100"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "40"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "2"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
+      SPORTLOGIC_MATCH_MIN_SCORE: "48"
+
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
       TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
       ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
       ODDS_API_IO_KEY_2: ${{ secrets.ODDS_API_IO_KEY_2 }}
+      ODDS_API_IO_KEY2: ${{ secrets.ODDS_API_IO_KEY2 }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
@@ -107,6 +197,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 1
+
       - name: Prepare runtime directories
         shell: bash
         run: |
@@ -117,28 +208,54 @@ jobs:
           cp .data/exports/latest-day-inventory-core-crosswalk.json /tmp/harizon-preserve-exports/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-core-strict-merge-report.json /tmp/harizon-preserve-exports/ 2>/dev/null || true
           rm -rf .data/exports artifacts/run-bot
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           cp /tmp/harizon-preserve-exports/* .data/exports/ 2>/dev/null || true
+
+      - name: Compute and freeze day inventory date
+        shell: bash
+        run: |
+          set -euo pipefail
+          cache_date="$(TZ="${APP_TIMEZONE}" date +%F)"
+          echo "DAY_INVENTORY_CACHE_DATE=${cache_date}" >> "$GITHUB_ENV"
+          echo "DAY_INVENTORY_TARGET_DATE=${cache_date}" >> "$GITHUB_ENV"
+          echo "PROVIDER_SMOKE_TARGET_DATE=${cache_date}" >> "$GITHUB_ENV"
+          echo "PROVIDER_SMOKE_TARGET_DATE_FROZEN=true" >> "$GITHUB_ENV"
+          echo "run-bot frozen day inventory date: ${cache_date}"
+
+      - name: Restore persisted day inventory
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .data/day_inventory
+            .data/line_history
+          key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
+          restore-keys: |
+            run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-
+            provider-smoke-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
           python-version: "3.12"
+
       - name: Install dependencies
         shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
       - name: Apply publication family policy
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py
+
       - name: Apply provider quota governor
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           echo "provider quota governor shell start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 45s python -u scripts/apply_provider_quota_governor.py; then
             echo "provider quota governor applied"
@@ -146,11 +263,12 @@ jobs:
             status=$?
             echo "provider quota governor failed or timed out with status ${status}; continuing with request-budget policy"
           fi
+
       - name: Apply provider request budget
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           echo "provider request budget start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 45s python -u scripts/apply_provider_request_budget.py; then
             echo "provider request budget applied"
@@ -158,11 +276,12 @@ jobs:
             status=$?
             echo "provider request budget failed or timed out with status ${status}; continuing with workflow env"
           fi
+
       - name: Apply per-run API quota contract
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           echo "per-run API quota contract start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 45s python -u scripts/apply_per_run_api_quota_contract.py; then
             echo "per-run API quota contract applied"
@@ -171,11 +290,12 @@ jobs:
             echo "per-run API quota contract failed or timed out with status ${status}; continuing with previous env"
           fi
           python -u scripts/apply_publication_family_policy.py || true
+
       - name: Provider smoke
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           echo "provider smoke start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 90s python -u workflow/provider_smoke.py; then
             echo "provider smoke completed"
@@ -185,6 +305,7 @@ jobs:
           fi
           cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
+
       - name: Run tests
         shell: bash
         run: |
@@ -196,20 +317,15 @@ jobs:
             status=$?
             echo "unit tests failed or timed out with status ${status}; continuing production run"
           fi
+
       - name: Run bot
         shell: bash
         run: |
           set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py || true
           echo "runtime start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python - <<'PY' 2>&1 | tee .data/exports/latest-run-bot.log
-          import runpy
-          import sys
-          print('runtime cli direct start', flush=True)
-          sys.argv = ['python -m app.cli', 'run-once']
-          runpy.run_module('app.cli', run_name='__main__')
-          PY
+          python -u -m app.cli run-once 2>&1 | tee .data/exports/latest-run-bot.log
           status=${PIPESTATUS[0]}
           echo "runtime status ${status}"
           echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -217,11 +333,13 @@ jobs:
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
+          cp -r .data/line_history artifacts/run-bot/line_history || true
           cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
+
       - name: Publish controlled fallback
         shell: bash
         run: |
@@ -235,6 +353,7 @@ jobs:
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
+
       - name: Update cumulative day inventory coverage
         if: always()
         shell: bash
@@ -244,10 +363,12 @@ jobs:
             echo "skip cumulative day inventory coverage: fresh run-bot log was not created"
             exit 0
           fi
-          mkdir -p .data/exports .data/day_inventory artifacts/run-bot
+          mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/day_inventory_cumulative_coverage.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
+          cp -r .data/line_history artifacts/run-bot/line_history || true
+
       - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
@@ -263,6 +384,7 @@ jobs:
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
+
       - name: Commit runtime artifacts
         if: always()
         shell: bash
@@ -274,12 +396,22 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/exports .data/cache .data/day_inventory .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
           git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
+
+      - name: Save persisted day inventory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .data/day_inventory
+            .data/line_history
+          key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
+
       - name: Upload run artifact
         if: always()
         uses: actions/upload-artifact@v5
@@ -290,6 +422,7 @@ jobs:
             .data/exports/**
             .data/cache/**
             .data/day_inventory/**
+            .data/line_history/**
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
           if-no-files-found: ignore
