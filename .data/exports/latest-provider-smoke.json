@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":71456920,\"home\":\"Hapoel Nir Ramat Hasharon\",\"away\":\"Maccabi Kishronot Hadera\",\"homeId\":238852,\"awayId\":243954,\"date\":\"2026-05-14T15:10:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Israel - Liga Al, Women\",\"slug\":\"israel-liga-al-women\"},\"status\":\"pending\",\"scores\":{\"hom",
+      "body_preview": "[{\"id\":69921760,\"home\":\"Tips\",\"away\":\"MK United\",\"homeId\":1114697,\"awayId\":1114065,\"date\":\"2026-05-14T17:05:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Finland - Kolmonen\",\"slug\":\"finland-kolmonen\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":69921114,\"home\":\"MPS/",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -43,15 +43,15 @@
       "status": "skipped_preserve_runtime_quota"
     },
     {
-      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-05-14\",\"dateTo\":\"2026-05-14\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+      "body_preview": "{\"message\":\"You reached your request limit. Wait 8 seconds.\",\"errorCode\":429}",
       "enabled": true,
-      "http_status": 200,
-      "item_count": 0,
+      "http_status": 429,
+      "item_count": 2,
       "key_present": true,
-      "ok": true,
-      "payload_shape": "filters,matches,resultSet",
+      "ok": false,
+      "payload_shape": "errorCode,message",
       "provider": "football_data",
-      "status": "ok"
+      "status": "http_429"
     },
     {
       "body_preview": "{\"teams\":[{\"idTeam\":\"133604\",\"idESPN\":\"359\",\"idAPIfootball\":\"42\",\"intLoved\":\"9\",\"strTeam\":\"Arsenal\",\"strTeamAlternate\":\"Arsenal Football Club, AFC, Arsenal FC\",\"strTeamShort\":\"ARS\",\"intFormedYear\":\"1892\",\"strSport\":\"Soccer\",\"strLeague\":\"English Premier League\",\"idLeague\":\"4328\",\"strLeague2\":\"FA Cup\"",
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778770973,\"localtime\":\"2026-05-14 16:02\"},\"current\":{\"last_updated_epoch\":1778770800,\"last_updated\":\"2026-05-14 16:00\",\"temp_c\":13.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778778181,\"localtime\":\"2026-05-14 18:03\"},\"current\":{\"last_updated_epoch\":1778778000,\"last_updated\":\"2026-05-14 18:00\",\"temp_c\":14.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,7 +77,7 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.0743865966796875,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curre",
+      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":0.05614757537841797,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curr",
       "enabled": true,
       "http_status": 200,
       "item_count": 9,
@@ -96,7 +96,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-05-14T15:02:48.215280+00:00",
+  "created_at_utc": "2026-05-14T17:02:52.514034+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -224,11 +224,9 @@
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
-      "bad_enabled": {
-        "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true"
-      },
+      "bad_enabled": {},
       "bad_limits": {},
-      "ok": false,
+      "ok": true,
       "prefix": "RAPIDAPI_FREE_FOOTBALL"
     },
     {
@@ -264,10 +262,10 @@
   "summary": {
     "checks_total": 8,
     "enabled_checks": 8,
-    "failed_enabled_checks": 1,
+    "failed_enabled_checks": 2,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 10,
-    "ok_enabled_checks": 7,
+    "non_core_bad_env_prefixes": 9,
+    "ok_enabled_checks": 6,
     "status": "warning"
   }
 }
