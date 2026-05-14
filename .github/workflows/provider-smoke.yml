@@ -16,9 +16,9 @@ on:
         required: false
         default: ""
       coverage_target:
-        description: "Top matches to audit, nearest kickoff first"
+        description: "Daily top match inventory size"
         required: false
-        default: "120"
+        default: "300"
       send_samples:
         description: "Show small OK samples in txt report"
         type: boolean
@@ -35,7 +35,7 @@ concurrency:
 jobs:
   provider-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 14
+    timeout-minutes: 16
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
@@ -43,6 +43,7 @@ jobs:
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: provider-smoke-minimal-repair
+      PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED: "true"
       PUBLISH_DRY_RUN: "true"
       PREDICTION_PUBLICATION_ENABLED: "false"
       RUN_REPORT_ENABLED: "false"
@@ -52,7 +53,6 @@ jobs:
       SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
 
-      # Minimal smoke budget: only requests that diagnose SportLogic / odds-api.io / SStats / Bzzoiro.
       PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'odds_api_io,bzzoiro,sstats,sportlogic' }}
       PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '180' }}
       PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'true' }}
@@ -61,7 +61,6 @@ jobs:
       PROVIDER_SMOKE_REPEATS: "1"
       PROVIDER_API_MIN_PROBE_TIMEOUT: "16"
 
-      # Cross-provider matching diagnostics are deliberately small.
       PROVIDER_SMOKE_MATCHING_DIAGNOSTICS_ENABLED: "true"
       PROVIDER_SMOKE_MATCHING_TIMEOUT_SECONDS: "22"
       PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,sportlogic"
@@ -69,35 +68,20 @@ jobs:
       PROVIDER_SMOKE_MATCHING_ODDS_PAGES: "1"
       PROVIDER_SMOKE_MATCHING_DAYS_AHEAD: "1"
       PROVIDER_SMOKE_SSTATS_LOOKBACK_DAYS: "21"
-      BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
 
-      # Disable broad/full probes by default; the minimal repair probe below replaces them.
       API_FULL_SMOKE_ENABLED: "false"
       API_FULL_SMOKE_SPORTLOGIC_ENABLED: "false"
       API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED: "false"
-      API_FULL_SMOKE_MAX_SECONDS: "90"
-      API_FULL_SMOKE_TIMEOUT_SECONDS: "16"
-      API_FULL_SMOKE_CONCURRENCY: "2"
-      API_FULL_SMOKE_DETAIL_CONCURRENCY: "1"
       API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS: "1"
       API_FULL_SMOKE_ODDS_EVENT_LIMIT: "1"
       API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT: "0"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
-      SPORTLOGIC_PER_RUN_MAX: "4"
-      SPORTLOGIC_MATCH_LIMIT: "20"
-      SPORTLOGIC_ODDS_MATCH_LIMIT: "1"
-      SPORTLOGIC_MATCH_MIN_SCORE: "48"
-      SSTATS_DEEP_SMOKE_DETAIL_GAMES: "0"
-      SSTATS_DEEP_SMOKE_CONCURRENCY: "1"
-      SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "12"
-      SSTATS_DEEP_SMOKE_INCLUDE_APIKEY: "true"
 
-      # Compact day inventory.  No forced 300-match expansion in repair mode.
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       PROVIDER_SMOKE_TARGET_DATE: ${{ github.event.inputs.target_date }}
-      PROVIDER_SMOKE_COVERAGE_TARGET: ${{ github.event.inputs.coverage_target || '120' }}
-      DAY_INVENTORY_MAX_MATCHES: ${{ github.event.inputs.coverage_target || '120' }}
+      PROVIDER_SMOKE_COVERAGE_TARGET: ${{ github.event.inputs.coverage_target || '300' }}
+      DAY_INVENTORY_TARGET_SIZE: ${{ github.event.inputs.coverage_target || '300' }}
+      DAY_INVENTORY_MAX_MATCHES: ${{ github.event.inputs.coverage_target || '300' }}
+      DAY_INVENTORY_FORCE_TOP_300: "true"
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: "odds_api_io"
       MATCH_BOOTSTRAP_PROVIDER: "odds_api_io"
       DAY_INVENTORY_FORCE_PROVIDER_MERGE: "true"
@@ -111,12 +95,12 @@ jobs:
       DAY_INVENTORY_ENABLE_SSTATS: "true"
       DAY_INVENTORY_TOP_MATCHES_ENABLED: "true"
       DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "80"
-      DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: "60"
-      DAY_INVENTORY_OTHER_MAX_MATCHES: "40"
-      DAY_INVENTORY_SSTATS_ONLY_MAX_MATCHES: "35"
-      DAY_INVENTORY_SSTATS_OVERFLOW_MAX_MATCHES: "35"
-      DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: "70"
-      DAY_INVENTORY_FORCE_FULL_300: "false"
+      DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: "80"
+      DAY_INVENTORY_OTHER_MAX_MATCHES: "60"
+      DAY_INVENTORY_SSTATS_ONLY_MAX_MATCHES: "160"
+      DAY_INVENTORY_SSTATS_OVERFLOW_MAX_MATCHES: "160"
+      DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: "260"
+      DAY_INVENTORY_FORCE_FULL_300: "true"
       DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP: "false"
       DAY_INVENTORY_EXCLUDE_BAD_STATUS_FROM_TOP: "true"
       DAY_INVENTORY_EXCLUDE_LOW_VALUE_FROM_FIRST_PASS: "true"
@@ -131,7 +115,6 @@ jobs:
       DAY_INVENTORY_SSTATS_LIMIT: "1000"
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "1"
 
-      # Per-run quota caps.  These are intentionally conservative for repair smoke.
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
@@ -142,7 +125,37 @@ jobs:
       ODDS_API_IO_PER_RUN_MAX: "6"
       ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "4"
       ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "2"
+      ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "6"
+      ODDS_API_IO_MAX_REQUESTS_PER_RUN: "6"
+      ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "1"
+      ODDS_API_IO_MAX_PAGES_PER_SPORT: "1"
       MAX_MATCHES_FOR_ODDS_FETCH: "20"
+      BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
+      BZZOIRO_PER_RUN_MAX: "3"
+      BZZOIRO_MAX_REQUESTS_PER_RUN: "3"
+      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "3"
+      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "2"
+      BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "1"
+      BZZOIRO_MAX_PAGES: "2"
+      BZZOIRO_CONTEXT_MATCH_LIMIT: "40"
+      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "2"
+      SSTATS_CONTEXT_MATCH_LIMIT: "60"
+      SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "0"
+      SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "0"
+      SSTATS_DEEP_ENRICHMENT_ENABLED: "false"
+      SSTATS_DEEP_SMOKE_DETAIL_GAMES: "0"
+      SSTATS_DEEP_SMOKE_CONCURRENCY: "1"
+      SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "12"
+      SSTATS_DEEP_SMOKE_INCLUDE_APIKEY: "true"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
+      SPORTLOGIC_PER_RUN_MAX: "4"
+      SPORTLOGIC_MATCH_LIMIT: "20"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "1"
+      SPORTLOGIC_MATCH_MIN_SCORE: "48"
+      SPORTLOGIC_ENABLED: "false"
+      ENABLE_SPORTLOGIC: "false"
+
       PUBLISH_MIN_ODDS_SOURCES: "2"
       PUBLISH_MIN_CONTEXT_SOURCES: "2"
       MIN_CONTEXT_SOURCES_PUBLISH: "2"
@@ -186,29 +199,11 @@ jobs:
       GUARDIAN_KEY: ${{ secrets.GUARDIAN_KEY }}
       FUTRIXMETRICS_API_KEY: ${{ secrets.FUTRIXMETRICS_API_KEY }}
       FUTRIXMETRICS_KEY: ${{ secrets.FUTRIXMETRICS_KEY }}
-      FUTRIXMETRICS_BASE_URL: ${{ secrets.FUTRIXMETRICS_BASE_URL }}
       HIGHLIGHTLY_API_KEY: ${{ secrets.HIGHLIGHTLY_API_KEY }}
-      HIGHLIGHTLY_KEY: ${{ secrets.HIGHLIGHTLY_KEY }}
-      HIGHLIGHTLY_BASE_URL: ${{ secrets.HIGHLIGHTLY_BASE_URL }}
-      HIGHLIGHTLY_SMOKE_PATH: ${{ secrets.HIGHLIGHTLY_SMOKE_PATH }}
-      HIGHLIGHTLY_USE_RAPIDAPI: ${{ secrets.HIGHLIGHTLY_USE_RAPIDAPI }}
-      HIGHLIGHTLY_RAPIDAPI_HOST: ${{ secrets.HIGHLIGHTLY_RAPIDAPI_HOST }}
       METEOSTAT_RAPIDAPI_KEY: ${{ secrets.METEOSTAT_RAPIDAPI_KEY }}
-      METEOSTAT_RAPIDAPI_HOST: meteostat.p.rapidapi.com
-      METEOSTAT_RAPIDAPI_PATH: ${{ secrets.METEOSTAT_RAPIDAPI_PATH }}
       RAPIDAPI_KEY: ${{ secrets.RAPIDAPI_KEY }}
       ODDS_FEED_RAPIDAPI_KEY: ${{ secrets.ODDS_FEED_RAPIDAPI_KEY }}
-      ODDS_FEED_RAPIDAPI_HOST: ${{ secrets.ODDS_FEED_RAPIDAPI_HOST }}
-      ODDS_FEED_RAPIDAPI_PATH: ${{ secrets.ODDS_FEED_RAPIDAPI_PATH }}
-      SPORTSBOOK_RAPIDAPI_KEY: ${{ secrets.SPORTSBOOK_RAPIDAPI_KEY }}
-      SPORTSBOOK_RAPIDAPI_HOST: ${{ secrets.SPORTSBOOK_RAPIDAPI_HOST }}
-      SPORTSBOOK_RAPIDAPI_PATH: ${{ secrets.SPORTSBOOK_RAPIDAPI_PATH }}
-      SPORTAPI7_RAPIDAPI_KEY: ${{ secrets.SPORTAPI7_RAPIDAPI_KEY }}
-      SPORTAPI7_RAPIDAPI_HOST: ${{ secrets.SPORTAPI7_RAPIDAPI_HOST }}
-      SPORTAPI7_RAPIDAPI_PATH: ${{ secrets.SPORTAPI7_RAPIDAPI_PATH }}
       FREE_FOOTBALL_RAPIDAPI_KEY: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_KEY }}
-      FREE_FOOTBALL_RAPIDAPI_HOST: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_HOST }}
-      FREE_FOOTBALL_RAPIDAPI_PATH: ${{ secrets.FREE_FOOTBALL_RAPIDAPI_PATH }}
 
     steps:
       - name: Checkout repository
@@ -243,6 +238,63 @@ jobs:
           python -u scripts/apply_provider_request_budget.py || true
           python -u scripts/apply_per_run_api_quota_contract.py || true
 
+      - name: Reassert minimal provider-smoke environment
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat >> "$GITHUB_ENV" <<'EOF'
+          APP_ENV=provider-smoke-minimal-repair
+          PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED=true
+          PUBLISH_DRY_RUN=true
+          PREDICTION_PUBLICATION_ENABLED=false
+          PROVIDER_SMOKE_FAST_PROVIDERS=odds_api_io,bzzoiro,sstats,sportlogic
+          PROVIDER_SMOKE_MATCHING_PROVIDERS=sstats,bzzoiro,sportlogic
+          BZZOIRO_PROVIDER_SMOKE_ENABLED=true
+          ODDS_API_IO_PER_RUN_MAX=6
+          ODDS_API_IO_ACCOUNT1_PER_RUN_MAX=4
+          ODDS_API_IO_ACCOUNT2_PER_RUN_MAX=2
+          ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN=6
+          ODDS_API_IO_MAX_REQUESTS_PER_RUN=6
+          ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT=1
+          ODDS_API_IO_MAX_PAGES_PER_SPORT=1
+          MAX_MATCHES_FOR_ODDS_FETCH=20
+          BZZOIRO_PER_RUN_MAX=3
+          BZZOIRO_MAX_REQUESTS_PER_RUN=3
+          BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN=3
+          BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN=2
+          BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN=1
+          BZZOIRO_MAX_PAGES=2
+          BZZOIRO_CONTEXT_MATCH_LIMIT=40
+          SSTATS_MAX_HTTP_REQUESTS_PER_RUN=2
+          SSTATS_CONTEXT_MATCH_LIMIT=60
+          SSTATS_DEEP_DETAIL_LIMIT_PER_RUN=0
+          SSTATS_DEEP_CONTEXT_MATCH_LIMIT=0
+          SSTATS_DEEP_ENRICHMENT_ENABLED=false
+          SPORTLOGIC_ENABLED=false
+          ENABLE_SPORTLOGIC=false
+          SPORTLOGIC_PER_RUN_MAX=4
+          SPORTLOGIC_MATCH_LIMIT=20
+          SPORTLOGIC_ODDS_MATCH_LIMIT=1
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES=0
+          SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT=0
+          API_FULL_SMOKE_ENABLED=false
+          API_FULL_SMOKE_SPORTLOGIC_ENABLED=false
+          API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED=false
+          DAY_INVENTORY_TARGET_SIZE=300
+          DAY_INVENTORY_MAX_MATCHES=300
+          DAY_INVENTORY_FORCE_TOP_300=true
+          DAY_INVENTORY_FORCE_FULL_300=true
+          DAY_INVENTORY_ENABLE_BZZOIRO=true
+          DAY_INVENTORY_ENABLE_SSTATS=true
+          DAY_INVENTORY_ENABLE_SPORTLOGIC=false
+          DAY_INVENTORY_SSTATS_MAX_REQUESTS=1
+          DAY_INVENTORY_BZZOIRO_MAX_REQUESTS=3
+          PUBLISH_MIN_ODDS_SOURCES=2
+          PUBLISH_MIN_CONTEXT_SOURCES=2
+          SPREADS_PUBLICATION_ENABLED=true
+          TOTALS_PUBLICATION_ENABLED=true
+          EOF
+
       - name: Run minimal API repair probe
         shell: bash
         run: |
@@ -255,19 +307,22 @@ jobs:
             echo "minimal api repair probe failed or timed out with status ${status}; continuing diagnostics"
           fi
 
-      - name: Build compact smoke inventory
+      - name: Build and normalize top-300 smoke inventory
         shell: bash
         run: |
           set -uo pipefail
-          echo "compact smoke inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          echo "top-300 smoke inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           if timeout 270s python -u scripts/build_day_inventory.py 2>&1 | tee .data/exports/provider-smoke-build-day-inventory.log; then
-            echo "compact smoke inventory completed"
+            echo "top-300 smoke inventory build completed"
           else
             status=$?
-            echo "compact smoke inventory failed or timed out with status ${status}; continuing diagnostics"
+            echo "top-300 smoke inventory build failed or timed out with status ${status}; continuing diagnostics"
           fi
+          python -u scripts/repair_inventory_source_counts.py 2>&1 | tee .data/exports/provider-smoke-source-count-repair-run.log || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/latest-day-inventory-summary.json 2>/dev/null || true
+          cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/latest-inventory-source-count-repair.json 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/provider-smoke-build-day-inventory.log 2>/dev/null || true
+          cp .data/exports/provider-smoke-source-count-repair-run.log artifacts/provider-smoke/provider-smoke-source-count-repair-run.log 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
 
       - name: Run provider endpoint and matching diagnostics
@@ -276,8 +331,13 @@ jobs:
           API_FULL_SMOKE_ENABLED: "false"
           PROVIDER_SMOKE_REPEATS: "1"
           PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,sportlogic"
+          BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
           SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
           SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
+          ODDS_API_IO_PER_RUN_MAX: "6"
+          ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "4"
+          ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "2"
+          MAX_MATCHES_FOR_ODDS_FETCH: "20"
         run: |
           set -uo pipefail
           mkdir -p .data/exports artifacts/provider-smoke artifacts/provider-smoke-fast
@@ -295,6 +355,7 @@ jobs:
           fi
           cp .data/exports/latest-provider-smoke-fast.json .data/exports/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke-fast.txt .data/exports/latest-provider-smoke.txt 2>/dev/null || true
+          python -u scripts/repair_inventory_source_counts.py 2>&1 | tee .data/exports/provider-smoke-source-count-repair-after-diagnostics-run.log || true
 
       - name: Collect provider smoke artifacts
         if: always()
@@ -309,13 +370,17 @@ jobs:
           cp .data/exports/latest-provider-smoke*.txt artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-fast-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/provider-smoke-source-count-repair*.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/ 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
           echo "----- minimal API repair probe -----"
           cat .data/exports/latest-provider-api-min-repair-probe.txt 2>/dev/null || true
+          echo "----- source-count/top-300 inventory repair -----"
+          cat .data/exports/latest-inventory-source-count-repair.json 2>/dev/null || true
           echo "----- provider smoke diagnostics -----"
           cat .data/exports/latest-provider-smoke-diagnostics.txt 2>/dev/null || cat .data/exports/latest-provider-smoke.txt 2>/dev/null || true
-          echo "----- compact day inventory summary -----"
+          echo "----- top-300 day inventory summary -----"
           cat .data/exports/latest-day-inventory-summary.json 2>/dev/null || true
 
       - name: Upload provider smoke artifact
