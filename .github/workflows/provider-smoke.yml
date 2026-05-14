@@ -4,13 +4,13 @@ on:
   workflow_dispatch:
     inputs:
       providers:
-        description: "all/core/odds/context/weather/news/mapping/csv/rapidapi or comma-separated provider names"
+        description: "core/minimal or comma-separated provider names"
         required: true
-        default: "all"
+        default: "odds_api_io,bzzoiro,sstats,sportlogic"
       max_seconds:
         description: "Hard diagnostics limit in seconds"
         required: true
-        default: "360"
+        default: "180"
       target_date:
         description: "Moscow local date YYYY-MM-DD. Empty = today"
         required: false
@@ -18,7 +18,7 @@ on:
       coverage_target:
         description: "Top matches to audit, nearest kickoff first"
         required: false
-        default: "300"
+        default: "120"
       send_samples:
         description: "Show small OK samples in txt report"
         type: boolean
@@ -35,14 +35,14 @@ concurrency:
 jobs:
   provider-smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 22
+    timeout-minutes: 14
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
       PYTHONPATH: ${{ github.workspace }}
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
-      APP_ENV: provider-smoke-repair
+      APP_ENV: provider-smoke-minimal-repair
       PUBLISH_DRY_RUN: "true"
       PREDICTION_PUBLICATION_ENABLED: "false"
       RUN_REPORT_ENABLED: "false"
@@ -52,81 +52,97 @@ jobs:
       SETTLEMENT_SEND_TELEGRAM_SUMMARY: "false"
       TELEGRAM_MESSAGE_SOFT_LIMIT: "3600"
 
-      PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'all' }}
-      PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '360' }}
+      # Minimal smoke budget: only requests that diagnose SportLogic / odds-api.io / SStats / Bzzoiro.
+      PROVIDER_SMOKE_FAST_PROVIDERS: ${{ github.event.inputs.providers || 'odds_api_io,bzzoiro,sstats,sportlogic' }}
+      PROVIDER_SMOKE_FAST_MAX_SECONDS: ${{ github.event.inputs.max_seconds || '180' }}
       PROVIDER_SMOKE_SHOW_OK_SAMPLES: ${{ github.event.inputs.send_samples || 'true' }}
-      PROVIDER_SMOKE_FAST_TIMEOUT: "22"
-      PROVIDER_SMOKE_FAST_CONCURRENCY: "4"
+      PROVIDER_SMOKE_FAST_TIMEOUT: "18"
+      PROVIDER_SMOKE_FAST_CONCURRENCY: "2"
       PROVIDER_SMOKE_REPEATS: "1"
+      PROVIDER_API_MIN_PROBE_TIMEOUT: "16"
+
+      # Cross-provider matching diagnostics are deliberately small.
       PROVIDER_SMOKE_MATCHING_DIAGNOSTICS_ENABLED: "true"
-      PROVIDER_SMOKE_MATCHING_TIMEOUT_SECONDS: "35"
-      PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,football_data,allsportsapi"
-      PROVIDER_SMOKE_MATCHING_ODDS_LIMIT: "100"
-      PROVIDER_SMOKE_MATCHING_ODDS_PAGES: "3"
-      PROVIDER_SMOKE_MATCHING_DAYS_AHEAD: "2"
-      PROVIDER_SMOKE_SSTATS_LOOKBACK_DAYS: "45"
+      PROVIDER_SMOKE_MATCHING_TIMEOUT_SECONDS: "22"
+      PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,sportlogic"
+      PROVIDER_SMOKE_MATCHING_ODDS_LIMIT: "60"
+      PROVIDER_SMOKE_MATCHING_ODDS_PAGES: "1"
+      PROVIDER_SMOKE_MATCHING_DAYS_AHEAD: "1"
+      PROVIDER_SMOKE_SSTATS_LOOKBACK_DAYS: "21"
       BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
+
+      # Disable broad/full probes by default; the minimal repair probe below replaces them.
       API_FULL_SMOKE_ENABLED: "false"
       API_FULL_SMOKE_SPORTLOGIC_ENABLED: "false"
       API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED: "false"
-      API_FULL_SMOKE_MAX_SECONDS: "180"
-      API_FULL_SMOKE_TIMEOUT_SECONDS: "22"
-      API_FULL_SMOKE_CONCURRENCY: "4"
+      API_FULL_SMOKE_MAX_SECONDS: "90"
+      API_FULL_SMOKE_TIMEOUT_SECONDS: "16"
+      API_FULL_SMOKE_CONCURRENCY: "2"
       API_FULL_SMOKE_DETAIL_CONCURRENCY: "1"
-      API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS: "4"
-      API_FULL_SMOKE_ODDS_EVENT_LIMIT: "2"
-      API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT: "1"
+      API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS: "1"
+      API_FULL_SMOKE_ODDS_EVENT_LIMIT: "1"
+      API_FULL_SMOKE_FOOTBALL_DATA_COMPETITION_LIMIT: "0"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
-      SSTATS_DEEP_SMOKE_DETAIL_GAMES: "2"
-      SSTATS_DEEP_SMOKE_CONCURRENCY: "2"
-      SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "18"
+      SPORTLOGIC_PER_RUN_MAX: "4"
+      SPORTLOGIC_MATCH_LIMIT: "20"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "1"
+      SPORTLOGIC_MATCH_MIN_SCORE: "48"
+      SSTATS_DEEP_SMOKE_DETAIL_GAMES: "0"
+      SSTATS_DEEP_SMOKE_CONCURRENCY: "1"
+      SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "12"
       SSTATS_DEEP_SMOKE_INCLUDE_APIKEY: "true"
 
+      # Compact day inventory.  No forced 300-match expansion in repair mode.
       DAY_INVENTORY_TARGET_DATE: ${{ github.event.inputs.target_date }}
       PROVIDER_SMOKE_TARGET_DATE: ${{ github.event.inputs.target_date }}
-      PROVIDER_SMOKE_COVERAGE_TARGET: ${{ github.event.inputs.coverage_target || '300' }}
-      DAY_INVENTORY_MAX_MATCHES: ${{ github.event.inputs.coverage_target || '300' }}
+      PROVIDER_SMOKE_COVERAGE_TARGET: ${{ github.event.inputs.coverage_target || '120' }}
+      DAY_INVENTORY_MAX_MATCHES: ${{ github.event.inputs.coverage_target || '120' }}
       DAY_INVENTORY_BOOTSTRAP_PROVIDER: "odds_api_io"
       MATCH_BOOTSTRAP_PROVIDER: "odds_api_io"
       DAY_INVENTORY_FORCE_PROVIDER_MERGE: "true"
-      DAY_INVENTORY_BUILD_TIMEOUT_SECONDS: "600"
+      DAY_INVENTORY_BUILD_TIMEOUT_SECONDS: "240"
       DAY_INVENTORY_DIRECT_WINDOW_DAYS: "1"
       DAY_INVENTORY_DIRECT_MIN_MATCHES: "1"
       DAY_INVENTORY_EXTRA_FIXTURES_ENABLED: "true"
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
-      DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "true"
+      DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "false"
       DAY_INVENTORY_ENABLE_SPORTLOGIC: "false"
       DAY_INVENTORY_ENABLE_SSTATS: "true"
       DAY_INVENTORY_TOP_MATCHES_ENABLED: "true"
-      DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "180"
-      DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: "120"
-      DAY_INVENTORY_OTHER_MAX_MATCHES: "120"
-      DAY_INVENTORY_SSTATS_ONLY_MAX_MATCHES: "70"
-      DAY_INVENTORY_SSTATS_OVERFLOW_MAX_MATCHES: "70"
-      DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: "140"
-      DAY_INVENTORY_FORCE_FULL_300: "true"
+      DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "80"
+      DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES: "60"
+      DAY_INVENTORY_OTHER_MAX_MATCHES: "40"
+      DAY_INVENTORY_SSTATS_ONLY_MAX_MATCHES: "35"
+      DAY_INVENTORY_SSTATS_OVERFLOW_MAX_MATCHES: "35"
+      DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP: "70"
+      DAY_INVENTORY_FORCE_FULL_300: "false"
       DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP: "false"
       DAY_INVENTORY_EXCLUDE_BAD_STATUS_FROM_TOP: "true"
       DAY_INVENTORY_EXCLUDE_LOW_VALUE_FROM_FIRST_PASS: "true"
       DAY_INVENTORY_BZZOIRO_WINDOW_DAYS: "1"
-      DAY_INVENTORY_BZZOIRO_MAX_PAGES: "10"
-      DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "12"
+      DAY_INVENTORY_BZZOIRO_MAX_PAGES: "2"
+      DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "3"
       DAY_INVENTORY_ALLSPORTSAPI_WINDOW_DAYS: "0"
-      DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT: "500"
+      DAY_INVENTORY_ALLSPORTSAPI_MATCH_LIMIT: "0"
       DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "0"
       DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "0"
       DAY_INVENTORY_SSTATS_WINDOW_DAYS: "1"
       DAY_INVENTORY_SSTATS_LIMIT: "1000"
-      DAY_INVENTORY_SSTATS_MAX_REQUESTS: "3"
+      DAY_INVENTORY_SSTATS_MAX_REQUESTS: "1"
 
+      # Per-run quota caps.  These are intentionally conservative for repair smoke.
       PROVIDER_FREE_QUOTA_POLICY_ENABLED: "true"
       PROVIDER_QUOTA_GOVERNOR_ENABLED: "true"
       PROVIDER_QUOTA_RUNS_PER_DAY: "12"
-      PROVIDER_QUOTA_SAFETY_FACTOR: "0.78"
-      PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "25"
+      PROVIDER_QUOTA_SAFETY_FACTOR: "0.70"
+      PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "18"
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+      ODDS_API_IO_PER_RUN_MAX: "6"
+      ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "4"
+      ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "2"
+      MAX_MATCHES_FOR_ODDS_FETCH: "20"
       PUBLISH_MIN_ODDS_SOURCES: "2"
       PUBLISH_MIN_CONTEXT_SOURCES: "2"
       MIN_CONTEXT_SOURCES_PUBLISH: "2"
@@ -227,16 +243,28 @@ jobs:
           python -u scripts/apply_provider_request_budget.py || true
           python -u scripts/apply_per_run_api_quota_contract.py || true
 
-      - name: Build 300-match smoke inventory
+      - name: Run minimal API repair probe
         shell: bash
         run: |
           set -uo pipefail
-          echo "build smoke inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 660s python -u scripts/build_day_inventory.py 2>&1 | tee .data/exports/provider-smoke-build-day-inventory.log; then
-            echo "build smoke inventory completed"
+          echo "minimal api repair probe start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 120s python -u scripts/provider_api_min_repair_probe.py 2>&1 | tee .data/exports/provider-api-min-repair-probe-run.log; then
+            echo "minimal api repair probe completed"
           else
             status=$?
-            echo "build smoke inventory failed or timed out with status ${status}; continuing diagnostics"
+            echo "minimal api repair probe failed or timed out with status ${status}; continuing diagnostics"
+          fi
+
+      - name: Build compact smoke inventory
+        shell: bash
+        run: |
+          set -uo pipefail
+          echo "compact smoke inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 270s python -u scripts/build_day_inventory.py 2>&1 | tee .data/exports/provider-smoke-build-day-inventory.log; then
+            echo "compact smoke inventory completed"
+          else
+            status=$?
+            echo "compact smoke inventory failed or timed out with status ${status}; continuing diagnostics"
           fi
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/latest-day-inventory-summary.json 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/provider-smoke-build-day-inventory.log 2>/dev/null || true
@@ -247,14 +275,14 @@ jobs:
         env:
           API_FULL_SMOKE_ENABLED: "false"
           PROVIDER_SMOKE_REPEATS: "1"
-          PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,football_data,allsportsapi"
+          PROVIDER_SMOKE_MATCHING_PROVIDERS: "sstats,bzzoiro,sportlogic"
           SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
           SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
         run: |
           set -uo pipefail
           mkdir -p .data/exports artifacts/provider-smoke artifacts/provider-smoke-fast
           echo "provider diagnostics start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout "$(( PROVIDER_SMOKE_FAST_MAX_SECONDS + 120 ))" python -u scripts/provider_smoke_fast.py \
+          if timeout "$(( PROVIDER_SMOKE_FAST_MAX_SECONDS + 90 ))" python -u scripts/provider_smoke_fast.py \
             --providers "${PROVIDER_SMOKE_FAST_PROVIDERS}" \
             --max-seconds "${PROVIDER_SMOKE_FAST_MAX_SECONDS}" \
             --timeout "${PROVIDER_SMOKE_FAST_TIMEOUT}" \
@@ -268,99 +296,27 @@ jobs:
           cp .data/exports/latest-provider-smoke-fast.json .data/exports/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke-fast.txt .data/exports/latest-provider-smoke.txt 2>/dev/null || true
 
-      - name: Run explicit full-data endpoint probe
-        shell: bash
-        env:
-          API_FULL_SMOKE_ENABLED: "true"
-          API_FULL_SMOKE_DETAIL_CONCURRENCY: "1"
-          API_FULL_SMOKE_SPORTLOGIC_ENABLED: "false"
-          API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED: "false"
-          SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
-          SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
-        run: |
-          set -uo pipefail
-          echo "explicit full-data probe v10 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 220s python -u scripts/api_full_data_smoke_probe_v10.py 2>&1 | tee .data/exports/api-full-data-smoke-run.log; then
-            echo "explicit full-data probe v10 completed"
-          else
-            status=$?
-            echo "explicit full-data probe v10 failed or timed out with status ${status}; continuing"
-          fi
-
-      - name: Run SStats deep endpoint probe
-        shell: bash
-        env:
-          SSTATS_DEEP_SMOKE_DETAIL_GAMES: "2"
-          SSTATS_DEEP_SMOKE_CONCURRENCY: "2"
-          SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "18"
-        run: |
-          set -uo pipefail
-          echo "sstats deep smoke v2 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 180s python -u scripts/sstats_deep_smoke_probe_v2.py 2>&1 | tee .data/exports/sstats-deep-smoke-run.log; then
-            echo "sstats deep smoke v2 completed"
-          else
-            status=$?
-            echo "sstats deep smoke v2 failed or timed out with status ${status}; continuing"
-          fi
-
-      - name: Build 300-match coverage matrix
-        shell: bash
-        run: |
-          set -uo pipefail
-          echo "coverage matrix v2 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if python -u scripts/provider_smoke_coverage_matrix_v2.py 2>&1 | tee .data/exports/provider-smoke-coverage-matrix-run.log; then
-            echo "coverage matrix v2 completed"
-          else
-            status=$?
-            echo "coverage matrix v2 failed with status ${status}; continuing"
-          fi
-
-      - name: Build provider signal coverage blueprint
-        shell: bash
-        run: |
-          set -uo pipefail
-          echo "provider signal coverage blueprint v2 start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if python -u scripts/provider_signal_coverage_blueprint_v2.py 2>&1 | tee .data/exports/provider-signal-coverage-blueprint-run.log; then
-            echo "provider signal coverage blueprint v2 completed"
-          else
-            status=$?
-            echo "provider signal coverage blueprint v2 failed with status ${status}; continuing"
-          fi
-
       - name: Collect provider smoke artifacts
         if: always()
         shell: bash
         run: |
           set -uo pipefail
           mkdir -p artifacts/provider-smoke artifacts/provider-smoke-fast
+          cp .data/exports/latest-provider-api-min-repair-probe.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-provider-api-min-repair-probe.txt artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/provider-api-min-repair-probe-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-provider-smoke*.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-provider-smoke*.txt artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/latest-api-full-data-enrichment.json artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/latest-api-full-data-enrichment.txt artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/latest-sstats-deep-smoke.json artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/latest-sstats-deep-smoke.txt artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/sstats-deep-smoke-run.log artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/provider-signal-coverage-blueprint.json artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/provider-signal-coverage-blueprint.txt artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/provider-signal-coverage-blueprint-run.log artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/api-full-data-smoke-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-fast-run.log artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/provider-smoke-coverage-matrix.json artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/provider-smoke-coverage-matrix.txt artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/provider-smoke-coverage-matrix-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/ 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
-          echo "----- provider smoke coverage matrix -----"
-          cat .data/exports/provider-smoke-coverage-matrix.txt 2>/dev/null || true
+          echo "----- minimal API repair probe -----"
+          cat .data/exports/latest-provider-api-min-repair-probe.txt 2>/dev/null || true
           echo "----- provider smoke diagnostics -----"
           cat .data/exports/latest-provider-smoke-diagnostics.txt 2>/dev/null || cat .data/exports/latest-provider-smoke.txt 2>/dev/null || true
-          echo "----- API full-data enrichment -----"
-          cat .data/exports/latest-api-full-data-enrichment.txt 2>/dev/null || true
-          echo "----- SStats deep smoke -----"
-          cat .data/exports/latest-sstats-deep-smoke.txt 2>/dev/null || true
-          echo "----- Provider signal coverage blueprint -----"
-          cat .data/exports/provider-signal-coverage-blueprint.txt 2>/dev/null || true
+          echo "----- compact day inventory summary -----"
+          cat .data/exports/latest-day-inventory-summary.json 2>/dev/null || true
 
       - name: Upload provider smoke artifact
         if: always()
