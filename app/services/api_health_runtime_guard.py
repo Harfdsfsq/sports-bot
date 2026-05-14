@@ -6,15 +6,26 @@ The normal run report shows providers that participated in prediction, but some
 configured APIs are rotation/probe/optional sources. This guard runs the existing
 quick health probe so Telegram reports can show whether those APIs are configured,
 reachable, disabled by policy, or failing.
+
+If the SportLogic daily circuit is open, the subprocess health probe receives a
+masked SportLogic environment so it cannot spend another HTTP request while the
+free daily quota is exhausted.
 """
 
 import atexit
+import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-PATCH_MARKER = "_harizon_api_health_runtime_guard_v1"
+PATCH_MARKER = "_harizon_api_health_runtime_guard_v2"
+SPORTLOGIC_MARKERS = [
+    Path(".data/cache/sportlogic_daily_limit_open.json"),
+    Path(".data/line_history/sportlogic_daily_limit_open.json"),
+    Path(".data/cache/sportlogic_daily_circuit.json"),
+    Path(".data/line_history/sportlogic_daily_circuit.json"),
+]
 
 
 def _is_provider_budget_process() -> bool:
@@ -28,6 +39,58 @@ def _truthy(value: object, default: bool = False) -> bool:
     return str(value).strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
+def _utc_day() -> str:
+    from datetime import datetime, timezone
+    return datetime.now(timezone.utc).date().isoformat()
+
+
+def _sportlogic_circuit_open() -> bool:
+    if _truthy(os.getenv("SPORTLOGIC_DAILY_CIRCUIT_OPEN")):
+        return True
+    today = _utc_day()
+    for path in SPORTLOGIC_MARKERS:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if isinstance(payload, dict) and payload.get("status") == "open" and payload.get("date_utc") == today:
+            return True
+    return False
+
+
+def _subprocess_env() -> dict[str, str]:
+    env = dict(os.environ)
+    if _sportlogic_circuit_open():
+        env.update({
+            "SPORTLOGIC_DAILY_CIRCUIT_OPEN": "true",
+            "SPORTLOGIC_DAILY_CIRCUIT_REASON": env.get("SPORTLOGIC_DAILY_CIRCUIT_REASON", "api_health_guard_masked"),
+            "SPORTLOGIC_ENABLED": "false",
+            "ENABLE_SPORTLOGIC": "false",
+            "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "false",
+            "SPORTLOGIC_PER_RUN_MAX": "0",
+            "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "0",
+            "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "0",
+            "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "0",
+            "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "0",
+            "SPORTLOGIC_MATCH_LIMIT": "0",
+            "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "0",
+            "SPORTLOGIC_ODDS_MATCH_LIMIT": "0",
+            "SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES": "0",
+            "SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT": "0",
+            "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false",
+            "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "0",
+            "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": "0",
+            "API_FULL_SMOKE_SPORTLOGIC_ENABLED": "false",
+            "API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED": "false",
+            # The health script only checks key presence before calling the endpoint,
+            # so blank the aliases for this subprocess when the daily circuit is open.
+            "SPORTLOGIC_API_KEY": "",
+            "SPORTLOGIC_KEY": "",
+            "SPORTLOGIC_TOKEN": "",
+        })
+    return env
+
+
 def _run() -> None:
     if not _truthy(os.getenv("API_HEALTH_DURING_RUN_ENABLED"), True):
         return
@@ -39,6 +102,7 @@ def _run() -> None:
             [sys.executable, str(script), "--mode", os.getenv("API_HEALTH_MODE", "quick"), "--output-dir", ".data/exports"],
             check=False,
             timeout=int(float(os.getenv("API_HEALTH_GUARD_TIMEOUT_SECONDS", "55") or 55)),
+            env=_subprocess_env(),
         )
     except Exception as exc:
         print(f"[api-health-guard] skipped after error: {type(exc).__name__}: {exc}", flush=True)
