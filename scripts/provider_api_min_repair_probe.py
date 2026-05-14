@@ -6,11 +6,7 @@ Cheap diagnostic contract:
 - odds-api.io: 1 events request + at most 1 odds/multi request per configured account;
 - bzzoiro: 1 v2 events request, with v1 fallback only if v2 fails;
 - sstats: 1 Games/list request, with fallback only if the first request fails;
-- sportlogic: up to 3 fixture endpoint variants + optional 1 active-odds discovery request + optional 1 odds/detail request.
-
-The goal is not coverage.  The goal is to identify whether each API is alive,
-which payload shape it returns, whether we can parse home/away/start, and
-whether returned rows are inside the target window.
+- sportlogic: skipped completely when the daily circuit is open or budget is 0.
 """
 
 import asyncio
@@ -26,6 +22,10 @@ UTC = timezone.utc
 OUT_DIR = Path(".data/exports")
 JSON_PATH = OUT_DIR / "latest-provider-api-min-repair-probe.json"
 TXT_PATH = OUT_DIR / "latest-provider-api-min-repair-probe.txt"
+SPORTLOGIC_MARKERS = [
+    Path(".data/cache/sportlogic_daily_limit_open.json"),
+    Path(".data/line_history/sportlogic_daily_limit_open.json"),
+]
 
 
 def _secret(*names: str) -> str:
@@ -34,6 +34,19 @@ def _secret(*names: str) -> str:
         if value:
             return value
     return ""
+
+
+def _as_int(value: Any, default: int = 0) -> int:
+    try:
+        if value in (None, ""):
+            return default
+        return int(float(value))
+    except Exception:
+        return default
+
+
+def _truthy(value: Any) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
 
 
 def _shape(value: Any) -> str:
@@ -123,7 +136,6 @@ def _event(provider: str, row: dict[str, Any]) -> dict[str, Any] | None:
         start = _parse_dt_text(event.get("event_date") or event.get("scheduled_start_time") or event.get("start_time") or event.get("date") or event.get("start"))
         source_id = str(event.get("id") or event.get("event_id") or row.get("id") or "")
     elif provider == "sstats":
-        # Current SStats Games/list shape is nested: homeTeam.name, awayTeam.name, season.league.name.
         home = _first(row, ("homeTeam.name", "HomeTeam.name", "homeTeamName", "HomeTeamName", "home_team", "home.name", "home"))
         away = _first(row, ("awayTeam.name", "AwayTeam.name", "awayTeamName", "AwayTeamName", "away_team", "away.name", "away"))
         league = _first(row, ("season.league.name", "league.name", "leagueName", "LeagueName", "league"))
@@ -157,6 +169,35 @@ def _window_counts(events: list[dict[str, Any]], start: datetime, end: datetime)
     return {"target_window_events": inside, "future_or_live_events": future, "stale_events": stale, "missing_start_events": missing_start}
 
 
+def _sportlogic_circuit_marker() -> dict[str, Any] | None:
+    today = datetime.now(UTC).date().isoformat()
+    for path in SPORTLOGIC_MARKERS:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        if isinstance(payload, dict) and payload.get("status") == "open" and payload.get("date_utc") == today:
+            return payload
+    return None
+
+
+def _sportlogic_disabled_reason() -> str:
+    marker = _sportlogic_circuit_marker()
+    if marker or _truthy(os.getenv("SPORTLOGIC_DAILY_CIRCUIT_OPEN")):
+        return "daily_circuit_open"
+    if str(os.getenv("SPORTLOGIC_ENABLED") or "").strip().lower() == "false" or str(os.getenv("ENABLE_SPORTLOGIC") or "").strip().lower() == "false":
+        return "disabled_by_env"
+    budget = max(
+        _as_int(os.getenv("SPORTLOGIC_REQUEST_BUDGET_GRANTED")),
+        _as_int(os.getenv("SPORTLOGIC_MAX_REQUESTS_PER_RUN")),
+        _as_int(os.getenv("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN")),
+        _as_int(os.getenv("SPORTLOGIC_PER_RUN_MAX")),
+    )
+    if budget <= 0:
+        return "zero_budget"
+    return ""
+
+
 async def _get(client: httpx.AsyncClient, provider: str, url: str, *, params: dict[str, Any] | None = None, headers: dict[str, str] | None = None) -> tuple[Any, dict[str, Any]]:
     started = datetime.now(UTC)
     safe_params = {k: ("***" if "key" in k.lower() or "token" in k.lower() else v) for k, v in (params or {}).items()}
@@ -167,18 +208,7 @@ async def _get(client: httpx.AsyncClient, provider: str, url: str, *, params: di
             payload = r.json()
         except Exception:
             payload = None
-        return payload, {
-            "provider": provider,
-            "url_path": url.split("://", 1)[-1].split("/", 1)[-1],
-            "status": r.status_code,
-            "ok": r.status_code == 200,
-            "params": safe_params,
-            "header_keys": safe_headers,
-            "shape": _shape(payload),
-            "rows": len(_rows(payload)),
-            "body_preview": r.text[:650],
-            "duration_ms": round((datetime.now(UTC) - started).total_seconds() * 1000, 1),
-        }
+        return payload, {"provider": provider, "url_path": url.split("://", 1)[-1].split("/", 1)[-1], "status": r.status_code, "ok": r.status_code == 200, "params": safe_params, "header_keys": safe_headers, "shape": _shape(payload), "rows": len(_rows(payload)), "body_preview": r.text[:650], "duration_ms": round((datetime.now(UTC) - started).total_seconds() * 1000, 1)}
     except Exception as exc:
         return None, {"provider": provider, "ok": False, "status": "request_error", "error": f"{type(exc).__name__}: {exc}", "params": safe_params}
 
@@ -244,6 +274,9 @@ async def _probe_sstats(client: httpx.AsyncClient) -> dict[str, Any]:
 
 
 async def _probe_sportlogic(client: httpx.AsyncClient) -> dict[str, Any]:
+    disabled = _sportlogic_disabled_reason()
+    if disabled:
+        return {"provider": "sportlogic", "status": f"skipped_{disabled}", "requests_used": 0, "events_raw": 0, "events_parsed": 0, "target_window_events": 0, "future_or_live_events": 0, "stale_events": 0, "samples": [], "attempts": [], "note": "SportLogic minimal probe skipped before HTTP call."}
     key = _secret("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN")
     if not key:
         return {"provider": "sportlogic", "status": "missing_key"}
@@ -319,6 +352,8 @@ def _render(payload: dict[str, Any]) -> str:
         item = payload.get(provider) or {}
         if item.get("status") == "missing_key":
             note = "нет ключа"
+        elif str(item.get("status") or "").startswith("skipped_"):
+            note = str(item.get("note") or "пропущено по circuit/budget")
         elif int(item.get("events_raw") or 0) <= 0:
             note = "endpoint/window не дал строк"
         elif int(item.get("events_parsed") or 0) <= 0:
