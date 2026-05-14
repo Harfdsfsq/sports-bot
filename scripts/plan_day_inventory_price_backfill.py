@@ -2,11 +2,11 @@ from __future__ import annotations
 
 """Plan and optionally execute low-quota price backfill for top-300 inventory.
 
-The planner makes no external API calls itself.  In provider-smoke-minimal-repair
-it chains `execute_day_inventory_price_backfill.py` once per workflow.  It also
-marks the eventIds selected for the current odds-api.io batch so the next run can
-rotate to the next price-thin matches instead of spending the same two requests
-again.
+The planner itself does not call external APIs.  In provider-smoke-minimal-repair
+it chains `execute_day_inventory_price_backfill.py` once per workflow.  It
+selects unique odds-api.io eventIds, marks attempted targets before execution,
+and therefore lets a persisted day inventory rotate through price-thin matches
+instead of repeatedly spending requests on the same event IDs.
 """
 
 import json
@@ -91,6 +91,18 @@ def norm(value: Any) -> str:
     return aliases.get(text, text)
 
 
+def unique_ordered(values: list[str]) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        text = str(value or "").strip()
+        if not text or text in seen:
+            continue
+        seen.add(text)
+        out.append(text)
+    return out
+
+
 def source_ids(row: dict[str, Any]) -> dict[str, str]:
     out: dict[str, str] = {}
     raw = row.get("source_ids") if isinstance(row.get("source_ids"), dict) else {}
@@ -115,16 +127,10 @@ def fixture_sources(row: dict[str, Any]) -> list[str]:
         if isinstance(value, list):
             out.extend(norm(x) for x in value if norm(x))
     out.extend(source_ids(row).keys())
-    src = norm(row.get("source"))
-    if src:
-        out.append(src)
-    seen: set[str] = set()
-    final: list[str] = []
-    for item in out:
-        if item and item not in seen:
-            seen.add(item)
-            final.append(item)
-    return final
+    source = norm(row.get("source"))
+    if source:
+        out.append(source)
+    return unique_ordered(out)
 
 
 def price_count(row: dict[str, Any]) -> int:
@@ -182,10 +188,9 @@ def priority_tuple(row: dict[str, Any], now: datetime, min_price: int, min_conte
         bucket = 2
     else:
         bucket = 3
+    attempt_penalty = min(9, backfill_attempts(row))
     context_bonus = 0 if context_count(row) >= min_context else 1
     need = max(0, min_price - price_count(row))
-    # Attempt penalty rotates the next run toward untried price-thin matches.
-    attempt_penalty = min(9, backfill_attempts(row))
     return (bucket, abs(hours), attempt_penalty, context_bonus + need, str(row.get("league_name") or ""), str(row.get("home_team") or ""))
 
 
@@ -202,8 +207,9 @@ def render(report: dict[str, Any]) -> str:
         f"• matches_total: {report.get('matches_total')}",
         f"• missing 2+ price: {report.get('missing_2plus_price')}",
         f"• context-ready but price-thin: {report.get('context_ready_price_thin')}",
-        f"• odds_api_io event ids planned: {len(report.get('odds_api_io_event_ids', []))}",
-        f"• odds_api_io event ids selected this run: {len(report.get('odds_api_io_event_ids_selected', []))}",
+        f"• odds_api_io unique ids planned: {len(report.get('odds_api_io_event_ids', []))}",
+        f"• odds_api_io unique ids selected this run: {len(report.get('odds_api_io_event_ids_selected', []))}",
+        f"• duplicate odds ids skipped: {report.get('duplicate_odds_api_io_event_ids_skipped')}",
         f"• previously attempted targets: {report.get('previously_attempted_targets')}",
         f"• execution: {(report.get('execution') or {}).get('status', 'not_run')}",
         "",
@@ -308,25 +314,26 @@ def main() -> int:
             "odds_api_io_attempts": attempts,
         }
 
-    odds_ids: list[str] = []
+    raw_odds_ids: list[str] = []
     bzz_targets: list[dict[str, Any]] = []
     sstats_targets: list[dict[str, Any]] = []
     match_first: list[dict[str, Any]] = []
     for item in targets:
         ids = item.get("source_ids") or {}
-        if ids.get("odds_api_io") and len(odds_ids) < odds_id_limit:
-            odds_ids.append(str(ids["odds_api_io"]))
+        event_id = str(ids.get("odds_api_io") or "").strip()
+        if event_id and len(raw_odds_ids) < odds_id_limit * 3:
+            raw_odds_ids.append(event_id)
         if "bzzoiro:current_odds_or_prediction" in (item.get("routes") or []) and len(bzz_targets) < bzz_limit:
             bzz_targets.append(item)
         if "sstats:odds_snapshot_if_present" in (item.get("routes") or []) and len(sstats_targets) < sstats_limit:
             sstats_targets.append(item)
         if item.get("routes") == ["needs_provider_match_first"] and len(match_first) < 40:
             match_first.append(item)
-    selected_ids = odds_ids[:batch_request_limit()]
+    unique_odds_ids = unique_ordered(raw_odds_ids)[:odds_id_limit]
+    duplicate_skipped = max(0, len(raw_odds_ids) - len(unique_ordered(raw_odds_ids)))
+    selected_ids = unique_odds_ids[:batch_request_limit()]
     selected_set = set(selected_ids)
 
-    # Mark selected eventIds before execution. If an API returns no markets for an
-    # event, the next persisted run will rotate that event behind untried targets.
     for row in matches:
         eid = source_ids(row).get("odds_api_io")
         if not eid or eid not in selected_set or price_count(row) >= min_price:
@@ -351,8 +358,9 @@ def main() -> int:
                 "missing_2plus_price": missing_price,
                 "context_ready_price_thin": context_ready_price_thin,
                 "previously_attempted_targets": previously_attempted,
-                "odds_api_io_event_ids": len(odds_ids),
+                "odds_api_io_event_ids": len(unique_odds_ids),
                 "odds_api_io_event_ids_selected": len(selected_ids),
+                "duplicate_odds_api_io_event_ids_skipped": duplicate_skipped,
                 "bzzoiro_targets": len(bzz_targets),
                 "sstats_targets": len(sstats_targets),
             }
@@ -378,8 +386,9 @@ def main() -> int:
         "previously_attempted_targets": previously_attempted,
         "target_limit": target_limit,
         "targets": targets,
-        "odds_api_io_event_ids": odds_ids,
+        "odds_api_io_event_ids": unique_odds_ids,
         "odds_api_io_event_ids_selected": selected_ids,
+        "duplicate_odds_api_io_event_ids_skipped": duplicate_skipped,
         "odds_api_io_event_ids_csv": ",".join(selected_ids),
         "bzzoiro_targets": bzz_targets,
         "sstats_targets": sstats_targets,
@@ -388,7 +397,7 @@ def main() -> int:
         "notes": [
             "Planner itself does not call external APIs.",
             "In provider-smoke-minimal-repair it chains one guarded executor pass: at most two odds-api.io odds/multi requests.",
-            "Selected odds_api_io eventIds are attempt-marked before execution, so persisted day_inventory can rotate future runs.",
+            "Selected odds_api_io eventIds are unique and attempt-marked before execution so persisted day_inventory can rotate future runs.",
         ],
     }
     write_json(OUT_JSON, report)
