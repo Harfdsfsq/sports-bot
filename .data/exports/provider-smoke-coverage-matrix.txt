@@ -1,0 +1,76 @@
+# Provider smoke 300-match coverage matrix v3
+
+- status: **ok**
+- target_date: 2026-05-15
+- inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-15.json`
+- inventory_matches_total: 419
+- matrix_matches: 300/300
+- full target reached: True
+- min odds/context sources: 2/2
+
+## Coverage by kickoff window
+
+| window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
+| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
+| 0_2h | 15 | 8 | 15 | 5 | 10 | 10 | 5 | 0 | 10 | 5 |
+| 2_6h | 9 | 7 | 9 | 6 | 8 | 6 | 7 | 0 | 8 | 5 |
+| 6_12h | 23 | 16 | 23 | 9 | 13 | 13 | 9 | 0 | 13 | 9 |
+| 12_24h | 253 | 61 | 243 | 38 | 217 | 211 | 39 | 0 | 217 | 38 |
+
+## Totals
+
+- fixture_2plus_sources: 92/300
+- odds_2plus_sources: 58/300
+- context_2plus_sources: 240/300
+- ready_for_model: 248/300
+- ready_for_publish: 57/300
+
+## Provider endpoint status
+- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
+- not_ok:
+  - clubelo: ConnectTimeout:  http=None rows=None reason=None
+
+## Matching diagnostics
+- odds_inventory: `{"parsed_events": null, "raw_rows": null, "status": null}`
+- by_stage: `{}`
+
+## Next enrichment queue
+- 0_2h | 2026-05-14T22:00:00+00:00 | Real Potosi — Academia del Balompie Boliviano | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-14T22:00:00+00:00 | AC Goianiense GO — CA Paranaense PR | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-14T22:00:00+00:00 | AD Confianca SE — Gremio FB Porto Alegrense RS | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-14T22:00:00+00:00 | Atletico Goianiense — Atletico Paranaense | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 0_2h | 2026-05-14T22:00:00+00:00 | Real Potosí — ABB | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 0_2h | 2026-05-14T22:30:00+00:00 | Club Fernando de La Mora — Independiente Campo Grande | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-14T22:30:00+00:00 | Fernando De La Mora — Independiente F.b.c. | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 0_2h | 2026-05-14T23:00:00+00:00 | South Carolina United Bantams — South Georgia Tormenta FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-14T23:00:00+00:00 | Broki — Flora | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 0_2h | 2026-05-14T23:00:00+00:00 | SC United Bantams W — Tormenta W | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 2_6h | 2026-05-15T00:30:00+00:00 | EC Vitoria BA — CR Flamengo RJ | odds=1 context=1 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-05-15T01:00:00+00:00 | CF Pachuca — U.N.A.M. - Pumas | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 2_6h | 2026-05-15T01:00:00+00:00 | CF Pachuca — Pumas UNAM | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather
+- 2_6h | 2026-05-15T01:30:00+00:00 | Udelas FC — CD Universitario II | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T07:00:00+00:00 | Auckland FC Reserves — Auckland City FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T07:00:00+00:00 | SS Lazio — Cesena FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T07:30:00+00:00 | Kyrgyzstan — Turkmenistan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T08:00:00+00:00 | Ural Ekaterinburg — FK Spartak Moscow | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T08:00:00+00:00 | Broadmeadow Magic FC Reserve — Newcastle Olympic FC Reserve | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T08:00:00+00:00 | Ural U20 — Spartak Moskva U19 | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 6_12h | 2026-05-15T08:30:00+00:00 | Skala 1911 Stryi — Atlet | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 6_12h | 2026-05-15T08:45:00+00:00 | Bunga Raya FC — Malaysia University | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T09:00:00+00:00 | FC Radian Baikal Irkutsk — Rassvet Krasnoyarsk | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T09:00:00+00:00 | Shakhtar Karagandy — Aktobe Reserve | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T09:00:00+00:00 | Casuarina FC Reserves — Mindil Aces FC Reserves | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T09:00:00+00:00 | Azzurri United FC — Darwin Olympic SC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-15T09:00:00+00:00 | Lazio U20 — Cesena U20 | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 6_12h | 2026-05-15T09:00:00+00:00 | Shakhter Karagandy — Aktobe Jas | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 12_24h | 2026-05-15T09:30:00+00:00 | Wynnum Wolves FC — Eastern Suburbs FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 12_24h | 2026-05-15T09:30:00+00:00 | North Lakes United — Mitchelton FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+
+Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
+
+
+## SStats deep projection
+- crosswalk: matched=258 / checked=300 | rate=86.0% | SStats events=1371
+- potential_add: context_deep=258 xg_or_rating=258 form=258 odds_rescue=189
+- projected_upper_bound: context_2plus=300 xg=300 form=259 odds_2plus=247
+- next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
