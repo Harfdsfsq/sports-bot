@@ -28,6 +28,10 @@ on:
 permissions:
   contents: read
 
+defaults:
+  run:
+    shell: bash
+
 concurrency:
   group: provider-smoke
   cancel-in-progress: true
@@ -245,20 +249,38 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        shell: bash
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Prepare smoke directories
-        shell: bash
         run: |
           set -euo pipefail
           rm -rf .data/exports artifacts/provider-smoke artifacts/provider-smoke-fast
-          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/provider-smoke artifacts/provider-smoke-fast
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/provider-smoke artifacts/provider-smoke-fast
+
+      - name: Compute day inventory cache key
+        run: |
+          set -euo pipefail
+          if [ -n "${DAY_INVENTORY_TARGET_DATE:-}" ]; then
+            cache_date="${DAY_INVENTORY_TARGET_DATE}"
+          else
+            cache_date="$(TZ="${APP_TIMEZONE}" date +%F)"
+          fi
+          echo "DAY_INVENTORY_CACHE_DATE=${cache_date}" >> "$GITHUB_ENV"
+          echo "day inventory cache date: ${cache_date}"
+
+      - name: Restore persisted day inventory
+        uses: actions/cache/restore@v4
+        with:
+          path: |
+            .data/day_inventory
+            .data/line_history
+          key: provider-smoke-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
+          restore-keys: |
+            provider-smoke-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-
 
       - name: Apply quota and policy guards
-        shell: bash
         run: |
           set -uo pipefail
           python -u scripts/apply_publication_family_policy.py || true
@@ -267,7 +289,6 @@ jobs:
           python -u scripts/apply_per_run_api_quota_contract.py || true
 
       - name: Reassert minimal provider-smoke environment
-        shell: bash
         run: |
           set -euo pipefail
           cat >> "$GITHUB_ENV" <<'EOF'
@@ -349,7 +370,6 @@ jobs:
           EOF
 
       - name: Run minimal API repair probe
-        shell: bash
         run: |
           set -uo pipefail
           echo "minimal api repair probe start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -361,7 +381,6 @@ jobs:
           fi
 
       - name: Build and normalize top-300 smoke inventory
-        shell: bash
         run: |
           set -uo pipefail
           echo "top-300 smoke inventory start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -376,13 +395,16 @@ jobs:
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/latest-day-inventory-summary.json 2>/dev/null || true
           cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/latest-inventory-source-count-repair.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-context-source-projection.json artifacts/provider-smoke/latest-day-inventory-context-source-projection.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-price-backfill-plan.json artifacts/provider-smoke/latest-day-inventory-price-backfill-plan.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-price-backfill-plan.txt artifacts/provider-smoke/latest-day-inventory-price-backfill-plan.txt 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-price-backfill-execution.json artifacts/provider-smoke/latest-day-inventory-price-backfill-execution.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-price-backfill-execution.txt artifacts/provider-smoke/latest-day-inventory-price-backfill-execution.txt 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/provider-smoke-build-day-inventory.log 2>/dev/null || true
           cp .data/exports/provider-smoke-source-count-repair-run.log artifacts/provider-smoke/provider-smoke-source-count-repair-run.log 2>/dev/null || true
           cp .data/exports/provider-smoke-context-source-projection-run.log artifacts/provider-smoke/provider-smoke-context-source-projection-run.log 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
 
       - name: Run provider endpoint and matching diagnostics
-        shell: bash
         env:
           API_FULL_SMOKE_ENABLED: "false"
           PROVIDER_SMOKE_REPEATS: "1"
@@ -419,7 +441,6 @@ jobs:
 
       - name: Collect provider smoke artifacts
         if: always()
-        shell: bash
         run: |
           set -uo pipefail
           mkdir -p artifacts/provider-smoke artifacts/provider-smoke-fast
@@ -432,20 +453,36 @@ jobs:
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-context-source-projection.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-price-backfill-plan.* artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-price-backfill-execution.* artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-source-count-repair*.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-context-source-projection*.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/ 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
+          cp -r .data/line_history artifacts/provider-smoke/line_history 2>/dev/null || true
           echo "----- minimal API repair probe -----"
           cat .data/exports/latest-provider-api-min-repair-probe.txt 2>/dev/null || true
           echo "----- source-count/top-300 inventory repair -----"
           cat .data/exports/latest-inventory-source-count-repair.json 2>/dev/null || true
           echo "----- context source projection -----"
           cat .data/exports/latest-day-inventory-context-source-projection.json 2>/dev/null || true
+          echo "----- price backfill plan -----"
+          cat .data/exports/latest-day-inventory-price-backfill-plan.txt 2>/dev/null || true
+          echo "----- price backfill execution -----"
+          cat .data/exports/latest-day-inventory-price-backfill-execution.txt 2>/dev/null || true
           echo "----- provider smoke diagnostics -----"
           cat .data/exports/latest-provider-smoke-diagnostics.txt 2>/dev/null || cat .data/exports/latest-provider-smoke.txt 2>/dev/null || true
           echo "----- top-300 day inventory summary -----"
           cat .data/exports/latest-day-inventory-summary.json 2>/dev/null || true
+
+      - name: Save persisted day inventory
+        if: always()
+        uses: actions/cache/save@v4
+        with:
+          path: |
+            .data/day_inventory
+            .data/line_history
+          key: provider-smoke-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
 
       - name: Upload provider smoke artifact
         if: always()
@@ -457,6 +494,7 @@ jobs:
             artifacts/provider-smoke-fast/**
             .data/exports/**
             .data/day_inventory/**
+            .data/line_history/**
           if-no-files-found: error
           include-hidden-files: true
           retention-days: 7
