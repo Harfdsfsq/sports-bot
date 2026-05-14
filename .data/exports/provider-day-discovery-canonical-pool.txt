@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-14T21:12:27.675990+00:00
+UTC: 2026-05-14T23:03:52.055229+00:00
 target_date: 2026-05-15
-canonical_matches: 395
+canonical_matches: 374
 2+ provider sources: 70
 2+ primary sources: 68
 all 3 primary sources: 1
@@ -12,23 +12,23 @@ all 3 primary sources: 1
 - football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=273 event_like=254 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=253 event_like=233 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 325, "2": 68, "3": 2}
-- primary providers: {"1": 317, "2": 67, "3": 1, "0": 10}
+- all providers: {"1": 304, "2": 68, "3": 2}
+- primary providers: {"1": 296, "2": 67, "3": 1, "0": 10}
 
 ## Top canonical matches
-- 2026-05-14T22:00:00+00:00 | Atletico Goianiense — Atletico Paranaense | providers=sstats ids={"sstats": "1537023"}
 - 2026-05-14T22:00:00+00:00 | Confiança — Gremio | providers=sstats ids={"sstats": "1537020"}
-- 2026-05-14T22:00:00+00:00 | Real Potosí — ABB | providers=sstats ids={"sstats": "1538379"}
 - 2026-05-14T22:00:00+00:00 | Tigres FC — Envigado | providers=sstats ids={"sstats": "1544814"}
+- 2026-05-14T22:00:00+00:00 | Atletico Goianiense — Atletico Paranaense | providers=sstats ids={"sstats": "1537023"}
+- 2026-05-14T22:00:00+00:00 | Real Potosí — ABB | providers=sstats ids={"sstats": "1538379"}
 - 2026-05-14T22:30:00+00:00 | Fernando De La Mora — Independiente F.b.c. | providers=sstats ids={"sstats": "1544822"}
 - 2026-05-14T22:30:00+00:00 | Corinthians — Barra | providers=sstats ids={"sstats": "1537019"}
-- 2026-05-14T23:00:00+00:00 | Broki — Flora | providers=sstats ids={"sstats": "1544334"}
 - 2026-05-14T23:00:00+00:00 | SC United Bantams W — Tormenta W | providers=sstats ids={"sstats": "1531979"}
 - 2026-05-14T23:00:00+00:00 | Wake — Charlotte Eagles | providers=sstats ids={"sstats": "1524452"}
+- 2026-05-14T23:00:00+00:00 | Broki — Flora | providers=sstats ids={"sstats": "1544334"}
 - 2026-05-15T00:00:00+00:00 | Oriente Petrolero — Guabira Montero | providers=odds_api_io,sstats ids={"odds_api_io": "70379168", "sstats": "1538380"}
 - 2026-05-15T00:30:00+00:00 | EC Vitoria BA — CR Flamengo RJ | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "70401304", "bzzoiro": "9612", "sstats": "1537008"}
 - 2026-05-15T00:45:00+00:00 | Deportes Quindio — Internacional FC De Palmira | providers=odds_api_io,sstats ids={"odds_api_io": "71475330", "sstats": "1544815"}
@@ -52,19 +52,19 @@ all 3 primary sources: 1
 - 2026-05-15T08:15:00+00:00 | Northcote City FC — FC Bulleen Lions | providers=odds_api_io,sstats ids={"odds_api_io": "68160550", "sstats": "1522103"}
 
 ## Targeted enrichment plan sample
-- Atletico Goianiense — Atletico Paranaense | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Confiança — Gremio | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Real Potosí — ABB | primary=1 providers=sstats
+- Tigres FC — Envigado | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Tigres FC — Envigado | primary=1 providers=sstats
+- Atletico Goianiense — Atletico Paranaense | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Real Potosí — ABB | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -76,15 +76,15 @@ all 3 primary sources: 1
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Broki — Flora | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - SC United Bantams W — Tormenta W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Wake — Charlotte Eagles | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Broki — Flora | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
