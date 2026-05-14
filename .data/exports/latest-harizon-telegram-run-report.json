@@ -19,12 +19,12 @@
       "v2_stats_resources": 0
     },
     "odds_api_io": {
-      "books_2plus": 32,
+      "books_2plus": 23,
       "errors": 0,
       "events_req": 0,
       "matched": 100,
       "odds_req": 20,
-      "offers": 6453
+      "offers": 4438
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -40,38 +40,39 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 119,
-      "deep_enriched": 8,
+      "contexts": 138,
+      "deep_enriched": 13,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 23,
       "rows": 18690,
       "runtime_patch": "sstats_v1_first_then_legacy_gapfill",
-      "team_form_contexts": 119
+      "team_form_contexts": 138
     }
   },
   "artifacts": {
-    "debug_age_min": 0.32425697247187296,
-    "fallback_age_min": 0.048582224051157634,
-    "run_log_age_min": 0.29266039927800497,
-    "signal_stack_age_min": 0.3612138628959656
+    "debug_age_min": 0.34849456946055096,
+    "fallback_age_min": 0.0581600030263265,
+    "run_log_age_min": 0.31807517210642494,
+    "signal_stack_age_min": 0.3869081179300944
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 341,
-    "matches_seen": 227,
-    "matches_with_2plus_books": 32,
-    "matches_with_context": 138,
-    "matches_with_offers": 47,
-    "odds_offers_primary": 6453,
-    "ready_for_model": 0,
+    "matches_seen": 249,
+    "matches_with_2plus_books": 23,
+    "matches_with_context": 152,
+    "matches_with_offers": 39,
+    "odds_offers_primary": 4438,
+    "ready_for_model": 4,
     "secondary_combinations": {
-      "odds_api_io": 28,
-      "odds_api_io+sstats": 19
+      "bzzoiro": 2,
+      "odds_api_io": 19,
+      "odds_api_io+sstats": 18
     }
   },
-  "created_at_utc": "2026-05-14T03:09:50.776085+00:00",
+  "created_at_utc": "2026-05-14T05:08:09.441534+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
       "contexts_built": 0,
@@ -123,25 +124,25 @@
         ]
       },
       "counts": {
-        "all_context_1plus": 809,
-        "all_context_2plus": 265,
+        "all_context_1plus": 811,
+        "all_context_2plus": 266,
         "all_odds_1plus": 1001,
-        "all_odds_2plus": 401,
+        "all_odds_2plus": 405,
         "context_1plus": 715,
         "context_2plus": 119,
         "core_context_1plus": 715,
         "core_context_2plus": 119,
         "core_odds_1plus": 1001,
-        "core_odds_2plus": 401,
+        "core_odds_2plus": 405,
         "core_ready_2plus_both": 119,
         "matches_tracked": 1016,
         "odds_1plus": 1001,
-        "odds_2plus": 401,
+        "odds_2plus": 405,
         "ready_2plus_both": 119,
-        "window_0_12h": 227,
-        "window_0_12h_core_ready_2plus_both": 8,
-        "window_0_12h_ready_2plus_both": 8,
-        "window_0_4h": 1,
+        "window_0_12h": 249,
+        "window_0_12h_core_ready_2plus_both": 9,
+        "window_0_12h_ready_2plus_both": 9,
+        "window_0_4h": 8,
         "window_0_4h_core_ready_2plus_both": 0,
         "window_0_4h_ready_2plus_both": 0
       },
@@ -157,50 +158,202 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
-    "fallback_published": false,
-    "passed_candidates": 0,
-    "publish_filter_blocked": 0,
-    "publish_filter_input": 0,
+    "candidates_before_quality": 4,
+    "fallback_candidates_seen": 2,
+    "fallback_evaluated": 2,
+    "fallback_published": true,
+    "passed_candidates": 1,
+    "publish_filter_blocked": 1,
+    "publish_filter_input": 1,
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 0,
-    "windowed_audit_candidates": 0,
+    "raw_candidates": 1,
+    "windowed_audit_candidates": 6,
     "windowed_publish_allowed": 0,
-    "windowed_publish_blocked": 0
+    "windowed_publish_blocked": 6
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 0,
+    "final_pre_kickoff_checks": 1,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 0,
+    "no_more_regular_run_before_kickoff": 1,
     "seen": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 2,
+      "reason": "quality_post_calibration_edge_guard",
+      "reason_ru": "quality post calibration edge guard"
+    },
+    {
+      "count": 1,
+      "reason": "missing_total_xg_sanity",
+      "reason_ru": "missing total xg sanity"
+    }
+  ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "FK Gjoevik-Lyn",
+        "away_team_ru": "Гджоевик-Лин",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-14T13:00:00+00:00",
+        "commence_time_display": "14.05.2026 16:00 MSK",
+        "family": "totals",
+        "home_team": "Lillehammer FK",
+        "home_team_ru": "Лиллехаммер",
+        "league_name": "Norway - 3rd Division Group 6",
+        "league_name_ru": "Норвегия - 3-й дивизион, группа 6",
+        "match_key": "soccer|gjoevik lyn|lillehammer|2026-05-14",
+        "metrics": {
+          "adjusted_probability": 0.552964,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 4.535,
+          "canonical_ev_pct": 8.934,
+          "confidence": 74.8,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "sstats"
+          ],
+          "confirmation_sources_count": 1,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -4.5,
+          "market_probability": 0.597964,
+          "model_probability": 0.632964,
+          "odds": 1.97,
+          "odds_sources_count": 2,
+          "publication_score": 82.6,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 67.83,
+          "quality_score_raw": 67.83,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.507614,
+          "sources_count": 1,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg"
+          }
+        },
+        "ok": false,
+        "point": 3.5,
+        "reject_reasons": [
+          "missing_total_xg_sanity"
+        ],
+        "reject_reasons_ru": [
+          "missing total xg sanity"
+        ],
+        "selection": "Меньше 3.5",
+        "tier": "уровень A"
+      },
+      {
+        "away_team": "Byaasen",
+        "away_team_ru": "Биаасен",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-14T12:00:00+00:00",
+        "commence_time_display": "14.05.2026 15:00 MSK",
+        "family": "totals",
+        "home_team": "Nardo FK",
+        "home_team_ru": "Нардо",
+        "league_name": "Norway - 3rd Division Group 2",
+        "league_name_ru": "Норвегия - 3-й дивизион, группа 2",
+        "match_key": "soccer|byaasen|nardo|2026-05-14",
+        "metrics": {
+          "adjusted_probability": 0.577091,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 4.799,
+          "canonical_ev_pct": 9.07,
+          "confidence": 74.968,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "clubelo",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -4.127,
+          "market_probability": 0.618361,
+          "model_probability": 0.653361,
+          "odds": 1.89,
+          "odds_sources_count": 2,
+          "publication_score": 84.347,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 75.668,
+          "quality_score_raw": 75.668,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.529101,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 19.154,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 19.154,
+            "xg_model_gap_pp": -19.154,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.768632,
+            "xg_probability_pct": 76.863,
+            "xg_total": 2.448
+          }
+        },
+        "ok": true,
+        "point": 3.5,
+        "reject_reasons": [],
+        "reject_reasons_ru": [],
+        "selection": "Меньше 3.5",
+        "tier": "уровень A"
+      }
+    ],
     "top_priority_matches": [
       {
-        "away_team": "Olympic",
-        "home_team": "Tvååker",
-        "kickoff_utc": "2026-05-14T11:00:00+00:00",
+        "away_team": "Australia U17 W",
+        "home_team": "Japan U17 W",
+        "kickoff_utc": "2026-05-14T07:00:00+00:00",
         "league_name": "Unknown",
-        "match_key": "soccer|olympic|tvaaker|2026-05-14",
-        "minutes_to_kickoff": 470.49,
-        "pre_kickoff_status": "near_window",
-        "priority": 86.396,
+        "match_key": "soccer|australia w|japan w|2026-05-14",
+        "minutes_to_kickoff": 112.2,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 122.599,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
+          "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
@@ -209,9 +362,9 @@
         "kickoff_utc": "2026-05-14T08:00:00+00:00",
         "league_name": "Finland - Kolmonen",
         "match_key": "soccer|kiisto|sjk j|2026-05-14",
-        "minutes_to_kickoff": 290.49,
-        "pre_kickoff_status": "near_window",
-        "priority": 85.896,
+        "minutes_to_kickoff": 172.2,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 110.599,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -224,14 +377,54 @@
         }
       },
       {
+        "away_team": "SC Gofis",
+        "home_team": "Austria Lustenau II",
+        "kickoff_utc": "2026-05-14T08:00:00+00:00",
+        "league_name": "Austria Amateur - Vorarlberg, Eliteliga",
+        "match_key": "soccer|austria lustenau 2|gofis|2026-05-14",
+        "minutes_to_kickoff": 172.2,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 102.599,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Olympic",
+        "home_team": "Tvååker",
+        "kickoff_utc": "2026-05-14T11:00:00+00:00",
+        "league_name": "Unknown",
+        "match_key": "soccer|olympic|tvaaker|2026-05-14",
+        "minutes_to_kickoff": 352.2,
+        "pre_kickoff_status": "near_window",
+        "priority": 91.325,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
         "away_team": "North Korea U17 W",
         "home_team": "China PR U17 W",
         "kickoff_utc": "2026-05-14T11:30:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|china pr w|north korea w|2026-05-14",
-        "minutes_to_kickoff": 500.49,
+        "minutes_to_kickoff": 382.2,
         "pre_kickoff_status": "near_window",
-        "priority": 85.146,
+        "priority": 90.075,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -249,49 +442,9 @@
         "kickoff_utc": "2026-05-14T12:00:00+00:00",
         "league_name": "Unknown",
         "match_key": "soccer|taraz|turan turkistan|2026-05-14",
-        "minutes_to_kickoff": 530.49,
+        "minutes_to_kickoff": 412.2,
         "pre_kickoff_status": "near_window",
-        "priority": 83.896,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "FC Astana Reserve",
-        "home_team": "FC Tobol Kostanay Reserve",
-        "kickoff_utc": "2026-05-14T09:00:00+00:00",
-        "league_name": "Kazakhstan - Pervaya Liga",
-        "match_key": "soccer|astana reserves|tobol kostanay reserves|2026-05-14",
-        "minutes_to_kickoff": 350.49,
-        "pre_kickoff_status": "near_window",
-        "priority": 83.396,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
-        }
-      },
-      {
-        "away_team": "Baia de Pemba FC",
-        "home_team": "Ferroviario de Nacala",
-        "kickoff_utc": "2026-05-14T13:00:00+00:00",
-        "league_name": "Mozambique - Mocambola",
-        "match_key": "soccer|baia pemba|ferroviario nacala|2026-05-14",
-        "minutes_to_kickoff": 590.49,
-        "pre_kickoff_status": "near_window",
-        "priority": 81.396,
+        "priority": 88.825,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -305,10 +458,10 @@
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 1959,
-  "top_reason": "no_positive_canonical_value_candidates",
+  "text_length": 2260,
+  "top_reason": "quality_post_calibration_edge_guard",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
