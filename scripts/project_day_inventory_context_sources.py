@@ -1,25 +1,17 @@
 from __future__ import annotations
 
-"""Project explicit context-source evidence into day inventory.
+"""Project explicit context-source evidence into day inventory and plan price backfill.
 
-`build_day_inventory.py` and `repair_inventory_source_counts.py` can prove that a
-match has generic context (`coverage.context`, xG/form flags), but older rows do
-not always preserve which providers produced that context.  This script converts
-fixture/provider provenance into auditable context-source fields so the daily
-inventory can answer:
-
-- which 300 matches are tracked today;
-- which matches already have 2+ price confirmations;
-- which matches already have 2+ context confirmations;
-- which exact source family is missing on the remaining matches.
-
-It is conservative for publication: only explicit provider provenance and existing
-coverage flags are projected.  It never invents odds prices.
+This script is intentionally cheap: it does not call external APIs.  It converts
+stored fixture/provider provenance into auditable context fields, recomputes the
+top-300 coverage counters, and then chains the no-API price-backfill planner so
+provider-smoke artifacts always show the next minimal odds requests to spend.
 """
 
 import json
 import os
 import re
+import runpy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -32,29 +24,9 @@ EXPORT_DIR = ROOT / '.data' / 'exports'
 OUT = EXPORT_DIR / 'latest-day-inventory-context-source-projection.json'
 SUMMARY = EXPORT_DIR / 'latest-day-inventory-summary.json'
 
-CONTEXT_CAPABLE_PROVIDERS = {
-    'sstats',
-    'bzzoiro',
-    'api_football',
-    'football_data',
-    'thesportsdb',
-    'allsportsapi',
-    'sportlogic',
-    'futrixmetrics',
-    'openfootball',
-    'openligadb',
-    'espn',
-    'clubelo',
-}
-STRONG_CONTEXT_PROVIDERS = {
-    'sstats',
-    'bzzoiro',
-    'api_football',
-    'futrixmetrics',
-    'sportlogic',
-    'clubelo',
-}
-WEAK_CONTEXT_PROVIDERS = CONTEXT_CAPABLE_PROVIDERS - STRONG_CONTEXT_PROVIDERS
+STRONG_CONTEXT = {'sstats', 'bzzoiro', 'api_football', 'futrixmetrics', 'sportlogic', 'clubelo'}
+WEAK_CONTEXT = {'football_data', 'thesportsdb', 'allsportsapi', 'openfootball', 'openligadb', 'espn'}
+NO_CONTEXT = {'', 'odds_api_io', 'line_history', 'market', 'ensemble'}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -81,21 +53,6 @@ def target_date(now: datetime) -> str:
     return explicit or now.astimezone(app_tz()).date().isoformat()
 
 
-def norm(value: Any) -> str:
-    text = re.sub(r'[^a-z0-9]+', '_', str(value or '').strip().lower()).strip('_')
-    aliases = {
-        'bzzoiro_predictions': 'bzzoiro',
-        'bzzoiro_current_odds': 'bzzoiro',
-        'sstats_form': 'sstats',
-        'football_data_org': 'football_data',
-        'the_sports_db': 'thesportsdb',
-        'sportsdb': 'thesportsdb',
-        'oddsapiio': 'odds_api_io',
-        'odds_api': 'odds_api_io',
-    }
-    return aliases.get(text, text)
-
-
 def as_int(value: Any, default: int = 0) -> int:
     try:
         if value in (None, ''):
@@ -105,131 +62,152 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def norm(value: Any) -> str:
+    text = re.sub(r'[^a-z0-9]+', '_', str(value or '').strip().lower()).strip('_')
+    aliases = {
+        'oddsapiio': 'odds_api_io',
+        'odds_api': 'odds_api_io',
+        'bzzoiro_predictions': 'bzzoiro',
+        'bzzoiro_current_odds': 'bzzoiro',
+        'sstats_form': 'sstats',
+        'football_data_org': 'football_data',
+        'the_sports_db': 'thesportsdb',
+        'sportsdb': 'thesportsdb',
+    }
+    return aliases.get(text, text)
+
+
 def list_from_any(value: Any) -> list[str]:
-    if isinstance(value, list):
-        return [str(x).strip() for x in value if str(x).strip()]
-    if isinstance(value, tuple):
-        return [str(x).strip() for x in value if str(x).strip()]
-    if isinstance(value, set):
-        return [str(x).strip() for x in value if str(x).strip()]
     if isinstance(value, dict):
-        return [str(x).strip() for x in value.keys() if str(x).strip()]
+        return [str(k).strip() for k in value.keys() if str(k).strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(x).strip() for x in value if str(x).strip()]
     if isinstance(value, str) and value.strip():
         return [v.strip() for v in re.split(r'[,|;/]+', value) if v.strip()]
     return []
 
 
-def row_sources(row: dict[str, Any]) -> set[str]:
-    out: set[str] = set()
-    for key in ('sources_seen', 'fixture_sources', 'provider_sources'):
-        for src in list_from_any(row.get(key)):
-            srcn = norm(src)
-            if srcn:
-                out.add(srcn)
+def unique(values: list[str]) -> list[str]:
+    seen: set[str] = set()
+    out: list[str] = []
+    for value in values:
+        item = norm(value)
+        if not item or item in seen:
+            continue
+        seen.add(item)
+        out.append(item)
+    return out
+
+
+def metadata(row: dict[str, Any]) -> dict[str, Any]:
+    value = row.get('metadata')
+    if isinstance(value, dict):
+        return value
+    value = {}
+    row['metadata'] = value
+    return value
+
+
+def coverage(row: dict[str, Any]) -> dict[str, Any]:
+    value = row.get('coverage')
+    if isinstance(value, dict):
+        return value
+    value = {}
+    row['coverage'] = value
+    return value
+
+
+def row_provider_sources(row: dict[str, Any]) -> list[str]:
+    out: list[str] = []
+    md = metadata(row)
+    for key in ('sources_seen', 'fixture_sources', 'provider_sources', 'context_sources', 'context_confirmations'):
+        out.extend(list_from_any(row.get(key)))
+    for key in ('context_sources', 'context_confirmations', 'coverage_repair_sources', 'fixture_expansion_source', 'latest_run_source', 'source', 'provider'):
+        out.extend(list_from_any(md.get(key)))
     source_ids = row.get('source_ids') if isinstance(row.get('source_ids'), dict) else {}
-    for src in source_ids.keys():
-        srcn = norm(src)
-        if srcn:
-            out.add(srcn)
-    metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
-    for key in ('coverage_repair_sources', 'fixture_expansion_source', 'latest_run_source', 'source', 'provider'):
-        for src in list_from_any(metadata.get(key)):
-            srcn = norm(src)
-            if srcn:
-                out.add(srcn)
-    srcn = norm(row.get('source'))
-    if srcn:
-        out.add(srcn)
-    return out
+    out.extend(str(k) for k in source_ids.keys())
+    out.append(str(row.get('source') or ''))
+    return unique(out)
 
 
-def existing_context_sources(row: dict[str, Any]) -> set[str]:
-    out: set[str] = set()
-    metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
-    for key in ('context_sources', 'context_confirmations'):
-        for src in list_from_any(row.get(key)) + list_from_any(metadata.get(key)):
-            srcn = norm(src)
-            if srcn:
-                out.add(srcn)
-    return out
+def price_count(row: dict[str, Any]) -> int:
+    md = metadata(row)
+    return max(
+        as_int(md.get('price_confirmation_sources_count')),
+        as_int(md.get('price_sources_count')),
+        as_int(md.get('books_count')),
+        len(row.get('price_confirmations') or []),
+        len(row.get('books') or []),
+    )
 
 
-def projected_context_sources(row: dict[str, Any]) -> tuple[set[str], set[str], list[str]]:
-    coverage = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
-    metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
-    provenance = row_sources(row)
-    strong = {src for src in provenance if src in STRONG_CONTEXT_PROVIDERS}
-    weak = {src for src in provenance if src in WEAK_CONTEXT_PROVIDERS}
-    existing = existing_context_sources(row)
+def existing_context(row: dict[str, Any]) -> set[str]:
+    md = metadata(row)
+    out = set(unique(list_from_any(row.get('context_sources')) + list_from_any(row.get('context_confirmations')) + list_from_any(md.get('context_sources')) + list_from_any(md.get('context_confirmations'))))
+    return {x for x in out if x not in NO_CONTEXT}
+
+
+def project_sources(row: dict[str, Any]) -> tuple[list[str], list[str], list[str]]:
+    cov = coverage(row)
+    md = metadata(row)
+    provenance = set(row_provider_sources(row))
+    existing = existing_context(row)
+    strong = {x for x in provenance if x in STRONG_CONTEXT}
+    weak = {x for x in provenance if x in WEAK_CONTEXT}
     reasons: list[str] = []
-
-    # Existing explicit context counts remain authoritative.
+    sources = set(existing)
     if existing:
         reasons.append('existing_context_source_fields')
-
-    # If the row already says it has xG/form/context, provider provenance is enough
-    # to persist the source names.  SStats/Bzzoiro are strong; fixture metadata is weak.
-    if coverage.get('context') or coverage.get('xg') or coverage.get('form'):
-        if strong:
-            reasons.append('coverage_context_with_strong_provider')
-        if weak:
-            reasons.append('coverage_context_with_fixture_provider')
-
-    # SStats/Bzzoiro rows are themselves context evidence because their payloads are
-    # used as team form / prediction context in the model stack.
-    if strong & {'sstats', 'bzzoiro', 'api_football', 'futrixmetrics', 'sportlogic'}:
+    if strong:
+        sources |= strong
         reasons.append('provider_payload_is_context_capable')
-
-    # Do not let pure odds_api_io become a context source.
-    sources = (existing | strong)
-    if coverage.get('context') or coverage.get('xg') or coverage.get('form'):
+    if (cov.get('context') or cov.get('xg') or cov.get('form')) and weak:
         sources |= weak
-    sources.discard('odds_api_io')
-    sources.discard('line_history')
-
+        reasons.append('coverage_context_with_fixture_provider')
+    sources -= NO_CONTEXT
     confirmations = set(sources)
-    if coverage.get('xg') and sources:
+    if cov.get('xg') and sources:
         confirmations.add('xg_model_context')
-    if coverage.get('form') and sources:
+    if cov.get('form') and sources:
         confirmations.add('form_context')
-    if metadata.get('context_sources_count') or metadata.get('confirmation_sources_count'):
-        target = max(as_int(metadata.get('context_sources_count')), as_int(metadata.get('confirmation_sources_count')), len(confirmations))
-        while len(confirmations) < target:
-            confirmations.add(f'context_confirmation_{len(confirmations) + 1}')
-            sources.add(f'context_source_{len(sources) + 1}')
-    return sources, confirmations, reasons
+    numeric_target = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(confirmations))
+    while len(confirmations) < numeric_target:
+        idx = len(confirmations) + 1
+        confirmations.add(f'context_confirmation_{idx}')
+        sources.add(f'context_source_{idx}')
+    return sorted(sources), sorted(confirmations), sorted(set(reasons))
 
 
 def recompute_counts(matches: list[dict[str, Any]], previous: dict[str, Any], min_price: int, min_context: int) -> dict[str, Any]:
     counts = dict(previous or {})
     totals = {
         'matches_total': len(matches),
-        'matches_with_context': 0,
-        'matches_with_2plus_context_sources': 0,
         'matches_with_odds': 0,
+        'matches_with_context': 0,
         'matches_with_2plus_price_confirmations': 0,
         'matches_with_2plus_odds_sources': 0,
+        'matches_with_2plus_context_sources': 0,
         'matches_ready_for_model': 0,
         'matches_ready_for_publish': 0,
         'matches_missing_price_2plus': 0,
         'matches_missing_context_2plus': 0,
     }
     for row in matches:
-        coverage = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
-        metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
-        price_count = max(as_int(metadata.get('price_confirmation_sources_count')), len(row.get('price_confirmations') or []))
-        context_count = max(as_int(metadata.get('context_sources_count')), len(row.get('context_confirmations') or []), len(row.get('context_sources') or []))
-        has_odds = bool(coverage.get('odds')) or price_count > 0
-        has_context = bool(coverage.get('context')) or context_count > 0
-        ok_price = price_count >= min_price
-        ok_context = context_count >= min_context
+        cov = coverage(row)
+        md = metadata(row)
+        pc = price_count(row)
+        cc = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(row.get('context_confirmations') or []), len(row.get('context_sources') or []))
+        has_odds = bool(cov.get('odds')) or pc > 0
+        has_context = bool(cov.get('context')) or cc > 0
+        ok_price = pc >= min_price
+        ok_context = cc >= min_context
         totals['matches_with_odds'] += int(has_odds)
         totals['matches_with_context'] += int(has_context)
         totals['matches_with_2plus_price_confirmations'] += int(ok_price)
         totals['matches_with_2plus_odds_sources'] += int(ok_price)
         totals['matches_with_2plus_context_sources'] += int(ok_context)
-        totals['matches_ready_for_model'] += int(bool(coverage.get('ready_for_model')) or (has_odds and has_context))
-        totals['matches_ready_for_publish'] += int(bool(coverage.get('ready_for_publish')))
+        totals['matches_ready_for_model'] += int(bool(cov.get('ready_for_model')) or (has_odds and has_context))
+        totals['matches_ready_for_publish'] += int(bool(cov.get('ready_for_publish')) or (ok_price and ok_context and has_odds and has_context))
         totals['matches_missing_price_2plus'] += int(not ok_price)
         totals['matches_missing_context_2plus'] += int(not ok_context)
     counts.update(totals)
@@ -238,6 +216,23 @@ def recompute_counts(matches: list[dict[str, Any]], previous: dict[str, Any], mi
     counts['publish_min_context_sources'] = min_context
     counts['context_source_projection_updated_utc'] = datetime.now(UTC).isoformat()
     return counts
+
+
+def run_price_backfill_planner() -> dict[str, Any]:
+    path = ROOT / 'scripts' / 'plan_day_inventory_price_backfill.py'
+    started = datetime.now(UTC).isoformat()
+    if not path.exists():
+        return {'status': 'skipped', 'reason': 'missing_script', 'path': str(path), 'started_at_utc': started}
+    try:
+        runpy.run_path(str(path), run_name='__main__')
+        return {'status': 'ok', 'path': str(path), 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat()}
+    except SystemExit as exc:
+        code = getattr(exc, 'code', 0)
+        if code in (0, None):
+            return {'status': 'ok', 'path': str(path), 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'code': code}
+        return {'status': 'error', 'path': str(path), 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'code': code}
+    except Exception as exc:
+        return {'status': 'error', 'path': str(path), 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'error': f'{type(exc).__name__}: {exc}'}
 
 
 def main() -> int:
@@ -251,60 +246,50 @@ def main() -> int:
     if not isinstance(inv, dict):
         inv = {'date_local': d, 'matches': []}
     matches = [dict(row) for row in inv.get('matches', []) if isinstance(row, dict)]
-    changed = 0
-    projected = 0
-    ready_publish_after = 0
+    changed = projected = ready_publish_after = 0
     examples: list[dict[str, Any]] = []
     for row in matches:
         before = json.dumps(row, ensure_ascii=False, sort_keys=True)
-        coverage = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
-        metadata = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
-        sources, confirmations, reasons = projected_context_sources(row)
+        cov = coverage(row)
+        md = metadata(row)
+        sources, confirmations, reasons = project_sources(row)
         if sources or confirmations:
             projected += 1
-        existing_sources = {norm(x) for x in list_from_any(row.get('context_sources')) if norm(x)}
-        existing_confirmations = {norm(x) for x in list_from_any(row.get('context_confirmations')) if norm(x)}
-        all_sources = sorted((existing_sources | sources) - {'odds_api_io', ''})
-        all_confirmations = sorted((existing_confirmations | confirmations) - {'odds_api_io', ''})
-        row['context_sources'] = all_sources
-        row['context_confirmations'] = all_confirmations
-        metadata['context_sources_count'] = max(as_int(metadata.get('context_sources_count')), len(all_sources))
-        metadata['confirmation_sources_count'] = max(as_int(metadata.get('confirmation_sources_count')), len(all_confirmations))
-        metadata['context_source_projection_updated_utc'] = now_iso
+        row['context_sources'] = sources
+        row['context_confirmations'] = confirmations
+        md['context_sources_count'] = max(as_int(md.get('context_sources_count')), len(sources))
+        md['confirmation_sources_count'] = max(as_int(md.get('confirmation_sources_count')), len(confirmations))
+        md['context_source_projection_updated_utc'] = now_iso
         if reasons:
-            metadata['context_source_projection_reasons'] = sorted(set(reasons))
-        row['metadata'] = metadata
-
-        price_count = max(as_int(metadata.get('price_confirmation_sources_count')), len(row.get('price_confirmations') or []))
-        context_count = max(as_int(metadata.get('context_sources_count')), len(all_confirmations), len(all_sources))
-        has_odds = bool(coverage.get('odds')) or price_count > 0
-        has_context = bool(coverage.get('context')) or context_count > 0
-        coverage['context'] = has_context
-        coverage['context_2plus_sources'] = context_count >= min_context
-        coverage['odds_2plus_sources'] = price_count >= min_price
-        coverage['ready_for_model'] = bool(coverage.get('ready_for_model')) or (has_odds and has_context)
-        coverage['ready_for_publish'] = bool(coverage.get('ready_for_publish')) or (price_count >= min_price and context_count >= min_context and has_odds and has_context)
-        row['coverage'] = coverage
+            md['context_source_projection_reasons'] = reasons
+        pc = price_count(row)
+        cc = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(confirmations), len(sources))
+        has_odds = bool(cov.get('odds')) or pc > 0
+        has_context = bool(cov.get('context')) or cc > 0
+        cov['context'] = has_context
+        cov['context_2plus_sources'] = cc >= min_context
+        cov['odds_2plus_sources'] = pc >= min_price
+        cov['ready_for_model'] = bool(cov.get('ready_for_model')) or (has_odds and has_context)
+        cov['ready_for_publish'] = bool(cov.get('ready_for_publish')) or (pc >= min_price and cc >= min_context and has_odds and has_context)
         row['coverage_gaps'] = {
-            'price_confirmations': price_count,
-            'context_confirmations': context_count,
-            'need_price_confirmations': max(0, min_price - price_count),
-            'need_context_confirmations': max(0, min_context - context_count),
+            'price_confirmations': pc,
+            'context_confirmations': cc,
+            'need_price_confirmations': max(0, min_price - pc),
+            'need_context_confirmations': max(0, min_context - cc),
             'has_odds': has_odds,
             'has_context': has_context,
         }
-        if coverage['ready_for_publish']:
+        if cov['ready_for_publish']:
             ready_publish_after += 1
-        after = json.dumps(row, ensure_ascii=False, sort_keys=True)
-        changed += int(before != after)
-        if len(examples) < 12 and (context_count < min_context or price_count < min_price):
+        changed += int(before != json.dumps(row, ensure_ascii=False, sort_keys=True))
+        if len(examples) < 12 and (pc < min_price or cc < min_context):
             examples.append({
                 'match_key': row.get('match_key') or row.get('canonical_match_id'),
                 'home_team': row.get('home_team'),
                 'away_team': row.get('away_team'),
                 'fixture_sources': row.get('fixture_sources') or row.get('sources_seen'),
-                'price_confirmations': price_count,
-                'context_confirmations': context_count,
+                'price_confirmations': pc,
+                'context_confirmations': cc,
                 'gaps': row['coverage_gaps'],
             })
     inv['matches'] = matches
@@ -345,12 +330,16 @@ def main() -> int:
         'ready_for_publish_after': ready_publish_after,
         'counts': inv.get('counts', {}),
         'gap_examples': examples,
+        'price_backfill_plan': None,
         'notes': [
             'Projects explicit context_sources/context_confirmations from provider provenance and existing xg/form/context flags.',
             'Does not invent odds prices; price confirmations still come from odds/bookmaker evidence.',
-            'coverage_gaps shows what each tracked match still needs to reach 2+ price and 2+ context confirmations.',
+            'Chains the no-API price-backfill planner so provider-smoke exposes the next minimal odds requests.',
         ],
     }
+    write_json(OUT, report)
+    planner_status = run_price_backfill_planner()
+    report['price_backfill_plan'] = planner_status
     write_json(OUT, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
