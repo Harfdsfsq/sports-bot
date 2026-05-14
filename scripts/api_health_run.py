@@ -39,7 +39,13 @@ ACTIVE_PROVIDER_CHECKS = (
 )
 
 REMOVED_PROVIDERS = {"bookies_api", "api_football", "oddspapi"}
-NON_FAILURE_STATUSES = {"ok", "degraded", "config_only"}
+NON_FAILURE_STATUSES = {"ok", "degraded", "config_only", "skipped_daily_circuit", "skipped_zero_budget", "skipped_disabled"}
+SPORTLOGIC_CIRCUIT_MARKERS = (
+    Path(".data/cache/sportlogic_daily_limit_open.json"),
+    Path(".data/line_history/sportlogic_daily_limit_open.json"),
+    Path(".data/cache/sportlogic_daily_circuit.json"),
+    Path(".data/line_history/sportlogic_daily_circuit.json"),
+)
 
 
 @dataclass(slots=True)
@@ -74,6 +80,53 @@ def truthy(value: Any) -> bool:
 
 def now_utc() -> datetime:
     return datetime.now(UTC)
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _sportlogic_circuit_open() -> bool:
+    if truthy(os.getenv("SPORTLOGIC_DAILY_CIRCUIT_OPEN")):
+        return True
+    today = now_utc().date().isoformat()
+    for path in SPORTLOGIC_CIRCUIT_MARKERS:
+        payload = _load_json(path)
+        if payload.get("status") == "open" and payload.get("date_utc") == today:
+            return True
+    return False
+
+
+def _budget_value(*names: str) -> int:
+    values: list[int] = []
+    for name in names:
+        try:
+            raw = str(os.getenv(name) or "").strip()
+            if raw:
+                values.append(int(float(raw)))
+        except Exception:
+            pass
+    return max(values) if values else 0
+
+
+def _sportlogic_skip_reason() -> str:
+    if _sportlogic_circuit_open():
+        return "daily_circuit"
+    if env("SPORTLOGIC_ENABLED").lower() == "false" or env("ENABLE_SPORTLOGIC").lower() == "false":
+        return "disabled"
+    budget = _budget_value(
+        "SPORTLOGIC_REQUEST_BUDGET_GRANTED",
+        "SPORTLOGIC_MAX_REQUESTS_PER_RUN",
+        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN",
+        "SPORTLOGIC_PER_RUN_MAX",
+    )
+    if budget <= 0:
+        return "zero_budget"
+    return ""
 
 
 def redact(text: Any) -> str:
@@ -261,6 +314,27 @@ class HealthRunner:
         self.add(await self.request(client, "allsportsapi", "odds_context", f"{base}/", critical=False, configured=bool(key), params={"met": "Fixtures", "APIkey": key, "from": d.isoformat(), "to": (d + timedelta(days=1)).isoformat(), "timezone": "UTC"}))
 
     async def check_sportlogic(self, client: httpx.AsyncClient) -> None:
+        skip = _sportlogic_skip_reason()
+        if skip:
+            status = {
+                "daily_circuit": "skipped_daily_circuit",
+                "zero_budget": "skipped_zero_budget",
+                "disabled": "skipped_disabled",
+            }.get(skip, "skipped_disabled")
+            self.add(CheckResult(
+                "sportlogic",
+                "odds",
+                status,
+                False,
+                False,
+                requests=0,
+                useful_rows=0,
+                http_statuses=[],
+                message=f"SportLogic health check skipped: {skip}; no HTTP call was made.",
+                endpoint="https://api.sportlogic.io/api/v1/games",
+                details={"skip_reason": skip, "daily_circuit_open": skip == "daily_circuit"},
+            ))
+            return
         key = env("SPORTLOGIC_API_KEY") or env("SPORTLOGIC_KEY") or env("SPORTLOGIC_TOKEN")
         base = env("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1").rstrip("/")
         header = env("SPORTLOGIC_HEADER_NAME", "X-API-Key")
@@ -355,6 +429,7 @@ class HealthRunner:
             by_status[row["status"]] = by_status.get(row["status"], 0) + 1
             by_group.setdefault(row["group"], {})
             by_group[row["group"]][row["status"]] = by_group[row["group"]].get(row["status"], 0) + 1
+        skipped = by_status.get("skipped_daily_circuit", 0) + by_status.get("skipped_zero_budget", 0) + by_status.get("skipped_disabled", 0)
         summary = {
             "providers_checked": len(rows),
             "ok": by_status.get("ok", 0),
@@ -363,8 +438,10 @@ class HealthRunner:
             "rate_limited": by_status.get("rate_limited", 0),
             "auth_error": by_status.get("auth_error", 0),
             "missing_secret": by_status.get("missing_secret", 0),
+            "skipped": skipped,
+            "skipped_daily_circuit": by_status.get("skipped_daily_circuit", 0),
             "critical_failures": len(critical_failures),
-            "healthy_or_config_only": by_status.get("ok", 0) + by_status.get("config_only", 0),
+            "healthy_or_config_only": by_status.get("ok", 0) + by_status.get("config_only", 0) + skipped,
         }
         return {"created_at_utc": now_utc().isoformat(), "mode": self.mode, "removed_providers": sorted(REMOVED_PROVIDERS), "active_provider_checks": list(ACTIVE_PROVIDER_CHECKS), "summary": summary, "by_status": by_status, "by_group": by_group, "critical_failures": critical_failures, "results": rows, "recommendations": build_recommendations(rows)}
 
@@ -377,8 +454,11 @@ def build_recommendations(rows: list[dict[str, Any]]) -> list[str]:
         recs.append("odds-api.io inventory is healthy; keep dual-account bookmaker split active.")
         if not ((odds.get("details") or {}).get("key2_present")):
             recs.append("ODDS_API_IO_KEY_2 is missing; four-bookmaker coverage will not work.")
-    if by_provider.get("sportlogic", {}).get("status") == "ok":
+    sportlogic = by_provider.get("sportlogic", {})
+    if sportlogic.get("status") == "ok":
         recs.append("SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.")
+    elif sportlogic.get("status") == "skipped_daily_circuit":
+        recs.append("SportLogic daily circuit is open; health probe skipped it without spending quota.")
     if by_provider.get("highlightly", {}).get("status") != "ok":
         recs.append("Highlightly is not healthy on the current endpoint; keep it as optional context until endpoint/key is verified.")
     if by_provider.get("futrixmetrics", {}).get("status") == "config_only":
@@ -401,7 +481,8 @@ def write_report(report: dict[str, Any], out_dir: Path) -> None:
         f"- Removed providers: `{', '.join(report['removed_providers'])}`",
         f"- OK: **{report['summary']['ok']}**",
         f"- Config-only: **{report['summary']['config_only']}**",
-        f"- Healthy or config-only: **{report['summary']['healthy_or_config_only']}**",
+        f"- Skipped: **{report['summary'].get('skipped', 0)}**",
+        f"- Healthy/config/skipped: **{report['summary']['healthy_or_config_only']}**",
         f"- Degraded: **{report['summary']['degraded']}**",
         f"- Rate-limited: **{report['summary']['rate_limited']}**",
         f"- Auth errors: **{report['summary']['auth_error']}**",
