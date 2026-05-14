@@ -25,14 +25,9 @@ def _is_stdin_env_helper_process() -> bool:
     return str(sys.argv[0] or "").strip() == "-" or os.getenv("HARIZON_SKIP_USERCUSTOMIZE_INSTALLERS") == "1"
 
 
-# Controlled fallback runs after the main bot in a separate Python process. It must not
-# reinstall model/runtime wrappers because those installers overwrite the main run's
-# diagnostics (`latest-candidate-value-runtime-patch.json`, api coverage reports, etc.).
-# sitecustomize still redirects the legacy fallback entrypoint and keeps Telegram safety.
 _SKIP_RUNTIME_INSTALLERS = _is_fallback_publisher_process() or _is_stdin_env_helper_process()
 
-# Runtime patch installer. Keep order: broad guards first, concrete runner/provider
-# wrappers next, inventory/evidence bridge before final accounting fixes.
+
 def _install(module_path: str) -> None:
     try:
         module_name, attr = module_path.rsplit('.', 1)
@@ -46,9 +41,8 @@ if not _SKIP_RUNTIME_INSTALLERS:
     for _module in [
         'app.services.provider_smoke_repair_env_guard',
         'app.services.runtime_provider_budget_guard',
-        # Raise only the core provider budgets before settings/providers are built.
-        # Publication guards remain strict and still require verified price/context coverage.
         'app.services.core_coverage_quota_runtime_override',
+        'app.services.sportlogic_daily_limit_guard',
         'app.services.core_provider_inventory_bridge',
         'app.services.free_context_runtime_enrichment',
         'app.services.api_matching_quality_runtime_guard',
@@ -77,16 +71,14 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.providers.rapidapi_bridge_runtime_patch',
         'app.providers.sharpapi_runtime_patch',
         'app.services.sharpapi_text_runtime_patch',
-        # Reinstall rescue after later provider wrappers.
         'app.services.secondary_odds_rescue_runtime_patch',
         'app.services.bzzoiro_final_odds_bridge_patch',
         'app.services.runner_bzzoiro_bridge_runtime_patch',
         'app.services.provider_smoke_repair_env_guard',
         'app.services.primary_provider_tier_runtime_guard',
         'app.services.core_odds_merge_safety_patch',
-        # Re-apply core quotas and inventory bridge after provider-tier/runtime-budget wrappers because some
-        # older layers still write conservative Bzzoiro/SStats/SportLogic limits or rewrite inventory rows.
         'app.services.core_coverage_quota_runtime_override',
+        'app.services.sportlogic_daily_limit_guard',
         'app.services.core_provider_inventory_bridge',
         'app.services.odds_movement_cache_bridge_patch',
         'app.services.prequality_final_consensus_bridge',
