@@ -6,6 +6,11 @@ The workflow and quota scripts may write conservative defaults into GITHUB_ENV.
 This module is imported by Python processes during provider-smoke, so it keeps the
 chosen provider limits authoritative for the current process and for later steps.
 
+It also freezes the provider-smoke target date for the whole workflow. Without
+this, a run that starts before local midnight and finishes after local midnight
+can build `.data/day_inventory/YYYY-MM-DD.json` for one date and then repair or
+collect artifacts for the next date.
+
 Requested caps:
 * odds-api.io: 100 requests/hour;
 * SStats: 150 requests/minute;
@@ -15,7 +20,9 @@ Requested caps:
 
 import atexit
 import os
+from datetime import datetime, timezone
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 BROAD_REPAIR_ENV = {
     "APP_ENV": "provider-smoke-repair",
@@ -66,7 +73,6 @@ BROAD_REPAIR_ENV = {
 }
 
 RAISED_LIMIT_ENV = {
-    # odds-api.io — requested 100/hour. Split across two configured accounts.
     "ODDS_API_IO_HOURLY_LIMIT": "100",
     "ODDS_API_IO_PER_RUN_MAX": "100",
     "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "50",
@@ -84,7 +90,6 @@ RAISED_LIMIT_ENV = {
     "MAX_MATCHES_FOR_ODDS_FETCH": "300",
     "DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES": "220",
 
-    # Bzzoiro — requested 200/minute.
     "BZZOIRO_RATE_LIMIT_PER_MINUTE": "200",
     "BZZOIRO_PER_RUN_MAX": "200",
     "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
@@ -103,7 +108,6 @@ RAISED_LIMIT_ENV = {
     "DAY_INVENTORY_BZZOIRO_MAX_REQUESTS": "200",
     "DAY_INVENTORY_BZZOIRO_MAX_PAGES": "20",
 
-    # SStats — requested 150/minute.
     "SSTATS_RATE_LIMIT_PER_MINUTE": "150",
     "SSTATS_PER_RUN_MAX": "150",
     "SSTATS_MAX_REQUESTS_PER_RUN": "150",
@@ -125,7 +129,6 @@ RAISED_LIMIT_ENV = {
     "DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP": "300",
     "DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP": "true",
 
-    # SportLogic — requested 500/day. Per-run grant is kept at 40 for 12 runs/day.
     "SPORTLOGIC_DAILY_LIMIT": "500",
     "SPORTLOGIC_ENABLED": "true",
     "ENABLE_SPORTLOGIC": "true",
@@ -179,6 +182,7 @@ MINIMAL_REPAIR_ENV = {
 PRESERVE_IF_SET = {
     "DAY_INVENTORY_TARGET_DATE",
     "PROVIDER_SMOKE_TARGET_DATE",
+    "DAY_INVENTORY_CACHE_DATE",
     "PROVIDER_SMOKE_COVERAGE_TARGET",
     "PROVIDER_SMOKE_FAST_MAX_SECONDS",
     "PROVIDER_SMOKE_FAST_TIMEOUT",
@@ -206,6 +210,21 @@ def _base_env() -> dict[str, str]:
     return dict(MINIMAL_REPAIR_ENV if _is_minimal_mode() else {**BROAD_REPAIR_ENV, **RAISED_LIMIT_ENV})
 
 
+def _app_tz() -> ZoneInfo:
+    try:
+        return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
+    except Exception:
+        return ZoneInfo("Europe/Moscow")
+
+
+def _frozen_target_date() -> str:
+    for key in ("DAY_INVENTORY_TARGET_DATE", "PROVIDER_SMOKE_TARGET_DATE", "DAY_INVENTORY_CACHE_DATE"):
+        value = str(os.getenv(key) or "").strip()
+        if value:
+            return value
+    return datetime.now(timezone.utc).astimezone(_app_tz()).date().isoformat()
+
+
 def _effective_env() -> dict[str, str]:
     values: dict[str, str] = {}
     base = _base_env()
@@ -215,6 +234,11 @@ def _effective_env() -> dict[str, str]:
             values[key] = str(current)
         else:
             values[key] = str(default)
+    target_date = _frozen_target_date()
+    values["DAY_INVENTORY_TARGET_DATE"] = target_date
+    values["PROVIDER_SMOKE_TARGET_DATE"] = target_date
+    values["DAY_INVENTORY_CACHE_DATE"] = str(os.getenv("DAY_INVENTORY_CACHE_DATE") or target_date)
+    values["PROVIDER_SMOKE_TARGET_DATE_FROZEN"] = "true"
     return values
 
 
