@@ -1,5 +1,25 @@
 from sitecustomize import *
 
+import os
+import sys
+from pathlib import Path
+
+
+def _is_fallback_publisher_process() -> bool:
+    name = Path(str(sys.argv[0] or "")).name
+    return name in {
+        "publish_controlled_fallback.py",
+        "publish_controlled_fallback_guarded.py",
+    } or os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1"
+
+
+# Controlled fallback runs after the main bot in a separate Python process. It must not
+# reinstall model/runtime wrappers because those installers overwrite the main run's
+# diagnostics (`latest-candidate-value-runtime-patch.json`, api coverage reports, etc.).
+# sitecustomize still redirects the legacy fallback entrypoint and keeps Telegram safety.
+if _is_fallback_publisher_process():
+    raise SystemExit if False else None
+
 # Runtime patch installer. Keep order: broad guards first, concrete runner/provider
 # wrappers next, progressive/final accounting fixes last.
 def _install(module_path: str) -> None:
