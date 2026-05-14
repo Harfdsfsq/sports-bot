@@ -84,9 +84,25 @@ def _github_env(values: dict[str, str]) -> None:
         pass
 
 
+def _without_sportlogic(value: str) -> str:
+    parts = []
+    for raw in str(value or "").split(','):
+        item = raw.strip()
+        if item and item.lower() != "sportlogic":
+            parts.append(item)
+    return ','.join(parts)
+
+
 def _zero(reason: str, marker: dict[str, Any] | None = None) -> None:
     env = dict(ZERO)
     env["SPORTLOGIC_DAILY_CIRCUIT_REASON"] = reason
+    for key in ("PROVIDER_SMOKE_FAST_PROVIDERS", "PROVIDER_SMOKE_MATCHING_PROVIDERS"):
+        current = os.getenv(key)
+        if current:
+            env[key] = _without_sportlogic(current)
+    allowed = os.getenv("HARIZON_ALLOWED_PROVIDER_SET")
+    if allowed:
+        env["HARIZON_ALLOWED_PROVIDER_SET"] = _without_sportlogic(allowed)
     for key, value in env.items():
         os.environ[key] = value
     _github_env(env)
@@ -96,6 +112,7 @@ def _zero(reason: str, marker: dict[str, Any] | None = None) -> None:
         "reason": reason,
         "updated_at_utc": datetime.now(timezone.utc).isoformat(),
         "marker": marker or {},
+        "provider_lists": {k: os.getenv(k) for k in ("PROVIDER_SMOKE_FAST_PROVIDERS", "PROVIDER_SMOKE_MATCHING_PROVIDERS", "HARIZON_ALLOWED_PROVIDER_SET")},
     })
 
 
@@ -116,7 +133,7 @@ def _mark(reason: str, text: str = "", status_code: int | None = None, url: str 
 
 def _is_daily_429(status_code: int, text: str) -> bool:
     low = str(text or "").lower()
-    return int(status_code or 0) == 429 and ("daily limit" in low or "limit of 500" in low or "rate_limit_exceeded" in low)
+    return int(status_code or 0) == 429 and ("daily limit" in low or "limit of 500" in low or "rate_limit_exceeded" in low or "requests exceeded" in low)
 
 
 def install() -> None:
