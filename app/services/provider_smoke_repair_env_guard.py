@@ -1,23 +1,21 @@
 from __future__ import annotations
 
-"""Keep provider-smoke repair workflow env intact without overriding step env.
+"""Authoritative env guard for provider-smoke repair workflows.
 
-Several runtime/guard scripts write values into GITHUB_ENV.  The provider-smoke
-workflow has two modes:
+The workflow and quota scripts may write conservative defaults into GITHUB_ENV.
+This module is imported by Python processes during provider-smoke, so it keeps the
+chosen provider limits authoritative for the current process and for later steps.
 
-* provider-smoke-repair: broad repair/debug mode;
-* provider-smoke-minimal-repair: low-quota API repair mode.
-
-The minimal mode must never be expanded back to production-sized quotas by this
-module's atexit GITHUB_ENV writer.  This guard is imported by usercustomize.py in
-nearly every Python process, so the values below are authoritative for later
-workflow steps.
+Requested caps:
+* odds-api.io: 100 requests/hour;
+* SStats: 150 requests/minute;
+* Bzzoiro: 200 requests/minute;
+* SportLogic: 500 requests/day.
 """
 
 import atexit
 import os
 from pathlib import Path
-
 
 BROAD_REPAIR_ENV = {
     "APP_ENV": "provider-smoke-repair",
@@ -39,20 +37,22 @@ BROAD_REPAIR_ENV = {
     "BZZOIRO_ENABLED": "true",
     "ENABLE_BZZOIRO": "true",
     "ENABLE_BZZOIRO_CONTEXT": "true",
+    "BZZOIRO_CONTEXT_ENABLED": "true",
     "SSTATS_ENABLED": "true",
     "ENABLE_SSTATS": "true",
     "ENABLE_SSTATS_CONTEXT": "true",
+    "SSTATS_CONTEXT_ENABLED": "true",
     "SPORTLOGIC_ENABLED": "true",
     "ENABLE_SPORTLOGIC": "true",
     "ALLSPORTSAPI_ENABLED": "true",
     "ENABLE_ALLSPORTSAPI": "true",
     "PROVIDER_SMOKE_MATCHING_DIAGNOSTICS_ENABLED": "true",
-    "PROVIDER_SMOKE_MATCHING_PROVIDERS": "sstats,bzzoiro,football_data,allsportsapi",
+    "PROVIDER_SMOKE_MATCHING_PROVIDERS": "sstats,bzzoiro,sportlogic",
     "API_FULL_SMOKE_ENABLED": "false",
     "API_FULL_SMOKE_BZZOIRO_ENABLED": "true",
     "API_FULL_SMOKE_FOOTBALL_DATA_ENABLED": "true",
     "API_FULL_SMOKE_ODDS_API_IO_ENABLED": "true",
-    "API_FULL_SMOKE_SPORTLOGIC_ENABLED": "false",
+    "API_FULL_SMOKE_SPORTLOGIC_ENABLED": "true",
     "API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED": "false",
     "PUBLICATION_ALLOWED_MARKET_FAMILIES": "totals,spreads",
     "HARIZON_ALLOWED_PUBLICATION_FAMILIES": "totals,spreads",
@@ -65,100 +65,115 @@ BROAD_REPAIR_ENV = {
     "SPREADS_PUBLICATION_ENABLED": "true",
 }
 
+RAISED_LIMIT_ENV = {
+    # odds-api.io — requested 100/hour. Split across two configured accounts.
+    "ODDS_API_IO_HOURLY_LIMIT": "100",
+    "ODDS_API_IO_PER_RUN_MAX": "100",
+    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "50",
+    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "50",
+    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "100",
+    "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "100",
+    "ODDS_API_IO_REQUEST_BUDGET_GRANTED": "100",
+    "ODDS_API_IO_REQUESTS_MAX_PER_RUN": "100",
+    "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "10",
+    "ODDS_API_IO_MAX_PAGES_PER_SPORT": "10",
+    "ODDS_API_IO_PAGE_LIMIT": "100",
+    "PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT": "5",
+    "PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST": "10",
+    "PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT": "100",
+    "MAX_MATCHES_FOR_ODDS_FETCH": "300",
+    "DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES": "220",
+
+    # Bzzoiro — requested 200/minute.
+    "BZZOIRO_RATE_LIMIT_PER_MINUTE": "200",
+    "BZZOIRO_PER_RUN_MAX": "200",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "200",
+    "BZZOIRO_REQUESTS_MAX_PER_RUN": "200",
+    "BZZOIRO_REQUEST_BUDGET_GRANTED": "200",
+    "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "80",
+    "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "40",
+    "BZZOIRO_PREDICTIONS_MAX_PAGES": "10",
+    "BZZOIRO_MAX_PAGES": "20",
+    "BZZOIRO_V2_MAX_EVENTS": "600",
+    "BZZOIRO_V2_PAGE_SIZE": "200",
+    "BZZOIRO_CONTEXT_MATCH_LIMIT": "300",
+    "BZZOIRO_PRICE_BACKFILL_ENABLED": "true",
+    "BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT": "80",
+    "DAY_INVENTORY_BZZOIRO_MAX_REQUESTS": "200",
+    "DAY_INVENTORY_BZZOIRO_MAX_PAGES": "20",
+
+    # SStats — requested 150/minute.
+    "SSTATS_RATE_LIMIT_PER_MINUTE": "150",
+    "SSTATS_PER_RUN_MAX": "150",
+    "SSTATS_MAX_REQUESTS_PER_RUN": "150",
+    "SSTATS_REQUESTS_MAX_PER_RUN": "150",
+    "SSTATS_REQUEST_BUDGET_GRANTED": "150",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "150",
+    "SSTATS_CONTEXT_MATCH_LIMIT": "300",
+    "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "40",
+    "SSTATS_DEEP_CONTEXT_MATCH_LIMIT": "80",
+    "SSTATS_DEEP_ENRICHMENT_ENABLED": "true",
+    "SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK": "true",
+    "SSTATS_DEEP_SMOKE_DETAIL_GAMES": "30",
+    "SSTATS_GAME_DETAIL_ENABLED": "true",
+    "SSTATS_LAST_GAMES_STATS_ENABLED": "true",
+    "SSTATS_INJURIES_ENABLED": "false",
+    "SSTATS_GLICKO_ENABLED": "true",
+    "SSTATS_ODDS_RESCUE_ENABLED": "true",
+    "DAY_INVENTORY_SSTATS_MAX_REQUESTS": "150",
+    "DAY_INVENTORY_SSTATS_TOTAL_HARD_CAP": "300",
+    "DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP": "true",
+
+    # SportLogic — requested 500/day. Per-run grant is kept at 40 for 12 runs/day.
+    "SPORTLOGIC_DAILY_LIMIT": "500",
+    "SPORTLOGIC_ENABLED": "true",
+    "ENABLE_SPORTLOGIC": "true",
+    "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
+    "SPORTLOGIC_PER_RUN_MAX": "40",
+    "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "40",
+    "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "40",
+    "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "40",
+    "SPORTLOGIC_MATCH_LIMIT": "100",
+    "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "100",
+    "SPORTLOGIC_ODDS_MATCH_LIMIT": "40",
+    "SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES": "2",
+    "SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT": "40",
+    "SPORTLOGIC_PER_PAGE": "50",
+    "SPORTLOGIC_MATCH_MIN_SCORE": "48",
+    "DAY_INVENTORY_ENABLE_SPORTLOGIC": "true",
+    "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "100",
+    "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": "40",
+}
+
 MINIMAL_REPAIR_ENV = {
     **BROAD_REPAIR_ENV,
     "APP_ENV": "provider-smoke-minimal-repair",
     "HARIZON_PROVIDER_PROBE_MODE": "true",
-    "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
     "DAY_INVENTORY_TARGET_SIZE": "300",
     "DAY_INVENTORY_MAX_MATCHES": "300",
     "DAY_INVENTORY_FORCE_TOP_300": "true",
     "DAY_INVENTORY_FORCE_FULL_300": "true",
-    "DAY_INVENTORY_FORCE_FULL_ALLOW_SSTATS_OVER_HARD_CAP": "false",
+    "DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true",
     "DAY_INVENTORY_ENABLE_BZZOIRO": "true",
     "DAY_INVENTORY_ENABLE_ALLSPORTSAPI": "false",
-    "DAY_INVENTORY_ENABLE_SPORTLOGIC": "false",
     "DAY_INVENTORY_ENABLE_SSTATS": "true",
-    "DAY_INVENTORY_BZZOIRO_MAX_REQUESTS": "3",
-    "DAY_INVENTORY_BZZOIRO_MAX_PAGES": "2",
-    "DAY_INVENTORY_SSTATS_MAX_REQUESTS": "1",
-    "DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT": "0",
-    "DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS": "0",
+    "DAY_INVENTORY_TOP_MATCHES_ENABLED": "true",
     "PROVIDER_SMOKE_FAST_PROVIDERS": "odds_api_io,bzzoiro,sstats,sportlogic",
     "PROVIDER_SMOKE_MATCHING_PROVIDERS": "sstats,bzzoiro,sportlogic",
-    "PROVIDER_SMOKE_MATCHING_ODDS_LIMIT": "60",
-    "PROVIDER_SMOKE_MATCHING_ODDS_PAGES": "1",
+    "PROVIDER_SMOKE_MATCHING_ODDS_LIMIT": "160",
+    "PROVIDER_SMOKE_MATCHING_ODDS_PAGES": "4",
     "PROVIDER_SMOKE_REPEATS": "1",
-
-    # odds-api.io: event list + small odds/multi checks only.
-    "ODDS_API_IO_PER_RUN_MAX": "6",
-    "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "4",
-    "ODDS_API_IO_ACCOUNT2_PER_RUN_MAX": "2",
-    "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN": "6",
-    "ODDS_API_IO_MAX_REQUESTS_PER_RUN": "6",
-    "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "1",
-    "ODDS_API_IO_MAX_PAGES_PER_SPORT": "1",
-    "ODDS_API_IO_REQUEST_BUDGET_GRANTED": "6",
-    "ODDS_API_IO_REQUESTS_MAX_PER_RUN": "6",
-    "MAX_MATCHES_FOR_ODDS_FETCH": "20",
-
-    # Bzzoiro: one events pass plus small optional prediction/odds checks.
-    "BZZOIRO_PROVIDER_SMOKE_ENABLED": "true",
-    "BZZOIRO_ENABLED": "true",
-    "ENABLE_BZZOIRO": "true",
-    "ENABLE_BZZOIRO_CONTEXT": "true",
-    "BZZOIRO_CONTEXT_ENABLED": "true",
-    "BZZOIRO_PER_RUN_MAX": "3",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "3",
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "3",
-    "BZZOIRO_REQUESTS_MAX_PER_RUN": "3",
-    "BZZOIRO_REQUEST_BUDGET_GRANTED": "3",
-    "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "2",
-    "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "1",
-    "BZZOIRO_PREDICTIONS_MAX_PAGES": "1",
-    "BZZOIRO_MAX_PAGES": "2",
-    "BZZOIRO_CONTEXT_MATCH_LIMIT": "40",
-
-    # SStats: keep the cheap list endpoint; disable deep/detail enrichment in smoke.
-    "SSTATS_ENABLED": "true",
-    "ENABLE_SSTATS": "true",
-    "ENABLE_SSTATS_CONTEXT": "true",
-    "SSTATS_CONTEXT_ENABLED": "true",
-    "SSTATS_PER_RUN_MAX": "2",
-    "SSTATS_MAX_REQUESTS_PER_RUN": "2",
-    "SSTATS_REQUESTS_MAX_PER_RUN": "2",
-    "SSTATS_REQUEST_BUDGET_GRANTED": "2",
-    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "2",
-    "SSTATS_CONTEXT_MATCH_LIMIT": "60",
-    "SSTATS_DEEP_DETAIL_LIMIT_PER_RUN": "0",
-    "SSTATS_DEEP_CONTEXT_MATCH_LIMIT": "0",
-    "SSTATS_DEEP_ENRICHMENT_ENABLED": "false",
-    "SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK": "false",
-    "SSTATS_DEEP_SMOKE_DETAIL_GAMES": "0",
-    "SSTATS_GAME_DETAIL_ENABLED": "false",
-    "SSTATS_LAST_GAMES_STATS_ENABLED": "false",
-    "SSTATS_INJURIES_ENABLED": "false",
-    "SSTATS_GLICKO_ENABLED": "false",
-    "SSTATS_ODDS_RESCUE_ENABLED": "false",
-
-    # SportLogic is diagnosed by the minimal probe only.  Broad runtime use stays off.
-    "SPORTLOGIC_ENABLED": "false",
-    "ENABLE_SPORTLOGIC": "false",
-    "SPORTLOGIC_PER_RUN_MAX": "4",
-    "SPORTLOGIC_MATCH_LIMIT": "20",
-    "SPORTLOGIC_ODDS_MATCH_LIMIT": "1",
-    "SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES": "0",
-    "SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT": "0",
-
     "API_FULL_SMOKE_ENABLED": "false",
-    "API_FULL_SMOKE_SPORTLOGIC_ENABLED": "false",
+    "API_FULL_SMOKE_SPORTLOGIC_ENABLED": "true",
     "API_FULL_SMOKE_SPORTLOGIC_DETAILS_ENABLED": "false",
-    "API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS": "1",
-    "API_FULL_SMOKE_ODDS_EVENT_LIMIT": "1",
+    "API_FULL_SMOKE_ODDS_EXTRA_MAX_REQUESTS": "10",
+    "API_FULL_SMOKE_ODDS_EVENT_LIMIT": "20",
     "PUBLISH_MIN_ODDS_SOURCES": "2",
     "PUBLISH_MIN_CONTEXT_SOURCES": "2",
     "MIN_CONTEXT_SOURCES_PUBLISH": "2",
     "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+    **RAISED_LIMIT_ENV,
 }
 
 PRESERVE_IF_SET = {
@@ -184,13 +199,11 @@ def _is_minimal_mode() -> bool:
 
 def _is_provider_smoke_repair() -> bool:
     app_env = str(os.getenv("APP_ENV") or "").strip().lower()
-    if app_env in {"provider-smoke-repair", "provider-smoke-minimal-repair"}:
-        return True
-    return _is_truthy(os.getenv("PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED"))
+    return app_env in {"provider-smoke-repair", "provider-smoke-minimal-repair"} or _is_truthy(os.getenv("PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED"))
 
 
 def _base_env() -> dict[str, str]:
-    return dict(MINIMAL_REPAIR_ENV if _is_minimal_mode() else BROAD_REPAIR_ENV)
+    return dict(MINIMAL_REPAIR_ENV if _is_minimal_mode() else {**BROAD_REPAIR_ENV, **RAISED_LIMIT_ENV})
 
 
 def _effective_env() -> dict[str, str]:
