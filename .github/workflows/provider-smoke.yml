@@ -43,6 +43,7 @@ jobs:
       TZ: Europe/Moscow
       APP_TIMEZONE: Europe/Moscow
       APP_ENV: provider-smoke-minimal-repair
+      PROVIDER_SMOKE_MINIMAL_REPAIR: "true"
       PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED: "true"
       PUBLISH_DRY_RUN: "true"
       PREDICTION_PUBLICATION_ENABLED: "false"
@@ -122,39 +123,66 @@ jobs:
       PROVIDER_QUOTA_HARD_TIMEOUT_SECONDS: "18"
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
+
       ODDS_API_IO_PER_RUN_MAX: "6"
       ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "4"
       ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "2"
       ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN: "6"
       ODDS_API_IO_MAX_REQUESTS_PER_RUN: "6"
+      ODDS_API_IO_REQUEST_BUDGET_GRANTED: "6"
+      ODDS_API_IO_REQUESTS_MAX_PER_RUN: "6"
       ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "1"
       ODDS_API_IO_MAX_PAGES_PER_SPORT: "1"
       MAX_MATCHES_FOR_ODDS_FETCH: "20"
+
       BZZOIRO_PROVIDER_SMOKE_ENABLED: "true"
+      BZZOIRO_ENABLED: "true"
+      ENABLE_BZZOIRO: "true"
+      ENABLE_BZZOIRO_CONTEXT: "true"
+      BZZOIRO_CONTEXT_ENABLED: "true"
       BZZOIRO_PER_RUN_MAX: "3"
       BZZOIRO_MAX_REQUESTS_PER_RUN: "3"
       BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "3"
+      BZZOIRO_REQUESTS_MAX_PER_RUN: "3"
+      BZZOIRO_REQUEST_BUDGET_GRANTED: "3"
       BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "2"
       BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "1"
+      BZZOIRO_PREDICTIONS_MAX_PAGES: "1"
       BZZOIRO_MAX_PAGES: "2"
       BZZOIRO_CONTEXT_MATCH_LIMIT: "40"
+
+      SSTATS_ENABLED: "true"
+      ENABLE_SSTATS: "true"
+      ENABLE_SSTATS_CONTEXT: "true"
+      SSTATS_CONTEXT_ENABLED: "true"
+      SSTATS_PER_RUN_MAX: "2"
+      SSTATS_MAX_REQUESTS_PER_RUN: "2"
+      SSTATS_REQUESTS_MAX_PER_RUN: "2"
+      SSTATS_REQUEST_BUDGET_GRANTED: "2"
       SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "2"
       SSTATS_CONTEXT_MATCH_LIMIT: "60"
       SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "0"
       SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "0"
       SSTATS_DEEP_ENRICHMENT_ENABLED: "false"
+      SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK: "false"
       SSTATS_DEEP_SMOKE_DETAIL_GAMES: "0"
       SSTATS_DEEP_SMOKE_CONCURRENCY: "1"
       SSTATS_DEEP_SMOKE_TIMEOUT_SECONDS: "12"
       SSTATS_DEEP_SMOKE_INCLUDE_APIKEY: "true"
+      SSTATS_GAME_DETAIL_ENABLED: "false"
+      SSTATS_LAST_GAMES_STATS_ENABLED: "false"
+      SSTATS_INJURIES_ENABLED: "false"
+      SSTATS_GLICKO_ENABLED: "false"
+      SSTATS_ODDS_RESCUE_ENABLED: "false"
+
+      SPORTLOGIC_ENABLED: "false"
+      ENABLE_SPORTLOGIC: "false"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
       SPORTLOGIC_PER_RUN_MAX: "4"
       SPORTLOGIC_MATCH_LIMIT: "20"
       SPORTLOGIC_ODDS_MATCH_LIMIT: "1"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
-      SPORTLOGIC_ENABLED: "false"
-      ENABLE_SPORTLOGIC: "false"
 
       PUBLISH_MIN_ODDS_SOURCES: "2"
       PUBLISH_MIN_CONTEXT_SOURCES: "2"
@@ -176,13 +204,13 @@ jobs:
       ODDS_API_IO_KEY2: ${{ secrets.ODDS_API_IO_KEY2 }}
       BZZOIRO_API_KEY: ${{ secrets.BZZOIRO_API_KEY }}
       SSTATS_API_KEY: ${{ secrets.SSTATS_API_KEY }}
+      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
+      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
       FOOTBALL_DATA_API_KEY: ${{ secrets.FOOTBALL_DATA_API_KEY }}
       FOOTBALL_DATA_KEY: ${{ secrets.FOOTBALL_DATA_KEY }}
       THESPORTSDB_API_KEY: ${{ secrets.THESPORTSDB_API_KEY }}
       ALLSPORTSAPI_API_KEY: ${{ secrets.ALLSPORTSAPI_API_KEY }}
-      SPORTLOGIC_API_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
-      SPORTLOGIC_KEY: ${{ secrets.SPORTLOGIC_API_KEY }}
-      SPORTLOGIC_TOKEN: ${{ secrets.SPORTLOGIC_API_KEY }}
       WEATHERAPI_KEY: ${{ secrets.WEATHERAPI_KEY }}
       WEATHER_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
       WEATHERAPI_API_KEY: ${{ secrets.WEATHERAPI_KEY }}
@@ -244,6 +272,7 @@ jobs:
           set -euo pipefail
           cat >> "$GITHUB_ENV" <<'EOF'
           APP_ENV=provider-smoke-minimal-repair
+          PROVIDER_SMOKE_MINIMAL_REPAIR=true
           PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED=true
           PUBLISH_DRY_RUN=true
           PREDICTION_PUBLICATION_ENABLED=false
@@ -255,21 +284,45 @@ jobs:
           ODDS_API_IO_ACCOUNT2_PER_RUN_MAX=2
           ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN=6
           ODDS_API_IO_MAX_REQUESTS_PER_RUN=6
+          ODDS_API_IO_REQUEST_BUDGET_GRANTED=6
+          ODDS_API_IO_REQUESTS_MAX_PER_RUN=6
           ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT=1
           ODDS_API_IO_MAX_PAGES_PER_SPORT=1
           MAX_MATCHES_FOR_ODDS_FETCH=20
+          BZZOIRO_ENABLED=true
+          ENABLE_BZZOIRO=true
+          ENABLE_BZZOIRO_CONTEXT=true
+          BZZOIRO_CONTEXT_ENABLED=true
           BZZOIRO_PER_RUN_MAX=3
           BZZOIRO_MAX_REQUESTS_PER_RUN=3
           BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN=3
+          BZZOIRO_REQUESTS_MAX_PER_RUN=3
+          BZZOIRO_REQUEST_BUDGET_GRANTED=3
           BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN=2
           BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN=1
+          BZZOIRO_PREDICTIONS_MAX_PAGES=1
           BZZOIRO_MAX_PAGES=2
           BZZOIRO_CONTEXT_MATCH_LIMIT=40
+          SSTATS_ENABLED=true
+          ENABLE_SSTATS=true
+          ENABLE_SSTATS_CONTEXT=true
+          SSTATS_CONTEXT_ENABLED=true
+          SSTATS_PER_RUN_MAX=2
+          SSTATS_MAX_REQUESTS_PER_RUN=2
+          SSTATS_REQUESTS_MAX_PER_RUN=2
+          SSTATS_REQUEST_BUDGET_GRANTED=2
           SSTATS_MAX_HTTP_REQUESTS_PER_RUN=2
           SSTATS_CONTEXT_MATCH_LIMIT=60
           SSTATS_DEEP_DETAIL_LIMIT_PER_RUN=0
           SSTATS_DEEP_CONTEXT_MATCH_LIMIT=0
           SSTATS_DEEP_ENRICHMENT_ENABLED=false
+          SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK=false
+          SSTATS_DEEP_SMOKE_DETAIL_GAMES=0
+          SSTATS_GAME_DETAIL_ENABLED=false
+          SSTATS_LAST_GAMES_STATS_ENABLED=false
+          SSTATS_INJURIES_ENABLED=false
+          SSTATS_GLICKO_ENABLED=false
+          SSTATS_ODDS_RESCUE_ENABLED=false
           SPORTLOGIC_ENABLED=false
           ENABLE_SPORTLOGIC=false
           SPORTLOGIC_PER_RUN_MAX=4
@@ -319,10 +372,13 @@ jobs:
             echo "top-300 smoke inventory build failed or timed out with status ${status}; continuing diagnostics"
           fi
           python -u scripts/repair_inventory_source_counts.py 2>&1 | tee .data/exports/provider-smoke-source-count-repair-run.log || true
+          python -u scripts/project_day_inventory_context_sources.py 2>&1 | tee .data/exports/provider-smoke-context-source-projection-run.log || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/latest-day-inventory-summary.json 2>/dev/null || true
           cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/latest-inventory-source-count-repair.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-context-source-projection.json artifacts/provider-smoke/latest-day-inventory-context-source-projection.json 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/provider-smoke-build-day-inventory.log 2>/dev/null || true
           cp .data/exports/provider-smoke-source-count-repair-run.log artifacts/provider-smoke/provider-smoke-source-count-repair-run.log 2>/dev/null || true
+          cp .data/exports/provider-smoke-context-source-projection-run.log artifacts/provider-smoke/provider-smoke-context-source-projection-run.log 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
 
       - name: Run provider endpoint and matching diagnostics
@@ -338,6 +394,9 @@ jobs:
           ODDS_API_IO_ACCOUNT1_PER_RUN_MAX: "4"
           ODDS_API_IO_ACCOUNT2_PER_RUN_MAX: "2"
           MAX_MATCHES_FOR_ODDS_FETCH: "20"
+          BZZOIRO_REQUEST_BUDGET_GRANTED: "3"
+          SSTATS_REQUEST_BUDGET_GRANTED: "2"
+          SSTATS_GAME_DETAIL_ENABLED: "false"
         run: |
           set -uo pipefail
           mkdir -p .data/exports artifacts/provider-smoke artifacts/provider-smoke-fast
@@ -356,6 +415,7 @@ jobs:
           cp .data/exports/latest-provider-smoke-fast.json .data/exports/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke-fast.txt .data/exports/latest-provider-smoke.txt 2>/dev/null || true
           python -u scripts/repair_inventory_source_counts.py 2>&1 | tee .data/exports/provider-smoke-source-count-repair-after-diagnostics-run.log || true
+          python -u scripts/project_day_inventory_context_sources.py 2>&1 | tee .data/exports/provider-smoke-context-source-projection-after-diagnostics-run.log || true
 
       - name: Collect provider smoke artifacts
         if: always()
@@ -371,13 +431,17 @@ jobs:
           cp .data/exports/provider-smoke-fast-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-context-source-projection.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-source-count-repair*.log artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/provider-smoke-context-source-projection*.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/ 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
           echo "----- minimal API repair probe -----"
           cat .data/exports/latest-provider-api-min-repair-probe.txt 2>/dev/null || true
           echo "----- source-count/top-300 inventory repair -----"
           cat .data/exports/latest-inventory-source-count-repair.json 2>/dev/null || true
+          echo "----- context source projection -----"
+          cat .data/exports/latest-day-inventory-context-source-projection.json 2>/dev/null || true
           echo "----- provider smoke diagnostics -----"
           cat .data/exports/latest-provider-smoke-diagnostics.txt 2>/dev/null || cat .data/exports/latest-provider-smoke.txt 2>/dev/null || true
           echo "----- top-300 day inventory summary -----"
