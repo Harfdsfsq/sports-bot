@@ -1,25 +1,18 @@
 from __future__ import annotations
 
-"""Plan low-quota price backfill for the daily top inventory.
+"""Plan and optionally execute low-quota price backfill for top-300 inventory.
 
-This script does not call external APIs.  It reads the persisted top-300 day
-inventory and writes an execution plan that tells the next runtime pass where to
-spend the smallest number of odds requests:
-
-1. prioritize matches that already have 2+ context confirmations;
-2. fetch odds-api.io `/odds/multi` for matches with an odds_api_io event id;
-3. use Bzzoiro/SStats/SportLogic only as secondary line/context probes when they
-   already have a matched source id;
-4. keep matches without source ids in a separate matching-needed bucket.
-
-The plan is intentionally auditable.  It also writes per-match `price_backfill`
-metadata into the day inventory so later runners/reports can see why a match is
-still blocked from publication.
+The planner itself makes no external API calls.  In provider-smoke-minimal-repair
+it also chains `execute_day_inventory_price_backfill.py` exactly once per run,
+which spends at most two odds-api.io `/odds/multi` requests: account1 and
+account2.  This keeps the smoke cheap while moving matches from context-ready to
+price-ready.
 """
 
 import json
 import os
 import re
+import runpy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -31,6 +24,7 @@ DAY_INV_DIR = ROOT / '.data' / 'day_inventory'
 EXPORT_DIR = ROOT / '.data' / 'exports'
 OUT_JSON = EXPORT_DIR / 'latest-day-inventory-price-backfill-plan.json'
 OUT_TXT = EXPORT_DIR / 'latest-day-inventory-price-backfill-plan.txt'
+EXEC_JSON = EXPORT_DIR / 'latest-day-inventory-price-backfill-execution.json'
 SUMMARY = EXPORT_DIR / 'latest-day-inventory-summary.json'
 
 
@@ -97,6 +91,16 @@ def norm(value: Any) -> str:
     return aliases.get(text, text)
 
 
+def list_from_any(value: Any) -> list[str]:
+    if isinstance(value, dict):
+        return [str(k).strip() for k in value.keys() if str(k).strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, str) and value.strip():
+        return [v.strip() for v in re.split(r'[,|;/]+', value) if v.strip()]
+    return []
+
+
 def source_ids(row: dict[str, Any]) -> dict[str, str]:
     out: dict[str, str] = {}
     raw = row.get('source_ids') if isinstance(row.get('source_ids'), dict) else {}
@@ -121,15 +125,15 @@ def fixture_sources(row: dict[str, Any]) -> list[str]:
         if isinstance(value, list):
             out.extend(norm(x) for x in value if norm(x))
     out.extend(source_ids(row).keys())
-    source = norm(row.get('source'))
-    if source:
-        out.append(source)
-    seen = set()
-    final = []
-    for src in out:
-        if src and src not in seen:
-            seen.add(src)
-            final.append(src)
+    src = norm(row.get('source'))
+    if src:
+        out.append(src)
+    seen: set[str] = set()
+    final: list[str] = []
+    for item in out:
+        if item and item not in seen:
+            seen.add(item)
+            final.append(item)
     return final
 
 
@@ -156,11 +160,12 @@ def context_count(row: dict[str, Any]) -> int:
 def route_for(row: dict[str, Any]) -> list[str]:
     ids = source_ids(row)
     routes: list[str] = []
+    sources = fixture_sources(row)
     if ids.get('odds_api_io'):
         routes.append('odds_api_io:odds_multi')
-    if ids.get('bzzoiro') or 'bzzoiro' in fixture_sources(row):
+    if ids.get('bzzoiro') or 'bzzoiro' in sources:
         routes.append('bzzoiro:current_odds_or_prediction')
-    if ids.get('sstats') or 'sstats' in fixture_sources(row):
+    if ids.get('sstats') or 'sstats' in sources:
         routes.append('sstats:odds_snapshot_if_present')
     if ids.get('sportlogic'):
         routes.append('sportlogic:odds_detail_if_not_stale')
@@ -182,8 +187,6 @@ def priority_tuple(row: dict[str, Any], now: datetime, min_price: int, min_conte
         bucket = 2
     else:
         bucket = 3
-    # Context-ready matches should receive price requests first because one odds
-    # fetch can make them publishable immediately.
     context_bonus = 0 if context_count(row) >= min_context else 1
     need = max(0, min_price - price_count(row))
     return (bucket, abs(hours), context_bonus + need, str(row.get('league_name') or ''), str(row.get('home_team') or ''))
@@ -199,6 +202,7 @@ def render(report: dict[str, Any]) -> str:
         f"• odds_api_io event ids planned: {len(report.get('odds_api_io_event_ids', []))}",
         f"• bzzoiro secondary targets: {len(report.get('bzzoiro_targets', []))}",
         f"• sstats snapshot targets: {len(report.get('sstats_targets', []))}",
+        f"• execution: {(report.get('execution') or {}).get('status', 'not_run')}",
         '',
         'Top targets:',
     ]
@@ -210,6 +214,41 @@ def render(report: dict[str, Any]) -> str:
     return '\n'.join(lines) + '\n'
 
 
+def should_auto_execute() -> bool:
+    if str(os.getenv('PRICE_BACKFILL_EXECUTE_ENABLED') or '').strip().lower() in {'1', 'true', 'yes', 'on', 'force'}:
+        return True
+    return str(os.getenv('APP_ENV') or '').strip().lower() == 'provider-smoke-minimal-repair'
+
+
+def maybe_execute_once(report: dict[str, Any]) -> dict[str, Any]:
+    if not should_auto_execute():
+        return {'status': 'skipped', 'reason': 'not enabled'}
+    existing = load_json(EXEC_JSON, {})
+    if isinstance(existing, dict) and existing.get('status') == 'ok' and as_int(existing.get('requests_used')) > 0:
+        return {'status': 'skipped', 'reason': 'already_executed_this_workspace', 'existing_requests_used': existing.get('requests_used')}
+    script = ROOT / 'scripts' / 'execute_day_inventory_price_backfill.py'
+    if not script.exists():
+        return {'status': 'skipped', 'reason': 'missing_executor', 'path': str(script)}
+    started = datetime.now(UTC).isoformat()
+    old = os.environ.get('PRICE_BACKFILL_EXECUTE_ENABLED')
+    os.environ['PRICE_BACKFILL_EXECUTE_ENABLED'] = 'true'
+    try:
+        runpy.run_path(str(script), run_name='__main__')
+        return {'status': 'ok', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'path': str(script)}
+    except SystemExit as exc:
+        code = getattr(exc, 'code', 0)
+        if code in (0, None):
+            return {'status': 'ok', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'path': str(script), 'code': code}
+        return {'status': 'error', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'path': str(script), 'code': code}
+    except Exception as exc:
+        return {'status': 'error', 'started_at_utc': started, 'finished_at_utc': datetime.now(UTC).isoformat(), 'path': str(script), 'error': f'{type(exc).__name__}: {exc}'}
+    finally:
+        if old is None:
+            os.environ.pop('PRICE_BACKFILL_EXECUTE_ENABLED', None)
+        else:
+            os.environ['PRICE_BACKFILL_EXECUTE_ENABLED'] = old
+
+
 def main() -> int:
     now = datetime.now(UTC)
     d = target_date(now)
@@ -219,7 +258,6 @@ def main() -> int:
     odds_id_limit = max(1, as_int(os.getenv('PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT'), 60))
     bzz_limit = max(0, as_int(os.getenv('PRICE_BACKFILL_BZZOIRO_TARGET_LIMIT'), 40))
     sstats_limit = max(0, as_int(os.getenv('PRICE_BACKFILL_SSTATS_TARGET_LIMIT'), 60))
-
     inv_path = DAY_INV_DIR / f'{d}.json'
     inv = load_json(inv_path, {})
     matches = [dict(row) for row in inv.get('matches', []) if isinstance(row, dict)] if isinstance(inv, dict) else []
@@ -268,19 +306,15 @@ def main() -> int:
         ids = item.get('source_ids') or {}
         if ids.get('odds_api_io') and len(odds_ids) < odds_id_limit:
             odds_ids.append(str(ids['odds_api_io']))
-        if ('bzzoiro:current_odds_or_prediction' in (item.get('routes') or [])) and len(bzz_targets) < bzz_limit:
+        if 'bzzoiro:current_odds_or_prediction' in (item.get('routes') or []) and len(bzz_targets) < bzz_limit:
             bzz_targets.append(item)
-        if ('sstats:odds_snapshot_if_present' in (item.get('routes') or [])) and len(sstats_targets) < sstats_limit:
+        if 'sstats:odds_snapshot_if_present' in (item.get('routes') or []) and len(sstats_targets) < sstats_limit:
             sstats_targets.append(item)
         if item.get('routes') == ['needs_provider_match_first'] and len(match_first) < 40:
             match_first.append(item)
-
     if isinstance(inv, dict):
         for row in inv.get('matches', []):
-            if not isinstance(row, dict):
-                continue
-            pc = price_count(row)
-            if pc >= min_price:
+            if isinstance(row, dict) and price_count(row) >= min_price:
                 row.pop('price_backfill', None)
         inv['updated_at_utc'] = now.isoformat()
         src_meta = inv.setdefault('sources', {})
@@ -302,7 +336,6 @@ def main() -> int:
             summary['counts'] = dict(inv.get('counts') or summary.get('counts') or {})
             summary['updated_at_utc'] = now.isoformat()
             write_json(SUMMARY, summary)
-
     report = {
         'status': 'ok',
         'date_local': d,
@@ -320,13 +353,17 @@ def main() -> int:
         'bzzoiro_targets': bzz_targets,
         'sstats_targets': sstats_targets,
         'needs_provider_match_first': match_first,
+        'execution': {'status': 'not_started'},
         'notes': [
-            'No external API calls are made by this planner.',
-            'The next odds pass should spend requests on context-ready price-thin matches first.',
+            'Planner itself does not call external APIs.',
+            'In provider-smoke-minimal-repair it chains one guarded executor pass: at most two odds-api.io odds/multi requests.',
             'odds_api_io_event_ids_csv can be sent to /odds/multi in compact batches.',
-            'Bzzoiro/SStats targets are secondary line probes only when source ids or fixture provenance already exist.',
         ],
     }
+    write_json(OUT_JSON, report)
+    OUT_TXT.write_text(render(report), encoding='utf-8')
+    execution = maybe_execute_once(report)
+    report['execution'] = execution
     write_json(OUT_JSON, report)
     OUT_TXT.write_text(render(report), encoding='utf-8')
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
