@@ -4,12 +4,14 @@ from __future__ import annotations
 
 The normal run report shows providers that participated in prediction, but some
 configured APIs are rotation/probe/optional sources. This guard runs the existing
-quick health probe so Telegram reports can show whether those APIs are configured,
+quick health probe so reports can show whether those APIs are configured,
 reachable, disabled by policy, or failing.
 
 If the SportLogic daily circuit is open, the subprocess health probe receives a
 masked SportLogic environment so it cannot spend another HTTP request while the
-free daily quota is exhausted.
+free daily quota is exhausted. After the probe, this module rewrites the
+SportLogic row to `skipped_daily_circuit` so the report does not show a false
+critical failure.
 """
 
 import atexit
@@ -19,7 +21,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-PATCH_MARKER = "_harizon_api_health_runtime_guard_v2"
+PATCH_MARKER = "_harizon_api_health_runtime_guard_v3"
+OUT_DIR = Path(".data/exports")
+HEALTH_JSON = OUT_DIR / "latest-api-health-run.json"
+HEALTH_MD = OUT_DIR / "latest-api-health-run.md"
 SPORTLOGIC_MARKERS = [
     Path(".data/cache/sportlogic_daily_limit_open.json"),
     Path(".data/line_history/sportlogic_daily_limit_open.json"),
@@ -91,6 +96,89 @@ def _subprocess_env() -> dict[str, str]:
     return env
 
 
+def _recount(report: dict) -> None:
+    rows = [row for row in report.get("results", []) if isinstance(row, dict)]
+    non_failure = {"ok", "degraded", "config_only", "skipped_daily_circuit"}
+    by_status: dict[str, int] = {}
+    by_group: dict[str, dict[str, int]] = {}
+    critical_failures = []
+    for row in rows:
+        status = str(row.get("status") or "")
+        group = str(row.get("group") or "")
+        by_status[status] = by_status.get(status, 0) + 1
+        by_group.setdefault(group, {})[status] = by_group.setdefault(group, {}).get(status, 0) + 1
+        if row.get("critical") and status not in non_failure:
+            critical_failures.append(row)
+    summary = dict(report.get("summary") or {})
+    summary.update({
+        "providers_checked": len(rows),
+        "ok": by_status.get("ok", 0),
+        "config_only": by_status.get("config_only", 0),
+        "degraded": by_status.get("degraded", 0),
+        "rate_limited": by_status.get("rate_limited", 0),
+        "auth_error": by_status.get("auth_error", 0),
+        "missing_secret": by_status.get("missing_secret", 0),
+        "skipped_daily_circuit": by_status.get("skipped_daily_circuit", 0),
+        "critical_failures": len(critical_failures),
+        "healthy_or_config_only": by_status.get("ok", 0) + by_status.get("config_only", 0) + by_status.get("skipped_daily_circuit", 0),
+    })
+    report["summary"] = summary
+    report["by_status"] = by_status
+    report["by_group"] = by_group
+    report["critical_failures"] = critical_failures
+
+
+def _rewrite_health_if_needed() -> None:
+    if not _sportlogic_circuit_open() or not HEALTH_JSON.exists():
+        return
+    try:
+        report = json.loads(HEALTH_JSON.read_text(encoding="utf-8"))
+    except Exception:
+        return
+    changed = False
+    for row in report.get("results", []) if isinstance(report.get("results"), list) else []:
+        if row.get("provider") != "sportlogic":
+            continue
+        row.update({
+            "status": "skipped_daily_circuit",
+            "critical": False,
+            "configured": False,
+            "requests": 0,
+            "useful_rows": 0,
+            "http_statuses": [],
+            "latency_ms": None,
+            "message": "SportLogic daily circuit is open; health check skipped before HTTP call.",
+            "details": {**dict(row.get("details") or {}), "daily_circuit_open": True},
+        })
+        changed = True
+    if not changed:
+        return
+    recs = [x for x in report.get("recommendations", []) if isinstance(x, str)]
+    recs.append("SportLogic daily circuit is open; health probe was skipped to avoid spending exhausted quota.")
+    report["recommendations"] = recs
+    _recount(report)
+    HEALTH_JSON.write_text(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    # A compact markdown replacement is enough for the artifact; the full JSON carries details.
+    lines = [
+        "# API Health Run",
+        "",
+        f"- Created UTC: `{report.get('created_at_utc')}`",
+        f"- Mode: `{report.get('mode')}`",
+        f"- Providers checked: **{report.get('summary', {}).get('providers_checked')}**",
+        f"- OK: **{report.get('summary', {}).get('ok')}**",
+        f"- Config-only/skipped: **{report.get('summary', {}).get('healthy_or_config_only')}**",
+        f"- Critical failures: **{report.get('summary', {}).get('critical_failures')}**",
+        "",
+        "## Provider results",
+        "",
+        "| Provider | Group | Status | Requests | Useful rows | Message |",
+        "|---|---|---:|---:|---:|---|",
+    ]
+    for row in report.get("results", []):
+        lines.append(f"| `{row.get('provider')}` | `{row.get('group')}` | `{row.get('status')}` | {row.get('requests', 0)} | {row.get('useful_rows', 0)} | {str(row.get('message', '')).replace('|', '/')} |")
+    HEALTH_MD.write_text("\n".join(lines) + "\n", encoding="utf-8")
+
+
 def _run() -> None:
     if not _truthy(os.getenv("API_HEALTH_DURING_RUN_ENABLED"), True):
         return
@@ -104,6 +192,7 @@ def _run() -> None:
             timeout=int(float(os.getenv("API_HEALTH_GUARD_TIMEOUT_SECONDS", "55") or 55)),
             env=_subprocess_env(),
         )
+        _rewrite_health_if_needed()
     except Exception as exc:
         print(f"[api-health-guard] skipped after error: {type(exc).__name__}: {exc}", flush=True)
 
