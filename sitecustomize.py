@@ -12,6 +12,33 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 
+def _redirect_controlled_fallback_entrypoint() -> None:
+    """Run the guarded controlled-fallback publisher without changing workflow YAML.
+
+    GitHub Actions still calls `python scripts/publish_controlled_fallback.py`.
+    This redirect makes that command execute `publish_controlled_fallback_guarded.py`,
+    which respects windowed line-movement blocks and duplicate fallback reports.
+    """
+    try:
+        if os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED"):
+            return
+        if Path(str(sys.argv[0] or "")).name != "publish_controlled_fallback.py":
+            return
+        target = SCRIPTS / "publish_controlled_fallback_guarded.py"
+        if not target.exists():
+            return
+        os.environ["HARIZON_CONTROLLED_FALLBACK_REDIRECTED"] = "1"
+        os.execv(sys.executable, [sys.executable, str(target), *sys.argv[1:]])
+    except Exception as exc:
+        try:
+            print(f"root sitecustomize controlled fallback redirect skipped: {type(exc).__name__}: {exc}")
+        except Exception:
+            pass
+
+
+_redirect_controlled_fallback_entrypoint()
+
+
 def _set(name: str, value: str) -> None:
     os.environ[name] = str(value)
 
