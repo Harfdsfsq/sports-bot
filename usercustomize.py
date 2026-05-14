@@ -25,6 +25,10 @@ for _module in [
     'app.services.provider_payload_mining_runtime_patch_v2',
     'app.services.bzzoiro_direct_fetch_final_guard',
     'app.services.signal_stack_runtime_patch',
+    # Persist odds movement snapshots into .data/cache and make windowed movement
+    # read the durable cache as well as the current-run jsonl. This fixes
+    # snapshot_count=0 caused by workflow resetting .data/odds_movement_snapshots.jsonl.
+    'app.services.odds_movement_cache_bridge_patch',
     'app.services.sportlogic_query_runtime_guard',
     'app.services.api_runtime_enhancements',
     'app.services.secondary_odds_rescue_runtime_patch',
@@ -56,6 +60,9 @@ for _module in [
     # Re-apply core quotas after provider-tier/runtime-budget wrappers because some
     # older layers still write conservative Bzzoiro/SStats limits.
     'app.services.core_coverage_quota_runtime_override',
+    # Re-apply snapshot cache bridge after any later signal/windowed wrappers. It is
+    # idempotent, so this guarantees final movement checks read durable history.
+    'app.services.odds_movement_cache_bridge_patch',
     # Keep near-zero candidates alive until final consensus validation. This must
     # run before candidate_value_runtime_patch so the pre-quality filter uses the
     # widened holding-pen thresholds, while final consensus still requires EV>=0.
@@ -84,6 +91,9 @@ for _module in [
     # Then bridge progressive coverage into the final CandidateFactory wrapper.
     # This must be AFTER candidate_value_final_reinstall; otherwise it is overwritten.
     'app.services.windowed_coverage_state_bridge',
+    # Final re-application after windowed bridge, because movement checks are used in
+    # candidate/publication filters installed by the windowed layers.
+    'app.services.odds_movement_cache_bridge_patch',
     # True final publication-candidate gate: rebase odds to exact-line consensus and
     # reject candidates without verified price/context coverage.
     'app.services.api_coverage_consensus_runtime_patch',
