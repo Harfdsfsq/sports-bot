@@ -1,13 +1,13 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
 • Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: no positive canonical value candidates
+• Главная причина: no viable controlled fallback
 
 📦 Покрытие
-• Матчи в run: 267 | day inventory: 340
-• С линиями: 54 | с контекстом: 171 | ready model: 0
-• odds-api.io offers: 8733 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 41 | 2-source overlap Bzzoiro+odds-api.io: 0
-• Source combinations: odds_api_io: 31, odds_api_io+sstats: 21, bzzoiro: 2
+• Матчи в run: 270 | day inventory: 340
+• С линиями: 56 | с контекстом: 205 | ready model: 0
+• odds-api.io offers: 8074 | Bzzoiro secondary offers: 77
+• 2+ букмекера odds-api.io: 40 | 2-source overlap Bzzoiro+odds-api.io: 0
+• Source combinations: odds_api_io: 32, odds_api_io+sstats: 21, bzzoiro: 8, bzzoiro+odds_api_io+sstats: 1
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0 / 0
@@ -16,25 +16,25 @@
 • Windowed coverage: audit 1 | allowed 1 | blocked 0 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 36 | no next regular run: 36
+• Final pre-kickoff checks: 42 | no next regular run: 42
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 20, matched 96, offers 8733, 2+ books 41, err 0
-• sstats: req 23, ctx 154, rows 18689, err 0, deep enriched 14 | patch sstats_v1_first_then_legacy_gapfill; direct 0, form 154
-• bzzoiro: direct req 0, v2 req 1, v2 ctx 0, v2 odds 0, secondary offers 0, overlap odds-api.io 0, err 0
-• sportlogic: enabled True, req 12, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
+• odds_api_io: events req 0, odds req 20, matched 99, offers 8074, 2+ books 40, err 0
+• sstats: req 23, ctx 202, rows 18689, err 0, deep enriched 7
+• bzzoiro: direct req 0, v2 req 1, v2 ctx 0, v2 odds 0, secondary offers 77, overlap odds-api.io 0, err 0
+• sportlogic: enabled True, req 2, fixtures 50, matched 0, odds req 0, offers 0, sample_dates 2026-05-02, diag games_endpoint_returned_unmatched_or_stale_rows, err 0
 
 🧭 Progressive core coverage
 • Core odds/line: bzzoiro,odds_api_io,sstats
 • Core context: bzzoiro,sstats
-• Tracked: 1018 | core odds 2+: 410 | core context 2+: 119 | core-ready both: 119
-• 0–4ч: 1/98 core-ready
-• 0–12ч: 12/277 core-ready
+• Tracked: 1022 | core odds 2+: 436 | core context 2+: 119 | core-ready both: 119
+• 0–4ч: 1/149 core-ready
+• 0–12ч: 12/276 core-ready
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
 
 📌 Вывод
-• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 119; 0–4ч: 1/98; 0–12ч: 12/277.
+• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 119; 0–4ч: 1/149; 0–12ч: 12/276.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.

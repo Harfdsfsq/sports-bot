@@ -9,7 +9,7 @@
       "overlap": 0,
       "requests": 0,
       "requests_total_effective": 1,
-      "secondary_offers_added": 0,
+      "secondary_offers_added": 77,
       "v2_contexts": 0,
       "v2_errors": 0,
       "v2_events": 33,
@@ -19,60 +19,63 @@
       "v2_stats_resources": 0
     },
     "odds_api_io": {
-      "books_2plus": 41,
+      "books_2plus": 40,
       "errors": 0,
       "events_req": 0,
-      "matched": 96,
+      "matched": 99,
       "odds_req": 20,
-      "offers": 8733
+      "offers": 8074
     },
     "sportlogic": {
-      "diagnosis": "ok_or_no_data",
+      "diagnosis": "games_endpoint_returned_unmatched_or_stale_rows",
       "enabled": true,
-      "errors": 2,
-      "fixtures_fetched": 0,
-      "games_fetched": 0,
+      "errors": 0,
+      "fixtures_fetched": 50,
+      "games_fetched": 50,
       "matched": 0,
       "odds_requests": 0,
       "offers": 0,
-      "requests": 12,
-      "sample_dates": [],
-      "stale_sample": false
+      "requests": 2,
+      "sample_dates": [
+        "2026-05-02"
+      ],
+      "stale_sample": true
     },
     "sstats": {
-      "contexts": 154,
-      "deep_enriched": 14,
+      "contexts": 202,
+      "deep_enriched": 7,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 23,
       "rows": 18689,
-      "runtime_patch": "sstats_v1_first_then_legacy_gapfill",
-      "team_form_contexts": 154
+      "runtime_patch": "",
+      "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 0.32813703616460166,
-    "fallback_age_min": 0.08361384868621827,
-    "run_log_age_min": 0.29851407607396446,
-    "signal_stack_age_min": 0.3644873340924581
+    "debug_age_min": 0.3559610605239868,
+    "fallback_age_min": 0.2102735718091329,
+    "run_log_age_min": 0.32152424653371176,
+    "signal_stack_age_min": 0.3724883278210958
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 0,
-    "bzzoiro_secondary_offers_added": 0,
+    "bzzoiro_secondary_offers_added": 77,
     "day_inventory_total": 340,
-    "matches_seen": 267,
-    "matches_with_2plus_books": 41,
-    "matches_with_context": 171,
-    "matches_with_offers": 54,
-    "odds_offers_primary": 8733,
+    "matches_seen": 270,
+    "matches_with_2plus_books": 40,
+    "matches_with_context": 205,
+    "matches_with_offers": 56,
+    "odds_offers_primary": 8074,
     "ready_for_model": 0,
     "secondary_combinations": {
-      "bzzoiro": 2,
-      "odds_api_io": 31,
+      "bzzoiro": 8,
+      "bzzoiro+odds_api_io+sstats": 1,
+      "odds_api_io": 32,
       "odds_api_io+sstats": 21
     }
   },
-  "created_at_utc": "2026-05-14T08:57:58.961115+00:00",
+  "created_at_utc": "2026-05-14T09:12:39.651442+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
       "contexts_built": 0,
@@ -124,37 +127,50 @@
         ]
       },
       "counts": {
-        "all_context_1plus": 813,
-        "all_context_2plus": 266,
-        "all_odds_1plus": 1003,
-        "all_odds_2plus": 410,
-        "context_1plus": 716,
+        "all_context_1plus": 844,
+        "all_context_2plus": 282,
+        "all_odds_1plus": 1011,
+        "all_odds_2plus": 436,
+        "context_1plus": 763,
         "context_2plus": 119,
-        "core_context_1plus": 716,
+        "core_context_1plus": 763,
         "core_context_2plus": 119,
-        "core_odds_1plus": 1003,
-        "core_odds_2plus": 410,
+        "core_odds_1plus": 1011,
+        "core_odds_2plus": 436,
         "core_ready_2plus_both": 119,
-        "matches_tracked": 1018,
-        "odds_1plus": 1003,
-        "odds_2plus": 410,
+        "matches_tracked": 1022,
+        "odds_1plus": 1011,
+        "odds_2plus": 436,
         "ready_2plus_both": 119,
-        "window_0_12h": 277,
+        "window_0_12h": 276,
         "window_0_12h_core_ready_2plus_both": 12,
         "window_0_12h_ready_2plus_both": 12,
-        "window_0_4h": 98,
+        "window_0_4h": 149,
         "window_0_4h_core_ready_2plus_both": 1,
         "window_0_4h_ready_2plus_both": 1
       },
       "gap_sample_size": 80
     },
     "sportlogic": {
-      "diagnosis": "ok_or_no_data",
-      "fixtures_fetched": 0,
-      "games_fetched": 0,
-      "query_variants_used": [],
-      "sample_dates": [],
-      "stale_sample": false
+      "diagnosis": "games_endpoint_returned_unmatched_or_stale_rows",
+      "fixtures_fetched": 50,
+      "games_fetched": 50,
+      "query_variants_used": [
+        {
+          "date": "2026-05-14",
+          "params": {
+            "from": "2026-05-14",
+            "per_page": 50,
+            "to": "2026-05-14"
+          },
+          "rows": 50,
+          "scope": "dated"
+        }
+      ],
+      "sample_dates": [
+        "2026-05-02"
+      ],
+      "stale_sample": true
     }
   },
   "funnel": {
@@ -175,9 +191,9 @@
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 36,
+    "final_pre_kickoff_checks": 42,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 36,
+    "no_more_regular_run_before_kickoff": 42,
     "seen": 0
   },
   "reasons": [],
@@ -185,34 +201,14 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Sudeva Delhi FC",
-        "home_team": "Neroca FC",
-        "kickoff_utc": "2026-05-14T09:30:00+00:00",
-        "league_name": "India - I-League 2",
-        "match_key": "soccer|neroca|sudeva delhi|2026-05-14",
-        "minutes_to_kickoff": 32.36,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.213,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
         "away_team": "FC KTP",
         "home_team": "JaPS",
         "kickoff_utc": "2026-05-14T10:00:00+00:00",
         "league_name": "Finland - Suomen Cup, Women",
         "match_key": "soccer|japs|ktp|2026-05-14",
-        "minutes_to_kickoff": 62.36,
+        "minutes_to_kickoff": 47.71,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.213,
+        "priority": 152.097,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -230,9 +226,9 @@
         "kickoff_utc": "2026-05-14T10:00:00+00:00",
         "league_name": "Finland - Suomen Cup, Women",
         "match_key": "2026-05-14|japs|ktp",
-        "minutes_to_kickoff": 62.36,
+        "minutes_to_kickoff": 47.71,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.213,
+        "priority": 152.097,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -250,9 +246,9 @@
         "kickoff_utc": "2026-05-14T10:00:00+00:00",
         "league_name": "Spain - U19 Division de Honor Juvenil",
         "match_key": "2026-05-14|barcelona|tenerife",
-        "minutes_to_kickoff": 62.36,
+        "minutes_to_kickoff": 47.71,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.213,
+        "priority": 152.097,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -270,9 +266,9 @@
         "kickoff_utc": "2026-05-14T10:00:00+00:00",
         "league_name": "Sweden Amateur - U19 Allsvenskan",
         "match_key": "soccer|djurgardens if|mjallby aif|2026-05-14",
-        "minutes_to_kickoff": 62.36,
+        "minutes_to_kickoff": 47.71,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.213,
+        "priority": 152.097,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -290,9 +286,9 @@
         "kickoff_utc": "2026-05-14T10:00:00+00:00",
         "league_name": "Sweden Amateur - U19 Allsvenskan",
         "match_key": "2026-05-14|djurgardens if|mjallby aif",
-        "minutes_to_kickoff": 62.36,
+        "minutes_to_kickoff": 47.71,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.213,
+        "priority": 152.097,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -303,13 +299,33 @@
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
+      },
+      {
+        "away_team": "Hadiya Hossana FC",
+        "home_team": "Sidama Bunna SC",
+        "kickoff_utc": "2026-05-14T10:00:00+00:00",
+        "league_name": "Ethiopia - Premier League",
+        "match_key": "soccer|hadiya hossana|sidama bunna|2026-05-14",
+        "minutes_to_kickoff": 47.71,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 144.097,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-14T09:12:33.856663+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
       }
     ]
   },
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 1977,
-  "top_reason": "no_positive_canonical_value_candidates",
+  "text_length": 1979,
+  "top_reason": "no_viable_controlled_fallback",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
