@@ -12,17 +12,43 @@ if str(SCRIPTS) not in sys.path:
     sys.path.insert(0, str(SCRIPTS))
 
 
-def _redirect_controlled_fallback_entrypoint() -> None:
-    """Run the guarded controlled-fallback publisher without changing workflow YAML.
+def _script_name() -> str:
+    return Path(str(sys.argv[0] or "")).name
 
-    GitHub Actions still calls `python scripts/publish_controlled_fallback.py`.
-    This redirect makes that command execute `publish_controlled_fallback_guarded.py`,
-    which respects windowed line-movement blocks and duplicate fallback reports.
-    """
+
+def _argv_text() -> str:
+    return " ".join(str(x) for x in sys.argv)
+
+
+def _is_main_run_once() -> bool:
+    text = _argv_text()
+    return os.getenv("HARIZON_FORCE_RUNTIME_PATCH_INSTALL") == "1" or (
+        "run-once" in text and ("app.cli" in text or "python -m app.cli" in text or _script_name() in {"app.cli", "python -m app.cli"})
+    )
+
+
+def _is_readonly_helper() -> bool:
+    name = _script_name()
+    return (
+        name.startswith("send_harizon_telegram_run_report")
+        or name in {
+            "publish_controlled_fallback.py",
+            "publish_controlled_fallback_guarded.py",
+            "day_inventory_cumulative_coverage.py",
+            "apply_publication_family_policy.py",
+            "apply_provider_quota_governor.py",
+            "apply_provider_request_budget.py",
+            "apply_per_run_api_quota_contract.py",
+        }
+        or os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1"
+    )
+
+
+def _redirect_controlled_fallback_entrypoint() -> None:
     try:
         if os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED"):
             return
-        if Path(str(sys.argv[0] or "")).name != "publish_controlled_fallback.py":
+        if _script_name() != "publish_controlled_fallback.py":
             return
         target = SCRIPTS / "publish_controlled_fallback_guarded.py"
         if not target.exists():
@@ -77,31 +103,15 @@ def _apply_common_prediction_contract() -> None:
         "MIN_SOURCES_PUBLISH": "2",
         "MARKET_DERIVED_MIN_BOOKS": "2",
         "MARKET_DERIVED_MIN_SOURCES": "2",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "2",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES": "2",
-        "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "2",
         "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
         "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
-        "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "true",
         "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EV_PCT": "0.0",
         "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EDGE_PP": "0.0",
         "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "2",
         "TELEGRAM_MAIN_PICK_MIN_EDGE_PP": "3.0",
-        "TELEGRAM_MAIN_PICK_STRICT_SINGLE_SOURCE": "true",
-        "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_BOOKS": "3",
-        "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EDGE_PP": "4.0",
-        "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_EV_PCT": "8.0",
-        "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_CONFIDENCE": "78.0",
-        "TELEGRAM_MAIN_PICK_SINGLE_SOURCE_MIN_QUALITY": "78.0",
         "SECONDARY_ODDS_RESCUE_ENABLED": "true",
-        "SECONDARY_ODDS_RESCUE_FORCE_RAPIDAPI_REFRESH": "true",
-        "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "80",
         "BZZOIRO_ODDS_REKEY_ENABLED": "true",
-        "BZZOIRO_ODDS_REKEY_MIN_SCORE": "70",
-        "PREQUALITY_CANONICAL_VALUE_FILTER_ENABLED": "true",
-        "PREQUALITY_CANONICAL_MIN_EV_PCT": "0.0",
-        "PREQUALITY_CANONICAL_MIN_EDGE_PP": "0.0",
         "MARKET_DERIVED_SINGLE_SNAPSHOT_CONSENSUS_ENABLED": "true",
     }
     for key, value in common.items():
@@ -117,11 +127,26 @@ def _phase_env(phase: str) -> dict[str, str]:
         "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth",
     }
     if phase == "full_inventory":
-        base.update({"DAY_INVENTORY_FORCE_PROVIDER_MERGE": "true", "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "true", "PUBLISH_WINDOW_HOURS": "24", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "36", "ODDS_API_IO_PAGE_LIMIT": "100", "MAX_MATCHES_FOR_ODDS_FETCH": "900", "ANALYSIS_MATCH_CAP_PER_RUN": "900", "DIAGNOSTICS_MATCH_LIMIT": "900", "CONTEXT_ENRICHMENT_MATCH_LIMIT": "120", "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "48", "WEATHER_CONTEXT_MATCH_LIMIT": "12", "NEWSAPI_MATCH_LIMIT": "0", "GNEWS_MATCH_LIMIT": "0", "SECONDARY_ODDS_RESCUE_TRIGGER": "odds_api_io_empty_or_thin"})
+        base.update({
+            "PUBLISH_WINDOW_HOURS": "24",
+            "MAX_MATCHES_FOR_ODDS_FETCH": "900",
+            "ANALYSIS_MATCH_CAP_PER_RUN": "900",
+            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "120",
+        })
     elif phase == "morning_backfill":
-        base.update({"DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false", "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false", "PUBLISH_WINDOW_HOURS": "12", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "24", "ODDS_API_IO_PAGE_LIMIT": "100", "MAX_MATCHES_FOR_ODDS_FETCH": "650", "ANALYSIS_MATCH_CAP_PER_RUN": "650", "DIAGNOSTICS_MATCH_LIMIT": "650", "CONTEXT_ENRICHMENT_MATCH_LIMIT": "260", "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96", "WEATHER_CONTEXT_MATCH_LIMIT": "24"})
+        base.update({
+            "PUBLISH_WINDOW_HOURS": "12",
+            "MAX_MATCHES_FOR_ODDS_FETCH": "650",
+            "ANALYSIS_MATCH_CAP_PER_RUN": "650",
+            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "260",
+        })
     else:
-        base.update({"DAY_INVENTORY_FORCE_PROVIDER_MERGE": "false", "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false", "PUBLISH_WINDOW_HOURS": "12", "ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT": "18", "ODDS_API_IO_PAGE_LIMIT": "100", "MAX_MATCHES_FOR_ODDS_FETCH": "520", "ANALYSIS_MATCH_CAP_PER_RUN": "520", "DIAGNOSTICS_MATCH_LIMIT": "520", "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240", "PREMIUM_CONTEXT_SHORTLIST_LIMIT": "96", "WEATHER_CONTEXT_MATCH_LIMIT": "24"})
+        base.update({
+            "PUBLISH_WINDOW_HOURS": "12",
+            "MAX_MATCHES_FOR_ODDS_FETCH": "520",
+            "ANALYSIS_MATCH_CAP_PER_RUN": "520",
+            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240",
+        })
     return base
 
 
@@ -141,33 +166,6 @@ def _apply_phase_policy() -> None:
         pass
 
 
-def _safe_install(label: str, installer) -> None:
-    try:
-        installer()
-    except Exception as exc:
-        try:
-            print(f"root sitecustomize {label} skipped: {type(exc).__name__}: {exc}")
-        except Exception:
-            pass
-
-
-def _install_runtime_guards() -> None:
-    # Must be first: suppresses only the legacy no-pick summary from controlled
-    # fallback while leaving actual pick Telegram messages untouched. The factual
-    # run report is sent by send_harizon_telegram_run_report_v5/v6.
-    _safe_install("telegram no-pick suppressor", lambda: __import__("telegram_no_pick_summary_suppressor").install())
-    _safe_install("telegram safety", lambda: __import__("telegram_controlled_pick_safety").install())
-    _safe_install("fallback value filter", lambda: __import__("app.services.controlled_fallback_value_filter_runtime", fromlist=["install"]).install())
-    _safe_install("rapidapi schema", lambda: __import__("app.providers.rapidapi_odds_bridge_schema_patch", fromlist=["install"]).install())
-    _safe_install("odds secondary", lambda: __import__("app.providers.odds_api_io_secondary_rescue_patch", fromlist=["install"]).install())
-    _safe_install("candidate value", lambda: __import__("app.services.candidate_value_runtime_patch", fromlist=["install"]).install())
-    # Important order: signal_stack creates Bzzoiro offer hints; rekey wraps on top of it;
-    # windowed coverage is last so it is the final publication gate.
-    _safe_install("signal stack", lambda: __import__("app.services.signal_stack_runtime_patch", fromlist=["install"]).install())
-    _safe_install("bzzoiro odds rekey", lambda: __import__("app.services.bzzoiro_odds_rekey_runtime_patch", fromlist=["install"]).install())
-    _safe_install("windowed core coverage", lambda: __import__("app.services.windowed_core_coverage_runtime_patch", fromlist=["install"]).install())
-
-
 try:
     _apply_phase_policy()
 except Exception as exc:
@@ -176,4 +174,5 @@ except Exception as exc:
     except Exception:
         pass
 
-_install_runtime_guards()
+# No model/provider runtime wrappers are installed here. usercustomize.py installs
+# the gated runtime_startup_chain only for the main app.cli run-once process.
