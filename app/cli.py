@@ -119,7 +119,17 @@ def _apply_api_max_runtime_overrides() -> None:
 
 
 def _install_prediction_candidate_runtime_patches(stage: str = 'cli') -> None:
-    """Re-apply runtime patches after discovery/bootstrap wrappers."""
+    """Install the full production runtime patch chain before the runner.
+
+    Several high-value wrappers are not imported by app.services.__init__; they
+    only work when explicitly installed.  Earlier runs created modules such as
+    bzzoiro_exact_offer_bridge_patch, but app.cli installed only two legacy
+    wrappers, so the main run never materialized Bzzoiro v2 odds hints into
+    CandidateFactory Offer buckets.  Keep the legacy direct installs, then run
+    the central startup chain, then reinstall the final candidate bridge and
+    diagnostics as the last wrappers.
+    """
+
     results: dict[str, Any] = {}
     try:
         from app.services import sstats_bzzoiro_odds_merge_patch
@@ -134,12 +144,34 @@ def _install_prediction_candidate_runtime_patches(stage: str = 'cli') -> None:
         results['candidate_value_final_reinstall'] = f'{type(exc).__name__}: {exc}'
         logging.getLogger(__name__).warning('candidate value final install failed at %s: %s: %s', stage, type(exc).__name__, exc)
     try:
+        from app.services import runtime_startup_chain
+        results['runtime_startup_chain'] = runtime_startup_chain.install_all()
+    except Exception as exc:
+        results['runtime_startup_chain'] = f'{type(exc).__name__}: {exc}'
+        logging.getLogger(__name__).warning('runtime startup chain install failed at %s: %s: %s', stage, type(exc).__name__, exc)
+
+    # These two must be last even if the central chain changes ordering later.
+    try:
+        from app.services import bzzoiro_exact_offer_bridge_patch
+        results['bzzoiro_exact_offer_bridge_patch_final'] = bzzoiro_exact_offer_bridge_patch.install()
+    except Exception as exc:
+        results['bzzoiro_exact_offer_bridge_patch_final'] = f'{type(exc).__name__}: {exc}'
+        logging.getLogger(__name__).warning('exact offer bridge install failed at %s: %s: %s', stage, type(exc).__name__, exc)
+    try:
+        from app.services import candidate_factory_runtime_diagnostics
+        results['candidate_factory_runtime_diagnostics_final'] = candidate_factory_runtime_diagnostics.install()
+    except Exception as exc:
+        results['candidate_factory_runtime_diagnostics_final'] = f'{type(exc).__name__}: {exc}'
+        logging.getLogger(__name__).warning('candidate factory diagnostics install failed at %s: %s: %s', stage, type(exc).__name__, exc)
+
+    try:
         export_dir = Path('.data/exports')
         export_dir.mkdir(parents=True, exist_ok=True)
         (export_dir / 'latest-cli-final-runtime-install.json').write_text(
             json.dumps({'stage': stage, 'results': results}, ensure_ascii=False, indent=2) + '\n',
             encoding='utf-8',
         )
+        logging.getLogger(__name__).info('runtime patch install completed at %s: %s', stage, _redact_log_text(results))
     except Exception:
         pass
 
