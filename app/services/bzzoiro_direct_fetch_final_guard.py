@@ -2,13 +2,15 @@ from __future__ import annotations
 
 """Final runtime guard for duplicate direct Bzzoiro context fetch.
 
-Bzzoiro predictions are already consumed through the SStats-integrated generic
-layer. A later payload-mining wrapper can otherwise call the old direct
-``app.providers.bzzoiro.BzzoiroContextProvider.fetch_context`` and overwrite the
-run report with ``bzzoiro err=1 ctx=0`` after a timeout. This guard is installed
-after payload mining and replaces the direct fetch with a clean no-op by default.
+Older runs disabled the direct Bzzoiro provider to avoid duplicate slow v1
+prediction fetches.  That is now too aggressive: the windowed v2 enrichment and
+context-gap finalizers are installed on the same ``fetch_context`` method, so a
+blank no-op here can suppress the very Bzzoiro v2 pass that should create the
+second core context/odds source.
 
-Set ``BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED=true`` only for standalone debugging.
+The guard now defaults to pass-through.  It can still force a clean no-op for a
+standalone emergency by setting ``BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED=false``
+or ``BZZOIRO_DIRECT_CONTEXT_FETCH_MODE=noop``.
 """
 
 import os
@@ -24,16 +26,26 @@ def _truthy(value: Any, default: bool = False) -> bool:
     return raw in {'1', 'true', 'yes', 'on', 'force'}
 
 
-def _stats(self: Any, matches: Any) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+def _mode() -> str:
+    raw = str(os.getenv('BZZOIRO_DIRECT_CONTEXT_FETCH_MODE') or '').strip().lower()
+    if raw:
+        return raw
+    legacy = os.getenv('BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED')
+    if legacy is not None and str(legacy).strip() != '':
+        return 'pass' if _truthy(legacy, False) else 'noop'
+    return 'pass'
+
+
+def _stats(self: Any, matches: Any, *, passthrough_available: bool = False) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
     target_matches = len(matches or []) if isinstance(matches, list) else 0
     stats = {
-        'provider_version': getattr(self, 'VERSION', 'bzzoiro-direct-final-guard'),
-        'api_version': 'v2_predictions',
+        'provider_version': getattr(self, 'VERSION', 'bzzoiro-direct-final-guard-v2'),
+        'api_version': 'v2_events_context_gap',
         'enabled': bool(getattr(self, 'api_key', None)),
         'api_key_present': bool(getattr(self, 'api_key', None)),
         'direct_context_fetch_skipped': True,
-        'skip_reason': 'duplicate_direct_bzzoiro_fetch_disabled_after_payload_mining',
-        'delegated_to_sstats_nested_bzzoiro': True,
+        'skip_reason': 'forced_noop_by_BZZOIRO_DIRECT_CONTEXT_FETCH_MODE',
+        'passthrough_available': passthrough_available,
         'requests': 0,
         'response_errors': 0,
         'retry_attempts': 0,
@@ -56,7 +68,6 @@ def _stats(self: Any, matches: Any) -> tuple[dict[str, Any], dict[str, Any], dic
     }
     preview = {
         'direct_context_fetch_skipped': True,
-        'delegated_to_sstats_nested_bzzoiro': True,
         'target_matches': target_matches,
         'sample_predictions': [],
         'matched_examples': [],
@@ -65,18 +76,21 @@ def _stats(self: Any, matches: Any) -> tuple[dict[str, Any], dict[str, Any], dic
 
 
 def _patch_class(cls: type, label: str) -> str:
-    if getattr(cls, '_harizon_bzzoiro_direct_final_guard', False):
+    if getattr(cls, '_harizon_bzzoiro_direct_final_guard_v2', False):
         return f'{label}:already_patched'
     original = getattr(cls, 'fetch_context', None)
 
     async def fetch_context_final_guard(self, matches):  # type: ignore[no-untyped-def]
-        if _truthy(os.getenv('BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED'), False) and callable(original):
+        mode = _mode()
+        if mode in {'noop', 'skip', 'disabled', 'false', '0', 'off'}:
+            return _stats(self, matches, passthrough_available=callable(original))
+        if callable(original):
             return await original(self, matches)
-        return _stats(self, matches)
+        return _stats(self, matches, passthrough_available=False)
 
     cls.fetch_context = fetch_context_final_guard
-    cls._harizon_bzzoiro_direct_final_guard = True
-    return f'{label}:patched'
+    cls._harizon_bzzoiro_direct_final_guard_v2 = True
+    return f'{label}:patched_passthrough_default'
 
 
 def install() -> dict[str, Any]:
@@ -95,4 +109,4 @@ def install() -> dict[str, Any]:
     except Exception as exc:
         patched.append(f'app.providers.bzzoiro_predictions_v2:error:{type(exc).__name__}:{exc}')
     _INSTALLED = True
-    return {'status': 'installed', 'patched': patched, 'direct_enabled': _truthy(os.getenv('BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED'), False)}
+    return {'status': 'installed', 'patched': patched, 'mode': _mode(), 'passthrough_default': True}
