@@ -28,8 +28,7 @@
       "ok": 5
     },
     "odds": {
-      "ok": 1,
-      "skipped_daily_circuit": 1
+      "ok": 2
     },
     "odds_context": {
       "ok": 1
@@ -44,19 +43,17 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 15,
-    "skipped_daily_circuit": 1
+    "ok": 16
   },
-  "created_at_utc": "2026-05-14T23:01:50.062920+00:00",
+  "created_at_utc": "2026-05-15T01:01:50.007608+00:00",
   "critical_failures": [],
   "mode": "quick",
   "recommendations": [
     "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
-    "SportLogic daily circuit is open; health probe skipped it without spending quota.",
+    "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
-    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi.",
-    "SportLogic daily circuit is open; health probe was skipped to avoid spending exhausted quota."
+    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
   ],
   "removed_providers": [
     "api_football",
@@ -68,15 +65,15 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "{\"count\":51,\"next\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-14&date_to=2026-05-15&page=2&tz=UTC&upcoming=true\",\"previous\":null,\"results\":[{\"id\":3895,\"event\":{\"id\":9606,\"league\":{\"id\":35,\"name\":\"Copa do Brasil\",\"country\":\"Brazil\",\"is_women\":false,\"current_season\":{\"id\":78,\"name\":\"Copa do Brasil 2026\",\"year\":2026,\"start_date\":\"2026-01-01\",\"end_date\":\"2026-12-31\"}},\"season\":{\"id\":78,\"name\":\"Copa do Brasil 2026\",\"year\":2026},\"home_team\":\"Ceará\",\"away_team\":\"Atlético Mineiro\",\"home_team_obj\":{\"id\":169,\"name\":\"Ceará\",\"short_name\":\"Ceará\",\"country\":\"Brazil\",\"coach\":{\"name\":\"Mozart Santos\",\"shortName\":\"M. Santos\"},\"venue\":null},\"away_team_obj\":{\"id\":155,\"name\":\"Atlético Mineiro\",\"short_name\":\"Atlético-MG\",\"country\":\"Brazil\",\"coach\":{\"name\":\"Eduardo Dominguez\",\"shortName\":\"E. Dominguez\"},\"venue\":{\"id\":153,\"name\":\"Arena MRV\",\"city\":\"Belo Horizonte\",\"country\":\"Brazil\",\"capacity\":44892}},\"event_date\":\"2026-05-14T00:30:00Z\",\"round_number\":5,\"round_name\":\"Round 5\",\"group_name\":null,\"status\":\"finished\",\"home_score\":2,\"away_score\":1,\"home_score_ht\":1,\"away_score_ht\":1,\"current_minute\":90,\"period\":\"FT\",\"odds_home\":2.55,\"odds_draw\":3.05,\"odds_away\":3.34,\"odds_over_15\":1.42,\"odd",
+        "body_preview": "{\"count\":109,\"next\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-15&date_to=2026-05-16&page=2&tz=UTC&upcoming=true\",\"previous\":null,\"results\":[{\"id\":3937,\"event\":{\"id\":9612,\"league\":{\"id\":35,\"name\":\"Copa do Brasil\",\"country\":\"Brazil\",\"is_women\":false,\"current_season\":{\"id\":78,\"name\":\"Copa do Brasil 2026\",\"year\":2026,\"start_date\":\"2026-01-01\",\"end_date\":\"2026-12-31\"}},\"season\":{\"id\":78,\"name\":\"Copa do Brasil 2026\",\"year\":2026},\"home_team\":\"Vitória\",\"away_team\":\"Flamengo\",\"home_team_obj\":{\"id\":157,\"name\":\"Vitória\",\"short_name\":\"Vitória\",\"country\":\"Brazil\",\"coach\":{\"name\":\"Jair Ventura\",\"shortName\":\"J. Ventura\"},\"venue\":{\"id\":155,\"name\":\"Estádio Manoel Barradas\",\"city\":\"Salvador\",\"country\":\"Brazil\",\"capacity\":34535}},\"away_team_obj\":{\"id\":160,\"name\":\"Flamengo\",\"short_name\":\"Flamengo\",\"country\":\"Brazil\",\"coach\":{\"name\":\"Leonardo Jardim\",\"shortName\":\"L. Jardim\"},\"venue\":null},\"event_date\":\"2026-05-15T00:30:00Z\",\"round_number\":5,\"round_name\":\"Round 5\",\"group_name\":null,\"status\":\"1st_half\",\"home_score\":1,\"away_score\":0,\"home_score_ht\":null,\"away_score_ht\":null,\"current_minute\":30,\"period\":\"1T\",\"odds_home\":3.02,\"odds_draw\":2.63,\"odds_away\":1.69,\"odds_over_15\":1.31,\"odds_o",
         "payload_shape": "count,next,previous,results"
       },
-      "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-14&date_to=2026-05-15&upcoming=true&tz=UTC&page=1",
+      "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-15&date_to=2026-05-16&upcoming=true&tz=UTC&page=1",
       "group": "context",
       "http_statuses": [
         200
       ],
-      "latency_ms": 3431,
+      "latency_ms": 2274,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -95,7 +92,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 688,
+      "latency_ms": 723,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -123,17 +120,17 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"data\":[{\"id\":1303714913,\"round\":\"Regular Season - 1\",\"date\":\"2026-05-14T23:00:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":20394148,\"logo\":null,\"name\":\"Tormenta Women\"},\"homeTeam\":{\"id\":20389893,\"logo\":null,\"name\":\"SC United Bantams Women\"},\"league\":{\"id\":951351,\"logo\":null,\"name\":\"USL W League\",\"season\":2026}},{\"id\":1314229018,\"round\":\"Quarter-finals\",\"date\":\"2026-05-14T23:00:00.000Z\",\"country\":{\"code\":\"World\",\"name\":\"World\",\"logo\":\"https://highlightly.net/soccer/images/countries/World.png\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":19938863,\"logo\":null,\"name\":\"Flora\"},\"homeTeam\":{\"id\":10394047,\"logo\":null,\"name\":\"Broki\"},\"league\":{\"id\":484152,\"logo\":\"https://highlightly.net/soccer/images/leagues/484152.png\",\"name\":\"Eerste Divisie\",\"season\":2025}},{\"id\":1297309436,\"round\":\"Group Stage\",\"date\":\"2026-05-14T23:00:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,",
+        "body_preview": "{\"data\":[{\"id\":1303042623,\"round\":\"Group Stage\",\"date\":\"2026-05-15T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":3413294,\"logo\":\"https://highlightly.net/soccer/images/teams/3413294.png\",\"name\":\"Pittsburgh Riverhounds\"},\"homeTeam\":{\"id\":3397125,\"logo\":\"https://highlightly.net/soccer/images/teams/3397125.png\",\"name\":\"Charlotte Independence\"},\"league\":{\"id\":932629,\"logo\":null,\"name\":\"USL League One Cup\",\"season\":2026}},{\"id\":1297311989,\"round\":\"Group Stage\",\"date\":\"2026-05-15T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":16071068,\"logo\":\"https://highlightly.net/soccer/images/teams/16071068.png\",\"name\":\"Blackwatch Rush\"},\"homeTeam\":{\"id\":3489884,\"logo\":\"https://highlightly.net/soccer/images/teams/3489884.png\",\"name\":\"Western Mass Pioneers\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name",
         "expected_base": "https://soccer.highlightly.net",
         "payload_shape": "data,pagination,plan",
         "rapidapi_base": "https://football-highlights-api.p.rapidapi.com"
       },
-      "endpoint": "https://soccer.highlightly.net/matches?date=2026-05-14&limit=5",
+      "endpoint": "https://soccer.highlightly.net/matches?date=2026-05-15&limit=5",
       "group": "context",
       "http_statuses": [
         200
       ],
-      "latency_ms": 288,
+      "latency_ms": 274,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -144,15 +141,15 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "{\"status\":\"OK\",\"count\":5,\"data\":[{\"id\":1544311,\"flashId\":\"tpOjHBWO\",\"date\":\"2026-05-12T21:00:00+00:00\",\"dateUtc\":1778619600,\"status\":8,\"periods\":[\"2026-05-12T21:00:00+00:00\",\"2026-05-12T22:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":9,\"homeResult\":3,\"awayResult\":0,\"homeHTResult\":1,\"awayHTResult\":0,\"homeFTResult\":3,\"awayFTResult\":0,\"homeTeam\":{\"id\":1465,\"name\":\"Union Magdalena\",\"flashId\":\"union-magdalena/tpLItk4L\",\"country\":{\"code\":\"CO\",\"name\":\"Colombia\"}},\"awayTeam\":{\"id\":1459,\"name\":\"Real Cartagena\",\"flashId\":\"cartagena/6eofBSjQ\",\"country\":{\"code\":\"CO\",\"name\":\"Colombia\"}},\"season\":{\"uid\":\"14b260c6-f90a-11f0-9833-3cecef730a49\",\"year\":2026,\"league\":{\"id\":240,\"name\":\"Primera B\",\"country\":{\"code\":\"CO\",\"name\":\"Colombia\"},\"flashScoreId\":\"colombia/primera-b\"}},\"roundName\":\"Apertura - Quadrangular - 4\",\"odds\":[{\"marketId\":1,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.95,\"openingValue\":null},{\"name\":\"Away\",\"value\":3.55,\"openingValue\":null},{\"name\":\"Draw\",\"value\":3.25,\"openingValue\":null}]},{\"marketId\":2,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.45,\"openingValue\":null},{\"name\":\"Away\",\"value\":2.55,\"openingValue\":null}]},{\"marketId\":12,\"marketName\":null,\"",
+        "body_preview": "{\"status\":\"OK\",\"count\":5,\"data\":[{\"id\":1544312,\"flashId\":\"ddb0yFHt\",\"date\":\"2026-05-13T21:00:00+00:00\",\"dateUtc\":1778706000,\"status\":8,\"periods\":[\"2026-05-13T21:00:00+00:00\",\"2026-05-13T22:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":4,\"homeResult\":1,\"awayResult\":1,\"homeHTResult\":1,\"awayHTResult\":0,\"homeFTResult\":1,\"awayFTResult\":1,\"homeTeam\":{\"id\":1458,\"name\":\"Bogota FC\",\"flashId\":\"bogota/foERz7de\",\"country\":{\"code\":\"CO\",\"name\":\"Colombia\"}},\"awayTeam\":{\"id\":1466,\"name\":\"Barranquilla\",\"flashId\":\"barranquilla/O8ANu9JR\",\"country\":{\"code\":\"CO\",\"name\":\"Colombia\"}},\"season\":{\"uid\":\"14b260c6-f90a-11f0-9833-3cecef730a49\",\"year\":2026,\"league\":{\"id\":240,\"name\":\"Primera B\",\"country\":{\"code\":\"CO\",\"name\":\"Colombia\"},\"flashScoreId\":\"colombia/primera-b\"}},\"roundName\":\"Apertura - Quadrangular - 4\",\"odds\":[{\"marketId\":1,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.53,\"openingValue\":null},{\"name\":\"Away\",\"value\":5.8,\"openingValue\":null},{\"name\":\"Draw\",\"value\":3.6,\"openingValue\":null}]},{\"marketId\":2,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.18,\"openingValue\":null},{\"name\":\"Away\",\"value\":4.33,\"openingValue\":null}]},{\"marketId\":12,\"marketName\":null,\"odds\":[{\"name\":\"",
         "payload_shape": "count,data,offset,status,traceId"
       },
-      "endpoint": "https://api.sstats.net/Games/list?apikey=***&from=2026-05-13&to=2026-05-14&limit=5&offset=0",
+      "endpoint": "https://api.sstats.net/Games/list?apikey=***&from=2026-05-14&to=2026-05-15&limit=5&offset=0",
       "group": "context",
       "http_statuses": [
         200
       ],
-      "latency_ms": 631,
+      "latency_ms": 588,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -172,7 +169,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 212,
+      "latency_ms": 180,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -183,7 +180,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"24c1ad64-6e06-5c22-a3ce-7575d34b6b87\",\"title\":\"Soto homers in return to Mets' lineup; Lindor making progress\",\"description\":\"Juan Soto returned to the starting lineup and homered Thursday for the injury-riddled New York Mets.\",\"url\":\"https://www.espn.com/mlb/story/_/id/48771880/soto-homers-return-mets-lineup-lindor-making-progress\",\"author\":\"Associated Press\",\"image\":\"https://a2.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0514%2Fr1658287_1296x729_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-14 22:52:05 +0000\"},{\"id\":\"562359a8-15ca-56a5-b8b1-64637af3e555\",\"title\":\"Rays, local officials reach tentative deal for ballpark in Tampa\",\"description\":\"The Rays and local officials announced a tentative $2.3 billion agreement for a new ballpark in Tampa funded by public and private money.\",\"url\":\"https://www.espn.com/mlb/story/_/id/48772516/rays-local-officials-reach-tentative-deal-ballpark-tampa\",\"author\":\"Associated Press\",\"image\":\"https://a.espncdn.com/combiner/i?img=%2Fphoto%2F2024%2F1206%2Fr1424174_1296x729_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"bb881e4d-3690-5bc4-9c18-b59311d3aa83\",\"title\":\"2026 NFL schedule release: Odds for every Week 1 game, other highlights\",\"description\":\"Spreads, moneylines and totals for each Week 1 game in the NFL, plus other highlighted matchups.\",\"url\":\"https://www.espn.com/espn/betting/story/_/id/48432180/2026-nfl-schedule-release-season-week-1-games-betting-odds-spreads-lines-highlights\",\"author\":\"ESPN\",\"image\":\"https://a3.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0408%2Fr1640564_2_1296x729_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-15 00:55:08 +0000\"},{\"id\":\"e3129041-dd84-517d-b561-02692e086771\",\"title\":\"Seattle Seahawks schedule 2026: Takeaways, predictions\",\"description\":\"Here is everything to know about the Seahawks' 2026 NFL schedule.\",\"url\":\"https://www.espn.com/nfl/story/_/page/nflschedulerelease-48738335/seattle-seahawks-nfl-schedule-2026-takeaways-predictions\",\"author\":\"Brady Henderson\",\"image\":\"https://a1.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0323%2Fr1632808_1296x729_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-15 00:55:07 +0000\"},{\"i",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -191,7 +188,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 588,
+      "latency_ms": 570,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -202,7 +199,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":320200,\"articles\":[{\"id\":\"89b4b6e1845e88ef4c69e8c4d2f2f717\",\"title\":\"Football: Iran hold World Cup departure rally despite continuing concerns\",\"description\":\"Thousands gathered in Tehran for Iran's World Cup send-off. Players showcased their new kit and made patriotic statements. However, concerns linger about the team's entry into the United States for the tournament. Iran's FA is relying on FIFA to resolve visa issues. The team will train in Turkey before the competition.\",\"content\":\"Synopsis\\nThousands gathered in Tehran for Iran's World Cup send-off. Players showcased their new kit and made patriotic statements. However, concerns linger about the team's entry into the United States for the tournament. Iran's FA is relying on FIF... [3273 chars]\",\"url\":\"https://economictimes.indiatimes.com/news/sports/football-iran-hold-world-cup-departure-rally-despite-continuing-concerns/articleshow/131090915.cms\",\"image\":\"https://img.etimg.com/thumb/msid-131090915,width-12",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":320218,\"articles\":[{\"id\":\"eda132b71ff922f8258b34e11012d6d6\",\"title\":\"\\\"I Was Going To Be FBI Agent\\\": Michael Vick Confesses Real Career Plan Before Infamous Football Career\",\"description\":\"Michael Vick revealed he once planned to become an FBI agent before his football career completely changed the direction of his life.\",\"content\":\"Have you ever wondered what NFL legend Michael Vick would have done if he had never made it big on the gridiron? It turns out the former No. 1 overall pick had a completely different vision for his life and a dream job in mind if football hadn’t work... [3226 chars]\",\"url\":\"https://www.essentiallysports.com/ncaa-college-football-news-i-was-going-to-be-fbi-agent-michael-vick-confesses-real-career-plan-before-infamous-football-career/\",\"image\":\"https://image-cdn.essentiallysports.com/wp-content/uploads/imago1036247808-472x315.jpg\",\"publishedAt\":\"2026-05-14T13:00:55Z\",\"lang\":\"en\",\"source\":{\"id\":\"f6c2179332ca0ae400ff2a52227265f3\",\"name\":",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -210,7 +207,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 465,
+      "latency_ms": 379,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -221,7 +218,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134329,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134329,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134330,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134330,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
         "payload_shape": "response"
       },
       "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
@@ -229,7 +226,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 876,
+      "latency_ms": 662,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -240,7 +237,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":25203,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Sports Illustrated\"},\"author\":\"Carson Field\",\"title\":\"Oklahoma Gets in the Mix For 2028 WR From St. Louis\",\"description\":\"The Sooners offered a 6-foot-2 pass catcher from fertile recruiting territory.\",\"url\":\"https://www.si.com/college/oklahoma/football/highly-touted-wide-receiver-prospect-announces-offer-from-oklahoma-01krhdg8s4kp\",\"urlToImage\":\"https://s.yimg.com/os/en/oklahoma_sooners_on_si_articles_543/7916262438f4b8491280d6addf7cbc39\",\"publishedAt\":\"2026-05-13T23:00:03Z\",\"content\":\"Ryan Richmond-McDavis hails from the border of SEC country, and now he has an offer from the Sooners.\\r\\nRichmond-McDavis, a Class of 2028 wide receiver from St. Louis, announced Tuesday that Oklahoma … [+2328 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":25254,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Dailymail.com\"},\"author\":\"Nathan Salt\",\"title\":\"From the 'mini David Beckham' to the new Eberechi Eze and a Rodri clone: Meet the six young stars ready to light up the FA Youth Cup final as Man City take on rivals Man United\",\"description\":\"Manchester City take on rivals Manchester United in the FA Youth Cup final on Thursday at the Etihad academy campus in what promises to be a fascinating match.\",\"url\":\"https://www.dailymail.com/sport/football/article-15800931/man-city-man-united-fa-youth-cup-final-stars.html\",\"urlToImage\":\"https://i.dailymail.com/1s/2026/05/11/14/108523621-0-image-m-82_1778507229327.jpg\",\"publishedAt\":\"2026-05-14T01:00:46Z\",\"content\":\"Manchester City take on rivals Manchester United in the FA Youth Cup final on Thursday in what promises to be a fascinating match. \\r\\nThe game kick offs at 7pm at the academy stadium in City's Etihad … [+7589 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -248,7 +245,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 212,
+      "latency_ms": 133,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -259,7 +256,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":9814,\"results\":[{\"article_id\":\"4a72aa4a6ea2ce2e6ed06eb4278224dd\",\"link\":\"https://bleacherreport.com/articles/25427634-projecting-which-nfl-players-will-lead-league-each-statistical-category-2026\",\"title\":\"Projecting Which NFL Players Will Lead the League in Each Statistical Category in 2026\",\"description\":\"It's a time of great hope and optimism across the NFL.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"nfl\"],\"creator\":[\"gary davenport\"],\"language\":\"english\",\"country\":[\"united states of america\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-14 11:00:59\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-14 11:01:53\",\"image_url\":\"https://gsp-image-cdn.wmsports.io/cms/prod/bleacher-report/ap_images/2026-05/6ec34527261f4ff596d5806ef168a52c/Ravens_Browns_Football_60678_7459x4196_(0,162).jpg\",\"video_url\":null,\"source_id\":\"bleacherreport\",\"source_name\":\"Bleacherreport\",\"source_priority\":4240,\"source_url\":\"https://bleacherreport.com\",\"source_icon\":\"https://n.bytvi.com/bleacherreport.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_tag\":\"ONLY AVAI",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":10070,\"results\":[{\"article_id\":\"3aaa07ca3b5b026977b0cbe29276c776\",\"link\":\"https://www.thestar.com.my/sport/football/2026/05/14/soccer-potter039s-stormy-season-set-to-end-on-world-cup-high-with-sweden\",\"title\":\"Soccer-Potter's stormy season set to end on World Cup high with Sweden\",\"description\":\"STOCKHOLM, Sweden, May 14 (Reuters) - Few coaches have ⁠experienced the highs and lows that Graham Potter has this season, which started with his sacking by Premier League club West Ham United ⁠in September and will end with him leading Sweden at the World Cup in June.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"/sport/football\",\"world cup\",\"fifa\"],\"creator\":[\"philip o'connor\"],\"language\":\"english\",\"country\":[\"malaysia\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-14 13:01:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-14 13:37:41\",\"image_url\":\"https://apicms.thestar.com.my/uploads/images/2026/05/14/3908440.jpg\",\"video_url\":null,\"source_id\":\"thestar_my\",\"source_name\":\"The Star\",\"source_priority\":5603,\"source_url\":\"https://www.thestar.com.my\",\"source_icon\":\"https://n.bytvi.com/thestar_my.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONA",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -267,7 +264,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 355,
+      "latency_ms": 440,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -278,18 +275,18 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":70379168,\"home\":\"Oriente Petrolero\",\"away\":\"Guabira Montero\",\"homeId\":33820,\"awayId\":47701,\"date\":\"2026-05-15T00:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Bolivia - Division Profesional\",\"slug\":\"bolivia-division-profesional\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70401304,\"home\":\"EC Vitoria BA\",\"away\":\"CR Flamengo RJ\",\"homeId\":1962,\"awayId\":5981,\"date\":\"2026-05-15T00:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Copa do Brasil\",\"slug\":\"brazil-copa-do-brasil\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71475330,\"home\":\"Deportes Quindio\",\"away\":\"Internacional FC De Palmira\",\"homeId\":6110,\"awayId\":39866,\"date\":\"2026-05-15T00:45:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Colombia - Primera B\",\"slug\":\"colombia-primera-b\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71450704,\"home\":\"CF Pachuca\",\"away\":\"Pumas UNAM\",\"homeId\":1936,\"awayId\":1933,\"date\":\"2026-05-15T01:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Mexico - Liga MX, Clausura\",\"slug\":\"mexico-liga-mx-clausura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":714",
+        "body_preview": "[{\"id\":71452804,\"home\":\"Municipal Limeno\",\"away\":\"CD FAS Santa Ana\",\"homeId\":275241,\"awayId\":24386,\"date\":\"2026-05-15T01:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"El Salvador - Primera Division, Clausura\",\"slug\":\"el-salvador-primera-division-clausura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71451454,\"home\":\"Udelas FC\",\"away\":\"CD Universitario II\",\"homeId\":780124,\"awayId\":785196,\"date\":\"2026-05-15T01:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Panama - Liga Prom\",\"slug\":\"panama-liga-prom\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71454736,\"home\":\"CF Monterrey\",\"away\":\"Club America\",\"homeId\":334061,\"awayId\":340986,\"date\":\"2026-05-15T03:10:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Mexico - Liga MX, Women, Clausura\",\"slug\":\"mexico-liga-mx-women-clausura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70228242,\"home\":\"Ska-Khabarovsk-2\",\"away\":\"Zenit Penza\",\"homeId\":610544,\"awayId\":75179,\"date\":\"2026-05-15T04:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 2. Liga, Division B, Group 3\",\"slug\":\"russia-2-liga-division-b-group-3\"},\"stat",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-14T23%3A01%3A46Z&to=2026-05-16T23%3A01%3A46Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-15T01%3A01%3A47Z&to=2026-05-17T01%3A01%3A47Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 480,
+      "latency_ms": 1326,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -297,21 +294,24 @@
       "useful_rows": 10
     },
     {
-      "configured": false,
-      "critical": false,
+      "configured": true,
+      "critical": true,
       "details": {
-        "daily_circuit_open": true,
-        "skip_reason": "daily_circuit"
+        "body_preview": "{\"success\":true,\"data\":[{\"id\":51480,\"sport_id\":null,\"external_id\":null,\"league_id\":894,\"season\":2026,\"home_team_id\":12147,\"away_team_id\":11298,\"home_team\":{\"id\":12147,\"sport_id\":1,\"name\":\"Oriente Petrolero\",\"short_name\":\"ORI\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/3707.png\",\"country\":\"Bolivia\",\"founded\":1955,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:29.000000Z\",\"updated_at\":\"2026-01-27T20:13:29.000000Z\"},\"away_team\":{\"id\":11298,\"sport_id\":1,\"name\":\"Real Tomayapo\",\"short_name\":\"Real Tomayapo\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/15708.png\",\"country\":\"Bolivia\",\"founded\":1999,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:27.000000Z\",\"updated_at\":\"2026-01-27T20:13:27.000000Z\"},\"start_time\":\"2026-05-02T23:30:00.000000Z\",\"bet_start_time\":\"2026-05-02T22:30:00.000000Z\",\"bet_end_time\":\"2026-05-02T23:30:00.000000Z\",\"status\":\"scheduled\",\"status_short\":\"NS\",\"is_live\":false,\"completed\":false,\"events_synced_at\":null,\"elapsed_time\":null,\"home_score\":null,\"away_score\":null,\"home_score_ht\":null,\"away_score_ht\":null,\"extra_time_score\":null,\"penalty_s",
+        "controlled_odds_enabled": true,
+        "payload_shape": "data,pagination,success"
       },
-      "endpoint": "https://api.sportlogic.io/api/v1/games",
+      "endpoint": "https://api.sportlogic.io/api/v1/games?sport=football&limit=5",
       "group": "odds",
-      "http_statuses": [],
-      "latency_ms": null,
-      "message": "SportLogic daily circuit is open; health check skipped before HTTP call.",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 664,
+      "message": "ok",
       "provider": "sportlogic",
-      "requests": 0,
-      "status": "skipped_daily_circuit",
-      "useful_rows": 0
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 50
     },
     {
       "configured": true,
@@ -320,12 +320,12 @@
         "body_preview": "{\"success\":1,\"result\":[{\"event_key\":1688560,\"event_date\":\"2026-05-15\",\"event_time\":\"15:00\",\"event_home_team\":\"Nations\",\"home_team_key\":32824,\"event_away_team\":\"Vision\",\"away_team_key\":34151,\"event_halftime_result\":\"\",\"event_final_result\":\"-\",\"event_ft_result\":\"\",\"event_penalty_result\":\"\",\"event_status\":\"\",\"country_name\":\"Ghana\",\"league_name\":\"Premier League\",\"league_key\":177,\"league_round\":\"Round 33\",\"league_season\":\"2025\\/2026\",\"event_live\":\"0\",\"event_stadium\":\"Dr. Kwame Kyei Sports Complex (Abrankese)\",\"event_referee\":\"\",\"home_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/32824_nations.jpg\",\"away_team_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/34151_vision.jpg\",\"event_country_key\":50,\"league_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_leagues\\/177_premier-league.png\",\"country_logo\":\"https:\\/\\/apiv2.allsportsapi.com\\/logo\\/logo_country\\/50_ghana.png\",\"event_home_formation\":\"\",\"event_away_formation\":\"\",\"fk_stage_key\":1020,\"stage_name\":\"Current\",\"league_group\":null,\"goalscorers\":[],\"substitutes\":[],\"cards\":[],\"vars\":{\"home_team\":[],\"away_team\":[]},\"lineups\":{\"home_team\":{\"starting_lineups\":[],\"substitutes\":[],\"coaches\":[],\"missing_players\":[]},\"away_team\":{\"startin",
         "payload_shape": "result,success"
       },
-      "endpoint": "https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-05-14&to=2026-05-15&timezone=UTC",
+      "endpoint": "https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-05-15&to=2026-05-16&timezone=UTC",
       "group": "odds_context",
       "http_statuses": [
         200
       ],
-      "latency_ms": 545,
+      "latency_ms": 542,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -352,7 +352,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-05-14 01:01:36\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-08 23:21:28\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -360,7 +360,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 274,
+      "latency_ms": 153,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -371,7 +371,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04n\"}],\"base\":\"stations\",\"main\":{\"temp\":7.58,\"feels_like\":7.08,\"temp_min\":6.12,\"temp_max\":8.49,\"pressure\":1004,\"humidity\":83,\"sea_level\":1004,\"grnd_level\":1000},\"visibility\":10000,\"wind\":{\"speed\":1.34,\"deg\":302,\"gust\":1.79},\"clouds\":{\"all\":61},\"dt\":1778799541,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778818137,\"sunset\":1778874295},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04n\"}],\"base\":\"stations\",\"main\":{\"temp\":7.18,\"feels_like\":5.43,\"temp_min\":5.53,\"temp_max\":7.94,\"pressure\":1005,\"humidity\":84,\"sea_level\":1005,\"grnd_level\":1001},\"visibility\":10000,\"wind\":{\"speed\":2.57,\"deg\":310},\"clouds\":{\"all\":75},\"dt\":1778806231,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778818137,\"sunset\":1778874295},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -379,7 +379,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 168,
+      "latency_ms": 74,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -390,7 +390,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778799667,\"localtime\":\"2026-05-15 00:01\"},\"current\":{\"last_updated_epoch\":1778799600,\"last_updated\":\"2026-05-15 00:00\",\"temp_c\":8.3,\"temp_f\":46.9,\"is_day\":0,\"condition\":{\"text\":\"Overcast\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/night/122.png\",\"code\":1009},\"wind_mph\":3.8,\"wind_kph\":6.1,\"wind_degree\":358,\"wind_dir\":\"N\",\"pressure_mb\":1004.0,\"pressure_in\":29.65,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":76,\"cloud\":100,\"feelslike_c\":7.5,\"feelslike_f\":45.5,\"windchill_c\":4.2,\"windchill_f\":39.5,\"heatindex_c\":5.4,\"heatindex_f\":41.7,\"dewpoint_c\":4.2,\"dewpoint_f\":39.5,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":7.0,\"gust_kph\":11.3,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-15\",\"date_epoch\":1778803200,\"day\":{\"maxtemp_c\":12.3,\"maxtemp_f\":54.2,\"mintemp_c\":5.0,\"mintemp_f\":41.0,\"avgtemp_c\":8.4,\"avgtemp_f\":47.1,\"maxwind_mph\":8.3,\"maxwind_kph\":13.3,\"totalprecip_mm\":2.59,\"totalprecip_in\":0.1,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.0,\"avghumi",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778806907,\"localtime\":\"2026-05-15 02:01\"},\"current\":{\"last_updated_epoch\":1778806800,\"last_updated\":\"2026-05-15 02:00\",\"temp_c\":6.0,\"temp_f\":42.8,\"is_day\":0,\"condition\":{\"text\":\"Partly Cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/night/116.png\",\"code\":1003},\"wind_mph\":4.0,\"wind_kph\":6.5,\"wind_degree\":354,\"wind_dir\":\"N\",\"pressure_mb\":1004.0,\"pressure_in\":29.65,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":87,\"cloud\":25,\"feelslike_c\":4.7,\"feelslike_f\":40.5,\"windchill_c\":3.7,\"windchill_f\":38.7,\"heatindex_c\":5.1,\"heatindex_f\":41.2,\"dewpoint_c\":3.9,\"dewpoint_f\":39.0,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":7.2,\"gust_kph\":11.6,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-15\",\"date_epoch\":1778803200,\"day\":{\"maxtemp_c\":12.3,\"maxtemp_f\":54.2,\"mintemp_c\":5.0,\"mintemp_f\":41.0,\"avgtemp_c\":8.4,\"avgtemp_f\":47.1,\"maxwind_mph\":8.3,\"maxwind_kph\":13.3,\"totalprecip_mm\":2.59,\"totalprecip_in\":0.1,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.0,\"avg",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -398,7 +398,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 522,
+      "latency_ms": 208,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -413,10 +413,10 @@
     "degraded": 0,
     "healthy_or_config_only": 17,
     "missing_secret": 1,
-    "ok": 15,
+    "ok": 16,
     "providers_checked": 18,
     "rate_limited": 0,
-    "skipped": 1,
-    "skipped_daily_circuit": 1
+    "skipped": 0,
+    "skipped_daily_circuit": 0
   }
 }

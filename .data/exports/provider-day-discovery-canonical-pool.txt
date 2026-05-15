@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-14T23:03:52.055229+00:00
+UTC: 2026-05-15T01:03:54.100106+00:00
 target_date: 2026-05-15
-canonical_matches: 374
-2+ provider sources: 70
-2+ primary sources: 68
-all 3 primary sources: 1
+canonical_matches: 373
+2+ provider sources: 68
+2+ primary sources: 66
+all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=9 event_like=9 statuses={"OK": 1}
@@ -12,12 +12,12 @@ all 3 primary sources: 1
 - football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=253 event_like=233 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=252 event_like=229 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 304, "2": 68, "3": 2}
-- primary providers: {"1": 296, "2": 67, "3": 1, "0": 10}
+- all providers: {"1": 305, "2": 67, "3": 1}
+- primary providers: {"1": 297, "2": 66, "0": 10}
 
 ## Top canonical matches
 - 2026-05-14T22:00:00+00:00 | Confiança — Gremio | providers=sstats ids={"sstats": "1537020"}
@@ -29,10 +29,10 @@ all 3 primary sources: 1
 - 2026-05-14T23:00:00+00:00 | SC United Bantams W — Tormenta W | providers=sstats ids={"sstats": "1531979"}
 - 2026-05-14T23:00:00+00:00 | Wake — Charlotte Eagles | providers=sstats ids={"sstats": "1524452"}
 - 2026-05-14T23:00:00+00:00 | Broki — Flora | providers=sstats ids={"sstats": "1544334"}
-- 2026-05-15T00:00:00+00:00 | Oriente Petrolero — Guabira Montero | providers=odds_api_io,sstats ids={"odds_api_io": "70379168", "sstats": "1538380"}
-- 2026-05-15T00:30:00+00:00 | EC Vitoria BA — CR Flamengo RJ | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "70401304", "bzzoiro": "9612", "sstats": "1537008"}
-- 2026-05-15T00:45:00+00:00 | Deportes Quindio — Internacional FC De Palmira | providers=odds_api_io,sstats ids={"odds_api_io": "71475330", "sstats": "1544815"}
-- 2026-05-15T01:00:00+00:00 | CF Pachuca — Pumas UNAM | providers=bzzoiro,odds_api_io ids={"odds_api_io": "71450704", "bzzoiro": "207411"}
+- 2026-05-15T00:00:00+00:00 | Oriente Petrolero — Guabirá | providers=sstats ids={"sstats": "1538380"}
+- 2026-05-15T00:30:00+00:00 | Vitória — Flamengo | providers=bzzoiro,sstats ids={"bzzoiro": "9612", "sstats": "1537008"}
+- 2026-05-15T00:45:00+00:00 | Quindio — Internacional Palmira | providers=sstats ids={"sstats": "1544815"}
+- 2026-05-15T01:00:00+00:00 | CF Pachuca — Pumas UNAM | providers=bzzoiro ids={"bzzoiro": "207411"}
 - 2026-05-15T01:00:00+00:00 | CF Pachuca — U.N.A.M. - Pumas | providers=sstats ids={"sstats": "1544854"}
 - 2026-05-15T01:30:00+00:00 | Municipal Limeno — CD FAS Santa Ana | providers=odds_api_io,sstats ids={"odds_api_io": "71452804", "sstats": "1544858"}
 - 2026-05-15T01:30:00+00:00 | Udelas FC — CD Universitario II | providers=odds_api_io ids={"odds_api_io": "71451454"}
@@ -88,22 +88,21 @@ all 3 primary sources: 1
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Oriente Petrolero — Guabira Montero | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Oriente Petrolero — Guabirá | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- EC Vitoria BA — CR Flamengo RJ | primary=3 providers=bzzoiro,odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Vitória — Flamengo | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Deportes Quindio — Internacional FC De Palmira | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Quindio — Internacional Palmira | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- CF Pachuca — Pumas UNAM | primary=2 providers=bzzoiro,odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- CF Pachuca — Pumas UNAM | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - CF Pachuca — U.N.A.M. - Pumas | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
