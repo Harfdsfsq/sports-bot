@@ -1,28 +1,28 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: no viable controlled fallback
+• Итог: ✅ прогноз опубликован
+• Главная причина: skipped existing pick
 
 📦 Покрытие
-• Матчи в run: 281 | day inventory: 304
-• С линиями: 58 | с контекстом: 258 | ready model: 0
-• odds-api.io offers: 7214 | Bzzoiro secondary offers: 198
-• 2+ букмекера odds-api.io: 39 | 2-source overlap Bzzoiro+odds-api.io: 6
-• Source combinations: odds_api_io: 29, odds_api_io+sstats: 17, bzzoiro: 16, bzzoiro+odds_api_io: 6, bzzoiro+odds_api_io+sstats: 1
+• Матчи в run: 266 | day inventory: 293
+• С линиями: 55 | с контекстом: 245 | ready model: 2
+• odds-api.io offers: 7121 | Bzzoiro secondary offers: 198
+• 2+ букмекера odds-api.io: 37 | 2-source overlap Bzzoiro+odds-api.io: 5
+• Source combinations: odds_api_io: 23, bzzoiro: 18, odds_api_io+sstats: 18, bzzoiro+odds_api_io: 5, bzzoiro+odds_api_io+sstats: 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 2
+• Passed quality: 1 | publishable: 1 | опубликовано: 1
 • Controlled fallback: seen 0 | evaluated 0 | published False
-• Windowed coverage: audit 2 | allowed 1 | blocked 1 | publish-filter input 0
+• Windowed coverage: audit 8 | allowed 6 | blocked 2 | publish-filter input 1
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 68 | no next regular run: 68
+• Final pre-kickoff checks: 70 | no next regular run: 70
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 18, matched 85, offers 7214, 2+ books 39, err 0
-• sstats: req 28, ctx 256, rows 24354, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 1, v2 ctx 0, v2 odds 0, secondary offers 198, overlap odds-api.io 6, err 1
+• odds_api_io: events req 0, odds req 16, matched 78, offers 7121, 2+ books 37, err 0
+• sstats: req 28, ctx 243, rows 24354, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 1, v2 ctx 0, v2 odds 0, secondary offers 198, overlap odds-api.io 5, err 1
 • sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
 🧭 Progressive core coverage
@@ -36,5 +36,5 @@
 • Нет reject reasons в свежих артефактах.
 
 📌 Вывод
-• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 119; 0–4ч: 0/0; 0–12ч: 0/0.
+• Прогноз реально опубликован; все цифры выше взяты из одного нормализованного payload.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.

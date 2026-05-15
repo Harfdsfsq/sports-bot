@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-15T09:19:57.694071+00:00
+UTC: 2026-05-15T09:38:22.141143+00:00
 target_date: 2026-05-15
-canonical_matches: 359
+canonical_matches: 358
 2+ provider sources: 75
 2+ primary sources: 73
 all 3 primary sources: 1
@@ -12,12 +12,12 @@ all 3 primary sources: 1
 - football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=245 event_like=212 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=245 event_like=211 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 284, "2": 73, "3": 2}
-- primary providers: {"1": 276, "2": 72, "3": 1, "0": 10}
+- all providers: {"1": 283, "2": 73, "3": 2}
+- primary providers: {"1": 275, "2": 72, "3": 1, "0": 10}
 
 ## Top canonical matches
 - 2026-05-15T00:30:00+00:00 | Vitória — Flamengo | providers=bzzoiro ids={"bzzoiro": "9612"}
@@ -35,14 +35,12 @@ all 3 primary sources: 1
 - 2026-05-15T09:00:00+00:00 | Lazio U20 — Cesena U20 | providers=sstats ids={"sstats": "1404655"}
 - 2026-05-15T09:00:00+00:00 | Slovakia U19 — San Marino U19 | providers=sstats ids={"sstats": "1538937"}
 - 2026-05-15T09:15:00+00:00 | Brisbane Roar II — Lions | providers=sstats ids={"sstats": "1524034"}
-- 2026-05-15T09:30:00+00:00 | Nunawading City — Whittlesea United SC | providers=odds_api_io,sstats ids={"odds_api_io": "68161886", "sstats": "1541419"}
-- 2026-05-15T09:30:00+00:00 | Sydney FC Youth — Sydney Olympic FC | providers=odds_api_io,sstats ids={"odds_api_io": "67690854", "sstats": "1517534"}
-- 2026-05-15T09:30:00+00:00 | Peninsula Power FC — Gold Coast Knights | providers=odds_api_io,sstats ids={"odds_api_io": "67878230", "sstats": "1524030"}
-- 2026-05-15T09:30:00+00:00 | Green Gully SC — Melbourne City FC 2 | providers=odds_api_io,sstats ids={"odds_api_io": "68160138", "sstats": "1522028"}
-- 2026-05-15T09:30:00+00:00 | Box Hill United — Melbourne City Youth | providers=odds_api_io ids={"odds_api_io": "68162374"}
-- 2026-05-15T09:30:00+00:00 | North Lakes United — Mitchelton FC | providers=odds_api_io ids={"odds_api_io": "71492532"}
+- 2026-05-15T09:30:00+00:00 | Sydney FC U23 — Sydney Olympic | providers=sstats ids={"sstats": "1517534"}
+- 2026-05-15T09:30:00+00:00 | Peninsula Power — Gold Coast Knights | providers=sstats ids={"sstats": "1524030"}
 - 2026-05-15T09:30:00+00:00 | WDSC Wolves — Eastern Suburbs | providers=sstats ids={"sstats": "1524029"}
-- 2026-05-15T09:35:00+00:00 | Adelaide United FC — Auckland FC | providers=odds_api_io,sstats ids={"odds_api_io": "71240192", "sstats": "1543792"}
+- 2026-05-15T09:30:00+00:00 | Nunawading — Whittlesea United | providers=sstats ids={"sstats": "1541419"}
+- 2026-05-15T09:30:00+00:00 | Green Gully — Melbourne City II | providers=sstats ids={"sstats": "1522028"}
+- 2026-05-15T09:35:00+00:00 | Adelaide United — Auckland | providers=sstats ids={"sstats": "1543792"}
 - 2026-05-15T09:45:00+00:00 | Abahani Limited Dhaka — Bashundhara Kings | providers=odds_api_io,sstats ids={"odds_api_io": "71481176", "sstats": "1528427"}
 - 2026-05-15T09:45:00+00:00 | Fortis FC — Brothers Union | providers=odds_api_io,sstats ids={"odds_api_io": "71481180", "sstats": "1528430"}
 - 2026-05-15T09:45:00+00:00 | Rahmatganj MFS — Mohammedan SC Dhaka | providers=odds_api_io,sstats ids={"odds_api_io": "71481182", "sstats": "1528431"}
@@ -50,6 +48,8 @@ all 3 primary sources: 1
 - 2026-05-15T09:45:00+00:00 | Dandenong City SC — Oakleigh Cannons | providers=odds_api_io,sstats ids={"odds_api_io": "68160142", "sstats": "1521932"}
 - 2026-05-15T09:45:00+00:00 | Kingston City FC — Eastern Lions SC | providers=odds_api_io,sstats ids={"odds_api_io": "68161694", "sstats": "1541308"}
 - 2026-05-15T09:45:00+00:00 | Fakirapool Young Men — Pwd SC | providers=odds_api_io ids={"odds_api_io": "71481178"}
+- 2026-05-15T09:45:00+00:00 | Fakirerpool — PWD Sports Club | providers=sstats ids={"sstats": "1528429"}
+- 2026-05-15T10:00:00+00:00 | United Sports Club — Delhi FC | providers=odds_api_io,sstats ids={"odds_api_io": "70090088", "sstats": "1538136"}
 
 ## Targeted enrichment plan sample
 - Vitória — Flamengo | primary=1 providers=bzzoiro
@@ -112,23 +112,23 @@ all 3 primary sources: 1
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Nunawading City — Whittlesea United SC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Sydney FC U23 — Sydney Olympic | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Sydney FC Youth — Sydney Olympic FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Peninsula Power — Gold Coast Knights | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Peninsula Power FC — Gold Coast Knights | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- WDSC Wolves — Eastern Suburbs | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Green Gully SC — Melbourne City FC 2 | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Nunawading — Whittlesea United | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Box Hill United — Melbourne City Youth | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Green Gully — Melbourne City II | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
