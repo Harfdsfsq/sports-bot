@@ -1,15 +1,15 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 13,
-      "contexts_total_effective": 13,
+      "contexts": 14,
+      "contexts_total_effective": 14,
       "errors": 0,
       "events": 18,
       "events_total_effective": 20,
-      "overlap": 5,
+      "overlap": 7,
       "requests": 1,
       "requests_total_effective": 45,
-      "secondary_offers_added": 308,
+      "secondary_offers_added": 319,
       "v2_contexts": 11,
       "v2_errors": 0,
       "v2_events": 20,
@@ -19,12 +19,12 @@
       "v2_stats_resources": 11
     },
     "odds_api_io": {
-      "books_2plus": 40,
+      "books_2plus": 50,
       "errors": 0,
       "events_req": 0,
-      "matched": 84,
-      "odds_req": 18,
-      "offers": 6153
+      "matched": 94,
+      "odds_req": 20,
+      "offers": 9529
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -40,7 +40,7 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 245,
+      "contexts": 249,
       "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
@@ -51,30 +51,30 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.48838348388671876,
-    "fallback_age_min": 0.1606197436650594,
-    "run_log_age_min": 0.2933156410853068,
-    "signal_stack_age_min": 0.6033053119977315
+    "debug_age_min": 0.4373342434565226,
+    "fallback_age_min": 0.15446106990178426,
+    "run_log_age_min": 0.24715346892674764,
+    "signal_stack_age_min": 0.46485122044881183
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 5,
-    "bzzoiro_secondary_offers_added": 308,
-    "day_inventory_total": 278,
-    "matches_seen": 271,
-    "matches_with_2plus_books": 40,
-    "matches_with_context": 247,
-    "matches_with_offers": 60,
-    "odds_offers_primary": 6153,
-    "ready_for_model": 2,
+    "bzzoiro_odds_overlap_with_odds_api_io": 7,
+    "bzzoiro_secondary_offers_added": 319,
+    "day_inventory_total": 283,
+    "matches_seen": 277,
+    "matches_with_2plus_books": 50,
+    "matches_with_context": 253,
+    "matches_with_offers": 70,
+    "odds_offers_primary": 9529,
+    "ready_for_model": 0,
     "secondary_combinations": {
-      "bzzoiro": 18,
-      "bzzoiro+odds_api_io": 5,
+      "bzzoiro": 16,
+      "bzzoiro+odds_api_io": 7,
       "bzzoiro+odds_api_io+sstats": 1,
-      "odds_api_io": 28,
+      "odds_api_io": 40,
       "odds_api_io+sstats": 18
     }
   },
-  "created_at_utc": "2026-05-15T10:03:42.524886+00:00",
+  "created_at_utc": "2026-05-15T10:32:57.125828+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
       "contexts_built": 11,
@@ -324,9 +324,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 2,
-    "fallback_candidates_seen": 1,
-    "fallback_evaluated": 1,
+    "candidates_before_quality": 0,
+    "fallback_candidates_seen": 0,
+    "fallback_evaluated": 0,
     "fallback_published": false,
     "passed_candidates": 0,
     "publish_filter_blocked": 0,
@@ -334,244 +334,148 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 2,
-    "windowed_audit_candidates": 8,
-    "windowed_publish_allowed": 6,
-    "windowed_publish_blocked": 2
+    "raw_candidates": 0,
+    "windowed_audit_candidates": 1,
+    "windowed_publish_allowed": 0,
+    "windowed_publish_blocked": 1
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 65,
+    "final_pre_kickoff_checks": 97,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 65,
+    "no_more_regular_run_before_kickoff": 97,
     "seen": 0
   },
-  "reasons": [
-    {
-      "count": 1,
-      "reason": "canonical_negative_value",
-      "reason_ru": "отрицательная canonical value после пересчёта по выбранному коэффициенту"
-    },
-    {
-      "count": 1,
-      "reason": "xg_direction_conflict",
-      "reason_ru": "направление ставки конфликтует с xG"
-    },
-    {
-      "count": 1,
-      "reason": "quality_post_calibration_probability_guard",
-      "reason_ru": "quality: вероятность после калибровки ниже порога"
-    }
-  ],
+  "reasons": [],
   "samples": {
-    "fallback_evaluated": [
-      {
-        "away_team": "Qingdao West Coast FC",
-        "away_team_ru": "Кингдао Уест Коаст",
-        "candidate_source": "debug_candidates_before_quality",
-        "commence_time": "2026-05-15T12:00:00+00:00",
-        "commence_time_display": "15.05.2026 15:00 MSK",
-        "family": "totals",
-        "home_team": "Dalian Yingbo FC",
-        "home_team_ru": "Далиан Иингбо",
-        "league_name": "China - Chinese Super League",
-        "league_name_ru": "Чина - Чинесе Супер Лигуе",
-        "match_key": "soccer|dalian yingbo|qingdao west coast|2026-05-15",
-        "metrics": {
-          "adjusted_probability": 0.440063,
-          "books_count": 4,
-          "btts_sanity": {
-            "enabled": false,
-            "reason": "family_not_btts"
-          },
-          "canonical_edge_pp": -7.145,
-          "canonical_ev_pct": -13.968,
-          "confidence": 72.476,
-          "confirmation_meta": {
-            "weather_confirmation_relevant": false,
-            "weather_dropped_as_neutral": true,
-            "weather_neutral": true,
-            "weather_risk_flag": false,
-            "weather_supports_over": false,
-            "weather_supports_under": false
-          },
-          "confirmation_sources": [
-            "bzzoiro",
-            "clubelo",
-            "sstats"
-          ],
-          "confirmation_sources_count": 3,
-          "dnb_sanity": {
-            "enabled": false,
-            "reason": "family_not_dnb"
-          },
-          "market_edge_pp": -6.338,
-          "market_probability": 0.503445,
-          "model_probability": 0.520063,
-          "odds": 1.955,
-          "odds_sources_count": 2,
-          "publication_score": 71.536,
-          "quality_reasons": [
-            "post_calibration_probability_guard"
-          ],
-          "quality_score": 52.693,
-          "quality_score_raw": 52.693,
-          "quality_score_source": "raw",
-          "selected_implied_probability": 0.511509,
-          "sources_count": 3,
-          "xg_sanity": {
-            "enabled": true,
-            "xg_abs_gap_pp": 3.442,
-            "xg_direction_ok": false,
-            "xg_model_conservative_gap_pp": 0.0,
-            "xg_model_gap_pp": 3.442,
-            "xg_model_optimism_gap_pp": 3.442,
-            "xg_probability": 0.405638,
-            "xg_probability_pct": 40.564,
-            "xg_total": 2.306
-          }
-        },
-        "ok": false,
-        "point": 2.5,
-        "reject_reasons": [
-          "canonical_negative_value",
-          "xg_direction_conflict"
-        ],
-        "reject_reasons_ru": [
-          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
-          "направление ставки конфликтует с xG"
-        ],
-        "selection": "Больше 2.5",
-        "tier": null
-      }
-    ],
+    "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Fremantle City FC",
-        "home_team": "Balcatta FC",
-        "kickoff_utc": "2026-05-15T11:00:00+00:00",
-        "league_name": "Australia - NPL Western Australia, Women",
-        "match_key": "soccer|balcatta|fremantle city|2026-05-15",
-        "minutes_to_kickoff": 56.8,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 157.068,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Mindil Aces Yellow",
-        "home_team": "Darwin Olympic SC",
-        "kickoff_utc": "2026-05-15T11:00:00+00:00",
-        "league_name": "Australia - U23 Northern Territory Premier League, Women",
-        "match_key": "soccer|darwin olympic|mindil aces yellow|2026-05-15",
-        "minutes_to_kickoff": 56.8,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 157.068,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "SC Bengaluru",
-        "home_team": "SC de Goa",
-        "kickoff_utc": "2026-05-15T11:00:00+00:00",
-        "league_name": "India - I-League 2",
-        "match_key": "soccer|bengaluru|goa|2026-05-15",
-        "minutes_to_kickoff": 56.8,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 157.068,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Borac 1926 Cacak",
-        "home_team": "OFK Vrsac",
-        "kickoff_utc": "2026-05-15T11:00:00+00:00",
-        "league_name": "Serbia - U19 League",
-        "match_key": "soccer|borac 1926 cacak|ofk vrsac|2026-05-15",
-        "minutes_to_kickoff": 56.8,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 157.068,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Ararat Yerevan 2",
-        "home_team": "FC Ararat-Armenia 2",
-        "kickoff_utc": "2026-05-15T11:00:00+00:00",
+        "away_team": "Noah Yerevan 2",
+        "home_team": "Andranik",
+        "kickoff_utc": "2026-05-15T11:30:00+00:00",
         "league_name": "Armenia - First League",
-        "match_key": "soccer|ararat armenia 2|ararat yerevan 2|2026-05-15",
-        "minutes_to_kickoff": 56.8,
+        "match_key": "soccer|andranik|noah yerevan 2|2026-05-15",
+        "minutes_to_kickoff": 57.5,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.068,
+        "priority": 156.833,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-14T21:20:52.043809+00:00",
+          "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Azzurri United FC",
-        "home_team": "Casuarina FC",
-        "kickoff_utc": "2026-05-15T11:00:00+00:00",
-        "league_name": "Australia - Northern Territory Premier League",
-        "match_key": "soccer|azzurri united|casuarina|2026-05-15",
-        "minutes_to_kickoff": 56.8,
+        "away_team": "FC BKMA Vagharshapat 2",
+        "home_team": "FC Van Charentsavan 2",
+        "kickoff_utc": "2026-05-15T11:30:00+00:00",
+        "league_name": "Armenia - First League",
+        "match_key": "soccer|bkma vagharshapat 2|van charentsavan 2|2026-05-15",
+        "minutes_to_kickoff": 57.5,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.068,
+        "priority": 156.833,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-14T21:20:52.043809+00:00",
+          "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Murdoch University Melville FC",
+        "home_team": "Curtin University SC",
+        "kickoff_utc": "2026-05-15T11:30:00+00:00",
+        "league_name": "Australia - Western Australia State League 1",
+        "match_key": "soccer|curtin university|murdoch university melville|2026-05-15",
+        "minutes_to_kickoff": 57.5,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 156.833,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "East Perth FC",
+        "home_team": "Wembley Downs SC",
+        "kickoff_utc": "2026-05-15T11:30:00+00:00",
+        "league_name": "Australia - Western Australia State League 2",
+        "match_key": "soccer|east perth|wembley downs|2026-05-15",
+        "minutes_to_kickoff": 57.5,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 156.833,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Sportivo 2 de Mayo",
+        "home_team": "Libertad Asuncion",
+        "kickoff_utc": "2026-05-15T11:30:00+00:00",
+        "league_name": "Paraguay - Primera Division Reserve, Apertura",
+        "match_key": "soccer|libertad asuncion|sportivo 2 mayo|2026-05-15",
+        "minutes_to_kickoff": 57.5,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 156.833,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Illes Akademia",
+        "home_team": "Ferencvarosi TC",
+        "kickoff_utc": "2026-05-15T12:00:00+00:00",
+        "league_name": "Hungary - U19 National",
+        "match_key": "soccer|ferencvarosi tc|illes akademia|2026-05-15",
+        "minutes_to_kickoff": 87.5,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 146.833,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
       }
     ]
   },
-  "status": "candidates_but_quality_rejected",
-  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
+  "status": "lines_but_no_raw_candidates",
+  "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 2422,
-  "top_reason": "canonical_negative_value",
+  "text_length": 1959,
+  "top_reason": "no_viable_controlled_fallback",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
