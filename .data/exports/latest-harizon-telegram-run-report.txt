@@ -3,26 +3,26 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Покрытие
-• Матчи в run: 245 | day inventory: 271
-• С линиями: 66 | с контекстом: 227 | ready model: 2
-• odds-api.io offers: 5996 | Bzzoiro secondary offers: 154
-• 2+ букмекера odds-api.io: 47 | 2-source overlap Bzzoiro+odds-api.io: 1
-• Source combinations: odds_api_io: 62, bzzoiro: 13, bzzoiro+odds_api_io: 1
+• Матчи в run: 226 | day inventory: 234
+• С линиями: 63 | с контекстом: 207 | ready model: 6
+• odds-api.io offers: 6800 | Bzzoiro secondary offers: 176
+• 2+ букмекера odds-api.io: 43 | 2-source overlap Bzzoiro+odds-api.io: 2
+• Source combinations: odds_api_io: 59, bzzoiro: 11, bzzoiro+odds_api_io: 2
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2 / 2
+• Raw/candidates before quality: 6 / 6
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published False
-• Windowed coverage: audit 2 | allowed 0 | blocked 2 | publish-filter input 0
+• Controlled fallback: seen 3 | evaluated 3 | published False
+• Windowed coverage: audit 6 | allowed 0 | blocked 6 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 86 | no next regular run: 86
+• Final pre-kickoff checks: 164 | no next regular run: 164
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 18, matched 87, offers 5996, 2+ books 47, err 0
-• sstats: req 28, ctx 220, rows 24354, err 0, deep enriched 9
-• bzzoiro: direct req 1, v2 req 13, v2 ctx 3, v2 odds 3, secondary offers 154, overlap odds-api.io 1, err 0
+• odds_api_io: events req 0, odds req 20, matched 99, offers 6800, 2+ books 43, err 0
+• sstats: req 28, ctx 204, rows 24355, err 0, deep enriched 10
+• bzzoiro: direct req 1, v2 req 13, v2 ctx 3, v2 odds 3, secondary offers 176, overlap odds-api.io 2, err 0
 • sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
 🧭 Progressive core coverage
@@ -33,12 +33,17 @@
 • 0–12ч: 0/0 core-ready
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
-• quality: вероятность после калибровки ниже порога: 1 (50%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 3 (33%)
+• направление ставки конфликтует с xG: 3 (33%)
+• quality: вероятность после калибровки ниже порога: 3 (33%)
 
 🔎 Проверенные reserve-кандидаты
-1. Club Olimpia — Recoleta FC | Меньше 2.5 @2.23 | EV -12.4% | edge -5.6 п.п. | q 57.8
-   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
+1. Ajman Club — Al-Nasr Dubai CSC | Меньше 2.5 @2.40 | EV -12.7% | edge -5.3 п.п. | q 57.5
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
+2. Dubai City Football Club — Fujairah FC | Меньше 2.5 @2.54 | EV -14.4% | edge -5.7 п.п. | q 57.4
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
+3. Al-Hamriyah — Dibba Al-Hisn SC | Меньше 2.5 @2.15 | EV -10.0% | edge -4.7 п.п. | q 58.3
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
 
 📌 Вывод
 • Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 119; 0–4ч: 0/0; 0–12ч: 0/0.

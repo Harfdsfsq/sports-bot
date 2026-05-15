@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-15T11:34:07.848446+00:00
+UTC: 2026-05-15T13:03:51.685869+00:00
 target_date: 2026-05-15
-canonical_matches: 317
-2+ provider sources: 83
-2+ primary sources: 81
-all 3 primary sources: 1
+canonical_matches: 319
+2+ provider sources: 74
+2+ primary sources: 73
+all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=9 event_like=9 statuses={"OK": 1}
@@ -12,22 +12,16 @@ all 3 primary sources: 1
 - football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=243 event_like=179 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=244 event_like=172 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 234, "2": 81, "3": 2}
-- primary providers: {"1": 226, "2": 80, "3": 1, "0": 10}
+- all providers: {"1": 245, "2": 72, "3": 2}
+- primary providers: {"1": 236, "2": 73, "0": 10}
 
 ## Top canonical matches
 - 2026-05-15T00:30:00+00:00 | Vitória — Flamengo | providers=bzzoiro ids={"bzzoiro": "9612"}
 - 2026-05-15T01:00:00+00:00 | CF Pachuca — Pumas UNAM | providers=bzzoiro ids={"bzzoiro": "207411"}
-- 2026-05-15T09:30:00+00:00 | Sydney FC U23 — Sydney Olympic | providers=sstats ids={"sstats": "1517534"}
-- 2026-05-15T09:30:00+00:00 | Peninsula Power — Gold Coast Knights | providers=sstats ids={"sstats": "1524030"}
-- 2026-05-15T09:30:00+00:00 | WDSC Wolves — Eastern Suburbs | providers=sstats ids={"sstats": "1524029"}
-- 2026-05-15T09:30:00+00:00 | Nunawading — Whittlesea United | providers=sstats ids={"sstats": "1541419"}
-- 2026-05-15T09:30:00+00:00 | Green Gully — Melbourne City II | providers=sstats ids={"sstats": "1522028"}
-- 2026-05-15T09:35:00+00:00 | Adelaide United — Auckland | providers=sstats ids={"sstats": "1543792"}
 - 2026-05-15T09:45:00+00:00 | Kingston City — Eastern Lions | providers=sstats ids={"sstats": "1541308"}
 - 2026-05-15T09:45:00+00:00 | Dandenong City — Oakleigh Cannons | providers=sstats ids={"sstats": "1521932"}
 - 2026-05-15T09:45:00+00:00 | Abahani — Bashundhara Kings | providers=sstats ids={"sstats": "1528427"}
@@ -50,6 +44,12 @@ all 3 primary sources: 1
 - 2026-05-15T10:00:00+00:00 | Metalist 1925 U19 — Epitsentr U19 | providers=sstats ids={"sstats": "1421734"}
 - 2026-05-15T10:15:00+00:00 | Blacktown Spartans — Bulls Academy | providers=sstats ids={"sstats": "1517760"}
 - 2026-05-15T10:30:00+00:00 | Caboolture — North Star | providers=sstats ids={"sstats": "1524210"}
+- 2026-05-15T10:30:00+00:00 | Logan Lightning — Redlands United | providers=sstats ids={"sstats": "1524142"}
+- 2026-05-15T10:30:00+00:00 | Melbourne Knights — Eltham Redbacks FC | providers=sstats ids={"sstats": "1522198"}
+- 2026-05-15T10:30:00+00:00 | Northcote City — Bulleen Lions | providers=sstats ids={"sstats": "1522103"}
+- 2026-05-15T10:30:00+00:00 | Essendon Royals SC — Moreland City | providers=sstats ids={"sstats": "1541352"}
+- 2026-05-15T10:30:00+00:00 | Bentleigh Greens — Heidelberg United | providers=sstats ids={"sstats": "1521933"}
+- 2026-05-15T10:30:00+00:00 | Gomel II — Ostrovets FC | providers=sstats ids={"sstats": "1534299"}
 
 ## Targeted enrichment plan sample
 - Vitória — Flamengo | primary=1 providers=bzzoiro
@@ -58,30 +58,6 @@ all 3 primary sources: 1
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - CF Pachuca — Pumas UNAM | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Sydney FC U23 — Sydney Olympic | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Peninsula Power — Gold Coast Knights | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- WDSC Wolves — Eastern Suburbs | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Nunawading — Whittlesea United | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Green Gully — Melbourne City II | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Adelaide United — Auckland | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Kingston City — Eastern Lions | primary=1 providers=sstats
@@ -129,6 +105,30 @@ all 3 primary sources: 1
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Maitland — Cooks Hill United | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Werribee City — Malvern | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Mekelle Kenema — Ethiopian Medhin | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Myj-Gmsc — Bengaluru United | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- United — Delhi FC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Incheon Red Angels — Gyeongju | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Seoul — Suwon FMC | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
