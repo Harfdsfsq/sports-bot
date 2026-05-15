@@ -7,9 +7,11 @@ Live runs reached this state:
 - candidates_before_quality > 0;
 - quality rejects all remaining candidates by post-calibration probability guard.
 
-We must not publish negative EV or single-source picks. This wrapper only rescues
-candidates that have already passed the final consensus/source layer and still
-have non-negative consensus EV/edge after repricing.
+This patch is intentionally conservative: relief may only rescue a candidate
+when the *post-calibration* probability still gives non-negative EV and edge. It
+must never use pre-calibration/canonical probability to override a negative final
+probability, because that can publish a pick whose exported ``ev_pct`` is already
+negative.
 """
 
 import json
@@ -79,7 +81,6 @@ def _coverage(candidate: Any) -> dict[str, Any]:
         cov = report.get("api_coverage_consensus")
         if isinstance(cov, dict):
             return cov
-    # Some wrappers flatten these fields directly into source_summary.
     return summary
 
 
@@ -133,19 +134,42 @@ def _books_count(candidate: Any) -> int:
     return _as_int(getattr(candidate, "books_count", None), 0)
 
 
+def _effective_probability(candidate: Any) -> float:
+    """Return the probability that publication actually uses after quality.
+
+    The old code looked at ``probability_used_for_ev`` first. For controlled
+    consensus rescue that field stores the pre-calibration canonical probability,
+    while ``adjusted_probability`` / ``final_probability`` may already be lower.
+    Relief must use the lower final value, not the pre-calibration value.
+    """
+
+    values = [
+        _as_float(getattr(candidate, "final_probability", None), 0.0),
+        _as_float(getattr(candidate, "adjusted_probability", None), 0.0),
+        _as_float(getattr(candidate, "canonical_adjusted_probability", None), 0.0),
+        _as_float(getattr(candidate, "probability_used_for_ev", None), 0.0),
+        _as_float(getattr(candidate, "model_probability", None), 0.0),
+    ]
+    valid = [v for v in values if 0.001 <= v <= 0.999]
+    if not valid:
+        return 0.0
+    # Conservative by design: if multiple wrappers disagree, use the lowest
+    # plausible post-calibration probability.
+    return min(valid)
+
+
 def _canonical_ev_edge(candidate: Any) -> tuple[float, float]:
     odds = _as_float(getattr(candidate, "selected_odds", None), 0.0) or _as_float(getattr(candidate, "odds", None), 0.0)
-    probability = (
-        _as_float(getattr(candidate, "probability_used_for_ev", None), 0.0)
-        or _as_float(getattr(candidate, "canonical_adjusted_probability", None), 0.0)
-        or _as_float(getattr(candidate, "adjusted_probability", None), 0.0)
-        or _as_float(getattr(candidate, "final_probability", None), 0.0)
-        or _as_float(getattr(candidate, "model_probability", None), 0.0)
-    )
+    probability = _effective_probability(candidate)
     implied = 1.0 / odds if odds > 1.0 else _as_float(getattr(candidate, "selected_implied_probability", None), 0.0)
-    ev = (probability * odds - 1.0) * 100.0 if odds > 1.0 and probability > 0 else _as_float(getattr(candidate, "ev_pct", None), -999.0)
-    edge = (probability - implied) * 100.0 if probability > 0 and implied > 0 else _as_float(getattr(candidate, "edge_pct", None), -999.0)
-    return ev, edge
+    computed_ev = (probability * odds - 1.0) * 100.0 if odds > 1.0 and probability > 0 else -999.0
+    computed_edge = (probability - implied) * 100.0 if probability > 0 and implied > 0 else -999.0
+
+    exported_ev = _as_float(getattr(candidate, "ev_pct", None), computed_ev)
+    exported_edge = _as_float(getattr(candidate, "edge_pct", None), computed_edge)
+    # Safety invariant: if either exported or recomputed value is worse, use the
+    # worse one. This prevents relief from masking a downstream negative value.
+    return min(computed_ev, exported_ev), min(computed_edge, exported_edge)
 
 
 def _decision_for(candidate: Any, decisions: list[dict[str, Any]]) -> dict[str, Any]:
@@ -163,7 +187,6 @@ def _decision_for(candidate: Any, decisions: list[dict[str, Any]]) -> dict[str, 
         if family and str(row.get("family") or "") != family:
             continue
         if str(row.get("point") or "") != str(point or ""):
-            # Do not require exact point when the row omitted it.
             if row.get("point") not in (None, "") or point not in (None, ""):
                 continue
         return row
@@ -204,11 +227,19 @@ def _eligible(candidate: Any, decision: dict[str, Any]) -> tuple[bool, list[str]
     if edge < min_edge:
         reasons.append(f"edge_below_relief_min:{edge:.3f}")
 
+    # Explicit negative-export guard, separate from computed EV. This catches
+    # cases where a later patch already wrote negative ev_pct/edge_pct.
+    exported_ev = _as_float(getattr(candidate, "ev_pct", None), 0.0)
+    exported_edge = _as_float(getattr(candidate, "edge_pct", None), 0.0)
+    if exported_ev < 0:
+        reasons.append(f"exported_ev_negative:{exported_ev:.3f}")
+    if exported_edge < 0:
+        reasons.append(f"exported_edge_negative:{exported_edge:.3f}")
+
     min_conf = float(os.getenv("QUALITY_CONSENSUS_RELIEF_MIN_CONFIDENCE") or 54.0)
     if _as_float(getattr(candidate, "confidence", None), 0.0) < min_conf:
         reasons.append("confidence_below_relief_min")
 
-    # Do not rescue candidates explicitly marked as market-integrity failures.
     integrity_reasons = [str(x) for x in list(getattr(candidate, "integrity_reasons", []) or [])]
     if integrity_reasons:
         reasons.append("integrity_reasons_present:" + ",".join(integrity_reasons[:3]))
@@ -256,7 +287,7 @@ def _patch_quality_service() -> dict[str, Any]:
     original = getattr(PredictionQualityService, "apply_to_candidates", None)
     if not callable(original):
         return {"quality_service": "missing_apply_to_candidates"}
-    if getattr(original, "_harizon_quality_consensus_safe_relief", False):
+    if getattr(original, "_harizon_quality_consensus_safe_relief_v2", False):
         return {"quality_service": "already_patched"}
 
     def apply_to_candidates_with_consensus_relief(self: Any, candidates: list[Any], quality_report: dict[str, Any], now_utc: datetime):
@@ -287,8 +318,11 @@ def _patch_quality_service() -> dict[str, Any]:
                 "family": getattr(candidate, "family", ""),
                 "selection": getattr(candidate, "selection", ""),
                 "point": getattr(candidate, "point", None),
+                "effective_probability": round(_effective_probability(candidate), 5),
                 "ev_pct": round(ev, 4),
                 "edge_pp": round(edge, 4),
+                "exported_ev_pct": round(_as_float(getattr(candidate, "ev_pct", None), 0.0), 4),
+                "exported_edge_pct": round(_as_float(getattr(candidate, "edge_pct", None), 0.0), 4),
                 "confidence": round(_as_float(getattr(candidate, "confidence", None), 0.0), 3),
                 "odds_sources": _odds_sources_count(candidate),
                 "context_sources": _context_sources_count(candidate),
@@ -325,9 +359,9 @@ def _patch_quality_service() -> dict[str, Any]:
         _write(report)
         return passed, rejections, debug
 
-    apply_to_candidates_with_consensus_relief._harizon_quality_consensus_safe_relief = True  # type: ignore[attr-defined]
+    apply_to_candidates_with_consensus_relief._harizon_quality_consensus_safe_relief_v2 = True  # type: ignore[attr-defined]
     PredictionQualityService.apply_to_candidates = apply_to_candidates_with_consensus_relief  # type: ignore[assignment]
-    return {"quality_service": "patched"}
+    return {"quality_service": "patched_v2_negative_ev_guard"}
 
 
 def install() -> dict[str, Any]:
