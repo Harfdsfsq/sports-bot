@@ -1,30 +1,30 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 15,
-      "contexts_total_effective": 15,
+      "contexts": 11,
+      "contexts_total_effective": 11,
       "errors": 0,
       "events": 18,
       "events_total_effective": 20,
-      "overlap": 5,
+      "overlap": 9,
       "requests": 1,
-      "requests_total_effective": 21,
-      "secondary_offers_added": 231,
-      "v2_contexts": 5,
+      "requests_total_effective": 45,
+      "secondary_offers_added": 298,
+      "v2_contexts": 11,
       "v2_errors": 0,
       "v2_events": 20,
-      "v2_lineups_resources": 5,
-      "v2_odds_resources": 5,
-      "v2_requests": 21,
-      "v2_stats_resources": 5
+      "v2_lineups_resources": 11,
+      "v2_odds_resources": 11,
+      "v2_requests": 45,
+      "v2_stats_resources": 11
     },
     "odds_api_io": {
-      "books_2plus": 37,
+      "books_2plus": 49,
       "errors": 0,
       "events_req": 0,
-      "matched": 87,
-      "odds_req": 18,
-      "offers": 6010
+      "matched": 66,
+      "odds_req": 14,
+      "offers": 10168
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -40,50 +40,50 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 102,
-      "deep_enriched": 11,
+      "contexts": 56,
+      "deep_enriched": 6,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 28,
-      "rows": 24355,
+      "rows": 24354,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 0.5684743960698445,
-    "fallback_age_min": 0.2535302480061849,
-    "run_log_age_min": 0.34596465826034545,
-    "signal_stack_age_min": 0.5786742687225341
+    "debug_age_min": 0.47238192160924275,
+    "fallback_age_min": 0.17418041229248046,
+    "run_log_age_min": 0.2807194352149963,
+    "signal_stack_age_min": 0.488042418162028
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 5,
-    "bzzoiro_secondary_offers_added": 231,
-    "day_inventory_total": 150,
-    "matches_seen": 129,
-    "matches_with_2plus_books": 37,
-    "matches_with_context": 104,
-    "matches_with_offers": 49,
-    "odds_offers_primary": 6010,
-    "ready_for_model": 0,
+    "bzzoiro_odds_overlap_with_odds_api_io": 9,
+    "bzzoiro_secondary_offers_added": 298,
+    "day_inventory_total": 72,
+    "matches_seen": 69,
+    "matches_with_2plus_books": 49,
+    "matches_with_context": 57,
+    "matches_with_offers": 61,
+    "odds_offers_primary": 10168,
+    "ready_for_model": 2,
     "secondary_combinations": {
-      "bzzoiro": 11,
-      "bzzoiro+odds_api_io": 5,
-      "odds_api_io": 41
+      "bzzoiro": 3,
+      "bzzoiro+odds_api_io": 9,
+      "odds_api_io": 49
     }
   },
-  "created_at_utc": "2026-05-15T15:12:13.688951+00:00",
+  "created_at_utc": "2026-05-15T17:10:48.525004+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 5,
+      "contexts_built": 11,
       "enabled": true,
       "errors": 0,
       "events_fetched": 20,
-      "lineups_resources": 5,
-      "metadata_resources": 5,
-      "odds_resources": 5,
-      "requests": 21,
-      "stats_resources": 5,
+      "lineups_resources": 11,
+      "metadata_resources": 11,
+      "odds_resources": 11,
+      "requests": 45,
+      "stats_resources": 11,
       "target_matches": 64
     },
     "progressive_core_coverage": {
@@ -322,9 +322,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 2,
+    "fallback_candidates_seen": 1,
+    "fallback_evaluated": 1,
     "fallback_published": false,
     "passed_candidates": 0,
     "publish_filter_blocked": 0,
@@ -332,31 +332,126 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 0,
-    "windowed_audit_candidates": 0,
-    "windowed_publish_allowed": 0,
+    "raw_candidates": 2,
+    "windowed_audit_candidates": 2,
+    "windowed_publish_allowed": 2,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 121,
+    "final_pre_kickoff_checks": 65,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 121,
+    "no_more_regular_run_before_kickoff": 65,
     "seen": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 1,
+      "reason": "canonical_negative_value",
+      "reason_ru": "отрицательная canonical value после пересчёта по выбранному коэффициенту"
+    },
+    {
+      "count": 1,
+      "reason": "xg_direction_conflict",
+      "reason_ru": "направление ставки конфликтует с xG"
+    },
+    {
+      "count": 1,
+      "reason": "quality_market_sanity_totals_xg_contradiction",
+      "reason_ru": "quality: market sanity totals/xG contradiction"
+    }
+  ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "Al-Riyadh SC",
+        "away_team_ru": "Ал-Рииадх",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-15T18:00:00+00:00",
+        "commence_time_display": "15.05.2026 21:00 MSK",
+        "family": "totals",
+        "home_team": "Al-Taawoun FC",
+        "home_team_ru": "Ал-Таауун",
+        "league_name": "Saudi Arabia - Saudi Pro League",
+        "league_name_ru": "Саудовская Аравия - Сауди Про-лига",
+        "match_key": "soccer|al riyadh|al taawoun|2026-05-15",
+        "metrics": {
+          "adjusted_probability": 0.333327,
+          "books_count": 4,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -6.064,
+          "canonical_ev_pct": -15.392,
+          "confidence": 74.278,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -4.695,
+          "market_probability": 0.380282,
+          "model_probability": 0.400707,
+          "odds": 2.5383,
+          "odds_sources_count": 3,
+          "publication_score": 80.708,
+          "quality_reasons": [
+            "market_sanity_totals_xg_contradiction"
+          ],
+          "quality_score": 50.575,
+          "quality_score_raw": 50.575,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.393964,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 4.516,
+            "xg_direction_ok": false,
+            "xg_model_conservative_gap_pp": 4.516,
+            "xg_model_gap_pp": -4.516,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.378485,
+            "xg_probability_pct": 37.848,
+            "xg_total": 3.207
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "canonical_negative_value",
+          "xg_direction_conflict"
+        ],
+        "reject_reasons_ru": [
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
+          "направление ставки конфликтует с xG"
+        ],
+        "selection": "Меньше 2.5",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
       {
-        "away_team": "Kazincbarcika",
-        "home_team": "Nyíregyháza",
-        "kickoff_utc": "2026-05-15T15:45:00+00:00",
-        "league_name": "Hungarian NB I",
-        "match_key": "soccer|kazincbarcika|ny_regyh_za|2026-05-15",
-        "minutes_to_kickoff": 33.35,
+        "away_team": "San Luis FC",
+        "home_team": "CA Independiente",
+        "kickoff_utc": "2026-05-15T18:00:00+00:00",
+        "league_name": "Argentina - Primera Division, Women",
+        "match_key": "soccer|ca independiente|san luis|2026-05-15",
+        "minutes_to_kickoff": 49.67,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.884,
+        "priority": 159.444,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -369,14 +464,14 @@
         }
       },
       {
-        "away_team": "Kazincbarcika",
-        "home_team": "Nyíregyháza",
-        "kickoff_utc": "2026-05-15T15:45:00+00:00",
-        "league_name": "Hungarian NB I",
-        "match_key": "soccer|kazincbarcika|nyiregyhaza|2026-05-15",
-        "minutes_to_kickoff": 33.35,
+        "away_team": "Ferro Carril Oeste",
+        "home_team": "CA River Plate (ARG)",
+        "kickoff_utc": "2026-05-15T18:00:00+00:00",
+        "league_name": "Argentina - Primera Division, Women",
+        "match_key": "soccer|ca river plate arg|ferro carril oeste|2026-05-15",
+        "minutes_to_kickoff": 49.67,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.884,
+        "priority": 159.444,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -389,14 +484,14 @@
         }
       },
       {
-        "away_team": "Al-Ahli SC Manama",
-        "home_team": "AL Budaiya",
-        "kickoff_utc": "2026-05-15T16:00:00+00:00",
-        "league_name": "Bahrain - Premier League",
-        "match_key": "soccer|al ahli manama|al budaiya|2026-05-15",
-        "minutes_to_kickoff": 48.35,
+        "away_team": "Jeugd Lommel SK",
+        "home_team": "Jeugd Lierse Kempenzonen",
+        "kickoff_utc": "2026-05-15T18:00:00+00:00",
+        "league_name": "Belgium - U21 Pro League",
+        "match_key": "soccer|jeugd lierse kempenzonen|jeugd lommel sk|2026-05-15",
+        "minutes_to_kickoff": 49.67,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 159.884,
+        "priority": 159.444,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -409,14 +504,14 @@
         }
       },
       {
-        "away_team": "NK Varazdin",
-        "home_team": "HNK Vukovar 1991",
-        "kickoff_utc": "2026-05-15T16:00:00+00:00",
-        "league_name": "Croatia - HNL",
-        "match_key": "soccer|hnk vukovar 1991|nk varazdin|2026-05-15",
-        "minutes_to_kickoff": 48.35,
+        "away_team": "RAAL La Louviere",
+        "home_team": "Jeugd Patro Eisden Maasmechelen",
+        "kickoff_utc": "2026-05-15T18:00:00+00:00",
+        "league_name": "Belgium - U21 Pro League",
+        "match_key": "soccer|jeugd patro eisden maasmechelen|raal la louviere|2026-05-15",
+        "minutes_to_kickoff": 49.67,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 159.884,
+        "priority": 159.444,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -429,14 +524,14 @@
         }
       },
       {
-        "away_team": "AEL Limassol",
-        "home_team": "Akritas Chlorakas",
-        "kickoff_utc": "2026-05-15T16:00:00+00:00",
-        "league_name": "Cyprus - 1st Division",
-        "match_key": "soccer|ael limassol|akritas chlorakas|2026-05-15",
-        "minutes_to_kickoff": 48.35,
+        "away_team": "Jeugd RWDM Brussels",
+        "home_team": "K Beerschot VA",
+        "kickoff_utc": "2026-05-15T18:00:00+00:00",
+        "league_name": "Belgium - U21 Pro League",
+        "match_key": "soccer|jeugd rwdm brussels|k beerschot va|2026-05-15",
+        "minutes_to_kickoff": 49.67,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 159.884,
+        "priority": 159.444,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -449,14 +544,14 @@
         }
       },
       {
-        "away_team": "SK Slavia Prague C",
-        "home_team": "FC Pisek",
-        "kickoff_utc": "2026-05-15T16:00:00+00:00",
-        "league_name": "Czechia - CFL",
-        "match_key": "soccer|pisek|sk slavia prague c|2026-05-15",
-        "minutes_to_kickoff": 48.35,
+        "away_team": "Jeugd KV Kortrijk",
+        "home_team": "Olympic Club De Charleroi",
+        "kickoff_utc": "2026-05-15T18:00:00+00:00",
+        "league_name": "Belgium - U21 Pro League",
+        "match_key": "soccer|jeugd kv kortrijk|olympic charleroi|2026-05-15",
+        "minutes_to_kickoff": 49.67,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 159.884,
+        "priority": 159.444,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -470,10 +565,10 @@
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 1904,
-  "top_reason": "no_viable_controlled_fallback",
+  "text_length": 2348,
+  "top_reason": "canonical_negative_value",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
