@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-15T05:03:50.855033+00:00
+UTC: 2026-05-15T07:03:48.350236+00:00
 target_date: 2026-05-15
-canonical_matches: 372
-2+ provider sources: 69
-2+ primary sources: 67
+canonical_matches: 370
+2+ provider sources: 70
+2+ primary sources: 68
 all 3 primary sources: 1
 
 ## Provider fixture discovery
@@ -12,21 +12,17 @@ all 3 primary sources: 1
 - football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=252 event_like=229 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=253 event_like=229 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 303, "2": 67, "3": 2}
-- primary providers: {"1": 295, "2": 66, "3": 1, "0": 10}
+- all providers: {"1": 300, "2": 68, "3": 1, "4": 1}
+- primary providers: {"1": 293, "2": 67, "3": 1, "0": 9}
 
 ## Top canonical matches
 - 2026-05-15T00:30:00+00:00 | Vitória — Flamengo | providers=bzzoiro ids={"bzzoiro": "9612"}
 - 2026-05-15T01:00:00+00:00 | CF Pachuca — Pumas UNAM | providers=bzzoiro ids={"bzzoiro": "207411"}
-- 2026-05-15T01:30:00+00:00 | Municipal Limeño — FAS | providers=sstats ids={"sstats": "1544858"}
-- 2026-05-15T03:10:00+00:00 | Monterrey W — América W | providers=sstats ids={"sstats": "1544866"}
 - 2026-05-15T04:00:00+00:00 | SKA Khabarovsk II — Zenit Penza | providers=sstats ids={"sstats": "1536568"}
-- 2026-05-15T07:00:00+00:00 | SS Lazio — Cesena FC | providers=odds_api_io,sstats ids={"odds_api_io": "61537664", "sstats": "1404655"}
-- 2026-05-15T07:00:00+00:00 | Auckland FC Reserves — Auckland City FC | providers=odds_api_io ids={"odds_api_io": "69460606"}
 - 2026-05-15T07:30:00+00:00 | Sydney FC — Sydney Olympic FC | providers=odds_api_io,sstats ids={"odds_api_io": "67690854", "sstats": "1517534"}
 - 2026-05-15T07:30:00+00:00 | Kyrgyzstan — Turkmenistan | providers=odds_api_io ids={"odds_api_io": "71465054"}
 - 2026-05-15T08:00:00+00:00 | Bankstown City FC — Newcastle Jets FC | providers=odds_api_io,sstats ids={"odds_api_io": "67691602", "sstats": "1517764"}
@@ -50,6 +46,10 @@ all 3 primary sources: 1
 - 2026-05-15T09:00:00+00:00 | Latvia — Belarus | providers=odds_api_io,sstats ids={"odds_api_io": "69165690", "sstats": "1538936"}
 - 2026-05-15T09:00:00+00:00 | FK Kudrivka U19 — LNZ Cherkasy | providers=odds_api_io,sstats ids={"odds_api_io": "61941516", "sstats": "1421735"}
 - 2026-05-15T09:00:00+00:00 | Penang FA — Brunei DPMM FC | providers=odds_api_io,sstats ids={"odds_api_io": "61974264", "sstats": "1404261"}
+- 2026-05-15T09:00:00+00:00 | FC Radian Baikal Irkutsk — Rassvet Krasnoyarsk | providers=odds_api_io ids={"odds_api_io": "71213296"}
+- 2026-05-15T09:00:00+00:00 | Casuarina FC Reserves — Mindil Aces FC Reserves | providers=odds_api_io ids={"odds_api_io": "70934640"}
+- 2026-05-15T09:00:00+00:00 | Azzurri United FC — Darwin Olympic SC | providers=odds_api_io ids={"odds_api_io": "70930072"}
+- 2026-05-15T09:00:00+00:00 | Lazio U20 — Cesena U20 | providers=sstats ids={"sstats": "1404655"}
 
 ## Targeted enrichment plan sample
 - Vitória — Flamengo | primary=1 providers=bzzoiro
@@ -60,24 +60,8 @@ all 3 primary sources: 1
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Municipal Limeño — FAS | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Monterrey W — América W | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - SKA Khabarovsk II — Zenit Penza | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- SS Lazio — Cesena FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Auckland FC Reserves — Auckland City FC | primary=1 providers=odds_api_io
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Sydney FC — Sydney Olympic FC | primary=2 providers=odds_api_io,sstats
@@ -131,4 +115,20 @@ all 3 primary sources: 1
 - MFC Metalurh Zaporizhya — FC Chernigiv | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Semen Padang FC — Persebaya Surabaya | primary=2 providers=odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Dalian Kewei — Nantong Zhiyun | primary=2 providers=odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Caboolture Sports FC — North Star | primary=2 providers=odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Skala 1911 Stryi — Atlet | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
