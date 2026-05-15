@@ -20,6 +20,13 @@ REPORT_PATH = EXPORT_DIR / 'latest-sstats-bzzoiro-odds-merge.json'
 _INSTALLED = False
 
 
+def truthy(value: Any, default: bool = False) -> bool:
+    raw = str(value if value is not None else '').strip().lower()
+    if not raw:
+        return default
+    return raw in {'1', 'true', 'yes', 'on', 'force'}
+
+
 def fnum(value: Any) -> float | None:
     try:
         if value in (None, ''):
@@ -181,9 +188,30 @@ def selection_for(fam: str, outcome: Any, match: Match) -> tuple[str | None, str
     return None, None
 
 
+def _line_price_sane(source: str, fam: str, sel: str, price: float, point: float | None) -> bool:
+    """Reject clearly misparsed current-line prices before they poison consensus.
+
+    SStats /Odds values are often historical/closing rows and sometimes nested
+    fields from another market. They must not be used as live/current price
+    confirmation unless explicitly enabled. Bzzoiro and odds-api.io still pass
+    normal prices, while obviously impossible totals/spreads are blocked.
+    """
+    if source == 'sstats' and not truthy(os.getenv('SSTATS_CURRENT_ODDS_AS_LINE_SOURCE'), False):
+        return False
+    if fam in {'totals', 'spreads', 'btts'} and price > 6.0:
+        return False
+    if fam == 'totals' and point is not None and abs(float(point) - 2.5) <= 0.01 and price > 4.25:
+        return False
+    if fam == 'spreads' and price > 8.0:
+        return False
+    return True
+
+
 def add_offer(out: list[Offer], seen: set[tuple[Any, ...]], source: str, book: Any, fam: str, sel: str, price: Any, match: Match, point: float | None, side: str | None, event_id: str | None) -> None:
     p = fnum(price)
     if p is None or p <= 1.0 or p > 100:
+        return
+    if not _line_price_sane(source, fam, sel, float(p), point):
         return
     b = normalize_bookmaker_name(str(book or '')) or source
     key = (source, b, fam, sel, point, side, round(p, 4))
@@ -262,8 +290,20 @@ def merge(base: dict[str, list[Offer]], extra: dict[str, list[Offer]]) -> int:
 
 async def fetch_sstats(settings: Any, matches: list[Match], base: dict[str, list[Offer]], amap: dict[str, dict[str, str]]) -> tuple[dict[str, list[Offer]], dict[str, Any]]:
     key = os.getenv('SSTATS_API_KEY') or getattr(settings, 'sstats_api_key', None)
-    stats = {'enabled': bool(key), 'requests': 0, 'response_errors': 0, 'matched_ids': 0, 'offers_parsed': 0, 'skipped_no_id': 0}
+    stats = {
+        'enabled': bool(key) and truthy(os.getenv('SSTATS_CURRENT_ODDS_AS_LINE_SOURCE'), False),
+        'requests': 0,
+        'response_errors': 0,
+        'matched_ids': 0,
+        'offers_parsed': 0,
+        'skipped_no_id': 0,
+        'skip_reason': None,
+    }
     if not key:
+        stats['skip_reason'] = 'missing_key'
+        return {}, stats
+    if not truthy(os.getenv('SSTATS_CURRENT_ODDS_AS_LINE_SOURCE'), False):
+        stats['skip_reason'] = 'sstats_kept_as_context_not_current_line_source'
         return {}, stats
     base_url = str(os.getenv('SSTATS_BASE_URL') or getattr(settings, 'sstats_base_url', 'https://api.sstats.net')).rstrip('/')
     out: dict[str, list[Offer]] = {}
@@ -386,7 +426,12 @@ async def fetch_offers_wrapped(self: Any, matches: list[Match]):
     stats = dict(stats or {})
     preview = dict(preview or {})
     amap = artifact_ids()
-    report: dict[str, Any] = {'created_at_utc': datetime.now(UTC).isoformat(), 'before_matches': len([1 for v in base.values() if v]), 'before_2plus_sources': sum(1 for v in base.values() if source_count(v) >= 2)}
+    report: dict[str, Any] = {
+        'created_at_utc': datetime.now(UTC).isoformat(),
+        'before_matches': len([1 for v in base.values() if v]),
+        'before_2plus_sources': sum(1 for v in base.values() if source_count(v) >= 2),
+        'sstats_current_odds_as_line_source': truthy(os.getenv('SSTATS_CURRENT_ODDS_AS_LINE_SOURCE'), False),
+    }
     for name, func in (('sstats', fetch_sstats), ('bzzoiro', fetch_bzzoiro)):
         try:
             extra, sub = await func(getattr(self, 'settings', None), matches, base, amap)
@@ -412,6 +457,7 @@ def install() -> dict[str, Any]:
         return {'status': 'already_installed'}
     _INSTALLED = True
     os.environ.setdefault('CORE_ODDS_PATCH_MATCH_LIMIT', '160')
+    os.environ.setdefault('SSTATS_CURRENT_ODDS_AS_LINE_SOURCE', 'false')
     os.environ.setdefault('SSTATS_ODDS_RESCUE_LIMIT_PER_RUN', '120')
     try:
         from app.providers.odds_api_io import OddsApiIoProvider
@@ -423,6 +469,11 @@ def install() -> dict[str, Any]:
         result = {'status': 'error', 'error': f'{type(exc).__name__}: {exc}'}
         write_report(result)
         return result
-    result = {'status': 'installed', 'created_at_utc': datetime.now(UTC).isoformat()}
+    result = {
+        'status': 'installed',
+        'created_at_utc': datetime.now(UTC).isoformat(),
+        'sstats_current_odds_as_line_source': truthy(os.getenv('SSTATS_CURRENT_ODDS_AS_LINE_SOURCE'), False),
+        'sstats_policy': 'context_only_by_default',
+    }
     write_report(result)
     return result
