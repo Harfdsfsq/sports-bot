@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-15T10:58:06.009715+00:00
+UTC: 2026-05-15T11:17:59.277580+00:00
 target_date: 2026-05-15
 canonical_matches: 331
-2+ provider sources: 76
-2+ primary sources: 74
+2+ provider sources: 80
+2+ primary sources: 78
 all 3 primary sources: 1
 
 ## Provider fixture discovery
@@ -12,22 +12,16 @@ all 3 primary sources: 1
 - football_data: commands=1 ok=1 rows=1 event_like=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 statuses={"AUTH": 1}
 - odds_api_io: commands=2 ok=2 rows=200 event_like=200 statuses={"OK": 2}
-- sstats: commands=1 ok=1 rows=242 event_like=186 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=245 event_like=190 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 255, "2": 74, "3": 2}
-- primary providers: {"1": 247, "2": 73, "3": 1, "0": 10}
+- all providers: {"1": 251, "2": 78, "3": 2}
+- primary providers: {"1": 243, "2": 77, "3": 1, "0": 10}
 
 ## Top canonical matches
 - 2026-05-15T00:30:00+00:00 | Vitória — Flamengo | providers=bzzoiro ids={"bzzoiro": "9612"}
 - 2026-05-15T01:00:00+00:00 | CF Pachuca — Pumas UNAM | providers=bzzoiro ids={"bzzoiro": "207411"}
-- 2026-05-15T09:00:00+00:00 | Shakhter Karagandy — Aktobe Jas | providers=sstats ids={"sstats": "1534740"}
-- 2026-05-15T09:00:00+00:00 | Penang — DPMM FC Brunei | providers=sstats ids={"sstats": "1404261"}
-- 2026-05-15T09:00:00+00:00 | Kudrivka U19 — LNZ Cherkasy U19 | providers=sstats ids={"sstats": "1421735"}
-- 2026-05-15T09:00:00+00:00 | Latvia U19 — Belarus U19 | providers=sstats ids={"sstats": "1538936"}
-- 2026-05-15T09:00:00+00:00 | Lazio U20 — Cesena U20 | providers=sstats ids={"sstats": "1404655"}
-- 2026-05-15T09:00:00+00:00 | Slovakia U19 — San Marino U19 | providers=sstats ids={"sstats": "1538937"}
 - 2026-05-15T09:15:00+00:00 | Brisbane Roar II — Lions | providers=sstats ids={"sstats": "1524034"}
 - 2026-05-15T09:30:00+00:00 | Sydney FC U23 — Sydney Olympic | providers=sstats ids={"sstats": "1517534"}
 - 2026-05-15T09:30:00+00:00 | Peninsula Power — Gold Coast Knights | providers=sstats ids={"sstats": "1524030"}
@@ -50,6 +44,12 @@ all 3 primary sources: 1
 - 2026-05-15T10:00:00+00:00 | Werribee City — Malvern | providers=sstats ids={"sstats": "1541421"}
 - 2026-05-15T10:00:00+00:00 | Mekelle Kenema — Ethiopian Medhin | providers=sstats ids={"sstats": "1541059"}
 - 2026-05-15T10:00:00+00:00 | Myj-Gmsc — Bengaluru United | providers=sstats ids={"sstats": "1538158"}
+- 2026-05-15T10:00:00+00:00 | United — Delhi FC | providers=sstats ids={"sstats": "1538136"}
+- 2026-05-15T10:00:00+00:00 | Incheon Red Angels — Gyeongju | providers=sstats ids={"sstats": "1533713"}
+- 2026-05-15T10:00:00+00:00 | Seoul — Suwon FMC | providers=sstats ids={"sstats": "1533714"}
+- 2026-05-15T10:00:00+00:00 | Kolos Kovalivka U19 — Obolon' Kyiv U19 | providers=sstats ids={"sstats": "1416419"}
+- 2026-05-15T10:00:00+00:00 | Metalist 1925 U19 — Epitsentr U19 | providers=sstats ids={"sstats": "1421734"}
+- 2026-05-15T10:15:00+00:00 | Blacktown Spartans — Bulls Academy | providers=sstats ids={"sstats": "1517760"}
 
 ## Targeted enrichment plan sample
 - Vitória — Flamengo | primary=1 providers=bzzoiro
@@ -58,30 +58,6 @@ all 3 primary sources: 1
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - CF Pachuca — Pumas UNAM | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Shakhter Karagandy — Aktobe Jas | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Penang — DPMM FC Brunei | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Kudrivka U19 — LNZ Cherkasy U19 | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Latvia U19 — Belarus U19 | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Lazio U20 — Cesena U20 | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Slovakia U19 — San Marino U19 | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Brisbane Roar II — Lions | primary=1 providers=sstats
@@ -129,6 +105,30 @@ all 3 primary sources: 1
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Fortis — Brothers Union | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Rahmatgonj MFS — Mohammedan Dhaka | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Fakirerpool — PWD Sports Club | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Chertanovo U20 — Fakel U19 | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Zenit U19 — Lokomotiv Moskva U19 | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Bankstown City Lions — Newcastle Jets II | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Hurstville FC — Prospect United | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
