@@ -67,6 +67,9 @@ MODULES = [
     'app.services.api_coverage_consensus_runtime_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
+    # Keep last: this wrapper must see the final offers/contexts that all
+    # previous bridges produced and write the post-bridge factory blockers.
+    'app.services.candidate_factory_runtime_diagnostics',
 ]
 
 
