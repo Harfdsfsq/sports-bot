@@ -12,6 +12,7 @@ from typing import Any, Sequence
 from app.config import get_settings
 from app.reporting import CoverageAuditService, ReportingSQLiteExporter, TrainingDatasetExporter
 from app.reporting.history_guard_audit import HistoryGuardAuditService
+from app.services.runtime_preflight import RuntimePreflight
 from app.services.runner import PredictionRunner
 from app.state import resolve_run_history_roots
 
@@ -70,112 +71,6 @@ def _parse_int(value: str) -> int:
     return int(float(str(value).strip()))
 
 
-def _setdefault_env(values: dict[str, str]) -> None:
-    for key, value in values.items():
-        os.environ.setdefault(key, value)
-
-
-def _apply_api_max_runtime_overrides() -> None:
-    """Install safe runtime defaults without clobbering workflow/governor policy."""
-    _setdefault_env(
-        {
-            'STRICT_PRICE_INTEGRITY_ENABLED': 'true',
-            'STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES': '2',
-            'STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS': '2',
-            'PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION': 'false',
-            'PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE': 'true',
-            'MIN_BOOKS_FOR_CONSENSUS': '2',
-            'MIN_BOOKS_PUBLISH': '2',
-            'MIN_SOURCES_PUBLISH': '2',
-            'MARKET_DERIVED_MIN_BOOKS': '2',
-            'MARKET_DERIVED_MIN_SOURCES': '2',
-            'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
-            'CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY': 'true',
-            'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '2',
-            'TELEGRAM_MIN_ODDS_SOURCES': '2',
-            'MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS': '1.45',
-            'MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS': '3',
-            'MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED': 'true',
-            'MATCH_TOTAL_OVER15_ABSOLUTE_MAX_ODDS': '1.55',
-            'ENABLE_QUARTER_TOTAL_LINES': 'true',
-            'QUARTER_TOTAL_MIN_BOOKS': '2',
-        }
-    )
-    try:
-        from app.services import api_runtime_enhancements
-        api_runtime_enhancements.install()
-    except Exception:
-        pass
-    try:
-        from app.services import market_integrity
-        market_integrity.install()
-    except Exception:
-        pass
-    try:
-        from app.providers import odds_api_io_startup_compat
-        odds_api_io_startup_compat.install()
-    except Exception:
-        pass
-
-
-def _install_prediction_candidate_runtime_patches(stage: str = 'cli') -> None:
-    """Install the full production runtime patch chain before the runner.
-
-    Several high-value wrappers are not imported by app.services.__init__; they
-    only work when explicitly installed.  Earlier runs created modules such as
-    bzzoiro_exact_offer_bridge_patch, but app.cli installed only two legacy
-    wrappers, so the main run never materialized Bzzoiro v2 odds hints into
-    CandidateFactory Offer buckets.  Keep the legacy direct installs, then run
-    the central startup chain, then reinstall the final candidate bridge and
-    diagnostics as the last wrappers.
-    """
-
-    results: dict[str, Any] = {}
-    try:
-        from app.services import sstats_bzzoiro_odds_merge_patch
-        results['sstats_bzzoiro_odds_merge'] = sstats_bzzoiro_odds_merge_patch.install()
-    except Exception as exc:
-        results['sstats_bzzoiro_odds_merge'] = f'{type(exc).__name__}: {exc}'
-        logging.getLogger(__name__).warning('odds merge install failed at %s: %s: %s', stage, type(exc).__name__, exc)
-    try:
-        from app.services import candidate_value_final_reinstall
-        results['candidate_value_final_reinstall'] = candidate_value_final_reinstall.install()
-    except Exception as exc:
-        results['candidate_value_final_reinstall'] = f'{type(exc).__name__}: {exc}'
-        logging.getLogger(__name__).warning('candidate value final install failed at %s: %s: %s', stage, type(exc).__name__, exc)
-    try:
-        from app.services import runtime_startup_chain
-        results['runtime_startup_chain'] = runtime_startup_chain.install_all()
-    except Exception as exc:
-        results['runtime_startup_chain'] = f'{type(exc).__name__}: {exc}'
-        logging.getLogger(__name__).warning('runtime startup chain install failed at %s: %s: %s', stage, type(exc).__name__, exc)
-
-    # These two must be last even if the central chain changes ordering later.
-    try:
-        from app.services import bzzoiro_exact_offer_bridge_patch
-        results['bzzoiro_exact_offer_bridge_patch_final'] = bzzoiro_exact_offer_bridge_patch.install()
-    except Exception as exc:
-        results['bzzoiro_exact_offer_bridge_patch_final'] = f'{type(exc).__name__}: {exc}'
-        logging.getLogger(__name__).warning('exact offer bridge install failed at %s: %s: %s', stage, type(exc).__name__, exc)
-    try:
-        from app.services import candidate_factory_runtime_diagnostics
-        results['candidate_factory_runtime_diagnostics_final'] = candidate_factory_runtime_diagnostics.install()
-    except Exception as exc:
-        results['candidate_factory_runtime_diagnostics_final'] = f'{type(exc).__name__}: {exc}'
-        logging.getLogger(__name__).warning('candidate factory diagnostics install failed at %s: %s: %s', stage, type(exc).__name__, exc)
-
-    try:
-        export_dir = Path('.data/exports')
-        export_dir.mkdir(parents=True, exist_ok=True)
-        (export_dir / 'latest-cli-final-runtime-install.json').write_text(
-            json.dumps({'stage': stage, 'results': results}, ensure_ascii=False, indent=2) + '\n',
-            encoding='utf-8',
-        )
-        logging.getLogger(__name__).info('runtime patch install completed at %s: %s', stage, _redact_log_text(results))
-    except Exception:
-        pass
-
-
 def _reporting_path(settings: Any, attr_name: str, default_name: str) -> str:
     value = getattr(settings, attr_name, None)
     if str(value or '').strip():
@@ -216,61 +111,9 @@ def _apply_runtime_env_overrides(settings: Any) -> Any:
     return settings
 
 
-def _prepare_discovery_first_inventory_for_run_once() -> None:
-    if not _parse_bool(os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED', 'true')):
-        return
-    if os.getenv('RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING') == '1':
-        return
-    os.environ['RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING'] = '1'
-    _setdefault_env(
-        {
-            'HARIZON_PROVIDER_TIER_STRATEGY_VERSION': 'primary-three-v1-100-per-run',
-            'HARIZON_PRIMARY_PROVIDERS': 'odds_api_io,bzzoiro,sstats',
-            'HARIZON_SUPPLEMENTAL_API_MODE': 'top_pick_backfill_only',
-            'SUPPLEMENTAL_PROVIDERS_REQUIRE_SHORTLIST': 'true',
-            'SUPPLEMENTAL_PROVIDERS_REQUIRE_MISSING_ROLE': 'true',
-            'SUPPLEMENTAL_BACKFILL_AFTER_PRIMARY_SHORTLIST': 'true',
-            'ODDS_API_IO_MAX_REQUESTS_PER_RUN': '200',
-            'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': '200',
-            'ODDS_API_IO_ACCOUNT1_PER_RUN_MAX': '100',
-            'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': '100',
-            'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': '100',
-            'BZZOIRO_MAX_REQUESTS_PER_RUN': '100',
-            'BZZOIRO_CONTEXT_MATCH_LIMIT': '300',
-            'SSTATS_MAX_HTTP_REQUESTS_PER_RUN': '100',
-            'SSTATS_MAX_REQUESTS_PER_RUN': '100',
-            'SSTATS_CONTEXT_MATCH_LIMIT': '300',
-            'SSTATS_DEEP_ENRICHMENT_ENABLED': 'true',
-            'SSTATS_DEEP_DETAIL_LIMIT_PER_RUN': '80',
-            'SSTATS_GAME_DETAIL_LIMIT_PER_RUN': '8',
-            'SSTATS_ODDS_RESCUE_LIMIT_PER_RUN': '120',
-            'SSTATS_ODDS_RESCUE_ONLY_IF_ODDS_SOURCES_LT': '2',
-            'PROVIDER_DAY_DISCOVERY_MAX_SECONDS': '120',
-            'PROVIDER_DAY_DISCOVERY_TIMEOUT_SECONDS': '16',
-            'PROVIDER_DAY_DISCOVERY_CONCURRENCY': '5',
-            'PROVIDER_DAY_DISCOVERY_MIN_SCORE': '0.74',
-            'SPORTLOGIC_ENABLED': 'false',
-            'ENABLE_SPORTLOGIC': 'false',
-            'SPORTLOGIC_MAX_REQUESTS_PER_RUN': '0',
-        }
-    )
-    try:
-        from scripts import runbot_discovery_first_prepare
-        runbot_discovery_first_prepare.main()
-    except Exception as exc:
-        logging.getLogger(__name__).warning(
-            'discovery-first runbot preparation failed; continuing run-once: %s: %s',
-            type(exc).__name__,
-            exc,
-        )
-    finally:
-        os.environ.pop('RUNBOT_DISCOVERY_FIRST_PREPARE_RUNNING', None)
-
-
 async def _dispatch_async(command: str, settings: Any) -> tuple[int, dict[str, Any] | None]:
     if command == 'run-once':
-        await asyncio.to_thread(_prepare_discovery_first_inventory_for_run_once)
-        _install_prediction_candidate_runtime_patches(stage='after_discovery_before_runner')
+        await asyncio.to_thread(RuntimePreflight(settings).run_before_prediction)
         runner = PredictionRunner(settings)
         summary = await runner.run_once()
         return 0, summary
@@ -299,7 +142,7 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
 
 
 async def _main(argv: Sequence[str] | None = None) -> int:
-    _apply_api_max_runtime_overrides()
+    RuntimePreflight().apply_safe_defaults()
     args = list(argv if argv is not None else sys.argv[1:])
     settings = _apply_runtime_env_overrides(get_settings())
     command = args[0] if args else ''

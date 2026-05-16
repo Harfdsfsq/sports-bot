@@ -86,4 +86,12 @@ def _install(module_path: str) -> dict[str, Any]:
 
 
 def install_all() -> list[dict[str, Any]]:
-    return [_install(module_path) for module_path in MODULES]
+    results: list[dict[str, Any]] = []
+    installed: set[str] = set()
+    for module_path in MODULES:
+        if module_path in installed:
+            results.append({'module': module_path, 'status': 'skipped_duplicate'})
+            continue
+        installed.add(module_path)
+        results.append(_install(module_path))
+    return results
