@@ -20,6 +20,7 @@ from app.providers.weather_common import WeatherContextEnricher
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
+from app.services.coverage_contract import evaluate_publish_candidate
 from app.services.quality import PredictionQualityService
 from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
@@ -1764,12 +1765,19 @@ class PredictionRunner:
         return projected
 
     def _filter_publishable_candidates(self, candidates: list[CandidateBet]) -> list[CandidateBet]:
-        if not getattr(self.settings, 'bankroll_enabled', True):
-            return candidates
-        return [
-            candidate for candidate in candidates
-            if float(getattr(candidate, 'stake_amount', 0.0) or 0.0) > 0.0
-        ]
+        publishable: list[CandidateBet] = []
+        for candidate in candidates:
+            if getattr(self.settings, 'bankroll_enabled', True) and float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0:
+                continue
+            coverage_decision = evaluate_publish_candidate(candidate, self.settings)
+            candidate.diagnostics.setdefault('publish_coverage_contract', coverage_decision.report)
+            candidate.source_summary['publish_coverage_contract'] = coverage_decision.report
+            if not coverage_decision.passed:
+                candidate.source_summary['publish_coverage_reasons'] = list(coverage_decision.reasons)
+                candidate.reasons.extend(f'publish_coverage={reason}' for reason in coverage_decision.reasons)
+                continue
+            publishable.append(candidate)
+        return publishable
 
     def _collect_candidate_fingerprints(
         self,

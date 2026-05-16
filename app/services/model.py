@@ -1152,6 +1152,7 @@ class CandidateFactory:
                 )
 
         context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
+        context_sources = self._context_source_names(context)
         selection_key = candidate_selection_key(
             family,
             selection,
@@ -1260,6 +1261,7 @@ class CandidateFactory:
                 'selected_price': best_offer.price,
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
+                'context_sources': context_sources,
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
                 'home_recent_count': context_details.get('home_recent_count'),
@@ -1280,9 +1282,43 @@ class CandidateFactory:
                 'probability_gap_pp': analysis.get('probability_gap_pp'),
             },
             bookmaker=best_offer.bookmaker,
+            raw_bucket_offers=[
+                {
+                    'source': offer.source,
+                    'bookmaker': offer.bookmaker,
+                    'family': offer.family,
+                    'selection': offer.selection,
+                    'price': offer.price,
+                    'point': offer.point,
+                    'team_side': offer.team_side,
+                    'market_name': offer.market_name,
+                    'market_key': offer.market_key,
+                    'source_event_id': offer.source_event_id,
+                }
+                for offer in offers
+            ],
         )
 
     
+    @staticmethod
+    def _context_source_names(context: MatchContext | None) -> list[str]:
+        if context is None:
+            return []
+        details = dict(getattr(context, 'details', {}) or {})
+        raw_sources = details.get('merged_sources') or details.get('context_sources') or []
+        names: list[str] = []
+        if isinstance(raw_sources, str):
+            raw_sources = [raw_sources]
+        if isinstance(raw_sources, (list, tuple, set)):
+            for item in raw_sources:
+                text = str(item or '').strip()
+                if text and text not in names:
+                    names.append(text)
+        if names:
+            return names
+        source = str(getattr(context, 'source', '') or '').strip()
+        return [source] if source else []
+
     def _build_candidate_analysis(
         self,
         *,

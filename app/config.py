@@ -91,8 +91,12 @@ class Settings(BaseSettings):
     match_start_tolerance_hours: float = Field(default=12.0, validation_alias=AliasChoices("MATCH_START_TOLERANCE_HOURS"))
     fallback_match_start_tolerance_hours: float = Field(default=8.0, validation_alias=AliasChoices("FALLBACK_MATCH_START_TOLERANCE_HOURS"))
     min_books_for_consensus: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"))
-    min_books_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH"))
-    min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH"))
+    min_books_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH", "PUBLISH_MIN_BOOKS"))
+    min_sources_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH", "PUBLISH_MIN_ODDS_SOURCES"))
+    min_context_sources_publish: int = Field(
+        default=2,
+        validation_alias=AliasChoices("MIN_CONTEXT_SOURCES_PUBLISH", "PUBLISH_MIN_CONTEXT_SOURCES"),
+    )
 
     min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
     min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EV_PCT"))
@@ -141,7 +145,7 @@ class Settings(BaseSettings):
     simple_market_min_signal_boost_pct: float = Field(default=0.65, validation_alias=AliasChoices("SIMPLE_MARKET_MIN_SIGNAL_BOOST_PCT"))
     market_derived_candidates_enabled: bool = Field(default=True, validation_alias=AliasChoices("MARKET_DERIVED_CANDIDATES_ENABLED"))
     market_derived_min_books: int = Field(default=2, validation_alias=AliasChoices("MARKET_DERIVED_MIN_BOOKS"))
-    market_derived_min_sources: int = Field(default=1, validation_alias=AliasChoices("MARKET_DERIVED_MIN_SOURCES"))
+    market_derived_min_sources: int = Field(default=2, validation_alias=AliasChoices("MARKET_DERIVED_MIN_SOURCES"))
     market_derived_min_observations: int = Field(default=2, validation_alias=AliasChoices("MARKET_DERIVED_MIN_OBSERVATIONS"))
     market_derived_min_edge_pct: float = Field(default=1.2, validation_alias=AliasChoices("MARKET_DERIVED_MIN_EDGE_PCT"))
     market_derived_min_delta_prob_pp: float = Field(default=0.0, validation_alias=AliasChoices("MARKET_DERIVED_MIN_DELTA_PROB_PP"))

@@ -85,6 +85,65 @@ def disabled_env(provider: str) -> dict[str, str]:
     }
 
 
+def decide_provider(provider: str, cfg: dict[str, Any], state_row: dict[str, Any], now_utc: datetime, reason_prefix: str = "") -> dict[str, Any]:
+    """Compatibility decision helper used by provider budget tests.
+
+    The production path now reads provider_runtime_policy.json through
+    compute(), but tests and diagnostic scripts still import this smaller
+    decision primitive.
+    """
+
+    provider_key = str(provider or "").strip().lower()
+    event_name = str(os.getenv("GITHUB_EVENT_NAME") or "").strip()
+    per_run_max = max(0, as_int(cfg.get("per_run_max"), as_int(cfg.get("grant"), 0)))
+    if not truthy(cfg.get("enabled", True)):
+        return {"provider": provider_key, "grant": 0, "reason": f"{reason_prefix}disabled_by_policy".strip(":")}
+    if event_name == "workflow_dispatch" and cfg.get("manual_enabled") is False:
+        return {"provider": provider_key, "grant": 0, "reason": f"{reason_prefix}manual_disabled_by_policy".strip(":")}
+
+    allowed_hours = cfg.get("allowed_msk_hours")
+    if isinstance(allowed_hours, list) and allowed_hours:
+        local_hour = int(now_utc.astimezone(MSK).hour)
+        allowed = {as_int(item, -1) for item in allowed_hours}
+        if local_hour not in allowed:
+            return {"provider": provider_key, "grant": 0, "reason": f"{reason_prefix}outside_allowed_hour:{local_hour}".strip(":")}
+
+    daily_budget = cfg.get("safe_daily_budget")
+    if daily_budget is not None:
+        day_key = now_utc.astimezone(MSK).date().isoformat()
+        daily = state_row.setdefault("daily", {})
+        used = as_int((daily or {}).get(day_key), 0)
+        limit = max(0, as_int(daily_budget, 0))
+        if used >= limit:
+            return {"provider": provider_key, "grant": 0, "reason": f"{reason_prefix}daily_budget_exhausted:{used}/{limit}".strip(":")}
+        per_run_max = min(per_run_max, max(0, limit - used))
+
+    monthly_budget = cfg.get("safe_monthly_budget")
+    if monthly_budget is not None:
+        month_key = now_utc.astimezone(MSK).strftime("%Y-%m")
+        monthly = state_row.setdefault("monthly", {})
+        used = as_int((monthly or {}).get(month_key), 0)
+        limit = max(0, as_int(monthly_budget, 0))
+        if used >= limit:
+            return {"provider": provider_key, "grant": 0, "reason": f"{reason_prefix}monthly_budget_exhausted:{used}/{limit}".strip(":")}
+        per_run_max = min(per_run_max, max(0, limit - used))
+
+    grant = max(0, per_run_max)
+    state_row["last_grant"] = grant
+    state_row["last_decided_at"] = now_utc.isoformat()
+    return {"provider": provider_key, "grant": grant, "reason": f"{reason_prefix}granted".strip(":") if grant > 0 else f"{reason_prefix}disabled_by_policy".strip(":")}
+
+
+def build_env_for_decision(cfg: dict[str, Any], decision: dict[str, Any]) -> dict[str, str]:
+    env = {str(k): str(v) for k, v in dict(cfg.get("env") or {}).items()}
+    if as_int(decision.get("grant"), 0) <= 0:
+        provider = str(decision.get("provider") or "").strip()
+        if provider:
+            env.update(disabled_env(provider))
+        env.update({str(k): str(v) for k, v in dict(cfg.get("disable_env") or {}).items()})
+    return env
+
+
 def removed_provider_env() -> dict[str, str]:
     return {
         "ENABLE_BOOKIES_API": "false",
