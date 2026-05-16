@@ -1,30 +1,30 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 25,
-      "contexts_total_effective": 25,
+      "contexts": 15,
+      "contexts_total_effective": 15,
       "errors": 0,
       "events": 50,
       "events_total_effective": 91,
-      "overlap": 8,
+      "overlap": 10,
       "requests": 1,
-      "requests_total_effective": 57,
-      "secondary_offers_added": 539,
-      "v2_contexts": 14,
+      "requests_total_effective": 49,
+      "secondary_offers_added": 220,
+      "v2_contexts": 12,
       "v2_errors": 0,
       "v2_events": 91,
-      "v2_lineups_resources": 14,
-      "v2_odds_resources": 14,
-      "v2_requests": 57,
-      "v2_stats_resources": 14
+      "v2_lineups_resources": 12,
+      "v2_odds_resources": 12,
+      "v2_requests": 49,
+      "v2_stats_resources": 12
     },
     "odds_api_io": {
-      "books_2plus": 20,
+      "books_2plus": 48,
       "errors": 0,
       "events_req": 0,
-      "matched": 66,
-      "odds_req": 14,
-      "offers": 5389
+      "matched": 90,
+      "odds_req": 18,
+      "offers": 7883
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -40,8 +40,8 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 87,
-      "deep_enriched": 15,
+      "contexts": 85,
+      "deep_enriched": 14,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 28,
@@ -51,39 +51,39 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.6479833642641704,
-    "fallback_age_min": 0.3454396327336629,
-    "run_log_age_min": 0.4466995437939962,
-    "signal_stack_age_min": 0.6565729101498922
+    "debug_age_min": 0.458633553981781,
+    "fallback_age_min": 0.16435670455296833,
+    "run_log_age_min": 0.2558615247408549,
+    "signal_stack_age_min": 0.46914016803105674
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 8,
-    "bzzoiro_secondary_offers_added": 539,
-    "day_inventory_total": 105,
-    "matches_seen": 97,
-    "matches_with_2plus_books": 20,
-    "matches_with_context": 88,
-    "matches_with_offers": 66,
-    "odds_offers_primary": 5389,
-    "ready_for_model": 0,
+    "bzzoiro_odds_overlap_with_odds_api_io": 10,
+    "bzzoiro_secondary_offers_added": 220,
+    "day_inventory_total": 101,
+    "matches_seen": 101,
+    "matches_with_2plus_books": 48,
+    "matches_with_context": 89,
+    "matches_with_offers": 79,
+    "odds_offers_primary": 7883,
+    "ready_for_model": 2,
     "secondary_combinations": {
-      "bzzoiro": 33,
-      "bzzoiro+odds_api_io": 8,
-      "odds_api_io": 32
+      "bzzoiro": 15,
+      "bzzoiro+odds_api_io": 10,
+      "odds_api_io": 62
     }
   },
-  "created_at_utc": "2026-05-16T15:15:16.484702+00:00",
+  "created_at_utc": "2026-05-16T17:17:41.327193+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 14,
+      "contexts_built": 12,
       "enabled": true,
       "errors": 0,
       "events_fetched": 91,
-      "lineups_resources": 14,
-      "metadata_resources": 14,
-      "odds_resources": 14,
-      "requests": 57,
-      "stats_resources": 14,
+      "lineups_resources": 12,
+      "metadata_resources": 12,
+      "odds_resources": 12,
+      "requests": 49,
+      "stats_resources": 12,
       "target_matches": 64
     },
     "progressive_core_coverage": {
@@ -322,9 +322,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 2,
+    "fallback_candidates_seen": 2,
+    "fallback_evaluated": 2,
     "fallback_published": false,
     "passed_candidates": 0,
     "publish_filter_blocked": 0,
@@ -332,31 +332,210 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 0,
-    "windowed_audit_candidates": 0,
-    "windowed_publish_allowed": 0,
+    "raw_candidates": 2,
+    "windowed_audit_candidates": 2,
+    "windowed_publish_allowed": 2,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 85,
-    "kept": 0,
-    "no_more_regular_run_before_kickoff": 85,
-    "seen": 0
+    "final_pre_kickoff_checks": 99,
+    "kept": 1,
+    "no_more_regular_run_before_kickoff": 99,
+    "seen": 1
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 2,
+      "reason": "quality_bad_historical_segment_guard",
+      "reason_ru": "quality bad historical segment guard"
+    },
+    {
+      "count": 1,
+      "reason": "final_edge_below_min",
+      "reason_ru": "final edge below min"
+    },
+    {
+      "count": 1,
+      "reason": "canonical_negative_value",
+      "reason_ru": "отрицательная canonical value после пересчёта по выбранному коэффициенту"
+    },
+    {
+      "count": 1,
+      "reason": "xg_direction_conflict",
+      "reason_ru": "направление ставки конфликтует с xG"
+    }
+  ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "Sarpsborg 08",
+        "away_team_ru": "Сарпсборг 08",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-05-16T18:00:00+00:00",
+        "commence_time_display": "16.05.2026 21:00 MSK",
+        "family": "totals",
+        "home_team": "Vaalerenga IF",
+        "home_team_ru": "Ваалеренга IF",
+        "league_name": "Norway - Eliteserien",
+        "league_name_ru": "Норуей - Елитесериен",
+        "match_key": "soccer|sarpsborg 08|vaalerenga if|2026-05-16",
+        "metrics": {
+          "adjusted_probability": 0.420262,
+          "books_count": 4,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.887,
+          "canonical_ev_pct": 7.377,
+          "confidence": 81.152,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "clubelo",
+            "espn",
+            "sstats"
+          ],
+          "confirmation_sources_count": 4,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": 4.264,
+          "market_probability": 0.377624,
+          "model_probability": 0.611641,
+          "odds": 2.555,
+          "odds_sources_count": 3,
+          "publication_score": 69.959,
+          "quality_reasons": [
+            "bad_historical_segment_guard"
+          ],
+          "quality_score": 80.255,
+          "quality_score_raw": 80.255,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.391389,
+          "sources_count": 4,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 16.638,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 16.638,
+            "xg_model_gap_pp": -16.638,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.586641,
+            "xg_probability_pct": 58.664,
+            "xg_total": 2.336
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "final_edge_below_min"
+        ],
+        "reject_reasons_ru": [
+          "final edge below min"
+        ],
+        "selection": "Меньше",
+        "tier": "уровень A"
+      },
+      {
+        "away_team": "Almere City FC",
+        "away_team_ru": "Алмере Кити",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-16T18:00:00+00:00",
+        "commence_time_display": "16.05.2026 21:00 MSK",
+        "family": "totals",
+        "home_team": "Willem II Tilburg",
+        "home_team_ru": "Уиллем II Тилбург",
+        "league_name": "Netherlands - Eredivisie",
+        "league_name_ru": "Нидерланды - Эредивизи",
+        "match_key": "soccer|almere city|willem 2 tilburg|2026-05-16",
+        "metrics": {
+          "adjusted_probability": 0.363475,
+          "books_count": 4,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -5.09,
+          "canonical_ev_pct": -12.283,
+          "confidence": 76.009,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "clubelo",
+            "sstats"
+          ],
+          "confirmation_sources_count": 3,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -3.534,
+          "market_probability": 0.398817,
+          "model_probability": 0.469828,
+          "odds": 2.4133,
+          "odds_sources_count": 3,
+          "publication_score": 30.643,
+          "quality_reasons": [
+            "bad_historical_segment_guard"
+          ],
+          "quality_score": 68.634,
+          "quality_score_raw": 68.634,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.41437,
+          "sources_count": 3,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 8.187,
+            "xg_direction_ok": false,
+            "xg_model_conservative_gap_pp": 8.187,
+            "xg_model_gap_pp": -8.187,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.445344,
+            "xg_probability_pct": 44.534,
+            "xg_total": 2.903
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "canonical_negative_value",
+          "xg_direction_conflict"
+        ],
+        "reject_reasons_ru": [
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту",
+          "направление ставки конфликтует с xG"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
       {
-        "away_team": "CR Temouchent",
-        "home_team": "CA Batna",
-        "kickoff_utc": "2026-05-16T16:00:00+00:00",
-        "league_name": "Algeria - Ligue 2",
-        "match_key": "soccer|ca batna|cr temouchent|2026-05-16",
-        "minutes_to_kickoff": 45.38,
+        "away_team": "Boca Juniors",
+        "home_team": "Belgrano de Cordoba",
+        "kickoff_utc": "2026-05-16T18:00:00+00:00",
+        "league_name": "Argentina - Primera Division, Women",
+        "match_key": "soccer|belgrano cordoba|boca juniors|2026-05-16",
+        "minutes_to_kickoff": 42.78,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.874,
+        "priority": 161.741,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -369,34 +548,14 @@
         }
       },
       {
-        "away_team": "US Chaouia",
-        "home_team": "USM EL Harrach",
-        "kickoff_utc": "2026-05-16T16:00:00+00:00",
-        "league_name": "Algeria - Ligue 2",
-        "match_key": "soccer|us chaouia|usm el harrach|2026-05-16",
-        "minutes_to_kickoff": 45.38,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.874,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Atletico de Rafaela",
-        "home_team": "CA Atlanta",
-        "kickoff_utc": "2026-05-16T16:00:00+00:00",
+        "away_team": "CD Godoy Cruz",
+        "home_team": "Club Atletico Los Andes",
+        "kickoff_utc": "2026-05-16T18:00:00+00:00",
         "league_name": "Argentina - Primera Nacional",
-        "match_key": "soccer|atletico rafaela|ca atlanta|2026-05-16",
-        "minutes_to_kickoff": 45.38,
+        "match_key": "soccer|atletico los andes|godoy cruz|2026-05-16",
+        "minutes_to_kickoff": 42.78,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.874,
+        "priority": 161.741,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -409,14 +568,14 @@
         }
       },
       {
-        "away_team": "Nussdorf",
-        "home_team": "ATUS Ferlach",
-        "kickoff_utc": "2026-05-16T16:00:00+00:00",
-        "league_name": "Austria Amateur - Karnten, Karntner Liga",
-        "match_key": "soccer|atus ferlach|nussdorf|2026-05-16",
-        "minutes_to_kickoff": 45.38,
+        "away_team": "Liga Sao Jao PI",
+        "home_team": "Portuguesa AP",
+        "kickoff_utc": "2026-05-16T18:00:00+00:00",
+        "league_name": "Brazil - Brasileiro A3, Women",
+        "match_key": "soccer|liga sao jao pi|portuguesa ap|2026-05-16",
+        "minutes_to_kickoff": 42.78,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.874,
+        "priority": 161.741,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -429,14 +588,14 @@
         }
       },
       {
-        "away_team": "SPG Silz / Moetz",
-        "home_team": "SC Mils",
-        "kickoff_utc": "2026-05-16T16:00:00+00:00",
-        "league_name": "Austria Amateur - Tirol, Regionalliga Tirol",
-        "match_key": "soccer|mils|spg silz moetz|2026-05-16",
-        "minutes_to_kickoff": 45.38,
+        "away_team": "SE Uniao De Natal RN",
+        "home_team": "Prosperidade FC ES",
+        "kickoff_utc": "2026-05-16T18:00:00+00:00",
+        "league_name": "Brazil - Brasileiro A3, Women",
+        "match_key": "soccer|prosperidade es|se uniao natal rn|2026-05-16",
+        "minutes_to_kickoff": 42.78,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.874,
+        "priority": 161.741,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -449,14 +608,34 @@
         }
       },
       {
-        "away_team": "FK Zeljeznicar Sarajevo",
-        "home_team": "FK Borac Banja Luka",
-        "kickoff_utc": "2026-05-16T16:00:00+00:00",
-        "league_name": "Bosnia & Herzegovina - Premijer Liga",
-        "match_key": "soccer|borac banja luka|zeljeznicar sarajevo|2026-05-16",
-        "minutes_to_kickoff": 45.38,
+        "away_team": "Tiradentes PA",
+        "home_team": "Sampaio Correa FC MA",
+        "kickoff_utc": "2026-05-16T18:00:00+00:00",
+        "league_name": "Brazil - Brasileiro A3, Women",
+        "match_key": "soccer|sampaio correa ma|tiradentes pa|2026-05-16",
+        "minutes_to_kickoff": 42.78,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.874,
+        "priority": 161.741,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Rio Negro RR",
+        "home_team": "CR Vasco da Gama RJ",
+        "kickoff_utc": "2026-05-16T18:00:00+00:00",
+        "league_name": "Brazil - Brasileiro Serie A2, Women",
+        "match_key": "soccer|cr vasco gama rj|rio negro rr|2026-05-16",
+        "minutes_to_kickoff": 42.78,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 161.741,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -470,10 +649,10 @@
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 1901,
-  "top_reason": "no_viable_controlled_fallback",
+  "text_length": 2459,
+  "top_reason": "quality_bad_historical_segment_guard",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
