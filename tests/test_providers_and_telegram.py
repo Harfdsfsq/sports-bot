@@ -13,7 +13,7 @@ from app.services.quality import PredictionQualityService
 from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
 from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider
-from scripts.publish_controlled_fallback import hard_reject_reasons, xg_sanity_metrics
+from scripts.publish_controlled_fallback import final_publish_guard_reasons, hard_reject_reasons, xg_sanity_metrics
 
 UTC = timezone.utc
 
@@ -184,6 +184,53 @@ def test_xg_guard_rejects_only_model_optimism(monkeypatch):
     assert "xg_probability_gap_hard_reject" in hard_reject_reasons(candidate, metrics, {})
 
 
+def test_controlled_fallback_allows_tiny_final_edge_miss_with_clean_confirmation(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", "3.0")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", "6.0")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_PP", "0.15")
+    candidate = {"family": "totals", "selection": "Under", "point": 2.5}
+    metrics = {
+        "canonical_edge_pp": 2.9,
+        "canonical_ev_pct": 7.4,
+        "quality_score": 80.3,
+        "confidence": 81.1,
+        "books_count": 4,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
+        "quality_score_source": "raw",
+        "xg_sanity": {"enabled": True, "xg_direction_ok": True, "xg_model_optimism_gap_pp": 0.0},
+    }
+
+    reasons = final_publish_guard_reasons(candidate, metrics, "B")
+
+    assert "final_edge_below_min" not in reasons
+    assert metrics["final_edge_tolerance_used"]["edge_pp"] == 2.9
+
+
+def test_controlled_fallback_keeps_xg_conflict_hard_even_near_edge(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", "3.0")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", "6.0")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_PP", "0.15")
+    candidate = {"family": "totals", "selection": "Under", "point": 2.5}
+    metrics = {
+        "canonical_edge_pp": 2.9,
+        "canonical_ev_pct": 7.4,
+        "quality_score": 80.3,
+        "confidence": 81.1,
+        "books_count": 4,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
+        "quality_score_source": "raw",
+        "xg_sanity": {"enabled": True, "xg_direction_ok": False, "xg_model_optimism_gap_pp": 0.0},
+    }
+
+    reasons = final_publish_guard_reasons(candidate, metrics, "B")
+
+    assert "xg_direction_conflict" in reasons
+    assert "final_edge_below_min" in reasons
+    assert "final_edge_tolerance_used" not in metrics
+
+
 def test_gnews_zero_request_budget_short_circuits():
     provider = GNewsContextProvider(Settings(_env_file=None, ENABLE_GNEWS_CONTEXT=True, GNEWS_KEY="fake", GNEWS_PER_RUN_MAX=0))
     match = Match(
@@ -233,6 +280,55 @@ def test_football_data_zero_request_budget_short_circuits():
     assert contexts == {}
     assert stats["requests"] == 0
     assert stats["budget_exhausted"] is True
+
+
+def test_quality_historical_relief_accepts_multi_source_totals_near_edge():
+    service = PredictionQualityService(Settings(_env_file=None))
+    candidate = CandidateBet(
+        match_key="soccer|sarpsborg 08|vaalerenga if|2026-05-16",
+        sport_key="soccer",
+        league_name="Norway Eliteserien",
+        home_team="Vaalerenga IF",
+        away_team="Sarpsborg 08",
+        commence_time=datetime(2026, 5, 16, 18, 0, tzinfo=UTC),
+        family="totals",
+        selection="Under",
+        selection_key="under",
+        odds=2.56,
+        fair_odds=2.43,
+        implied_probability=0.391,
+        market_probability=0.391,
+        consensus_probability=0.378,
+        model_probability=0.493,
+        final_probability=0.493,
+        adjusted_probability=0.421,
+        edge_pct=2.9,
+        ev_pct=7.4,
+        confidence=81.0,
+        books_count=4,
+        sources_count=2,
+        point=2.5,
+        expected_home=1.32,
+        expected_away=1.01,
+        publication_score=70.0,
+        source_summary={
+            "context_source": "ensemble",
+            "context_sources": ["sstats", "bzzoiro"],
+            "context_sources_count": 2,
+            "match_tier": "secondary",
+        },
+    )
+    decisions = [{
+        "match_key": candidate.match_key,
+        "selection_key": candidate.selection_key,
+        "status": "rejected_by_quality_filters",
+        "reasons": ["bad_historical_segment_guard"],
+    }]
+
+    selected = service._select_historical_guard_relief_candidate([candidate], decisions)
+
+    assert selected is candidate
+    assert candidate.source_summary["historical_segment_relief"]["edge_tolerance_pp"] == 0.35
 
 
 def test_telegram_uses_live_edge_values_and_keeps_structured_sections():

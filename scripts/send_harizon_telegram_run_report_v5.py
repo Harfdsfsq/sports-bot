@@ -121,6 +121,7 @@ def artifacts() -> dict[str, Any]:
         "refresh": load_json(EXPORT_DIR / "latest-day-inventory-refresh-plan.json", {}),
         "priority": load_json(EXPORT_DIR / "latest-day-inventory-priority-and-line-state.json", {}),
         "line_guard": load_json(EXPORT_DIR / "latest-line-movement-guard-report.json", {}),
+        "day_inventory_summary": load_json(EXPORT_DIR / "latest-day-inventory-summary.json", {}),
         "signal": load_json(EXPORT_DIR / "latest-signal-stack-runtime.json", {}),
         "secondary": load_json(EXPORT_DIR / "latest-secondary-provider-matching.json", {}),
         "windowed_audit": load_json(EXPORT_DIR / "latest-windowed-core-candidate-audit.json", {}),
@@ -165,6 +166,8 @@ def build_payload() -> dict[str, Any]:
     data = artifacts()
     debug = first_dict(data.get("debug"))
     summary = first_dict(debug.get("summary"))
+    day_summary = first_dict(data.get("day_inventory_summary"))
+    day_counts = first_dict(day_summary.get("counts"))
     fallback = first_dict(data.get("fallback"))
     rescue = first_dict(data.get("rescue"))
     rescue_counts = first_dict(rescue.get("counts"))
@@ -190,15 +193,20 @@ def build_payload() -> dict[str, Any]:
     published_count = len(picks) + len([x for x in pending if isinstance(x, dict) and x.get("telegram_sent")])
 
     day_inventory_total = first_positive(
+        day_counts.get("matches_total"), day_counts.get("matches_total_high_watermark"),
+        day_summary.get("day_inventory_total"), day_summary.get("matches_total"),
         summary.get("day_inventory_total"), summary.get("day_inventory_matches"), summary.get("inventory_total"), summary.get("matches_total"),
         refresh.get("active_matches"), refresh.get("day_inventory_total"), refresh.get("matches_total"),
         priority.get("active_matches"), priority.get("day_inventory_total"), priority.get("matches_total"),
         summary.get("matches_seen"),
     )
     ready_for_model = first_positive(
+        day_counts.get("matches_ready_for_model"), day_summary.get("matches_ready_for_model"),
         summary.get("ready_for_model"), summary.get("matches_ready_for_model"), summary.get("ready_for_model_count"),
         summary.get("model_matches"), summary.get("model_debug_matches"), candidates_before_quality, raw_candidates,
     )
+    day_with_odds = first_positive(day_counts.get("matches_with_odds"), day_summary.get("matches_with_odds"))
+    day_with_context = first_positive(day_counts.get("matches_with_context"), day_summary.get("matches_with_context"))
 
     reasons: Counter[str] = Counter()
     for row in evaluated:
@@ -222,6 +230,8 @@ def build_payload() -> dict[str, Any]:
         "matches_with_offers": as_int(summary.get("matches_with_offers")),
         "matches_with_context": as_int(summary.get("contexts_built")),
         "ready_for_model": ready_for_model,
+        "day_inventory_with_odds": day_with_odds,
+        "day_inventory_with_context": day_with_context,
         "odds_offers_primary": as_int(odds.get("offers_parsed")),
         "bzzoiro_secondary_offers_added": as_int(bzz.get("secondary_offers_added")),
         "matches_with_2plus_books": as_int(odds.get("matches_with_2plus_books")),

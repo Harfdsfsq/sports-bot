@@ -19,6 +19,8 @@ from zoneinfo import ZoneInfo
 
 import httpx
 
+from scripts.day_inventory_aliases import should_update_current_aliases, write_current_aliases
+
 UTC = timezone.utc
 ROOT = Path(".").resolve()
 OUT_PATH = ROOT / ".data" / "exports" / "latest-day-inventory-fixture-expansion.json"
@@ -326,11 +328,12 @@ async def main_async() -> int:
         sources = {}
         inventory["sources"] = sources
     sources["fixture_expansion"] = {"updated_at_utc": datetime.now(UTC).isoformat(), "providers": provider_reports, "rows_fetched": len(fetched_rows), "added": added, "updated": updated}
-    for path in [inv_path, inv_dir / "latest.json", inv_dir / "current.json", inv_dir / "today.json"]:
-        write_json(path, inventory)
-    summary = {"date_local": local_date, "updated_at_utc": datetime.now(UTC).isoformat(), "timezone": str(app_tz()), "build_status": inventory.get("build_status") or "ok", "counts": counts, "sources": dict(inventory.get("sources") or {})}
-    write_json(SUMMARY_PATH, summary)
-    report = {"status": "ok", "target_date": local_date, "matches_before": len(current_rows), "provider_rows_fetched": len(fetched_rows), "matches_added": added, "matches_updated": updated, "matches_after": len(sorted_rows), "counts": counts, "providers": provider_reports, "notes": ["Runs before prediction so run-once can see a broader daily fixture inventory.", "Fixture-only expansion does not create publishable predictions by itself; odds/context guards still apply."]}
+    write_json(inv_path, inventory)
+    alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
+    summary = {"date_local": local_date, "updated_at_utc": datetime.now(UTC).isoformat(), "timezone": str(app_tz()), "build_status": inventory.get("build_status") or "ok", "counts": counts, "sources": dict(inventory.get("sources") or {}), "alias_update": alias_update}
+    if should_update_current_aliases(local_date):
+        write_json(SUMMARY_PATH, summary)
+    report = {"status": "ok", "target_date": local_date, "matches_before": len(current_rows), "provider_rows_fetched": len(fetched_rows), "matches_added": added, "matches_updated": updated, "matches_after": len(sorted_rows), "counts": counts, "providers": provider_reports, "alias_update": alias_update, "notes": ["Runs before prediction so run-once can see a broader daily fixture inventory.", "Fixture-only expansion does not create publishable predictions by itself; odds/context guards still apply."]}
     write_json(OUT_PATH, report)
     print(json.dumps(report, ensure_ascii=False, indent=2, sort_keys=True))
     return 0

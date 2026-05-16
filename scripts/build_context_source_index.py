@@ -20,6 +20,7 @@ OUT_PATHS = [
     ROOT / ".data" / "exports" / "latest-context-source-index.json",
     ROOT / ".data" / "provider_cache" / "context-source-index" / "latest.json",
 ]
+DAY_SUMMARY_PATH = ROOT / ".data" / "exports" / "latest-day-inventory-summary.json"
 
 SOURCE_ALIASES = {
     "sstats": "sstats",
@@ -82,6 +83,20 @@ def load_json(path: Path, default: Any) -> Any:
         return json.loads(path.read_text(encoding="utf-8"))
     except Exception:
         return default
+
+
+def payload_date(payload: Any) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    value = payload.get("date_local")
+    if value:
+        return str(value)
+    matches = payload.get("matches")
+    if isinstance(matches, list) and matches:
+        first = matches[0]
+        if isinstance(first, dict):
+            return str(first.get("date_local") or "")[:10]
+    return ""
 
 
 def normalize_source(value: Any) -> str | None:
@@ -175,15 +190,21 @@ def walk(obj: Any, index: dict[str, set[str]], evidence: dict[str, list[str]], p
 
 
 def build_index() -> dict[str, Any]:
+    summary = load_json(DAY_SUMMARY_PATH, {})
+    current_date = str(summary.get("date_local") or "").strip() if isinstance(summary, dict) else ""
     raw_paths = [
         ROOT / ".logs" / "debug-last-run.json",
         ROOT / ".data" / "exports" / "latest-run-summary.json",
         ROOT / ".data" / "exports" / "latest-day-inventory-coverage-merge.json",
         ROOT / ".data" / "exports" / "latest-day-inventory-coverage-audit.json",
+    ]
+    if current_date:
+        raw_paths.append(ROOT / ".data" / "day_inventory" / f"{current_date}.json")
+    raw_paths.extend([
         ROOT / ".data" / "day_inventory" / "current.json",
         ROOT / ".data" / "day_inventory" / "today.json",
         ROOT / ".data" / "day_inventory" / "latest.json",
-    ]
+    ])
     index: dict[str, set[str]] = defaultdict(set)
     evidence: dict[str, list[str]] = defaultdict(list)
     loaded: list[str] = []
@@ -191,6 +212,10 @@ def build_index() -> dict[str, Any]:
         payload = load_json(path, None)
         if payload is None:
             continue
+        if path.name in {"current.json", "today.json", "latest.json"} and current_date:
+            seen_date = payload_date(payload)
+            if seen_date and seen_date != current_date:
+                continue
         loaded.append(path.as_posix())
         walk(payload, index, evidence, path.as_posix())
 

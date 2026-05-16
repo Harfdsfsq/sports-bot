@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from datetime import datetime, timezone
+from pathlib import Path
 
 from scripts import build_detailed_run_report as detailed
+from scripts import day_inventory_aliases
 from scripts import publish_controlled_fallback as fallback
 from scripts import send_enhanced_telegram_run_report as enhanced
 
@@ -43,3 +45,29 @@ def test_controlled_fallback_rejects_stale_artifact_payload():
 
     assert not fallback.is_payload_fresh(old_fallback, reference)
     assert fallback.is_payload_fresh(current_run, reference)
+
+
+def test_day_inventory_aliases_skip_non_current_target(monkeypatch):
+    monkeypatch.setenv("DAY_INVENTORY_CURRENT_DATE", "2026-05-16")
+    writes = []
+
+    def fake_write(path, payload):
+        writes.append((path, payload))
+
+    result = day_inventory_aliases.write_current_aliases(Path(".codex_tmp"), "2026-05-17", {"matches": []}, fake_write)
+
+    assert result["status"] == "skipped"
+    assert writes == []
+
+
+def test_day_inventory_aliases_update_current_target(monkeypatch):
+    monkeypatch.setenv("DAY_INVENTORY_CURRENT_DATE", "2026-05-16")
+    writes = []
+
+    def fake_write(path, payload):
+        writes.append(path)
+
+    result = day_inventory_aliases.write_current_aliases(Path(".codex_tmp"), "2026-05-16", {"matches": []}, fake_write)
+
+    assert result["status"] == "ok"
+    assert [path.name for path in writes] == ["latest.json", "current.json", "today.json"]

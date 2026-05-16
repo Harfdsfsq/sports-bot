@@ -273,11 +273,14 @@ class PredictionQualityService:
             return None
         if not offenders:
             return None
-        allowed_families = {'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'}
+        allowed_families = {'h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals', 'totals', 'spreads'}
         min_conf = float(self._setting('historical_segment_relief_min_confidence', 58.0) or 58.0)
         min_ev = float(self._setting('historical_segment_relief_min_ev_pct', 0.8) or 0.8)
         min_edge = float(self._setting('historical_segment_relief_min_edge_pct', 1.0) or 1.0)
+        edge_tolerance = max(0.0, float(self._setting('historical_segment_relief_edge_tolerance_pp', 0.0) or 0.0))
         min_books = max(1, int(self._setting('historical_segment_relief_min_books', 1) or 1))
+        min_sources = max(1, int(self._setting('historical_segment_relief_min_sources', 1) or 1))
+        min_context_sources = max(0, int(self._setting('historical_segment_relief_min_context_sources', 0) or 0))
         min_publication_score = float(self._setting('historical_segment_relief_min_publication_score', 16.0) or 16.0)
         ranked = sorted(
             candidates,
@@ -309,12 +312,23 @@ class PredictionQualityService:
                 continue
             if float(item.confidence) < min_conf:
                 continue
-            if float(item.ev_pct) < min_ev or float(item.edge_pct) < min_edge:
+            if float(item.ev_pct) < min_ev or float(item.edge_pct) < (min_edge - edge_tolerance):
                 continue
             if float(getattr(item, 'publication_score', 0.0) or 0.0) < min_publication_score:
                 continue
             if int(getattr(item, 'books_count', 0) or 0) < min_books:
                 continue
+            if int(getattr(item, 'sources_count', 0) or 0) < min_sources:
+                continue
+            if self._candidate_context_sources_count(item) < min_context_sources:
+                continue
+            item.source_summary['historical_segment_relief'] = {
+                'min_edge_pct': round(min_edge, 3),
+                'edge_tolerance_pp': round(edge_tolerance, 3),
+                'edge_pct': round(float(item.edge_pct), 3),
+                'min_sources': min_sources,
+                'min_context_sources': min_context_sources,
+            }
             return item
         return None
 

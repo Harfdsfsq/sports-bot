@@ -16,6 +16,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from scripts.day_inventory_aliases import should_update_current_aliases, write_current_aliases
+
 UTC = timezone.utc
 ROOT = Path(".").resolve()
 EXPORT_PATH = ROOT / ".data" / "exports" / "latest-day-inventory-accumulation.json"
@@ -339,8 +341,8 @@ def main() -> int:
     }
 
     inv_dir.mkdir(parents=True, exist_ok=True)
-    for path in [inventory_path, inv_dir / "latest.json", inv_dir / "current.json", inv_dir / "today.json"]:
-        write_json(path, inventory)
+    write_json(inventory_path, inventory)
+    alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
     summary = {
         "date_local": local_date,
         "updated_at_utc": now.isoformat(),
@@ -350,13 +352,17 @@ def main() -> int:
         "source_match_counts": dict(inventory.get("source_match_counts") or {}),
         "league_match_counts": dict(inventory.get("league_match_counts") or {}),
         "sources": dict(inventory.get("sources") or {}),
+        "alias_update": alias_update,
     }
-    write_json(SUMMARY_PATH, summary)
+    if should_update_current_aliases(local_date):
+        write_json(SUMMARY_PATH, summary)
     report = {
         "status": "ok",
         "target_date": local_date,
         "updated_at_utc": now.isoformat(),
         "inventory_path": str(inventory_path),
+        "summary_path": str(SUMMARY_PATH) if should_update_current_aliases(local_date) else None,
+        "alias_update": alias_update,
         "latest_rows_seen": len(latest_rows),
         "matches_before": len(matches),
         "matches_after": len(sorted_rows),

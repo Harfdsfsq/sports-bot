@@ -1101,11 +1101,61 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     min_edge = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP", 1.8)
     min_ev = env_float("CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT", 4.0)
     if float(metrics.get("canonical_edge_pp") or 0.0) < min_edge:
-        reasons.append("final_edge_below_min")
+        if not final_edge_tolerance_allowed(candidate, metrics, min_edge, min_ev):
+            reasons.append("final_edge_below_min")
     if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
         reasons.append("final_ev_below_min")
 
     return reasons
+
+
+def final_edge_tolerance_allowed(candidate: dict[str, Any], metrics: dict[str, Any], min_edge: float, min_ev: float) -> bool:
+    """Allow a tiny final-edge miss only when every safety signal is already strong.
+
+    The fallback recalculates value against the selected price, so a candidate can miss
+    the final edge threshold by a few basis points while still having strong EV,
+    multi-book confirmation and clean xG/context checks. This helper keeps that
+    tolerance explicit and auditable instead of lowering the global publication bar.
+    """
+    tolerance = max(0.0, env_float("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_PP", 0.15))
+    if tolerance <= 0:
+        return False
+    edge = float(metrics.get("canonical_edge_pp") or 0.0)
+    ev = float(metrics.get("canonical_ev_pct") or 0.0)
+    if edge <= 0 or edge < (min_edge - tolerance):
+        return False
+    if ev < (min_ev + env_float("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_EV_BUFFER_PCT", 1.0)):
+        return False
+    if int(metrics.get("books_count") or 0) < env_int("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_BOOKS", 2):
+        return False
+    confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
+    if confirmation_count < env_int("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_CONFIRMATION_SOURCES", 2):
+        return False
+    if float(metrics.get("quality_score") or 0.0) < env_float("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_QUALITY", 75.0):
+        return False
+    if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_FINAL_EDGE_TOLERANCE_MIN_CONFIDENCE", 68.0):
+        return False
+
+    fam = family_norm(candidate)
+    if fam in {"totals", "teamtotals"}:
+        xg = metrics.get("xg_sanity") or {}
+        if not bool(xg.get("enabled")) or not bool(xg.get("xg_direction_ok", True)):
+            return False
+    if fam == "btts":
+        btts = metrics.get("btts_sanity") or {}
+        if not bool(btts.get("enabled")) or not bool(btts.get("btts_direction_ok", True)):
+            return False
+    if fam == "dnb":
+        dnb = metrics.get("dnb_sanity") or {}
+        if not bool(dnb.get("enabled")) or not bool(dnb.get("dnb_direction_ok", True)):
+            return False
+
+    metrics["final_edge_tolerance_used"] = {
+        "edge_pp": round(edge, 3),
+        "min_edge_pp": round(min_edge, 3),
+        "tolerance_pp": round(tolerance, 3),
+    }
+    return True
 
 
 def watch_candidate_rank(row: dict[str, Any]) -> tuple[float, float, float, float]:

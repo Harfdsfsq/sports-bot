@@ -23,6 +23,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from scripts.day_inventory_aliases import write_current_aliases
+
 UTC = timezone.utc
 ROOT = Path(".").resolve()
 EXPORT_DIR = ROOT / ".data" / "exports"
@@ -155,13 +157,16 @@ def main() -> int:
         sources = inventory.setdefault("sources", {})
         if isinstance(sources, dict):
             sources["refresh_plan_count_repair"] = {"updated_at_utc": now.isoformat(), **counters}
-        for path in (inventory_path, DAY_INV_DIR / "latest.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "today.json"):
-            write_json(path, inventory)
+        write_json(inventory_path, inventory)
+        alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
+    else:
+        alias_update = {"status": "skipped", "reason": "inventory_missing"}
 
     report = {
         "status": "ok",
         "date_local": local_date,
         "updated_at_utc": now.isoformat(),
+        "alias_update": alias_update,
         **counters,
         "notes": [
             "Top-level refresh counters now match row-level refresh_plan flags.",

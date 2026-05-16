@@ -25,6 +25,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from scripts.day_inventory_aliases import write_current_aliases
+
 UTC = timezone.utc
 ROOT = Path(".").resolve()
 EXPORT_DIR = ROOT / ".data" / "exports"
@@ -455,13 +457,14 @@ def update_inventory_priority(local_date: str, now: datetime) -> dict[str, Any]:
             "final_pre_kickoff_checks": final_checks,
             "no_more_regular_run_before_kickoff": no_more_runs,
         }
-    for path in [DAY_INV_DIR / f"{local_date}.json", DAY_INV_DIR / "today.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "current.json"]:
-        write_json(path, inventory)
+    write_json(DAY_INV_DIR / f"{local_date}.json", inventory)
+    alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
     refresh_plan = {
         "status": "ok",
         "date_local": local_date,
         "updated_at_utc": now.isoformat(),
         "active_matches": active_rows,
+        "alias_update": alias_update,
         "matches_needing_odds_refresh": needs_odds,
         "final_pre_kickoff_checks": final_checks,
         "no_more_regular_run_before_kickoff": no_more_runs,

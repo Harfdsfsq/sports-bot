@@ -7,6 +7,8 @@ from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
+from scripts.day_inventory_aliases import should_update_current_aliases, write_current_aliases
+
 ROOT = Path('.').resolve()
 UTC = timezone.utc
 EXPORT_PATH = ROOT / '.data' / 'exports' / 'latest-day-inventory-coverage-merge.json'
@@ -346,9 +348,8 @@ def main() -> int:
     }
 
     base = ROOT / '.data' / 'day_inventory'
-    paths = [inventory_path, base / 'latest.json', base / 'current.json', base / 'today.json']
-    for path in paths:
-        write_json(path, inventory)
+    write_json(inventory_path, inventory)
+    alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
 
     summary = {
         'date_local': local_date,
@@ -359,14 +360,18 @@ def main() -> int:
         'source_match_counts': dict(inventory.get('source_match_counts') or {}),
         'league_match_counts': dict(inventory.get('league_match_counts') or {}),
         'sources': dict(inventory.get('sources') or {}),
+        'alias_update': alias_update,
     }
-    write_json(SUMMARY_PATH, summary)
+    if should_update_current_aliases(local_date):
+        write_json(SUMMARY_PATH, summary)
 
     report = {
         'status': 'ok',
         'target_date': local_date,
         'updated_at_utc': now_utc.isoformat(),
         'inventory_path': str(inventory_path),
+        'summary_path': str(SUMMARY_PATH) if should_update_current_aliases(local_date) else None,
+        'alias_update': alias_update,
         'summary_path': str(SUMMARY_PATH),
         'matches_total': merged_counts.get('matches_total'),
         'coverage_rows_seen': len(cindex),
