@@ -1,13 +1,13 @@
 # Provider smoke
 
 - status: **warning**
-- enabled ok: 7/8
+- enabled ok: 6/8
 - missing keys: 0
 - non-core env violations: 9
 
 | provider | enabled | ok | status | items | http |
 | --- | --- | --- | --- | ---: | ---: |
-| odds_api_io | True | True | ok | 5 | 200 |
+| odds_api_io | True | False | http_500 | 1 | 500 |
 | sstats | True | True | ok | 5 | 200 |
 | bzzoiro | True | True | skipped_preserve_runtime_quota |  |  |
 | football_data | True | True | ok | 1 | 200 |

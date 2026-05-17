@@ -28,7 +28,8 @@
       "ok": 5
     },
     "odds": {
-      "ok": 2
+      "ok": 1,
+      "server_error": 1
     },
     "odds_context": {
       "ok": 1
@@ -43,13 +44,37 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 16
+    "ok": 15,
+    "server_error": 1
   },
-  "created_at_utc": "2026-05-17T05:01:44.002476+00:00",
-  "critical_failures": [],
+  "created_at_utc": "2026-05-17T07:01:47.806266+00:00",
+  "critical_failures": [
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"error\":\"Failed to fetch events\"}",
+        "bookmakers_account1": "Bet365,Unibet",
+        "bookmakers_account2": "Betfair Exchange,Sbobet",
+        "key2_present": true,
+        "payload_shape": "error",
+        "semantic_message": "provider_payload_error"
+      },
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-17T07%3A01%3A42Z&to=2026-05-19T07%3A01%3A42Z&limit=10&page=1",
+      "group": "odds",
+      "http_statuses": [
+        500
+      ],
+      "latency_ms": 5331,
+      "message": "provider_payload_error",
+      "provider": "odds_api_io_events",
+      "requests": 1,
+      "status": "server_error",
+      "useful_rows": 0
+    }
+  ],
   "mode": "quick",
   "recommendations": [
-    "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
     "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
@@ -73,7 +98,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 3898,
+      "latency_ms": 3219,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -92,7 +117,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 625,
+      "latency_ms": 678,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -130,7 +155,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 213,
+      "latency_ms": 283,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -149,7 +174,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 433,
+      "latency_ms": 627,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -169,7 +194,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 124,
+      "latency_ms": 127,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -180,7 +205,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"8e600fa6-940e-5ab7-a28d-aa1317025970\",\"title\":\"\\u2018Future is bright\\u2019: Pep Guardiola bullish as Man City seal FA Cup win\",\"description\":\"They still have an outside chance of completing a domestic treble. Read more at straitstimes.com. Read more at straitstimes.com.\",\"url\":\"https://www.straitstimes.com/sport/future-is-bright-pep-guardiola-bullish-as-man-city-seal-fa-cup-win\",\"author\":\"\",\"image\":\"https://cassette.sphdigital.com.sg/image/straitstimes/091ce45e44bbb0f9968cc4008396e77910f0a4ad3cb6c88931adb788653778b2\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-17 04:55:22 +0000\"},{\"id\":\"4fbab49c-0e70-58a3-88d3-169cda014b74\",\"title\":\"Mixed Martial Arts-McGregor to make UFC comeback on July 11\",\"description\":\"May 16 - Former two-weight mixed martial arts world champion Conor McGregor will make his long-awaited return to the UFC octagon on July 11 in Las Vegas, UFC President Dana White announced during Saturday night's UFC card. Read more at straitstimes.com. Read more at straitstimes.com.\",\"url\":\"https://www.straitstimes.com/sport/combat-sports/mixed-martial-arts-mcgregor-to-make-ufc-comeback-on-july-11\",\"auth",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"16460370-e61f-599a-9398-799c74266102\",\"title\":\"5x world champ rekindles NZ connection to progress in World Surf League Raglan event\",\"description\":\"Carissa Moore won her first event on the Championship Tour in Taranaki in 2010.\",\"url\":\"https://www.nzherald.co.nz/sport/world-surf-league-raglan-carissa-moore-rekindles-new-zealand-connection-to-move-into-quarter-finals/OZNRZATMINEFRH7HSHREW5UDMM/\",\"author\":\"Christopher Reive\",\"image\":\"https://www.nzherald.co.nz/resizer/v2/REIP7BLVB5FDDDLHHWRMVQ6PJY.jpg?auth=03a14bf305df99e783b37ae5d5709041fe7c6e77cdb9cc42b7a776427df7ee24&width=1200&height=675&quality=70&focal=1005%2C496&smart=false\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-17 06:50:03 +0000\"},{\"id\":\"9c40bb53-3a65-5295-8bb6-dc5d00b8ad9c\",\"title\":\"SANFL ruckman confirms mid-season draft interest from Eagles\",\"description\":\"A SANFL ruckman has confirmed he has been the subject of interest from West Coast ahead of the upcoming mid-season draft.\",\"url\":\"https://thewest.com.au/sport/afl/sanfl-ruckman-caleb-may-confirms-interest-from-west-coast-ahead-of-mid-season-draft-c-22295705\",\"author\":\"Josh Kempton\",\"image\":\"h",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -188,7 +213,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 419,
+      "latency_ms": 871,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -199,7 +224,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":320860,\"articles\":[{\"id\":\"035fbd68e24f88017facd8b38bfb01b3\",\"title\":\"Turkey travel advice 2026 as FCDO issues 'take care' warning for Brits\",\"description\":\"Foreign Office updates travel advice for Brits heading to Turkey, with specific warnings for football fans travelling to Istanbul for the UEFA Europa League Final\",\"content\":\"Foreign Office updates travel advice for Brits heading to Turkey, with specific warnings for football fans travelling to Istanbul for the UEFA Europa League Final\\nThe Foreign Office has issued updated travel guidance for British holidaymakers travell... [2786 chars]\",\"url\":\"https://www.dailypost.co.uk/news/north-wales-news/turkey-travel-advice-2026-fcdo-33958565\",\"image\":\"https://i2-prod.dailypost.co.uk/article33958562.ece/ALTERNATES/s1200d/0_GettyImages-1499025854.jpg\",\"publishedAt\":\"2026-05-16T17:00:00Z\",\"lang\":\"en\",\"source\":{\"id\":\"9dad5dd34ae4b3718266ca71b291fd88\",\"name\":\"Daily Post\",\"url\":\"https://www.dailypost.co.uk\",\"country\":\"gb\"}",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":320876,\"articles\":[{\"id\":\"abae2cb3b82941ebd60e437f803c8736\",\"title\":\"Minute yet powerful tweak in stadium tunnel could go a long way in benefitting Tottenham stars ahead of important week\",\"description\":\"According to Football London, Tottenham Hotspur have made a meaningful change to the players’ tunnel at the Tottenham Hotspur Stadium ahead of the most\",\"content\":\"Tottenham have made a subtle change to the stadium tunnel which could benefit players.\\nAccording to Football London, Tottenham Hotspur have made a meaningful change to the players’ tunnel at the Tottenham Hotspur Stadium ahead of the most important s... [2297 chars]\",\"url\":\"https://www.yardbarker.com/soccer/articles/minute_yet_powerful_tweak_in_stadium_tunnel_could_go_a_long_way_in_benefitting_tottenham_stars_ahead_of_important_week/s1_17451_43851118\",\"image\":\"https://us-west-2-gw-2.yardbarker.com/images/yb_white_on_black_medium.jpg\",\"publishedAt\":\"2026-05-16T19:01:40Z\",\"lang\":\"en\",\"source\":{\"id\":\"8d7",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -207,7 +232,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 529,
+      "latency_ms": 351,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -226,7 +251,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 597,
+      "latency_ms": 680,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -237,7 +262,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":25678,\"articles\":[{\"source\":{\"id\":null,\"name\":\"newsBTC\"},\"author\":\"Keshav Verma\",\"title\":\"Ethereum Sell Signal That Last Preceded A 63% Drop Flashes Again\",\"description\":\"Ethereum has seen a Tom Demark (TD) Sequential sell signal on its weekly chart, something that last led to a major drawdown for the asset. Ethereum Has Seen A TD Sequential Sell Signal In a new post on X, analyst Ali Martinez has highlighted a TD Sequential s…\",\"url\":\"http://www.newsbtc.com/news/ethereum/ethereum-sell-last-preceded-63-drop-flashes-again/\",\"urlToImage\":\"https://www.newsbtc.com/wp-content/uploads/2026/05/eth_290cc5.png?fit=1152%2C768\",\"publishedAt\":\"2026-05-16T05:00:25Z\",\"content\":\"Keshav is currently a senior writer at NewsBTC and has been attached to the website since June 14, 2021. Keshav has been writing for many years, first as a hobbyist and later as a freelancer. He has … [+2820 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":25717,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Arsenal.com\"},\"author\":null,\"title\":\"Preview: Liverpool v Arsenal Women\",\"description\":\"All you need to know ahead of our trip to Anfield for the final Barclays Women's Super League game of the season\",\"url\":\"http://www.arsenal.com/news/preview-liverpool-v-arsenal-women-2\",\"urlToImage\":\"http://www.arsenal.com/sites/default/files/styles/desktop_16x9/public/Arsenal_WSL_Fixture_16x9_Third__hpaxgv39.png?h=d1ca7a6f&auto=webp&itok=g32hjPV2\",\"publishedAt\":\"2026-05-16T07:00:00Z\",\"content\":\"Our final Barclays Womens Super League game of the season takes place against Liverpool at Anfield at 1pm on Saturday.\\r\\nWere looking to end the season on a high with a win that would secure second po… [+4613 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -245,7 +270,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 283,
+      "latency_ms": 333,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -256,7 +281,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":9718,\"results\":[{\"article_id\":\"68384d53cfae9a0e91c44d7385591d5b\",\"link\":\"https://sports.yahoo.com/articles/ryan-harris-departing-notre-dame-170057004.html\",\"title\":\"Ryan Harris departing Notre Dame football radio booth, exploring NFL and TV opportunities\",\"description\":\"Former Notre Dame Fighting Irish offensive lineman and Super Bowl champion Ryan Harris has been calling games as a Notre Dame Radio analyst for the last eight seasons. Before the next football season begins, he’s stepping out of the booth to explore other opportunities. “I will be devoting the next season of my life to...\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"opportunities\",\"notre dame football\",\"notre dame radio analyst\",\"offensive lineman\",\"notre dame fighting irish\",\"denver broncos\",\"television opportunities\",\"nfl\",\"altitude sports\",\"kansas city chiefs\",\"pittsburgh steelers\",\"ryan harris\",\"notre dame\",\"houston texans\"],\"creator\":[\"sean keeley\"],\"language\":\"english\",\"country\":[\"united states of america\"],\"category\":[\"sports\",\"breaking\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-16 17:00:57\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-16 17:32:33\",\"image_url\":\"https://s.yi",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":9828,\"results\":[{\"article_id\":\"7b4f6cc09bcb67825d435e257b2c7d13\",\"link\":\"https://www.caughtoffside.com/2026/05/16/mohamed-salah-liverpool-dig-arne-slot/\",\"title\":\"Liverpool dressing room tensions exposed as Salah speaks out after latest defeat\",\"description\":\"Liverpool crashed to a defeat against Aston Villa in the Premier League recently, and Mohamed Salah has now sent out a message on social media. The Egyptian has claimed that qualifying for the UEFA Champions League should be the bare minimum for Liverpool, and they need to be doing much better. He added that Liverpool [...] The post Liverpool dressing room tensions exposed as Salah speaks out after latest defeat appeared first on CaughtOffside .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"liverpool fc\",\"premier league\",\"mobile app stories\",\"features - newsnow\",\"transfer news\",\"extra time\",\"football and soccer\"],\"creator\":[\"saikat\"],\"language\":\"english\",\"country\":[\"united kingdom\"],\"category\":[\"sports\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-16 19:00:54\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-16 21:33:47\",\"image_url\":\"https://icdn.caughtoffside.com/wp-content/uploads/2026/03/CO",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -264,7 +289,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 183,
+      "latency_ms": 342,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -275,23 +300,24 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":67693932,\"home\":\"South Coast Flame FC\",\"away\":\"St George FC\",\"homeId\":978879,\"awayId\":771194,\"date\":\"2026-05-17T05:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Australia - NSW League One, Women\",\"slug\":\"australia-nsw-league-one-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71006260,\"home\":\"Azzurri United FC Div 3\",\"away\":\"Darwin Olympic SC Div 3\",\"homeId\":1339842,\"awayId\":1339846,\"date\":\"2026-05-17T05:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Australia - Northern Territory Division 3\",\"slug\":\"australia-northern-territory-division-3\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71006262,\"home\":\"Mindil Aces FC Div 3\",\"away\":\"Casuarina FC Div 3\",\"homeId\":1339850,\"awayId\":1339844,\"date\":\"2026-05-17T05:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Australia - Northern Territory Division 3\",\"slug\":\"australia-northern-territory-division-3\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67694246,\"home\":\"Hills United FC\",\"away\":\"Gladesville Ravens\",\"homeId\":1223347,\"awayId\":1223311,\"date\":\"2026-05-17T05:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":",
+        "body_preview": "{\"error\":\"Failed to fetch events\"}",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
-        "payload_shape": "list"
+        "payload_shape": "error",
+        "semantic_message": "provider_payload_error"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-17T05%3A01%3A40Z&to=2026-05-19T05%3A01%3A40Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-17T07%3A01%3A42Z&to=2026-05-19T07%3A01%3A42Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
-        200
+        500
       ],
-      "latency_ms": 220,
-      "message": "ok",
+      "latency_ms": 5331,
+      "message": "provider_payload_error",
       "provider": "odds_api_io_events",
       "requests": 1,
-      "status": "ok",
-      "useful_rows": 10
+      "status": "server_error",
+      "useful_rows": 0
     },
     {
       "configured": true,
@@ -306,7 +332,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 509,
+      "latency_ms": 511,
       "message": "ok",
       "provider": "sportlogic",
       "requests": 1,
@@ -325,7 +351,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 357,
+      "latency_ms": 424,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -352,7 +378,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-05-09 08:49:48\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-05-16 21:01:36\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -360,7 +386,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 260,
+      "latency_ms": 276,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -371,7 +397,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":804,\"main\":\"Clouds\",\"description\":\"overcast clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":9.92,\"feels_like\":7.44,\"temp_min\":8.36,\"temp_max\":10.86,\"pressure\":1008,\"humidity\":89,\"sea_level\":1008,\"grnd_level\":1004},\"visibility\":10000,\"wind\":{\"speed\":5.14,\"deg\":240},\"clouds\":{\"all\":100},\"dt\":1778993829,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778990764,\"sunset\":1779047276},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":10.58,\"feels_like\":9.97,\"temp_min\":9.95,\"temp_max\":10.99,\"pressure\":1009,\"humidity\":87,\"sea_level\":1009,\"grnd_level\":1005},\"visibility\":10000,\"wind\":{\"speed\":4.12,\"deg\":240},\"clouds\":{\"all\":75},\"dt\":1779000746,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1778990764,\"sunset\":1779047276},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -379,7 +405,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 324,
+      "latency_ms": 273,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -390,7 +416,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1778994100,\"localtime\":\"2026-05-17 06:01\"},\"current\":{\"last_updated_epoch\":1778994000,\"last_updated\":\"2026-05-17 06:00\",\"temp_c\":9.2,\"temp_f\":48.6,\"is_day\":1,\"condition\":{\"text\":\"Overcast\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/122.png\",\"code\":1009},\"wind_mph\":5.6,\"wind_kph\":9.0,\"wind_degree\":233,\"wind_dir\":\"SW\",\"pressure_mb\":1008.0,\"pressure_in\":29.77,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":93,\"cloud\":100,\"feelslike_c\":7.9,\"feelslike_f\":46.1,\"windchill_c\":6.6,\"windchill_f\":43.9,\"heatindex_c\":8.1,\"heatindex_f\":46.6,\"dewpoint_c\":7.4,\"dewpoint_f\":45.4,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.1,\"gust_mph\":8.5,\"gust_kph\":13.7,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-17\",\"date_epoch\":1778976000,\"day\":{\"maxtemp_c\":16.5,\"maxtemp_f\":61.6,\"mintemp_c\":8.1,\"mintemp_f\":46.6,\"avgtemp_c\":12.0,\"avgtemp_f\":53.6,\"maxwind_mph\":9.6,\"maxwind_kph\":15.5,\"totalprecip_mm\":1.19,\"totalprecip_in\":0.05,\"totalsnow_cm\":0.0,\"avgvis_km\":9.0,\"avgvis_miles\":5.0,\"avghum",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779001291,\"localtime\":\"2026-05-17 08:01\"},\"current\":{\"last_updated_epoch\":1779001200,\"last_updated\":\"2026-05-17 08:00\",\"temp_c\":9.0,\"temp_f\":48.2,\"is_day\":1,\"condition\":{\"text\":\"Partly Cloudy\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/116.png\",\"code\":1003},\"wind_mph\":6.5,\"wind_kph\":10.4,\"wind_degree\":259,\"wind_dir\":\"W\",\"pressure_mb\":1009.0,\"pressure_in\":29.8,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":100,\"cloud\":25,\"feelslike_c\":7.4,\"feelslike_f\":45.2,\"windchill_c\":8.2,\"windchill_f\":46.7,\"heatindex_c\":9.7,\"heatindex_f\":49.4,\"dewpoint_c\":7.5,\"dewpoint_f\":45.6,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.9,\"gust_mph\":8.3,\"gust_kph\":13.4,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-17\",\"date_epoch\":1778976000,\"day\":{\"maxtemp_c\":16.5,\"maxtemp_f\":61.6,\"mintemp_c\":8.1,\"mintemp_f\":46.6,\"avgtemp_c\":12.0,\"avgtemp_f\":53.6,\"maxwind_mph\":9.6,\"maxwind_kph\":15.5,\"totalprecip_mm\":1.19,\"totalprecip_in\":0.05,\"totalsnow_cm\":0.0,\"avgvis_km\":9.0,\"avgvis_miles\":5.0,\"av",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -398,7 +424,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 287,
+      "latency_ms": 393,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -409,11 +435,11 @@
   "summary": {
     "auth_error": 0,
     "config_only": 1,
-    "critical_failures": 0,
+    "critical_failures": 1,
     "degraded": 0,
-    "healthy_or_config_only": 17,
+    "healthy_or_config_only": 16,
     "missing_secret": 1,
-    "ok": 16,
+    "ok": 15,
     "providers_checked": 18,
     "rate_limited": 0,
     "skipped": 0,
