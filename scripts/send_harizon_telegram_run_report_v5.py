@@ -162,6 +162,30 @@ def source_stats(data: dict[str, Any]) -> dict[str, Any]:
     return normalized
 
 
+def provider_auth_failed(row: dict[str, Any]) -> bool:
+    if bool(row.get("auth_error")):
+        return True
+    statuses: list[int] = []
+    for key in ("event_http_statuses", "odds_http_statuses", "http_statuses"):
+        value = row.get(key)
+        if isinstance(value, list):
+            statuses.extend(as_int(item) for item in value)
+    accounts = row.get("accounts")
+    if isinstance(accounts, dict):
+        for account in accounts.values():
+            if not isinstance(account, dict):
+                continue
+            if bool(account.get("auth_error")):
+                return True
+            value = account.get("http_statuses")
+            if isinstance(value, list):
+                statuses.extend(as_int(item) for item in value)
+    if any(status in (401, 403) for status in statuses):
+        return True
+    preview = str(row.get("last_body_preview") or "").lower()
+    return "valid apikey" in preview or "api key" in preview and "invalid" in preview
+
+
 def build_payload() -> dict[str, Any]:
     data = artifacts()
     debug = first_dict(data.get("debug"))
@@ -179,6 +203,7 @@ def build_payload() -> dict[str, Any]:
     pool_counts = first_dict(fallback.get("pool_counts"))
     stats = source_stats(data)
     odds = first_dict(stats.get("odds_api_io"))
+    odds_auth_failed = provider_auth_failed(odds)
     sstats = first_dict(stats.get("sstats"))
     bzz = first_dict(stats.get("bzzoiro"))
     sport = first_dict(stats.get("sportlogic"))
@@ -223,6 +248,8 @@ def build_payload() -> dict[str, Any]:
                 reasons[str(key)] += as_int(value)
     if as_int(line_guard.get("candidates_dropped")) > 0:
         reasons["line_movement_guard_dropped"] += as_int(line_guard.get("candidates_dropped"))
+    if odds_auth_failed:
+        reasons["odds_api_io_auth_failed"] += 1
 
     coverage = {
         "matches_seen": as_int(summary.get("matches_seen")),
@@ -255,7 +282,7 @@ def build_payload() -> dict[str, Any]:
         "publish_filter_blocked": as_int(windowed_filter.get("blocked")),
     }
     api = {
-        "odds_api_io": {"events_req": as_int(odds.get("event_requests")), "odds_req": as_int(odds.get("odds_requests")), "matched": as_int(odds.get("events_matched")), "offers": as_int(odds.get("offers_parsed")), "books_2plus": as_int(odds.get("matches_with_2plus_books")), "errors": as_int(odds.get("response_errors"))},
+        "odds_api_io": {"events_req": as_int(odds.get("event_requests")), "odds_req": as_int(odds.get("odds_requests")), "matched": as_int(odds.get("events_matched")), "offers": as_int(odds.get("offers_parsed")), "books_2plus": as_int(odds.get("matches_with_2plus_books")), "errors": as_int(odds.get("response_errors")), "auth_failed": odds_auth_failed},
         "sstats": {"requests": as_int(sstats.get("requests")), "contexts": as_int(sstats.get("contexts_built")), "rows": as_int(sstats.get("rows_fetched")), "errors": as_int(sstats.get("response_errors")), "deep_enriched": as_int(first_dict(sstats.get("sstats_deep")).get("contexts_enriched"))},
         "bzzoiro": {"requests": as_int(bzz.get("requests")), "contexts": as_int(bzz.get("contexts_built")), "events": as_int(bzz.get("events_fetched"), as_int(bzz.get("rows_fetched"))), "secondary_offers_added": as_int(bzz.get("secondary_offers_added")), "overlap": as_int(bzz.get("combo_with_odds_api_io")), "errors": as_int(bzz.get("response_errors"))},
         "sportlogic": {"enabled": bool(first_dict(data.get("sportlogic_final")).get("sportlogic", {}).get("enabled") if isinstance(first_dict(data.get("sportlogic_final")).get("sportlogic"), dict) else sport.get("enabled")), "requests": as_int(sport.get("requests")), "odds_requests": as_int(sport.get("odds_requests")), "matched": as_int(sport.get("events_matched")), "offers": as_int(sport.get("offers_parsed")), "errors": as_int(sport.get("response_errors"))},
@@ -273,7 +300,10 @@ def build_payload() -> dict[str, Any]:
     else:
         status, status_ru = "coverage_guard_blocked", "🟡 кандидаты есть, coverage/movement guard заблокировал публикацию"
 
-    top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback.get("status") or "n/a")
+    if odds_auth_failed and raw_candidates <= 0:
+        top_reason = "odds_api_io_auth_failed"
+    else:
+        top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback.get("status") or "n/a")
     return {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "version": "harizon-telegram-report-v6-standalone-single-source",

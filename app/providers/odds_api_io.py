@@ -45,6 +45,8 @@ class OddsApiIoProvider:
             "event_http_statuses": [],
             "payload_shapes": [],
             "last_body_preview": None,
+            "auth_error": False,
+            "stop_reason": "",
             "rate_limited": False,
             "max_http_requests_per_run": self.max_http_requests,
             "budget_exhausted": False,
@@ -86,6 +88,9 @@ class OddsApiIoProvider:
                     continue
                 stats["event_http_statuses"].append(response.status_code)
                 stats["last_body_preview"] = response.text[:1500]
+                if response.status_code in (401, 403):
+                    self._mark_auth_error(stats, response.status_code)
+                    break
                 if response.status_code == 429:
                     stats["response_errors"] += 1
                     stats["rate_limited"] = True
@@ -185,6 +190,8 @@ class OddsApiIoProvider:
             "payload_shapes": [],
             "bookmakers_seen": 0,
             "last_body_preview": None,
+            "auth_error": False,
+            "stop_reason": "",
             "simulated_skipped": 0,
             "requested_bookmakers": None,
             "requested_bookmakers_by_account": [
@@ -268,6 +275,9 @@ class OddsApiIoProvider:
 
                     stats["event_http_statuses"].append(response.status_code)
                     stats["last_body_preview"] = response.text[:1500]
+                    if response.status_code in (401, 403):
+                        self._mark_auth_error(stats, response.status_code, account_name=str(event_account["name"]))
+                        break
                     if response.status_code == 429:
                         stats["response_errors"] += 1
                         stats["rate_limited"] = True
@@ -449,6 +459,9 @@ class OddsApiIoProvider:
             stats["odds_http_statuses"].append(response.status_code)
             account_stats["http_statuses"].append(response.status_code)
             stats["last_body_preview"] = response.text[:2000]
+            if response.status_code in (401, 403):
+                self._mark_auth_error(stats, response.status_code, account_name=account_name)
+                return []
             if response.status_code == 429:
                 stats["response_errors"] += 1
                 account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
@@ -474,6 +487,17 @@ class OddsApiIoProvider:
             if response.status_code < 500:
                 return []
         return []
+
+    def _mark_auth_error(self, stats: dict[str, Any], status_code: int, account_name: str | None = None) -> None:
+        stats["response_errors"] = int(stats.get("response_errors") or 0) + 1
+        stats["auth_error"] = True
+        stats["auth_status_code"] = status_code
+        stats["stop_reason"] = "auth_error"
+        if account_name:
+            account_stats = stats.setdefault("accounts", {}).setdefault(account_name, {})
+            account_stats["response_errors"] = int(account_stats.get("response_errors") or 0) + 1
+            account_stats["auth_error"] = True
+            account_stats["auth_status_code"] = status_code
 
     def _request_budget_allows(self, stats: dict[str, Any], account_name: str | None = None) -> bool:
         if self.max_http_requests <= 0:
