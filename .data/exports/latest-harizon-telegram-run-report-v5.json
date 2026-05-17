@@ -1,31 +1,31 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 25,
-      "contexts_total_effective": 25,
+      "contexts": 24,
+      "contexts_total_effective": 24,
       "errors": 0,
       "events": 50,
       "events_total_effective": 107,
-      "overlap": 20,
+      "overlap": 13,
       "requests": 1,
-      "requests_total_effective": 57,
-      "secondary_offers_added": 605,
-      "v2_contexts": 14,
+      "requests_total_effective": 37,
+      "secondary_offers_added": 286,
+      "v2_contexts": 9,
       "v2_errors": 0,
       "v2_events": 107,
-      "v2_lineups_resources": 14,
-      "v2_odds_resources": 14,
-      "v2_requests": 57,
-      "v2_stats_resources": 14
+      "v2_lineups_resources": 9,
+      "v2_odds_resources": 9,
+      "v2_requests": 37,
+      "v2_stats_resources": 9
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 51,
+      "books_2plus": 44,
       "errors": 0,
       "events_req": 0,
-      "matched": 85,
+      "matched": 88,
       "odds_req": 18,
-      "offers": 10660
+      "offers": 8507
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -41,7 +41,7 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 112,
+      "contexts": 93,
       "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
@@ -52,41 +52,41 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.5138987302780151,
-    "fallback_age_min": 0.1536245067914327,
-    "run_log_age_min": 0.2823574384053548,
-    "signal_stack_age_min": 0.5249927520751954
+    "debug_age_min": 0.47984684705734254,
+    "fallback_age_min": 0.16161627372105916,
+    "run_log_age_min": 0.2614458401997884,
+    "signal_stack_age_min": 0.49009008407592775
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 20,
-    "bzzoiro_secondary_offers_added": 605,
+    "bzzoiro_odds_overlap_with_odds_api_io": 13,
+    "bzzoiro_secondary_offers_added": 286,
     "day_inventory_total": 302,
-    "day_inventory_with_context": 42,
-    "day_inventory_with_odds": 42,
-    "matches_seen": 120,
-    "matches_with_2plus_books": 51,
-    "matches_with_context": 115,
-    "matches_with_offers": 79,
-    "odds_offers_primary": 10660,
-    "ready_for_model": 42,
+    "day_inventory_with_context": 27,
+    "day_inventory_with_odds": 27,
+    "matches_seen": 109,
+    "matches_with_2plus_books": 44,
+    "matches_with_context": 96,
+    "matches_with_offers": 75,
+    "odds_offers_primary": 8507,
+    "ready_for_model": 27,
     "secondary_combinations": {
-      "bzzoiro": 32,
-      "bzzoiro+odds_api_io": 20,
-      "odds_api_io": 50
+      "bzzoiro": 11,
+      "bzzoiro+odds_api_io": 13,
+      "odds_api_io": 54
     }
   },
-  "created_at_utc": "2026-05-17T15:15:22.031230+00:00",
+  "created_at_utc": "2026-05-17T17:16:30.773583+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 14,
+      "contexts_built": 9,
       "enabled": true,
       "errors": 0,
       "events_fetched": 107,
-      "lineups_resources": 14,
-      "metadata_resources": 14,
-      "odds_resources": 14,
-      "requests": 57,
-      "stats_resources": 14,
+      "lineups_resources": 9,
+      "metadata_resources": 9,
+      "odds_resources": 9,
+      "requests": 37,
+      "stats_resources": 9,
       "target_matches": 64
     },
     "progressive_core_coverage": {
@@ -325,41 +325,205 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 1,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 2,
+    "fallback_candidates_seen": 2,
+    "fallback_evaluated": 2,
     "fallback_published": false,
-    "passed_candidates": 1,
+    "passed_candidates": 0,
     "publish_filter_blocked": 0,
-    "publish_filter_input": 1,
-    "publish_filter_kept": 1,
-    "publishable_candidates": 1,
-    "published_count": 1,
-    "raw_candidates": 1,
-    "windowed_audit_candidates": 1,
-    "windowed_publish_allowed": 1,
+    "publish_filter_input": 0,
+    "publish_filter_kept": 0,
+    "publishable_candidates": 0,
+    "published_count": 0,
+    "raw_candidates": 2,
+    "windowed_audit_candidates": 2,
+    "windowed_publish_allowed": 2,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 97,
+    "final_pre_kickoff_checks": 109,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 97,
+    "no_more_regular_run_before_kickoff": 109,
     "seen": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 2,
+      "reason": "canonical_negative_value",
+      "reason_ru": "отрицательная canonical value после пересчёта по выбранному коэффициенту"
+    },
+    {
+      "count": 2,
+      "reason": "quality_post_calibration_edge_guard",
+      "reason_ru": "quality post calibration edge guard"
+    }
+  ],
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "US Lecce",
+        "away_team_ru": "US Лекке",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-17T18:45:00+00:00",
+        "commence_time_display": "17.05.2026 21:45 MSK",
+        "family": "totals",
+        "home_team": "Sassuolo Calcio",
+        "home_team_ru": "Сассуоло Калкио",
+        "league_name": "Italy - Serie A",
+        "league_name_ru": "Италия - Серия A",
+        "match_key": "soccer|sassuolo|us lecce|2026-05-17",
+        "metrics": {
+          "adjusted_probability": 0.551004,
+          "books_count": 5,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -1.628,
+          "canonical_ev_pct": -2.869,
+          "confidence": 73.762,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": 0.576,
+          "market_probability": 0.545247,
+          "model_probability": 0.630825,
+          "odds": 1.7628,
+          "odds_sources_count": 3,
+          "publication_score": 34.888,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 73.593,
+          "quality_score_raw": 73.593,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.567279,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 1.55,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 0.0,
+            "xg_model_gap_pp": 1.55,
+            "xg_model_optimism_gap_pp": 1.55,
+            "xg_probability": 0.535509,
+            "xg_probability_pct": 53.551,
+            "xg_total": 2.532
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "canonical_negative_value"
+        ],
+        "reject_reasons_ru": [
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      },
+      {
+        "away_team": "SC Corinthians SP",
+        "away_team_ru": "Коринтианс SP",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-17T19:00:00+00:00",
+        "commence_time_display": "17.05.2026 22:00 MSK",
+        "family": "totals",
+        "home_team": "Botafogo FR RJ",
+        "home_team_ru": "Ботафого FR RJ",
+        "league_name": "Brazil - Brasileiro Serie A",
+        "league_name_ru": "Бразилия - Серия A",
+        "match_key": "soccer|botafogo fr rj|corinthians sp|2026-05-17",
+        "metrics": {
+          "adjusted_probability": 0.561236,
+          "books_count": 6,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -3.284,
+          "canonical_ev_pct": -5.527,
+          "confidence": 73.904,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": -0.615,
+          "market_probability": 0.56739,
+          "model_probability": 0.681638,
+          "odds": 1.6833,
+          "odds_sources_count": 3,
+          "publication_score": 33.797,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 76.099,
+          "quality_score_raw": 76.099,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.594071,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 18.009,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 18.009,
+            "xg_model_gap_pp": -18.009,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.74133,
+            "xg_probability_pct": 74.133,
+            "xg_total": 1.76
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "canonical_negative_value"
+        ],
+        "reject_reasons_ru": [
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
       {
-        "away_team": "SVG Bleiburg",
-        "home_team": "VST Voelkermarkt",
-        "kickoff_utc": "2026-05-17T16:00:00+00:00",
-        "league_name": "Austria Amateur - Karnten, Karntner Liga",
-        "match_key": "soccer|svg bleiburg|vst voelkermarkt|2026-05-17",
-        "minutes_to_kickoff": 45.15,
+        "away_team": "CA San Lorenzo de Almagro",
+        "home_team": "Gimnasia Y Esgrima La Plata",
+        "kickoff_utc": "2026-05-17T18:00:00+00:00",
+        "league_name": "Argentina - Primera Division, Women",
+        "match_key": "soccer|ca san lorenzo almagro|gimnasia y esgrima la plata|2026-05-17",
+        "minutes_to_kickoff": 43.97,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.949,
+        "priority": 161.342,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -372,14 +536,14 @@
         }
       },
       {
-        "away_team": "Palestino",
-        "home_team": "Union Espanola",
-        "kickoff_utc": "2026-05-17T16:00:00+00:00",
-        "league_name": "Chile - Primera Division, Women",
-        "match_key": "soccer|palestino|union espanola|2026-05-17",
-        "minutes_to_kickoff": 45.15,
+        "away_team": "Ferro Carril Oeste",
+        "home_team": "Deportivo Madryn",
+        "kickoff_utc": "2026-05-17T18:00:00+00:00",
+        "league_name": "Argentina - Primera Nacional",
+        "match_key": "soccer|ferro carril oeste|madryn|2026-05-17",
+        "minutes_to_kickoff": 43.97,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.949,
+        "priority": 161.342,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -392,14 +556,14 @@
         }
       },
       {
-        "away_team": "Viborg FF",
-        "home_team": "AGF Aarhus",
-        "kickoff_utc": "2026-05-17T16:00:00+00:00",
-        "league_name": "Denmark - Superliga",
-        "match_key": "soccer|agf aarhus|viborg ff|2026-05-17",
-        "minutes_to_kickoff": 45.15,
+        "away_team": "Guillermo Brown",
+        "home_team": "CA Germinal",
+        "kickoff_utc": "2026-05-17T18:00:00+00:00",
+        "league_name": "Argentina - Torneo Federal A",
+        "match_key": "soccer|ca germinal|guillermo brown|2026-05-17",
+        "minutes_to_kickoff": 43.97,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.949,
+        "priority": 161.342,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -412,14 +576,14 @@
         }
       },
       {
-        "away_team": "Broendby IF",
-        "home_team": "FC Midtjylland",
-        "kickoff_utc": "2026-05-17T16:00:00+00:00",
-        "league_name": "Denmark - Superliga",
-        "match_key": "soccer|broendby if|midtjylland|2026-05-17",
-        "minutes_to_kickoff": 45.15,
+        "away_team": "Gimnasia y Esgrima de Concepcion del Uruguay",
+        "home_team": "CA Linqueno",
+        "kickoff_utc": "2026-05-17T18:00:00+00:00",
+        "league_name": "Argentina - Torneo Federal A",
+        "match_key": "soccer|ca linqueno|gimnasia y esgrima concepcion uruguay|2026-05-17",
+        "minutes_to_kickoff": 43.97,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.949,
+        "priority": 161.342,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -432,14 +596,14 @@
         }
       },
       {
-        "away_team": "FC Nordsjaelland",
-        "home_team": "Soenderjyske",
-        "kickoff_utc": "2026-05-17T16:00:00+00:00",
-        "league_name": "Denmark - Superliga",
-        "match_key": "soccer|nordsjaelland|soenderjyske|2026-05-17",
-        "minutes_to_kickoff": 45.15,
+        "away_team": "Kimberley de Mar Del Plata",
+        "home_team": "CDC Nicanor Otamendi",
+        "kickoff_utc": "2026-05-17T18:00:00+00:00",
+        "league_name": "Argentina - Torneo Federal A",
+        "match_key": "soccer|cdc nicanor otamendi|kimberley mar plata|2026-05-17",
+        "minutes_to_kickoff": 43.97,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.949,
+        "priority": 161.342,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -452,14 +616,14 @@
         }
       },
       {
-        "away_team": "Universidad Catolica Del Ecuador",
-        "home_team": "CS Emelec",
-        "kickoff_utc": "2026-05-17T16:00:00+00:00",
-        "league_name": "Ecuador - Superliga, Women",
-        "match_key": "soccer|cs emelec|universidad catolica ecuador|2026-05-17",
-        "minutes_to_kickoff": 45.15,
+        "away_team": "Costa Brava de General Pico",
+        "home_team": "Deportivo Rincon",
+        "kickoff_utc": "2026-05-17T18:00:00+00:00",
+        "league_name": "Argentina - Torneo Federal A",
+        "match_key": "soccer|costa brava general pico|rincon|2026-05-17",
+        "minutes_to_kickoff": 43.97,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 160.949,
+        "priority": 161.342,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -473,10 +637,10 @@
       }
     ]
   },
-  "status": "published",
-  "status_ru": "✅ прогноз опубликован",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 1707,
-  "top_reason": "skipped_existing_pick",
+  "text_length": 2428,
+  "top_reason": "canonical_negative_value",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
