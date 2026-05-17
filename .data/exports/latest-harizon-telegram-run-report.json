@@ -1,15 +1,15 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 38,
-      "contexts_total_effective": 38,
+      "contexts": 41,
+      "contexts_total_effective": 41,
       "errors": 0,
       "events": 50,
       "events_total_effective": 107,
-      "overlap": 0,
+      "overlap": 7,
       "requests": 1,
       "requests_total_effective": 13,
-      "secondary_offers_added": 858,
+      "secondary_offers_added": 847,
       "v2_contexts": 3,
       "v2_errors": 0,
       "v2_events": 107,
@@ -19,12 +19,13 @@
       "v2_stats_resources": 3
     },
     "odds_api_io": {
-      "books_2plus": 0,
-      "errors": 36,
-      "events_req": 36,
-      "matched": 0,
-      "odds_req": 0,
-      "offers": 408
+      "auth_failed": false,
+      "books_2plus": 18,
+      "errors": 0,
+      "events_req": 0,
+      "matched": 82,
+      "odds_req": 18,
+      "offers": 2935
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -40,39 +41,41 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 192,
+      "contexts": 198,
       "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 28,
-      "rows": 25290,
+      "rows": 25307,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 0.4677971641222636,
-    "fallback_age_min": 0.1702130913734436,
-    "run_log_age_min": 0.2618273178736369,
-    "signal_stack_age_min": 0.4865257342656453
+    "debug_age_min": 0.4576353430747986,
+    "fallback_age_min": 0.15772799650828043,
+    "run_log_age_min": 0.2553604284922282,
+    "signal_stack_age_min": 0.4735438386599223
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 0,
-    "bzzoiro_secondary_offers_added": 858,
-    "day_inventory_total": 301,
-    "day_inventory_with_context": 109,
-    "day_inventory_with_odds": 109,
-    "matches_seen": 207,
-    "matches_with_2plus_books": 0,
-    "matches_with_context": 194,
-    "matches_with_offers": 8,
-    "odds_offers_primary": 408,
-    "ready_for_model": 109,
+    "bzzoiro_odds_overlap_with_odds_api_io": 7,
+    "bzzoiro_secondary_offers_added": 847,
+    "day_inventory_total": 314,
+    "day_inventory_with_context": 91,
+    "day_inventory_with_odds": 91,
+    "matches_seen": 218,
+    "matches_with_2plus_books": 18,
+    "matches_with_context": 201,
+    "matches_with_offers": 45,
+    "odds_offers_primary": 2935,
+    "ready_for_model": 91,
     "secondary_combinations": {
-      "bzzoiro": 77
+      "bzzoiro": 69,
+      "bzzoiro+odds_api_io": 7,
+      "odds_api_io": 37
     }
   },
-  "created_at_utc": "2026-05-17T07:22:52.368428+00:00",
+  "created_at_utc": "2026-05-17T08:23:53.186813+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
       "contexts_built": 3,
@@ -339,9 +342,9 @@
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 82,
+    "final_pre_kickoff_checks": 100,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 82,
+    "no_more_regular_run_before_kickoff": 100,
     "seen": 0
   },
   "reasons": [],
@@ -349,14 +352,14 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "North Lakes United",
-        "home_team": "Moggill FC",
-        "kickoff_utc": "2026-05-17T08:00:00+00:00",
-        "league_name": "Australia - Queensland Premier League 3 Metro",
-        "match_key": "soccer|moggill|north lakes united|2026-05-17",
-        "minutes_to_kickoff": 37.61,
+        "away_team": "FC Penya d`Andorra",
+        "home_team": "Atletic Club d'Escaldes",
+        "kickoff_utc": "2026-05-17T09:00:00+00:00",
+        "league_name": "Andorra - Primera Divisio",
+        "match_key": "soccer|atletic d escaldes|penya d andorra|2026-05-17",
+        "minutes_to_kickoff": 36.58,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.464,
+        "priority": 163.806,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -369,14 +372,54 @@
         }
       },
       {
-        "away_team": "Jiangsu LFC",
-        "home_team": "Beijing WFC",
-        "kickoff_utc": "2026-05-17T08:00:00+00:00",
+        "away_team": "Sporting Club DE Escaldes",
+        "home_team": "City Escaldes FC",
+        "kickoff_utc": "2026-05-17T09:00:00+00:00",
+        "league_name": "Andorra - Second Divisio",
+        "match_key": "soccer|city escaldes|sporting escaldes|2026-05-17",
+        "minutes_to_kickoff": 36.58,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 163.806,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CE Casa De Portugal",
+        "home_team": "FS La Massana",
+        "kickoff_utc": "2026-05-17T09:00:00+00:00",
+        "league_name": "Andorra - Second Divisio",
+        "match_key": "soccer|ce casa portugal|fs la massana|2026-05-17",
+        "minutes_to_kickoff": 36.58,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 163.806,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Shandong Ticai",
+        "home_team": "Shaanxi Chang An Athletic FC",
+        "kickoff_utc": "2026-05-17T09:00:00+00:00",
         "league_name": "China - Chinese Super League, Women",
-        "match_key": "soccer|beijing wfc|jiangsu lfc|2026-05-17",
-        "minutes_to_kickoff": 37.61,
+        "match_key": "soccer|shaanxi chang an athletic|shandong ticai|2026-05-17",
+        "minutes_to_kickoff": 36.58,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.464,
+        "priority": 163.806,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -389,54 +432,14 @@
         }
       },
       {
-        "away_team": "Changchun Jiuyin Loans",
-        "home_team": "Shanghai Shengli",
-        "kickoff_utc": "2026-05-17T08:00:00+00:00",
-        "league_name": "China - Chinese Super League, Women",
-        "match_key": "soccer|changchun jiuyin loans|shanghai shengli|2026-05-17",
-        "minutes_to_kickoff": 37.61,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.464,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Ming Chuan University",
-        "home_team": "Taiwan Power Company",
-        "kickoff_utc": "2026-05-17T08:00:00+00:00",
-        "league_name": "Chinese Taipei - Premier League",
-        "match_key": "soccer|ming chuan university|taiwan power company|2026-05-17",
-        "minutes_to_kickoff": 37.61,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.464,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Ns Medimurje Cakovec",
-        "home_team": "Znk Agram",
-        "kickoff_utc": "2026-05-17T08:00:00+00:00",
+        "away_team": "Znk Osijek",
+        "home_team": "Znk Gorica",
+        "kickoff_utc": "2026-05-17T09:00:00+00:00",
         "league_name": "Croatia - First League Women",
-        "match_key": "soccer|ns medimurje cakovec|znk agram|2026-05-17",
-        "minutes_to_kickoff": 37.61,
+        "match_key": "soccer|znk gorica|znk osijek|2026-05-17",
+        "minutes_to_kickoff": 36.58,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.464,
+        "priority": 163.806,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -449,14 +452,14 @@
         }
       },
       {
-        "away_team": "Znk Hajduk Split",
-        "home_team": "Znk Dinamo-Maksimir",
-        "kickoff_utc": "2026-05-17T08:00:00+00:00",
-        "league_name": "Croatia - First League Women",
-        "match_key": "soccer|znk dinamo maksimir|znk hajduk split|2026-05-17",
-        "minutes_to_kickoff": 37.61,
+        "away_team": "HNK Rijeka",
+        "home_team": "NK Osijek",
+        "kickoff_utc": "2026-05-17T09:00:00+00:00",
+        "league_name": "Croatia - U19 Prva NL Juniori",
+        "match_key": "soccer|hnk rijeka|nk osijek|2026-05-17",
+        "minutes_to_kickoff": 36.58,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.464,
+        "priority": 163.806,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -473,7 +476,7 @@
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 1858,
+  "text_length": 1905,
   "top_reason": "no_viable_controlled_fallback",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }

@@ -1,21 +1,22 @@
 # API Health Run
 
-- Created UTC: `2026-05-17T07:01:47.806266+00:00`
+- Created UTC: `2026-05-17T08:08:30.622410+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
-- OK: **15**
+- OK: **16**
 - Config-only: **1**
 - Skipped: **0**
-- Healthy/config/skipped: **16**
+- Healthy/config/skipped: **17**
 - Degraded: **0**
 - Rate-limited: **0**
 - Auth errors: **0**
 - Missing secrets: **1**
-- Critical failures: **1**
+- Critical failures: **0**
 
 ## Recommendations
 
+- odds-api.io inventory is healthy; keep dual-account bookmaker split active.
 - SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.
 - FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.
 - TheSportsDB is reachable; use it for team/league alias enrichment.
@@ -36,7 +37,7 @@
 | `guardian` | `news` | `ok` | 1 | 1 | ok |
 | `newsapi` | `news` | `ok` | 1 | 1 | ok |
 | `newsdata` | `news` | `ok` | 1 | 1 | ok |
-| `odds_api_io_events` | `odds` | `server_error` | 1 | 0 | provider_payload_error |
+| `odds_api_io_events` | `odds` | `ok` | 1 | 10 | ok |
 | `sportlogic` | `odds` | `ok` | 1 | 50 | ok |
 | `allsportsapi` | `odds_context` | `ok` | 1 | 9 | ok |
 | `sharpapi_configured_base` | `utility` | `missing_secret` | 0 | 0 | required secret is not configured |
