@@ -1,29 +1,29 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: published
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Покрытие
-• Матчи в run: 86 | day inventory: 302
-• С линиями: 62 | с контекстом: 67 | ready model: 27
-• odds-api.io offers: 8802 | Bzzoiro secondary offers: 110
-• 2+ букмекера odds-api.io: 49 | 2-source overlap Bzzoiro+odds-api.io: 11
-• Source combinations: odds_api_io: 48, bzzoiro+odds_api_io: 11, bzzoiro: 3
+• Матчи в run: 164 | day inventory: 230
+• С линиями: 59 | с контекстом: 138 | ready model: 152
+• odds-api.io offers: 10439 | Bzzoiro secondary offers: 242
+• 2+ букмекера odds-api.io: 51 | 2-source overlap Bzzoiro+odds-api.io: 10
+• Source combinations: odds_api_io: 47, bzzoiro+odds_api_io: 10, bzzoiro: 9
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1 / 1
-• Passed quality: 1 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published True
+• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published False
 • Windowed coverage: audit 1 | allowed 0 | blocked 1 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 25 | no next regular run: 25
-• Line guard: seen 1 | kept 1 | dropped 0
+• Final pre-kickoff checks: 21 | no next regular run: 21
+• Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 18, matched 86, offers 8802, 2+ books 49, err 0
-• sstats: req 29, ctx 64, rows 26301, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 37, v2 ctx 9, v2 odds 9, secondary offers 110, overlap odds-api.io 11, err 0
-• sportlogic: enabled True, req 21, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 3
+• odds_api_io: events req 0, odds req 20, matched 95, offers 10439, 2+ books 51, err 0
+• sstats: req 29, ctx 135, rows 26300, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 13, v2 ctx 3, v2 odds 3, secondary offers 242, overlap odds-api.io 10, err 0
+• sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
 🧭 Progressive core coverage
 • Core odds/line: bzzoiro,odds_api_io,sstats
@@ -33,10 +33,12 @@
 • 0–12ч: 0/0 core-ready
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
+• quality bad historical segment guard: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Red Bull Bragantino SP — EC Vitoria BA | Больше @2.02 | EV +9.0% | edge +4.5 п.п. | q 86.9
+1. FC Lokomotiv 1929 Sofia — PFC Slavia Sofia | Меньше @2.11 | EV -1.7% | edge -0.8 п.п. | q 68.5
+   • reject: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Вывод
 • Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: 119; 0–4ч: 0/0; 0–12ч: 0/0.
