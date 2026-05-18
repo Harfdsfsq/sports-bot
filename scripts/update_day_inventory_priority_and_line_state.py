@@ -302,6 +302,64 @@ def line_guard(candidate: dict[str, Any], previous: dict[str, Any] | None, now: 
     }
 
 
+def apply_line_movement_lifecycle(candidate: dict[str, Any], guard: dict[str, Any], snapshot_count: int) -> None:
+    """Normalize all exported movement fields to one final lifecycle status.
+
+    Older artifacts may keep strings like `market_move=insufficient_history` in
+    source_summary/reasons even after the next run has confirmed movement.  The
+    Telegram report and publication guards should read one coherent status.
+    """
+    status = str(guard.get("line_movement_lifecycle_status") or "not_publishable")
+    movement_label = {
+        "awaiting_next_run": "awaiting_next_run",
+        "publish_now_no_next_cron": "publish_now_no_next_cron",
+        "movement_confirmed": "movement_confirmed",
+        "movement_failed": "movement_failed",
+    }.get(status, status)
+    candidate["line_movement_lifecycle_status"] = status
+    candidate["market_move"] = movement_label
+    candidate["forecast_market_movement"] = movement_label
+    diagnostics = candidate.setdefault("diagnostics", {})
+    if isinstance(diagnostics, dict):
+        diagnostics["line_movement_guard"] = guard
+        diagnostics["line_movement_lifecycle_status"] = status
+        diagnostics["market_move"] = movement_label
+        diagnostics["movement"] = {
+            "status": status,
+            "market_move": movement_label,
+            "snapshot_count": int(snapshot_count or 0),
+            "line_move_pct": guard.get("line_move_pct"),
+            "previous_snapshot_at_utc": guard.get("previous_snapshot_at_utc"),
+        }
+    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    source_summary["line_movement_lifecycle_status"] = status
+    source_summary["market_move"] = movement_label
+    source_summary["market_movement"] = movement_label
+    source_summary["forecast_market_movement"] = movement_label
+    if status == "awaiting_next_run":
+        source_summary["publication_lifecycle_status"] = "awaiting_next_run"
+        candidate["publication_lifecycle_status"] = "awaiting_next_run"
+    elif status in {"movement_confirmed", "publish_now_no_next_cron"}:
+        # Do not leave an old awaiting/generated marker when the last movement
+        # check now allows the candidate to continue to publication guards.
+        current_publication_status = str(candidate.get("publication_lifecycle_status") or "")
+        if current_publication_status in {"", "awaiting_next_run", "generated_not_sent"}:
+            candidate["publication_lifecycle_status"] = "movement_ready"
+        if source_summary.get("publication_lifecycle_status") in (None, "", "awaiting_next_run", "generated_not_sent"):
+            source_summary["publication_lifecycle_status"] = "movement_ready"
+    candidate["source_summary"] = source_summary
+
+
+def strip_stale_insufficient_history_reasons(candidate: dict[str, Any], guard: dict[str, Any]) -> None:
+    status = str(guard.get("line_movement_lifecycle_status") or "")
+    if status not in {"movement_confirmed", "publish_now_no_next_cron"}:
+        return
+    reasons = candidate.get("reasons") if isinstance(candidate.get("reasons"), list) else []
+    candidate["reasons"] = [r for r in reasons if "insufficient_history" not in str(r)]
+    reject_reasons = candidate.get("reject_reasons") if isinstance(candidate.get("reject_reasons"), list) else []
+    candidate["reject_reasons"] = [r for r in reject_reasons if "insufficient_history" not in str(r)]
+
+
 def candidates_from_payload(payload: Any) -> tuple[list[dict[str, Any]], str | None]:
     if isinstance(payload, list):
         return [row for row in payload if isinstance(row, dict)], None
@@ -350,17 +408,9 @@ def mutate_candidate_files(local_date: str, now: datetime) -> dict[str, Any]:
             entry["snapshots"] = snapshots[-env_int("LINE_HISTORY_MAX_SNAPSHOTS_PER_LINE", 12):]
             entry["last_snapshot"] = snap
             entry["last_guard"] = guard
-            candidate.setdefault("diagnostics", {})
-            if isinstance(candidate["diagnostics"], dict):
-                candidate["diagnostics"]["line_movement_guard"] = guard
             candidate["line_movement_guard"] = guard
-            candidate["line_movement_lifecycle_status"] = guard.get("line_movement_lifecycle_status")
-            source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-            source_summary["line_movement_lifecycle_status"] = guard.get("line_movement_lifecycle_status")
-            if guard.get("line_movement_lifecycle_status") == "awaiting_next_run":
-                source_summary["publication_lifecycle_status"] = "awaiting_next_run"
-                candidate["publication_lifecycle_status"] = "awaiting_next_run"
-            candidate["source_summary"] = source_summary
+            apply_line_movement_lifecycle(candidate, guard, len(snapshots))
+            strip_stale_insufficient_history_reasons(candidate, guard)
             if not guard["passed"]:
                 reasons = candidate.get("reject_reasons") if isinstance(candidate.get("reject_reasons"), list) else []
                 reasons = list(reasons) + [f"line_guard:{reason}" for reason in guard["reasons"]]

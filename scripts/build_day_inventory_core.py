@@ -140,6 +140,23 @@ def nested(row: dict[str, Any], *paths: str) -> Any:
     return None
 
 
+LOW_QUALITY_TEAM_PATTERNS = [
+    r"\bu[- ]?17\b", r"\bu[- ]?18\b", r"\bu[- ]?19\b", r"\bu[- ]?20\b", r"\bu[- ]?21\b", r"\bu[- ]?23\b",
+    r"\bunder[- ]?17\b", r"\bunder[- ]?18\b", r"\bunder[- ]?19\b", r"\bunder[- ]?20\b", r"\bunder[- ]?21\b", r"\bunder[- ]?23\b",
+    r"\breserves?\b", r"\breserve team\b", r"\byouth\b", r"\bacademy\b", r"\bwomen(?:s)?\b",
+    r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
+]
+
+
+def is_low_quality_inventory_match(league: str, home: str, away: str) -> bool:
+    if is_low_tier_league(league):
+        return True
+    haystack = " ".join([str(league or ""), str(home or ""), str(away or "")]).lower()
+    if "unknown" in haystack:
+        return True
+    return any(re.search(pattern, haystack) for pattern in LOW_QUALITY_TEAM_PATTERNS)
+
+
 def make_match(
     *,
     source: str,
@@ -155,7 +172,7 @@ def make_match(
     league = clean_text(league_name) or "Unknown"
     if not home or not away or not commence_time:
         return None
-    if not env_bool("DAY_INVENTORY_ALLOW_LOW_TIER", False) and is_low_tier_league(league):
+    if not env_bool("DAY_INVENTORY_ALLOW_LOW_TIER", False) and is_low_quality_inventory_match(league, home, away):
         return None
     meta = dict(metadata or {})
     source_ids = dict(meta.get("provider_source_ids") or {})
@@ -463,8 +480,8 @@ def priority_score(match: Match, now_utc: datetime) -> float:
     league = str(match.league_name or "").lower()
     if any(term in league for term in ("premier", "serie a", "la liga", "bundesliga", "ligue 1", "eredivisie", "mls", "championship", "k league", "j1")):
         score += 12
-    if str(match.tier).lower() == "low":
-        score -= 35
+    if str(match.tier).lower() == "low" or is_low_quality_inventory_match(match.league_name, match.home_team, match.away_team):
+        score -= 80
     return round(max(0.0, score), 3)
 
 

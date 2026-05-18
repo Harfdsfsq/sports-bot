@@ -67,6 +67,65 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def truthy(value: Any) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "ok", "sent"}
+
+
+def sent_count_from_rows(rows: Any) -> int:
+    if not isinstance(rows, list):
+        return 0
+    return sum(1 for row in rows if is_sent_pick_row(row))
+
+
+def fallback_sent_count(fallback: dict[str, Any]) -> int:
+    """Return only Telegram-confirmed fallback sends.
+
+    A fallback report can legitimately say skipped_existing_pick after the main
+    pipeline has already published a pick.  That status must never be counted
+    as a new fallback publication and must not become the final top reason.
+    """
+    if not isinstance(fallback, dict) or not bool(fallback.get("published")):
+        return 0
+    status = str(fallback.get("status") or "").strip().lower()
+    if status.startswith("skipped"):
+        return 0
+    explicit = first_positive(
+        fallback.get("telegram_messages_sent"),
+        fallback.get("telegram_sent_count"),
+        fallback.get("published_to_telegram"),
+        fallback.get("selected_count"),
+    )
+    if explicit > 0:
+        return explicit
+    if truthy(fallback.get("telegram_sent")) or truthy(fallback.get("sent")):
+        return 1
+    return 0
+
+
+def final_publish_status(
+    *,
+    main_pipeline_count: int,
+    fallback_count: int,
+    fallback_status: str,
+) -> dict[str, Any]:
+    published_count = max(int(main_pipeline_count or 0), int(fallback_count or 0))
+    main_published = int(main_pipeline_count or 0) > 0
+    fallback_published = int(fallback_count or 0) > 0
+    if main_published:
+        top_reason = "main_pipeline_published"
+    elif fallback_published:
+        top_reason = "fallback_published"
+    else:
+        top_reason = fallback_status or "n/a"
+    return {
+        "published_count": published_count,
+        "main_pipeline_published": main_published,
+        "fallback_published": fallback_published,
+        "final_status": "published" if published_count > 0 else "not_published",
+        "top_reason_when_published": top_reason,
+    }
+
+
 def as_float(value: Any, default: float = 0.0) -> float:
     try:
         if value in (None, ""):
@@ -117,6 +176,9 @@ def reason_ru(reason: str) -> str:
         "controlled_rescue_no_candidate": "controlled reserve не нашёл безопасного кандидата",
         "fallback_publish_no_candidate": "fallback-публикация: нет кандидата",
         "line_movement_guard_dropped": "line movement guard снял кандидата",
+        "main_pipeline_published": "опубликовано основным пайплайном",
+        "fallback_published": "опубликовано fallback-пайплайном",
+        "telegram_sent": "Telegram подтвердил отправку",
     }
     return mapping.get(str(reason), str(reason).replace("_", " "))
 
@@ -225,16 +287,20 @@ def build_payload() -> dict[str, Any]:
     publishable = first_positive(summary.get("publishable_candidates"), rescue_counts.get("publishable_candidates"), windowed_filter.get("kept"))
     sent_picks = [x for x in picks if is_sent_pick_row(x)]
     sent_pending = [x for x in pending if is_sent_pick_row(x)]
-    fallback_published = 0
-    if bool(fallback.get("published")):
-        fallback_published = max(1, as_int(fallback.get("selected_count"), 1))
-    published_count = max(
+    main_pipeline_published_count = max(
         as_int(summary.get("published_to_telegram"), 0),
         as_int(summary.get("telegram_picks_sent"), 0),
         len(sent_picks),
         len(sent_pending),
-        fallback_published,
     )
+    fallback_status = str(fallback.get("status") or "").strip()
+    fallback_published_count = fallback_sent_count(fallback)
+    publish_status = final_publish_status(
+        main_pipeline_count=main_pipeline_published_count,
+        fallback_count=fallback_published_count,
+        fallback_status=fallback_status,
+    )
+    published_count = as_int(publish_status.get("published_count"), 0)
 
     day_inventory_total = first_positive(
         day_counts.get("matches_total"), day_counts.get("matches_total_high_watermark"),
@@ -290,9 +356,14 @@ def build_payload() -> dict[str, Any]:
         "passed_candidates": as_int(rescue_counts.get("passed_candidates")),
         "publishable_candidates": publishable,
         "published_count": published_count,
+        "main_pipeline_published_count": main_pipeline_published_count,
+        "main_pipeline_published": bool(publish_status.get("main_pipeline_published")),
         "fallback_candidates_seen": as_int(fallback.get("candidates_seen")),
         "fallback_evaluated": len(evaluated),
-        "fallback_published": bool(fallback.get("published")),
+        "fallback_status": fallback_status or "n/a",
+        "fallback_published_count": fallback_published_count,
+        "fallback_published": bool(publish_status.get("fallback_published")),
+        "final_publication_status": publish_status.get("final_status"),
         "windowed_audit_candidates": as_int(windowed.get("candidates_in")),
         "windowed_publish_allowed": as_int(windowed.get("publish_allowed_by_coverage")),
         "windowed_publish_blocked": as_int(windowed.get("publish_blocked_by_coverage")),
@@ -319,10 +390,12 @@ def build_payload() -> dict[str, Any]:
     else:
         status, status_ru = "coverage_guard_blocked", "🟡 кандидаты есть, coverage/movement guard заблокировал публикацию"
 
-    if odds_auth_failed and raw_candidates <= 0:
+    if published_count > 0:
+        top_reason = str(publish_status.get("top_reason_when_published") or "telegram_sent")
+    elif odds_auth_failed and raw_candidates <= 0:
         top_reason = "odds_api_io_auth_failed"
     else:
-        top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback.get("status") or "n/a")
+        top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback_status or "n/a")
     return {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "version": "harizon-telegram-report-v6-standalone-single-source",
@@ -360,7 +433,8 @@ def render(payload: dict[str, Any]) -> str:
         "🧪 Воронка кандидатов",
         f"• Raw/candidates before quality: {f['raw_candidates']} / {f['candidates_before_quality']}",
         f"• Passed quality: {f['passed_candidates']} | publishable: {f['publishable_candidates']} | опубликовано: {f['published_count']}",
-        f"• Controlled fallback: seen {f['fallback_candidates_seen']} | evaluated {f['fallback_evaluated']} | published {f['fallback_published']}",
+        f"• Main pipeline: published {f.get('main_pipeline_published')} ({f.get('main_pipeline_published_count', 0)})",
+        f"• Controlled fallback: status {f.get('fallback_status', 'n/a')} | seen {f['fallback_candidates_seen']} | evaluated {f['fallback_evaluated']} | published {f['fallback_published']} ({f.get('fallback_published_count', 0)})",
         f"• Windowed coverage: audit {f['windowed_audit_candidates']} | allowed {f['windowed_publish_allowed']} | blocked {f['windowed_publish_blocked']} | publish-filter input {f['publish_filter_input']}",
         "",
         "🛡️ Pre-publish / line movement",
@@ -376,7 +450,7 @@ def render(payload: dict[str, Any]) -> str:
         f"• bzzoiro: req {bzz['requests']}, ctx {bzz['contexts']}, events {bzz['events']}, secondary offers {bzz['secondary_offers_added']}, overlap odds-api.io {bzz['overlap']}, err {bzz['errors']}",
         f"• sportlogic: enabled {sport['enabled']}, req {sport['requests']}, odds req {sport['odds_requests']}, matched {sport['matched']}, offers {sport['offers']}, err {sport['errors']}",
         "",
-        "🚫 Почему не опубликовано",
+        "🚫 Почему не опубликовано" if payload["status"] != "published" else "🚫 Почему не опубликовано: не применимо, Telegram уже подтвердил отправку",
     ]
     reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
     if reasons:
