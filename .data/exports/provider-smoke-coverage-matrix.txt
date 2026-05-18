@@ -12,8 +12,9 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 6_12h | 41 | 26 | 41 | 14 | 14 | 14 | 6 | 0 | 14 | 14 |
-| 12_24h | 111 | 106 | 107 | 70 | 75 | 70 | 42 | 0 | 74 | 70 |
+| 2_6h | 5 | 5 | 5 | 3 | 3 | 3 | 2 | 0 | 3 | 3 |
+| 6_12h | 48 | 32 | 48 | 20 | 20 | 20 | 8 | 0 | 20 | 20 |
+| 12_24h | 99 | 95 | 95 | 61 | 66 | 61 | 38 | 0 | 65 | 61 |
 | 24h_plus | 18 | 18 | 0 | 0 | 14 | 0 | 14 | 0 | 0 | 0 |
 | started | 85 | 47 | 85 | 64 | 64 | 63 | 27 | 0 | 64 | 63 |
 
@@ -35,8 +36,8 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 6_12h | 2026-05-18T09:00:00+00:00 | FC Cukaricki — FK Crvena Zvezda | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 6_12h | 2026-05-18T09:00:00+00:00 | FC Krylia Sovetov Samara-2 — FC Orenburg-2 | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T09:00:00+00:00 | FC Cukaricki — FK Crvena Zvezda | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-18T09:00:00+00:00 | FC Krylia Sovetov Samara-2 — FC Orenburg-2 | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-18T09:30:00+00:00 | South Melbourne FC — Caroline Springs George Cross FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-18T10:00:00+00:00 | Naftan Novopolotsk 2 — FC Maxline-2 Vitebsk | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-18T10:00:00+00:00 | FC Zorya Luhansk — FC Polissya Zhytomyr | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
@@ -62,15 +63,15 @@
 - 6_12h | 2026-05-18T13:00:00+00:00 | Polisi Tanzania FC — Kengold FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-18T13:00:00+00:00 | Transit Camp FC — Gunners FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-18T13:00:00+00:00 | Stade de Reims — LOSC Lille | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 12_24h | 2026-05-18T14:00:00+00:00 | Talaea El Gaish — Pharco FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 12_24h | 2026-05-18T15:00:00+00:00 | FC Lahti — Vaasan Palloseura | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 12_24h | 2026-05-18T15:00:00+00:00 | Club Deportivo Magallanes — Deportes Recoleta | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-18T14:00:00+00:00 | Talaea El Gaish — Pharco FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-18T15:00:00+00:00 | FC Lahti — Vaasan Palloseura | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 6_12h | 2026-05-18T15:00:00+00:00 | Club Deportivo Magallanes — Deportes Recoleta | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=191 / checked=255 | rate=74.9% | SStats events=1064
-- potential_add: context_deep=191 xg_or_rating=191 form=191 odds_rescue=14
-- projected_upper_bound: context_2plus=255 xg=244 form=193 odds_2plus=162
+- crosswalk: matched=190 / checked=255 | rate=74.51% | SStats events=1063
+- potential_add: context_deep=190 xg_or_rating=190 form=190 odds_rescue=14
+- projected_upper_bound: context_2plus=255 xg=243 form=193 odds_2plus=162
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
