@@ -123,7 +123,7 @@ class Settings(BaseSettings):
     context_enrichment_requires_offers: bool = Field(default=False, validation_alias=AliasChoices("CONTEXT_ENRICHMENT_REQUIRES_OFFERS"))
     seen_candidate_lookback_hours: float = Field(default=36.0, validation_alias=AliasChoices("SEEN_CANDIDATE_LOOKBACK_HOURS"))
     republish_seen_candidates_when_empty: bool = Field(
-        default=True,
+        default=False,
         validation_alias=AliasChoices("REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY"),
     )
     republish_seen_candidates_limit: int = Field(

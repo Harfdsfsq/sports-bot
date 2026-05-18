@@ -145,7 +145,22 @@ LOW_QUALITY_TEAM_PATTERNS = [
     r"\bunder[- ]?17\b", r"\bunder[- ]?18\b", r"\bunder[- ]?19\b", r"\bunder[- ]?20\b", r"\bunder[- ]?21\b", r"\bunder[- ]?23\b",
     r"\breserves?\b", r"\breserve team\b", r"\byouth\b", r"\bacademy\b", r"\bwomen(?:s)?\b",
     r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
+    r"\bvtoraya\s+liga\b", r"\bsecond\s+league\b", r"\bthird\s+league\b",
 ]
+
+
+def is_low_quality_team_name(name: str) -> bool:
+    text = str(name or "").strip().lower()
+    if not text:
+        return False
+    if re.search(r"\b(?:u[- ]?17|u[- ]?18|u[- ]?19|u[- ]?20|u[- ]?21|u[- ]?23|under[- ]?17|under[- ]?18|under[- ]?19|under[- ]?20|under[- ]?21|under[- ]?23|reserves?|youth|academy|development|women(?:s)?|2nd|second team|b team)\b", text):
+        return True
+    # Many providers encode reserve squads as "Team 2", "Team-2", "Team II" or "Team III".
+    # Do this check only on team names, never on league names, so good leagues like LaLiga 2 are not penalized.
+    if re.search(r"(?:^|[\s\-_.])(?:2|ii|iii)$", text):
+        return True
+    return False
+
 
 
 def is_low_quality_inventory_match(league: str, home: str, away: str) -> bool:
@@ -153,6 +168,8 @@ def is_low_quality_inventory_match(league: str, home: str, away: str) -> bool:
         return True
     haystack = " ".join([str(league or ""), str(home or ""), str(away or "")]).lower()
     if "unknown" in haystack:
+        return True
+    if is_low_quality_team_name(home) or is_low_quality_team_name(away):
         return True
     return any(re.search(pattern, haystack) for pattern in LOW_QUALITY_TEAM_PATTERNS)
 

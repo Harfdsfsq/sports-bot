@@ -38,8 +38,21 @@ LOW_QUALITY_SAMPLE_PATTERNS = [
     r"\bunknown\b", r"\bu[- ]?17\b", r"\bu[- ]?18\b", r"\bu[- ]?19\b", r"\bu[- ]?20\b", r"\bu[- ]?21\b", r"\bu[- ]?23\b",
     r"\bunder[- ]?17\b", r"\bunder[- ]?18\b", r"\bunder[- ]?19\b", r"\bunder[- ]?20\b", r"\bunder[- ]?21\b", r"\bunder[- ]?23\b",
     r"\breserves?\b", r"\byouth\b", r"\bacademy\b", r"\bdevelopment\b", r"\bwomen(?:s)?\b", r"\bamateur\b", r"\bregional\b",
-    r"\brussia\s*-?\s*2\.?\s*liga\b", r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
+    r"\brussia\s*-?\s*2\.?\s*liga\b", r"\bvtoraya\s+liga\b", r"\bsecond\s+league\b", r"\bthird\s+league\b",
+    r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
 ]
+
+
+def is_low_quality_team_name(name: Any) -> bool:
+    text = str(name or "").strip().lower()
+    if not text:
+        return False
+    if re.search(r"\b(?:u[- ]?17|u[- ]?18|u[- ]?19|u[- ]?20|u[- ]?21|u[- ]?23|under[- ]?17|under[- ]?18|under[- ]?19|under[- ]?20|under[- ]?21|under[- ]?23|reserves?|youth|academy|development|women(?:s)?|2nd|second team|b team)\b", text):
+        return True
+    if re.search(r"(?:^|[\s\-_.])(?:2|ii|iii)$", text):
+        return True
+    return False
+
 
 
 def is_low_quality_sample(row: Any) -> bool:
@@ -50,6 +63,8 @@ def is_low_quality_sample(row: Any) -> bool:
         str(row.get("home_team") or row.get("home") or ""),
         str(row.get("away_team") or row.get("away") or ""),
     ]).lower()
+    if is_low_quality_team_name(row.get("home_team") or row.get("home")) or is_low_quality_team_name(row.get("away_team") or row.get("away")):
+        return True
     return any(re.search(pattern, haystack) for pattern in LOW_QUALITY_SAMPLE_PATTERNS)
 
 
@@ -314,12 +329,23 @@ def build_payload() -> dict[str, Any]:
     publishable = first_positive(summary.get("publishable_candidates"), rescue_counts.get("publishable_candidates"), windowed_filter.get("kept"))
     sent_picks = [x for x in picks if is_sent_pick_row(x)]
     sent_pending = [x for x in pending if is_sent_pick_row(x)]
-    main_pipeline_published_count = max(
-        as_int(summary.get("published_to_telegram"), 0),
-        as_int(summary.get("telegram_picks_sent"), 0),
-        len(sent_picks),
-        len(sent_pending),
+    # For the factual run report, count only picks sent by *this* run when
+    # fresh debug summary is available.  latest-picks/latest-bets are committed
+    # state artifacts and may contain an older Telegram-confirmed pick; using
+    # them as a publication counter made later no-pick runs look like they had
+    # published the same pick again.
+    summary_has_publication_counters = any(
+        key in summary
+        for key in ("published_to_telegram", "telegram_picks_sent", "published")
     )
+    if summary_has_publication_counters:
+        main_pipeline_published_count = max(
+            as_int(summary.get("published_to_telegram"), 0),
+            as_int(summary.get("telegram_picks_sent"), 0),
+            as_int(summary.get("published"), 0),
+        )
+    else:
+        main_pipeline_published_count = max(len(sent_picks), len(sent_pending))
     fallback_status = str(fallback.get("status") or "").strip()
     fallback_published_count = fallback_sent_count(fallback)
     publish_status = final_publish_status(

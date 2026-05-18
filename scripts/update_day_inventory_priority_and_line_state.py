@@ -43,7 +43,20 @@ LOW_QUALITY_INVENTORY_PATTERNS = [
     r"\breserves?\b", r"\breserve team\b", r"\byouth\b", r"\bacademy\b", r"\bdevelopment\b",
     r"\bwomen(?:s)?\b", r"\bamateur\b", r"\bregional\b", r"\brussia\s*-?\s*2\.?\s*liga\b",
     r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
+    r"\bvtoraya\s+liga\b", r"\bsecond\s+league\b", r"\bthird\s+league\b",
 ]
+
+
+def is_low_quality_team_name(name: Any) -> bool:
+    text = str(name or "").strip().lower()
+    if not text:
+        return False
+    if re.search(r"\b(?:u[- ]?17|u[- ]?18|u[- ]?19|u[- ]?20|u[- ]?21|u[- ]?23|under[- ]?17|under[- ]?18|under[- ]?19|under[- ]?20|under[- ]?21|under[- ]?23|reserves?|youth|academy|development|women(?:s)?|2nd|second team|b team)\b", text):
+        return True
+    if re.search(r"(?:^|[\s\-_.])(?:2|ii|iii)$", text):
+        return True
+    return False
+
 
 
 def low_quality_inventory_reason(row: dict[str, Any]) -> str | None:
@@ -55,6 +68,8 @@ def low_quality_inventory_reason(row: dict[str, Any]) -> str | None:
     ]).lower()
     if not haystack.strip():
         return "empty_match_text"
+    if is_low_quality_team_name(row.get("home_team") or row.get("home")) or is_low_quality_team_name(row.get("away_team") or row.get("away")):
+        return "reserve_or_second_team_name"
     for pattern in LOW_QUALITY_INVENTORY_PATTERNS:
         if re.search(pattern, haystack):
             return pattern

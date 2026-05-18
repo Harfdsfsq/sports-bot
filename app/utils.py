@@ -247,6 +247,9 @@ LOW_TIER_PATTERNS = [
     r"\bacademy\b",
     r"\bdevelopment\b",
     r"\brussia.*2\.?\s*liga\b",
+    r"\bvtoraya\s+liga\b",
+    r"\bsecond\s+league\b",
+    r"\bthird\s+league\b",
 ]
 
 

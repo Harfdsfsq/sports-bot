@@ -62,6 +62,7 @@ class PredictionRunner:
         self.telegram = TelegramPublisher(settings)
         self.settlement = SettlementService(settings)
         self.state = JsonStateStore(settings.state_path, settings.debug_path)
+        self._seen_published_fingerprints: set[str] = set()
 
     @staticmethod
     def _provider_name_from_module(module_name: str) -> str:
@@ -456,6 +457,7 @@ class PredictionRunner:
                 rejections[f'quality_{reason}'] = rejections.get(f'quality_{reason}', 0) + count
 
             seen_fingerprints = self._load_seen_candidate_fingerprints()
+            self._seen_published_fingerprints = set(seen_fingerprints)
             candidates: list[CandidateBet] = []
             reused_candidates: list[CandidateBet] = []
             reused_already_in_state = 0
@@ -467,25 +469,34 @@ class PredictionRunner:
                     reused_candidates.append(candidate)
                     continue
                 candidates.append(candidate)
-            if (
-                not candidates
-                and reused_candidates
-                and bool(getattr(self.settings, 'republish_seen_candidates_when_empty', True))
-            ):
-                republish_limit = max(1, int(getattr(self.settings, 'republish_seen_candidates_limit', 1) or 1))
-                reused_candidates.sort(
-                    key=lambda item: (
-                        float(getattr(item, 'publication_score', 0.0) or 0.0),
-                        float(getattr(item, 'ev_pct', 0.0) or 0.0),
-                        float(getattr(item, 'edge_pct', 0.0) or 0.0),
-                    ),
-                    reverse=True,
+            # Do not resend an already Telegram-confirmed pick just because the current run
+            # has no fresh alternatives.  The previous behavior republished the same candidate
+            # from ``reused_candidates`` when the fresh pool was empty, which caused duplicate
+            # Telegram posts during frequent external/manual runs.  Keep an explicit escape hatch
+            # for local diagnostics, but default and workflow settings keep it disabled.
+            if not candidates and reused_candidates:
+                republish_seen_enabled = bool(
+                    getattr(self.settings, 'republish_seen_candidates_when_empty', False)
                 )
-                republished_candidates = reused_candidates[:republish_limit]
-                for candidate in republished_candidates:
-                    candidate.reasons.append('republish=seen_candidate_pool_empty')
-                    candidate.source_summary['republish_reason'] = 'seen_candidate_pool_empty'
-                candidates = republished_candidates
+                if republish_seen_enabled:
+                    republish_limit = max(1, int(getattr(self.settings, 'republish_seen_candidates_limit', 1) or 1))
+                    reused_candidates.sort(
+                        key=lambda item: (
+                            float(getattr(item, 'publication_score', 0.0) or 0.0),
+                            float(getattr(item, 'ev_pct', 0.0) or 0.0),
+                            float(getattr(item, 'edge_pct', 0.0) or 0.0),
+                        ),
+                        reverse=True,
+                    )
+                    republished_candidates = reused_candidates[:republish_limit]
+                    for candidate in republished_candidates:
+                        candidate.reasons.append('republish=seen_candidate_pool_empty_explicit_override')
+                        candidate.source_summary['republish_reason'] = 'seen_candidate_pool_empty_explicit_override'
+                    candidates = republished_candidates
+                else:
+                    for candidate in reused_candidates:
+                        candidate.reasons.append('blocked=already_telegram_sent')
+                        candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent'
 
             candidates = self.state.annotate_candidates_with_stakes(candidates, self.settings)
             zero_stake_candidates = [
@@ -1732,9 +1743,16 @@ class PredictionRunner:
         lookback_hours = max(0.0, float(getattr(self.settings, 'seen_candidate_lookback_hours', 36.0) or 36.0))
         cutoff = now_utc - timedelta(hours=lookback_hours) if lookback_hours > 0 else None
         paths = [Path(self.settings.state_path)]
-        latest_picks = Path(self.settings.storage_export_dir) / 'latest-picks.json'
-        if latest_picks not in paths:
-            paths.append(latest_picks)
+        export_dir = Path(self.settings.storage_export_dir)
+        for extra_path in (
+            export_dir / 'latest-picks.json',
+            export_dir / 'latest-bets.json',
+            export_dir / 'latest-pending-bets.json',
+            Path('.data') / 'fallback-sent-index.json',
+            Path('.data') / 'candidate-lifecycle-state.json',
+        ):
+            if extra_path not in paths:
+                paths.append(extra_path)
 
         seen: set[str] = set()
         for path in paths:
@@ -1776,6 +1794,11 @@ class PredictionRunner:
         publishable: list[CandidateBet] = []
         for candidate in candidates:
             if getattr(self.settings, 'bankroll_enabled', True) and float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0:
+                continue
+            fingerprint = self._candidate_fingerprint(candidate)
+            if fingerprint and fingerprint in getattr(self, '_seen_published_fingerprints', set()):
+                candidate.reasons.append('publish_blocked=already_telegram_sent')
+                candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent'
                 continue
             coverage_decision = sync_candidate_publish_coverage(candidate, self.settings)
             candidate.diagnostics.setdefault('publish_coverage_contract', coverage_decision.report)
