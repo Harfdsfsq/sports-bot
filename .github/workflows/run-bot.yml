@@ -1,6 +1,9 @@
 name: run-bot
 
 on:
+  schedule:
+    # Every 2 hours. Workflow runs in UTC; app TZ remains Europe/Moscow for business logic.
+    - cron: "0 */2 * * *"
   workflow_dispatch:
     inputs:
       mode:

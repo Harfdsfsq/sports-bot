@@ -107,17 +107,30 @@ def _seq_len(value: Any) -> int:
 
 
 def _odds_source_count(candidate: Any) -> tuple[int, str]:
+    try:
+        from app.services.coverage_contract import publication_odds_source_report, sync_candidate_publish_coverage
+
+        # Sync first so the Telegram guard reads the same coverage numbers as the runner.
+        sync_candidate_publish_coverage(candidate)
+        report = publication_odds_source_report(candidate)
+        count = _to_int(report.get('odds_sources_count'), 0)
+        basis = ','.join(str(item) for item in (report.get('basis') or []) if str(item).strip())
+        return count, basis or 'publish_coverage_contract'
+    except Exception:
+        pass
+
     summary = _source_summary(candidate)
+    candidates: list[tuple[int, str]] = []
     for key in ('odds_sources_count', 'odds_source_count', 'independent_odds_sources', 'independent_odds_source_count'):
         if key in summary:
             value = _to_int(summary.get(key), -1)
             if value >= 0:
-                return value, f'source_summary.{key}'
-    for key in ('odds_sources', 'offer_sources', 'price_sources', 'independent_sources'):
+                candidates.append((value, f'source_summary.{key}'))
+    for key in ('odds_sources', 'offer_sources', 'price_sources', 'independent_sources', 'exact_odds_sources'):
         if key in summary:
             count = _seq_len(summary.get(key))
             if count > 0:
-                return count, f'source_summary.{key}'
+                candidates.append((count, f'source_summary.{key}'))
     sources: set[str] = set()
     candidate_family = _family(candidate)
     candidate_point = _get(candidate, 'point', None)
@@ -136,9 +149,14 @@ def _odds_source_count(candidate: Any) -> tuple[int, str]:
                 pass
         sources.add(source)
     if sources:
-        return len(sources), 'raw_bucket_offers.sources'
+        candidates.append((len(sources), 'raw_bucket_offers.sources'))
     count = _to_int(_get(candidate, 'sources_count', 0), 0)
-    return count, 'candidate.sources_count'
+    if count:
+        candidates.append((count, 'candidate.sources_count'))
+    if not candidates:
+        return 0, 'no_odds_sources'
+    best = max(candidates, key=lambda item: item[0])
+    return best
 
 
 def _reject_reason(candidate: Any) -> str | None:

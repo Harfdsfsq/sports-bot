@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import os
+import re
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Iterable
 
 
 CONTEXT_ONLY_SOURCES = {
@@ -40,6 +41,45 @@ ODDS_SOURCE_ALIASES = {
     "sstats_current_odds": "sstats",
 }
 
+ODDS_SOURCE_LIST_KEYS = {
+    "sources",
+    "odds_sources",
+    "offer_sources",
+    "price_sources",
+    "selected_odds_sources",
+    "selected_price_sources",
+    "exact_odds_sources",
+    "independent_sources",
+    "publication_odds_sources",
+    "provider_sources",
+}
+
+ODDS_SOURCE_COUNT_KEYS = {
+    "sources_count",
+    "odds_sources_count",
+    "odds_source_count",
+    "independent_odds_sources",
+    "independent_odds_sources_count",
+    "independent_odds_source_count",
+    "publication_odds_sources_count",
+    "exact_odds_sources_count",
+    "price_sources_count",
+}
+
+CONTEXT_SOURCE_LIST_KEYS = {
+    "context_sources",
+    "confirmation_sources",
+    "merged_context_sources",
+    "context_provider_sources",
+}
+
+CONTEXT_SOURCE_COUNT_KEYS = {
+    "context_sources_count",
+    "context_source_count",
+    "confirmation_sources_count",
+    "merged_context_sources_count",
+}
+
 
 @dataclass(frozen=True)
 class CoverageContract:
@@ -61,6 +101,8 @@ def _truthy(value: Any, default: bool = False) -> bool:
     raw = str(value if value is not None else "").strip().lower()
     if not raw:
         return default
+    if raw in {"0", "false", "no", "off", "none", "null"}:
+        return False
     return raw in {"1", "true", "yes", "on", "force"}
 
 
@@ -129,6 +171,16 @@ def _get(container: Any, field: str, default: Any = None) -> Any:
     return getattr(container, field, default)
 
 
+def _set(container: Any, field: str, value: Any) -> None:
+    if isinstance(container, dict):
+        container[field] = value
+        return
+    try:
+        setattr(container, field, value)
+    except Exception:
+        return
+
+
 def _iter_offer_rows(candidate: Any) -> list[Any]:
     rows = _get(candidate, "raw_bucket_offers", None)
     if isinstance(rows, list) and rows:
@@ -142,33 +194,100 @@ def _iter_offer_rows(candidate: Any) -> list[Any]:
     return []
 
 
-def _sources_from_summary(candidate: Any) -> set[str]:
-    source_summary = _get(candidate, "source_summary", {}) or {}
-    if not isinstance(source_summary, dict):
-        return set()
+def _iter_dicts(value: Any, *, max_depth: int = 4) -> Iterable[dict[str, Any]]:
+    if max_depth < 0:
+        return
+    if isinstance(value, dict):
+        yield value
+        for nested in value.values():
+            if isinstance(nested, dict):
+                yield from _iter_dicts(nested, max_depth=max_depth - 1)
+            elif isinstance(nested, list):
+                for item in nested[:20]:
+                    if isinstance(item, dict):
+                        yield from _iter_dicts(item, max_depth=max_depth - 1)
+
+
+def _candidate_dict_views(candidate: Any) -> list[dict[str, Any]]:
+    views: list[dict[str, Any]] = []
+    if isinstance(candidate, dict):
+        views.extend(_iter_dicts(candidate, max_depth=3))
+    for attr in ("source_summary", "diagnostics", "integrity_report", "analysis"):
+        value = _get(candidate, attr, None)
+        if isinstance(value, dict):
+            views.extend(_iter_dicts(value, max_depth=3))
+    # Preserve order but remove duplicate dict identities.
+    unique: list[dict[str, Any]] = []
+    seen_ids: set[int] = set()
+    for view in views:
+        ident = id(view)
+        if ident not in seen_ids:
+            unique.append(view)
+            seen_ids.add(ident)
+    return unique
+
+
+def _split_sources(value: Any) -> set[str]:
     found: set[str] = set()
-    for key in ("sources", "odds_sources", "price_sources", "selected_odds_sources", "selected_price_sources"):
-        value = source_summary.get(key)
-        if isinstance(value, str):
-            found.add(value)
-        elif isinstance(value, (list, tuple, set)):
-            found.update(str(item) for item in value)
+    if value in (None, ""):
+        return found
+    if isinstance(value, str):
+        found.update(part.strip() for part in re.split(r"[,;+|/]", value) if part.strip())
+        return found
+    if isinstance(value, (list, tuple, set)):
+        for item in value:
+            found.update(_split_sources(item))
+        return found
+    if isinstance(value, dict):
+        for key, item_value in value.items():
+            # Some reports are {"odds_api_io": true}; others are {"sources": [...]}.  Keep both forms.
+            if isinstance(item_value, (bool, int, float, str)) and str(key or "").strip():
+                found.add(str(key).strip())
+            else:
+                found.update(_split_sources(item_value))
     return found
+
+
+def _sources_from_summary(candidate: Any) -> set[str]:
+    found: set[str] = set()
+    for view in _candidate_dict_views(candidate):
+        for key in ODDS_SOURCE_LIST_KEYS:
+            if key in view:
+                found.update(_split_sources(view.get(key)))
+    return found
+
+
+def _declared_count(candidate: Any, keys: set[str]) -> tuple[int, list[str]]:
+    count = 0
+    basis: list[str] = []
+    for view in _candidate_dict_views(candidate):
+        for key in keys:
+            if key not in view:
+                continue
+            value = _as_int(view.get(key), -1)
+            if value >= 0:
+                if value > count:
+                    count = value
+                basis.append(key)
+    for key in keys:
+        value = _as_int(_get(candidate, key, None), -1)
+        if value >= 0:
+            if value > count:
+                count = value
+            basis.append(f"candidate.{key}")
+    return count, sorted(set(basis))
 
 
 def odds_sources_for_candidate(candidate: Any, contract: CoverageContract | None = None) -> set[str]:
     contract = contract or CoverageContract()
     sources: set[str] = set()
-    rows = _iter_offer_rows(candidate)
-    for row in rows:
+    for row in _iter_offer_rows(candidate):
         source = normalize_source(_get(row, "source"), count_api_accounts_as_sources=contract.count_api_accounts_as_sources)
         if not source:
             continue
         if contract.context_sources_do_not_confirm_price and source in CONTEXT_ONLY_SOURCES:
             continue
         sources.add(source)
-    if sources:
-        return sources
     for source in _sources_from_summary(candidate):
         normalized = normalize_source(source, count_api_accounts_as_sources=contract.count_api_accounts_as_sources)
         if normalized and not (contract.context_sources_do_not_confirm_price and normalized in CONTEXT_ONLY_SOURCES):
@@ -177,16 +296,12 @@ def odds_sources_for_candidate(candidate: Any, contract: CoverageContract | None
 
 
 def context_sources_for_candidate(candidate: Any) -> set[str]:
-    source_summary = _get(candidate, "source_summary", {}) or {}
     sources: set[str] = set()
-    if isinstance(source_summary, dict):
-        for key in ("context_sources", "confirmation_sources", "merged_context_sources"):
-            value = source_summary.get(key)
-            if isinstance(value, str):
-                sources.add(value)
-            elif isinstance(value, (list, tuple, set)):
-                sources.update(str(item) for item in value)
-        context_source = source_summary.get("context_source")
+    for view in _candidate_dict_views(candidate):
+        for key in CONTEXT_SOURCE_LIST_KEYS:
+            if key in view:
+                sources.update(_split_sources(view.get(key)))
+        context_source = view.get("context_source")
         if context_source:
             sources.add(str(context_source))
     normalized = {normalize_source(item) for item in sources}
@@ -199,29 +314,48 @@ def books_for_candidate(candidate: Any) -> set[str]:
         book = str(_get(row, "bookmaker") or "").strip().lower()
         if book:
             books.add(book)
-    if books:
-        return books
-    source_summary = _get(candidate, "source_summary", {}) or {}
-    if isinstance(source_summary, dict):
-        value = source_summary.get("books")
-        if isinstance(value, str):
-            books.add(value.strip().lower())
-        elif isinstance(value, (list, tuple, set)):
-            books.update(str(item).strip().lower() for item in value if str(item).strip())
+    for view in _candidate_dict_views(candidate):
+        for key in ("books", "bookmakers", "selected_books"):
+            if key not in view:
+                continue
+            value = view.get(key)
+            if isinstance(value, str):
+                books.update(part.strip().lower() for part in re.split(r"[,;+|/]", value) if part.strip())
+            elif isinstance(value, (list, tuple, set)):
+                books.update(str(item).strip().lower() for item in value if str(item).strip())
     return books
+
+
+def publication_odds_source_report(candidate: Any, contract: CoverageContract | None = None) -> dict[str, Any]:
+    contract = contract or CoverageContract()
+    odds_sources = odds_sources_for_candidate(candidate, contract)
+    declared_count, declared_basis = _declared_count(candidate, ODDS_SOURCE_COUNT_KEYS)
+    source_count = max(len(odds_sources), declared_count)
+    basis: list[str] = []
+    if _iter_offer_rows(candidate):
+        basis.append("raw_bucket_offers.sources")
+    if odds_sources:
+        basis.append("normalized_odds_source_lists")
+    basis.extend(declared_basis)
+    return {
+        "odds_sources": sorted(odds_sources),
+        "odds_sources_count": source_count,
+        "declared_odds_sources_count": declared_count,
+        "named_odds_sources_count": len(odds_sources),
+        "basis": sorted(set(basis)) or ["none"],
+    }
 
 
 def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> CoverageDecision:
     contract = contract_from_settings(settings)
-    raw_offer_rows = _iter_offer_rows(candidate)
-    odds_sources = odds_sources_for_candidate(candidate, contract)
+    odds_report = publication_odds_source_report(candidate, contract)
     context_sources = context_sources_for_candidate(candidate)
     books = books_for_candidate(candidate)
     books_count = max(len(books), _as_int(_get(candidate, "books_count", 0), 0))
-    odds_source_count = len(odds_sources)
-    if not raw_offer_rows and not odds_sources:
-        odds_source_count = _as_int(_get(candidate, "sources_count", 0), 0)
-    context_source_count = len(context_sources)
+    odds_sources = set(odds_report["odds_sources"])
+    odds_source_count = int(odds_report["odds_sources_count"])
+    context_declared_count, context_basis = _declared_count(candidate, CONTEXT_SOURCE_COUNT_KEYS)
+    context_source_count = max(len(context_sources), context_declared_count)
 
     reasons: list[str] = []
     if odds_source_count < contract.min_odds_sources:
@@ -237,9 +371,49 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
         "min_books": contract.min_books,
         "odds_sources": sorted(odds_sources),
         "odds_sources_count": odds_source_count,
+        "declared_odds_sources_count": odds_report["declared_odds_sources_count"],
+        "named_odds_sources_count": odds_report["named_odds_sources_count"],
+        "odds_sources_basis": odds_report["basis"],
         "context_sources": sorted(context_sources),
         "context_sources_count": context_source_count,
+        "declared_context_sources_count": context_declared_count,
+        "context_sources_basis": context_basis,
         "books": sorted(books),
         "books_count": books_count,
     }
     return CoverageDecision(passed=not reasons, reasons=tuple(reasons), report=report)
+
+
+def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None) -> CoverageDecision:
+    """Normalize the final publish-coverage fields before any Telegram/fallback guard reads them.
+
+    Older pipeline stages may leave stale values such as source_summary.odds_sources_count=1 while
+    raw offers or a nested publish_coverage_contract already prove 2+ sources.  This function makes
+    the richest coverage report the single value of truth for the rest of the run.
+    """
+    decision = evaluate_publish_candidate(candidate, settings)
+    report = dict(decision.report)
+
+    source_summary = dict(_get(candidate, "source_summary", {}) or {})
+    source_summary["publish_coverage_contract"] = report
+    source_summary["publish_coverage_passed"] = bool(decision.passed)
+    source_summary["publish_coverage_reasons"] = list(decision.reasons)
+    source_summary["odds_sources_count"] = int(report.get("odds_sources_count") or 0)
+    source_summary["independent_odds_sources_count"] = int(report.get("odds_sources_count") or 0)
+    source_summary["price_sources_count"] = int(report.get("odds_sources_count") or 0)
+    source_summary["exact_odds_sources"] = list(report.get("odds_sources") or [])
+    source_summary["odds_sources"] = list(report.get("odds_sources") or [])
+    source_summary["context_sources_count"] = int(report.get("context_sources_count") or 0)
+    source_summary["context_sources"] = list(report.get("context_sources") or [])
+    source_summary["books_count"] = int(report.get("books_count") or 0)
+    source_summary["books"] = list(report.get("books") or [])
+    _set(candidate, "source_summary", source_summary)
+
+    diagnostics = dict(_get(candidate, "diagnostics", {}) or {})
+    diagnostics["publish_coverage_contract"] = report
+    _set(candidate, "diagnostics", diagnostics)
+
+    # CandidateBet has slots for these counters; dict rows use the same names.
+    _set(candidate, "sources_count", max(_as_int(_get(candidate, "sources_count", 0), 0), int(report.get("odds_sources_count") or 0)))
+    _set(candidate, "books_count", max(_as_int(_get(candidate, "books_count", 0), 0), int(report.get("books_count") or 0)))
+    return decision

@@ -11,6 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from app.schemas import CandidateBet, Match
+from app.services.publication_lifecycle import is_sent_pick_row
 from app.utils import candidate_selection_key, parse_datetime
 
 
@@ -418,6 +419,7 @@ class JsonStateStore:
         existing = {item.get('fingerprint') for item in bets if isinstance(item, dict)}
         bank = self._state.setdefault('bankroll', self._default_state()['bankroll'])
         added = 0
+        published_added = 0
         for candidate in candidates:
             row = self._serialize_candidate(candidate)
             fp = row['fingerprint']
@@ -432,8 +434,17 @@ class JsonStateStore:
             row['status'] = 'pending' if telegram_sent else 'generated'
             row['settlement'] = None
             row['telegram_sent'] = bool(telegram_sent)
+            row['publication_lifecycle_status'] = 'telegram_sent' if telegram_sent else 'generated_not_sent'
+            row['publication_lifecycle_stage'] = row['publication_lifecycle_status']
+            source_summary = dict(row.get('source_summary') or {})
+            source_summary['telegram_sent'] = bool(telegram_sent)
+            source_summary['publication_lifecycle_status'] = row['publication_lifecycle_status']
+            source_summary['publication_lifecycle_stage'] = row['publication_lifecycle_stage']
+            row['source_summary'] = source_summary
             bets.append(row)
-            published.append(row)
+            if telegram_sent:
+                published.append(row)
+                published_added += 1
             existing.add(fp)
             added += 1
             if telegram_sent and float(row.get('stake_amount') or 0.0) > 0:
@@ -441,7 +452,7 @@ class JsonStateStore:
                 bank['total_staked'] = round(float(bank.get('total_staked') or 0.0) + float(row['stake_amount']), 2)
                 bank['bets_published'] = int(bank.get('bets_published') or 0) + 1
         self._save()
-        return added
+        return published_added
 
     def store_shadow_candidates(self, candidates: list[CandidateBet], tracking_reason: str = 'shadow_tracking') -> int:
         shadow_bets = self._state.setdefault('shadow_bets', [])
@@ -451,6 +462,7 @@ class JsonStateStore:
             if isinstance(item, dict)
         }
         added = 0
+        published_added = 0
         for candidate in candidates:
             row = self._serialize_candidate(candidate)
             fp = row['fingerprint']
@@ -1236,6 +1248,22 @@ class JsonStateStore:
         row['commence_time'] = candidate.commence_time.isoformat()
         row['fingerprint'] = JsonStateStore._fingerprint_from_candidate(candidate)
         row['prediction_id'] = row['fingerprint']
+        source_summary = dict(row.get('source_summary') or {})
+        diagnostics = dict(row.get('diagnostics') or {})
+        lifecycle = str(
+            source_summary.get('publication_lifecycle_status')
+            or source_summary.get('publication_lifecycle_stage')
+            or (diagnostics.get('publication_lifecycle') or {}).get('status')
+            or 'generated_not_sent'
+        )
+        row['publication_lifecycle_status'] = lifecycle
+        row['publication_lifecycle_stage'] = lifecycle
+        row['telegram_sent'] = is_sent_pick_row(row)
+        row['status'] = 'pending' if row['telegram_sent'] else 'generated'
+        source_summary['telegram_sent'] = bool(row['telegram_sent'])
+        source_summary['publication_lifecycle_status'] = lifecycle
+        source_summary['publication_lifecycle_stage'] = lifecycle
+        row['source_summary'] = source_summary
         return row
 
     @staticmethod

@@ -20,7 +20,8 @@ from app.providers.weather_common import WeatherContextEnricher
 from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
-from app.services.coverage_contract import evaluate_publish_candidate
+from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
+from app.services.publication_lifecycle import is_sent_pick_row, mark_candidate_lifecycle
 from app.services.quality import PredictionQualityService
 from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
@@ -544,11 +545,18 @@ class PredictionRunner:
             )
             bankroll_preview = self._project_bankroll_summary(publishable_candidates)
             settlement_messages_sent, settlement_payloads = await self.telegram.publish_settlement_summary(settlement_summary)
-            sent_messages, telegram_payloads = await self.telegram.publish(publishable_candidates, bankroll_summary=bankroll_preview)
-            published_count = self.state.store_candidates(publishable_candidates, telegram_sent=sent_messages > 0)
+            prediction_messages_sent, telegram_payloads = await self.telegram.publish(publishable_candidates, bankroll_summary=bankroll_preview)
+            prediction_telegram_sent = prediction_messages_sent > 0
+            for candidate in publishable_candidates:
+                mark_candidate_lifecycle(
+                    candidate,
+                    telegram_sent=prediction_telegram_sent,
+                    failure_reason=None if prediction_telegram_sent else 'telegram_send_not_confirmed',
+                )
+            published_count = self.state.store_candidates(publishable_candidates, telegram_sent=prediction_telegram_sent)
             shadow_tracked_count = self.state.store_shadow_candidates(shadow_candidates, tracking_reason='shadow_learning')
-            telegram_picks_sent = len(publishable_candidates) if sent_messages > 0 else 0
-            sent_messages += settlement_messages_sent + daily_report_messages_sent
+            telegram_picks_sent = len(publishable_candidates) if prediction_telegram_sent else 0
+            sent_messages = prediction_messages_sent + settlement_messages_sent + daily_report_messages_sent
             telegram_payloads = list(settlement_payloads) + list(daily_report_payloads) + list(telegram_payloads)
             clv_record_stats = self.market_monitor.record_published_candidates(publishable_candidates, decision_now_utc) if self.market_monitor is not None else {'tracked': 0}
             derived_market_candidates_before_quality = sum(
@@ -1769,7 +1777,7 @@ class PredictionRunner:
         for candidate in candidates:
             if getattr(self.settings, 'bankroll_enabled', True) and float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0:
                 continue
-            coverage_decision = evaluate_publish_candidate(candidate, self.settings)
+            coverage_decision = sync_candidate_publish_coverage(candidate, self.settings)
             candidate.diagnostics.setdefault('publish_coverage_contract', coverage_decision.report)
             candidate.source_summary['publish_coverage_contract'] = coverage_decision.report
             if not coverage_decision.passed:
@@ -1799,11 +1807,11 @@ class PredictionRunner:
     @staticmethod
     def _should_block_fingerprint(candidate: dict[str, Any], cutoff: datetime | None) -> bool:
         status = str(candidate.get('status') or '').strip().lower()
-        active_statuses = {'pending', 'open', 'published', 'new', 'active'}
-        settled_statuses = {'won', 'lost', 'push', 'void', 'cancelled', 'canceled', 'settled'}
-        if status in settled_statuses:
+        if status in {'won', 'lost', 'push', 'void', 'cancelled', 'canceled', 'settled'}:
             return False
-        if status and status not in active_statuses:
+        # latest-picks.json can contain generated/exported candidates that never reached Telegram.
+        # They are diagnostics, not published picks, and must not block the next run/fallback.
+        if not is_sent_pick_row(candidate):
             return False
 
         event_time_raw = candidate.get('commence_time') or candidate.get('published_at') or candidate.get('created_at')

@@ -16,6 +16,14 @@ from typing import Any
 from urllib import parse, request
 
 UTC = timezone.utc
+
+try:
+    from app.services.publication_lifecycle import is_sent_pick_row
+except Exception:
+    def is_sent_pick_row(row: Any) -> bool:
+        if not isinstance(row, dict):
+            return False
+        return str(row.get("telegram_sent") or "").strip().lower() in {"1", "true", "yes", "on"}
 EXPORT_DIR = Path(".data/exports")
 DEBUG_PATH = Path(".logs/debug-last-run.json")
 OUT_TXT = EXPORT_DIR / "latest-harizon-telegram-run-report.txt"
@@ -215,7 +223,18 @@ def build_payload() -> dict[str, Any]:
     raw_candidates = first_positive(summary.get("candidates_raw"), rescue_counts.get("candidates_before_quality"), pool_counts.get("debug_candidates_before_quality"))
     candidates_before_quality = first_positive(summary.get("candidates_before_quality"), rescue_counts.get("candidates_before_quality"), pool_counts.get("debug_candidates_before_quality"), raw_candidates)
     publishable = first_positive(summary.get("publishable_candidates"), rescue_counts.get("publishable_candidates"), windowed_filter.get("kept"))
-    published_count = len(picks) + len([x for x in pending if isinstance(x, dict) and x.get("telegram_sent")])
+    sent_picks = [x for x in picks if is_sent_pick_row(x)]
+    sent_pending = [x for x in pending if is_sent_pick_row(x)]
+    fallback_published = 0
+    if bool(fallback.get("published")):
+        fallback_published = max(1, as_int(fallback.get("selected_count"), 1))
+    published_count = max(
+        as_int(summary.get("published_to_telegram"), 0),
+        as_int(summary.get("telegram_picks_sent"), 0),
+        len(sent_picks),
+        len(sent_pending),
+        fallback_published,
+    )
 
     day_inventory_total = first_positive(
         day_counts.get("matches_total"), day_counts.get("matches_total_high_watermark"),
@@ -417,8 +436,15 @@ def send_telegram(text: str) -> bool:
         try:
             req = request.Request(f"https://api.telegram.org/bot{token}/sendMessage", data=data, method="POST")
             with request.urlopen(req, timeout=20) as resp:
-                if '"ok":true' not in resp.read().decode("utf-8", errors="replace"):
-                    ok = False
+                body = resp.read().decode("utf-8", errors="replace")
+            try:
+                payload = json.loads(body)
+            except Exception:
+                payload = {}
+            result = payload.get("result") if isinstance(payload, dict) and isinstance(payload.get("result"), dict) else {}
+            blocked = isinstance(payload, dict) and bool(payload.get("blocked_by_market_family_publication_guard"))
+            if not (isinstance(payload, dict) and payload.get("ok") is True and result.get("message_id") and not blocked):
+                ok = False
         except Exception:
             ok = False
     return ok

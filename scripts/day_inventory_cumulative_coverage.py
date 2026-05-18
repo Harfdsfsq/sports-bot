@@ -210,12 +210,15 @@ def main() -> int:
     for name, data in current.items():
         old = prev_buckets.get(name) if isinstance(prev_buckets.get(name), dict) else {}
         high_watermark[name] = {k: max(as_int(old.get(k)), as_int(data.get(k))) for k in empty_bucket().keys()}
+    pipeline_errors = [step for step in pipeline_steps if isinstance(step, dict) and step.get('status') == 'error']
     progress = {
         'updated_at_utc': now.isoformat(),
         'date_local': d,
         'min_odds_sources': min_odds_sources,
         'min_context_sources': min_context_sources,
         'coverage_pipeline_steps': pipeline_steps,
+        'coverage_pipeline_ok': not pipeline_errors,
+        'coverage_pipeline_error_count': len(pipeline_errors),
         'current_by_kickoff_window': current,
         'by_kickoff_window': high_watermark,
         'notes': [
@@ -234,8 +237,14 @@ def main() -> int:
     inv['updated_at_utc'] = now.isoformat()
     for path in [inv_path, ROOT / '.data' / 'day_inventory' / 'latest.json', ROOT / '.data' / 'day_inventory' / 'current.json', ROOT / '.data' / 'day_inventory' / 'today.json']:
         write_json(path, inv)
+    report_status = 'ok' if matches else 'no_matches'
+    if pipeline_errors:
+        report_status = 'degraded' if matches else 'error'
     report = {
-        'status': 'ok' if matches else 'no_matches',
+        'status': report_status,
+        'pipeline_ok': not pipeline_errors,
+        'pipeline_error_count': len(pipeline_errors),
+        'pipeline_errors': pipeline_errors[:5],
         'inventory_path': str(inv_path),
         'updated_at_utc': now.isoformat(),
         'date_local': d,

@@ -34,7 +34,19 @@ class TelegramPublisher:
                     },
                 )
                 response.raise_for_status()
-                sent += 1
+                try:
+                    payload = response.json()
+                except Exception:
+                    payload = {}
+                if isinstance(payload, dict):
+                    result = payload.get("result") if isinstance(payload.get("result"), dict) else {}
+                    blocked = bool(payload.get("blocked_by_market_family_publication_guard"))
+                    message_id = result.get("message_id") if isinstance(result, dict) else None
+                    if payload.get("ok") is True and message_id and not blocked:
+                        sent += 1
+                else:
+                    # Telegram normally returns JSON.  Do not count synthetic/unknown OK bodies as sent.
+                    continue
         return sent, parts
 
     def _split_message(self, message: str, limit: int = 3900) -> list[str]:

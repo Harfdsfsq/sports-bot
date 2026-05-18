@@ -552,6 +552,9 @@ async def main_async() -> int:
     payload = store.build_payload(local_date=local_date, matches=selected, source_meta=source_meta, existing=existing)
     payload = enrich_payload_coverage(payload)
     payload.setdefault("counts", {})["matches_after_top_cut"] = len(selected)
+    payload["counts"]["target_matches"] = max_matches
+    payload["counts"]["target_shortfall"] = max(0, max_matches - len(selected))
+    payload["counts"]["target_full"] = len(selected) >= max_matches
     payload["counts"]["matches_raw_before_merge"] = sum(len(v) for v in matches_by_provider.values())
     payload["counts"]["matches_after_core_merge"] = len(merged)
     payload["core_crosswalk"] = {
@@ -566,6 +569,10 @@ async def main_async() -> int:
         "build_status": "ok",
         "mode": "core_provider_discovery_top300",
         "max_matches": max_matches,
+        "target_matches": max_matches,
+        "target_shortfall": max(0, max_matches - len(selected)),
+        "target_full": len(selected) >= max_matches,
+        "inventory_policy": "rank providers into top 300; if providers return fewer high-quality matches, report target_shortfall instead of silently treating a partial inventory as complete",
         "providers": {name: dict(source_meta["attempts"].get(name, {}).get("stats") or {}) for name in CORE_PROVIDERS},
         "counts": dict(payload.get("counts") or {}),
         "source_match_counts": dict(payload.get("source_match_counts") or {}),

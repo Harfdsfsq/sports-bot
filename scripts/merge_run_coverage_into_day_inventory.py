@@ -347,9 +347,16 @@ def main() -> int:
         'source_stats_seen': sorted(source_stats.keys()) if isinstance(source_stats, dict) else [],
     }
 
-    base = ROOT / '.data' / 'day_inventory'
+    saved_paths: list[str] = []
     write_json(inventory_path, inventory)
+    saved_paths.append(str(inventory_path))
     alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
+    if isinstance(alias_update, dict):
+        for value in alias_update.values():
+            if isinstance(value, str) and value:
+                saved_paths.append(value)
+            elif isinstance(value, list):
+                saved_paths.extend(str(item) for item in value if str(item or '').strip())
 
     summary = {
         'date_local': local_date,
@@ -362,17 +369,18 @@ def main() -> int:
         'sources': dict(inventory.get('sources') or {}),
         'alias_update': alias_update,
     }
+    summary_path = str(SUMMARY_PATH) if should_update_current_aliases(local_date) else None
     if should_update_current_aliases(local_date):
         write_json(SUMMARY_PATH, summary)
+        saved_paths.append(str(SUMMARY_PATH))
 
     report = {
         'status': 'ok',
         'target_date': local_date,
         'updated_at_utc': now_utc.isoformat(),
         'inventory_path': str(inventory_path),
-        'summary_path': str(SUMMARY_PATH) if should_update_current_aliases(local_date) else None,
+        'summary_path': summary_path,
         'alias_update': alias_update,
-        'summary_path': str(SUMMARY_PATH),
         'matches_total': merged_counts.get('matches_total'),
         'coverage_rows_seen': len(cindex),
         'runtime_counts': runtime_counts,
@@ -386,7 +394,7 @@ def main() -> int:
         'matches_next_12h_ready': merged_counts.get('matches_next_12h_ready'),
         'matches_ready_for_publish': merged_counts.get('matches_ready_for_publish'),
         'selected_keys_seen': len(selected_keys),
-        'saved_paths': [str(path) for path in paths],
+        'saved_paths': sorted(set(saved_paths)),
         'notes': [
             'Near-window inventory is recomputed from now, not from the inventory calendar boundary.',
             'The Telegram detailed report now reads the post-merge summary instead of stale pre-run bootstrap counts.',

@@ -258,6 +258,14 @@ def line_guard(candidate: dict[str, Any], previous: dict[str, Any] | None, now: 
         reasons.append(f"current_edge_below_floor:{edge_pp:.1f}<{min_edge:.1f}")
     final_check = lead_min is not None and min_lead <= lead_min <= final_window_min
     no_more_cron_before_kickoff = lead_min is not None and lead_min <= next_run_min + min_lead
+    needs_next_cron_recheck = (
+        previous is None
+        and not no_more_cron_before_kickoff
+        and env_bool("LINE_MOVEMENT_REQUIRE_NEXT_CRON_FOR_FUTURE_MATCHES", True)
+    )
+    if needs_next_cron_recheck:
+        passed = False
+        reasons.append("needs_next_cron_line_movement_recheck")
     if final_check:
         # The candidate came from the current run. If the run/artifact is stale,
         # block publication because this is the last realistic check before kick-off.
@@ -267,9 +275,21 @@ def line_guard(candidate: dict[str, Any], previous: dict[str, Any] | None, now: 
             passed = False
             reasons.append(f"final_pre_kickoff_line_too_old:{age_min:.1f}m")
 
+    if needs_next_cron_recheck:
+        lifecycle_status = "awaiting_next_run"
+    elif previous is None and no_more_cron_before_kickoff and passed:
+        lifecycle_status = "publish_now_no_next_cron"
+    elif previous is not None and passed:
+        lifecycle_status = "movement_confirmed"
+    elif previous is not None:
+        lifecycle_status = "movement_failed"
+    else:
+        lifecycle_status = "not_publishable"
+
     return {
         "passed": passed,
         "reasons": reasons,
+        "line_movement_lifecycle_status": lifecycle_status,
         "current_odds": current_odds,
         "previous_odds": previous_odds or None,
         "line_move_pct": round(move_pct, 3),
@@ -334,6 +354,13 @@ def mutate_candidate_files(local_date: str, now: datetime) -> dict[str, Any]:
             if isinstance(candidate["diagnostics"], dict):
                 candidate["diagnostics"]["line_movement_guard"] = guard
             candidate["line_movement_guard"] = guard
+            candidate["line_movement_lifecycle_status"] = guard.get("line_movement_lifecycle_status")
+            source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+            source_summary["line_movement_lifecycle_status"] = guard.get("line_movement_lifecycle_status")
+            if guard.get("line_movement_lifecycle_status") == "awaiting_next_run":
+                source_summary["publication_lifecycle_status"] = "awaiting_next_run"
+                candidate["publication_lifecycle_status"] = "awaiting_next_run"
+            candidate["source_summary"] = source_summary
             if not guard["passed"]:
                 reasons = candidate.get("reject_reasons") if isinstance(candidate.get("reject_reasons"), list) else []
                 reasons = list(reasons) + [f"line_guard:{reason}" for reason in guard["reasons"]]
@@ -501,6 +528,7 @@ def main() -> int:
         "notes": [
             "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
             "Candidate files are guarded before Telegram fallback publication. If the current line loses EV/edge or moves sharply against the bet, the candidate is dropped.",
+            "If there is still another regular cron before kickoff and no previous line snapshot exists, candidates move to awaiting_next_run instead of being published immediately.",
         ],
     }
     write_json(OUT_PATH, report)

@@ -222,6 +222,15 @@ LOW_TIER_PATTERNS = [
     r"\bwomens\b",
     r"\besports\b",
     r"\bfriendly\b",
+    r"\bunknown\b",
+    r"\bamateur\b",
+    r"\bregional\b",
+    r"\bu\s*17\b",
+    r"\bu\s*18\b",
+    r"\bu\s*19\b",
+    r"\bu\s*20\b",
+    r"\bu\s*21\b",
+    r"\bu\s*23\b",
 ]
 
 

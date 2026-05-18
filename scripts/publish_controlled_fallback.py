@@ -29,6 +29,15 @@ except Exception:
 
 UTC = timezone.utc
 
+try:
+    from app.services.publication_lifecycle import is_sent_pick_row
+except Exception:
+    def is_sent_pick_row(row: Any) -> bool:
+        if not isinstance(row, dict):
+            return False
+        return str(row.get("telegram_sent") or "").strip().lower() in {"1", "true", "yes", "on"}
+
+
 
 def env_bool(name: str, default: bool) -> bool:
     raw = os.getenv(name)
@@ -786,7 +795,7 @@ def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> s
         if not isinstance(rows, list):
             continue
         for row in rows:
-            if isinstance(row, dict) and dedupe_key(row) == key:
+            if isinstance(row, dict) and dedupe_key(row) == key and is_sent_pick_row(row):
                 return f"duplicate_state:{collection}"
     return None
 
@@ -1344,16 +1353,16 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
 
 
 def already_has_picks() -> bool:
-    # In external publisher mode latest-picks should normally stay empty.
-    # Keep this guard for safety if internal publication is accidentally re-enabled.
+    # latest-picks.json may contain generated candidates that never reached Telegram.
+    # Only an actually sent/published pick may suppress fallback publication.
     latest_picks = load_json(".data/exports/latest-picks.json", [])
     if isinstance(latest_picks, list) and len(latest_picks) > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_LATEST_PICKS", True):
         if not env_bool("CONTROLLED_FALLBACK_FILTER_POOL_BY_TIME", True):
-            return True
+            return any(is_sent_pick_row(row) for row in latest_picks if isinstance(row, dict))
         now = datetime.now(UTC)
         latest = now + timedelta(hours=max(1, env_int("PUBLISH_WINDOW_HOURS", 24)))
         for row in latest_picks:
-            if not isinstance(row, dict):
+            if not isinstance(row, dict) or not is_sent_pick_row(row):
                 continue
             kickoff = parse_dt(row.get("commence_time") or row.get("start_time") or row.get("kickoff"))
             if kickoff is not None and now <= kickoff <= latest:
@@ -1364,7 +1373,11 @@ def already_has_picks() -> bool:
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True) and not is_payload_fresh(debug, reference):
         return False
     summary = debug.get("summary") if isinstance(debug, dict) else {}
-    return isinstance(summary, dict) and as_int(summary.get("published"), 0) > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_INTERNAL_PUBLISHED", True)
+    published_to_telegram = max(
+        as_int(summary.get("published_to_telegram"), 0),
+        as_int(summary.get("telegram_picks_sent"), 0),
+    )
+    return published_to_telegram > 0 and env_bool("CONTROLLED_FALLBACK_SKIP_IF_INTERNAL_PUBLISHED", True)
 
 
 def send_telegram(text: str) -> tuple[bool, str]:
@@ -1378,7 +1391,14 @@ def send_telegram(text: str) -> tuple[bool, str]:
     try:
         with request.urlopen(request.Request(url, data=data, method="POST"), timeout=20) as response:
             body = response.read().decode("utf-8", errors="replace")
-        return True, body[:1000]
+        try:
+            payload = json.loads(body)
+        except Exception:
+            payload = {}
+        result = payload.get("result") if isinstance(payload, dict) and isinstance(payload.get("result"), dict) else {}
+        ok = isinstance(payload, dict) and payload.get("ok") is True and result.get("message_id")
+        blocked = isinstance(payload, dict) and bool(payload.get("blocked_by_market_family_publication_guard"))
+        return bool(ok and not blocked), body[:1000]
     except Exception as exc:
         return False, f"{type(exc).__name__}: {exc}"
 
@@ -1906,24 +1926,30 @@ def main() -> int:
     if sent or dry_run:
         for chosen, metrics, tier, stake in selected_items:
             key = dedupe_key(chosen)
-            sent_index[key] = {
-                "sent_at": datetime.now(UTC).isoformat(),
-                "match_key": chosen.get("match_key"),
-                "home_team": chosen.get("home_team"),
-                "away_team": chosen.get("away_team"),
-                "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
-                "league_name": chosen.get("league_name"),
-                "family": chosen.get("family"),
-                "selection": chosen.get("selection"),
-                "point": chosen.get("point"),
-                "odds": chosen.get("odds"),
-                "stake": stake,
-                "stake_amount": stake,
-                "tier": tier,
-                "commence_time": chosen.get("commence_time"),
-            }
+            if sent:
+                sent_index[key] = {
+                    "sent_at": datetime.now(UTC).isoformat(),
+                    "match_key": chosen.get("match_key"),
+                    "home_team": chosen.get("home_team"),
+                    "away_team": chosen.get("away_team"),
+                    "match_name": chosen.get("match_name") or f"{chosen.get('home_team') or ''} — {chosen.get('away_team') or ''}".strip(),
+                    "league_name": chosen.get("league_name"),
+                    "family": chosen.get("family"),
+                    "selection": chosen.get("selection"),
+                    "point": chosen.get("point"),
+                    "odds": chosen.get("odds"),
+                    "stake": stake,
+                    "stake_amount": stake,
+                    "tier": tier,
+                    "commence_time": chosen.get("commence_time"),
+                    "telegram_sent": True,
+                    "publication_lifecycle_status": "telegram_sent",
+                }
             selected_rows.append({
                 "dedupe_key": key,
+                "telegram_sent": bool(sent),
+                "publication_lifecycle_status": "telegram_sent" if sent else "dry_run_selected",
+                "status": "pending" if sent else "generated",
                 "match_key": chosen.get("match_key"),
                 "home_team": chosen.get("home_team"),
                 "away_team": chosen.get("away_team"),
