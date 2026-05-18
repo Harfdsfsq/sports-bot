@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+import json
 from datetime import datetime, timezone
+from pathlib import Path
 
 from app.config import Settings
 from app.schemas import CandidateBet
+from app.services.publication_lifecycle import candidate_dedupe_keys, load_sent_candidate_keys
 from app.services.runner import PredictionRunner
 
 
@@ -51,16 +54,40 @@ def test_republish_seen_candidates_disabled_by_default() -> None:
     assert Settings().republish_seen_candidates_when_empty is False
 
 
-def test_publishable_filter_blocks_previously_sent_fingerprint(tmp_path) -> None:
+def test_publishable_filter_blocks_previously_sent_semantic_key(tmp_path) -> None:
     settings = Settings(state_path=str(tmp_path / "state.json"), debug_path=str(tmp_path / "debug.json"))
     runner = PredictionRunner(settings)
     candidate = make_candidate()
-    fingerprint = runner._candidate_fingerprint(candidate)
-    assert fingerprint
-    runner._seen_published_fingerprints = {fingerprint}
+    keys = candidate_dedupe_keys(candidate)
+    runner._seen_published_fingerprints = set(keys)
 
     publishable = runner._filter_publishable_candidates([candidate])
 
     assert publishable == []
-    assert "publish_blocked=already_telegram_sent" in candidate.reasons
-    assert candidate.source_summary["publication_blocked_reason"] == "already_telegram_sent"
+    assert "publish_blocked=already_telegram_sent_semantic_dedupe" in candidate.reasons
+    assert candidate.source_summary["publication_blocked_reason"] == "already_telegram_sent_semantic_dedupe"
+
+
+def test_sent_key_loader_matches_latest_bets_without_commence_time(tmp_path) -> None:
+    candidate = make_candidate()
+    latest_bets = tmp_path / "latest-bets.json"
+    latest_bets.write_text(json.dumps([
+        {
+            "match_key": "soccer|huesca|leganes|2026-05-18",
+            "sport_key": "soccer",
+            "home_team": "CD Leganes",
+            "away_team": "SD Huesca",
+            "commence_time_utc": "2026-05-18T18:30:00+00:00",
+            "family": "totals",
+            "selection": "Больше",
+            "selection_key": "over",
+            "point": 3.5,
+            "status": "pending",
+            "telegram_sent": True,
+            "publication_lifecycle_status": "telegram_sent",
+        }
+    ], ensure_ascii=False), encoding="utf-8")
+
+    seen = load_sent_candidate_keys([latest_bets])
+
+    assert candidate_dedupe_keys(candidate).intersection(seen)

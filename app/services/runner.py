@@ -21,7 +21,14 @@ from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
-from app.services.publication_lifecycle import is_sent_pick_row, mark_candidate_lifecycle
+from app.services.publication_lifecycle import (
+    append_sent_candidate_index,
+    candidate_dedupe_keys,
+    collect_sent_candidate_keys,
+    is_sent_pick_row,
+    load_sent_candidate_keys,
+    mark_candidate_lifecycle,
+)
 from app.services.quality import PredictionQualityService
 from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
@@ -462,10 +469,13 @@ class PredictionRunner:
             reused_candidates: list[CandidateBet] = []
             reused_already_in_state = 0
             for candidate in raw_candidates:
-                fingerprint = self._candidate_fingerprint(candidate)
-                if fingerprint and fingerprint in seen_fingerprints:
+                candidate_keys = candidate_dedupe_keys(candidate)
+                if candidate_keys and candidate_keys.intersection(seen_fingerprints):
                     reused_already_in_state += 1
                     candidate.already_used = True
+                    candidate.reasons.append('blocked=already_telegram_sent_semantic_dedupe')
+                    candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent_semantic_dedupe'
+                    candidate.source_summary['publication_dedupe_keys_matched'] = sorted(candidate_keys.intersection(seen_fingerprints))[:6]
                     reused_candidates.append(candidate)
                     continue
                 candidates.append(candidate)
@@ -564,6 +574,12 @@ class PredictionRunner:
                     telegram_sent=prediction_telegram_sent,
                     failure_reason=None if prediction_telegram_sent else 'telegram_send_not_confirmed',
                 )
+            if prediction_telegram_sent and publishable_candidates:
+                try:
+                    append_sent_candidate_index(Path('.data') / 'published-candidate-index.json', publishable_candidates)
+                    append_sent_candidate_index(Path('.data') / 'fallback-sent-index.json', publishable_candidates)
+                except Exception as exc:
+                    self.provider_runtime_errors['publication_dedupe_index'].append(self._format_exception(exc))
             published_count = self.state.store_candidates(publishable_candidates, telegram_sent=prediction_telegram_sent)
             shadow_tracked_count = self.state.store_shadow_candidates(shadow_candidates, tracking_reason='shadow_learning')
             telegram_picks_sent = len(publishable_candidates) if prediction_telegram_sent else 0
@@ -1739,30 +1755,29 @@ class PredictionRunner:
         return list(unique.values())
 
     def _load_seen_candidate_fingerprints(self) -> set[str]:
-        now_utc = datetime.now(UTC)
-        lookback_hours = max(0.0, float(getattr(self.settings, 'seen_candidate_lookback_hours', 36.0) or 36.0))
-        cutoff = now_utc - timedelta(hours=lookback_hours) if lookback_hours > 0 else None
+        """Load robust sent-pick dedupe keys from persistent state and committed indices.
+
+        The name is kept for backward compatibility, but the returned set now contains more
+        than exact fingerprints: semantic match+market keys are included too. This blocks
+        duplicate Telegram sends when exporters use different fingerprint/time formats.
+        """
         paths = [Path(self.settings.state_path)]
         export_dir = Path(self.settings.storage_export_dir)
         for extra_path in (
+            Path('.data') / 'published-candidate-index.json',
+            Path('.data') / 'fallback-sent-index.json',
+            Path('.data') / 'candidate-lifecycle-state.json',
             export_dir / 'latest-picks.json',
             export_dir / 'latest-bets.json',
             export_dir / 'latest-pending-bets.json',
-            Path('.data') / 'fallback-sent-index.json',
-            Path('.data') / 'candidate-lifecycle-state.json',
         ):
             if extra_path not in paths:
                 paths.append(extra_path)
 
-        seen: set[str] = set()
-        for path in paths:
-            if not path.exists() or not path.is_file():
-                continue
-            try:
-                payload = json.loads(path.read_text(encoding='utf-8'))
-            except Exception:
-                continue
-            self._collect_candidate_fingerprints(payload, seen, cutoff)
+        seen: set[str] = load_sent_candidate_keys(paths)
+        # Backward compatibility for older state files that do not have explicit lifecycle fields.
+        # JsonStateStore stores actual bets under active-bet statuses, so collect_sent_candidate_keys
+        # will still identify them as sent/open rows.
         return seen
 
     def _project_bankroll_summary(self, candidates: list[CandidateBet]) -> dict[str, Any]:
@@ -1795,10 +1810,12 @@ class PredictionRunner:
         for candidate in candidates:
             if getattr(self.settings, 'bankroll_enabled', True) and float(getattr(candidate, 'stake_amount', 0.0) or 0.0) <= 0.0:
                 continue
-            fingerprint = self._candidate_fingerprint(candidate)
-            if fingerprint and fingerprint in getattr(self, '_seen_published_fingerprints', set()):
-                candidate.reasons.append('publish_blocked=already_telegram_sent')
-                candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent'
+            candidate_keys = candidate_dedupe_keys(candidate)
+            seen_keys = getattr(self, '_seen_published_fingerprints', set())
+            if candidate_keys and candidate_keys.intersection(seen_keys):
+                candidate.reasons.append('publish_blocked=already_telegram_sent_semantic_dedupe')
+                candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent_semantic_dedupe'
+                candidate.source_summary['publication_dedupe_keys_matched'] = sorted(candidate_keys.intersection(seen_keys))[:6]
                 continue
             coverage_decision = sync_candidate_publish_coverage(candidate, self.settings)
             candidate.diagnostics.setdefault('publish_coverage_contract', coverage_decision.report)

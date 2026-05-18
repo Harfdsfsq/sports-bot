@@ -1,12 +1,19 @@
 from __future__ import annotations
 
 import re
+from pathlib import Path
 from typing import Any
 
 import httpx
 
 from app.config import Settings
 from app.schemas import CandidateBet
+from app.services.publication_lifecycle import (
+    append_sent_candidate_index,
+    candidate_dedupe_keys,
+    load_sent_candidate_keys,
+    mark_candidate_lifecycle,
+)
 from app.utils import russian_market_name, russian_selection
 
 
@@ -1007,5 +1014,38 @@ class TelegramPublisher:
         if not bets:
             return 0, []
 
-        message = self.render_message(bets, bankroll_summary=bankroll_summary)
-        return await self._send_message(message)
+        # Final safety net: even if runner state filtering misses a duplicate, never send a
+        # Telegram prediction whose semantic match+market key already exists in persistent state.
+        # This protects frequent external/manual triggers and runs that start from committed state
+        # but have old latest-picks/latest-bets exports removed during workflow preparation.
+        index_paths = [
+            Path('.data') / 'published-candidate-index.json',
+            Path('.data') / 'fallback-sent-index.json',
+            Path('.data') / 'candidate-lifecycle-state.json',
+            Path('.data') / 'state.json',
+            Path('.data') / 'exports' / 'latest-picks.json',
+            Path('.data') / 'exports' / 'latest-bets.json',
+            Path('.data') / 'exports' / 'latest-pending-bets.json',
+        ]
+        seen_keys = load_sent_candidate_keys(index_paths)
+        fresh_bets: list[CandidateBet] = []
+        for bet in bets:
+            keys = candidate_dedupe_keys(bet)
+            matched = sorted(keys.intersection(seen_keys))[:6]
+            if matched:
+                bet.already_used = True
+                bet.reasons.append('telegram_send_blocked=duplicate_semantic_key')
+                bet.source_summary['publication_blocked_reason'] = 'duplicate_semantic_key'
+                bet.source_summary['publication_dedupe_keys_matched'] = matched
+                mark_candidate_lifecycle(bet, telegram_sent=False, failure_reason='duplicate_semantic_key')
+                continue
+            fresh_bets.append(bet)
+
+        if not fresh_bets:
+            return 0, []
+
+        message = self.render_message(fresh_bets, bankroll_summary=bankroll_summary)
+        sent, payloads = await self._send_message(message)
+        if sent > 0:
+            append_sent_candidate_index(Path('.data') / 'published-candidate-index.json', fresh_bets)
+        return sent, payloads
