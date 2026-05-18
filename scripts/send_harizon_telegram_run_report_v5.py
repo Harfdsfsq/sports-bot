@@ -9,6 +9,7 @@ numbers do not contradict each other.
 
 import json
 import os
+import re
 from collections import Counter
 from datetime import datetime, timezone
 from pathlib import Path
@@ -31,6 +32,32 @@ OUT_JSON = EXPORT_DIR / "latest-harizon-telegram-run-report.json"
 OUT_V5_JSON = EXPORT_DIR / "latest-harizon-telegram-run-report-v5.json"
 OUT_V5_TXT = EXPORT_DIR / "latest-harizon-telegram-run-report-v5.txt"
 
+
+
+LOW_QUALITY_SAMPLE_PATTERNS = [
+    r"\bunknown\b", r"\bu[- ]?17\b", r"\bu[- ]?18\b", r"\bu[- ]?19\b", r"\bu[- ]?20\b", r"\bu[- ]?21\b", r"\bu[- ]?23\b",
+    r"\bunder[- ]?17\b", r"\bunder[- ]?18\b", r"\bunder[- ]?19\b", r"\bunder[- ]?20\b", r"\bunder[- ]?21\b", r"\bunder[- ]?23\b",
+    r"\breserves?\b", r"\byouth\b", r"\bacademy\b", r"\bdevelopment\b", r"\bwomen(?:s)?\b", r"\bamateur\b", r"\bregional\b",
+    r"\brussia\s*-?\s*2\.?\s*liga\b", r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
+]
+
+
+def is_low_quality_sample(row: Any) -> bool:
+    if not isinstance(row, dict):
+        return False
+    haystack = " ".join([
+        str(row.get("league_name") or row.get("league") or ""),
+        str(row.get("home_team") or row.get("home") or ""),
+        str(row.get("away_team") or row.get("away") or ""),
+    ]).lower()
+    return any(re.search(pattern, haystack) for pattern in LOW_QUALITY_SAMPLE_PATTERNS)
+
+
+def clean_top_priority_samples(rows: Any, limit: int = 6) -> list[dict[str, Any]]:
+    if not isinstance(rows, list):
+        return []
+    cleaned = [row for row in rows if isinstance(row, dict) and not is_low_quality_sample(row)]
+    return cleaned[:limit]
 
 def load_json(path: str | Path, default: Any = None) -> Any:
     try:
@@ -407,7 +434,7 @@ def build_payload() -> dict[str, Any]:
         "api": api,
         "line_guard": line,
         "reasons": [{"reason": k, "reason_ru": reason_ru(k), "count": int(v)} for k, v in reasons.most_common(12) if int(v) > 0],
-        "samples": {"fallback_evaluated": evaluated[:5], "top_priority_matches": (refresh.get("top_priority_matches") if isinstance(refresh.get("top_priority_matches"), list) else [])[:6]},
+        "samples": {"fallback_evaluated": evaluated[:5], "top_priority_matches": clean_top_priority_samples(refresh.get("top_priority_matches"), 6)},
         "artifacts": {"debug_age_min": freshness_minutes(DEBUG_PATH), "run_log_age_min": freshness_minutes(EXPORT_DIR / "latest-run-bot.log"), "fallback_age_min": freshness_minutes(EXPORT_DIR / "latest-controlled-fallback-report.json"), "signal_stack_age_min": freshness_minutes(EXPORT_DIR / "latest-signal-stack-runtime.json")},
     }
 

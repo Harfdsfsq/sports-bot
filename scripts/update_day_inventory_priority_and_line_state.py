@@ -36,6 +36,30 @@ OUT_PATH = EXPORT_DIR / "latest-day-inventory-priority-and-line-state.json"
 REFRESH_PLAN_PATH = EXPORT_DIR / "latest-day-inventory-refresh-plan.json"
 LINE_GUARD_REPORT_PATH = EXPORT_DIR / "latest-line-movement-guard-report.json"
 
+
+LOW_QUALITY_INVENTORY_PATTERNS = [
+    r"\bunknown\b", r"\bu[- ]?17\b", r"\bu[- ]?18\b", r"\bu[- ]?19\b", r"\bu[- ]?20\b", r"\bu[- ]?21\b", r"\bu[- ]?23\b",
+    r"\bunder[- ]?17\b", r"\bunder[- ]?18\b", r"\bunder[- ]?19\b", r"\bunder[- ]?20\b", r"\bunder[- ]?21\b", r"\bunder[- ]?23\b",
+    r"\breserves?\b", r"\breserve team\b", r"\byouth\b", r"\bacademy\b", r"\bdevelopment\b",
+    r"\bwomen(?:s)?\b", r"\bamateur\b", r"\bregional\b", r"\brussia\s*-?\s*2\.?\s*liga\b",
+    r"\bii\b", r"\biii\b", r"\b2nd\b", r"\bsecond team\b", r"\bb team\b",
+]
+
+
+def low_quality_inventory_reason(row: dict[str, Any]) -> str | None:
+    haystack = " ".join([
+        str(row.get("league_name") or row.get("league") or ""),
+        str(row.get("home_team") or row.get("home") or ""),
+        str(row.get("away_team") or row.get("away") or ""),
+        str(row.get("tournament") or row.get("competition") or ""),
+    ]).lower()
+    if not haystack.strip():
+        return "empty_match_text"
+    for pattern in LOW_QUALITY_INVENTORY_PATTERNS:
+        if re.search(pattern, haystack):
+            return pattern
+    return None
+
 CANDIDATE_PATHS = [
     EXPORT_DIR / "latest-rescue-candidates.json",
     EXPORT_DIR / "latest-candidates-before-quality.json",
@@ -470,12 +494,36 @@ def update_inventory_priority(local_date: str, now: datetime) -> dict[str, Any]:
     final_checks = 0
     no_more_runs = 0
     active_rows = 0
+    low_quality_rows = 0
+    allow_low_tier = env_bool("DAY_INVENTORY_ALLOW_LOW_TIER", False)
     for row in rows:
         kickoff = parse_dt(row.get("kickoff_utc") or row.get("commence_time"))
         coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
         minutes = None if kickoff is None else (kickoff - now).total_seconds() / 60.0
         status = "unknown"
         priority = 0.0
+        low_quality_reason = None if allow_low_tier else low_quality_inventory_reason(row)
+        if low_quality_reason:
+            low_quality_rows += 1
+            row["inventory_quality_status"] = "excluded_low_quality"
+            row["inventory_quality_reason"] = low_quality_reason
+            row["minutes_to_kickoff"] = round(minutes, 2) if minutes is not None else None
+            row["pre_kickoff_status"] = "low_quality_excluded"
+            row["priority"] = -500.0
+            row["refresh_plan"] = {
+                "needs_odds_refresh": False,
+                "needs_context_refresh": False,
+                "final_pre_kickoff_check_required": False,
+                "no_more_regular_run_before_kickoff": False,
+                "expected_next_run_interval_minutes": next_run_min,
+                "min_kickoff_lead_minutes": min_lead,
+                "max_current_line_age_minutes": 0,
+                "last_odds_refresh_utc": None,
+                "blocked_reason": "low_quality_inventory_match",
+            }
+            continue
+        row.pop("inventory_quality_status", None)
+        row.pop("inventory_quality_reason", None)
         if minutes is None:
             status = "unknown_kickoff"
         elif minutes < 0:
@@ -533,6 +581,7 @@ def update_inventory_priority(local_date: str, now: datetime) -> dict[str, Any]:
             "needs_odds_refresh": needs_odds,
             "final_pre_kickoff_checks": final_checks,
             "no_more_regular_run_before_kickoff": no_more_runs,
+            "low_quality_rows_filtered_from_priority": low_quality_rows,
         }
     write_json(DAY_INV_DIR / f"{local_date}.json", inventory)
     alias_update = write_current_aliases(ROOT, local_date, inventory, write_json)
@@ -557,8 +606,9 @@ def update_inventory_priority(local_date: str, now: datetime) -> dict[str, Any]:
                 "pre_kickoff_status": row.get("pre_kickoff_status"),
                 "refresh_plan": row.get("refresh_plan"),
             }
-            for row in rows[:40]
+            for row in [r for r in rows if str(r.get("inventory_quality_status") or "") != "excluded_low_quality"][:40]
         ],
+        "low_quality_rows_filtered_from_priority": low_quality_rows,
     }
     write_json(REFRESH_PLAN_PATH, refresh_plan)
     return refresh_plan

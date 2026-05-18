@@ -369,6 +369,18 @@ jobs:
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
           cp -r .data/line_history artifacts/run-bot/line_history || true
 
+      - name: Normalize published pick payloads
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip payload normalization: fresh run-bot log was not created"
+            exit 0
+          fi
+          python scripts/normalize_published_pick_payloads.py || true
+          cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
+
       - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
