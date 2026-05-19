@@ -218,6 +218,7 @@ def reason_ru(reason: str) -> str:
         "controlled_rescue_no_candidate": "controlled reserve не нашёл безопасного кандидата",
         "fallback_publish_no_candidate": "fallback-публикация: нет кандидата",
         "line_movement_guard_dropped": "line movement guard снял кандидата",
+        "odds_api_io_auth_failed": "odds-api.io auth failed: invalid API key",
         "main_pipeline_published": "опубликовано основным пайплайном",
         "fallback_published": "опубликовано fallback-пайплайном",
         "telegram_sent": "Telegram подтвердил отправку",
@@ -498,7 +499,7 @@ def render(payload: dict[str, Any]) -> str:
     ]
     odds, sstats, bzz, sport = api["odds_api_io"], api["sstats"], api["bzzoiro"], api["sportlogic"]
     lines += [
-        f"• odds_api_io: events req {odds['events_req']}, odds req {odds['odds_req']}, matched {odds['matched']}, offers {odds['offers']}, 2+ books {odds['books_2plus']}, err {odds['errors']}",
+        f"• odds_api_io: events req {odds['events_req']}, odds req {odds['odds_req']}, matched {odds['matched']}, offers {odds['offers']}, 2+ books {odds['books_2plus']}, err {odds['errors']}, auth_failed {odds.get('auth_failed')}",
         f"• sstats: req {sstats['requests']}, ctx {sstats['contexts']}, rows {sstats['rows']}, err {sstats['errors']}, deep enriched {sstats['deep_enriched']}",
         f"• bzzoiro: req {bzz['requests']}, ctx {bzz['contexts']}, events {bzz['events']}, secondary offers {bzz['secondary_offers_added']}, overlap odds-api.io {bzz['overlap']}, err {bzz['errors']}",
         f"• sportlogic: enabled {sport['enabled']}, req {sport['requests']}, odds req {sport['odds_requests']}, matched {sport['matched']}, offers {sport['offers']}, err {sport['errors']}",
@@ -525,6 +526,8 @@ def render(payload: dict[str, Any]) -> str:
     lines += ["", "📌 Вывод"]
     if payload["status"] == "published":
         lines.append("• Прогноз реально опубликован; все цифры выше взяты из одного нормализованного payload.")
+    elif odds.get("auth_failed"):
+        lines.append("• Main technical blocker: odds-api.io rejected the configured API key, so the run had too few usable primary lines for candidate generation.")
     elif c["bzzoiro_odds_overlap_with_odds_api_io"] < 15:
         lines.append("• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.")
     elif f["fallback_evaluated"] > 0:

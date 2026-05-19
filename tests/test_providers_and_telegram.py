@@ -7,6 +7,7 @@ from app.config import Settings
 from app.providers.allsportsapi import AllSportsApiOddsProvider
 from app.providers.football_data import FootballDataContextProvider
 from app.providers.gnews import GNewsContextProvider
+from app.providers.odds_api_io import OddsApiIoProvider
 from app.providers.oddspapi import OddsPapiProvider
 from app.schemas import CandidateBet, Match
 from app.services.quality import PredictionQualityService
@@ -14,8 +15,57 @@ from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
 from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider
 from scripts.publish_controlled_fallback import final_publish_guard_reasons, hard_reject_reasons, xg_sanity_metrics
+from scripts.send_harizon_telegram_run_report_v5 import provider_auth_failed
 
 UTC = timezone.utc
+
+
+class _FakeOddsApiIoResponse:
+    status_code = 401
+    text = '{"error":"You need to provide a valid apiKey"}'
+
+
+def test_odds_api_io_stops_event_paging_on_auth_error(monkeypatch):
+    calls: list[dict] = []
+
+    class FakeAsyncClient:
+        def __init__(self, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return False
+
+        async def get(self, url, params=None):
+            calls.append({"url": url, "params": dict(params or {})})
+            return _FakeOddsApiIoResponse()
+
+    monkeypatch.setattr("app.providers.odds_api_io.httpx.AsyncClient", FakeAsyncClient)
+    settings = Settings(
+        _env_file=None,
+        odds_api_io_key="bad-key",
+        odds_api_io_per_run_max=20,
+        odds_api_io_max_pages_per_sport=10,
+    )
+    provider = OddsApiIoProvider(settings)
+
+    matches, stats, _preview = asyncio.run(provider.fetch_matches())
+
+    assert matches == []
+    assert len(calls) == 1
+    assert stats["event_requests"] == 1
+    assert stats["response_errors"] == 1
+    assert stats["auth_error"] is True
+    assert stats["auth_status_code"] == 401
+    assert stats["stop_reason"] == "auth_error"
+
+
+def test_report_detects_odds_api_io_auth_failure_from_statuses():
+    assert provider_auth_failed({"event_http_statuses": [401]}) is True
+    assert provider_auth_failed({"last_body_preview": '{"error":"You need to provide a valid apiKey"}'}) is True
+    assert provider_auth_failed({"event_http_statuses": [200], "last_body_preview": "ok"}) is False
 
 
 def test_probability_helpers_accept_percent_strings():
