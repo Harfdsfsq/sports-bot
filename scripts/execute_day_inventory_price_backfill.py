@@ -28,6 +28,7 @@ PLAN_JSON = EXPORT_DIR / 'latest-day-inventory-price-backfill-plan.json'
 OUT_JSON = EXPORT_DIR / 'latest-day-inventory-price-backfill-execution.json'
 OUT_TXT = EXPORT_DIR / 'latest-day-inventory-price-backfill-execution.txt'
 SUMMARY = EXPORT_DIR / 'latest-day-inventory-summary.json'
+LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -414,37 +415,40 @@ def merge_inventory(evidence: dict[str, dict[str, dict[str, Any]]], report: dict
         row['books'] = sorted(books)
         row['odds_sources'] = sorted(odds_sources)
         row['line_sources'] = sorted(set(list_from_any(row.get('line_sources'))) | odds_sources)
-        price_count = max(as_int(md.get('price_confirmation_sources_count')), len(price_tokens), len(books), len(odds_sources))
+        odds_source_count = len({norm(x) for x in odds_sources if norm(x) in LIVE_ODDS_SOURCES})
+        price_count = max(as_int(md.get('price_confirmation_sources_count')), len(price_tokens), len(books))
         context_count = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(row.get('context_confirmations') or []), len(row.get('context_sources') or []))
-        md.update({'price_confirmation_sources_count': price_count, 'price_sources_count': price_count, 'books_count': max(as_int(md.get('books_count')), len(books)), 'odds_sources_count': max(as_int(md.get('odds_sources_count')), len(odds_sources)), 'independent_odds_sources_count': max(as_int(md.get('independent_odds_sources_count')), len(odds_sources))})
+        md.update({'price_confirmation_sources_count': price_count, 'price_sources_count': price_count, 'books_count': max(as_int(md.get('books_count')), len(books)), 'odds_sources_count': odds_source_count, 'independent_odds_sources_count': odds_source_count})
         row['metadata'] = md
         cov['odds'] = True
-        cov['odds_2plus_sources'] = price_count >= min_price
+        cov['odds_2plus_sources'] = odds_source_count >= min_price
         cov['ready_for_model'] = bool(cov.get('ready_for_model')) or (price_count > 0 and context_count > 0)
-        cov['ready_for_publish'] = bool(cov.get('ready_for_publish')) or (price_count >= min_price and context_count >= min_context)
+        cov['ready_for_publish'] = price_count >= min_price and odds_source_count >= min_price and context_count >= min_context
         row['coverage'] = cov
         refresh = row.get('refresh') if isinstance(row.get('refresh'), dict) else {}
         refresh['last_odds_refresh_utc'] = now
         row['refresh'] = refresh
-        row['price_backfill'] = {'updated_at_utc': now, 'needed': price_count < min_price, 'executed': True, 'price_confirmations': price_count, 'context_confirmations': context_count, 'source': 'odds_api_io+bzzoiro'}
-        row['coverage_gaps'] = {'price_confirmations': price_count, 'context_confirmations': context_count, 'need_price_confirmations': max(0, min_price - price_count), 'need_context_confirmations': max(0, min_context - context_count), 'has_odds': price_count > 0, 'has_context': context_count > 0}
+        row['price_backfill'] = {'updated_at_utc': now, 'needed': price_count < min_price or odds_source_count < min_price, 'executed': True, 'price_confirmations': price_count, 'odds_sources': odds_source_count, 'context_confirmations': context_count, 'source': 'odds_api_io+bzzoiro'}
+        row['coverage_gaps'] = {'price_confirmations': price_count, 'odds_sources': odds_source_count, 'context_confirmations': context_count, 'need_price_confirmations': max(0, min_price - price_count), 'need_odds_sources': max(0, min_price - odds_source_count), 'need_context_confirmations': max(0, min_context - context_count), 'has_odds': price_count > 0, 'has_context': context_count > 0}
         updated += 1
         newly_price_ready += int((not before_price_ready) and price_count >= min_price)
         newly_publish_ready += int((not before_publish) and bool(cov.get('ready_for_publish')))
     counts = dict(inv.get('counts') or {})
-    price2 = context2 = odds_any = context_any = ready_model = ready_publish = 0
+    price2 = odds_source2 = context2 = odds_any = context_any = ready_model = ready_publish = 0
     for row in matches:
         md = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
         cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
         pc = max(as_int(md.get('price_confirmation_sources_count')), len(row.get('price_confirmations') or []), len(row.get('books') or []))
+        oc = len({norm(x) for x in list_from_any(row.get('odds_sources')) + list_from_any(row.get('line_sources')) if norm(x) in LIVE_ODDS_SOURCES})
         cc = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(row.get('context_confirmations') or []), len(row.get('context_sources') or []))
         odds_any += int(bool(cov.get('odds')) or pc > 0)
         context_any += int(bool(cov.get('context')) or cc > 0)
         price2 += int(pc >= min_price)
+        odds_source2 += int(oc >= min_price)
         context2 += int(cc >= min_context)
         ready_model += int(bool(cov.get('ready_for_model')))
-        ready_publish += int(bool(cov.get('ready_for_publish')))
-    counts.update({'matches_with_odds': odds_any, 'matches_with_context': context_any, 'matches_with_2plus_price_confirmations': price2, 'matches_with_2plus_odds_sources': price2, 'matches_with_2plus_context_sources': context2, 'matches_ready_for_model': ready_model, 'matches_ready_for_publish': ready_publish, 'matches_missing_price_2plus': max(0, len(matches) - price2), 'matches_missing_context_2plus': max(0, len(matches) - context2), 'price_backfill_execution_updated_utc': now})
+        ready_publish += int(pc >= min_price and oc >= min_price and cc >= min_context)
+    counts.update({'matches_with_odds': odds_any, 'matches_with_context': context_any, 'matches_with_2plus_price_confirmations': price2, 'matches_with_2plus_odds_sources': odds_source2, 'matches_with_2plus_context_sources': context2, 'matches_ready_for_model': ready_model, 'matches_ready_for_publish': ready_publish, 'matches_missing_price_2plus': max(0, len(matches) - price2), 'matches_missing_odds_source_2plus': max(0, len(matches) - odds_source2), 'matches_missing_context_2plus': max(0, len(matches) - context2), 'price_backfill_execution_updated_utc': now})
     inv['counts'] = counts
     inv['updated_at_utc'] = now
     src = inv.setdefault('sources', {})

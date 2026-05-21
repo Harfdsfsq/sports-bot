@@ -281,13 +281,16 @@ def _declared_count(candidate: Any, keys: set[str]) -> tuple[int, list[str]]:
 def odds_sources_for_candidate(candidate: Any, contract: CoverageContract | None = None) -> set[str]:
     contract = contract or CoverageContract()
     sources: set[str] = set()
-    for row in _iter_offer_rows(candidate):
+    offer_rows = _iter_offer_rows(candidate)
+    for row in offer_rows:
         source = normalize_source(_get(row, "source"), count_api_accounts_as_sources=contract.count_api_accounts_as_sources)
         if not source:
             continue
         if contract.context_sources_do_not_confirm_price and source in CONTEXT_ONLY_SOURCES:
             continue
         sources.add(source)
+    if offer_rows:
+        return sources
     for source in _sources_from_summary(candidate):
         normalized = normalize_source(source, count_api_accounts_as_sources=contract.count_api_accounts_as_sources)
         if normalized and not (contract.context_sources_do_not_confirm_price and normalized in CONTEXT_ONLY_SOURCES):
@@ -330,13 +333,15 @@ def publication_odds_source_report(candidate: Any, contract: CoverageContract | 
     contract = contract or CoverageContract()
     odds_sources = odds_sources_for_candidate(candidate, contract)
     declared_count, declared_basis = _declared_count(candidate, ODDS_SOURCE_COUNT_KEYS)
-    source_count = max(len(odds_sources), declared_count)
+    has_named_evidence = bool(_iter_offer_rows(candidate) or _sources_from_summary(candidate))
+    source_count = len(odds_sources) if has_named_evidence else declared_count
     basis: list[str] = []
     if _iter_offer_rows(candidate):
         basis.append("raw_bucket_offers.sources")
     if odds_sources:
         basis.append("normalized_odds_source_lists")
-    basis.extend(declared_basis)
+    if not has_named_evidence:
+        basis.extend(declared_basis)
     return {
         "odds_sources": sorted(odds_sources),
         "odds_sources_count": source_count,
@@ -355,7 +360,7 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
     odds_sources = set(odds_report["odds_sources"])
     odds_source_count = int(odds_report["odds_sources_count"])
     context_declared_count, context_basis = _declared_count(candidate, CONTEXT_SOURCE_COUNT_KEYS)
-    context_source_count = max(len(context_sources), context_declared_count)
+    context_source_count = len(context_sources) if context_sources else context_declared_count
 
     reasons: list[str] = []
     if odds_source_count < contract.min_odds_sources:

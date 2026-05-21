@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from app.config import Settings
 from app.schemas import CandidateBet
 from app.services.coverage_contract import evaluate_publish_candidate, odds_sources_for_candidate
+from app.services.core_provider_inventory_bridge import _counts, _normalize_row
 from app.services.runner import PredictionRunner
 
 UTC = timezone.utc
@@ -122,3 +123,26 @@ def test_odds_api_accounts_are_one_source_by_default(monkeypatch):
     )
 
     assert odds_sources_for_candidate(item) == {"odds_api_io"}
+
+
+def test_inventory_keeps_books_and_independent_odds_sources_separate(monkeypatch):
+    monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "2")
+    monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "2")
+    row = {
+        "match_key": "soccer|home|away|2026-05-16",
+        "odds_sources": ["odds_api_io"],
+        "line_sources": ["odds_api_io"],
+        "books": ["Bet365", "Unibet"],
+        "price_confirmations": ["book:Bet365", "book:Unibet"],
+        "context_sources": ["sstats", "bzzoiro"],
+        "context_confirmations": ["provider:sstats", "provider:bzzoiro"],
+        "metadata": {},
+        "coverage": {},
+    }
+
+    _normalize_row(row, "2026-05-16T00:00:00+00:00")
+    counts = _counts([row], {}, "2026-05-16T00:00:00+00:00")
+
+    assert counts["matches_with_2plus_price_confirmations"] == 1
+    assert counts["matches_with_2plus_odds_sources"] == 0
+    assert counts["matches_ready_for_publish"] == 0

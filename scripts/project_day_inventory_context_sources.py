@@ -27,6 +27,7 @@ SUMMARY = EXPORT_DIR / 'latest-day-inventory-summary.json'
 STRONG_CONTEXT = {'sstats', 'bzzoiro', 'api_football', 'futrixmetrics', 'sportlogic', 'clubelo'}
 WEAK_CONTEXT = {'football_data', 'thesportsdb', 'allsportsapi', 'openfootball', 'openligadb', 'espn'}
 NO_CONTEXT = {'', 'odds_api_io', 'line_history', 'market', 'ensemble'}
+LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -141,6 +142,10 @@ def price_count(row: dict[str, Any]) -> int:
     )
 
 
+def odds_source_count(row: dict[str, Any]) -> int:
+    return len({norm(x) for x in list_from_any(row.get('odds_sources')) + list_from_any(row.get('line_sources')) if norm(x) in LIVE_ODDS_SOURCES})
+
+
 def existing_context(row: dict[str, Any]) -> set[str]:
     md = metadata(row)
     out = set(unique(list_from_any(row.get('context_sources')) + list_from_any(row.get('context_confirmations')) + list_from_any(md.get('context_sources')) + list_from_any(md.get('context_confirmations'))))
@@ -166,15 +171,6 @@ def project_sources(row: dict[str, Any]) -> tuple[list[str], list[str], list[str
         reasons.append('coverage_context_with_fixture_provider')
     sources -= NO_CONTEXT
     confirmations = set(sources)
-    if cov.get('xg') and sources:
-        confirmations.add('xg_model_context')
-    if cov.get('form') and sources:
-        confirmations.add('form_context')
-    numeric_target = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(confirmations))
-    while len(confirmations) < numeric_target:
-        idx = len(confirmations) + 1
-        confirmations.add(f'context_confirmation_{idx}')
-        sources.add(f'context_source_{idx}')
     return sorted(sources), sorted(confirmations), sorted(set(reasons))
 
 
@@ -196,18 +192,20 @@ def recompute_counts(matches: list[dict[str, Any]], previous: dict[str, Any], mi
         cov = coverage(row)
         md = metadata(row)
         pc = price_count(row)
-        cc = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(row.get('context_confirmations') or []), len(row.get('context_sources') or []))
+        oc = odds_source_count(row)
+        cc = max(len(row.get('context_confirmations') or []), len(row.get('context_sources') or []))
         has_odds = bool(cov.get('odds')) or pc > 0
         has_context = bool(cov.get('context')) or cc > 0
         ok_price = pc >= min_price
+        ok_odds_sources = oc >= min_price
         ok_context = cc >= min_context
         totals['matches_with_odds'] += int(has_odds)
         totals['matches_with_context'] += int(has_context)
         totals['matches_with_2plus_price_confirmations'] += int(ok_price)
-        totals['matches_with_2plus_odds_sources'] += int(ok_price)
+        totals['matches_with_2plus_odds_sources'] += int(ok_odds_sources)
         totals['matches_with_2plus_context_sources'] += int(ok_context)
         totals['matches_ready_for_model'] += int(bool(cov.get('ready_for_model')) or (has_odds and has_context))
-        totals['matches_ready_for_publish'] += int(bool(cov.get('ready_for_publish')) or (ok_price and ok_context and has_odds and has_context))
+        totals['matches_ready_for_publish'] += int(ok_price and ok_odds_sources and ok_context and has_odds and has_context)
         totals['matches_missing_price_2plus'] += int(not ok_price)
         totals['matches_missing_context_2plus'] += int(not ok_context)
     counts.update(totals)
@@ -263,18 +261,21 @@ def main() -> int:
         if reasons:
             md['context_source_projection_reasons'] = reasons
         pc = price_count(row)
-        cc = max(as_int(md.get('context_sources_count')), as_int(md.get('confirmation_sources_count')), len(confirmations), len(sources))
+        oc = odds_source_count(row)
+        cc = max(len(confirmations), len(sources))
         has_odds = bool(cov.get('odds')) or pc > 0
         has_context = bool(cov.get('context')) or cc > 0
         cov['context'] = has_context
         cov['context_2plus_sources'] = cc >= min_context
-        cov['odds_2plus_sources'] = pc >= min_price
+        cov['odds_2plus_sources'] = oc >= min_price
         cov['ready_for_model'] = bool(cov.get('ready_for_model')) or (has_odds and has_context)
-        cov['ready_for_publish'] = bool(cov.get('ready_for_publish')) or (pc >= min_price and cc >= min_context and has_odds and has_context)
+        cov['ready_for_publish'] = pc >= min_price and oc >= min_price and cc >= min_context and has_odds and has_context
         row['coverage_gaps'] = {
             'price_confirmations': pc,
+            'odds_sources': oc,
             'context_confirmations': cc,
             'need_price_confirmations': max(0, min_price - pc),
+            'need_odds_sources': max(0, min_price - oc),
             'need_context_confirmations': max(0, min_context - cc),
             'has_odds': has_odds,
             'has_context': has_context,

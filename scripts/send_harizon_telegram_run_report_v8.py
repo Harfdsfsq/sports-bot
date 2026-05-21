@@ -3,7 +3,7 @@ from __future__ import annotations
 """HARIZON Telegram run report v8.
 
 Extends v7 with progressive core coverage metrics. The core contract is:
-- core line/odds sources: odds_api_io + bzzoiro + sstats;
+- core line/odds sources: odds_api_io + bzzoiro + sportlogic;
 - core context sources: sstats + bzzoiro.
 
 The report also normalizes runtime-patched SStats counters: the provider wrapper
@@ -53,6 +53,16 @@ def _load_progressive_plan() -> dict[str, Any]:
     try:
         if PROGRESSIVE_PLAN.exists() and PROGRESSIVE_PLAN.stat().st_size > 0:
             payload = json.loads(PROGRESSIVE_PLAN.read_text(encoding="utf-8"))
+            return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+    return {}
+
+
+def _load_json(path: Path) -> dict[str, Any]:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            payload = json.loads(path.read_text(encoding="utf-8"))
             return payload if isinstance(payload, dict) else {}
     except Exception:
         return {}
@@ -117,6 +127,14 @@ def build_payload() -> dict[str, Any]:
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
         "gap_sample_size": len(plan.get("core_gap_sample") or plan.get("gap_sample") or []) if isinstance(plan, dict) else 0,
     }
+    day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
+    truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
+    if truth_counts:
+        sources = day_summary.get("sources") if isinstance(day_summary.get("sources"), dict) else {}
+        payload.setdefault("diagnostics", {})["coverage_truth"] = {
+            "counts": truth_counts,
+            "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {},
+        }
     return payload
 
 
@@ -178,7 +196,7 @@ def render(payload: dict[str, Any]) -> str:
     counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
 
     if counts:
-        core_odds = ",".join(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sstats"])
+        core_odds = ",".join(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sportlogic"])
         core_context = ",".join(contract.get("core_context_providers") or ["bzzoiro", "sstats"])
         block = "\n".join([
             "🧭 Progressive core coverage",
@@ -190,6 +208,18 @@ def render(payload: dict[str, Any]) -> str:
         ])
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
         text = _replace_conclusion(text, counts)
+    truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
+    truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
+    if truth_counts:
+        block = "\n".join([
+            "Coverage truth",
+            f"• Inventory rows: {_as_int(truth_counts.get('matches_total'))}",
+            f"• 2+ price confirmations: {_as_int(truth_counts.get('matches_with_2plus_price_confirmations'))}",
+            f"• 2+ independent odds sources: {_as_int(truth_counts.get('matches_with_2plus_odds_sources'))}",
+            f"• 2+ context sources: {_as_int(truth_counts.get('matches_with_2plus_context_sources'))}",
+            f"• ready publish by strict truth: {_as_int(truth_counts.get('matches_ready_for_publish'))}",
+        ])
+        text = _insert_before(text, "🚫 Почему не опубликовано", block)
     return text
 
 

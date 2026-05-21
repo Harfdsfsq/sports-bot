@@ -38,7 +38,7 @@ PROVIDER_ALIASES = {
     "sportsdb": "thesportsdb",
     "the_sports_db": "thesportsdb",
 }
-CORE_PRICE_PROVIDERS = {"odds_api_io", "bzzoiro", "sportlogic", "sstats"}
+CORE_PRICE_PROVIDERS = {"odds_api_io", "bzzoiro", "sportlogic"}
 CORE_CONTEXT_PROVIDERS = {"bzzoiro", "sstats", "sportlogic", "football_data", "thesportsdb", "clubelo", "weatherapi", "open_meteo"}
 LIST_FIELDS = ("odds_sources", "line_sources", "books", "price_confirmations", "context_sources", "context_confirmations", "fixture_sources", "sources_seen")
 COUNT_FIELDS = (
@@ -148,12 +148,15 @@ def _source_ids(row: dict[str, Any]) -> dict[str, str]:
 
 def _price_count(row: dict[str, Any]) -> int:
     md = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-    return max(_as_int(md.get("price_confirmation_sources_count")), _as_int(md.get("price_sources_count")), len(row.get("price_confirmations") or []), len(row.get("books") or []), len(row.get("odds_sources") or []))
+    return max(_as_int(md.get("price_confirmation_sources_count")), _as_int(md.get("price_sources_count")), len(row.get("price_confirmations") or []), len(row.get("books") or []))
+
+
+def _odds_source_count(row: dict[str, Any]) -> int:
+    return len(set(_listify(row.get("odds_sources")) + _listify(row.get("line_sources"))) & CORE_PRICE_PROVIDERS)
 
 
 def _context_count(row: dict[str, Any]) -> int:
-    md = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-    return max(_as_int(md.get("context_sources_count")), _as_int(md.get("confirmation_sources_count")), len(row.get("context_confirmations") or []), len(row.get("context_sources") or []))
+    return max(len(row.get("context_confirmations") or []), len(row.get("context_sources") or []))
 
 
 def _merge(dst: dict[str, Any], src: dict[str, Any], now_iso: str) -> bool:
@@ -183,10 +186,10 @@ def _normalize_row(row: dict[str, Any], now_iso: str) -> None:
     fixture_sources = set(_listify(row.get("fixture_sources"))) | set(ids.keys())
     row["sources_seen"] = sorted(sources_seen)
     row["fixture_sources"] = sorted(fixture_sources)
-    odds_sources = set(_listify(row.get("odds_sources"))) | (set(ids.keys()) & CORE_PRICE_PROVIDERS)
+    odds_sources = set(_listify(row.get("odds_sources"))) | (set(_listify(row.get("line_sources"))) & CORE_PRICE_PROVIDERS)
     context_sources = set(_listify(row.get("context_sources"))) | (set(ids.keys()) & CORE_CONTEXT_PROVIDERS)
-    # Only provider presence is not enough to create fake odds evidence, but it is enough
-    # to keep routing/diagnostics coherent. Price confirmations remain actual tokens.
+    # Provider IDs alone are routing evidence, not live line evidence.  Odds sources
+    # must come from explicit odds/line fields or price-backfill evidence.
     row["odds_sources"] = sorted(odds_sources)
     row["line_sources"] = sorted(set(_listify(row.get("line_sources"))) | odds_sources)
     row["context_sources"] = sorted(context_sources)
@@ -194,10 +197,11 @@ def _normalize_row(row: dict[str, Any], now_iso: str) -> None:
         row["context_confirmations"] = sorted(f"provider:{src}" for src in context_sources)
     md = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
     pc = _price_count(row)
+    oc = _odds_source_count(row)
     cc = _context_count(row)
     md["fixture_sources_count"] = max(_as_int(md.get("fixture_sources_count")), len(fixture_sources))
-    md["odds_sources_count"] = max(_as_int(md.get("odds_sources_count")), len(odds_sources))
-    md["independent_odds_sources_count"] = max(_as_int(md.get("independent_odds_sources_count")), len(odds_sources))
+    md["odds_sources_count"] = oc
+    md["independent_odds_sources_count"] = oc
     md["context_sources_count"] = max(_as_int(md.get("context_sources_count")), cc, len(context_sources))
     md["confirmation_sources_count"] = max(_as_int(md.get("confirmation_sources_count")), cc, len(context_sources))
     md["price_confirmation_sources_count"] = max(_as_int(md.get("price_confirmation_sources_count")), pc)
@@ -207,14 +211,15 @@ def _normalize_row(row: dict[str, Any], now_iso: str) -> None:
     min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
     min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
     pc = _price_count(row)
+    oc = _odds_source_count(row)
     cc = _context_count(row)
     cov = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
     cov["odds"] = bool(cov.get("odds")) or pc > 0
     cov["context"] = bool(cov.get("context")) or cc > 0
-    cov["odds_2plus_sources"] = pc >= min_price
+    cov["odds_2plus_sources"] = oc >= min_price
     cov["context_2plus_sources"] = cc >= min_context
     cov["ready_for_model"] = bool(cov.get("ready_for_model")) or (pc > 0 and cc > 0)
-    cov["ready_for_publish"] = bool(cov.get("ready_for_publish")) or (pc >= min_price and cc >= min_context)
+    cov["ready_for_publish"] = pc >= min_price and oc >= min_price and cc >= min_context
     row["coverage"] = cov
 
 
@@ -226,7 +231,7 @@ def _counts(rows: list[dict[str, Any]], old: dict[str, Any], now_iso: str) -> di
         "matches_with_odds": sum(1 for r in rows if _price_count(r) > 0 or (r.get("coverage") or {}).get("odds")),
         "matches_with_context": sum(1 for r in rows if _context_count(r) > 0 or (r.get("coverage") or {}).get("context")),
         "matches_with_2plus_price_confirmations": sum(1 for r in rows if _price_count(r) >= min_price),
-        "matches_with_2plus_odds_sources": sum(1 for r in rows if _price_count(r) >= min_price),
+        "matches_with_2plus_odds_sources": sum(1 for r in rows if _odds_source_count(r) >= min_price),
         "matches_with_2plus_context_sources": sum(1 for r in rows if _context_count(r) >= min_context),
         "matches_ready_for_model": sum(1 for r in rows if bool((r.get("coverage") or {}).get("ready_for_model"))),
         "matches_ready_for_publish": sum(1 for r in rows if bool((r.get("coverage") or {}).get("ready_for_publish"))),

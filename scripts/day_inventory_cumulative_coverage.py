@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import runpy
 from datetime import datetime, timezone
 from pathlib import Path
@@ -11,6 +12,7 @@ from zoneinfo import ZoneInfo
 ROOT = Path('.').resolve()
 UTC = timezone.utc
 OUT = ROOT / '.data' / 'exports' / 'latest-day-inventory-cumulative-coverage.json'
+LIVE_ODDS_SOURCES = {'odds_api_io', 'bzzoiro', 'sportlogic'}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -72,6 +74,56 @@ def source_count(row: dict[str, Any], *names: str) -> int:
         for name in names:
             best = max(best, as_int(c.get(name)))
     return best
+
+
+def list_from_any(value: Any) -> list[str]:
+    if isinstance(value, dict):
+        return [str(k).strip() for k in value.keys() if str(k).strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, str) and value.strip():
+        import re
+        return [v.strip() for v in re.split(r'[,|;/]+', value) if v.strip()]
+    return []
+
+
+def norm_source(value: Any) -> str:
+    import re
+    text = re.sub(r'[^a-z0-9]+', '_', str(value or '').strip().lower()).strip('_')
+    aliases = {
+        'oddsapiio': 'odds_api_io',
+        'odds_api': 'odds_api_io',
+        'odds_api_io_account1': 'odds_api_io',
+        'odds_api_io_account2': 'odds_api_io',
+        'bzzoiro_predictions': 'bzzoiro',
+        'bzzoiro_current_odds': 'bzzoiro',
+        'bzzoiro_v2': 'bzzoiro',
+        'sport_logic': 'sportlogic',
+        'sportlogic_io': 'sportlogic',
+    }
+    return aliases.get(text, text)
+
+
+def odds_source_count(row: dict[str, Any]) -> int:
+    return len({norm_source(x) for x in list_from_any(row.get('odds_sources')) + list_from_any(row.get('line_sources')) if norm_source(x) in LIVE_ODDS_SOURCES})
+
+
+def price_confirmation_count(row: dict[str, Any]) -> int:
+    return source_count(row, 'price_confirmation_sources_count', 'price_sources_count', 'books_count', 'latest_books_max')
+
+
+def context_source_count(row: dict[str, Any]) -> int:
+    values = []
+    for source in list_from_any(row.get('context_sources')) + list_from_any(row.get('context_confirmations')):
+        item = norm_source(source)
+        if item.startswith('provider_'):
+            item = item.removeprefix('provider_')
+        if item in {'', 'ensemble', 'market', 'market_signal', 'line_history', 'odds_api_io', 'xg_model_context', 'form_context'}:
+            continue
+        if re.match(r'^context_(source|confirmation)_\d+$', item):
+            continue
+        values.append(item)
+    return len(set(values))
 
 
 def bool_cov(row: dict[str, Any], key: str) -> bool:
@@ -139,6 +191,7 @@ def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
     # cumulative coverage sees bookmaker-confirmed price depth and independent
     # context confirmations instead of stale bootstrap counters.
     steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_source_counts.py'))
+    steps.append(run_python_script(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'))
     return steps
 
 
@@ -164,29 +217,13 @@ def main() -> int:
         b = bucket((kickoff - now).total_seconds() / 60.0)
         slot = current.setdefault(b, empty_bucket())
         slot['seen'] += 1
-        odds_sources = source_count(
-            row,
-            'price_confirmation_sources_count',
-            'latest_books_max',
-            'books_count',
-            'odds_sources_count',
-            'latest_odds_sources_max',
-            'price_sources_count',
-            'independent_odds_sources_count',
-            'exact_price_sources_count',
-            'exact_sources_count',
-        )
-        context_sources = source_count(
-            row,
-            'context_sources_count',
-            'latest_context_sources_max',
-            'confirmation_sources_count',
-            'latest_confirmation_sources_max',
-        )
-        has_odds = bool_cov(row, 'odds') or odds_sources > 0
+        odds_sources = odds_source_count(row)
+        price_confirmations = price_confirmation_count(row)
+        context_sources = context_source_count(row)
+        has_odds = bool_cov(row, 'odds') or price_confirmations > 0
         has_context = bool_cov(row, 'context') or context_sources > 0
         ready_model = bool_cov(row, 'ready_for_model') or (has_odds and has_context)
-        ready_publish = bool_cov(row, 'ready_for_publish') or (odds_sources >= min_odds_sources and context_sources >= min_context_sources)
+        ready_publish = price_confirmations >= min_odds_sources and odds_sources >= min_odds_sources and context_sources >= min_context_sources
         slot['odds_any'] += int(has_odds)
         slot['odds_2plus_sources'] += int(odds_sources >= min_odds_sources)
         slot['context_any'] += int(has_context)
@@ -202,6 +239,7 @@ def main() -> int:
                 'away_team': row.get('away_team'),
                 'bucket': b,
                 'odds_sources': odds_sources,
+                'price_confirmations': price_confirmations,
                 'context_sources': context_sources,
                 'has_odds': has_odds,
                 'has_context': has_context,
@@ -224,8 +262,8 @@ def main() -> int:
         'notes': [
             'current_by_kickoff_window is the live rolling window and can shrink when matches start.',
             'by_kickoff_window is the cumulative high watermark and should only grow during the local day.',
-            'ready_for_publish requires at least 2 price confirmations and 2 context/confirmation sources by default.',
-            'Price confirmations can come from distinct bookmakers/lines even when the API provider is still odds_api_io.',
+            'ready_for_publish requires 2+ price confirmations, 2+ independent live odds providers, and 2+ context/confirmation sources by default.',
+            'Price confirmations can come from distinct bookmakers/lines, but they are not counted as independent odds providers.',
             'Before calculating cumulative coverage this script rebuilds latest-match-data coverage, merges it into day inventory, and repairs source counters.',
         ],
     }

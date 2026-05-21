@@ -34,6 +34,7 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 LINE_HISTORY_DIR = ROOT / ".data" / "line_history"
 OUT = EXPORT_DIR / "latest-inventory-source-count-repair.json"
 SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
+LIVE_ODDS_SOURCES = {"odds_api_io", "bzzoiro", "sportlogic"}
 
 CANDIDATE_PATHS = [
     EXPORT_DIR / "latest-rescue-candidates.json",
@@ -113,6 +114,8 @@ def norm_source(value: Any) -> str:
     aliases = {
         "oddsapiio": "odds_api_io",
         "odds_api": "odds_api_io",
+        "odds_api_io_account1": "odds_api_io",
+        "odds_api_io_account2": "odds_api_io",
         "the_odds_api": "odds_api_io",
         "bzzoiro_predictions": "bzzoiro",
         "bzzoiro_current_odds": "bzzoiro",
@@ -464,43 +467,37 @@ def apply_evidence_to_row(row: dict[str, Any], ev: dict[str, Any] | None, min_pr
     fixture_sources = set(existing_fixture_sources(row))
     if ev:
         fixture_sources.update(ev.get("fixture_sources") or set())
-    odds_sources = set(list_from_any(row.get("odds_sources")) + list_from_any(metadata.get("odds_sources")))
+    odds_sources = {src for src in (norm_source(x) for x in list_from_any(row.get("odds_sources")) + list_from_any(metadata.get("odds_sources"))) if src in LIVE_ODDS_SOURCES}
     price_confirmations = set(list_from_any(row.get("price_confirmations")) + list_from_any(metadata.get("price_confirmations")))
     context_sources = set(list_from_any(row.get("context_sources")) + list_from_any(metadata.get("context_sources")))
     context_confirmations = set(list_from_any(row.get("context_confirmations")) + list_from_any(metadata.get("context_confirmations")))
-    line_sources = set(list_from_any(row.get("line_sources")) + list_from_any(metadata.get("line_sources")))
+    line_sources = {src for src in (norm_source(x) for x in list_from_any(row.get("line_sources")) + list_from_any(metadata.get("line_sources"))) if src in LIVE_ODDS_SOURCES}
     books = set(list_from_any(row.get("books")) + list_from_any(metadata.get("books")))
 
     if ev:
-        odds_sources.update(ev.get("odds_sources") or set())
+        odds_sources.update(src for src in (norm_source(x) for x in (ev.get("odds_sources") or set())) if src in LIVE_ODDS_SOURCES)
         price_confirmations.update(ev.get("price_confirmations") or set())
         context_sources.update(ev.get("context_sources") or set())
         context_confirmations.update(ev.get("context_confirmations") or set())
-        line_sources.update(ev.get("line_sources") or set())
+        line_sources.update(src for src in (norm_source(x) for x in (ev.get("line_sources") or set())) if src in LIVE_ODDS_SOURCES)
         books.update(ev.get("books") or set())
 
     # Preserve existing numeric counts even if names are unavailable.
-    numeric_independent = max(as_int(metadata.get("independent_odds_sources_count")), as_int(metadata.get("odds_sources_count")), len(odds_sources))
+    numeric_independent = len(odds_sources | line_sources)
     numeric_books = max(as_int(metadata.get("books_count")), len(books))
-    numeric_price = max(as_int(metadata.get("price_confirmation_sources_count")), as_int(metadata.get("price_sources_count")), len(price_confirmations), numeric_independent, numeric_books)
-    numeric_context = max(as_int(metadata.get("context_sources_count")), as_int(metadata.get("confirmation_sources_count")), len(context_sources), len(context_confirmations))
+    numeric_price = max(as_int(metadata.get("price_confirmation_sources_count")), as_int(metadata.get("price_sources_count")), len(price_confirmations), numeric_books)
+    context_sources = {src for src in (norm_source(x) for x in context_sources) if src and not re.match(r"^context_(source|confirmation)_\d+$", src)}
+    context_confirmations = {src for src in (norm_source(x) for x in context_confirmations) if src and not re.match(r"^context_(source|confirmation)_\d+$", src)}
+    numeric_context = max(len(context_sources), len(context_confirmations))
     if ev and isinstance(ev.get("counts"), dict):
         counts = ev["counts"]
-        numeric_independent = max(numeric_independent, as_int(counts.get("independent_odds_sources_count")), as_int(counts.get("odds_sources_count")))
         numeric_books = max(numeric_books, as_int(counts.get("books_count")))
-        numeric_price = max(numeric_price, as_int(counts.get("price_confirmation_sources_count")), as_int(counts.get("price_sources_count")), numeric_independent, numeric_books)
-        numeric_context = max(numeric_context, as_int(counts.get("context_sources_count")), as_int(counts.get("confirmation_sources_count")))
+        numeric_price = max(numeric_price, as_int(counts.get("price_confirmation_sources_count")), as_int(counts.get("price_sources_count")), numeric_books)
+        numeric_context = max(numeric_context, len(context_sources), len(context_confirmations))
 
     # Synthetic confirmation placeholders are explicit and only used when numeric depth exists but exact names were not exported.
     while len(price_confirmations) < numeric_price:
         price_confirmations.add(f"price_confirmation_{len(price_confirmations) + 1}")
-    while len(context_confirmations) < numeric_context:
-        context_confirmations.add(f"context_confirmation_{len(context_confirmations) + 1}")
-    while len(odds_sources) < numeric_independent:
-        odds_sources.add(f"odds_source_{len(odds_sources) + 1}")
-    while len(context_sources) < numeric_context:
-        context_sources.add(f"context_source_{len(context_sources) + 1}")
-
     row["fixture_sources"] = sorted(fixture_sources)
     row["odds_sources"] = sorted(odds_sources)
     row["line_sources"] = sorted(line_sources or odds_sources)
@@ -528,10 +525,10 @@ def apply_evidence_to_row(row: dict[str, Any], ev: dict[str, Any] | None, min_pr
     has_context = numeric_context > 0 or bool(coverage.get("context"))
     coverage["odds"] = has_odds
     coverage["context"] = has_context
-    coverage["odds_2plus_sources"] = numeric_price >= min_price
+    coverage["odds_2plus_sources"] = numeric_independent >= min_price
     coverage["context_2plus_sources"] = numeric_context >= min_context
     coverage["ready_for_model"] = bool(coverage.get("ready_for_model")) or (has_odds and has_context)
-    coverage["ready_for_publish"] = bool(coverage.get("ready_for_publish")) or (numeric_price >= min_price and numeric_context >= min_context and has_odds and has_context)
+    coverage["ready_for_publish"] = numeric_price >= min_price and numeric_independent >= min_price and numeric_context >= min_context and has_odds and has_context
     row["coverage"] = coverage
 
     if has_odds:
@@ -574,18 +571,20 @@ def priority_score(row: dict[str, Any], now: datetime) -> tuple[int, float, floa
 
 def recompute_inventory_counts(matches: list[dict[str, Any]], previous: dict[str, Any], min_price: int, min_context: int, before_cut: int, high_watermark: int) -> dict[str, Any]:
     counts = dict(previous or {})
-    price_2plus = context_2plus = odds_any = context_any = ready_model = ready_publish = fixture_2plus = fixture_3plus = 0
+    price_2plus = odds_source_2plus = context_2plus = odds_any = context_any = ready_model = ready_publish = fixture_2plus = fixture_3plus = 0
     for row in matches:
         coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
         fixture_count = len(row.get("fixture_sources") or [])
         price_sources = max(as_int((row.get("metadata") or {}).get("price_confirmation_sources_count")), len(row.get("price_confirmations") or []))
-        context_sources = max(as_int((row.get("metadata") or {}).get("context_sources_count")), len(row.get("context_confirmations") or []), len(row.get("context_sources") or []))
+        odds_source_count = len({src for src in (norm_source(x) for x in list_from_any(row.get("odds_sources")) + list_from_any(row.get("line_sources"))) if src in LIVE_ODDS_SOURCES})
+        context_sources = max(len(row.get("context_confirmations") or []), len(row.get("context_sources") or []))
         odds_any += int(bool(coverage.get("odds")) or price_sources > 0)
         context_any += int(bool(coverage.get("context")) or context_sources > 0)
         price_2plus += int(price_sources >= min_price)
+        odds_source_2plus += int(odds_source_count >= min_price)
         context_2plus += int(context_sources >= min_context)
         ready_model += int(bool(coverage.get("ready_for_model")))
-        ready_publish += int(bool(coverage.get("ready_for_publish")))
+        ready_publish += int(price_sources >= min_price and odds_source_count >= min_price and context_sources >= min_context)
         fixture_2plus += int(fixture_count >= 2)
         fixture_3plus += int(fixture_count >= 3)
     counts.update({
@@ -595,7 +594,7 @@ def recompute_inventory_counts(matches: list[dict[str, Any]], previous: dict[str
         "matches_with_odds": odds_any,
         "matches_with_context": context_any,
         "matches_with_2plus_price_confirmations": price_2plus,
-        "matches_with_2plus_odds_sources": price_2plus,
+        "matches_with_2plus_odds_sources": odds_source_2plus,
         "matches_with_2plus_context_sources": context_2plus,
         "matches_with_2plus_core_fixture_sources": fixture_2plus,
         "matches_with_3_core_fixture_sources": fixture_3plus,
@@ -605,6 +604,7 @@ def recompute_inventory_counts(matches: list[dict[str, Any]], previous: dict[str
         "publish_min_odds_sources": min_price,
         "publish_min_context_sources": min_context,
     })
+    counts["matches_missing_odds_source_2plus"] = max(0, len(matches) - odds_source_2plus)
     counts["matches_total_high_watermark"] = max(as_int(counts.get("matches_total_high_watermark")), high_watermark, before_cut, len(matches))
     return counts
 
@@ -688,7 +688,7 @@ def main() -> int:
             "Inventory matches are capped to top-300 by kickoff/priority/evidence, while matches_total_high_watermark keeps the raw daily audit size.",
             "Each match now stores odds_sources, price_confirmations, context_sources, context_confirmations, fixture_sources and books.",
             "price_confirmation_sources_count uses distinct bookmaker prices as confirmations when only one odds API provider is available.",
-            "ready_for_publish requires 2+ pricing confirmations and 2+ context confirmations by default.",
+            "ready_for_publish requires 2+ price confirmations, 2+ independent live odds providers, and 2+ context confirmations by default.",
         ],
     }
     write_json(OUT, report)
