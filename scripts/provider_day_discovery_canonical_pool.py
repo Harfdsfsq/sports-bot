@@ -347,10 +347,12 @@ def build_calls() -> list[CallSpec]:
     odds_pages = max(1, min(max_config_pages, default_pages, 6))
     if odds:
         for page in range(1, odds_pages + 1):
-            calls.append(CallSpec("odds_api_io", f"events_account1_page_{page}", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": odds_limit, "page": page}))
+            skip = (page - 1) * odds_limit
+            calls.append(CallSpec("odds_api_io", f"events_account1_skip_{skip}", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": odds_limit, "skip": skip}))
     if odds2:
         for page in range(1, odds_pages + 1):
-            calls.append(CallSpec("odds_api_io", f"events_account2_page_{page}", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds2, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": odds_limit, "page": page}))
+            skip = (page - 1) * odds_limit
+            calls.append(CallSpec("odds_api_io", f"events_account2_skip_{skip}", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds2, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": odds_limit, "skip": skip}))
     _, bzz = first_env("BZZOIRO_API_KEY")
     if bzz:
         h = {"Authorization": f"Token {bzz}"}
@@ -440,12 +442,23 @@ def summarize(results: list[dict[str, Any]], canonical: list[dict[str, Any]]) ->
     provider_rows: dict[str, Any] = {}
     for row in results:
         provider = str(row.get("provider") or "unknown")
-        cur = provider_rows.setdefault(provider, {"commands": 0, "ok": 0, "rows": 0, "events": 0, "statuses": {}})
+        cur = provider_rows.setdefault(provider, {"commands": 0, "ok": 0, "rows": 0, "events": 0, "unique_events": 0, "statuses": {}, "_ids": set()})
         cur["commands"] += 1
         cur["ok"] += 1 if row.get("status") == "OK" else 0
         cur["rows"] += as_int(row.get("rows_count"), 0)
         cur["events"] += as_int(row.get("event_like_rows"), 0)
+        ids = cur.get("_ids") if isinstance(cur.get("_ids"), set) else set()
+        for event in row.get("events") or []:
+            if isinstance(event, dict):
+                token = str(event.get("source_id") or event.get("raw_id") or event.get("id") or "").strip()
+                if not token:
+                    token = f"{event.get('kickoff_utc')}|{normalize(event.get('home_team'))}|{normalize(event.get('away_team'))}"
+                ids.add(token)
+        cur["_ids"] = ids
+        cur["unique_events"] = len(ids)
         cur["statuses"][str(row.get("status") or "unknown")] = cur["statuses"].get(str(row.get("status") or "unknown"), 0) + 1
+    for row in provider_rows.values():
+        row.pop("_ids", None)
     source_dist = Counter(len(item.get("providers") or []) for item in canonical)
     primary_dist = Counter(len(set(item.get("providers") or []) & PRIMARY_PROVIDERS) for item in canonical)
     return {"provider_rows": provider_rows, "canonical_matches": len(canonical), "source_count_distribution": dict(source_dist), "primary_source_count_distribution": dict(primary_dist), "canonical_with_2plus_sources": sum(1 for item in canonical if len(item.get("providers") or []) >= 2), "canonical_with_2plus_primary_sources": sum(1 for item in canonical if len(set(item.get("providers") or []) & PRIMARY_PROVIDERS) >= 2), "canonical_with_all_3_primary_sources": sum(1 for item in canonical if PRIMARY_PROVIDERS.issubset(set(item.get("providers") or [])))}
@@ -455,7 +468,7 @@ def render(payload: dict[str, Any]) -> str:
     s = payload.get("summary") or {}
     lines = ["# Provider day discovery canonical pool", f"UTC: {payload.get('created_at_utc')}", f"target_date: {payload.get('target_date')}", f"canonical_matches: {s.get('canonical_matches', 0)}", f"2+ provider sources: {s.get('canonical_with_2plus_sources', 0)}", f"2+ primary sources: {s.get('canonical_with_2plus_primary_sources', 0)}", f"all 3 primary sources: {s.get('canonical_with_all_3_primary_sources', 0)}", "", "## Provider fixture discovery"]
     for provider, row in sorted((s.get("provider_rows") or {}).items()):
-        lines.append(f"- {provider}: commands={row.get('commands')} ok={row.get('ok')} rows={row.get('rows')} event_like={row.get('events')} statuses={json.dumps(row.get('statuses') or {}, ensure_ascii=False)}")
+        lines.append(f"- {provider}: commands={row.get('commands')} ok={row.get('ok')} rows={row.get('rows')} event_like={row.get('events')} unique={row.get('unique_events')} statuses={json.dumps(row.get('statuses') or {}, ensure_ascii=False)}")
     lines += ["", "## Source distributions", f"- all providers: {json.dumps(s.get('source_count_distribution') or {}, ensure_ascii=False)}", f"- primary providers: {json.dumps(s.get('primary_source_count_distribution') or {}, ensure_ascii=False)}", "", "## Top canonical matches"]
     for item in (payload.get("canonical_matches_sample") or [])[:30]:
         lines.append(f"- {item.get('kickoff_utc')} | {item.get('home_team')} — {item.get('away_team')} | providers={','.join(item.get('providers') or [])} ids={json.dumps(item.get('source_ids') or {}, ensure_ascii=False)}")

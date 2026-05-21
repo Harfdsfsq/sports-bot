@@ -76,7 +76,7 @@ class OddsApiIoProvider:
                     "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
                     "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
                     "limit": page_limit,
-                    "page": page,
+                    "skip": (page - 1) * page_limit,
                 }
                 stats["event_requests"] += 1
                 self._record_request(account_name="account1")
@@ -262,7 +262,7 @@ class OddsApiIoProvider:
                         "from": now.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
                         "to": until.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
                         "limit": page_limit,
-                        "page": page,
+                        "skip": (page - 1) * page_limit,
                     }
                     stats["event_requests"] += 1
                     self._record_request(account_name=str(event_account["name"]))
