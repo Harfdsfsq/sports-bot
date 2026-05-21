@@ -340,17 +340,24 @@ def build_calls() -> list[CallSpec]:
     calls: list[CallSpec] = []
     _, odds = first_env("ODDS_API_IO_KEY")
     _, odds2 = first_env("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2")
+    odds_limit = max(20, min(100, as_int(env("PROVIDER_DAY_DISCOVERY_ODDS_API_IO_PAGE_LIMIT"), 100)))
+    odds_target = max(300, as_int(env("DAY_INVENTORY_TARGET_SIZE") or env("DAY_INVENTORY_MAX_MATCHES"), 300))
+    default_pages = max(1, (odds_target + odds_limit - 1) // odds_limit)
+    max_config_pages = as_int(env("PROVIDER_DAY_DISCOVERY_ODDS_API_IO_PAGES") or env("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT"), default_pages)
+    odds_pages = max(1, min(max_config_pages, default_pages, 6))
     if odds:
-        calls.append(CallSpec("odds_api_io", "events_account1", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": 100, "page": 1}))
+        for page in range(1, odds_pages + 1):
+            calls.append(CallSpec("odds_api_io", f"events_account1_page_{page}", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": odds_limit, "page": page}))
     if odds2:
-        calls.append(CallSpec("odds_api_io", "events_account2", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds2, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": 100, "page": 1}))
+        for page in range(1, odds_pages + 1):
+            calls.append(CallSpec("odds_api_io", f"events_account2_page_{page}", "https://api.odds-api.io/v3/events", "fixture_primary_odds", {"apiKey": odds2, "sport": "football", "status": "pending,live", "from": f"{t}T00:00:00Z", "to": f"{tm}T00:00:00Z", "limit": odds_limit, "page": page}))
     _, bzz = first_env("BZZOIRO_API_KEY")
     if bzz:
         h = {"Authorization": f"Token {bzz}"}
         calls.extend([
             CallSpec("bzzoiro", "events_v1_day", "https://sports.bzzoiro.com/api/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "tz": "UTC", "limit": 100}, h),
             CallSpec("bzzoiro", "predictions_v1_day", "https://sports.bzzoiro.com/api/predictions/", "fixture_primary_prediction", {"date_from": t, "date_to": tm, "upcoming": "true", "tz": "UTC", "limit": 100}, h),
-            CallSpec("bzzoiro", "events_v2_day", "https://sports.bzzoiro.com/api/v2/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "limit": 100, "offset": 0}, h),
+            CallSpec("bzzoiro", "events_v2_day_offset_0", "https://sports.bzzoiro.com/api/v2/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "limit": 100, "offset": 0}, h),
         ])
     _, sstats = first_env("SSTATS_API_KEY")
     if sstats:
