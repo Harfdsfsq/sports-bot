@@ -1,14 +1,13 @@
 {
-  "patch_name": "sports-bot-followup-ci-env-isolation",
-  "source_artifacts": [
-    "logs_70185176216.zip",
-    "run-bot-26245503912.zip"
-  ],
-  "changed_files": [
+  "patch_name": "strict-controlled-fallback-publication-guard",
+  "reason": "Controlled fallback published a pick while main pipeline had 0 quality-passed/publishable candidates and strict coverage truth for the selected match missed independent odds sources.",
+  "files": [
+    "sports-bot/scripts/publish_controlled_fallback.py",
     "sports-bot/.github/workflows/run-bot.yml",
-    "sports-bot/tests/test_providers_and_telegram.py",
-    "sports-bot/tests/test_runtime_preflight.py"
+    "sports-bot/tests/test_controlled_fallback_strict_truth.py"
   ],
-  "test_command": "APP_ENV=production RUN_REPORT_ENABLED=false PUBLISH_MIN_CONTEXT_SOURCES=2 MIN_CONTEXT_SOURCES_PUBLISH=2 PYTHONPATH=. python -m pytest -q",
-  "test_result": "44 passed"
+  "checks": [
+    "python3 -m pytest tests/test_controlled_fallback_strict_truth.py -q -> 2 passed",
+    "python3 -m pytest -q -> 43 passed"
+  ]
 }

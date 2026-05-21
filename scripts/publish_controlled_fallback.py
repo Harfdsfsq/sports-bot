@@ -280,6 +280,127 @@ def candidate_confirmation_sources(candidate: dict[str, Any]) -> tuple[list[str]
     return sorted(sources), relevance
 
 
+
+
+def normalized_match_key(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def candidate_team_tokens(candidate: dict[str, Any]) -> set[str]:
+    tokens: set[str] = set()
+    for field in ("match_key", "home_team", "away_team", "match_name"):
+        text = str(candidate.get(field) or "").lower()
+        for part in re.split(r"[^a-z0-9а-яё]+", text):
+            if len(part) >= 4:
+                tokens.add(part)
+    return tokens
+
+
+def load_strict_coverage_truth() -> dict[str, Any]:
+    for path in (
+        Path("artifacts/run-bot/latest-day-inventory-coverage-truth.json"),
+        Path("artifacts/latest-day-inventory-coverage-truth.json"),
+        Path(".data/exports/latest-day-inventory-coverage-truth.json"),
+    ):
+        payload = load_json(path, {})
+        if isinstance(payload, dict) and isinstance(payload.get("rows"), list):
+            return payload
+    return {}
+
+
+def strict_truth_for_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Return day-inventory strict truth for a candidate.
+
+    Candidate-level fields can be optimistic: rescue rows may carry provider/source
+    counters copied from enrichment layers, while the authoritative publication
+    contract is the day-inventory coverage truth. Telegram fallback must therefore
+    re-check the selected match against this matrix before publication.
+    """
+    truth = load_strict_coverage_truth()
+    rows = truth.get("rows") if isinstance(truth, dict) else None
+    if not isinstance(rows, list):
+        return {"available": False, "reason": "coverage_truth_missing"}
+
+    candidate_key = normalized_match_key(candidate.get("match_key"))
+    candidate_kickoff = parse_dt(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
+    tokens = candidate_team_tokens(candidate)
+
+    best: dict[str, Any] | None = None
+    best_score = -1
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        row_key = normalized_match_key(row.get("match_key"))
+        score = 0
+        if candidate_key and row_key == candidate_key:
+            score += 100
+        else:
+            row_text = " ".join(str(row.get(k) or "") for k in ("match_key", "home_team", "away_team", "league_name")).lower()
+            row_tokens = {part for part in re.split(r"[^a-z0-9а-яё]+", row_text) if len(part) >= 4}
+            overlap = len(tokens & row_tokens)
+            if overlap >= 2:
+                score += 20 + overlap
+        row_kickoff = parse_dt(row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff"))
+        if candidate_kickoff is not None and row_kickoff is not None:
+            delta = abs((candidate_kickoff - row_kickoff).total_seconds())
+            if delta <= 3 * 3600:
+                score += 10
+            if delta <= 15 * 60:
+                score += 20
+        if score > best_score:
+            best_score = score
+            best = row
+
+    if best is None or best_score <= 0:
+        return {"available": True, "matched": False, "reason": "candidate_not_found_in_coverage_truth"}
+
+    price_confirmations = as_int(best.get("price_confirmations"), 0)
+    odds_sources_count = as_int(best.get("odds_sources_count"), 0)
+    context_sources_count = as_int(best.get("context_sources_count"), 0)
+    min_price_confirmations = as_int(best.get("need_price_confirmations"), 2)
+    min_odds_sources = max(2, as_int(best.get("need_odds_sources"), env_int("PUBLISH_MIN_ODDS_SOURCES", 2)))
+    min_context_sources = max(2, as_int(best.get("need_context_sources"), env_int("PUBLISH_MIN_CONTEXT_SOURCES", 2)))
+    missing = [str(item) for item in (best.get("missing") or []) if str(item).strip()]
+    ready = bool(best.get("ready_for_publish"))
+    if not ready:
+        ready = (
+            price_confirmations >= min_price_confirmations
+            and odds_sources_count >= min_odds_sources
+            and context_sources_count >= min_context_sources
+            and not missing
+        )
+    return {
+        "available": True,
+        "matched": True,
+        "matched_score": best_score,
+        "match_key": best.get("match_key"),
+        "ready_for_publish": ready,
+        "price_confirmations": price_confirmations,
+        "odds_sources_count": odds_sources_count,
+        "context_sources_count": context_sources_count,
+        "min_price_confirmations": min_price_confirmations,
+        "min_odds_sources": min_odds_sources,
+        "min_context_sources": min_context_sources,
+        "missing": missing,
+        "odds_sources": best.get("odds_sources") or [],
+        "context_sources": best.get("context_sources") or [],
+    }
+
+
+def quality_stop_reject_reasons(metrics: dict[str, Any], *, prefix: str = "telegram") -> list[str]:
+    if not env_bool("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", True):
+        return []
+    allowed = env_set("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "")
+    reasons: list[str] = []
+    for item in metrics.get("quality_reasons") or []:
+        reason = str(item or "").strip().lower()
+        if not reason:
+            continue
+        if reason not in allowed:
+            reasons.append(f"{prefix}_quality_stop_not_allowed:{reason}")
+    return reasons
+
+
 def as_float(value: Any, default: float = 0.0) -> float:
     try:
         if value is None or value == "":
@@ -837,6 +958,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     xg_sanity = xg_sanity_metrics(candidate, adjusted)
     btts_sanity = btts_sanity_metrics(candidate, adjusted)
     dnb_sanity = dnb_sanity_metrics(candidate, adjusted)
+    strict_truth = strict_truth_for_candidate(candidate) if env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", True) else {"available": False, "disabled": True}
 
     return {
         "odds": round(odds, 4),
@@ -859,6 +981,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
         "quality_reasons": quality_reasons(candidate),
+        "strict_coverage_truth": strict_truth,
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
         "dnb_sanity": dnb_sanity,
@@ -1010,9 +1133,10 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
                 reasons.append("tier_a_dnb_confirmation_missing")
 
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
-    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
-    if q_reasons and q_reasons[0] not in allowed_stops:
-        reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{q_reasons[0]}")
+    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", ""))
+    for quality_stop in q_reasons:
+        if quality_stop not in allowed_stops:
+            reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{quality_stop}")
     return reasons
 
 
@@ -1047,6 +1171,28 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
         confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
         if confirmation_count < min_sources:
             reasons.append(f"controlled_fallback_confirmation_sources_below_min:{confirmation_count}/{min_sources}")
+
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", True):
+        truth = metrics.get("strict_coverage_truth") or {}
+        if not bool(truth.get("matched")):
+            reasons.append(str(truth.get("reason") or "strict_coverage_truth_not_matched"))
+        elif not bool(truth.get("ready_for_publish")):
+            if int(truth.get("price_confirmations") or 0) < int(truth.get("min_price_confirmations") or 2):
+                reasons.append(
+                    f"strict_truth_price_confirmations_below_min:{int(truth.get('price_confirmations') or 0)}/{int(truth.get('min_price_confirmations') or 2)}"
+                )
+            if int(truth.get("odds_sources_count") or 0) < int(truth.get("min_odds_sources") or 2):
+                reasons.append(
+                    f"strict_truth_odds_sources_below_min:{int(truth.get('odds_sources_count') or 0)}/{int(truth.get('min_odds_sources') or 2)}"
+                )
+            if int(truth.get("context_sources_count") or 0) < int(truth.get("min_context_sources") or 2):
+                reasons.append(
+                    f"strict_truth_context_sources_below_min:{int(truth.get('context_sources_count') or 0)}/{int(truth.get('min_context_sources') or 2)}"
+                )
+            for missing_item in truth.get("missing") or []:
+                reasons.append(f"strict_truth_missing:{missing_item}")
+
+    reasons.extend(quality_stop_reject_reasons(metrics, prefix="telegram"))
 
     # If all prices come from one provider, proxy signals need stronger numeric confirmation.
     # This avoids "looks good but only one data pipeline" publications while still allowing
