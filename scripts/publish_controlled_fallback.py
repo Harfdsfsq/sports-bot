@@ -387,6 +387,87 @@ def strict_truth_for_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def single_line_context_publish_allowed(candidate: dict[str, Any], metrics: dict[str, Any], tier_name: str) -> tuple[bool, list[str]]:
+    """Controlled Tier B exception: one line provider may publish only with strong context.
+
+    The project rules prefer 2+ independent line sources. In practice the free
+    line APIs have sparse overlap, so Tier B can use one authoritative line
+    provider when that provider has multi-book confirmation and the context stack
+    is materially stronger. This never makes SStats a price source; it is context
+    only.
+    """
+    if not env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED", True):
+        return False, ["single_line_context_mode_disabled"]
+    if tier_name != "B":
+        return False, ["single_line_context_only_tier_b"]
+
+    fam = family_norm(candidate)
+    allowed = env_set("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_ALLOWED_FAMILIES", "totals,spreads")
+    if fam not in allowed:
+        return False, [f"single_line_context_family_not_allowed:{fam}"]
+
+    truth = metrics.get("strict_coverage_truth") or {}
+    odds_sources = int(truth.get("odds_sources_count") or metrics.get("odds_sources_count") or 0)
+    price_confirmations = int(truth.get("price_confirmations") or metrics.get("books_count") or 0)
+    context_sources = max(
+        int(truth.get("context_sources_count") or 0),
+        int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0),
+    )
+    books = int(metrics.get("books_count") or 0)
+    edge = float(metrics.get("canonical_edge_pp") or 0.0)
+    ev = float(metrics.get("canonical_ev_pct") or 0.0)
+    confidence = float(metrics.get("confidence") or 0.0)
+    quality = float(metrics.get("quality_score") or 0.0)
+
+    reasons: list[str] = []
+    if odds_sources < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_ODDS_SOURCES", 1):
+        reasons.append(f"single_line_context_odds_sources_below_min:{odds_sources}/1")
+    if price_confirmations < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_PRICE_CONFIRMATIONS", 2):
+        reasons.append(f"single_line_context_price_confirmations_below_min:{price_confirmations}/2")
+    if books < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_BOOKS", 2):
+        reasons.append(f"single_line_context_books_below_min:{books}/2")
+    min_context = env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONTEXT_SOURCES", 3)
+    if context_sources < min_context:
+        reasons.append(f"single_line_context_sources_below_min:{context_sources}/{min_context}")
+    min_edge = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EDGE_PP", 4.0)
+    if edge < min_edge:
+        reasons.append(f"single_line_context_edge_below_min:{edge:.1f}/{min_edge:.1f}")
+    min_ev = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EV_PCT", 7.0)
+    if ev < min_ev:
+        reasons.append(f"single_line_context_ev_below_min:{ev:.1f}/{min_ev:.1f}")
+    min_conf = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONFIDENCE", 76.0)
+    if confidence < min_conf:
+        reasons.append(f"single_line_context_confidence_below_min:{confidence:.1f}/{min_conf:.1f}")
+    min_quality = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY", 78.0)
+    if quality < min_quality:
+        reasons.append(f"single_line_context_quality_below_min:{quality:.1f}/{min_quality:.1f}")
+
+    if env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_REQUIRE_XG_SANITY", True):
+        xg = metrics.get("xg_sanity") or {}
+        if fam in {"totals", "teamtotals"}:
+            if not bool(xg.get("enabled")):
+                reasons.append("single_line_context_missing_xg_sanity")
+            elif not bool(xg.get("xg_direction_ok", True)):
+                reasons.append("single_line_context_xg_direction_conflict")
+
+    if not reasons:
+        metrics["line_source_mode"] = "single_line_plus_context"
+        metrics["single_line_context_policy"] = {
+            "tier": tier_name,
+            "odds_sources_count": odds_sources,
+            "price_confirmations": price_confirmations,
+            "books_count": books,
+            "context_sources_count": context_sources,
+            "min_context_sources": min_context,
+            "min_edge_pp": min_edge,
+            "min_ev_pct": min_ev,
+            "min_confidence": min_conf,
+            "min_quality": min_quality,
+        }
+        return True, []
+    return False, reasons
+
+
 def quality_stop_reject_reasons(metrics: dict[str, Any], *, prefix: str = "telegram") -> list[str]:
     if not env_bool("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", True):
         return []
@@ -1174,9 +1255,13 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
 
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", True):
         truth = metrics.get("strict_coverage_truth") or {}
+        single_line_allowed = False
+        single_line_reasons: list[str] = []
+        if bool(truth.get("matched")):
+            single_line_allowed, single_line_reasons = single_line_context_publish_allowed(candidate, metrics, tier_name)
         if not bool(truth.get("matched")):
             reasons.append(str(truth.get("reason") or "strict_coverage_truth_not_matched"))
-        elif not bool(truth.get("ready_for_publish")):
+        elif not bool(truth.get("ready_for_publish")) and not single_line_allowed:
             if int(truth.get("price_confirmations") or 0) < int(truth.get("min_price_confirmations") or 2):
                 reasons.append(
                     f"strict_truth_price_confirmations_below_min:{int(truth.get('price_confirmations') or 0)}/{int(truth.get('min_price_confirmations') or 2)}"
@@ -1191,6 +1276,9 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
                 )
             for missing_item in truth.get("missing") or []:
                 reasons.append(f"strict_truth_missing:{missing_item}")
+            reasons.extend(single_line_reasons)
+        elif single_line_allowed:
+            metrics["strict_truth_single_line_context_override"] = True
 
     reasons.extend(quality_stop_reject_reasons(metrics, prefix="telegram"))
 
@@ -1741,7 +1829,9 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
     xg_line += sanity_lines(metrics)
 
     source_note = ""
-    if int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
+    if metrics.get("line_source_mode") == "single_line_plus_context":
+        source_note = " | 1 line source + усиленный контекст, сниженный риск"
+    elif int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
         source_note = " | один источник, сниженный риск"
     confirmations = ", ".join(metrics.get("confirmation_sources") or []) or "нет"
 
@@ -1876,7 +1966,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
 
     risk_note = {
         "уровень A": "контролируемый резерв, уровень A. 2+ линии и нормальный запас ценности.",
-        "уровень B": "контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.",
+        "уровень B": "контролируемый резерв, уровень B. 1 основной источник линий допустим только при 2+ букмекерах, усиленном контексте и повышенном value-пороге; сумма снижена.",
         "уровень C": "контролируемый резерв, уровень C. Пограничный резерв, минимальная тестовая сумма.",
     }.get(tier, "контролируемый резерв")
 
@@ -1894,7 +1984,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"💸 Коэффициент: {metrics['odds']:.2f}\n"
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
-        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}\n"
+        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}{' | 1 line source + context' if metrics.get('line_source_mode') == 'single_line_plus_context' else ''}\n"
         f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
         f"🔎 Подтверждения: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
@@ -1903,6 +1993,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"💰 Сумма ставки: {stake:.2f} (ограничение риска)"
         f"{xg_line}\n"
         "📝 Комментарий: ставка разрешена только после повторного пересчёта от выбранного коэффициента и проверки времени матча. "
+        "Для уровня B допускается один независимый источник линий только при 2+ букмекерах, 3+ контекстных подтверждениях и повышенном value-пороге. "
         "Если матч уже начался или вышел за окно публикации, резервный публикователь такую ставку не отправляет."
     )
 

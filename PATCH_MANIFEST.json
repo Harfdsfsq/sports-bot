@@ -1,14 +1,17 @@
 {
-  "patch_name": "active-core-coverage-and-quota-contract-fix",
-  "reason": "Fallback is now blocked correctly, but active core coverage/reporting still treated disabled SportLogic as active and under-budgeted Bzzoiro/SStats context backfill.",
+  "patch": "hybrid-single-line-context-publication",
+  "date": "2026-05-22",
   "files": [
-    "sports-bot/scripts/apply_per_run_api_quota_contract.py",
-    "sports-bot/app/services/progressive_upcoming_gap_finalizer.py",
-    "sports-bot/scripts/send_harizon_telegram_run_report_v8.py",
-    "sports-bot/tests/test_core_coverage_contract_runtime.py"
+    ".github/workflows/run-bot.yml",
+    "PATCH_MANIFEST.md",
+    "scripts/apply_harizon_runtime_policy.py",
+    "scripts/apply_per_run_api_quota_contract.py",
+    "scripts/apply_publication_family_policy.py",
+    "scripts/publish_controlled_fallback.py",
+    "tests/test_controlled_fallback_single_line_context.py"
   ],
-  "checks": [
-    "python -m pytest tests/test_core_coverage_contract_runtime.py -q -> 2 passed",
-    "python -m pytest -q -> 45 passed"
+  "tests": [
+    "python -m pytest tests/test_controlled_fallback_single_line_context.py -q => 3 passed",
+    "python -m pytest -q => 48 passed"
   ]
 }
