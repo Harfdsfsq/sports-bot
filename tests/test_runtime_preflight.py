@@ -8,7 +8,10 @@ from app.services.runtime_preflight import RuntimePreflight, SAFE_RUNTIME_DEFAUL
 
 
 def test_setdefault_env_does_not_clobber_existing_values(monkeypatch):
+    # GitHub Actions exports many production runtime variables before the test step.
+    # This unit test must verify setdefault_env itself, not the workflow environment.
     monkeypatch.setenv("MIN_SOURCES_PUBLISH", "3")
+    monkeypatch.delenv("PUBLISH_MIN_CONTEXT_SOURCES", raising=False)
 
     applied = setdefault_env({"MIN_SOURCES_PUBLISH": "2", "PUBLISH_MIN_CONTEXT_SOURCES": "2"})
 

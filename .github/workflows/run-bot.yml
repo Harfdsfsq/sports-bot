@@ -313,6 +313,10 @@ jobs:
 
       - name: Run tests
         shell: bash
+        env:
+          APP_ENV: test
+          PUBLISH_DRY_RUN: true
+          RUN_REPORT_ENABLED: true
         run: |
           set -euo pipefail
           echo "full test suite start $(date -u +%Y-%m-%dT%H:%M:%SZ)"

@@ -430,7 +430,7 @@ def test_telegram_uses_live_edge_values_and_keeps_structured_sections():
 
 
 def test_run_report_renders_even_if_predictions_were_already_sent_when_allowed_by_settings():
-    publisher = TelegramPublisher(Settings(_env_file=None, RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=False))
+    publisher = TelegramPublisher(Settings(_env_file=None, RUN_REPORT_ENABLED=True, RUN_REPORT_ONLY_WHEN_NO_PREDICTIONS=False))
     summary = {
         "published_to_telegram": 1,
         "telegram_messages_sent": 1,
@@ -455,7 +455,7 @@ def test_run_report_renders_even_if_predictions_were_already_sent_when_allowed_b
 
 
 def test_run_report_renders_when_it_is_the_only_message_for_empty_run():
-    publisher = TelegramPublisher(Settings(_env_file=None))
+    publisher = TelegramPublisher(Settings(_env_file=None, RUN_REPORT_ENABLED=True))
     summary = {
         "published_to_telegram": 0,
         "telegram_messages_sent": 0,

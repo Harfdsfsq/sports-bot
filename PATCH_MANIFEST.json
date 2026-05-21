@@ -1,49 +1,14 @@
 {
-  "files": [
-    {
-      "path": ".github/workflows/run-bot.yml",
-      "size": 20367,
-      "sha256": "fd928c048ff19cffb92b2ec83200fbefa6ecd685817eec7bcc6e694f0fe099fc"
-    },
-    {
-      "path": ".github/workflows/ci.yml",
-      "size": 1068,
-      "sha256": "789ebe7019e177cf8c201a6f7cb7e5f63ec7a46d29bdb1acf0368e72f02f7c2c"
-    },
-    {
-      "path": "app/main.py",
-      "size": 1113,
-      "sha256": "b5d0dd9d1c486b61edd2d3dd32cca3d26e0fe5a5b3cb88cf5fdab282bb9e53c8"
-    },
-    {
-      "path": "app/services/runtime_inventory_hooks.py",
-      "size": 6762,
-      "sha256": "607701e26bbfc07a0ba53680b1ef4f9de565455274792abecabf6b8360860f48"
-    },
-    {
-      "path": "app/providers/sportlogic_provider.py",
-      "size": 48458,
-      "sha256": "318103c120b000fac090bc079a68061519b31d3ca591b3d4a6dc5a26a1e5af93"
-    },
-    {
-      "path": "app/services/bookmaker_universe_runtime_guard.py",
-      "size": 1420,
-      "sha256": "dbac6371687873ca6980d12d435525bf2cade5aaeb5cd6d64477296d90c0b4f3"
-    },
-    {
-      "path": "pytest.ini",
-      "size": 103,
-      "sha256": "0191c2a8684b3ae2b7231434414c67a95e565401822e350ac36e773133634fa6"
-    },
-    {
-      "path": "requirements.txt",
-      "size": 159,
-      "sha256": "67fdf11d4e1150b8a53fe8228e6eb8be992a6fab47836bd13691f37c006e281e"
-    },
-    {
-      "path": "tests/test_runtime_security_and_hooks.py",
-      "size": 1867,
-      "sha256": "6e38ffdffbbbdf524f562e060257be86cd707e31c7db3386e256fc3237edd90c"
-    }
-  ]
+  "patch_name": "sports-bot-followup-ci-env-isolation",
+  "source_artifacts": [
+    "logs_70185176216.zip",
+    "run-bot-26245503912.zip"
+  ],
+  "changed_files": [
+    "sports-bot/.github/workflows/run-bot.yml",
+    "sports-bot/tests/test_providers_and_telegram.py",
+    "sports-bot/tests/test_runtime_preflight.py"
+  ],
+  "test_command": "APP_ENV=production RUN_REPORT_ENABLED=false PUBLISH_MIN_CONTEXT_SOURCES=2 MIN_CONTEXT_SOURCES_PUBLISH=2 PYTHONPATH=. python -m pytest -q",
+  "test_result": "44 passed"
 }
