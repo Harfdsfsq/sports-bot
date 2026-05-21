@@ -1,6 +1,9 @@
 name: run-bot
 
 on:
+  schedule:
+    # Every 2 hours by MSK. 21:00 UTC is 00:00 MSK and starts the daily inventory cycle.
+    - cron: "0 21,23,1-19/2 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -311,14 +314,10 @@ jobs:
       - name: Run tests
         shell: bash
         run: |
-          set -uo pipefail
-          echo "unit tests start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 60s python -m pytest -q tests/test_market_integrity.py; then
-            echo "unit tests passed"
-          else
-            status=$?
-            echo "unit tests failed or timed out with status ${status}; continuing production run"
-          fi
+          set -euo pipefail
+          echo "full test suite start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          timeout 120s python -m pytest -q
+          echo "full test suite passed"
 
       - name: Run bot
         shell: bash
@@ -401,23 +400,16 @@ jobs:
           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
 
-      - name: Commit runtime artifacts
+      - name: Prepare runtime artifact bundle
         if: always()
         shell: bash
         run: |
-          set -uo pipefail
+          set -euo pipefail
           if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip runtime artifact commit: fresh run-bot log was not created"
+            echo "skip runtime artifact bundle: fresh run-bot log was not created"
             exit 0
           fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
-          git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
-          git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
-          git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
-          git commit -m "Update runtime artifacts [skip ci]" || true
-          git push || true
+          echo "Runtime state is preserved by actions/cache and upload-artifact, not committed back to main."
 
       - name: Save persisted day inventory
         if: always()

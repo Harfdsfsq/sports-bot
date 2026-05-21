@@ -72,6 +72,15 @@ class SportLogicProvider:
                 or 80
             )),
         )
+        self.max_pages = max(
+            1,
+            int(float(
+                getattr(settings, "sportlogic_max_pages", None)
+                or os.getenv("SPORTLOGIC_MAX_PAGES")
+                or os.getenv("SPORTLOGIC_GAMES_MAX_PAGES")
+                or 5
+            )),
+        )
         self.enabled = self._env_bool("ENABLE_SPORTLOGIC", True) and self._env_bool("SPORTLOGIC_ENABLED", True)
         self._requests = 0
         self._fixture_cache: list[dict[str, Any]] = []
@@ -132,8 +141,14 @@ class SportLogicProvider:
                     stats["budget_exhausted"] = True
                     break
                 date_key = (now + timedelta(days=offset)).date().isoformat()
-                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
-                fixtures.extend(self._extract_list(payload))
+                fixtures.extend(await self._fetch_paginated_list(
+                    client,
+                    "/games",
+                    {"date_from": date_key, "date_to": date_key, "per_page": 100},
+                    stats,
+                    preview,
+                    date_key=date_key,
+                ))
 
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
@@ -274,8 +289,14 @@ class SportLogicProvider:
                 if not self._budget_left():
                     stats["budget_exhausted"] = True
                     break
-                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
-                fixtures.extend(self._extract_list(payload))
+                fixtures.extend(await self._fetch_paginated_list(
+                    client,
+                    "/games",
+                    {"date_from": date_key, "date_to": date_key, "per_page": 100},
+                    stats,
+                    preview,
+                    date_key=date_key,
+                ))
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         preview["sample_fixtures"] = fixtures[:3]
@@ -318,6 +339,64 @@ class SportLogicProvider:
             stats["response_errors"] += 1
             self._preview_error(preview, "json", exc)
             return None
+
+    async def _fetch_paginated_list(
+        self,
+        client: httpx.AsyncClient,
+        path: str,
+        params: dict[str, Any],
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+        *,
+        date_key: str | None = None,
+    ) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        cursor: str | None = None
+        seen_cursors: set[str] = set()
+        for page_no in range(self.max_pages):
+            if not self._budget_left():
+                stats["budget_exhausted"] = True
+                break
+            page_params = dict(params)
+            if cursor:
+                page_params["cursor"] = cursor
+            payload = await self._get_json(client, path, page_params, stats, preview)
+            page_rows = self._extract_list(payload)
+            if date_key:
+                in_window: list[dict[str, Any]] = []
+                for row in page_rows:
+                    start = self._fixture_datetime(row)
+                    if start is None or start.astimezone(UTC).date().isoformat() == date_key:
+                        in_window.append(row)
+                    else:
+                        stats["fixtures_outside_requested_date"] = int(stats.get("fixtures_outside_requested_date") or 0) + 1
+                page_rows = in_window
+            rows.extend(page_rows)
+            stats["pages_fetched"] = int(stats.get("pages_fetched") or 0) + 1
+            next_cursor = self._next_cursor(payload)
+            if not next_cursor or next_cursor in seen_cursors:
+                break
+            seen_cursors.add(next_cursor)
+            cursor = next_cursor
+            if not page_rows and page_no > 0:
+                break
+        return rows
+
+    @staticmethod
+    def _next_cursor(payload: Any) -> str | None:
+        if not isinstance(payload, dict):
+            return None
+        for key in ("next_cursor", "nextCursor", "cursor_next", "next"):
+            value = payload.get(key)
+            if value:
+                return str(value)
+        meta = payload.get("meta") or payload.get("pagination") or payload.get("links")
+        if isinstance(meta, dict):
+            for key in ("next_cursor", "nextCursor", "cursor", "next"):
+                value = meta.get(key)
+                if value and value is not True:
+                    return str(value)
+        return None
 
     async def _fetch_odds_payload(
         self,

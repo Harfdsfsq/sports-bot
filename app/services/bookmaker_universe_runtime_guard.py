@@ -20,7 +20,7 @@ ALIASES = {
     "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
     # Actual Settings aliases.
     "MIN_BOOKS_PUBLISH": "2",
-    "MIN_SOURCES_PUBLISH": "1",
+    "MIN_SOURCES_PUBLISH": "2",
     "MIN_BOOKS_FOR_CONSENSUS": "2",
     "STRONG_MARKET_MIN_BOOKS": "2",
     # Backward-compatible aliases used by older runtime guards.

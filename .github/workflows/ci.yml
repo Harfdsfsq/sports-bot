@@ -30,4 +30,14 @@ jobs:
       - name: Import smoke
         run: |
           python -m compileall app scripts
-          python -m app.cli || true
+          python - <<'PY'
+          import app.cli
+          import app.main
+          print("import smoke ok")
+          PY
+      - name: Run full test suite
+        run: python -m pytest -q
+      - name: Dependency audit
+        run: |
+          pip install pip-audit
+          pip-audit

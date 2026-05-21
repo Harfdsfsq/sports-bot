@@ -2,8 +2,11 @@ from __future__ import annotations
 
 import atexit
 import importlib.util
+import inspect
 import os
 import shutil
+import subprocess
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -41,6 +44,39 @@ def _copy_tree(src: Path, dst: Path) -> dict[str, Any]:
     return {"status": "ok", "src": str(src), "dst": str(dst), "files": copied}
 
 
+
+
+def _run_async_entrypoint(entrypoint: Any, script: Path) -> int:
+    """Run an async hook safely from both sync and already-async callers.
+
+    run-once can install runtime hooks while an event loop is already alive.
+    Calling asyncio.run() there raises and can leave main_async unawaited.  When
+    a loop is running, execute the hook in a short subprocess using the script's
+    normal __main__ path; otherwise run it directly.
+    """
+    import asyncio
+
+    try:
+        asyncio.get_running_loop()
+    except RuntimeError:
+        result = entrypoint()
+        if inspect.isawaitable(result):
+            result = asyncio.run(result)
+        return int(result or 0)
+
+    env = os.environ.copy()
+    repo_root = str(Path.cwd())
+    existing_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = repo_root if not existing_pythonpath else f"{repo_root}{os.pathsep}{existing_pythonpath}"
+    completed = subprocess.run(
+        [sys.executable, str(script)],
+        cwd=repo_root,
+        env=env,
+        check=False,
+    )
+    return int(completed.returncode or 0)
+
+
 def _sync_persistent_runtime_state(direction: str) -> list[dict[str, Any]]:
     if not _truthy(os.getenv("PERSIST_RUNTIME_INVENTORY_STATE_ENABLED"), True):
         return []
@@ -65,15 +101,15 @@ def _run_script(path: str) -> dict[str, Any]:
             return {"status": "spec_failed", "path": str(script)}
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
+        main_async = getattr(module, "main_async", None)
+        if callable(main_async):
+            rc = _run_async_entrypoint(main_async, script)
+            return {"status": "ok", "path": str(script), "return_code": int(rc or 0)}
         main = getattr(module, "main", None)
         if callable(main):
             rc = main()
-            return {"status": "ok", "path": str(script), "return_code": int(rc or 0)}
-        main_async = getattr(module, "main_async", None)
-        if callable(main_async):
-            import asyncio
-
-            rc = asyncio.run(main_async())
+            if inspect.isawaitable(rc):
+                rc = _run_async_entrypoint(lambda: rc, script)
             return {"status": "ok", "path": str(script), "return_code": int(rc or 0)}
         return {"status": "no_main", "path": str(script)}
     except Exception as exc:

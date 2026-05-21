@@ -27,7 +27,12 @@ async def run_now(
     x_admin_token: Annotated[str | None, Header()] = None,
 ) -> dict:
     expected = os.getenv("ADMIN_RUN_TOKEN")
-    if expected and x_admin_token != expected:
+    if not expected:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="admin token is not configured",
+        )
+    if x_admin_token != expected:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="unauthorized",
