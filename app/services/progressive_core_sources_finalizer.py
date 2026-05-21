@@ -5,11 +5,12 @@ from __future__ import annotations
 The betting bot has three primary APIs:
 - odds_api_io: primary live odds/current lines;
 - bzzoiro: secondary odds + context;
-- sstats: statistical context and core historical/model line signal.
+- sportlogic: optional secondary live odds/context;
+- sstats: statistical context only.
 
 Supplemental providers may still be queried, but they must not hide gaps in the
 primary coverage plan. A match is considered core-ready only when it has:
-- 2+ core line/odds sources from {odds_api_io, bzzoiro, sstats};
+- 2+ core line/odds sources from {odds_api_io, bzzoiro, sportlogic};
 - 2+ core context sources from {sstats, bzzoiro}.
 """
 
@@ -27,10 +28,10 @@ EXPORT_DIR = ROOT / ".data" / "exports"
 DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = EXPORT_DIR / "latest-progressive-core-sources-finalizer.json"
 
-CORE_PROVIDERS = {"odds_api_io", "sstats", "bzzoiro"}
-CORE_ODDS_PROVIDERS = {"odds_api_io", "sstats", "bzzoiro"}
+CORE_PROVIDERS = {"odds_api_io", "bzzoiro", "sportlogic", "sstats"}
+CORE_ODDS_PROVIDERS = {"odds_api_io", "bzzoiro", "sportlogic"}
 CORE_CONTEXT_PROVIDERS = {"sstats", "bzzoiro"}
-SUPPLEMENTAL_ODDS_PROVIDERS = {"sportlogic", "allsportsapi", "oddspapi", "bookies_api"}
+SUPPLEMENTAL_ODDS_PROVIDERS = {"allsportsapi", "oddspapi", "bookies_api"}
 SUPPLEMENTAL_CONTEXT_PROVIDERS = {"api_football", "espn", "thesportsdb", "football_data", "openligadb", "futrixmetrics", "openfootball", "newsapi", "gnews", "sportlogic", "weather", "self_history"}
 
 
@@ -80,9 +81,6 @@ def _install_patch() -> dict[str, Any]:
             coverage = {}
         odds_sources: set[str] = set()
         context_sources: set[str] = set()
-        # User contract: odds_api_io + bzzoiro + sstats are all primary line/odds
-        # sources. SStats may arrive through context/list endpoints, but its
-        # matched source id still counts as a core line/model signal source.
         odds_sources |= sources_seen & CORE_ODDS_PROVIDERS
         if coverage.get("odds"):
             odds_sources.add("odds_api_io")
@@ -92,7 +90,6 @@ def _install_patch() -> dict[str, Any]:
             odds_sources.add("bzzoiro")
         if meta.get("sstats_has_context_hint"):
             context_sources.add("sstats")
-            odds_sources.add("sstats")
         return odds_sources, context_sources
 
     def coverage_counts_core(row: dict[str, Any]) -> tuple[int, int]:
@@ -135,8 +132,6 @@ def _install_patch() -> dict[str, Any]:
                 score += 40
             if provider == "bzzoiro" and "bzzoiro" not in core_odds:
                 score += 65
-            if provider == "sstats" and "sstats" not in core_odds:
-                score += 45
         elif method_name == "fetch_context":
             deficit = max(0, min_context - context_count)
             score += deficit * 105
@@ -154,10 +149,6 @@ def _install_patch() -> dict[str, Any]:
                     score += 6
             else:
                 score -= 35
-            # Context calls from SStats/Bzzoiro also satisfy core odds-source
-            # coverage by contract, so prioritize them when core odds are thin.
-            if provider in CORE_ODDS_PROVIDERS and provider not in core_odds:
-                score += 45
             if provider == "sstats" and "sstats" not in core_context:
                 score += 45
             if provider == "bzzoiro" and ("bzzoiro" not in core_context or "bzzoiro" not in core_odds):
@@ -181,7 +172,7 @@ def _install_patch() -> dict[str, Any]:
             "context_sources": context_count,
             "odds_needed": max(0, min_odds - odds_count),
             "context_needed": max(0, min_context - context_count),
-            "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
+            "core_contract": "odds_api_io+bzzoiro+sportlogic lines; sstats+bzzoiro context",
         }
         return score
 
@@ -222,10 +213,6 @@ def _install_patch() -> dict[str, Any]:
             elif method_name == "fetch_context":
                 if provider in CORE_CONTEXT_PROVIDERS or provider in SUPPLEMENTAL_CONTEXT_PROVIDERS:
                     context_sources.add(provider)
-                # User contract: successful SStats/Bzzoiro context coverage also
-                # counts as a core line/odds source for coverage planning.
-                if provider in CORE_ODDS_PROVIDERS:
-                    odds_sources.add(provider)
                 if isinstance(value, list):
                     for item in value[:50]:
                         src = getattr(item, "source", None) if not isinstance(item, dict) else item.get("source")
@@ -233,16 +220,12 @@ def _install_patch() -> dict[str, Any]:
                             src_l = str(src).strip().lower()
                             if src_l in CORE_CONTEXT_PROVIDERS or src_l in SUPPLEMENTAL_CONTEXT_PROVIDERS:
                                 context_sources.add(src_l)
-                            if src_l in CORE_ODDS_PROVIDERS or src_l in SUPPLEMENTAL_ODDS_PROVIDERS:
-                                odds_sources.add(src_l)
                 else:
                     src = getattr(value, "source", None) if not isinstance(value, dict) else value.get("source")
                     if src:
                         src_l = str(src).strip().lower()
                         if src_l in CORE_CONTEXT_PROVIDERS or src_l in SUPPLEMENTAL_CONTEXT_PROVIDERS:
                             context_sources.add(src_l)
-                        if src_l in CORE_ODDS_PROVIDERS or src_l in SUPPLEMENTAL_ODDS_PROVIDERS:
-                            odds_sources.add(src_l)
             row["odds_sources"] = sorted(odds_sources)
             row["context_sources"] = sorted(context_sources)
             row.setdefault("last_success_utc_by_provider", {})[provider] = now
@@ -259,7 +242,7 @@ def _install_patch() -> dict[str, Any]:
                 "context_sources": context_count,
                 "odds_needed": max(0, _to_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_ODDS_SOURCES") or 2, 2) - odds_count),
                 "context_needed": max(0, _to_int(os.getenv("PROGRESSIVE_COVERAGE_MIN_CONTEXT_SOURCES") or 2, 2) - context_count),
-                "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
+                "core_contract": "odds_api_io+bzzoiro+sportlogic lines; sstats+bzzoiro context",
             }
             successes += 1
         state.setdefault("runs", []).append({
@@ -268,7 +251,7 @@ def _install_patch() -> dict[str, Any]:
             "method": method_name,
             "matches_with_data": successes,
             "stats": {k: v for k, v in dict(stats or {}).items() if k not in {"last_body_preview"}} if isinstance(stats, dict) else {},
-            "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
+            "core_contract": "odds_api_io+bzzoiro+sportlogic lines; sstats+bzzoiro context",
         })
         state["runs"] = state.get("runs", [])[-120:]
         p._save_state(state)
@@ -391,7 +374,7 @@ def _install_patch() -> dict[str, Any]:
                     "all_context_sources_count": len(all_context),
                     "ready_for_model": len(core_odds) >= 1 and len(core_context) >= 1,
                     "ready_for_publish_coverage": len(core_odds) >= 2 and len(core_context) >= 2,
-                    "core_contract": "odds_api_io+bzzoiro+sstats lines; sstats+bzzoiro context",
+                    "core_contract": "odds_api_io+bzzoiro+sportlogic lines; sstats+bzzoiro context",
                 })
                 row["coverage"] = coverage
                 row["progressive_coverage"] = {

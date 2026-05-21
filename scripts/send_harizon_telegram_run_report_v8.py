@@ -19,6 +19,7 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
+TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 
 
@@ -129,11 +130,14 @@ def build_payload() -> dict[str, Any]:
     }
     day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
     truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
+    truth_report = _load_json(TRUTH_REPORT)
+    if not truth_counts and isinstance(truth_report.get("counts"), dict):
+        truth_counts = truth_report["counts"]
     if truth_counts:
         sources = day_summary.get("sources") if isinstance(day_summary.get("sources"), dict) else {}
         payload.setdefault("diagnostics", {})["coverage_truth"] = {
             "counts": truth_counts,
-            "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {},
+            "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {"path": str(TRUTH_REPORT)},
         }
     return payload
 
@@ -154,7 +158,7 @@ def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
     win12_total = _as_int(counts.get("window_0_12h"))
     if core_ready > 0:
         new = (
-            "• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sstats для линий, "
+            "• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sportlogic для линий, "
             "sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, "
             f"а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
         )
@@ -196,7 +200,11 @@ def render(payload: dict[str, Any]) -> str:
     counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
 
     if counts:
-        core_odds = ",".join(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sportlogic"])
+        core_odds_values = list(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sportlogic"])
+        core_odds_values = [str(x) for x in core_odds_values if str(x) != "sstats"]
+        if "sportlogic" not in core_odds_values:
+            core_odds_values.append("sportlogic")
+        core_odds = ",".join(sorted(set(core_odds_values)))
         core_context = ",".join(contract.get("core_context_providers") or ["bzzoiro", "sstats"])
         block = "\n".join([
             "🧭 Progressive core coverage",

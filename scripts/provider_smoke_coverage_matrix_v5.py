@@ -4,8 +4,8 @@ from __future__ import annotations
 
 Runs SStats enrichment v4 and patches the base matrix counter so source lists and
 boolean coverage flags are counted as at least one source. This makes actual
-SStats enrichment visible in context_2plus/odds_2plus instead of only in
-context_any/odds_any.
+SStats enrichment visible in context_2plus instead of only in context_any.
+SStats is not treated as an independent live odds source.
 """
 
 import asyncio
@@ -42,8 +42,6 @@ def _patched_source_count(row: dict[str, Any], keys: tuple[str, ...]) -> int:
         best = max(best, len(base._split_sources(row.get("odds_sources"))))
         if _bool_cov(row, "odds"):
             best = max(best, 1)
-        if "sstats" in base._split_sources(row.get("odds_sources")) and best < 2 and _bool_cov(row, "odds"):
-            best = max(best, 2)
     return best
 
 

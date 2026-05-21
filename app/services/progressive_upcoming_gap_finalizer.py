@@ -28,7 +28,7 @@ PLAN_PATH = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 REPORT_PATH = EXPORT_DIR / "latest-progressive-upcoming-gap-finalizer.json"
 
 CORE_CONTEXT = {"bzzoiro", "sstats"}
-CORE_ODDS = {"odds_api_io", "bzzoiro", "sstats"}
+CORE_ODDS = {"odds_api_io", "bzzoiro", "sportlogic"}
 
 
 def _now() -> datetime:

@@ -51,6 +51,8 @@ COVERAGE_PATHS = [
     EXPORT_DIR / "provider-smoke-coverage-matrix.json",
 ]
 
+SSTATS_DEEP_PATH = EXPORT_DIR / "latest-sstats-deep-inventory-enrichment.json"
+
 
 def load_json(path: Path, default: Any) -> Any:
     try:
@@ -432,9 +434,41 @@ def rows_by_match_from_line_history(local_date: str) -> dict[str, dict[str, Any]
     return out
 
 
+def rows_by_match_from_sstats_deep_enrichment() -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    payload = load_json(SSTATS_DEEP_PATH, {})
+    rows = payload.get("enriched_sample") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return out
+    now_iso = datetime.now(UTC).isoformat()
+    for item in rows:
+        if not isinstance(item, dict):
+            continue
+        key = str(item.get("match_key") or "").strip()
+        if not key:
+            continue
+        deep_ok = bool(item.get("deep_ok"))
+        detail_ok = bool(item.get("detail_ok"))
+        if not (deep_ok or detail_ok):
+            continue
+        ev = out.setdefault(key, evidence_template())
+        ev["context_sources"].add("sstats")
+        ev["context_confirmations"].add("sstats")
+        ev["fixture_sources"].add("sstats")
+        ev["latest_context_at"] = now_iso
+        merge_count_max(ev, "context_sources_count", len(ev["context_sources"]))
+        merge_count_max(ev, "confirmation_sources_count", len(ev["context_confirmations"]))
+        add_sample(ev, SSTATS_DEEP_PATH.name, {
+            "game_id": item.get("game_id"),
+            "deep_ok": deep_ok,
+            "detail_ok": detail_ok,
+        })
+    return out
+
+
 def collect_all_evidence(local_date: str) -> dict[str, dict[str, Any]]:
     evidence = rows_by_match_from_coverage()
-    for source in (rows_by_match_from_candidates(), rows_by_match_from_line_history(local_date)):
+    for source in (rows_by_match_from_candidates(), rows_by_match_from_line_history(local_date), rows_by_match_from_sstats_deep_enrichment()):
         for key, value in source.items():
             current = evidence.setdefault(key, evidence_template())
             merge_evidence(current, value)
