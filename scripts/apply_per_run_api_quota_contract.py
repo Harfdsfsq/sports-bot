@@ -85,24 +85,31 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     if phase == "full_inventory":
         odds_total, odds_account = 170, 85
         max_matches_for_odds, analysis_cap = 900, 900
-        context_limit, premium_context = 300, 140
-        bzzoiro, sstats, football_data, thesportsdb = 18, 36, 8, 14
+        context_limit, premium_context = 300, 180
+        # Bzzoiro and SStats are the two core context legs from the rules.
+        # They must not be throttled to smoke-like values, otherwise the run
+        # reports show many general rows but almost no strict core-ready matches.
+        bzzoiro, sstats, football_data, thesportsdb = 120, 150, 8, 14
         weatherapi, open_meteo, clubelo = 8, 80, 3
-        allsportsapi, sportlogic = 8, 8
+        # SportLogic is quota-sensitive, but it is also the only configured
+        # third independent core odds provider. Keep it in a small dedicated
+        # near-window rescue budget instead of disabling it after odds-api.io
+        # already has offers.
+        allsportsapi, sportlogic = 8, 32
     elif phase == "morning_backfill":
         odds_total, odds_account = 150, 75
         max_matches_for_odds, analysis_cap = 700, 700
-        context_limit, premium_context = 260, 120
-        bzzoiro, sstats, football_data, thesportsdb = 20, 34, 8, 12
+        context_limit, premium_context = 280, 160
+        bzzoiro, sstats, football_data, thesportsdb = 100, 120, 8, 12
         weatherapi, open_meteo, clubelo = 8, 80, 3
-        allsportsapi, sportlogic = 6, 6
+        allsportsapi, sportlogic = 6, 24
     else:
         odds_total, odds_account = 130, 65
         max_matches_for_odds, analysis_cap = 560, 560
-        context_limit, premium_context = 260, 120
-        bzzoiro, sstats, football_data, thesportsdb = 20, 32, 6, 10
+        context_limit, premium_context = 260, 140
+        bzzoiro, sstats, football_data, thesportsdb = 80, 100, 6, 10
         weatherapi, open_meteo, clubelo = 8, 80, 3
-        allsportsapi, sportlogic = 4, 4
+        allsportsapi, sportlogic = 4, 16
 
     odds_key_present = _present("ODDS_API_IO_KEY")
     odds_key2_present = _present("ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2")
@@ -125,7 +132,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         # odds are not yet matched. Publication still requires strict market guards.
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
         "DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED": "true",
-        "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": "160",
+        "DAY_INVENTORY_CONTEXT_BACKFILL_LIMIT": str(context_limit),
         "DAY_INVENTORY_USE_FOR_RUN": "true",
         "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": "12",
@@ -135,8 +142,8 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false",
         # Secondary odds rescue is controlled and does not relax publication.
         "SECONDARY_ODDS_RESCUE_ENABLED": "true",
-        "SECONDARY_ODDS_RESCUE_TRIGGER": "odds_api_io_empty_or_thin",
-        "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "80",
+        "SECONDARY_ODDS_RESCUE_TRIGGER": "independent_core_odds_lt2",
+        "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "0",
         "SECONDARY_ODDS_RESCUE_NEAR_WINDOW_HOURS": "12",
         "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
@@ -183,7 +190,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "SSTATS_ENABLED": "true" if _present("SSTATS_API_KEY") else "false",
         "SSTATS_RECENT_MATCHES": "10",
         "SSTATS_LOOKBACK_DAYS": "45",
-        "SSTATS_CONTEXT_MATCH_LIMIT": "120",
+        "SSTATS_CONTEXT_MATCH_LIMIT": str(context_limit),
     })
     _put_limit(env, "SSTATS", sstats if _present("SSTATS_API_KEY") else 0)
 
@@ -191,9 +198,10 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "ENABLE_BZZOIRO_CONTEXT": "true" if _present("BZZOIRO_API_KEY") else "false",
         "ENABLE_BZZOIRO": "true" if _present("BZZOIRO_API_KEY") else "false",
         "BZZOIRO_ENABLED": "true" if _present("BZZOIRO_API_KEY") else "false",
-        "BZZOIRO_CONTEXT_MATCH_LIMIT": "96",
-        "BZZOIRO_MAX_PAGES": "8",
-        "BZZOIRO_PAGE_SIZE": "10",
+        "BZZOIRO_CONTEXT_MATCH_LIMIT": str(context_limit),
+        "BZZOIRO_MAX_PAGES": "20",
+        "BZZOIRO_PAGE_SIZE": "50",
+        "BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT": "120",
     })
     _put_limit(env, "BZZOIRO", bzzoiro if _present("BZZOIRO_API_KEY") else 0, "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN", "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN")
 
@@ -240,10 +248,11 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "ENABLE_SPORTLOGIC": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false",
         "SPORTLOGIC_ENABLED": "true" if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else "false",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
-        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "true",
-        "SPORTLOGIC_MATCH_LIMIT": "40",
-        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "60",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": "20",
+        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false",
+        "SPORTLOGIC_ONLY_IF_INDEPENDENT_ODDS_LT": "2",
+        "SPORTLOGIC_MATCH_LIMIT": "80",
+        "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "80",
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": "40",
         "SPORTLOGIC_MIN_SECONDS_BETWEEN_REQUESTS": "7",
     })
     _put_limit(env, "SPORTLOGIC", sportlogic if _present("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") else 0)
@@ -302,7 +311,8 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
             "Runtime maximizes verified odds/context coverage while publication remains strict.",
             "Odds API IO inventory source IDs are used for exact odds matching before fuzzy matching.",
             "Context no longer requires already-matched offers; near-window inventory rows are enriched first.",
-            "AllSportsAPI and SportLogic are controlled secondary odds rescue providers only.",
+            "Bzzoiro/SStats keep production-sized context budgets because publication requires 2+ core context sources.",
+            "SportLogic is a controlled independent-odds rescue provider when a match has odds-api.io prices but lacks a second live odds source.",
         ],
     }
     return env, contract

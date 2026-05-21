@@ -27,8 +27,44 @@ EXPORT_DIR = ROOT / ".data" / "exports"
 PLAN_PATH = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 REPORT_PATH = EXPORT_DIR / "latest-progressive-upcoming-gap-finalizer.json"
 
-CORE_CONTEXT = {"bzzoiro", "sstats"}
-CORE_ODDS = {"odds_api_io", "bzzoiro", "sportlogic"}
+CORE_CONTEXT_BASE = {"bzzoiro", "sstats"}
+CORE_ODDS_BASE = {"odds_api_io", "bzzoiro", "sportlogic"}
+
+
+def _provider_enabled(provider: str) -> bool:
+    name = str(provider or "").strip().lower()
+    prefix = name.upper()
+    aliases = {
+        "odds_api_io": ("ODDS_API_IO_ENABLED", "ENABLE_ODDS_API_IO"),
+        "bzzoiro": ("BZZOIRO_ENABLED", "ENABLE_BZZOIRO"),
+        "sstats": ("SSTATS_ENABLED", "ENABLE_SSTATS", "ENABLE_SSTATS_CONTEXT"),
+        "sportlogic": ("SPORTLOGIC_ENABLED", "ENABLE_SPORTLOGIC"),
+    }.get(name, (f"{prefix}_ENABLED", f"ENABLE_{prefix}"))
+    for key in aliases:
+        raw = os.getenv(key)
+        if raw is not None and str(raw).strip().lower() in {"0", "false", "no", "off"}:
+            return False
+    budget_keys = {
+        "odds_api_io": ("ODDS_API_IO_REQUEST_BUDGET_GRANTED", "ODDS_API_IO_MAX_REQUESTS_PER_RUN", "ODDS_API_IO_PER_RUN_MAX"),
+        "bzzoiro": ("BZZOIRO_REQUEST_BUDGET_GRANTED", "BZZOIRO_MAX_REQUESTS_PER_RUN", "BZZOIRO_PER_RUN_MAX"),
+        "sstats": ("SSTATS_REQUEST_BUDGET_GRANTED", "SSTATS_MAX_REQUESTS_PER_RUN", "SSTATS_PER_RUN_MAX"),
+        "sportlogic": ("SPORTLOGIC_REQUEST_BUDGET_GRANTED", "SPORTLOGIC_MAX_REQUESTS_PER_RUN", "SPORTLOGIC_PER_RUN_MAX"),
+    }.get(name, (f"{prefix}_REQUEST_BUDGET_GRANTED", f"{prefix}_MAX_REQUESTS_PER_RUN", f"{prefix}_PER_RUN_MAX"))
+    seen_budget = False
+    for key in budget_keys:
+        if os.getenv(key) is not None:
+            seen_budget = True
+            if _as_int(os.getenv(key)) > 0:
+                return True
+    return not seen_budget
+
+
+def _effective_core_context() -> set[str]:
+    return {p for p in CORE_CONTEXT_BASE if _provider_enabled(p)}
+
+
+def _effective_core_odds() -> set[str]:
+    return {p for p in CORE_ODDS_BASE if _provider_enabled(p)}
 
 
 def _now() -> datetime:
@@ -111,8 +147,10 @@ def _rebuild_plan_from_state(p: Any) -> None:
             continue
         odds = _tokens(row.get("odds_sources"))
         context = _tokens(row.get("context_sources"))
-        core_odds = odds & CORE_ODDS
-        core_context = context & CORE_CONTEXT
+        effective_core_odds = _effective_core_odds()
+        effective_core_context = _effective_core_context()
+        core_odds = odds & effective_core_odds
+        core_context = context & effective_core_context
         odds_count = len(core_odds)
         context_count = len(core_context)
         counts["matches_tracked"] += 1
@@ -172,11 +210,15 @@ def _rebuild_plan_from_state(p: Any) -> None:
         -_as_int(r.get("core_odds_needed")),
     ))
 
-    plan.setdefault("contract", {
-        "core_context_providers": sorted(CORE_CONTEXT),
-        "core_odds_providers": sorted(CORE_ODDS),
-        "core_providers": sorted(CORE_CONTEXT | CORE_ODDS),
-    })
+    effective_core_context = _effective_core_context()
+    effective_core_odds = _effective_core_odds()
+    plan["contract"] = {
+        "core_context_providers": sorted(effective_core_context),
+        "core_odds_providers": sorted(effective_core_odds),
+        "core_providers": sorted(effective_core_context | effective_core_odds),
+        "excluded_core_providers": sorted((CORE_CONTEXT_BASE | CORE_ODDS_BASE) - (effective_core_context | effective_core_odds)),
+        "reason": "disabled or zero-budget providers are excluded from the active core contract",
+    }
     plan["counts"] = dict(counts)
     plan["core_gap_sample"] = upcoming_gaps[:80]
     plan["gap_sample"] = upcoming_gaps[:80]

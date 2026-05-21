@@ -1,13 +1,14 @@
 {
-  "patch_name": "strict-controlled-fallback-publication-guard",
-  "reason": "Controlled fallback published a pick while main pipeline had 0 quality-passed/publishable candidates and strict coverage truth for the selected match missed independent odds sources.",
+  "patch_name": "active-core-coverage-and-quota-contract-fix",
+  "reason": "Fallback is now blocked correctly, but active core coverage/reporting still treated disabled SportLogic as active and under-budgeted Bzzoiro/SStats context backfill.",
   "files": [
-    "sports-bot/scripts/publish_controlled_fallback.py",
-    "sports-bot/.github/workflows/run-bot.yml",
-    "sports-bot/tests/test_controlled_fallback_strict_truth.py"
+    "sports-bot/scripts/apply_per_run_api_quota_contract.py",
+    "sports-bot/app/services/progressive_upcoming_gap_finalizer.py",
+    "sports-bot/scripts/send_harizon_telegram_run_report_v8.py",
+    "sports-bot/tests/test_core_coverage_contract_runtime.py"
   ],
   "checks": [
-    "python3 -m pytest tests/test_controlled_fallback_strict_truth.py -q -> 2 passed",
-    "python3 -m pytest -q -> 43 passed"
+    "python -m pytest tests/test_core_coverage_contract_runtime.py -q -> 2 passed",
+    "python -m pytest -q -> 45 passed"
   ]
 }

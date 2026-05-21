@@ -3,8 +3,9 @@ from __future__ import annotations
 """HARIZON Telegram run report v8.
 
 Extends v7 with progressive core coverage metrics. The core contract is:
-- core line/odds sources: odds_api_io + bzzoiro + sportlogic;
-- core context sources: sstats + bzzoiro.
+- active core line/odds sources from latest-progressive-coverage-plan.json;
+- active core context sources from latest-progressive-coverage-plan.json.
+Disabled/zero-budget providers are not displayed as active core sources.
 
 The report also normalizes runtime-patched SStats counters: the provider wrapper
 stores real v1 numbers under source_stats.sstats.v1_stats / v1_* fields, while
@@ -156,16 +157,22 @@ def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
     win12 = _as_int(counts.get("window_0_12h_core_ready_2plus_both") or counts.get("window_0_12h_ready_2plus_both"))
     win4_total = _as_int(counts.get("window_0_4h"))
     win12_total = _as_int(counts.get("window_0_12h"))
-    if core_ready > 0:
+    if win12_total <= 0:
         new = (
-            "• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sportlogic для линий, "
-            "sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, "
-            f"а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
+            "• Progressive coverage не видит матчей в ближайшие 12 часов в накопленном state. "
+            "Это не повод ослаблять guards: нужно проверить свежесть kickoff_utc/target-date state и продолжать добор core coverage "
+            f"для дневного инвентаря. Core-ready за день: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
+        )
+    elif core_ready > 0:
+        new = (
+            "• Progressive coverage считает активный core-contract из включённых провайдеров. Главный gap сейчас — "
+            "добор Bzzoiro/SStats и второго live odds source на ближайшие окна, а не ослабление guards. "
+            f"Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
         )
     else:
         new = (
-            "• Progressive coverage включён, но core-ready 2+ ещё не накоплен. Нужно добирать именно core gaps: "
-            "Bzzoiro/SStats по матчам ближайшего окна; supplemental источники не должны закрывать core-дырки."
+            "• Progressive coverage включён, но core-ready 2+ ещё не накоплен. Нужно добирать именно active core gaps: "
+            "Bzzoiro/SStats по контексту и второй live odds source по матчам ближайшего окна; supplemental источники не закрывают core-дырки."
         )
     return text.replace(old, new)
 
@@ -200,20 +207,22 @@ def render(payload: dict[str, Any]) -> str:
     counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
 
     if counts:
-        core_odds_values = list(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sportlogic"])
-        core_odds_values = [str(x) for x in core_odds_values if str(x) != "sstats"]
-        if "sportlogic" not in core_odds_values:
-            core_odds_values.append("sportlogic")
-        core_odds = ",".join(sorted(set(core_odds_values)))
-        core_context = ",".join(contract.get("core_context_providers") or ["bzzoiro", "sstats"])
-        block = "\n".join([
+        core_odds_values = [str(x) for x in (contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io"]) if str(x) != "sstats"]
+        core_context_values = [str(x) for x in (contract.get("core_context_providers") or ["bzzoiro", "sstats"])]
+        excluded = [str(x) for x in (contract.get("excluded_core_providers") or [])]
+        core_odds = ",".join(sorted(set(core_odds_values))) or "n/a"
+        core_context = ",".join(sorted(set(core_context_values))) or "n/a"
+        block_lines = [
             "🧭 Progressive core coverage",
-            f"• Core odds/line: {core_odds}",
-            f"• Core context: {core_context}",
+            f"• Active core odds/line: {core_odds}",
+            f"• Active core context: {core_context}",
             f"• Tracked: {_as_int(counts.get('matches_tracked'))} | core odds 2+: {_as_int(counts.get('core_odds_2plus') or counts.get('odds_2plus'))} | core context 2+: {_as_int(counts.get('core_context_2plus') or counts.get('context_2plus'))} | core-ready both: {_as_int(counts.get('core_ready_2plus_both') or counts.get('ready_2plus_both'))}",
             f"• 0–4ч: {_as_int(counts.get('window_0_4h_core_ready_2plus_both') or counts.get('window_0_4h_ready_2plus_both'))}/{_as_int(counts.get('window_0_4h'))} core-ready",
             f"• 0–12ч: {_as_int(counts.get('window_0_12h_core_ready_2plus_both') or counts.get('window_0_12h_ready_2plus_both'))}/{_as_int(counts.get('window_0_12h'))} core-ready",
-        ])
+        ]
+        if excluded:
+            block_lines.append(f"• Excluded from active core: {','.join(sorted(set(excluded)))}")
+        block = "\n".join(block_lines)
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
         text = _replace_conclusion(text, counts)
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
