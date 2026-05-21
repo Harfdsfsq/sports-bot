@@ -1,93 +1,111 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 15,
-      "contexts_total_effective": 15,
+      "contexts": 30,
+      "contexts_total_effective": 30,
       "errors": 0,
-      "events": 18,
-      "events_total_effective": 18,
-      "overlap": 15,
+      "events": 19,
+      "events_total_effective": 33,
+      "overlap": 25,
       "requests": 1,
-      "requests_total_effective": 5,
-      "secondary_offers_added": 187,
-      "v2_contexts": 1,
+      "requests_total_effective": 97,
+      "secondary_offers_added": 573,
+      "v2_contexts": 24,
       "v2_errors": 0,
-      "v2_events": 18,
-      "v2_lineups_resources": 1,
-      "v2_odds_resources": 1,
-      "v2_requests": 5,
-      "v2_stats_resources": 1
+      "v2_events": 33,
+      "v2_lineups_resources": 24,
+      "v2_odds_resources": 24,
+      "v2_requests": 97,
+      "v2_stats_resources": 24
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 61,
+      "books_2plus": 50,
       "errors": 0,
       "events_req": 0,
-      "matched": 97,
-      "odds_req": 20,
-      "offers": 12135
+      "matched": 76,
+      "odds_req": 16,
+      "offers": 11979
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
       "enabled": true,
-      "errors": 2,
+      "errors": 3,
       "fixtures_fetched": 0,
       "games_fetched": 0,
       "matched": 0,
       "odds_requests": 0,
       "offers": 0,
-      "requests": 13,
+      "requests": 21,
       "sample_dates": [],
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 124,
+      "contexts": 60,
       "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
-      "requests": 30,
-      "rows": 26484,
+      "requests": 22,
+      "rows": 18329,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 0.5430715441703796,
-    "fallback_age_min": 0.22604604562123617,
-    "run_log_age_min": 0.30969114700953165,
-    "signal_stack_age_min": 0.5990551789601644
+    "debug_age_min": 0.5520471096038818,
+    "fallback_age_min": 0.3076212525367737,
+    "run_log_age_min": 0.37874890565872193,
+    "signal_stack_age_min": 0.6108557343482971
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 15,
-    "bzzoiro_secondary_offers_added": 187,
-    "day_inventory_total": 246,
-    "day_inventory_with_context": 156,
-    "day_inventory_with_odds": 196,
-    "matches_seen": 148,
-    "matches_with_2plus_books": 61,
-    "matches_with_context": 125,
-    "matches_with_offers": 72,
-    "odds_offers_primary": 12135,
-    "ready_for_model": 156,
+    "bzzoiro_odds_overlap_with_odds_api_io": 25,
+    "bzzoiro_secondary_offers_added": 573,
+    "day_inventory_total": 152,
+    "day_inventory_with_context": 36,
+    "day_inventory_with_odds": 116,
+    "matches_seen": 83,
+    "matches_with_2plus_books": 50,
+    "matches_with_context": 64,
+    "matches_with_offers": 70,
+    "odds_offers_primary": 11979,
+    "ready_for_model": 36,
     "secondary_combinations": {
-      "bzzoiro": 1,
-      "bzzoiro+odds_api_io": 15,
-      "odds_api_io": 57
+      "bzzoiro": 7,
+      "bzzoiro+odds_api_io": 25,
+      "odds_api_io": 38
     }
   },
-  "created_at_utc": "2026-05-18T09:56:57.637793+00:00",
+  "created_at_utc": "2026-05-21T17:12:18.415751+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 1,
+      "contexts_built": 24,
       "enabled": true,
       "errors": 0,
-      "events_fetched": 18,
-      "lineups_resources": 1,
-      "metadata_resources": 1,
-      "odds_resources": 1,
-      "requests": 5,
-      "stats_resources": 1,
+      "events_fetched": 33,
+      "lineups_resources": 24,
+      "metadata_resources": 24,
+      "odds_resources": 24,
+      "requests": 97,
+      "stats_resources": 24,
       "target_matches": 64
+    },
+    "coverage_truth": {
+      "counts": {
+        "matches_missing_context_2plus": 130,
+        "matches_missing_odds_source_2plus": 144,
+        "matches_missing_price_2plus": 144,
+        "matches_ready_for_model": 36,
+        "matches_ready_for_publish": 8,
+        "matches_total": 152,
+        "matches_with_2plus_context_sources": 22,
+        "matches_with_2plus_odds_sources": 8,
+        "matches_with_2plus_price_confirmations": 8,
+        "matches_with_context": 36,
+        "matches_with_odds": 116
+      },
+      "source": {
+        "path": ".data/exports/latest-day-inventory-coverage-truth.json"
+      }
     },
     "progressive_core_coverage": {
       "contract": {
@@ -98,11 +116,12 @@
         "core_odds_providers": [
           "bzzoiro",
           "odds_api_io",
-          "sstats"
+          "sportlogic"
         ],
         "core_providers": [
           "bzzoiro",
           "odds_api_io",
+          "sportlogic",
           "sstats"
         ],
         "supplemental_context_providers": [
@@ -122,26 +141,25 @@
         "supplemental_odds_providers": [
           "allsportsapi",
           "bookies_api",
-          "oddspapi",
-          "sportlogic"
+          "oddspapi"
         ]
       },
       "counts": {
-        "all_context_1plus": 844,
-        "all_context_2plus": 282,
-        "all_odds_1plus": 1011,
-        "all_odds_2plus": 436,
-        "context_1plus": 763,
+        "all_context_1plus": 895,
+        "all_context_2plus": 290,
+        "all_odds_1plus": 1205,
+        "all_odds_2plus": 463,
+        "context_1plus": 787,
         "context_2plus": 119,
-        "core_context_1plus": 763,
+        "core_context_1plus": 787,
         "core_context_2plus": 119,
-        "core_odds_1plus": 1011,
-        "core_odds_2plus": 436,
-        "core_ready_2plus_both": 119,
-        "matches_tracked": 1022,
-        "odds_1plus": 1011,
-        "odds_2plus": 436,
-        "ready_2plus_both": 119
+        "core_odds_1plus": 848,
+        "core_odds_2plus": 148,
+        "core_ready_2plus_both": 80,
+        "matches_tracked": 1241,
+        "odds_1plus": 848,
+        "odds_2plus": 148,
+        "ready_2plus_both": 80
       },
       "gap_sample_size": 0
     },
@@ -151,11 +169,11 @@
       "games_fetched": 0,
       "query_variants_used": [
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "params": {
-            "date_from": "2026-05-18",
-            "date_to": "2026-05-18",
+            "date_from": "2026-05-21",
+            "date_to": "2026-05-21",
             "per_page": 50,
             "status": "scheduled"
           },
@@ -163,22 +181,22 @@
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "params": {
-            "date_from": "2026-05-18",
-            "date_to": "2026-05-18",
+            "date_from": "2026-05-21",
+            "date_to": "2026-05-21",
             "per_page": 50
           },
           "rows": 0,
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "params": {
-            "date_from": "2026-05-18",
-            "date_to": "2026-05-18",
+            "date_from": "2026-05-21",
+            "date_to": "2026-05-21",
             "per_page": 50,
             "status": "live"
           },
@@ -186,11 +204,11 @@
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "params": {
-            "date_from": "2026-05-18",
-            "date_to": "2026-05-18",
+            "date_from": "2026-05-21",
+            "date_to": "2026-05-21",
             "per_page": 50,
             "status": "pending"
           },
@@ -198,13 +216,13 @@
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "inside_ratio": 0.0,
           "inside_window": 0,
           "outside_window": 50,
           "params": {
-            "date": "2026-05-18",
+            "date": "2026-05-21",
             "per_page": 50
           },
           "parsed_dates": 50,
@@ -215,15 +233,15 @@
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "inside_ratio": 0.0,
           "inside_window": 0,
           "outside_window": 50,
           "params": {
             "per_page": 50,
-            "starts_at_from": "2026-05-18T00:00:00Z",
-            "starts_at_to": "2026-05-18T23:59:59Z"
+            "starts_at_from": "2026-05-21T00:00:00Z",
+            "starts_at_to": "2026-05-21T23:59:59Z"
           },
           "parsed_dates": 50,
           "rows": 50,
@@ -233,15 +251,15 @@
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "inside_ratio": 0.0,
           "inside_window": 0,
           "outside_window": 50,
           "params": {
-            "from": "2026-05-18",
+            "from": "2026-05-21",
             "per_page": 50,
-            "to": "2026-05-18"
+            "to": "2026-05-21"
           },
           "parsed_dates": 50,
           "rows": 50,
@@ -251,15 +269,15 @@
           "scope": "dated"
         },
         {
-          "date": "2026-05-18",
+          "date": "2026-05-21",
           "date_filter_effective": false,
           "inside_ratio": 0.0,
           "inside_window": 0,
           "outside_window": 50,
           "params": {
-            "end_date": "2026-05-18",
+            "end_date": "2026-05-21",
             "per_page": 50,
-            "start_date": "2026-05-18"
+            "start_date": "2026-05-21"
           },
           "parsed_dates": 50,
           "rows": 50,
@@ -269,55 +287,51 @@
           "scope": "dated"
         },
         {
-          "date": "broad",
+          "date": "2026-05-22",
+          "date_filter_effective": false,
           "params": {
+            "date_from": "2026-05-22",
+            "date_to": "2026-05-22",
             "per_page": 50,
             "status": "scheduled"
           },
-          "rows": 50,
-          "rows_inside_requested_dates": 0,
-          "sample_dates": [
-            "2026-05-02"
-          ],
-          "scope": "broad"
+          "rows": 0,
+          "scope": "dated"
         },
         {
-          "date": "broad",
+          "date": "2026-05-22",
+          "date_filter_effective": false,
           "params": {
+            "date_from": "2026-05-22",
+            "date_to": "2026-05-22",
             "per_page": 50
           },
-          "rows": 50,
-          "rows_inside_requested_dates": 0,
-          "sample_dates": [
-            "2026-05-02"
-          ],
-          "scope": "broad"
+          "rows": 0,
+          "scope": "dated"
         },
         {
-          "date": "broad",
+          "date": "2026-05-22",
+          "date_filter_effective": false,
           "params": {
+            "date_from": "2026-05-22",
+            "date_to": "2026-05-22",
             "per_page": 50,
-            "sport": "football"
+            "status": "live"
           },
-          "rows": 50,
-          "rows_inside_requested_dates": 0,
-          "sample_dates": [
-            "2026-05-02"
-          ],
-          "scope": "broad"
+          "rows": 0,
+          "scope": "dated"
         },
         {
-          "date": "broad",
+          "date": "2026-05-22",
+          "date_filter_effective": false,
           "params": {
+            "date_from": "2026-05-22",
+            "date_to": "2026-05-22",
             "per_page": 50,
-            "sport": "soccer"
+            "status": "pending"
           },
-          "rows": 50,
-          "rows_inside_requested_dates": 0,
-          "sample_dates": [
-            "2026-05-02"
-          ],
-          "scope": "broad"
+          "rows": 0,
+          "scope": "dated"
         }
       ],
       "sample_dates": [],
@@ -325,7 +339,7 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 2,
+    "candidates_before_quality": 3,
     "fallback_candidates_seen": 0,
     "fallback_evaluated": 0,
     "fallback_published": false,
@@ -341,15 +355,15 @@
     "publishable_candidates": 1,
     "published_count": 1,
     "raw_candidates": 1,
-    "windowed_audit_candidates": 2,
-    "windowed_publish_allowed": 2,
-    "windowed_publish_blocked": 0
+    "windowed_audit_candidates": 3,
+    "windowed_publish_allowed": 1,
+    "windowed_publish_blocked": 2
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 4,
+    "final_pre_kickoff_checks": 37,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 4,
+    "no_more_regular_run_before_kickoff": 37,
     "seen": 0
   },
   "reasons": [],
@@ -357,123 +371,123 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Pakhtakor",
-        "home_team": "FK Termez Surkhon",
-        "kickoff_utc": "2026-05-18T11:00:00+00:00",
-        "league_name": "Uzbekistan - Cup",
-        "match_key": "soccer|pakhtakor|termez surkhon|2026-05-18",
-        "minutes_to_kickoff": 63.6,
+        "away_team": "Gremio Esportivo Brasil",
+        "home_team": "Gremio Atletico Farroupilha RS",
+        "kickoff_utc": "2026-05-21T18:00:00+00:00",
+        "league_name": "Brazil - Copa FGF",
+        "match_key": "soccer|gremio atletico farroupilha rs|gremio esportivo brasil|2026-05-21",
+        "minutes_to_kickoff": 48.26,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 146.8,
+        "priority": 159.914,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-17T23:10:51.851175+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Navbahor",
-        "home_team": "Xorazm Fk Urganch",
-        "kickoff_utc": "2026-05-18T11:00:00+00:00",
-        "league_name": "Uzbekistan - Cup",
-        "match_key": "soccer|navbahor|xorazm urganch|2026-05-18",
-        "minutes_to_kickoff": 63.6,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 146.8,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-17T23:10:51.851175+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Hougang United FC",
-        "home_team": "Tanjong Pagar United",
-        "kickoff_utc": "2026-05-18T11:30:00+00:00",
-        "league_name": "Singapore - Premier League",
-        "match_key": "soccer|hougang united|tanjong pagar united|2026-05-18",
-        "minutes_to_kickoff": 93.6,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 128.8,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-17T23:10:51.851175+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Mika Yerevan",
-        "home_team": "FC Hayq",
-        "kickoff_utc": "2026-05-18T12:00:00+00:00",
-        "league_name": "Armenia - First League",
-        "match_key": "soccer|hayq|mika yerevan|2026-05-18",
-        "minutes_to_kickoff": 123.6,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 118.8,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-17T23:10:51.851175+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Kattaqorgon",
-        "home_team": "FC Yaypan Fergana",
-        "kickoff_utc": "2026-05-18T13:00:00+00:00",
-        "league_name": "Uzbekistan - Cup",
-        "match_key": "soccer|kattaqorgon|yaypan fergana|2026-05-18",
-        "minutes_to_kickoff": 183.6,
-        "pre_kickoff_status": "near_window",
-        "priority": 98.35,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Dhofar SCSC",
-        "home_team": "Ibri",
-        "kickoff_utc": "2026-05-18T15:20:00+00:00",
-        "league_name": "Oman - Omani League",
-        "match_key": "soccer|dhofar scsc|ibri|2026-05-18",
-        "minutes_to_kickoff": 323.6,
-        "pre_kickoff_status": "near_window",
-        "priority": 92.517,
+        "away_team": "IBV Vestmannaeyjar",
+        "home_team": "IA Akranes",
+        "kickoff_utc": "2026-05-21T18:00:00+00:00",
+        "league_name": "Iceland - Besta deild",
+        "match_key": "soccer|ia akranes|ibv vestmannaeyjar|2026-05-21",
+        "minutes_to_kickoff": 48.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 159.914,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
+          "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Nejmeh SC",
+        "home_team": "AL Ansar SC",
+        "kickoff_utc": "2026-05-21T18:00:00+00:00",
+        "league_name": "International Clubs - Club Friendly Games",
+        "match_key": "soccer|al ansar|nejmeh|2026-05-21",
+        "minutes_to_kickoff": 48.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 159.914,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "KF Dukagjini",
+        "home_team": "KF Ferizaj",
+        "kickoff_utc": "2026-05-21T18:00:00+00:00",
+        "league_name": "Kosovo - Kosovo FA Cup",
+        "match_key": "soccer|kf dukagjini|kf ferizaj|2026-05-21",
+        "minutes_to_kickoff": 48.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 159.914,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Mbeya City FC",
+        "home_team": "Namungo FC",
+        "kickoff_utc": "2026-05-21T18:00:00+00:00",
+        "league_name": "Tanzania - Premier League",
+        "match_key": "soccer|mbeya city|namungo|2026-05-21",
+        "minutes_to_kickoff": 48.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 159.914,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Defensores Del Ilucan",
+        "home_team": "Flamengo FBC",
+        "kickoff_utc": "2026-05-21T18:15:00+00:00",
+        "league_name": "Peru - Liga Femenina",
+        "match_key": "soccer|defensores ilucan|flamengo fbc|2026-05-21",
+        "minutes_to_kickoff": 63.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 154.914,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
         }
       }
     ]
@@ -481,7 +495,7 @@
   "status": "published",
   "status_ru": "✅ прогноз опубликован",
   "telegram_sent": true,
-  "text_length": 1832,
+  "text_length": 2014,
   "top_reason": "main_pipeline_published",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
