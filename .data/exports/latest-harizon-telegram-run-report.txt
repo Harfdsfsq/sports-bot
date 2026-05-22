@@ -1,19 +1,19 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: telegram publish odds sources guard:1/2
+• Главная причина: no viable controlled fallback
 
 📦 Покрытие
-• Матчи в run: 150 | day inventory: 300
-• С линиями: 111 | с контекстом: 108 | ready model: 133
-• odds-api.io offers: 11396 | Bzzoiro secondary offers: 44
-• 2+ букмекера odds-api.io: 76 | 2-source overlap Bzzoiro+odds-api.io: 7
-• Source combinations: odds_api_io: 104, bzzoiro+odds_api_io: 7
+• Матчи в run: 162 | day inventory: 300
+• С линиями: 121 | с контекстом: 117 | ready model: 133
+• odds-api.io offers: 11737 | Bzzoiro secondary offers: 44
+• 2+ букмекера odds-api.io: 79 | 2-source overlap Bzzoiro+odds-api.io: 7
+• Source combinations: odds_api_io: 114, bzzoiro+odds_api_io: 7
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1 / 1
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
 • Windowed coverage: audit 1 | allowed 1 | blocked 0 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
@@ -21,8 +21,8 @@
 • Line guard: seen 1 | kept 1 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 30, matched 150, offers 11396, 2+ books 76, err 0, auth_failed False
-• sstats: req 28, ctx 106, rows 24177, err 0, deep enriched 2
+• odds_api_io: events req 0, odds req 34, matched 162, offers 11737, 2+ books 79, err 0, auth_failed False
+• sstats: req 28, ctx 114, rows 24177, err 0, deep enriched 1
 • bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 44, overlap odds-api.io 7, err 0
 • sportlogic: enabled True, req 16, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 16
 
@@ -42,22 +42,21 @@ Coverage truth
 • ready publish fresh: 0 | strict: 1 | already sent: 1
 
 🚫 Почему не опубликовано
-• telegram publish odds sources guard:1/2: 1 (20%)
-• tier c watch only: 1 (20%)
-• final edge below min: 1 (20%)
-• final ev below min: 1 (20%)
-• quality bad historical segment guard: 1 (20%)
+• Нет reject reasons в свежих артефактах.
 
-🔎 Проверенные reserve-кандидаты
-1. Porto Vitoria ES — Audax Sao Mateus ES | Меньше @1.90 | EV +5.3% | edge +2.8 п.п. | q 73.6
-   • reject: telegram publish odds sources guard:1/2, tier c watch only, final edge below min
+🧩 CandidateFactory diagnostics
+• matches/offers/context: 162/121/117 | raw: 1
+• likely blockers: spreads:bucket_sources_below_2: 121, totals:bucket_sources_below_2: 121, spreads:bucket_books_below_2: 51, totals:bucket_books_below_2: 42, missing_context: 23
+• factory rejects: market_derived_signal_guard_spreads: 240, publish_books_guard: 184, confidence_below_threshold: 76, market_derived_signal_guard_totals: 75, edge_below_threshold: 29, non_core_confidence_guard: 25, missing_context_spreads: 21
+• post-integrity rescue: already_installed | built 0 | returned 0
+• Смысл: это причины до quality/fallback; они объясняют, почему raw pool стал нулевым.
 
 📌 Вывод
 • Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. Core-ready: 80; 0–4ч: 0/0; 0–12ч: 0/0.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
 
 🕒 Current day inventory windows
-• Active matches: 3 | odds refresh needed: 9
+• Active matches: 0 | odds refresh needed: 9
 • Final pre-kickoff checks: 0 | no next regular run: 0
-• 0–4ч inventory: 0/5 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
-• 0–12ч inventory: 0/5 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
+• 0–4ч inventory: 0/0 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
+• 0–12ч inventory: 0/0 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
