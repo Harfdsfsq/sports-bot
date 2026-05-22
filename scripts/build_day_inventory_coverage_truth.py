@@ -63,6 +63,68 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+def parse_dt(value: Any) -> datetime | None:
+    if value in (None, ""):
+        return None
+    text = str(value).strip()
+    try:
+        if text.endswith("Z"):
+            text = text[:-1] + "+00:00"
+        dt = datetime.fromisoformat(text)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=UTC)
+        return dt.astimezone(UTC)
+    except Exception:
+        return None
+
+
+def run_now() -> datetime:
+    for key in ("HARIZON_RUN_NOW_UTC", "RUN_NOW_UTC", "CURRENT_TIME_UTC"):
+        dt = parse_dt(os.getenv(key))
+        if dt is not None:
+            return dt
+    summary = load_json(EXPORT_DIR / "latest-run-summary.json", {})
+    if isinstance(summary, dict):
+        for key in ("current_time_utc", "started_time_utc", "created_at_utc", "updated_at_utc"):
+            dt = parse_dt(summary.get(key))
+            if dt is not None:
+                return dt
+    debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
+    if isinstance(debug, dict):
+        summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
+        for key in ("current_time_utc", "started_time_utc"):
+            dt = parse_dt(summary.get(key))
+            if dt is not None:
+                return dt
+    return datetime.now(UTC)
+
+
+def canonical_match_key(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    return re.sub(r"[^a-z0-9|]+", " ", text).strip()
+
+
+def sent_match_keys() -> set[str]:
+    keys: set[str] = set()
+    fallback = load_json(ROOT / ".data" / "fallback-sent-index.json", {})
+    if isinstance(fallback, dict):
+        for row in fallback.values():
+            if isinstance(row, dict) and row.get("telegram_sent") is True:
+                key = canonical_match_key(row.get("match_key"))
+                if key:
+                    keys.add(key)
+    published = load_json(ROOT / ".data" / "published-candidate-index.json", {})
+    if isinstance(published, dict):
+        rows = published.get("sent") or published.get("published") or []
+        if isinstance(rows, list):
+            for row in rows:
+                if isinstance(row, dict) and row.get("telegram_sent") is True:
+                    key = canonical_match_key(row.get("match_key"))
+                    if key:
+                        keys.add(key)
+    return keys
+
+
 def norm(value: Any) -> str:
     text = re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
     aliases = {
@@ -156,7 +218,7 @@ def price_confirmations(row: dict[str, Any]) -> int:
     )
 
 
-def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str, Any]:
+def row_truth(row: dict[str, Any], min_odds: int, min_context: int, now_dt: datetime, sent_keys: set[str]) -> dict[str, Any]:
     cov = coverage(row)
     osrc = odds_sources(row)
     csrc = context_sources(row)
@@ -171,10 +233,20 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         missing.append("independent_odds_sources")
     if cc < min_context:
         missing.append("context_sources")
-    ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
+    strict_ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
+    match_key = row.get("match_key") or row.get("canonical_match_id") or ""
+    kickoff_utc = row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff_local") or ""
+    kickoff_dt = parse_dt(kickoff_utc)
+    minutes_to_kickoff = round((kickoff_dt - now_dt).total_seconds() / 60.0, 2) if kickoff_dt is not None else None
+    already_published = canonical_match_key(match_key) in sent_keys
+    ready_publish = bool(strict_ready_publish and not already_published)
+    missing_new = list(missing)
+    if already_published:
+        missing_new.append("already_published")
     return {
-        "match_key": row.get("match_key") or row.get("canonical_match_id") or "",
-        "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff_local") or "",
+        "match_key": match_key,
+        "kickoff_utc": kickoff_utc,
+        "minutes_to_kickoff": minutes_to_kickoff,
         "league_name": row.get("league_name") or "",
         "home_team": row.get("home_team") or "",
         "away_team": row.get("away_team") or "",
@@ -187,11 +259,13 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         "has_odds": has_odds,
         "has_context": has_context,
         "ready_for_model": bool(cov.get("ready_for_model")) or (has_odds and has_context),
+        "strict_ready_for_publish": strict_ready_publish,
+        "already_published": already_published,
         "ready_for_publish": ready_publish,
         "need_price_confirmations": max(0, min_odds - pc),
         "need_odds_sources": max(0, min_odds - len(osrc)),
         "need_context_sources": max(0, min_context - cc),
-        "missing": missing,
+        "missing": missing_new,
     }
 
 
@@ -200,6 +274,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     fields = [
         "match_key",
         "kickoff_utc",
+        "minutes_to_kickoff",
         "league_name",
         "home_team",
         "away_team",
@@ -212,6 +287,8 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "has_odds",
         "has_context",
         "ready_for_model",
+        "strict_ready_for_publish",
+        "already_published",
         "ready_for_publish",
         "need_price_confirmations",
         "need_odds_sources",
@@ -229,14 +306,16 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 
 def main() -> int:
-    now = datetime.now(UTC).isoformat()
+    now_dt = run_now()
+    now = now_dt.isoformat()
+    sent_keys = sent_match_keys()
     d = target_date()
     min_odds = max(2, as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
     min_context = max(2, as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
     inv_path = DAY_INV_DIR / f"{d}.json"
     inv = load_json(inv_path, {})
     matches = [row for row in inv.get("matches", []) if isinstance(row, dict)] if isinstance(inv, dict) else []
-    rows = [row_truth(row, min_odds, min_context) for row in matches]
+    rows = [row_truth(row, min_odds, min_context, now_dt, sent_keys) for row in matches]
     rows.sort(key=lambda x: (str(x.get("kickoff_utc") or ""), str(x.get("league_name") or ""), str(x.get("home_team") or "")))
 
     counts = {
@@ -247,6 +326,8 @@ def main() -> int:
         "matches_with_2plus_odds_sources": sum(1 for r in rows if r["odds_sources_count"] >= min_odds),
         "matches_with_2plus_context_sources": sum(1 for r in rows if r["context_sources_count"] >= min_context),
         "matches_ready_for_model": sum(1 for r in rows if r["ready_for_model"]),
+        "matches_ready_for_publish_strict": sum(1 for r in rows if r.get("strict_ready_for_publish")),
+        "matches_strict_ready_already_published": sum(1 for r in rows if r.get("strict_ready_for_publish") and r.get("already_published")),
         "matches_ready_for_publish": sum(1 for r in rows if r["ready_for_publish"]),
     }
     counts["matches_missing_price_2plus"] = max(0, len(rows) - counts["matches_with_2plus_price_confirmations"])
@@ -267,7 +348,9 @@ def main() -> int:
         "notes": [
             "odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.",
             "price_confirmations is bookmaker/line depth and is tracked separately from provider independence.",
-            "ready_for_publish requires 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.",
+            "strict_ready_for_publish requires 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.",
+            "ready_for_publish additionally excludes matches already sent to Telegram in fallback/published indexes.",
+            "minutes_to_kickoff is computed from the current run clock for window diagnostics.",
         ],
     }
     write_json(OUT_JSON, payload)

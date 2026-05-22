@@ -764,6 +764,88 @@ def save_sent_index(index: dict[str, Any]) -> None:
     write_json(".data/fallback-sent-index.json", index)
 
 
+def _read_json_list(path: str | Path) -> list[dict[str, Any]]:
+    payload = load_json(path, [])
+    if isinstance(payload, list):
+        return [row for row in payload if isinstance(row, dict)]
+    return []
+
+
+def _append_unique_rows(path: str | Path, rows: list[dict[str, Any]], key_field: str = "dedupe_key") -> None:
+    existing = _read_json_list(path)
+    seen = {str(row.get(key_field) or "") for row in existing if str(row.get(key_field) or "").strip()}
+    changed = False
+    for row in rows:
+        key = str(row.get(key_field) or "").strip()
+        if key and key in seen:
+            continue
+        existing.append(row)
+        if key:
+            seen.add(key)
+        changed = True
+    if changed:
+        write_json(path, existing)
+
+
+def _update_published_candidate_index(rows: list[dict[str, Any]]) -> None:
+    path = Path(".data/published-candidate-index.json")
+    payload = load_json(path, {})
+    if not isinstance(payload, dict):
+        payload = {}
+    sent_rows = payload.get("sent") if isinstance(payload.get("sent"), list) else []
+    existing = {str(row.get("dedupe_key") or row.get("match_key") or "") for row in sent_rows if isinstance(row, dict)}
+    for row in rows:
+        marker = str(row.get("dedupe_key") or row.get("match_key") or "")
+        if marker and marker in existing:
+            continue
+        sent_rows.append({
+            "recorded_at": datetime.now(UTC).isoformat(),
+            "dedupe_key": row.get("dedupe_key"),
+            "match_key": row.get("match_key"),
+            "home_team": row.get("home_team"),
+            "away_team": row.get("away_team"),
+            "league_name": row.get("league_name"),
+            "family": row.get("family"),
+            "selection": row.get("selection"),
+            "point": row.get("point"),
+            "odds": row.get("odds"),
+            "stake": row.get("stake"),
+            "stake_amount": row.get("stake_amount"),
+            "commence_time": row.get("commence_time"),
+            "telegram_sent": bool(row.get("telegram_sent")),
+            "publication_lifecycle_status": row.get("publication_lifecycle_status") or "telegram_sent",
+        })
+        if marker:
+            existing.add(marker)
+    payload["sent"] = sent_rows[-500:]
+    payload["updated_at"] = datetime.now(UTC).isoformat()
+    write_json(path, payload)
+
+
+def persist_fallback_publication_rows(rows: list[dict[str, Any]]) -> None:
+    """Mirror fallback Telegram picks into the normal pick/bet artifacts.
+
+    The fallback sender writes .data/fallback-sent-index.json for dedupe, but
+    bankroll/open-risk and later reports read the standard latest-picks/bets files.
+    Without this mirror a sent fallback pick can disappear from open exposure.
+    """
+    if not rows:
+        return
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        item = dict(row)
+        item.setdefault("telegram_sent", True)
+        item.setdefault("publication_lifecycle_status", "telegram_sent")
+        item.setdefault("status", "pending")
+        item.setdefault("created_at", datetime.now(UTC).isoformat())
+        item.setdefault("source", "controlled_fallback")
+        normalized.append(item)
+    _append_unique_rows(".data/exports/latest-picks.json", normalized)
+    _append_unique_rows(".data/exports/latest-bets.json", normalized)
+    _append_unique_rows(".data/exports/latest-pending-bets.json", normalized)
+    _update_published_candidate_index(normalized)
+
+
 def prune_sent_index(index: dict[str, Any], hours: int) -> dict[str, Any]:
     cutoff = datetime.now(UTC) - timedelta(hours=max(1, hours))
     result: dict[str, Any] = {}
@@ -2167,6 +2249,8 @@ def main() -> int:
                 },
             })
         save_sent_index(sent_index)
+        if sent:
+            persist_fallback_publication_rows(selected_rows)
     else:
         for chosen, metrics, tier, stake in selected_items:
             selected_rows.append({

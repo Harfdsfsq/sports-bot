@@ -1,15 +1,19 @@
 {
-  "patch": "sports-bot-run263003-fallback-odds-context-split-fix",
-  "run_id": "26300364428",
+  "name": "sports-bot-run263020-lifecycle-window-truth-fix",
   "files": [
+    "scripts/build_day_inventory_coverage_truth.py",
     "scripts/publish_controlled_fallback.py",
     "scripts/send_harizon_telegram_run_report_v8.py",
-    "app/services/market_family_publication_guard.py",
-    "app/services/runtime_startup_chain.py",
-    "app/services/post_integrity_candidate_rescue.py",
     "app/services/__init__.py",
-    "tests/test_controlled_fallback_odds_context_split.py"
+    "app/services/market_family_publication_guard.py",
+    "app/services/post_integrity_candidate_rescue.py",
+    "app/services/runtime_startup_chain.py",
+    "tests/test_fallback_published_artifact_and_coverage_truth.py",
+    "PATCH_MANIFEST.md",
+    "PATCH_MANIFEST.json"
   ],
-  "main_fix": "Use publish_coverage_contract odds_sources_count for fallback tiering; keep SStats as context only.",
-  "expected_effect": "The Fiorentina-Atalanta type of candidate is no longer promoted to Tier A or published as 2 independent line sources when only odds_api_io supplied the actual selected line."
+  "checks": {
+    "py_compile": "passed",
+    "pytest_targeted": "2 passed"
+  }
 }

@@ -171,11 +171,15 @@ def _current_inventory_window_payload() -> dict[str, Any]:
         if 0 <= minutes <= 4 * 60:
             counts["window_0_4h"] += 1
             counts["window_0_4h_ready"] += int(bool(row.get("ready_for_publish")))
+            counts["window_0_4h_strict_ready"] += int(bool(row.get("strict_ready_for_publish", row.get("ready_for_publish"))))
+            counts["window_0_4h_already_published"] += int(bool(row.get("already_published")))
             counts["window_0_4h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
             counts["window_0_4h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
         if 0 <= minutes <= 12 * 60:
             counts["window_0_12h"] += 1
             counts["window_0_12h_ready"] += int(bool(row.get("ready_for_publish")))
+            counts["window_0_12h_strict_ready"] += int(bool(row.get("strict_ready_for_publish", row.get("ready_for_publish"))))
+            counts["window_0_12h_already_published"] += int(bool(row.get("already_published")))
             counts["window_0_12h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
             counts["window_0_12h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
     if counts["window_0_12h"] <= 0:
@@ -337,8 +341,8 @@ def render(payload: dict[str, Any]) -> str:
             "🕒 Current day inventory windows",
             f"• Active matches: {_as_int(inv.get('active_matches'))} | odds refresh needed: {_as_int(inv.get('matches_needing_odds_refresh'))}",
             f"• Final pre-kickoff checks: {_as_int(inv.get('final_pre_kickoff_checks'))} | no next regular run: {_as_int(inv.get('no_more_regular_run_before_kickoff'))}",
-            f"• 0–4ч inventory: {_as_int(inv.get('window_0_4h_ready'))}/{_as_int(inv.get('window_0_4h'))} ready | context 2+: {_as_int(inv.get('window_0_4h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_4h_price_2plus'))}",
-            f"• 0–12ч inventory: {_as_int(inv.get('window_0_12h_ready'))}/{_as_int(inv.get('window_0_12h'))} ready | context 2+: {_as_int(inv.get('window_0_12h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_12h_price_2plus'))}",
+            f"• 0–4ч inventory: {_as_int(inv.get('window_0_4h_ready'))}/{_as_int(inv.get('window_0_4h'))} ready | strict {_as_int(inv.get('window_0_4h_strict_ready'))} | already sent {_as_int(inv.get('window_0_4h_already_published'))} | context 2+: {_as_int(inv.get('window_0_4h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_4h_price_2plus'))}",
+            f"• 0–12ч inventory: {_as_int(inv.get('window_0_12h_ready'))}/{_as_int(inv.get('window_0_12h'))} ready | strict {_as_int(inv.get('window_0_12h_strict_ready'))} | already sent {_as_int(inv.get('window_0_12h_already_published'))} | context 2+: {_as_int(inv.get('window_0_12h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_12h_price_2plus'))}",
         ])
         text = _insert_before(text, "Coverage truth", block)
 
