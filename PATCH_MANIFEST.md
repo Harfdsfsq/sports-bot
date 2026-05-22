@@ -1,23 +1,31 @@
-# sports-bot run263078 day-inventory fallback membership fix
+# sports-bot run263092 fallback pool report fix
 
-## Причина
+## Problem
+The run correctly did not publish a pick, but the v8 report classified the situation as `quality/value не пропустили` even though controlled fallback evaluated zero candidates. The raw candidate was removed before evaluation by the day-inventory membership/lifecycle filter:
 
-В run-bot-26307847014 controlled fallback показал watchlist-кандидата Porto Vitoria ES — Audax Sao Mateus ES, но этот матч отсутствовал в текущем frozen day inventory на 2026-05-22. Из-за этого Telegram-watchlist мог показывать кандидата с `цен 2, контекст 2`, а `Coverage truth` и `Current day inventory windows` одновременно показывали `price 2+: 0` и `context 2+: 0` в ближайшем окне.
+- `latest_rescue_candidates_not_in_day_inventory: 1`
+- `debug_candidates_before_quality_not_in_day_inventory: 1`
+- `fallback candidates_seen: 0`
+- `fallback evaluated: 0`
 
-## Исправление
+This made Telegram misleading: it looked like the candidate failed quality/value, while in fact it was outside the frozen day-inventory contract.
 
-- `scripts/publish_controlled_fallback.py`
-  - добавлена проверка `CONTROLLED_FALLBACK_REQUIRE_DAY_INVENTORY_MEMBERSHIP=true` по умолчанию;
-  - fallback pool теперь берёт только кандидатов, которые есть в `.data/day_inventory/{DAY_INVENTORY_TARGET_DATE}.json` / `current.json` / `latest.json` / `today.json`;
-  - для совместимости матч проверяется и по `match_key`, и по нормализованной паре команд + дате;
-  - в `pool_counts` добавляется `*_not_in_day_inventory`, чтобы причина была видна в no-pick report.
+## Changes
+- `scripts/send_harizon_telegram_run_report_v8.py`
+  - loads `latest-controlled-fallback-report.json`;
+  - exposes `controlled_fallback_pool_counts` and `controlled_fallback_pool_filter_counts` in diagnostics;
+  - changes v8 status to `candidates_filtered_before_fallback` when raw candidates exist but fallback evaluated zero due pre-evaluation filters;
+  - renders a `Controlled fallback pool filter` block;
+  - translates `*_not_in_day_inventory` into Russian in the main reason line.
 
-- `tests/test_controlled_fallback_day_inventory_membership.py`
-  - регресс-тест на отбрасывание кандидата вне day inventory;
-  - регресс-тест на сохранение кандидата внутри day inventory.
+- `tests/test_report_v8_fallback_pool_filter_status.py`
+  - regression coverage for the new status and rendered block.
 
-## Что не менялось
+## Expected result
+For this run, the report should say:
 
-- Финальные odds-source/context/value/quality guards не ослаблены.
-- SStats не становится источником линий.
-- Single-provider odds signal не публикуется как Tier A.
+`Итог: 🟡 кандидаты отфильтрованы до fallback`
+
+`Главная причина: кандидат не входит в frozen day inventory`
+
+This does not relax publication rules. It only fixes report truthfulness.

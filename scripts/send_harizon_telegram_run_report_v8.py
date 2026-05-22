@@ -199,6 +199,105 @@ def _current_inventory_window_payload() -> dict[str, Any]:
                 counts["window_0_12h"] += 1
     return counts
 
+
+
+def _load_controlled_fallback_report() -> dict[str, Any]:
+    payload = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
+    if payload:
+        return payload
+    payload = _load_json(Path("artifacts/run-bot/latest-controlled-fallback-report.json"))
+    return payload if isinstance(payload, dict) else {}
+
+
+def _fallback_pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
+    """Return real pre-evaluation filter reasons from controlled fallback pool counts.
+
+    `day_inventory_membership_keys` is just an index size, not a rejection.
+    Duplicate counters are useful diagnostics but not a top no-publish reason.
+    """
+    out: dict[str, int] = {}
+    if not isinstance(pool_counts, dict):
+        return out
+    for key, value in pool_counts.items():
+        name = str(key or "").strip()
+        if not name or name == "day_inventory_membership_keys":
+            continue
+        if name.endswith("_duplicate_in_pool"):
+            continue
+        count = _as_int(value)
+        if count > 0:
+            out[name] = count
+    return out
+
+
+def _fallback_pool_reason_ru(reason: str) -> str:
+    text = str(reason or "")
+    if text.endswith("_not_in_day_inventory"):
+        return "кандидат не входит в frozen day inventory"
+    if text.endswith("_stale_or_outside_window"):
+        return "кандидат вне окна публикации или устарел"
+    if text.endswith("_canonical_negative_value_prefilter"):
+        return "отрицательная контрольная ценность до fallback"
+    if text.endswith("_stale_payload"):
+        return "устаревший fallback-артефакт"
+    return text.replace("_", " ")
+
+
+def _apply_controlled_fallback_pool_status(payload: dict[str, Any]) -> None:
+    """Make reports truthful when raw candidates exist but fallback evaluates zero rows.
+
+    After the day-inventory membership guard was added, a run can have
+    `raw_candidates=1` while controlled fallback legitimately evaluates 0 rows:
+    the raw row was not part of the frozen 300-match inventory.  v5/v7 classify
+    this as `quality/value не пропустили`; v8 should show the actual pre-fallback
+    pool filter instead.
+    """
+    fallback = _load_controlled_fallback_report()
+    pool_counts = fallback.get("pool_counts") if isinstance(fallback.get("pool_counts"), dict) else {}
+    if not isinstance(pool_counts, dict) or not pool_counts:
+        return
+    filtered = _fallback_pool_filter_counts(pool_counts)
+    diag = payload.setdefault("diagnostics", {})
+    diag["controlled_fallback_pool_counts"] = dict(pool_counts)
+    diag["controlled_fallback_pool_filter_counts"] = dict(filtered)
+    if not filtered:
+        return
+    funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
+    raw = _as_int(funnel.get("raw_candidates") or funnel.get("candidates_before_quality"))
+    seen = _as_int(funnel.get("fallback_candidates_seen"))
+    evaluated = _as_int(funnel.get("fallback_evaluated"))
+    if raw > 0 and seen == 0 and evaluated == 0:
+        top_reason, top_count = max(filtered.items(), key=lambda item: _as_int(item[1]))
+        payload["status"] = "candidates_filtered_before_fallback"
+        payload["status_ru"] = "🟡 кандидаты отфильтрованы до fallback"
+        payload["top_reason"] = top_reason
+        payload["reasons"] = [
+            {"reason": key, "reason_ru": _fallback_pool_reason_ru(key), "count": int(count)}
+            for key, count in sorted(filtered.items(), key=lambda item: _as_int(item[1]), reverse=True)[:8]
+            if int(count) > 0
+        ]
+
+
+def _controlled_fallback_pool_block(payload: dict[str, Any]) -> str:
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    pool_counts = diag.get("controlled_fallback_pool_counts") if isinstance(diag.get("controlled_fallback_pool_counts"), dict) else {}
+    filter_counts = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
+    if not pool_counts:
+        return ""
+    rows = ["🧯 Controlled fallback pool filter"]
+    membership = _as_int(pool_counts.get("day_inventory_membership_keys"))
+    if membership:
+        rows.append(f"• Frozen day inventory keys: {membership}")
+    if filter_counts:
+        top = sorted(filter_counts.items(), key=lambda item: _as_int(item[1]), reverse=True)[:6]
+        rows.append("• Pre-evaluation filters: " + ", ".join(f"{_fallback_pool_reason_ru(k)}: {_as_int(v)}" for k, v in top))
+        rows.append("• Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.")
+    else:
+        compact = {k: v for k, v in pool_counts.items() if k != "day_inventory_membership_keys"}
+        if compact:
+            rows.append("• Pool counters: " + ", ".join(f"{k}: {_as_int(v)}" for k, v in sorted(compact.items())[:8]))
+    return "\n".join(rows)
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
@@ -221,6 +320,7 @@ def build_payload() -> dict[str, Any]:
             "counts": truth_counts,
             "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {"path": str(TRUTH_REPORT)},
         }
+    _apply_controlled_fallback_pool_status(payload)
     return payload
 
 
@@ -304,8 +404,13 @@ def _patch_sstats_line(text: str, payload: dict[str, Any]) -> str:
 
 def render(payload: dict[str, Any]) -> str:
     text = _base_render(payload).replace("HARIZON run report v7", "HARIZON run report v8")
-    text = _patch_sstats_line(text, payload)
     diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    pool_filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
+    top_reason = str(payload.get("top_reason") or "")
+    if top_reason and top_reason in pool_filters:
+        import re
+        text = re.sub(r"• Главная причина: .+", f"• Главная причина: {_fallback_pool_reason_ru(top_reason)}", text, count=1)
+    text = _patch_sstats_line(text, payload)
     prog = diag.get("progressive_core_coverage") if isinstance(diag.get("progressive_core_coverage"), dict) else {}
     contract = prog.get("contract") if isinstance(prog.get("contract"), dict) else {}
     counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
@@ -361,6 +466,9 @@ def render(payload: dict[str, Any]) -> str:
             f"• ready publish fresh: {_as_int(truth_counts.get('matches_ready_for_publish'))} | strict: {_as_int(truth_counts.get('matches_ready_for_publish_strict'))} | already sent: {_as_int(truth_counts.get('matches_strict_ready_already_published'))}",
         ])
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
+    pool_block = _controlled_fallback_pool_block(payload)
+    if pool_block:
+        text = _insert_before(text, "📌 Вывод", pool_block)
     if "Нет reject reasons в свежих артефактах" in text or "raw-кандидатов нет" in text:
         block = _candidate_factory_blockers_block()
         if block:
