@@ -1,18 +1,27 @@
 {
-  "name": "sports-bot-run262965-zero-candidate-fix",
-  "based_on_run": "run-bot-26296521425",
-  "created_at_utc": "2026-05-22T16:02:10.784494+00:00",
-  "changed_files": [
-    "app/services/__init__.py",
+  "patch_name": "sports-bot-run262984-tierb-discovery-fix",
+  "based_on_run_artifact": "run-bot-26298444638.zip",
+  "created_files_or_changed": [
+    "app/services/market_family_publication_guard.py",
+    "app/services/runtime_startup_chain.py",
     "app/services/post_integrity_candidate_rescue.py",
-    "scripts/send_harizon_telegram_run_report_v8.py",
-    "scripts/publish_controlled_fallback.py",
-    "app/services/candidate_value_runtime_patch.py"
+    "app/services/__init__.py",
+    "scripts/send_harizon_telegram_run_report_v8.py"
   ],
-  "notes": [
-    "Install final CandidateFactory runtime chain from app.services.__init__ to keep core-line, market-sanity and value wrappers in deterministic order.",
-    "Enable post-integrity rescue as a raw candidate discovery bridge for hybrid Tier B; skip hard market-integrity re-filter only at discovery stage, final Telegram guards remain strict.",
-    "Render current day-inventory window counters separately from cumulative progressive state so report no longer says 0/0 when day inventory has active matches.",
-    "Keeps SStats as context only and Bzzoiro odds/comparison as the valid secondary line source."
+  "root_cause": [
+    "CandidateFactory built internal rows (core_line/model_sanity candidates_after=5; controlled rescue built=40), but market_family_publication_guard ran in CandidateFactory stage and blocked every one-line-source row before candidate_value_runtime_patch and controlled fallback.",
+    "Telegram report correctly showed zero raw candidates, but did not show factory-level rejection reasons, so it looked like there were no reject reasons."
+  ],
+  "fixes": [
+    "Market-family guard now has a discovery-only relief for hybrid Tier B: totals/spreads with >=1 real price source may enter quality/fallback evaluation.",
+    "TelegramPublisher/text guards remain strict; this relief is not used at final send stage.",
+    "Runtime startup chain now installs post_integrity_candidate_rescue during the main production run, not only in report/fallback processes.",
+    "Post-integrity rescue now writes latest-post-integrity-candidate-rescue.json.",
+    "v8 report now adds CandidateFactory diagnostics when raw candidates are zero."
+  ],
+  "safety": [
+    "Does not make SStats a line source.",
+    "Does not publish directly from rescue.",
+    "Final fallback still blocks negative canonical EV/edge, xG conflict, quality stops, insufficient books/context and stale line movement."
   ]
 }

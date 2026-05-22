@@ -1,17 +1,19 @@
-# sports-bot run 262965 zero-candidate fix
+# sports-bot-run262984-tierb-discovery-fix
 
-Патч для запуска `run-bot-26296521425`.
+## Причина
+В запуске `run-bot-26298444638` CandidateFactory не был реально пустым:
+- `core_line_bookmaker_universe.candidates_after = 5`
+- `model_input_market_sanity.candidates_after = 5`
+- `controlled_consensus_rescue.built = 40`
+- `market_integrity_guard.remaining_candidates = 18`
 
-## Что чинит
+Но затем `market_family_publication_guard` в candidate-discovery стадии заблокировал все строки с `insufficient_publication_odds_sources:1<2`, поэтому `candidate_value_runtime_patch` получил `input_candidates = 0`, а fallback увидел `0` кандидатов.
 
-- `0 raw candidates` при наличии линий и контекста: подключает deterministic final CandidateFactory chain и post-integrity rescue.
-- Hybrid Tier B: кандидаты с `1 line source + 2+ books + context` могут дойти до fallback evaluation, но финальная публикация всё ещё проверяет EV/edge/xG/context/quality.
-- Отчёт v8 теперь отдельно показывает current day-inventory windows, чтобы cumulative progressive cache не маскировал реальные 0–4ч/0–12ч окна.
+## Правка
+- В candidate-discovery стадии разрешён hybrid Tier B проход: `1 real line source` для `totals/spreads`, чтобы кандидат дошёл до quality/fallback.
+- В TelegramPublisher/text stage строгий guard остаётся: финальная публикация не ослаблена.
+- Runtime chain теперь устанавливает `post_integrity_candidate_rescue` в основном run.
+- v8 report добавляет CandidateFactory diagnostics, когда raw pool = 0.
 
-## Файлы
-
-- `app/services/__init__.py`
-- `app/services/post_integrity_candidate_rescue.py`
-- `scripts/send_harizon_telegram_run_report_v8.py`
-- `scripts/publish_controlled_fallback.py`
-- `app/services/candidate_value_runtime_patch.py`
+## Безопасность
+SStats не становится line source. Публикация всё ещё проходит финальные проверки EV/edge/xG/context/books/quality/line movement.

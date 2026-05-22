@@ -2,23 +2,27 @@ from __future__ import annotations
 
 """Post market-integrity candidate rescue.
 
-The normal CandidateFactory may build useful pre-filter rows, but the hard
-market-integrity wrapper can reduce the final raw pool to zero. This module is
-installed after market_integrity and only activates in that exact situation:
+This module is a discovery bridge, not a publisher.  It activates when the normal
+CandidateFactory chain returns zero rows although offers/context exist.  In
+hybrid Tier-B mode it may restore one-line-source candidates to the raw pool so
+controlled fallback can evaluate the *final* contract: positive canonical value,
+2+ books, 3+ context confirmations, xG sanity, quality stops and line movement.
 
-* offers_by_match exists;
-* the wrapped factory returned no candidates;
-* controlled consensus rescue can rebuild paired-book totals/DNB/BTTS candidates;
-* market_integrity validates those rebuilt candidates.
-
-It does not publish anything directly. It only restores a raw candidate pool for
-quality/fallback/line-movement guards.
+It writes an artifact so zero-candidate runs are auditable instead of silently
+showing "raw candidates = 0".
 """
 
+import json
 import os
+from datetime import datetime, timezone
+from pathlib import Path
 from typing import Any
 
 from app.schemas import Offer
+
+UTC = timezone.utc
+ROOT = Path(__file__).resolve().parents[2]
+REPORT_PATH = ROOT / ".data" / "exports" / "latest-post-integrity-candidate-rescue.json"
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -35,6 +39,15 @@ def _int(value: Any, default: int = 0) -> int:
         return default
 
 
+def _float(value: Any, default: float = 0.0) -> float:
+    try:
+        if value in (None, ""):
+            return default
+        return float(str(value).replace(",", "."))
+    except Exception:
+        return default
+
+
 def _inc(rejections: dict[str, int], key: str, by: int = 1) -> None:
     try:
         rejections[key] = int(rejections.get(key) or 0) + by
@@ -42,25 +55,74 @@ def _inc(rejections: dict[str, int], key: str, by: int = 1) -> None:
         pass
 
 
+def _write(payload: dict[str, Any]) -> None:
+    try:
+        REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        REPORT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _canonical_rank(candidate: Any) -> tuple[float, float, float, float]:
+    odds = _float(getattr(candidate, "selected_odds", None), 0.0) or _float(getattr(candidate, "odds", None), 0.0)
+    probability = (
+        _float(getattr(candidate, "canonical_adjusted_probability", None), 0.0)
+        or _float(getattr(candidate, "probability_used_for_ev", None), 0.0)
+        or _float(getattr(candidate, "adjusted_probability", None), 0.0)
+        or _float(getattr(candidate, "model_probability", None), 0.0)
+    )
+    ev = (probability * odds - 1.0) * 100.0 if odds > 1.0 and probability > 0 else _float(getattr(candidate, "ev_pct", None), -999.0)
+    implied = 1.0 / odds if odds > 1.0 else 0.0
+    edge = (probability - implied) * 100.0 if probability > 0 and implied > 0 else _float(getattr(candidate, "edge_pct", None), -999.0)
+    return (ev, edge, _float(getattr(candidate, "confidence", None), 0.0), _float(getattr(candidate, "publication_score", None), 0.0))
+
+
+def _sample(candidates: list[Any]) -> list[dict[str, Any]]:
+    out: list[dict[str, Any]] = []
+    for item in candidates[:20]:
+        out.append({
+            "match_key": str(getattr(item, "match_key", "") or ""),
+            "home": str(getattr(item, "home_team", "") or ""),
+            "away": str(getattr(item, "away_team", "") or ""),
+            "family": str(getattr(item, "family", "") or ""),
+            "selection": str(getattr(item, "selection", "") or ""),
+            "odds": round(_float(getattr(item, "odds", None), 0.0), 4),
+            "books_count": _int(getattr(item, "books_count", 0), 0),
+            "sources_count": _int(getattr(item, "sources_count", 0), 0),
+            "rank": [round(x, 4) for x in _canonical_rank(item)],
+        })
+    return out
+
+
 def install() -> dict[str, Any]:
     if not _truthy(os.getenv("POST_INTEGRITY_CANDIDATE_RESCUE_ENABLED"), True):
-        return {"status": "disabled"}
+        result = {"status": "disabled"}
+        _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
+        return result
     try:
         from app.services import model
         from app.services import controlled_candidate_rescue
         from app.services import market_integrity
     except Exception as exc:
-        return {"status": "skipped", "reason": f"import_failed:{type(exc).__name__}:{exc}"}
+        result = {"status": "skipped", "reason": f"import_failed:{type(exc).__name__}:{exc}"}
+        _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
+        return result
 
     cls = getattr(model, "CandidateFactory", None)
     if cls is None:
-        return {"status": "skipped", "reason": "candidate_factory_missing"}
+        result = {"status": "skipped", "reason": "candidate_factory_missing"}
+        _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
+        return result
     if getattr(cls, "_harizon_post_integrity_candidate_rescue_patch", False):
-        return {"status": "already_installed"}
+        result = {"status": "already_installed"}
+        _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
+        return result
     original = getattr(cls, "build_candidates", None)
     build_rescue = getattr(controlled_candidate_rescue, "_build_rescue", None)
     if not callable(original) or not callable(build_rescue):
-        return {"status": "skipped", "reason": "missing_hooks"}
+        result = {"status": "skipped", "reason": "missing_hooks"}
+        _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
+        return result
 
     def build_candidates_patched(
         self: Any,
@@ -71,6 +133,13 @@ def install() -> dict[str, Any]:
     ):
         candidates, rejections, debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match)
         if candidates or not offers_by_match:
+            _write({
+                "created_at_utc": datetime.now(UTC).isoformat(),
+                "stage": "pass_through",
+                "input_candidates": len(candidates or []),
+                "offers_matches": len(offers_by_match or {}),
+                "contexts_matches": len(contexts_by_match or {}),
+            })
             return candidates, rejections, debug
         if not isinstance(rejections, dict):
             rejections = {}
@@ -80,35 +149,29 @@ def install() -> dict[str, Any]:
         rescue_candidates, rescue_debug = build_rescue(self, matches, offers_by_match, contexts_by_match, rejections)
         if not rescue_candidates:
             _inc(rejections, "post_integrity_rescue_no_candidate")
+            _write({
+                "created_at_utc": datetime.now(UTC).isoformat(),
+                "stage": "no_candidate",
+                "offers_matches": len(offers_by_match or {}),
+                "contexts_matches": len(contexts_by_match or {}),
+                "rejection_keys": {k: v for k, v in sorted(rejections.items()) if "rescue" in str(k) or "market" in str(k)},
+            })
             return candidates, rejections, debug
 
         before_integrity = len(rescue_candidates)
         hybrid_mode = _truthy(os.getenv("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED"), True)
         apply_market_guard = _truthy(os.getenv("POST_INTEGRITY_RESCUE_APPLY_MARKET_GUARD"), True)
         if hybrid_mode and not _truthy(os.getenv("POST_INTEGRITY_RESCUE_APPLY_MARKET_GUARD_FOR_HYBRID"), False):
-            # The market-integrity module is intentionally hard on one-source
-            # market-derived rows.  For the hybrid policy, this rescue layer is
-            # only a candidate-discovery bridge: final Telegram publication still
-            # rechecks EV, edge, books, context sources, xG sanity and quality
-            # stops in publish_controlled_fallback.py.  Applying the hard market
-            # guard here can reduce a covered run to zero raw candidates before
-            # fallback has a chance to evaluate Tier B.
             apply_market_guard = False
             _inc(rejections, "post_integrity_rescue_market_guard_skipped_for_hybrid", 1)
         if apply_market_guard:
             rescue_candidates = market_integrity.filter_candidates(list(rescue_candidates), rejections)
-        rescue_candidates.sort(
-            key=lambda item: (
-                float(getattr(item, "publication_score", 0.0) or 0.0),
-                float(getattr(item, "ev_pct", 0.0) or 0.0),
-                float(getattr(item, "confidence", 0.0) or 0.0),
-            ),
-            reverse=True,
-        )
+
+        rescue_candidates.sort(key=_canonical_rank, reverse=True)
         limit = max(1, _int(os.getenv("POST_INTEGRITY_RESCUE_RETURN_LIMIT"), 24))
         returned = rescue_candidates[:limit]
         _inc(rejections, "post_integrity_rescue_built", before_integrity)
-        _inc(rejections, "post_integrity_rescue_after_market_integrity", len(returned))
+        _inc(rejections, "post_integrity_rescue_returned", len(returned))
 
         debug = dict(debug or {})
         debug["matches"] = (list(debug.get("matches") or []) + list(rescue_debug or []))[:240]
@@ -117,9 +180,20 @@ def install() -> dict[str, Any]:
             "built_before_market_integrity": before_integrity,
             "market_integrity_applied": bool(apply_market_guard),
             "hybrid_mode": bool(hybrid_mode),
-            "returned_after_market_integrity": len(returned),
+            "returned": len(returned),
             "return_limit": limit,
+            "sample": _sample(returned),
         }
+        _write({
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "stage": "rescued",
+            "built_before_market_integrity": before_integrity,
+            "market_integrity_applied": bool(apply_market_guard),
+            "hybrid_mode": bool(hybrid_mode),
+            "returned": len(returned),
+            "return_limit": limit,
+            "sample": _sample(returned),
+        })
         if returned:
             for candidate in returned:
                 try:
@@ -136,4 +210,6 @@ def install() -> dict[str, Any]:
 
     cls.build_candidates = build_candidates_patched
     cls._harizon_post_integrity_candidate_rescue_patch = True
-    return {"status": "installed", "version": "post-integrity-candidate-rescue-v2-hybrid-bridge"}
+    result = {"status": "installed", "version": "post-integrity-candidate-rescue-v3-audited-hybrid-bridge"}
+    _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
+    return result

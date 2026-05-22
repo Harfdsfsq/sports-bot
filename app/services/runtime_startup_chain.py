@@ -62,6 +62,9 @@ MODULES = [
     'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
     'app.services.progressive_provider_alias_finalizer',
     'app.services.candidate_value_final_reinstall',
+    # Last-resort bridge: if early hard guards still leave zero raw candidates,
+    # rebuild controlled rescue rows for fallback evaluation (not direct publish).
+    'app.services.post_integrity_candidate_rescue',
     'app.services.windowed_coverage_state_bridge',
     'app.services.odds_movement_cache_bridge_patch',
     'app.services.api_coverage_consensus_runtime_patch',
