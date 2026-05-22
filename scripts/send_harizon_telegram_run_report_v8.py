@@ -21,6 +21,8 @@ EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 ACTIVE_CORE_PATCH = EXPORT_DIR / "latest-progressive-active-core-budget-patch.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
+REFRESH_PLAN = EXPORT_DIR / "latest-day-inventory-refresh-plan.json"
+PRIORITY_STATE = EXPORT_DIR / "latest-day-inventory-priority-and-line-state.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 
 
@@ -143,6 +145,75 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     api["sstats"] = sstats_api
 
 
+def _current_inventory_window_payload() -> dict[str, Any]:
+    """Return current-day inventory window counters, independent from progressive state.
+
+    Progressive coverage state is cumulative and may contain stale kickoff rows.
+    The day-inventory refresh plan is recomputed in the current workflow run and
+    is the source of truth for near-kickoff windows and final line checks.
+    """
+    refresh = _load_json(REFRESH_PLAN)
+    priority = _load_json(PRIORITY_STATE)
+    plan = refresh if refresh else {}
+    if not plan and isinstance(priority.get("refresh_plan"), dict):
+        plan = priority["refresh_plan"]
+
+    truth = _load_json(TRUTH_REPORT)
+    truth_rows = truth.get("rows") if isinstance(truth.get("rows"), list) else []
+    counts = {
+        "active_matches": _as_int(plan.get("active_matches")),
+        "final_pre_kickoff_checks": _as_int(plan.get("final_pre_kickoff_checks")),
+        "no_more_regular_run_before_kickoff": _as_int(plan.get("no_more_regular_run_before_kickoff")),
+        "matches_needing_odds_refresh": _as_int(plan.get("matches_needing_odds_refresh")),
+        "window_0_4h": 0,
+        "window_0_4h_ready": 0,
+        "window_0_12h": 0,
+        "window_0_12h_ready": 0,
+        "window_0_4h_context_2plus": 0,
+        "window_0_12h_context_2plus": 0,
+        "window_0_4h_price_2plus": 0,
+        "window_0_12h_price_2plus": 0,
+        "source": "latest-day-inventory-refresh-plan + coverage-truth",
+    }
+    # Prefer coverage-truth rows because they contain both kickoff and readiness flags.
+    for row in truth_rows:
+        if not isinstance(row, dict):
+            continue
+        minutes = None
+        value = row.get("minutes_to_kickoff")
+        try:
+            if value not in (None, ""):
+                minutes = float(value)
+        except Exception:
+            minutes = None
+        if minutes is None:
+            continue
+        if 0 <= minutes <= 4 * 60:
+            counts["window_0_4h"] += 1
+            counts["window_0_4h_ready"] += int(bool(row.get("ready_for_publish")))
+            counts["window_0_4h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
+            counts["window_0_4h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
+        if 0 <= minutes <= 12 * 60:
+            counts["window_0_12h"] += 1
+            counts["window_0_12h_ready"] += int(bool(row.get("ready_for_publish")))
+            counts["window_0_12h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
+            counts["window_0_12h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
+
+    # If coverage-truth lacks minutes, fall back to refresh-plan top priority rows.
+    if counts["window_0_12h"] <= 0:
+        for row in plan.get("top_priority_matches") or []:
+            if not isinstance(row, dict):
+                continue
+            try:
+                minutes = float(row.get("minutes_to_kickoff"))
+            except Exception:
+                continue
+            if 0 <= minutes <= 4 * 60:
+                counts["window_0_4h"] += 1
+            if 0 <= minutes <= 12 * 60:
+                counts["window_0_12h"] += 1
+    return counts
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
@@ -153,6 +224,7 @@ def build_payload() -> dict[str, Any]:
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
         "gap_sample_size": len(plan.get("core_gap_sample") or plan.get("gap_sample") or []) if isinstance(plan, dict) else 0,
     }
+    payload.setdefault("diagnostics", {})["current_inventory_windows"] = _current_inventory_window_payload()
     day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
     truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
     truth_report = _load_json(TRUTH_REPORT)
@@ -258,6 +330,21 @@ def render(payload: dict[str, Any]) -> str:
         block = "\n".join(block_lines)
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
         text = _replace_conclusion(text, counts)
+
+    inv = diag.get("current_inventory_windows") if isinstance(diag.get("current_inventory_windows"), dict) else {}
+    if inv:
+        # Show the current run's near-kickoff truth separately from cumulative
+        # progressive state. This prevents misleading 0/0 windows when the
+        # progressive cache is stale but the day inventory has active matches.
+        block = "\n".join([
+            "🕒 Current day inventory windows",
+            f"• Active matches: {_as_int(inv.get('active_matches'))} | odds refresh needed: {_as_int(inv.get('matches_needing_odds_refresh'))}",
+            f"• Final pre-kickoff checks: {_as_int(inv.get('final_pre_kickoff_checks'))} | no next regular run: {_as_int(inv.get('no_more_regular_run_before_kickoff'))}",
+            f"• 0–4ч inventory: {_as_int(inv.get('window_0_4h_ready'))}/{_as_int(inv.get('window_0_4h'))} ready | context 2+: {_as_int(inv.get('window_0_4h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_4h_price_2plus'))}",
+            f"• 0–12ч inventory: {_as_int(inv.get('window_0_12h_ready'))}/{_as_int(inv.get('window_0_12h'))} ready | context 2+: {_as_int(inv.get('window_0_12h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_12h_price_2plus'))}",
+        ])
+        text = _insert_before(text, "Coverage truth", block)
+
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
     if truth_counts:

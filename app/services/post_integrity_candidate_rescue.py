@@ -83,7 +83,19 @@ def install() -> dict[str, Any]:
             return candidates, rejections, debug
 
         before_integrity = len(rescue_candidates)
-        if _truthy(os.getenv("POST_INTEGRITY_RESCUE_APPLY_MARKET_GUARD"), True):
+        hybrid_mode = _truthy(os.getenv("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED"), True)
+        apply_market_guard = _truthy(os.getenv("POST_INTEGRITY_RESCUE_APPLY_MARKET_GUARD"), True)
+        if hybrid_mode and not _truthy(os.getenv("POST_INTEGRITY_RESCUE_APPLY_MARKET_GUARD_FOR_HYBRID"), False):
+            # The market-integrity module is intentionally hard on one-source
+            # market-derived rows.  For the hybrid policy, this rescue layer is
+            # only a candidate-discovery bridge: final Telegram publication still
+            # rechecks EV, edge, books, context sources, xG sanity and quality
+            # stops in publish_controlled_fallback.py.  Applying the hard market
+            # guard here can reduce a covered run to zero raw candidates before
+            # fallback has a chance to evaluate Tier B.
+            apply_market_guard = False
+            _inc(rejections, "post_integrity_rescue_market_guard_skipped_for_hybrid", 1)
+        if apply_market_guard:
             rescue_candidates = market_integrity.filter_candidates(list(rescue_candidates), rejections)
         rescue_candidates.sort(
             key=lambda item: (
@@ -103,6 +115,8 @@ def install() -> dict[str, Any]:
         debug["post_integrity_candidate_rescue"] = {
             "enabled": True,
             "built_before_market_integrity": before_integrity,
+            "market_integrity_applied": bool(apply_market_guard),
+            "hybrid_mode": bool(hybrid_mode),
             "returned_after_market_integrity": len(returned),
             "return_limit": limit,
         }
@@ -122,4 +136,4 @@ def install() -> dict[str, Any]:
 
     cls.build_candidates = build_candidates_patched
     cls._harizon_post_integrity_candidate_rescue_patch = True
-    return {"status": "installed", "version": "post-integrity-candidate-rescue-v1"}
+    return {"status": "installed", "version": "post-integrity-candidate-rescue-v2-hybrid-bridge"}
