@@ -1,21 +1,12 @@
-# sports-bot run263034 report v8/watchlist fix
+# sports-bot run263045 v8 window counter fix
 
-## Что исправлено
+## Problem
+`send_harizon_telegram_run_report_v8.py` had a direct v8 `main()`, but `_current_inventory_window_payload()` incremented `window_0_4h_strict_ready`, `window_0_4h_already_published`, `window_0_12h_strict_ready` and `window_0_12h_already_published` without initializing those keys. When coverage-truth contained a match in the current window, v8 crashed and the workflow fell back to v7.
 
-- `scripts/send_harizon_telegram_run_report_v8.py` теперь имеет собственный `main()` и напрямую пишет/отправляет v8 payload.
-  Раньше файл ставил v8 wrapper, но затем вызывал `v7.v5.main()`, из-за чего в части запусков Telegram и JSON оставались `HARIZON run report v7`.
-- `scripts/publish_controlled_fallback.py` в no-pick watchlist больше не пишет неоднозначное `линий 2`.
-  Теперь отдельно выводятся:
-  - `цен` = bookmaker price confirmations;
-  - `odds sources` = независимые провайдеры линий;
-  - `контекст` = независимые контекстные подтверждения.
+## Fix
+- Initialize all strict/already-sent window counters before iteration.
+- Make the Coverage truth block distinguish fresh publish-ready, strict-ready and already-sent strict-ready matches.
 
-## По запуску 26303423515
-
-Решение не публиковать Breidablik — KR было корректным:
-- odds sources: `1/2`;
-- context confirmations: `1/2`;
-- candidate дошёл только до Tier C watch-only;
-- SStats был контекстом, не line source.
-
-Патч не ослабляет публикацию, а чинит отчёт и текст no-pick сообщения.
+## Files
+- `scripts/send_harizon_telegram_run_report_v8.py`
+- `tests/test_report_v8_window_counter_init.py`

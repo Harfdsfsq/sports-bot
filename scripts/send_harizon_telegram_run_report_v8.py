@@ -156,7 +156,10 @@ def _current_inventory_window_payload() -> dict[str, Any]:
         "final_pre_kickoff_checks": _as_int(plan.get("final_pre_kickoff_checks")),
         "no_more_regular_run_before_kickoff": _as_int(plan.get("no_more_regular_run_before_kickoff")),
         "matches_needing_odds_refresh": _as_int(plan.get("matches_needing_odds_refresh")),
-        "window_0_4h": 0, "window_0_4h_ready": 0, "window_0_12h": 0, "window_0_12h_ready": 0,
+        "window_0_4h": 0, "window_0_4h_ready": 0, "window_0_4h_strict_ready": 0,
+        "window_0_4h_already_published": 0,
+        "window_0_12h": 0, "window_0_12h_ready": 0, "window_0_12h_strict_ready": 0,
+        "window_0_12h_already_published": 0,
         "window_0_4h_context_2plus": 0, "window_0_12h_context_2plus": 0,
         "window_0_4h_price_2plus": 0, "window_0_12h_price_2plus": 0,
         "source": "latest-day-inventory-refresh-plan + coverage-truth",
@@ -355,7 +358,7 @@ def render(payload: dict[str, Any]) -> str:
             f"• 2+ price confirmations: {_as_int(truth_counts.get('matches_with_2plus_price_confirmations'))}",
             f"• 2+ independent odds sources: {_as_int(truth_counts.get('matches_with_2plus_odds_sources'))}",
             f"• 2+ context sources: {_as_int(truth_counts.get('matches_with_2plus_context_sources'))}",
-            f"• ready publish by strict truth: {_as_int(truth_counts.get('matches_ready_for_publish'))}",
+            f"• ready publish fresh: {_as_int(truth_counts.get('matches_ready_for_publish'))} | strict: {_as_int(truth_counts.get('matches_ready_for_publish_strict'))} | already sent: {_as_int(truth_counts.get('matches_strict_ready_already_published'))}",
         ])
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
     if "Нет reject reasons в свежих артефактах" in text or "raw-кандидатов нет" in text:
