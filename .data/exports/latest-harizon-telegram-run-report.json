@@ -1,31 +1,31 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 5,
-      "contexts_total_effective": 5,
+      "contexts": 3,
+      "contexts_total_effective": 3,
       "errors": 0,
       "events": 50,
       "events_total_effective": 83,
-      "overlap": 9,
+      "overlap": 7,
       "requests": 1,
-      "requests_total_effective": 13,
-      "secondary_offers_added": 88,
-      "v2_contexts": 3,
+      "requests_total_effective": 5,
+      "secondary_offers_added": 44,
+      "v2_contexts": 1,
       "v2_errors": 0,
       "v2_events": 83,
-      "v2_lineups_resources": 3,
-      "v2_odds_resources": 3,
-      "v2_requests": 13,
-      "v2_stats_resources": 3
+      "v2_lineups_resources": 1,
+      "v2_odds_resources": 1,
+      "v2_requests": 5,
+      "v2_stats_resources": 1
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 74,
+      "books_2plus": 76,
       "errors": 0,
       "events_req": 0,
-      "matched": 147,
+      "matched": 150,
       "odds_req": 30,
-      "offers": 11372
+      "offers": 11396
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -41,49 +41,134 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 103,
-      "deep_enriched": 6,
+      "contexts": 106,
+      "deep_enriched": 2,
+      "direct_contexts": 0,
       "errors": 0,
       "requests": 28,
-      "rows": 24177
+      "rows": 24177,
+      "runtime_patch": "",
+      "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 0.870836095015208,
-    "fallback_age_min": 0.3265930533409119,
-    "run_log_age_min": 0.6527991930643717,
-    "signal_stack_age_min": 0.8832705696423848
+    "debug_age_min": 0.8722777366638184,
+    "fallback_age_min": 0.2862214962641398,
+    "run_log_age_min": 0.6550451159477234,
+    "signal_stack_age_min": 0.9061745921770732
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 9,
-    "bzzoiro_secondary_offers_added": 88,
+    "bzzoiro_odds_overlap_with_odds_api_io": 7,
+    "bzzoiro_secondary_offers_added": 44,
     "day_inventory_total": 300,
     "day_inventory_with_context": 137,
     "day_inventory_with_odds": 240,
-    "matches_seen": 147,
-    "matches_with_2plus_books": 74,
-    "matches_with_context": 104,
-    "matches_with_offers": 109,
-    "odds_offers_primary": 11372,
+    "matches_seen": 150,
+    "matches_with_2plus_books": 76,
+    "matches_with_context": 108,
+    "matches_with_offers": 111,
+    "odds_offers_primary": 11396,
     "ready_for_model": 133,
     "secondary_combinations": {
-      "bzzoiro+odds_api_io": 9,
-      "odds_api_io": 100
+      "bzzoiro+odds_api_io": 7,
+      "odds_api_io": 104
     }
   },
-  "created_at_utc": "2026-05-22T19:18:28.537751+00:00",
+  "created_at_utc": "2026-05-22T19:50:28.845266+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 3,
+      "contexts_built": 1,
       "enabled": true,
       "errors": 0,
       "events_fetched": 83,
-      "lineups_resources": 3,
-      "metadata_resources": 3,
-      "odds_resources": 3,
-      "requests": 13,
-      "stats_resources": 3,
+      "lineups_resources": 1,
+      "metadata_resources": 1,
+      "odds_resources": 1,
+      "requests": 5,
+      "stats_resources": 1,
       "target_matches": 64
+    },
+    "coverage_truth": {
+      "counts": {
+        "matches_missing_context_2plus": 289,
+        "matches_missing_odds_source_2plus": 299,
+        "matches_missing_price_2plus": 297,
+        "matches_ready_for_model": 133,
+        "matches_ready_for_publish": 0,
+        "matches_ready_for_publish_strict": 1,
+        "matches_strict_ready_already_published": 1,
+        "matches_total": 300,
+        "matches_with_2plus_context_sources": 11,
+        "matches_with_2plus_odds_sources": 1,
+        "matches_with_2plus_price_confirmations": 3,
+        "matches_with_context": 137,
+        "matches_with_odds": 240
+      },
+      "source": {
+        "path": ".data/exports/latest-day-inventory-coverage-truth.json"
+      }
+    },
+    "current_inventory_windows": {
+      "active_matches": 3,
+      "final_pre_kickoff_checks": 0,
+      "matches_needing_odds_refresh": 9,
+      "no_more_regular_run_before_kickoff": 0,
+      "source": "latest-day-inventory-refresh-plan + coverage-truth",
+      "window_0_12h": 5,
+      "window_0_12h_already_published": 0,
+      "window_0_12h_context_2plus": 0,
+      "window_0_12h_price_2plus": 0,
+      "window_0_12h_ready": 0,
+      "window_0_12h_strict_ready": 0,
+      "window_0_4h": 5,
+      "window_0_4h_already_published": 0,
+      "window_0_4h_context_2plus": 0,
+      "window_0_4h_price_2plus": 0,
+      "window_0_4h_ready": 0,
+      "window_0_4h_strict_ready": 0
+    },
+    "progressive_core_coverage": {
+      "contract": {
+        "core_context_providers": [
+          "bzzoiro",
+          "sstats"
+        ],
+        "core_odds_providers": [
+          "bzzoiro",
+          "odds_api_io"
+        ],
+        "core_providers": [
+          "bzzoiro",
+          "odds_api_io",
+          "sstats"
+        ],
+        "excluded_core_providers": [
+          {
+            "grant": 0,
+            "provider": "sportlogic",
+            "reason": "disabled"
+          }
+        ],
+        "reason": "active core merged from budget patch; disabled/zero-budget providers excluded"
+      },
+      "counts": {
+        "all_context_1plus": 895,
+        "all_context_2plus": 290,
+        "all_odds_1plus": 1205,
+        "all_odds_2plus": 463,
+        "context_1plus": 787,
+        "context_2plus": 119,
+        "core_context_1plus": 787,
+        "core_context_2plus": 119,
+        "core_odds_1plus": 848,
+        "core_odds_2plus": 148,
+        "core_ready_2plus_both": 80,
+        "matches_tracked": 1241,
+        "odds_1plus": 848,
+        "odds_2plus": 148,
+        "ready_2plus_both": 80
+      },
+      "gap_sample_size": 0
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -233,9 +318,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 0,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 1,
+    "fallback_candidates_seen": 1,
+    "fallback_evaluated": 1,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -248,21 +333,144 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 0,
-    "windowed_audit_candidates": 0,
-    "windowed_publish_allowed": 0,
+    "raw_candidates": 1,
+    "windowed_audit_candidates": 1,
+    "windowed_publish_allowed": 1,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 3,
-    "kept": 0,
-    "no_more_regular_run_before_kickoff": 3,
-    "seen": 0
+    "final_pre_kickoff_checks": 0,
+    "kept": 1,
+    "no_more_regular_run_before_kickoff": 0,
+    "seen": 1
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 1,
+      "reason": "telegram_publish_odds_sources_guard:1/2",
+      "reason_ru": "telegram publish odds sources guard:1/2"
+    },
+    {
+      "count": 1,
+      "reason": "tier_c_watch_only",
+      "reason_ru": "tier c watch only"
+    },
+    {
+      "count": 1,
+      "reason": "final_edge_below_min",
+      "reason_ru": "final edge below min"
+    },
+    {
+      "count": 1,
+      "reason": "final_ev_below_min",
+      "reason_ru": "final ev below min"
+    },
+    {
+      "count": 1,
+      "reason": "quality_bad_historical_segment_guard",
+      "reason_ru": "quality bad historical segment guard"
+    }
+  ],
+  "report_renderer": "v8",
+  "report_renderer_status": "direct_v8_main",
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "Audax Sao Mateus ES",
+        "away_team_ru": "Аудакс Сао Матеус ES",
+        "candidate_source": "latest_rescue_candidates",
+        "commence_time": "2026-05-22T21:45:00+00:00",
+        "commence_time_display": "23.05.2026 00:45 MSK",
+        "family": "totals",
+        "home_team": "Porto Vitoria ES",
+        "home_team_ru": "Порто Виториа ES",
+        "league_name": "Brazil - Copa Espirito Santo",
+        "league_name_ru": "Бразилия - Копа Еспирито Санто",
+        "match_key": "soccer|audax sao mateus es|porto vitoria es|2026-05-22",
+        "metrics": {
+          "adjusted_probability": 0.555771,
+          "books_count": 2,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 2.807,
+          "canonical_ev_pct": 5.319,
+          "confidence": 68.417,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "clubelo",
+            "sstats_form"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "exact_account_sources": [
+            "odds_api_io_account1",
+            "odds_api_io_account2"
+          ],
+          "exact_account_sources_count": 2,
+          "line_sources": [
+            "odds_api_io"
+          ],
+          "market_edge_pp": 5.511,
+          "market_probability": 0.500656,
+          "model_probability": 0.80329,
+          "odds": 1.895,
+          "odds_sources_count": 1,
+          "publication_score": 53.497,
+          "publish_coverage_passed": false,
+          "publish_coverage_reasons": [
+            "insufficient_odds_sources:1/2"
+          ],
+          "quality_reasons": [
+            "bad_historical_segment_guard"
+          ],
+          "quality_score": 73.602,
+          "quality_score_raw": 73.602,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.527704,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 4.543,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 4.543,
+            "xg_model_gap_pp": -4.543,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.601203,
+            "xg_probability_pct": 60.12,
+            "xg_total": 2.281
+          }
+        },
+        "ok": false,
+        "point": 3.0,
+        "reject_reasons": [
+          "telegram_publish_odds_sources_guard:1/2",
+          "tier_c_watch_only",
+          "final_edge_below_min",
+          "final_ev_below_min"
+        ],
+        "reject_reasons_ru": [
+          "telegram publish odds sources guard:1/2",
+          "уровень C: watch only",
+          "final edge below min",
+          "final ev below min"
+        ],
+        "selection": "Меньше",
+        "tier": "уровень C"
+      }
+    ],
     "top_priority_matches": [
       {
         "away_team": "Llaneros FC",
@@ -270,18 +478,18 @@
         "kickoff_utc": "2026-05-22T20:00:00+00:00",
         "league_name": "Colombia - Liga Femenina",
         "match_key": "soccer|llaneros|once caldas sa|2026-05-22",
-        "minutes_to_kickoff": 42.4,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.865,
+        "minutes_to_kickoff": 10.4,
+        "pre_kickoff_status": "too_soon",
+        "priority": 5.0,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T19:18:24.396156+00:00",
+          "final_pre_kickoff_check_required": false,
+          "last_odds_refresh_utc": "2026-05-22T19:18:29.624724+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
+          "no_more_regular_run_before_kickoff": false
         }
       },
       {
@@ -290,18 +498,18 @@
         "kickoff_utc": "2026-05-22T20:00:00+00:00",
         "league_name": "Ecuador - Copa Ecuador",
         "match_key": "soccer|9 octubre|manta|2026-05-22",
-        "minutes_to_kickoff": 42.4,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.865,
+        "minutes_to_kickoff": 10.4,
+        "pre_kickoff_status": "too_soon",
+        "priority": 5.0,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T19:18:24.396156+00:00",
+          "final_pre_kickoff_check_required": false,
+          "last_odds_refresh_utc": "2026-05-22T19:18:29.624724+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
+          "no_more_regular_run_before_kickoff": false
         }
       },
       {
@@ -310,33 +518,13 @@
         "kickoff_utc": "2026-05-22T20:00:00+00:00",
         "league_name": "Morocco - Botola Pro D1",
         "match_key": "soccer|codm meknes|kawkab athletic of marrakech|2026-05-22",
-        "minutes_to_kickoff": 42.4,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 145.865,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T19:18:24.396156+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Atletico Avila FC",
-        "home_team": "Monagas SC B",
-        "kickoff_utc": "2026-05-22T19:30:00+00:00",
-        "league_name": "Venezuela - Segunda Division",
-        "match_key": "soccer|atletico avila|monagas b|2026-05-22",
-        "minutes_to_kickoff": 12.4,
+        "minutes_to_kickoff": 10.4,
         "pre_kickoff_status": "too_soon",
         "priority": 5.0,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": "2026-05-22T18:33:22.393708+00:00",
+          "last_odds_refresh_utc": "2026-05-22T19:18:29.624724+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
@@ -350,7 +538,7 @@
         "kickoff_utc": "2026-05-22T14:00:00+00:00",
         "league_name": "Croatian First Football League",
         "match_key": "soccer|osijek|slaven_belupo_koprivnica|2026-05-22",
-        "minutes_to_kickoff": -317.6,
+        "minutes_to_kickoff": -349.6,
         "pre_kickoff_status": "started",
         "priority": -84.0,
         "refresh_plan": {
@@ -370,7 +558,27 @@
         "kickoff_utc": "2026-05-22T16:00:00+00:00",
         "league_name": "Veikkausliiga",
         "match_key": "soccer|hjk|vps|2026-05-22",
-        "minutes_to_kickoff": -197.6,
+        "minutes_to_kickoff": -229.6,
+        "pre_kickoff_status": "started",
+        "priority": -84.0,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Vukovar",
+        "home_team": "Hajduk Split",
+        "kickoff_utc": "2026-05-22T16:15:00+00:00",
+        "league_name": "Croatian First Football League",
+        "match_key": "soccer|hajduk_split|vukovar|2026-05-22",
+        "minutes_to_kickoff": -214.6,
         "pre_kickoff_status": "started",
         "priority": -84.0,
         "refresh_plan": {
@@ -386,10 +594,10 @@
       }
     ]
   },
-  "status": "lines_but_no_raw_candidates",
-  "status_ru": "🟠 линии есть, raw-кандидатов нет",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 1627,
-  "top_reason": "no_viable_controlled_fallback",
-  "version": "harizon-telegram-report-v7-bzzoiro-v2-sportlogic-diagnostics"
+  "text_length": 2875,
+  "top_reason": "telegram_publish_odds_sources_guard:1/2",
+  "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
