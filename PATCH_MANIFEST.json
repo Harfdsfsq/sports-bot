@@ -1,20 +1,15 @@
 {
-  "name": "sports-bot-hybrid-source-gate-followup",
-  "created_from_run": "run-bot-26275386700",
-  "summary": "Fixes remaining CandidateFactory source gates so Tier B single-line-source candidates reach controlled fallback; final EV/value guards remain strict.",
-  "files": [
-    "app/services/core_line_bookmaker_universe_patch.py",
-    "tests/test_hybrid_candidate_build_relaxation.py",
-    "PATCH_MANIFEST.md",
-    "PATCH_MANIFEST.json"
+  "patch": "sports-bot-run262909-followup",
+  "created_for": "run-bot-26290903265",
+  "changes": [
+    "Blocks controlled-consensus rescue candidates when selected odds have negative value vs paired bookmaker consensus.",
+    "Updates app/services/__init__.py to install the rescue consensus guard and active-core budget patch.",
+    "Patches progressive coverage plan after run so zero-budget optional providers (e.g. SportLogic with grant 0) are excluded from active core report contract.",
+    "Adds regression tests for both behaviors."
   ],
-  "notes": [
-    "Previous patch enabled CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE, but model.CandidateFactory still used settings.min_sources_publish and market-derived min source gates while building candidates.",
-    "This patch relaxes only candidate discovery while the wrapper runs; settings are restored immediately after build_candidates returns.",
-    "Final publication is still controlled by fallback canonical EV/edge, xG sanity, quality stops, 2+ books, context confirmations and tier thresholds.",
-    "SStats remains context-only; Bzzoiro/SportLogic remain line sources only when real odds/offers exist."
-  ],
-  "validation": [
-    "PYTHONPATH=. python -m pytest tests/test_hybrid_candidate_build_relaxation.py -q"
+  "does_not_change": [
+    "Does not loosen final Telegram publication thresholds.",
+    "Does not make SStats a line source.",
+    "Does not publish negative EV candidates."
   ]
 }
