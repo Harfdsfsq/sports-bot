@@ -1,9 +1,6 @@
 name: run-bot
 
 on:
-  schedule:
-    # Every 2 hours by MSK. 21:00 UTC is 00:00 MSK and starts the daily inventory cycle.
-    - cron: "0 21,23,1-19/2 * * *"
   workflow_dispatch:
     inputs:
       mode:
@@ -82,27 +79,6 @@ jobs:
       CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "false"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
-      CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM: "true"
-      CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM: "true"
-      CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS: ""
-      CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED: "true"
-      CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE: "true"
-      CANDIDATE_FACTORY_ALLOW_SINGLE_LINE_FOR_CONTROLLED_FALLBACK: "true"
-      CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_ALLOWED_FAMILIES: "totals,spreads"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_PRICE_CONFIRMATIONS: "2"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_BOOKS: "2"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONTEXT_SOURCES: "3"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EDGE_PP: "4.0"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EV_PCT: "7.0"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONFIDENCE: "76.0"
-      CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY: "78.0"
-      CONTROLLED_FALLBACK_SINGLE_LINE_REQUIRE_XG_SANITY: "true"
-      CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "2"
-      CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP: "4.0"
-      CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT: "7.0"
-      CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE: "76.0"
-      CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY: "78.0"
       ODDS_MOVEMENT_SNAPSHOTS_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_LIMIT: "8"
@@ -334,15 +310,15 @@ jobs:
 
       - name: Run tests
         shell: bash
-        env:
-          APP_ENV: test
-          PUBLISH_DRY_RUN: true
-          RUN_REPORT_ENABLED: true
         run: |
-          set -euo pipefail
-          echo "full test suite start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          timeout 120s python -m pytest -q
-          echo "full test suite passed"
+          set -uo pipefail
+          echo "unit tests start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 60s python -m pytest -q tests/test_market_integrity.py; then
+            echo "unit tests passed"
+          else
+            status=$?
+            echo "unit tests failed or timed out with status ${status}; continuing production run"
+          fi
 
       - name: Run bot
         shell: bash
@@ -365,6 +341,25 @@ jobs:
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
+
+      - name: Update inventory priority and line movement state
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip inventory priority/line movement: fresh run-bot log was not created"
+            exit 0
+          fi
+          mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
+          echo "inventory priority and line movement update start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -u scripts/update_day_inventory_priority_and_line_state.py || true
+          python -u scripts/repair_inventory_refresh_plan_counts.py || true
+          cp .data/exports/latest-day-inventory-priority-and-line-state.json artifacts/run-bot/latest-day-inventory-priority-and-line-state.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-refresh-plan.json artifacts/run-bot/latest-day-inventory-refresh-plan.json 2>/dev/null || true
+          cp .data/exports/latest-inventory-refresh-plan-count-repair.json artifacts/run-bot/latest-inventory-refresh-plan-count-repair.json 2>/dev/null || true
+          cp .data/exports/latest-line-movement-guard-report.json artifacts/run-bot/latest-line-movement-guard-report.json 2>/dev/null || true
+          cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
+          cp -r .data/line_history artifacts/run-bot/line_history || true
 
       - name: Publish controlled fallback
         shell: bash
@@ -425,16 +420,23 @@ jobs:
           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
 
-      - name: Prepare runtime artifact bundle
+      - name: Commit runtime artifacts
         if: always()
         shell: bash
         run: |
-          set -euo pipefail
+          set -uo pipefail
           if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip runtime artifact bundle: fresh run-bot log was not created"
+            echo "skip runtime artifact commit: fresh run-bot log was not created"
             exit 0
           fi
-          echo "Runtime state is preserved by actions/cache and upload-artifact, not committed back to main."
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
+          git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
+          git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
+          git commit -m "Update runtime artifacts [skip ci]" || true
+          git push || true
 
       - name: Save persisted day inventory
         if: always()

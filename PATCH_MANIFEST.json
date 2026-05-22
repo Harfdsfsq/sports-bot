@@ -1,15 +1,21 @@
 {
-  "patch": "sports-bot-run262909-followup",
-  "created_for": "run-bot-26290903265",
-  "changes": [
-    "Blocks controlled-consensus rescue candidates when selected odds have negative value vs paired bookmaker consensus.",
-    "Updates app/services/__init__.py to install the rescue consensus guard and active-core budget patch.",
-    "Patches progressive coverage plan after run so zero-budget optional providers (e.g. SportLogic with grant 0) are excluded from active core report contract.",
-    "Adds regression tests for both behaviors."
+  "name": "sports-bot-run262957-inventory-clock-fix",
+  "files": [
+    ".github/workflows/run-bot.yml",
+    "scripts/update_day_inventory_priority_and_line_state.py",
+    "scripts/repair_inventory_refresh_plan_counts.py",
+    "tests/test_inventory_runtime_clock_and_workflow.py",
+    "PATCH_MANIFEST.md",
+    "PATCH_MANIFEST.json"
   ],
-  "does_not_change": [
-    "Does not loosen final Telegram publication thresholds.",
-    "Does not make SStats a line source.",
-    "Does not publish negative EV candidates."
+  "fixes": [
+    "Ignore stale debug timestamps when computing inventory minutes_to_kickoff.",
+    "Run inventory priority and line-movement update before controlled fallback.",
+    "Repair refresh-plan counters immediately after priority update.",
+    "Prevent stale cached inventory from disabling pre-kickoff/line-movement logic."
+  ],
+  "validation": [
+    "python -m py_compile scripts/update_day_inventory_priority_and_line_state.py scripts/repair_inventory_refresh_plan_counts.py scripts/publish_controlled_fallback.py scripts/send_harizon_telegram_run_report_v8.py",
+    "PYTHONPATH=. python -m pytest tests/test_inventory_runtime_clock_and_workflow.py tests/test_fallback_pool_post_quality_value_prefilter.py tests/test_report_active_core_renderer_merge.py -q"
   ]
 }

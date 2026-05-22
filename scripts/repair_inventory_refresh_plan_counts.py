@@ -70,13 +70,26 @@ def parse_dt(value: Any) -> datetime | None:
 
 
 def now_utc_from_debug() -> datetime:
-    debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
-    summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
-    for value in (summary.get("current_time_utc"), debug.get("current_time_utc") if isinstance(debug, dict) else None):
-        dt = parse_dt(value)
+    """Return a fresh run timestamp, not a stale cached debug timestamp."""
+    for env_name in ("HARIZON_RUN_NOW_UTC", "RUN_NOW_UTC", "CURRENT_TIME_UTC"):
+        dt = parse_dt(os.getenv(env_name))
         if dt is not None:
             return dt
-    return datetime.now(UTC)
+
+    wall = datetime.now(UTC)
+    debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
+    summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
+    candidates = [summary.get("current_time_utc"), debug.get("current_time_utc") if isinstance(debug, dict) else None]
+    max_age_min = max(1, env_int("MAX_TRUSTED_ARTIFACT_NOW_AGE_MINUTES", 360))
+    allow_stale = env_bool("ALLOW_STALE_DEBUG_TIME_FOR_INVENTORY", False)
+    for value in candidates:
+        dt = parse_dt(value)
+        if dt is None:
+            continue
+        age_min = abs((wall - dt).total_seconds()) / 60.0
+        if age_min <= max_age_min or allow_stale:
+            return dt
+    return wall
 
 
 def target_date(now: datetime) -> str:
