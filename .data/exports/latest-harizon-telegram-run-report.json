@@ -1,31 +1,31 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 3,
-      "contexts_total_effective": 3,
+      "contexts": 5,
+      "contexts_total_effective": 5,
       "errors": 0,
       "events": 50,
-      "events_total_effective": 83,
+      "events_total_effective": 50,
       "overlap": 7,
       "requests": 1,
-      "requests_total_effective": 5,
-      "secondary_offers_added": 44,
-      "v2_contexts": 1,
-      "v2_errors": 0,
-      "v2_events": 83,
-      "v2_lineups_resources": 1,
-      "v2_odds_resources": 1,
-      "v2_requests": 5,
-      "v2_stats_resources": 1
+      "requests_total_effective": 1,
+      "secondary_offers_added": 55,
+      "v2_contexts": 0,
+      "v2_errors": 1,
+      "v2_events": 0,
+      "v2_lineups_resources": 0,
+      "v2_odds_resources": 0,
+      "v2_requests": 1,
+      "v2_stats_resources": 0
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 79,
-      "errors": 0,
+      "books_2plus": 193,
+      "errors": 1,
       "events_req": 0,
-      "matched": 162,
-      "odds_req": 34,
-      "offers": 11737
+      "matched": 1066,
+      "odds_req": 129,
+      "offers": 35270
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -41,7 +41,7 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 114,
+      "contexts": 215,
       "deep_enriched": 1,
       "direct_contexts": 0,
       "errors": 0,
@@ -52,77 +52,82 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.8212333997090657,
-    "fallback_age_min": 0.27649553219477335,
-    "run_log_age_min": 0.59281933705012,
-    "signal_stack_age_min": 0.8676576375961303
+    "debug_age_min": 0.939295216401418,
+    "fallback_age_min": 0.31919014851252236,
+    "run_log_age_min": 0.6669970393180847,
+    "signal_stack_age_min": 1.0233195066452025
   },
   "coverage": {
     "bzzoiro_odds_overlap_with_odds_api_io": 7,
-    "bzzoiro_secondary_offers_added": 44,
-    "day_inventory_total": 300,
-    "day_inventory_with_context": 137,
-    "day_inventory_with_odds": 240,
-    "matches_seen": 162,
-    "matches_with_2plus_books": 79,
-    "matches_with_context": 117,
-    "matches_with_offers": 121,
-    "odds_offers_primary": 11737,
-    "ready_for_model": 133,
+    "bzzoiro_secondary_offers_added": 55,
+    "day_inventory_total": 1070,
+    "day_inventory_with_context": 83,
+    "day_inventory_with_odds": 214,
+    "matches_seen": 1078,
+    "matches_with_2plus_books": 193,
+    "matches_with_context": 218,
+    "matches_with_offers": 352,
+    "odds_offers_primary": 35270,
+    "ready_for_model": 83,
     "secondary_combinations": {
       "bzzoiro+odds_api_io": 7,
-      "odds_api_io": 114
+      "odds_api_io": 345
     }
   },
-  "created_at_utc": "2026-05-22T20:23:06.587338+00:00",
+  "created_at_utc": "2026-05-22T21:47:44.860465+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 1,
+      "contexts_built": 0,
       "enabled": true,
-      "errors": 0,
-      "events_fetched": 83,
-      "lineups_resources": 1,
-      "metadata_resources": 1,
-      "odds_resources": 1,
-      "requests": 5,
-      "stats_resources": 1,
+      "errors": 1,
+      "events_fetched": 0,
+      "last_error": "ConnectTimeout: ",
+      "lineups_resources": 0,
+      "metadata_resources": 0,
+      "odds_resources": 0,
+      "requests": 1,
+      "stats_resources": 0,
       "target_matches": 64
     },
+    "controlled_fallback_pool_counts": {
+      "day_inventory_membership_keys": 2136
+    },
+    "controlled_fallback_pool_filter_counts": {},
     "coverage_truth": {
       "counts": {
-        "matches_missing_context_2plus": 289,
-        "matches_missing_odds_source_2plus": 299,
-        "matches_missing_price_2plus": 297,
-        "matches_ready_for_model": 133,
+        "matches_missing_context_2plus": 294,
+        "matches_missing_odds_source_2plus": 300,
+        "matches_missing_price_2plus": 300,
+        "matches_ready_for_model": 83,
         "matches_ready_for_publish": 0,
-        "matches_ready_for_publish_strict": 1,
-        "matches_strict_ready_already_published": 1,
+        "matches_ready_for_publish_strict": 0,
+        "matches_strict_ready_already_published": 0,
         "matches_total": 300,
-        "matches_with_2plus_context_sources": 11,
-        "matches_with_2plus_odds_sources": 1,
-        "matches_with_2plus_price_confirmations": 3,
-        "matches_with_context": 137,
-        "matches_with_odds": 240
+        "matches_with_2plus_context_sources": 6,
+        "matches_with_2plus_odds_sources": 0,
+        "matches_with_2plus_price_confirmations": 0,
+        "matches_with_context": 83,
+        "matches_with_odds": 214
       },
       "source": {
         "path": ".data/exports/latest-day-inventory-coverage-truth.json"
       }
     },
     "current_inventory_windows": {
-      "active_matches": 0,
-      "final_pre_kickoff_checks": 0,
-      "matches_needing_odds_refresh": 9,
-      "no_more_regular_run_before_kickoff": 0,
+      "active_matches": 832,
+      "final_pre_kickoff_checks": 18,
+      "matches_needing_odds_refresh": 643,
+      "no_more_regular_run_before_kickoff": 18,
       "source": "latest-day-inventory-refresh-plan + coverage-truth",
-      "window_0_12h": 0,
+      "window_0_12h": 267,
       "window_0_12h_already_published": 0,
-      "window_0_12h_context_2plus": 0,
+      "window_0_12h_context_2plus": 5,
       "window_0_12h_price_2plus": 0,
       "window_0_12h_ready": 0,
       "window_0_12h_strict_ready": 0,
-      "window_0_4h": 0,
+      "window_0_4h": 35,
       "window_0_4h_already_published": 0,
-      "window_0_4h_context_2plus": 0,
+      "window_0_4h_context_2plus": 1,
       "window_0_4h_price_2plus": 0,
       "window_0_4h_ready": 0,
       "window_0_4h_strict_ready": 0
@@ -143,13 +148,9 @@
           "sstats"
         ],
         "excluded_core_providers": [
-          {
-            "grant": 0,
-            "provider": "sportlogic",
-            "reason": "disabled"
-          }
+          "sportlogic"
         ],
-        "reason": "active core merged from budget patch; disabled/zero-budget providers excluded"
+        "reason": "disabled or zero-budget providers are excluded from the active core contract"
       },
       "counts": {
         "all_context_1plus": 895,
@@ -318,7 +319,7 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 1,
+    "candidates_before_quality": 0,
     "fallback_candidates_seen": 0,
     "fallback_evaluated": 0,
     "fallback_published": false,
@@ -333,17 +334,17 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 1,
-    "windowed_audit_candidates": 1,
-    "windowed_publish_allowed": 1,
+    "raw_candidates": 0,
+    "windowed_audit_candidates": 0,
+    "windowed_publish_allowed": 0,
     "windowed_publish_blocked": 0
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 0,
-    "kept": 1,
-    "no_more_regular_run_before_kickoff": 0,
-    "seen": 1
+    "final_pre_kickoff_checks": 18,
+    "kept": 0,
+    "no_more_regular_run_before_kickoff": 18,
+    "seen": 0
   },
   "reasons": [],
   "report_renderer": "v8",
@@ -352,131 +353,131 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Slaven Belupo Koprivnica",
-        "home_team": "Osijek",
-        "kickoff_utc": "2026-05-22T14:00:00+00:00",
-        "league_name": "Croatian First Football League",
-        "match_key": "soccer|osijek|slaven_belupo_koprivnica|2026-05-22",
-        "minutes_to_kickoff": -382.28,
-        "pre_kickoff_status": "started",
-        "priority": -84.0,
+        "away_team": "CD UAI Urquiza",
+        "home_team": "CA Ituzaingo",
+        "kickoff_utc": "2026-05-22T22:30:00+00:00",
+        "league_name": "Argentina - Primera B",
+        "match_key": "soccer|ca ituzaingo|uai urquiza|2026-05-22",
+        "minutes_to_kickoff": 43.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 145.582,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:38.117254+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "HJK",
-        "home_team": "VPS",
-        "kickoff_utc": "2026-05-22T16:00:00+00:00",
-        "league_name": "Veikkausliiga",
-        "match_key": "soccer|hjk|vps|2026-05-22",
-        "minutes_to_kickoff": -262.28,
-        "pre_kickoff_status": "started",
-        "priority": -84.0,
+        "away_team": "Racing Club Montevideo",
+        "home_team": "Liverpool Montevideo",
+        "kickoff_utc": "2026-05-22T22:30:00+00:00",
+        "league_name": "Uruguay - Primera Division",
+        "match_key": "soccer|liverpool montevideo|racing montevideo|2026-05-22",
+        "minutes_to_kickoff": 43.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 145.582,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:38.117254+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Vukovar",
-        "home_team": "Hajduk Split",
-        "kickoff_utc": "2026-05-22T16:15:00+00:00",
-        "league_name": "Croatian First Football League",
-        "match_key": "soccer|hajduk_split|vukovar|2026-05-22",
-        "minutes_to_kickoff": -247.28,
-        "pre_kickoff_status": "started",
-        "priority": -84.0,
+        "away_team": "CA Independiente Avellaneda",
+        "home_team": "Union de Santa Fe",
+        "kickoff_utc": "2026-05-22T23:00:00+00:00",
+        "league_name": "Argentina - Copa Argentina",
+        "match_key": "soccer|ca independiente avellaneda|union santa fe|2026-05-22",
+        "minutes_to_kickoff": 73.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 135.582,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:38.117254+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Vukovar",
-        "home_team": "Hajduk Split",
-        "kickoff_utc": "2026-05-22T16:15:00+00:00",
-        "league_name": "Croatian First Football League",
-        "match_key": "soccer|hajduk split|vukovar|2026-05-22",
-        "minutes_to_kickoff": -247.28,
-        "pre_kickoff_status": "started",
-        "priority": -84.0,
+        "away_team": "CSD Liniers",
+        "home_team": "CA Excursionistas",
+        "kickoff_utc": "2026-05-22T23:00:00+00:00",
+        "league_name": "Argentina - Primera B",
+        "match_key": "soccer|ca excursionistas|csd liniers|2026-05-22",
+        "minutes_to_kickoff": 73.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 135.582,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:38.117254+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "AL Hilal (SDN)",
-        "home_team": "Al-Merrikh SC (SDN)",
-        "kickoff_utc": "2026-05-22T17:00:00+00:00",
-        "league_name": "Rwanda - Premier League",
-        "match_key": "soccer|al hilal sdn|al merrikh sdn|2026-05-22",
-        "minutes_to_kickoff": -202.28,
-        "pre_kickoff_status": "started",
-        "priority": -84.0,
+        "away_team": "Deportivo Camioneros",
+        "home_team": "CSCD Laferrere",
+        "kickoff_utc": "2026-05-22T23:00:00+00:00",
+        "league_name": "Argentina - Primera B",
+        "match_key": "soccer|camioneros|cscd laferrere|2026-05-22",
+        "minutes_to_kickoff": 73.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 135.582,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:38.117254+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "FC Argeș Pitești",
-        "home_team": "CFR 1907 Cluj",
-        "kickoff_utc": "2026-05-22T17:30:00+00:00",
-        "league_name": "Superliga",
-        "match_key": "soccer|arges pitesti|cfr 1907 cluj|2026-05-22",
-        "minutes_to_kickoff": -172.28,
-        "pre_kickoff_status": "started",
-        "priority": -84.0,
+        "away_team": "FC Pride Elite",
+        "home_team": "Michigan Rangers FC",
+        "kickoff_utc": "2026-05-22T23:00:00+00:00",
+        "league_name": "USA - National Premier Soccer League",
+        "match_key": "soccer|michigan rangers|pride elite|2026-05-22",
+        "minutes_to_kickoff": 73.26,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 135.582,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": false,
-          "last_odds_refresh_utc": null,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:38.117254+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": false
+          "no_more_regular_run_before_kickoff": true
         }
       }
     ]
   },
-  "status": "candidates_but_quality_rejected",
-  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
+  "status": "lines_but_no_raw_candidates",
+  "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 3151,
+  "text_length": 3219,
   "top_reason": "no_viable_controlled_fallback",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
