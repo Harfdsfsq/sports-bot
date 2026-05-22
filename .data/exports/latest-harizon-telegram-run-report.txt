@@ -1,55 +1,55 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: no viable controlled fallback
+• Итог: ✅ прогноз опубликован
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Покрытие
-• Матчи в run: 223 | day inventory: 300
-• С линиями: 137 | с контекстом: 177 | ready model: 104
-• odds-api.io offers: 18211 | Bzzoiro secondary offers: 44
-• 2+ букмекера odds-api.io: 90 | 2-source overlap Bzzoiro+odds-api.io: 5
-• Source combinations: odds_api_io: 132, bzzoiro+odds_api_io: 5, bzzoiro: 1
+• Матчи в run: 154 | day inventory: 300
+• С линиями: 106 | с контекстом: 119 | ready model: 133
+• odds-api.io offers: 14570 | Bzzoiro secondary offers: 77
+• 2+ букмекера odds-api.io: 73 | 2-source overlap Bzzoiro+odds-api.io: 8
+• Source combinations: odds_api_io: 98, bzzoiro+odds_api_io: 8, bzzoiro: 2
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 2
+• Passed quality: 1 | publishable: 0 | опубликовано: 1
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 0 | allowed 0 | blocked 0 | publish-filter input 0
+• Controlled fallback: status published | seen 2 | evaluated 2 | published True (1)
+• Windowed coverage: audit 2 | allowed 1 | blocked 1 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 65 | no next regular run: 65
-• Line guard: seen 0 | kept 0 | dropped 0
+• Final pre-kickoff checks: 40 | no next regular run: 40
+• Line guard: seen 2 | kept 2 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 44, matched 218, offers 18211, 2+ books 90, err 0, auth_failed False
-• sstats: req 28, ctx 175, rows 24176, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 44, overlap odds-api.io 5, err 0
+• odds_api_io: events req 0, odds req 30, matched 150, offers 14570, 2+ books 73, err 0, auth_failed False
+• sstats: req 28, ctx 119, rows 24176, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 13, v2 ctx 3, v2 odds 3, secondary offers 77, overlap odds-api.io 8, err 0
 • sportlogic: enabled True, req 21, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 3
 
 🧭 Progressive core coverage
-• Active core odds/line: bzzoiro,odds_api_io
-• Active core context: bzzoiro,sstats
+• Core odds/line: bzzoiro,odds_api_io,sportlogic
+• Core context: bzzoiro,sstats
 • Tracked: 1241 | core odds 2+: 148 | core context 2+: 119 | core-ready both: 80
 • 0–4ч: 0/0 core-ready
 • 0–12ч: 0/0 core-ready
-• Excluded from active core: sportlogic (disabled)
 
 Coverage truth
 • Inventory rows: 300
-• 2+ price confirmations: 0
-• 2+ independent odds sources: 0
-• 2+ context sources: 9
-• ready publish by strict truth: 0
+• 2+ price confirmations: 2
+• 2+ independent odds sources: 1
+• 2+ context sources: 10
+• ready publish by strict truth: 1
 
-🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+🚫 Почему не опубликовано: не применимо, Telegram уже подтвердил отправку
+• quality bad historical segment guard: 2 (50%)
+• quality quality historical guard relief: 1 (25%)
+• odds above global max: 1 (25%)
+
+🔎 Проверенные reserve-кандидаты
+1. ACF Fiorentina — Atalanta BC | Меньше @2.71 | EV +18.1% | edge +6.7 п.п. | q 96.4
+2. SC Heerenveen — Ajax Amsterdam | Меньше @3.21 | EV +7.3% | edge +2.3 п.п. | q 76.5
+   • reject: odds above global max
 
 📌 Вывод
-• Progressive coverage не видит матчей в ближайшие 12 часов в накопленном state. Это не повод ослаблять guards: нужно проверить свежесть kickoff_utc/target-date state и продолжать добор active core coverage для дневного инвентаря. Core-ready за день: 80; 0–4ч: 0/0; 0–12ч: 0/0.
+• Прогноз реально опубликован; все цифры выше взяты из одного нормализованного payload.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
-
-🕒 Current day inventory windows
-• Active matches: 95 | odds refresh needed: 9
-• Final pre-kickoff checks: 65 | no next regular run: 65
-• 0–4ч inventory: 0/40 ready | context 2+: 0 | price 2+: 0
-• 0–12ч inventory: 0/40 ready | context 2+: 0 | price 2+: 0
