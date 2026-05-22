@@ -1,62 +1,41 @@
-🧾 HARIZON run report v8 — единая фактическая сводка
+🧾 HARIZON run report v7 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: no viable controlled fallback
+• Главная причина: telegram publish odds sources guard:1/2
 
 📦 Покрытие
-• Матчи в run: 157 | day inventory: 300
-• С линиями: 121 | с контекстом: 129 | ready model: 133
-• odds-api.io offers: 17053 | Bzzoiro secondary offers: 154
-• 2+ букмекера odds-api.io: 91 | 2-source overlap Bzzoiro+odds-api.io: 10
-• Source combinations: odds_api_io: 111, bzzoiro+odds_api_io: 10, bzzoiro: 3
+• Матчи в run: 143 | day inventory: 300
+• С линиями: 110 | с контекстом: 109 | ready model: 133
+• odds-api.io offers: 14482 | Bzzoiro secondary offers: 99
+• 2+ букмекера odds-api.io: 81 | 2-source overlap Bzzoiro+odds-api.io: 9
+• Source combinations: odds_api_io: 101, bzzoiro+odds_api_io: 9, bzzoiro: 2
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1 / 1
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
 • Windowed coverage: audit 1 | allowed 0 | blocked 1 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 32 | no next regular run: 32
-• Line guard: seen 0 | kept 0 | dropped 0
+• Final pre-kickoff checks: 29 | no next regular run: 29
+• Line guard: seen 1 | kept 1 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 32, matched 154, offers 17053, 2+ books 91, err 0, auth_failed False
-• sstats: req 28, ctx 129, rows 24177, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 25, v2 ctx 6, v2 odds 6, secondary offers 154, overlap odds-api.io 10, err 0
+• odds_api_io: events req 0, odds req 30, matched 141, offers 14482, 2+ books 81, err 0, auth_failed False
+• sstats: req 28, ctx 109, rows 24177, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 29, v2 ctx 7, v2 odds 7, secondary offers 99, overlap odds-api.io 9, err 0
 • sportlogic: enabled True, req 16, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 16
 
-🧭 Progressive core coverage
-• Active core odds/line: bzzoiro,odds_api_io
-• Active core context: bzzoiro,sstats
-• Tracked: 1241 | core odds 2+: 148 | core context 2+: 119 | core-ready both: 80
-• 0–4ч: 0/0 core-ready
-• 0–12ч: 0/0 core-ready
-• Excluded from active core: sportlogic (disabled)
-
-Coverage truth
-• Inventory rows: 300
-• 2+ price confirmations: 2
-• 2+ independent odds sources: 1
-• 2+ context sources: 10
-• ready publish by strict truth: 1
-
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• telegram publish odds sources guard:1/2: 1 (25%)
+• tier c watch only: 1 (25%)
+• controlled fallback confirmation sources below min:1/2: 1 (25%)
+• quality bad historical segment guard: 1 (25%)
 
-🧩 CandidateFactory diagnostics
-• matches/offers/context: 157/121/129 | raw: 1
-• likely blockers: spreads:bucket_sources_below_2: 121, totals:bucket_sources_below_2: 121, spreads:bucket_books_below_2: 34, totals:bucket_books_below_2: 30, missing_context: 17
-• factory rejects: market_derived_signal_guard_spreads: 220, publish_books_guard: 166, market_derived_signal_guard_totals: 82, confidence_below_threshold: 73, edge_below_threshold: 46, non_core_confidence_guard: 19, non_core_shortlist_cap_guard: 18
-• post-integrity rescue: already_installed | built 0 | returned 0
-• Смысл: это причины до quality/fallback; они объясняют, почему raw pool стал нулевым.
+🔎 Проверенные reserve-кандидаты
+1. Breidablik Kopavogur — KR Reykjavik | Меньше @2.58 | EV +17.6% | edge +6.8 п.п. | q 88.9
+   • reject: telegram publish odds sources guard:1/2, tier c watch only, controlled fallback confirmation sources below min:1/2
 
 📌 Вывод
-• Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. Core-ready: 80; 0–4ч: 0/0; 0–12ч: 0/0.
+• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
-
-🕒 Current day inventory windows
-• Active matches: 43 | odds refresh needed: 9
-• Final pre-kickoff checks: 32 | no next regular run: 32
-• 0–4ч inventory: 0/40 ready | context 2+: 0 | price 2+: 0
-• 0–12ч inventory: 0/40 ready | context 2+: 0 | price 2+: 0
