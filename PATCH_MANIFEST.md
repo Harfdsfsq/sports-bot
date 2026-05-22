@@ -1,13 +1,32 @@
-# HARIZON hybrid candidate factory follow-up
+# sports-bot hybrid source-gate follow-up
 
-Причина патча: в запуске 22.05.2026 10:24 гибридные Tier B-флаги были включены, но candidate factory всё ещё работала как strict two-source layer (`allow_single_source=false`). Из-за этого большинство матчей с одним line provider и несколькими контекстами не попадали в пул controlled fallback.
+Причина патча: в запуске `run-bot-26275386700` флаг `CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE=true` уже применился, но candidate pool всё равно остался `1`, потому что внутри `CandidateFactory` ещё действовали source-gates уровня `min_sources_publish` / `market_derived_min_sources`.
 
-Изменения:
-- `MIN_SOURCES_PUBLISH=1` только для построения candidate pool; строгий publish-contract остаётся через `PUBLISH_MIN_ODDS_SOURCES=2` и fallback Tier A.
-- Включён `CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE=true` для гибридного режима.
-- `MARKET_DERIVED_MIN_SOURCES=1`, чтобы market-derived кандидаты с одним line provider могли попасть в pre-quality pool.
-- SStats удалён из `CORE_LINE_SOURCES`; он остаётся только контекстом.
-- Bzzoiro и SportLogic остаются line sources только при реальных odds/offers.
-- Добавлены регресс-тесты на single-line candidate factory policy.
+## Что изменено
 
-Важно: этот патч не разрешает публиковать отрицательный EV или `bad_historical_segment_guard`. Он только позволяет Tier B увидеть больше кандидатов, после чего final fallback всё равно проверяет EV/edge/context/xG/quality.
+- `app/services/core_line_bookmaker_universe_patch.py`
+  - на время сборки кандидатов для Tier B временно снижает:
+    - `min_sources_publish` до `1`;
+    - `market_derived_min_sources` до `1`;
+    - `market_derived_consensus_relief_min_sources` до `1`;
+    - `line_movement_min_sources` до `1`;
+  - после `build_candidates` возвращает старые значения;
+  - пишет это в `latest-core-line-bookmaker-universe.json`.
+
+- `tests/test_hybrid_candidate_build_relaxation.py`
+  - регресс-тест на временное ослабление discovery-gates и восстановление настроек.
+
+## Что НЕ ослаблено
+
+- отрицательный canonical EV всё ещё блокирует публикацию;
+- `bad_historical_segment_guard` всё ещё блокирует публикацию;
+- xG-конфликт всё ещё блокирует публикацию;
+- SStats не становится источником линий;
+- Tier A остаётся строгим 2-line-source режимом;
+- Tier B публикуется только через controlled fallback и его повышенные пороги.
+
+## Проверка
+
+```bash
+PYTHONPATH=. python -m pytest tests/test_hybrid_candidate_build_relaxation.py -q
+```

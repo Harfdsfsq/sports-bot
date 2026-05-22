@@ -82,6 +82,64 @@ def _collect_external_books(factory: Any, offers_by_match: dict[str, list[Any]])
     return books, stats
 
 
+def _set_attr(obj: Any, name: str, value: Any) -> bool:
+    try:
+        setattr(obj, name, value)
+        return True
+    except Exception:
+        try:
+            object.__setattr__(obj, name, value)
+            return True
+        except Exception:
+            return False
+
+
+def _relax_candidate_build_contract(settings: Any) -> tuple[dict[str, Any], dict[str, Any]]:
+    """Relax only the *candidate discovery* contract for Tier-B hybrid picks.
+
+    Final publication still goes through controlled fallback guards:
+    canonical EV/edge, xG sanity, quality stops, 2+ books and 3+ context confirmations.
+    This wrapper only prevents promising 1-line-source buckets from being discarded
+    before the fallback scanner can evaluate them.
+    """
+    enabled = _truthy(os.getenv(HYBRID_ENV), False) or _truthy(os.getenv(SINGLE_LINE_ENV), False)
+    if not enabled or settings is None:
+        return {}, {'enabled': enabled, 'applied': False, 'reason': 'hybrid_disabled_or_no_settings'}
+
+    overrides = {
+        # CandidateFactory._candidate_from_bucket uses min_sources_publish.
+        # For Tier B candidate discovery we allow one line source; publication
+        # remains guarded by PUBLISH_MIN_ODDS_SOURCES / fallback tier policy.
+        'min_sources_publish': 1,
+        # Market-derived and consensus-relief candidates also have source-count
+        # gates; keep 2+ bookmaker pressure but let a single provider through.
+        'market_derived_min_sources': 1,
+        'market_derived_consensus_relief_min_sources': 1,
+        'line_movement_min_sources': 1,
+    }
+    old_values: dict[str, Any] = {}
+    applied: dict[str, Any] = {}
+    for name, value in overrides.items():
+        try:
+            old_values[name] = getattr(settings, name)
+        except Exception:
+            continue
+        if _set_attr(settings, name, value):
+            applied[name] = value
+    return old_values, {
+        'enabled': True,
+        'applied': bool(applied),
+        'overrides': applied,
+        'old_values': {k: str(v) for k, v in old_values.items()},
+        'reason': 'tier_b_single_line_candidate_discovery',
+    }
+
+
+def _restore_candidate_build_contract(settings: Any, old_values: dict[str, Any]) -> None:
+    for name, value in old_values.items():
+        _set_attr(settings, name, value)
+
+
 def _install_candidate_factory_patch(report: dict[str, Any]) -> None:
     from app.services.model import CandidateFactory
 
@@ -94,6 +152,7 @@ def _install_candidate_factory_patch(report: dict[str, Any]) -> None:
         extra_books, stats = _collect_external_books(self, offers_by_match or {})
         old_target = set(getattr(self, 'target_books', set()) or set())
         old_consensus = set(getattr(self, 'consensus_books', set()) or set())
+        old_settings, settings_report = _relax_candidate_build_contract(getattr(self, 'settings', None))
         try:
             if extra_books:
                 self.target_books = set(old_target) | set(extra_books)
@@ -105,6 +164,7 @@ def _install_candidate_factory_patch(report: dict[str, Any]) -> None:
                 'extra_books_added': len(extra_books),
                 'target_books_before': len(old_target),
                 'consensus_books_before': len(old_consensus),
+                'candidate_build_settings': settings_report,
                 'candidates_after': len(candidates or []),
             }
             _write({'created_at_utc': datetime.now(UTC).isoformat(), 'stage': 'build_candidates', **debug['core_line_bookmaker_universe']})
@@ -113,6 +173,7 @@ def _install_candidate_factory_patch(report: dict[str, Any]) -> None:
             try:
                 self.target_books = old_target
                 self.consensus_books = old_consensus
+                _restore_candidate_build_contract(getattr(self, 'settings', None), old_settings)
             except Exception:
                 pass
 
@@ -132,6 +193,7 @@ def install() -> dict[str, Any]:
         'allow_single_source': _truthy(os.getenv(SINGLE_LINE_ENV), _truthy(os.getenv(HYBRID_ENV), False)),
         'core_line_sources': sorted(CORE_LINE_SOURCES),
         'note': 'SStats is intentionally excluded from line sources; it is context only.',
+        'candidate_build_relaxation': 'hybrid Tier B: min_sources_publish/market_derived sources are relaxed only while building the candidate pool',
     }
     try:
         _install_candidate_factory_patch(report)
