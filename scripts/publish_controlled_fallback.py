@@ -2054,10 +2054,14 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
             point = item.get("point")
             point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
             reasons = ", ".join(translate_reject_reason(reason) for reason in (item.get("reject_reasons") or [])[:3])
+            price_confirmations = int(metrics.get('books_count') or 0)
+            odds_sources = int(metrics.get('odds_sources_count') or 0)
+            context_confirmations = int(metrics.get('confirmation_sources_count') or metrics.get('sources_count') or 0)
             lines.append(
                 f"• {home} — {away}: {market_title(family)} {selection}{point_text}, "
                 f"EV {float(metrics.get('canonical_ev_pct') or 0.0):+.1f}%, "
-                f"линий {int(metrics.get('books_count') or 0)} — не публикую: {reasons}"
+                f"цен {price_confirmations}, odds sources {odds_sources}, контекст {context_confirmations} — "
+                f"не публикую: {reasons}"
             )
     if counter:
         lines.append("Причины отказа:")

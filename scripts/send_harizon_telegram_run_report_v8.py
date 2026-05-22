@@ -369,8 +369,57 @@ v7.v5.build_payload = build_payload
 v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
-_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5", "sstats_nested_normalizer": True})
+_write_status({"status": "installed", "renderer": "v8", "main_module": "self", "sstats_nested_normalizer": True})
+
+
+def main() -> int:
+    """Write and send the v8 payload directly.
+
+    v8 used to patch v7.v5 and then call v7.v5.main(). In some GitHub Actions
+    runs that still emitted the v7 payload/text because the base module main()
+    resolved its own globals before the v8 wrapper finished patching them.  Keep
+    the v7 send/write helpers, but call the v8 build_payload/render functions
+    explicitly so the artifact and Telegram message cannot silently downgrade.
+    """
+    payload = build_payload()
+    text = render(payload)
+    payload["text_length"] = len(text)
+    payload["telegram_sent"] = False
+    payload["report_renderer"] = "v8"
+    payload["report_renderer_status"] = "direct_v8_main"
+
+    # Reuse the v5/v7 artifact paths so downstream workflow upload steps do not
+    # need to change.
+    try:
+        v7.v5.write_json(v7.v5.OUT_V5_JSON, payload)
+        v7.v5.write_text(v7.v5.OUT_V5_TXT, text + "\n")
+        v7.v5.write_json(v7.v5.OUT_JSON, payload)
+        v7.v5.write_text(v7.v5.OUT_TXT, text + "\n")
+    except Exception:
+        write_path = EXPORT_DIR / "latest-harizon-telegram-run-report.json"
+        text_path = EXPORT_DIR / "latest-harizon-telegram-run-report.txt"
+        write_path.parent.mkdir(parents=True, exist_ok=True)
+        write_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        text_path.write_text(text + "\n", encoding="utf-8")
+
+    try:
+        if v7.v5.os.getenv("TELEGRAM_CHAT_ID") and (v7.v5.os.getenv("TELEGRAM_BOT_TOKEN") or v7.v5.os.getenv("TELEGRAM_TOKEN")):
+            payload["telegram_sent"] = bool(v7.v5.send_telegram(text))
+            v7.v5.write_json(v7.v5.OUT_V5_JSON, payload)
+            v7.v5.write_json(v7.v5.OUT_JSON, payload)
+        else:
+            print(text)
+    except Exception as exc:
+        payload["telegram_sent"] = False
+        payload["telegram_error"] = f"{type(exc).__name__}: {exc}"
+        try:
+            v7.v5.write_json(v7.v5.OUT_V5_JSON, payload)
+            v7.v5.write_json(v7.v5.OUT_JSON, payload)
+        except Exception:
+            pass
+    _write_status({"status": "sent" if payload.get("telegram_sent") else "written", "renderer": "v8", "main_module": "self", "payload_version": payload.get("version")})
+    return 0
 
 
 if __name__ == "__main__":
-    raise SystemExit(v7.v5.main())
+    raise SystemExit(main())

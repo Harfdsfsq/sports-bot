@@ -1,19 +1,28 @@
 {
-  "name": "sports-bot-run263020-lifecycle-window-truth-fix",
+  "name": "sports-bot-run263034-report-v8-watchlist-fix",
+  "created_at_utc": "2026-05-22T18:14:44Z",
   "files": [
-    "scripts/build_day_inventory_coverage_truth.py",
-    "scripts/publish_controlled_fallback.py",
     "scripts/send_harizon_telegram_run_report_v8.py",
-    "app/services/__init__.py",
-    "app/services/market_family_publication_guard.py",
-    "app/services/post_integrity_candidate_rescue.py",
-    "app/services/runtime_startup_chain.py",
-    "tests/test_fallback_published_artifact_and_coverage_truth.py",
+    "scripts/publish_controlled_fallback.py",
+    "tests/test_report_v8_direct_main_and_watchlist_text.py",
     "PATCH_MANIFEST.md",
     "PATCH_MANIFEST.json"
   ],
-  "checks": {
-    "py_compile": "passed",
-    "pytest_targeted": "2 passed"
+  "summary": [
+    "Force the HARIZON report v8 script to write/send its own v8 payload instead of delegating to v7.v5.main(), which was producing v7 artifacts despite v8 installer status.",
+    "Improve controlled fallback no-pick watchlist wording: show bookmaker price confirmations, independent odds sources, and context confirmations separately.",
+    "Keep publication guards unchanged: single-provider odds candidates remain blocked unless they pass the explicit Tier-B rules."
+  ],
+  "run_analysis": {
+    "telegram_run": "26303423515",
+    "candidate": "Breidablik Kopavogur — KR Reykjavik Under 3.5",
+    "decision": "correctly not published",
+    "main_reasons": [
+      "odds_sources_count=1/2",
+      "confirmation_sources_count=1/2",
+      "tier C watch only",
+      "quality bad historical segment guard"
+    ],
+    "report_issue": "Telegram report downgraded to v7 although v8 status said installed."
   }
 }
