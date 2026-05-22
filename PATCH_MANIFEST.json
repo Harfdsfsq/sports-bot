@@ -1,27 +1,15 @@
 {
-  "patch_name": "sports-bot-run262984-tierb-discovery-fix",
-  "based_on_run_artifact": "run-bot-26298444638.zip",
-  "created_files_or_changed": [
+  "patch": "sports-bot-run263003-fallback-odds-context-split-fix",
+  "run_id": "26300364428",
+  "files": [
+    "scripts/publish_controlled_fallback.py",
+    "scripts/send_harizon_telegram_run_report_v8.py",
     "app/services/market_family_publication_guard.py",
     "app/services/runtime_startup_chain.py",
     "app/services/post_integrity_candidate_rescue.py",
     "app/services/__init__.py",
-    "scripts/send_harizon_telegram_run_report_v8.py"
+    "tests/test_controlled_fallback_odds_context_split.py"
   ],
-  "root_cause": [
-    "CandidateFactory built internal rows (core_line/model_sanity candidates_after=5; controlled rescue built=40), but market_family_publication_guard ran in CandidateFactory stage and blocked every one-line-source row before candidate_value_runtime_patch and controlled fallback.",
-    "Telegram report correctly showed zero raw candidates, but did not show factory-level rejection reasons, so it looked like there were no reject reasons."
-  ],
-  "fixes": [
-    "Market-family guard now has a discovery-only relief for hybrid Tier B: totals/spreads with >=1 real price source may enter quality/fallback evaluation.",
-    "TelegramPublisher/text guards remain strict; this relief is not used at final send stage.",
-    "Runtime startup chain now installs post_integrity_candidate_rescue during the main production run, not only in report/fallback processes.",
-    "Post-integrity rescue now writes latest-post-integrity-candidate-rescue.json.",
-    "v8 report now adds CandidateFactory diagnostics when raw candidates are zero."
-  ],
-  "safety": [
-    "Does not make SStats a line source.",
-    "Does not publish directly from rescue.",
-    "Final fallback still blocks negative canonical EV/edge, xG conflict, quality stops, insufficient books/context and stale line movement."
-  ]
+  "main_fix": "Use publish_coverage_contract odds_sources_count for fallback tiering; keep SStats as context only.",
+  "expected_effect": "The Fiorentina-Atalanta type of candidate is no longer promoted to Tier A or published as 2 independent line sources when only odds_api_io supplied the actual selected line."
 }

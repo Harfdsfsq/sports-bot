@@ -19,7 +19,10 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
+ACTIVE_CORE_PATCH = EXPORT_DIR / "latest-progressive-active-core-budget-patch.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
+REFRESH_PLAN = EXPORT_DIR / "latest-day-inventory-refresh-plan.json"
+PRIORITY_STATE = EXPORT_DIR / "latest-day-inventory-priority-and-line-state.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 CANDIDATE_FACTORY_DIAGNOSTICS = EXPORT_DIR / "latest-candidate-factory-diagnostics.json"
 POST_INTEGRITY_RESCUE_REPORT = EXPORT_DIR / "latest-post-integrity-candidate-rescue.json"
@@ -56,10 +59,29 @@ def _load_progressive_plan() -> dict[str, Any]:
     try:
         if PROGRESSIVE_PLAN.exists() and PROGRESSIVE_PLAN.stat().st_size > 0:
             payload = json.loads(PROGRESSIVE_PLAN.read_text(encoding="utf-8"))
-            return payload if isinstance(payload, dict) else {}
+            if not isinstance(payload, dict):
+                payload = {}
+        else:
+            payload = {}
     except Exception:
-        return {}
-    return {}
+        payload = {}
+    try:
+        active = _load_json(ACTIVE_CORE_PATCH)
+        if active:
+            contract = dict(payload.get("contract") or {})
+            if isinstance(active.get("active_core_odds_providers"), list):
+                contract["core_odds_providers"] = [str(x) for x in active.get("active_core_odds_providers") or []]
+            if isinstance(active.get("active_core_context_providers"), list):
+                contract["core_context_providers"] = [str(x) for x in active.get("active_core_context_providers") or []]
+            if isinstance(active.get("excluded_core_providers"), list):
+                contract["excluded_core_providers"] = active.get("excluded_core_providers") or []
+            contract["core_providers"] = sorted(set(contract.get("core_odds_providers") or []) | set(contract.get("core_context_providers") or []))
+            contract["reason"] = "active core merged from budget patch; disabled/zero-budget providers excluded"
+            payload["contract"] = contract
+            payload.setdefault("diagnostics", {})["active_core_budget_patch_merged_in_renderer"] = True
+    except Exception:
+        pass
+    return payload
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -120,6 +142,56 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     api["sstats"] = sstats_api
 
 
+
+def _current_inventory_window_payload() -> dict[str, Any]:
+    refresh = _load_json(REFRESH_PLAN)
+    priority = _load_json(PRIORITY_STATE)
+    plan = refresh if refresh else {}
+    if not plan and isinstance(priority.get("refresh_plan"), dict):
+        plan = priority["refresh_plan"]
+    truth = _load_json(TRUTH_REPORT)
+    truth_rows = truth.get("rows") if isinstance(truth.get("rows"), list) else []
+    counts = {
+        "active_matches": _as_int(plan.get("active_matches")),
+        "final_pre_kickoff_checks": _as_int(plan.get("final_pre_kickoff_checks")),
+        "no_more_regular_run_before_kickoff": _as_int(plan.get("no_more_regular_run_before_kickoff")),
+        "matches_needing_odds_refresh": _as_int(plan.get("matches_needing_odds_refresh")),
+        "window_0_4h": 0, "window_0_4h_ready": 0, "window_0_12h": 0, "window_0_12h_ready": 0,
+        "window_0_4h_context_2plus": 0, "window_0_12h_context_2plus": 0,
+        "window_0_4h_price_2plus": 0, "window_0_12h_price_2plus": 0,
+        "source": "latest-day-inventory-refresh-plan + coverage-truth",
+    }
+    for row in truth_rows:
+        if not isinstance(row, dict):
+            continue
+        try:
+            minutes = float(row.get("minutes_to_kickoff"))
+        except Exception:
+            continue
+        if 0 <= minutes <= 4 * 60:
+            counts["window_0_4h"] += 1
+            counts["window_0_4h_ready"] += int(bool(row.get("ready_for_publish")))
+            counts["window_0_4h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
+            counts["window_0_4h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
+        if 0 <= minutes <= 12 * 60:
+            counts["window_0_12h"] += 1
+            counts["window_0_12h_ready"] += int(bool(row.get("ready_for_publish")))
+            counts["window_0_12h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
+            counts["window_0_12h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
+    if counts["window_0_12h"] <= 0:
+        for row in plan.get("top_priority_matches") or []:
+            if not isinstance(row, dict):
+                continue
+            try:
+                minutes = float(row.get("minutes_to_kickoff"))
+            except Exception:
+                continue
+            if 0 <= minutes <= 4 * 60:
+                counts["window_0_4h"] += 1
+            if 0 <= minutes <= 12 * 60:
+                counts["window_0_12h"] += 1
+    return counts
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
@@ -130,6 +202,7 @@ def build_payload() -> dict[str, Any]:
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
         "gap_sample_size": len(plan.get("core_gap_sample") or plan.get("gap_sample") or []) if isinstance(plan, dict) else 0,
     }
+    payload.setdefault("diagnostics", {})["current_inventory_windows"] = _current_inventory_window_payload()
     day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
     truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
     truth_report = _load_json(TRUTH_REPORT)
@@ -160,9 +233,9 @@ def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
     win12_total = _as_int(counts.get("window_0_12h"))
     if core_ready > 0:
         new = (
-            "• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sportlogic для линий, "
-            "sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, "
-            f"а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
+            "• Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — "
+            "добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. "
+            f"Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
         )
     else:
         new = (
@@ -231,22 +304,44 @@ def render(payload: dict[str, Any]) -> str:
     counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
 
     if counts:
-        core_odds_values = list(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sportlogic"])
-        core_odds_values = [str(x) for x in core_odds_values if str(x) != "sstats"]
-        if "sportlogic" not in core_odds_values:
-            core_odds_values.append("sportlogic")
-        core_odds = ",".join(sorted(set(core_odds_values)))
-        core_context = ",".join(contract.get("core_context_providers") or ["bzzoiro", "sstats"])
-        block = "\n".join([
+        core_odds_values = [str(x) for x in (contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io"]) if str(x) != "sstats"]
+        core_odds = ",".join(sorted(set(core_odds_values))) or "n/a"
+        core_context = ",".join(sorted(set(str(x) for x in (contract.get("core_context_providers") or ["bzzoiro", "sstats"]))))
+        excluded_rows = contract.get("excluded_core_providers") if isinstance(contract.get("excluded_core_providers"), list) else []
+        excluded_values: list[str] = []
+        for item in excluded_rows:
+            if isinstance(item, dict):
+                provider = str(item.get("provider") or "").strip()
+                reason = str(item.get("reason") or "excluded").strip()
+                if provider:
+                    excluded_values.append(f"{provider} ({reason})")
+            elif str(item).strip():
+                excluded_values.append(str(item).strip())
+        block_lines = [
             "🧭 Progressive core coverage",
-            f"• Core odds/line: {core_odds}",
-            f"• Core context: {core_context}",
+            f"• Active core odds/line: {core_odds}",
+            f"• Active core context: {core_context}",
             f"• Tracked: {_as_int(counts.get('matches_tracked'))} | core odds 2+: {_as_int(counts.get('core_odds_2plus') or counts.get('odds_2plus'))} | core context 2+: {_as_int(counts.get('core_context_2plus') or counts.get('context_2plus'))} | core-ready both: {_as_int(counts.get('core_ready_2plus_both') or counts.get('ready_2plus_both'))}",
             f"• 0–4ч: {_as_int(counts.get('window_0_4h_core_ready_2plus_both') or counts.get('window_0_4h_ready_2plus_both'))}/{_as_int(counts.get('window_0_4h'))} core-ready",
             f"• 0–12ч: {_as_int(counts.get('window_0_12h_core_ready_2plus_both') or counts.get('window_0_12h_ready_2plus_both'))}/{_as_int(counts.get('window_0_12h'))} core-ready",
-        ])
+        ]
+        if excluded_values:
+            block_lines.append(f"• Excluded from active core: {', '.join(excluded_values)}")
+        block = "\n".join(block_lines)
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
         text = _replace_conclusion(text, counts)
+
+    inv = diag.get("current_inventory_windows") if isinstance(diag.get("current_inventory_windows"), dict) else {}
+    if inv:
+        block = "\n".join([
+            "🕒 Current day inventory windows",
+            f"• Active matches: {_as_int(inv.get('active_matches'))} | odds refresh needed: {_as_int(inv.get('matches_needing_odds_refresh'))}",
+            f"• Final pre-kickoff checks: {_as_int(inv.get('final_pre_kickoff_checks'))} | no next regular run: {_as_int(inv.get('no_more_regular_run_before_kickoff'))}",
+            f"• 0–4ч inventory: {_as_int(inv.get('window_0_4h_ready'))}/{_as_int(inv.get('window_0_4h'))} ready | context 2+: {_as_int(inv.get('window_0_4h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_4h_price_2plus'))}",
+            f"• 0–12ч inventory: {_as_int(inv.get('window_0_12h_ready'))}/{_as_int(inv.get('window_0_12h'))} ready | context 2+: {_as_int(inv.get('window_0_12h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_12h_price_2plus'))}",
+        ])
+        text = _insert_before(text, "Coverage truth", block)
+
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
     if truth_counts:

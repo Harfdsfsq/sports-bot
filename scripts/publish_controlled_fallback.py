@@ -800,18 +800,127 @@ def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> s
     return None
 
 
+
+def _dict_at_path(root: dict[str, Any], *path: str) -> dict[str, Any]:
+    current: Any = root
+    for key in path:
+        if not isinstance(current, dict):
+            return {}
+        current = current.get(key)
+    return current if isinstance(current, dict) else {}
+
+
+def publish_coverage_contract(candidate: dict[str, Any]) -> dict[str, Any]:
+    """Return the canonical publication coverage contract for this candidate.
+
+    This is the source of truth for line-source counts.  Context providers such
+    as SStats/ClubElo/Weather must never inflate odds_sources_count.
+    """
+    diag = candidate.get("diagnostics") if isinstance(candidate.get("diagnostics"), dict) else {}
+    direct = diag.get("publish_coverage_contract") if isinstance(diag.get("publish_coverage_contract"), dict) else {}
+    if direct:
+        return direct
+    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    direct = summary.get("publish_coverage_contract") if isinstance(summary.get("publish_coverage_contract"), dict) else {}
+    return direct if isinstance(direct, dict) else {}
+
+
+def api_coverage_consensus(candidate: dict[str, Any]) -> dict[str, Any]:
+    diag = candidate.get("diagnostics") if isinstance(candidate.get("diagnostics"), dict) else {}
+    direct = diag.get("api_coverage_consensus") if isinstance(diag.get("api_coverage_consensus"), dict) else {}
+    if direct:
+        return direct
+    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    direct = summary.get("api_coverage_consensus") if isinstance(summary.get("api_coverage_consensus"), dict) else {}
+    if direct:
+        return direct
+    # Older candidate rows flatten the consensus fields into source_summary.
+    keys = {
+        "exact_books", "exact_books_count", "exact_odds_sources", "exact_odds_sources_count",
+        "exact_offers_count", "exact_source_prices", "source_price_dispersion_pct",
+        "consensus_price_avg", "consensus_price_median",
+    }
+    return {key: summary.get(key) for key in keys if key in summary}
+
+
+def _clean_source_list(values: Any, *, exclude_context: bool = False) -> list[str]:
+    out: list[str] = []
+    blocked = {"sstats", "sstats_form", "clubelo", "weather", "open_meteo", "weatherapi", "context_equiv_supplemental", "model_xg", "ensemble", "market"}
+    for value in _source_values(values):
+        text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+        if not text:
+            continue
+        if exclude_context and text in blocked:
+            continue
+        if text not in out:
+            out.append(text)
+    return out
+
+
+def odds_source_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
+    contract = publish_coverage_contract(candidate)
+    consensus = api_coverage_consensus(candidate)
+    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+
+    contract_sources = _clean_source_list(contract.get("odds_sources"), exclude_context=True)
+    summary_sources = _clean_source_list(summary.get("odds_sources"), exclude_context=True)
+    # For Telegram and tiering use the exact publication contract first.  A
+    # broader source_summary.line_sources may include provider-level hints that
+    # did not actually provide the selected market/line/side price.
+    line_sources = contract_sources or summary_sources
+    if not line_sources:
+        line_sources = _clean_source_list(summary.get("line_sources"), exclude_context=True)
+
+    provider_count = as_int(contract.get("odds_sources_count"), -1)
+    if provider_count < 0:
+        provider_count = as_int(summary.get("odds_sources_count"), 0)
+    if provider_count <= 0:
+        provider_count = len(contract_sources or summary_sources or line_sources)
+
+    # Account-level exact odds sources are useful as price confirmations, but
+    # they are not independent provider sources.  Example: odds_api_io account1
+    # and account2 are bookmaker diversity, not two provider APIs.
+    exact_account_sources = _clean_source_list(consensus.get("exact_odds_sources"), exclude_context=True)
+    exact_accounts_count = as_int(consensus.get("exact_odds_sources_count"), len(exact_account_sources))
+    exact_books = _clean_source_list(consensus.get("exact_books") or consensus.get("exact_line_bookmakers"), exclude_context=False)
+    exact_books_count = as_int(consensus.get("exact_books_count"), len(exact_books))
+
+    return {
+        "odds_sources": line_sources or contract_sources or summary_sources,
+        "odds_sources_count": max(0, provider_count),
+        "exact_account_sources": exact_account_sources,
+        "exact_account_sources_count": max(0, exact_accounts_count),
+        "exact_books": exact_books,
+        "exact_books_count": max(0, exact_books_count),
+        "publish_coverage_passed": bool(summary.get("publish_coverage_passed")) or not bool(summary.get("publish_coverage_reasons")),
+        "publish_coverage_reasons": summary.get("publish_coverage_reasons") or [],
+    }
+
+
+def context_source_metrics(candidate: dict[str, Any], fallback_sources: list[str]) -> dict[str, Any]:
+    contract = publish_coverage_contract(candidate)
+    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    sources = _clean_source_list(contract.get("context_sources") or summary.get("context_sources") or fallback_sources, exclude_context=False)
+    # odds_api_io is a line provider and should not be shown as context confirmation.
+    sources = [src for src in sources if src not in {"odds_api_io", "market", "context_equiv_supplemental", "model_xg"}]
+    return {
+        "context_sources": sources,
+        "context_sources_count": len(sources),
+    }
+
 def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     odds = as_float(candidate.get("odds"), 0.0)
     adjusted = as_float(candidate.get("adjusted_probability"), 0.0)
     model_prob = as_float(candidate.get("model_probability"), 0.0)
     market_prob = as_float(candidate.get("market_probability"), 0.0)
     confidence = as_float(candidate.get("confidence"), 0.0)
-    books = as_int(candidate.get("books_count"), 0)
-    raw_sources = as_int(candidate.get("sources_count"), 0)
-    odds_sources = as_int(candidate.get("odds_sources_count"), raw_sources)
+    coverage = odds_source_metrics(candidate)
     confirmation_sources, confirmation_meta = candidate_confirmation_sources(candidate)
-    declared_confirmation_count = as_int(candidate.get("confirmation_sources_count"), 0)
-    confirmation_sources_count = max(declared_confirmation_count, len(confirmation_sources))
+    context_coverage = context_source_metrics(candidate, confirmation_sources)
+    books = max(as_int(candidate.get("books_count"), 0), int(coverage.get("exact_books_count") or 0))
+    odds_sources = int(coverage.get("odds_sources_count") or 0)
+    confirmation_sources = list(context_coverage.get("context_sources") or confirmation_sources)
+    confirmation_sources_count = int(context_coverage.get("context_sources_count") or len(confirmation_sources))
     sources = confirmation_sources_count
     q = quality_payload(candidate)
     raw_quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), 0.0))
@@ -830,6 +939,11 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
+        "line_sources": coverage.get("odds_sources") or [],
+        "exact_account_sources": coverage.get("exact_account_sources") or [],
+        "exact_account_sources_count": int(coverage.get("exact_account_sources_count") or 0),
+        "publish_coverage_passed": bool(coverage.get("publish_coverage_passed")),
+        "publish_coverage_reasons": coverage.get("publish_coverage_reasons") or [],
         "canonical_edge_pp": canonical_edge_pp,
         "canonical_ev_pct": canonical_ev_pct,
     }
@@ -858,6 +972,11 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
+        "line_sources": coverage.get("odds_sources") or [],
+        "exact_account_sources": coverage.get("exact_account_sources") or [],
+        "exact_account_sources_count": int(coverage.get("exact_account_sources_count") or 0),
+        "publish_coverage_passed": bool(coverage.get("publish_coverage_passed")),
+        "publish_coverage_reasons": coverage.get("publish_coverage_reasons") or [],
         "quality_reasons": quality_reasons(candidate),
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
@@ -943,6 +1062,13 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     allowed_families = env_set(prefix + "ALLOWED_FAMILIES", "")
     if allowed_families and fam not in allowed_families:
         reasons.append(f"tier_{tier.lower()}_family_not_allowed:{fam}")
+    min_odds_sources = env_int(prefix + "MIN_ODDS_SOURCES", 2 if tier == "A" else 1)
+    if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
+        reasons.append(f"tier_{tier.lower()}_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
+    if tier == "B":
+        min_context_sources = env_int(prefix + "MIN_CONTEXT_SOURCES", 3)
+        if int(metrics.get("confirmation_sources_count") or metrics.get("sources_count") or 0) < min_context_sources:
+            reasons.append(f"tier_b_context_sources_below_min:{int(metrics.get('confirmation_sources_count') or metrics.get('sources_count') or 0)}/{min_context_sources}")
     if metrics["books_count"] < env_int(prefix + "MIN_BOOKS", 2):
         reasons.append(f"tier_{tier.lower()}_books_below_min")
     if metrics["confidence"] < env_float(prefix + "MIN_CONFIDENCE", 60.0):
@@ -1030,6 +1156,22 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):
         if int(metrics.get("books_count") or 0) < 2:
             reasons.append("telegram_publish_books_guard")
+
+    odds_sources_count = int(metrics.get("odds_sources_count") or 0)
+    min_public_odds_sources = env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES_FOR_TELEGRAM", 2)
+    hybrid_single_line_allowed = (
+        env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED", True)
+        and tier_name == "B"
+        and odds_sources_count >= 1
+        and int(metrics.get("books_count") or 0) >= env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 2)
+        and int(metrics.get("confirmation_sources_count") or metrics.get("sources_count") or 0) >= env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 3)
+        and float(metrics.get("canonical_edge_pp") or 0.0) >= env_float("CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP", 4.0)
+        and float(metrics.get("canonical_ev_pct") or 0.0) >= env_float("CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT", 7.0)
+        and float(metrics.get("confidence") or 0.0) >= env_float("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE", 76.0)
+    )
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM", True):
+        if odds_sources_count < min_public_odds_sources and not hybrid_single_line_allowed:
+            reasons.append(f"telegram_publish_odds_sources_guard:{odds_sources_count}/{min_public_odds_sources}")
 
     if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", True):
         if int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy":
@@ -1234,6 +1376,8 @@ def build_watchlist(evaluated: list[dict[str, Any]], limit: int | None = None) -
                 "odds_sources_count": metrics.get("odds_sources_count"),
                 "confirmation_sources_count": metrics.get("confirmation_sources_count"),
                 "confirmation_sources": metrics.get("confirmation_sources"),
+                "line_sources": metrics.get("line_sources"),
+                "publish_coverage_reasons": metrics.get("publish_coverage_reasons"),
             },
         })
     return watchlist
@@ -1643,8 +1787,8 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
         f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} "
         f"({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}{source_note}\n"
-        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
-        f"🔎 Подтверждения: {confirmations} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
+        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | context sources: {metrics.get('confirmation_sources_count', 0)}\n"
+        f"🔎 Линии: {', '.join(metrics.get('line_sources') or []) or selected_source(candidate) or 'н/д'} | контекст: {confirmations} | букмекер: {selected_bookmaker(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
         f"🕒 Начало: {kickoff_text(candidate)}\n"
@@ -1765,8 +1909,8 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         )
 
     risk_note = {
-        "уровень A": "контролируемый резерв, уровень A. 2+ линии и нормальный запас ценности.",
-        "уровень B": "контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.",
+        "уровень A": "контролируемый резерв, уровень A. 2+ независимых источника линии и нормальный запас ценности.",
+        "уровень B": "контролируемый резерв, уровень B. 1 источник линии + 2+ букмекера + усиленный контекст; сумма снижена.",
         "уровень C": "контролируемый резерв, уровень C. Пограничный резерв, минимальная тестовая сумма.",
     }.get(tier, "контролируемый резерв")
 
@@ -1785,8 +1929,8 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
         f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}\n"
-        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
-        f"🔎 Подтверждения: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
+        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | context sources: {metrics.get('confirmation_sources_count', 0)}\n"
+        f"🔎 Линии: {', '.join(metrics.get('line_sources') or []) or selected_source(candidate) or 'н/д'} | контекст: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | букмекер: {selected_bookmaker(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
         f"🕒 Начало: {kickoff_text(candidate)}\n"
