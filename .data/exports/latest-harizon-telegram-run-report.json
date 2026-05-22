@@ -6,26 +6,26 @@
       "errors": 0,
       "events": 50,
       "events_total_effective": 50,
-      "overlap": 4,
+      "overlap": 5,
       "requests": 1,
-      "requests_total_effective": 1,
-      "secondary_offers_added": 22,
-      "v2_contexts": 0,
+      "requests_total_effective": 5,
+      "secondary_offers_added": 44,
+      "v2_contexts": 1,
       "v2_errors": 0,
       "v2_events": 19,
-      "v2_lineups_resources": 0,
-      "v2_odds_resources": 0,
-      "v2_requests": 1,
-      "v2_stats_resources": 0
+      "v2_lineups_resources": 1,
+      "v2_odds_resources": 1,
+      "v2_requests": 5,
+      "v2_stats_resources": 1
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 92,
+      "books_2plus": 90,
       "errors": 0,
       "events_req": 0,
-      "matched": 231,
-      "odds_req": 48,
-      "offers": 18579
+      "matched": 218,
+      "odds_req": 44,
+      "offers": 18211
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -41,7 +41,7 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 186,
+      "contexts": 175,
       "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
@@ -52,60 +52,75 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.8105361223220825,
-    "fallback_age_min": 0.2943934440612793,
-    "run_log_age_min": 0.5770587642987569,
-    "signal_stack_age_min": 0.9476455291112263
+    "debug_age_min": 0.7305904428164164,
+    "fallback_age_min": 0.24178600311279297,
+    "run_log_age_min": 0.5054317514101664,
+    "signal_stack_age_min": 0.9811943848927815
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 4,
-    "bzzoiro_secondary_offers_added": 22,
+    "bzzoiro_odds_overlap_with_odds_api_io": 5,
+    "bzzoiro_secondary_offers_added": 44,
     "day_inventory_total": 300,
-    "day_inventory_with_context": 100,
-    "day_inventory_with_odds": 232,
-    "matches_seen": 237,
-    "matches_with_2plus_books": 92,
-    "matches_with_context": 188,
-    "matches_with_offers": 144,
-    "odds_offers_primary": 18579,
-    "ready_for_model": 96,
+    "day_inventory_with_context": 108,
+    "day_inventory_with_odds": 233,
+    "matches_seen": 223,
+    "matches_with_2plus_books": 90,
+    "matches_with_context": 177,
+    "matches_with_offers": 137,
+    "odds_offers_primary": 18211,
+    "ready_for_model": 104,
     "secondary_combinations": {
       "bzzoiro": 1,
-      "bzzoiro+odds_api_io": 4,
-      "odds_api_io": 140
+      "bzzoiro+odds_api_io": 5,
+      "odds_api_io": 132
     }
   },
-  "created_at_utc": "2026-05-22T15:52:21.353531+00:00",
+  "created_at_utc": "2026-05-22T16:22:42.528275+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 0,
+      "contexts_built": 1,
       "enabled": true,
       "errors": 0,
       "events_fetched": 19,
-      "lineups_resources": 0,
-      "metadata_resources": 0,
-      "odds_resources": 0,
-      "requests": 1,
-      "stats_resources": 0,
+      "lineups_resources": 1,
+      "metadata_resources": 1,
+      "odds_resources": 1,
+      "requests": 5,
+      "stats_resources": 1,
       "target_matches": 64
     },
     "coverage_truth": {
       "counts": {
-        "matches_missing_context_2plus": 298,
+        "matches_missing_context_2plus": 291,
         "matches_missing_odds_source_2plus": 300,
         "matches_missing_price_2plus": 300,
-        "matches_ready_for_model": 96,
+        "matches_ready_for_model": 104,
         "matches_ready_for_publish": 0,
         "matches_total": 300,
-        "matches_with_2plus_context_sources": 2,
+        "matches_with_2plus_context_sources": 9,
         "matches_with_2plus_odds_sources": 0,
         "matches_with_2plus_price_confirmations": 0,
-        "matches_with_context": 100,
-        "matches_with_odds": 232
+        "matches_with_context": 108,
+        "matches_with_odds": 233
       },
       "source": {
         "path": ".data/exports/latest-day-inventory-coverage-truth.json"
       }
+    },
+    "current_inventory_windows": {
+      "active_matches": 95,
+      "final_pre_kickoff_checks": 65,
+      "matches_needing_odds_refresh": 9,
+      "no_more_regular_run_before_kickoff": 65,
+      "source": "latest-day-inventory-refresh-plan + coverage-truth",
+      "window_0_12h": 40,
+      "window_0_12h_context_2plus": 0,
+      "window_0_12h_price_2plus": 0,
+      "window_0_12h_ready": 0,
+      "window_0_4h": 40,
+      "window_0_4h_context_2plus": 0,
+      "window_0_4h_price_2plus": 0,
+      "window_0_4h_ready": 0
     },
     "progressive_core_coverage": {
       "contract": {
@@ -348,9 +363,9 @@
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 63,
+    "final_pre_kickoff_checks": 65,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 63,
+    "no_more_regular_run_before_kickoff": 65,
     "seen": 0
   },
   "reasons": [],
@@ -358,54 +373,14 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "FK Komarov",
-        "home_team": "TJ Hluboka Nad Vlatvou",
-        "kickoff_utc": "2026-05-22T16:30:00+00:00",
-        "league_name": "Czechia - Divize A",
-        "match_key": "soccer|komarov|tj hluboka nad vlatvou|2026-05-22",
-        "minutes_to_kickoff": 38.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 155.177,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Tampereen Peli-Toverit",
-        "home_team": "FC LeKi",
-        "kickoff_utc": "2026-05-22T16:30:00+00:00",
-        "league_name": "Finland - Kolmonen",
-        "match_key": "soccer|leki|tampereen peli toverit|2026-05-22",
-        "minutes_to_kickoff": 38.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 155.177,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
         "away_team": "AL Hilal (SDN)",
         "home_team": "Al-Merrikh SC (SDN)",
         "kickoff_utc": "2026-05-22T17:00:00+00:00",
         "league_name": "Rwanda - Premier League",
         "match_key": "soccer|al hilal sdn|al merrikh sdn|2026-05-22",
-        "minutes_to_kickoff": 68.47,
+        "minutes_to_kickoff": 38.03,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 153.177,
+        "priority": 163.323,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -418,61 +393,101 @@
         }
       },
       {
-        "away_team": "TiPS Vantaa",
-        "home_team": "Hps/2",
-        "kickoff_utc": "2026-05-22T16:45:00+00:00",
-        "league_name": "Finland - Kolmonen",
-        "match_key": "soccer|hps 2|tips vantaa|2026-05-22",
-        "minutes_to_kickoff": 53.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 150.177,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Kings SC Kuopio",
-        "home_team": "SC Zulimanit",
-        "kickoff_utc": "2026-05-22T16:45:00+00:00",
-        "league_name": "Finland - Kolmonen",
-        "match_key": "soccer|kings kuopio|zulimanit|2026-05-22",
-        "minutes_to_kickoff": 53.47,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 150.177,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FK Seko Louny",
-        "home_team": "FC Chomutov",
-        "kickoff_utc": "2026-05-22T16:30:00+00:00",
+        "away_team": "SK Slany",
+        "home_team": "FC Slavia Karlovy Vary",
+        "kickoff_utc": "2026-05-22T17:00:00+00:00",
         "league_name": "Czechia - Divize B",
-        "match_key": "soccer|chomutov|seko louny|2026-05-22",
-        "minutes_to_kickoff": 38.47,
+        "match_key": "soccer|sk slany|slavia karlovy vary|2026-05-22",
+        "minutes_to_kickoff": 38.03,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.177,
+        "priority": 155.323,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T15:52:16.787364+00:00",
+          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Fana IL",
+        "home_team": "Austevoll",
+        "kickoff_utc": "2026-05-22T17:00:00+00:00",
+        "league_name": "Norway - 3rd Division Group 3",
+        "match_key": "soccer|austevoll|fana il|2026-05-22",
+        "minutes_to_kickoff": 38.03,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 155.323,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "AS Camberene",
+        "home_team": "AS Pikine",
+        "kickoff_utc": "2026-05-22T17:00:00+00:00",
+        "league_name": "Senegal - Ligue 1",
+        "match_key": "soccer|as camberene|as pikine|2026-05-22",
+        "minutes_to_kickoff": 38.03,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 155.323,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Casa Sport",
+        "home_team": "ASC Jaraaf",
+        "kickoff_utc": "2026-05-22T17:00:00+00:00",
+        "league_name": "Senegal - Ligue 1",
+        "match_key": "soccer|asc jaraaf|casa sport|2026-05-22",
+        "minutes_to_kickoff": 38.03,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 155.323,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Hlm",
+        "home_team": "Sonacos",
+        "kickoff_utc": "2026-05-22T17:00:00+00:00",
+        "league_name": "Senegal - Ligue 1",
+        "match_key": "soccer|hlm|sonacos|2026-05-22",
+        "minutes_to_kickoff": 38.03,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 155.323,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T15:52:09.994930+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
           "needs_odds_refresh": false,
           "no_more_regular_run_before_kickoff": true
         }
@@ -482,7 +497,7 @@
   "status": "lines_but_no_raw_candidates",
   "status_ru": "🟠 линии есть, raw-кандидатов нет",
   "telegram_sent": true,
-  "text_length": 2224,
+  "text_length": 2480,
   "top_reason": "no_viable_controlled_fallback",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
