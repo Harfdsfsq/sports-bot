@@ -280,208 +280,6 @@ def candidate_confirmation_sources(candidate: dict[str, Any]) -> tuple[list[str]
     return sorted(sources), relevance
 
 
-
-
-def normalized_match_key(value: Any) -> str:
-    return str(value or "").strip().lower()
-
-
-def candidate_team_tokens(candidate: dict[str, Any]) -> set[str]:
-    tokens: set[str] = set()
-    for field in ("match_key", "home_team", "away_team", "match_name"):
-        text = str(candidate.get(field) or "").lower()
-        for part in re.split(r"[^a-z0-9а-яё]+", text):
-            if len(part) >= 4:
-                tokens.add(part)
-    return tokens
-
-
-def load_strict_coverage_truth() -> dict[str, Any]:
-    for path in (
-        Path("artifacts/run-bot/latest-day-inventory-coverage-truth.json"),
-        Path("artifacts/latest-day-inventory-coverage-truth.json"),
-        Path(".data/exports/latest-day-inventory-coverage-truth.json"),
-    ):
-        payload = load_json(path, {})
-        if isinstance(payload, dict) and isinstance(payload.get("rows"), list):
-            return payload
-    return {}
-
-
-def strict_truth_for_candidate(candidate: dict[str, Any]) -> dict[str, Any]:
-    """Return day-inventory strict truth for a candidate.
-
-    Candidate-level fields can be optimistic: rescue rows may carry provider/source
-    counters copied from enrichment layers, while the authoritative publication
-    contract is the day-inventory coverage truth. Telegram fallback must therefore
-    re-check the selected match against this matrix before publication.
-    """
-    truth = load_strict_coverage_truth()
-    rows = truth.get("rows") if isinstance(truth, dict) else None
-    if not isinstance(rows, list):
-        return {"available": False, "reason": "coverage_truth_missing"}
-
-    candidate_key = normalized_match_key(candidate.get("match_key"))
-    candidate_kickoff = parse_dt(candidate.get("commence_time") or candidate.get("start_time") or candidate.get("kickoff"))
-    tokens = candidate_team_tokens(candidate)
-
-    best: dict[str, Any] | None = None
-    best_score = -1
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        row_key = normalized_match_key(row.get("match_key"))
-        score = 0
-        if candidate_key and row_key == candidate_key:
-            score += 100
-        else:
-            row_text = " ".join(str(row.get(k) or "") for k in ("match_key", "home_team", "away_team", "league_name")).lower()
-            row_tokens = {part for part in re.split(r"[^a-z0-9а-яё]+", row_text) if len(part) >= 4}
-            overlap = len(tokens & row_tokens)
-            if overlap >= 2:
-                score += 20 + overlap
-        row_kickoff = parse_dt(row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff"))
-        if candidate_kickoff is not None and row_kickoff is not None:
-            delta = abs((candidate_kickoff - row_kickoff).total_seconds())
-            if delta <= 3 * 3600:
-                score += 10
-            if delta <= 15 * 60:
-                score += 20
-        if score > best_score:
-            best_score = score
-            best = row
-
-    if best is None or best_score <= 0:
-        return {"available": True, "matched": False, "reason": "candidate_not_found_in_coverage_truth"}
-
-    price_confirmations = as_int(best.get("price_confirmations"), 0)
-    odds_sources_count = as_int(best.get("odds_sources_count"), 0)
-    context_sources_count = as_int(best.get("context_sources_count"), 0)
-    min_price_confirmations = as_int(best.get("need_price_confirmations"), 2)
-    min_odds_sources = max(2, as_int(best.get("need_odds_sources"), env_int("PUBLISH_MIN_ODDS_SOURCES", 2)))
-    min_context_sources = max(2, as_int(best.get("need_context_sources"), env_int("PUBLISH_MIN_CONTEXT_SOURCES", 2)))
-    missing = [str(item) for item in (best.get("missing") or []) if str(item).strip()]
-    ready = bool(best.get("ready_for_publish"))
-    if not ready:
-        ready = (
-            price_confirmations >= min_price_confirmations
-            and odds_sources_count >= min_odds_sources
-            and context_sources_count >= min_context_sources
-            and not missing
-        )
-    return {
-        "available": True,
-        "matched": True,
-        "matched_score": best_score,
-        "match_key": best.get("match_key"),
-        "ready_for_publish": ready,
-        "price_confirmations": price_confirmations,
-        "odds_sources_count": odds_sources_count,
-        "context_sources_count": context_sources_count,
-        "min_price_confirmations": min_price_confirmations,
-        "min_odds_sources": min_odds_sources,
-        "min_context_sources": min_context_sources,
-        "missing": missing,
-        "odds_sources": best.get("odds_sources") or [],
-        "context_sources": best.get("context_sources") or [],
-    }
-
-
-def single_line_context_publish_allowed(candidate: dict[str, Any], metrics: dict[str, Any], tier_name: str) -> tuple[bool, list[str]]:
-    """Controlled Tier B exception: one line provider may publish only with strong context.
-
-    The project rules prefer 2+ independent line sources. In practice the free
-    line APIs have sparse overlap, so Tier B can use one authoritative line
-    provider when that provider has multi-book confirmation and the context stack
-    is materially stronger. This never makes SStats a price source; it is context
-    only.
-    """
-    if not env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED", True):
-        return False, ["single_line_context_mode_disabled"]
-    if tier_name != "B":
-        return False, ["single_line_context_only_tier_b"]
-
-    fam = family_norm(candidate)
-    allowed = env_set("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_ALLOWED_FAMILIES", "totals,spreads")
-    if fam not in allowed:
-        return False, [f"single_line_context_family_not_allowed:{fam}"]
-
-    truth = metrics.get("strict_coverage_truth") or {}
-    odds_sources = int(truth.get("odds_sources_count") or metrics.get("odds_sources_count") or 0)
-    price_confirmations = int(truth.get("price_confirmations") or metrics.get("books_count") or 0)
-    context_sources = max(
-        int(truth.get("context_sources_count") or 0),
-        int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0),
-    )
-    books = int(metrics.get("books_count") or 0)
-    edge = float(metrics.get("canonical_edge_pp") or 0.0)
-    ev = float(metrics.get("canonical_ev_pct") or 0.0)
-    confidence = float(metrics.get("confidence") or 0.0)
-    quality = float(metrics.get("quality_score") or 0.0)
-
-    reasons: list[str] = []
-    if odds_sources < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_ODDS_SOURCES", 1):
-        reasons.append(f"single_line_context_odds_sources_below_min:{odds_sources}/1")
-    if price_confirmations < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_PRICE_CONFIRMATIONS", 2):
-        reasons.append(f"single_line_context_price_confirmations_below_min:{price_confirmations}/2")
-    if books < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_BOOKS", 2):
-        reasons.append(f"single_line_context_books_below_min:{books}/2")
-    min_context = env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONTEXT_SOURCES", 3)
-    if context_sources < min_context:
-        reasons.append(f"single_line_context_sources_below_min:{context_sources}/{min_context}")
-    min_edge = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EDGE_PP", 4.0)
-    if edge < min_edge:
-        reasons.append(f"single_line_context_edge_below_min:{edge:.1f}/{min_edge:.1f}")
-    min_ev = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EV_PCT", 7.0)
-    if ev < min_ev:
-        reasons.append(f"single_line_context_ev_below_min:{ev:.1f}/{min_ev:.1f}")
-    min_conf = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONFIDENCE", 76.0)
-    if confidence < min_conf:
-        reasons.append(f"single_line_context_confidence_below_min:{confidence:.1f}/{min_conf:.1f}")
-    min_quality = env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY", 78.0)
-    if quality < min_quality:
-        reasons.append(f"single_line_context_quality_below_min:{quality:.1f}/{min_quality:.1f}")
-
-    if env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_REQUIRE_XG_SANITY", True):
-        xg = metrics.get("xg_sanity") or {}
-        if fam in {"totals", "teamtotals"}:
-            if not bool(xg.get("enabled")):
-                reasons.append("single_line_context_missing_xg_sanity")
-            elif not bool(xg.get("xg_direction_ok", True)):
-                reasons.append("single_line_context_xg_direction_conflict")
-
-    if not reasons:
-        metrics["line_source_mode"] = "single_line_plus_context"
-        metrics["single_line_context_policy"] = {
-            "tier": tier_name,
-            "odds_sources_count": odds_sources,
-            "price_confirmations": price_confirmations,
-            "books_count": books,
-            "context_sources_count": context_sources,
-            "min_context_sources": min_context,
-            "min_edge_pp": min_edge,
-            "min_ev_pct": min_ev,
-            "min_confidence": min_conf,
-            "min_quality": min_quality,
-        }
-        return True, []
-    return False, reasons
-
-
-def quality_stop_reject_reasons(metrics: dict[str, Any], *, prefix: str = "telegram") -> list[str]:
-    if not env_bool("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", True):
-        return []
-    allowed = env_set("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "")
-    reasons: list[str] = []
-    for item in metrics.get("quality_reasons") or []:
-        reason = str(item or "").strip().lower()
-        if not reason:
-            continue
-        if reason not in allowed:
-            reasons.append(f"{prefix}_quality_stop_not_allowed:{reason}")
-    return reasons
-
-
 def as_float(value: Any, default: float = 0.0) -> float:
     try:
         if value is None or value == "":
@@ -1039,7 +837,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     xg_sanity = xg_sanity_metrics(candidate, adjusted)
     btts_sanity = btts_sanity_metrics(candidate, adjusted)
     dnb_sanity = dnb_sanity_metrics(candidate, adjusted)
-    strict_truth = strict_truth_for_candidate(candidate) if env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", True) else {"available": False, "disabled": True}
 
     return {
         "odds": round(odds, 4),
@@ -1062,7 +859,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
         "quality_reasons": quality_reasons(candidate),
-        "strict_coverage_truth": strict_truth,
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
         "dnb_sanity": dnb_sanity,
@@ -1214,10 +1010,9 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
                 reasons.append("tier_a_dnb_confirmation_missing")
 
     q_reasons = [r.lower() for r in metrics.get("quality_reasons") or []]
-    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", ""))
-    for quality_stop in q_reasons:
-        if quality_stop not in allowed_stops:
-            reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{quality_stop}")
+    allowed_stops = env_set(prefix + "ALLOWED_QUALITY_STOPS", os.getenv("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "bad_historical_segment_guard,no_bet_quality_score_guard,post_calibration_probability_guard,post_calibration_edge_guard"))
+    if q_reasons and q_reasons[0] not in allowed_stops:
+        reasons.append(f"tier_{tier.lower()}_quality_stop_not_allowed:{q_reasons[0]}")
     return reasons
 
 
@@ -1252,35 +1047,6 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
         confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
         if confirmation_count < min_sources:
             reasons.append(f"controlled_fallback_confirmation_sources_below_min:{confirmation_count}/{min_sources}")
-
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", True):
-        truth = metrics.get("strict_coverage_truth") or {}
-        single_line_allowed = False
-        single_line_reasons: list[str] = []
-        if bool(truth.get("matched")):
-            single_line_allowed, single_line_reasons = single_line_context_publish_allowed(candidate, metrics, tier_name)
-        if not bool(truth.get("matched")):
-            reasons.append(str(truth.get("reason") or "strict_coverage_truth_not_matched"))
-        elif not bool(truth.get("ready_for_publish")) and not single_line_allowed:
-            if int(truth.get("price_confirmations") or 0) < int(truth.get("min_price_confirmations") or 2):
-                reasons.append(
-                    f"strict_truth_price_confirmations_below_min:{int(truth.get('price_confirmations') or 0)}/{int(truth.get('min_price_confirmations') or 2)}"
-                )
-            if int(truth.get("odds_sources_count") or 0) < int(truth.get("min_odds_sources") or 2):
-                reasons.append(
-                    f"strict_truth_odds_sources_below_min:{int(truth.get('odds_sources_count') or 0)}/{int(truth.get('min_odds_sources') or 2)}"
-                )
-            if int(truth.get("context_sources_count") or 0) < int(truth.get("min_context_sources") or 2):
-                reasons.append(
-                    f"strict_truth_context_sources_below_min:{int(truth.get('context_sources_count') or 0)}/{int(truth.get('min_context_sources') or 2)}"
-                )
-            for missing_item in truth.get("missing") or []:
-                reasons.append(f"strict_truth_missing:{missing_item}")
-            reasons.extend(single_line_reasons)
-        elif single_line_allowed:
-            metrics["strict_truth_single_line_context_override"] = True
-
-    reasons.extend(quality_stop_reject_reasons(metrics, prefix="telegram"))
 
     # If all prices come from one provider, proxy signals need stronger numeric confirmation.
     # This avoids "looks good but only one data pipeline" publications while still allowing
@@ -1533,6 +1299,40 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
             return env_bool("CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME", False)
         return earliest <= kickoff <= latest
 
+    def row_post_quality_canonical_metrics(row: dict[str, Any]) -> dict[str, float]:
+        odds = as_float(row.get("selected_odds"), 0.0) or as_float(row.get("odds"), 0.0)
+        diag = row.get("diagnostics") if isinstance(row.get("diagnostics"), dict) else {}
+        quality = diag.get("quality") if isinstance(diag.get("quality"), dict) else {}
+        adjusted = (
+            as_float(quality.get("final_adjusted_probability"), 0.0)
+            or as_float(row.get("adjusted_probability"), 0.0)
+            or as_float(row.get("final_probability"), 0.0)
+            or as_float(row.get("canonical_adjusted_probability"), 0.0)
+            or as_float(row.get("probability_used_for_ev"), 0.0)
+            or as_float(row.get("model_probability"), 0.0)
+        )
+        implied = (1.0 / odds) if odds > 1.0 else as_float(row.get("selected_implied_probability"), as_float(row.get("implied_probability"), 0.0))
+        ev_pct = ((adjusted * odds) - 1.0) * 100.0 if odds > 1.0 and adjusted > 0 else -999.0
+        edge_pp = (adjusted - implied) * 100.0 if adjusted > 0 and implied > 0 else -999.0
+        return {"odds": odds, "adjusted_probability": adjusted, "implied": implied, "canonical_ev_pct": ev_pct, "canonical_edge_pp": edge_pp}
+
+    def row_allowed_for_fallback_pool(source: str, row: dict[str, Any]) -> bool:
+        if not env_bool("CONTROLLED_FALLBACK_POOL_CANONICAL_VALUE_PREFILTER_ENABLED", True):
+            return True
+        metrics = row_post_quality_canonical_metrics(row)
+        min_ev = env_float("CONTROLLED_FALLBACK_POOL_MIN_CANONICAL_EV_PCT", 0.0)
+        min_edge = env_float("CONTROLLED_FALLBACK_POOL_MIN_CANONICAL_EDGE_PP", 0.0)
+        if metrics["canonical_ev_pct"] < min_ev or metrics["canonical_edge_pp"] < min_edge:
+            counts[f"{source}_canonical_negative_value_prefilter"] += 1
+            try:
+                source_summary = row.setdefault("source_summary", {})
+                if isinstance(source_summary, dict):
+                    source_summary["fallback_pool_prefilter_reject"] = {k: round(v, 4) for k, v in metrics.items()}
+            except Exception:
+                pass
+            return False
+        return True
+
     def payload_is_usable(source: str, payload: Any) -> bool:
         if not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True):
             return True
@@ -1559,6 +1359,8 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
                 continue
             if not row_in_current_window(row):
                 counts[f"{source}_stale_or_outside_window"] += 1
+                continue
+            if not row_allowed_for_fallback_pool(source, row):
                 continue
             key = dedupe_key(row)
             if key in seen:
@@ -1829,9 +1631,7 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
     xg_line += sanity_lines(metrics)
 
     source_note = ""
-    if metrics.get("line_source_mode") == "single_line_plus_context":
-        source_note = " | 1 line source + усиленный контекст, сниженный риск"
-    elif int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
+    if int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
         source_note = " | один источник, сниженный риск"
     confirmations = ", ".join(metrics.get("confirmation_sources") or []) or "нет"
 
@@ -1966,7 +1766,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
 
     risk_note = {
         "уровень A": "контролируемый резерв, уровень A. 2+ линии и нормальный запас ценности.",
-        "уровень B": "контролируемый резерв, уровень B. 1 основной источник линий допустим только при 2+ букмекерах, усиленном контексте и повышенном value-пороге; сумма снижена.",
+        "уровень B": "контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.",
         "уровень C": "контролируемый резерв, уровень C. Пограничный резерв, минимальная тестовая сумма.",
     }.get(tier, "контролируемый резерв")
 
@@ -1984,7 +1784,7 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"💸 Коэффициент: {metrics['odds']:.2f}\n"
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
-        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}{' | 1 line source + context' if metrics.get('line_source_mode') == 'single_line_plus_context' else ''}\n"
+        f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}\n"
         f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
         f"🔎 Подтверждения: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
@@ -1993,7 +1793,6 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"💰 Сумма ставки: {stake:.2f} (ограничение риска)"
         f"{xg_line}\n"
         "📝 Комментарий: ставка разрешена только после повторного пересчёта от выбранного коэффициента и проверки времени матча. "
-        "Для уровня B допускается один независимый источник линий только при 2+ букмекерах, 3+ контекстных подтверждениях и повышенном value-пороге. "
         "Если матч уже начался или вышел за окно публикации, резервный публикователь такую ставку не отправляет."
     )
 

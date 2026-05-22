@@ -1,28 +1,19 @@
-# sports-bot run 262909 follow-up patch
+# sports-bot run 262931 follow-up patch
 
-## Почему патч нужен
+## Причина
+Свежий запуск 22.05.2026 17:43 показал две проблемы:
 
-В запуске `run-bot-26290903265` fallback увидел 2 reserve-кандидата, но оба имели отрицательную canonical value после пересчёта. Эти кандидаты появились из controlled-consensus rescue: слой строил резервные строки по paired consensus, даже если выбранный коэффициент уже хуже fair probability по консенсусу.
+1. `latest-progressive-active-core-budget-patch.json` уже исключил SportLogic при `grant=0`, но Telegram v8 успел отрендерить старый progressive contract и показал SportLogic как active core.
+2. В controlled fallback попал reserve-кандидат с отрицательной canonical value после quality/historical calibration (`EV -15.5%`). Ранее pre-quality значение было положительным, потому что `canonical_adjusted_probability` сохранялся до качества.
 
-Также отчёт показывал SportLogic как active core line provider, хотя quota contract дал `sportlogic: 0`.
+## Изменения
+- `scripts/send_harizon_telegram_run_report_v8.py` теперь сам мержит `latest-progressive-active-core-budget-patch.json` в progressive contract перед рендером и печатает `Active core ...` + `Excluded from active core`.
+- `scripts/publish_controlled_fallback.py` фильтрует fallback-pool по post-quality canonical EV/edge до evaluation, чтобы negative-value rescue rows не попадали в Telegram no-pick reserve list.
+- `app/services/candidate_value_runtime_patch.py` предпочитает `diagnostics.quality.final_adjusted_probability` при пересчёте canonical value.
+- `app/services/__init__.py` безопасно устанавливает active-core и rescue-consensus patches.
 
-## Что меняется
-
-1. `app/services/controlled_rescue_consensus_guard_patch.py`
-   - блокирует rescue-кандидата до качества, если `consensus_probability - selected_implied_probability < 0`;
-   - пишет `.data/exports/latest-controlled-rescue-consensus-guard.json`.
-
-2. `app/services/progressive_active_core_budget_patch.py`
-   - после записи progressive plan исключает provider из active core, если в per-run contract у него grant `0` или provider disabled;
-   - пишет `.data/exports/latest-progressive-active-core-budget-patch.json`.
-
-3. `app/services/__init__.py`
-   - устанавливает оба патча автоматически.
-
-4. Тесты:
-   - `tests/test_controlled_rescue_consensus_guard_patch.py`
-   - `tests/test_progressive_active_core_budget_patch.py`
-
-## Важно
-
-Патч не ослабляет публикацию. Он только убирает отрицательные market-consensus rescue-кандидаты раньше и исправляет misleading core coverage report.
+## Что не ослаблено
+- Negative EV всё ещё блокируется.
+- `bad_historical_segment_guard` всё ещё блокирует публикацию.
+- SStats не становится источником линий.
+- SportLogic не считается active core при zero budget.

@@ -67,7 +67,33 @@ def _selected_odds(candidate: Any) -> float:
     return _as_float(getattr(candidate, "selected_odds", None), 0.0) or _as_float(getattr(candidate, "odds", None), 0.0)
 
 
+def _quality_final_probability(candidate: Any) -> float:
+    """Return the latest post-quality calibrated probability when available.
+
+    Earlier runtime patches stored canonical_adjusted_probability before the
+    quality/historical calibration stage. In live runs this made pre-quality
+    rows look positive while Telegram fallback later rejected them as negative
+    after final_adjusted_probability was applied. Prefer the post-quality value
+    from diagnostics.quality whenever it exists.
+    """
+    try:
+        diag = getattr(candidate, "diagnostics", None)
+        if isinstance(diag, dict):
+            quality = diag.get("quality")
+            if isinstance(quality, dict):
+                for key in ("final_adjusted_probability", "final_probability", "probability_used_for_ev"):
+                    value = _as_float(quality.get(key), 0.0)
+                    if value > 0:
+                        return value
+    except Exception:
+        pass
+    return 0.0
+
+
 def _adjusted_probability(candidate: Any) -> float:
+    post_quality = _quality_final_probability(candidate)
+    if post_quality > 0:
+        return post_quality
     return (
         _as_float(getattr(candidate, "canonical_adjusted_probability", None), 0.0)
         or _as_float(getattr(candidate, "probability_used_for_ev", None), 0.0)

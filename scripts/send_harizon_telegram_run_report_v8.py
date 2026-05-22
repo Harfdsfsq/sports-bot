@@ -3,9 +3,8 @@ from __future__ import annotations
 """HARIZON Telegram run report v8.
 
 Extends v7 with progressive core coverage metrics. The core contract is:
-- active core line/odds sources from latest-progressive-coverage-plan.json;
-- active core context sources from latest-progressive-coverage-plan.json.
-Disabled/zero-budget providers are not displayed as active core sources.
+- core line/odds sources: odds_api_io + bzzoiro + sportlogic;
+- core context sources: sstats + bzzoiro.
 
 The report also normalizes runtime-patched SStats counters: the provider wrapper
 stores real v1 numbers under source_stats.sstats.v1_stats / v1_* fields, while
@@ -20,6 +19,7 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
+ACTIVE_CORE_PATCH = EXPORT_DIR / "latest-progressive-active-core-budget-patch.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 
@@ -55,10 +55,34 @@ def _load_progressive_plan() -> dict[str, Any]:
     try:
         if PROGRESSIVE_PLAN.exists() and PROGRESSIVE_PLAN.stat().st_size > 0:
             payload = json.loads(PROGRESSIVE_PLAN.read_text(encoding="utf-8"))
-            return payload if isinstance(payload, dict) else {}
+            if not isinstance(payload, dict):
+                payload = {}
+        else:
+            payload = {}
     except Exception:
-        return {}
-    return {}
+        payload = {}
+
+    # The active-core budget patch can be written after the progressive plan but
+    # before/around Telegram rendering. Merge it here so the report never labels
+    # a disabled/zero-budget provider (SportLogic in recent runs) as active.
+    try:
+        active = _load_json(ACTIVE_CORE_PATCH)
+        if active:
+            contract = dict(payload.get("contract") or {})
+            if isinstance(active.get("active_core_odds_providers"), list):
+                contract["core_odds_providers"] = [str(x) for x in active.get("active_core_odds_providers") or []]
+            if isinstance(active.get("active_core_context_providers"), list):
+                contract["core_context_providers"] = [str(x) for x in active.get("active_core_context_providers") or []]
+            if isinstance(active.get("excluded_core_providers"), list):
+                contract["excluded_core_providers"] = active.get("excluded_core_providers") or []
+            active_names = set(contract.get("core_odds_providers") or []) | set(contract.get("core_context_providers") or [])
+            contract["core_providers"] = sorted(active_names)
+            contract["reason"] = "active core merged from budget patch; disabled/zero-budget providers excluded"
+            payload["contract"] = contract
+            payload.setdefault("diagnostics", {})["active_core_budget_patch_merged_in_renderer"] = True
+    except Exception:
+        pass
+    return payload
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -160,19 +184,19 @@ def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
     if win12_total <= 0:
         new = (
             "• Progressive coverage не видит матчей в ближайшие 12 часов в накопленном state. "
-            "Это не повод ослаблять guards: нужно проверить свежесть kickoff_utc/target-date state и продолжать добор core coverage "
+            "Это не повод ослаблять guards: нужно проверить свежесть kickoff_utc/target-date state и продолжать добор active core coverage "
             f"для дневного инвентаря. Core-ready за день: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
         )
     elif core_ready > 0:
         new = (
-            "• Progressive coverage считает активный core-contract из включённых провайдеров. Главный gap сейчас — "
+            "• Progressive coverage считает active core-contract только из реально включённых провайдеров. Главный gap сейчас — "
             "добор Bzzoiro/SStats и второго live odds source на ближайшие окна, а не ослабление guards. "
             f"Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
         )
     else:
         new = (
-            "• Progressive coverage включён, но core-ready 2+ ещё не накоплен. Нужно добирать именно active core gaps: "
-            "Bzzoiro/SStats по контексту и второй live odds source по матчам ближайшего окна; supplemental источники не закрывают core-дырки."
+            "• Progressive coverage включён, но active core-ready 2+ ещё не накоплен. Нужно добирать именно active core gaps: "
+            "Bzzoiro/SStats по контексту и второй live odds source по ближайшему окну; supplemental источники не закрывают core-дырки."
         )
     return text.replace(old, new)
 
@@ -209,7 +233,16 @@ def render(payload: dict[str, Any]) -> str:
     if counts:
         core_odds_values = [str(x) for x in (contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io"]) if str(x) != "sstats"]
         core_context_values = [str(x) for x in (contract.get("core_context_providers") or ["bzzoiro", "sstats"])]
-        excluded = [str(x) for x in (contract.get("excluded_core_providers") or [])]
+        excluded_rows = contract.get("excluded_core_providers") if isinstance(contract.get("excluded_core_providers"), list) else []
+        excluded_values = []
+        for item in excluded_rows:
+            if isinstance(item, dict):
+                provider = str(item.get("provider") or "").strip()
+                reason = str(item.get("reason") or "excluded").strip()
+                if provider:
+                    excluded_values.append(f"{provider} ({reason})")
+            elif str(item).strip():
+                excluded_values.append(str(item).strip())
         core_odds = ",".join(sorted(set(core_odds_values))) or "n/a"
         core_context = ",".join(sorted(set(core_context_values))) or "n/a"
         block_lines = [
@@ -220,8 +253,8 @@ def render(payload: dict[str, Any]) -> str:
             f"• 0–4ч: {_as_int(counts.get('window_0_4h_core_ready_2plus_both') or counts.get('window_0_4h_ready_2plus_both'))}/{_as_int(counts.get('window_0_4h'))} core-ready",
             f"• 0–12ч: {_as_int(counts.get('window_0_12h_core_ready_2plus_both') or counts.get('window_0_12h_ready_2plus_both'))}/{_as_int(counts.get('window_0_12h'))} core-ready",
         ]
-        if excluded:
-            block_lines.append(f"• Excluded from active core: {','.join(sorted(set(excluded)))}")
+        if excluded_values:
+            block_lines.append(f"• Excluded from active core: {', '.join(excluded_values)}")
         block = "\n".join(block_lines)
         text = _insert_before(text, "🚫 Почему не опубликовано", block)
         text = _replace_conclusion(text, counts)
