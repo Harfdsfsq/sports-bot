@@ -11,8 +11,10 @@ ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = ROOT / '.data' / 'exports' / 'latest-core-line-bookmaker-universe.json'
 _INSTALLED = False
 
-CORE_LINE_SOURCES = {'sstats', 'bzzoiro', 'sportlogic'}
+CORE_LINE_SOURCES = {'bzzoiro', 'sportlogic'}
 PRIMARY_LINE_SOURCES = {'odds_api_io', 'bzzoiro'}
+SINGLE_LINE_ENV = 'CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE'
+HYBRID_ENV = 'CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED'
 
 
 def _write(payload: dict[str, Any]) -> None:
@@ -42,7 +44,7 @@ def _offer_source(offer: Any) -> str:
 
 
 def _collect_external_books(factory: Any, offers_by_match: dict[str, list[Any]]) -> tuple[set[str], dict[str, Any]]:
-    allow_single_source = _truthy(os.getenv('CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE'), False)
+    allow_single_source = _truthy(os.getenv(SINGLE_LINE_ENV), _truthy(os.getenv(HYBRID_ENV), False))
     books: set[str] = set()
     stats = {
         'matches_seen': 0,
@@ -127,7 +129,9 @@ def install() -> dict[str, Any]:
     report: dict[str, Any] = {
         'status': 'starting',
         'created_at_utc': datetime.now(UTC).isoformat(),
-        'allow_single_source': _truthy(os.getenv('CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE'), False),
+        'allow_single_source': _truthy(os.getenv(SINGLE_LINE_ENV), _truthy(os.getenv(HYBRID_ENV), False)),
+        'core_line_sources': sorted(CORE_LINE_SOURCES),
+        'note': 'SStats is intentionally excluded from line sources; it is context only.',
     }
     try:
         _install_candidate_factory_patch(report)

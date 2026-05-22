@@ -1,57 +1,13 @@
-# HARIZON hybrid publication policy patch
+# HARIZON hybrid candidate factory follow-up
 
-Дата: 2026-05-22
+Причина патча: в запуске 22.05.2026 10:24 гибридные Tier B-флаги были включены, но candidate factory всё ещё работала как strict two-source layer (`allow_single_source=false`). Из-за этого большинство матчей с одним line provider и несколькими контекстами не попадали в пул controlled fallback.
 
-## Что меняется
+Изменения:
+- `MIN_SOURCES_PUBLISH=1` только для построения candidate pool; строгий publish-contract остаётся через `PUBLISH_MIN_ODDS_SOURCES=2` и fallback Tier A.
+- Включён `CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE=true` для гибридного режима.
+- `MARKET_DERIVED_MIN_SOURCES=1`, чтобы market-derived кандидаты с одним line provider могли попасть в pre-quality pool.
+- SStats удалён из `CORE_LINE_SOURCES`; он остаётся только контекстом.
+- Bzzoiro и SportLogic остаются line sources только при реальных odds/offers.
+- Добавлены регресс-тесты на single-line candidate factory policy.
 
-Вводится гибридная схема публикации controlled fallback:
-
-- **Tier A**: прежний строгий режим — требуется `2+ independent odds sources`, `2+ price confirmations`, `2+ context sources`, чистые quality/xG/value guards.
-- **Tier B**: разрешён `1 independent odds source`, только если одновременно есть:
-  - `2+` подтверждения цены/букмекера;
-  - `3+` контекстных подтверждения;
-  - market family только `totals` или `spreads`;
-  - canonical edge не ниже `4.0 п.п.`;
-  - EV не ниже `7.0%`;
-  - confidence не ниже `76.0%`;
-  - quality не ниже `78.0`;
-  - xG/market sanity не конфликтует со ставкой;
-  - quality stops не запрещают публикацию.
-- **Tier C**: остаётся watch-only, если явно не включён отдельным флагом.
-
-Важно: SStats не становится источником текущих линий. Он остаётся источником контекста. Bzzoiro может быть источником линий только через реальные odds/comparison endpoints, а Bzzoiro prediction/xG/stats считаются контекстом.
-
-## Изменённые файлы
-
-- `.github/workflows/run-bot.yml`
-- `scripts/publish_controlled_fallback.py`
-- `scripts/apply_publication_family_policy.py`
-- `scripts/apply_harizon_runtime_policy.py`
-- `scripts/apply_per_run_api_quota_contract.py`
-- `tests/test_controlled_fallback_single_line_context.py`
-
-## Проверка
-
-```bash
-python -m pytest tests/test_controlled_fallback_single_line_context.py -q
-# 3 passed
-
-python -m pytest -q
-# 48 passed
-```
-
-## Ключевые env-флаги
-
-```env
-CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED=true
-CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_ALLOWED_FAMILIES=totals,spreads
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_ODDS_SOURCES=1
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_PRICE_CONFIRMATIONS=2
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_BOOKS=2
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONTEXT_SOURCES=3
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EDGE_PP=4.0
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EV_PCT=7.0
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONFIDENCE=76.0
-CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY=78.0
-CONTROLLED_FALLBACK_SINGLE_LINE_REQUIRE_XG_SANITY=true
-```
+Важно: этот патч не разрешает публиковать отрицательный EV или `bad_historical_segment_guard`. Он только позволяет Tier B увидеть больше кандидатов, после чего final fallback всё равно проверяет EV/edge/context/xG/quality.

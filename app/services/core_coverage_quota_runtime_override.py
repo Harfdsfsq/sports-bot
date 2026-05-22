@@ -197,6 +197,8 @@ def install() -> dict[str, Any]:
         "SECONDARY_ODDS_RESCUE_MIN_PRIMARY_OFFERS": "120",
         "API_COVERAGE_CONSENSUS_GUARD_ENABLED": "true",
         "API_COVERAGE_MIN_EXACT_ODDS_SOURCES": "2",
+        "CORE_LINE_BOOKMAKER_UNIVERSE_ALLOW_SINGLE_SOURCE": "true",
+        "CANDIDATE_FACTORY_ALLOW_SINGLE_LINE_FOR_CONTROLLED_FALLBACK": "true",
         "API_COVERAGE_MIN_EXACT_BOOKS": "2",
         "API_COVERAGE_MIN_CONTEXT_SOURCES": "2",
         "API_COVERAGE_CONTEXT_EXCLUDE_NEWS_WEATHER_FROM_CORE": "true",
@@ -204,12 +206,12 @@ def install() -> dict[str, Any]:
         "API_COVERAGE_MAX_SELECTED_PRICE_DRIFT_PCT": "8.0",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
         "MIN_BOOKS_PUBLISH": "2",
-        "MIN_SOURCES_PUBLISH": "2",
+        "MIN_SOURCES_PUBLISH": "1",
         "PUBLISH_MIN_ODDS_SOURCES": "2",
         "PUBLISH_MIN_CONTEXT_SOURCES": "2",
         "MIN_CONTEXT_SOURCES_PUBLISH": "2",
         "MARKET_DERIVED_MIN_BOOKS": "2",
-        "MARKET_DERIVED_MIN_SOURCES": "2",
+        "MARKET_DERIVED_MIN_SOURCES": "1",
     }
 
     env.update(_limit_aliases("ODDS_API_IO", odds_total))
@@ -233,7 +235,7 @@ def install() -> dict[str, Any]:
         "env_written_count": len(env),
         "notes": [
             "Runtime budgets are raised for core coverage providers.",
-            "Publication still requires two exact odds sources and two context sources.",
+            "Candidate generation may allow one line source for controlled Tier B; normal strict publication still requires two exact odds sources.",
             "SportLogic is capped per run to stay under 500/day across 12 scheduled runs.",
         ],
     }

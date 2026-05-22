@@ -1,17 +1,13 @@
 {
-  "patch": "hybrid-single-line-context-publication",
-  "date": "2026-05-22",
-  "files": [
+  "patch": "hybrid-candidate-factory-followup",
+  "reason": "Tier B fallback was enabled but CandidateFactory still required 2 line sources before candidates reached fallback.",
+  "changed_files": [
     ".github/workflows/run-bot.yml",
-    "PATCH_MANIFEST.md",
+    "scripts/apply_publication_family_policy.py",
     "scripts/apply_harizon_runtime_policy.py",
     "scripts/apply_per_run_api_quota_contract.py",
-    "scripts/apply_publication_family_policy.py",
-    "scripts/publish_controlled_fallback.py",
-    "tests/test_controlled_fallback_single_line_context.py"
-  ],
-  "tests": [
-    "python -m pytest tests/test_controlled_fallback_single_line_context.py -q => 3 passed",
-    "python -m pytest -q => 48 passed"
+    "app/services/core_line_bookmaker_universe_patch.py",
+    "app/services/core_coverage_quota_runtime_override.py",
+    "tests/test_hybrid_candidate_factory_single_source.py"
   ]
 }
