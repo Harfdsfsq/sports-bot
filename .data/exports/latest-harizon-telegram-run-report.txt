@@ -1,34 +1,63 @@
-🧾 HARIZON run report v7 — единая фактическая сводка
-• Итог: 🟠 линии есть, raw-кандидатов нет
-• Главная причина: no viable controlled fallback
+🧾 HARIZON run report v8 — единая фактическая сводка
+• Итог: 🟡 кандидаты есть, quality/value не пропустили
+• Главная причина: telegram publish odds sources guard:1/2
 
 📦 Покрытие
-• Матчи в run: 147 | day inventory: 300
-• С линиями: 109 | с контекстом: 104 | ready model: 133
-• odds-api.io offers: 11372 | Bzzoiro secondary offers: 88
-• 2+ букмекера odds-api.io: 74 | 2-source overlap Bzzoiro+odds-api.io: 9
-• Source combinations: odds_api_io: 100, bzzoiro+odds_api_io: 9
+• Матчи в run: 150 | day inventory: 300
+• С линиями: 111 | с контекстом: 108 | ready model: 133
+• odds-api.io offers: 11396 | Bzzoiro secondary offers: 44
+• 2+ букмекера odds-api.io: 76 | 2-source overlap Bzzoiro+odds-api.io: 7
+• Source combinations: odds_api_io: 104, bzzoiro+odds_api_io: 7
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0 / 0
+• Raw/candidates before quality: 1 / 1
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 0 | allowed 0 | blocked 0 | publish-filter input 0
+• Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
+• Windowed coverage: audit 1 | allowed 1 | blocked 0 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 3 | no next regular run: 3
-• Line guard: seen 0 | kept 0 | dropped 0
+• Final pre-kickoff checks: 0 | no next regular run: 0
+• Line guard: seen 1 | kept 1 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 30, matched 147, offers 11372, 2+ books 74, err 0, auth_failed False
-• sstats: req 28, ctx 103, rows 24177, err 0, deep enriched 6
-• bzzoiro: direct req 1, v2 req 13, v2 ctx 3, v2 odds 3, secondary offers 88, overlap odds-api.io 9, err 0
+• odds_api_io: events req 0, odds req 30, matched 150, offers 11396, 2+ books 76, err 0, auth_failed False
+• sstats: req 28, ctx 106, rows 24177, err 0, deep enriched 2
+• bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 44, overlap odds-api.io 7, err 0
 • sportlogic: enabled True, req 16, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 16
 
+🧭 Progressive core coverage
+• Active core odds/line: bzzoiro,odds_api_io
+• Active core context: bzzoiro,sstats
+• Tracked: 1241 | core odds 2+: 148 | core context 2+: 119 | core-ready both: 80
+• 0–4ч: 0/0 core-ready
+• 0–12ч: 0/0 core-ready
+• Excluded from active core: sportlogic (disabled)
+
+Coverage truth
+• Inventory rows: 300
+• 2+ price confirmations: 3
+• 2+ independent odds sources: 1
+• 2+ context sources: 11
+• ready publish fresh: 0 | strict: 1 | already sent: 1
+
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• telegram publish odds sources guard:1/2: 1 (20%)
+• tier c watch only: 1 (20%)
+• final edge below min: 1 (20%)
+• final ev below min: 1 (20%)
+• quality bad historical segment guard: 1 (20%)
+
+🔎 Проверенные reserve-кандидаты
+1. Porto Vitoria ES — Audax Sao Mateus ES | Меньше @1.90 | EV +5.3% | edge +2.8 п.п. | q 73.6
+   • reject: telegram publish odds sources guard:1/2, tier c watch only, final edge below min
 
 📌 Вывод
-• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.
+• Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. Core-ready: 80; 0–4ч: 0/0; 0–12ч: 0/0.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
+
+🕒 Current day inventory windows
+• Active matches: 3 | odds refresh needed: 9
+• Final pre-kickoff checks: 0 | no next regular run: 0
+• 0–4ч inventory: 0/5 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
+• 0–12ч inventory: 0/5 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
