@@ -1,35 +1,34 @@
 # Provider smoke 300-match coverage matrix v3
 
 - status: **ok**
-- target_date: 2026-05-21
-- inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-21.json`
-- inventory_matches_total: 192
-- matrix_matches: 192/300
-- full target reached: False
+- target_date: 2026-05-22
+- inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-22.json`
+- inventory_matches_total: 492
+- matrix_matches: 300/300
+- full target reached: True
 - min odds/context sources: 2/2
 
 ## Coverage by kickoff window
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 41 | 41 | 41 | 14 | 14 | 14 | 14 | 0 | 14 | 14 |
-| 2_6h | 25 | 25 | 25 | 3 | 3 | 3 | 3 | 0 | 3 | 3 |
-| 6_12h | 13 | 13 | 12 | 1 | 6 | 5 | 6 | 0 | 5 | 1 |
-| 12_24h | 7 | 7 | 7 | 0 | 7 | 7 | 7 | 0 | 7 | 0 |
-| 24h_plus | 6 | 6 | 1 | 0 | 6 | 1 | 6 | 0 | 1 | 0 |
-| started | 100 | 81 | 96 | 8 | 19 | 8 | 19 | 0 | 16 | 8 |
+| 0_2h | 163 | 128 | 161 | 7 | 20 | 18 | 20 | 0 | 19 | 7 |
+| 2_6h | 73 | 64 | 70 | 0 | 6 | 0 | 6 | 0 | 4 | 0 |
+| 6_12h | 2 | 2 | 2 | 0 | 1 | 0 | 1 | 0 | 1 | 0 |
+| started | 62 | 37 | 61 | 6 | 9 | 6 | 9 | 0 | 9 | 6 |
 
 ## Totals
 
-- fixture_2plus_sources: 173/192
-- odds_2plus_sources: 26/192
-- context_2plus_sources: 38/192
-- ready_for_model: 46/192
-- ready_for_publish: 26/192
+- fixture_2plus_sources: 231/300
+- odds_2plus_sources: 13/300
+- context_2plus_sources: 24/300
+- ready_for_model: 33/300
+- ready_for_publish: 13/300
 
 ## Provider endpoint status
-- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
+- by_status: `{"ok": 5, "skipped_preserve_runtime_quota": 1, "request_error": 1, "ConnectTimeout: ": 1}`
 - not_ok:
+  - open_meteo: request_error http=None rows=None reason=ConnectTimeout: 
   - clubelo: ConnectTimeout:  http=None rows=None reason=None
 
 ## Matching diagnostics
@@ -37,42 +36,42 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-05-21T17:10:00+00:00 | Ntnui — Ranheim 2 | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T17:15:00+00:00 | Hoogee — GrIFK/Akatemia | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T17:20:00+00:00 | Al-Fahaheel — Kuwait SC | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T17:30:00+00:00 | Vri — Horsens FS | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | CA Barracas Central Reserve — CA Union Santa Fe Reserve | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Estudiantes de LP Reserve — CA Belgrano | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Gimnasia de Mendoza Reserve — Atletico Tucuman Reserve | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Instituto AC Cordoba Reserves — CD Godoy Cruz | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Velez Sarsfield Reserve — CA River Plate (Arg) | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Boca Juniors — CA River Plate (ARG) | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Gremio Atletico Farroupilha RS — Gremio Esportivo Brasil | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | CA Paranaense PR — Botafogo FR RJ | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | CR Vasco da Gama RJ — America FC MG | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | EC Bahia BA — Fortaleza EC CE | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Red Bull Bragantino SP — Gremio FB Porto Alegrense RS | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | SC Preussen Munster II — TSV Victoria Clarholz | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | IA Akranes — IBV Vestmannaeyjar | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | AL Ansar SC — Nejmeh SC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | KF Ferizaj — KF Dukagjini | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:00:00+00:00 | Namungo FC — Mbeya City FC | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:15:00+00:00 | Flamengo FBC — Defensores Del Ilucan | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:30:00+00:00 | Velež Mostar — FK Sarajevo | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:30:00+00:00 | Željezničar Sarajevo — Široki Brijeg | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T18:30:00+00:00 | UD Las Palmas — FC Barcelona | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T19:00:00+00:00 | Acao Futebol MT — SC Recife PE | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T19:00:00+00:00 | Deportes Recoleta — CD Cobreloa Calama | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-05-21T19:00:00+00:00 | San Antonio FC — SD Aucas | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-05-21T19:15:00+00:00 | KFG Gardabaer — Haukar Hafnarfjordur | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-05-21T19:15:00+00:00 | Hafnir — IH Hafnarfjordur | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-05-21T19:15:00+00:00 | KFR — Hamar | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Atlantis FC — Puistolan Urheilijat | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | FC Blackbird Jyvaskyla — Savon Pallo | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | FC Saaripotku — SIF | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | JPS — FC Metso | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Keupa — JPS | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Komeetat — FC Blackbird Jyvaskyla | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Mps — Leppavaaran Pallo | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Piikkion Palloseura — Jyrkkalan Tykit | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Piikkion Palloseura — Masku | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Savon Pallo — JJK Jyvaskyla/2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Yllatys — JIPPO-J/Punamusta | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | Vaasan Palloseura — HJK Helsinki | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | SAK Celovec/Klagenfurt — KAC 1909 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | PPJ Helsinki — Lahden Reipas | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | SC Viktoria Anrath — Borussia Monchengladbach | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-05-22T16:00:00+00:00 | FK Rudar Prijedor — HSK Zrinjski Mostar | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | HSK Posusje — FK Sloga Doboj | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | HIFK — HPS | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | Cesena FC — Inter Milano | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | FK Ekranas — FK Transinvest B | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | Hegelmann Litauen B — FC Neptunas Klaipeda | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | Piteaa IF DFF — Djurgardens IF DFF | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | SV Leobendorf — Favoritner AC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-05-22T16:00:00+00:00 | VPS — HJK | odds=1 context=3 fixtures=2 missing=odds_source_2plus,weather
+- started | 2026-05-22T14:00:00+00:00 | FC Prizreni — KF Istogu | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- started | 2026-05-22T14:00:00+00:00 | ETO Akademia — SC Sopron | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- started | 2026-05-22T14:00:00+00:00 | Khan Tengri FC — FC Tobol Kostanay Reserve | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- started | 2026-05-22T14:00:00+00:00 | Osijek — Slaven Belupo Koprivnica | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- started | 2026-05-22T14:00:00+00:00 | NK Osijek — NK Slaven Belupo | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- started | 2026-05-22T14:00:00+00:00 | El Gouna FC — Talaea El Gaish | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=147 / checked=192 | rate=76.56% | SStats events=1177
-- potential_add: context_deep=147 xg_or_rating=147 form=147 odds_rescue=27
-- projected_upper_bound: context_2plus=185 xg=150 form=185 odds_2plus=53
+- crosswalk: matched=190 / checked=300 | rate=63.33% | SStats events=1343
+- potential_add: context_deep=190 xg_or_rating=190 form=190 odds_rescue=4
+- projected_upper_bound: context_2plus=214 xg=211 form=214 odds_2plus=17
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.

@@ -1,7 +1,7 @@
 # Provider smoke
 
 - status: **warning**
-- enabled ok: 7/8
+- enabled ok: 6/8
 - missing keys: 0
 - non-core env violations: 10
 
@@ -13,7 +13,7 @@
 | football_data | True | True | ok | 0 | 200 |
 | thesportsdb | True | True | ok | 1 | 200 |
 | weatherapi | True | True | ok | 2 | 200 |
-| open_meteo | True | True | ok | 9 | 200 |
+| open_meteo | True | False | request_error |  |  |
 | clubelo | True | False | ConnectTimeout:  |  |  |
 
 ## Non-core env violations

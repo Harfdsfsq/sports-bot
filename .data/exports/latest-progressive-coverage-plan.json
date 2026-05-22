@@ -6,34 +6,21 @@
     ],
     "core_odds_providers": [
       "bzzoiro",
-      "odds_api_io",
-      "sportlogic"
+      "odds_api_io"
     ],
     "core_providers": [
       "bzzoiro",
       "odds_api_io",
-      "sportlogic",
       "sstats"
     ],
-    "supplemental_context_providers": [
-      "api_football",
-      "espn",
-      "football_data",
-      "futrixmetrics",
-      "gnews",
-      "newsapi",
-      "openfootball",
-      "openligadb",
-      "self_history",
-      "sportlogic",
-      "thesportsdb",
-      "weather"
+    "excluded_core_providers": [
+      {
+        "grant": 0,
+        "provider": "sportlogic",
+        "reason": "zero_budget"
+      }
     ],
-    "supplemental_odds_providers": [
-      "allsportsapi",
-      "bookies_api",
-      "oddspapi"
-    ]
+    "reason": "active core excludes disabled/zero-budget providers from the current run"
   },
   "core_gap_sample": [],
   "counts": {
@@ -53,9 +40,21 @@
     "odds_2plus": 148,
     "ready_2plus_both": 80
   },
-  "created_at_utc": "2026-05-21T17:12:19.383308+00:00",
+  "created_at_utc": "2026-05-22T15:52:22.486899+00:00",
   "diagnostics": {
+    "active_core_budget_patch": "applied",
+    "active_core_odds_providers": [
+      "bzzoiro",
+      "odds_api_io"
+    ],
     "all_gap_rows_before_started_filter": 1161,
+    "excluded_core_providers": [
+      {
+        "grant": 0,
+        "provider": "sportlogic",
+        "reason": "zero_budget"
+      }
+    ],
     "reason": "started matches remain in state/history but are not operational targets; sample rebuilt from full state",
     "started_gap_rows_suppressed_from_sample": 1161,
     "upcoming_gap_finalizer": "applied_full_state_rebuild",

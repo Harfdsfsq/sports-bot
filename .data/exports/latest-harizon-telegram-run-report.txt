@@ -1,48 +1,49 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
-• Итог: ✅ прогноз опубликован
-• Главная причина: опубликовано основным пайплайном
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Главная причина: no viable controlled fallback
 
 📦 Покрытие
-• Матчи в run: 83 | day inventory: 152
-• С линиями: 70 | с контекстом: 64 | ready model: 36
-• odds-api.io offers: 11979 | Bzzoiro secondary offers: 573
-• 2+ букмекера odds-api.io: 50 | 2-source overlap Bzzoiro+odds-api.io: 25
-• Source combinations: odds_api_io: 38, bzzoiro+odds_api_io: 25, bzzoiro: 7
+• Матчи в run: 237 | day inventory: 300
+• С линиями: 144 | с контекстом: 188 | ready model: 96
+• odds-api.io offers: 18579 | Bzzoiro secondary offers: 22
+• 2+ букмекера odds-api.io: 92 | 2-source overlap Bzzoiro+odds-api.io: 4
+• Source combinations: odds_api_io: 140, bzzoiro+odds_api_io: 4, bzzoiro: 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1 / 3
-• Passed quality: 1 | publishable: 1 | опубликовано: 1
-• Main pipeline: published True (1)
-• Controlled fallback: status skipped_existing_pick | seen 0 | evaluated 0 | published False (0)
-• Windowed coverage: audit 3 | allowed 1 | blocked 2 | publish-filter input 1
+• Raw/candidates before quality: 0 / 0
+• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Main pipeline: published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
+• Windowed coverage: audit 0 | allowed 0 | blocked 0 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 37 | no next regular run: 37
+• Final pre-kickoff checks: 63 | no next regular run: 63
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 16, matched 76, offers 11979, 2+ books 50, err 0, auth_failed False
-• sstats: req 22, ctx 60, rows 18329, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 97, v2 ctx 24, v2 odds 24, secondary offers 573, overlap odds-api.io 25, err 0
+• odds_api_io: events req 0, odds req 48, matched 231, offers 18579, 2+ books 92, err 0, auth_failed False
+• sstats: req 28, ctx 186, rows 24176, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 1, v2 ctx 0, v2 odds 0, secondary offers 22, overlap odds-api.io 4, err 0
 • sportlogic: enabled True, req 21, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 3
 
 🧭 Progressive core coverage
-• Core odds/line: bzzoiro,odds_api_io,sportlogic
-• Core context: bzzoiro,sstats
+• Active core odds/line: bzzoiro,odds_api_io
+• Active core context: bzzoiro,sstats
 • Tracked: 1241 | core odds 2+: 148 | core context 2+: 119 | core-ready both: 80
 • 0–4ч: 0/0 core-ready
 • 0–12ч: 0/0 core-ready
+• Excluded from active core: sportlogic (disabled)
 
 Coverage truth
-• Inventory rows: 152
-• 2+ price confirmations: 8
-• 2+ independent odds sources: 8
-• 2+ context sources: 22
-• ready publish by strict truth: 8
+• Inventory rows: 300
+• 2+ price confirmations: 0
+• 2+ independent odds sources: 0
+• 2+ context sources: 2
+• ready publish by strict truth: 0
 
-🚫 Почему не опубликовано: не применимо, Telegram уже подтвердил отправку
+🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
 
 📌 Вывод
-• Прогноз реально опубликован; все цифры выше взяты из одного нормализованного payload.
+• Progressive coverage не видит матчей в ближайшие 12 часов в накопленном state. Это не повод ослаблять guards: нужно проверить свежесть kickoff_utc/target-date state и продолжать добор active core coverage для дневного инвентаря. Core-ready за день: 80; 0–4ч: 0/0; 0–12ч: 0/0.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
