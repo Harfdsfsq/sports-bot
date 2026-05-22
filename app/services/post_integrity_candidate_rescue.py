@@ -113,13 +113,20 @@ def install() -> dict[str, Any]:
         result = {"status": "skipped", "reason": "candidate_factory_missing"}
         _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
         return result
-    if getattr(cls, "_harizon_post_integrity_candidate_rescue_patch", False):
+    original = getattr(cls, "build_candidates", None)
+    # Do not trust the class-level flag alone.  Several final/reinstall wrappers
+    # can replace CandidateFactory.build_candidates after this module was first
+    # installed, leaving cls._harizon_post_integrity_candidate_rescue_patch=True
+    # while the *current* callable no longer contains the rescue wrapper.  That
+    # was the cause of zero-candidate runs where latest-post-integrity-candidate-
+    # rescue.json only said {status: installed} and never wrote rescued/no_candidate
+    # execution data.  The current callable marker is the source of truth.
+    if getattr(original, "_harizon_post_integrity_candidate_rescue_patch", False):
         # Do not overwrite the real build-time rescue report from a later
         # report/fallback helper import.  The artifact is used by Telegram v8
         # to explain zero-candidate runs, so an "already_installed" marker
         # would hide the actual rescued/no_candidate/pass_through stage.
-        return {"status": "already_installed"}
-    original = getattr(cls, "build_candidates", None)
+        return {"status": "already_wrapped_current_callable"}
     build_rescue = getattr(controlled_candidate_rescue, "_build_rescue", None)
     if not callable(original) or not callable(build_rescue):
         result = {"status": "skipped", "reason": "missing_hooks"}
@@ -210,8 +217,13 @@ def install() -> dict[str, Any]:
             return returned, rejections, debug
         return candidates, rejections, debug
 
+    build_candidates_patched._harizon_post_integrity_candidate_rescue_patch = True  # type: ignore[attr-defined]
     cls.build_candidates = build_candidates_patched
     cls._harizon_post_integrity_candidate_rescue_patch = True
-    result = {"status": "installed", "version": "post-integrity-candidate-rescue-v3-audited-hybrid-bridge"}
+    result = {
+        "status": "installed",
+        "version": "post-integrity-candidate-rescue-v4-current-callable-rewrap",
+        "rewrapped_after_chain_overwrite": True,
+    }
     _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
     return result

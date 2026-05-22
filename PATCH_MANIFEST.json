@@ -1,18 +1,8 @@
 {
-  "name": "sports-bot-run263110-runtime-import-side-effects-fix",
-  "files": [
-    "app/services/__init__.py",
+  "patch": "sports-bot-run263122-post-integrity-rewrap-fix",
+  "changed_files": [
     "app/services/post_integrity_candidate_rescue.py",
-    "tests/test_runtime_import_side_effects.py",
-    "PATCH_MANIFEST.md"
+    "tests/test_post_integrity_rescue_rewrap_current_callable.py"
   ],
-  "validation": [
-    "python -m py_compile app/services/__init__.py app/services/post_integrity_candidate_rescue.py",
-    "PYTHONPATH=. python -m pytest -q tests/test_runtime_import_side_effects.py tests/test_report_v8_fallback_pool_filter_status.py tests/test_report_v8_window_counter_init.py tests/test_controlled_fallback_day_inventory_membership.py"
-  ],
-  "notes": [
-    "No publication thresholds were relaxed.",
-    "SStats remains context-only, not a live odds source.",
-    "Runtime patches are installed explicitly via runtime_startup_chain, not package import."
-  ]
+  "safety": "No publication thresholds are relaxed; only the active CandidateFactory chain is rewrapped when a stale class-level install flag would otherwise skip the rescue wrapper."
 }

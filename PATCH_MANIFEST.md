@@ -1,36 +1,24 @@
-# sports-bot run263110 runtime import side-effects fix
+# sports-bot run263122 post-integrity rescue rewrap fix
 
-## Problem confirmed from `run-bot-26311029908.zip`
+## Problem
+The run had 1078 matches, 352 with odds and 218 with context, but `raw_candidates=0`.
+`bzzoiro_exact_offer_bridge` found 30 likely allowed 2-source buckets, yet
+`latest-post-integrity-candidate-rescue.json` only contained the installer marker
+`status=installed`. The rescue wrapper was not present in the active
+`CandidateFactory.build_candidates` callable.
 
-The bot correctly did not publish a forecast, but the zero-candidate diagnostics were degraded:
+Root cause: `post_integrity_candidate_rescue.install()` trusted the class-level
+flag `CandidateFactory._harizon_post_integrity_candidate_rescue_patch`. Later
+final/reinstall wrappers can replace `build_candidates`, leaving the class flag
+true while the current callable no longer includes the rescue wrapper.
 
-- `matches_with_offers=130`, `matches_with_context=129`, `raw_candidates=0`.
-- CandidateFactory blockers were visible (`bucket_sources_below_2`, `market_derived_signal_guard_*`).
-- `latest-post-integrity-candidate-rescue.json` contained only `{"status":"already_installed"}` instead of the actual build-time stage.
+## Fix
+`post_integrity_candidate_rescue.install()` now checks the marker on the current
+`CandidateFactory.build_candidates` callable. If the class flag is stale but the
+current callable is unwrapped, it rewraps the active chain and writes execution
+artifacts (`pass_through`, `no_candidate`, or `rescued`) during the real run.
 
-This happened because `app/services/__init__.py` installed runtime CandidateFactory patches as an import side effect. Report/fallback helper processes import service modules while reading artifacts, so they can overwrite real production diagnostics after the run.
-
-## Files changed
-
-- `app/services/__init__.py`
-  - Now side-effect free.
-  - Runtime patch installation remains the responsibility of `app.services.runtime_startup_chain` during the main production run.
-
-- `app/services/post_integrity_candidate_rescue.py`
-  - `install()` no longer overwrites `latest-post-integrity-candidate-rescue.json` when the patch is already installed.
-  - This preserves the real `rescued`, `no_candidate`, or `pass_through` stage for the v8 report.
-
-- `tests/test_runtime_import_side_effects.py`
-  - Regression tests for import-side-effect safety and artifact preservation.
-
-## Validation
-
-```bash
-python -m py_compile app/services/__init__.py app/services/post_integrity_candidate_rescue.py
-PYTHONPATH=. python -m pytest -q tests/test_runtime_import_side_effects.py tests/test_report_v8_fallback_pool_filter_status.py tests/test_report_v8_window_counter_init.py tests/test_controlled_fallback_day_inventory_membership.py
-# 8 passed
-```
-
-## Expected next-run effect
-
-If raw candidates are still zero, Telegram v8 should preserve the real post-integrity rescue stage instead of showing a misleading `already_installed` marker. Publication guards are not weakened.
+## Safety
+This does not loosen Telegram publication. It only restores the intended
+pre-fallback discovery bridge so controlled fallback can evaluate candidates
+through existing EV/edge/source/xG/quality guards.
