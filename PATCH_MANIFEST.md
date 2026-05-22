@@ -1,12 +1,23 @@
-# sports-bot run263045 v8 window counter fix
+# sports-bot run263078 day-inventory fallback membership fix
 
-## Problem
-`send_harizon_telegram_run_report_v8.py` had a direct v8 `main()`, but `_current_inventory_window_payload()` incremented `window_0_4h_strict_ready`, `window_0_4h_already_published`, `window_0_12h_strict_ready` and `window_0_12h_already_published` without initializing those keys. When coverage-truth contained a match in the current window, v8 crashed and the workflow fell back to v7.
+## Причина
 
-## Fix
-- Initialize all strict/already-sent window counters before iteration.
-- Make the Coverage truth block distinguish fresh publish-ready, strict-ready and already-sent strict-ready matches.
+В run-bot-26307847014 controlled fallback показал watchlist-кандидата Porto Vitoria ES — Audax Sao Mateus ES, но этот матч отсутствовал в текущем frozen day inventory на 2026-05-22. Из-за этого Telegram-watchlist мог показывать кандидата с `цен 2, контекст 2`, а `Coverage truth` и `Current day inventory windows` одновременно показывали `price 2+: 0` и `context 2+: 0` в ближайшем окне.
 
-## Files
-- `scripts/send_harizon_telegram_run_report_v8.py`
-- `tests/test_report_v8_window_counter_init.py`
+## Исправление
+
+- `scripts/publish_controlled_fallback.py`
+  - добавлена проверка `CONTROLLED_FALLBACK_REQUIRE_DAY_INVENTORY_MEMBERSHIP=true` по умолчанию;
+  - fallback pool теперь берёт только кандидатов, которые есть в `.data/day_inventory/{DAY_INVENTORY_TARGET_DATE}.json` / `current.json` / `latest.json` / `today.json`;
+  - для совместимости матч проверяется и по `match_key`, и по нормализованной паре команд + дате;
+  - в `pool_counts` добавляется `*_not_in_day_inventory`, чтобы причина была видна в no-pick report.
+
+- `tests/test_controlled_fallback_day_inventory_membership.py`
+  - регресс-тест на отбрасывание кандидата вне day inventory;
+  - регресс-тест на сохранение кандидата внутри day inventory.
+
+## Что не менялось
+
+- Финальные odds-source/context/value/quality guards не ослаблены.
+- SStats не становится источником линий.
+- Single-provider odds signal не публикуется как Tier A.

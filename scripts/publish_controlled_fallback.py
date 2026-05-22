@@ -1503,6 +1503,81 @@ def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str
         float(metrics["confidence"]),
     )
 
+
+def _norm_inventory_token(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).strip()
+
+
+def _candidate_inventory_keys(row: dict[str, Any]) -> set[str]:
+    keys: set[str] = set()
+    match_key = _norm_inventory_token(row.get("match_key") or row.get("canonical_match_id"))
+    if match_key:
+        keys.add("match_key:" + match_key)
+    kickoff = parse_dt(row.get("commence_time") or row.get("start_time") or row.get("kickoff") or row.get("kickoff_utc"))
+    date = kickoff.date().isoformat() if kickoff is not None else str(row.get("date") or row.get("date_local") or "")[:10]
+    home = _norm_inventory_token(row.get("home_team") or row.get("home"))
+    away = _norm_inventory_token(row.get("away_team") or row.get("away"))
+    if date and home and away:
+        teams = "|".join(sorted([home, away]))
+        keys.add(f"teams_date:{date}|{teams}")
+    return keys
+
+
+def _day_inventory_target_date() -> str:
+    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
+    if explicit:
+        return explicit[:10]
+    return datetime.now(UTC).date().isoformat()
+
+
+_DAY_INVENTORY_MEMBERSHIP_CACHE: set[str] | None = None
+
+
+def load_day_inventory_membership_keys() -> set[str]:
+    """Return match keys/signatures from the current day inventory.
+
+    Controlled fallback must evaluate only candidates that belong to the frozen
+    300-match day inventory. Otherwise rescue artifacts can surface a valid
+    price/context pair from a match that was never part of the daily contract,
+    which makes Telegram watchlists disagree with coverage-truth/window stats.
+    """
+    global _DAY_INVENTORY_MEMBERSHIP_CACHE
+    if _DAY_INVENTORY_MEMBERSHIP_CACHE is not None:
+        return _DAY_INVENTORY_MEMBERSHIP_CACHE
+
+    target = _day_inventory_target_date()
+    candidate_paths = [
+        Path(".data/day_inventory") / f"{target}.json",
+        Path(".data/day_inventory/current.json"),
+        Path(".data/day_inventory/latest.json"),
+        Path(".data/day_inventory/today.json"),
+        Path("artifacts/run-bot/day_inventory") / f"{target}.json",
+        Path("artifacts/run-bot/day_inventory/current.json"),
+        Path("artifacts/run-bot/day_inventory/latest.json"),
+        Path("artifacts/run-bot/day_inventory/today.json"),
+    ]
+    keys: set[str] = set()
+    for path in candidate_paths:
+        payload = load_json(path, {})
+        if isinstance(payload, dict):
+            rows = payload.get("matches") or payload.get("rows") or payload.get("items") or []
+        else:
+            rows = payload
+        if not isinstance(rows, list):
+            continue
+        for item in rows:
+            if isinstance(item, dict):
+                keys.update(_candidate_inventory_keys(item))
+    _DAY_INVENTORY_MEMBERSHIP_CACHE = keys
+    return keys
+
+
+def row_in_day_inventory(row: dict[str, Any], inventory_keys: set[str]) -> bool:
+    if not inventory_keys:
+        return True
+    return bool(_candidate_inventory_keys(row) & inventory_keys)
+
+
 def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     pool: list[dict[str, Any]] = []
     counts: Counter[str] = Counter()
@@ -1516,6 +1591,10 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     rescue_payload = load_json(".data/exports/latest-rescue-candidates.json", [])
     artifact_rescue_payload = load_json("artifacts/run-bot/latest-rescue-candidates.json", [])
     reference = newest_timestamp(run_summary, debug, rescue_payload, artifact_rescue_payload) or now
+    require_day_inventory = env_bool("CONTROLLED_FALLBACK_REQUIRE_DAY_INVENTORY_MEMBERSHIP", True)
+    day_inventory_keys = load_day_inventory_membership_keys() if require_day_inventory else set()
+    if require_day_inventory:
+        counts["day_inventory_membership_keys"] = len(day_inventory_keys)
 
     def row_in_current_window(row: dict[str, Any]) -> bool:
         if not filter_by_time or not env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True):
@@ -1585,6 +1664,9 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
                 continue
             if not row_in_current_window(row):
                 counts[f"{source}_stale_or_outside_window"] += 1
+                continue
+            if require_day_inventory and day_inventory_keys and not row_in_day_inventory(row, day_inventory_keys):
+                counts[f"{source}_not_in_day_inventory"] += 1
                 continue
             if not row_allowed_for_fallback_pool(source, row):
                 continue
