@@ -1,22 +1,31 @@
-# HARIZON speed-run patch
+# sports-bot fast balanced follow-up
 
-Adds a separate `run-bot-fast` GitHub Actions workflow and two helper scripts.
+Исправляет слишком агрессивный fast-run, где рынок был урезан до `odds req 4`, `2+ books 0`, `Bzzoiro secondary 0`.
 
-## What speeds up
+## Файлы
 
-- Uses `actions/setup-python` pip cache.
-- Skips provider smoke and tests by default; they are still available via workflow inputs or `mode=full`.
-- Trims oversized cached day inventory back to the publication target before the run.
-- Applies lower discovery budgets for expensive providers in fast mode.
-- Automatically disables SportLogic in fast mode when recent artifacts show zero matched/offers or active-core exclusion.
-- Commits only small lifecycle state by default instead of the full `.data/exports`, `.data/cache`, and inventory tree.
-- Uploads artifacts with low compression for faster upload.
+- `.github/workflows/run-bot-fast.yml`
+  - balanced fast defaults;
+  - re-apply fast budgets after quota contract;
+  - гарантирует controlled-fallback artifact;
+  - пишет fast-depth diagnostic.
 
-## Safety
+- `scripts/apply_fast_run_budget.py`
+  - сохраняет минимум рыночной глубины: odds-api.io budget 120, odds match target 220, Bzzoiro odds backfill включён;
+  - отключает SportLogic в fast только если нет свежих сигналов или он явно не включён.
 
-Publication guards are unchanged:
+- `scripts/ensure_controlled_fallback_report.py`
+  - создаёт no-op fallback artifact, если fallback step не записал отчёт.
 
-- SStats remains context-only.
-- Tier A still requires 2 independent odds sources.
-- Telegram publication still requires EV/edge/xG/quality guards.
-- Fast workflow can be bypassed by using the existing `run-bot` workflow or selecting `mode=full`.
+- `scripts/assert_fast_run_depth.py`
+  - warning-only диагностика, если fast-mode снова дал слишком мало линий/2+ books/Bzzoiro overlap.
+
+- `tests/test_fast_run_balanced_depth.py`
+  - регресс-тесты на balanced fast budgets и workflow order.
+
+## Что НЕ меняется
+
+- Tier A/B publication guards не ослаблены.
+- SStats остаётся context-only.
+- 2 independent odds sources для Tier A остаются обязательными.
+- EV/edge/xG/quality guards не трогаются.
