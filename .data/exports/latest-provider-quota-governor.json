@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-05-22T23:01:37.954130+00:00",
+  "created_at": "2026-05-23T01:01:51.898788+00:00",
   "enabled": true,
   "exports": {
     "ALLSPORTSAPI_ENABLED": "true",
@@ -19,10 +19,10 @@
     "BZZOIRO_CONTEXT_MATCH_LIMIT": "40",
     "BZZOIRO_ENABLED": "true",
     "BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN": "1",
-    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "15",
-    "BZZOIRO_MAX_REQUESTS_PER_RUN": "15",
+    "BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN": "10",
+    "BZZOIRO_MAX_REQUESTS_PER_RUN": "10",
     "BZZOIRO_PAGE_SIZE": "5",
-    "BZZOIRO_PER_RUN_MAX": "15",
+    "BZZOIRO_PER_RUN_MAX": "10",
     "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "3",
     "BZZOIRO_TIMEOUT_SECONDS": "12",
     "CLUBELO_BASE_URL": "http://api.clubelo.com",
@@ -45,7 +45,7 @@
     "ENABLE_FUTRIXMETRICS_CONTEXT": "true",
     "ENABLE_GNEWS_CONTEXT": "true",
     "ENABLE_NEWSAPI_CONTEXT": "true",
-    "ENABLE_ODDSPAPI": "false",
+    "ENABLE_ODDSPAPI": "true",
     "ENABLE_ODDS_API_IO": "true",
     "ENABLE_SSTATS_CONTEXT": "true",
     "ENABLE_THESPORTSDB_CONTEXT": "true",
@@ -60,8 +60,8 @@
     "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "12",
     "FOOTBALL_DATA_STANDINGS_LIMIT": "12",
     "FREE_CONTEXT_RUNTIME_ENABLED": "true",
-    "FREE_FOOTBALL_RAPIDAPI_ENABLED": "true",
-    "FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN": "1",
+    "FREE_FOOTBALL_RAPIDAPI_ENABLED": "false",
+    "FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN": "0",
     "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "72",
     "FUTRIXMETRICS_ENABLED": "true",
     "FUTRIXMETRICS_MAX_HTTP_REQUESTS_PER_RUN": "24",
@@ -108,12 +108,12 @@
     "NEWSDATA_MAX_REQUESTS_PER_RUN": "10",
     "NEWSDATA_PER_RUN_MAX": "10",
     "NEWS_CONTEXT_CACHE_TTL_MINUTES": "240",
-    "ODDSPAPI_ENABLED": "false",
-    "ODDSPAPI_MATCH_LIMIT": "0",
-    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+    "ODDSPAPI_ENABLED": "true",
+    "ODDSPAPI_MATCH_LIMIT": "6",
+    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "1",
     "ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES": "360",
-    "ODDSPAPI_PER_RUN_MAX": "0",
-    "ODDSPAPI_TOURNAMENT_LIMIT": "0",
+    "ODDSPAPI_PER_RUN_MAX": "1",
+    "ODDSPAPI_TOURNAMENT_LIMIT": "1",
     "ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN": "100",
     "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
     "ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN": "100",
@@ -145,8 +145,8 @@
     "PROVIDER_FREE_QUOTA_POLICY_ENABLED": "true",
     "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "true",
     "RAPIDAPI_DEFAULT_DAILY_LIMIT": "1",
-    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "1",
-    "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true",
+    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "0",
+    "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "false",
     "RAPIDAPI_ODDS_FEED_DAILY_LIMIT": "1",
     "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true",
     "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": "2",
@@ -165,10 +165,10 @@
     "SPORTSBOOK_RAPIDAPI_MAX_REQUESTS_PER_RUN": "2",
     "SSTATS_ENABLED": "true",
     "SSTATS_LOOKBACK_DAYS": "45",
-    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "9",
-    "SSTATS_MAX_REQUESTS_PER_RUN": "9",
-    "SSTATS_RECENT_MATCHES": "12",
-    "SSTATS_REQUESTS_MAX_PER_RUN": "9",
+    "SSTATS_MAX_HTTP_REQUESTS_PER_RUN": "7",
+    "SSTATS_MAX_REQUESTS_PER_RUN": "7",
+    "SSTATS_RECENT_MATCHES": "11",
+    "SSTATS_REQUESTS_MAX_PER_RUN": "7",
     "THESPORTSDB_CONTEXT_ENABLED": "true",
     "THESPORTSDB_CONTEXT_MATCH_LIMIT": "216",
     "THESPORTSDB_MAX_HTTP_REQUESTS_PER_RUN": "18",
@@ -207,14 +207,14 @@
       "reserve_tokens": 200,
       "role": "primary_odds",
       "skip_reason": null,
-      "tokens_after": 2927.807,
-      "tokens_before": 3127.807
+      "tokens_after": 3040.411,
+      "tokens_before": 3240.411
     },
     {
       "bucket_max": 300.0,
       "daily_budget": 120.0,
       "enabled_for_run": true,
-      "granted": 15,
+      "granted": 10,
       "minute_spacing": 20,
       "per_run_max": 100,
       "provider": "bzzoiro",
@@ -223,14 +223,14 @@
       "reserve_tokens": 100,
       "role": "prediction_context",
       "skip_reason": null,
-      "tokens_after": 100.943,
-      "tokens_before": 115.943
+      "tokens_after": 100.962,
+      "tokens_before": 110.962
     },
     {
       "bucket_max": 300.0,
       "daily_budget": 72.0,
       "enabled_for_run": true,
-      "granted": 9,
+      "granted": 7,
       "minute_spacing": 20,
       "per_run_max": 100,
       "provider": "sstats",
@@ -239,8 +239,8 @@
       "reserve_tokens": 100,
       "role": "form_xg_context",
       "skip_reason": null,
-      "tokens_after": 100.988,
-      "tokens_before": 109.988
+      "tokens_after": 100.0,
+      "tokens_before": 107.0
     },
     {
       "bucket_max": 78.0,
@@ -255,8 +255,8 @@
       "reserve_tokens": 6,
       "role": "football_context",
       "skip_reason": null,
-      "tokens_after": 66.663,
-      "tokens_before": 72.663
+      "tokens_after": 67.175,
+      "tokens_before": 73.175
     },
     {
       "bucket_max": 160.0,
@@ -271,14 +271,14 @@
       "reserve_tokens": 10,
       "role": "fixtures_context",
       "skip_reason": null,
-      "tokens_after": 110.59,
-      "tokens_before": 120.59
+      "tokens_after": 113.949,
+      "tokens_before": 123.949
     },
     {
       "bucket_max": 6.0,
       "daily_budget": 6.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 1,
       "minute_spacing": 240,
       "per_run_max": 1,
       "provider": "oddspapi",
@@ -286,9 +286,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "odds_fallback",
-      "skip_reason": "spacing_active:29.6m",
-      "tokens_after": 5.877,
-      "tokens_before": 5.877
+      "skip_reason": null,
+      "tokens_after": 5.0,
+      "tokens_before": 6.0
     },
     {
       "bucket_max": 360.0,
@@ -303,8 +303,8 @@
       "reserve_tokens": 24,
       "role": "player_team_ratings",
       "skip_reason": null,
-      "tokens_after": 233.828,
-      "tokens_before": 257.828
+      "tokens_after": 239.886,
+      "tokens_before": 263.886
     },
     {
       "bucket_max": 180.0,
@@ -319,8 +319,8 @@
       "reserve_tokens": 12,
       "role": "fixtures_standings_context",
       "skip_reason": null,
-      "tokens_after": 116.914,
-      "tokens_before": 128.914
+      "tokens_after": 119.943,
+      "tokens_before": 131.943
     },
     {
       "bucket_max": 240.0,
@@ -335,24 +335,24 @@
       "reserve_tokens": 18,
       "role": "mapping_context",
       "skip_reason": null,
-      "tokens_after": 135.885,
-      "tokens_before": 153.885
+      "tokens_after": 137.924,
+      "tokens_before": 155.924
     },
     {
-      "bucket_max": 0.0,
+      "bucket_max": 390.0,
       "daily_budget": 390.0,
       "enabled_for_run": false,
       "granted": 0,
       "minute_spacing": 10,
-      "per_run_max": 0,
+      "per_run_max": 40,
       "provider": "sportlogic",
       "quota_basis": "500 requests/day, 10 requests/minute, reset 00:00 UTC",
       "recovered": false,
-      "reserve_tokens": 0,
+      "reserve_tokens": 40,
       "role": "fixtures_odds_outcomes",
       "skip_reason": null,
-      "tokens_after": 0.0,
-      "tokens_before": 0.0
+      "tokens_after": 32.563,
+      "tokens_before": 32.563
     },
     {
       "bucket_max": 78.0,
@@ -367,8 +367,8 @@
       "reserve_tokens": 6,
       "role": "live_scores_match_context",
       "skip_reason": null,
-      "tokens_after": 66.663,
-      "tokens_before": 72.663
+      "tokens_after": 67.175,
+      "tokens_before": 73.175
     },
     {
       "bucket_max": 39.0,
@@ -405,8 +405,8 @@
     {
       "bucket_max": 3.0,
       "daily_budget": 2.0,
-      "enabled_for_run": true,
-      "granted": 1,
+      "enabled_for_run": false,
+      "granted": 0,
       "minute_spacing": 360,
       "per_run_max": 1,
       "provider": "free_live_football_data",
@@ -414,9 +414,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rapidapi_probe_fallback",
-      "skip_reason": null,
-      "tokens_after": 1.632,
-      "tokens_before": 2.632
+      "skip_reason": "spacing_active:239.8m",
+      "tokens_after": 1.799,
+      "tokens_before": 1.799
     },
     {
       "bucket_max": 1680.0,
@@ -431,8 +431,8 @@
       "reserve_tokens": 70,
       "role": "weather_forecast",
       "skip_reason": null,
-      "tokens_after": 1559.572,
-      "tokens_before": 1629.572
+      "tokens_after": 1610.0,
+      "tokens_before": 1680.0
     },
     {
       "bucket_max": 780.0,
@@ -447,8 +447,8 @@
       "reserve_tokens": 50,
       "role": "weather_fallback",
       "skip_reason": null,
-      "tokens_after": 526.626,
-      "tokens_before": 576.626
+      "tokens_after": 541.752,
+      "tokens_before": 591.752
     },
     {
       "bucket_max": 1800.0,
@@ -463,8 +463,8 @@
       "reserve_tokens": 120,
       "role": "weather_primary_or_fallback",
       "skip_reason": null,
-      "tokens_after": 1169.138,
-      "tokens_before": 1289.138
+      "tokens_after": 1199.429,
+      "tokens_before": 1319.429
     },
     {
       "bucket_max": 13.0,
@@ -527,8 +527,8 @@
       "reserve_tokens": 50,
       "role": "news_context",
       "skip_reason": null,
-      "tokens_after": 526.626,
-      "tokens_before": 576.626
+      "tokens_after": 541.752,
+      "tokens_before": 591.752
     },
     {
       "bucket_max": 156.0,
@@ -543,8 +543,8 @@
       "reserve_tokens": 10,
       "role": "news_context",
       "skip_reason": null,
-      "tokens_after": 105.325,
-      "tokens_before": 115.325
+      "tokens_after": 108.35,
+      "tokens_before": 118.35
     },
     {
       "bucket_max": 390.0,
@@ -559,8 +559,8 @@
       "reserve_tokens": 25,
       "role": "news_context",
       "skip_reason": null,
-      "tokens_after": 263.313,
-      "tokens_before": 288.313
+      "tokens_after": 270.876,
+      "tokens_before": 295.876
     },
     {
       "bucket_max": 3.0,
@@ -574,9 +574,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rating_cache",
-      "skip_reason": "spacing_active:864.7m",
-      "tokens_after": 2.25,
-      "tokens_before": 2.25
+      "skip_reason": "spacing_active:744.5m",
+      "tokens_after": 2.333,
+      "tokens_before": 2.333
     },
     {
       "bucket_max": 3.0,
@@ -590,9 +590,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "historical_csv_cache",
-      "skip_reason": "spacing_active:864.7m",
-      "tokens_after": 2.25,
-      "tokens_before": 2.25
+      "skip_reason": "spacing_active:744.5m",
+      "tokens_after": 2.333,
+      "tokens_before": 2.333
     },
     {
       "bucket_max": 120.0,
@@ -607,8 +607,8 @@
       "reserve_tokens": 8,
       "role": "mapping_cache",
       "skip_reason": null,
-      "tokens_after": 77.943,
-      "tokens_before": 85.943
+      "tokens_after": 79.962,
+      "tokens_before": 87.962
     }
   ],
   "providers_enabled_for_run": 22,
