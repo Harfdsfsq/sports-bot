@@ -1,21 +1,31 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 8,
+      "contexts": 5,
+      "contexts_total_effective": 5,
       "errors": 0,
-      "events": 400,
-      "overlap": 0,
-      "requests": 11,
-      "secondary_offers_added": 0
+      "events": 50,
+      "events_total_effective": 70,
+      "overlap": 8,
+      "requests": 1,
+      "requests_total_effective": 1,
+      "secondary_offers_added": 66,
+      "v2_contexts": 0,
+      "v2_errors": 0,
+      "v2_events": 70,
+      "v2_lineups_resources": 0,
+      "v2_odds_resources": 0,
+      "v2_requests": 1,
+      "v2_stats_resources": 0
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 0,
+      "books_2plus": 178,
       "errors": 0,
       "events_req": 0,
-      "matched": 36,
-      "odds_req": 4,
-      "offers": 881
+      "matched": 864,
+      "odds_req": 146,
+      "offers": 32418
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -31,75 +41,89 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 30,
-      "deep_enriched": 0,
+      "contexts": 215,
+      "deep_enriched": 4,
       "direct_contexts": 0,
       "errors": 0,
-      "requests": 31,
-      "rows": 26487,
+      "requests": 27,
+      "rows": 24037,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 34.706498050689696,
+    "debug_age_min": 0.3220909833908081,
     "fallback_age_min": null,
-    "run_log_age_min": 0.0009201765060424805,
-    "signal_stack_age_min": null
+    "run_log_age_min": 0.07766755819320678,
+    "signal_stack_age_min": 0.4629072388013204
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 0,
-    "bzzoiro_secondary_offers_added": 0,
-    "day_inventory_total": 300,
-    "day_inventory_with_context": 99,
-    "day_inventory_with_odds": 197,
-    "matches_seen": 36,
-    "matches_with_2plus_books": 0,
-    "matches_with_context": 30,
-    "matches_with_offers": 29,
-    "odds_offers_primary": 881,
-    "ready_for_model": 94,
-    "secondary_combinations": {}
+    "bzzoiro_odds_overlap_with_odds_api_io": 8,
+    "bzzoiro_secondary_offers_added": 66,
+    "day_inventory_total": 985,
+    "day_inventory_with_context": 163,
+    "day_inventory_with_odds": 217,
+    "matches_seen": 871,
+    "matches_with_2plus_books": 178,
+    "matches_with_context": 219,
+    "matches_with_offers": 324,
+    "odds_offers_primary": 32418,
+    "ready_for_model": 158,
+    "secondary_combinations": {
+      "bzzoiro+odds_api_io": 8,
+      "odds_api_io": 316
+    }
   },
-  "created_at_utc": "2026-05-23T03:36:05.585910+00:00",
+  "created_at_utc": "2026-05-23T05:36:05.355623+00:00",
   "diagnostics": {
-    "bzzoiro_v2": {},
+    "bzzoiro_v2": {
+      "contexts_built": 0,
+      "enabled": true,
+      "errors": 0,
+      "events_fetched": 70,
+      "lineups_resources": 0,
+      "metadata_resources": 0,
+      "odds_resources": 0,
+      "requests": 1,
+      "stats_resources": 0,
+      "target_matches": 64
+    },
     "coverage_truth": {
       "counts": {
         "matches_missing_context_2plus": 293,
         "matches_missing_odds_source_2plus": 300,
-        "matches_missing_price_2plus": 292,
-        "matches_ready_for_model": 94,
+        "matches_missing_price_2plus": 288,
+        "matches_ready_for_model": 163,
         "matches_ready_for_publish": 0,
         "matches_ready_for_publish_strict": 0,
         "matches_strict_ready_already_published": 0,
         "matches_total": 300,
         "matches_with_2plus_context_sources": 7,
         "matches_with_2plus_odds_sources": 0,
-        "matches_with_2plus_price_confirmations": 8,
-        "matches_with_context": 99,
-        "matches_with_odds": 197
+        "matches_with_2plus_price_confirmations": 12,
+        "matches_with_context": 168,
+        "matches_with_odds": 212
       },
       "source": {
         "path": ".data/exports/latest-day-inventory-coverage-truth.json"
       }
     },
     "current_inventory_windows": {
-      "active_matches": 191,
-      "final_pre_kickoff_checks": 48,
-      "matches_needing_odds_refresh": 41,
-      "no_more_regular_run_before_kickoff": 48,
+      "active_matches": 631,
+      "final_pre_kickoff_checks": 54,
+      "matches_needing_odds_refresh": 522,
+      "no_more_regular_run_before_kickoff": 54,
       "source": "latest-day-inventory-refresh-plan + coverage-truth",
-      "window_0_12h": 40,
+      "window_0_12h": 189,
       "window_0_12h_already_published": 0,
-      "window_0_12h_context_2plus": 0,
-      "window_0_12h_price_2plus": 0,
+      "window_0_12h_context_2plus": 4,
+      "window_0_12h_price_2plus": 8,
       "window_0_12h_ready": 0,
       "window_0_12h_strict_ready": 0,
-      "window_0_4h": 40,
+      "window_0_4h": 132,
       "window_0_4h_already_published": 0,
-      "window_0_4h_context_2plus": 0,
-      "window_0_4h_price_2plus": 0,
+      "window_0_4h_context_2plus": 2,
+      "window_0_4h_price_2plus": 6,
       "window_0_4h_ready": 0,
       "window_0_4h_strict_ready": 0
     },
@@ -322,7 +346,7 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 5,
+    "candidates_before_quality": 8,
     "fallback_candidates_seen": 0,
     "fallback_evaluated": 0,
     "fallback_published": false,
@@ -337,16 +361,16 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 4,
-    "windowed_audit_candidates": 0,
+    "raw_candidates": 8,
+    "windowed_audit_candidates": 8,
     "windowed_publish_allowed": 0,
-    "windowed_publish_blocked": 0
+    "windowed_publish_blocked": 8
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 48,
+    "final_pre_kickoff_checks": 54,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 48,
+    "no_more_regular_run_before_kickoff": 54,
     "seen": 0
   },
   "reasons": [],
@@ -356,114 +380,114 @@
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "Sydney United 58 FC",
-        "home_team": "University of Nsw",
-        "kickoff_utc": "2026-05-23T04:15:00+00:00",
-        "league_name": "Australia - NSW NPL 1",
-        "match_key": "soccer|sydney united 58|university of nsw|2026-05-23",
-        "minutes_to_kickoff": 38.98,
+        "away_team": "Toronto Awaba FC",
+        "home_team": "Lake Macquarie City FC",
+        "kickoff_utc": "2026-05-23T06:30:00+00:00",
+        "league_name": "Australia - Northern NSW League One",
+        "match_key": "soccer|lake macquarie city|toronto awaba|2026-05-23",
+        "minutes_to_kickoff": 54.28,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.005,
+        "priority": 149.906,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T23:33:47.767744+00:00",
+          "last_odds_refresh_utc": "2026-05-22T21:47:31.184966+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
+          "needs_context_refresh": true,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Belconnen United",
-        "home_team": "Canberra Olympic",
-        "kickoff_utc": "2026-05-23T04:30:00+00:00",
-        "league_name": "Australia - Capital NPL 1",
-        "match_key": "soccer|belconnen united|canberra olympic|2026-05-23",
-        "minutes_to_kickoff": 53.98,
+        "away_team": "Dulwich Hill",
+        "home_team": "Hakoah",
+        "kickoff_utc": "2026-05-23T06:30:00+00:00",
+        "league_name": "Australia - NSW League One",
+        "match_key": "soccer|dulwich hill|hakoah|2026-05-23",
+        "minutes_to_kickoff": 54.28,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 142.005,
+        "priority": 141.906,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T23:33:47.767744+00:00",
+          "last_odds_refresh_utc": "2026-05-23T05:35:59.944554+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Lambton Jaffas FC",
+        "home_team": "Edgeworth FC",
+        "kickoff_utc": "2026-05-23T06:30:00+00:00",
+        "league_name": "Australia - Northern NSW NPL",
+        "match_key": "soccer|edgeworth|lambton jaffas|2026-05-23",
+        "minutes_to_kickoff": 54.28,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.906,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-23T05:35:59.944554+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Broadmeadow Magic FC",
+        "home_team": "Valentine FC",
+        "kickoff_utc": "2026-05-23T06:30:00+00:00",
+        "league_name": "Australia - Northern NSW NPL",
+        "match_key": "soccer|broadmeadow magic|valentine|2026-05-23",
+        "minutes_to_kickoff": 54.28,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.906,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-23T05:35:59.944554+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "UQ FC",
+        "home_team": "AC Carina",
+        "kickoff_utc": "2026-05-23T07:00:00+00:00",
+        "league_name": "Australia - Queensland Premier League 3 Metro",
+        "match_key": "soccer|carina|uq|2026-05-23",
+        "minutes_to_kickoff": 84.28,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 139.906,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-22T21:47:31.184966+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
       },
       {
-        "away_team": "Kingborough Lions United FC",
-        "home_team": "Clarence Zebras FC",
-        "kickoff_utc": "2026-05-23T04:30:00+00:00",
-        "league_name": "Australia - Tasmania NPL",
-        "match_key": "soccer|clarence zebras|kingborough lions united|2026-05-23",
-        "minutes_to_kickoff": 53.98,
+        "away_team": "Kalamunda City FC",
+        "home_team": "Ashfield SC",
+        "kickoff_utc": "2026-05-23T07:00:00+00:00",
+        "league_name": "Australia - Western Australia State League 2",
+        "match_key": "soccer|ashfield|kalamunda city|2026-05-23",
+        "minutes_to_kickoff": 84.28,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 142.005,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T23:33:47.767744+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "South Hobart FC",
-        "home_team": "Riverside Olympic FC",
-        "kickoff_utc": "2026-05-23T04:30:00+00:00",
-        "league_name": "Australia - Tasmania NPL",
-        "match_key": "soccer|riverside olympic|south hobart|2026-05-23",
-        "minutes_to_kickoff": 53.98,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 142.005,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T23:33:47.767744+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Ulverstone SC",
-        "home_team": "South East United FC",
-        "kickoff_utc": "2026-05-23T04:30:00+00:00",
-        "league_name": "Australia - Tasmania NPL",
-        "match_key": "soccer|south east united|ulverstone|2026-05-23",
-        "minutes_to_kickoff": 53.98,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 142.005,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-22T23:33:47.767744+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Mount Barker United SC",
-        "home_team": "Plympton FC",
-        "kickoff_utc": "2026-05-23T05:00:00+00:00",
-        "league_name": "Australia - South Australia State League 2",
-        "match_key": "soccer|mount barker united|plympton|2026-05-23",
-        "minutes_to_kickoff": 83.98,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 140.005,
+        "priority": 139.906,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -480,7 +504,7 @@
   "status": "candidates_but_quality_rejected",
   "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 2551,
+  "text_length": 3095,
   "top_reason": "n/a",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
