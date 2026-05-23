@@ -1,78 +1,82 @@
 from __future__ import annotations
 
-"""Write a compact diagnostic if fast mode starves market depth.
-
-This is a warning-only guard.  It never changes publication logic and does not
-fail the workflow by default.
-"""
-
 import json
-import os
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+OUT = Path('.data/exports/latest-fast-run-depth-check.json')
 UTC = timezone.utc
-EXPORT = Path('.data/exports')
-OUT = EXPORT / 'latest-fast-run-depth-check.json'
 
 
-def as_int(value: Any, default: int = 0) -> int:
+def load_json(path: str | Path, default: Any) -> Any:
     try:
-        if value in (None, ''):
-            return default
-        return int(float(str(value)))
-    except Exception:
-        return default
-
-
-def load_json(path: Path, default: Any) -> Any:
-    try:
-        if path.exists() and path.stat().st_size > 0:
-            return json.loads(path.read_text(encoding='utf-8'))
+        p = Path(path)
+        if p.exists() and p.stat().st_size > 0:
+            return json.loads(p.read_text(encoding='utf-8'))
     except Exception:
         pass
     return default
 
 
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+def first_dict(*values: Any) -> dict[str, Any]:
+    for value in values:
+        if isinstance(value, dict):
+            return value
+    return {}
+
+
+def as_int(value: Any) -> int:
+    try:
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
+        return int(float(str(value)))
+    except Exception:
+        return 0
 
 
 def main() -> int:
-    report = load_json(EXPORT / 'latest-harizon-telegram-run-report.json', {})
-    api = report.get('api') if isinstance(report, dict) and isinstance(report.get('api'), dict) else {}
-    coverage = report.get('coverage') if isinstance(report, dict) and isinstance(report.get('coverage'), dict) else {}
-    odds = api.get('odds_api_io') if isinstance(api.get('odds_api_io'), dict) else {}
-    bzz = api.get('bzzoiro') if isinstance(api.get('bzzoiro'), dict) else {}
+    debug = load_json('.logs/debug-last-run.json', {})
+    summary = first_dict(debug.get('summary'))
+    stats = first_dict(summary.get('source_stats'))
+    odds = first_dict(stats.get('odds_api_io'))
+    bzz = first_dict(stats.get('bzzoiro'))
+    observed = {
+        'matches_seen': as_int(summary.get('matches_seen')),
+        'matches_with_offers': as_int(summary.get('matches_with_offers')),
+        'odds_api_io_odds_req': as_int(odds.get('odds_requests')),
+        'matches_with_2plus_books': as_int(odds.get('matches_with_2plus_books')),
+        'bookmakers_seen': as_int(odds.get('bookmakers_seen')),
+        'requested_bookmakers': odds.get('requested_bookmakers') or '',
+        'account2_missing': bool(odds.get('account2_missing')),
+        'bzzoiro_secondary_offers': as_int(bzz.get('secondary_offers_added')),
+        'bzzoiro_v2_odds': as_int(bzz.get('v2_odds_resources')),
+    }
     warnings: list[str] = []
     recommendations: list[str] = []
-    if as_int(odds.get('odds_req')) < as_int(os.getenv('FAST_RUN_MIN_ODDS_REQUESTS_WARN'), 12):
+    if observed['matches_seen'] < 80:
+        warnings.append('fast_run_match_window_too_thin')
+        recommendations.append('increase PUBLISH_WINDOW_HOURS/FAST_RUN_WINDOW_HOURS or avoid internal app fast shortcuts')
+    if observed['odds_api_io_odds_req'] < 8:
         warnings.append('odds_api_io_request_depth_too_low')
-        recommendations.append('odds request depth is too thin; ensure RUN_MODE=normal and reapply fast budget after quota contract')
-    if as_int(coverage.get('matches_with_2plus_books')) <= 0:
+        recommendations.append('source latest-fast-run-env.sh before app.cli and keep 24h publish window')
+    if observed['bookmakers_seen'] < 4 or 'Betfair' not in str(observed['requested_bookmakers']):
+        warnings.append('odds_api_io_second_account_or_bookmaker_group_missing')
+        recommendations.append('map ODDS_API_IO_KEY2/ODDS_API_IO_ACC2_KEY from ODDS_API_IO_KEY_2 and request Betfair Exchange,Sbobet')
+    if observed['matches_with_2plus_books'] <= 0:
         warnings.append('zero_matches_with_2plus_books')
-        recommendations.append('market depth is insufficient; increase odds match target/request budget or run full workflow')
-    if as_int(bzz.get('v2_odds_resources')) <= 0 and as_int(bzz.get('secondary_offers_added')) <= 0:
+    if observed['bzzoiro_secondary_offers'] <= 0:
         warnings.append('zero_bzzoiro_secondary_odds')
-        recommendations.append('Bzzoiro odds bridge produced no secondary offers; keep Bzzoiro v2 odds/backfill enabled or run full workflow')
     payload = {
         'created_at_utc': datetime.now(UTC).isoformat(),
+        'ok': not warnings,
+        'observed': observed,
         'warnings': warnings,
         'recommendations': recommendations,
-        'ok': not warnings,
-        'observed': {
-            'odds_api_io_odds_req': as_int(odds.get('odds_req')),
-            'matches_with_2plus_books': as_int(coverage.get('matches_with_2plus_books')),
-            'bzzoiro_secondary_offers': as_int(bzz.get('secondary_offers_added')),
-            'bzzoiro_v2_odds': as_int(bzz.get('v2_odds_resources')),
-        },
     }
-    write_json(OUT, payload)
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
-    if warnings and str(os.getenv('FAST_RUN_DEPTH_CHECK_FAIL') or '').lower() in {'1', 'true', 'yes', 'on'}:
-        return 1
     return 0
 
 
