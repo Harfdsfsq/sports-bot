@@ -17,6 +17,10 @@ MODULES = [
     'app.services.api_matching_quality_runtime_guard',
     'app.services.bzzoiro_provider_runtime_fix',
     'app.services.market_family_publication_guard',
+    # Fast-mode odds-api.io event-account fallback must be installed before the
+    # provider is instantiated/fetched. It only reorders account usage in fast
+    # runs so account2 can fetch events if account1 is in short 429 cooldown.
+    'app.providers.odds_api_io_fast_event_account_patch',
     'app.services.runtime_odds_inventory_matching_patch',
     'app.services.provider_payload_mining_runtime_patch_v2',
     'app.services.bzzoiro_direct_fetch_final_guard',
@@ -70,6 +74,10 @@ MODULES = [
     'app.services.api_coverage_consensus_runtime_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
+    # Normalize Bzzoiro total points (25 -> 2.5) before exact offer bridge turns
+    # provider hints into Offer rows. This improves real Bzzoiro/odds-api overlap
+    # without treating context-only SStats as a line source.
+    'app.services.bzzoiro_total_point_normalization_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',

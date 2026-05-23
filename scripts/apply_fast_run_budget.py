@@ -100,7 +100,7 @@ def main() -> int:
         sstats_req = max(80, as_int(os.getenv('FAST_RUN_SSTATS_REQUESTS'), 100))
         acc2_present = bool((os.getenv('ODDS_API_IO_KEY_2') or os.getenv('ODDS_API_IO_KEY2') or os.getenv('ODDS_API_IO_ACC2_KEY') or os.getenv('ODDS_API_IO_SECONDARY_KEY') or '').strip())
         overrides.update({
-            'FAST_RUN_PROFILE': 'balanced-depth-v3',
+            'FAST_RUN_PROFILE': 'balanced-depth-v4',
             'PUBLISH_WINDOW_HOURS': str(window_hours),
             'RUN_DAYS_AHEAD': os.getenv('FAST_RUN_DAYS_AHEAD', '2'),
             'MIN_KICKOFF_LEAD_MINUTES': os.getenv('FAST_RUN_MIN_KICKOFF_LEAD_MINUTES', '20'),
@@ -127,6 +127,9 @@ def main() -> int:
             'ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN': str(max(60, odds_req // 2)),
             'ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN': str(max(60, odds_req // 2)),
             'ODDS_API_IO_ACCOUNT2_ACTIVE': 'true' if acc2_present else 'false',
+            'ODDS_API_IO_FAST_EVENT_ACCOUNT': 'account2' if acc2_present else 'account1',
+            'ODDS_API_IO_EVENT_ACCOUNT': 'account2' if acc2_present else 'account1',
+            'ODDS_API_IO_ACCOUNT_ORDER': 'account2,account1' if acc2_present else 'account1',
             'ODDS_API_IO_BOOKMAKERS': 'Bet365,Unibet,Betfair Exchange,Sbobet',
             'ODDS_API_IO_BOOKMAKERS_ACCOUNT1': 'Bet365,Unibet',
             'ODDS_API_IO_BOOKMAKERS_ACCOUNT2': 'Betfair Exchange,Sbobet',
@@ -177,7 +180,7 @@ def main() -> int:
             notes.append(f'sportlogic_disabled:{reason}')
         else:
             notes.append(f'sportlogic_kept:{reason}')
-        notes.append('balanced_depth_v3_uses_24h_window_and_dual_account_bookmakers')
+        notes.append('balanced_depth_v4_uses_account2_for_event_lookup_when_account1_is_rate_limited')
         if not acc2_present:
             notes.append('warning:odds_api_io_second_key_missing_or_not_mapped')
     else:

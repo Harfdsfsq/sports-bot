@@ -35,18 +35,27 @@ def as_int(value: Any) -> int:
         return 0
 
 
+def _read_text(path: str) -> str:
+    try:
+        return Path(path).read_text(encoding='utf-8', errors='replace')
+    except Exception:
+        return ''
+
+
 def main() -> int:
     debug = load_json('.logs/debug-last-run.json', {})
     summary = first_dict(debug.get('summary'))
     stats = first_dict(summary.get('source_stats'))
     odds = first_dict(stats.get('odds_api_io'))
     bzz = first_dict(stats.get('bzzoiro'))
+    run_log_text = _read_text('.data/exports/latest-run-bot.log').lower()
     observed = {
         'matches_seen': as_int(summary.get('matches_seen')),
         'matches_with_offers': as_int(summary.get('matches_with_offers')),
         'odds_api_io_odds_req': as_int(odds.get('odds_requests')),
         'matches_with_2plus_books': as_int(odds.get('matches_with_2plus_books')),
         'bookmakers_seen': as_int(odds.get('bookmakers_seen')),
+        'odds_api_io_429_seen': 'api.odds-api.io' in run_log_text and '429 too many requests' in run_log_text,
         'requested_bookmakers': odds.get('requested_bookmakers') or '',
         'account2_missing': bool(odds.get('account2_missing')),
         'bzzoiro_secondary_offers': as_int(bzz.get('secondary_offers_added')),
@@ -57,6 +66,9 @@ def main() -> int:
     if observed['matches_seen'] < 80:
         warnings.append('fast_run_match_window_too_thin')
         recommendations.append('increase PUBLISH_WINDOW_HOURS/FAST_RUN_WINDOW_HOURS or avoid internal app fast shortcuts')
+    if observed.get('odds_api_io_429_seen'):
+        warnings.append('odds_api_io_rate_limited_429_before_odds_backfill')
+        recommendations.append('use account2 for odds-api.io event lookup in fast mode or wait for cooldown')
     if observed['odds_api_io_odds_req'] < 8:
         warnings.append('odds_api_io_request_depth_too_low')
         recommendations.append('source latest-fast-run-env.sh before app.cli and keep 24h publish window')
