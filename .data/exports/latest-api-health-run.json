@@ -22,7 +22,8 @@
   "by_group": {
     "context": {
       "config_only": 1,
-      "ok": 5
+      "ok": 4,
+      "rate_limited": 1
     },
     "news": {
       "ok": 5
@@ -44,17 +45,16 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 15,
-    "rate_limited": 1
+    "ok": 14,
+    "rate_limited": 2
   },
-  "created_at_utc": "2026-05-23T13:01:50.112317+00:00",
+  "created_at_utc": "2026-05-23T15:01:43.855018+00:00",
   "critical_failures": [],
   "mode": "quick",
   "recommendations": [
     "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
     "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
-    "TheSportsDB is reachable; use it for team/league alias enrichment.",
     "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
   ],
   "removed_providers": [
@@ -67,7 +67,7 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "{\"count\":141,\"next\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-23&date_to=2026-05-24&page=2&tz=UTC&upcoming=true\",\"previous\":null,\"results\":[{\"id\":4269,\"event\":{\"id\":204894,\"league\":{\"id\":49,\"name\":\"J1 League\",\"country\":\"Japan\",\"is_women\":false,\"current_season\":null},\"season\":null,\"home_team\":\"Avispa Fukuoka\",\"away_team\":\"Vissel Kobe\",\"home_team_obj\":{\"id\":1940,\"name\":\"Avispa Fukuoka\",\"short_name\":\"Fukuoka\",\"country\":\"Japan\",\"coach\":{\"name\":\"Shinya Tsukahara\",\"shortName\":\"S. Tsukahara\"},\"venue\":null},\"away_team_obj\":{\"id\":1931,\"name\":\"Vissel Kobe\",\"short_name\":\"Vissel Kobe\",\"country\":\"Japan\",\"coach\":{\"name\":\"Michael Skibbe\",\"shortName\":\"M. Skibbe\"},\"venue\":null},\"event_date\":\"2026-05-23T05:00:00Z\",\"round_number\":18,\"round_name\":\"\",\"group_name\":null,\"status\":\"finished\",\"home_score\":0,\"away_score\":1,\"home_score_ht\":0,\"away_score_ht\":1,\"current_minute\":90,\"period\":\"FT\",\"odds_home\":4.18,\"odds_draw\":3.26,\"odds_away\":1.89,\"odds_over_15\":1.45,\"odds_over_25\":2.37,\"odds_over_35\":4.5,\"odds_under_15\":2.64,\"odds_under_25\":1.55,\"odds_under_35\":1.19,\"odds_btts_yes\":2.11,\"odds_btts_no\":1.67,\"actual_home_xg\":null,\"actual_away_xg\":null,\"home_xg_live\":null,\"away_xg_live\":null,\"pe",
+        "body_preview": "{\"count\":141,\"next\":\"https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-23&date_to=2026-05-24&page=2&tz=UTC&upcoming=true\",\"previous\":null,\"results\":[{\"id\":4268,\"event\":{\"id\":204895,\"league\":{\"id\":49,\"name\":\"J1 League\",\"country\":\"Japan\",\"is_women\":false,\"current_season\":null},\"season\":null,\"home_team\":\"Sanfrecce Hiroshima\",\"away_team\":\"Nagoya Grampus\",\"home_team_obj\":{\"id\":1933,\"name\":\"Sanfrecce Hiroshima\",\"short_name\":\"Sanfrecce\",\"country\":\"Japan\",\"coach\":{\"name\":\"Bartosch Gaul\",\"shortName\":\"B. Gaul\"},\"venue\":null},\"away_team_obj\":{\"id\":1942,\"name\":\"Nagoya Grampus\",\"short_name\":\"Nagoya\",\"country\":\"Japan\",\"coach\":{\"name\":\"Mihailo Petrovic\",\"shortName\":\"M. Petrovic\"},\"venue\":null},\"event_date\":\"2026-05-23T05:00:00Z\",\"round_number\":18,\"round_name\":\"\",\"group_name\":null,\"status\":\"finished\",\"home_score\":4,\"away_score\":2,\"home_score_ht\":3,\"away_score_ht\":1,\"current_minute\":90,\"period\":\"FT\",\"odds_home\":1.79,\"odds_draw\":4.36,\"odds_away\":8.86,\"odds_over_15\":1.16,\"odds_over_25\":1.52,\"odds_over_35\":2.24,\"odds_under_15\":4.81,\"odds_under_25\":2.59,\"odds_under_35\":1.92,\"odds_btts_yes\":1.54,\"odds_btts_no\":2.37,\"actual_home_xg\":null,\"actual_away_xg\":null,\"home_xg_live\":null,\"away_xg_live",
         "payload_shape": "count,next,previous,results"
       },
       "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-05-23&date_to=2026-05-24&upcoming=true&tz=UTC&page=1",
@@ -75,7 +75,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 4701,
+      "latency_ms": 3505,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -94,7 +94,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 733,
+      "latency_ms": 459,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -122,7 +122,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"data\":[{\"id\":1297419215,\"round\":\"Group Stage\",\"date\":\"2026-05-23T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":23422006,\"logo\":null,\"name\":\"Swarm Fc\"},\"homeTeam\":{\"id\":20406913,\"logo\":null,\"name\":\"Columbus United\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name\":\"USL League Two\",\"season\":2026}},{\"id\":1297421768,\"round\":\"Group Stage\",\"date\":\"2026-05-23T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":1370043,\"logo\":\"https://highlightly.net/soccer/images/teams/1370043.png\",\"name\":\"New England Revolution\"},\"homeTeam\":{\"id\":3489884,\"logo\":\"https://highlightly.net/soccer/images/teams/3489884.png\",\"name\":\"Western Mass Pioneers\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name\":\"USL League Two\",\"season\":2026}},{\"id\":1297418364,\"round\":\"Group Sta",
+        "body_preview": "{\"data\":[{\"id\":1297419215,\"round\":\"Group Stage\",\"date\":\"2026-05-23T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":23422006,\"logo\":null,\"name\":\"Swarm Fc\"},\"homeTeam\":{\"id\":20406913,\"logo\":null,\"name\":\"Columbus United\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name\":\"USL League Two\",\"season\":2026}},{\"id\":1268257147,\"round\":\"Regular Season - 16\",\"date\":\"2026-05-23T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":1374298,\"logo\":\"https://highlightly.net/soccer/images/teams/1374298.png\",\"name\":\"Montréal Impact\"},\"homeTeam\":{\"id\":1375149,\"logo\":\"https://highlightly.net/soccer/images/teams/1375149.png\",\"name\":\"DC United\"},\"league\":{\"id\":216087,\"logo\":\"https://highlightly.net/soccer/images/leagues/216087.png\",\"name\":\"Major League Soccer\",\"season\":2026}},{\"id\":1268256296,\"round\":\"Regular Season ",
         "expected_base": "https://soccer.highlightly.net",
         "payload_shape": "data,pagination,plan",
         "rapidapi_base": "https://football-highlights-api.p.rapidapi.com"
@@ -132,7 +132,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 257,
+      "latency_ms": 227,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -151,7 +151,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 658,
+      "latency_ms": 492,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -162,27 +162,28 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"countries\":[{\"idLeague\":\"4570\",\"idAPIfootball\":\"7364\",\"idAPIfootballv3\":\"48\",\"strSport\":\"Soccer\",\"strLeague\":\"EFL Cup\",\"strLeagueAlternate\":\"Football League Cup, Carabao Cup\",\"intDivision\":\"99\",\"idCup\":\"1\",\"strCurrentSeason\":\"2025-2026\",\"intFormedYear\":\"1960\",\"dateFirstEvent\":\"2006-02-26\",\"strGender\":\"Male\",\"strCountry\":\"England\",\"strWebsite\":\"www.efl.com\\/carabao-cup\",\"strFacebook\":\"www.facebook.com\\/TheCarabaoCup\\/\",\"strInstagram\":\"\",\"strTwitter\":\"twitter.com\\/carabao_cup\",\"strYoutube\":\"\",\"strRSS\":\"\",\"strDescriptionEN\":\"The EFL Cup (referred to historically, and colloquially, as simply the League Cup), currently known as the Carabao Cup for sponsorship reasons, is an annual knockout football competition in men's domestic English football. Organised by the English Football League (EFL), it is open to any club within the top four levels of the English football league system – 92 clubs in total – comprising the top level Premier League, and the three divisions of the English Football League's own league competition (Championship, League One and League Two).\\r\\n\\r\\nFirst held in 1960–61 as the Football League Cup, it is one of the three top-tier domestic football competitions in En",
+        "body_preview": "<!doctype html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <html class=\"no-js ie7 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 8]>    <html class=\"no-js ie8 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if gt IE 8]><!-->\n<html class=\"no-js\" lang=\"en-US\">\n    <!--<![endif]-->\n    <head>\n        <title>Access denied | www.thesportsdb.com used Cloudflare to restrict access | www.thesportsdb.com | Cloudflare</title>\n        <meta charset=\"UTF-8\" />\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\" />\n<meta name=\"robots\" content=\"noindex, nofollow\" />\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n<link rel=\"stylesheet\" id=\"cf_styles-css\" href=\"/cdn-cgi/styles/main.css\" /> <script>\n  (function(){if(document.addEventListener&&window.XMLHttpRequest&&JSON&&JSON.stringify){var e=function(a){var c=document.getElementById(\"error-feedback-survey\"),d=document.getElementById(\"error-feedback-success\"),b=new XMLHttpRequest;a={event:\"feedback clicked\",properties:{errorCode: 1015 },helpful:a,version: 1 };b.open(\"POST\",\"https://sparrow.cloudflare.com/api/v1/event\"",
         "free_key_defaulted": true,
-        "payload_shape": "countries"
+        "payload_shape": "NoneType",
+        "semantic_message": "html_error_page"
       },
       "endpoint": "https://www.thesportsdb.com/api/v1/json/123/search_all_leagues.php?c=England&s=Soccer",
       "group": "context",
       "http_statuses": [
-        200
+        429
       ],
-      "latency_ms": 165,
-      "message": "ok",
+      "latency_ms": 23,
+      "message": "html_error_page",
       "provider": "thesportsdb",
       "requests": 1,
-      "status": "ok",
-      "useful_rows": 5
+      "status": "rate_limited",
+      "useful_rows": 0
     },
     {
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"e844266e-7427-5f2f-afb9-90962e420df7\",\"title\":\"Gout Gout taunted by former world champion Fred Kerley who mockingly invites sprinter to Enhanced Games\",\"description\":\"US sprinter Fred Kerley has challenged Gout Gout to compete at the Enhanced Games while raising doubt over whether he will be able to handle the pressure of becoming a star.\",\"url\":\"https://www.news.com.au/sport/olympics/athletics/gout-gout-taunted-by-former-world-champion-fred-kerley-who-mockingly-invites-sprinter-to-enhanced-games/news-story/e51e606df8ab6247ae1b05d46439485f\",\"author\":\"Kealan Hughes\",\"image\":\"https://content.api.news/v3/images/bin/953f411f4831b81c5ae76e49bb16eebb\",\"language\":\"en\",\"category\":[\"sports\",\"regional\"],\"source_category\":[\"sports\",\"regional\"],\"published\":\"2026-05-23 12:50:52 +0000\"},{\"id\":\"35a7cb93-4115-5d7c-a6a5-997d0421a0bb\",\"title\":\"Champions Cup final, Leinster v Bordeaux: Leo Cullen\\u2019s side face tough task in quest for fifth star\",\"description\":\"\",\"url\":\"https://www.independent.ie/sport/rugby/leinster-rugby/champions-cup-final-leinster-v-bordeaux-leo-cullens-side-face-tough-task-in-quest-for-fifth-star/a/152745294.html\",\"author\":\"Michael Scully\",\"image\"",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"94cd2bea-f548-50ba-9ec4-3e2dc68bacf1\",\"title\":\"PSG play friendly ahead of Arsenal showdown but two injured stars miss out\",\"description\":\"PSG played a inter-squad friendly match ahead of the Champions League final against Arsenal with Ousmane Dembele and Hakimi missing out.\",\"url\":\"https://metro.co.uk/2026/05/23/psg-play-friendly-ahead-arsenal-showdown-two-injured-stars-miss-28491591/\",\"author\":\"Tony Mogan\",\"image\":\"https://metro.co.uk/wp-content/uploads/2026/05/GettyImages-2276717193_664460_1779547784.jpg?quality=90&strip=all&w=1200&h=630&crop=1\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-23 14:49:39 +0000\"},{\"id\":\"981b0a86-3dc7-5911-bdb7-1f5324260ea1\",\"title\":\"[FIA] Alex Albon, Pierre Gasly and Ollie Bearman to start the Sprint from the pitlane\",\"description\":\"submitted by    /u/Aratho   [link]   [comments]\",\"url\":\"https://www.reddit.com/r/formula1/comments/1tlidii/fia_alex_albon_pierre_gasly_and_ollie_bearman_to/\",\"author\":\"/u/Aratho\",\"image\":\"None\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-23 14:43:38 +0000\"},{\"id\":\"67dc23e4-d325-58fe-abfb-8464ba4c662d\",\"titl",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -190,7 +191,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 587,
+      "latency_ms": 397,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -201,7 +202,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":322587,\"articles\":[{\"id\":\"4d214a6556d76506b039fe42ec9cae74\",\"title\":\"In 28 Months, Look How Much Husky Football Has Changed\",\"description\":\"Reminders of a glorious UW playoff run are few and far between.\",\"content\":\"College football unapologetically keeps reminding us how nothing stays the same in thia game anymore.\\nA lot of traditions have gone by the wayside, been filed away.\\nFor instance, Notre Dame and USC have say they no longer want to play each other in f... [2685 chars]\",\"url\":\"https://www.si.com/college/washington/football/in-28-months-look-how-much-husky-football-has-changed-01krykrydg48\",\"image\":\"https://images2.minutemediacdn.com/image/upload/c_crop,x_0,y_136,w_5526,h_3108/c_fill,w_1440,ar_1440:810,f_auto,q_auto,g_auto/images/ImagnImages/mmsport/inside_the_huskies/01krykz811p3vtz0m99h.jpg\",\"publishedAt\":\"2026-05-23T00:55:53Z\",\"lang\":\"en\",\"source\":{\"id\":\"9965770f36f6de1ea190915236ad98eb\",\"name\":\"Sports Illustrated\",\"url\":\"https://www.si.com\",\"country",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":322603,\"articles\":[{\"id\":\"23d0d3e903c671baf98dd3970af13aaf\",\"title\":\"Wachusett girls' flag football celebrates Senior Night, NLI signing\",\"description\":\"After starting the program with just nine players in 2024, Wachusett celebrated five players Friday with its second ever Senior Night and first ever NLI signing.\",\"content\":\"HOLDEN — What a day it was for the Wachusett girls’ flag football team.\\nAfter starting the flag program with just nine players two years ago, Wachusett celebrated five players on Friday — Julia Daly, Maggie Jennings, Lucy O’Brien, Maria Petronino and... [4557 chars]\",\"url\":\"https://www.telegram.com/story/sports/high-school/2026/05/22/wachusett-girls-flag-football-senior-night-2026-maggie-jennings-julia-daly-bridget-damelio/90210917007/\",\"image\":\"https://www.telegram.com/gcdn/authoring/authoring-images/2026/05/23/NTEG/90226252007-dsc-02718.jpg?crop=6424,3616,x0,y335&width=3200&height=1802&format=pjpg&auto=webp\",\"publishedAt\":\"2026-05-23T03:01",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -209,7 +210,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 459,
+      "latency_ms": 248,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -220,7 +221,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134466,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134466,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134467,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134467,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
         "payload_shape": "response"
       },
       "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
@@ -228,7 +229,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 847,
+      "latency_ms": 573,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -239,7 +240,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":26980,\"articles\":[{\"source\":{\"id\":\"usa-today\",\"name\":\"USA Today\"},\"author\":\"Matt Legros, Giants Wire\",\"title\":\"Ex-Giants WR Collin Johnson announces retirement, enrollment at MIT\",\"description\":\"Former New York Giants WR Collin Johnson has officially announced his NFL retirement.\",\"url\":\"https://giantswire.usatoday.com/story/sports/nfl/giants/2026/05/22/ex-giants-collin-johnson-announces-retirement-enrollment-mit/90196010007/\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/jqHpkuynhbdV9M4cF9FtKA--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD04NTA7Y2Y9d2VicA--/https://media.zenfs.com/en/new_york_giants_wire_usa_today_sports_articles_591/b810350301b7119e7de7ddeab7095e14\",\"publishedAt\":\"2026-05-22T13:01:25Z\",\"content\":\"Former New York Giants wide receiver Collin Johnson has retired from the NFL after six seasons.\\r\\nJohnson officially announced his retirement on Thursday and revealed that he will enroll at MIT in the… [+813 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":27093,\"articles\":[{\"source\":{\"id\":null,\"name\":\"BBC News\"},\"author\":\"BBC\",\"title\":\"'Put trust in Martin' or 'long-term' planning required?\",\"description\":\"Celtic fans, we asked for your views as to whether Martin O'Neill should remain as manager for next season. Kenny: Martin should at least be offered the job before anyone else after what he has achieved in the short time he's been there. Celtic need a rebuild…\",\"url\":\"https://www.bbc.com/sport/articles/cgkp2nj3gz1o?xtor=AL-72-%5Bpartner%5D-%5Byahoo.north.america%5D-%5Bheadline%5D-%5Bsport%5D-%5Bbizdev%5D-%5Bisapi%5D\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/p1LRcJu0HMOckMPkn3tKmg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD02NzU7Y2Y9d2VicA--/https://media.zenfs.com/en/bbc_us_articles_995/8d0bd48de056415827c2f418b9a4ead6\",\"publishedAt\":\"2026-05-22T15:01:39Z\",\"content\":\"Celtic fans, we asked for your views as to whether Martin O'Neill should remain as manager for next season.\\r\\nHere's what some of you had to say:\\r\\nKenny: Martin should at least be offered the job befo… [+2050 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -247,7 +248,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 165,
+      "latency_ms": 106,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -258,7 +259,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":10348,\"results\":[{\"article_id\":\"49b6c09f0d781f2fce0af5d04dc2be9b\",\"link\":\"https://www.dailymail.com/sport/football/article-15840241/Tottenham-relegation-car-crash-gunpoint-mistakes.html\",\"title\":\"A car crash, being held at gunpoint, an AWOL captain, the never-ending list of hapless mistakes... and why they didn't act in January: This is the inside story of Tottenham's worst season in half a century\",\"description\":\"Spurs will finish at best 17th, the same as last season, which at the time seemed to be an anomaly but might be a trend. It doesn't help the mood when Arsenal are crowned champions.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"richarlison\",\"dailymail\",\"sport\",\"james maddison\",\"roberto de zerbi\",\"rodrigo bentancur\",\"ange postecoglou\",\"tottenham relegation car crash gunpoint mistakes\",\"cristian romero\",\"football\",\"premier league\",\"dominic solanke\",\"dejan kulusevski\",\"tottenham hotspur\",\"thomas frank\"],\"creator\":[\"matt barlow\"],\"language\":\"english\",\"country\":[\"united kingdom\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-23 01:00:46\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-23 01:05:50\",\"image_url\":\"https://i.dailymai",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":9882,\"results\":[{\"article_id\":\"647cd81835e391dff43da6185aaead17\",\"link\":\"https://www.naijanews.com/2026/05/23/top-nigerian-newspaper-headlines-22rd-may-2026/\",\"title\":\"Top Nigerian Newspaper Headlines For Today, Saturday, 22rd May, 2026\",\"description\":\"Good morning, Nigeria. Welcome to the Naija News roundup of top newspaper headlines in Nigeria for today, Saturday, 23rd May, 2026. 1. Court Adjourns Malami’s... The post Top Nigerian Newspaper Headlines For Today, Saturday, 22rd May, 2026 appeared first on Naija News .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"breaking nigerian newspaper headlines today\",\"major nigerian newspaper headlines today\",\"top nigerian newspaper headlines\",\"breaking news\",\"headlines\",\"breaking nigerian newspaper headlines\",\"top nigerian newspaper headlines today\",\"major nigerian newspaper headlines\",\"latest nigerian newspaper headlines today\",\"latest nigerian newspaper headlines\",\"naija news\",\"breaking nigerian news today\"],\"creator\":[\"richard ogunsile\"],\"language\":\"english\",\"country\":[\"nigeria\"],\"category\":[\"top\",\"lifestyle\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-23 03:00:20\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"202",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -266,7 +267,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 361,
+      "latency_ms": 160,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -277,18 +278,18 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":71577914,\"home\":\"Ferencvarosi Budapest\",\"away\":\"Puskas Akademia Felcsut\",\"homeId\":153382,\"awayId\":778126,\"date\":\"2026-05-23T13:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Hungary - NB I, Women\",\"slug\":\"hungary-nb-i-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67993580,\"home\":\"HB Torshavn II\",\"away\":\"IF Fuglafjordur\",\"homeId\":36137,\"awayId\":5188,\"date\":\"2026-05-23T13:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Faroe Islands - 1st deild\",\"slug\":\"faroe-islands-1st-deild\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70249524,\"home\":\"FC Pobeda Khasavyurt\",\"away\":\"Neftyanik Izberbash\",\"homeId\":890445,\"awayId\":1241233,\"date\":\"2026-05-23T13:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 2. Liga, Division B, Group 1\",\"slug\":\"russia-2-liga-division-b-group-1\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70249526,\"home\":\"FK Angusht Nazran\",\"away\":\"FC Druzhba Maykop\",\"homeId\":36395,\"awayId\":75101,\"date\":\"2026-05-23T13:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Russia - 2. Liga, Division B, Group 1\",\"slug\":\"russia-2-liga-division-b",
+        "body_preview": "[{\"id\":71498964,\"home\":\"Al Nahda\",\"away\":\"Al Shabab\",\"homeId\":40648,\"awayId\":57449,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498956,\"home\":\"Al-Seeb\",\"away\":\"Ibri\",\"homeId\":71044,\"awayId\":652894,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498958,\"home\":\"Al-Rustaq\",\"away\":\"Oman Club\",\"homeId\":185570,\"awayId\":57443,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498960,\"home\":\"Sur SC\",\"away\":\"Sohar\",\"homeId\":57439,\"awayId\":99993,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498962,\"home\":\"Samail SC\",\"away\":\"Bahla Club\",\"homeId\":185588,\"awayId\":185578,\"date\":\"2026-05-23T15:25:0",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-23T13%3A01%3A45Z&to=2026-05-25T13%3A01%3A45Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-23T15%3A01%3A40Z&to=2026-05-25T15%3A01%3A40Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 487,
+      "latency_ms": 211,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -308,7 +309,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 690,
+      "latency_ms": 576,
       "message": "ok",
       "provider": "sportlogic",
       "requests": 1,
@@ -327,7 +328,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 545,
+      "latency_ms": 378,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -362,7 +363,7 @@
       "http_statuses": [
         429
       ],
-      "latency_ms": 156,
+      "latency_ms": 39,
       "message": "http_status=429",
       "provider": "meteostat",
       "requests": 1,
@@ -373,7 +374,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":801,\"main\":\"Clouds\",\"description\":\"few clouds\",\"icon\":\"02d\"}],\"base\":\"stations\",\"main\":{\"temp\":28.54,\"feels_like\":28.32,\"temp_min\":26.95,\"temp_max\":29.05,\"pressure\":1027,\"humidity\":42,\"sea_level\":1027,\"grnd_level\":1023},\"visibility\":10000,\"wind\":{\"speed\":2.06,\"deg\":270},\"clouds\":{\"all\":13},\"dt\":1779540929,\"sys\":{\"type\":2,\"id\":268730,\"country\":\"GB\",\"sunrise\":1779508696,\"sunset\":1779566191},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":802,\"main\":\"Clouds\",\"description\":\"scattered clouds\",\"icon\":\"03d\"}],\"base\":\"stations\",\"main\":{\"temp\":29.13,\"feels_like\":28.56,\"temp_min\":27.95,\"temp_max\":29.58,\"pressure\":1026,\"humidity\":38,\"sea_level\":1026,\"grnd_level\":1023},\"visibility\":10000,\"wind\":{\"speed\":3.6,\"deg\":260},\"clouds\":{\"all\":38},\"dt\":1779548265,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1779508696,\"sunset\":1779566191},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -381,7 +382,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 100,
+      "latency_ms": 42,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -392,7 +393,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779541327,\"localtime\":\"2026-05-23 14:02\"},\"current\":{\"last_updated_epoch\":1779541200,\"last_updated\":\"2026-05-23 14:00\",\"temp_c\":26.4,\"temp_f\":79.5,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/113.png\",\"code\":1000},\"wind_mph\":6.0,\"wind_kph\":9.7,\"wind_degree\":273,\"wind_dir\":\"W\",\"pressure_mb\":1027.0,\"pressure_in\":30.33,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":48,\"cloud\":25,\"feelslike_c\":26.5,\"feelslike_f\":79.7,\"windchill_c\":27.6,\"windchill_f\":81.8,\"heatindex_c\":27.7,\"heatindex_f\":81.8,\"dewpoint_c\":13.7,\"dewpoint_f\":56.7,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":6.1,\"gust_mph\":7.0,\"gust_kph\":11.2,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-23\",\"date_epoch\":1779494400,\"day\":{\"maxtemp_c\":28.4,\"maxtemp_f\":83.1,\"mintemp_c\":16.0,\"mintemp_f\":60.8,\"avgtemp_c\":21.9,\"avgtemp_f\":71.4,\"maxwind_mph\":8.3,\"maxwind_kph\":13.3,\"totalprecip_mm\":0.99,\"totalprecip_in\":0.04,\"totalsnow_cm\":0.0,\"avgvis_km\":9.9,\"avgvis_miles\":6.0,\"avghu",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779548494,\"localtime\":\"2026-05-23 16:01\"},\"current\":{\"last_updated_epoch\":1779548400,\"last_updated\":\"2026-05-23 16:00\",\"temp_c\":28.3,\"temp_f\":82.9,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/113.png\",\"code\":1000},\"wind_mph\":8.5,\"wind_kph\":13.7,\"wind_degree\":292,\"wind_dir\":\"WNW\",\"pressure_mb\":1027.0,\"pressure_in\":30.33,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":42,\"cloud\":0,\"feelslike_c\":28.2,\"feelslike_f\":82.8,\"windchill_c\":27.2,\"windchill_f\":81.0,\"heatindex_c\":27.2,\"heatindex_f\":80.9,\"dewpoint_c\":12.8,\"dewpoint_f\":55.0,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":3.7,\"gust_mph\":9.8,\"gust_kph\":15.7,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-23\",\"date_epoch\":1779494400,\"day\":{\"maxtemp_c\":27.5,\"maxtemp_f\":81.5,\"mintemp_c\":16.0,\"mintemp_f\":60.8,\"avgtemp_c\":21.6,\"avgtemp_f\":70.9,\"maxwind_mph\":8.5,\"maxwind_kph\":13.7,\"totalprecip_mm\":0.99,\"totalprecip_in\":0.04,\"totalsnow_cm\":0.0,\"avgvis_km\":9.9,\"avgvis_miles\":6.0,\"avg",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -400,7 +401,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 368,
+      "latency_ms": 185,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -413,11 +414,11 @@
     "config_only": 1,
     "critical_failures": 0,
     "degraded": 0,
-    "healthy_or_config_only": 16,
+    "healthy_or_config_only": 15,
     "missing_secret": 1,
-    "ok": 15,
+    "ok": 14,
     "providers_checked": 18,
-    "rate_limited": 1,
+    "rate_limited": 2,
     "skipped": 0,
     "skipped_daily_circuit": 0
   }
