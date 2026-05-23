@@ -82,7 +82,11 @@ def _env_int(name: str, default: int) -> int:
 
 def main() -> int:
     run_mode = str(os.getenv('RUN_MODE') or '').strip().lower()
-    fast = truthy(os.getenv('HARIZON_FAST_RUN'), False) or run_mode == 'fast'
+    workflow_mode = str(os.getenv('FAST_WORKFLOW_MODE') or os.getenv('GITHUB_WORKFLOW_MODE') or '').strip().lower()
+    # RUN_MODE belongs to app.cli. Do not use RUN_MODE=fast for the production
+    # app because it activates internal shortcuts and starves odds depth. Fast
+    # workflow mode is controlled by HARIZON_FAST_RUN / FAST_WORKFLOW_MODE.
+    fast = truthy(os.getenv('HARIZON_FAST_RUN'), False) or workflow_mode == 'fast'
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     overrides: dict[str, str] = {}
     notes: list[str] = []
@@ -91,11 +95,13 @@ def main() -> int:
         profile = str(os.getenv('FAST_RUN_PROFILE') or 'balanced').strip().lower()
         inventory_limit = max(220, as_int(os.getenv('FAST_RUN_INVENTORY_LIMIT'), 300))
         window_hours = max(8, as_int(os.getenv('FAST_RUN_WINDOW_HOURS') or os.getenv('PUBLISH_WINDOW_HOURS'), 12))
-        odds_match_target = max(160, _env_int('FAST_RUN_ODDS_MATCH_TARGET', min(inventory_limit, 220)))
-        odds_req = max(60, _env_int('FAST_RUN_ODDS_API_IO_REQUESTS', 120))
-        per_account = max(30, odds_req // 2)
-        bzz_req = max(60, _env_int('FAST_RUN_BZZOIRO_MAX_REQUESTS', 100))
-        sstats_req = max(60, _env_int('FAST_RUN_SSTATS_MAX_REQUESTS', 90))
+        odds_match_target = max(220, _env_int('FAST_RUN_ODDS_MATCH_TARGET', min(inventory_limit, 260)))
+        # Balanced fast must still fetch enough market depth. The previous
+        # profile produced only 4 odds requests and 0 matches with 2+ books.
+        odds_req = max(100, _env_int('FAST_RUN_ODDS_API_IO_REQUESTS', 160))
+        per_account = max(50, odds_req // 2)
+        bzz_req = max(90, _env_int('FAST_RUN_BZZOIRO_MAX_REQUESTS', 140))
+        sstats_req = max(70, _env_int('FAST_RUN_SSTATS_MAX_REQUESTS', 100))
 
         overrides.update({
             'HARIZON_FAST_RUN': 'true',
@@ -107,7 +113,7 @@ def main() -> int:
             'DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES': str(odds_match_target),
             'DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES': str(odds_match_target),
             'PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT': str(odds_match_target),
-            'PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT': str(max(6, min(14, odds_match_target // 15))),
+            'PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT': str(max(10, min(18, odds_match_target // 12))),
             'PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST': '10',
             'ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN': str(odds_req),
             'ODDS_API_IO_MAX_REQUESTS_PER_RUN': str(odds_req),
@@ -118,6 +124,11 @@ def main() -> int:
             'ODDS_API_IO_ACCOUNT2_PER_RUN_MAX': str(per_account),
             'ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN': str(per_account),
             'ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN': str(per_account),
+            'ODDS_API_IO_MAX_ODDS_REQUESTS_PER_RUN': str(odds_req),
+            'ODDS_API_IO_ODDS_REQUEST_BUDGET_GRANTED': str(odds_req),
+            'ODDS_API_IO_FETCH_ODDS_MAX_REQUESTS': str(odds_req),
+            'ODDS_API_IO_MATCH_LIMIT': str(odds_match_target),
+            'ODDS_API_IO_ODDS_MATCH_LIMIT': str(odds_match_target),
             'BZZOIRO_MAX_REQUESTS_PER_RUN': str(bzz_req),
             'BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN': str(bzz_req),
             'BZZOIRO_REQUESTS_MAX_PER_RUN': str(bzz_req),
@@ -128,7 +139,7 @@ def main() -> int:
             'BZZOIRO_MAX_PAGES': '14',
             'BZZOIRO_CONTEXT_MATCH_LIMIT': str(min(inventory_limit, 220)),
             'BZZOIRO_PRICE_BACKFILL_ENABLED': 'true',
-            'BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT': str(max(60, min(100, odds_match_target // 2))),
+            'BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT': str(max(80, min(140, odds_match_target // 2))),
             'BZZOIRO_V2_ODDS_ENABLED': 'true',
             'BZZOIRO_V2_FETCH_EVENT_ODDS': 'true',
             'BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE': 'true',
@@ -159,6 +170,7 @@ def main() -> int:
         else:
             notes.append(f'sportlogic_kept:{reason}')
         notes.append('balanced_fast_preserves_minimum_odds_depth')
+        notes.append('app_run_mode_forced_normal_to_avoid_internal_fast_shortcuts')
     else:
         notes.append('fast_run_disabled')
 
@@ -167,6 +179,7 @@ def main() -> int:
         'created_at_utc': datetime.now(UTC).isoformat(),
         'fast_run': fast,
         'run_mode': run_mode,
+        'workflow_mode': workflow_mode,
         'overrides': overrides,
         'notes': notes,
     }

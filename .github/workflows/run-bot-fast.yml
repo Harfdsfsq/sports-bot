@@ -30,7 +30,11 @@ env:
   TZ: Europe/Moscow
   APP_TIMEZONE: Europe/Moscow
   APP_ENV: production
-  RUN_MODE: ${{ github.event.inputs.mode || 'fast' }}
+  # Keep app.cli in normal production mode. The previous fast workflow passed RUN_MODE=fast,
+  # which activated internal app shortcuts and left only ~36 matches / 4 odds requests.
+  # HARIZON_FAST_RUN controls the workflow budget profile; RUN_MODE controls prediction logic.
+  RUN_MODE: "normal"
+  FAST_WORKFLOW_MODE: ${{ github.event.inputs.mode || 'fast' }}
   HARIZON_FAST_RUN: ${{ github.event.inputs.mode != 'full' }}
   PUBLISH_DRY_RUN: "false"
   PREDICTION_PUBLICATION_ENABLED: "true"
@@ -240,6 +244,7 @@ jobs:
           mkdir -p .data/exports
           python -u scripts/apply_fast_run_budget.py
           python -u scripts/trim_day_inventory_fast.py
+          echo "RUN_MODE=${RUN_MODE} FAST_WORKFLOW_MODE=${FAST_WORKFLOW_MODE} HARIZON_FAST_RUN=${HARIZON_FAST_RUN}"
 
       - name: Apply publication and quota policy
         shell: bash
@@ -251,6 +256,7 @@ jobs:
           # after it so balanced fast keeps enough market depth for 2+ books/odds.
           python -u scripts/apply_fast_run_budget.py || true
           python -u scripts/apply_publication_family_policy.py || true
+          echo "fast-depth env: RUN_MODE=${RUN_MODE} ODDS_API_IO_MAX_REQUESTS_PER_RUN=${ODDS_API_IO_MAX_REQUESTS_PER_RUN} MAX_MATCHES_FOR_ODDS_FETCH=${MAX_MATCHES_FOR_ODDS_FETCH} BZZOIRO_MAX_REQUESTS_PER_RUN=${BZZOIRO_MAX_REQUESTS_PER_RUN}"
 
       - name: Provider smoke
         if: ${{ github.event.inputs.provider_smoke == 'true' || github.event.inputs.mode == 'full' }}

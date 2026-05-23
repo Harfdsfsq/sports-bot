@@ -47,15 +47,20 @@ def main() -> int:
     odds = api.get('odds_api_io') if isinstance(api.get('odds_api_io'), dict) else {}
     bzz = api.get('bzzoiro') if isinstance(api.get('bzzoiro'), dict) else {}
     warnings: list[str] = []
+    recommendations: list[str] = []
     if as_int(odds.get('odds_req')) < as_int(os.getenv('FAST_RUN_MIN_ODDS_REQUESTS_WARN'), 12):
         warnings.append('odds_api_io_request_depth_too_low')
+        recommendations.append('odds request depth is too thin; ensure RUN_MODE=normal and reapply fast budget after quota contract')
     if as_int(coverage.get('matches_with_2plus_books')) <= 0:
         warnings.append('zero_matches_with_2plus_books')
+        recommendations.append('market depth is insufficient; increase odds match target/request budget or run full workflow')
     if as_int(bzz.get('v2_odds_resources')) <= 0 and as_int(bzz.get('secondary_offers_added')) <= 0:
         warnings.append('zero_bzzoiro_secondary_odds')
+        recommendations.append('Bzzoiro odds bridge produced no secondary offers; keep Bzzoiro v2 odds/backfill enabled or run full workflow')
     payload = {
         'created_at_utc': datetime.now(UTC).isoformat(),
         'warnings': warnings,
+        'recommendations': recommendations,
         'ok': not warnings,
         'observed': {
             'odds_api_io_odds_req': as_int(odds.get('odds_req')),
