@@ -8,6 +8,7 @@
   "stats": {
     "api_key_present": 2,
     "auth_error": 0,
+    "broad_fallback_stale_rows": 200,
     "budget_exhausted": 0,
     "contexts_built": 0,
     "date_filter_ignored": true,
@@ -98,6 +99,11 @@
       422,
       200,
       200,
+      200,
+      200,
+      200,
+      200,
+      422,
       200,
       200
     ],
@@ -233,11 +239,62 @@
           "2026-05-02"
         ],
         "scope": "dated"
+      },
+      {
+        "date": "broad",
+        "params": {
+          "per_page": 50,
+          "status": "scheduled"
+        },
+        "rows": 50,
+        "rows_inside_requested_dates": 0,
+        "sample_dates": [
+          "2026-05-02"
+        ],
+        "scope": "broad"
+      },
+      {
+        "date": "broad",
+        "params": {
+          "per_page": 50
+        },
+        "rows": 50,
+        "rows_inside_requested_dates": 0,
+        "sample_dates": [
+          "2026-05-02"
+        ],
+        "scope": "broad"
+      },
+      {
+        "date": "broad",
+        "params": {
+          "per_page": 50,
+          "sport": "football"
+        },
+        "rows": 50,
+        "rows_inside_requested_dates": 0,
+        "sample_dates": [
+          "2026-05-02"
+        ],
+        "scope": "broad"
+      },
+      {
+        "date": "broad",
+        "params": {
+          "per_page": 50,
+          "sport": "soccer"
+        },
+        "rows": 50,
+        "rows_inside_requested_dates": 0,
+        "sample_dates": [
+          "2026-05-02"
+        ],
+        "scope": "broad"
       }
     ],
     "rate_limited": 0,
-    "requests": 8,
-    "response_errors": 1,
+    "requests": 13,
+    "response_errors": 2,
     "rows_before_parse": 0,
     "sportlogic_query_guard_enabled": true,
     "stale_or_ignored_date_filter_rows": 200,
