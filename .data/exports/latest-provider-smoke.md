@@ -1,9 +1,9 @@
 # Provider smoke
 
 - status: **warning**
-- enabled ok: 6/8
+- enabled ok: 7/8
 - missing keys: 0
-- non-core env violations: 9
+- non-core env violations: 10
 
 | provider | enabled | ok | status | items | http |
 | --- | --- | --- | --- | ---: | ---: |
@@ -11,7 +11,7 @@
 | sstats | True | True | ok | 5 | 200 |
 | bzzoiro | True | True | skipped_preserve_runtime_quota |  |  |
 | football_data | True | True | ok | 0 | 200 |
-| thesportsdb | True | False | http_429 | 0 | 429 |
+| thesportsdb | True | True | ok | 1 | 200 |
 | weatherapi | True | True | ok | 2 | 200 |
 | open_meteo | True | True | ok | 9 | 200 |
 | clubelo | True | False | ConnectTimeout:  |  |  |
@@ -24,5 +24,6 @@
 - CURRENTS: enabled={'CURRENTS_NEWS_CONTEXT_ENABLED': 'true'} limits={}
 - METEOSTAT: enabled={'METEOSTAT_RAPIDAPI_ENABLED': 'true'} limits={'METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN': '1'}
 - RAPIDAPI_SPORTSBOOK: enabled={'RAPIDAPI_SPORTSBOOK_PROBE_ENABLED': 'true'} limits={}
+- RAPIDAPI_FREE_FOOTBALL: enabled={'RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED': 'true'} limits={}
 - SHARPAPI: enabled={'SHARPAPI_TEXT_ENRICHMENT_ENABLED': 'true'} limits={}
 - OPENFOOTBALL: enabled={} limits={'OPENFOOTBALL_PUBLIC_REQUEST_BUDGET_GRANTED': '2', 'OPENFOOTBALL_PUBLIC_MAX_HTTP_REQUESTS_PER_RUN': '2'}

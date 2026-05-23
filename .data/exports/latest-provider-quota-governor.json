@@ -1,5 +1,5 @@
 {
-  "created_at": "2026-05-23T15:01:30.062653+00:00",
+  "created_at": "2026-05-23T17:01:31.454042+00:00",
   "enabled": true,
   "exports": {
     "ALLSPORTSAPI_ENABLED": "true",
@@ -26,9 +26,9 @@
     "BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN": "3",
     "BZZOIRO_TIMEOUT_SECONDS": "12",
     "CLUBELO_BASE_URL": "http://api.clubelo.com",
-    "CLUBELO_ENABLED": "true",
-    "CLUBELO_MAX_REQUESTS_PER_DAY": "1",
-    "CLUBELO_MAX_REQUESTS_PER_RUN": "1",
+    "CLUBELO_ENABLED": "false",
+    "CLUBELO_MAX_REQUESTS_PER_DAY": "0",
+    "CLUBELO_MAX_REQUESTS_PER_RUN": "0",
     "CONTEXT_ENRICHMENT_MATCH_LIMIT": "508",
     "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
     "CURRENTS_ARTICLES_PER_MATCH": "2",
@@ -45,14 +45,14 @@
     "ENABLE_FUTRIXMETRICS_CONTEXT": "true",
     "ENABLE_GNEWS_CONTEXT": "true",
     "ENABLE_NEWSAPI_CONTEXT": "true",
-    "ENABLE_ODDSPAPI": "false",
+    "ENABLE_ODDSPAPI": "true",
     "ENABLE_ODDS_API_IO": "true",
     "ENABLE_SSTATS_CONTEXT": "true",
     "ENABLE_THESPORTSDB_CONTEXT": "true",
     "FOOTBALL_DATA_CONTEXT_MATCH_LIMIT": "168",
-    "FOOTBALL_DATA_CO_UK_ENABLED": "true",
-    "FOOTBALL_DATA_CO_UK_MAX_REQUESTS_PER_DAY": "1",
-    "FOOTBALL_DATA_CO_UK_MAX_REQUESTS_PER_RUN": "1",
+    "FOOTBALL_DATA_CO_UK_ENABLED": "false",
+    "FOOTBALL_DATA_CO_UK_MAX_REQUESTS_PER_DAY": "0",
+    "FOOTBALL_DATA_CO_UK_MAX_REQUESTS_PER_RUN": "0",
     "FOOTBALL_DATA_ENABLED": "true",
     "FOOTBALL_DATA_MATCH_LIMIT": "120",
     "FOOTBALL_DATA_MAX_HTTP_REQUESTS_PER_RUN": "12",
@@ -60,8 +60,8 @@
     "FOOTBALL_DATA_REQUESTS_MAX_PER_RUN": "12",
     "FOOTBALL_DATA_STANDINGS_LIMIT": "12",
     "FREE_CONTEXT_RUNTIME_ENABLED": "true",
-    "FREE_FOOTBALL_RAPIDAPI_ENABLED": "false",
-    "FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN": "0",
+    "FREE_FOOTBALL_RAPIDAPI_ENABLED": "true",
+    "FREE_FOOTBALL_RAPIDAPI_MAX_REQUESTS_PER_RUN": "1",
     "FUTRIXMETRICS_CONTEXT_MATCH_LIMIT": "72",
     "FUTRIXMETRICS_ENABLED": "true",
     "FUTRIXMETRICS_MAX_HTTP_REQUESTS_PER_RUN": "24",
@@ -108,12 +108,12 @@
     "NEWSDATA_MAX_REQUESTS_PER_RUN": "10",
     "NEWSDATA_PER_RUN_MAX": "10",
     "NEWS_CONTEXT_CACHE_TTL_MINUTES": "240",
-    "ODDSPAPI_ENABLED": "false",
-    "ODDSPAPI_MATCH_LIMIT": "0",
-    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "0",
+    "ODDSPAPI_ENABLED": "true",
+    "ODDSPAPI_MATCH_LIMIT": "6",
+    "ODDSPAPI_MAX_HTTP_REQUESTS_PER_RUN": "1",
     "ODDSPAPI_MIN_FETCH_INTERVAL_MINUTES": "360",
-    "ODDSPAPI_PER_RUN_MAX": "0",
-    "ODDSPAPI_TOURNAMENT_LIMIT": "0",
+    "ODDSPAPI_PER_RUN_MAX": "1",
+    "ODDSPAPI_TOURNAMENT_LIMIT": "1",
     "ODDS_API_IO_ACCOUNT1_MAX_REQUESTS_PER_RUN": "100",
     "ODDS_API_IO_ACCOUNT1_PER_RUN_MAX": "100",
     "ODDS_API_IO_ACCOUNT2_MAX_REQUESTS_PER_RUN": "100",
@@ -145,8 +145,8 @@
     "PROVIDER_FREE_QUOTA_POLICY_ENABLED": "true",
     "PROVIDER_QUOTA_GOVERNOR_ACTIVE": "true",
     "RAPIDAPI_DEFAULT_DAILY_LIMIT": "1",
-    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "0",
-    "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "false",
+    "RAPIDAPI_FREE_FOOTBALL_DAILY_LIMIT": "1",
+    "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true",
     "RAPIDAPI_ODDS_FEED_DAILY_LIMIT": "1",
     "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true",
     "RAPIDAPI_SPORTSBOOK_DAILY_LIMIT": "2",
@@ -223,8 +223,8 @@
       "reserve_tokens": 100,
       "role": "prediction_context",
       "skip_reason": null,
-      "tokens_after": 100.932,
-      "tokens_before": 110.932
+      "tokens_after": 100.934,
+      "tokens_before": 110.934
     },
     {
       "bucket_max": 300.0,
@@ -239,8 +239,8 @@
       "reserve_tokens": 100,
       "role": "form_xg_context",
       "skip_reason": null,
-      "tokens_after": 100.982,
-      "tokens_before": 106.982
+      "tokens_after": 100.983,
+      "tokens_before": 106.983
     },
     {
       "bucket_max": 78.0,
@@ -277,8 +277,8 @@
     {
       "bucket_max": 6.0,
       "daily_budget": 6.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 1,
       "minute_spacing": 240,
       "per_run_max": 1,
       "provider": "oddspapi",
@@ -286,8 +286,8 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "odds_fallback",
-      "skip_reason": "spacing_active:0.1m",
-      "tokens_after": 6.0,
+      "skip_reason": null,
+      "tokens_after": 5.0,
       "tokens_before": 6.0
     },
     {
@@ -303,8 +303,8 @@
       "reserve_tokens": 24,
       "role": "player_team_ratings",
       "skip_reason": null,
-      "tokens_after": 329.795,
-      "tokens_before": 353.795
+      "tokens_after": 335.801,
+      "tokens_before": 359.801
     },
     {
       "bucket_max": 180.0,
@@ -319,8 +319,8 @@
       "reserve_tokens": 12,
       "role": "fixtures_standings_context",
       "skip_reason": null,
-      "tokens_after": 164.897,
-      "tokens_before": 176.897
+      "tokens_after": 167.9,
+      "tokens_before": 179.9
     },
     {
       "bucket_max": 240.0,
@@ -335,8 +335,8 @@
       "reserve_tokens": 18,
       "role": "mapping_context",
       "skip_reason": null,
-      "tokens_after": 187.863,
-      "tokens_before": 205.863
+      "tokens_after": 189.867,
+      "tokens_before": 207.867
     },
     {
       "bucket_max": 390.0,
@@ -351,8 +351,8 @@
       "reserve_tokens": 40,
       "role": "fixtures_odds_outcomes",
       "skip_reason": null,
-      "tokens_after": 49.964,
-      "tokens_before": 89.964
+      "tokens_after": 42.471,
+      "tokens_before": 82.471
     },
     {
       "bucket_max": 78.0,
@@ -405,8 +405,8 @@
     {
       "bucket_max": 3.0,
       "daily_budget": 2.0,
-      "enabled_for_run": false,
-      "granted": 0,
+      "enabled_for_run": true,
+      "granted": 1,
       "minute_spacing": 360,
       "per_run_max": 1,
       "provider": "free_live_football_data",
@@ -415,8 +415,8 @@
       "reserve_tokens": 1,
       "role": "rapidapi_probe_fallback",
       "skip_reason": null,
-      "tokens_after": 1.966,
-      "tokens_before": 1.966
+      "tokens_after": 1.132,
+      "tokens_before": 2.132
     },
     {
       "bucket_max": 1680.0,
@@ -463,8 +463,8 @@
       "reserve_tokens": 120,
       "role": "weather_primary_or_fallback",
       "skip_reason": null,
-      "tokens_after": 1648.974,
-      "tokens_before": 1768.974
+      "tokens_after": 1679.003,
+      "tokens_before": 1799.003
     },
     {
       "bucket_max": 13.0,
@@ -565,8 +565,8 @@
     {
       "bucket_max": 3.0,
       "daily_budget": 1.0,
-      "enabled_for_run": true,
-      "granted": 1,
+      "enabled_for_run": false,
+      "granted": 0,
       "minute_spacing": 1320,
       "per_run_max": 1,
       "provider": "clubelo",
@@ -574,15 +574,15 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "rating_cache",
-      "skip_reason": null,
-      "tokens_after": 1.916,
-      "tokens_before": 2.916
+      "skip_reason": "spacing_active:1200.0m",
+      "tokens_after": 2.0,
+      "tokens_before": 2.0
     },
     {
       "bucket_max": 3.0,
       "daily_budget": 1.0,
-      "enabled_for_run": true,
-      "granted": 1,
+      "enabled_for_run": false,
+      "granted": 0,
       "minute_spacing": 1320,
       "per_run_max": 1,
       "provider": "football_data_co_uk",
@@ -590,9 +590,9 @@
       "recovered": false,
       "reserve_tokens": 1,
       "role": "historical_csv_cache",
-      "skip_reason": null,
-      "tokens_after": 1.916,
-      "tokens_before": 2.916
+      "skip_reason": "spacing_active:1200.0m",
+      "tokens_after": 2.0,
+      "tokens_before": 2.0
     },
     {
       "bucket_max": 120.0,
@@ -607,8 +607,8 @@
       "reserve_tokens": 8,
       "role": "mapping_cache",
       "skip_reason": null,
-      "tokens_after": 109.932,
-      "tokens_before": 117.932
+      "tokens_after": 111.934,
+      "tokens_before": 119.934
     }
   ],
   "providers_enabled_for_run": 24,

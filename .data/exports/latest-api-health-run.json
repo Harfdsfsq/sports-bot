@@ -22,8 +22,7 @@
   "by_group": {
     "context": {
       "config_only": 1,
-      "ok": 4,
-      "rate_limited": 1
+      "ok": 5
     },
     "news": {
       "ok": 5
@@ -45,16 +44,17 @@
   "by_status": {
     "config_only": 1,
     "missing_secret": 1,
-    "ok": 14,
-    "rate_limited": 2
+    "ok": 15,
+    "rate_limited": 1
   },
-  "created_at_utc": "2026-05-23T15:01:43.855018+00:00",
+  "created_at_utc": "2026-05-23T17:01:44.238205+00:00",
   "critical_failures": [],
   "mode": "quick",
   "recommendations": [
     "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
     "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
+    "TheSportsDB is reachable; use it for team/league alias enrichment.",
     "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
   ],
   "removed_providers": [
@@ -75,7 +75,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 3505,
+      "latency_ms": 4018,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -94,7 +94,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 459,
+      "latency_ms": 448,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -132,7 +132,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 227,
+      "latency_ms": 197,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -151,7 +151,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 492,
+      "latency_ms": 413,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -162,28 +162,27 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "<!doctype html>\n<!--[if lt IE 7]> <html class=\"no-js ie6 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 7]>    <html class=\"no-js ie7 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if IE 8]>    <html class=\"no-js ie8 oldie\" lang=\"en-US\"> <![endif]-->\n<!--[if gt IE 8]><!-->\n<html class=\"no-js\" lang=\"en-US\">\n    <!--<![endif]-->\n    <head>\n        <title>Access denied | www.thesportsdb.com used Cloudflare to restrict access | www.thesportsdb.com | Cloudflare</title>\n        <meta charset=\"UTF-8\" />\n<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\" />\n<meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\" />\n<meta name=\"robots\" content=\"noindex, nofollow\" />\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\" />\n<link rel=\"stylesheet\" id=\"cf_styles-css\" href=\"/cdn-cgi/styles/main.css\" /> <script>\n  (function(){if(document.addEventListener&&window.XMLHttpRequest&&JSON&&JSON.stringify){var e=function(a){var c=document.getElementById(\"error-feedback-survey\"),d=document.getElementById(\"error-feedback-success\"),b=new XMLHttpRequest;a={event:\"feedback clicked\",properties:{errorCode: 1015 },helpful:a,version: 1 };b.open(\"POST\",\"https://sparrow.cloudflare.com/api/v1/event\"",
+        "body_preview": "{\"countries\":[{\"idLeague\":\"4570\",\"idAPIfootball\":\"7364\",\"idAPIfootballv3\":\"48\",\"strSport\":\"Soccer\",\"strLeague\":\"EFL Cup\",\"strLeagueAlternate\":\"Football League Cup, Carabao Cup\",\"intDivision\":\"99\",\"idCup\":\"1\",\"strCurrentSeason\":\"2025-2026\",\"intFormedYear\":\"1960\",\"dateFirstEvent\":\"2006-02-26\",\"strGender\":\"Male\",\"strCountry\":\"England\",\"strWebsite\":\"www.efl.com\\/carabao-cup\",\"strFacebook\":\"www.facebook.com\\/TheCarabaoCup\\/\",\"strInstagram\":\"\",\"strTwitter\":\"twitter.com\\/carabao_cup\",\"strYoutube\":\"\",\"strRSS\":\"\",\"strDescriptionEN\":\"The EFL Cup (referred to historically, and colloquially, as simply the League Cup), currently known as the Carabao Cup for sponsorship reasons, is an annual knockout football competition in men's domestic English football. Organised by the English Football League (EFL), it is open to any club within the top four levels of the English football league system – 92 clubs in total – comprising the top level Premier League, and the three divisions of the English Football League's own league competition (Championship, League One and League Two).\\r\\n\\r\\nFirst held in 1960–61 as the Football League Cup, it is one of the three top-tier domestic football competitions in En",
         "free_key_defaulted": true,
-        "payload_shape": "NoneType",
-        "semantic_message": "html_error_page"
+        "payload_shape": "countries"
       },
       "endpoint": "https://www.thesportsdb.com/api/v1/json/123/search_all_leagues.php?c=England&s=Soccer",
       "group": "context",
       "http_statuses": [
-        429
+        200
       ],
-      "latency_ms": 23,
-      "message": "html_error_page",
+      "latency_ms": 115,
+      "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
-      "status": "rate_limited",
-      "useful_rows": 0
+      "status": "ok",
+      "useful_rows": 5
     },
     {
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"94cd2bea-f548-50ba-9ec4-3e2dc68bacf1\",\"title\":\"PSG play friendly ahead of Arsenal showdown but two injured stars miss out\",\"description\":\"PSG played a inter-squad friendly match ahead of the Champions League final against Arsenal with Ousmane Dembele and Hakimi missing out.\",\"url\":\"https://metro.co.uk/2026/05/23/psg-play-friendly-ahead-arsenal-showdown-two-injured-stars-miss-28491591/\",\"author\":\"Tony Mogan\",\"image\":\"https://metro.co.uk/wp-content/uploads/2026/05/GettyImages-2276717193_664460_1779547784.jpg?quality=90&strip=all&w=1200&h=630&crop=1\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-23 14:49:39 +0000\"},{\"id\":\"981b0a86-3dc7-5911-bdb7-1f5324260ea1\",\"title\":\"[FIA] Alex Albon, Pierre Gasly and Ollie Bearman to start the Sprint from the pitlane\",\"description\":\"submitted by    /u/Aratho   [link]   [comments]\",\"url\":\"https://www.reddit.com/r/formula1/comments/1tlidii/fia_alex_albon_pierre_gasly_and_ollie_bearman_to/\",\"author\":\"/u/Aratho\",\"image\":\"None\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-23 14:43:38 +0000\"},{\"id\":\"67dc23e4-d325-58fe-abfb-8464ba4c662d\",\"titl",
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"2b54d7c8-df89-5a84-87d8-9a98c16533ed\",\"title\":\"Starmer urges TNT Sports to make Champions League final available for free | BreakingNews\",\"description\":\"British Prime Minister Keir Starmer said fans \\u2018should not have to worry about forking out for a subscription\\u2019 to watch Arsenal play Paris St Germain.\",\"url\":\"https://www.breakingnews.ie/world/starmer-urges-tnt-sports-to-make-champions-league-final-available-for-free-1904066.html\",\"author\":\"Press Association\",\"image\":\"https://img.resized.co/breaking-news/eyJkYXRhIjoie1widXJsXCI6XCJodHRwczpcXFwvXFxcL2ltYWdlcy5icmVha2luZ25ld3MuaWVcXFwvcHJvZFxcXC91cGxvYWRzXFxcLzIwMjZcXFwvMDVcXFwvMjMxNzA5MjlcXFwvMi44NDcwMDkzMy5qcGdcIixcIndpZHRoXCI6MTIwMCxcImhlaWdodFwiOjYyNyxcImRlZmF1bHRcIjpcImh0dHBzOlxcXC9cXFwvd3d3LmJyZWFraW5nbmV3cy5pZVxcXC9pXFxcL2JuLW5vaW1hZ2UucG5nXCIsXCJvcHRpb25zXCI6W119IiwiaGFzaCI6ImZiYTcyNWIxY2RkNDZkMzk1MmNlNWI4MDQ2NmU5MTVkMmExN2U4MTQifQ==/starmer-urges-tnt-sports-to-make-champions-league-final-available-for-free.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-05-23 16:57:06 +0000\"},{\"id\":\"e573a6a2-b514-5686-9252-acae7bec3887\",\"title\":\"Hull win promoti",
         "payload_shape": "news,page,status"
       },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
@@ -191,7 +190,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 397,
+      "latency_ms": 536,
       "message": "ok",
       "provider": "currents",
       "requests": 1,
@@ -202,7 +201,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":322603,\"articles\":[{\"id\":\"23d0d3e903c671baf98dd3970af13aaf\",\"title\":\"Wachusett girls' flag football celebrates Senior Night, NLI signing\",\"description\":\"After starting the program with just nine players in 2024, Wachusett celebrated five players Friday with its second ever Senior Night and first ever NLI signing.\",\"content\":\"HOLDEN — What a day it was for the Wachusett girls’ flag football team.\\nAfter starting the flag program with just nine players two years ago, Wachusett celebrated five players on Friday — Julia Daly, Maggie Jennings, Lucy O’Brien, Maria Petronino and... [4557 chars]\",\"url\":\"https://www.telegram.com/story/sports/high-school/2026/05/22/wachusett-girls-flag-football-senior-night-2026-maggie-jennings-julia-daly-bridget-damelio/90210917007/\",\"image\":\"https://www.telegram.com/gcdn/authoring/authoring-images/2026/05/23/NTEG/90226252007-dsc-02718.jpg?crop=6424,3616,x0,y335&width=3200&height=1802&format=pjpg&auto=webp\",\"publishedAt\":\"2026-05-23T03:01",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":322616,\"articles\":[{\"id\":\"131ff9aa8e8223468398bbac0bd652f3\",\"title\":\"Our experts pick their England teams for World Cup opener - and so can you\",\"description\":\"Should Tuchel start with Bellingham? Who gets the nod in defence? Telegraph Sport’s football writers have their say\",\"content\":\"Thomas Tuchel has named his 26-man England squad that will travel to the World Cup with the aim of ending 60 years of hurt.\\nTelegraph Sport’s football experts have selected their starting teams for England’s opener against Croatia, assuming all membe... [3837 chars]\",\"url\":\"https://www.telegraph.co.uk/football/2026/05/23/our-experts-pick-their-england-teams-for-world-cup-opener/\",\"image\":\"https://www.telegraph.co.uk/content/dam/football/2026/05/22/TELEMMGLPICT000486350847_17794692112270_trans_NvBQzQNjv4BqqVzuuqpFlyLIwiB6NTmJwfSVWeZ_vEN7c6bHu2jJnT8.jpeg?impolicy=OG-Standard\",\"publishedAt\":\"2026-05-23T05:00:00Z\",\"lang\":\"en\",\"source\":{\"id\":\"bff0cd3b8c64dceaada8841bea814f65\",\"name\":\"",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -210,7 +209,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 248,
+      "latency_ms": 180,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -221,7 +220,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134467,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134467,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134470,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134470,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
         "payload_shape": "response"
       },
       "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
@@ -229,7 +228,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 573,
+      "latency_ms": 539,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -240,7 +239,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":27093,\"articles\":[{\"source\":{\"id\":null,\"name\":\"BBC News\"},\"author\":\"BBC\",\"title\":\"'Put trust in Martin' or 'long-term' planning required?\",\"description\":\"Celtic fans, we asked for your views as to whether Martin O'Neill should remain as manager for next season. Kenny: Martin should at least be offered the job before anyone else after what he has achieved in the short time he's been there. Celtic need a rebuild…\",\"url\":\"https://www.bbc.com/sport/articles/cgkp2nj3gz1o?xtor=AL-72-%5Bpartner%5D-%5Byahoo.north.america%5D-%5Bheadline%5D-%5Bsport%5D-%5Bbizdev%5D-%5Bisapi%5D\",\"urlToImage\":\"https://s.yimg.com/ny/api/res/1.2/p1LRcJu0HMOckMPkn3tKmg--/YXBwaWQ9aGlnaGxhbmRlcjt3PTEyMDA7aD02NzU7Y2Y9d2VicA--/https://media.zenfs.com/en/bbc_us_articles_995/8d0bd48de056415827c2f418b9a4ead6\",\"publishedAt\":\"2026-05-22T15:01:39Z\",\"content\":\"Celtic fans, we asked for your views as to whether Martin O'Neill should remain as manager for next season.\\r\\nHere's what some of you had to say:\\r\\nKenny: Martin should at least be offered the job befo… [+2050 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":27194,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Dailymail.com\"},\"author\":\"Simon Jones\",\"title\":\"'He's got a great football brain, just like Kenny Dalglish': Ian Rush, John Terry and more who know Mohamed Salah best reveal the secrets of his rise to an 'all-time Liverpool great' via yoga, cappuccinos in Italy... and a Terry rollocking!\",\"description\":\"Mohamed Salah takes his final Anfield bow on Sunday, departing as one of the Premier League's all-time greats. Here, those who have been part of his journey talk about the man and the player.\",\"url\":\"https://www.dailymail.com/sport/football/article-15841015/Kenny-Dalglish-Mo-Salah-Liverpool-Ian-Rush-John-Terry.html\",\"urlToImage\":\"https://i.dailymail.com/1s/2026/05/22/14/108804229-0-image-m-56_1779457908268.jpg\",\"publishedAt\":\"2026-05-22T17:01:30Z\",\"content\":\"Mohamed Salah takes his final Anfield bow on Sunday, departing as one of the Premier League's all-time greats.\\r\\nIt was a long and winding road to the top, with moments when the footballing immortalit… [+15038 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -248,7 +247,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 106,
+      "latency_ms": 133,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -259,7 +258,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":9882,\"results\":[{\"article_id\":\"647cd81835e391dff43da6185aaead17\",\"link\":\"https://www.naijanews.com/2026/05/23/top-nigerian-newspaper-headlines-22rd-may-2026/\",\"title\":\"Top Nigerian Newspaper Headlines For Today, Saturday, 22rd May, 2026\",\"description\":\"Good morning, Nigeria. Welcome to the Naija News roundup of top newspaper headlines in Nigeria for today, Saturday, 23rd May, 2026. 1. Court Adjourns Malami’s... The post Top Nigerian Newspaper Headlines For Today, Saturday, 22rd May, 2026 appeared first on Naija News .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"breaking nigerian newspaper headlines today\",\"major nigerian newspaper headlines today\",\"top nigerian newspaper headlines\",\"breaking news\",\"headlines\",\"breaking nigerian newspaper headlines\",\"top nigerian newspaper headlines today\",\"major nigerian newspaper headlines\",\"latest nigerian newspaper headlines today\",\"latest nigerian newspaper headlines\",\"naija news\",\"breaking nigerian news today\"],\"creator\":[\"richard ogunsile\"],\"language\":\"english\",\"country\":[\"nigeria\"],\"category\":[\"top\",\"lifestyle\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-23 03:00:20\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"202",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":9496,\"results\":[{\"article_id\":\"a1080b992c49b553e19248e83c9bc961\",\"link\":\"https://www.jamaicaobserver.com/2026/05/23/coach-pleased-u-17-wcup-bound-boyz-drawn-italy-ivory-coast-uzbekistan/\",\"title\":\"Coach pleased as U-17 W’Cup-bound Boyz drawn against Italy, Ivory Coast, Uzbekistan\",\"description\":null,\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":null,\"language\":\"english\",\"country\":[\"gabon\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-05-23 05:01:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-05-23 05:34:44\",\"image_url\":\"https://www.jamaicaobserver.com/jamaicaobserver/news/wp-content/uploads/sites/4/2026/05/b48b6f6c362a7ab8cd59bf19ebb6f147.jpg\",\"video_url\":null,\"source_id\":\"jamaicaobserver\",\"source_name\":\"Jamaica Observer\",\"source_priority\":14529,\"source_url\":\"https://www.jamaicaobserver.com\",\"source_icon\":\"https://n.bytvi.com/jamaicaobserver.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_tag\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_region\":\"ONLY AVAILABLE IN CORPORATE PLANS\",\"ai_org\":\"ONLY AVAILABLE IN CORPOR",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -267,7 +266,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 160,
+      "latency_ms": 148,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -278,18 +277,18 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":71498964,\"home\":\"Al Nahda\",\"away\":\"Al Shabab\",\"homeId\":40648,\"awayId\":57449,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498956,\"home\":\"Al-Seeb\",\"away\":\"Ibri\",\"homeId\":71044,\"awayId\":652894,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498958,\"home\":\"Al-Rustaq\",\"away\":\"Oman Club\",\"homeId\":185570,\"awayId\":57443,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498960,\"home\":\"Sur SC\",\"away\":\"Sohar\",\"homeId\":57439,\"awayId\":99993,\"date\":\"2026-05-23T15:25:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Oman - Omani League\",\"slug\":\"oman-omani-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71498962,\"home\":\"Samail SC\",\"away\":\"Bahla Club\",\"homeId\":185588,\"awayId\":185578,\"date\":\"2026-05-23T15:25:0",
+        "body_preview": "[{\"id\":71663588,\"home\":\"Club Universitario Tarija\",\"away\":\"Union Tarija\",\"homeId\":1131755,\"awayId\":1255509,\"date\":\"2026-05-23T17:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Bolivia - Copa Simon Bolivar\",\"slug\":\"bolivia-copa-simon-bolivar\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":61467305,\"home\":\"CWKS Resovia\",\"away\":\"Podbeskidzie Bielsko-Biała\",\"homeId\":37204,\"awayId\":7919,\"date\":\"2026-05-23T17:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Poland - II Liga\",\"slug\":\"poland-ii-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":69785256,\"home\":\"FC Universitatea Cluj\",\"away\":\"FC Dinamo Bucuresti 1948\",\"homeId\":7734,\"awayId\":3292,\"date\":\"2026-05-23T17:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Romania - Superliga\",\"slug\":\"romania-superliga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71372578,\"home\":\"CD Moquegua\",\"away\":\"Universitario de Deportes\",\"homeId\":1084092,\"awayId\":2305,\"date\":\"2026-05-23T17:45:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Peru - Liga 1\",\"slug\":\"peru-liga-1\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":7158788",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-23T15%3A01%3A40Z&to=2026-05-25T15%3A01%3A40Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-05-23T17%3A01%3A40Z&to=2026-05-25T17%3A01%3A40Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 211,
+      "latency_ms": 266,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -309,7 +308,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 576,
+      "latency_ms": 481,
       "message": "ok",
       "provider": "sportlogic",
       "requests": 1,
@@ -328,7 +327,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 378,
+      "latency_ms": 430,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -363,7 +362,7 @@
       "http_statuses": [
         429
       ],
-      "latency_ms": 39,
+      "latency_ms": 95,
       "message": "http_status=429",
       "provider": "meteostat",
       "requests": 1,
@@ -374,7 +373,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":802,\"main\":\"Clouds\",\"description\":\"scattered clouds\",\"icon\":\"03d\"}],\"base\":\"stations\",\"main\":{\"temp\":29.13,\"feels_like\":28.56,\"temp_min\":27.95,\"temp_max\":29.58,\"pressure\":1026,\"humidity\":38,\"sea_level\":1026,\"grnd_level\":1023},\"visibility\":10000,\"wind\":{\"speed\":3.6,\"deg\":260},\"clouds\":{\"all\":38},\"dt\":1779548265,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1779508696,\"sunset\":1779566191},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":28.56,\"feels_like\":28.02,\"temp_min\":27.98,\"temp_max\":28.95,\"pressure\":1027,\"humidity\":38,\"sea_level\":1027,\"grnd_level\":1023},\"visibility\":10000,\"wind\":{\"speed\":3.6,\"deg\":250},\"clouds\":{\"all\":60},\"dt\":1779555253,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1779508696,\"sunset\":1779566191},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -382,7 +381,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 42,
+      "latency_ms": 78,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -393,7 +392,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779548494,\"localtime\":\"2026-05-23 16:01\"},\"current\":{\"last_updated_epoch\":1779548400,\"last_updated\":\"2026-05-23 16:00\",\"temp_c\":28.3,\"temp_f\":82.9,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/113.png\",\"code\":1000},\"wind_mph\":8.5,\"wind_kph\":13.7,\"wind_degree\":292,\"wind_dir\":\"WNW\",\"pressure_mb\":1027.0,\"pressure_in\":30.33,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":42,\"cloud\":0,\"feelslike_c\":28.2,\"feelslike_f\":82.8,\"windchill_c\":27.2,\"windchill_f\":81.0,\"heatindex_c\":27.2,\"heatindex_f\":80.9,\"dewpoint_c\":12.8,\"dewpoint_f\":55.0,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":3.7,\"gust_mph\":9.8,\"gust_kph\":15.7,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-23\",\"date_epoch\":1779494400,\"day\":{\"maxtemp_c\":27.5,\"maxtemp_f\":81.5,\"mintemp_c\":16.0,\"mintemp_f\":60.8,\"avgtemp_c\":21.6,\"avgtemp_f\":70.9,\"maxwind_mph\":8.5,\"maxwind_kph\":13.7,\"totalprecip_mm\":0.99,\"totalprecip_in\":0.04,\"totalsnow_cm\":0.0,\"avgvis_km\":9.9,\"avgvis_miles\":6.0,\"avg",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779555729,\"localtime\":\"2026-05-23 18:02\"},\"current\":{\"last_updated_epoch\":1779555600,\"last_updated\":\"2026-05-23 18:00\",\"temp_c\":28.3,\"temp_f\":82.9,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/113.png\",\"code\":1000},\"wind_mph\":7.4,\"wind_kph\":11.9,\"wind_degree\":305,\"wind_dir\":\"NW\",\"pressure_mb\":1027.0,\"pressure_in\":30.33,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":40,\"cloud\":0,\"feelslike_c\":28.9,\"feelslike_f\":84.0,\"windchill_c\":25.8,\"windchill_f\":78.5,\"heatindex_c\":26.4,\"heatindex_f\":79.5,\"dewpoint_c\":13.9,\"dewpoint_f\":57.1,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":1.2,\"gust_mph\":8.9,\"gust_kph\":14.3,\"will_it_rain\":0,\"chance_of_rain\":0,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-05-23\",\"date_epoch\":1779494400,\"day\":{\"maxtemp_c\":27.5,\"maxtemp_f\":81.5,\"mintemp_c\":16.0,\"mintemp_f\":60.8,\"avgtemp_c\":21.6,\"avgtemp_f\":70.9,\"maxwind_mph\":8.5,\"maxwind_kph\":13.7,\"totalprecip_mm\":0.99,\"totalprecip_in\":0.04,\"totalsnow_cm\":0.0,\"avgvis_km\":9.9,\"avgvis_miles\":6.0,\"avgh",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -401,7 +400,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 185,
+      "latency_ms": 201,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -414,11 +413,11 @@
     "config_only": 1,
     "critical_failures": 0,
     "degraded": 0,
-    "healthy_or_config_only": 15,
+    "healthy_or_config_only": 16,
     "missing_secret": 1,
-    "ok": 14,
+    "ok": 15,
     "providers_checked": 18,
-    "rate_limited": 2,
+    "rate_limited": 1,
     "skipped": 0,
     "skipped_daily_circuit": 0
   }

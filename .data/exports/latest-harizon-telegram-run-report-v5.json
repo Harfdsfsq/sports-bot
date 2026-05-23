@@ -1,21 +1,31 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 8,
+      "contexts": 12,
+      "contexts_total_effective": 12,
       "errors": 0,
-      "events": 400,
-      "overlap": 0,
-      "requests": 11,
-      "secondary_offers_added": 0
+      "events": 50,
+      "events_total_effective": 68,
+      "overlap": 37,
+      "requests": 1,
+      "requests_total_effective": 17,
+      "secondary_offers_added": 253,
+      "v2_contexts": 4,
+      "v2_errors": 0,
+      "v2_events": 68,
+      "v2_lineups_resources": 4,
+      "v2_odds_resources": 4,
+      "v2_requests": 17,
+      "v2_stats_resources": 4
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 0,
+      "books_2plus": 153,
       "errors": 0,
       "events_req": 0,
-      "matched": 36,
-      "odds_req": 4,
-      "offers": 881
+      "matched": 310,
+      "odds_req": 62,
+      "offers": 29874
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -31,75 +41,98 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 30,
-      "deep_enriched": 0,
+      "contexts": 215,
+      "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
-      "requests": 31,
-      "rows": 26487,
+      "requests": 28,
+      "rows": 25091,
       "runtime_patch": "",
       "team_form_contexts": 0
     }
   },
   "artifacts": {
-    "debug_age_min": 34.96712946891785,
-    "fallback_age_min": null,
-    "run_log_age_min": 1.3808841983477274,
-    "signal_stack_age_min": null
+    "debug_age_min": 0.6996458172798157,
+    "fallback_age_min": 0.21556859016418456,
+    "run_log_age_min": 0.49267388582229615,
+    "signal_stack_age_min": 0.7343646923700968
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 0,
-    "bzzoiro_secondary_offers_added": 0,
+    "bzzoiro_odds_overlap_with_odds_api_io": 37,
+    "bzzoiro_secondary_offers_added": 253,
     "day_inventory_total": 301,
-    "day_inventory_with_context": 21,
-    "day_inventory_with_odds": 27,
-    "matches_seen": 36,
-    "matches_with_2plus_books": 0,
-    "matches_with_context": 30,
-    "matches_with_offers": 29,
-    "odds_offers_primary": 881,
-    "ready_for_model": 21,
-    "secondary_combinations": {}
+    "day_inventory_with_context": 79,
+    "day_inventory_with_odds": 85,
+    "matches_seen": 311,
+    "matches_with_2plus_books": 153,
+    "matches_with_context": 217,
+    "matches_with_offers": 219,
+    "odds_offers_primary": 29874,
+    "ready_for_model": 79,
+    "secondary_combinations": {
+      "bzzoiro+odds_api_io": 37,
+      "odds_api_io": 182
+    }
   },
-  "created_at_utc": "2026-05-23T15:36:06.338945+00:00",
+  "created_at_utc": "2026-05-23T17:34:51.220645+00:00",
   "diagnostics": {
-    "bzzoiro_v2": {},
+    "bzzoiro_v2": {
+      "contexts_built": 4,
+      "enabled": true,
+      "errors": 0,
+      "events_fetched": 68,
+      "lineups_resources": 4,
+      "metadata_resources": 4,
+      "odds_resources": 4,
+      "requests": 17,
+      "stats_resources": 4,
+      "target_matches": 64
+    },
+    "controlled_fallback_pool_counts": {
+      "day_inventory_membership_keys": 866,
+      "debug_candidates_before_quality_canonical_negative_value_prefilter": 6,
+      "debug_candidates_before_quality_stale_or_outside_window": 2
+    },
+    "controlled_fallback_pool_filter_counts": {
+      "debug_candidates_before_quality_canonical_negative_value_prefilter": 6,
+      "debug_candidates_before_quality_stale_or_outside_window": 2
+    },
     "coverage_truth": {
       "counts": {
         "matches_missing_context_2plus": 300,
         "matches_missing_odds_source_2plus": 300,
-        "matches_missing_price_2plus": 294,
-        "matches_ready_for_model": 21,
+        "matches_missing_price_2plus": 292,
+        "matches_ready_for_model": 79,
         "matches_ready_for_publish": 0,
         "matches_ready_for_publish_strict": 0,
         "matches_strict_ready_already_published": 0,
         "matches_total": 300,
         "matches_with_2plus_context_sources": 0,
         "matches_with_2plus_odds_sources": 0,
-        "matches_with_2plus_price_confirmations": 6,
-        "matches_with_context": 21,
-        "matches_with_odds": 27
+        "matches_with_2plus_price_confirmations": 8,
+        "matches_with_context": 79,
+        "matches_with_odds": 85
       },
       "source": {
         "path": ".data/exports/latest-day-inventory-coverage-truth.json"
       }
     },
     "current_inventory_windows": {
-      "active_matches": 57,
-      "final_pre_kickoff_checks": 35,
-      "matches_needing_odds_refresh": 226,
-      "no_more_regular_run_before_kickoff": 35,
+      "active_matches": 112,
+      "final_pre_kickoff_checks": 82,
+      "matches_needing_odds_refresh": 188,
+      "no_more_regular_run_before_kickoff": 82,
       "source": "latest-day-inventory-refresh-plan + coverage-truth",
-      "window_0_12h": 40,
+      "window_0_12h": 133,
       "window_0_12h_already_published": 0,
       "window_0_12h_context_2plus": 0,
-      "window_0_12h_price_2plus": 0,
+      "window_0_12h_price_2plus": 7,
       "window_0_12h_ready": 0,
       "window_0_12h_strict_ready": 0,
-      "window_0_4h": 40,
+      "window_0_4h": 133,
       "window_0_4h_already_published": 0,
       "window_0_4h_context_2plus": 0,
-      "window_0_4h_price_2plus": 0,
+      "window_0_4h_price_2plus": 7,
       "window_0_4h_ready": 0,
       "window_0_4h_strict_ready": 0
     },
@@ -318,12 +351,12 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 5,
+    "candidates_before_quality": 8,
     "fallback_candidates_seen": 0,
     "fallback_evaluated": 0,
     "fallback_published": false,
     "fallback_published_count": 0,
-    "fallback_status": "n/a",
+    "fallback_status": "no_viable_controlled_fallback",
     "final_publication_status": "not_published",
     "main_pipeline_published": false,
     "main_pipeline_published_count": 0,
@@ -333,33 +366,44 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 4,
-    "windowed_audit_candidates": 0,
-    "windowed_publish_allowed": 0,
-    "windowed_publish_blocked": 0
+    "raw_candidates": 8,
+    "windowed_audit_candidates": 8,
+    "windowed_publish_allowed": 4,
+    "windowed_publish_blocked": 4
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 35,
+    "final_pre_kickoff_checks": 82,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 35,
+    "no_more_regular_run_before_kickoff": 82,
     "seen": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 6,
+      "reason": "debug_candidates_before_quality_canonical_negative_value_prefilter",
+      "reason_ru": "отрицательная контрольная ценность до fallback"
+    },
+    {
+      "count": 2,
+      "reason": "debug_candidates_before_quality_stale_or_outside_window",
+      "reason_ru": "кандидат вне окна публикации или устарел"
+    }
+  ],
   "report_renderer": "v8",
   "report_renderer_status": "direct_v8_main",
   "samples": {
     "fallback_evaluated": [],
     "top_priority_matches": [
       {
-        "away_team": "AL Ula",
-        "home_team": "AL Draih",
-        "kickoff_utc": "2026-05-23T16:10:00+00:00",
-        "league_name": "Saudi Arabia - Division 1",
-        "match_key": "soccer|al draih|al ula|2026-05-23",
-        "minutes_to_kickoff": 33.99,
+        "away_team": "Pisa",
+        "home_team": "Lazio",
+        "kickoff_utc": "2026-05-23T18:45:00+00:00",
+        "league_name": "Italian Serie A",
+        "match_key": "soccer|lazio|pisa|2026-05-23",
+        "minutes_to_kickoff": 70.86,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 164.669,
+        "priority": 152.379,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -372,14 +416,14 @@
         }
       },
       {
-        "away_team": "Lommel SK",
-        "home_team": "FCV Dender EH",
-        "kickoff_utc": "2026-05-23T16:15:00+00:00",
-        "league_name": "Belgium - Pro League",
-        "match_key": "soccer|fcv dender eh|lommel sk|2026-05-23",
-        "minutes_to_kickoff": 38.99,
+        "away_team": "AS Arapiraquense AL",
+        "home_team": "CS Alagoano AL",
+        "kickoff_utc": "2026-05-23T19:00:00+00:00",
+        "league_name": "Brazil - Brasileiro Serie D",
+        "match_key": "soccer|as arapiraquense al|cs alagoano al|2026-05-23",
+        "minutes_to_kickoff": 85.86,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.003,
+        "priority": 147.379,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -392,14 +436,14 @@
         }
       },
       {
-        "away_team": "Al Shabab Kuwait",
-        "home_team": "Al-Salmiya SC",
-        "kickoff_utc": "2026-05-23T16:15:00+00:00",
-        "league_name": "Kuwait - Premier League",
-        "match_key": "soccer|al salmiya|al shabab kuwait|2026-05-23",
-        "minutes_to_kickoff": 38.99,
+        "away_team": "Cianorte FC PR",
+        "home_team": "Joinville EC SC",
+        "kickoff_utc": "2026-05-23T19:00:00+00:00",
+        "league_name": "Brazil - Brasileiro Serie D",
+        "match_key": "soccer|cianorte pr|joinville|2026-05-23",
+        "minutes_to_kickoff": 85.86,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 163.003,
+        "priority": 147.379,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -412,14 +456,14 @@
         }
       },
       {
-        "away_team": "Cobresal",
-        "home_team": "Audax Italiano",
-        "kickoff_utc": "2026-05-23T16:30:00+00:00",
-        "league_name": "Chile - Primera Division",
-        "match_key": "soccer|audax italiano|cobresal|2026-05-23",
-        "minutes_to_kickoff": 53.99,
+        "away_team": "Tocantinopolis EC TO",
+        "home_team": "Trem DC AP",
+        "kickoff_utc": "2026-05-23T19:00:00+00:00",
+        "league_name": "Brazil - Brasileiro Serie D",
+        "match_key": "soccer|tocantinopolis to|trem dc ap|2026-05-23",
+        "minutes_to_kickoff": 85.86,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 158.003,
+        "priority": 147.379,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -432,14 +476,14 @@
         }
       },
       {
-        "away_team": "Juventud Torremolinos CF",
-        "home_team": "Antequera CF",
-        "kickoff_utc": "2026-05-23T16:30:00+00:00",
-        "league_name": "Spain - Primera Federacion",
-        "match_key": "soccer|antequera|juventud torremolinos|2026-05-23",
-        "minutes_to_kickoff": 53.99,
+        "away_team": "Inter Toronto FC",
+        "home_team": "HFX Wanderers FC",
+        "kickoff_utc": "2026-05-23T19:00:00+00:00",
+        "league_name": "Canada - Canadian Premier League",
+        "match_key": "soccer|hfx wanderers|inter toronto|2026-05-23",
+        "minutes_to_kickoff": 85.86,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 158.003,
+        "priority": 147.379,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -452,14 +496,14 @@
         }
       },
       {
-        "away_team": "Zamora CF",
-        "home_team": "Arenas Club Getxo",
-        "kickoff_utc": "2026-05-23T16:30:00+00:00",
-        "league_name": "Spain - Primera Federacion",
-        "match_key": "soccer|arenas getxo|zamora|2026-05-23",
-        "minutes_to_kickoff": 53.99,
+        "away_team": "America de Cali Sa",
+        "home_team": "Internacional de Bogota",
+        "kickoff_utc": "2026-05-23T19:00:00+00:00",
+        "league_name": "Colombia - Liga Femenina",
+        "match_key": "soccer|america cali sa|internacional bogota|2026-05-23",
+        "minutes_to_kickoff": 85.86,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 158.003,
+        "priority": 147.379,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -473,10 +517,10 @@
       }
     ]
   },
-  "status": "candidates_but_quality_rejected",
-  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
+  "status": "candidates_filtered_before_fallback",
+  "status_ru": "🟡 кандидаты отфильтрованы до fallback",
   "telegram_sent": true,
-  "text_length": 2551,
-  "top_reason": "n/a",
+  "text_length": 2756,
+  "top_reason": "debug_candidates_before_quality_canonical_negative_value_prefilter",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
