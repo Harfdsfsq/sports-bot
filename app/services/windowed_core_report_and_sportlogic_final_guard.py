@@ -5,7 +5,7 @@ from __future__ import annotations
 This module fixes two runtime issues seen in the 2026-05-12 logs:
 
 1. `latest-windowed-core-coverage.json` can be overwritten by an install-only
-   report when later workflow steps import usercustomize again. We keep a stable
+   report when later workflow steps install runtime extensions again. We keep a stable
    candidate-audit copy and restore it over install-only payloads.
 2. Bzzoiro provides useful secondary odds, but only overlaps odds-api.io on a
    small match subset. SportLogic has a configured key/quota and should be used

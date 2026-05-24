@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Absolute-final installer for windowed core coverage.
 
-`sitecustomize` can load before dependencies are installed, and `usercustomize`
-loads many runtime wrappers after it. This module deliberately forces the
-windowed-core policy to be the final PredictionRunner / CandidateFactory wrapper.
+Runtime extensions can be installed in several stages. This module deliberately
+forces the windowed-core policy to be the final PredictionRunner /
+CandidateFactory wrapper.
 
 Important: the windowed-core policy must not kill raw candidates. Raw candidates
 are needed for diagnostics, quality analysis and controlled reserve evaluation.
@@ -269,7 +269,7 @@ def install() -> dict[str, Any]:
         previous_coverage_report = _safe_read_json(patch.LATEST_REPORT)
 
         # Reset module/class markers so the windowed wrappers are applied after
-        # all other usercustomize wrappers, not before them.
+        # all other runtime wrappers.
         patch._INSTALLED = False
         try:
             from app.services.runner import PredictionRunner
@@ -314,7 +314,7 @@ def install() -> dict[str, Any]:
         _install_publishable_filter_wrapper(payload)
 
         # patch.install() writes an install-only coverage report. If a later
-        # post-run script imports usercustomize, do not overwrite the richer
+        # post-run step imports the startup chain, do not overwrite the richer
         # run report produced during CandidateFactory execution.
         current_report = _safe_read_json(patch.LATEST_REPORT)
         if isinstance(previous_coverage_report, dict) and "candidates_in" in previous_coverage_report and isinstance(current_report, dict) and "candidates_in" not in current_report:

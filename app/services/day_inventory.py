@@ -8,6 +8,7 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from app.schemas import Match
+from app.services.day_inventory_cached_evidence import preserve_cached_evidence
 
 UTC = timezone.utc
 LEGACY_PLACEHOLDER_SOURCES = {"", "day_inventory", "inventory", "unknown", "none", "null"}
@@ -285,7 +286,11 @@ class DayInventoryStore:
             "league_match_counts": dict(sorted(leagues.items(), key=lambda item: (-item[1], item[0]))[:50]),
             "matches": sorted_matches,
         }
-        return payload
+        return preserve_cached_evidence(
+            payload,
+            existing,
+            report_path=self.summary_path.parent / "latest-day-inventory-cached-evidence-preserve.json",
+        )
 
     def _coverage_counts(self, rows: list[dict[str, Any]]) -> dict[str, int]:
         now = datetime.now(UTC)

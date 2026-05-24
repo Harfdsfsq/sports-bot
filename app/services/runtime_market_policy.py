@@ -289,8 +289,8 @@ def _install_candidate_factory_policy() -> None:
 
     setattr(cls, _PATCH_MARKER, True)
     setattr(cls, _PREVIOUS_PATCH_MARKER, True)
-    # Keep the legacy marker too, so old sitecustomize/bootstrap checks do not
-    # install the previous "remove all quarter totals" behavior again.
+    # Keep the legacy marker too, so old bootstrap checks do not install the
+    # previous "remove all quarter totals" behavior again.
     setattr(cls, _LEGACY_PATCH_MARKER, True)
 
 
@@ -317,6 +317,6 @@ def install() -> None:
     _install_candidate_factory_policy()
 
 
-# Allow direct import side effect from sitecustomize/service package startup.
+# Allow direct import side effect for explicit runtime startup imports.
 if os.getenv("HARIZON_RUNTIME_MARKET_POLICY_AUTOINSTALL", "true").strip().lower() in {"1", "true", "yes", "on", "force"}:
     install()

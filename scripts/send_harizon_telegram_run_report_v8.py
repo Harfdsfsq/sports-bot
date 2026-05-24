@@ -344,6 +344,8 @@ def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
             "добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. "
             f"Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
         )
+        if win12_total <= 0:
+            new += " Progressive coverage не видит матчей в ближайшие 12 часов."
     else:
         new = (
             "• Progressive coverage включён, но core-ready 2+ ещё не накоплен. Нужно добирать именно core gaps: "

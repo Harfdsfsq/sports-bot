@@ -7,7 +7,7 @@ The factual run report is now sent by `send_harizon_telegram_run_report_v5.py`.
 before v5. This patch intercepts only those no-pick sendMessage calls and leaves
 actual pick messages untouched.
 
-This module is imported first from root sitecustomize, so it also installs the
+When installed explicitly before report/fallback sending, it also installs the
 core source coverage runtime patch before the runner imports providers.
 """
 

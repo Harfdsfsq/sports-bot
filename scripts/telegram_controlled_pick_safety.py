@@ -19,7 +19,7 @@ from urllib import request as url_request
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_PATH = ROOT / ".data" / "exports" / "latest-telegram-controlled-pick-safety.json"
-TARGET_SCRIPT_NAMES = {"publish_controlled_fallback.py", "-"}
+TARGET_SCRIPT_NAMES = {"publish_controlled_fallback.py", "publish_controlled_fallback_guarded.py", "-"}
 _ORIGINAL_URLOPEN = url_request.urlopen
 
 

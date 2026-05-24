@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import json
 import math
 import os
 import re
+import runpy
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -82,6 +84,51 @@ def write_json(path: str | Path, payload: Any) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+_EXPLICIT_TELEGRAM_GUARDS_INSTALLED = False
+
+
+def _import_guard_module(module_name: str) -> Any | None:
+    for candidate in (f"scripts.{module_name}", module_name):
+        try:
+            return importlib.import_module(candidate)
+        except Exception:
+            continue
+    return None
+
+
+def install_explicit_telegram_guards() -> None:
+    """Install last-mile fallback guards without relying on sitecustomize."""
+    global _EXPLICIT_TELEGRAM_GUARDS_INSTALLED
+    if _EXPLICIT_TELEGRAM_GUARDS_INSTALLED:
+        return
+    _EXPLICIT_TELEGRAM_GUARDS_INSTALLED = True
+    if not env_bool("CONTROLLED_FALLBACK_EXPLICIT_GUARDS_ENABLED", True):
+        return
+
+    guard = _import_guard_module("controlled_fallback_prepublish_guard")
+    if guard is not None:
+        price_patch = _import_guard_module("controlled_fallback_price_source_patch")
+        if price_patch is not None:
+            try:
+                price_patch.apply(guard)
+            except Exception:
+                pass
+        installer = getattr(guard, "install", None)
+        if callable(installer):
+            try:
+                installer()
+            except Exception:
+                pass
+
+    safety = _import_guard_module("telegram_controlled_pick_safety")
+    installer = getattr(safety, "install", None) if safety is not None else None
+    if callable(installer):
+        try:
+            installer()
+        except Exception:
+            pass
 
 
 def payload_timestamp(payload: Any) -> datetime | None:
@@ -946,16 +993,30 @@ def odds_source_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
 
     contract_sources = _clean_source_list(contract.get("odds_sources"), exclude_context=True)
     summary_sources = _clean_source_list(summary.get("odds_sources"), exclude_context=True)
+    direct_sources = _clean_source_list(
+        candidate.get("odds_sources")
+        or candidate.get("line_sources")
+        or candidate.get("price_sources")
+        or candidate.get("selected_odds_sources"),
+        exclude_context=True,
+    )
     # For Telegram and tiering use the exact publication contract first.  A
     # broader source_summary.line_sources may include provider-level hints that
     # did not actually provide the selected market/line/side price.
-    line_sources = contract_sources or summary_sources
+    line_sources = contract_sources or summary_sources or direct_sources
     if not line_sources:
         line_sources = _clean_source_list(summary.get("line_sources"), exclude_context=True)
 
     provider_count = as_int(contract.get("odds_sources_count"), -1)
     if provider_count < 0:
         provider_count = as_int(summary.get("odds_sources_count"), 0)
+    direct_count = max(
+        as_int(candidate.get("odds_sources_count"), 0),
+        as_int(candidate.get("price_sources_count"), 0),
+        as_int(candidate.get("independent_odds_sources_count"), 0),
+        len(direct_sources),
+    )
+    provider_count = max(provider_count, direct_count)
     if provider_count <= 0:
         provider_count = len(contract_sources or summary_sources or line_sources)
 
@@ -985,9 +1046,15 @@ def context_source_metrics(candidate: dict[str, Any], fallback_sources: list[str
     sources = _clean_source_list(contract.get("context_sources") or summary.get("context_sources") or fallback_sources, exclude_context=False)
     # odds_api_io is a line provider and should not be shown as context confirmation.
     sources = [src for src in sources if src not in {"odds_api_io", "market", "context_equiv_supplemental", "model_xg"}]
+    direct_count = max(
+        as_int(candidate.get("confirmation_sources_count"), 0),
+        as_int(candidate.get("context_sources_count"), 0),
+        as_int(summary.get("context_sources_count"), 0),
+        len(sources),
+    )
     return {
         "context_sources": sources,
-        "context_sources_count": len(sources),
+        "context_sources_count": direct_count,
     }
 
 def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -1225,6 +1292,116 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
 
 
 
+def _truth_report_paths() -> list[Path]:
+    paths: list[Path] = []
+    explicit = str(os.getenv("DAY_INVENTORY_COVERAGE_TRUTH_PATH") or os.getenv("CONTROLLED_FALLBACK_COVERAGE_TRUTH_PATH") or "").strip()
+    if explicit:
+        paths.append(Path(explicit))
+    paths.extend([
+        Path(".data/exports/latest-day-inventory-coverage-truth.json"),
+        Path("artifacts/run-bot/latest-day-inventory-coverage-truth.json"),
+    ])
+    return paths
+
+
+def _load_truth_rows() -> list[dict[str, Any]]:
+    for path in _truth_report_paths():
+        payload = load_json(path, {})
+        rows = payload.get("rows") if isinstance(payload, dict) else None
+        if rows is None and isinstance(payload, dict):
+            rows = payload.get("matches")
+        if isinstance(rows, list):
+            return [dict(row) for row in rows if isinstance(row, dict)]
+    return []
+
+
+def _norm_key(value: Any) -> str:
+    return re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).strip()
+
+
+def _matching_truth_row(candidate: dict[str, Any]) -> dict[str, Any] | None:
+    candidate_key = _norm_key(candidate.get("match_key"))
+    candidate_home = _norm_key(candidate.get("home_team"))
+    candidate_away = _norm_key(candidate.get("away_team"))
+    for row in _load_truth_rows():
+        row_key = _norm_key(row.get("match_key") or row.get("canonical_match_id"))
+        if candidate_key and row_key and candidate_key == row_key:
+            return row
+        row_home = _norm_key(row.get("home_team"))
+        row_away = _norm_key(row.get("away_team"))
+        if candidate_home and candidate_away and row_home == candidate_home and row_away == candidate_away:
+            return row
+    return None
+
+
+def _single_line_context_override_reasons(metrics: dict[str, Any], truth: dict[str, Any], tier_name: str) -> list[str]:
+    if not env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED", True) or tier_name != "B":
+        return ["single_line_context_override_not_allowed_for_tier"]
+    odds_sources = max(as_int(metrics.get("odds_sources_count"), 0), as_int(truth.get("odds_sources_count"), 0))
+    context_sources = max(
+        as_int(metrics.get("confirmation_sources_count"), 0),
+        as_int(metrics.get("sources_count"), 0),
+        as_int(truth.get("context_sources_count"), 0),
+    )
+    min_context = env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONTEXT_SOURCES", 3)
+    reasons: list[str] = []
+    if odds_sources < 1:
+        reasons.append("single_line_odds_sources_below_min:0/1")
+    if context_sources < min_context:
+        reasons.append(f"single_line_context_sources_below_min:{context_sources}/{min_context}")
+    if int(metrics.get("books_count") or 0) < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_BOOKS", 2):
+        reasons.append("single_line_books_below_min")
+    if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EDGE_PP", 4.0):
+        reasons.append("single_line_edge_below_min")
+    if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EV_PCT", 7.0):
+        reasons.append("single_line_ev_below_min")
+    if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONFIDENCE", 76.0):
+        reasons.append("single_line_confidence_below_min")
+    if float(metrics.get("quality_score") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY", 78.0):
+        reasons.append("single_line_quality_below_min")
+    if not reasons:
+        metrics["line_source_mode"] = "single_line_plus_context"
+        metrics["strict_truth_single_line_context_override"] = True
+    return reasons
+
+
+def _strict_truth_reasons(candidate: dict[str, Any], metrics: dict[str, Any], tier_name: str) -> list[str]:
+    if not env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", False):
+        return []
+    truth = _matching_truth_row(candidate)
+    if not truth:
+        return ["strict_truth_missing_match"]
+
+    missing = [str(item) for item in truth.get("missing") or [] if str(item).strip()]
+    odds_sources = as_int(truth.get("odds_sources_count"), as_int(metrics.get("odds_sources_count"), 0))
+    context_sources = as_int(truth.get("context_sources_count"), as_int(metrics.get("confirmation_sources_count"), 0))
+    price_confirmations = as_int(truth.get("price_confirmations"), as_int(metrics.get("books_count"), 0))
+    need_odds = as_int(truth.get("need_odds_sources"), 0)
+    need_context = as_int(truth.get("need_context_sources"), 0)
+    need_price = as_int(truth.get("need_price_confirmations"), 0)
+    min_odds = max(env_int("PUBLISH_MIN_ODDS_SOURCES", 2), odds_sources + need_odds)
+    min_context = max(env_int("PUBLISH_MIN_CONTEXT_SOURCES", env_int("MIN_CONTEXT_SOURCES_PUBLISH", 2)), context_sources + need_context)
+    min_price = max(env_int("PUBLISH_MIN_PRICE_CONFIRMATIONS", 2), price_confirmations + need_price)
+
+    can_single_line = "independent_odds_sources" in missing and odds_sources == 1
+    override_reasons = _single_line_context_override_reasons(metrics, truth, tier_name) if can_single_line else []
+    if can_single_line and not override_reasons:
+        return []
+
+    reasons: list[str] = []
+    if price_confirmations < min_price:
+        reasons.append(f"strict_truth_price_confirmations_below_min:{price_confirmations}/{min_price}")
+    if odds_sources < min_odds:
+        reasons.append(f"strict_truth_odds_sources_below_min:{odds_sources}/{min_odds}")
+    if context_sources < min_context:
+        reasons.append(f"strict_truth_context_sources_below_min:{context_sources}/{min_context}")
+    reasons.extend(f"strict_truth_missing:{item}" for item in missing)
+    reasons.extend(override_reasons)
+    if not bool(truth.get("ready_for_publish", not reasons)) and not reasons:
+        reasons.append("strict_truth_not_ready_for_publish")
+    return reasons
+
+
 def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> list[str]:
     """Final Telegram publication guard.
 
@@ -1233,7 +1410,7 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     """
     reasons: list[str] = []
     fam = family_norm(candidate)
-    tier_name = tier.replace("уровень ", "").strip().upper()
+    tier_name = tier.replace("уровень ", "").replace("УРОВЕНЬ ", "").replace("level ", "").replace("LEVEL ", "").strip().upper()
 
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):
         if int(metrics.get("books_count") or 0) < 2:
@@ -1338,6 +1515,15 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             reasons.append("final_edge_below_min")
     if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
         reasons.append("final_ev_below_min")
+
+    if env_bool("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", True):
+        allowed_quality_stops = env_set("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "")
+        for quality_reason in [item.lower() for item in metrics.get("quality_reasons") or []]:
+            if quality_reason and quality_reason not in allowed_quality_stops:
+                reasons.append(f"telegram_quality_stop_not_allowed:{quality_reason}")
+                break
+
+    reasons.extend(_strict_truth_reasons(candidate, metrics, tier_name))
 
     return reasons
 
@@ -2153,6 +2339,7 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
+    install_explicit_telegram_guards()
     report: dict[str, Any] = {
         "created_at": datetime.now(UTC).isoformat(),
         "enabled": env_bool("CONTROLLED_FALLBACK_ENABLED", True),
@@ -2393,5 +2580,24 @@ def main() -> int:
     return 0 if (sent or dry_run) else 1
 
 
+def _guarded_entrypoint_exit_code() -> int | None:
+    if not env_bool("CONTROLLED_FALLBACK_GUARDED_ENTRYPOINT_ENABLED", True):
+        return None
+    if os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1":
+        return None
+    target = Path(__file__).resolve().with_name("publish_controlled_fallback_guarded.py")
+    if not target.exists():
+        return None
+    os.environ["HARIZON_CONTROLLED_FALLBACK_REDIRECTED"] = "1"
+    try:
+        runpy.run_path(str(target), run_name="__main__")
+    except SystemExit as exc:
+        if exc.code is None:
+            return 0
+        return int(exc.code) if isinstance(exc.code, int) else 1
+    return 0
+
+
 if __name__ == "__main__":
-    raise SystemExit(main())
+    guarded_code = _guarded_entrypoint_exit_code()
+    raise SystemExit(main() if guarded_code is None else guarded_code)

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 Why this exists:
 - signal_stack_runtime_patch mines Bzzoiro odds hints inside CandidateFactory.build_candidates;
-- other runtime wrappers can be installed after sitecustomize/usercustomize;
+- other runtime wrappers can be installed earlier in the startup chain;
 - a wrapper installed before signal_stack cannot rekey offers that do not exist yet.
 
 This final wrapper mines Bzzoiro hints itself and attaches them to the canonical
 odds-api.io match_key before candidate generation. It is intentionally installed
-at the very end of usercustomize.py.
+near the end of the explicit runtime startup chain.
 """
 
 import json

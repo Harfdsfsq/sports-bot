@@ -3,8 +3,8 @@ from __future__ import annotations
 """Hard runtime guard for day-inventory builds.
 
 The day inventory is useful, but it must never consume the whole run-bot job.
-This guard is loaded from usercustomize before scripts/build_day_inventory.py
-executes. It applies only to that script.
+This guard is installed explicitly by day-inventory startup code. It applies
+only to scripts/build_day_inventory.py.
 """
 
 import json

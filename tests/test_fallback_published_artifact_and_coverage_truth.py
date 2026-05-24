@@ -5,6 +5,8 @@ import json
 from datetime import datetime, timezone
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def _load_module(path: Path, name: str):
     spec = importlib.util.spec_from_file_location(name, path)
@@ -16,7 +18,7 @@ def _load_module(path: Path, name: str):
 
 def test_coverage_truth_marks_already_published_and_minutes(tmp_path: Path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    mod = _load_module(Path('/mnt/data/patchbase263020/scripts/build_day_inventory_coverage_truth.py'), 'coverage_truth_mod')
+    mod = _load_module(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py', 'coverage_truth_mod')
     (tmp_path / '.data/day_inventory').mkdir(parents=True)
     (tmp_path / '.data').mkdir(parents=True, exist_ok=True)
     (tmp_path / '.data/fallback-sent-index.json').write_text(json.dumps({
@@ -53,7 +55,7 @@ def test_coverage_truth_marks_already_published_and_minutes(tmp_path: Path, monk
 
 def test_fallback_persists_sent_rows_to_standard_artifacts(tmp_path: Path, monkeypatch):
     monkeypatch.chdir(tmp_path)
-    mod = _load_module(Path('/mnt/data/patchbase263020/scripts/publish_controlled_fallback.py'), 'fallback_mod')
+    mod = _load_module(ROOT / 'scripts' / 'publish_controlled_fallback.py', 'fallback_mod')
     row = {
         'dedupe_key': 'abc',
         'match_key': 'soccer|a|b|2026-05-22',

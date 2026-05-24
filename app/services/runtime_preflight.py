@@ -10,10 +10,12 @@ extensions as optional compatibility hooks instead of the source of truth.
 import json
 import logging
 import os
-from importlib import import_module
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
+from importlib import import_module
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +101,7 @@ LEGACY_FINAL_INSTALLERS = (
 class PreflightReport:
     stage: str
     safe_defaults_applied: int = 0
+    phase_policy: dict[str, Any] = field(default_factory=dict)
     discovery_first: dict[str, Any] = field(default_factory=dict)
     legacy_extensions: dict[str, Any] = field(default_factory=dict)
 
@@ -119,6 +122,90 @@ def setdefault_env(values: dict[str, str]) -> int:
     return applied
 
 
+def _set_env(values: dict[str, str]) -> None:
+    for key, value in values.items():
+        os.environ[str(key)] = str(value)
+
+
+def _local_hour() -> int:
+    tz_name = os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow"
+    try:
+        tz = ZoneInfo(str(tz_name))
+    except Exception:
+        tz = timezone.utc
+    return datetime.now(timezone.utc).astimezone(tz).hour
+
+
+def _runtime_phase() -> str:
+    explicit = str(os.getenv("HARIZON_RUN_PHASE") or os.getenv("RUN_PHASE") or "").strip().lower()
+    if explicit:
+        return explicit
+    hour = _local_hour()
+    if 0 <= hour <= 2:
+        return "full_inventory"
+    if 3 <= hour <= 10:
+        return "morning_backfill"
+    return "live_refresh"
+
+
+def _common_prediction_contract() -> dict[str, str]:
+    return {
+        "HARIZON_PHASE_POLICY_ENABLED": "true",
+        "DAY_INVENTORY_USE_FOR_RUN": "true",
+        "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
+        "DAY_INVENTORY_NEAR_WINDOW_HOURS": "12",
+        "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "true",
+        "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
+        "MIN_BOOKS_FOR_CONSENSUS": "2",
+        "MIN_BOOKS_PUBLISH": "2",
+        "MIN_SOURCES_PUBLISH": "2",
+        "MARKET_DERIVED_MIN_BOOKS": "2",
+        "MARKET_DERIVED_MIN_SOURCES": "2",
+        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
+        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+        "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EV_PCT": "0.0",
+        "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EDGE_PP": "0.0",
+        "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "2",
+        "TELEGRAM_MAIN_PICK_MIN_EDGE_PP": "3.0",
+        "SECONDARY_ODDS_RESCUE_ENABLED": "true",
+        "BZZOIRO_ODDS_REKEY_ENABLED": "true",
+        "MARKET_DERIVED_SINGLE_SNAPSHOT_CONSENSUS_ENABLED": "true",
+    }
+
+
+def _phase_env(phase: str) -> dict[str, str]:
+    env = {
+        "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
+        "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
+        "FIXTURE_EXPANSION_ENABLED": "true",
+        "RUN_DAYS_AHEAD": "1",
+        "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth",
+    }
+    if phase == "full_inventory":
+        env.update({
+            "PUBLISH_WINDOW_HOURS": "24",
+            "MAX_MATCHES_FOR_ODDS_FETCH": "900",
+            "ANALYSIS_MATCH_CAP_PER_RUN": "900",
+            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "120",
+        })
+    elif phase == "morning_backfill":
+        env.update({
+            "PUBLISH_WINDOW_HOURS": "12",
+            "MAX_MATCHES_FOR_ODDS_FETCH": "650",
+            "ANALYSIS_MATCH_CAP_PER_RUN": "650",
+            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "260",
+        })
+    else:
+        env.update({
+            "PUBLISH_WINDOW_HOURS": "12",
+            "MAX_MATCHES_FOR_ODDS_FETCH": "520",
+            "ANALYSIS_MATCH_CAP_PER_RUN": "520",
+            "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240",
+        })
+    return env
+
+
 class RuntimePreflight:
     def __init__(self, settings: Any | None = None, *, export_dir: str | Path = ".data/exports") -> None:
         self.settings = settings
@@ -128,6 +215,29 @@ class RuntimePreflight:
         applied = setdefault_env(SAFE_RUNTIME_DEFAULTS)
         self._install_native_integrity_hooks()
         return applied
+
+    def apply_phase_policy(self) -> dict[str, Any]:
+        phase = _runtime_phase()
+        phase_values = _phase_env(phase)
+        _set_env({"HARIZON_RUN_PHASE_EFFECTIVE": phase})
+        _set_env(_common_prediction_contract())
+        _set_env(phase_values)
+
+        report: dict[str, Any] = {
+            "enabled": True,
+            "phase": phase,
+            "env": phase_values,
+        }
+        try:
+            self.export_dir.mkdir(parents=True, exist_ok=True)
+            out = self.export_dir / "latest-run-phase-policy.env"
+            lines = [f"HARIZON_RUN_PHASE_EFFECTIVE={phase}"] + [f"{key}={value}" for key, value in sorted(phase_values.items())]
+            out.write_text("\n".join(lines) + "\n", encoding="utf-8")
+            report["path"] = str(out)
+        except Exception as exc:
+            report["write_error"] = f"{type(exc).__name__}: {exc}"
+            logger.debug("failed to write runtime phase policy report", exc_info=True)
+        return report
 
     def prepare_discovery_first_inventory(self) -> dict[str, Any]:
         if not _truthy(os.getenv("RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED"), True):
@@ -169,6 +279,7 @@ class RuntimePreflight:
     def run_before_prediction(self, stage: str = "after_discovery_before_runner") -> PreflightReport:
         report = PreflightReport(stage=stage)
         report.safe_defaults_applied = self.apply_safe_defaults()
+        report.phase_policy = self.apply_phase_policy()
         report.discovery_first = self.prepare_discovery_first_inventory()
         report.legacy_extensions = self.install_legacy_runtime_extensions(stage=stage)
         self.write_report(report)
@@ -180,6 +291,7 @@ class RuntimePreflight:
             payload = {
                 "stage": report.stage,
                 "safe_defaults_applied": report.safe_defaults_applied,
+                "phase_policy": report.phase_policy,
                 "discovery_first": report.discovery_first,
                 "legacy_extensions": report.legacy_extensions,
             }

@@ -2,10 +2,10 @@ from __future__ import annotations
 
 """Run fixture expansion after provider policy is applied.
 
-This hooks into the existing pre-run `apply_provider_request_budget.py` step via
-usercustomize, so the workflow does not need another YAML step. The expansion is
-bounded and best-effort; it can only add fixture rows to day inventory and never
-publishes predictions or relaxes guards.
+This hooks into the existing pre-run `apply_provider_request_budget.py` step when
+the runtime startup chain is installed. The expansion is bounded and best-effort;
+it can only add fixture rows to day inventory and never publishes predictions or
+relaxes guards.
 """
 
 import atexit

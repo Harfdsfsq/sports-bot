@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-"""Startup patches applied before every Python entrypoint.
+"""Legacy startup patch bundle.
 
-This file keeps emergency runtime fixes centralized.  It is loaded from the
-repository root `sitecustomize.py`, so it runs for `python -m app.cli ...` and
-for `python scripts/*.py` in GitHub Actions.
+This module is kept for manual compatibility work only. It is no longer imported
+from `sitecustomize.py`, because normal runs use explicit runtime preflight code
+instead of repository-wide Python startup side effects.
 """
 
 import builtins
@@ -407,8 +407,6 @@ def install_import_hook() -> None:
     _apply_import_patches()
 
 
-try:
+if __name__ == "__main__":
     apply_all()
     install_import_hook()
-except Exception:
-    pass

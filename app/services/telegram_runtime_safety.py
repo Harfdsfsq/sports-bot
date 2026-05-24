@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Telegram payload normalizer and send-state guard.
 
-This module is installed from sitecustomize and intentionally covers every
-Telegram sending path: app/services/telegram.py, urllib-based scripts and any
-standalone httpx script. It fixes three production issues:
+This module is installed by explicit Telegram/fallback entrypoints and covers
+Telegram sending paths that opt into it: app/services/telegram.py, urllib-based
+scripts and standalone httpx scripts. It fixes three production issues:
 
 1. outgoing pick messages can mix English team/league names with Russian market
    text;

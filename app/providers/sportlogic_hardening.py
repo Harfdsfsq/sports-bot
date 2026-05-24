@@ -4,7 +4,7 @@ from __future__ import annotations
 
 The provider must survive slightly different SportLogic JSON envelopes and odds
 row shapes.  This module is intentionally self-contained so it can be installed
-from sitecustomize/runtime hooks without making the main runner brittle.
+from explicit runtime hooks without making the main runner brittle.
 """
 
 import os

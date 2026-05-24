@@ -9,11 +9,12 @@ Business rule:
 - Every other provider is supplemental and should run only after shortlisting or
   for explicit missing roles: weather, ClubElo, news, mapping and odds rescue.
 
-This module is intentionally installed at the end of usercustomize.py. It
-rewrites both os.environ and GITHUB_ENV so older quota scripts cannot silently
-restore conservative defaults such as BZZOIRO=2 or SSTATS=12. It also exports the
-effective tier contract so provider-smoke/run-bot artifacts show the real final
-contract, not the earlier conservative contract written by older scripts.
+This module is intentionally installed near the end of the explicit runtime
+startup chain. It rewrites both os.environ and GITHUB_ENV so older quota scripts
+cannot silently restore conservative defaults such as BZZOIRO=2 or SSTATS=12. It
+also exports the effective tier contract so provider-smoke/run-bot artifacts show
+the real final contract, not the earlier conservative contract written by older
+scripts.
 """
 
 import atexit

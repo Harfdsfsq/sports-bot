@@ -19,7 +19,7 @@ from urllib import request as url_request
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_PATH = ROOT / ".data" / "exports" / "latest-controlled-fallback-prepublish-guard.json"
-TARGET_SCRIPT = "publish_controlled_fallback.py"
+TARGET_SCRIPT_NAMES = {"publish_controlled_fallback.py", "publish_controlled_fallback_guarded.py"}
 _ORIGINAL_URL_OPEN = url_request.urlopen
 
 
@@ -222,7 +222,7 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
 
 
 def install() -> None:
-    if Path(sys.argv[0] or "").name != TARGET_SCRIPT:
+    if Path(sys.argv[0] or "").name not in TARGET_SCRIPT_NAMES:
         return
     selected = _load_selected()
     audit: dict[str, Any] = {

@@ -68,6 +68,8 @@ MODULES = [
     'app.services.api_coverage_consensus_runtime_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
+    'app.providers.odds_api_io_fast_event_account_patch',
+    'app.services.bzzoiro_total_point_normalization_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',

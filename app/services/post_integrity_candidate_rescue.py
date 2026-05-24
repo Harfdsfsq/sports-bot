@@ -114,6 +114,8 @@ def install() -> dict[str, Any]:
         _write({"created_at_utc": datetime.now(UTC).isoformat(), **result})
         return result
     original = getattr(cls, "build_candidates", None)
+    if getattr(cls, "_harizon_post_integrity_candidate_rescue_patch", False) and not callable(original):
+        return {"status": "already_installed"}
     # Do not trust the class-level flag alone.  Several final/reinstall wrappers
     # can replace CandidateFactory.build_candidates after this module was first
     # installed, leaving cls._harizon_post_integrity_candidate_rescue_patch=True

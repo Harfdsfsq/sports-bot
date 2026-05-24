@@ -83,9 +83,9 @@ def main() -> int:
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
     workflow_mode = str(os.getenv('FAST_WORKFLOW_MODE') or os.getenv('RUN_MODE') or 'fast').strip().lower()
     fast = truthy(os.getenv('HARIZON_FAST_RUN'), workflow_mode != 'full') and workflow_mode != 'full'
+    app_run_mode = str(os.getenv('RUN_MODE') or 'normal').strip() or 'normal'
     notes: list[str] = []
     overrides: dict[str, str] = {
-        'RUN_MODE': 'normal',
         'HARIZON_FAST_RUN': 'true' if fast else 'false',
         'FAST_WORKFLOW_MODE': workflow_mode or 'fast',
     }
@@ -94,7 +94,7 @@ def main() -> int:
         inventory_limit = max(300, as_int(os.getenv('FAST_RUN_INVENTORY_LIMIT'), 300))
         window_hours = max(18, as_int(os.getenv('FAST_RUN_WINDOW_HOURS'), 24))
         keep_window_hours = max(window_hours + 4, as_int(os.getenv('FAST_RUN_KEEP_WINDOW_HOURS'), 30))
-        odds_target = max(220, as_int(os.getenv('FAST_RUN_ODDS_MATCH_TARGET'), 260))
+        odds_target = max(220, as_int(os.getenv('FAST_RUN_ODDS_MATCH_TARGET'), 220))
         odds_req = max(140, as_int(os.getenv('FAST_RUN_ODDS_API_IO_REQUESTS'), 160))
         bzz_req = max(120, as_int(os.getenv('FAST_RUN_BZZOIRO_REQUESTS'), 140))
         sstats_req = max(80, as_int(os.getenv('FAST_RUN_SSTATS_REQUESTS'), 100))
@@ -180,6 +180,7 @@ def main() -> int:
             notes.append(f'sportlogic_disabled:{reason}')
         else:
             notes.append(f'sportlogic_kept:{reason}')
+        notes.append('balanced_depth_v3_uses_24h_window_and_dual_account_bookmakers')
         notes.append('balanced_depth_v4_uses_account2_for_event_lookup_when_account1_is_rate_limited')
         if not acc2_present:
             notes.append('warning:odds_api_io_second_key_missing_or_not_mapped')
@@ -190,7 +191,7 @@ def main() -> int:
     payload = {
         'created_at_utc': datetime.now(UTC).isoformat(),
         'fast_run': fast,
-        'run_mode': overrides.get('RUN_MODE'),
+        'run_mode': app_run_mode,
         'workflow_mode': workflow_mode,
         'overrides': overrides,
         'notes': notes,

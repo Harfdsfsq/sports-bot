@@ -142,8 +142,11 @@ def _dispatch_sync(command: str, settings: Any) -> tuple[int, dict[str, Any] | N
 
 
 async def _main(argv: Sequence[str] | None = None) -> int:
-    RuntimePreflight().apply_safe_defaults()
     args = list(argv if argv is not None else sys.argv[1:])
+    preflight = RuntimePreflight()
+    preflight.apply_safe_defaults()
+    if args and args[0] == 'run-once':
+        preflight.apply_phase_policy()
     settings = _apply_runtime_env_overrides(get_settings())
     command = args[0] if args else ''
 

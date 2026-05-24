@@ -24,6 +24,27 @@ UTC = timezone.utc
 ENV_BOOTSTRAP_KEY = 'MATCH_BOOTSTRAP_PROVIDER'
 
 
+def _env_bool(name: str, default: bool = True) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on", "force"}
+
+
+def _install_day_inventory_runtime_extensions() -> None:
+    if not _env_bool("DAY_INVENTORY_RUNTIME_EXTENSIONS_ENABLED", True):
+        return
+    try:
+        from app.services import runtime_startup_chain
+
+        runtime_startup_chain.install_all()
+    except Exception as exc:
+        print(f"[day-inventory] runtime extensions skipped: {type(exc).__name__}: {exc}", flush=True)
+
+
+_install_day_inventory_runtime_extensions()
+
+
 def app_tz(settings: Settings):
     try:
         return ZoneInfo(str(getattr(settings, 'app_timezone', '') or 'Europe/Moscow'))
