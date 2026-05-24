@@ -1,0 +1,55 @@
+diff --git a/.github/workflows/run-bot.yml b/.github/workflows/run-bot.yml
+--- a/.github/workflows/run-bot.yml
++++ b/.github/workflows/run-bot.yml
+@@
+           mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
+           python -u scripts/day_inventory_cumulative_coverage.py || true
++          python -u scripts/repair_inventory_evidence_key_aliases.py || true
++          python -u scripts/build_day_inventory_coverage_truth.py || true
+           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
++          cp .data/exports/latest-inventory-evidence-key-alias-repair.json artifacts/run-bot/latest-inventory-evidence-key-alias-repair.json 2>/dev/null || true
+           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
+           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
+           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
+diff --git a/scripts/day_inventory_cumulative_coverage.py b/scripts/day_inventory_cumulative_coverage.py
+--- a/scripts/day_inventory_cumulative_coverage.py
++++ b/scripts/day_inventory_cumulative_coverage.py
+@@
+     steps.append(run_python_script(ROOT / 'scripts' / 'merge_run_coverage_into_day_inventory.py'))
+@@
+     steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_source_counts.py'))
++    steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_evidence_key_aliases.py'))
+     steps.append(run_python_script(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'))
+     return steps
+diff --git a/scripts/build_day_inventory_coverage_truth.py b/scripts/build_day_inventory_coverage_truth.py
+--- a/scripts/build_day_inventory_coverage_truth.py
++++ b/scripts/build_day_inventory_coverage_truth.py
+@@
+-    osrc = odds_sources(row)
+-    csrc = context_sources(row)
+-    pc = price_confirmations(row)
+-    cc = len(csrc)
++    osrc = odds_sources(row)
++    csrc = context_sources(row)
++    pc = price_confirmations(row)
++    odds_sources_count = max(
++        len(osrc),
++        count_from_metadata(row, "independent_odds_sources_count", "odds_sources_count", "odds_source_count"),
++    )
++    cc = max(
++        len(csrc),
++        count_from_metadata(row, "context_sources_count", "confirmation_sources_count", "context_source_count"),
++    )
+@@
+-    if len(osrc) < min_odds:
++    if odds_sources_count < min_odds:
+         missing.append("independent_odds_sources")
+@@
+-    strict_ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
++    strict_ready_publish = has_odds and has_context and pc >= min_odds and odds_sources_count >= min_odds and cc >= min_context
+@@
+-        "odds_sources_count": len(osrc),
++        "odds_sources_count": odds_sources_count,
+@@
+-        "need_odds_sources": max(0, min_odds - len(osrc)),
++        "need_odds_sources": max(0, min_odds - odds_sources_count),

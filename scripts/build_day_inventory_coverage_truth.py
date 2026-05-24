@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-"""Build an auditable per-match coverage truth table for the day inventory.
+"""Build auditable per-match coverage truth from the unified day inventory contract.
 
-The Telegram summary is intentionally compact, but debugging the 300-match
-contract needs a row-level artifact.  This script does not call external APIs;
-it only normalizes the persisted inventory evidence into explicit columns:
-independent live odds providers, price confirmations, context sources, and the
-remaining gaps before a match can be considered publish-ready.
+This version treats persisted metadata/harizon_contract numeric evidence as the
+source of truth when explicit source names are unavailable. It fixes the case
+where runtime evidence was merged into metadata but the report still showed
+`2+ context/price = 0`.
 """
 
 import csv
@@ -27,7 +26,7 @@ OUT_CSV = EXPORT_DIR / "latest-day-inventory-coverage-truth.csv"
 SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
 
 LIVE_ODDS_SOURCES = {"odds_api_io", "bzzoiro", "sportlogic"}
-CONTEXT_ONLY = {"sstats", "bzzoiro", "sportlogic", "clubelo", "football_data", "thesportsdb", "openfootball", "openligadb", "espn", "weatherapi", "open_meteo"}
+CONTEXT_EXCLUDE = {"", "ensemble", "market", "market_signal", "line_history", "odds_api_io", "xg_model_context", "form_context"}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -58,7 +57,11 @@ def as_int(value: Any, default: int = 0) -> int:
     try:
         if value in (None, ""):
             return default
-        return int(float(str(value)))
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
+        return int(float(str(value).replace(",", ".")))
     except Exception:
         return default
 
@@ -83,19 +86,14 @@ def run_now() -> datetime:
         dt = parse_dt(os.getenv(key))
         if dt is not None:
             return dt
-    summary = load_json(EXPORT_DIR / "latest-run-summary.json", {})
-    if isinstance(summary, dict):
-        for key in ("current_time_utc", "started_time_utc", "created_at_utc", "updated_at_utc"):
-            dt = parse_dt(summary.get(key))
-            if dt is not None:
-                return dt
-    debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
-    if isinstance(debug, dict):
-        summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
-        for key in ("current_time_utc", "started_time_utc"):
-            dt = parse_dt(summary.get(key))
-            if dt is not None:
-                return dt
+    for path in (EXPORT_DIR / "latest-run-summary.json", ROOT / ".logs" / "debug-last-run.json"):
+        payload = load_json(path, {})
+        summary = payload.get("summary") if isinstance(payload.get("summary"), dict) else payload
+        if isinstance(summary, dict):
+            for key in ("current_time_utc", "started_time_utc", "created_at_utc", "updated_at_utc"):
+                dt = parse_dt(summary.get(key))
+                if dt is not None:
+                    return dt
     return datetime.now(UTC)
 
 
@@ -106,22 +104,21 @@ def canonical_match_key(value: Any) -> str:
 
 def sent_match_keys() -> set[str]:
     keys: set[str] = set()
-    fallback = load_json(ROOT / ".data" / "fallback-sent-index.json", {})
-    if isinstance(fallback, dict):
-        for row in fallback.values():
+    for path in (ROOT / ".data" / "fallback-sent-index.json", ROOT / ".data" / "published-candidate-index.json"):
+        payload = load_json(path, {})
+        rows: list[Any] = []
+        if isinstance(payload, dict):
+            rows.extend(payload.values())
+            for key in ("sent", "published", "rows"):
+                if isinstance(payload.get(key), list):
+                    rows.extend(payload[key])
+        elif isinstance(payload, list):
+            rows = payload
+        for row in rows:
             if isinstance(row, dict) and row.get("telegram_sent") is True:
                 key = canonical_match_key(row.get("match_key"))
                 if key:
                     keys.add(key)
-    published = load_json(ROOT / ".data" / "published-candidate-index.json", {})
-    if isinstance(published, dict):
-        rows = published.get("sent") or published.get("published") or []
-        if isinstance(rows, list):
-            for row in rows:
-                if isinstance(row, dict) and row.get("telegram_sent") is True:
-                    key = canonical_match_key(row.get("match_key"))
-                    if key:
-                        keys.add(key)
     return keys
 
 
@@ -139,6 +136,7 @@ def norm(value: Any) -> str:
         "sportlogic_io": "sportlogic",
         "sstats_form": "sstats",
         "sstats_net": "sstats",
+        "soccerstats": "sstats",
         "football_data_org": "football_data",
         "sportsdb": "thesportsdb",
         "the_sports_db": "thesportsdb",
@@ -157,8 +155,8 @@ def list_from_any(value: Any) -> list[str]:
 
 
 def unique_norm(values: list[Any]) -> list[str]:
-    seen: set[str] = set()
     out: list[str] = []
+    seen: set[str] = set()
     for value in values:
         item = norm(value)
         if not item or item in seen:
@@ -176,33 +174,43 @@ def coverage(row: dict[str, Any]) -> dict[str, Any]:
     return row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
 
 
-def count_from_metadata(row: dict[str, Any], *keys: str) -> int:
-    md = metadata(row)
+def contract(row: dict[str, Any]) -> dict[str, Any]:
+    return row.get("harizon_contract") if isinstance(row.get("harizon_contract"), dict) else {}
+
+
+def count_from_containers(row: dict[str, Any], *keys: str) -> int:
     best = 0
-    for container in (row, md):
+    for container in (row, metadata(row), coverage(row), contract(row)):
+        if not isinstance(container, dict):
+            continue
         for key in keys:
             best = max(best, as_int(container.get(key)))
     return best
 
 
 def odds_sources(row: dict[str, Any]) -> list[str]:
-    sources = unique_norm(list_from_any(row.get("odds_sources")) + list_from_any(row.get("line_sources")))
-    return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
+    values = (
+        list_from_any(row.get("odds_sources"))
+        + list_from_any(row.get("line_sources"))
+        + list_from_any(metadata(row).get("odds_sources"))
+        + list_from_any(contract(row).get("odds_sources"))
+    )
+    return sorted({x for x in unique_norm(values) if x in LIVE_ODDS_SOURCES})
 
 
 def context_sources(row: dict[str, Any]) -> list[str]:
-    md = metadata(row)
-    sources = unique_norm(
+    values = (
         list_from_any(row.get("context_sources"))
         + list_from_any(row.get("context_confirmations"))
-        + list_from_any(md.get("context_sources"))
-        + list_from_any(md.get("context_confirmations"))
+        + list_from_any(metadata(row).get("context_sources"))
+        + list_from_any(metadata(row).get("context_confirmations"))
+        + list_from_any(contract(row).get("context_sources"))
     )
-    cleaned = []
-    for item in sources:
+    cleaned: list[str] = []
+    for item in unique_norm(values):
         if item.startswith("provider_"):
             item = item.removeprefix("provider_")
-        if item in {"ensemble", "market", "market_signal", "line_history", "odds_api_io", "xg_model_context", "form_context"}:
+        if item in CONTEXT_EXCLUDE:
             continue
         if re.match(r"^context_(source|confirmation)_\d+$", item):
             continue
@@ -210,11 +218,13 @@ def context_sources(row: dict[str, Any]) -> list[str]:
     return sorted(set(cleaned))
 
 
-def price_confirmations(row: dict[str, Any]) -> int:
+def price_confirmation_count(row: dict[str, Any]) -> int:
     return max(
-        count_from_metadata(row, "price_confirmation_sources_count", "price_sources_count", "books_count", "latest_books_max"),
+        count_from_containers(row, "price_confirmation_sources_count", "price_sources_count", "books_count", "latest_books_max", "bookmaker_count"),
         len(list_from_any(row.get("price_confirmations"))),
+        len(list_from_any(metadata(row).get("price_confirmations"))),
         len(list_from_any(row.get("books"))),
+        len(list_from_any(metadata(row).get("books"))),
     )
 
 
@@ -222,18 +232,29 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int, now_dt: date
     cov = coverage(row)
     osrc = odds_sources(row)
     csrc = context_sources(row)
-    pc = price_confirmations(row)
-    cc = len(csrc)
-    has_odds = bool(cov.get("odds")) or pc > 0
-    has_context = bool(cov.get("context")) or cc > 0
+
+    odds_sources_count = max(len(osrc), count_from_containers(row, "independent_odds_sources_count", "odds_sources_count", "odds_source_count"))
+    context_sources_count = max(len(csrc), count_from_containers(row, "context_sources_count", "confirmation_sources_count", "context_source_count"))
+    price_confirmations = price_confirmation_count(row)
+
+    has_odds = bool(cov.get("odds")) or odds_sources_count > 0 or price_confirmations > 0
+    has_context = bool(cov.get("context")) or context_sources_count > 0
+
     missing: list[str] = []
-    if pc < min_odds:
+    if price_confirmations < min_odds:
         missing.append("price_confirmations")
-    if len(osrc) < min_odds:
+    if odds_sources_count < min_odds:
         missing.append("independent_odds_sources")
-    if cc < min_context:
+    if context_sources_count < min_context:
         missing.append("context_sources")
-    strict_ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
+
+    strict_ready_publish = (
+        has_odds
+        and has_context
+        and price_confirmations >= min_odds
+        and odds_sources_count >= min_odds
+        and context_sources_count >= min_context
+    )
     match_key = row.get("match_key") or row.get("canonical_match_id") or ""
     kickoff_utc = row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff_local") or ""
     kickoff_dt = parse_dt(kickoff_utc)
@@ -251,49 +272,33 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int, now_dt: date
         "home_team": row.get("home_team") or "",
         "away_team": row.get("away_team") or "",
         "odds_sources": osrc,
-        "odds_sources_count": len(osrc),
-        "price_confirmations": pc,
-        "books_count": max(count_from_metadata(row, "books_count"), len(list_from_any(row.get("books")))),
+        "odds_sources_count": odds_sources_count,
+        "price_confirmations": price_confirmations,
+        "books_count": max(count_from_containers(row, "books_count"), len(list_from_any(row.get("books"))), len(list_from_any(metadata(row).get("books")))),
         "context_sources": csrc,
-        "context_sources_count": cc,
+        "context_sources_count": context_sources_count,
         "has_odds": has_odds,
         "has_context": has_context,
         "ready_for_model": bool(cov.get("ready_for_model")) or (has_odds and has_context),
         "strict_ready_for_publish": strict_ready_publish,
         "already_published": already_published,
         "ready_for_publish": ready_publish,
-        "need_price_confirmations": max(0, min_odds - pc),
-        "need_odds_sources": max(0, min_odds - len(osrc)),
-        "need_context_sources": max(0, min_context - cc),
+        "need_price_confirmations": max(0, min_odds - price_confirmations),
+        "need_odds_sources": max(0, min_odds - odds_sources_count),
+        "need_context_sources": max(0, min_context - context_sources_count),
         "missing": missing_new,
+        "evidence_basis": "metadata+harizon_contract+explicit_sources",
     }
 
 
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
-        "match_key",
-        "kickoff_utc",
-        "minutes_to_kickoff",
-        "league_name",
-        "home_team",
-        "away_team",
-        "odds_sources_count",
-        "odds_sources",
-        "price_confirmations",
-        "books_count",
-        "context_sources_count",
-        "context_sources",
-        "has_odds",
-        "has_context",
-        "ready_for_model",
-        "strict_ready_for_publish",
-        "already_published",
-        "ready_for_publish",
-        "need_price_confirmations",
-        "need_odds_sources",
-        "need_context_sources",
-        "missing",
+        "match_key", "kickoff_utc", "minutes_to_kickoff", "league_name", "home_team", "away_team",
+        "odds_sources_count", "odds_sources", "price_confirmations", "books_count",
+        "context_sources_count", "context_sources", "has_odds", "has_context", "ready_for_model",
+        "strict_ready_for_publish", "already_published", "ready_for_publish",
+        "need_price_confirmations", "need_odds_sources", "need_context_sources", "missing", "evidence_basis",
     ]
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
@@ -307,15 +312,13 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
 
 def main() -> int:
     now_dt = run_now()
-    now = now_dt.isoformat()
-    sent_keys = sent_match_keys()
     d = target_date()
     min_odds = max(2, as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
     min_context = max(2, as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
     inv_path = DAY_INV_DIR / f"{d}.json"
     inv = load_json(inv_path, {})
     matches = [row for row in inv.get("matches", []) if isinstance(row, dict)] if isinstance(inv, dict) else []
-    rows = [row_truth(row, min_odds, min_context, now_dt, sent_keys) for row in matches]
+    rows = [row_truth(row, min_odds, min_context, now_dt, sent_match_keys()) for row in matches]
     rows.sort(key=lambda x: (str(x.get("kickoff_utc") or ""), str(x.get("league_name") or ""), str(x.get("home_team") or "")))
 
     counts = {
@@ -334,23 +337,22 @@ def main() -> int:
     counts["matches_missing_odds_source_2plus"] = max(0, len(rows) - counts["matches_with_2plus_odds_sources"])
     counts["matches_missing_context_2plus"] = max(0, len(rows) - counts["matches_with_2plus_context_sources"])
 
-    gap_examples = [r for r in rows if r["missing"]][:25]
     payload = {
         "status": "ok",
         "date_local": d,
-        "updated_at_utc": now,
+        "updated_at_utc": datetime.now(UTC).isoformat(),
         "inventory_path": str(inv_path),
         "min_odds_sources": min_odds,
         "min_context_sources": min_context,
         "counts": counts,
-        "gap_examples": gap_examples,
+        "gap_examples": [r for r in rows if r["missing"]][:25],
         "rows": rows,
         "notes": [
             "odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.",
             "price_confirmations is bookmaker/line depth and is tracked separately from provider independence.",
+            "metadata/harizon_contract numeric counts are used when explicit source names are unavailable.",
             "strict_ready_for_publish requires 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.",
-            "ready_for_publish additionally excludes matches already sent to Telegram in fallback/published indexes.",
-            "minutes_to_kickoff is computed from the current run clock for window diagnostics.",
+            "ready_for_publish additionally excludes matches already sent to Telegram.",
         ],
     }
     write_json(OUT_JSON, payload)
@@ -361,13 +363,14 @@ def main() -> int:
         sources = summary.setdefault("sources", {})
         if isinstance(sources, dict):
             sources["coverage_truth"] = {
-                "updated_at_utc": now,
+                "updated_at_utc": payload["updated_at_utc"],
                 "json": str(OUT_JSON),
                 "csv": str(OUT_CSV),
                 "counts": counts,
+                "evidence_basis": "metadata+harizon_contract+explicit_sources",
             }
         summary["coverage_truth_counts"] = counts
-        summary["updated_at_utc"] = now
+        summary["updated_at_utc"] = payload["updated_at_utc"]
         write_json(SUMMARY_PATH, summary)
     print(json.dumps({k: payload[k] for k in ("status", "date_local", "updated_at_utc", "counts", "gap_examples")}, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
