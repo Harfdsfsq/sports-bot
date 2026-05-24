@@ -2,11 +2,11 @@ from __future__ import annotations
 
 """Deduplicate final CandidateFactory output.
 
-Late runtime wrappers can materialize the same logical candidate twice: same
-match, market family, selection and line.  That inflates raw counts, fallback
-pool counts and rejection counters.  This patch is conservative: it keeps the
-best-ranked candidate for each logical key and does not alter odds, probability,
-EV, edge, quality or publication guards.
+Multiple late runtime wrappers can materialize the same logical candidate twice:
+same match, market family, selection and line.  That inflates
+`candidates_before_quality`, controlled-fallback pool counts and reject reasons.
+This patch is intentionally conservative: it keeps the best-ranked candidate for
+each logical key and does not alter probabilities, odds, EV or publish guards.
 """
 
 import json
@@ -70,18 +70,21 @@ def _rank(candidate: Any) -> tuple[float, float, float, float, float]:
 
 def dedupe_candidates(candidates: list[Any]) -> tuple[list[Any], list[dict[str, Any]]]:
     best: dict[tuple[str, str, str, str], Any] = {}
+    order: list[tuple[str, str, str, str]] = []
     duplicates: list[dict[str, Any]] = []
     for candidate in candidates or []:
         key = candidate_key(candidate)
         current = best.get(key)
-        if current is None or _rank(candidate) > _rank(current):
-            if current is not None:
-                duplicates.append({
-                    "key": "|".join(key),
-                    "dropped_match_key": getattr(current, "match_key", ""),
-                    "kept_match_key": getattr(candidate, "match_key", ""),
-                    "reason": "lower_rank_duplicate",
-                })
+        if current is None:
+            best[key] = candidate
+            order.append(key)
+        elif _rank(candidate) > _rank(current):
+            duplicates.append({
+                "key": "|".join(key),
+                "dropped_match_key": getattr(current, "match_key", ""),
+                "kept_match_key": getattr(candidate, "match_key", ""),
+                "reason": "lower_rank_duplicate",
+            })
             best[key] = candidate
         else:
             duplicates.append({
@@ -90,7 +93,7 @@ def dedupe_candidates(candidates: list[Any]) -> tuple[list[Any], list[dict[str, 
                 "kept_match_key": getattr(current, "match_key", ""),
                 "reason": "lower_rank_duplicate",
             })
-    return list(best.values()), duplicates
+    return [best[key] for key in order if key in best], duplicates
 
 
 def _write_report(payload: dict[str, Any]) -> None:
