@@ -26,6 +26,9 @@ SAFE_RUNTIME_DEFAULTS = {
     "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
     "MIN_BOOKS_FOR_CONSENSUS": "2",
     "MIN_BOOKS_PUBLISH": "2",
+    "HARIZON_UNIFIED_SCHEME_ENABLED": "true",
+    "HARIZON_RUN_INTERVAL_HOURS": "2",
+    "HARIZON_LINE_MOVEMENT_GUARD_ENABLED": "true",
     "PUBLISH_MIN_BOOKS": "2",
     "MIN_SOURCES_PUBLISH": "2",
     "PUBLISH_MIN_ODDS_SOURCES": "2",
@@ -75,6 +78,9 @@ DISCOVERY_FIRST_DEFAULTS = {
     "SPORTLOGIC_ENABLED": "false",
     "ENABLE_SPORTLOGIC": "false",
     "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "0",
+    "DAY_INVENTORY_TARGET_SIZE": "300",
+    "DAY_INVENTORY_MAX_MATCHES": "300",
+    "HARIZON_SUPPLEMENTAL_API_MODE": "shortlist_and_missing_role_only",
 }
 
 
@@ -187,6 +193,7 @@ class RuntimePreflight:
     @staticmethod
     def _install_native_integrity_hooks() -> None:
         for module_path in (
+            "app.services.harizon_unified_scheme_runtime",
             "app.services.api_runtime_enhancements",
             "app.services.market_integrity",
             "app.providers.odds_api_io_startup_compat",
