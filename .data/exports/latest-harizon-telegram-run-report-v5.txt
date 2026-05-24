@@ -1,71 +1,64 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
-• Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: quality: вероятность после калибровки ниже порога
+• Итог: 🟠 линии есть, raw-кандидатов нет
+• Главная причина: no viable controlled fallback
 
 📦 Покрытие
-• Матчи в run: 424 | day inventory: 474
-• С линиями: 273 | с контекстом: 268 | ready model: 126
-• odds-api.io offers: 38211 | Bzzoiro secondary offers: 484
-• 2+ букмекера odds-api.io: 195 | 2-source overlap Bzzoiro+odds-api.io: 31
-• Source combinations: odds_api_io: 242, bzzoiro+odds_api_io: 31, bzzoiro: 6
+• Матчи в run: 232 | day inventory: 300
+• С линиями: 186 | с контекстом: 197 | ready model: 81
+• odds-api.io offers: 19229 | Bzzoiro secondary offers: 99
+• 2+ букмекера odds-api.io: 148 | 2-source overlap Bzzoiro+odds-api.io: 47
+• Source combinations: odds_api_io: 139, bzzoiro+odds_api_io: 47
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8 / 8
+• Raw/candidates before quality: 0 / 0
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 4 | evaluated 4 | published False (0)
-• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
+• Controlled fallback: status no_viable_controlled_fallback | seen 0 | evaluated 0 | published False (0)
+• Windowed coverage: audit 2 | allowed 0 | blocked 2 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 156 | no next regular run: 156
+• Final pre-kickoff checks: 56 | no next regular run: 56
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 84, matched 416, offers 38211, 2+ books 195, err 0, auth_failed False
-• sstats: req 27, ctx 265, rows 24071, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 45, v2 ctx 11, v2 odds 11, secondary offers 484, overlap odds-api.io 31, err 1
+• odds_api_io: events req 0, odds req 48, matched 232, offers 19229, 2+ books 148, err 0, auth_failed False
+• sstats: req 28, ctx 197, rows 24829, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 1, v2 ctx 0, v2 odds 0, secondary offers 99, overlap odds-api.io 47, err 1
 • sportlogic: enabled True, req 21, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 3
 
 🧭 Progressive core coverage
 • Active core odds/line: bzzoiro,odds_api_io,sportlogic
 • Active core context: bzzoiro,sstats
-• Tracked: 1241 | core odds 2+: 148 | core context 2+: 119 | core-ready both: 80
-• 0–4ч: 0/0 core-ready
-• 0–12ч: 0/0 core-ready
+• Tracked: 1473 | core odds 2+: 187 | core context 2+: 138 | core-ready both: 99
+• 0–4ч: 17/140 core-ready
+• 0–12ч: 19/232 core-ready
 
 Coverage truth
 • Inventory rows: 300
-• 2+ price confirmations: 16
+• 2+ price confirmations: 1
 • 2+ independent odds sources: 0
 • 2+ context sources: 4
 • ready publish fresh: 0 | strict: 0 | already sent: 0
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 4 (50%)
-• направление ставки конфликтует с xG: 2 (25%)
-• missing sources: 2 (25%)
-
-🔎 Проверенные reserve-кандидаты
-1. Odra Opole — Polonia Warszawa | Меньше 2.5 @2.44 | EV +2.4% | edge +1.0 п.п. | q 48.6
-   • reject: направление ставки конфликтует с xG
-2. FC Ballkani — FC Prishtina | Меньше 2.5 @2.38 | EV +1.5% | edge +0.6 п.п. | q 47.4
-   • reject: направление ставки конфликтует с xG
-3. LKS Lodz — Gornik Leczna | Больше 3.5 @2.75 | EV +3.8% | edge +1.4 п.п. | q 48.9
-   • reject: missing sources
-4. GKS Tychy — ZKS Stal Rzeszow | Больше 3.5 @2.58 | EV +2.3% | edge +0.9 п.п. | q 42.5
-   • reject: missing sources
+• Нет reject reasons в свежих артефактах.
 
 🧯 Controlled fallback pool filter
-• Frozen day inventory keys: 1068
-• Pre-evaluation filters: debug candidates before quality: 4
-• Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.
+• Frozen day inventory keys: 1331
+
+🧩 CandidateFactory diagnostics
+• matches/offers/context: 232/186/197 | raw: 0
+• likely blockers: spreads:bucket_sources_below_2: 183, totals:bucket_sources_below_2: 179, spreads:bucket_books_below_2: 73, totals:bucket_books_below_2: 39, missing_context: 13
+• factory rejects: unsupported_total_line: 1745, market_derived_signal_guard_spreads: 483, market_derived_signal_guard_totals: 403, publish_books_guard: 357, edge_below_threshold: 76, confidence_below_threshold: 53, market_derived_signal_guard_h2h: 23
+• post-integrity rescue: pass_through | built 0 | returned 0
+• Смысл: это причины до quality/fallback; они объясняют, почему raw pool стал нулевым.
 
 📌 Вывод
-• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality не разрешили публикацию.
+• Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
 
 🕒 Current day inventory windows
-• Active matches: 307 | odds refresh needed: 273
-• Final pre-kickoff checks: 156 | no next regular run: 156
-• 0–4ч inventory: 0/201 ready | strict 0 | already sent 0 | context 2+: 3 | price 2+: 11
-• 0–12ч inventory: 0/201 ready | strict 0 | already sent 0 | context 2+: 3 | price 2+: 11
+• Active matches: 240 | odds refresh needed: 186
+• Final pre-kickoff checks: 56 | no next regular run: 56
+• 0–4ч inventory: 0/115 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
+• 0–12ч inventory: 0/115 ready | strict 0 | already sent 0 | context 2+: 0 | price 2+: 0
