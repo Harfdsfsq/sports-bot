@@ -1,33 +1,33 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-24T17:03:16.881317+00:00
+UTC: 2026-05-24T19:02:57.678104+00:00
 target_date: 2026-05-24
-canonical_matches: 471
-2+ provider sources: 70
-2+ primary sources: 59
+canonical_matches: 380
+2+ provider sources: 64
+2+ primary sources: 49
 all 3 primary sources: 0
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=8 event_like=8 unique=8 statuses={"OK": 1}
 - bzzoiro: commands=3 ok=3 rows=250 event_like=250 unique=110 statuses={"OK": 3}
-- football_data: commands=1 ok=1 rows=20 event_like=20 unique=20 statuses={"OK": 1}
+- football_data: commands=1 ok=1 rows=10 event_like=10 unique=10 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=4 rows=392 event_like=392 unique=196 statuses={"OK": 4, "EMPTY": 2}
+- odds_api_io: commands=6 ok=2 rows=184 event_like=184 unique=92 statuses={"OK": 2, "EMPTY": 4}
 - sstats: commands=1 ok=1 rows=230 event_like=226 unique=226 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"2": 53, "1": 401, "3": 14, "4": 3}
-- primary providers: {"2": 59, "1": 412}
+- all providers: {"2": 59, "1": 316, "3": 5}
+- primary providers: {"2": 49, "1": 330, "0": 1}
 
 ## Top canonical matches
 - 2026-05-24T00:00:00+00:00 | Flamengo — Palmeiras | providers=bzzoiro,sstats ids={"bzzoiro": "7157", "sstats": "1492273"}
-- 2026-05-24T00:30:00+00:00 | San Antonio FC — Sacramento Republic FC | providers=bzzoiro,sstats ids={"bzzoiro": "207631", "sstats": "1493512"}
 - 2026-05-24T00:30:00+00:00 | Chicago Fire — Toronto FC | providers=bzzoiro,sstats ids={"bzzoiro": "5123", "sstats": "1490315"}
-- 2026-05-24T00:30:00+00:00 | Nashville SC — New York City FC | providers=bzzoiro,sstats ids={"bzzoiro": "5122", "sstats": "1490314"}
+- 2026-05-24T00:30:00+00:00 | San Antonio FC — Sacramento Republic FC | providers=bzzoiro,sstats ids={"bzzoiro": "207631", "sstats": "1493512"}
 - 2026-05-24T00:30:00+00:00 | Sporting Kansas City — New York Red Bulls | providers=bzzoiro,sstats ids={"bzzoiro": "5124", "sstats": "1490316"}
+- 2026-05-24T00:30:00+00:00 | Nashville SC — New York City FC | providers=bzzoiro,sstats ids={"bzzoiro": "5122", "sstats": "1490314"}
 - 2026-05-24T01:00:00+00:00 | New Mexico United — Charleston Battery | providers=bzzoiro,sstats ids={"bzzoiro": "207632", "sstats": "1493509"}
-- 2026-05-24T01:30:00+00:00 | Portland Timbers — San Jose Earthquakes | providers=bzzoiro,sstats ids={"bzzoiro": "5128", "sstats": "1490320"}
 - 2026-05-24T01:30:00+00:00 | San Diego FC — Vancouver Whitecaps | providers=bzzoiro,sstats ids={"bzzoiro": "5126", "sstats": "1490318"}
+- 2026-05-24T01:30:00+00:00 | Portland Timbers — San Jose Earthquakes | providers=bzzoiro,sstats ids={"bzzoiro": "5128", "sstats": "1490320"}
 - 2026-05-24T01:30:00+00:00 | Colorado Rapids — FC Dallas | providers=bzzoiro,sstats ids={"bzzoiro": "5127", "sstats": "1490319"}
 - 2026-05-24T02:00:00+00:00 | Monterey Bay FC — Birmingham Legion FC | providers=bzzoiro,sstats ids={"bzzoiro": "207633", "sstats": "1493508"}
 - 2026-05-24T02:00:00+00:00 | Orange County SC — Oakland Roots SC | providers=bzzoiro,sstats ids={"bzzoiro": "207634", "sstats": "1493510"}
@@ -43,8 +43,8 @@ all 3 primary sources: 0
 - 2026-05-24T09:30:00+00:00 | Torrejón — Las Rozas | providers=sstats ids={"sstats": "1545337"}
 - 2026-05-24T09:30:00+00:00 | Trival Valderas — Leganés II | providers=sstats ids={"sstats": "1545338"}
 - 2026-05-24T10:00:00+00:00 | Alhama Club de Fútbol — Levante UD | providers=bzzoiro ids={"bzzoiro": "9838"}
-- 2026-05-24T10:00:00+00:00 | Fútbol Club Barcelona — Real Sociedad | providers=bzzoiro ids={"bzzoiro": "9842"}
 - 2026-05-24T10:00:00+00:00 | Club Atlético de Madrid — Costa Adeje Tenerife | providers=bzzoiro ids={"bzzoiro": "9839"}
+- 2026-05-24T10:00:00+00:00 | Fútbol Club Barcelona — Real Sociedad | providers=bzzoiro ids={"bzzoiro": "9842"}
 - 2026-05-24T10:00:00+00:00 | Daegu FC — Ansan Greeners | providers=sstats ids={"sstats": "1510343"}
 - 2026-05-24T10:00:00+00:00 | Seoul E-Land FC — Seongnam FC | providers=sstats ids={"sstats": "1510344"}
 - 2026-05-24T10:00:00+00:00 | Águilas — Poblense | providers=sstats ids={"sstats": "1545569"}
@@ -56,15 +56,11 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- San Antonio FC — Sacramento Republic FC | primary=2 providers=bzzoiro,sstats
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Chicago Fire — Toronto FC | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Nashville SC — New York City FC | primary=2 providers=bzzoiro,sstats
+- San Antonio FC — Sacramento Republic FC | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -72,15 +68,19 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Nashville SC — New York City FC | primary=2 providers=bzzoiro,sstats
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - New Mexico United — Charleston Battery | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Portland Timbers — San Jose Earthquakes | primary=2 providers=bzzoiro,sstats
+- San Diego FC — Vancouver Whitecaps | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- San Diego FC — Vancouver Whitecaps | primary=2 providers=bzzoiro,sstats
+- Portland Timbers — San Jose Earthquakes | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
