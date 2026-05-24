@@ -1,23 +1,21 @@
-# HARIZON unified scheme follow-up: API coverage discovery soft guard
+# HARIZON run 263719 follow-up fix
 
-## Problem observed in run-bot-26370011900
+## Why
+Run `26371965654` was safe (the only raw candidate became negative after quality calibration), but two infrastructure issues remained:
 
-The model found a positive candidate internally, but `api_coverage_consensus_runtime_patch`
-hard-filtered it inside `CandidateFactory` because the exact market had only one independent
-odds provider. That is correct for final publication, but too early for discovery/reporting:
-`raw candidates` became 0, quality/fallback saw nothing, and Telegram did not explain the real
-reject reason.
+1. `controlled_fallback_prepublish_guard.py` blocked the no-pick diagnostic Telegram message as if it was a betting pick, because no selected candidate had 2 odds sources.
+2. `repair_inventory_source_counts.py` did not consume runtime audit samples from `latest-api-coverage-consensus-runtime-patch.json` and `latest-quality-consensus-safe-relief.json`, so coverage truth could show `0` two-source/context rows while the model/quality layer had evaluated a candidate with those counts.
 
-## Fix
+## Changed files
+- `scripts/controlled_fallback_prepublish_guard.py`
+- `scripts/repair_inventory_source_counts.py`
+- `tests/test_no_pick_guard_and_evidence_repair.py`
 
-- Add `app/services/api_coverage_discovery_soft_guard_patch.py`.
-- Install it immediately after `api_coverage_consensus_runtime_patch` in `runtime_startup_chain.py`.
-- It keeps strict final publish behavior unchanged, but lets discovery candidates continue with
-  annotations when the only issue is missing exact odds/context source coverage.
+## Safety
+Publication gates are not loosened. The guard still blocks real pick messages with fewer than 2 odds sources / 2 context sources / insufficient quality. Only no-pick diagnostic reports are allowed through.
 
-## Expected next run
-
-- `Raw/candidates before quality` should no longer drop to 0 when the model has a candidate.
-- Controlled fallback/watchlist should show explicit reject reasons such as
-  `api_coverage_missing_2_exact_odds_sources` or final Telegram odds-source guard.
-- No single-provider candidate should be published because final publication guards are unchanged.
+## Verification
+```bash
+python -m py_compile scripts/controlled_fallback_prepublish_guard.py scripts/repair_inventory_source_counts.py
+PYTHONPATH=. python -m pytest -q tests/test_no_pick_guard_and_evidence_repair.py
+```

@@ -172,7 +172,42 @@ def _set_request_text(req: Any, text: str) -> Any:
     return req
 
 
+
+
+def _is_controlled_pick_message(text: str) -> bool:
+    """Return True only for actual controlled-pick Telegram messages.
+
+    The fallback script also sends no-pick diagnostic reports. Those reports may
+    mention zero odds/context sources because no candidate was selected; they
+    must not be blocked by the hard pick prepublish guard. The guard below stays
+    strict for messages that contain a real betting card.
+    """
+    low = str(text or "").lower()
+    if not low.strip():
+        return False
+    no_pick_markers = (
+        "прогнозов не было",
+        "не нашёл безопасный вариант",
+        "отчёт по запуску бота",
+        "no viable controlled fallback",
+        "проверено резервных кандидатов: 0",
+    )
+    has_pick_markers = (
+        "🎯 ставка:" in low,
+        "💰 сумма ставки:" in low,
+        "контролируемый прогноз" in low,
+        "лучшая ставка" in low,
+        "controlled pick" in low,
+    )
+    if any(has_pick_markers):
+        return True
+    if any(marker in low for marker in no_pick_markers):
+        return False
+    return False
+
 def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
+    if not _is_controlled_pick_message(text):
+        return False, "non_pick_report", {"text_kind": "no_pick_or_diagnostic_report"}
     text_metrics = _parse_text_metrics(text)
     min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES", 2))
     min_context_sources = max(
