@@ -97,7 +97,7 @@ def pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
 
 def build_payload() -> dict[str, Any]:
     payload = v8.build_payload()
-    payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier"
+    payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier-v2"
     payload["report_renderer"] = "v9"
     diag = payload.setdefault("diagnostics", {})
     fallback = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
@@ -114,12 +114,13 @@ def build_payload() -> dict[str, Any]:
             if k != "day_inventory_membership_keys" and not is_real_pool_filter(str(k))
         }
     if seen > 0 or evaluated > 0:
-        # Candidates were evaluated; source counters are not pre-evaluation filters.
+        # Candidates were evaluated; pool/source counters and stale artifacts are
+        # not the run-level pre-fallback blocker.  Keep them as diagnostics only.
         if payload.get("status") == "candidates_filtered_before_fallback":
             payload["status"] = "candidates_but_quality_rejected"
             payload["status_ru"] = "🟡 кандидаты есть, quality/value не пропустили"
-        if not real_filters:
-            diag["controlled_fallback_pool_filter_counts"] = {}
+        diag["controlled_fallback_pool_lifecycle_notes"] = dict(real_filters)
+        diag["controlled_fallback_pool_filter_counts"] = {}
     _write_json(STATUS_PATH, {"status": "installed", "renderer": "v9", "pool_filter_classifier": True})
     return payload
 
@@ -172,9 +173,12 @@ def render(payload: dict[str, Any]) -> str:
     filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
     funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
     if _as_int(funnel.get("fallback_candidates_seen")) > 0 or _as_int(funnel.get("fallback_evaluated")) > 0:
-        if not filters:
-            text = _strip_controlled_pool_block(text)
-            text = _insert_pool_source_note(text, payload)
+        # Once fallback evaluated at least one candidate, pool counters are not
+        # pre-evaluation blockers for the run.  Even if there are stale/outside
+        # artifacts in the pool, they are only lifecycle notes and must not be
+        # rendered with the misleading text "fallback did not evaluate it".
+        text = _strip_controlled_pool_block(text)
+        text = _insert_pool_source_note(text, payload)
     elif filters:
         # Keep only real filters in the block.
         top = sorted(filters.items(), key=lambda item: _as_int(item[1]), reverse=True)[:6]
