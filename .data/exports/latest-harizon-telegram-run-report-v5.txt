@@ -3,27 +3,27 @@
 • Главная причина: tier a odds sources below min:0/2
 
 📦 Покрытие
-• Матчи в run: 271 | day inventory: 324
-• С линиями: 163 | с контекстом: 216 | ready model: 105
-• odds-api.io offers: 18650 | Bzzoiro secondary offers: 363
-• 2+ букмекера odds-api.io: 95 | 2-source overlap Bzzoiro+odds-api.io: 19
-• Source combinations: odds_api_io: 144, bzzoiro+odds_api_io: 19, bzzoiro: 4
+• Матчи в run: 451 | day inventory: 488
+• С линиями: 248 | с контекстом: 239 | ready model: 106
+• odds-api.io offers: 29302 | Bzzoiro secondary offers: 264
+• 2+ букмекера odds-api.io: 139 | 2-source overlap Bzzoiro+odds-api.io: 16
+• Source combinations: odds_api_io: 232, bzzoiro+odds_api_io: 16, bzzoiro: 3
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8 / 8
 • Passed quality: 0 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 2 | evaluated 2 | published False (0)
+• Controlled fallback: status no_viable_controlled_fallback | seen 3 | evaluated 3 | published False (0)
 • Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 11 | no next regular run: 11
+• Final pre-kickoff checks: 29 | no next regular run: 29
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 54, matched 266, offers 18650, 2+ books 95, err 0, auth_failed False
-• sstats: req 27, ctx 213, rows 24078, err 0, deep enriched 13
-• bzzoiro: direct req 1, v2 req 33, v2 ctx 8, v2 odds 8, secondary offers 363, overlap odds-api.io 19, err 0
+• odds_api_io: events req 0, odds req 88, matched 440, offers 29302, 2+ books 139, err 0, auth_failed False
+• sstats: req 27, ctx 238, rows 24074, err 0, deep enriched 13
+• bzzoiro: direct req 1, v2 req 17, v2 ctx 4, v2 odds 4, secondary offers 264, overlap odds-api.io 16, err 0
 • sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
 🧭 Progressive core coverage
@@ -35,30 +35,32 @@
 
 Coverage truth
 • Inventory rows: 300
-• 2+ price confirmations: 16
+• 2+ price confirmations: 14
 • 2+ independent odds sources: 0
-• 2+ context sources: 15
+• 2+ context sources: 12
 • ready publish fresh: 0 | strict: 0 | already sent: 0
 
 🚫 Почему не опубликовано
-• tier a odds sources below min:0/2: 1 (9%)
-• tier b odds sources below min:0/2: 1 (9%)
-• tier b context sources below min:2/3: 1 (9%)
-• tier b confidence below min: 1 (9%)
-• tier b quality below min: 1 (9%)
-• tier b canonical edge below min: 1 (9%)
-• tier b canonical ev below min: 1 (9%)
-• tier c odds sources below min:0/1: 1 (9%)
+• tier a odds sources below min:0/2: 2 (11%)
+• tier b odds sources below min:0/2: 2 (11%)
+• tier b context sources below min:2/3: 2 (11%)
+• tier b confidence below min: 2 (11%)
+• tier b quality below min: 2 (11%)
+• tier c odds sources below min:0/1: 2 (11%)
+• quality post calibration edge guard: 2 (11%)
+• направление ставки конфликтует с xG: 1 (5%)
 
 🔎 Проверенные reserve-кандидаты
-1. Springfield United — Logan Roos FC | Больше 2.5 @1.90 | EV +6.8% | edge +3.6 п.п. | q 61.1
+1. Springfield United — Logan Roos FC | Больше 2.5 @1.84 | EV +19.3% | edge +10.5 п.п. | q 74.5
    • reject: tier a odds sources below min:0/2, tier b odds sources below min:0/2, tier b context sources below min:2/3
-2. Angby IF — Bollstanas SK | Меньше 2.5 @2.62 | EV +9.0% | edge +3.4 п.п. | q 44.3
+2. Angby IF — Bollstanas SK | Меньше 2.5 @2.62 | EV +8.2% | edge +3.1 п.п. | q 43.1
    • reject: направление ставки конфликтует с xG
+3. Matsumoto Yamaga FC — Fukushima United FC | Больше 2.5 @1.80 | EV +1.4% | edge +0.8 п.п. | q 48.5
+   • reject: tier a odds sources below min:0/2, tier a quality below min, tier a canonical edge below min
 
 🧯 Controlled fallback pool filter
-• Frozen day inventory keys: 1512
-• Pre-evaluation filters: отрицательная контрольная ценность до fallback: 4, debug candidates before quality: 2
+• Frozen day inventory keys: 1034
+• Pre-evaluation filters: debug candidates before quality: 3, отрицательная контрольная ценность до fallback: 2
 • Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.
 
 📌 Вывод
@@ -66,7 +68,7 @@ Coverage truth
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
 
 🕒 Current day inventory windows
-• Active matches: 183 | odds refresh needed: 94
-• Final pre-kickoff checks: 11 | no next regular run: 11
-• 0–4ч inventory: 0/69 ready | strict 0 | already sent 0 | context 2+: 4 | price 2+: 4
-• 0–12ч inventory: 0/258 ready | strict 0 | already sent 0 | context 2+: 8 | price 2+: 11
+• Active matches: 300 | odds refresh needed: 223
+• Final pre-kickoff checks: 29 | no next regular run: 29
+• 0–4ч inventory: 0/64 ready | strict 0 | already sent 0 | context 2+: 5 | price 2+: 7
+• 0–12ч inventory: 0/274 ready | strict 0 | already sent 0 | context 2+: 8 | price 2+: 13
