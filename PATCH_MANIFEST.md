@@ -1,16 +1,13 @@
-# run263731 report-v9 pool-filter fix
+# run263735 dedup + report v9 fix
 
-Files:
-- `scripts/send_harizon_telegram_run_report_v9.py`
-- `tests/test_report_v9_pool_filter_classifier.py`
-- `run263731-report-v9-pool-filter.patch`
+Fixes for the 2026-05-25 00:59 run:
 
-Apply:
-1. Copy the new script and test into the repository.
-2. Apply `run263731-report-v9-pool-filter.patch` or manually put v9 before v8 in the HARIZON report workflow step.
+- CandidateFactory output is de-duplicated by match+market+selection+line so the
+  same Cavalier FC candidate is not counted twice.
+- v9 report is used before v8 in run-bot workflow.
+- v9 report keeps true pre-fallback filters such as
+  `*_canonical_negative_value_prefilter`, but ignores pure source-pool counters.
+- v9 conclusion now says the value safety gate worked when candidates are filtered
+  by negative post-calibration/canonical value before fallback.
 
-Purpose:
-- Do not treat source-pool counters like `debug_candidates_before_quality: 4` as pre-evaluation fallback filters.
-- Keep real filters such as `*_not_in_day_inventory`, `*_stale_or_outside_window`, and `*_prefilter`.
-
-Publication logic is unchanged.
+Publication rules are not loosened.

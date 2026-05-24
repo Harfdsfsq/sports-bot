@@ -2,15 +2,16 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v9.
 
-Small compatibility wrapper around v8.
+Compatibility wrapper around v8 with two reporting fixes:
 
-Why it exists:
-- v8 correctly renders progressive/coverage truth, but it treats every
-  controlled-fallback pool counter as a pre-evaluation filter.
-- Source-pool counters such as ``debug_candidates_before_quality: 4`` are not
-  filters; those candidates were actually evaluated by fallback.
-- This wrapper patches only the v8 pool-filter classifier before v8 builds and
-  sends the report. It does not touch candidate selection or publication rules.
+1. Pool source counters are not pre-evaluation filters.  For example,
+   ``debug_candidates_before_quality: 4`` means four rows were loaded from that
+   source, not four rejected candidates.
+2. When all raw candidates are prefiltered by canonical/controlled value before
+   fallback, the conclusion should say that the value gate worked, not that the
+   mapping/candidate factory is broken.
+
+This module does not change candidate selection or publication rules.
 """
 
 from importlib import import_module
@@ -45,6 +46,13 @@ TRUE_FILTER_SUBSTRINGS = (
     "line_guard",
 )
 
+NEGATIVE_VALUE_TOKENS = (
+    "canonical_negative_value_prefilter",
+    "negative_value_prefilter",
+    "отрицательная",
+    "negative",
+)
+
 
 def _as_int(value: Any) -> int:
     try:
@@ -69,12 +77,7 @@ def _is_true_pre_evaluation_filter_key(key: str) -> bool:
 
 
 def filtered_pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
-    """Return only real pre-evaluation filter counters.
-
-    Pool-source counters must not be converted into no-publish reasons.  Example:
-    ``debug_candidates_before_quality: 4`` means four rows came from that source,
-    not that four rows were rejected before evaluation.
-    """
+    """Return only real pre-evaluation filter counters."""
     if not isinstance(pool_counts, dict):
         return {}
     out: dict[str, int] = {}
@@ -87,8 +90,57 @@ def filtered_pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
     return out
 
 
+def _pool_filters(payload: dict[str, Any]) -> dict[str, int]:
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
+    return {str(k): _as_int(v) for k, v in filters.items() if _as_int(v) > 0}
+
+
+def _has_negative_value_pool_filter(payload: dict[str, Any]) -> bool:
+    filters = _pool_filters(payload)
+    if not filters:
+        return False
+    joined = " ".join(filters.keys()).lower()
+    return any(token in joined for token in NEGATIVE_VALUE_TOKENS)
+
+
+def _patch_report_conclusion(text: str, payload: dict[str, Any]) -> str:
+    if not _has_negative_value_pool_filter(payload):
+        return text
+    old_variants = [
+        "• Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.",
+        "• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.",
+    ]
+    new = (
+        "• Candidate pipeline работает: raw-кандидат был найден, но отфильтрован до fallback "
+        "после контрольного пересчёта value. Это корректный safety gate: отрицательный "
+        "post-calibration EV/edge не должен попадать в резервную публикацию."
+    )
+    for old in old_variants:
+        if old in text:
+            return text.replace(old, new)
+    marker = "📌 Вывод"
+    idx = text.find(marker)
+    if idx >= 0:
+        next_line = text.find("\n", idx)
+        if next_line >= 0:
+            return text[: next_line + 1] + new + "\n" + text[next_line + 1 :]
+    return text
+
+
 def patch_v8_module(v8: Any) -> None:
     v8._fallback_pool_filter_counts = filtered_pool_filter_counts
+    original_render = v8.render
+
+    def render_v9(payload: dict[str, Any]) -> str:
+        return _patch_report_conclusion(original_render(payload), payload)
+
+    v8.render = render_v9
+    try:
+        v8.v7.render = render_v9
+        v8.v7.v5.render = render_v9
+    except Exception:
+        pass
 
 
 def main() -> int:
