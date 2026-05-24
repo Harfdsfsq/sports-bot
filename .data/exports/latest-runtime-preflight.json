@@ -15,17 +15,26 @@
       },
       "app.services.candidate_value_final_reinstall": {
         "build_after": "build_candidates_value_safety",
-        "build_before": "build_candidates_patched",
+        "build_before": "build_candidates_with_core_line_books",
         "core_line_bookmaker_universe_install": {
-          "status": "already_installed"
+          "allow_single_source": true,
+          "candidate_build_relaxation": "hybrid Tier B: min_sources_publish/market_derived sources are relaxed only while building the candidate pool",
+          "candidate_factory": "wrapped",
+          "core_line_sources": [
+            "bzzoiro",
+            "sportlogic"
+          ],
+          "created_at_utc": "2026-05-24T19:04:37.455365+00:00",
+          "note": "SStats is intentionally excluded from line sources; it is context only.",
+          "status": "installed"
         },
-        "created_at_utc": "2026-05-24T13:06:10.116871+00:00",
+        "created_at_utc": "2026-05-24T19:04:37.453513+00:00",
         "had_value_patch_flag_after": true,
-        "had_value_patch_flag_before": true,
+        "had_value_patch_flag_before": false,
         "install_result": {
           "build_candidates_post_filter": true,
           "candidate_factory": "patched",
-          "created_at_utc": "2026-05-24T13:06:10.116898+00:00",
+          "created_at_utc": "2026-05-24T19:04:37.458843+00:00",
           "market_derived_single_snapshot_consensus": true,
           "prequality_filter": "canonical_ev_edge_non_negative",
           "rank_key": "canonical_ev_first",
@@ -57,7 +66,23 @@
         {
           "module": "app.services.core_coverage_quota_runtime_override",
           "result": {
-            "status": "already_installed"
+            "created_at_utc": "2026-05-24T19:04:37.465028+00:00",
+            "env_written_count": 135,
+            "notes": [
+              "Runtime budgets are raised for core coverage providers.",
+              "Candidate generation may allow one line source for controlled Tier B; normal strict publication still requires two exact odds sources.",
+              "SportLogic is capped per run to stay under 500/day across 12 scheduled runs."
+            ],
+            "requested_limits": {
+              "bzzoiro_per_minute": 200,
+              "odds_api_io_account1_per_run": 50,
+              "odds_api_io_account2_per_run": 50,
+              "odds_api_io_per_hour_total": 100,
+              "sportlogic_per_day": 500,
+              "sportlogic_per_run": 40,
+              "sstats_per_minute": 150
+            },
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -74,55 +99,95 @@
         {
           "module": "app.services.bzzoiro_provider_runtime_fix",
           "result": {
-            "status": "already_installed"
+            "forced_predictions_v2": true,
+            "patched_modules": [
+              "app.providers.bzzoiro",
+              "app.providers.bzzoiro_predictions_v2"
+            ],
+            "patches": [
+              "bzzoiro_symbol_predictions_v2",
+              "bzzoiro_direct_context_fetch_skip_default",
+              "bzzoiro_date_signature_fetch_rows_to_predictions",
+              "bzzoiro_compat_date_range_clamp",
+              "bzzoiro_sstats_style_helper_shims",
+              "bzzoiro_url_alias",
+              "bzzoiro_team_form_noop",
+              "bzzoiro_nested_context_noop"
+            ],
+            "provider_class_module": "app.providers.bzzoiro_predictions_v2",
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.market_family_publication_guard",
           "result": {
-            "status": "already_installed"
+            "allowed_families": [
+              "spreads",
+              "totals"
+            ],
+            "min_odds_sources": 2,
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.runtime_odds_inventory_matching_patch",
           "result": {
-            "status": "already_installed"
+            "patches": [
+              "PredictionRunner._match_from_day_inventory_row",
+              "OddsApiIoProvider._match_event"
+            ],
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.provider_payload_mining_runtime_patch_v2",
           "result": {
-            "status": "already_installed"
+            "patch": "provider_payload_mining_runtime_patch_v2",
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.bzzoiro_direct_fetch_final_guard",
           "result": {
-            "status": "already_installed"
+            "mode": "pass",
+            "passthrough_default": true,
+            "patched": [
+              "app.providers.bzzoiro:patched_passthrough_default",
+              "app.providers.bzzoiro_predictions_v2:already_patched"
+            ],
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.signal_stack_runtime_patch",
           "result": {
-            "status": "already_installed"
+            "patch": "signal_stack_runtime_patch",
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.odds_movement_cache_bridge_patch",
           "result": {
-            "status": "already_installed"
+            "cache_rows_total": 57716,
+            "cache_snapshot_path": ".data/cache/odds_movement_snapshots.jsonl",
+            "created_at_utc": "2026-05-24T19:04:37.694435+00:00",
+            "live_snapshot_path": ".data/odds_movement_snapshots.jsonl",
+            "localized_selection_normalization": true,
+            "signal_stack": "patched",
+            "status": "installed",
+            "windowed_loader": "patched_v2_localized_selection"
           },
           "status": "ok"
         },
         {
           "module": "app.services.sportlogic_query_runtime_guard",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
@@ -159,17 +224,17 @@
         },
         {
           "module": "app.services.near_window_priority_runtime_patch",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
           "module": "app.services.context_family_matching_runtime_patch",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
           "module": "app.services.runner_step_trace",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
@@ -189,7 +254,7 @@
         },
         {
           "module": "app.services.post_run_analytics_runtime_guard",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
@@ -199,22 +264,22 @@
         },
         {
           "module": "app.providers.rapidapi_odds_feed_patch",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
           "module": "app.providers.rapidapi_bridge_runtime_patch",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
           "module": "app.providers.sharpapi_runtime_patch",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
           "module": "app.services.sharpapi_text_runtime_patch",
-          "result": false,
+          "result": true,
           "status": "ok"
         },
         {
@@ -231,7 +296,7 @@
         {
           "module": "app.services.runner_bzzoiro_bridge_runtime_patch",
           "result": {
-            "status": "already_wrapped"
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -247,7 +312,11 @@
         {
           "module": "app.services.core_odds_merge_safety_patch",
           "result": {
-            "status": "already_installed"
+            "created_at_utc": "2026-05-24T19:04:38.848983+00:00",
+            "parse_filter": "wrapped",
+            "rescue_priority": "overlap_first",
+            "score_event_match_compat": "wrapped",
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -262,7 +331,18 @@
         {
           "module": "app.services.prequality_final_consensus_bridge",
           "result": {
-            "status": "already_installed"
+            "created_at_utc": "2026-05-24T19:04:38.849794+00:00",
+            "env": {
+              "API_COVERAGE_MIN_CANONICAL_EDGE_PP": "0.0",
+              "API_COVERAGE_MIN_CANONICAL_EV_PCT": "0.0",
+              "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EDGE_PP": "0.0",
+              "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EV_PCT": "0.0",
+              "PREQUALITY_CANONICAL_MIN_EDGE_PP": "-6.0",
+              "PREQUALITY_CANONICAL_MIN_EV_PCT": "-10.0",
+              "PREQUALITY_CANONICAL_VALUE_FILTER_ENABLED": "true"
+            },
+            "safety": "prequality only; final consensus guard remains non-negative",
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -276,7 +356,7 @@
         {
           "module": "app.services.windowed_core_coverage_finalizer",
           "result": {
-            "created_at_utc": "2026-05-24T13:06:10.141677+00:00",
+            "created_at_utc": "2026-05-24T19:04:38.852510+00:00",
             "forced": true,
             "patch_result": {
               "patch": "windowed_core_coverage_runtime_patch",
@@ -296,9 +376,8 @@
         {
           "module": "app.services.windowed_core_report_and_sportlogic_final_guard",
           "result": {
-            "created_at_utc": "2026-05-24T13:06:10.143485+00:00",
+            "created_at_utc": "2026-05-24T19:04:38.855234+00:00",
             "report_guard": {
-              "already_wrapped": true,
               "installed": true,
               "restored_existing_audit": false
             },
@@ -325,7 +404,9 @@
         {
           "module": "app.services.progressive_coverage_runtime_patch",
           "result": {
-            "status": "already_installed"
+            "plan_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-progressive-coverage-plan.json",
+            "state_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/progressive_coverage_state.json",
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -342,7 +423,7 @@
               "odds_api_io",
               "sportlogic"
             ],
-            "created_at_utc": "2026-05-24T13:06:10.143716+00:00",
+            "created_at_utc": "2026-05-24T19:04:38.904655+00:00",
             "status": "installed",
             "supplemental_context_providers": [
               "api_football",
@@ -369,10 +450,10 @@
         {
           "module": "app.services.progressive_fetch_provider_signature_finalizer",
           "result": {
-            "created_at_utc": "2026-05-24T13:06:10.190377+00:00",
-            "original_found": false,
+            "created_at_utc": "2026-05-24T19:04:38.954822+00:00",
+            "original_found": true,
             "status": "installed",
-            "wrapped_existing_progressive": false
+            "wrapped_existing_progressive": true
           },
           "status": "ok"
         },
@@ -380,7 +461,7 @@
           "module": "app.services.progressive_upcoming_gap_finalizer",
           "result": {
             "bzzoiro_core_gap_retry_boost": true,
-            "created_at_utc": "2026-05-24T13:06:10.190553+00:00",
+            "created_at_utc": "2026-05-24T19:04:38.957813+00:00",
             "gap_sample_rebuilt_from_full_state": true,
             "gap_sample_upcoming_only": true,
             "sstats_context_gap_retry_boost": true,
@@ -392,7 +473,7 @@
         {
           "module": "app.services.bzzoiro_context_gap_finalizer",
           "result": {
-            "created_at_utc": "2026-05-24T13:06:10.245851+00:00",
+            "created_at_utc": "2026-05-24T19:04:39.025455+00:00",
             "match_limit": 72,
             "max_requests": 140,
             "runtime_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-context-gap-finalizer.json",
@@ -403,16 +484,19 @@
         {
           "module": "app.services.bzzoiro_context_gap_timeout_guard",
           "result": {
-            "created_at_utc": "2026-05-24T13:06:10.246020+00:00",
-            "status": "already_installed"
+            "created_at_utc": "2026-05-24T19:04:39.027075+00:00",
+            "effect": "timeouts are counted and skipped instead of aborting the whole gap pass",
+            "status": "installed",
+            "timeout_seconds": 8.0
           },
           "status": "ok"
         },
         {
           "module": "app.services.bzzoiro_context_gap_source_id_finalizer",
           "result": {
-            "created_at_utc": "2026-05-24T13:06:10.246152+00:00",
-            "status": "already_installed"
+            "created_at_utc": "2026-05-24T19:04:39.029319+00:00",
+            "keys_indexed": 559,
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -425,7 +509,7 @@
           "module": "app.services.progressive_provider_alias_finalizer",
           "result": {
             "bzzoiro_success_promoted": 0,
-            "created_at_utc": "2026-05-24T13:06:10.246339+00:00",
+            "created_at_utc": "2026-05-24T19:04:39.298265+00:00",
             "matches_changed": 0,
             "sstats_success_promoted": 0,
             "status": "installed"
@@ -440,13 +524,13 @@
             "core_line_bookmaker_universe_install": {
               "status": "already_installed"
             },
-            "created_at_utc": "2026-05-24T13:06:10.536554+00:00",
+            "created_at_utc": "2026-05-24T19:04:39.752399+00:00",
             "had_value_patch_flag_after": true,
             "had_value_patch_flag_before": true,
             "install_result": {
               "build_candidates_post_filter": true,
               "candidate_factory": "patched",
-              "created_at_utc": "2026-05-24T13:06:10.536585+00:00",
+              "created_at_utc": "2026-05-24T19:04:39.752432+00:00",
               "market_derived_single_snapshot_consensus": true,
               "prequality_filter": "canonical_ev_edge_non_negative",
               "rank_key": "canonical_ev_first",
@@ -460,7 +544,12 @@
         {
           "module": "app.services.windowed_coverage_state_bridge",
           "result": {
-            "status": "already_installed"
+            "candidate_factory": "wrapped",
+            "created_at_utc": "2026-05-24T19:04:39.755938+00:00",
+            "plan_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-progressive-coverage-plan.json",
+            "publish_filter": "wrapped",
+            "refresh_plan_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-refresh-plan.json",
+            "status": "installed"
           },
           "status": "ok"
         },
@@ -471,21 +560,52 @@
         {
           "module": "app.services.api_coverage_consensus_runtime_patch",
           "result": {
-            "status": "already_installed"
+            "candidate_factory": "patched",
+            "created_at_utc": "2026-05-24T19:04:39.761668+00:00",
+            "guard": "api_coverage_consensus",
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.odds_api_io_account_source_split_patch",
           "result": {
-            "status": "already_installed"
+            "account1_books": [
+              "Bet365",
+              "Unibet"
+            ],
+            "account2_books": [
+              "Betfair Exchange",
+              "Sbobet"
+            ],
+            "api_coverage_source_from_offer": "patched",
+            "api_matching_quality_guard": "kept_provider_aliases",
+            "created_at_utc": "2026-05-24T19:04:39.763301+00:00",
+            "status": "installed"
           },
           "status": "ok"
         },
         {
           "module": "app.services.quality_consensus_safe_relief_patch",
           "result": {
-            "status": "already_installed"
+            "created_at_utc": "2026-05-24T19:04:39.767145+00:00",
+            "quality_service": "patched_v2_negative_ev_guard",
+            "status": "installed"
+          },
+          "status": "ok"
+        },
+        {
+          "module": "app.providers.odds_api_io_fast_event_account_patch",
+          "result": {
+            "status": "disabled_not_fast"
+          },
+          "status": "ok"
+        },
+        {
+          "module": "app.services.bzzoiro_total_point_normalization_patch",
+          "result": {
+            "status": "installed",
+            "version": "bzzoiro-total-point-normalization-v1"
           },
           "status": "ok"
         },
@@ -507,13 +627,29 @@
         }
       ],
       "app.services.sstats_bzzoiro_odds_merge_patch": {
-        "created_at_utc": "2026-05-24T13:06:10.116717+00:00",
+        "created_at_utc": "2026-05-24T19:04:37.452608+00:00",
         "sstats_current_odds_as_line_source": false,
         "sstats_policy": "context_only_by_default",
         "status": "installed"
       }
     },
     "stage": "after_discovery_before_runner"
+  },
+  "phase_policy": {
+    "enabled": true,
+    "env": {
+      "ANALYSIS_MATCH_CAP_PER_RUN": "520",
+      "CONTEXT_ENRICHMENT_MATCH_LIMIT": "240",
+      "DAY_INVENTORY_BOOTSTRAP_PROVIDER": "odds_api_io",
+      "FIXTURE_EXPANSION_ENABLED": "true",
+      "MATCH_BOOTSTRAP_PROVIDER": "odds_api_io",
+      "MAX_MATCHES_FOR_ODDS_FETCH": "520",
+      "PUBLISH_WINDOW_HOURS": "12",
+      "RUN_DAYS_AHEAD": "1",
+      "SECONDARY_ODDS_RESCUE_TRIGGER": "thin_primary_market_depth"
+    },
+    "path": ".data/exports/latest-run-phase-policy.env",
+    "phase": "live_refresh"
   },
   "safe_defaults_applied": 0,
   "stage": "after_discovery_before_runner"
