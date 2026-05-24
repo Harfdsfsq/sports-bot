@@ -12,20 +12,20 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 24 | 15 | 24 | 8 | 20 | 9 | 19 | 0 | 20 | 8 |
+| 0_2h | 22 | 14 | 22 | 7 | 18 | 8 | 18 | 0 | 18 | 7 |
 | 2_6h | 7 | 6 | 7 | 4 | 6 | 4 | 6 | 0 | 6 | 4 |
 | 6_12h | 5 | 3 | 5 | 0 | 3 | 0 | 3 | 0 | 3 | 0 |
-| 12_24h | 223 | 177 | 195 | 18 | 63 | 21 | 62 | 0 | 63 | 18 |
-| 24h_plus | 17 | 17 | 15 | 1 | 6 | 5 | 6 | 0 | 4 | 1 |
-| started | 24 | 21 | 23 | 2 | 11 | 5 | 11 | 0 | 11 | 2 |
+| 12_24h | 224 | 178 | 196 | 28 | 74 | 32 | 73 | 0 | 74 | 28 |
+| 24h_plus | 16 | 16 | 14 | 1 | 6 | 5 | 6 | 0 | 4 | 1 |
+| started | 26 | 22 | 25 | 3 | 13 | 6 | 12 | 0 | 13 | 3 |
 
 ## Totals
 
 - fixture_2plus_sources: 239/300
-- odds_2plus_sources: 33/300
-- context_2plus_sources: 44/300
-- ready_for_model: 107/300
-- ready_for_publish: 33/300
+- odds_2plus_sources: 43/300
+- context_2plus_sources: 55/300
+- ready_for_model: 118/300
+- ready_for_publish: 43/300
 
 ## Provider endpoint status
 - by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
@@ -37,7 +37,6 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-05-24T22:30:00+00:00 | Point Michel — Mahaut Soca Strikers | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-24T23:00:00+00:00 | B71 Sandoy — FC Suduroy | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-24T23:00:00+00:00 | Red Bull New York II — CT United FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-24T23:00:00+00:00 | CD Inca — Sensunte Cabanas FC | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
@@ -67,12 +66,13 @@
 - 12_24h | 2026-05-25T11:00:00+00:00 | Aalborg BK — Viborg FF | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 12_24h | 2026-05-25T11:00:00+00:00 | Bhutan — Nepal | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 12_24h | 2026-05-25T11:00:00+00:00 | Esbjerg FB 2 — Hobro IK 2 | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
+- 12_24h | 2026-05-25T11:00:00+00:00 | Bhutan — Nepal | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=205 / checked=300 | rate=68.33% | SStats events=1039
-- potential_add: context_deep=205 xg_or_rating=205 form=205 odds_rescue=8
-- projected_upper_bound: context_2plus=249 xg=232 form=233 odds_2plus=41
+- crosswalk: matched=205 / checked=300 | rate=68.33% | SStats events=1040
+- potential_add: context_deep=205 xg_or_rating=205 form=205 odds_rescue=7
+- projected_upper_bound: context_2plus=260 xg=233 form=234 odds_2plus=50
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
