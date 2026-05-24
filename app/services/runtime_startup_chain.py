@@ -10,7 +10,6 @@ because installer reports overwrite build-time diagnostics.
 from typing import Any
 
 MODULES = [
-    'app.services.harizon_unified_scheme_runtime',
     'app.services.provider_smoke_repair_env_guard',
     'app.services.runtime_provider_budget_guard',
     'app.services.core_coverage_quota_runtime_override',
@@ -63,13 +62,17 @@ MODULES = [
     'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
     'app.services.progressive_provider_alias_finalizer',
     'app.services.candidate_value_final_reinstall',
+    # Last-resort bridge: if early hard guards still leave zero raw candidates,
+    # rebuild controlled rescue rows for fallback evaluation (not direct publish).
+    'app.services.post_integrity_candidate_rescue',
     'app.services.windowed_coverage_state_bridge',
     'app.services.odds_movement_cache_bridge_patch',
     'app.services.api_coverage_consensus_runtime_patch',
+    # Keep API coverage strict for final publication, but soft at discovery time so
+    # rejected candidates still reach quality/fallback/watchlist diagnostics.
+    'app.services.api_coverage_discovery_soft_guard_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
-    'app.providers.odds_api_io_fast_event_account_patch',
-    'app.services.bzzoiro_total_point_normalization_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',
