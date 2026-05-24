@@ -1,74 +1,64 @@
 🧾 HARIZON run report v8 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: tier a odds sources below min:1/2
+• Главная причина: telegram publish odds sources guard:1/2
 
 📦 Покрытие
 • Матчи в run: 220 | day inventory: 300
-• С линиями: 147 | с контекстом: 188 | ready model: 99
-• odds-api.io offers: 11505 | Bzzoiro secondary offers: 286
-• 2+ букмекера odds-api.io: 103 | 2-source overlap Bzzoiro+odds-api.io: 23
-• Source combinations: odds_api_io: 123, bzzoiro+odds_api_io: 23, bzzoiro: 1
+• С линиями: 44 | с контекстом: 187 | ready model: 107
+• odds-api.io offers: 3626 | Bzzoiro secondary offers: 286
+• 2+ букмекера odds-api.io: 25 | 2-source overlap Bzzoiro+odds-api.io: 7
+• Source combinations: odds_api_io: 29, bzzoiro: 17, bzzoiro+odds_api_io: 7
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 6 / 6
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 1 / 2
+• Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 3 | evaluated 3 | published False (0)
-• Windowed coverage: audit 24 | allowed 10 | blocked 14 | publish-filter input 0
+• Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
+• Windowed coverage: audit 2 | allowed 0 | blocked 2 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 17 | no next regular run: 17
+• Final pre-kickoff checks: 11 | no next regular run: 11
 • Line guard: seen 0 | kept 0 | dropped 0
 
 📡 Core API
-• odds_api_io: events req 0, odds req 44, matched 218, offers 11505, 2+ books 103, err 0, auth_failed False
-• sstats: req 28, ctx 183, rows 24827, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 33, v2 ctx 8, v2 odds 8, secondary offers 286, overlap odds-api.io 23, err 0
+• odds_api_io: events req 0, odds req 15, matched 218, offers 3626, 2+ books 25, err 1, auth_failed False
+• sstats: req 28, ctx 182, rows 24827, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 33, v2 ctx 8, v2 odds 8, secondary offers 286, overlap odds-api.io 7, err 0
 • sportlogic: enabled True, req 21, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 21
 
 🧭 Progressive core coverage
 • Active core odds/line: bzzoiro,odds_api_io,sportlogic
 • Active core context: bzzoiro,sstats
 • Tracked: 1667 | core odds 2+: 222 | core context 2+: 187 | core-ready both: 148
-• 0–4ч: 7/31 core-ready
-• 0–12ч: 7/37 core-ready
+• 0–4ч: 7/30 core-ready
+• 0–12ч: 7/35 core-ready
 
 Coverage truth
 • Inventory rows: 300
-• 2+ price confirmations: 32
-• 2+ independent odds sources: 24
-• 2+ context sources: 36
-• ready publish fresh: 24 | strict: 24 | already sent: 0
+• 2+ price confirmations: 34
+• 2+ independent odds sources: 33
+• 2+ context sources: 35
+• ready publish fresh: 25 | strict: 25 | already sent: 0
 
 🚫 Почему не опубликовано
-• tier a odds sources below min:1/2: 2 (10%)
-• tier a quality below min: 2 (10%)
-• tier b odds sources below min:1/2: 2 (10%)
-• tier b context sources below min:1/3: 2 (10%)
-• tier b confidence below min: 2 (10%)
-• tier b quality below min: 2 (10%)
-• tier c quality below min: 2 (10%)
-• quality post calibration edge guard: 2 (10%)
+• telegram publish odds sources guard:1/2: 1 (50%)
+• tier c watch only: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Strindheim TF — Nardo FK | Больше 3.5 @1.88 | EV +9.3% | edge +5.0 п.п. | q 49.5
-   • reject: tier a odds sources below min:1/2, tier a quality below min, tier b odds sources below min:1/2
-2. FK Gjoevik-Lyn — Elverum | Меньше 3.5 @1.93 | EV +6.0% | edge +3.1 п.п. | q 52.9
-   • reject: tier a odds sources below min:1/2, tier a quality below min, tier b odds sources below min:1/2
-3. Enppi Club — Wadi Degla SC | Меньше 1.5 @2.58 | EV +2.1% | edge +0.8 п.п. | q 34.5
-   • reject: направление ставки конфликтует с xG
+1. SC Paderborn 07 — VFL Wolfsburg | Больше @3.04 | EV +40.1% | edge +13.2 п.п. | q 100.0
+   • reject: telegram publish odds sources guard:1/2, tier c watch only
 
 🧯 Controlled fallback pool filter
 • Frozen day inventory keys: 597
-• Pre-evaluation filters: debug candidates before quality: 3
+• Pre-evaluation filters: debug candidates before quality: 1, кандидат вне окна публикации или устарел: 1
 • Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.
 
 📌 Вывод
-• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality не разрешили публикацию.
+• Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. Core-ready: 148; 0–4ч: 7/30; 0–12ч: 7/35.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
 
 🕒 Current day inventory windows
-• Active matches: 178 | odds refresh needed: 23
-• Final pre-kickoff checks: 17 | no next regular run: 17
-• 0–4ч inventory: 5/30 ready | strict 5 | already sent 0 | context 2+: 6 | price 2+: 8
-• 0–12ч inventory: 6/36 ready | strict 6 | already sent 0 | context 2+: 7 | price 2+: 9
+• Active matches: 176 | odds refresh needed: 22
+• Final pre-kickoff checks: 11 | no next regular run: 11
+• 0–4ч inventory: 5/29 ready | strict 5 | already sent 0 | context 2+: 6 | price 2+: 12
+• 0–12ч inventory: 5/34 ready | strict 5 | already sent 0 | context 2+: 6 | price 2+: 12
