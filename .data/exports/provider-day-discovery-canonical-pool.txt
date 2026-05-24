@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-23T23:04:12.873954+00:00
+UTC: 2026-05-24T01:04:40.641370+00:00
 target_date: 2026-05-24
-canonical_matches: 445
-2+ provider sources: 162
-2+ primary sources: 147
-all 3 primary sources: 22
+canonical_matches: 451
+2+ provider sources: 141
+2+ primary sources: 120
+all 3 primary sources: 13
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=8 event_like=8 unique=8 statuses={"OK": 1}
@@ -12,15 +12,14 @@ all 3 primary sources: 22
 - football_data: commands=1 ok=1 rows=23 event_like=23 unique=23 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
-- sstats: commands=1 ok=1 rows=242 event_like=231 unique=231 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=196 event_like=191 unique=191 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 283, "4": 4, "2": 126, "3": 32}
-- primary providers: {"1": 297, "3": 22, "2": 125, "0": 1}
+- all providers: {"1": 310, "3": 17, "2": 124}
+- primary providers: {"1": 322, "2": 107, "3": 13, "0": 9}
 
 ## Top canonical matches
-- 2026-05-23T21:15:00+00:00 | Deportivo Recoleta — Club Guarani | providers=sstats ids={"sstats": "1505089"}
 - 2026-05-23T21:30:00+00:00 | Deportes Iquique — Curico Unido | providers=sstats ids={"sstats": "1511587"}
 - 2026-05-23T21:30:00+00:00 | Orense SC — Universidad Catolica | providers=sstats ids={"sstats": "1519374"}
 - 2026-05-23T21:30:00+00:00 | Charlottesville Blues W — Richmond Ivy W | providers=sstats ids={"sstats": "1532029"}
@@ -50,12 +49,9 @@ all 3 primary sources: 22
 - 2026-05-23T23:00:00+00:00 | Atletico Nacional — Deportes Tolima | providers=sstats ids={"sstats": "1545168"}
 - 2026-05-23T23:00:00+00:00 | Indy Eleven — Lexington | providers=sstats ids={"sstats": "1493504"}
 - 2026-05-23T23:00:00+00:00 | Miami FC — Louisville City | providers=sstats ids={"sstats": "1493507"}
+- 2026-05-23T23:00:00+00:00 | Charlotte Independence — Forward Madison | providers=sstats ids={"sstats": "1493832"}
 
 ## Targeted enrichment plan sample
-- Deportivo Recoleta — Club Guarani | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Deportes Iquique — Curico Unido | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
@@ -129,6 +125,10 @@ all 3 primary sources: 22
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Maringá — Santa Cruz | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Imperatriz — Águia de Marabá | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
