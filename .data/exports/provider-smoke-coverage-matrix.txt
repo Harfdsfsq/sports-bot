@@ -12,20 +12,20 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 13 | 9 | 13 | 3 | 10 | 4 | 10 | 0 | 10 | 3 |
-| 2_6h | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 0 | 3 | 3 |
+| 0_2h | 13 | 9 | 13 | 4 | 10 | 5 | 10 | 0 | 10 | 4 |
+| 2_6h | 2 | 2 | 2 | 2 | 2 | 2 | 2 | 0 | 2 | 2 |
 | 6_12h | 13 | 6 | 12 | 1 | 6 | 1 | 6 | 0 | 6 | 1 |
-| 12_24h | 220 | 179 | 193 | 38 | 85 | 43 | 84 | 0 | 85 | 38 |
+| 12_24h | 220 | 179 | 193 | 48 | 99 | 54 | 98 | 0 | 99 | 48 |
 | 24h_plus | 13 | 13 | 10 | 0 | 6 | 4 | 6 | 0 | 3 | 0 |
-| started | 38 | 29 | 37 | 8 | 23 | 10 | 22 | 0 | 23 | 8 |
+| started | 39 | 30 | 38 | 8 | 24 | 10 | 23 | 0 | 24 | 8 |
 
 ## Totals
 
 - fixture_2plus_sources: 239/300
-- odds_2plus_sources: 53/300
-- context_2plus_sources: 65/300
-- ready_for_model: 130/300
-- ready_for_publish: 53/300
+- odds_2plus_sources: 63/300
+- context_2plus_sources: 76/300
+- ready_for_model: 144/300
+- ready_for_publish: 63/300
 
 ## Provider endpoint status
 - by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
@@ -37,7 +37,6 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-05-24T23:10:00+00:00 | Delfin SC — Barcelona SC | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
 - 0_2h | 2026-05-24T23:30:00+00:00 | FC Mayaguez — Academia Quintana | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 0_2h | 2026-05-24T23:30:00+00:00 | Operario Ferroviario EC PR — Criciuma EC SC | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
 - 0_2h | 2026-05-24T23:30:00+00:00 | Operário-PR — Criciúma | odds=1 context=2 fixtures=3 missing=odds_source_2plus,weather
@@ -67,12 +66,13 @@
 - 12_24h | 2026-05-25T12:00:00+00:00 | BSC YB Frauen — Servette FC Chenois Feminin | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 12_24h | 2026-05-25T12:00:00+00:00 | Vanloese IF — Naesby BK | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
 - 12_24h | 2026-05-25T12:00:00+00:00 | Naestved HG — Esbjerg FB | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
+- 12_24h | 2026-05-25T12:00:00+00:00 | Strindheim TF — Nardo FK | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=205 / checked=300 | rate=68.33% | SStats events=1054
+- crosswalk: matched=205 / checked=300 | rate=68.33% | SStats events=1055
 - potential_add: context_deep=205 xg_or_rating=205 form=205 odds_rescue=7
-- projected_upper_bound: context_2plus=270 xg=234 form=232 odds_2plus=60
+- projected_upper_bound: context_2plus=281 xg=234 form=234 odds_2plus=70
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
