@@ -1,0 +1,21 @@
+diff --git a/app/services/runtime_startup_chain.py b/app/services/runtime_startup_chain.py
+--- a/app/services/runtime_startup_chain.py
++++ b/app/services/runtime_startup_chain.py
+@@
+     'app.services.bzzoiro_exact_offer_bridge_patch',
+     'app.services.candidate_factory_runtime_diagnostics',
++    # Must be the outermost CandidateFactory wrapper: collapse duplicate logical
++    # candidates after all rescue/diagnostic materializers have run.
++    'app.services.candidate_factory_output_dedup_patch',
+ ]
+diff --git a/.github/workflows/run-bot.yml b/.github/workflows/run-bot.yml
+--- a/.github/workflows/run-bot.yml
++++ b/.github/workflows/run-bot.yml
+@@
+-          python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
++          python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+@@
+           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
+           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
++          cp .data/exports/latest-harizon-telegram-run-report-v9-status.json artifacts/run-bot/latest-harizon-telegram-run-report-v9-status.json 2>/dev/null || true
++          cp .data/exports/latest-candidate-factory-output-dedup.json artifacts/run-bot/latest-candidate-factory-output-dedup.json 2>/dev/null || true

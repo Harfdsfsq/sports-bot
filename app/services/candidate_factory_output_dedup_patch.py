@@ -2,11 +2,11 @@ from __future__ import annotations
 
 """Deduplicate final CandidateFactory output.
 
-Multiple late runtime wrappers can materialize the same logical candidate twice:
-same match, market family, selection and line.  That inflates
-`candidates_before_quality`, controlled-fallback pool counts and reject reasons.
-This patch is intentionally conservative: it keeps the best-ranked candidate for
-each logical key and does not alter probabilities, odds, EV or publish guards.
+Late runtime wrappers can materialize the same logical candidate twice: same
+match, market family, selection and line.  That inflates raw counts, fallback
+pool counts and rejection counters.  This patch is conservative: it keeps the
+best-ranked candidate for each logical key and does not alter odds, probability,
+EV, edge, quality or publication guards.
 """
 
 import json
@@ -17,15 +17,14 @@ from typing import Any
 UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[2]
 REPORT_PATH = ROOT / ".data" / "exports" / "latest-candidate-factory-output-dedup.json"
-_MARKER = "_harizon_candidate_factory_output_dedup_v2"
+_MARKER = "_harizon_candidate_factory_output_dedup_v3"
 
 
 def _as_float(value: Any, default: float = 0.0) -> float:
     try:
         if value in (None, ""):
             return default
-        number = float(str(value).replace(",", "."))
-        return number
+        return float(str(value).replace(",", "."))
     except Exception:
         return default
 
@@ -38,9 +37,11 @@ def _line_value(candidate: Any) -> str:
     value = getattr(candidate, "point", None)
     if value in (None, ""):
         value = getattr(candidate, "line", None)
-    number = _as_float(value, None) if value not in (None, "") else None
-    if number is not None:
-        return f"{number:.3f}".rstrip("0").rstrip(".")
+    if value not in (None, ""):
+        try:
+            return f"{float(str(value).replace(',', '.')):.3f}".rstrip("0").rstrip(".")
+        except Exception:
+            pass
     return _norm(value)
 
 
@@ -58,7 +59,6 @@ def candidate_key(candidate: Any) -> tuple[str, str, str, str]:
 
 
 def _rank(candidate: Any) -> tuple[float, float, float, float, float]:
-    # Prefer the same fields used downstream.  All values are read-only here.
     return (
         _as_float(getattr(candidate, "publication_score", None)),
         _as_float(getattr(candidate, "ev_pct", None)),

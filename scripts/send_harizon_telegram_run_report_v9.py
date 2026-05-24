@@ -2,11 +2,13 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v9.
 
-v9 is a small renderer fix on top of v8:
-- do not classify candidate source counters as pre-fallback filters;
-- if controlled fallback actually evaluated candidates, hide the pool-filter block;
-- keep real lifecycle filters such as stale/outside-window/not-in-inventory/prefilter;
-- show a more precise conclusion when quality/value guards are the real reason.
+v9 is a renderer/reporting fix on top of v8:
+- run directly from workflow before v8;
+- do not classify source-pool counters as pre-fallback filters;
+- if controlled fallback evaluated at least one candidate, never show a block
+  saying fallback did not evaluate candidates;
+- split evaluated-candidate rejects from non-evaluated leftover filters;
+- keep real lifecycle filters for fully pre-filtered runs.
 """
 
 import importlib.util
@@ -97,29 +99,33 @@ def pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
 
 def build_payload() -> dict[str, Any]:
     payload = v8.build_payload()
-    payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier-v2"
+    payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier"
     payload["report_renderer"] = "v9"
     diag = payload.setdefault("diagnostics", {})
     fallback = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
     pool_counts = fallback.get("pool_counts") if isinstance(fallback.get("pool_counts"), dict) else {}
     real_filters = pool_filter_counts(pool_counts)
     funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
-    seen = _as_int(funnel.get("fallback_candidates_seen"))
-    evaluated = _as_int(funnel.get("fallback_evaluated"))
+    seen = max(_as_int(funnel.get("fallback_candidates_seen")), _as_int(fallback.get("candidates_seen")))
+    evaluated_raw = fallback.get("evaluated")
+    evaluated = max(_as_int(funnel.get("fallback_evaluated")), len(evaluated_raw) if isinstance(evaluated_raw, list) else _as_int(evaluated_raw))
     if pool_counts:
         diag["controlled_fallback_pool_counts"] = dict(pool_counts)
-        diag["controlled_fallback_pool_filter_counts"] = dict(real_filters)
         diag["controlled_fallback_pool_source_counts"] = {
             k: _as_int(v) for k, v in pool_counts.items()
-            if k != "day_inventory_membership_keys" and not is_real_pool_filter(str(k))
+            if k != "day_inventory_membership_keys" and not is_real_pool_filter(str(k)) and _as_int(v) > 0
         }
-    if seen > 0 or evaluated > 0:
-        # Candidates were evaluated; pool/source counters and stale artifacts are
-        # not the run-level pre-fallback blocker.  Keep them as diagnostics only.
+        diag["controlled_fallback_pool_filter_counts"] = dict(real_filters)
+    diag["controlled_fallback_evaluated_count_v9"] = evaluated
+    diag["controlled_fallback_seen_count_v9"] = seen
+    if evaluated > 0 or seen > 0:
+        # There was a real fallback evaluation, so pool filters are not the main
+        # run status.  They are leftovers from candidates that did not reach the
+        # evaluated subset and should not render as "fallback did not evaluate".
         if payload.get("status") == "candidates_filtered_before_fallback":
             payload["status"] = "candidates_but_quality_rejected"
             payload["status_ru"] = "🟡 кандидаты есть, quality/value не пропустили"
-        diag["controlled_fallback_pool_lifecycle_notes"] = dict(real_filters)
+        diag["controlled_fallback_pool_non_evaluated_filters"] = dict(real_filters)
         diag["controlled_fallback_pool_filter_counts"] = {}
     _write_json(STATUS_PATH, {"status": "installed", "renderer": "v9", "pool_filter_classifier": True})
     return payload
@@ -140,29 +146,50 @@ def _strip_controlled_pool_block(text: str) -> str:
     return re.sub(pattern, "\n\n", text, flags=re.MULTILINE)
 
 
-def _insert_pool_source_note(text: str, payload: dict[str, Any]) -> str:
+def _insert_pool_summary(text: str, payload: dict[str, Any]) -> str:
     diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
     source_counts = diag.get("controlled_fallback_pool_source_counts") if isinstance(diag.get("controlled_fallback_pool_source_counts"), dict) else {}
-    if not source_counts:
+    non_eval = diag.get("controlled_fallback_pool_non_evaluated_filters") if isinstance(diag.get("controlled_fallback_pool_non_evaluated_filters"), dict) else {}
+    evaluated = _as_int(diag.get("controlled_fallback_evaluated_count_v9"))
+    lines: list[str] = []
+    if evaluated:
+        lines.append(f"• Evaluated by fallback: {evaluated}")
+    compact_sources = {k: _as_int(v) for k, v in source_counts.items() if _as_int(v) > 0}
+    if compact_sources:
+        lines.append("• Pool sources: " + ", ".join(f"{k}: {v}" for k, v in sorted(compact_sources.items())[:6]))
+    compact_filters = {k: _as_int(v) for k, v in non_eval.items() if _as_int(v) > 0}
+    if compact_filters:
+        lines.append("• Non-evaluated leftover filters: " + ", ".join(f"{_reason_ru(k)}: {v}" for k, v in sorted(compact_filters.items())[:6]))
+    if not lines:
         return text
-    compact = {k: _as_int(v) for k, v in source_counts.items() if _as_int(v) > 0}
-    if not compact:
-        return text
-    line = "• Pool sources: " + ", ".join(f"{k}: {v}" for k, v in sorted(compact.items())[:6])
-    # Put it after the reserve/funnel block only if there is no filter block.
+    block = "🧯 Controlled fallback pool\n" + "\n".join(lines) + "\n• Смысл: это диагностика состава pool; основная причина отказа берётся из проверенных reserve-кандидатов."
     marker = "\n📌 Вывод"
-    if marker in text and "🧯 Controlled fallback pool filter" not in text:
-        return text.replace(marker, "\n\n🧯 Controlled fallback pool\n" + line + "\n• Смысл: это источники пула, а не причины отказа.\n" + marker, 1)
+    if marker in text and "🧯 Controlled fallback pool" not in text:
+        return text.replace(marker, "\n\n" + block + "\n" + marker, 1)
     return text
+
+
+def _insert_true_filter_block(text: str, payload: dict[str, Any]) -> str:
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
+    if not filters:
+        return text
+    top = sorted(filters.items(), key=lambda item: _as_int(item[1]), reverse=True)[:6]
+    block = "\n".join([
+        "🧯 Controlled fallback pool filter",
+        "• Pre-evaluation filters: " + ", ".join(f"{_reason_ru(k)}: {_as_int(v)}" for k, v in top),
+        "• Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.",
+    ])
+    return text.replace("\n📌 Вывод", "\n\n" + block + "\n\n📌 Вывод", 1)
 
 
 def _patch_conclusion(text: str, payload: dict[str, Any]) -> str:
     reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
     reason_text = " ".join(str((r or {}).get("reason") if isinstance(r, dict) else r) for r in reasons).lower()
-    if any(token in reason_text for token in ("quality", "edge", "ev", "xg", "tier")):
+    if any(token in reason_text for token in ("quality", "edge", "ev", "xg", "tier", "odds sources")):
         text = text.replace(
             "• Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.",
-            "• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality не разрешили публикацию."
+            "• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality/coverage не разрешили публикацию."
         )
     return text
 
@@ -170,27 +197,15 @@ def _patch_conclusion(text: str, payload: dict[str, Any]) -> str:
 def render(payload: dict[str, Any]) -> str:
     text = v8.render(payload).replace("HARIZON run report v8", "HARIZON run report v9")
     diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
-    filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
-    funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
-    if _as_int(funnel.get("fallback_candidates_seen")) > 0 or _as_int(funnel.get("fallback_evaluated")) > 0:
-        # Once fallback evaluated at least one candidate, pool counters are not
-        # pre-evaluation blockers for the run.  Even if there are stale/outside
-        # artifacts in the pool, they are only lifecycle notes and must not be
-        # rendered with the misleading text "fallback did not evaluate it".
-        text = _strip_controlled_pool_block(text)
-        text = _insert_pool_source_note(text, payload)
-    elif filters:
-        # Keep only real filters in the block.
-        top = sorted(filters.items(), key=lambda item: _as_int(item[1]), reverse=True)[:6]
-        block = "\n".join([
-            "🧯 Controlled fallback pool filter",
-            "• Pre-evaluation filters: " + ", ".join(f"{_reason_ru(k)}: {_as_int(v)}" for k, v in top),
-            "• Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.",
-        ])
-        text = _strip_controlled_pool_block(text)
-        text = text.replace("\n📌 Вывод", "\n\n" + block + "\n\n📌 Вывод", 1)
+    evaluated = _as_int(diag.get("controlled_fallback_evaluated_count_v9"))
+    seen = _as_int(diag.get("controlled_fallback_seen_count_v9"))
+    text = _strip_controlled_pool_block(text)
+    if evaluated > 0 or seen > 0:
+        text = _insert_pool_summary(text, payload)
+    else:
+        text = _insert_true_filter_block(text, payload)
     text = _patch_conclusion(text, payload)
-    return text
+    return re.sub(r"\n{3,}", "\n\n", text).strip() + "\n"
 
 
 def main() -> int:
@@ -202,9 +217,9 @@ def main() -> int:
     payload["report_renderer_status"] = "direct_v9_main"
     try:
         v8.v7.v5.write_json(v8.v7.v5.OUT_V5_JSON, payload)
-        v8.v7.v5.write_text(v8.v7.v5.OUT_V5_TXT, text + "\n")
+        v8.v7.v5.write_text(v8.v7.v5.OUT_V5_TXT, text)
         v8.v7.v5.write_json(v8.v7.v5.OUT_JSON, payload)
-        v8.v7.v5.write_text(v8.v7.v5.OUT_TXT, text + "\n")
+        v8.v7.v5.write_text(v8.v7.v5.OUT_TXT, text)
         result = v8.v7.v5.send_telegram(text)
         payload["telegram_sent"] = bool(result.get("sent")) if isinstance(result, dict) else False
         payload["telegram_result"] = result
