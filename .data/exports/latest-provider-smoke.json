@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":71612876,\"home\":\"Club Libertad\",\"away\":\"Sportivo Luqueno\",\"homeId\":585605,\"awayId\":585621,\"date\":\"2026-05-24T19:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Paraguay - Camopeonato Femenino, Women\",\"slug\":\"paraguay-camopeonato-femenino-women\"},\"status\":\"pending\",\"sco",
+      "body_preview": "[{\"id\":66299230,\"home\":\"Columbus Crew\",\"away\":\"Atlanta United FC\",\"homeId\":2504,\"awayId\":305920,\"date\":\"2026-05-24T21:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - MLS\",\"slug\":\"usa-mls\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":67912090,\"home\":\"Bay FC\",\"",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779649275,\"localtime\":\"2026-05-24 20:01\"},\"current\":{\"last_updated_epoch\":1779649200,\"last_updated\":\"2026-05-24 20:00\",\"temp_c\":24.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1779654632,\"localtime\":\"2026-05-24 21:30\"},\"current\":{\"last_updated_epoch\":1779654600,\"last_updated\":\"2026-05-24 21:30\",\"temp_c\":22.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,7 +77,7 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":29.29508686065674,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curren",
+      "body_preview": "{\"latitude\":51.51147,\"longitude\":-0.13078308,\"generationtime_ms\":288.63298892974854,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"curre",
       "enabled": true,
       "http_status": 200,
       "item_count": 9,
@@ -96,7 +96,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-05-24T19:01:38.956862+00:00",
+  "created_at_utc": "2026-05-24T20:30:34.531959+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -134,15 +134,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -196,9 +200,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -208,9 +216,11 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
@@ -254,7 +264,7 @@
     "enabled_checks": 8,
     "failed_enabled_checks": 1,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 5,
+    "non_core_bad_env_prefixes": 9,
     "ok_enabled_checks": 7,
     "status": "warning"
   }
