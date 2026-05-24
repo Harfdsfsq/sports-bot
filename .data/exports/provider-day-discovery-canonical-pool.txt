@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-24T19:02:57.678104+00:00
+UTC: 2026-05-24T20:31:58.790932+00:00
 target_date: 2026-05-24
-canonical_matches: 380
-2+ provider sources: 64
-2+ primary sources: 49
+canonical_matches: 351
+2+ provider sources: 63
+2+ primary sources: 48
 all 3 primary sources: 0
 
 ## Provider fixture discovery
@@ -11,28 +11,28 @@ all 3 primary sources: 0
 - bzzoiro: commands=3 ok=3 rows=250 event_like=250 unique=110 statuses={"OK": 3}
 - football_data: commands=1 ok=1 rows=10 event_like=10 unique=10 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=184 event_like=184 unique=92 statuses={"OK": 2, "EMPTY": 4}
+- odds_api_io: commands=6 ok=2 rows=124 event_like=124 unique=62 statuses={"OK": 2, "EMPTY": 4}
 - sstats: commands=1 ok=1 rows=230 event_like=226 unique=226 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"2": 59, "1": 316, "3": 5}
-- primary providers: {"2": 49, "1": 330, "0": 1}
+- all providers: {"2": 58, "1": 288, "3": 5}
+- primary providers: {"2": 48, "1": 302, "0": 1}
 
 ## Top canonical matches
 - 2026-05-24T00:00:00+00:00 | Flamengo — Palmeiras | providers=bzzoiro,sstats ids={"bzzoiro": "7157", "sstats": "1492273"}
 - 2026-05-24T00:30:00+00:00 | Chicago Fire — Toronto FC | providers=bzzoiro,sstats ids={"bzzoiro": "5123", "sstats": "1490315"}
-- 2026-05-24T00:30:00+00:00 | San Antonio FC — Sacramento Republic FC | providers=bzzoiro,sstats ids={"bzzoiro": "207631", "sstats": "1493512"}
 - 2026-05-24T00:30:00+00:00 | Sporting Kansas City — New York Red Bulls | providers=bzzoiro,sstats ids={"bzzoiro": "5124", "sstats": "1490316"}
 - 2026-05-24T00:30:00+00:00 | Nashville SC — New York City FC | providers=bzzoiro,sstats ids={"bzzoiro": "5122", "sstats": "1490314"}
+- 2026-05-24T00:30:00+00:00 | San Antonio FC — Sacramento Republic FC | providers=bzzoiro,sstats ids={"bzzoiro": "207631", "sstats": "1493512"}
 - 2026-05-24T01:00:00+00:00 | New Mexico United — Charleston Battery | providers=bzzoiro,sstats ids={"bzzoiro": "207632", "sstats": "1493509"}
+- 2026-05-24T01:30:00+00:00 | Colorado Rapids — FC Dallas | providers=bzzoiro,sstats ids={"bzzoiro": "5127", "sstats": "1490319"}
 - 2026-05-24T01:30:00+00:00 | San Diego FC — Vancouver Whitecaps | providers=bzzoiro,sstats ids={"bzzoiro": "5126", "sstats": "1490318"}
 - 2026-05-24T01:30:00+00:00 | Portland Timbers — San Jose Earthquakes | providers=bzzoiro,sstats ids={"bzzoiro": "5128", "sstats": "1490320"}
-- 2026-05-24T01:30:00+00:00 | Colorado Rapids — FC Dallas | providers=bzzoiro,sstats ids={"bzzoiro": "5127", "sstats": "1490319"}
-- 2026-05-24T02:00:00+00:00 | Monterey Bay FC — Birmingham Legion FC | providers=bzzoiro,sstats ids={"bzzoiro": "207633", "sstats": "1493508"}
 - 2026-05-24T02:00:00+00:00 | Orange County SC — Oakland Roots SC | providers=bzzoiro,sstats ids={"bzzoiro": "207634", "sstats": "1493510"}
-- 2026-05-24T02:30:00+00:00 | LA Galaxy — Houston Dynamo | providers=bzzoiro,sstats ids={"bzzoiro": "5129", "sstats": "1490321"}
+- 2026-05-24T02:00:00+00:00 | Monterey Bay FC — Birmingham Legion FC | providers=bzzoiro,sstats ids={"bzzoiro": "207633", "sstats": "1493508"}
 - 2026-05-24T02:30:00+00:00 | Las Vegas Lights — Colorado Springs Switchbacks FC | providers=bzzoiro,sstats ids={"bzzoiro": "207635", "sstats": "1493505"}
+- 2026-05-24T02:30:00+00:00 | LA Galaxy — Houston Dynamo | providers=bzzoiro,sstats ids={"bzzoiro": "5129", "sstats": "1490321"}
 - 2026-05-24T03:55:00+00:00 | Fagiano Okayama — Cerezo Osaka | providers=bzzoiro,sstats ids={"bzzoiro": "204899", "sstats": "1504825"}
 - 2026-05-24T05:00:00+00:00 | Tokyo Verdy — Yokohama F. Marinos | providers=bzzoiro,sstats ids={"bzzoiro": "204901", "sstats": "1504827"}
 - 2026-05-24T05:00:00+00:00 | Mito Hollyhock — Kawasaki Frontale | providers=bzzoiro,sstats ids={"bzzoiro": "204900", "sstats": "1504826"}
@@ -60,10 +60,6 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- San Antonio FC — Sacramento Republic FC | primary=2 providers=bzzoiro,sstats
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Sporting Kansas City — New York Red Bulls | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
@@ -72,7 +68,15 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- San Antonio FC — Sacramento Republic FC | primary=2 providers=bzzoiro,sstats
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - New Mexico United — Charleston Battery | primary=2 providers=bzzoiro,sstats
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Colorado Rapids — FC Dallas | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -84,7 +88,7 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Colorado Rapids — FC Dallas | primary=2 providers=bzzoiro,sstats
+- Orange County SC — Oakland Roots SC | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -92,15 +96,11 @@ all 3 primary sources: 0
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Orange County SC — Oakland Roots SC | primary=2 providers=bzzoiro,sstats
+- Las Vegas Lights — Colorado Springs Switchbacks FC | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - LA Galaxy — Houston Dynamo | primary=2 providers=bzzoiro,sstats
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Las Vegas Lights — Colorado Springs Switchbacks FC | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
