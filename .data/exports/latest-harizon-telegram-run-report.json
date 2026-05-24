@@ -1,31 +1,31 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 19,
-      "contexts_total_effective": 19,
+      "contexts": 23,
+      "contexts_total_effective": 23,
       "errors": 0,
       "events": 50,
       "events_total_effective": 91,
-      "overlap": 13,
+      "overlap": 26,
       "requests": 1,
-      "requests_total_effective": 25,
-      "secondary_offers_added": 275,
-      "v2_contexts": 6,
+      "requests_total_effective": 29,
+      "secondary_offers_added": 396,
+      "v2_contexts": 7,
       "v2_errors": 0,
       "v2_events": 91,
-      "v2_lineups_resources": 6,
-      "v2_odds_resources": 6,
-      "v2_requests": 25,
-      "v2_stats_resources": 6
+      "v2_lineups_resources": 7,
+      "v2_odds_resources": 7,
+      "v2_requests": 29,
+      "v2_stats_resources": 7
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 84,
-      "errors": 1,
+      "books_2plus": 235,
+      "errors": 0,
       "events_req": 0,
-      "matched": 532,
-      "odds_req": 51,
-      "offers": 16162
+      "matched": 525,
+      "odds_req": 106,
+      "offers": 43487
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -41,7 +41,7 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 250,
+      "contexts": 256,
       "deep_enriched": 15,
       "direct_contexts": 0,
       "errors": 0,
@@ -52,79 +52,86 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 0.7931807120641072,
-    "fallback_age_min": 0.26015127897262574,
-    "run_log_age_min": 0.5928671558698019,
-    "signal_stack_age_min": 0.9097942153612772
+    "debug_age_min": 0.7322050929069519,
+    "fallback_age_min": 0.255592942237854,
+    "run_log_age_min": 0.5238075534502665,
+    "signal_stack_age_min": 0.7890962203343709
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 13,
-    "bzzoiro_secondary_offers_added": 275,
-    "day_inventory_total": 571,
-    "day_inventory_with_context": 100,
-    "day_inventory_with_odds": 103,
-    "matches_seen": 539,
-    "matches_with_2plus_books": 84,
-    "matches_with_context": 255,
-    "matches_with_offers": 142,
-    "odds_offers_primary": 16162,
-    "ready_for_model": 96,
+    "bzzoiro_odds_overlap_with_odds_api_io": 26,
+    "bzzoiro_secondary_offers_added": 396,
+    "day_inventory_total": 584,
+    "day_inventory_with_context": 110,
+    "day_inventory_with_odds": 109,
+    "matches_seen": 535,
+    "matches_with_2plus_books": 235,
+    "matches_with_context": 256,
+    "matches_with_offers": 336,
+    "odds_offers_primary": 43487,
+    "ready_for_model": 105,
     "secondary_combinations": {
-      "bzzoiro": 11,
-      "bzzoiro+odds_api_io": 13,
-      "odds_api_io": 129
+      "bzzoiro": 5,
+      "bzzoiro+odds_api_io": 26,
+      "odds_api_io": 310
     }
   },
-  "created_at_utc": "2026-05-24T07:22:29.027192+00:00",
+  "created_at_utc": "2026-05-24T09:25:20.155259+00:00",
   "diagnostics": {
     "bzzoiro_v2": {
-      "contexts_built": 6,
+      "contexts_built": 7,
       "enabled": true,
       "errors": 0,
       "events_fetched": 91,
-      "lineups_resources": 6,
-      "metadata_resources": 6,
-      "odds_resources": 6,
-      "requests": 25,
-      "stats_resources": 6,
+      "lineups_resources": 7,
+      "metadata_resources": 7,
+      "odds_resources": 7,
+      "requests": 29,
+      "stats_resources": 7,
       "target_matches": 64
+    },
+    "controlled_fallback_pool_counts": {
+      "day_inventory_membership_keys": 1192,
+      "debug_candidates_before_quality": 1
+    },
+    "controlled_fallback_pool_filter_counts": {
+      "debug_candidates_before_quality": 1
     },
     "coverage_truth": {
       "counts": {
         "matches_missing_context_2plus": 295,
         "matches_missing_odds_source_2plus": 300,
-        "matches_missing_price_2plus": 284,
-        "matches_ready_for_model": 96,
+        "matches_missing_price_2plus": 285,
+        "matches_ready_for_model": 105,
         "matches_ready_for_publish": 0,
         "matches_ready_for_publish_strict": 0,
         "matches_strict_ready_already_published": 0,
         "matches_total": 300,
         "matches_with_2plus_context_sources": 5,
         "matches_with_2plus_odds_sources": 0,
-        "matches_with_2plus_price_confirmations": 16,
-        "matches_with_context": 100,
-        "matches_with_odds": 103
+        "matches_with_2plus_price_confirmations": 15,
+        "matches_with_context": 110,
+        "matches_with_odds": 109
       },
       "source": {
         "path": ".data/exports/latest-day-inventory-coverage-truth.json"
       }
     },
     "current_inventory_windows": {
-      "active_matches": 400,
-      "final_pre_kickoff_checks": 29,
-      "matches_needing_odds_refresh": 332,
-      "no_more_regular_run_before_kickoff": 29,
+      "active_matches": 399,
+      "final_pre_kickoff_checks": 37,
+      "matches_needing_odds_refresh": 349,
+      "no_more_regular_run_before_kickoff": 37,
       "source": "latest-day-inventory-refresh-plan + coverage-truth",
-      "window_0_12h": 283,
-      "window_0_12h_already_published": 1,
-      "window_0_12h_context_2plus": 4,
-      "window_0_12h_price_2plus": 14,
+      "window_0_12h": 254,
+      "window_0_12h_already_published": 0,
+      "window_0_12h_context_2plus": 2,
+      "window_0_12h_price_2plus": 12,
       "window_0_12h_ready": 0,
       "window_0_12h_strict_ready": 0,
-      "window_0_4h": 111,
-      "window_0_4h_already_published": 1,
-      "window_0_4h_context_2plus": 4,
-      "window_0_4h_price_2plus": 10,
+      "window_0_4h": 164,
+      "window_0_4h_already_published": 0,
+      "window_0_4h_context_2plus": 1,
+      "window_0_4h_price_2plus": 11,
       "window_0_4h_ready": 0,
       "window_0_4h_strict_ready": 0
     },
@@ -347,165 +354,295 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 8,
-    "fallback_candidates_seen": 0,
-    "fallback_evaluated": 0,
+    "candidates_before_quality": 1,
+    "fallback_candidates_seen": 1,
+    "fallback_evaluated": 1,
     "fallback_published": false,
     "fallback_published_count": 0,
-    "fallback_status": "skipped_existing_pick",
-    "final_publication_status": "published",
-    "main_pipeline_published": true,
-    "main_pipeline_published_count": 1,
+    "fallback_status": "no_viable_controlled_fallback",
+    "final_publication_status": "not_published",
+    "main_pipeline_published": false,
+    "main_pipeline_published_count": 0,
     "passed_candidates": 1,
     "publish_filter_blocked": 0,
-    "publish_filter_input": 1,
-    "publish_filter_kept": 1,
-    "publishable_candidates": 1,
-    "published_count": 1,
+    "publish_filter_input": 0,
+    "publish_filter_kept": 0,
+    "publishable_candidates": 0,
+    "published_count": 0,
     "raw_candidates": 1,
-    "windowed_audit_candidates": 8,
-    "windowed_publish_allowed": 2,
-    "windowed_publish_blocked": 6
+    "windowed_audit_candidates": 1,
+    "windowed_publish_allowed": 0,
+    "windowed_publish_blocked": 1
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 29,
+    "final_pre_kickoff_checks": 37,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 29,
+    "no_more_regular_run_before_kickoff": 37,
     "seen": 0
   },
-  "reasons": [],
+  "reasons": [
+    {
+      "count": 1,
+      "reason": "tier_a_canonical_edge_below_min",
+      "reason_ru": "tier a canonical edge below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_b_quality_below_min",
+      "reason_ru": "tier b quality below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_b_canonical_edge_below_min",
+      "reason_ru": "tier b canonical edge below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_b_canonical_ev_below_min",
+      "reason_ru": "tier b canonical ev below min"
+    },
+    {
+      "count": 1,
+      "reason": "tier_c_canonical_edge_below_min",
+      "reason_ru": "tier c canonical edge below min"
+    },
+    {
+      "count": 1,
+      "reason": "quality_post_calibration_probability_guard",
+      "reason_ru": "quality: вероятность после калибровки ниже порога"
+    }
+  ],
   "report_renderer": "v8",
   "report_renderer_status": "direct_v8_main",
   "samples": {
-    "fallback_evaluated": [],
+    "fallback_evaluated": [
+      {
+        "away_team": "CA Penarol Montevideo",
+        "away_team_ru": "Пенарол Монтевидео",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-05-24T14:00:00+00:00",
+        "commence_time_display": "24.05.2026 17:00 MSK",
+        "family": "totals",
+        "home_team": "Liverpool FC Montevideo",
+        "home_team_ru": "Ливерпул Монтевидео",
+        "league_name": "Uruguay - Primera Division, Women",
+        "league_name_ru": "Уругуей - Примера Дивисион, Уомен",
+        "match_key": "soccer|ca penarol montevideo|liverpool montevideo|2026-05-24",
+        "metrics": {
+          "adjusted_probability": 0.412016,
+          "books_count": 3,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": 1.202,
+          "canonical_ev_pct": 3.004,
+          "confidence": 76.077,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": true,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "bzzoiro_predictions_v2",
+            "sstats",
+            "sstats_form",
+            "weather"
+          ],
+          "confirmation_sources_count": 5,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "exact_account_sources": [
+            "bzzoiro",
+            "odds_api_io_account1"
+          ],
+          "exact_account_sources_count": 2,
+          "line_sources": [
+            "bzzoiro",
+            "odds_api_io"
+          ],
+          "market_edge_pp": 4.102,
+          "market_probability": 0.370993,
+          "model_probability": 0.534361,
+          "odds": 2.5,
+          "odds_sources_count": 2,
+          "publication_score": 48.718,
+          "publish_coverage_passed": true,
+          "publish_coverage_reasons": [],
+          "quality_reasons": [
+            "post_calibration_probability_guard"
+          ],
+          "quality_score": 67.27,
+          "quality_score_raw": 67.27,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.4,
+          "sources_count": 5,
+          "xg_sanity": {
+            "enabled": true,
+            "xg_abs_gap_pp": 12.235,
+            "xg_direction_ok": true,
+            "xg_model_conservative_gap_pp": 12.235,
+            "xg_model_gap_pp": -12.235,
+            "xg_model_optimism_gap_pp": 0.0,
+            "xg_probability": 0.534361,
+            "xg_probability_pct": 53.436,
+            "xg_total": 2.537
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "tier_a_canonical_edge_below_min",
+          "tier_b_quality_below_min",
+          "tier_b_canonical_edge_below_min",
+          "tier_b_canonical_ev_below_min",
+          "tier_c_canonical_edge_below_min"
+        ],
+        "reject_reasons_ru": [
+          "запас value ниже минимума уровня A",
+          "качество ниже минимума уровня B",
+          "запас value ниже минимума уровня B",
+          "EV ниже минимума уровня B",
+          "запас value ниже минимума уровня C"
+        ],
+        "selection": "Меньше",
+        "tier": null
+      }
+    ],
     "top_priority_matches": [
       {
-        "away_team": "Ipswich FC",
-        "home_team": "St George Willawong FC",
-        "kickoff_utc": "2026-05-24T08:00:00+00:00",
-        "league_name": "Australia - Queensland Premier League 1",
-        "match_key": "soccer|ipswich|saint george willawong|2026-05-24",
-        "minutes_to_kickoff": 38.34,
+        "away_team": "Levante UD",
+        "home_team": "Alhama Club de Fútbol",
+        "kickoff_utc": "2026-05-24T10:00:00+00:00",
+        "league_name": "Liga F",
+        "match_key": "soccer|alhama futbol|levante|2026-05-24",
+        "minutes_to_kickoff": 35.42,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.22,
+        "priority": 164.192,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-24T07:22:23.356877+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Caloundra FC",
-        "home_team": "Virginia United",
-        "kickoff_utc": "2026-05-24T08:00:00+00:00",
-        "league_name": "Australia - Queensland Premier League 2",
-        "match_key": "soccer|caloundra|virginia united|2026-05-24",
-        "minutes_to_kickoff": 38.34,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.22,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-24T07:22:23.356877+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "AC Taipei",
-        "home_team": "New Taipei Hang Yuan",
-        "kickoff_utc": "2026-05-24T08:00:00+00:00",
-        "league_name": "Chinese Taipei - Premier League",
-        "match_key": "soccer|new taipei hang yuan|taipei|2026-05-24",
-        "minutes_to_kickoff": 38.34,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.22,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-24T07:22:23.356877+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Taiwan Power Company",
-        "home_team": "Tatung FC",
-        "kickoff_utc": "2026-05-24T08:00:00+00:00",
-        "league_name": "Chinese Taipei - Premier League",
-        "match_key": "soccer|taiwan power company|tatung|2026-05-24",
-        "minutes_to_kickoff": 38.34,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.22,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-24T07:22:23.356877+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Gamba Osaka",
-        "home_team": "Shimizu S-Pulse",
-        "kickoff_utc": "2026-05-24T08:00:00+00:00",
-        "league_name": "Japan - J.League",
-        "match_key": "soccer|gamba osaka|shimizu s pulse|2026-05-24",
-        "minutes_to_kickoff": 38.34,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.22,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-24T07:22:23.356877+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Tuloy FC",
-        "home_team": "Mendiola FC",
-        "kickoff_utc": "2026-05-24T08:00:00+00:00",
-        "league_name": "Philippines - Philippines Footb. League",
-        "match_key": "soccer|mendiola|tuloy|2026-05-24",
-        "minutes_to_kickoff": 38.34,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 147.22,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-23T23:27:45.787010+00:00",
+          "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
+      },
+      {
+        "away_team": "Costa Adeje Tenerife",
+        "home_team": "Club Atlético de Madrid",
+        "kickoff_utc": "2026-05-24T10:00:00+00:00",
+        "league_name": "Liga F",
+        "match_key": "soccer|atletico madrid|costa adeje tenerife|2026-05-24",
+        "minutes_to_kickoff": 35.42,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 164.192,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Real Sociedad",
+        "home_team": "Fútbol Club Barcelona",
+        "kickoff_utc": "2026-05-24T10:00:00+00:00",
+        "league_name": "Liga F",
+        "match_key": "soccer|futbol barcelona|real sociedad|2026-05-24",
+        "minutes_to_kickoff": 35.42,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 164.192,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Gornik Zabrze",
+        "home_team": "Bialystok",
+        "kickoff_utc": "2026-05-24T10:00:00+00:00",
+        "league_name": "Poland - CLJ",
+        "match_key": "soccer|bialystok|gornik zabrze|2026-05-24",
+        "minutes_to_kickoff": 35.42,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 164.192,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Chitipa United",
+        "home_team": "Malawi Armed Forces College FC",
+        "kickoff_utc": "2026-05-24T10:30:00+00:00",
+        "league_name": "Malawi - Super League",
+        "match_key": "soccer|chitipa united|malawi armed forces college|2026-05-24",
+        "minutes_to_kickoff": 65.42,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 154.192,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Ansan Greeners FC",
+        "home_team": "Daegu FC",
+        "kickoff_utc": "2026-05-24T10:00:00+00:00",
+        "league_name": "Republic of Korea - K-League 2",
+        "match_key": "soccer|ansan greeners|daegu|2026-05-24",
+        "minutes_to_kickoff": 35.42,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 148.192,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-24T09:25:15.685713+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
       }
     ]
   },
-  "status": "published",
-  "status_ru": "✅ прогноз опубликован",
+  "status": "candidates_but_quality_rejected",
+  "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 3044,
-  "top_reason": "main_pipeline_published",
+  "text_length": 3106,
+  "top_reason": "tier_a_canonical_edge_below_min",
   "version": "harizon-telegram-report-v8-progressive-core-coverage"
 }
