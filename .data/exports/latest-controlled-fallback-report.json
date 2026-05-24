@@ -1,10 +1,100 @@
 {
-  "created_at": "2026-05-24T15:21:56.752771+00:00",
+  "created_at": "2026-05-24T16:32:17.692909+00:00",
   "enabled": true,
   "published": false,
   "status": "no_viable_controlled_fallback",
-  "candidates_seen": 0,
-  "evaluated": [],
+  "candidates_seen": 1,
+  "evaluated": [
+    {
+      "match_key": "soccer|as roma|hellas verona|2026-05-24",
+      "home_team": "Hellas Verona",
+      "away_team": "AS Roma",
+      "home_team_ru": "Хеллас Верона",
+      "away_team_ru": "Рома",
+      "league_name": "Italy - Serie A",
+      "league_name_ru": "Италия - Серия A",
+      "commence_time": "2026-05-24T18:45:00+00:00",
+      "commence_time_display": "24.05.2026 21:45 MSK",
+      "candidate_source": "latest_rescue_candidates",
+      "family": "totals",
+      "selection": "Меньше",
+      "point": 2.25,
+      "ok": false,
+      "tier": "уровень C",
+      "reject_reasons": [
+        "telegram_publish_odds_sources_guard:1/2",
+        "tier_c_watch_only"
+      ],
+      "reject_reasons_ru": [
+        "telegram publish odds sources guard:1/2",
+        "уровень C: watch only"
+      ],
+      "metrics": {
+        "odds": 2.255,
+        "selected_implied_probability": 0.443459,
+        "adjusted_probability": 0.482233,
+        "model_probability": 0.668185,
+        "market_probability": 0.426789,
+        "canonical_edge_pp": 3.877,
+        "market_edge_pp": 5.544,
+        "canonical_ev_pct": 8.744,
+        "confidence": 67.695,
+        "quality_score": 81.203,
+        "quality_score_raw": 81.203,
+        "quality_score_source": "raw",
+        "publication_score": 53.486,
+        "books_count": 2,
+        "odds_sources_count": 1,
+        "sources_count": 5,
+        "confirmation_sources_count": 5,
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats",
+          "weather"
+        ],
+        "confirmation_meta": {
+          "weather_supports_under": false,
+          "weather_supports_over": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": true
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "exact_account_sources": [
+          "odds_api_io_account1",
+          "odds_api_io_account2"
+        ],
+        "exact_account_sources_count": 2,
+        "publish_coverage_passed": false,
+        "publish_coverage_reasons": [
+          "insufficient_odds_sources:1/2"
+        ],
+        "quality_reasons": [],
+        "xg_sanity": {
+          "enabled": true,
+          "xg_probability": 0.532883,
+          "xg_probability_pct": 53.288,
+          "xg_model_gap_pp": -5.065,
+          "xg_abs_gap_pp": 5.065,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 5.065,
+          "xg_total": 2.031,
+          "xg_direction_ok": true
+        },
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        }
+      }
+    }
+  ],
   "scan_policy": {
     "min_kickoff_lead_minutes": 30,
     "publish_window_hours": 12,
@@ -22,9 +112,57 @@
     "publish_window_hours": 12
   },
   "pool_counts": {
-    "day_inventory_membership_keys": 1331
+    "day_inventory_membership_keys": 1334,
+    "latest_rescue_candidates": 1,
+    "debug_candidates_before_quality_duplicate_in_pool": 1
   },
-  "watchlist": [],
+  "watchlist": [
+    {
+      "match_key": "soccer|as roma|hellas verona|2026-05-24",
+      "home_team": "Hellas Verona",
+      "away_team": "AS Roma",
+      "home_team_ru": "Хеллас Верона",
+      "away_team_ru": "Рома",
+      "league_name": "Italy - Serie A",
+      "league_name_ru": "Италия - Серия A",
+      "family": "totals",
+      "selection": "Меньше",
+      "point": 2.25,
+      "commence_time": "2026-05-24T18:45:00+00:00",
+      "commence_time_display": "24.05.2026 21:45 MSK",
+      "reject_reasons": [
+        "telegram_publish_odds_sources_guard:1/2",
+        "tier_c_watch_only"
+      ],
+      "reject_reasons_ru": [
+        "telegram publish odds sources guard:1/2",
+        "уровень C: watch only"
+      ],
+      "metrics": {
+        "odds": 2.255,
+        "canonical_edge_pp": 3.877,
+        "canonical_ev_pct": 8.744,
+        "confidence": 67.695,
+        "quality_score": 81.203,
+        "quality_score_source": "raw",
+        "books_count": 2,
+        "sources_count": 5,
+        "odds_sources_count": 1,
+        "confirmation_sources_count": 5,
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats",
+          "weather"
+        ],
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "publish_coverage_reasons": [
+          "insufficient_odds_sources:1/2"
+        ]
+      }
+    }
+  ],
   "no_pick_report_sent": false,
-  "telegram_result": "RuntimeError: controlled fallback telegram send blocked by prepublish guard: telegram_price_odds_sources_below_min:0/2"
+  "telegram_result": "{\"ok\": true, \"result\": {\"message_id\": 0, \"blocked_by_harizon_pick_safety\": true, \"reasons\": [\"telegram_pick_odds_sources_below_min:1/2\"]}}"
 }
