@@ -174,6 +174,18 @@ class RuntimePreflight:
         self.write_report(report)
         return report
 
+
+    def apply_phase_policy(self, stage: str = "phase_policy_before_run_once") -> PreflightReport:
+        """Apply the production phase policy expected by app.cli.
+
+        app.cli calls this method before `run-once`.  The accumulation-stage
+        refactor accidentally removed it and caused the whole production run to
+        stop before CandidateFactory/fallback artifacts were created.  Keep the
+        method small and explicit: it runs the same pre-run preparation as the
+        native preflight path and writes the normal preflight audit.
+        """
+        return self.run_before_prediction(stage=stage)
+
     def write_report(self, report: PreflightReport) -> None:
         try:
             self.export_dir.mkdir(parents=True, exist_ok=True)

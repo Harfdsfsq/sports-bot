@@ -20,6 +20,7 @@ ROOT = Path('.').resolve()
 EXPORT_DIR = ROOT / '.data' / 'exports'
 LEDGER = ROOT / '.data' / 'prediction-ledger.jsonl'
 SUMMARY = EXPORT_DIR / 'latest-prediction-ledger-summary.json'
+RUN_LOG = EXPORT_DIR / 'latest-run-bot.log'
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -32,6 +33,46 @@ def load_json(path: Path, default: Any) -> Any:
 def write_json(path: Path, payload: Any) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+
+
+
+def runtime_error_row() -> dict[str, Any] | None:
+    try:
+        text = RUN_LOG.read_text(encoding='utf-8', errors='replace')
+    except Exception:
+        return None
+    if 'Traceback (most recent call last)' not in text and 'AttributeError:' not in text and 'RuntimeError:' not in text:
+        return None
+    reason = 'runtime_error'
+    if 'RuntimePreflight' in text and 'apply_phase_policy' in text:
+        reason = 'runtime_preflight_apply_phase_policy_missing'
+    run_id = os.getenv('GITHUB_RUN_ID') or datetime.now(UTC).strftime('%Y%m%d%H%M%S')
+    return {
+        'ledger_id': f'{run_id}|runtime_error|{reason}',
+        'run_id': run_id,
+        'created_at_utc': datetime.now(UTC).isoformat(),
+        'candidate_key': 'runtime_error',
+        'status': 'runtime_error',
+        'stage_seen': ['run_once'],
+        'match_key': None,
+        'home_team': None,
+        'away_team': None,
+        'league_name': None,
+        'kickoff_utc': None,
+        'family': None,
+        'selection': None,
+        'point': None,
+        'odds': None,
+        'ev_pct': None,
+        'edge_pp': None,
+        'confidence': None,
+        'quality': None,
+        'odds_sources_count': None,
+        'context_sources_count': None,
+        'books_count': None,
+        'reasons': [reason],
+        'settlement': {},
+    }
 
 
 def norm(value: Any) -> str:
@@ -146,6 +187,9 @@ def collect_current_rows() -> list[dict[str, Any]]:
             'reasons': r,
             'settlement': row.get('settlement') if isinstance(row.get('settlement'), dict) else {},
         })
+    err = runtime_error_row()
+    if err is not None:
+        out.append(err)
     return out
 
 

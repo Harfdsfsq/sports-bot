@@ -20,6 +20,7 @@ from typing import Any
 V8_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v8.py")
 EXPORT_DIR = Path(".data/exports")
 STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v9-status.json"
+RUN_LOG_PATH = EXPORT_DIR / "latest-run-bot.log"
 
 
 def _load_v8() -> Any:
@@ -75,6 +76,30 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
         pass
 
 
+
+def _runtime_error_from_log() -> dict[str, Any]:
+    try:
+        if not RUN_LOG_PATH.exists() or RUN_LOG_PATH.stat().st_size <= 0:
+            return {}
+        text = RUN_LOG_PATH.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return {}
+    if "Traceback (most recent call last)" not in text and "AttributeError:" not in text and "RuntimeError:" not in text:
+        return {}
+    reason = "runtime_error"
+    if "RuntimePreflight" in text and "apply_phase_policy" in text:
+        reason = "runtime_preflight_apply_phase_policy_missing"
+    # Keep the traceback compact for Telegram and JSON.
+    idx = text.find("Traceback (most recent call last)")
+    excerpt = text[idx: idx + 2200] if idx >= 0 else text[-2200:]
+    return {
+        "status": "error",
+        "reason": reason,
+        "excerpt": excerpt,
+        "log_path": str(RUN_LOG_PATH),
+    }
+
+
 def is_real_pool_filter(key: str) -> bool:
     name = str(key or "").strip()
     if not name or name == "day_inventory_membership_keys":
@@ -102,6 +127,17 @@ def build_payload() -> dict[str, Any]:
     payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier"
     payload["report_renderer"] = "v9"
     diag = payload.setdefault("diagnostics", {})
+    runtime_error = _runtime_error_from_log()
+    if runtime_error:
+        diag["runtime_error"] = runtime_error
+        payload["status"] = "runtime_failed"
+        payload["status_ru"] = "🔴 runtime упал до построения полного пайплайна"
+        payload["top_reason"] = runtime_error.get("reason") or "runtime_error"
+        payload["reasons"] = [{
+            "reason": payload["top_reason"],
+            "reason_ru": "ошибка runtime до полного построения кандидатов",
+            "count": 1,
+        }]
     fallback = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
     pool_counts = fallback.get("pool_counts") if isinstance(fallback.get("pool_counts"), dict) else {}
     real_filters = pool_filter_counts(pool_counts)
@@ -190,8 +226,35 @@ def _patch_conclusion(text: str, payload: dict[str, Any]) -> str:
     return text
 
 
+
+def _runtime_error_block(payload: dict[str, Any]) -> str:
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    err = diag.get("runtime_error") if isinstance(diag.get("runtime_error"), dict) else {}
+    if not err:
+        return ""
+    reason = str(err.get("reason") or "runtime_error")
+    excerpt = str(err.get("excerpt") or "").replace("\r", "")
+    # Show only the most useful traceback lines.
+    lines = [line.strip() for line in excerpt.splitlines() if line.strip()]
+    useful = []
+    for line in lines:
+        if any(token in line for token in ("Traceback", "File ", "AttributeError", "RuntimeError", "Exception")):
+            useful.append(line)
+        if len(useful) >= 6:
+            break
+    return "\n".join([
+        "🚨 Runtime error",
+        f"• Причина: {reason}",
+        "• Важно: этот run не дошёл до полного CandidateFactory/fallback цикла; coverage/ledger ниже могут быть построены по cached inventory.",
+        "• Trace: " + " | ".join(useful[:6]) if useful else "• Trace: см. latest-run-bot.log",
+    ])
+
+
 def render(payload: dict[str, Any]) -> str:
     text = v8.render(payload).replace("HARIZON run report v8", "HARIZON run report v9")
+    runtime_block = _runtime_error_block(payload)
+    if runtime_block and "\n📦 Покрытие" in text:
+        text = text.replace("\n📦 Покрытие", "\n\n" + runtime_block + "\n\n📦 Покрытие", 1)
     text = _strip_controlled_pool_block(text)
     block = _pool_info_block(payload)
     if block and "\n📌 Вывод" in text:

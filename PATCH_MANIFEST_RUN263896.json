@@ -1,0 +1,18 @@
+{
+  "name": "sports-bot-run263896-runtime-preflight-ledger-fix",
+  "source_run": "run-bot-26389644785",
+  "problem": "app.cli crashed because RuntimePreflight.apply_phase_policy was missing; no full CandidateFactory/fallback cycle ran.",
+  "changed_files": [
+    "app/services/runtime_preflight.py",
+    "scripts/send_harizon_telegram_run_report_v9.py",
+    "scripts/update_prediction_ledger.py",
+    "tests/test_run263896_runtime_preflight_and_v9.py",
+    "README_RUN263896_RUNTIME_PRELIGHT_FIX.md",
+    "run263896-runtime-preflight-ledger.patch"
+  ],
+  "publication_guards_changed": false,
+  "checks": [
+    "python -m py_compile app/services/runtime_preflight.py scripts/send_harizon_telegram_run_report_v9.py scripts/update_prediction_ledger.py",
+    "PYTHONPATH=. pytest -q tests/test_run263896_runtime_preflight_and_v9.py"
+  ]
+}

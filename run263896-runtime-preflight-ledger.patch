@@ -1,0 +1,280 @@
+--- a/app/services/runtime_preflight.py
++++ b/app/services/runtime_preflight.py
+@@ -174,6 +174,18 @@
+         self.write_report(report)
+         return report
+ 
++
++    def apply_phase_policy(self, stage: str = "phase_policy_before_run_once") -> PreflightReport:
++        """Apply the production phase policy expected by app.cli.
++
++        app.cli calls this method before `run-once`.  The accumulation-stage
++        refactor accidentally removed it and caused the whole production run to
++        stop before CandidateFactory/fallback artifacts were created.  Keep the
++        method small and explicit: it runs the same pre-run preparation as the
++        native preflight path and writes the normal preflight audit.
++        """
++        return self.run_before_prediction(stage=stage)
++
+     def write_report(self, report: PreflightReport) -> None:
+         try:
+             self.export_dir.mkdir(parents=True, exist_ok=True)
+--- a/scripts/send_harizon_telegram_run_report_v9.py
++++ b/scripts/send_harizon_telegram_run_report_v9.py
+@@ -20,6 +20,7 @@
+ V8_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v8.py")
+ EXPORT_DIR = Path(".data/exports")
+ STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v9-status.json"
++RUN_LOG_PATH = EXPORT_DIR / "latest-run-bot.log"
+ 
+ 
+ def _load_v8() -> Any:
+@@ -75,6 +76,30 @@
+         pass
+ 
+ 
++
++def _runtime_error_from_log() -> dict[str, Any]:
++    try:
++        if not RUN_LOG_PATH.exists() or RUN_LOG_PATH.stat().st_size <= 0:
++            return {}
++        text = RUN_LOG_PATH.read_text(encoding="utf-8", errors="replace")
++    except Exception:
++        return {}
++    if "Traceback (most recent call last)" not in text and "AttributeError:" not in text and "RuntimeError:" not in text:
++        return {}
++    reason = "runtime_error"
++    if "RuntimePreflight" in text and "apply_phase_policy" in text:
++        reason = "runtime_preflight_apply_phase_policy_missing"
++    # Keep the traceback compact for Telegram and JSON.
++    idx = text.find("Traceback (most recent call last)")
++    excerpt = text[idx: idx + 2200] if idx >= 0 else text[-2200:]
++    return {
++        "status": "error",
++        "reason": reason,
++        "excerpt": excerpt,
++        "log_path": str(RUN_LOG_PATH),
++    }
++
++
+ def is_real_pool_filter(key: str) -> bool:
+     name = str(key or "").strip()
+     if not name or name == "day_inventory_membership_keys":
+@@ -102,6 +127,17 @@
+     payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier"
+     payload["report_renderer"] = "v9"
+     diag = payload.setdefault("diagnostics", {})
++    runtime_error = _runtime_error_from_log()
++    if runtime_error:
++        diag["runtime_error"] = runtime_error
++        payload["status"] = "runtime_failed"
++        payload["status_ru"] = "🔴 runtime упал до построения полного пайплайна"
++        payload["top_reason"] = runtime_error.get("reason") or "runtime_error"
++        payload["reasons"] = [{
++            "reason": payload["top_reason"],
++            "reason_ru": "ошибка runtime до полного построения кандидатов",
++            "count": 1,
++        }]
+     fallback = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
+     pool_counts = fallback.get("pool_counts") if isinstance(fallback.get("pool_counts"), dict) else {}
+     real_filters = pool_filter_counts(pool_counts)
+@@ -190,8 +226,35 @@
+     return text
+ 
+ 
++
++def _runtime_error_block(payload: dict[str, Any]) -> str:
++    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
++    err = diag.get("runtime_error") if isinstance(diag.get("runtime_error"), dict) else {}
++    if not err:
++        return ""
++    reason = str(err.get("reason") or "runtime_error")
++    excerpt = str(err.get("excerpt") or "").replace("\r", "")
++    # Show only the most useful traceback lines.
++    lines = [line.strip() for line in excerpt.splitlines() if line.strip()]
++    useful = []
++    for line in lines:
++        if any(token in line for token in ("Traceback", "File ", "AttributeError", "RuntimeError", "Exception")):
++            useful.append(line)
++        if len(useful) >= 6:
++            break
++    return "\n".join([
++        "🚨 Runtime error",
++        f"• Причина: {reason}",
++        "• Важно: этот run не дошёл до полного CandidateFactory/fallback цикла; coverage/ledger ниже могут быть построены по cached inventory.",
++        "• Trace: " + " | ".join(useful[:6]) if useful else "• Trace: см. latest-run-bot.log",
++    ])
++
++
+ def render(payload: dict[str, Any]) -> str:
+     text = v8.render(payload).replace("HARIZON run report v8", "HARIZON run report v9")
++    runtime_block = _runtime_error_block(payload)
++    if runtime_block and "\n📦 Покрытие" in text:
++        text = text.replace("\n📦 Покрытие", "\n\n" + runtime_block + "\n\n📦 Покрытие", 1)
+     text = _strip_controlled_pool_block(text)
+     block = _pool_info_block(payload)
+     if block and "\n📌 Вывод" in text:
+--- a/scripts/update_prediction_ledger.py
++++ b/scripts/update_prediction_ledger.py
+@@ -20,6 +20,7 @@
+ EXPORT_DIR = ROOT / '.data' / 'exports'
+ LEDGER = ROOT / '.data' / 'prediction-ledger.jsonl'
+ SUMMARY = EXPORT_DIR / 'latest-prediction-ledger-summary.json'
++RUN_LOG = EXPORT_DIR / 'latest-run-bot.log'
+ 
+ 
+ def load_json(path: Path, default: Any) -> Any:
+@@ -32,6 +33,46 @@
+ def write_json(path: Path, payload: Any) -> None:
+     path.parent.mkdir(parents=True, exist_ok=True)
+     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
++
++
++
++def runtime_error_row() -> dict[str, Any] | None:
++    try:
++        text = RUN_LOG.read_text(encoding='utf-8', errors='replace')
++    except Exception:
++        return None
++    if 'Traceback (most recent call last)' not in text and 'AttributeError:' not in text and 'RuntimeError:' not in text:
++        return None
++    reason = 'runtime_error'
++    if 'RuntimePreflight' in text and 'apply_phase_policy' in text:
++        reason = 'runtime_preflight_apply_phase_policy_missing'
++    run_id = os.getenv('GITHUB_RUN_ID') or datetime.now(UTC).strftime('%Y%m%d%H%M%S')
++    return {
++        'ledger_id': f'{run_id}|runtime_error|{reason}',
++        'run_id': run_id,
++        'created_at_utc': datetime.now(UTC).isoformat(),
++        'candidate_key': 'runtime_error',
++        'status': 'runtime_error',
++        'stage_seen': ['run_once'],
++        'match_key': None,
++        'home_team': None,
++        'away_team': None,
++        'league_name': None,
++        'kickoff_utc': None,
++        'family': None,
++        'selection': None,
++        'point': None,
++        'odds': None,
++        'ev_pct': None,
++        'edge_pp': None,
++        'confidence': None,
++        'quality': None,
++        'odds_sources_count': None,
++        'context_sources_count': None,
++        'books_count': None,
++        'reasons': [reason],
++        'settlement': {},
++    }
+ 
+ 
+ def norm(value: Any) -> str:
+@@ -146,6 +187,9 @@
+             'reasons': r,
+             'settlement': row.get('settlement') if isinstance(row.get('settlement'), dict) else {},
+         })
++    err = runtime_error_row()
++    if err is not None:
++        out.append(err)
+     return out
+ 
+ 
+--- a/tests/test_run263896_runtime_preflight_and_v9.py
++++ b/tests/test_run263896_runtime_preflight_and_v9.py
+@@ -0,0 +1,68 @@
++
++from pathlib import Path
++import importlib.util
++import json
++import os
++import sys
++
++def load_module(path: Path, name: str):
++    spec = importlib.util.spec_from_file_location(name, path)
++    module = importlib.util.module_from_spec(spec)
++    assert spec and spec.loader
++    sys.modules[name] = module
++    spec.loader.exec_module(module)
++    return module
++
++def test_runtime_preflight_has_apply_phase_policy(monkeypatch, tmp_path):
++    mod = load_module(Path("app/services/runtime_preflight.py"), "runtime_preflight_test")
++    monkeypatch.setenv("RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED", "false")
++    monkeypatch.setenv("LEGACY_RUNTIME_EXTENSIONS_ENABLED", "false")
++    preflight = mod.RuntimePreflight(export_dir=tmp_path)
++    report = preflight.apply_phase_policy()
++    assert report.stage == "phase_policy_before_run_once"
++    assert (tmp_path / "latest-runtime-preflight.json").exists()
++
++def test_v9_runtime_error_detection(tmp_path, monkeypatch):
++    v8_stub = Path("scripts/send_harizon_telegram_run_report_v8.py")
++    if not v8_stub.exists():
++        v8_stub.write_text(
++            "from types import SimpleNamespace\n"
++            "def build_payload(): return {'diagnostics': {}, 'funnel': {}}\n"
++            "def render(payload): return '🧾 HARIZON run report v8\\n\\n📦 Покрытие\\n'\n"
++            "v7=SimpleNamespace(v5=SimpleNamespace(OUT_V5_JSON='x.json', OUT_V5_TXT='x.txt', OUT_JSON='y.json', OUT_TXT='y.txt', write_json=lambda *a, **k: None, write_text=lambda *a, **k: None, send_telegram=lambda text: {'sent': False}))\n",
++            encoding='utf-8',
++        )
++    mod = load_module(Path("scripts/send_harizon_telegram_run_report_v9.py"), "v9_runtime_error_test")
++    monkeypatch.chdir(tmp_path)
++    p = tmp_path / ".data" / "exports"
++    p.mkdir(parents=True)
++    (p / "latest-run-bot.log").write_text(
++        "Traceback (most recent call last):\n"
++        "AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'\n",
++        encoding="utf-8",
++    )
++    err = mod._runtime_error_from_log()
++    assert err["reason"] == "runtime_preflight_apply_phase_policy_missing"
++    block = mod._runtime_error_block({"diagnostics": {"runtime_error": err}})
++    assert "Runtime error" in block
++    assert "apply_phase_policy" in block
++
++def test_prediction_ledger_records_runtime_error(tmp_path, monkeypatch):
++    mod = load_module(Path("scripts/update_prediction_ledger.py"), "ledger_runtime_error_test")
++    monkeypatch.chdir(tmp_path)
++    monkeypatch.setenv("GITHUB_RUN_ID", "123")
++    p = tmp_path / ".data" / "exports"
++    p.mkdir(parents=True)
++    (p / "latest-run-bot.log").write_text(
++        "Traceback (most recent call last):\n"
++        "AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'\n",
++        encoding="utf-8",
++    )
++    mod.ROOT = tmp_path
++    mod.EXPORT_DIR = p
++    mod.LEDGER = tmp_path / ".data" / "prediction-ledger.jsonl"
++    mod.SUMMARY = p / "latest-prediction-ledger-summary.json"
++    mod.RUN_LOG = p / "latest-run-bot.log"
++    rows = mod.collect_current_rows()
++    assert rows and rows[0]["status"] == "runtime_error"
++    assert "runtime_preflight_apply_phase_policy_missing" in rows[0]["reasons"]
+--- a/README_RUN263896_RUNTIME_PRELIGHT_FIX.md
++++ b/README_RUN263896_RUNTIME_PRELIGHT_FIX.md
+@@ -0,0 +1,23 @@
++# run263896 runtime-preflight + accumulation fix
++
++## Problem seen in run-bot-26389644785
++
++The Telegram report was v9, but the production `run-once` did not complete.
++`latest-run-bot.log` contains:
++
++`AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'`
++
++Because `run-once` crashed before the full CandidateFactory/fallback cycle:
++- only cached/bootstrap evidence was available;
++- controlled fallback report was not produced;
++- prediction ledger stayed empty;
++- v9 could not explain the real root cause and showed stale/cached coverage.
++
++## Fix
++
++- Adds `RuntimePreflight.apply_phase_policy()` and maps it to the normal pre-run preparation path.
++- Makes v9 detect runtime tracebacks in `latest-run-bot.log` and clearly render a runtime error block.
++- Makes `update_prediction_ledger.py` add a `runtime_error` row when a run crashes before candidates are available.
++- Adds regression tests.
++
++Publication guards are unchanged.
