@@ -1,26 +1,34 @@
 {
+  "accumulation_filter": {
+    "excluded_coverage_only_rows": 2,
+    "line_less_rows_ambiguous": 0,
+    "line_less_rows_collapsed": 0,
+    "merged_keys": 3,
+    "prediction_rows": 1,
+    "pruned_existing_coverage_only_rows": 0,
+    "raw_artifact_rows": 9
+  },
   "by_status": {
-    "rejected_or_watch": 29,
+    "rejected_or_watch": 30,
     "runtime_error": 1,
     "watch_only": 1
   },
-  "current_run_id": "26396684482",
-  "current_run_rows": 5,
+  "current_run_id": "26397832790",
+  "current_run_rows": 1,
   "ledger_path": "/home/runner/work/sports-bot/sports-bot/.data/prediction-ledger.jsonl",
-  "new_rows_added": 5,
+  "new_rows_added": 1,
   "notes": [
     "Use this ledger for forward testing before trusting ROI.",
-    "Published/rejected/watch-only rows are accumulated; settlement fields can be filled by a future results job.",
-    "rows_missing_core_metrics_current_run is the main quality signal; total may include older rows produced before ledger fixes.",
-    "quality/confidence are optional when a row never reached fallback; they should not make a valid EV/edge row look broken."
+    "api_coverage-only rows are excluded from the ledger; they belong in candidate-opportunity audit.",
+    "quality/confidence are optional analytics fields; core metrics are identity + odds + EV + edge."
   ],
-  "rows_missing_core_metrics_current_run": 1,
+  "rows_missing_core_metrics_current_run": 0,
   "rows_missing_core_metrics_total": 9,
   "status": "ok",
   "top_reasons": [
     [
       "post_calibration_probability_guard",
-      14
+      15
     ],
     [
       "xg_direction_conflict",
@@ -104,7 +112,7 @@
     ],
     [
       "context_sources_below_relief_min",
-      3
+      4
     ],
     [
       "модель слишком оптимистична относительно xG-ориентира",
@@ -139,6 +147,6 @@
       2
     ]
   ],
-  "total_rows": 31,
-  "updated_at_utc": "2026-05-25T11:03:18.922471+00:00"
+  "total_rows": 32,
+  "updated_at_utc": "2026-05-25T11:32:10.011548+00:00"
 }
