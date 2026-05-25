@@ -22,6 +22,7 @@ from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
 from app.services.publication_tiers import classify_publication_tier
+from app.services.candidate_lifecycle_state import record_candidate_lifecycle
 from app.services.publication_lifecycle import (
     append_sent_candidate_index,
     candidate_dedupe_keys,
@@ -1827,6 +1828,7 @@ class PredictionRunner:
             candidate.source_summary['line_movement_lifecycle_status'] = str((tier_decision.report.get('line_movement') or {}).get('status') or '')
             candidate.source_summary['found_value'] = True
             candidate.source_summary['can_publish'] = bool(tier_decision.passed)
+            record_candidate_lifecycle(candidate, tier_decision.report, list(tier_decision.reasons), now=datetime.now(UTC))
             if not tier_decision.passed:
                 candidate.source_summary['publish_coverage_reasons'] = list(tier_decision.reasons)
                 candidate.reasons.extend(f'publish_tier={reason}' for reason in tier_decision.reasons)

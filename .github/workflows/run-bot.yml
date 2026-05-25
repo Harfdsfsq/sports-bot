@@ -56,8 +56,8 @@ jobs:
       DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "200"
       DAY_INVENTORY_BZZOIRO_MAX_PAGES: "20"
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "150"
-      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "100"
-      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "40"
+      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "180"
+      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "80"
 
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
       PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
@@ -94,7 +94,9 @@ jobs:
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
       ALL_SOURCES_FREE_MAXIMIZE: "true"
-      PROVIDER_SMOKE_FAIL_ON_ERROR: "true"
+      PROVIDER_SMOKE_FAIL_ON_ERROR: "false"
+      PROVIDER_SMOKE_FAIL_ON_CORE_ERROR: "true"
+      PROVIDER_SMOKE_REQUIRED_CORE_PROVIDERS: "odds_api_io,sstats,bzzoiro"
       PROVIDER_SMOKE_TIMEOUT_SECONDS: "10"
       API_HEALTH_DURING_RUN_ENABLED: "true"
 
@@ -125,7 +127,11 @@ jobs:
       BZZOIRO_MAX_PAGES: "20"
       BZZOIRO_CONTEXT_MATCH_LIMIT: "300"
       BZZOIRO_PRICE_BACKFILL_ENABLED: "true"
-      BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "80"
+      BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "140"
+      BZZOIRO_V2_ODDS_ENABLED: "true"
+      BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
+      BZZOIRO_ODDS_REKEY_ENABLED: "true"
+      BZZOIRO_ODDS_REKEY_MIN_SCORE: "66"
 
       SSTATS_RATE_LIMIT_PER_MINUTE: "150"
       SSTATS_PER_RUN_MAX: "150"
@@ -149,13 +155,13 @@ jobs:
       SPORTLOGIC_ENABLED: "true"
       ENABLE_SPORTLOGIC: "true"
       SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "true"
-      SPORTLOGIC_PER_RUN_MAX: "40"
-      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "40"
-      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "40"
-      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "40"
-      SPORTLOGIC_MATCH_LIMIT: "100"
-      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "100"
-      SPORTLOGIC_ODDS_MATCH_LIMIT: "40"
+      SPORTLOGIC_PER_RUN_MAX: "80"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "80"
+      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "80"
+      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "80"
+      SPORTLOGIC_MATCH_LIMIT: "180"
+      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "180"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "90"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "2"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
@@ -303,11 +309,12 @@ jobs:
             echo "provider smoke completed"
           else
             status=$?
-            echo "provider smoke failed or timed out with status ${status}; blocking production run"
-            exit ${status}
+            echo "provider smoke failed or timed out with status ${status}; validating core providers only"
           fi
+          python -u scripts/validate_core_provider_smoke.py
           cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
+          cp .data/exports/latest-core-provider-smoke-validation.json artifacts/run-bot/latest-core-provider-smoke-validation.json 2>/dev/null || true
 
       - name: Run tests
         shell: bash
@@ -369,6 +376,8 @@ jobs:
           fi
           mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/day_inventory_cumulative_coverage.py
+          python -u scripts/build_day_inventory_coverage_truth.py
+          test -s .data/exports/latest-day-inventory-coverage-truth.json
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true

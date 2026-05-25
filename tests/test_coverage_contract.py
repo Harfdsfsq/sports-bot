@@ -85,8 +85,10 @@ def test_publish_contract_accepts_two_price_and_two_context_sources(monkeypatch)
     assert decision.report["context_sources"] == ["football_data", "sstats"]
 
 
-def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch):
+def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch, tmp_path):
     monkeypatch.setenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
+    monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", str(tmp_path / "line_movement_state.json"))
+    monkeypatch.setenv("CANDIDATE_LIFECYCLE_STATE_PATH", str(tmp_path / "candidate_lifecycle_state.json"))
     settings = Settings(_env_file=None, PUBLISH_DRY_RUN=True)
     runner = PredictionRunner(settings)
     item = candidate(

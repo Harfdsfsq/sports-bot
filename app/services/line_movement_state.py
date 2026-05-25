@@ -55,6 +55,12 @@ def _norm(value: Any) -> str:
 
 def _line_key(candidate: Any) -> str:
     match_key = _norm(_get(candidate, "match_key"))
+    if not match_key:
+        home = _norm(_get(candidate, "home_team"))
+        away = _norm(_get(candidate, "away_team"))
+        kickoff = _norm(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc"))
+        league = _norm(_get(candidate, "league_name"))
+        match_key = "|".join(x for x in (league, home, away, kickoff) if x)
     family = _norm(_get(candidate, "family"))
     selection = _norm(_get(candidate, "selection_key") or _get(candidate, "selection"))
     point = _get(candidate, "point")
@@ -184,6 +190,11 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     lines[key] = entry
     state["updated_at_utc"] = now.isoformat()
     _write(path, state)
+    try:
+        latest_path = path.parent / "latest.json"
+        _write(latest_path, state)
+    except Exception:
+        latest_path = None
 
     return {
         "passed": passed,
@@ -197,5 +208,6 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         "lead_minutes": round(lead_minutes, 2) if lead_minutes is not None else None,
         "no_more_cron_before_kickoff": no_next_run,
         "state_path": str(path),
+        "latest_state_path": str(latest_path) if latest_path else None,
         "previous_snapshot_at_utc": previous.get("captured_at_utc") if isinstance(previous, dict) else None,
     }
