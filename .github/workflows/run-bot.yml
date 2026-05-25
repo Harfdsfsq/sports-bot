@@ -342,25 +342,6 @@ jobs:
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
 
-      - name: Update inventory priority and line movement state
-        shell: bash
-        run: |
-          set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip inventory priority/line movement: fresh run-bot log was not created"
-            exit 0
-          fi
-          mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
-          echo "inventory priority and line movement update start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          python -u scripts/update_day_inventory_priority_and_line_state.py || true
-          python -u scripts/repair_inventory_refresh_plan_counts.py || true
-          cp .data/exports/latest-day-inventory-priority-and-line-state.json artifacts/run-bot/latest-day-inventory-priority-and-line-state.json 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-refresh-plan.json artifacts/run-bot/latest-day-inventory-refresh-plan.json 2>/dev/null || true
-          cp .data/exports/latest-inventory-refresh-plan-count-repair.json artifacts/run-bot/latest-inventory-refresh-plan-count-repair.json 2>/dev/null || true
-          cp .data/exports/latest-line-movement-guard-report.json artifacts/run-bot/latest-line-movement-guard-report.json 2>/dev/null || true
-          cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
-          cp -r .data/line_history artifacts/run-bot/line_history || true
-
       - name: Publish controlled fallback
         shell: bash
         run: |
@@ -385,7 +366,9 @@ jobs:
             exit 0
           fi
           mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
+          python -u scripts/repair_inventory_evidence_key_aliases.py || true
           python -u scripts/day_inventory_cumulative_coverage.py || true
+          cp .data/exports/latest-inventory-evidence-key-aliases.json artifacts/run-bot/latest-inventory-evidence-key-aliases.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
@@ -404,6 +387,23 @@ jobs:
           python scripts/normalize_published_pick_payloads.py || true
           cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
 
+      - name: Build prediction analysis artifacts
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip prediction analysis artifacts: fresh run-bot log was not created"
+            exit 0
+          fi
+          python scripts/build_candidate_opportunity_audit.py || true
+          python scripts/build_prediction_calibration_audit.py || true
+          python scripts/update_prediction_ledger.py || true
+          cp .data/exports/latest-candidate-opportunity-audit.json artifacts/run-bot/latest-candidate-opportunity-audit.json 2>/dev/null || true
+          cp .data/exports/latest-prediction-calibration-audit.json artifacts/run-bot/latest-prediction-calibration-audit.json 2>/dev/null || true
+          cp .data/exports/latest-prediction-ledger-summary.json artifacts/run-bot/latest-prediction-ledger-summary.json 2>/dev/null || true
+          cp .data/prediction-ledger.jsonl artifacts/run-bot/prediction-ledger.jsonl 2>/dev/null || true
+
       - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
@@ -413,11 +413,12 @@ jobs:
             echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+          python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
           cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
+          cp .data/exports/latest-harizon-telegram-run-report-v9-status.json artifacts/run-bot/latest-harizon-telegram-run-report-v9-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
 
       - name: Commit runtime artifacts
@@ -431,7 +432,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/prediction-ledger.jsonl .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
           git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
@@ -463,6 +464,7 @@ jobs:
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
             .data/candidate-lifecycle-state.json
+            .data/prediction-ledger.jsonl
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 7

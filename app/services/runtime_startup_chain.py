@@ -76,7 +76,9 @@ MODULES = [
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',
+    'app.services.candidate_inventory_evidence_annotation_patch',
     'app.services.candidate_factory_runtime_diagnostics',
+    'app.services.candidate_factory_output_dedup_patch',
 ]
 
 
