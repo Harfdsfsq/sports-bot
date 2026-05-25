@@ -97,6 +97,8 @@ def record_candidate_lifecycle(candidate: Any, tier_report: dict[str, Any], reas
         "found_value_but_blocked": bool(tier_report.get("found_value_but_blocked")),
         "odds_sources_count": int(tier_report.get("odds_sources_count") or 0),
         "context_sources_count": int(tier_report.get("context_sources_count") or 0),
+        "quality_passed": bool(tier_report.get("quality_passed", True)),
+        "candidate_stage": str(tier_report.get("candidate_stage") or ""),
         "line_movement_status": str((line or {}).get("status") or ""),
         "line_movement_passed": bool((line or {}).get("passed")),
         "line_snapshot_count": int((line or {}).get("snapshot_count") or 0),
@@ -111,6 +113,7 @@ def record_candidate_lifecycle(candidate: Any, tier_report: dict[str, Any], reas
         "tier_b_publishable": sum(1 for item in candidates.values() if item.get("publication_tier") == "B" and item.get("can_publish")),
         "waiting_line_movement": sum(1 for item in candidates.values() if "wait" in str(item.get("publication_tier") or "") or item.get("line_movement_status") == "awaiting_next_run"),
         "found_value_but_blocked": sum(1 for item in candidates.values() if item.get("found_value_but_blocked")),
+        "quality_blocked": sum(1 for item in candidates.values() if item.get("quality_passed") is False),
     }
     state["updated_at_utc"] = now.isoformat()
     state["counts"] = counts

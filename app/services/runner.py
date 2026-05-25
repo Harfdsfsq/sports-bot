@@ -462,6 +462,28 @@ class PredictionRunner:
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
             candidates_before_quality = list(raw_candidates)
             raw_candidates, quality_rejections, quality_debug = self.quality.apply_to_candidates(raw_candidates, quality_report, now_utc)
+            quality_passed_ids = {id(item) for item in raw_candidates}
+            for candidate in candidates_before_quality:
+                try:
+                    tier_decision = classify_publication_tier(candidate, self.settings, now=now_utc)
+                    lifecycle_report = dict(tier_decision.report)
+                    quality_passed = id(candidate) in quality_passed_ids
+                    lifecycle_report['quality_passed'] = bool(quality_passed)
+                    lifecycle_report['candidate_stage'] = 'post_quality' if quality_passed else 'blocked_before_quality_publish'
+                    lifecycle_report['found_value'] = True
+                    if not quality_passed:
+                        lifecycle_report['can_publish'] = False
+                        lifecycle_report['publication_tier_passed'] = False
+                        lifecycle_report['found_value_but_blocked'] = True
+                    lifecycle_reasons = list(tier_decision.reasons)
+                    if not quality_passed:
+                        lifecycle_reasons.append('quality_blocked_before_publication')
+                    record_candidate_lifecycle(candidate, lifecycle_report, lifecycle_reasons, now=now_utc)
+                    candidate.source_summary['publication_tier_report'] = lifecycle_report
+                    candidate.source_summary['publication_tier'] = str(lifecycle_report.get('publication_tier') or tier_decision.tier)
+                    candidate.source_summary['line_movement_lifecycle_status'] = str((lifecycle_report.get('line_movement') or {}).get('status') or '')
+                except Exception as exc:
+                    self.provider_runtime_errors['candidate_lifecycle_state'].append(self._format_exception(exc))
             for reason, count in quality_rejections.items():
                 rejections[f'quality_{reason}'] = rejections.get(f'quality_{reason}', 0) + count
 

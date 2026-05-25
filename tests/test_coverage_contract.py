@@ -146,3 +146,27 @@ def test_inventory_keeps_books_and_independent_odds_sources_separate(monkeypatch
     assert counts["matches_with_2plus_price_confirmations"] == 1
     assert counts["matches_with_2plus_odds_sources"] == 0
     assert counts["matches_ready_for_publish"] == 0
+
+
+def test_publish_contract_reports_line_sources_separately_for_b_tier(monkeypatch):
+    monkeypatch.setenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE", "true")
+    item = candidate(
+        sources_count=1,
+        books_count=2,
+        source_summary={
+            "sources": ["odds_api_io"],
+            "books": ["Bet365", "Unibet"],
+            "context_sources": ["sstats"],
+        },
+        raw_bucket_offers=[
+            {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Over", "point": 2.5, "price": 1.91},
+            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Over", "point": 2.5, "price": 1.92},
+        ],
+    )
+
+    decision = evaluate_publish_candidate(item, Settings(_env_file=None))
+
+    assert not decision.passed
+    assert decision.report["odds_sources_count"] == 1
+    assert decision.report["line_sources_count"] >= 2
+    assert decision.report["context_sources_count"] == 1

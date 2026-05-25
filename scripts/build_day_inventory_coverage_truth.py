@@ -215,17 +215,21 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int, line_state: 
     csrc = context_sources(row)
     pc = price_confirmations(row)
     cc = len(csrc)
-    has_odds = bool(cov.get("odds")) or pc > 0
-    has_context = bool(cov.get("context")) or cc > 0
+    line_evidence_count = max(pc, len(osrc), count_from_metadata(row, "line_sources_count", "price_sources_count"))
+    cc_effective = max(cc, count_from_metadata(row, "context_sources_count", "context_source_count"))
+    has_odds = bool(cov.get("odds")) or line_evidence_count > 0
+    has_context = bool(cov.get("context")) or cc_effective > 0
     missing: list[str] = []
     if pc < min_odds:
         missing.append("price_confirmations")
     if len(osrc) < min_odds:
         missing.append("independent_odds_sources")
-    if cc < min_context:
+    if cc_effective < min_context:
         missing.append("context_sources")
-    ready_tier_a_coverage = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
-    ready_tier_b_coverage = has_odds and has_context and pc >= 1 and len(osrc) >= 1 and cc >= 1
+    ready_tier_a_coverage = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc_effective >= min_context
+    # B-tier needs 1+ line/price evidence and 1+ context.  It does not require
+    # two independent odds providers, but it still requires confirmed movement.
+    ready_tier_b_coverage = has_odds and has_context and line_evidence_count >= 1 and cc_effective >= 1
     movement = line_status_for_row(row, line_state)
     movement_status = str(movement.get("status") or "")
     ready_tier_a = ready_tier_a_coverage and movement_status in {"movement_confirmed", "publish_now_no_next_cron"}
@@ -242,9 +246,10 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int, line_state: 
         "odds_sources": osrc,
         "odds_sources_count": len(osrc),
         "price_confirmations": pc,
+        "line_evidence_count": line_evidence_count,
         "books_count": max(count_from_metadata(row, "books_count"), len(list_from_any(row.get("books")))),
         "context_sources": csrc,
-        "context_sources_count": cc,
+        "context_sources_count": cc_effective,
         "has_odds": has_odds,
         "has_context": has_context,
         "ready_for_model": bool(cov.get("ready_for_model")) or (has_odds and has_context),
@@ -259,7 +264,8 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int, line_state: 
         "line_declined_after_second_snapshot": declined_after_second_snapshot,
         "need_price_confirmations": max(0, min_odds - pc),
         "need_odds_sources": max(0, min_odds - len(osrc)),
-        "need_context_sources": max(0, min_context - cc),
+        "need_context_sources": max(0, min_context - cc_effective),
+        "need_line_evidence_for_tier_b": max(0, 1 - line_evidence_count),
         "missing": missing,
     }
 
@@ -275,6 +281,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "odds_sources_count",
         "odds_sources",
         "price_confirmations",
+        "line_evidence_count",
         "books_count",
         "context_sources_count",
         "context_sources",
@@ -293,6 +300,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "need_price_confirmations",
         "need_odds_sources",
         "need_context_sources",
+        "need_line_evidence_for_tier_b",
         "missing",
     ]
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -323,6 +331,7 @@ def main() -> int:
         "matches_with_odds": sum(1 for r in rows if r["has_odds"]),
         "matches_with_context": sum(1 for r in rows if r["has_context"]),
         "matches_with_2plus_price_confirmations": sum(1 for r in rows if r["price_confirmations"] >= min_odds),
+        "matches_with_1plus_line_evidence": sum(1 for r in rows if r["line_evidence_count"] >= 1),
         "matches_with_2plus_odds_sources": sum(1 for r in rows if r["odds_sources_count"] >= min_odds),
         "matches_with_2plus_context_sources": sum(1 for r in rows if r["context_sources_count"] >= min_context),
         "matches_ready_for_model": sum(1 for r in rows if r["ready_for_model"]),
@@ -337,6 +346,8 @@ def main() -> int:
         "candidate_lifecycle_waiting_line_movement": as_int((lifecycle.get("counts") or {}).get("waiting_line_movement")) if isinstance(lifecycle, dict) else 0,
         "candidate_lifecycle_tier_a_publishable": as_int((lifecycle.get("counts") or {}).get("tier_a_publishable")) if isinstance(lifecycle, dict) else 0,
         "candidate_lifecycle_tier_b_publishable": as_int((lifecycle.get("counts") or {}).get("tier_b_publishable")) if isinstance(lifecycle, dict) else 0,
+        "candidate_lifecycle_found_value_but_blocked": as_int((lifecycle.get("counts") or {}).get("found_value_but_blocked")) if isinstance(lifecycle, dict) else 0,
+        "candidate_lifecycle_quality_blocked": as_int((lifecycle.get("counts") or {}).get("quality_blocked")) if isinstance(lifecycle, dict) else 0,
     }
     counts["matches_missing_price_2plus"] = max(0, len(rows) - counts["matches_with_2plus_price_confirmations"])
     counts["matches_missing_odds_source_2plus"] = max(0, len(rows) - counts["matches_with_2plus_odds_sources"])
@@ -357,7 +368,7 @@ def main() -> int:
             "odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.",
             "price_confirmations is bookmaker/line depth and is tracked separately from provider independence.",
             "A-tier requires 2+ price confirmations, 2+ independent odds sources, 2+ context sources, and confirmed line movement or no next cron window.",
-            "B-tier requires 1+ independent odds source, 1+ context source, confirmed second line movement snapshot, and value still alive at candidate time.",
+            "B-tier requires 1+ line/price evidence, 1+ context source, confirmed second line movement snapshot, and value still alive at candidate time.",
             "Inventory truth can prove coverage and line-state; final candidate lifecycle proves value-vs-publication decisions.",
         ],
     }

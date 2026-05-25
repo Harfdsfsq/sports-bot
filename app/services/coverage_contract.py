@@ -359,6 +359,15 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
     books_count = max(len(books), _as_int(_get(candidate, "books_count", 0), 0))
     odds_sources = set(odds_report["odds_sources"])
     odds_source_count = int(odds_report["odds_sources_count"])
+    # "line/price evidence" is intentionally separate from strict independent
+    # provider count.  A-tier uses independent providers; B-tier can use one
+    # confirmed line source/bookmaker plus movement confirmation.
+    line_sources_count = max(
+        odds_source_count,
+        books_count,
+        _as_int(_get(candidate, "price_sources_count", 0), 0),
+        _as_int(_get(candidate, "line_sources_count", 0), 0),
+    )
     context_declared_count, context_basis = _declared_count(candidate, CONTEXT_SOURCE_COUNT_KEYS)
     context_source_count = len(context_sources) if context_sources else context_declared_count
 
@@ -385,6 +394,8 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
         "context_sources_basis": context_basis,
         "books": sorted(books),
         "books_count": books_count,
+        "price_sources_count": line_sources_count,
+        "line_sources_count": line_sources_count,
     }
     return CoverageDecision(passed=not reasons, reasons=tuple(reasons), report=report)
 
@@ -405,7 +416,8 @@ def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None)
     source_summary["publish_coverage_reasons"] = list(decision.reasons)
     source_summary["odds_sources_count"] = int(report.get("odds_sources_count") or 0)
     source_summary["independent_odds_sources_count"] = int(report.get("odds_sources_count") or 0)
-    source_summary["price_sources_count"] = int(report.get("odds_sources_count") or 0)
+    source_summary["price_sources_count"] = int(report.get("price_sources_count") or report.get("odds_sources_count") or 0)
+    source_summary["line_sources_count"] = int(report.get("line_sources_count") or report.get("price_sources_count") or 0)
     source_summary["exact_odds_sources"] = list(report.get("odds_sources") or [])
     source_summary["odds_sources"] = list(report.get("odds_sources") or [])
     source_summary["context_sources_count"] = int(report.get("context_sources_count") or 0)

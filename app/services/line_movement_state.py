@@ -154,6 +154,20 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     current = _snapshot(candidate, now)
     current_odds = _float(current.get("odds"), 0.0)
     previous_odds = _float(previous.get("odds") if isinstance(previous, dict) else None, 0.0)
+
+    # A second snapshot must come from a later regular run, not from another
+    # script in the same workflow seconds later.  This keeps the lifecycle:
+    # first snapshot -> wait next run -> second snapshot -> publish/decline.
+    min_recheck_minutes = float(os.getenv("LINE_MOVEMENT_MIN_RECHECK_MINUTES") or 60.0)
+    previous_at = _dt(previous.get("captured_at_utc")) if isinstance(previous, dict) else None
+    previous_age_minutes = ((now - previous_at).total_seconds() / 60.0) if previous_at else None
+    too_soon_for_second_snapshot = (
+        previous is not None
+        and previous_age_minutes is not None
+        and previous_age_minutes < min_recheck_minutes
+        and not no_next_run
+    )
+
     line_move_pct = 0.0
     adverse_drift = False
     if previous_odds > 1.0 and current_odds > 1.0:
@@ -168,6 +182,10 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         status = "awaiting_next_run"
         passed = False
         reasons.append("needs_next_cron_line_movement_recheck")
+    elif too_soon_for_second_snapshot:
+        status = "awaiting_next_run"
+        passed = False
+        reasons.append(f"needs_later_line_movement_recheck:{previous_age_minutes:.1f}<{min_recheck_minutes:.1f}m")
     elif previous is None and no_next_run:
         status = "publish_now_no_next_cron" if value_ok else "value_failed"
         passed = value_ok
@@ -182,7 +200,8 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         status = "value_failed"
         passed = False
 
-    snapshots.append(current)
+    if not too_soon_for_second_snapshot:
+        snapshots.append(current)
     entry["snapshots"] = snapshots[-max_snapshots:]
     entry["last_snapshot"] = current
     entry["last_status"] = status
@@ -210,4 +229,6 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         "state_path": str(path),
         "latest_state_path": str(latest_path) if latest_path else None,
         "previous_snapshot_at_utc": previous.get("captured_at_utc") if isinstance(previous, dict) else None,
+        "previous_snapshot_age_minutes": round(previous_age_minutes, 2) if previous_age_minutes is not None else None,
+        "min_recheck_minutes": min_recheck_minutes,
     }

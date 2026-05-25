@@ -38,6 +38,17 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     report = dict(coverage.report)
     odds_count = _get_count(report, "odds_sources_count", _as_int(getattr(candidate, "sources_count", 0), 0))
     context_count = _get_count(report, "context_sources_count", 0)
+    books_count = _get_count(report, "books_count", _as_int(getattr(candidate, "books_count", 0), 0))
+    price_count = max(
+        _get_count(report, "price_sources_count", 0),
+        _get_count(report, "line_sources_count", 0),
+        books_count,
+        _as_int(getattr(candidate, "price_sources_count", 0), 0),
+    )
+    # A-tier is strict independent-provider confirmation. B-tier is a safer
+    # reserve tier: 1+ line/price confirmation + 1+ context source, but only
+    # after line movement is confirmed on a later run.
+    line_count_for_tier_b = max(odds_count, price_count)
 
     tier_a_odds = max(2, _as_int(os.getenv("PUBLISH_TIER_A_MIN_ODDS_SOURCES"), 2))
     tier_a_context = max(2, _as_int(os.getenv("PUBLISH_TIER_A_MIN_CONTEXT_SOURCES"), 2))
@@ -47,13 +58,15 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     movement = evaluate_and_record_line_movement(candidate, settings, now=now)
     report["line_movement"] = movement
     report["tier_thresholds"] = {
-        "A": {"min_odds_sources": tier_a_odds, "min_context_sources": tier_a_context},
-        "B": {"min_odds_sources": tier_b_odds, "min_context_sources": tier_b_context, "requires_movement_confirmed": True},
+        "A": {"min_independent_odds_sources": tier_a_odds, "min_context_sources": tier_a_context},
+        "B": {"min_line_sources": tier_b_odds, "min_context_sources": tier_b_context, "requires_movement_confirmed": True},
     }
+    report["line_sources_count_for_tier_b"] = line_count_for_tier_b
+    report["price_sources_count"] = price_count
     report["found_value"] = True
 
     is_a = odds_count >= tier_a_odds and context_count >= tier_a_context
-    is_b = odds_count >= tier_b_odds and context_count >= tier_b_context
+    is_b = line_count_for_tier_b >= tier_b_odds and context_count >= tier_b_context
     movement_status = str(movement.get("status") or "")
     reasons: list[str] = []
 
@@ -67,7 +80,9 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
         tier = "A_wait" if is_a else "B_wait" if is_b else "blocked"
         passed = False
         if not is_b:
-            reasons.append(f"insufficient_tier_b_sources:odds={odds_count}/{tier_b_odds};context={context_count}/{tier_b_context}")
+            reasons.append(
+                f"insufficient_tier_b_sources:lines={line_count_for_tier_b}/{tier_b_odds};context={context_count}/{tier_b_context}"
+            )
         elif is_a and movement_status not in {"movement_confirmed", "publish_now_no_next_cron"}:
             reasons.append(f"tier_a_line_movement_not_ready:{movement_status}")
         elif is_b and movement_status != "movement_confirmed":
@@ -81,6 +96,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     report["publication_tier_passed"] = passed
     report["odds_sources_count"] = odds_count
     report["context_sources_count"] = context_count
+    report["books_count"] = books_count
     report["can_publish"] = passed
     report["found_value_but_blocked"] = bool(not passed)
     return PublicationTierDecision(passed=passed, tier=tier, reasons=reasons, report=report)

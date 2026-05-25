@@ -387,6 +387,14 @@ class SportLogicProvider:
             stats["auth_error"] = True
         if response.status_code == 429:
             stats["rate_limited"] = True
+            retry_after = response.headers.get("Retry-After") or response.headers.get("retry-after")
+            if retry_after:
+                stats["retry_after"] = retry_after
+            # Stop spending the whole SportLogic per-run budget after the first
+            # quota response.  The provider has a small free minute/day bucket,
+            # so repeated variants only create errors and block useful work.
+            self._requests = max(self._requests, self.max_requests_per_run)
+            stats["budget_exhausted"] = True
         if response.status_code >= 400:
             stats["response_errors"] += 1
             return None

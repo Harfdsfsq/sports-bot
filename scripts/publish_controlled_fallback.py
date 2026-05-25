@@ -1,12 +1,10 @@
 from __future__ import annotations
 
 import hashlib
-import importlib
 import json
 import math
 import os
 import re
-import runpy
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -73,6 +71,37 @@ def env_set(name: str, default: str) -> set[str]:
     return {item.strip().lower() for item in str(raw).split(",") if item.strip()}
 
 
+try:
+    from app.services.line_movement_state import evaluate_and_record_line_movement
+except Exception:
+    evaluate_and_record_line_movement = None
+
+
+class _LineMovementSettings:
+    line_movement_next_run_minutes = 120
+
+
+def controlled_line_movement_report(candidate: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+    if evaluate_and_record_line_movement is None:
+        return {"passed": False, "status": "unavailable", "reasons": ["line_movement_module_unavailable"]}
+    row = dict(candidate)
+    row.update({
+        "odds": metrics.get("odds") or metrics.get("selected_odds") or metrics.get("price_used_for_ev"),
+        "selected_odds": metrics.get("odds") or metrics.get("selected_odds") or metrics.get("price_used_for_ev"),
+        "ev_pct": metrics.get("canonical_ev_pct") or metrics.get("ev_pct"),
+        "edge_pct": metrics.get("canonical_edge_pp") or metrics.get("edge_pct"),
+        "confidence": metrics.get("confidence"),
+        "books_count": metrics.get("books_count"),
+        "sources_count": metrics.get("sources_count") or metrics.get("odds_sources_count"),
+    })
+    if "commence_time" not in row and candidate.get("kickoff_utc"):
+        row["commence_time"] = candidate.get("kickoff_utc")
+    try:
+        return evaluate_and_record_line_movement(row, _LineMovementSettings(), now=datetime.now(UTC))
+    except Exception as exc:
+        return {"passed": False, "status": "error", "reasons": [f"line_movement_error:{exc}"]}
+
+
 def load_json(path: str | Path, default: Any) -> Any:
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -84,51 +113,6 @@ def write_json(path: str | Path, payload: Any) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-_EXPLICIT_TELEGRAM_GUARDS_INSTALLED = False
-
-
-def _import_guard_module(module_name: str) -> Any | None:
-    for candidate in (f"scripts.{module_name}", module_name):
-        try:
-            return importlib.import_module(candidate)
-        except Exception:
-            continue
-    return None
-
-
-def install_explicit_telegram_guards() -> None:
-    """Install last-mile fallback guards without relying on sitecustomize."""
-    global _EXPLICIT_TELEGRAM_GUARDS_INSTALLED
-    if _EXPLICIT_TELEGRAM_GUARDS_INSTALLED:
-        return
-    _EXPLICIT_TELEGRAM_GUARDS_INSTALLED = True
-    if not env_bool("CONTROLLED_FALLBACK_EXPLICIT_GUARDS_ENABLED", True):
-        return
-
-    guard = _import_guard_module("controlled_fallback_prepublish_guard")
-    if guard is not None:
-        price_patch = _import_guard_module("controlled_fallback_price_source_patch")
-        if price_patch is not None:
-            try:
-                price_patch.apply(guard)
-            except Exception:
-                pass
-        installer = getattr(guard, "install", None)
-        if callable(installer):
-            try:
-                installer()
-            except Exception:
-                pass
-
-    safety = _import_guard_module("telegram_controlled_pick_safety")
-    installer = getattr(safety, "install", None) if safety is not None else None
-    if callable(installer):
-        try:
-            installer()
-        except Exception:
-            pass
 
 
 def payload_timestamp(payload: Any) -> datetime | None:
@@ -811,88 +795,6 @@ def save_sent_index(index: dict[str, Any]) -> None:
     write_json(".data/fallback-sent-index.json", index)
 
 
-def _read_json_list(path: str | Path) -> list[dict[str, Any]]:
-    payload = load_json(path, [])
-    if isinstance(payload, list):
-        return [row for row in payload if isinstance(row, dict)]
-    return []
-
-
-def _append_unique_rows(path: str | Path, rows: list[dict[str, Any]], key_field: str = "dedupe_key") -> None:
-    existing = _read_json_list(path)
-    seen = {str(row.get(key_field) or "") for row in existing if str(row.get(key_field) or "").strip()}
-    changed = False
-    for row in rows:
-        key = str(row.get(key_field) or "").strip()
-        if key and key in seen:
-            continue
-        existing.append(row)
-        if key:
-            seen.add(key)
-        changed = True
-    if changed:
-        write_json(path, existing)
-
-
-def _update_published_candidate_index(rows: list[dict[str, Any]]) -> None:
-    path = Path(".data/published-candidate-index.json")
-    payload = load_json(path, {})
-    if not isinstance(payload, dict):
-        payload = {}
-    sent_rows = payload.get("sent") if isinstance(payload.get("sent"), list) else []
-    existing = {str(row.get("dedupe_key") or row.get("match_key") or "") for row in sent_rows if isinstance(row, dict)}
-    for row in rows:
-        marker = str(row.get("dedupe_key") or row.get("match_key") or "")
-        if marker and marker in existing:
-            continue
-        sent_rows.append({
-            "recorded_at": datetime.now(UTC).isoformat(),
-            "dedupe_key": row.get("dedupe_key"),
-            "match_key": row.get("match_key"),
-            "home_team": row.get("home_team"),
-            "away_team": row.get("away_team"),
-            "league_name": row.get("league_name"),
-            "family": row.get("family"),
-            "selection": row.get("selection"),
-            "point": row.get("point"),
-            "odds": row.get("odds"),
-            "stake": row.get("stake"),
-            "stake_amount": row.get("stake_amount"),
-            "commence_time": row.get("commence_time"),
-            "telegram_sent": bool(row.get("telegram_sent")),
-            "publication_lifecycle_status": row.get("publication_lifecycle_status") or "telegram_sent",
-        })
-        if marker:
-            existing.add(marker)
-    payload["sent"] = sent_rows[-500:]
-    payload["updated_at"] = datetime.now(UTC).isoformat()
-    write_json(path, payload)
-
-
-def persist_fallback_publication_rows(rows: list[dict[str, Any]]) -> None:
-    """Mirror fallback Telegram picks into the normal pick/bet artifacts.
-
-    The fallback sender writes .data/fallback-sent-index.json for dedupe, but
-    bankroll/open-risk and later reports read the standard latest-picks/bets files.
-    Without this mirror a sent fallback pick can disappear from open exposure.
-    """
-    if not rows:
-        return
-    normalized: list[dict[str, Any]] = []
-    for row in rows:
-        item = dict(row)
-        item.setdefault("telegram_sent", True)
-        item.setdefault("publication_lifecycle_status", "telegram_sent")
-        item.setdefault("status", "pending")
-        item.setdefault("created_at", datetime.now(UTC).isoformat())
-        item.setdefault("source", "controlled_fallback")
-        normalized.append(item)
-    _append_unique_rows(".data/exports/latest-picks.json", normalized)
-    _append_unique_rows(".data/exports/latest-bets.json", normalized)
-    _append_unique_rows(".data/exports/latest-pending-bets.json", normalized)
-    _update_published_candidate_index(normalized)
-
-
 def prune_sent_index(index: dict[str, Any], hours: int) -> dict[str, Any]:
     cutoff = datetime.now(UTC) - timedelta(hours=max(1, hours))
     result: dict[str, Any] = {}
@@ -929,147 +831,18 @@ def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> s
     return None
 
 
-
-def _dict_at_path(root: dict[str, Any], *path: str) -> dict[str, Any]:
-    current: Any = root
-    for key in path:
-        if not isinstance(current, dict):
-            return {}
-        current = current.get(key)
-    return current if isinstance(current, dict) else {}
-
-
-def publish_coverage_contract(candidate: dict[str, Any]) -> dict[str, Any]:
-    """Return the canonical publication coverage contract for this candidate.
-
-    This is the source of truth for line-source counts.  Context providers such
-    as SStats/ClubElo/Weather must never inflate odds_sources_count.
-    """
-    diag = candidate.get("diagnostics") if isinstance(candidate.get("diagnostics"), dict) else {}
-    direct = diag.get("publish_coverage_contract") if isinstance(diag.get("publish_coverage_contract"), dict) else {}
-    if direct:
-        return direct
-    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-    direct = summary.get("publish_coverage_contract") if isinstance(summary.get("publish_coverage_contract"), dict) else {}
-    return direct if isinstance(direct, dict) else {}
-
-
-def api_coverage_consensus(candidate: dict[str, Any]) -> dict[str, Any]:
-    diag = candidate.get("diagnostics") if isinstance(candidate.get("diagnostics"), dict) else {}
-    direct = diag.get("api_coverage_consensus") if isinstance(diag.get("api_coverage_consensus"), dict) else {}
-    if direct:
-        return direct
-    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-    direct = summary.get("api_coverage_consensus") if isinstance(summary.get("api_coverage_consensus"), dict) else {}
-    if direct:
-        return direct
-    # Older candidate rows flatten the consensus fields into source_summary.
-    keys = {
-        "exact_books", "exact_books_count", "exact_odds_sources", "exact_odds_sources_count",
-        "exact_offers_count", "exact_source_prices", "source_price_dispersion_pct",
-        "consensus_price_avg", "consensus_price_median",
-    }
-    return {key: summary.get(key) for key in keys if key in summary}
-
-
-def _clean_source_list(values: Any, *, exclude_context: bool = False) -> list[str]:
-    out: list[str] = []
-    blocked = {"sstats", "sstats_form", "clubelo", "weather", "open_meteo", "weatherapi", "context_equiv_supplemental", "model_xg", "ensemble", "market"}
-    for value in _source_values(values):
-        text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
-        if not text:
-            continue
-        if exclude_context and text in blocked:
-            continue
-        if text not in out:
-            out.append(text)
-    return out
-
-
-def odds_source_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
-    contract = publish_coverage_contract(candidate)
-    consensus = api_coverage_consensus(candidate)
-    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-
-    contract_sources = _clean_source_list(contract.get("odds_sources"), exclude_context=True)
-    summary_sources = _clean_source_list(summary.get("odds_sources"), exclude_context=True)
-    direct_sources = _clean_source_list(
-        candidate.get("odds_sources")
-        or candidate.get("line_sources")
-        or candidate.get("price_sources")
-        or candidate.get("selected_odds_sources"),
-        exclude_context=True,
-    )
-    # For Telegram and tiering use the exact publication contract first.  A
-    # broader source_summary.line_sources may include provider-level hints that
-    # did not actually provide the selected market/line/side price.
-    line_sources = contract_sources or summary_sources or direct_sources
-    if not line_sources:
-        line_sources = _clean_source_list(summary.get("line_sources"), exclude_context=True)
-
-    provider_count = as_int(contract.get("odds_sources_count"), -1)
-    if provider_count < 0:
-        provider_count = as_int(summary.get("odds_sources_count"), 0)
-    direct_count = max(
-        as_int(candidate.get("odds_sources_count"), 0),
-        as_int(candidate.get("price_sources_count"), 0),
-        as_int(candidate.get("independent_odds_sources_count"), 0),
-        len(direct_sources),
-    )
-    provider_count = max(provider_count, direct_count)
-    if provider_count <= 0:
-        provider_count = len(contract_sources or summary_sources or line_sources)
-
-    # Account-level exact odds sources are useful as price confirmations, but
-    # they are not independent provider sources.  Example: odds_api_io account1
-    # and account2 are bookmaker diversity, not two provider APIs.
-    exact_account_sources = _clean_source_list(consensus.get("exact_odds_sources"), exclude_context=True)
-    exact_accounts_count = as_int(consensus.get("exact_odds_sources_count"), len(exact_account_sources))
-    exact_books = _clean_source_list(consensus.get("exact_books") or consensus.get("exact_line_bookmakers"), exclude_context=False)
-    exact_books_count = as_int(consensus.get("exact_books_count"), len(exact_books))
-
-    return {
-        "odds_sources": line_sources or contract_sources or summary_sources,
-        "odds_sources_count": max(0, provider_count),
-        "exact_account_sources": exact_account_sources,
-        "exact_account_sources_count": max(0, exact_accounts_count),
-        "exact_books": exact_books,
-        "exact_books_count": max(0, exact_books_count),
-        "publish_coverage_passed": bool(summary.get("publish_coverage_passed")) or not bool(summary.get("publish_coverage_reasons")),
-        "publish_coverage_reasons": summary.get("publish_coverage_reasons") or [],
-    }
-
-
-def context_source_metrics(candidate: dict[str, Any], fallback_sources: list[str]) -> dict[str, Any]:
-    contract = publish_coverage_contract(candidate)
-    summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-    sources = _clean_source_list(contract.get("context_sources") or summary.get("context_sources") or fallback_sources, exclude_context=False)
-    # odds_api_io is a line provider and should not be shown as context confirmation.
-    sources = [src for src in sources if src not in {"odds_api_io", "market", "context_equiv_supplemental", "model_xg"}]
-    direct_count = max(
-        as_int(candidate.get("confirmation_sources_count"), 0),
-        as_int(candidate.get("context_sources_count"), 0),
-        as_int(summary.get("context_sources_count"), 0),
-        len(sources),
-    )
-    return {
-        "context_sources": sources,
-        "context_sources_count": direct_count,
-    }
-
 def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     odds = as_float(candidate.get("odds"), 0.0)
     adjusted = as_float(candidate.get("adjusted_probability"), 0.0)
     model_prob = as_float(candidate.get("model_probability"), 0.0)
     market_prob = as_float(candidate.get("market_probability"), 0.0)
     confidence = as_float(candidate.get("confidence"), 0.0)
-    coverage = odds_source_metrics(candidate)
+    books = as_int(candidate.get("books_count"), 0)
+    raw_sources = as_int(candidate.get("sources_count"), 0)
+    odds_sources = as_int(candidate.get("odds_sources_count"), raw_sources)
     confirmation_sources, confirmation_meta = candidate_confirmation_sources(candidate)
-    context_coverage = context_source_metrics(candidate, confirmation_sources)
-    books = max(as_int(candidate.get("books_count"), 0), int(coverage.get("exact_books_count") or 0))
-    odds_sources = int(coverage.get("odds_sources_count") or 0)
-    confirmation_sources = list(context_coverage.get("context_sources") or confirmation_sources)
-    confirmation_sources_count = int(context_coverage.get("context_sources_count") or len(confirmation_sources))
+    declared_confirmation_count = as_int(candidate.get("confirmation_sources_count"), 0)
+    confirmation_sources_count = max(declared_confirmation_count, len(confirmation_sources))
     sources = confirmation_sources_count
     q = quality_payload(candidate)
     raw_quality_score = as_float(q.get("quality_score"), as_float(candidate.get("quality_score"), 0.0))
@@ -1088,11 +861,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
-        "line_sources": coverage.get("odds_sources") or [],
-        "exact_account_sources": coverage.get("exact_account_sources") or [],
-        "exact_account_sources_count": int(coverage.get("exact_account_sources_count") or 0),
-        "publish_coverage_passed": bool(coverage.get("publish_coverage_passed")),
-        "publish_coverage_reasons": coverage.get("publish_coverage_reasons") or [],
         "canonical_edge_pp": canonical_edge_pp,
         "canonical_ev_pct": canonical_ev_pct,
     }
@@ -1121,11 +889,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
-        "line_sources": coverage.get("odds_sources") or [],
-        "exact_account_sources": coverage.get("exact_account_sources") or [],
-        "exact_account_sources_count": int(coverage.get("exact_account_sources_count") or 0),
-        "publish_coverage_passed": bool(coverage.get("publish_coverage_passed")),
-        "publish_coverage_reasons": coverage.get("publish_coverage_reasons") or [],
         "quality_reasons": quality_reasons(candidate),
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
@@ -1211,13 +974,6 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     allowed_families = env_set(prefix + "ALLOWED_FAMILIES", "")
     if allowed_families and fam not in allowed_families:
         reasons.append(f"tier_{tier.lower()}_family_not_allowed:{fam}")
-    min_odds_sources = env_int(prefix + "MIN_ODDS_SOURCES", 2 if tier == "A" else 1)
-    if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-        reasons.append(f"tier_{tier.lower()}_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-    if tier == "B":
-        min_context_sources = env_int(prefix + "MIN_CONTEXT_SOURCES", 3)
-        if int(metrics.get("confirmation_sources_count") or metrics.get("sources_count") or 0) < min_context_sources:
-            reasons.append(f"tier_b_context_sources_below_min:{int(metrics.get('confirmation_sources_count') or metrics.get('sources_count') or 0)}/{min_context_sources}")
     if metrics["books_count"] < env_int(prefix + "MIN_BOOKS", 2):
         reasons.append(f"tier_{tier.lower()}_books_below_min")
     if metrics["confidence"] < env_float(prefix + "MIN_CONFIDENCE", 60.0):
@@ -1292,116 +1048,6 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
 
 
 
-def _truth_report_paths() -> list[Path]:
-    paths: list[Path] = []
-    explicit = str(os.getenv("DAY_INVENTORY_COVERAGE_TRUTH_PATH") or os.getenv("CONTROLLED_FALLBACK_COVERAGE_TRUTH_PATH") or "").strip()
-    if explicit:
-        paths.append(Path(explicit))
-    paths.extend([
-        Path(".data/exports/latest-day-inventory-coverage-truth.json"),
-        Path("artifacts/run-bot/latest-day-inventory-coverage-truth.json"),
-    ])
-    return paths
-
-
-def _load_truth_rows() -> list[dict[str, Any]]:
-    for path in _truth_report_paths():
-        payload = load_json(path, {})
-        rows = payload.get("rows") if isinstance(payload, dict) else None
-        if rows is None and isinstance(payload, dict):
-            rows = payload.get("matches")
-        if isinstance(rows, list):
-            return [dict(row) for row in rows if isinstance(row, dict)]
-    return []
-
-
-def _norm_key(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).strip()
-
-
-def _matching_truth_row(candidate: dict[str, Any]) -> dict[str, Any] | None:
-    candidate_key = _norm_key(candidate.get("match_key"))
-    candidate_home = _norm_key(candidate.get("home_team"))
-    candidate_away = _norm_key(candidate.get("away_team"))
-    for row in _load_truth_rows():
-        row_key = _norm_key(row.get("match_key") or row.get("canonical_match_id"))
-        if candidate_key and row_key and candidate_key == row_key:
-            return row
-        row_home = _norm_key(row.get("home_team"))
-        row_away = _norm_key(row.get("away_team"))
-        if candidate_home and candidate_away and row_home == candidate_home and row_away == candidate_away:
-            return row
-    return None
-
-
-def _single_line_context_override_reasons(metrics: dict[str, Any], truth: dict[str, Any], tier_name: str) -> list[str]:
-    if not env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED", True) or tier_name != "B":
-        return ["single_line_context_override_not_allowed_for_tier"]
-    odds_sources = max(as_int(metrics.get("odds_sources_count"), 0), as_int(truth.get("odds_sources_count"), 0))
-    context_sources = max(
-        as_int(metrics.get("confirmation_sources_count"), 0),
-        as_int(metrics.get("sources_count"), 0),
-        as_int(truth.get("context_sources_count"), 0),
-    )
-    min_context = env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONTEXT_SOURCES", 3)
-    reasons: list[str] = []
-    if odds_sources < 1:
-        reasons.append("single_line_odds_sources_below_min:0/1")
-    if context_sources < min_context:
-        reasons.append(f"single_line_context_sources_below_min:{context_sources}/{min_context}")
-    if int(metrics.get("books_count") or 0) < env_int("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_BOOKS", 2):
-        reasons.append("single_line_books_below_min")
-    if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EDGE_PP", 4.0):
-        reasons.append("single_line_edge_below_min")
-    if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_EV_PCT", 7.0):
-        reasons.append("single_line_ev_below_min")
-    if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_CONFIDENCE", 76.0):
-        reasons.append("single_line_confidence_below_min")
-    if float(metrics.get("quality_score") or 0.0) < env_float("CONTROLLED_FALLBACK_SINGLE_LINE_MIN_QUALITY", 78.0):
-        reasons.append("single_line_quality_below_min")
-    if not reasons:
-        metrics["line_source_mode"] = "single_line_plus_context"
-        metrics["strict_truth_single_line_context_override"] = True
-    return reasons
-
-
-def _strict_truth_reasons(candidate: dict[str, Any], metrics: dict[str, Any], tier_name: str) -> list[str]:
-    if not env_bool("CONTROLLED_FALLBACK_REQUIRE_STRICT_TRUTH_FOR_TELEGRAM", False):
-        return []
-    truth = _matching_truth_row(candidate)
-    if not truth:
-        return ["strict_truth_missing_match"]
-
-    missing = [str(item) for item in truth.get("missing") or [] if str(item).strip()]
-    odds_sources = as_int(truth.get("odds_sources_count"), as_int(metrics.get("odds_sources_count"), 0))
-    context_sources = as_int(truth.get("context_sources_count"), as_int(metrics.get("confirmation_sources_count"), 0))
-    price_confirmations = as_int(truth.get("price_confirmations"), as_int(metrics.get("books_count"), 0))
-    need_odds = as_int(truth.get("need_odds_sources"), 0)
-    need_context = as_int(truth.get("need_context_sources"), 0)
-    need_price = as_int(truth.get("need_price_confirmations"), 0)
-    min_odds = max(env_int("PUBLISH_MIN_ODDS_SOURCES", 2), odds_sources + need_odds)
-    min_context = max(env_int("PUBLISH_MIN_CONTEXT_SOURCES", env_int("MIN_CONTEXT_SOURCES_PUBLISH", 2)), context_sources + need_context)
-    min_price = max(env_int("PUBLISH_MIN_PRICE_CONFIRMATIONS", 2), price_confirmations + need_price)
-
-    can_single_line = "independent_odds_sources" in missing and odds_sources == 1
-    override_reasons = _single_line_context_override_reasons(metrics, truth, tier_name) if can_single_line else []
-    if can_single_line and not override_reasons:
-        return []
-
-    reasons: list[str] = []
-    if price_confirmations < min_price:
-        reasons.append(f"strict_truth_price_confirmations_below_min:{price_confirmations}/{min_price}")
-    if odds_sources < min_odds:
-        reasons.append(f"strict_truth_odds_sources_below_min:{odds_sources}/{min_odds}")
-    if context_sources < min_context:
-        reasons.append(f"strict_truth_context_sources_below_min:{context_sources}/{min_context}")
-    reasons.extend(f"strict_truth_missing:{item}" for item in missing)
-    reasons.extend(override_reasons)
-    if not bool(truth.get("ready_for_publish", not reasons)) and not reasons:
-        reasons.append("strict_truth_not_ready_for_publish")
-    return reasons
-
-
 def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> list[str]:
     """Final Telegram publication guard.
 
@@ -1410,27 +1056,11 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     """
     reasons: list[str] = []
     fam = family_norm(candidate)
-    tier_name = tier.replace("уровень ", "").replace("УРОВЕНЬ ", "").replace("level ", "").replace("LEVEL ", "").strip().upper()
+    tier_name = tier.replace("уровень ", "").strip().upper()
 
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):
         if int(metrics.get("books_count") or 0) < 2:
             reasons.append("telegram_publish_books_guard")
-
-    odds_sources_count = int(metrics.get("odds_sources_count") or 0)
-    min_public_odds_sources = env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES_FOR_TELEGRAM", 2)
-    hybrid_single_line_allowed = (
-        env_bool("CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED", True)
-        and tier_name == "B"
-        and odds_sources_count >= 1
-        and int(metrics.get("books_count") or 0) >= env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 2)
-        and int(metrics.get("confirmation_sources_count") or metrics.get("sources_count") or 0) >= env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 3)
-        and float(metrics.get("canonical_edge_pp") or 0.0) >= env_float("CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP", 4.0)
-        and float(metrics.get("canonical_ev_pct") or 0.0) >= env_float("CONTROLLED_FALLBACK_TIER_B_MIN_EV_PCT", 7.0)
-        and float(metrics.get("confidence") or 0.0) >= env_float("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE", 76.0)
-    )
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM", True):
-        if odds_sources_count < min_public_odds_sources and not hybrid_single_line_allowed:
-            reasons.append(f"telegram_publish_odds_sources_guard:{odds_sources_count}/{min_public_odds_sources}")
 
     if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", True):
         if int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy":
@@ -1438,6 +1068,16 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
 
     if tier_name == "C" and not env_bool("CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED", False):
         reasons.append("tier_c_watch_only")
+
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_LINE_MOVEMENT_FOR_TELEGRAM", True):
+        movement = controlled_line_movement_report(candidate, metrics)
+        metrics["line_movement"] = movement
+        status = str(movement.get("status") or "")
+        allowed = {"movement_confirmed"} if tier_name == "B" else {"movement_confirmed", "publish_now_no_next_cron"}
+        if not bool(movement.get("passed")) or status not in allowed:
+            reasons.append(f"line_movement_not_confirmed:{status}")
+            for item in movement.get("reasons") or []:
+                reasons.append(f"line_movement:{item}")
 
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", True):
         if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
@@ -1515,15 +1155,6 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
             reasons.append("final_edge_below_min")
     if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
         reasons.append("final_ev_below_min")
-
-    if env_bool("CONTROLLED_FALLBACK_REJECT_QUALITY_REASONS_FOR_TELEGRAM", True):
-        allowed_quality_stops = env_set("CONTROLLED_FALLBACK_ALLOWED_QUALITY_STOPS", "")
-        for quality_reason in [item.lower() for item in metrics.get("quality_reasons") or []]:
-            if quality_reason and quality_reason not in allowed_quality_stops:
-                reasons.append(f"telegram_quality_stop_not_allowed:{quality_reason}")
-                break
-
-    reasons.extend(_strict_truth_reasons(candidate, metrics, tier_name))
 
     return reasons
 
@@ -1644,8 +1275,6 @@ def build_watchlist(evaluated: list[dict[str, Any]], limit: int | None = None) -
                 "odds_sources_count": metrics.get("odds_sources_count"),
                 "confirmation_sources_count": metrics.get("confirmation_sources_count"),
                 "confirmation_sources": metrics.get("confirmation_sources"),
-                "line_sources": metrics.get("line_sources"),
-                "publish_coverage_reasons": metrics.get("publish_coverage_reasons"),
             },
         })
     return watchlist
@@ -1689,81 +1318,6 @@ def candidate_rank(candidate: dict[str, Any], metrics: dict[str, Any], tier: str
         float(metrics["confidence"]),
     )
 
-
-def _norm_inventory_token(value: Any) -> str:
-    return re.sub(r"[^a-z0-9]+", " ", str(value or "").strip().lower()).strip()
-
-
-def _candidate_inventory_keys(row: dict[str, Any]) -> set[str]:
-    keys: set[str] = set()
-    match_key = _norm_inventory_token(row.get("match_key") or row.get("canonical_match_id"))
-    if match_key:
-        keys.add("match_key:" + match_key)
-    kickoff = parse_dt(row.get("commence_time") or row.get("start_time") or row.get("kickoff") or row.get("kickoff_utc"))
-    date = kickoff.date().isoformat() if kickoff is not None else str(row.get("date") or row.get("date_local") or "")[:10]
-    home = _norm_inventory_token(row.get("home_team") or row.get("home"))
-    away = _norm_inventory_token(row.get("away_team") or row.get("away"))
-    if date and home and away:
-        teams = "|".join(sorted([home, away]))
-        keys.add(f"teams_date:{date}|{teams}")
-    return keys
-
-
-def _day_inventory_target_date() -> str:
-    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
-    if explicit:
-        return explicit[:10]
-    return datetime.now(UTC).date().isoformat()
-
-
-_DAY_INVENTORY_MEMBERSHIP_CACHE: set[str] | None = None
-
-
-def load_day_inventory_membership_keys() -> set[str]:
-    """Return match keys/signatures from the current day inventory.
-
-    Controlled fallback must evaluate only candidates that belong to the frozen
-    300-match day inventory. Otherwise rescue artifacts can surface a valid
-    price/context pair from a match that was never part of the daily contract,
-    which makes Telegram watchlists disagree with coverage-truth/window stats.
-    """
-    global _DAY_INVENTORY_MEMBERSHIP_CACHE
-    if _DAY_INVENTORY_MEMBERSHIP_CACHE is not None:
-        return _DAY_INVENTORY_MEMBERSHIP_CACHE
-
-    target = _day_inventory_target_date()
-    candidate_paths = [
-        Path(".data/day_inventory") / f"{target}.json",
-        Path(".data/day_inventory/current.json"),
-        Path(".data/day_inventory/latest.json"),
-        Path(".data/day_inventory/today.json"),
-        Path("artifacts/run-bot/day_inventory") / f"{target}.json",
-        Path("artifacts/run-bot/day_inventory/current.json"),
-        Path("artifacts/run-bot/day_inventory/latest.json"),
-        Path("artifacts/run-bot/day_inventory/today.json"),
-    ]
-    keys: set[str] = set()
-    for path in candidate_paths:
-        payload = load_json(path, {})
-        if isinstance(payload, dict):
-            rows = payload.get("matches") or payload.get("rows") or payload.get("items") or []
-        else:
-            rows = payload
-        if not isinstance(rows, list):
-            continue
-        for item in rows:
-            if isinstance(item, dict):
-                keys.update(_candidate_inventory_keys(item))
-    _DAY_INVENTORY_MEMBERSHIP_CACHE = keys
-    return keys
-
-
-def row_in_day_inventory(row: dict[str, Any], inventory_keys: set[str]) -> bool:
-    if not inventory_keys:
-        return True
-    return bool(_candidate_inventory_keys(row) & inventory_keys)
-
-
 def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     pool: list[dict[str, Any]] = []
     counts: Counter[str] = Counter()
@@ -1777,10 +1331,6 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
     rescue_payload = load_json(".data/exports/latest-rescue-candidates.json", [])
     artifact_rescue_payload = load_json("artifacts/run-bot/latest-rescue-candidates.json", [])
     reference = newest_timestamp(run_summary, debug, rescue_payload, artifact_rescue_payload) or now
-    require_day_inventory = env_bool("CONTROLLED_FALLBACK_REQUIRE_DAY_INVENTORY_MEMBERSHIP", True)
-    day_inventory_keys = load_day_inventory_membership_keys() if require_day_inventory else set()
-    if require_day_inventory:
-        counts["day_inventory_membership_keys"] = len(day_inventory_keys)
 
     def row_in_current_window(row: dict[str, Any]) -> bool:
         if not filter_by_time or not env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True):
@@ -1789,40 +1339,6 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
         if kickoff is None:
             return env_bool("CONTROLLED_FALLBACK_ALLOW_UNKNOWN_TIME", False)
         return earliest <= kickoff <= latest
-
-    def row_post_quality_canonical_metrics(row: dict[str, Any]) -> dict[str, float]:
-        odds = as_float(row.get("selected_odds"), 0.0) or as_float(row.get("odds"), 0.0)
-        diag = row.get("diagnostics") if isinstance(row.get("diagnostics"), dict) else {}
-        quality = diag.get("quality") if isinstance(diag.get("quality"), dict) else {}
-        adjusted = (
-            as_float(quality.get("final_adjusted_probability"), 0.0)
-            or as_float(row.get("adjusted_probability"), 0.0)
-            or as_float(row.get("final_probability"), 0.0)
-            or as_float(row.get("canonical_adjusted_probability"), 0.0)
-            or as_float(row.get("probability_used_for_ev"), 0.0)
-            or as_float(row.get("model_probability"), 0.0)
-        )
-        implied = (1.0 / odds) if odds > 1.0 else as_float(row.get("selected_implied_probability"), as_float(row.get("implied_probability"), 0.0))
-        ev_pct = ((adjusted * odds) - 1.0) * 100.0 if odds > 1.0 and adjusted > 0 else -999.0
-        edge_pp = (adjusted - implied) * 100.0 if adjusted > 0 and implied > 0 else -999.0
-        return {"odds": odds, "adjusted_probability": adjusted, "implied": implied, "canonical_ev_pct": ev_pct, "canonical_edge_pp": edge_pp}
-
-    def row_allowed_for_fallback_pool(source: str, row: dict[str, Any]) -> bool:
-        if not env_bool("CONTROLLED_FALLBACK_POOL_CANONICAL_VALUE_PREFILTER_ENABLED", True):
-            return True
-        metrics = row_post_quality_canonical_metrics(row)
-        min_ev = env_float("CONTROLLED_FALLBACK_POOL_MIN_CANONICAL_EV_PCT", 0.0)
-        min_edge = env_float("CONTROLLED_FALLBACK_POOL_MIN_CANONICAL_EDGE_PP", 0.0)
-        if metrics["canonical_ev_pct"] < min_ev or metrics["canonical_edge_pp"] < min_edge:
-            counts[f"{source}_canonical_negative_value_prefilter"] += 1
-            try:
-                source_summary = row.setdefault("source_summary", {})
-                if isinstance(source_summary, dict):
-                    source_summary["fallback_pool_prefilter_reject"] = {k: round(v, 4) for k, v in metrics.items()}
-            except Exception:
-                pass
-            return False
-        return True
 
     def payload_is_usable(source: str, payload: Any) -> bool:
         if not env_bool("CONTROLLED_FALLBACK_REQUIRE_FRESH_ARTIFACTS", True):
@@ -1850,11 +1366,6 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
                 continue
             if not row_in_current_window(row):
                 counts[f"{source}_stale_or_outside_window"] += 1
-                continue
-            if require_day_inventory and day_inventory_keys and not row_in_day_inventory(row, day_inventory_keys):
-                counts[f"{source}_not_in_day_inventory"] += 1
-                continue
-            if not row_allowed_for_fallback_pool(source, row):
                 continue
             key = dedupe_key(row)
             if key in seen:
@@ -2137,8 +1648,8 @@ def pick_block(index: int, candidate: dict[str, Any], metrics: dict[str, Any], t
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
         f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} "
         f"({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}{source_note}\n"
-        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | context sources: {metrics.get('confirmation_sources_count', 0)}\n"
-        f"🔎 Линии: {', '.join(metrics.get('line_sources') or []) or selected_source(candidate) or 'н/д'} | контекст: {confirmations} | букмекер: {selected_bookmaker(candidate) or 'н/д'}\n"
+        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
+        f"🔎 Подтверждения: {confirmations} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
         f"🕒 Начало: {kickoff_text(candidate)}\n"
@@ -2259,8 +1770,8 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         )
 
     risk_note = {
-        "уровень A": "контролируемый резерв, уровень A. 2+ независимых источника линии и нормальный запас ценности.",
-        "уровень B": "контролируемый резерв, уровень B. 1 источник линии + 2+ букмекера + усиленный контекст; сумма снижена.",
+        "уровень A": "контролируемый резерв, уровень A. 2+ линии и нормальный запас ценности.",
+        "уровень B": "контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.",
         "уровень C": "контролируемый резерв, уровень C. Пограничный резерв, минимальная тестовая сумма.",
     }.get(tier, "контролируемый резерв")
 
@@ -2279,8 +1790,8 @@ def build_message(candidate: dict[str, Any], metrics: dict[str, Any], tier: str,
         f"📊 Скорректированная оценка: {metrics['adjusted_probability'] * 100:.1f}%\n"
         f"📉 Рынок/консенсус: {metrics['market_probability'] * 100:.1f}%\n"
         f"✅ Уверенность: {metrics['confidence']:.1f}% | качество {metrics['quality_score']:.1f} ({'оценка резерва' if metrics.get('quality_score_source') == 'proxy' else 'модель'}) | {tier}\n"
-        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | context sources: {metrics.get('confirmation_sources_count', 0)}\n"
-        f"🔎 Линии: {', '.join(metrics.get('line_sources') or []) or selected_source(candidate) or 'н/д'} | контекст: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | букмекер: {selected_bookmaker(candidate) or 'н/д'}\n"
+        f"📚 Линии: {metrics['books_count']} | odds sources: {metrics.get('odds_sources_count', 0)} | confirmation sources: {metrics.get('confirmation_sources_count', 0)}\n"
+        f"🔎 Подтверждения: {', '.join(metrics.get('confirmation_sources') or []) or 'нет'} | {selected_bookmaker(candidate) or 'н/д'} / {selected_source(candidate) or 'н/д'}\n"
         f"🧮 Контрольная ценность: запас {metrics['canonical_edge_pp']:+.1f} п.п. | EV {metrics['canonical_ev_pct']:+.1f}%\n"
         f"🏆 Турнир: {league}\n"
         f"🕒 Начало: {kickoff_text(candidate)}\n"
@@ -2322,14 +1833,10 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
             point = item.get("point")
             point_text = "" if point in (None, "", "null") else f" ({clean_point_text(point)})"
             reasons = ", ".join(translate_reject_reason(reason) for reason in (item.get("reject_reasons") or [])[:3])
-            price_confirmations = int(metrics.get('books_count') or 0)
-            odds_sources = int(metrics.get('odds_sources_count') or 0)
-            context_confirmations = int(metrics.get('confirmation_sources_count') or metrics.get('sources_count') or 0)
             lines.append(
                 f"• {home} — {away}: {market_title(family)} {selection}{point_text}, "
                 f"EV {float(metrics.get('canonical_ev_pct') or 0.0):+.1f}%, "
-                f"цен {price_confirmations}, odds sources {odds_sources}, контекст {context_confirmations} — "
-                f"не публикую: {reasons}"
+                f"линий {int(metrics.get('books_count') or 0)} — не публикую: {reasons}"
             )
     if counter:
         lines.append("Причины отказа:")
@@ -2339,7 +1846,6 @@ def build_no_pick_message(report: dict[str, Any]) -> str:
 
 
 def main() -> int:
-    install_explicit_telegram_guards()
     report: dict[str, Any] = {
         "created_at": datetime.now(UTC).isoformat(),
         "enabled": env_bool("CONTROLLED_FALLBACK_ENABLED", True),
@@ -2522,8 +2028,6 @@ def main() -> int:
                 },
             })
         save_sent_index(sent_index)
-        if sent:
-            persist_fallback_publication_rows(selected_rows)
     else:
         for chosen, metrics, tier, stake in selected_items:
             selected_rows.append({
@@ -2580,24 +2084,5 @@ def main() -> int:
     return 0 if (sent or dry_run) else 1
 
 
-def _guarded_entrypoint_exit_code() -> int | None:
-    if not env_bool("CONTROLLED_FALLBACK_GUARDED_ENTRYPOINT_ENABLED", True):
-        return None
-    if os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1":
-        return None
-    target = Path(__file__).resolve().with_name("publish_controlled_fallback_guarded.py")
-    if not target.exists():
-        return None
-    os.environ["HARIZON_CONTROLLED_FALLBACK_REDIRECTED"] = "1"
-    try:
-        runpy.run_path(str(target), run_name="__main__")
-    except SystemExit as exc:
-        if exc.code is None:
-            return 0
-        return int(exc.code) if isinstance(exc.code, int) else 1
-    return 0
-
-
 if __name__ == "__main__":
-    guarded_code = _guarded_entrypoint_exit_code()
-    raise SystemExit(main() if guarded_code is None else guarded_code)
+    raise SystemExit(main())
