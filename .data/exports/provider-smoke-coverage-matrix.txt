@@ -13,9 +13,9 @@
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0_2h | 3 | 1 | 3 | 0 | 1 | 0 | 1 | 0 | 1 | 0 |
-| 2_6h | 93 | 70 | 81 | 29 | 62 | 34 | 62 | 0 | 60 | 29 |
-| 6_12h | 127 | 103 | 111 | 62 | 93 | 73 | 92 | 0 | 89 | 62 |
-| 12_24h | 19 | 18 | 18 | 15 | 15 | 15 | 15 | 0 | 15 | 15 |
+| 2_6h | 95 | 72 | 83 | 31 | 65 | 36 | 64 | 0 | 63 | 31 |
+| 6_12h | 130 | 105 | 114 | 63 | 95 | 74 | 94 | 0 | 91 | 63 |
+| 12_24h | 14 | 14 | 14 | 12 | 12 | 12 | 12 | 0 | 12 | 12 |
 | 24h_plus | 22 | 22 | 3 | 0 | 22 | 4 | 22 | 0 | 3 | 0 |
 | started | 36 | 28 | 36 | 11 | 33 | 15 | 32 | 0 | 33 | 11 |
 
@@ -24,7 +24,7 @@
 - fixture_2plus_sources: 242/300
 - odds_2plus_sources: 117/300
 - context_2plus_sources: 141/300
-- ready_for_model: 201/300
+- ready_for_model: 203/300
 - ready_for_publish: 117/300
 
 ## Provider endpoint status
@@ -42,7 +42,7 @@
 - 0_2h | 2026-05-25T10:00:00+00:00 | FC Baranovichi  2 — FC Belshina 2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-05-25T11:00:00+00:00 | Aalborg BK — Viborg FF | odds=0 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-05-25T11:00:00+00:00 | Slavia Mozyr 2 — Naftan Novopolotsk 2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-05-25T11:00:00+00:00 | Aalborg Freja — Hedensted IF | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-05-25T11:00:00+00:00 | Aalborg Freja — Hedensted IF | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-05-25T11:00:00+00:00 | Aalborg BK — Viborg FF | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-05-25T11:00:00+00:00 | Bhutan — Nepal | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-05-25T11:00:00+00:00 | Esbjerg FB 2 — Hobro IK 2 | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
@@ -74,5 +74,5 @@ Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data di
 ## SStats deep projection
 - crosswalk: matched=202 / checked=300 | rate=67.33% | SStats events=1070
 - potential_add: context_deep=202 xg_or_rating=202 form=202 odds_rescue=6
-- projected_upper_bound: context_2plus=300 xg=224 form=208 odds_2plus=123
+- projected_upper_bound: context_2plus=300 xg=225 form=210 odds_2plus=123
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
