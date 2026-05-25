@@ -1,0 +1,31 @@
+diff --git a/scripts/build_prediction_calibration_audit.py b/scripts/build_prediction_calibration_audit.py
+index previous..accumulation-v2 100644
+--- a/scripts/build_prediction_calibration_audit.py
++++ b/scripts/build_prediction_calibration_audit.py
+@@
+- Build a before/after calibration audit from separate sparse artifacts.
++ Build a merged before/after calibration audit.
++ Merge discovery/value/api/quality/fallback rows by logical candidate key so
++ sparse quality rows do not hide rich fallback metrics such as teams, odds,
++ confidence, quality and source counts.
++ Read nested metrics/source_summary/diagnostics and preserve reasons from all
++ stages.
+
+diff --git a/scripts/update_prediction_ledger.py b/scripts/update_prediction_ledger.py
+index previous..accumulation-v2 100644
+--- a/scripts/update_prediction_ledger.py
++++ b/scripts/update_prediction_ledger.py
+@@
+- Summarize missing core metrics across all historical rows.
++ Summarize missing core metrics separately for the current run and total ledger.
++ Read nested fallback metrics, avoid false runtime_error rows for nonfatal
++ discovery warnings, and keep older incomplete rows from polluting current-run
++ health checks.
+
+diff --git a/tests/test_accumulation_analytics_v2.py b/tests/test_accumulation_analytics_v2.py
+new file mode 100644
+--- /dev/null
++++ b/tests/test_accumulation_analytics_v2.py
+@@
++ Regression coverage for merged calibration audit, current-run ledger metrics,
++ and nonfatal runtime warning handling.
