@@ -54,6 +54,26 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 
+
+def env_int(name: str, default: int) -> int:
+    """Read an integer env var without making refresh-plan repair fragile."""
+    try:
+        raw = os.getenv(name)
+        if raw in (None, ""):
+            return int(default)
+        return int(float(str(raw).strip()))
+    except Exception:
+        return int(default)
+
+
+def env_bool(name: str, default: bool = False) -> bool:
+    """Read a boolean env var; malformed values fall back to default."""
+    raw = os.getenv(name)
+    if raw in (None, ""):
+        return bool(default)
+    return str(raw).strip().lower() in {"1", "true", "yes", "y", "on", "force"}
+
+
 def parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
         return None
@@ -70,26 +90,13 @@ def parse_dt(value: Any) -> datetime | None:
 
 
 def now_utc_from_debug() -> datetime:
-    """Return a fresh run timestamp, not a stale cached debug timestamp."""
-    for env_name in ("HARIZON_RUN_NOW_UTC", "RUN_NOW_UTC", "CURRENT_TIME_UTC"):
-        dt = parse_dt(os.getenv(env_name))
-        if dt is not None:
-            return dt
-
-    wall = datetime.now(UTC)
     debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
     summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
-    candidates = [summary.get("current_time_utc"), debug.get("current_time_utc") if isinstance(debug, dict) else None]
-    max_age_min = max(1, env_int("MAX_TRUSTED_ARTIFACT_NOW_AGE_MINUTES", 360))
-    allow_stale = env_bool("ALLOW_STALE_DEBUG_TIME_FOR_INVENTORY", False)
-    for value in candidates:
+    for value in (summary.get("current_time_utc"), debug.get("current_time_utc") if isinstance(debug, dict) else None):
         dt = parse_dt(value)
-        if dt is None:
-            continue
-        age_min = abs((wall - dt).total_seconds()) / 60.0
-        if age_min <= max_age_min or allow_stale:
+        if dt is not None:
             return dt
-    return wall
+    return datetime.now(UTC)
 
 
 def target_date(now: datetime) -> str:
