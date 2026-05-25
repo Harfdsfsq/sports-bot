@@ -1,14 +1,14 @@
 from __future__ import annotations
 
-"""HARIZON Telegram run report v8.
+"""HARIZON Telegram run report v8: human-readable coverage report.
 
-Extends v7 with progressive core coverage metrics. The core contract is:
-- core line/odds sources: odds_api_io + bzzoiro + sportlogic;
-- core context sources: sstats + bzzoiro.
-
-The report also normalizes runtime-patched SStats counters: the provider wrapper
-stores real v1 numbers under source_stats.sstats.v1_stats / v1_* fields, while
-older renderers only read top-level requests/contexts/rows.
+This renderer keeps the v7/v5 payload builder, but replaces the Telegram text
+with a clear operational summary:
+- inventory and current-run coverage;
+- 1+ and 2+ line/context coverage;
+- A-tier / B-tier publication readiness;
+- line movement lifecycle;
+- concise rejection reasons and next technical action.
 """
 
 import importlib.util
@@ -19,13 +19,9 @@ from typing import Any
 V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
-ACTIVE_CORE_PATCH = EXPORT_DIR / "latest-progressive-active-core-budget-patch.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
-REFRESH_PLAN = EXPORT_DIR / "latest-day-inventory-refresh-plan.json"
-PRIORITY_STATE = EXPORT_DIR / "latest-day-inventory-priority-and-line-state.json"
+DAY_SUMMARY = EXPORT_DIR / "latest-day-inventory-summary.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
-CANDIDATE_FACTORY_DIAGNOSTICS = EXPORT_DIR / "latest-candidate-factory-diagnostics.json"
-POST_INTEGRITY_RESCUE_REPORT = EXPORT_DIR / "latest-post-integrity-candidate-rescue.json"
 
 
 def _load_v7() -> Any:
@@ -39,49 +35,43 @@ def _load_v7() -> Any:
 
 v7 = _load_v7()
 _base_build_payload = v7.v5.build_payload
-_base_render = v7.v5.render
 
 
-def _as_int(value: Any) -> int:
+def _as_int(value: Any, default: int = 0) -> int:
     try:
         if value in (None, ""):
-            return 0
+            return default
         if isinstance(value, bool):
             return int(value)
         if isinstance(value, (list, tuple, set, dict)):
             return len(value)
         return int(float(str(value)))
     except Exception:
-        return 0
+        return default
 
 
-def _load_progressive_plan() -> dict[str, Any]:
+def _as_float(value: Any, default: float = 0.0) -> float:
     try:
-        if PROGRESSIVE_PLAN.exists() and PROGRESSIVE_PLAN.stat().st_size > 0:
-            payload = json.loads(PROGRESSIVE_PLAN.read_text(encoding="utf-8"))
-            if not isinstance(payload, dict):
-                payload = {}
-        else:
-            payload = {}
+        if value in (None, ""):
+            return default
+        return float(str(value))
     except Exception:
-        payload = {}
-    try:
-        active = _load_json(ACTIVE_CORE_PATCH)
-        if active:
-            contract = dict(payload.get("contract") or {})
-            if isinstance(active.get("active_core_odds_providers"), list):
-                contract["core_odds_providers"] = [str(x) for x in active.get("active_core_odds_providers") or []]
-            if isinstance(active.get("active_core_context_providers"), list):
-                contract["core_context_providers"] = [str(x) for x in active.get("active_core_context_providers") or []]
-            if isinstance(active.get("excluded_core_providers"), list):
-                contract["excluded_core_providers"] = active.get("excluded_core_providers") or []
-            contract["core_providers"] = sorted(set(contract.get("core_odds_providers") or []) | set(contract.get("core_context_providers") or []))
-            contract["reason"] = "active core merged from budget patch; disabled/zero-budget providers excluded"
-            payload["contract"] = contract
-            payload.setdefault("diagnostics", {})["active_core_budget_patch_merged_in_renderer"] = True
-    except Exception:
-        pass
-    return payload
+        return default
+
+
+def _pct(part: Any, total: Any) -> str:
+    p = _as_int(part)
+    t = _as_int(total)
+    if t <= 0:
+        return "0%"
+    return f"{round(p * 100.0 / t)}%"
+
+
+def _first_dict(*values: Any) -> dict[str, Any]:
+    for value in values:
+        if isinstance(value, dict):
+            return value
+    return {}
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -97,16 +87,20 @@ def _load_json(path: Path) -> dict[str, Any]:
 def _write_status(payload: dict[str, Any]) -> None:
     try:
         V8_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        V8_STATUS_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        V8_STATUS_PATH.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
     except Exception:
         pass
 
 
-def _first_dict(*values: Any) -> dict[str, Any]:
-    for value in values:
-        if isinstance(value, dict):
-            return value
-    return {}
+def _reason_ru(reason: Any) -> str:
+    text = str(reason or "n/a")
+    try:
+        return str(v7.v5.reason_ru(text))
+    except Exception:
+        return text
 
 
 def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
@@ -142,397 +136,222 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     api["sstats"] = sstats_api
 
 
-
-def _current_inventory_window_payload() -> dict[str, Any]:
-    refresh = _load_json(REFRESH_PLAN)
-    priority = _load_json(PRIORITY_STATE)
-    plan = refresh if refresh else {}
-    if not plan and isinstance(priority.get("refresh_plan"), dict):
-        plan = priority["refresh_plan"]
-    truth = _load_json(TRUTH_REPORT)
-    truth_rows = truth.get("rows") if isinstance(truth.get("rows"), list) else []
-    counts = {
-        "active_matches": _as_int(plan.get("active_matches")),
-        "final_pre_kickoff_checks": _as_int(plan.get("final_pre_kickoff_checks")),
-        "no_more_regular_run_before_kickoff": _as_int(plan.get("no_more_regular_run_before_kickoff")),
-        "matches_needing_odds_refresh": _as_int(plan.get("matches_needing_odds_refresh")),
-        "window_0_4h": 0, "window_0_4h_ready": 0, "window_0_4h_strict_ready": 0,
-        "window_0_4h_already_published": 0,
-        "window_0_12h": 0, "window_0_12h_ready": 0, "window_0_12h_strict_ready": 0,
-        "window_0_12h_already_published": 0,
-        "window_0_4h_context_2plus": 0, "window_0_12h_context_2plus": 0,
-        "window_0_4h_price_2plus": 0, "window_0_12h_price_2plus": 0,
-        "source": "latest-day-inventory-refresh-plan + coverage-truth",
-    }
-    for row in truth_rows:
-        if not isinstance(row, dict):
-            continue
-        try:
-            minutes = float(row.get("minutes_to_kickoff"))
-        except Exception:
-            continue
-        if 0 <= minutes <= 4 * 60:
-            counts["window_0_4h"] += 1
-            counts["window_0_4h_ready"] += int(bool(row.get("ready_for_publish")))
-            counts["window_0_4h_strict_ready"] += int(bool(row.get("strict_ready_for_publish", row.get("ready_for_publish"))))
-            counts["window_0_4h_already_published"] += int(bool(row.get("already_published")))
-            counts["window_0_4h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
-            counts["window_0_4h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
-        if 0 <= minutes <= 12 * 60:
-            counts["window_0_12h"] += 1
-            counts["window_0_12h_ready"] += int(bool(row.get("ready_for_publish")))
-            counts["window_0_12h_strict_ready"] += int(bool(row.get("strict_ready_for_publish", row.get("ready_for_publish"))))
-            counts["window_0_12h_already_published"] += int(bool(row.get("already_published")))
-            counts["window_0_12h_context_2plus"] += int(_as_int(row.get("context_sources_count")) >= 2)
-            counts["window_0_12h_price_2plus"] += int(_as_int(row.get("price_confirmations")) >= 2)
-    if counts["window_0_12h"] <= 0:
-        for row in plan.get("top_priority_matches") or []:
-            if not isinstance(row, dict):
-                continue
-            try:
-                minutes = float(row.get("minutes_to_kickoff"))
-            except Exception:
-                continue
-            if 0 <= minutes <= 4 * 60:
-                counts["window_0_4h"] += 1
-            if 0 <= minutes <= 12 * 60:
-                counts["window_0_12h"] += 1
-    return counts
-
-
-
-def _load_controlled_fallback_report() -> dict[str, Any]:
-    payload = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
-    if payload:
-        return payload
-    payload = _load_json(Path("artifacts/run-bot/latest-controlled-fallback-report.json"))
-    return payload if isinstance(payload, dict) else {}
-
-
-def _fallback_pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
-    """Return real pre-evaluation filter reasons from controlled fallback pool counts.
-
-    `day_inventory_membership_keys` is just an index size, not a rejection.
-    Duplicate counters are useful diagnostics but not a top no-publish reason.
-    """
-    out: dict[str, int] = {}
-    if not isinstance(pool_counts, dict):
-        return out
-    for key, value in pool_counts.items():
-        name = str(key or "").strip()
-        if not name or name == "day_inventory_membership_keys":
-            continue
-        if name.endswith("_duplicate_in_pool"):
-            continue
-        count = _as_int(value)
-        if count > 0:
-            out[name] = count
-    return out
-
-
-def _fallback_pool_reason_ru(reason: str) -> str:
-    text = str(reason or "")
-    if text.endswith("_not_in_day_inventory"):
-        return "кандидат не входит в frozen day inventory"
-    if text.endswith("_stale_or_outside_window"):
-        return "кандидат вне окна публикации или устарел"
-    if text.endswith("_canonical_negative_value_prefilter"):
-        return "отрицательная контрольная ценность до fallback"
-    if text.endswith("_stale_payload"):
-        return "устаревший fallback-артефакт"
-    return text.replace("_", " ")
-
-
-def _apply_controlled_fallback_pool_status(payload: dict[str, Any]) -> None:
-    """Make reports truthful when raw candidates exist but fallback evaluates zero rows.
-
-    After the day-inventory membership guard was added, a run can have
-    `raw_candidates=1` while controlled fallback legitimately evaluates 0 rows:
-    the raw row was not part of the frozen 300-match inventory.  v5/v7 classify
-    this as `quality/value не пропустили`; v8 should show the actual pre-fallback
-    pool filter instead.
-    """
-    fallback = _load_controlled_fallback_report()
-    pool_counts = fallback.get("pool_counts") if isinstance(fallback.get("pool_counts"), dict) else {}
-    if not isinstance(pool_counts, dict) or not pool_counts:
-        return
-    filtered = _fallback_pool_filter_counts(pool_counts)
-    diag = payload.setdefault("diagnostics", {})
-    diag["controlled_fallback_pool_counts"] = dict(pool_counts)
-    diag["controlled_fallback_pool_filter_counts"] = dict(filtered)
-    if not filtered:
-        return
-    funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
-    raw = _as_int(funnel.get("raw_candidates") or funnel.get("candidates_before_quality"))
-    seen = _as_int(funnel.get("fallback_candidates_seen"))
-    evaluated = _as_int(funnel.get("fallback_evaluated"))
-    if raw > 0 and seen == 0 and evaluated == 0:
-        top_reason, top_count = max(filtered.items(), key=lambda item: _as_int(item[1]))
-        payload["status"] = "candidates_filtered_before_fallback"
-        payload["status_ru"] = "🟡 кандидаты отфильтрованы до fallback"
-        payload["top_reason"] = top_reason
-        payload["reasons"] = [
-            {"reason": key, "reason_ru": _fallback_pool_reason_ru(key), "count": int(count)}
-            for key, count in sorted(filtered.items(), key=lambda item: _as_int(item[1]), reverse=True)[:8]
-            if int(count) > 0
-        ]
-
-
-def _controlled_fallback_pool_block(payload: dict[str, Any]) -> str:
-    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
-    pool_counts = diag.get("controlled_fallback_pool_counts") if isinstance(diag.get("controlled_fallback_pool_counts"), dict) else {}
-    filter_counts = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
-    if not pool_counts:
-        return ""
-    rows = ["🧯 Controlled fallback pool filter"]
-    membership = _as_int(pool_counts.get("day_inventory_membership_keys"))
-    if membership:
-        rows.append(f"• Frozen day inventory keys: {membership}")
-    if filter_counts:
-        top = sorted(filter_counts.items(), key=lambda item: _as_int(item[1]), reverse=True)[:6]
-        rows.append("• Pre-evaluation filters: " + ", ".join(f"{_fallback_pool_reason_ru(k)}: {_as_int(v)}" for k, v in top))
-        rows.append("• Смысл: raw-кандидат был найден, но fallback не оценивал его, потому что он не прошёл lifecycle/inventory-фильтр до финальной проверки.")
-    else:
-        compact = {k: v for k, v in pool_counts.items() if k != "day_inventory_membership_keys"}
-        if compact:
-            rows.append("• Pool counters: " + ", ".join(f"{k}: {_as_int(v)}" for k, v in sorted(compact.items())[:8]))
-    return "\n".join(rows)
-
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
-    plan = _load_progressive_plan()
-    payload["version"] = "harizon-telegram-report-v8-progressive-core-coverage"
-    payload.setdefault("diagnostics", {})["progressive_core_coverage"] = {
+
+    plan = _load_json(PROGRESSIVE_PLAN)
+    day_summary = _load_json(DAY_SUMMARY)
+    truth_report = _load_json(TRUTH_REPORT)
+    truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
+    if not truth_counts and isinstance(truth_report.get("counts"), dict):
+        truth_counts = truth_report["counts"]
+
+    payload["version"] = "harizon-telegram-report-v8-human-readable"
+    diagnostics = payload.setdefault("diagnostics", {})
+    diagnostics["progressive_core_coverage"] = {
         "contract": plan.get("contract") if isinstance(plan.get("contract"), dict) else {},
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
         "gap_sample_size": len(plan.get("core_gap_sample") or plan.get("gap_sample") or []) if isinstance(plan, dict) else 0,
     }
-    payload.setdefault("diagnostics", {})["current_inventory_windows"] = _current_inventory_window_payload()
-    day_summary = _load_json(EXPORT_DIR / "latest-day-inventory-summary.json")
-    truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
-    truth_report = _load_json(TRUTH_REPORT)
-    if not truth_counts and isinstance(truth_report.get("counts"), dict):
-        truth_counts = truth_report["counts"]
     if truth_counts:
         sources = day_summary.get("sources") if isinstance(day_summary.get("sources"), dict) else {}
-        payload.setdefault("diagnostics", {})["coverage_truth"] = {
+        diagnostics["coverage_truth"] = {
             "counts": truth_counts,
             "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {"path": str(TRUTH_REPORT)},
         }
-    _apply_controlled_fallback_pool_status(payload)
+    if day_summary:
+        diagnostics["day_inventory_summary"] = day_summary.get("counts") if isinstance(day_summary.get("counts"), dict) else {}
     return payload
 
 
-def _insert_before(text: str, marker: str, block: str) -> str:
-    idx = text.find(marker)
-    if idx < 0:
-        return text + "\n\n" + block
-    return text[:idx].rstrip() + "\n\n" + block.rstrip() + "\n\n" + text[idx:].lstrip()
+def _coverage_counts(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str, Any], dict[str, Any]]:
+    coverage = payload.get("coverage") if isinstance(payload.get("coverage"), dict) else {}
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
+    truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
+    summary_counts = diag.get("day_inventory_summary") if isinstance(diag.get("day_inventory_summary"), dict) else {}
+    prog = diag.get("progressive_core_coverage") if isinstance(diag.get("progressive_core_coverage"), dict) else {}
+    progressive_counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
+    merged_truth = {**summary_counts, **truth_counts}
+    return coverage, merged_truth, progressive_counts
 
 
-def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
-    old = "• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards."
-    core_ready = _as_int(counts.get("core_ready_2plus_both") or counts.get("ready_2plus_both"))
-    win4 = _as_int(counts.get("window_0_4h_core_ready_2plus_both") or counts.get("window_0_4h_ready_2plus_both"))
-    win12 = _as_int(counts.get("window_0_12h_core_ready_2plus_both") or counts.get("window_0_12h_ready_2plus_both"))
-    win4_total = _as_int(counts.get("window_0_4h"))
-    win12_total = _as_int(counts.get("window_0_12h"))
-    if core_ready > 0:
-        new = (
-            "• Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — "
-            "добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. "
-            f"Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
-        )
-        if win12_total <= 0:
-            new += " Progressive coverage не видит матчей в ближайшие 12 часов."
-    else:
-        new = (
-            "• Progressive coverage включён, но core-ready 2+ ещё не накоплен. Нужно добирать именно core gaps: "
-            "Bzzoiro/SStats по матчам ближайшего окна; supplemental источники не должны закрывать core-дырки."
-        )
-    return text.replace(old, new)
+def _status_explanation(payload: dict[str, Any], truth: dict[str, Any]) -> str:
+    published = _as_int(_first_dict(payload.get("funnel")).get("published_count"))
+    if published > 0 or payload.get("status") == "published":
+        return "✅ Прогноз опубликован. Ниже — проверка покрытия и причин, почему опубликован именно этот кандидат."
+    waiting = _as_int(truth.get("matches_waiting_line_movement")) + _as_int(truth.get("candidate_lifecycle_waiting_line_movement"))
+    tier_b_cov = _as_int(truth.get("matches_tier_b_coverage_ready"))
+    tier_a_cov = _as_int(truth.get("matches_tier_a_coverage_ready"))
+    if waiting > 0:
+        return f"🟡 Прогнозов нет: есть {waiting} матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle."
+    if tier_b_cov > 0 and _as_int(truth.get("matches_ready_for_publish_tier_b")) == 0:
+        return "🟡 Прогнозов нет: B-tier покрытие есть, но нет подтверждённого движения линии или value не сохранился."
+    if tier_a_cov > 0 and _as_int(truth.get("matches_ready_for_publish_tier_a")) == 0:
+        return "🟡 Прогнозов нет: A-tier покрытие есть, но финальные guards не дали безопасную ставку."
+    return f"🟡 Прогнозов нет: { _reason_ru(payload.get('top_reason')) }."
 
 
-
-def _candidate_factory_blockers_block() -> str:
-    diagnostics = _load_json(CANDIDATE_FACTORY_DIAGNOSTICS)
-    if not diagnostics:
-        return ""
-    rejections = diagnostics.get("rejections") if isinstance(diagnostics.get("rejections"), dict) else {}
-    blockers = diagnostics.get("top_likely_blockers") if isinstance(diagnostics.get("top_likely_blockers"), dict) else {}
-    rescue = _load_json(POST_INTEGRITY_RESCUE_REPORT)
-    rows: list[str] = ["🧩 CandidateFactory diagnostics"]
-    rows.append(
-        f"• matches/offers/context: {_as_int(diagnostics.get('matches_seen'))}/"
-        f"{_as_int(diagnostics.get('matches_with_offers'))}/"
-        f"{_as_int(diagnostics.get('matches_with_context'))} | raw: {_as_int(diagnostics.get('raw_candidates'))}"
-    )
-    if blockers:
-        top = sorted(blockers.items(), key=lambda item: _as_int(item[1]), reverse=True)[:5]
-        rows.append("• likely blockers: " + ", ".join(f"{k}: {_as_int(v)}" for k, v in top))
-    if rejections:
-        top_rej = sorted(rejections.items(), key=lambda item: _as_int(item[1]), reverse=True)[:7]
-        rows.append("• factory rejects: " + ", ".join(f"{k}: {_as_int(v)}" for k, v in top_rej))
-    if rescue:
-        stage = str(rescue.get("stage") or rescue.get("status") or "n/a")
-        returned = _as_int(rescue.get("returned"))
-        built = _as_int(rescue.get("built_before_market_integrity"))
-        rows.append(f"• post-integrity rescue: {stage} | built {built} | returned {returned}")
-    rows.append("• Смысл: это причины до quality/fallback; они объясняют, почему raw pool стал нулевым.")
-    return "\n".join(rows)
+def _source_summary(coverage: dict[str, Any]) -> str:
+    combos = coverage.get("secondary_combinations") if isinstance(coverage.get("secondary_combinations"), dict) else {}
+    if not combos:
+        return "• Источники линий: данных по комбинациям нет."
+    parts = [f"{name}: {count}" for name, count in sorted(combos.items(), key=lambda item: -_as_int(item[1]))[:6]]
+    return "• Комбинации источников линий: " + ", ".join(parts)
 
 
-def _patch_sstats_line(text: str, payload: dict[str, Any]) -> str:
-    api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
-    sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
-    if not sstats:
-        return text
-    import re
-    new_line = (
-        f"• sstats: req {_as_int(sstats.get('requests'))}, ctx {_as_int(sstats.get('contexts'))}, "
-        f"rows {_as_int(sstats.get('rows'))}, err {_as_int(sstats.get('errors'))}, "
-        f"deep enriched {_as_int(sstats.get('deep_enriched'))}"
-    )
-    extra = []
-    if sstats.get("runtime_patch"):
-        extra.append(f"patch {sstats.get('runtime_patch')}")
-    if _as_int(sstats.get("team_form_contexts")) or _as_int(sstats.get("direct_contexts")):
-        extra.append(f"direct {_as_int(sstats.get('direct_contexts'))}, form {_as_int(sstats.get('team_form_contexts'))}")
-    if extra:
-        new_line += " | " + "; ".join(extra)
-    return re.sub(r"• sstats: req \d+, ctx \d+, rows \d+, err \d+, deep enriched \d+(?: \| [^\n]*)?", new_line, text)
+def _render_reasons(payload: dict[str, Any]) -> list[str]:
+    reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
+    lines = ["🚫 Почему не опубликовано"]
+    if payload.get("status") == "published":
+        return ["🚫 Почему часть кандидатов отсеяна", "• Не применимо к публикации: один прогноз уже отправлен."]
+    if not reasons:
+        return lines + ["• В свежих артефактах нет явных reject reasons."]
+    total = sum(_as_int(row.get("count")) for row in reasons if isinstance(row, dict)) or 1
+    for row in [x for x in reasons if isinstance(x, dict)][:8]:
+        count = _as_int(row.get("count"))
+        lines.append(f"• {_reason_ru(row.get('reason_ru') or row.get('reason'))}: {count} ({_pct(count, total)})")
+    return lines
+
+
+def _render_samples(payload: dict[str, Any]) -> list[str]:
+    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
+    evaluated = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
+    rows = [x for x in evaluated if isinstance(x, dict)][:3]
+    if not rows:
+        return []
+    lines = ["🔎 Последние проверенные кандидаты"]
+    for idx, row in enumerate(rows, 1):
+        metrics = _first_dict(row.get("metrics"))
+        home = row.get("home_team") or row.get("home") or "?"
+        away = row.get("away_team") or row.get("away") or "?"
+        selection = row.get("selection") or row.get("market") or "ставка"
+        odds = _as_float(metrics.get("odds"))
+        ev = _as_float(metrics.get("canonical_ev_pct"))
+        edge = _as_float(metrics.get("canonical_edge_pp"))
+        q = _as_float(metrics.get("quality_score"))
+        odds_text = f" @{odds:.2f}" if odds > 0 else ""
+        lines.append(f"{idx}. {home} — {away} | {selection}{odds_text} | EV {ev:+.1f}% | edge {edge:+.1f} п.п. | q {q:.1f}")
+        reject = ", ".join(_reason_ru(x) for x in (row.get("reject_reasons") or [])[:3])
+        if reject:
+            lines.append(f"   • причина: {reject}")
+    return lines
+
+
+def _next_step(payload: dict[str, Any], truth: dict[str, Any], progressive: dict[str, Any]) -> str:
+    if _as_int(_first_dict(payload.get("funnel")).get("published_count")) > 0:
+        return "• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах."
+    if _as_int(truth.get("matches_waiting_line_movement")) > 0:
+        return "• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline."
+    if _as_int(truth.get("matches_with_2plus_odds_sources")) == 0 and _as_int(truth.get("matches_with_2plus_price_confirmations")) > 0:
+        return "• Главный gap: есть подтверждения цены, но нет 2 независимых odds-source. Нужно добирать Bzzoiro/SportLogic overlap."
+    if _as_int(truth.get("matches_with_2plus_context_sources")) < max(5, _as_int(truth.get("matches_total")) // 10):
+        return "• Главный gap: мало 2+ контекста. Нужно добирать Bzzoiro/SStats context на ближайшие окна."
+    if _as_int(progressive.get("window_0_4h_core_ready_2plus_both") or progressive.get("window_0_4h_ready_2plus_both")) == 0:
+        return "• Главный gap: ближайшее окно 0–4ч не готово. Нужно приоритизировать coverage именно по матчам, которые скоро начнутся."
+    return "• Следующий шаг: не ослаблять guards; проблема сейчас в качестве кандидатов/value, а не только в покрытии."
 
 
 def render(payload: dict[str, Any]) -> str:
-    text = _base_render(payload).replace("HARIZON run report v7", "HARIZON run report v8")
-    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
-    pool_filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
-    top_reason = str(payload.get("top_reason") or "")
-    if top_reason and top_reason in pool_filters:
-        import re
-        text = re.sub(r"• Главная причина: .+", f"• Главная причина: {_fallback_pool_reason_ru(top_reason)}", text, count=1)
-    text = _patch_sstats_line(text, payload)
-    prog = diag.get("progressive_core_coverage") if isinstance(diag.get("progressive_core_coverage"), dict) else {}
-    contract = prog.get("contract") if isinstance(prog.get("contract"), dict) else {}
-    counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
+    coverage, truth, progressive = _coverage_counts(payload)
+    funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
+    api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
+    line_guard = payload.get("line_guard") if isinstance(payload.get("line_guard"), dict) else {}
 
-    if counts:
-        core_odds_values = [str(x) for x in (contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io"]) if str(x) != "sstats"]
-        core_odds = ",".join(sorted(set(core_odds_values))) or "n/a"
-        core_context = ",".join(sorted(set(str(x) for x in (contract.get("core_context_providers") or ["bzzoiro", "sstats"]))))
-        excluded_rows = contract.get("excluded_core_providers") if isinstance(contract.get("excluded_core_providers"), list) else []
-        excluded_values: list[str] = []
-        for item in excluded_rows:
-            if isinstance(item, dict):
-                provider = str(item.get("provider") or "").strip()
-                reason = str(item.get("reason") or "excluded").strip()
-                if provider:
-                    excluded_values.append(f"{provider} ({reason})")
-            elif str(item).strip():
-                excluded_values.append(str(item).strip())
-        block_lines = [
-            "🧭 Progressive core coverage",
-            f"• Active core odds/line: {core_odds}",
-            f"• Active core context: {core_context}",
-            f"• Tracked: {_as_int(counts.get('matches_tracked'))} | core odds 2+: {_as_int(counts.get('core_odds_2plus') or counts.get('odds_2plus'))} | core context 2+: {_as_int(counts.get('core_context_2plus') or counts.get('context_2plus'))} | core-ready both: {_as_int(counts.get('core_ready_2plus_both') or counts.get('ready_2plus_both'))}",
-            f"• 0–4ч: {_as_int(counts.get('window_0_4h_core_ready_2plus_both') or counts.get('window_0_4h_ready_2plus_both'))}/{_as_int(counts.get('window_0_4h'))} core-ready",
-            f"• 0–12ч: {_as_int(counts.get('window_0_12h_core_ready_2plus_both') or counts.get('window_0_12h_ready_2plus_both'))}/{_as_int(counts.get('window_0_12h'))} core-ready",
+    inventory_total = _as_int(truth.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
+    run_matches = _as_int(coverage.get("matches_seen"))
+    lines_1plus = _as_int(truth.get("matches_with_1plus_line_evidence")) or _as_int(truth.get("matches_with_odds")) or _as_int(coverage.get("day_inventory_with_odds")) or _as_int(coverage.get("matches_with_offers"))
+    context_1plus = _as_int(truth.get("matches_with_context")) or _as_int(coverage.get("day_inventory_with_context")) or _as_int(coverage.get("matches_with_context"))
+    price_2plus = _as_int(truth.get("matches_with_2plus_price_confirmations"))
+    odds_source_2plus = _as_int(truth.get("matches_with_2plus_odds_sources"))
+    context_2plus = _as_int(truth.get("matches_with_2plus_context_sources"))
+    ready_model = _as_int(truth.get("matches_ready_for_model")) or _as_int(coverage.get("ready_for_model"))
+
+    tier_a_cov = _as_int(truth.get("matches_tier_a_coverage_ready"))
+    tier_b_cov = _as_int(truth.get("matches_tier_b_coverage_ready"))
+    tier_a_ready = _as_int(truth.get("matches_ready_for_publish_tier_a"))
+    tier_b_ready = _as_int(truth.get("matches_ready_for_publish_tier_b"))
+    waiting_movement = _as_int(truth.get("matches_waiting_line_movement")) + _as_int(truth.get("candidate_lifecycle_waiting_line_movement"))
+    declined_after_second = _as_int(truth.get("matches_declined_after_second_snapshot"))
+
+    odds_api = api.get("odds_api_io") if isinstance(api.get("odds_api_io"), dict) else {}
+    sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
+    bzz = api.get("bzzoiro") if isinstance(api.get("bzzoiro"), dict) else {}
+    sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
+
+    core_ready = _as_int(progressive.get("core_ready_2plus_both") or progressive.get("ready_2plus_both"))
+    win4_total = _as_int(progressive.get("window_0_4h"))
+    win4_ready = _as_int(progressive.get("window_0_4h_core_ready_2plus_both") or progressive.get("window_0_4h_ready_2plus_both"))
+    win12_total = _as_int(progressive.get("window_0_12h"))
+    win12_ready = _as_int(progressive.get("window_0_12h_core_ready_2plus_both") or progressive.get("window_0_12h_ready_2plus_both"))
+
+    lines: list[str] = [
+        "🧾 HARIZON — понятный отчёт по запуску",
+        _status_explanation(payload, truth),
+        f"• Главная причина: {_reason_ru(payload.get('top_reason'))}",
+        "",
+        "📦 Инвентарь и покрытие",
+        f"• Инвентарь дня: {inventory_total} матчей. В этом run обработано: {run_matches}.",
+        f"• 1+ линия: {lines_1plus}/{inventory_total} ({_pct(lines_1plus, inventory_total)}) | 1+ контекст: {context_1plus}/{inventory_total} ({_pct(context_1plus, inventory_total)})",
+        f"• 2+ подтверждения цены: {price_2plus}/{inventory_total} ({_pct(price_2plus, inventory_total)})",
+        f"• 2+ независимых odds-source: {odds_source_2plus}/{inventory_total} ({_pct(odds_source_2plus, inventory_total)})",
+        f"• 2+ контекста: {context_2plus}/{inventory_total} ({_pct(context_2plus, inventory_total)})",
+        f"• Готово для модели: {ready_model}/{inventory_total} ({_pct(ready_model, inventory_total)})",
+        "",
+        "🏷️ A/B-tier публикация",
+        f"• A-tier coverage: {tier_a_cov} | A-tier готово к публикации: {tier_a_ready}",
+        f"  A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.",
+        f"• B-tier coverage: {tier_b_cov} | B-tier готово к публикации: {tier_b_ready}",
+        f"  B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.",
+        f"• Ждут второй снимок линии: {waiting_movement} | отклонены после второго снимка: {declined_after_second}",
+        "",
+        "🛡️ Движение линии и финальный фильтр",
+        f"• Pre-kickoff проверок: {_as_int(line_guard.get('final_pre_kickoff_checks'))} | матчей без следующего регулярного run: {_as_int(line_guard.get('no_more_regular_run_before_kickoff'))}",
+        f"• Line guard: увидел {_as_int(line_guard.get('seen'))}, оставил {_as_int(line_guard.get('kept'))}, снял {_as_int(line_guard.get('dropped'))}",
+        "",
+        "🧪 Воронка кандидатов",
+        f"• Raw/candidates before quality: {_as_int(funnel.get('raw_candidates'))}/{_as_int(funnel.get('candidates_before_quality'))}",
+        f"• Quality прошло: {_as_int(funnel.get('passed_candidates'))} | publishable: {_as_int(funnel.get('publishable_candidates'))} | опубликовано: {_as_int(funnel.get('published_count'))}",
+        f"• Controlled fallback: seen {_as_int(funnel.get('fallback_candidates_seen'))} | evaluated {_as_int(funnel.get('fallback_evaluated'))} | published {_as_int(funnel.get('fallback_published_count'))}",
+        "",
+        "📡 Core API простыми словами",
+        f"• odds-api.io: матчей {_as_int(odds_api.get('matched'))}, offers {_as_int(odds_api.get('offers'))}, 2+ букмекера {_as_int(odds_api.get('books_2plus'))}, ошибок {_as_int(odds_api.get('errors'))}",
+        f"• Bzzoiro: контекст {_as_int(bzz.get('contexts'))}, secondary odds {_as_int(bzz.get('secondary_offers_added'))}, overlap с odds-api.io {_as_int(bzz.get('overlap'))}, ошибок {_as_int(bzz.get('errors'))}",
+        f"• SStats: контекст {_as_int(sstats.get('contexts'))}, rows {_as_int(sstats.get('rows'))}, deep {_as_int(sstats.get('deep_enriched'))}, ошибок {_as_int(sstats.get('errors'))}",
+        f"• SportLogic: enabled {bool(sport.get('enabled'))}, matched {_as_int(sport.get('matched'))}, offers {_as_int(sport.get('offers'))}, ошибок {_as_int(sport.get('errors'))}",
+        _source_summary(coverage),
+    ]
+
+    if progressive:
+        lines += [
+            "",
+            "🧭 Core coverage по ближайшим окнам",
+            f"• Все tracked матчи: {_as_int(progressive.get('matches_tracked'))} | core-ready 2+/2+: {core_ready}",
+            f"• 0–4 часа: {win4_ready}/{win4_total} core-ready",
+            f"• 0–12 часов: {win12_ready}/{win12_total} core-ready",
         ]
-        if excluded_values:
-            block_lines.append(f"• Excluded from active core: {', '.join(excluded_values)}")
-        block = "\n".join(block_lines)
-        text = _insert_before(text, "🚫 Почему не опубликовано", block)
-        text = _replace_conclusion(text, counts)
 
-    inv = diag.get("current_inventory_windows") if isinstance(diag.get("current_inventory_windows"), dict) else {}
-    if inv:
-        block = "\n".join([
-            "🕒 Current day inventory windows",
-            f"• Active matches: {_as_int(inv.get('active_matches'))} | odds refresh needed: {_as_int(inv.get('matches_needing_odds_refresh'))}",
-            f"• Final pre-kickoff checks: {_as_int(inv.get('final_pre_kickoff_checks'))} | no next regular run: {_as_int(inv.get('no_more_regular_run_before_kickoff'))}",
-            f"• 0–4ч inventory: {_as_int(inv.get('window_0_4h_ready'))}/{_as_int(inv.get('window_0_4h'))} ready | strict {_as_int(inv.get('window_0_4h_strict_ready'))} | already sent {_as_int(inv.get('window_0_4h_already_published'))} | context 2+: {_as_int(inv.get('window_0_4h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_4h_price_2plus'))}",
-            f"• 0–12ч inventory: {_as_int(inv.get('window_0_12h_ready'))}/{_as_int(inv.get('window_0_12h'))} ready | strict {_as_int(inv.get('window_0_12h_strict_ready'))} | already sent {_as_int(inv.get('window_0_12h_already_published'))} | context 2+: {_as_int(inv.get('window_0_12h_context_2plus'))} | price 2+: {_as_int(inv.get('window_0_12h_price_2plus'))}",
-        ])
-        text = _insert_before(text, "Coverage truth", block)
+    lines += [""] + _render_reasons(payload)
+    samples = _render_samples(payload)
+    if samples:
+        lines += [""] + samples
 
-    truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
-    truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
-    if truth_counts:
-        block = "\n".join([
-            "Coverage truth",
-            f"• Inventory rows: {_as_int(truth_counts.get('matches_total'))}",
-            f"• 2+ price confirmations: {_as_int(truth_counts.get('matches_with_2plus_price_confirmations'))}",
-            f"• 2+ independent odds sources: {_as_int(truth_counts.get('matches_with_2plus_odds_sources'))}",
-            f"• 2+ context sources: {_as_int(truth_counts.get('matches_with_2plus_context_sources'))}",
-            f"• ready publish fresh: {_as_int(truth_counts.get('matches_ready_for_publish'))} | strict: {_as_int(truth_counts.get('matches_ready_for_publish_strict'))} | already sent: {_as_int(truth_counts.get('matches_strict_ready_already_published'))}",
-        ])
-        text = _insert_before(text, "🚫 Почему не опубликовано", block)
-    pool_block = _controlled_fallback_pool_block(payload)
-    if pool_block:
-        text = _insert_before(text, "📌 Вывод", pool_block)
-    if "Нет reject reasons в свежих артефактах" in text or "raw-кандидатов нет" in text:
-        block = _candidate_factory_blockers_block()
-        if block:
-            text = _insert_before(text, "📌 Вывод", block)
-    return text
+    lines += [
+        "",
+        "📌 Что это значит",
+        _next_step(payload, truth, progressive),
+        "• Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.",
+    ]
+    return "\n".join(lines)
 
 
 v7.v5.build_payload = build_payload
 v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
-_write_status({"status": "installed", "renderer": "v8", "main_module": "self", "sstats_nested_normalizer": True})
-
-
-def main() -> int:
-    """Write and send the v8 payload directly.
-
-    v8 used to patch v7.v5 and then call v7.v5.main(). In some GitHub Actions
-    runs that still emitted the v7 payload/text because the base module main()
-    resolved its own globals before the v8 wrapper finished patching them.  Keep
-    the v7 send/write helpers, but call the v8 build_payload/render functions
-    explicitly so the artifact and Telegram message cannot silently downgrade.
-    """
-    payload = build_payload()
-    text = render(payload)
-    payload["text_length"] = len(text)
-    payload["telegram_sent"] = False
-    payload["report_renderer"] = "v8"
-    payload["report_renderer_status"] = "direct_v8_main"
-
-    # Reuse the v5/v7 artifact paths so downstream workflow upload steps do not
-    # need to change.
-    try:
-        v7.v5.write_json(v7.v5.OUT_V5_JSON, payload)
-        v7.v5.write_text(v7.v5.OUT_V5_TXT, text + "\n")
-        v7.v5.write_json(v7.v5.OUT_JSON, payload)
-        v7.v5.write_text(v7.v5.OUT_TXT, text + "\n")
-    except Exception:
-        write_path = EXPORT_DIR / "latest-harizon-telegram-run-report.json"
-        text_path = EXPORT_DIR / "latest-harizon-telegram-run-report.txt"
-        write_path.parent.mkdir(parents=True, exist_ok=True)
-        write_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        text_path.write_text(text + "\n", encoding="utf-8")
-
-    try:
-        if v7.v5.os.getenv("TELEGRAM_CHAT_ID") and (v7.v5.os.getenv("TELEGRAM_BOT_TOKEN") or v7.v5.os.getenv("TELEGRAM_TOKEN")):
-            payload["telegram_sent"] = bool(v7.v5.send_telegram(text))
-            v7.v5.write_json(v7.v5.OUT_V5_JSON, payload)
-            v7.v5.write_json(v7.v5.OUT_JSON, payload)
-        else:
-            print(text)
-    except Exception as exc:
-        payload["telegram_sent"] = False
-        payload["telegram_error"] = f"{type(exc).__name__}: {exc}"
-        try:
-            v7.v5.write_json(v7.v5.OUT_V5_JSON, payload)
-            v7.v5.write_json(v7.v5.OUT_JSON, payload)
-        except Exception:
-            pass
-    _write_status({"status": "sent" if payload.get("telegram_sent") else "written", "renderer": "v8", "main_module": "self", "payload_version": payload.get("version")})
-    return 0
+_write_status({"status": "installed", "renderer": "v8-human-readable", "main_module": "v7.v5", "sstats_nested_normalizer": True})
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(v7.v5.main())
