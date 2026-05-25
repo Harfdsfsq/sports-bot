@@ -153,6 +153,10 @@ def pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
     return out
 
 
+def filtered_pool_filter_counts(pool_counts: dict[str, Any]) -> dict[str, int]:
+    return pool_filter_counts(pool_counts)
+
+
 def build_payload() -> dict[str, Any]:
     payload = v8.build_payload()
     payload["version"] = "harizon-telegram-report-v9-pool-filter-classifier"
@@ -245,7 +249,20 @@ def _pool_info_block(payload: dict[str, Any]) -> str:
 def _patch_conclusion(text: str, payload: dict[str, Any]) -> str:
     reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
     reason_text = " ".join(str((r or {}).get("reason") if isinstance(r, dict) else r) for r in reasons).lower()
-    if any(token in reason_text for token in ("quality", "edge", "ev", "xg", "tier", "telegram_publish_odds_sources")):
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    filters = diag.get("controlled_fallback_pool_filter_counts") if isinstance(diag.get("controlled_fallback_pool_filter_counts"), dict) else {}
+    filter_text = " ".join(str(key) for key in filters).lower()
+    guard_tokens = (
+        "quality",
+        "edge",
+        "ev",
+        "xg",
+        "tier",
+        "telegram_publish_odds_sources",
+        "canonical_negative_value",
+        "prefilter",
+    )
+    if any(token in reason_text or token in filter_text for token in guard_tokens):
         text = text.replace(
             "• Нужно смотреть candidate factory/mapping: линии и контекст есть, но кандидаты не дошли до проверки.",
             "• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality/coverage guards не разрешили публикацию."
@@ -255,6 +272,10 @@ def _patch_conclusion(text: str, payload: dict[str, Any]) -> str:
             "• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality/coverage guards не разрешили публикацию."
         )
     return text
+
+
+def _patch_report_conclusion(text: str, payload: dict[str, Any]) -> str:
+    return _patch_conclusion(text, payload)
 
 
 

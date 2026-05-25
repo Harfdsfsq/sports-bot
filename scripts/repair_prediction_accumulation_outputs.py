@@ -26,6 +26,7 @@ LEDGER = ROOT / ".data" / "prediction-ledger.jsonl"
 SUMMARY = EXPORT_DIR / "latest-prediction-ledger-summary.json"
 CALIBRATION = EXPORT_DIR / "latest-prediction-calibration-audit.json"
 OUT = EXPORT_DIR / "latest-prediction-accumulation-repair.json"
+REPORT = OUT
 
 CORE_METRIC_FIELDS = ("home_team", "away_team", "odds", "ev_pct", "edge_pp")
 FORECAST_STAGES = {
@@ -122,6 +123,7 @@ def rebuild_summary(rows: list[dict[str, Any]], run_id: str, removed: int) -> di
         "by_status": dict(by_status),
         "top_reasons": by_reason.most_common(30),
         "repair_removed_current_run_coverage_only_rows": removed,
+        "coverage_only_rows_removed_current_run": removed,
         "notes": [
             "Use this ledger for forward testing before trusting ROI.",
             "Published/rejected/watch-only rows are accumulated; settlement fields can be filled by a future results job.",
@@ -164,6 +166,7 @@ def clean_calibration(run_id: str) -> dict[str, Any]:
     )
     counts["rows_with_quality"] = sum(1 for row in kept if row.get("quality") is not None)
     counts["coverage_only_rows_removed_by_repair"] = removed
+    counts["coverage_only_rows_removed"] = removed
 
     payload["rows"] = kept
     payload["counts"] = counts
@@ -216,4 +219,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()

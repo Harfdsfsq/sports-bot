@@ -187,6 +187,9 @@ def merge_row(a: dict[str, Any], b: dict[str, Any]) -> dict[str, Any]:
     for k,v in fill.items():
         if merged.get(k) in (None,'',[],{}) and v not in (None,'',[],{}):
             merged[k]=v
+    for before_key, metric_key in (('ev_before_pct', 'ev_pct'), ('edge_before_pp', 'edge_pp')):
+        if merged.get(before_key) in (None, '', [], {}) and fill.get(metric_key) not in (None, '', [], {}):
+            merged[before_key] = fill.get(metric_key)
     return flatten_row(merged)
 
 
@@ -303,4 +306,4 @@ def main() -> int:
 
 
 if __name__ == '__main__':
-    raise SystemExit(main())
+    main()

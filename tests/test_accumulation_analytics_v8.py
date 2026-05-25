@@ -3,6 +3,8 @@ import os
 import runpy
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
+
 
 def write(path, payload):
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -29,7 +31,7 @@ def test_ledger_excludes_api_coverage_only_rows(tmp_path, monkeypatch):
         }]
     })
     try:
-        runpy.run_path('/mnt/data/accum_v8/scripts/update_prediction_ledger.py', run_name='__main__')
+        runpy.run_path(str(ROOT / 'scripts' / 'update_prediction_ledger.py'), run_name='__main__')
     except SystemExit as exc:
         assert exc.code == 0
     lines = (tmp_path / '.data' / 'prediction-ledger.jsonl').read_text(encoding='utf-8').splitlines()
@@ -47,7 +49,7 @@ def test_calibration_audit_separates_opportunity_only(tmp_path, monkeypatch):
     write(exports / 'latest-controlled-fallback-report.json', {'evaluated': [{'home_team': 'A', 'away_team': 'B', 'family': 'totals', 'selection': 'Under 2.5', 'metrics': {'odds': 2.0, 'canonical_ev_pct': 5.0, 'canonical_edge_pp': 2.5, 'quality_score': 77}}]})
     write(exports / 'latest-api-coverage-consensus-runtime-patch.json', {'sample': [{'home_team': 'C', 'away_team': 'D', 'family': 'totals', 'selection': 'Over 2.5', 'odds': 3.1, 'ev_pct': 11.0}]})
     try:
-        runpy.run_path('/mnt/data/accum_v8/scripts/build_prediction_calibration_audit.py', run_name='__main__')
+        runpy.run_path(str(ROOT / 'scripts' / 'build_prediction_calibration_audit.py'), run_name='__main__')
     except SystemExit as exc:
         assert exc.code == 0
     audit = json.loads((exports / 'latest-prediction-calibration-audit.json').read_text(encoding='utf-8'))

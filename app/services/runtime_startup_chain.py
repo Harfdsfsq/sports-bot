@@ -75,6 +75,8 @@ MODULES = [
     'app.services.quality_consensus_safe_relief_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
+    'app.providers.odds_api_io_fast_event_account_patch',
+    'app.services.bzzoiro_total_point_normalization_patch',
     'app.services.bzzoiro_exact_offer_bridge_patch',
     'app.services.candidate_inventory_evidence_annotation_patch',
     'app.services.candidate_factory_runtime_diagnostics',

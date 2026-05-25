@@ -12,7 +12,7 @@ def test_repair_removes_current_run_api_coverage_only_rows(tmp_path: Path) -> No
     exports = root / ".data" / "exports"
     exports.mkdir(parents=True)
     ledger = root / ".data" / "prediction-ledger.jsonl"
-    ledger.parent.mkdir(parents=True)
+    ledger.parent.mkdir(parents=True, exist_ok=True)
 
     rows = [
         {

@@ -4,7 +4,6 @@ import json
 import runpy
 import shutil
 from pathlib import Path
-import pytest
 
 
 def write(path: Path, payload):
@@ -55,12 +54,8 @@ def test_quality_is_optional_for_sparse_nonfallback_rows(tmp_path, monkeypatch):
         }]
     })
 
-    with pytest.raises(SystemExit) as exc:
-        runpy.run_path('scripts/build_prediction_calibration_audit.py', run_name='__main__')
-    assert exc.value.code == 0
-    with pytest.raises(SystemExit) as exc:
-        runpy.run_path('scripts/update_prediction_ledger.py', run_name='__main__')
-    assert exc.value.code == 0
+    runpy.run_path('scripts/build_prediction_calibration_audit.py', run_name='__main__')
+    runpy.run_path('scripts/update_prediction_ledger.py', run_name='__main__')
 
     audit = json.loads((exp / 'latest-prediction-calibration-audit.json').read_text(encoding='utf-8'))
     summary = json.loads((exp / 'latest-prediction-ledger-summary.json').read_text(encoding='utf-8'))

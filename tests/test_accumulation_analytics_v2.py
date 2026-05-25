@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 import os
 import runpy
-import pytest
 from pathlib import Path
 
 
@@ -46,9 +45,7 @@ def test_calibration_audit_merges_sparse_quality_with_rich_fallback(tmp_path, mo
         }]
     })
     script = Path(__file__).resolve().parents[1] / "scripts" / "build_prediction_calibration_audit.py"
-    with pytest.raises(SystemExit) as exc:
-        runpy.run_path(str(script), run_name="__main__")
-    assert exc.value.code in (0, None)
+    runpy.run_path(str(script), run_name="__main__")
     payload = json.loads((export / "latest-prediction-calibration-audit.json").read_text(encoding="utf-8"))
     row = payload["rows"][0]
     assert row["home_team"] == "Team A"
@@ -87,9 +84,7 @@ def test_prediction_ledger_current_run_missing_metrics_ignores_old_rows(tmp_path
         }]
     })
     script = Path(__file__).resolve().parents[1] / "scripts" / "update_prediction_ledger.py"
-    with pytest.raises(SystemExit) as exc:
-        runpy.run_path(str(script), run_name="__main__")
-    assert exc.value.code in (0, None)
+    runpy.run_path(str(script), run_name="__main__")
     summary = json.loads((export / "latest-prediction-ledger-summary.json").read_text(encoding="utf-8"))
     assert summary["new_rows_added"] == 1
     assert summary["current_run_rows"] == 1
@@ -108,8 +103,6 @@ def test_prediction_ledger_does_not_log_nonfatal_runtime_warning_when_fallback_e
     )
     write_json(export / "latest-controlled-fallback-report.json", {"candidates_seen": 1, "evaluated": []})
     script = Path(__file__).resolve().parents[1] / "scripts" / "update_prediction_ledger.py"
-    with pytest.raises(SystemExit) as exc:
-        runpy.run_path(str(script), run_name="__main__")
-    assert exc.value.code in (0, None)
+    runpy.run_path(str(script), run_name="__main__")
     summary = json.loads((export / "latest-prediction-ledger-summary.json").read_text(encoding="utf-8"))
     assert summary["by_status"].get("runtime_error") is None

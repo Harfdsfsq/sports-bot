@@ -96,6 +96,10 @@ def dedupe_candidates(candidates: list[Any]) -> tuple[list[Any], list[dict[str, 
     return [best[key] for key in order if key in best], duplicates
 
 
+def _dedupe(candidates: list[Any]) -> tuple[list[Any], list[dict[str, Any]]]:
+    return dedupe_candidates(candidates)
+
+
 def _write_report(payload: dict[str, Any]) -> None:
     try:
         REPORT_PATH.parent.mkdir(parents=True, exist_ok=True)

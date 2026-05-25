@@ -25,6 +25,7 @@ ROOT = Path(".").resolve()
 EXPORT_DIR = ROOT / ".data" / "exports"
 LEDGER = ROOT / ".data" / "prediction-ledger.jsonl"
 SUMMARY = EXPORT_DIR / "latest-prediction-ledger-summary.json"
+RUN_LOG = EXPORT_DIR / "latest-run-bot.log"
 
 PREDICTION_STAGES = {
     "before_quality",
@@ -206,6 +207,9 @@ def merge_row(base: dict[str, Any], incoming: dict[str, Any]) -> dict[str, Any]:
     for key, value in fill.items():
         if merged.get(key) in (None, "", [], {}) and value not in (None, "", [], {}):
             merged[key] = value
+    for before_key, metric_key in (("ev_before_pct", "ev_pct"), ("edge_before_pp", "edge_pp")):
+        if merged.get(before_key) in (None, "", [], {}) and fill.get(metric_key) not in (None, "", [], {}):
+            merged[before_key] = fill.get(metric_key)
     return flatten_row(merged)
 
 
@@ -263,7 +267,73 @@ def existing_ids() -> set[str]:
     return ids
 
 
-def collect_current_rows() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+def runtime_error_row() -> dict[str, Any] | None:
+    try:
+        if not RUN_LOG.exists() or RUN_LOG.stat().st_size <= 0:
+            return None
+        text = RUN_LOG.read_text(encoding="utf-8", errors="replace")
+    except Exception:
+        return None
+
+    fatal_markers = (
+        "Traceback (most recent call last)",
+        "AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'",
+        "Usage: python -m app.cli run-once",
+    )
+    if not any(marker in text for marker in fatal_markers):
+        return None
+
+    fallback = load_json(EXPORT_DIR / "latest-controlled-fallback-report.json", {})
+    fallback_seen = 0
+    if isinstance(fallback, dict):
+        fallback_seen = as_int(fallback.get("candidates_seen"), 0) or len(fallback.get("evaluated") or [])
+    old_preflight_crash = "RuntimePreflight" in text and "apply_phase_policy" in text and "AttributeError:" in text
+    if not old_preflight_crash and fallback_seen > 0:
+        return None
+
+    reason = "runtime_preflight_apply_phase_policy_missing" if old_preflight_crash else "runtime_error"
+    run_id = os.getenv("GITHUB_RUN_ID") or datetime.now(UTC).strftime("%Y%m%d%H%M%S")
+    return {
+        "ledger_id": f"{run_id}|runtime_error|{reason}",
+        "run_id": run_id,
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "candidate_key": f"runtime_error|{reason}",
+        "status": "runtime_error",
+        "stage_seen": ["runtime"],
+        "match_key": None,
+        "home_team": None,
+        "away_team": None,
+        "league_name": None,
+        "kickoff_utc": None,
+        "family": None,
+        "selection": None,
+        "point": None,
+        "odds": None,
+        "ev_pct": None,
+        "edge_pp": None,
+        "confidence": None,
+        "quality": None,
+        "odds_sources_count": None,
+        "context_sources_count": None,
+        "books_count": None,
+        "reasons": [reason],
+        "settlement": {},
+    }
+
+
+def collect_current_rows_with_audit() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    runtime_row = runtime_error_row()
+    if runtime_row is not None:
+        return [runtime_row], {
+            "raw_artifact_rows": 0,
+            "merged_keys": 0,
+            "line_less_rows_collapsed": 0,
+            "line_less_rows_ambiguous": 0,
+            "excluded_coverage_only_rows": 0,
+            "prediction_rows": 1,
+            "runtime_error_rows": 1,
+        }
+
     sources = [
         ("before_quality", EXPORT_DIR / "latest-candidates-before-quality.json"),
         ("after_quality", EXPORT_DIR / "latest-candidates-after-quality.json"),
@@ -332,6 +402,11 @@ def collect_current_rows() -> tuple[list[dict[str, Any]], dict[str, Any]]:
         "prediction_rows": len(rows_out),
     }
     return rows_out, audit
+
+
+def collect_current_rows() -> list[dict[str, Any]]:
+    rows, _audit = collect_current_rows_with_audit()
+    return rows
 
 
 def read_ledger_rows() -> list[dict[str, Any]]:
@@ -409,7 +484,7 @@ def main() -> int:
     run_id = os.getenv("GITHUB_RUN_ID") or datetime.now(UTC).strftime("%Y%m%d%H%M%S")
     pruned = prune_current_run_coverage_only(run_id)
     seen = existing_ids()
-    current_rows, audit = collect_current_rows()
+    current_rows, audit = collect_current_rows_with_audit()
     audit["pruned_existing_coverage_only_rows"] = pruned
     new_rows = [row for row in current_rows if row["ledger_id"] not in seen]
     if new_rows:
@@ -424,4 +499,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    main()
