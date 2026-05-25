@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 import re
 import json
+import asyncio
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -82,7 +83,17 @@ class SportLogicProvider:
             )),
         )
         self.enabled = self._env_bool("ENABLE_SPORTLOGIC", True) and self._env_bool("SPORTLOGIC_ENABLED", True)
+        self.min_request_interval_seconds = max(
+            0.0,
+            float(
+                getattr(settings, "sportlogic_min_request_interval_seconds", None)
+                or os.getenv("SPORTLOGIC_MIN_REQUEST_INTERVAL_SECONDS")
+                or 0.0
+            ),
+        )
         self._requests = 0
+        self._last_request_ts = 0.0
+        self._rate_limit_cooldown_path = Path(os.getenv("SPORTLOGIC_RATE_LIMIT_COOLDOWN_FILE") or ".data/cache/sportlogic_rate_limit_cooldown.json")
         self._fixture_cache: list[dict[str, Any]] = []
 
     # ---------------------------------------------------------------------
@@ -390,6 +401,7 @@ class SportLogicProvider:
         stats: dict[str, Any],
         preview: dict[str, Any],
     ) -> Any | None:
+        await self._respect_rate_limit()
         self._requests += 1
         stats["requests"] += 1
         try:
@@ -407,6 +419,7 @@ class SportLogicProvider:
             retry_after = response.headers.get("Retry-After") or response.headers.get("retry-after")
             if retry_after:
                 stats["retry_after"] = retry_after
+            self._record_rate_limit_cooldown(response, stats)
             # Stop spending the whole SportLogic per-run budget after the first
             # quota response.  The provider has a small free minute/day bucket,
             # so repeated variants only create errors and block useful work.
@@ -997,10 +1010,85 @@ class SportLogicProvider:
             stats["enabled"] = False
             stats["reason"] = "missing_api_key"
             return False
+        cooldown = self._active_rate_limit_cooldown()
+        if cooldown:
+            stats["enabled"] = True
+            stats["rate_limited"] = True
+            stats["budget_exhausted"] = True
+            stats["reason"] = "sportlogic_rate_limit_cooldown"
+            stats["cooldown_until_utc"] = cooldown.get("until_utc")
+            return False
         return True
 
     def _budget_left(self) -> bool:
+        if self._active_rate_limit_cooldown():
+            return False
         return self.max_requests_per_run <= 0 or self._requests < self.max_requests_per_run
+
+    def _active_rate_limit_cooldown(self) -> dict[str, Any] | None:
+        try:
+            payload = json.loads(self._rate_limit_cooldown_path.read_text(encoding="utf-8"))
+            until_raw = str(payload.get("until_utc") or "")
+            if not until_raw:
+                return None
+            until = parse_datetime(until_raw)
+            if until > datetime.now(UTC):
+                return payload
+        except Exception:
+            return None
+        return None
+
+    def _record_rate_limit_cooldown(self, response: httpx.Response, stats: dict[str, Any]) -> None:
+        retry_after = response.headers.get("Retry-After") or response.headers.get("retry-after")
+        wait_seconds: float | None = None
+        if retry_after:
+            try:
+                wait_seconds = float(str(retry_after).strip())
+            except Exception:
+                wait_seconds = None
+        if wait_seconds is None:
+            # SportLogic has both 10 RPM and 500/day free limits.  Without a
+            # Retry-After header we assume minute-bucket pressure and cool down
+            # long enough to avoid burning the next run with immediate 429s.
+            wait_seconds = float(os.getenv("SPORTLOGIC_429_COOLDOWN_SECONDS") or 90)
+        until = datetime.now(UTC) + timedelta(seconds=max(30.0, wait_seconds))
+        stats["retry_after_seconds"] = round(max(30.0, wait_seconds), 2)
+        stats["cooldown_until_utc"] = until.isoformat()
+        try:
+            self._rate_limit_cooldown_path.parent.mkdir(parents=True, exist_ok=True)
+            self._rate_limit_cooldown_path.write_text(
+                json.dumps(
+                    {
+                        "provider": "sportlogic",
+                        "reason": "http_429",
+                        "status_code": response.status_code,
+                        "until_utc": until.isoformat(),
+                        "recorded_at_utc": datetime.now(UTC).isoformat(),
+                        "x_ratelimit_limit": response.headers.get("X-RateLimit-Limit"),
+                        "x_ratelimit_remaining": response.headers.get("X-RateLimit-Remaining"),
+                    },
+                    ensure_ascii=False,
+                    indent=2,
+                    sort_keys=True,
+                )
+                + "\n",
+                encoding="utf-8",
+            )
+        except Exception:
+            pass
+
+    async def _respect_rate_limit(self) -> None:
+        if self.min_request_interval_seconds <= 0:
+            return
+        import time
+        now = time.monotonic()
+        if self._last_request_ts <= 0:
+            self._last_request_ts = now
+            return
+        wait = self.min_request_interval_seconds - (now - self._last_request_ts)
+        if wait > 0:
+            await asyncio.sleep(wait)
+        self._last_request_ts = time.monotonic()
 
     @staticmethod
     def _merge_stats(target: dict[str, Any], source: dict[str, Any]) -> None:

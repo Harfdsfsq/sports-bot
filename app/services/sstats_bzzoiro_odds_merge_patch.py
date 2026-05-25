@@ -418,6 +418,129 @@ def merge(base: dict[str, list[Offer]], extra: dict[str, list[Offer]]) -> int:
     return added
 
 
+def _inventory_target_date() -> str:
+    explicit = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or '').strip()
+    if explicit:
+        return explicit
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
+        return datetime.now(UTC).astimezone(tz).date().isoformat()
+    except Exception:
+        return datetime.now(UTC).date().isoformat()
+
+
+def _truth_source(source: str) -> str:
+    s = str(source or '').strip().lower()
+    aliases = {
+        'odds_api_io_account1': 'odds_api_io',
+        'odds_api_io_account2': 'odds_api_io',
+        'bzzoiro_v2': 'bzzoiro',
+        'bzzoiro_current_odds': 'bzzoiro',
+        'sport_logic': 'sportlogic',
+        'sportlogic_io': 'sportlogic',
+    }
+    return aliases.get(s, s)
+
+
+def _listish(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if isinstance(value, (tuple, set)):
+        return list(value)
+    if isinstance(value, dict):
+        return list(value.keys())
+    if isinstance(value, str) and value.strip():
+        return [x.strip() for x in re.split(r'[,|;/]+', value) if x.strip()]
+    return []
+
+
+def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str, Any]:
+    """Persist runtime odds-source evidence back into the frozen day inventory.
+
+    The Bzzoiro/SportLogic rescue layer runs after the initial inventory is
+    frozen.  Without this bridge the runtime pool can have bzzoiro+odds_api_io
+    overlap while latest-day-inventory-coverage-truth still says 0 independent
+    odds sources.  This function updates only evidence counters/source lists; it
+    does not create matches or alter model probabilities.
+    """
+    day = _inventory_target_date()
+    path = ROOT / '.data' / 'day_inventory' / f'{day}.json'
+    payload = {}
+    try:
+        payload = json.loads(path.read_text(encoding='utf-8'))
+    except Exception:
+        return {'status': 'missing_inventory', 'date_local': day, 'path': str(path)}
+    matches = payload.get('matches') if isinstance(payload, dict) else None
+    if not isinstance(matches, list):
+        return {'status': 'bad_inventory_shape', 'date_local': day, 'path': str(path)}
+
+    by_key = {str(row.get('match_key') or row.get('canonical_match_id') or '').strip(): row for row in matches if isinstance(row, dict)}
+    updated = 0
+    with_2_sources = 0
+    with_bzzoiro = 0
+    with_sportlogic = 0
+    for match_key, offers in (base or {}).items():
+        row = by_key.get(str(match_key or '').strip())
+        if not row or not offers:
+            continue
+        sources = sorted({ _truth_source(getattr(o, 'source', '')) for o in offers if _truth_source(getattr(o, 'source', '')) in {'odds_api_io', 'bzzoiro', 'sportlogic'} })
+        books = sorted({ normalize_bookmaker_name(str(getattr(o, 'bookmaker', '') or '')) for o in offers if str(getattr(o, 'bookmaker', '') or '').strip() })
+        books = [b for b in books if b]
+        if not sources and not books:
+            continue
+        existing_sources = sorted({ _truth_source(x) for x in _listish(row.get('odds_sources')) + _listish(row.get('line_sources')) if _truth_source(x) in {'odds_api_io', 'bzzoiro', 'sportlogic'} })
+        merged_sources = sorted(set(existing_sources) | set(sources))
+        existing_books = [str(x).strip() for x in _listish(row.get('books')) if str(x).strip()]
+        merged_books = sorted(set(existing_books) | set(books))
+        row['odds_sources'] = merged_sources
+        row['line_sources'] = merged_sources
+        row['books'] = merged_books
+        cov = row.setdefault('coverage', {})
+        if isinstance(cov, dict):
+            cov['odds'] = bool(merged_sources or merged_books)
+            cov['line_sources_count'] = len(merged_sources)
+            cov['books_count'] = len(merged_books)
+        md = row.setdefault('metadata', {})
+        if isinstance(md, dict):
+            md['odds_sources'] = merged_sources
+            md['line_sources'] = merged_sources
+            md['line_sources_count'] = len(merged_sources)
+            md['books_count'] = len(merged_books)
+            md['latest_books_max'] = max(int(md.get('latest_books_max') or 0), len(merged_books))
+            md['price_sources_count'] = max(int(md.get('price_sources_count') or 0), len(merged_books))
+            md['price_confirmation_sources_count'] = max(int(md.get('price_confirmation_sources_count') or 0), len(merged_books))
+            md['runtime_offer_sources_annotated_at_utc'] = datetime.now(UTC).isoformat()
+        updated += 1
+        if len(merged_sources) >= 2:
+            with_2_sources += 1
+        if 'bzzoiro' in merged_sources:
+            with_bzzoiro += 1
+        if 'sportlogic' in merged_sources:
+            with_sportlogic += 1
+
+    if updated:
+        payload['updated_at_utc'] = datetime.now(UTC).isoformat()
+        payload.setdefault('sources', {})
+        if isinstance(payload.get('sources'), dict):
+            payload['sources']['runtime_odds_source_annotation'] = {
+                'updated_at_utc': datetime.now(UTC).isoformat(),
+                'updated_matches': updated,
+                'matches_with_2plus_runtime_odds_sources': with_2_sources,
+                'matches_with_bzzoiro_source': with_bzzoiro,
+                'matches_with_sportlogic_source': with_sportlogic,
+            }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+    return {
+        'status': 'ok',
+        'date_local': day,
+        'updated_matches': updated,
+        'matches_with_2plus_runtime_odds_sources': with_2_sources,
+        'matches_with_bzzoiro_source': with_bzzoiro,
+        'matches_with_sportlogic_source': with_sportlogic,
+    }
+
+
 async def fetch_sstats(settings: Any, matches: list[Match], base: dict[str, list[Offer]], amap: dict[str, dict[str, str]]) -> tuple[dict[str, list[Offer]], dict[str, Any]]:
     key = os.getenv('SSTATS_API_KEY') or getattr(settings, 'sstats_api_key', None)
     stats = {
@@ -579,6 +702,7 @@ async def fetch_offers_wrapped(self: Any, matches: list[Match]):
     report['after_matches'] = len([1 for v in base.values() if v])
     report['after_2plus_sources'] = sum(1 for v in base.values() if source_count(v) >= 2)
     report['after_2plus_books'] = sum(1 for v in base.values() if book_count(v) >= 2)
+    report['day_inventory_annotation'] = annotate_day_inventory_from_offers(base)
     stats['sstats_bzzoiro_odds_merge'] = report
     stats['offers_parsed'] = sum(len(v) for v in base.values())
     stats['matches_with_2plus_sources_after_merge'] = report['after_2plus_sources']

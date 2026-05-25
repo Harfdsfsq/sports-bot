@@ -156,25 +156,46 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
     requested_dates = set(dates or [])
     per_page = max(5, int(float(os.getenv("SPORTLOGIC_SMOKE_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100)))
     async with httpx.AsyncClient(timeout=provider.timeout, follow_redirects=True) as client:
-        for date_key in dates:
-            if not provider._budget_left():
-                stats["budget_exhausted"] = True
-                break
-            day_rows: list[dict[str, Any]] = []
-            for params in _param_variants_for_date(date_key, per_page=per_page):
-                if not provider._budget_left():
-                    stats["budget_exhausted"] = True
-                    break
-                payload = await provider._get_json(client, "/games", params, stats, preview)
-                rows = provider._extract_list(payload)
-                if not rows:
-                    preview.setdefault("query_variants_used", []).append({"scope": "dated", "date": date_key, "params": params, "rows": 0, "date_filter_effective": False})
-                    continue
-                if not _accept_dated_rows(provider, rows, date_key, params, stats, preview):
-                    continue
-                day_rows.extend(_filter_rows_to_requested_dates(provider, rows, {date_key}))
-                break
-            fixtures.extend(day_rows)
+        # SportLogic docs support date_from/date_to on /games, so use one
+        # cursor-paginated window request first.  The old per-date probe loop
+        # easily hit the 10 RPM free limit and caused 429 before useful odds work.
+        if dates:
+            window_params = {"date_from": min(dates), "date_to": max(dates), "status": "scheduled", "per_page": per_page}
+            rows = await provider._get_paginated_list(client, "/games", window_params, stats, preview, max_pages=getattr(provider, "max_pages", 3))
+            filtered = _filter_rows_to_requested_dates(provider, rows, requested_dates)
+            preview.setdefault("query_variants_used", []).append({
+                "scope": "window",
+                "date": "window",
+                "params": window_params,
+                "rows": len(rows),
+                "rows_inside_requested_dates": len(filtered),
+                "sample_dates": sorted({_row_date(provider, row) for row in rows if _row_date(provider, row)})[:8],
+                "date_filter_effective": bool(filtered),
+            })
+            if filtered:
+                stats["date_filter_effective"] = True
+                fixtures.extend(filtered)
+            elif rows:
+                stats["stale_or_ignored_date_filter_rows"] = _to_int(stats.get("stale_or_ignored_date_filter_rows"), 0) + len(rows)
+                stats["date_filter_ignored"] = True
+
+        if not fixtures and dates and provider._budget_left():
+            window_params = {"date_from": min(dates), "date_to": max(dates), "per_page": per_page}
+            rows = await provider._get_paginated_list(client, "/games", window_params, stats, preview, max_pages=getattr(provider, "max_pages", 3))
+            filtered = _filter_rows_to_requested_dates(provider, rows, requested_dates)
+            preview.setdefault("query_variants_used", []).append({
+                "scope": "window_no_status",
+                "date": "window",
+                "params": window_params,
+                "rows": len(rows),
+                "rows_inside_requested_dates": len(filtered),
+                "sample_dates": sorted({_row_date(provider, row) for row in rows if _row_date(provider, row)})[:8],
+                "date_filter_effective": bool(filtered),
+            })
+            if filtered:
+                stats["date_filter_effective"] = True
+                fixtures.extend(filtered)
+
         if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), True):
             for params in _broad_param_variants(per_page=per_page):
                 if not provider._budget_left():

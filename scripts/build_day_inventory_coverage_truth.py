@@ -177,7 +177,16 @@ def line_status_for_row(row: dict[str, Any], line_state: dict[str, Any]) -> dict
 
 
 def odds_sources(row: dict[str, Any]) -> list[str]:
-    sources = unique_norm(list_from_any(row.get("odds_sources")) + list_from_any(row.get("line_sources")))
+    md = metadata(row)
+    cov = coverage(row)
+    sources = unique_norm(
+        list_from_any(row.get("odds_sources"))
+        + list_from_any(row.get("line_sources"))
+        + list_from_any(md.get("odds_sources"))
+        + list_from_any(md.get("line_sources"))
+        + list_from_any(cov.get("odds_sources"))
+        + list_from_any(cov.get("line_sources"))
+    )
     return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
 
 
