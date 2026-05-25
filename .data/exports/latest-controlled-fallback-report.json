@@ -1,9 +1,9 @@
 {
-  "created_at": "2026-05-25T08:13:31.360628+00:00",
+  "created_at": "2026-05-25T08:33:08.636065+00:00",
   "enabled": true,
   "published": false,
   "status": "no_viable_controlled_fallback",
-  "candidates_seen": 3,
+  "candidates_seen": 4,
   "evaluated": [
     {
       "match_key": "soccer|aasane fotball|raufoss il|2026-05-25",
@@ -48,7 +48,7 @@
         "sources_count": 1,
         "confirmation_sources_count": 1,
         "confirmation_sources": [
-          "sstats"
+          "sstats_form"
         ],
         "confirmation_meta": {
           "weather_supports_under": false,
@@ -66,8 +66,11 @@
           "odds_api_io_account2"
         ],
         "exact_account_sources_count": 2,
-        "publish_coverage_passed": true,
-        "publish_coverage_reasons": [],
+        "publish_coverage_passed": false,
+        "publish_coverage_reasons": [
+          "insufficient_odds_sources:1/2",
+          "insufficient_context_sources:1/2"
+        ],
         "quality_reasons": [
           "market_sanity_totals_xg_contradiction"
         ],
@@ -133,7 +136,7 @@
         "sources_count": 1,
         "confirmation_sources_count": 1,
         "confirmation_sources": [
-          "sstats"
+          "sstats_form"
         ],
         "confirmation_meta": {
           "weather_supports_under": false,
@@ -151,8 +154,11 @@
           "odds_api_io_account2"
         ],
         "exact_account_sources_count": 2,
-        "publish_coverage_passed": true,
-        "publish_coverage_reasons": [],
+        "publish_coverage_passed": false,
+        "publish_coverage_reasons": [
+          "insufficient_odds_sources:1/2",
+          "insufficient_context_sources:1/2"
+        ],
         "quality_reasons": [
           "post_calibration_probability_guard"
         ],
@@ -166,6 +172,118 @@
           "xg_model_conservative_gap_pp": 3.308,
           "xg_total": 2.837,
           "xg_direction_ok": false
+        },
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        }
+      }
+    },
+    {
+      "match_key": "soccer|hapoel ra anana|ironi modiin|2026-05-25",
+      "home_team": "Hapoel Ra`anana FC",
+      "away_team": "Ironi Modiin",
+      "home_team_ru": "Хапоел Ра`анана",
+      "away_team_ru": "Ирони Модиин",
+      "league_name": "Israel - National League",
+      "league_name_ru": "Исраел - Насьональ Лигуе",
+      "commence_time": "2026-05-25T16:00:00+00:00",
+      "commence_time_display": "25.05.2026 19:00 MSK",
+      "candidate_source": "debug_candidates_before_quality",
+      "family": "totals",
+      "selection": "Больше 2.5",
+      "point": 2.5,
+      "ok": false,
+      "tier": null,
+      "reject_reasons": [
+        "tier_a_odds_sources_below_min:1/2",
+        "tier_a_quality_below_min",
+        "tier_a_canonical_edge_below_min",
+        "tier_a_canonical_ev_below_min",
+        "tier_b_odds_sources_below_min:1/2",
+        "tier_b_context_sources_below_min:1/3",
+        "tier_b_confidence_below_min",
+        "tier_b_quality_below_min",
+        "tier_b_canonical_edge_below_min",
+        "tier_b_canonical_ev_below_min",
+        "tier_c_quality_below_min",
+        "tier_c_canonical_edge_below_min",
+        "tier_c_canonical_ev_below_min"
+      ],
+      "reject_reasons_ru": [
+        "уровень A: odds sources below min:1/2",
+        "качество ниже минимума уровня A",
+        "запас value ниже минимума уровня A",
+        "EV ниже минимума уровня A",
+        "уровень B: odds sources below min:1/2",
+        "уровень B: context sources below min:1/3",
+        "уверенность ниже минимума уровня B",
+        "качество ниже минимума уровня B",
+        "запас value ниже минимума уровня B",
+        "EV ниже минимума уровня B",
+        "качество ниже минимума уровня C",
+        "запас value ниже минимума уровня C",
+        "EV ниже минимума уровня C"
+      ],
+      "metrics": {
+        "odds": 2.22,
+        "selected_implied_probability": 0.45045,
+        "adjusted_probability": 0.46203,
+        "model_probability": 0.4879,
+        "market_probability": 0.46687,
+        "canonical_edge_pp": 1.158,
+        "market_edge_pp": -0.484,
+        "canonical_ev_pct": 2.571,
+        "confidence": 74.043,
+        "quality_score": 40.098,
+        "quality_score_raw": 40.098,
+        "quality_score_source": "raw",
+        "publication_score": 81.692,
+        "books_count": 3,
+        "odds_sources_count": 1,
+        "sources_count": 1,
+        "confirmation_sources_count": 1,
+        "confirmation_sources": [
+          "sstats_form"
+        ],
+        "confirmation_meta": {
+          "weather_supports_under": false,
+          "weather_supports_over": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false
+        },
+        "line_sources": [
+          "odds_api_io"
+        ],
+        "exact_account_sources": [
+          "odds_api_io_account1",
+          "odds_api_io_account2"
+        ],
+        "exact_account_sources_count": 2,
+        "publish_coverage_passed": false,
+        "publish_coverage_reasons": [
+          "insufficient_odds_sources:1/2",
+          "insufficient_context_sources:1/2"
+        ],
+        "quality_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "xg_sanity": {
+          "enabled": true,
+          "xg_probability": 0.431075,
+          "xg_probability_pct": 43.107,
+          "xg_model_gap_pp": 3.096,
+          "xg_abs_gap_pp": 3.096,
+          "xg_model_optimism_gap_pp": 3.096,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 2.403,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -214,18 +332,18 @@
       "metrics": {
         "odds": 2.34,
         "selected_implied_probability": 0.42735,
-        "adjusted_probability": 0.429734,
-        "model_probability": 0.429734,
-        "market_probability": 0.411441,
-        "canonical_edge_pp": 0.238,
-        "market_edge_pp": 1.829,
-        "canonical_ev_pct": 0.558,
-        "confidence": 76.619,
-        "quality_score": 68.416,
-        "quality_score_raw": 68.416,
+        "adjusted_probability": 0.428553,
+        "model_probability": 0.428553,
+        "market_probability": 0.41068,
+        "canonical_edge_pp": 0.12,
+        "market_edge_pp": 1.787,
+        "canonical_ev_pct": 0.281,
+        "confidence": 78.5,
+        "quality_score": 68.325,
+        "quality_score_raw": 68.325,
         "quality_score_source": "raw",
-        "publication_score": 88.053,
-        "books_count": 4,
+        "publication_score": 90.638,
+        "books_count": 5,
         "odds_sources_count": 2,
         "sources_count": 5,
         "confirmation_sources_count": 5,
@@ -262,10 +380,10 @@
           "enabled": true,
           "xg_probability": 0.567062,
           "xg_probability_pct": 56.706,
-          "xg_model_gap_pp": -13.733,
-          "xg_abs_gap_pp": 13.733,
+          "xg_model_gap_pp": -13.851,
+          "xg_abs_gap_pp": 13.851,
           "xg_model_optimism_gap_pp": 0.0,
-          "xg_model_conservative_gap_pp": 13.733,
+          "xg_model_conservative_gap_pp": 13.851,
           "xg_total": 2.41,
           "xg_direction_ok": true
         },
@@ -298,10 +416,9 @@
   },
   "pool_counts": {
     "day_inventory_membership_keys": 603,
-    "debug_candidates_before_quality": 3,
-    "debug_candidates_before_quality_canonical_negative_value_prefilter": 1
+    "debug_candidates_before_quality": 4
   },
   "watchlist": [],
   "no_pick_report_sent": true,
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":1810,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1779696812,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":1812,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1779697989,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
 }
