@@ -6,6 +6,10 @@ This script is deliberately read-only with respect to model decisions.  It only
 collects published/rejected/watch-only candidates into ``.data/prediction-ledger.jsonl``
 so we can later measure CLV/ROI/yield.
 
+v5 fixes:
+- line-less sparse value/API rows are merged into the unique same-match market row
+  that has a concrete point, so one logical candidate produces one ledger row.
+
 v4 fixes:
 - quality/confidence are optional analytics fields for sparse non-fallback rows;
   current-run missing-core counters now require identity + odds + EV + edge, not quality.
@@ -170,6 +174,68 @@ def identity(row: dict[str, Any]) -> str:
     ])
 
 
+def identity_base(row: dict[str, Any]) -> str:
+    """Line-agnostic identity used only to merge sparse audit rows.
+
+    Some runtime artifacts (especially candidate-value audit rows) omit ``point``
+    while fallback/API rows export the same candidate with a concrete line.  A
+    sparse no-point row must not become a second ledger/calibration candidate.
+    """
+    row = flatten_row(row)
+    base = row.get('match_key') or f"{row.get('home_team')}|{row.get('away_team')}|{row.get('kickoff_utc') or row.get('commence_time')}"
+    return '|'.join([
+        norm(base),
+        norm(row.get('family') or row.get('market_family') or row.get('market')),
+        norm(row.get('selection') or row.get('selection_key')),
+    ])
+
+
+def _key_point(key_value: str) -> str:
+    parts = str(key_value or '').split('|')
+    return parts[-1] if len(parts) >= 4 else ''
+
+
+def _key_base(key_value: str) -> str:
+    parts = str(key_value or '').split('|')
+    return '|'.join(parts[:3]) if len(parts) >= 4 else str(key_value or '')
+
+
+def collapse_missing_line_rows(
+    merged: dict[str, dict[str, Any]],
+    stage_seen: dict[str, set[str]] | None = None,
+) -> tuple[dict[str, dict[str, Any]], dict[str, set[str]] | None, int]:
+    """Merge line-less sparse rows into the unique line-bearing sibling.
+
+    This is intentionally conservative: a no-line row is merged only when there is
+    exactly one non-empty-point candidate with the same match/family/selection
+    base.  Ambiguous cases are left untouched for audit visibility.
+    """
+    by_base: dict[str, list[str]] = defaultdict(list)
+    for key_value in merged:
+        if _key_point(key_value):
+            by_base[_key_base(key_value)].append(key_value)
+
+    remap: dict[str, str] = {}
+    for key_value in list(merged):
+        if _key_point(key_value):
+            continue
+        targets = by_base.get(_key_base(key_value), [])
+        if len(targets) == 1:
+            remap[key_value] = targets[0]
+
+    collapsed = 0
+    for source_key, target_key in remap.items():
+        if source_key not in merged or target_key not in merged:
+            continue
+        merged[target_key] = merge_row(merged[target_key], merged[source_key])
+        del merged[source_key]
+        if stage_seen is not None:
+            stage_seen[target_key].update(stage_seen.get(source_key, set()))
+            stage_seen.pop(source_key, None)
+        collapsed += 1
+    return merged, stage_seen, collapsed
+
+
 def reasons(row: dict[str, Any]) -> list[str]:
     out: list[str] = []
     for name in ('reasons', 'reject_reasons', 'reject_reasons_ru', 'quality_reasons'):
@@ -249,6 +315,8 @@ def collect_current_rows() -> list[dict[str, Any]]:
             k = identity(row)
             merged[k] = merge_row(merged.get(k, {}), row)
             stage_seen[k].add(stage)
+
+    merged, stage_seen, line_less_collapsed = collapse_missing_line_rows(merged, stage_seen)
 
     out = []
     run_id = os.getenv('GITHUB_RUN_ID') or datetime.now(UTC).strftime('%Y%m%d%H%M%S')
