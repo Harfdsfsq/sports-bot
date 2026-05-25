@@ -6,6 +6,10 @@ This script is deliberately read-only with respect to model decisions.  It only
 collects published/rejected/watch-only candidates into ``.data/prediction-ledger.jsonl``
 so we can later measure CLV/ROI/yield.
 
+v4 fixes:
+- quality/confidence are optional analytics fields for sparse non-fallback rows;
+  current-run missing-core counters now require identity + odds + EV + edge, not quality.
+
 v3 fixes:
 - value-patch rows often miss ``point`` but contain it in selection text
   ("Меньше 2.5", "Over 2.5").  We extract that line so sparse value/API rows
@@ -28,7 +32,8 @@ EXPORT_DIR = ROOT / '.data' / 'exports'
 LEDGER = ROOT / '.data' / 'prediction-ledger.jsonl'
 SUMMARY = EXPORT_DIR / 'latest-prediction-ledger-summary.json'
 
-CORE_METRIC_FIELDS = ('home_team', 'away_team', 'odds', 'ev_pct', 'edge_pp', 'quality')
+CORE_METRIC_FIELDS = ('home_team', 'away_team', 'odds', 'ev_pct', 'edge_pp')
+OPTIONAL_METRIC_FIELDS = ('quality', 'confidence')
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -323,6 +328,7 @@ def summarize(current_run_id: str = '') -> dict[str, Any]:
             'Use this ledger for forward testing before trusting ROI.',
             'Published/rejected/watch-only rows are accumulated; settlement fields can be filled by a future results job.',
             'rows_missing_core_metrics_current_run is the main quality signal; total may include older rows produced before ledger fixes.',
+            'quality/confidence are optional when a row never reached fallback; they should not make a valid EV/edge row look broken.',
         ],
     }
 

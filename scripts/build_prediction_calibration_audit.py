@@ -2,6 +2,8 @@ from __future__ import annotations
 
 """Build a before/after calibration audit for every candidate row we can see.
 
+v4 treats quality as optional for sparse non-fallback rows while preserving it when exported.
+
 v3 merges sparse value/API rows with rich fallback/quality rows by extracting the
 line from selection text when ``point`` is missing.  This keeps one row per
 logical candidate and preserves home/away/odds/quality metrics.
@@ -257,7 +259,7 @@ def main() -> int:
                 'api_coverage': k in api,
             },
         }
-        if any(row_out.get(field) in (None, '') for field in ('home_team', 'away_team', 'odds', 'quality')):
+        if any(row_out.get(field) in (None, '') for field in ('home_team', 'away_team', 'odds')):
             missing_core += 1
         rows_out.append(row_out)
     payload = {
@@ -274,6 +276,7 @@ def main() -> int:
             'quality_relief': len(quality),
             'negative_ev_after_calibration': negative_after,
             'rows_missing_core_metrics': missing_core,
+            'rows_with_quality': sum(1 for row in rows_out if row.get('quality') is not None),
         },
         'top_reasons': reason_counts.most_common(20),
         'rows': rows_out[:250],

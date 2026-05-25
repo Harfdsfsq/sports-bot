@@ -1,0 +1,59 @@
+--- a/scripts/update_prediction_ledger.py
++++ b/scripts/update_prediction_ledger.py
+@@ -5,6 +5,10 @@
+ This script is deliberately read-only with respect to model decisions.  It only
+ collects published/rejected/watch-only candidates into ``.data/prediction-ledger.jsonl``
+ so we can later measure CLV/ROI/yield.
++
++v4 fixes:
++- quality/confidence are optional analytics fields for sparse non-fallback rows;
++  current-run missing-core counters now require identity + odds + EV + edge, not quality.
+ 
+ v3 fixes:
+ - value-patch rows often miss ``point`` but contain it in selection text
+@@ -28,7 +32,8 @@
+ LEDGER = ROOT / '.data' / 'prediction-ledger.jsonl'
+ SUMMARY = EXPORT_DIR / 'latest-prediction-ledger-summary.json'
+ 
+-CORE_METRIC_FIELDS = ('home_team', 'away_team', 'odds', 'ev_pct', 'edge_pp', 'quality')
++CORE_METRIC_FIELDS = ('home_team', 'away_team', 'odds', 'ev_pct', 'edge_pp')
++OPTIONAL_METRIC_FIELDS = ('quality', 'confidence')
+ 
+ 
+ def load_json(path: Path, default: Any) -> Any:
+@@ -323,6 +328,7 @@
+             'Use this ledger for forward testing before trusting ROI.',
+             'Published/rejected/watch-only rows are accumulated; settlement fields can be filled by a future results job.',
+             'rows_missing_core_metrics_current_run is the main quality signal; total may include older rows produced before ledger fixes.',
++            'quality/confidence are optional when a row never reached fallback; they should not make a valid EV/edge row look broken.',
+         ],
+     }
+ 
+--- a/scripts/build_prediction_calibration_audit.py
++++ b/scripts/build_prediction_calibration_audit.py
+@@ -1,6 +1,8 @@
+ from __future__ import annotations
+ 
+ """Build a before/after calibration audit for every candidate row we can see.
++
++v4 treats quality as optional for sparse non-fallback rows while preserving it when exported.
+ 
+ v3 merges sparse value/API rows with rich fallback/quality rows by extracting the
+ line from selection text when ``point`` is missing.  This keeps one row per
+@@ -257,7 +259,7 @@
+                 'api_coverage': k in api,
+             },
+         }
+-        if any(row_out.get(field) in (None, '') for field in ('home_team', 'away_team', 'odds', 'quality')):
++        if any(row_out.get(field) in (None, '') for field in ('home_team', 'away_team', 'odds')):
+             missing_core += 1
+         rows_out.append(row_out)
+     payload = {
+@@ -274,6 +276,7 @@
+             'quality_relief': len(quality),
+             'negative_ev_after_calibration': negative_after,
+             'rows_missing_core_metrics': missing_core,
++            'rows_with_quality': sum(1 for row in rows_out if row.get('quality') is not None),
+         },
+         'top_reasons': reason_counts.most_common(20),
+         'rows': rows_out[:250],
