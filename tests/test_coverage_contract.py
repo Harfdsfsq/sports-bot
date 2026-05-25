@@ -106,11 +106,9 @@ def test_runner_publish_filter_blocks_single_source_candidate(monkeypatch):
     publishable = runner._filter_publishable_candidates([item])
 
     assert publishable == []
-    assert item.source_summary["publish_coverage_reasons"] == [
-        "insufficient_odds_sources:1/2",
-        "insufficient_context_sources:1/2",
-        "insufficient_books:1/2",
-    ]
+    assert item.source_summary["publication_tier"] == "B_wait"
+    assert item.source_summary["can_publish"] is False
+    assert any("tier_b_line_movement_not_confirmed" in reason for reason in item.source_summary["publish_coverage_reasons"])
 
 
 def test_odds_api_accounts_are_one_source_by_default(monkeypatch):

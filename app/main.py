@@ -30,7 +30,7 @@ async def run_now(
     if not expected:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="admin token is not configured",
+            detail="ADMIN_RUN_TOKEN is not configured",
         )
     if x_admin_token != expected:
         raise HTTPException(

@@ -21,6 +21,7 @@ from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
+from app.services.publication_tiers import classify_publication_tier
 from app.services.publication_lifecycle import (
     append_sent_candidate_index,
     candidate_dedupe_keys,
@@ -1817,12 +1818,18 @@ class PredictionRunner:
                 candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent_semantic_dedupe'
                 candidate.source_summary['publication_dedupe_keys_matched'] = sorted(candidate_keys.intersection(seen_keys))[:6]
                 continue
-            coverage_decision = sync_candidate_publish_coverage(candidate, self.settings)
-            candidate.diagnostics.setdefault('publish_coverage_contract', coverage_decision.report)
-            candidate.source_summary['publish_coverage_contract'] = coverage_decision.report
-            if not coverage_decision.passed:
-                candidate.source_summary['publish_coverage_reasons'] = list(coverage_decision.reasons)
-                candidate.reasons.extend(f'publish_coverage={reason}' for reason in coverage_decision.reasons)
+            tier_decision = classify_publication_tier(candidate, self.settings, now=datetime.now(UTC))
+            candidate.diagnostics.setdefault('publish_coverage_contract', tier_decision.report)
+            candidate.diagnostics['publication_tier'] = tier_decision.report
+            candidate.source_summary['publish_coverage_contract'] = tier_decision.report
+            candidate.source_summary['publication_tier'] = tier_decision.tier
+            candidate.source_summary['publication_tier_report'] = tier_decision.report
+            candidate.source_summary['line_movement_lifecycle_status'] = str((tier_decision.report.get('line_movement') or {}).get('status') or '')
+            candidate.source_summary['found_value'] = True
+            candidate.source_summary['can_publish'] = bool(tier_decision.passed)
+            if not tier_decision.passed:
+                candidate.source_summary['publish_coverage_reasons'] = list(tier_decision.reasons)
+                candidate.reasons.extend(f'publish_tier={reason}' for reason in tier_decision.reasons)
                 continue
             publishable.append(candidate)
         return publishable
