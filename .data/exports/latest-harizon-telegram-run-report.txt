@@ -1,29 +1,29 @@
 🧾 HARIZON run report v9 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: odds above global max
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Покрытие
-• Матчи в run: 187 | day inventory: 300
-• С линиями: 101 | с контекстом: 159 | ready model: 202
-• odds-api.io offers: 14041 | Bzzoiro secondary offers: 187
-• 2+ букмекера odds-api.io: 82 | 2-source overlap Bzzoiro+odds-api.io: 14
-• Source combinations: odds_api_io: 87, bzzoiro+odds_api_io: 14, bzzoiro: 2
+• Матчи в run: 188 | day inventory: 300
+• С линиями: 137 | с контекстом: 160 | ready model: 202
+• odds-api.io offers: 18482 | Bzzoiro secondary offers: 198
+• 2+ букмекера odds-api.io: 102 | 2-source overlap Bzzoiro+odds-api.io: 17
+• Source combinations: odds_api_io: 120, bzzoiro+odds_api_io: 17
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1 / 1
+• Raw/candidates before quality: 1 / 2
 • Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 1 | evaluated 1 | published False (0)
-• Windowed coverage: audit 1 | allowed 0 | blocked 1 | publish-filter input 0
+• Controlled fallback: status no_viable_controlled_fallback | seen 2 | evaluated 2 | published False (0)
+• Windowed coverage: audit 2 | allowed 0 | blocked 2 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
 • Final pre-kickoff checks: 7 | no next regular run: 7
-• Line guard: seen 1 | kept 1 | dropped 0
+• Line guard: seen 1 | kept 0 | dropped 1
 
 📡 Core API
-• odds_api_io: events req 0, odds req 31, matched 186, offers 14041, 2+ books 82, err 1, auth_failed False
-• sstats: req 30, ctx 159, rows 25122, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 187, overlap odds-api.io 14, err 0
+• odds_api_io: events req 0, odds req 38, matched 187, offers 18482, 2+ books 102, err 0, auth_failed False
+• sstats: req 30, ctx 160, rows 25122, err 0, deep enriched 15
+• bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 198, overlap odds-api.io 17, err 0
 • sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
 🧭 Progressive core coverage
@@ -35,31 +35,40 @@
 
 Coverage truth
 • Inventory rows: 300
-• 2+ price confirmations: 119
-• 2+ independent odds sources: 118
-• 2+ context sources: 32
-• ready publish fresh: 25 | strict: 25 | already sent: 0
+• 2+ price confirmations: 125
+• 2+ independent odds sources: 121
+• 2+ context sources: 33
+• ready publish fresh: 26 | strict: 26 | already sent: 0
 
 🚫 Почему не опубликовано
-• odds above global max: 1 (100%)
+• направление ставки конфликтует с xG: 1 (9%)
+• quality: market sanity totals/xG contradiction: 1 (9%)
+• tier a canonical edge below min: 1 (9%)
+• tier a canonical ev below min: 1 (9%)
+• tier b quality below min: 1 (9%)
+• tier b canonical edge below min: 1 (9%)
+• tier b canonical ev below min: 1 (9%)
+• tier c canonical edge below min: 1 (9%)
 
 🔎 Проверенные reserve-кандидаты
-1. SC Paderborn 07 — VFL Wolfsburg | Больше @3.22 | EV +49.6% | edge +15.4 п.п. | q 100.0
-   • reject: odds above global max
+1. Aasane Fotball — Raufoss IL | Меньше 2.5 @2.35 | EV +3.1% | edge +1.3 п.п. | q 38.9
+   • reject: направление ставки конфликтует с xG
+2. IK Start — Vaalerenga IF | Меньше 2.5 @2.36 | EV +1.0% | edge +0.4 п.п. | q 69.5
+   • reject: tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
 
 
 
 🧯 Controlled fallback pool
 • Frozen day inventory keys: 603
-• Pool sources: debug_candidates_before_quality_duplicate_in_pool: 1, latest_rescue_candidates: 1
+• Pool sources: debug_candidates_before_quality: 2
 • Смысл: это источники пула, а не причины отказа.
 
 📌 Вывод
-• Progressive coverage считает только active core-contract текущего запуска. Главный gap сейчас — добор Bzzoiro/SStats и второго odds source на ближайшие окна, а не ослабление guards. Core-ready: 149; 0–4ч: 1/74; 0–12ч: 16/188.
+• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality не разрешили публикацию.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
 
 🕒 Current day inventory windows
 • Active matches: 150 | odds refresh needed: 22
 • Final pre-kickoff checks: 7 | no next regular run: 7
-• 0–4ч inventory: 2/93 ready | strict 2 | already sent 0 | context 2+: 2 | price 2+: 30
-• 0–12ч inventory: 18/227 ready | strict 18 | already sent 0 | context 2+: 20 | price 2+: 97
+• 0–4ч inventory: 2/93 ready | strict 2 | already sent 0 | context 2+: 2 | price 2+: 32
+• 0–12ч inventory: 19/227 ready | strict 19 | already sent 0 | context 2+: 21 | price 2+: 103
