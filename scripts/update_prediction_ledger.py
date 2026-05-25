@@ -2,9 +2,11 @@ from __future__ import annotations
 
 """Append run candidates to a forward-test ledger.
 
-The ledger is the transition from patch-chasing to measurable forecasting:
-every candidate that reaches discovery/quality/fallback is stored with its odds,
-EV, reasons, publication status and later settlement fields if available.
+Robust accumulation layer:
+* handles fallback rows where metrics are nested under ``metrics``;
+* keeps rejected/watch-only candidates even when nothing is published;
+* never crashes because of legacy ``norm``/``_norm`` naming drift;
+* writes a summary artifact on every run.
 """
 
 import json
@@ -20,7 +22,6 @@ ROOT = Path('.').resolve()
 EXPORT_DIR = ROOT / '.data' / 'exports'
 LEDGER = ROOT / '.data' / 'prediction-ledger.jsonl'
 SUMMARY = EXPORT_DIR / 'latest-prediction-ledger-summary.json'
-RUN_LOG = EXPORT_DIR / 'latest-run-bot.log'
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -35,65 +36,58 @@ def write_json(path: Path, payload: Any) -> None:
     path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
 
 
+def norm(value: Any) -> str:
+    return re.sub(r'[^a-z0-9]+', ' ', str(value or '').lower()).strip()
 
-def runtime_error_row() -> dict[str, Any] | None:
-    """Build a ledger row only for fatal run-once failures.
 
-    Non-fatal helper warnings (for example discovery-first nested asyncio
-    warnings) should not create a ``runtime_error`` ledger row when the run
-    reached controlled fallback and produced evaluated candidates.
-    """
+# Backward/forward alias: older patched versions sometimes called _norm().
+_norm = norm
+
+
+def as_float(value: Any, default: float | None = None) -> float | None:
     try:
-        text = RUN_LOG.read_text(encoding='utf-8', errors='replace')
+        if value in (None, ''):
+            return default
+        return float(str(value).replace(',', '.'))
     except Exception:
-        return None
+        return default
 
-    fatal_markers = (
-        'Traceback (most recent call last)',
-        "AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'",
-        'Usage: python -m app.cli run-once',
-    )
-    if not any(marker in text for marker in fatal_markers):
-        return None
 
-    fallback = load_json(EXPORT_DIR / 'latest-controlled-fallback-report.json', {})
-    if isinstance(fallback, dict):
-        evaluated = fallback.get('evaluated') if isinstance(fallback.get('evaluated'), list) else []
-        candidates_seen = int(float(fallback.get('candidates_seen') or 0))
-        old_preflight_crash = 'RuntimePreflight' in text and 'apply_phase_policy' in text and 'AttributeError:' in text
-        if not old_preflight_crash and (candidates_seen > 0 or len(evaluated) > 0):
-            return None
+def as_int(value: Any, default: int | None = None) -> int | None:
+    try:
+        if value in (None, ''):
+            return default
+        return int(float(str(value)))
+    except Exception:
+        return default
 
-    reason = 'runtime_error'
-    if 'RuntimePreflight' in text and 'apply_phase_policy' in text and 'AttributeError:' in text:
-        reason = 'runtime_preflight_apply_phase_policy_missing'
-    run_id = os.getenv('GITHUB_RUN_ID') or datetime.now(UTC).strftime('%Y%m%d%H%M%S')
-    return {
-        'ledger_id': f'{run_id}|runtime_error|{reason}',
-        'run_id': run_id,
-        'created_at_utc': datetime.now(UTC).isoformat(),
-        'candidate_key': 'runtime_error',
-        'status': 'runtime_error',
-        'stage_seen': ['run_once'],
-        'match_key': None,
-        'home_team': None,
-        'away_team': None,
-        'league_name': None,
-        'kickoff_utc': None,
-        'family': None,
-        'selection': None,
-        'point': None,
-        'odds': None,
-        'ev_pct': None,
-        'edge_pp': None,
-        'confidence': None,
-        'quality': None,
-        'odds_sources_count': None,
-        'context_sources_count': None,
-        'books_count': None,
-        'reasons': [reason],
-        'settlement': {},
-    }
+
+def deep_get(row: dict[str, Any], *names: str) -> Any:
+    """Read a value from row, nested metrics, source_summary, diagnostics, or contract."""
+    containers: list[Any] = [row]
+    for key in ('metrics', 'source_summary', 'diagnostics', 'metadata', 'publish_coverage_contract', 'harizon_contract'):
+        val = row.get(key)
+        if isinstance(val, dict):
+            containers.append(val)
+    for container in containers:
+        if not isinstance(container, dict):
+            continue
+        for name in names:
+            if container.get(name) not in (None, '', [], {}):
+                return container.get(name)
+    return None
+
+
+def list_from_any(value: Any) -> list[str]:
+    if isinstance(value, list):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, tuple):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, set):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, str) and value.strip():
+        return [v.strip() for v in re.split(r'[,|;/]+', value) if v.strip()]
+    return []
 
 
 def rows(payload: Any) -> list[dict[str, Any]]:
@@ -102,7 +96,11 @@ def rows(payload: Any) -> list[dict[str, Any]]:
     if not isinstance(payload, dict):
         return []
     out: list[dict[str, Any]] = []
-    for key in ('candidates', 'rows', 'data', 'evaluated', 'blocked_top', 'near_miss', 'selected', 'selected_all', 'published_candidates'):
+    for key in (
+        'candidates', 'rows', 'data', 'evaluated', 'blocked_top', 'near_miss',
+        'watchlist', 'selected', 'selected_all', 'published_candidates',
+        'candidates_before_quality', 'passed_candidates',
+    ):
         val = payload.get(key)
         if isinstance(val, list):
             out.extend(x for x in val if isinstance(x, dict))
@@ -115,22 +113,31 @@ def rows(payload: Any) -> list[dict[str, Any]]:
 
 
 def identity(row: dict[str, Any]) -> str:
-    base = row.get('match_key') or f"{row.get('home_team')}|{row.get('away_team')}|{row.get('kickoff_utc') or row.get('commence_time')}"
-    return '|'.join([
-        norm(base), norm(row.get('family') or row.get('market_family') or row.get('market')),
-        norm(row.get('selection') or row.get('selection_key')), str(row.get('point') or row.get('line') or '').strip(),
-    ])
+    base = deep_get(row, 'match_key', 'canonical_match_id') or (
+        f"{deep_get(row, 'home_team')}|{deep_get(row, 'away_team')}|"
+        f"{deep_get(row, 'kickoff_utc', 'commence_time')}"
+    )
+    family = deep_get(row, 'family', 'market_family', 'market')
+    selection = deep_get(row, 'selection', 'selection_key')
+    point = deep_get(row, 'point', 'line')
+    return '|'.join([norm(base), norm(family), norm(selection), str(point or '').strip()])
 
 
 def reasons(row: dict[str, Any]) -> list[str]:
     out: list[str] = []
-    for name in ('reasons', 'reject_reasons', 'quality_reasons'):
-        val = row.get(name)
-        if isinstance(val, list):
-            out.extend(str(x) for x in val if str(x).strip())
-        elif isinstance(val, str) and val.strip():
-            out.extend(x.strip() for x in re.split(r'[,|;/]+', val) if x.strip())
-    return out
+    for container in (row, row.get('metrics') if isinstance(row.get('metrics'), dict) else {}):
+        for name in ('reasons', 'reject_reasons', 'reject_reasons_ru', 'quality_reasons', 'publish_coverage_reasons'):
+            val = container.get(name) if isinstance(container, dict) else None
+            out.extend(list_from_any(val))
+    # preserve order, remove duplicates
+    seen: set[str] = set()
+    result: list[str] = []
+    for item in out:
+        key = item.lower()
+        if key not in seen:
+            seen.add(key)
+            result.append(item)
+    return result
 
 
 def existing_ids() -> set[str]:
@@ -147,11 +154,22 @@ def existing_ids() -> set[str]:
     return ids
 
 
+def _row_status(row: dict[str, Any], reason_list: list[str]) -> str:
+    if row.get('telegram_sent') is True or row.get('published') is True or row.get('sent') is True:
+        return 'published'
+    joined = ' '.join(reason_list).lower()
+    if 'watch' in joined or str(deep_get(row, 'tier') or '').lower() == 'c':
+        return 'watch_only'
+    return 'rejected_or_watch'
+
+
 def collect_current_rows() -> list[dict[str, Any]]:
     sources = [
         ('before_quality', EXPORT_DIR / 'latest-candidates-before-quality.json'),
         ('after_quality', EXPORT_DIR / 'latest-candidates-after-quality.json'),
         ('fallback', EXPORT_DIR / 'latest-controlled-fallback-report.json'),
+        ('quality_relief', EXPORT_DIR / 'latest-quality-consensus-safe-relief.json'),
+        ('api_coverage', EXPORT_DIR / 'latest-api-coverage-consensus-runtime-patch.json'),
         ('normalized_publication', EXPORT_DIR / 'latest-normalized-publication-payloads.json'),
     ]
     merged: dict[str, dict[str, Any]] = {}
@@ -159,45 +177,45 @@ def collect_current_rows() -> list[dict[str, Any]]:
     for stage, path in sources:
         for row in rows(load_json(path, None)):
             k = identity(row)
+            if not k or k == 'none|none|none|':
+                continue
             current = merged.setdefault(k, {})
-            current.update({kk: vv for kk, vv in row.items() if vv not in (None, '', [], {})})
+            # Keep non-empty values; nested dicts such as metrics are important.
+            for kk, vv in row.items():
+                if vv not in (None, '', [], {}):
+                    current[kk] = vv
             stage_seen[k].add(stage)
-    out = []
+
+    out: list[dict[str, Any]] = []
     run_id = os.getenv('GITHUB_RUN_ID') or datetime.now(UTC).strftime('%Y%m%d%H%M%S')
     for k, row in merged.items():
         r = reasons(row)
-        status = 'published' if row.get('telegram_sent') is True or row.get('published') is True else 'rejected_or_watch'
-        if any('watch' in x.lower() for x in r):
-            status = 'watch_only'
         out.append({
             'ledger_id': f'{run_id}|{k}',
             'run_id': run_id,
             'created_at_utc': datetime.now(UTC).isoformat(),
             'candidate_key': k,
-            'status': status,
+            'status': _row_status(row, r),
             'stage_seen': sorted(stage_seen[k]),
-            'match_key': row.get('match_key'),
-            'home_team': row.get('home_team'),
-            'away_team': row.get('away_team'),
-            'league_name': row.get('league_name'),
-            'kickoff_utc': row.get('kickoff_utc') or row.get('commence_time'),
-            'family': row.get('family') or row.get('market_family') or row.get('market'),
-            'selection': row.get('selection') or row.get('selection_key'),
-            'point': row.get('point') or row.get('line'),
-            'odds': as_float(row.get('odds') or row.get('selected_odds')),
-            'ev_pct': as_float(row.get('ev_pct') or row.get('ev')),
-            'edge_pp': as_float(row.get('edge_pct') or row.get('edge_pp')),
-            'confidence': as_float(row.get('confidence')),
-            'quality': as_float(row.get('quality') or row.get('quality_score')),
-            'odds_sources_count': row.get('odds_sources_count') or row.get('independent_odds_sources_count'),
-            'context_sources_count': row.get('context_sources_count') or row.get('confirmation_sources_count'),
-            'books_count': row.get('books_count'),
+            'match_key': deep_get(row, 'match_key', 'canonical_match_id'),
+            'home_team': deep_get(row, 'home_team'),
+            'away_team': deep_get(row, 'away_team'),
+            'league_name': deep_get(row, 'league_name'),
+            'kickoff_utc': deep_get(row, 'kickoff_utc', 'commence_time'),
+            'family': deep_get(row, 'family', 'market_family', 'market'),
+            'selection': deep_get(row, 'selection', 'selection_key'),
+            'point': deep_get(row, 'point', 'line'),
+            'odds': as_float(deep_get(row, 'odds', 'selected_odds')),
+            'ev_pct': as_float(deep_get(row, 'canonical_ev_pct', 'ev_pct', 'ev')),
+            'edge_pp': as_float(deep_get(row, 'canonical_edge_pp', 'edge_pct', 'edge_pp')),
+            'confidence': as_float(deep_get(row, 'confidence')),
+            'quality': as_float(deep_get(row, 'quality', 'quality_score', 'quality_score_raw')),
+            'odds_sources_count': as_int(deep_get(row, 'odds_sources_count', 'independent_odds_sources_count', 'exact_sources_count')),
+            'context_sources_count': as_int(deep_get(row, 'context_sources_count', 'confirmation_sources_count')),
+            'books_count': as_int(deep_get(row, 'books_count', 'exact_books_count')),
             'reasons': r,
             'settlement': row.get('settlement') if isinstance(row.get('settlement'), dict) else {},
         })
-    err = runtime_error_row()
-    if err is not None:
-        out.append(err)
     return out
 
 
@@ -213,7 +231,10 @@ def summarize() -> dict[str, Any]:
                 pass
     by_status = Counter(str(r.get('status') or 'unknown') for r in rows_existing)
     by_reason = Counter()
+    missing_metrics = 0
     for row in rows_existing:
+        if row.get('ev_pct') is None and row.get('edge_pp') is None and row.get('quality') is None:
+            missing_metrics += 1
         for reason in row.get('reasons') or []:
             by_reason[str(reason)] += 1
     return {
@@ -222,6 +243,7 @@ def summarize() -> dict[str, Any]:
         'ledger_path': str(LEDGER),
         'total_rows': len(rows_existing),
         'by_status': dict(by_status),
+        'rows_missing_core_metrics': missing_metrics,
         'top_reasons': by_reason.most_common(30),
         'notes': [
             'Use this ledger for forward testing before trusting ROI.',
@@ -243,6 +265,7 @@ def main() -> int:
     write_json(SUMMARY, summary)
     print(json.dumps(summary, ensure_ascii=False, indent=2, sort_keys=True))
     return 0
+
 
 if __name__ == '__main__':
     raise SystemExit(main())
