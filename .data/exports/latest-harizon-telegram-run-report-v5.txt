@@ -1,28 +1,28 @@
 🧾 HARIZON run report v9 — единая фактическая сводка
 • Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: tier a canonical edge below min
+• Главная причина: quality: вероятность после калибровки ниже порога
 
 📦 Покрытие
-• Матчи в run: 189 | day inventory: 300
-• С линиями: 131 | с контекстом: 162 | ready model: 201
-• odds-api.io offers: 18026 | Bzzoiro secondary offers: 187
-• 2+ букмекера odds-api.io: 99 | 2-source overlap Bzzoiro+odds-api.io: 16
-• Source combinations: odds_api_io: 115, bzzoiro+odds_api_io: 16
+• Матчи в run: 187 | day inventory: 300
+• С линиями: 132 | с контекстом: 158 | ready model: 203
+• odds-api.io offers: 15558 | Bzzoiro secondary offers: 187
+• 2+ букмекера odds-api.io: 101 | 2-source overlap Bzzoiro+odds-api.io: 16
+• Source combinations: odds_api_io: 116, bzzoiro+odds_api_io: 16
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1 / 3
+• Raw/candidates before quality: 1 / 4
 • Passed quality: 1 | publishable: 0 | опубликовано: 0
 • Main pipeline: published False (0)
 • Controlled fallback: status no_viable_controlled_fallback | seen 3 | evaluated 3 | published False (0)
-• Windowed coverage: audit 3 | allowed 0 | blocked 3 | publish-filter input 0
+• Windowed coverage: audit 4 | allowed 0 | blocked 4 | publish-filter input 0
 
 🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 1 | no next regular run: 1
-• Line guard: seen 1 | kept 0 | dropped 1
+• Final pre-kickoff checks: 6 | no next regular run: 6
+• Line guard: seen 2 | kept 0 | dropped 2
 
 📡 Core API
-• odds_api_io: events req 0, odds req 38, matched 188, offers 18026, 2+ books 99, err 0, auth_failed False
-• sstats: req 30, ctx 161, rows 25122, err 0, deep enriched 15
+• odds_api_io: events req 0, odds req 38, matched 186, offers 15558, 2+ books 101, err 0, auth_failed False
+• sstats: req 30, ctx 158, rows 25122, err 0, deep enriched 15
 • bzzoiro: direct req 1, v2 req 5, v2 ctx 1, v2 odds 1, secondary offers 187, overlap odds-api.io 16, err 0
 • sportlogic: enabled True, req 13, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 2
 
@@ -30,32 +30,32 @@
 • Active core odds/line: bzzoiro,odds_api_io,sportlogic
 • Active core context: bzzoiro,sstats
 • Tracked: 1674 | core odds 2+: 223 | core context 2+: 188 | core-ready both: 149
-• 0–4ч: 1/51 core-ready
-• 0–12ч: 15/190 core-ready
+• 0–4ч: 1/54 core-ready
+• 0–12ч: 15/189 core-ready
 
 Coverage truth
 • Inventory rows: 300
-• 2+ price confirmations: 122
-• 2+ independent odds sources: 119
+• 2+ price confirmations: 125
+• 2+ independent odds sources: 120
 • 2+ context sources: 34
 • ready publish fresh: 27 | strict: 27 | already sent: 0
 
 🚫 Почему не опубликовано
-• tier a canonical edge below min: 2 (10%)
-• tier a canonical ev below min: 2 (10%)
-• tier b quality below min: 2 (10%)
-• tier b canonical edge below min: 2 (10%)
-• tier b canonical ev below min: 2 (10%)
-• tier c canonical edge below min: 2 (10%)
-• tier c canonical ev below min: 2 (10%)
-• quality: вероятность после калибровки ниже порога: 2 (10%)
+• quality: вероятность после калибровки ниже порога: 2 (14%)
+• line movement guard снял кандидата: 2 (14%)
+• telegram publish odds sources guard:1/2: 1 (7%)
+• tier c watch only: 1 (7%)
+• controlled fallback confirmation sources below min:1/2: 1 (7%)
+• missing total xg sanity: 1 (7%)
+• final edge below min: 1 (7%)
+• telegram quality stop not allowed:post calibration probability guard: 1 (7%)
 
 🔎 Проверенные reserve-кандидаты
-1. Aasane Fotball — Raufoss IL | Меньше 2.5 @2.33 | EV +3.3% | edge +1.4 п.п. | q 39.1
+1. Al Jahra — Al Arabi | Меньше 2.5 @2.75 | EV +6.2% | edge +2.2 п.п. | q 68.5
+   • reject: telegram publish odds sources guard:1/2, tier c watch only, controlled fallback confirmation sources below min:1/2
+2. Aasane Fotball — Raufoss IL | Меньше 2.5 @2.35 | EV +4.5% | edge +1.9 п.п. | q 40.6
    • reject: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-2. Hapoel Ra`anana FC — Ironi Modiin | Больше 2.5 @2.20 | EV +1.4% | edge +0.6 п.п. | q 38.5
-   • reject: tier a odds sources below min:1/2, tier a quality below min, tier a canonical edge below min
-3. IK Start — Vaalerenga IF | Меньше 2.5 @2.35 | EV +0.6% | edge +0.2 п.п. | q 68.8
+3. IK Start — Vaalerenga IF | Меньше 2.5 @2.36 | EV +1.2% | edge +0.5 п.п. | q 69.7
    • reject: tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
 
 
@@ -64,13 +64,15 @@ Coverage truth
 • Frozen day inventory keys: 603
 • Pool sources: debug_candidates_before_quality: 3
 • Смысл: это источники пула, а не причины отказа.
+• Также отфильтровано до fallback: отрицательная контрольная ценность до fallback: 1
+• Смысл: часть кандидатов fallback реально оценил; отдельные строки были отсеяны до evaluation.
 
 📌 Вывод
 • Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality не разрешили публикацию.
 • Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
 
 🕒 Current day inventory windows
-• Active matches: 151 | odds refresh needed: 22
-• Final pre-kickoff checks: 1 | no next regular run: 1
-• 0–4ч inventory: 2/61 ready | strict 2 | already sent 0 | context 2+: 2 | price 2+: 19
-• 0–12ч inventory: 19/229 ready | strict 19 | already sent 0 | context 2+: 21 | price 2+: 99
+• Active matches: 150 | odds refresh needed: 22
+• Final pre-kickoff checks: 6 | no next regular run: 6
+• 0–4ч inventory: 2/64 ready | strict 2 | already sent 0 | context 2+: 2 | price 2+: 22
+• 0–12ч inventory: 19/228 ready | strict 19 | already sent 0 | context 2+: 21 | price 2+: 102
