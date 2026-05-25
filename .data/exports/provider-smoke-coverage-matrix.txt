@@ -12,19 +12,19 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 3 | 3 | 3 | 3 | 3 | 3 | 3 | 0 | 3 | 3 |
-| 6_12h | 63 | 46 | 58 | 19 | 43 | 21 | 43 | 0 | 43 | 19 |
-| 12_24h | 177 | 146 | 154 | 40 | 73 | 45 | 72 | 0 | 73 | 40 |
+| 2_6h | 2 | 2 | 2 | 0 | 2 | 0 | 2 | 0 | 2 | 0 |
+| 6_12h | 116 | 91 | 106 | 37 | 85 | 41 | 84 | 0 | 85 | 37 |
+| 12_24h | 122 | 99 | 104 | 32 | 40 | 36 | 40 | 0 | 40 | 32 |
 | 24h_plus | 22 | 22 | 3 | 0 | 22 | 4 | 22 | 0 | 3 | 0 |
-| started | 35 | 27 | 35 | 4 | 22 | 7 | 21 | 0 | 22 | 4 |
+| started | 38 | 30 | 38 | 7 | 26 | 11 | 25 | 0 | 26 | 7 |
 
 ## Totals
 
 - fixture_2plus_sources: 244/300
-- odds_2plus_sources: 66/300
-- context_2plus_sources: 80/300
-- ready_for_model: 144/300
-- ready_for_publish: 66/300
+- odds_2plus_sources: 76/300
+- context_2plus_sources: 92/300
+- ready_for_model: 156/300
+- ready_for_publish: 76/300
 
 ## Provider endpoint status
 - by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
@@ -36,8 +36,8 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 6_12h | 2026-05-25T07:30:00+00:00 | Paju Citizen FC — Gimpo FC | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
-- 6_12h | 2026-05-25T07:30:00+00:00 | Suwon Bluewings — Cheonan City FC | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-05-25T07:30:00+00:00 | Paju Citizen FC — Gimpo FC | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-05-25T07:30:00+00:00 | Suwon Bluewings — Cheonan City FC | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
 - 6_12h | 2026-05-25T09:30:00+00:00 | South Melbourne FC — Avondale FC | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
 - 6_12h | 2026-05-25T10:00:00+00:00 | Dnepr Yuni Mogilev — FC Dinamo Brest II | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 6_12h | 2026-05-25T10:00:00+00:00 | FC Baranovichi  2 — FC Belshina 2 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
@@ -71,7 +71,7 @@ Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data di
 
 
 ## SStats deep projection
-- crosswalk: matched=205 / checked=300 | rate=68.33% | SStats events=1065
+- crosswalk: matched=205 / checked=300 | rate=68.33% | SStats events=1068
 - potential_add: context_deep=205 xg_or_rating=205 form=205 odds_rescue=7
-- projected_upper_bound: context_2plus=285 xg=239 form=223 odds_2plus=73
+- projected_upper_bound: context_2plus=297 xg=240 form=224 odds_2plus=83
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
