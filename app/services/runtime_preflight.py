@@ -178,13 +178,31 @@ class RuntimePreflight:
     def apply_phase_policy(self, stage: str = "phase_policy_before_run_once") -> PreflightReport:
         """Apply the production phase policy expected by app.cli.
 
-        app.cli calls this method before `run-once`.  The accumulation-stage
-        refactor accidentally removed it and caused the whole production run to
-        stop before CandidateFactory/fallback artifacts were created.  Keep the
-        method small and explicit: it runs the same pre-run preparation as the
-        native preflight path and writes the normal preflight audit.
+        ``app.cli`` is already inside ``asyncio.run()`` when this method is
+        called.  Some discovery-first helper scripts use ``asyncio.run()``
+        internally, so running them here produces non-fatal
+        ``RuntimeError: asyncio.run() cannot be called from a running event
+        loop`` messages in ``latest-run-bot.log``.  Those warnings used to be
+        misclassified as a failed production run.
+
+        Keep this phase deliberately lightweight: install safe defaults and
+        runtime wrappers, but do not execute the heavyweight discovery-prepare
+        script from inside the active event loop.  Workflow-level discovery and
+        cumulative coverage repair still run in normal shell steps.
         """
-        return self.run_before_prediction(stage=stage)
+        report = PreflightReport(stage=stage)
+        report.safe_defaults_applied = self.apply_safe_defaults()
+        # Apply the env budget/defaults from discovery-first without executing
+        # its subprocess/runpy pipeline inside the active event loop.
+        setdefault_env(DISCOVERY_FIRST_DEFAULTS)
+        report.discovery_first = {
+            "enabled": True,
+            "status": "env_only_in_async_phase",
+            "reason": "avoid_nested_asyncio_run",
+        }
+        report.legacy_extensions = self.install_legacy_runtime_extensions(stage=stage)
+        self.write_report(report)
+        return report
 
     def write_report(self, report: PreflightReport) -> None:
         try:

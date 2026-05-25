@@ -37,14 +37,35 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def runtime_error_row() -> dict[str, Any] | None:
+    """Build a ledger row only for fatal run-once failures.
+
+    Non-fatal helper warnings (for example discovery-first nested asyncio
+    warnings) should not create a ``runtime_error`` ledger row when the run
+    reached controlled fallback and produced evaluated candidates.
+    """
     try:
         text = RUN_LOG.read_text(encoding='utf-8', errors='replace')
     except Exception:
         return None
-    if 'Traceback (most recent call last)' not in text and 'AttributeError:' not in text and 'RuntimeError:' not in text:
+
+    fatal_markers = (
+        'Traceback (most recent call last)',
+        "AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'",
+        'Usage: python -m app.cli run-once',
+    )
+    if not any(marker in text for marker in fatal_markers):
         return None
+
+    fallback = load_json(EXPORT_DIR / 'latest-controlled-fallback-report.json', {})
+    if isinstance(fallback, dict):
+        evaluated = fallback.get('evaluated') if isinstance(fallback.get('evaluated'), list) else []
+        candidates_seen = int(float(fallback.get('candidates_seen') or 0))
+        old_preflight_crash = 'RuntimePreflight' in text and 'apply_phase_policy' in text and 'AttributeError:' in text
+        if not old_preflight_crash and (candidates_seen > 0 or len(evaluated) > 0):
+            return None
+
     reason = 'runtime_error'
-    if 'RuntimePreflight' in text and 'apply_phase_policy' in text:
+    if 'RuntimePreflight' in text and 'apply_phase_policy' in text and 'AttributeError:' in text:
         reason = 'runtime_preflight_apply_phase_policy_missing'
     run_id = os.getenv('GITHUB_RUN_ID') or datetime.now(UTC).strftime('%Y%m%d%H%M%S')
     return {
@@ -73,19 +94,6 @@ def runtime_error_row() -> dict[str, Any] | None:
         'reasons': [reason],
         'settlement': {},
     }
-
-
-def norm(value: Any) -> str:
-    return re.sub(r'[^a-z0-9]+', ' ', str(value or '').lower()).strip()
-
-
-def as_float(value: Any, default: float | None = None) -> float | None:
-    try:
-        if value in (None, ''):
-            return default
-        return float(str(value).replace(',', '.'))
-    except Exception:
-        return default
 
 
 def rows(payload: Any) -> list[dict[str, Any]]:

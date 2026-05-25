@@ -78,19 +78,50 @@ def _write_json(path: Path, payload: dict[str, Any]) -> None:
 
 
 def _runtime_error_from_log() -> dict[str, Any]:
+    """Return a fatal runtime error only for top-level run failures.
+
+    Discovery/preflight helper scripts can log non-fatal lines such as
+    ``RuntimeError: asyncio.run() cannot be called from a running event loop``.
+    The production run may still complete, build candidates, and run controlled
+    fallback.  v9 must not turn those warnings into a red "runtime failed"
+    report.
+    """
     try:
         if not RUN_LOG_PATH.exists() or RUN_LOG_PATH.stat().st_size <= 0:
             return {}
         text = RUN_LOG_PATH.read_text(encoding="utf-8", errors="replace")
     except Exception:
         return {}
-    if "Traceback (most recent call last)" not in text and "AttributeError:" not in text and "RuntimeError:" not in text:
+
+    fatal_markers = (
+        "Traceback (most recent call last)",
+        "AttributeError: 'RuntimePreflight' object has no attribute 'apply_phase_policy'",
+        "Usage: python -m app.cli run-once",
+    )
+    if not any(marker in text for marker in fatal_markers):
         return {}
+
+    # If fallback/candidate artifacts prove that the pipeline reached evaluation,
+    # treat helper-script tracebacks as non-fatal unless the specific old
+    # apply_phase_policy crash is present.
+    fallback = _load_json(EXPORT_DIR / "latest-controlled-fallback-report.json")
+    fallback_seen = _as_int(fallback.get("candidates_seen")) or len(fallback.get("evaluated") or [])
+    debug = _load_json(Path(".logs/debug-last-run.json"))
+    debug_summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
+    matches_seen = _as_int(debug_summary.get("matches_seen") or debug_summary.get("matches_in_run"))
+    old_preflight_crash = "RuntimePreflight" in text and "apply_phase_policy" in text and "AttributeError:" in text
+    if not old_preflight_crash and (fallback_seen > 0 or matches_seen > 0):
+        return {}
+
     reason = "runtime_error"
-    if "RuntimePreflight" in text and "apply_phase_policy" in text:
+    if old_preflight_crash:
         reason = "runtime_preflight_apply_phase_policy_missing"
-    # Keep the traceback compact for Telegram and JSON.
     idx = text.find("Traceback (most recent call last)")
+    if idx < 0:
+        for marker in fatal_markers:
+            idx = text.find(marker)
+            if idx >= 0:
+                break
     excerpt = text[idx: idx + 2200] if idx >= 0 else text[-2200:]
     return {
         "status": "error",
