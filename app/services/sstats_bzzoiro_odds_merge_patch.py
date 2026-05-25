@@ -221,9 +221,134 @@ def add_offer(out: list[Offer], seen: set[tuple[Any, ...]], source: str, book: A
     out.append(Offer(source=source, bookmaker=b, family=fam, selection=sel, price=float(p), point=point, team_side=side, market_name=fam, market_key=fam, source_event_id=event_id, metadata={'provider_source': source}))
 
 
+def parse_bzzoiro_compact_odds(payload: Any, match: Match, source: str, event_id: str | None = None) -> list[Offer]:
+    """Parse Bzzoiro v2 compact odds maps.
+
+    Docs expose /events/{id}/odds/ as {"odds": {home_win, draw, over_25_goals, ...}}
+    and /events/{id}/odds/comparison/ as market/bookmaker/outcome maps.  The
+    previous generic walker missed compact keys like over_25_goals because the
+    market/outcome is encoded in the key, not in a row field.
+    """
+    out: list[Offer] = []
+    seen: set[tuple[Any, ...]] = set()
+
+    def emit(book: Any, fam: str, sel: str, price: Any, point: float | None = None, side: str | None = None) -> None:
+        add_offer(out, seen, source, book or source, fam, sel, price, match, point, side, event_id)
+
+    def key_offer(key: str, value: Any, book: Any = None) -> None:
+        low = str(key or '').lower()
+        price = value.get('decimal_odds') if isinstance(value, dict) else value.get('price') if isinstance(value, dict) else value.get('odds') if isinstance(value, dict) else value
+        if price in (None, ''):
+            return
+        if low in {'home_win', 'home', 'home_winner', 'homewin', 'home_win_odds'}:
+            emit(book, 'h2h', match.home_team, price, None, 'home')
+            return
+        if low in {'away_win', 'away', 'away_winner', 'awaywin', 'away_win_odds'}:
+            emit(book, 'h2h', match.away_team, price, None, 'away')
+            return
+        if low in {'draw', 'x', 'draw_odds'}:
+            emit(book, 'h2h', 'Draw', price)
+            return
+        m = re.search(r'^(over|under)[_\- ]?(\d+)(?:[_\- ]?(\d+))?[_\- ]?(?:goals?)?$', low)
+        if not m:
+            m = re.search(r'^(over|under)[_\- ]?(\d)(\d)[_\- ]?(?:goals?)?$', low)
+        if m:
+            side = 'Over' if m.group(1) == 'over' else 'Under'
+            if len(m.groups()) >= 3 and m.group(3):
+                point = fnum(f'{m.group(2)}.{m.group(3)}')
+            else:
+                token = m.group(2)
+                point = fnum(f'{token[0]}.{token[1:]}') if len(token) > 1 else fnum(token)
+            emit(book, 'totals', side, price, point)
+            return
+        m = re.search(r'^(?:over|under)[_\- ]?(\d+(?:[\._]\d+))[_\- ]?(?:goals?)?$', low)
+        if m:
+            point = fnum(m.group(1).replace('_', '.'))
+            emit(book, 'totals', 'Over' if low.startswith('over') else 'Under', price, point)
+            return
+        if low in {'btts_yes', 'both_teams_to_score_yes'}:
+            emit(book, 'btts', 'Yes', price)
+            return
+        if low in {'btts_no', 'both_teams_to_score_no'}:
+            emit(book, 'btts', 'No', price)
+            return
+
+    def walk(obj: Any, book: Any = None, market: Any = None) -> None:
+        if isinstance(obj, list):
+            for item in obj:
+                walk(item, book, market)
+            return
+        if not isinstance(obj, dict):
+            return
+        # Compact /events/{id}/odds/ envelope.
+        odds_map = obj.get('odds') if isinstance(obj.get('odds'), dict) else None
+        if odds_map:
+            for key, value in odds_map.items():
+                key_offer(str(key), value, book)
+        # /odds/best/ rows.
+        if isinstance(obj.get('best_odds'), list):
+            market_name = obj.get('market') or market
+            for item in obj.get('best_odds') or []:
+                if isinstance(item, dict):
+                    outcome = item.get('outcome') or item.get('outcome_name')
+                    price = item.get('decimal_odds') or item.get('price') or item.get('odds')
+                    book_name = item.get('bookmaker_slug') or item.get('bookmaker_name') or book
+                    fam = family_market(market_name, outcome)
+                    if fam:
+                        sel, side = selection_for(fam, outcome, match)
+                        point = line_from(market_name, outcome) if fam == 'totals' else None
+                        if sel:
+                            add_offer(out, seen, source, book_name, fam, sel, price, match, point, side, event_id or str(obj.get('event_id') or ''))
+        # Comparison maps: markets -> market -> bookmaker -> outcome.
+        for key, value in obj.items():
+            if key in {'odds', 'best_odds'}:
+                continue
+            if isinstance(value, dict):
+                next_market = market
+                next_book = book
+                if family_market(key):
+                    next_market = key
+                elif market and norm(key) not in {'outcomes', 'selections', 'values', 'data', 'results'}:
+                    # When under a market, a dict key is often a bookmaker slug.
+                    next_book = key
+                # Scalar children under market/bookmaker are often outcome -> price.
+                if next_market and all(not isinstance(v, (dict, list)) for v in value.values()):
+                    for outcome, price in value.items():
+                        fam = family_market(next_market, outcome)
+                        if not fam:
+                            key_offer(str(outcome), price, next_book)
+                            continue
+                        sel, side = selection_for(fam, outcome, match)
+                        point = line_from(next_market, outcome) if fam == 'totals' else None
+                        if sel:
+                            add_offer(out, seen, source, next_book, fam, sel, price, match, point, side, event_id)
+                walk(value, next_book, next_market)
+            elif market and key not in {'event_id', 'id'}:
+                fam = family_market(market, key)
+                if fam:
+                    sel, side = selection_for(fam, key, match)
+                    point = line_from(market, key) if fam == 'totals' else None
+                    if sel:
+                        add_offer(out, seen, source, book, fam, sel, value, match, point, side, event_id)
+                else:
+                    key_offer(str(key), value, book)
+            else:
+                key_offer(str(key), value, book)
+
+    walk(payload)
+    return out
+
+
 def parse_any(payload: Any, match: Match, source: str, event_id: str | None = None) -> list[Offer]:
     out: list[Offer] = []
     seen: set[tuple[Any, ...]] = set()
+
+    # First handle documented Bzzoiro v2 compact maps, then fall back to the generic walker.
+    for offer in parse_bzzoiro_compact_odds(payload, match, source, event_id):
+        sig = (offer.source, offer.bookmaker, offer.family, offer.selection, offer.point, offer.team_side, round(float(offer.price), 4))
+        if sig not in seen:
+            seen.add(sig)
+            out.append(offer)
 
     def emit(book: Any, market: Any, outcome: Any, price: Any, point: Any = None) -> None:
         fam = family_market(market, outcome)
@@ -243,20 +368,26 @@ def parse_any(payload: Any, match: Match, source: str, event_id: str | None = No
         if not isinstance(obj, dict):
             return
         row = dict(inh)
-        for k, dst in [('bookmakerName','book'),('bookmaker','book'),('bookmaker_name','book'),('bookmaker_slug','book'),('marketName','market'),('market','market'),('market_key','market'),('marketId','market'),('name','outcome'),('selection','outcome'),('outcome','outcome'),('label','outcome'),('line','point'),('point','point'),('handicap','point')]:
+        for k, dst in [('bookmakerName','book'),('bookmaker','book'),('bookmaker_name','book'),('bookmaker_slug','book'),('marketName','market'),('market','market'),('market_key','market'),('marketId','market'),('name','outcome'),('selection','outcome'),('outcome','outcome'),('label','outcome'),('line','point'),('point','point'),('handicap','point'),('option_value','point')]:
             if k in obj and not isinstance(obj.get(k), (dict, list)):
                 row[dst] = obj.get(k)
+        if isinstance(obj.get('market'), dict):
+            m = obj['market']
+            row['market'] = m.get('key') or m.get('name') or m.get('label') or row.get('market')
+        if isinstance(obj.get('bookmaker'), dict):
+            b = obj['bookmaker']
+            row['book'] = b.get('slug') or b.get('name') or row.get('book')
         price = None
         for pk in ('value','price','odds','decimal','decimal_odds','best_decimal_odds'):
-            if obj.get(pk) not in (None, ''):
+            if obj.get(pk) not in (None, '') and not isinstance(obj.get(pk), (dict, list)):
                 price = obj.get(pk)
                 break
         if price not in (None, '') and (row.get('market') or row.get('outcome')):
             emit(row.get('book'), row.get('market'), row.get('outcome'), price, row.get('point'))
-        if isinstance(obj.get('odds'), list) and (obj.get('marketName') or obj.get('marketId')):
+        if isinstance(obj.get('odds'), list) and (obj.get('marketName') or obj.get('marketId') or obj.get('market')):
             for x in obj.get('odds') or []:
                 if isinstance(x, dict):
-                    emit(row.get('book'), obj.get('marketName') or obj.get('marketId'), x.get('name') or x.get('outcome'), x.get('value') or x.get('price') or x.get('odds'), x.get('point') or x.get('line'))
+                    emit(row.get('book'), obj.get('marketName') or obj.get('marketId') or row.get('market'), x.get('name') or x.get('outcome') or x.get('option_name'), x.get('value') or x.get('price') or x.get('odds') or x.get('decimal_odds'), x.get('point') or x.get('line') or x.get('option_value'))
         for key, child in obj.items():
             if not isinstance(child, (dict, list)):
                 continue
@@ -271,7 +402,6 @@ def parse_any(payload: Any, match: Match, source: str, event_id: str | None = No
 
     walk(payload, {})
     return out
-
 
 def merge(base: dict[str, list[Offer]], extra: dict[str, list[Offer]]) -> int:
     added = 0
@@ -340,7 +470,7 @@ async def fetch_sstats(settings: Any, matches: list[Match], base: dict[str, list
 
 async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, list[Offer]], amap: dict[str, dict[str, str]]) -> tuple[dict[str, list[Offer]], dict[str, Any]]:
     key = os.getenv('BZZOIRO_API_KEY') or getattr(settings, 'bzzoiro_api_key', None)
-    stats = {'enabled': bool(key), 'requests': 0, 'response_errors': 0, 'events_fetched': 0, 'events_matched': 0, 'offers_parsed': 0}
+    stats = {'enabled': bool(key), 'requests': 0, 'response_errors': 0, 'events_fetched': 0, 'events_matched': 0, 'event_odds_requests': 0, 'event_comparison_requests': 0, 'offers_parsed': 0, 'offers_from_compact_odds': 0, 'offers_from_comparison': 0}
     if not key:
         return {}, stats
     api = (os.getenv('BZZOIRO_BASE_URL') or 'https://sports.bzzoiro.com/api/v2').rstrip('/')
@@ -357,7 +487,7 @@ async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, lis
         while offset < 600:
             stats['requests'] += 1
             try:
-                resp = await client.get(f'{api}/events/', headers=headers, params={'date_from': d1, 'date_to': d2, 'limit': 200, 'offset': offset})
+                resp = await client.get(f'{api}/events/', headers=headers, params={'date_from': d1, 'date_to': d2, 'status': 'notstarted', 'limit': 200, 'offset': offset})
                 if resp.status_code >= 400:
                     stats['response_errors'] += 1
                     break
@@ -398,8 +528,13 @@ async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, lis
             if not event_id:
                 continue
             stats['events_matched'] += 1
-            for path in (f'/events/{event_id}/odds/comparison/', f'/events/{event_id}/odds/'):
+            collected: list[Offer] = []
+            for path, bucket in ((f'/events/{event_id}/odds/', 'offers_from_compact_odds'), (f'/events/{event_id}/odds/comparison/', 'offers_from_comparison')):
                 stats['requests'] += 1
+                if path.endswith('/odds/'):
+                    stats['event_odds_requests'] += 1
+                else:
+                    stats['event_comparison_requests'] += 1
                 try:
                     resp = await client.get(f'{api}{path}', headers=headers)
                     if resp.status_code == 404:
@@ -413,9 +548,11 @@ async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, lis
                     continue
                 offers = parse_any(payload, match, 'bzzoiro', event_id)
                 if offers:
-                    out[match.match_key] = offers
-                    stats['offers_parsed'] += len(offers)
-                    break
+                    stats[bucket] += len(offers)
+                    collected.extend(offers)
+            if collected:
+                out[match.match_key] = collected
+                stats['offers_parsed'] += len(collected)
     return out, stats
 
 
