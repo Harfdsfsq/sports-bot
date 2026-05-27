@@ -155,10 +155,22 @@ class SportLogicProvider:
             # One window request avoids wasting the free 10 RPM bucket on one request per day.
             # Fallback without status is kept for accounts returning localized/legacy status values.
             status_variants = ["scheduled", "notstarted", "not_started", "pending", "upcoming", ""]
+            query_variants: list[dict[str, Any]] = []
             for status_value in status_variants:
                 params = {"date_from": date_from, "date_to": date_to, "per_page": 100}
                 if status_value:
                     params["status"] = status_value
+                query_variants.append(params)
+            # Additional documented-window probes for accounts that treat date_to
+            # as an exclusive boundary or ignore status values. All rows are still
+            # filtered by the normal kickoff horizon below.
+            query_variants.extend([
+                {"date_from": date_from, "per_page": 100},
+                {"date_to": date_to, "per_page": 100},
+                {"date_from": date_from, "date_to": date_to, "is_live": "false", "per_page": 100},
+            ])
+            seen_variant_rows: set[str] = set()
+            for params in query_variants:
                 if not self._budget_left():
                     stats["budget_exhausted"] = True
                     break
@@ -170,8 +182,20 @@ class SportLogicProvider:
                     preview,
                     max_pages=self.max_pages,
                 )
-                fixtures.extend(rows)
-                if rows:
+                current_rows = []
+                date_counts: dict[str, int] = {}
+                for row in rows:
+                    dt = self._fixture_datetime(row)
+                    dkey = dt.date().isoformat() if dt else "unknown"
+                    date_counts[dkey] = date_counts.get(dkey, 0) + 1
+                    if dt and date_from <= dt.date().isoformat() <= date_to:
+                        sig = str(row.get("id") or row.get("game_id") or row)
+                        if sig not in seen_variant_rows:
+                            seen_variant_rows.add(sig)
+                            current_rows.append(row)
+                preview.setdefault("documented_games_variants", []).append({"params": params, "rows": len(rows), "current_rows": len(current_rows), "sample_dates": date_counts})
+                fixtures.extend(current_rows)
+                if current_rows:
                     break
             if not fixtures and self._budget_left():
                 fixtures.extend(await self._discover_fixtures_from_broad_games(client, stats, preview))
@@ -182,7 +206,8 @@ class SportLogicProvider:
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         if not fixtures and stats.get("odds_discovery_rows"):
-            stats["diagnosis"] = "sportlogic_has_active_odds_but_no_current_games_in_requested_window"
+            stats["diagnosis"] = "sportlogic_account_returns_stale_active_odds_no_current_games"
+            stats["provider_action"] = "disable_as_current_second_source_until_sportlogic_dashboard_has_current_games"
         elif not fixtures:
             stats["diagnosis"] = "documented_games_window_returned_no_rows"
         preview["sample_fixtures"] = fixtures[:3]
@@ -355,7 +380,8 @@ class SportLogicProvider:
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         if not fixtures and stats.get("odds_discovery_rows"):
-            stats["diagnosis"] = "sportlogic_has_active_odds_but_no_current_games_in_requested_window"
+            stats["diagnosis"] = "sportlogic_account_returns_stale_active_odds_no_current_games"
+            stats["provider_action"] = "disable_as_current_second_source_until_sportlogic_dashboard_has_current_games"
         elif not fixtures:
             stats["diagnosis"] = "documented_games_window_returned_no_rows"
         preview["sample_fixtures"] = fixtures[:3]

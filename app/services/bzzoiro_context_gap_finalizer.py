@@ -450,6 +450,125 @@ def _light_context_from_bzzoiro_line_evidence(match: Match, row: dict[str, Any])
     )
 
 
+
+
+def _date_token(value: Any) -> str:
+    text = str(value or "").strip()
+    if not text:
+        return ""
+    try:
+        dt = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        return dt.date().isoformat()
+    except Exception:
+        pass
+    match = re.search(r"(20\d{2}-\d{2}-\d{2})", text)
+    return match.group(1) if match else ""
+
+
+def _row_date_token(row: dict[str, Any] | None) -> str:
+    if not isinstance(row, dict):
+        return ""
+    for key in ("date_local", "kickoff_local", "kickoff_utc", "commence_time", "start_time", "event_date"):
+        value = row.get(key)
+        token = _date_token(value)
+        if token:
+            return token
+    return ""
+
+
+def _row_team(row: dict[str, Any] | None, side: str) -> str:
+    if not isinstance(row, dict):
+        return ""
+    keys = ("home_team", "home", "home_name", "homeTeam") if side == "home" else ("away_team", "away", "away_name", "awayTeam")
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, dict):
+            value = value.get("name") or value.get("short_name") or value.get("team_name")
+        if value not in (None, ""):
+            return str(value)
+    return ""
+
+
+def _inventory_alias_keys(*, key: Any = "", home: Any = "", away: Any = "", date: Any = "") -> set[str]:
+    aliases: set[str] = set()
+    raw_key = str(key or "").strip()
+    if raw_key:
+        aliases.add(raw_key)
+    d = _date_token(date) or _date_token(raw_key)
+    h = _norm_text(home)
+    a = _norm_text(away)
+    if h and a and d:
+        aliases.add(f"{d}|{h}|{a}")
+        aliases.add(f"{d}|{a}|{h}")
+        aliases.add(f"soccer|{h}|{a}|{d}")
+        aliases.add(f"soccer|{a}|{h}|{d}")
+    if raw_key:
+        parts = [part for part in raw_key.split("|") if part]
+        # Convert between the two key shapes seen in artifacts:
+        #   2026-05-27|home|away
+        #   soccer|home|away|2026-05-27 or soccer|away|home|2026-05-27
+        if len(parts) >= 3:
+            maybe_date = next((part for part in parts if re.match(r"20\d{2}-\d{2}-\d{2}$", part)), "")
+            teams = [part for part in parts if not re.match(r"20\d{2}-\d{2}-\d{2}$", part) and part != "soccer"]
+            if maybe_date and len(teams) >= 2:
+                t1, t2 = _norm_text(teams[0]), _norm_text(teams[1])
+                if t1 and t2:
+                    aliases.add(f"{maybe_date}|{t1}|{t2}")
+                    aliases.add(f"{maybe_date}|{t2}|{t1}")
+                    aliases.add(f"soccer|{t1}|{t2}|{maybe_date}")
+                    aliases.add(f"soccer|{t2}|{t1}|{maybe_date}")
+    return {alias for alias in aliases if alias}
+
+
+def _match_alias_keys(match: Match) -> set[str]:
+    date = ""
+    try:
+        date = match.commence_time.astimezone(UTC).date().isoformat()
+    except Exception:
+        pass
+    return _inventory_alias_keys(key=_match_key(match), home=getattr(match, "home_team", ""), away=getattr(match, "away_team", ""), date=date)
+
+
+def _row_alias_keys(row: dict[str, Any]) -> set[str]:
+    keys: set[str] = set()
+    for key_name in ("match_key", "canonical_match_id", "loose_key"):
+        keys.update(_inventory_alias_keys(key=row.get(key_name), home=_row_team(row, "home"), away=_row_team(row, "away"), date=_row_date_token(row)))
+    keys.update(_inventory_alias_keys(home=_row_team(row, "home"), away=_row_team(row, "away"), date=_row_date_token(row)))
+    return keys
+
+
+def _inventory_row_for_match(match: Match, rows_by_key: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    for alias in _match_alias_keys(match):
+        row = rows_by_key.get(alias)
+        if isinstance(row, dict):
+            return row
+    return None
+
+
+def _inventory_row_for_context_key(match_key: Any, rows_by_key: dict[str, dict[str, Any]], ctx: MatchContext | None = None) -> dict[str, Any] | None:
+    for alias in _inventory_alias_keys(key=match_key):
+        row = rows_by_key.get(alias)
+        if isinstance(row, dict):
+            return row
+    payload = getattr(ctx, "payload", None) if ctx is not None else None
+    if isinstance(payload, dict):
+        inv = payload.get("inventory_row")
+        if isinstance(inv, dict):
+            for alias in _row_alias_keys(inv):
+                row = rows_by_key.get(alias)
+                if isinstance(row, dict):
+                    return row
+        event = payload.get("event")
+        if isinstance(event, dict):
+            home = event.get("home_team") or event.get("home") or event.get("home_name")
+            away = event.get("away_team") or event.get("away") or event.get("away_name")
+            date = event.get("event_date") or event.get("start_time") or event.get("date")
+            for alias in _inventory_alias_keys(home=home, away=away, date=date):
+                row = rows_by_key.get(alias)
+                if isinstance(row, dict):
+                    return row
+    return None
+
 def _inventory_rows_by_key() -> dict[str, dict[str, Any]]:
     day = _inventory_target_date()
     path = ROOT / ".data" / "day_inventory" / f"{day}.json"
@@ -464,9 +583,8 @@ def _inventory_rows_by_key() -> dict[str, dict[str, Any]]:
     for row in rows:
         if not isinstance(row, dict):
             continue
-        key = str(row.get("match_key") or row.get("canonical_match_id") or "").strip()
-        if key:
-            out[key] = row
+        for alias in _row_alias_keys(row):
+            out.setdefault(alias, row)
     return out
 
 
@@ -481,13 +599,15 @@ def _contexts_from_bzzoiro_line_evidence(matches: list[Match], existing_contexts
         if getattr(match, "sport_key", "") != "soccer":
             continue
         key = _match_key(match)
-        if not key or key not in rows_by_key:
+        if not key:
+            continue
+        row = _inventory_row_for_match(match, rows_by_key)
+        if not isinstance(row, dict):
             continue
         inspected += 1
-        if _has_bzzoiro_context(existing_contexts.get(key)):
+        if _has_bzzoiro_context(existing_contexts.get(key)) or _has_bzzoiro_context(existing_contexts.get(str(row.get("match_key") or ""))):
             skipped_has_bzz += 1
             continue
-        row = rows_by_key[key]
         if not _row_contains_bzzoiro_line_evidence(row):
             continue
         added[key] = _light_context_from_bzzoiro_line_evidence(match, row)
@@ -561,18 +681,24 @@ def _annotate_day_inventory_from_contexts(contexts: dict[str, MatchContext]) -> 
     matches = payload.get("matches") if isinstance(payload, dict) else None
     if not isinstance(matches, list):
         return {"status": "bad_inventory_shape", "date_local": day, "path": str(path)}
-    by_key = {str(row.get("match_key") or row.get("canonical_match_id") or "").strip(): row for row in matches if isinstance(row, dict)}
+    by_key: dict[str, dict[str, Any]] = {}
+    for row in matches:
+        if isinstance(row, dict):
+            for alias in _row_alias_keys(row):
+                by_key.setdefault(alias, row)
     updated = 0
     with_2_context = 0
     now_s = datetime.now(UTC).isoformat()
     for match_key, ctx in (contexts or {}).items():
-        row = by_key.get(str(match_key or "").strip())
+        row = _inventory_row_for_context_key(match_key, by_key, ctx)
         if not row:
             continue
+        existing_tokens = _context_source_tokens_from_row(row)
         existing = [str(x).strip() for x in _listish(row.get("context_sources")) if str(x).strip()]
+        existing.extend(sorted(existing_tokens))
         if "bzzoiro" not in {x.lower() for x in existing}:
             existing.append("bzzoiro")
-        merged = sorted(set(existing), key=lambda x: x.lower())
+        merged = sorted({x for x in existing if x}, key=lambda x: x.lower())
         row["context_sources"] = merged
         cov = row.setdefault("coverage", {})
         if isinstance(cov, dict):
@@ -921,7 +1047,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
     
     def _priority(match: Match) -> tuple[int, int, int, int, float, str]:
         key = _match_key(match)
-        row = rows_by_key.get(key)
+        row = _inventory_row_for_match(match, rows_by_key)
         try:
             hours = (match.commence_time.astimezone(UTC) - now).total_seconds() / 3600.0
         except Exception:
@@ -943,8 +1069,8 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         "home": m.home_team,
         "away": m.away_team,
         "bzzoiro_id": _bzzoiro_id_from_match(m),
-        "has_other_context": _has_non_bzzoiro_context_from_row(rows_by_key.get(_match_key(m))) or (_match_key(m) in existing_contexts and not _has_bzzoiro_context(existing_contexts.get(_match_key(m)))),
-        "has_line_evidence": _row_has_any_line_evidence(rows_by_key.get(_match_key(m))),
+        "has_other_context": _has_non_bzzoiro_context_from_row(_inventory_row_for_match(m, rows_by_key)) or (_match_key(m) in existing_contexts and not _has_bzzoiro_context(existing_contexts.get(_match_key(m)))),
+        "has_line_evidence": _row_has_any_line_evidence(_inventory_row_for_match(m, rows_by_key)),
     } for m in candidates[:25]]
     if not candidates:
         stats["stop_reason"] = "no_gap_targets"
