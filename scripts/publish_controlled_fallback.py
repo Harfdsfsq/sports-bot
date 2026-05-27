@@ -199,6 +199,18 @@ def sync_controlled_fallback_publication_exports(selected_rows: list[dict[str, A
     write_json(latest_picks_path, latest_picks)
     write_json(latest_bets_path, latest_bets)
     write_json(export_dir / "latest-controlled-fallback-published-picks.json", rows)
+
+    # Append-only ledgers are the durable dedupe source.  The latest-* files can
+    # be rebuilt or overwritten earlier in the workflow; ledgers keep every sent
+    # Telegram pick so the next run cannot re-send the same match/market.
+    if sent:
+        for ledger_name in ("published-picks-ledger.json", "controlled-fallback-published-ledger.json"):
+            ledger_path = export_dir / ledger_name
+            ledger_rows = load_json(ledger_path, [])
+            if not isinstance(ledger_rows, list):
+                ledger_rows = []
+            merged_ledger = _merge_export_rows(ledger_rows, rows)
+            write_json(ledger_path, merged_ledger)
     return {
         "synced": True,
         "rows": len(rows),
@@ -952,6 +964,8 @@ def _iter_sent_pick_sources() -> list[tuple[str, list[Any]]]:
         ("latest_picks", load_json(".data/exports/latest-picks.json", [])),
         ("latest_bets", load_json(".data/exports/latest-bets.json", [])),
         ("fallback_published", load_json(".data/exports/latest-controlled-fallback-published-picks.json", [])),
+        ("published_picks_ledger", load_json(".data/exports/published-picks-ledger.json", [])),
+        ("controlled_fallback_ledger", load_json(".data/exports/controlled-fallback-published-ledger.json", [])),
     ]
     if isinstance(state, dict):
         for name in ("bets", "published_candidates", "telegram_published", "published_picks"):
@@ -972,8 +986,21 @@ def load_sent_dedupe_index() -> dict[str, Any]:
             if not isinstance(row, dict):
                 continue
             ts = parse_dt(row.get("sent_at") or row.get("published_at_utc") or row.get("created_at_utc"))
-            if ts is not None and ts >= cutoff:
-                index[str(key)] = row
+            if ts is not None and ts < cutoff:
+                continue
+
+            # Older versions stored only one exact dedupe hash in
+            # .data/fallback-sent-index.json.  That hash can change when the
+            # same pick is re-rendered with translated selection text, a slightly
+            # different price, or a rebuilt candidate payload.  Re-expand every
+            # legacy row into the broad same-match/same-market keys so old
+            # publications are still protected.
+            record = dict(row)
+            record.setdefault("source", "fallback_sent_index")
+            record.setdefault("sent_at", (ts or now).isoformat())
+            index[str(key)] = record
+            for broad_key in broad_dedupe_keys(record):
+                index[broad_key] = dict(record)
     for source, rows in _iter_sent_pick_sources():
         if not isinstance(rows, list):
             continue
