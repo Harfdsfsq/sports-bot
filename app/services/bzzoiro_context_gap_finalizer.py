@@ -649,6 +649,8 @@ def _context_source_tokens_from_row(row: dict[str, Any] | None) -> set[str]:
         value = row.get(key)
         if isinstance(value, dict):
             containers.append(value)
+    if _row_has_bzzoiro_context_hint(row):
+        tokens.add("bzzoiro")
     for container in containers:
         for key in ("context_sources", "source_tokens", "sources"):
             for item in _listish(container.get(key)):
@@ -670,6 +672,22 @@ def _context_source_tokens_from_row(row: dict[str, Any] | None) -> set[str]:
 
 def _has_non_bzzoiro_context_from_row(row: dict[str, Any] | None) -> bool:
     return any(token and token != "bzzoiro" for token in _context_source_tokens_from_row(row))
+
+
+def _row_has_bzzoiro_context_hint(row: dict[str, Any] | None) -> bool:
+    if not isinstance(row, dict):
+        return False
+    md = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+    cov = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+    if any(bool(md.get(key)) for key in (
+        "bzzoiro_context_fields", "bzzoiro_has_prediction", "bzzoiro_has_context_hint",
+        "bzzoiro_context_gap_annotated_at_utc", "bzzoiro_line_evidence_context_bridge",
+    )):
+        return True
+    source_ids = row.get("source_ids") if isinstance(row.get("source_ids"), dict) else {}
+    provider_ids = md.get("provider_source_ids") if isinstance(md.get("provider_source_ids"), dict) else {}
+    has_bzz_id = any(str(k).lower().startswith(("bzzoiro", "bsd")) for k in list(source_ids.keys()) + list(provider_ids.keys()))
+    return bool(has_bzz_id and (cov.get("context") or cov.get("xg") or md.get("bzzoiro_raw_source")))
 
 def _annotate_day_inventory_from_contexts(contexts: dict[str, MatchContext]) -> dict[str, Any]:
     day = _inventory_target_date()
@@ -1027,6 +1045,12 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
             stats["targets_with_existing_non_bzz_context"] = _to_int(stats.get("targets_with_existing_non_bzz_context"), 0) + 1
         if _row_has_any_line_evidence(inventory_row):
             stats["targets_with_line_evidence"] = _to_int(stats.get("targets_with_line_evidence"), 0) + 1
+        if _row_has_bzzoiro_context_hint(inventory_row):
+            # The frozen inventory already contains Bzzoiro event/prediction
+            # context evidence.  The repair/truth scripts will count it, so do
+            # not spend hundreds of v2 resource calls trying to rediscover it.
+            stats["already_has_bzzoiro_context"] = _to_int(stats.get("already_has_bzzoiro_context"), 0) + 1
+            continue
         if key in existing_contexts:
             stats["contexts_already_present"] += 1
             # Existing SStats/ClubElo context is not enough for A-tier.  Keep the

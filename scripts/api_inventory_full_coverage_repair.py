@@ -226,11 +226,29 @@ def find_row(event: dict[str, Any], rows: list[dict[str, Any]], by_alias: dict[s
     return None, best_score
 
 
+def row_has_bzzoiro_context_hint(row: dict[str, Any]) -> bool:
+    if not isinstance(row, dict):
+        return False
+    md = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
+    cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
+    if any(bool(md.get(key)) for key in (
+        'bzzoiro_context_fields', 'bzzoiro_has_prediction', 'bzzoiro_has_context_hint',
+        'bzzoiro_context_gap_annotated_at_utc', 'bzzoiro_line_evidence_context_bridge',
+    )):
+        return True
+    source_ids = row.get('source_ids') if isinstance(row.get('source_ids'), dict) else {}
+    provider_ids = md.get('provider_source_ids') if isinstance(md.get('provider_source_ids'), dict) else {}
+    has_bzz_id = any(str(k).lower().startswith(('bzzoiro', 'bsd')) for k in list(source_ids.keys()) + list(provider_ids.keys()))
+    return bool(has_bzz_id and (cov.get('context') or cov.get('xg') or md.get('bzzoiro_raw_source')))
+
+
 def add_sources(row: dict[str, Any], *, fixture: set[str] | None = None, odds: set[str] | None = None, context: set[str] | None = None, books: set[str] | None = None, reason: str = '') -> dict[str, int]:
     changed = {'fixture': 0, 'odds': 0, 'context': 0, 'books': 0}
     fixture = {norm_source(x) for x in (fixture or set()) if norm_source(x)}
     odds = {norm_source(x) for x in (odds or set()) if norm_source(x) in LIVE_ODDS}
     context = {norm_source(x) for x in (context or set()) if norm_source(x) in CONTEXT_PROVIDERS}
+    if row_has_bzzoiro_context_hint(row):
+        context.add('bzzoiro')
     books = {str(x).strip() for x in (books or set()) if str(x).strip()}
     md = row.setdefault('metadata', {})
     if not isinstance(md, dict):
@@ -391,7 +409,23 @@ def main() -> int:
         changed = add_sources(row, odds=odds, context=context, reason='coverage_truth_backfill')
         report['changes'].update(changed)
 
-    # 3) Promote Bzzoiro line evidence to a lightweight context source only when a match
+    # 3) Promote Bzzoiro event/prediction metadata into context_sources.
+    # Provider-day discovery often stores Bzzoiro prediction/event evidence as
+    # metadata flags but leaves context_sources empty.  That made the report show
+    # Bzzoiro contexts while the frozen inventory did not count Bzzoiro as a
+    # context provider.  This promotion is evidence-based: it requires an actual
+    # Bzzoiro event/prediction/source id or explicit context flag.
+    bzz_context_hint_promoted = 0
+    for row in rows:
+        if row_has_bzzoiro_context_hint(row):
+            before = set(listish(row.get('context_sources')) + listish((row.get('metadata') or {}).get('context_sources') if isinstance(row.get('metadata'), dict) else []))
+            add_sources(row, context={'bzzoiro'}, reason='bzzoiro_event_prediction_context_hint')
+            after = set(listish(row.get('context_sources')) + listish((row.get('metadata') or {}).get('context_sources') if isinstance(row.get('metadata'), dict) else []))
+            if len(after) > len(before):
+                bzz_context_hint_promoted += 1
+    report['changes']['bzzoiro_context_hint_promotions'] = bzz_context_hint_promoted
+
+    # 4) Promote Bzzoiro line evidence to a lightweight context source only when a match
     # already has another context source. This helps coverage truth reflect the fact that
     # Bzzoiro has independently identified the event, without inventing xG.
     promoted = 0
@@ -404,7 +438,7 @@ def main() -> int:
             promoted += 1
     report['changes']['bzzoiro_line_context_promotions'] = promoted
 
-    # 4) Recompute summary counters and cap the inventory to the frozen target size, preserving
+    # 5) Recompute summary counters and cap the inventory to the frozen target size, preserving
     # enriched rows and kickoff priority.
     target = max(300, as_int(os.getenv('DAY_INVENTORY_TARGET_SIZE') or os.getenv('DAY_INVENTORY_MAX_MATCHES'), 300))
     def sort_key(row: dict[str, Any]) -> tuple[Any, ...]:

@@ -128,14 +128,36 @@ def odds_sources(row: dict[str, Any]) -> list[str]:
     return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
 
 
+def row_has_bzzoiro_context_hint(row: dict[str, Any]) -> bool:
+    md = metadata(row)
+    cov = coverage(row)
+    if str(row.get("source") or "").lower() == "bzzoiro":
+        return True
+    if any(bool(md.get(key)) for key in (
+        "bzzoiro_context_fields", "bzzoiro_has_prediction", "bzzoiro_has_context_hint",
+        "bzzoiro_context_gap_annotated_at_utc", "bzzoiro_line_evidence_context_bridge",
+    )):
+        return True
+    source_ids = row.get("source_ids") if isinstance(row.get("source_ids"), dict) else {}
+    provider_ids = md.get("provider_source_ids") if isinstance(md.get("provider_source_ids"), dict) else {}
+    has_bzz_id = any(str(k).lower().startswith(("bzzoiro", "bsd")) for k in list(source_ids.keys()) + list(provider_ids.keys()))
+    # Count provider-day Bzzoiro prediction/event rows as context when the row
+    # also carries a context/xG/form flag. This fixes the frozen inventory losing
+    # the provider even though Bzzoiro supplied prediction/event metadata.
+    return bool(has_bzz_id and (cov.get("context") or cov.get("xg") or md.get("bzzoiro_raw_source")))
+
+
 def context_sources(row: dict[str, Any]) -> list[str]:
     md = metadata(row)
-    sources = unique_norm(
+    raw_sources = (
         list_from_any(row.get("context_sources"))
         + list_from_any(row.get("context_confirmations"))
         + list_from_any(md.get("context_sources"))
         + list_from_any(md.get("context_confirmations"))
     )
+    if row_has_bzzoiro_context_hint(row):
+        raw_sources.append("bzzoiro")
+    sources = unique_norm(raw_sources)
     cleaned = []
     for item in sources:
         if item.startswith("provider_"):
@@ -218,8 +240,15 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
     tier_a_coverage_ready = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
     tier_b_coverage_ready = has_odds and has_context and pc >= 1 and len(osrc) >= 1 and cc >= 1
     movement_ok = line_movement_confirmed(row)
-    movement_wait = line_movement_waiting(row)
     movement_drop = line_movement_declined(row)
+    movement_wait = line_movement_waiting(row)
+    # Row-level artifacts often do not persist an explicit "awaiting" flag for
+    # every covered match.  If A/B coverage is present but no confirmed second
+    # snapshot exists, the row is still waiting for line-movement confirmation.
+    # This keeps the Telegram/coverage truth from saying B-tier coverage exists
+    # while "waiting line movement" is zero.
+    if not movement_ok and not movement_drop and (tier_a_coverage_ready or tier_b_coverage_ready):
+        movement_wait = True
     ready_publish = tier_a_coverage_ready and movement_ok
     tier_b_publish_ready = tier_b_coverage_ready and movement_ok
     return {
