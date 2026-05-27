@@ -192,11 +192,14 @@ def odds_sources(row: dict[str, Any]) -> list[str]:
 
 def context_sources(row: dict[str, Any]) -> list[str]:
     md = metadata(row)
+    cov = coverage(row)
     sources = unique_norm(
         list_from_any(row.get("context_sources"))
         + list_from_any(row.get("context_confirmations"))
         + list_from_any(md.get("context_sources"))
         + list_from_any(md.get("context_confirmations"))
+        + list_from_any(cov.get("context_sources"))
+        + list_from_any(cov.get("context_confirmations"))
     )
     cleaned = []
     for item in sources:

@@ -15,7 +15,7 @@ for upcoming progressive gaps.
 
 import json
 import os
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -205,6 +205,83 @@ def _context_from_resources(event: dict[str, Any], resources: dict[str, Any], sc
     )
 
 
+
+
+def _inventory_target_date() -> str:
+    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or "").strip()
+    if explicit:
+        return explicit
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
+        return datetime.now(UTC).astimezone(tz).date().isoformat()
+    except Exception:
+        return datetime.now(UTC).date().isoformat()
+
+
+def _listish(value: Any) -> list[Any]:
+    if isinstance(value, list):
+        return value
+    if isinstance(value, (tuple, set)):
+        return list(value)
+    if isinstance(value, dict):
+        return list(value.keys())
+    if isinstance(value, str) and value.strip():
+        return [x.strip() for x in value.replace(";", ",").replace("|", ",").split(",") if x.strip()]
+    return []
+
+
+def _annotate_day_inventory_from_contexts(contexts: dict[str, MatchContext]) -> dict[str, Any]:
+    day = _inventory_target_date()
+    path = ROOT / ".data" / "day_inventory" / f"{day}.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {"status": "missing_inventory", "date_local": day, "path": str(path)}
+    matches = payload.get("matches") if isinstance(payload, dict) else None
+    if not isinstance(matches, list):
+        return {"status": "bad_inventory_shape", "date_local": day, "path": str(path)}
+    by_key = {str(row.get("match_key") or row.get("canonical_match_id") or "").strip(): row for row in matches if isinstance(row, dict)}
+    updated = 0
+    with_2_context = 0
+    now_s = datetime.now(UTC).isoformat()
+    for match_key, ctx in (contexts or {}).items():
+        row = by_key.get(str(match_key or "").strip())
+        if not row:
+            continue
+        existing = [str(x).strip() for x in _listish(row.get("context_sources")) if str(x).strip()]
+        if "bzzoiro" not in {x.lower() for x in existing}:
+            existing.append("bzzoiro")
+        merged = sorted(set(existing), key=lambda x: x.lower())
+        row["context_sources"] = merged
+        cov = row.setdefault("coverage", {})
+        if isinstance(cov, dict):
+            cov["context"] = True
+            cov["context_sources_count"] = len(merged)
+        md = row.setdefault("metadata", {})
+        if isinstance(md, dict):
+            md["context_sources"] = merged
+            md["context_sources_count"] = max(_to_int(md.get("context_sources_count"), 0), len(merged))
+            md["bzzoiro_context_gap_annotated_at_utc"] = now_s
+            details = getattr(ctx, "details", None)
+            if isinstance(details, dict):
+                md["bzzoiro_context_gap_details"] = {k: details.get(k) for k in ("bzzoiro_v2_event_id", "bzzoiro_match_quality", "bzzoiro_has_stats", "bzzoiro_has_metadata", "bzzoiro_has_lineups") if k in details}
+        updated += 1
+        if len(merged) >= 2:
+            with_2_context += 1
+    if updated:
+        payload["updated_at_utc"] = now_s
+        payload.setdefault("sources", {})
+        if isinstance(payload.get("sources"), dict):
+            payload["sources"]["runtime_bzzoiro_context_annotation"] = {
+                "updated_at_utc": now_s,
+                "updated_matches": updated,
+                "matches_with_2plus_runtime_context_sources": with_2_context,
+            }
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    return {"status": "ok", "date_local": day, "updated_matches": updated, "matches_with_2plus_runtime_context_sources": with_2_context}
+
+
 async def _fetch_json(client: httpx.AsyncClient, url: str, headers: dict[str, str], stats: dict[str, Any], params: dict[str, Any] | None = None) -> Any:
     stats["requests"] = _to_int(stats.get("requests"), 0) + 1
     response = await client.get(url, headers=headers, params=params or {})
@@ -383,8 +460,18 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         if gap_keys and key not in gap_keys:
             continue
         candidates.append(match)
-    candidates.sort(key=lambda m: ((m.commence_time.astimezone(UTC) - now).total_seconds(), 0 if _bzzoiro_id_from_match(m) else 1, m.league_name.lower()))
-    limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 160, 160))
+    
+    def _priority(match: Match) -> tuple[int, int, float, str]:
+        try:
+            hours = (match.commence_time.astimezone(UTC) - now).total_seconds() / 3600.0
+        except Exception:
+            hours = 999999.0
+        # Fill near kickoff first because those are the only matches that can publish soon.
+        window = 0 if 0 <= hours <= 4 else 1 if 0 <= hours <= 12 else 2 if hours >= 0 else 3
+        return (window, 0 if _bzzoiro_id_from_match(match) else 1, abs(hours), match.league_name.lower())
+
+    candidates.sort(key=_priority)
+    limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 240, 240))
     candidates = candidates[:limit]
     stats["target_matches"] = len(candidates)
     preview["target_sample"] = [{"match_key": _match_key(m), "home": m.home_team, "away": m.away_team, "bzzoiro_id": _bzzoiro_id_from_match(m)} for m in candidates[:25]]
@@ -392,23 +479,24 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         stats["stop_reason"] = "no_gap_targets"
         return {}, stats, preview
 
-    max_requests = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 240, 240))
+    max_requests = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 360, 360))
     headers = {"Authorization": f"Token {token}"}
     added: dict[str, MatchContext] = {}
     min_dt = min(m.commence_time for m in candidates).astimezone(UTC)
     max_dt = max(m.commence_time for m in candidates).astimezone(UTC)
+    query_to_date = (max_dt.date() + timedelta(days=1)).isoformat()
 
     async with httpx.AsyncClient(timeout=float(getattr(getattr(self, "settings", None), "bzzoiro_timeout_seconds", 20.0) or 20.0)) as client:
         v1_base = str(getattr(self, "base_url", "https://sports.bzzoiro.com/api") or "https://sports.bzzoiro.com/api").rstrip("/")
-        v1_params = {"date_from": min_dt.date().isoformat(), "date_to": max_dt.date().isoformat(), "tz": "UTC"}
-        v1_events = await _fetch_paginated(client, v1_base, "/events/", headers, v1_params, stats, mode="page", max_pages=8, max_requests=max_requests)
+        v1_params = {"date_from": min_dt.date().isoformat(), "date_to": query_to_date, "tz": "UTC"}
+        v1_events = await _fetch_paginated(client, v1_base, "/events/", headers, v1_params, stats, mode="page", max_pages=12, max_requests=max_requests)
         stats["v1_events_fetched"] = len(v1_events)
-        v1_predictions = await _fetch_paginated(client, v1_base, "/predictions/", headers, {**v1_params, "upcoming": "true"}, stats, mode="page", max_pages=8, max_requests=max_requests)
+        v1_predictions = await _fetch_paginated(client, v1_base, "/predictions/", headers, {**v1_params, "upcoming": "true"}, stats, mode="page", max_pages=12, max_requests=max_requests)
         if not v1_predictions and _to_int(stats.get("requests"), 0) < max_requests:
-            v1_predictions = await _fetch_paginated(client, v1_base, "/predictions/", headers, v1_params, stats, mode="page", max_pages=8, max_requests=max_requests)
+            v1_predictions = await _fetch_paginated(client, v1_base, "/predictions/", headers, v1_params, stats, mode="page", max_pages=12, max_requests=max_requests)
         stats["v1_predictions_fetched"] = len(v1_predictions)
 
-        v2_events = await _fetch_paginated(client, "https://sports.bzzoiro.com", "/api/v2/events/", headers, {"date_from": min_dt.date().isoformat(), "date_to": max_dt.date().isoformat()}, stats, mode="offset", max_pages=8, max_requests=max_requests)
+        v2_events = await _fetch_paginated(client, "https://sports.bzzoiro.com", "/api/v2/events/", headers, {"date_from": min_dt.date().isoformat(), "date_to": query_to_date}, stats, mode="offset", max_pages=12, max_requests=max_requests)
         stats["v2_events_fetched"] = len(v2_events)
         v2_by_id: dict[str, dict[str, Any]] = {}
         for row in v2_events:
@@ -550,6 +638,7 @@ def install() -> dict[str, Any]:
         try:
             added, gap_stats, gap_preview = await _gap_pass(self, matches, contexts)
             contexts.update(added)
+            gap_stats["day_inventory_context_annotation"] = _annotate_day_inventory_from_contexts(added)
             stats["context_gap_pass"] = gap_stats
             stats["contexts_built"] = max(_to_int(stats.get("contexts_built"), 0), len(contexts))
             preview["context_gap_pass"] = gap_preview
@@ -563,8 +652,8 @@ def install() -> dict[str, Any]:
     BzzoiroContextProvider.fetch_context = fetch_context_with_gap_pass  # type: ignore[assignment]
     payload.update({
         "status": "installed",
-        "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 160, 160),
-        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 240, 240),
+        "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 240, 240),
+        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 360, 360),
         "ignore_plan_default": True,
         "runtime_report": str(RUNTIME_REPORT_PATH),
     })

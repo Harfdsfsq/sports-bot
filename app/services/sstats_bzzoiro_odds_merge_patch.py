@@ -129,9 +129,17 @@ def book_count(offers: list[Offer]) -> int:
 def selected_matches(matches: list[Match], base: dict[str, list[Offer]]) -> list[Match]:
     now = datetime.now(UTC)
     pool = [m for m in matches if getattr(m, 'sport_key', '') == 'soccer']
-    pool.sort(key=lambda m: (source_count(base.get(m.match_key, [])) >= 2, abs((m.commence_time.astimezone(UTC) - now).total_seconds()), m.league_name.lower()))
+    
+    def _priority(m: Match) -> tuple[bool, int, float, str]:
+        try:
+            hours = (m.commence_time.astimezone(UTC) - now).total_seconds() / 3600.0
+        except Exception:
+            hours = 999999.0
+        window = 0 if 0 <= hours <= 4 else 1 if 0 <= hours <= 12 else 2 if hours >= 0 else 3
+        return (source_count(base.get(m.match_key, [])) >= 2, window, abs(hours), m.league_name.lower())
+    pool.sort(key=_priority)
     try:
-        limit = int(float(os.getenv('CORE_ODDS_PATCH_MATCH_LIMIT', '160')))
+        limit = int(float(os.getenv('CORE_ODDS_PATCH_MATCH_LIMIT', '240')))
     except Exception:
         limit = 160
     return pool[:max(1, limit)]
@@ -612,7 +620,7 @@ def _match_bzzoiro_row_to_match(row: dict[str, Any], target: list[Match]) -> tup
         if score > best_score:
             best_score = score
             best_match = match
-    if best_score < 62:
+    if best_score < float(os.getenv('BZZOIRO_ODDS_MATCH_MIN_SCORE', '55')):
         return None, best_score
     return best_match, best_score
 
@@ -628,7 +636,7 @@ async def fetch_bzzoiro_best_odds(client: httpx.AsyncClient, api: str, headers: 
     out: dict[str, list[Offer]] = {}
     markets_raw = os.getenv('BZZOIRO_BEST_ODDS_MARKETS') or '1x2,over_under_25,over_under_15,over_under_35,btts'
     markets = [m.strip() for m in markets_raw.split(',') if m.strip()]
-    max_pages = max(1, int(float(os.getenv('BZZOIRO_ODDS_BEST_MAX_PAGES_PER_MARKET', '2') or 2)))
+    max_pages = max(1, int(float(os.getenv('BZZOIRO_ODDS_BEST_MAX_PAGES_PER_MARKET', '4') or 2)))
     limit = min(200, max(20, int(float(os.getenv('BZZOIRO_ODDS_BEST_PAGE_SIZE', '200') or 200))))
     seen_rows: set[str] = set()
     for market in markets:

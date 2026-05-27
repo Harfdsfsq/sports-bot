@@ -115,6 +115,85 @@ def write_json(path: str | Path, payload: Any) -> None:
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
+
+
+def _row_key(row: dict[str, Any]) -> str:
+    return str(
+        row.get("dedupe_key")
+        or row.get("match_key")
+        or row.get("canonical_match_id")
+        or f"{row.get('home_team') or ''}|{row.get('away_team') or ''}|{row.get('commence_time') or row.get('kickoff') or ''}|{row.get('selection') or ''}|{row.get('point') or ''}"
+    )
+
+
+def _merge_export_rows(existing: Any, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    merged: list[dict[str, Any]] = []
+    by_key: dict[str, int] = {}
+    if isinstance(existing, list):
+        for item in existing:
+            if not isinstance(item, dict):
+                continue
+            key = _row_key(item)
+            by_key[key] = len(merged)
+            merged.append(dict(item))
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        normalized = dict(row)
+        normalized.setdefault("export_source", "controlled_fallback")
+        normalized.setdefault("published_by", "controlled_fallback")
+        normalized.setdefault("created_at_utc", datetime.now(UTC).isoformat())
+        key = _row_key(normalized)
+        if key in by_key:
+            old = merged[by_key[key]]
+            old.update(normalized)
+            merged[by_key[key]] = old
+        else:
+            by_key[key] = len(merged)
+            merged.append(normalized)
+    return merged
+
+
+def sync_controlled_fallback_publication_exports(selected_rows: list[dict[str, Any]], *, sent: bool, dry_run: bool) -> dict[str, Any]:
+    """Write fallback Telegram picks into the common latest-picks/latest-bets exports."""
+    export_dir = Path(".data/exports")
+    export_dir.mkdir(parents=True, exist_ok=True)
+    rows: list[dict[str, Any]] = []
+    for row in selected_rows or []:
+        if not isinstance(row, dict):
+            continue
+        out = dict(row)
+        out["telegram_sent"] = bool(sent)
+        out["publication_lifecycle_status"] = "telegram_sent" if sent else ("dry_run_selected" if dry_run else "send_failed")
+        out["status"] = "pending" if sent else ("generated" if dry_run else "send_failed")
+        out.setdefault("source", "controlled_fallback")
+        out.setdefault("export_source", "controlled_fallback")
+        out.setdefault("published_by", "controlled_fallback")
+        out.setdefault("published_at_utc", datetime.now(UTC).isoformat() if sent else "")
+        metrics = out.get("metrics") if isinstance(out.get("metrics"), dict) else {}
+        out.setdefault("ev_pct", metrics.get("canonical_ev_pct"))
+        out.setdefault("edge_pp", metrics.get("canonical_edge_pp"))
+        out.setdefault("quality_score", metrics.get("quality_score"))
+        rows.append(out)
+    if not rows:
+        return {"synced": False, "rows": 0}
+    latest_picks_path = export_dir / "latest-picks.json"
+    latest_bets_path = export_dir / "latest-bets.json"
+    latest_picks = _merge_export_rows(load_json(latest_picks_path, []), rows)
+    latest_bets = _merge_export_rows(load_json(latest_bets_path, []), rows)
+    write_json(latest_picks_path, latest_picks)
+    write_json(latest_bets_path, latest_bets)
+    write_json(export_dir / "latest-controlled-fallback-published-picks.json", rows)
+    return {
+        "synced": True,
+        "rows": len(rows),
+        "sent": bool(sent),
+        "dry_run": bool(dry_run),
+        "latest_picks_count": len(latest_picks),
+        "latest_bets_count": len(latest_bets),
+    }
+
+
 def payload_timestamp(payload: Any) -> datetime | None:
     if not isinstance(payload, dict):
         return None
@@ -2069,6 +2148,7 @@ def main() -> int:
                 },
             })
 
+    sync_result = sync_controlled_fallback_publication_exports(selected_rows, sent=bool(sent), dry_run=bool(dry_run))
     report.update({
         "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
         "published": bool(sent),
@@ -2078,6 +2158,7 @@ def main() -> int:
         "selected_all": selected_rows,
         "telegram_result": send_result,
         "message": message,
+        "latest_exports_sync": sync_result,
     })
     write_json("artifacts/controlled-fallback-report.json", report)
     write_json(".data/exports/latest-controlled-fallback-report.json", report)

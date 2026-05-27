@@ -20,6 +20,7 @@ V7_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v7.py")
 EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
+FALLBACK_REPORT = EXPORT_DIR / "latest-controlled-fallback-report.json"
 DAY_SUMMARY = EXPORT_DIR / "latest-day-inventory-summary.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 
@@ -84,6 +85,34 @@ def _load_json(path: Path) -> dict[str, Any]:
     return {}
 
 
+
+
+def _fallback_tier_counts(report: dict[str, Any]) -> dict[str, int]:
+    rows = report.get("selected_all") if isinstance(report.get("selected_all"), list) else []
+    if not rows and isinstance(report.get("selected"), dict):
+        rows = [report["selected"]]
+    selected = [row for row in rows if isinstance(row, dict)]
+    published = bool(report.get("published")) or str(report.get("status") or "") == "published"
+    out = {
+        "published_total": len(selected) if published else 0,
+        "selected_total": len(selected),
+        "tier_a_published": 0,
+        "tier_b_published": 0,
+        "tier_a_selected": 0,
+        "tier_b_selected": 0,
+    }
+    for row in selected:
+        tier = str(row.get("tier") or row.get("publication_tier") or "").strip().upper()
+        if tier == "A":
+            out["tier_a_selected"] += 1
+            if published:
+                out["tier_a_published"] += 1
+        elif tier == "B":
+            out["tier_b_selected"] += 1
+            if published:
+                out["tier_b_published"] += 1
+    return out
+
 def _write_status(payload: dict[str, Any]) -> None:
     try:
         V8_STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -143,11 +172,12 @@ def build_payload() -> dict[str, Any]:
     plan = _load_json(PROGRESSIVE_PLAN)
     day_summary = _load_json(DAY_SUMMARY)
     truth_report = _load_json(TRUTH_REPORT)
+    fallback_report = _load_json(FALLBACK_REPORT)
     truth_counts = day_summary.get("coverage_truth_counts") if isinstance(day_summary.get("coverage_truth_counts"), dict) else {}
     if not truth_counts and isinstance(truth_report.get("counts"), dict):
         truth_counts = truth_report["counts"]
 
-    payload["version"] = "harizon-telegram-report-v8-human-readable"
+    payload["version"] = "harizon-telegram-report-v8-human-readable-provider-coverage"
     diagnostics = payload.setdefault("diagnostics", {})
     diagnostics["progressive_core_coverage"] = {
         "contract": plan.get("contract") if isinstance(plan.get("contract"), dict) else {},
@@ -160,6 +190,14 @@ def build_payload() -> dict[str, Any]:
             "counts": truth_counts,
             "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {"path": str(TRUTH_REPORT)},
         }
+    if fallback_report:
+        diagnostics["controlled_fallback_report"] = fallback_report
+        diagnostics["controlled_fallback_tiers"] = _fallback_tier_counts(fallback_report)
+        funnel = payload.setdefault("funnel", {})
+        if isinstance(funnel, dict):
+            tier_counts = diagnostics["controlled_fallback_tiers"]
+            funnel["fallback_published_tier_a"] = tier_counts.get("tier_a_published", 0)
+            funnel["fallback_published_tier_b"] = tier_counts.get("tier_b_published", 0)
     if day_summary:
         diagnostics["day_inventory_summary"] = day_summary.get("counts") if isinstance(day_summary.get("counts"), dict) else {}
     return payload
@@ -196,9 +234,95 @@ def _status_explanation(payload: dict[str, Any], truth: dict[str, Any]) -> str:
 def _source_summary(coverage: dict[str, Any]) -> str:
     combos = coverage.get("secondary_combinations") if isinstance(coverage.get("secondary_combinations"), dict) else {}
     if not combos:
-        return "• Источники линий: данных по комбинациям нет."
+        return "• Комбинации источников линий: данных нет."
     parts = [f"{name}: {count}" for name, count in sorted(combos.items(), key=lambda item: -_as_int(item[1]))[:6]]
     return "• Комбинации источников линий: " + ", ".join(parts)
+
+
+def _safe_rate(numerator: Any, denominator: Any) -> str:
+    den = _as_int(denominator)
+    if den <= 0:
+        return "0/запрос"
+    value = _as_float(numerator) / den
+    if value >= 100:
+        return f"{value:.0f}/запрос"
+    if value >= 10:
+        return f"{value:.1f}/запрос"
+    return f"{value:.2f}/запрос"
+
+
+def _core_provider_lines(api: dict[str, Any], coverage: dict[str, Any]) -> list[str]:
+    odds_api = api.get("odds_api_io") if isinstance(api.get("odds_api_io"), dict) else {}
+    sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
+    bzz = api.get("bzzoiro") if isinstance(api.get("bzzoiro"), dict) else {}
+    sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
+
+    odds_requests = _as_int(odds_api.get("events_req")) + _as_int(odds_api.get("odds_req"))
+    if odds_requests <= 0:
+        odds_requests = _as_int(odds_api.get("requests"))
+    bzz_requests = _as_int(bzz.get("requests_total_effective")) or (_as_int(bzz.get("requests")) + _as_int(bzz.get("v2_requests")))
+    sstats_requests = _as_int(sstats.get("requests"))
+    sport_requests = _as_int(sport.get("requests")) or _as_int(sport.get("odds_requests"))
+
+    bzz_context = _as_int(bzz.get("contexts_total_effective")) or _as_int(bzz.get("contexts")) or _as_int(bzz.get("v2_contexts"))
+    bzz_events = _as_int(bzz.get("events_total_effective")) or _as_int(bzz.get("events")) or _as_int(bzz.get("v2_events"))
+    bzz_secondary = _as_int(bzz.get("secondary_offers_added"))
+    bzz_overlap = _as_int(bzz.get("overlap"))
+    bzz_resources = _as_int(bzz.get("v2_stats_resources")) + _as_int(bzz.get("v2_odds_resources")) + _as_int(bzz.get("v2_lineups_resources"))
+
+    lines = [
+        "📡 Провайдеры: запросы и полезные данные",
+        (
+            f"• odds-api.io: запросы {odds_requests} "
+            f"(events {_as_int(odds_api.get('events_req'))}, odds {_as_int(odds_api.get('odds_req'))}); "
+            f"смэтчил матчей {_as_int(odds_api.get('matched'))}; "
+            f"дал offers {_as_int(odds_api.get('offers'))} ({_safe_rate(odds_api.get('offers'), odds_requests)}); "
+            f"2+ букмекера {_as_int(odds_api.get('books_2plus'))}; "
+            f"ошибок {_as_int(odds_api.get('errors'))}."
+        ),
+        (
+            f"• Bzzoiro: запросы {bzz_requests} "
+            f"(direct {_as_int(bzz.get('requests'))}, v2 {_as_int(bzz.get('v2_requests'))}); "
+            f"событий {bzz_events}; контекстов {bzz_context}; "
+            f"v2 resources stats/odds/lineups {bzz_resources}; "
+            f"secondary offers {bzz_secondary}; overlap с odds-api.io {bzz_overlap}; "
+            f"ошибок {_as_int(bzz.get('errors')) or _as_int(bzz.get('v2_errors'))}."
+        ),
+        (
+            f"• SStats: запросы {sstats_requests}; "
+            f"сырых строк {_as_int(sstats.get('rows'))} ({_safe_rate(sstats.get('rows'), sstats_requests)}); "
+            f"контекстов {_as_int(sstats.get('contexts'))}; deep-enriched {_as_int(sstats.get('deep_enriched'))}; "
+            f"team-form {_as_int(sstats.get('team_form_contexts'))}; direct {_as_int(sstats.get('direct_contexts'))}; "
+            f"ошибок {_as_int(sstats.get('errors'))}."
+        ),
+        (
+            f"• SportLogic: enabled {bool(sport.get('enabled'))}; запросы {sport_requests}; "
+            f"fixtures/games {_as_int(sport.get('fixtures_fetched')) or _as_int(sport.get('games_fetched'))}; "
+            f"matched {_as_int(sport.get('matched'))}; odds req {_as_int(sport.get('odds_requests'))}; "
+            f"offers {_as_int(sport.get('offers'))}; ошибок {_as_int(sport.get('errors'))}; "
+            f"diag {sport.get('diagnosis') or 'n/a'}."
+        ),
+        _source_summary(coverage),
+    ]
+    return lines
+
+
+def _coverage_window_lines(truth: dict[str, Any], progressive: dict[str, Any], inventory_total: int) -> list[str]:
+    active = _as_int(truth.get("active_matches")) or _as_int(progressive.get("matches_tracked"))
+    odds_refresh = _as_int(truth.get("odds_refresh_needed"))
+    win4_total = _as_int(progressive.get("window_0_4h"))
+    win4_ready = _as_int(progressive.get("window_0_4h_core_ready_2plus_both") or progressive.get("window_0_4h_ready_2plus_both"))
+    win12_total = _as_int(progressive.get("window_0_12h"))
+    win12_ready = _as_int(progressive.get("window_0_12h_core_ready_2plus_both") or progressive.get("window_0_12h_ready_2plus_both"))
+    core_ready = _as_int(progressive.get("core_ready_2plus_both") or progressive.get("ready_2plus_both"))
+    lines = [
+        "🧭 Покрытие ближайших окон",
+        f"• Активных матчей сейчас: {active or inventory_total}. Нужно обновить линии: {odds_refresh}.",
+        f"• Core-ready 2+/2+ по всем tracked: {core_ready}.",
+        f"• 0–4 часа: {win4_ready}/{win4_total} core-ready.",
+        f"• 0–12 часов: {win12_ready}/{win12_total} core-ready.",
+    ]
+    return lines
 
 
 def _render_reasons(payload: dict[str, Any]) -> list[str]:
@@ -274,6 +398,10 @@ def render(payload: dict[str, Any]) -> str:
     tier_b_ready = _as_int(truth.get("matches_ready_for_publish_tier_b"))
     waiting_movement = _as_int(truth.get("matches_waiting_line_movement")) + _as_int(truth.get("candidate_lifecycle_waiting_line_movement"))
     declined_after_second = _as_int(truth.get("matches_declined_after_second_snapshot"))
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    fallback_tiers = diag.get("controlled_fallback_tiers") if isinstance(diag.get("controlled_fallback_tiers"), dict) else {}
+    fallback_a_published = _as_int(fallback_tiers.get("tier_a_published"))
+    fallback_b_published = _as_int(fallback_tiers.get("tier_b_published"))
 
     odds_api = api.get("odds_api_io") if isinstance(api.get("odds_api_io"), dict) else {}
     sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
@@ -300,9 +428,9 @@ def render(payload: dict[str, Any]) -> str:
         f"• Готово для модели: {ready_model}/{inventory_total} ({_pct(ready_model, inventory_total)})",
         "",
         "🏷️ A/B-tier публикация",
-        f"• A-tier coverage: {tier_a_cov} | A-tier готово к публикации: {tier_a_ready}",
+        f"• A-tier coverage: {tier_a_cov} | A-tier готово main: {tier_a_ready} | опубликовано fallback: {fallback_a_published}",
         f"  A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.",
-        f"• B-tier coverage: {tier_b_cov} | B-tier готово к публикации: {tier_b_ready}",
+        f"• B-tier coverage: {tier_b_cov} | B-tier готово main: {tier_b_ready} | опубликовано fallback: {fallback_b_published}",
         f"  B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.",
         f"• Ждут второй снимок линии: {waiting_movement} | отклонены после второго снимка: {declined_after_second}",
         "",
@@ -315,22 +443,12 @@ def render(payload: dict[str, Any]) -> str:
         f"• Quality прошло: {_as_int(funnel.get('passed_candidates'))} | publishable: {_as_int(funnel.get('publishable_candidates'))} | опубликовано: {_as_int(funnel.get('published_count'))}",
         f"• Controlled fallback: seen {_as_int(funnel.get('fallback_candidates_seen'))} | evaluated {_as_int(funnel.get('fallback_evaluated'))} | published {_as_int(funnel.get('fallback_published_count'))}",
         "",
-        "📡 Core API простыми словами",
-        f"• odds-api.io: матчей {_as_int(odds_api.get('matched'))}, offers {_as_int(odds_api.get('offers'))}, 2+ букмекера {_as_int(odds_api.get('books_2plus'))}, ошибок {_as_int(odds_api.get('errors'))}",
-        f"• Bzzoiro: контекст {_as_int(bzz.get('contexts'))}, secondary odds {_as_int(bzz.get('secondary_offers_added'))}, overlap с odds-api.io {_as_int(bzz.get('overlap'))}, ошибок {_as_int(bzz.get('errors'))}",
-        f"• SStats: контекст {_as_int(sstats.get('contexts'))}, rows {_as_int(sstats.get('rows'))}, deep {_as_int(sstats.get('deep_enriched'))}, ошибок {_as_int(sstats.get('errors'))}",
-        f"• SportLogic: enabled {bool(sport.get('enabled'))}, matched {_as_int(sport.get('matched'))}, offers {_as_int(sport.get('offers'))}, ошибок {_as_int(sport.get('errors'))}",
-        _source_summary(coverage),
     ]
 
+    lines += _core_provider_lines(api, coverage)
+
     if progressive:
-        lines += [
-            "",
-            "🧭 Core coverage по ближайшим окнам",
-            f"• Все tracked матчи: {_as_int(progressive.get('matches_tracked'))} | core-ready 2+/2+: {core_ready}",
-            f"• 0–4 часа: {win4_ready}/{win4_total} core-ready",
-            f"• 0–12 часов: {win12_ready}/{win12_total} core-ready",
-        ]
+        lines += [""] + _coverage_window_lines(truth, progressive, inventory_total)
 
     lines += [""] + _render_reasons(payload)
     samples = _render_samples(payload)
@@ -350,7 +468,7 @@ v7.v5.build_payload = build_payload
 v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
-_write_status({"status": "installed", "renderer": "v8-human-readable", "main_module": "v7.v5", "sstats_nested_normalizer": True})
+_write_status({"status": "installed", "renderer": "v8-human-readable-provider-coverage", "main_module": "v7.v5", "sstats_nested_normalizer": True})
 
 
 if __name__ == "__main__":

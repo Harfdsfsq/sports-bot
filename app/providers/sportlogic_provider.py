@@ -172,6 +172,9 @@ class SportLogicProvider:
                 fixtures.extend(rows)
                 if rows:
                     break
+            if not fixtures and self._env_bool("SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED", True) and self._budget_left():
+                discovered = await self._discover_fixtures_from_active_odds(client, stats, preview)
+                fixtures.extend(discovered)
 
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
@@ -331,10 +334,66 @@ class SportLogicProvider:
                     fixtures.extend(rows)
                     if rows:
                         break
+                if not fixtures and self._env_bool("SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED", True) and self._budget_left():
+                    discovered = await self._discover_fixtures_from_active_odds(client, stats, preview)
+                    fixtures.extend(discovered)
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         preview["sample_fixtures"] = fixtures[:3]
         return fixtures, stats, preview
+
+    async def _discover_fixtures_from_active_odds(
+        self,
+        client: httpx.AsyncClient,
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """Fallback when documented /games date window returns no current rows.
+
+        SportLogic's documented /odds endpoint is cursor-paginated and can be
+        filtered by active odds. Rows include game_id, so we fetch a small number
+        of /games/{id} details while staying inside the free minute/day bucket.
+        """
+        stats["odds_discovery_fallback_enabled"] = True
+        max_pages = max(1, int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES") or 2)))
+        max_games = max(1, int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT") or 20)))
+        odds_rows = await self._get_paginated_list(
+            client,
+            "/odds",
+            {"is_active": "true", "per_page": 100},
+            stats,
+            preview,
+            max_pages=max_pages,
+        )
+        stats["odds_discovery_rows"] = len(odds_rows)
+        game_ids: list[str] = []
+        seen: set[str] = set()
+        for row in odds_rows:
+            gid = row.get("game_id") or row.get("event_id") or row.get("fixture_id")
+            if gid in (None, ""):
+                continue
+            sid = str(gid)
+            if sid in seen:
+                continue
+            seen.add(sid)
+            game_ids.append(sid)
+            if len(game_ids) >= max_games:
+                break
+        fixtures: list[dict[str, Any]] = []
+        for gid in game_ids:
+            if not self._budget_left():
+                stats["budget_exhausted"] = True
+                break
+            payload = await self._get_json(client, f"/games/{gid}", {}, stats, preview)
+            row = payload.get("data") if isinstance(payload, dict) and isinstance(payload.get("data"), dict) else payload
+            if isinstance(row, dict) and (row.get("id") or row.get("game_id")):
+                fixtures.append(row)
+        stats["odds_discovery_game_ids"] = len(game_ids)
+        stats["odds_discovery_fixtures"] = len(fixtures)
+        if fixtures:
+            preview.setdefault("sample_fixtures", [])
+            preview["sample_fixtures"] = (preview.get("sample_fixtures") or []) + fixtures[:3]
+        return fixtures
 
     async def _get_paginated_list(
         self,
