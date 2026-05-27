@@ -498,6 +498,59 @@ def _contexts_from_bzzoiro_line_evidence(matches: list[Match], existing_contexts
         "skipped_already_has_bzzoiro": skipped_has_bzz,
     }
 
+
+
+def _row_has_any_line_evidence(row: dict[str, Any] | None) -> bool:
+    if not isinstance(row, dict):
+        return False
+    containers: list[dict[str, Any]] = [row]
+    for key in ("metadata", "coverage", "debug", "diagnostics"):
+        value = row.get(key)
+        if isinstance(value, dict):
+            containers.append(value)
+    for container in containers:
+        for key in ("line_sources", "odds_sources", "price_sources", "books", "bookmakers", "source_combinations"):
+            if _listish(container.get(key)):
+                return True
+        for key in ("line_sources_count", "odds_sources_count", "price_sources_count", "books_count", "price_confirmation_sources_count"):
+            if _to_int(container.get(key), 0) > 0:
+                return True
+        if bool(container.get("odds") or container.get("has_current_odds_provider")):
+            return True
+    return False
+
+
+def _context_source_tokens_from_row(row: dict[str, Any] | None) -> set[str]:
+    tokens: set[str] = set()
+    if not isinstance(row, dict):
+        return tokens
+    containers: list[dict[str, Any]] = [row]
+    for key in ("metadata", "coverage"):
+        value = row.get(key)
+        if isinstance(value, dict):
+            containers.append(value)
+    for container in containers:
+        for key in ("context_sources", "source_tokens", "sources"):
+            for item in _listish(container.get(key)):
+                text = str(item or "").strip().lower()
+                if text:
+                    tokens.add(text)
+        # Older runtime repairs sometimes only store SStats in evidence samples.
+        samples = container.get("source_evidence_samples")
+        if isinstance(samples, list):
+            for sample in samples:
+                if isinstance(sample, dict):
+                    source = str(sample.get("source") or sample.get("provider") or "").lower()
+                    if "sstats" in source:
+                        tokens.add("sstats")
+                    if "bzzoiro" in source:
+                        tokens.add("bzzoiro")
+    return tokens
+
+
+def _has_non_bzzoiro_context_from_row(row: dict[str, Any] | None) -> bool:
+    return any(token and token != "bzzoiro" for token in _context_source_tokens_from_row(row))
+
 def _annotate_day_inventory_from_contexts(contexts: dict[str, MatchContext]) -> dict[str, Any]:
     day = _inventory_target_date()
     path = ROOT / ".data" / "day_inventory" / f"{day}.json"
@@ -807,6 +860,8 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         "matched": 0,
         "contexts_added": 0,
         "contexts_already_present": 0,
+        "targets_with_existing_non_bzz_context": 0,
+        "targets_with_line_evidence": 0,
         "v1_events_fetched": 0,
         "v1_predictions_fetched": 0,
         "v2_events_fetched": 0,
@@ -835,11 +890,17 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
 
     gap_keys = set() if ignore_plan else _gap_keys()
     now = datetime.now(UTC)
+    rows_by_key = _inventory_rows_by_key()
     candidates: list[Match] = []
     for match in matches:
         if getattr(match, "sport_key", "") != "soccer":
             continue
         key = _match_key(match)
+        inventory_row = rows_by_key.get(key)
+        if _has_non_bzzoiro_context_from_row(inventory_row) or (key in existing_contexts and not _has_bzzoiro_context(existing_contexts.get(key))):
+            stats["targets_with_existing_non_bzz_context"] = _to_int(stats.get("targets_with_existing_non_bzz_context"), 0) + 1
+        if _row_has_any_line_evidence(inventory_row):
+            stats["targets_with_line_evidence"] = _to_int(stats.get("targets_with_line_evidence"), 0) + 1
         if key in existing_contexts:
             stats["contexts_already_present"] += 1
             # Existing SStats/ClubElo context is not enough for A-tier.  Keep the
@@ -858,20 +919,33 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
             continue
         candidates.append(match)
     
-    def _priority(match: Match) -> tuple[int, int, float, str]:
+    def _priority(match: Match) -> tuple[int, int, int, int, float, str]:
+        key = _match_key(match)
+        row = rows_by_key.get(key)
         try:
             hours = (match.commence_time.astimezone(UTC) - now).total_seconds() / 3600.0
         except Exception:
             hours = 999999.0
         # Fill near kickoff first because those are the only matches that can publish soon.
         window = 0 if 0 <= hours <= 4 else 1 if 0 <= hours <= 12 else 2 if hours >= 0 else 3
-        return (window, 0 if _bzzoiro_id_from_match(match) else 1, abs(hours), match.league_name.lower())
+        # Second priority: matches that already have SStats/ClubElo/other context.
+        # Adding Bzzoiro there immediately creates 2+ independent context sources.
+        has_other_context = _has_non_bzzoiro_context_from_row(row) or (key in existing_contexts and not _has_bzzoiro_context(existing_contexts.get(key)))
+        has_line = _row_has_any_line_evidence(row)
+        return (window, 0 if has_other_context else 1, 0 if has_line else 1, 0 if _bzzoiro_id_from_match(match) else 1, abs(hours), match.league_name.lower())
 
     candidates.sort(key=_priority)
     limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 240, 240))
     candidates = candidates[:limit]
     stats["target_matches"] = len(candidates)
-    preview["target_sample"] = [{"match_key": _match_key(m), "home": m.home_team, "away": m.away_team, "bzzoiro_id": _bzzoiro_id_from_match(m)} for m in candidates[:25]]
+    preview["target_sample"] = [{
+        "match_key": _match_key(m),
+        "home": m.home_team,
+        "away": m.away_team,
+        "bzzoiro_id": _bzzoiro_id_from_match(m),
+        "has_other_context": _has_non_bzzoiro_context_from_row(rows_by_key.get(_match_key(m))) or (_match_key(m) in existing_contexts and not _has_bzzoiro_context(existing_contexts.get(_match_key(m)))),
+        "has_line_evidence": _row_has_any_line_evidence(rows_by_key.get(_match_key(m))),
+    } for m in candidates[:25]]
     if not candidates:
         stats["stop_reason"] = "no_gap_targets"
         return {}, stats, preview

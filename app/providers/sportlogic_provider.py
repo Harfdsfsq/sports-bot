@@ -173,12 +173,18 @@ class SportLogicProvider:
                 fixtures.extend(rows)
                 if rows:
                     break
+            if not fixtures and self._budget_left():
+                fixtures.extend(await self._discover_fixtures_from_broad_games(client, stats, preview))
             if not fixtures and self._env_bool("SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED", True) and self._budget_left():
                 discovered = await self._discover_fixtures_from_active_odds(client, stats, preview)
                 fixtures.extend(discovered)
 
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
+        if not fixtures and stats.get("odds_discovery_rows"):
+            stats["diagnosis"] = "sportlogic_has_active_odds_but_no_current_games_in_requested_window"
+        elif not fixtures:
+            stats["diagnosis"] = "documented_games_window_returned_no_rows"
         preview["sample_fixtures"] = fixtures[:3]
 
         matches: list[Match] = []
@@ -341,11 +347,17 @@ class SportLogicProvider:
                     fixtures.extend(rows)
                     if rows:
                         break
+                if not fixtures and self._budget_left():
+                    fixtures.extend(await self._discover_fixtures_from_broad_games(client, stats, preview))
                 if not fixtures and self._env_bool("SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED", True) and self._budget_left():
                     discovered = await self._discover_fixtures_from_active_odds(client, stats, preview)
                     fixtures.extend(discovered)
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
+        if not fixtures and stats.get("odds_discovery_rows"):
+            stats["diagnosis"] = "sportlogic_has_active_odds_but_no_current_games_in_requested_window"
+        elif not fixtures:
+            stats["diagnosis"] = "documented_games_window_returned_no_rows"
         preview["sample_fixtures"] = fixtures[:3]
         return fixtures, stats, preview
 
@@ -373,6 +385,47 @@ class SportLogicProvider:
             candidate.setdefault("id", row.get("game_id") or row.get("event_id") or row.get("fixture_id"))
             return candidate
         return None
+
+    async def _discover_fixtures_from_broad_games(
+        self,
+        client: httpx.AsyncClient,
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+    ) -> list[dict[str, Any]]:
+        """Probe /games without date filters when documented date window is empty.
+
+        Some SportLogic accounts appear to return no rows for date_from/date_to,
+        while broad /games may still expose scheduled fixtures.  This fallback is
+        read-only and bounded; returned rows are still filtered later by the
+        normal match horizon, so stale rows cannot publish.
+        """
+        if not self._env_bool("SPORTLOGIC_GAMES_BROAD_FALLBACK_ENABLED", True):
+            return []
+        rows: list[dict[str, Any]] = []
+        max_pages = max(1, int(float(os.getenv("SPORTLOGIC_GAMES_BROAD_FALLBACK_MAX_PAGES") or 2)))
+        for params in (
+            {"per_page": 100, "status": "scheduled"},
+            {"per_page": 100},
+        ):
+            if not self._budget_left():
+                stats["budget_exhausted"] = True
+                break
+            batch = await self._get_paginated_list(client, "/games", params, stats, preview, max_pages=max_pages)
+            dates: dict[str, int] = {}
+            for row in batch:
+                dt = self._fixture_datetime(row)
+                key = dt.date().isoformat() if dt else "unknown"
+                dates[key] = dates.get(key, 0) + 1
+            preview.setdefault("broad_games_variants", []).append({"params": params, "rows": len(batch), "sample_dates": dates})
+            stats.setdefault("broad_games_sample_dates", {})
+            if isinstance(stats.get("broad_games_sample_dates"), dict):
+                for key, value in dates.items():
+                    stats["broad_games_sample_dates"][key] = int(stats["broad_games_sample_dates"].get(key) or 0) + int(value)
+            rows.extend(batch)
+            if batch:
+                break
+        stats["broad_games_rows"] = len(rows)
+        return rows
 
     async def _discover_fixtures_from_active_odds(
         self,
@@ -412,6 +465,14 @@ class SportLogicProvider:
             if len(odds_rows) >= max_games * 4:
                 break
         stats["odds_discovery_rows"] = len(odds_rows)
+        odds_row_dates: dict[str, int] = {}
+        for row in odds_rows[:300]:
+            embedded = self._fixture_from_odds_row(row)
+            dt = self._fixture_datetime(embedded or row) if isinstance(row, dict) else None
+            key = dt.date().isoformat() if dt else "unknown"
+            odds_row_dates[key] = odds_row_dates.get(key, 0) + 1
+        if odds_row_dates:
+            stats["odds_discovery_embedded_game_dates"] = odds_row_dates
         game_ids: list[str] = []
         seen: set[str] = set()
         fixtures: list[dict[str, Any]] = []
