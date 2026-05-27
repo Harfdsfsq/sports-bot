@@ -35,7 +35,22 @@ except Exception:
     def is_sent_pick_row(row: Any) -> bool:
         if not isinstance(row, dict):
             return False
-        return str(row.get("telegram_sent") or "").strip().lower() in {"1", "true", "yes", "on"}
+        truthy = {"1", "true", "yes", "on", "sent", "published", "telegram_sent"}
+        for key in (
+            "telegram_sent",
+            "published",
+            "sent",
+            "is_published",
+            "publication_sent",
+        ):
+            if str(row.get(key) or "").strip().lower() in truthy:
+                return True
+        status = str(row.get("status") or row.get("publication_lifecycle_status") or "").strip().lower()
+        if status in {"published", "telegram_sent", "sent", "posted"}:
+            return True
+        if row.get("published_at_utc") or row.get("sent_at") or row.get("telegram_sent_at_utc"):
+            return True
+        return False
 
 
 
@@ -851,18 +866,131 @@ def family_norm(candidate: dict[str, Any]) -> str:
     return str(candidate.get("family") or "").strip().lower()
 
 
+def _norm_dedupe_text(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    repl = {"ё": "е", "—": "-", "–": "-", "_": " ", "/": " ", "\\": " "}
+    for src, dst in repl.items():
+        text = text.replace(src, dst)
+    text = "".join(ch if ch.isalnum() else " " for ch in text)
+    return " ".join(text.split())
+
+
+def _canonical_point(value: Any) -> str:
+    if value is None or str(value).strip() == "":
+        return ""
+    try:
+        number = float(str(value).replace(",", "."))
+        if number.is_integer():
+            return str(int(number))
+        return f"{number:.2f}".rstrip("0").rstrip(".")
+    except Exception:
+        return _norm_dedupe_text(value)
+
+
+def _candidate_match_identity(candidate: dict[str, Any]) -> str:
+    explicit = candidate.get("canonical_match_id") or candidate.get("match_id") or candidate.get("event_id")
+    if explicit:
+        return _norm_dedupe_text(explicit)
+    match_key = candidate.get("match_key")
+    if match_key:
+        return _norm_dedupe_text(match_key)
+    home = candidate.get("home_team") or candidate.get("home") or candidate.get("home_team_ru")
+    away = candidate.get("away_team") or candidate.get("away") or candidate.get("away_team_ru")
+    kickoff = parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
+    day = kickoff.date().isoformat() if kickoff is not None else _norm_dedupe_text(candidate.get("date") or "")
+    return "|".join([day, _norm_dedupe_text(home), _norm_dedupe_text(away)])
+
+
 def dedupe_key(candidate: dict[str, Any]) -> str:
     raw = "|".join(
         [
-            str(candidate.get("match_key") or ""),
-            str(candidate.get("family") or "").lower(),
-            str(candidate.get("selection") or "").lower(),
-            str(candidate.get("selection_key") or "").lower(),
-            str(candidate.get("point") or ""),
-            str(candidate.get("team_side") or "").lower(),
+            _candidate_match_identity(candidate),
+            _norm_dedupe_text(candidate.get("family") or candidate.get("market_family") or ""),
+            _norm_dedupe_text(candidate.get("selection") or ""),
+            _norm_dedupe_text(candidate.get("selection_key") or ""),
+            _canonical_point(candidate.get("point") or candidate.get("line") or candidate.get("handicap")),
+            _norm_dedupe_text(candidate.get("team_side") or ""),
         ]
     )
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()
+
+
+def broad_dedupe_keys(candidate: dict[str, Any]) -> set[str]:
+    """Stable duplicate keys for already-sent Telegram picks.
+
+    The old fallback dedupe depended on one exact match_key. In practice rows can be
+    rewritten by the publisher/report layer, translated to Russian, or stored with a
+    different source id, so the same forecast could be sent again on the next run.
+    These keys intentionally cover both exact pick duplicates and same-match market
+    duplicates for the configured lookback window.
+    """
+    match_id = _candidate_match_identity(candidate)
+    family = _norm_dedupe_text(candidate.get("family") or candidate.get("market_family") or "")
+    selection = _norm_dedupe_text(candidate.get("selection") or candidate.get("selection_key") or "")
+    point = _canonical_point(candidate.get("point") or candidate.get("line") or candidate.get("handicap"))
+    keys = {dedupe_key(candidate)}
+    if match_id:
+        keys.add("match:" + hashlib.sha1(match_id.encode("utf-8")).hexdigest())
+    if match_id and family:
+        keys.add("match_family:" + hashlib.sha1(f"{match_id}|{family}".encode("utf-8")).hexdigest())
+    if match_id and family and selection:
+        keys.add("match_family_selection:" + hashlib.sha1(f"{match_id}|{family}|{selection}|{point}".encode("utf-8")).hexdigest())
+    return keys
+
+
+def _dedupe_row_timestamp(row: dict[str, Any]) -> datetime | None:
+    for key in ("sent_at", "published_at_utc", "telegram_sent_at_utc", "created_at_utc", "updated_at_utc", "commence_time", "kickoff"):
+        dt = parse_dt(row.get(key))
+        if dt is not None:
+            return dt
+    return None
+
+
+def _iter_sent_pick_sources() -> list[tuple[str, list[Any]]]:
+    state = load_json(".data/state.json", {})
+    sources: list[tuple[str, list[Any]]] = [
+        ("latest_picks", load_json(".data/exports/latest-picks.json", [])),
+        ("latest_bets", load_json(".data/exports/latest-bets.json", [])),
+        ("fallback_published", load_json(".data/exports/latest-controlled-fallback-published-picks.json", [])),
+    ]
+    if isinstance(state, dict):
+        for name in ("bets", "published_candidates", "telegram_published", "published_picks"):
+            rows = state.get(name)
+            if isinstance(rows, list):
+                sources.append((f"state:{name}", rows))
+    return sources
+
+
+def load_sent_dedupe_index() -> dict[str, Any]:
+    now = datetime.now(UTC)
+    lookback_hours = env_int("CONTROLLED_FALLBACK_DEDUPE_LOOKBACK_HOURS", 96)
+    cutoff = now - timedelta(hours=max(1, lookback_hours))
+    index: dict[str, Any] = {}
+    existing = load_json(".data/fallback-sent-index.json", {})
+    if isinstance(existing, dict):
+        for key, row in existing.items():
+            if not isinstance(row, dict):
+                continue
+            ts = parse_dt(row.get("sent_at") or row.get("published_at_utc") or row.get("created_at_utc"))
+            if ts is not None and ts >= cutoff:
+                index[str(key)] = row
+    for source, rows in _iter_sent_pick_sources():
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
+            if not isinstance(row, dict) or not is_sent_pick_row(row):
+                continue
+            ts = _dedupe_row_timestamp(row)
+            if ts is not None and ts < cutoff:
+                continue
+            record = {"source": source, "sent_at": (ts or now).isoformat(), "match_key": row.get("match_key"), "home_team": row.get("home_team"), "away_team": row.get("away_team")}
+            for key in broad_dedupe_keys(row):
+                index[key] = record
+    return index
+
+
+def save_sent_dedupe_index(index: dict[str, Any]) -> None:
+    write_json(".data/fallback-sent-index.json", index)
 
 
 def load_sent_index() -> dict[str, Any]:
@@ -887,26 +1015,24 @@ def prune_sent_index(index: dict[str, Any], hours: int) -> dict[str, Any]:
 
 
 def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> str | None:
-    key = dedupe_key(candidate)
-    if key in sent_index:
-        return "duplicate_fallback_sent_index"
-    state = load_json(".data/state.json", {})
-    if not isinstance(state, dict):
-        return None
-    collections: list[str] = []
-    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_BETS", True):
-        collections.append("bets")
-    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED", True):
-        collections.append("published_candidates")
-    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_SHADOW", False):
-        collections.append("shadow_bets")
-    for collection in collections:
-        rows = state.get(collection) or []
+    candidate_keys = broad_dedupe_keys(candidate)
+    for key in candidate_keys:
+        if key in sent_index:
+            source = sent_index.get(key)
+            src_name = source.get("source") if isinstance(source, dict) else "sent_index"
+            return f"duplicate_already_sent:{src_name}"
+
+    # Extra safety: scan all common publication ledgers. This catches cases where a
+    # prior fallback publication was synced to latest-picks/latest-bets but the legacy
+    # fallback index was not updated or used a different exact match_key.
+    for source_name, rows in _iter_sent_pick_sources():
         if not isinstance(rows, list):
             continue
         for row in rows:
-            if isinstance(row, dict) and dedupe_key(row) == key and is_sent_pick_row(row):
-                return f"duplicate_state:{collection}"
+            if not isinstance(row, dict) or not is_sent_pick_row(row):
+                continue
+            if candidate_keys.intersection(broad_dedupe_keys(row)):
+                return f"duplicate_already_sent:{source_name}"
     return None
 
 
@@ -1446,11 +1572,11 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
             if not row_in_current_window(row):
                 counts[f"{source}_stale_or_outside_window"] += 1
                 continue
-            key = dedupe_key(row)
-            if key in seen:
+            row_keys = broad_dedupe_keys(row)
+            if seen.intersection(row_keys):
                 counts[f"{source}_duplicate_in_pool"] += 1
                 continue
-            seen.add(key)
+            seen.update(row_keys)
             row.setdefault("_candidate_source", source)
             pool.append(row)
             counts[source] += 1
@@ -1961,7 +2087,7 @@ def main() -> int:
         write_json(".data/exports/latest-controlled-fallback-report.json", report)
         return 0
 
-    sent_index = prune_sent_index(load_sent_index(), env_int("CONTROLLED_FALLBACK_DEDUPE_HOURS", 72))
+    sent_index = load_sent_dedupe_index()
     candidates, pool_counts = load_candidate_pool()
     report["candidates_seen"] = len(candidates)
     report["pool_counts"] = pool_counts
@@ -2047,8 +2173,9 @@ def main() -> int:
         for chosen, metrics, tier, stake in selected_items:
             key = dedupe_key(chosen)
             if sent:
-                sent_index[key] = {
+                sent_record = {
                     "sent_at": datetime.now(UTC).isoformat(),
+                    "source": "controlled_fallback",
                     "match_key": chosen.get("match_key"),
                     "home_team": chosen.get("home_team"),
                     "away_team": chosen.get("away_team"),
@@ -2065,6 +2192,8 @@ def main() -> int:
                     "telegram_sent": True,
                     "publication_lifecycle_status": "telegram_sent",
                 }
+                for sent_key in broad_dedupe_keys(chosen):
+                    sent_index[sent_key] = dict(sent_record)
             selected_rows.append({
                 "dedupe_key": key,
                 "telegram_sent": bool(sent),
@@ -2106,7 +2235,7 @@ def main() -> int:
                     "stake_amount": stake,
                 },
             })
-        save_sent_index(sent_index)
+        save_sent_dedupe_index(sent_index)
     else:
         for chosen, metrics, tier, stake in selected_items:
             selected_rows.append({
