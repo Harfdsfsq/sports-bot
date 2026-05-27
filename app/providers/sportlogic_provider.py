@@ -147,7 +147,9 @@ class SportLogicProvider:
         days_ahead = max(1, int(getattr(self.settings, "run_days_ahead", 3) or 3))
         fixtures: list[dict[str, Any]] = []
         date_from = now.date().isoformat()
-        date_to = (now + timedelta(days=days_ahead)).date().isoformat()
+        # SportLogic date_to behaves like an upper day boundary on some accounts;
+        # ask through the next day so today's UTC evening fixtures are not lost.
+        date_to = (now + timedelta(days=days_ahead + 1)).date().isoformat()
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             # SportLogic docs: GET /games uses date_from/date_to/status and cursor pagination.
             # One window request avoids wasting the free 10 RPM bucket on one request per day.
@@ -308,7 +310,9 @@ class SportLogicProvider:
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             if dates:
                 date_from = dates[0]
-                date_to = dates[-1]
+                # Use the day after the last target date to avoid empty responses
+                # from accounts where date_to is treated as an exclusive boundary.
+                date_to = (datetime.fromisoformat(dates[-1]).date() + timedelta(days=1)).isoformat()
                 for params in (
                     {"date_from": date_from, "date_to": date_to, "status": "scheduled", "per_page": 100},
                     {"date_from": date_from, "date_to": date_to, "per_page": 100},

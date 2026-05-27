@@ -137,7 +137,6 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     key = _line_key(candidate)
     entry = lines.setdefault(key, {"snapshots": []})
     snapshots = entry.get("snapshots") if isinstance(entry.get("snapshots"), list) else []
-    previous = snapshots[-1] if snapshots else None
 
     next_run_min = int(float(os.getenv("LINE_MOVEMENT_NEXT_RUN_MINUTES") or getattr(settings, "line_movement_next_run_minutes", 120) or 120))
     min_lead_min = int(float(os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES") or 15))
@@ -152,19 +151,45 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     value_ok, value_reasons = _value_ok(candidate, min_ev_pct=min_ev_pct, min_edge_pct=min_edge_pct)
 
     current = _snapshot(candidate, now)
-    current_odds = _float(current.get("odds"), 0.0)
-    previous_odds = _float(previous.get("odds") if isinstance(previous, dict) else None, 0.0)
+    current_run_id = os.getenv("GITHUB_RUN_ID") or os.getenv("HARIZON_RUN_ID") or ""
+    if current_run_id:
+        current["run_id"] = current_run_id
 
     # A second snapshot must come from a later regular run, not from another
-    # script in the same workflow seconds later.  This keeps the lifecycle:
-    # first snapshot -> wait next run -> second snapshot -> publish/decline.
+    # script in the same workflow seconds later.  Older snapshots may exist
+    # behind a too-fresh snapshot from the current workflow; use the latest
+    # eligible previous snapshot instead of blindly using snapshots[-1].
     min_recheck_minutes = float(os.getenv("LINE_MOVEMENT_MIN_RECHECK_MINUTES") or 60.0)
+
+    def _snapshot_age_minutes(snapshot: Any) -> float | None:
+        snap_at = _dt(snapshot.get("captured_at_utc")) if isinstance(snapshot, dict) else None
+        return ((now - snap_at).total_seconds() / 60.0) if snap_at else None
+
+    previous = None
+    too_fresh_previous = snapshots[-1] if snapshots else None
+    too_fresh_previous_age = _snapshot_age_minutes(too_fresh_previous)
+    for snapshot in reversed(snapshots):
+        if not isinstance(snapshot, dict):
+            continue
+        age = _snapshot_age_minutes(snapshot)
+        snap_run_id = str(snapshot.get("run_id") or "")
+        same_run = bool(current_run_id and snap_run_id and snap_run_id == current_run_id)
+        if no_next_run or (age is not None and age >= min_recheck_minutes and not same_run):
+            previous = snapshot
+            break
+
+    if previous is None and snapshots:
+        previous = None
+
+    current_odds = _float(current.get("odds"), 0.0)
+    previous_odds = _float(previous.get("odds") if isinstance(previous, dict) else None, 0.0)
     previous_at = _dt(previous.get("captured_at_utc")) if isinstance(previous, dict) else None
     previous_age_minutes = ((now - previous_at).total_seconds() / 60.0) if previous_at else None
-    too_soon_for_second_snapshot = (
-        previous is not None
-        and previous_age_minutes is not None
-        and previous_age_minutes < min_recheck_minutes
+    latest_snapshot_too_fresh = (
+        too_fresh_previous is not None
+        and too_fresh_previous_age is not None
+        and too_fresh_previous_age < min_recheck_minutes
+        and previous is None
         and not no_next_run
     )
 
@@ -182,10 +207,10 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         status = "awaiting_next_run"
         passed = False
         reasons.append("needs_next_cron_line_movement_recheck")
-    elif too_soon_for_second_snapshot:
+    elif latest_snapshot_too_fresh:
         status = "awaiting_next_run"
         passed = False
-        reasons.append(f"needs_later_line_movement_recheck:{previous_age_minutes:.1f}<{min_recheck_minutes:.1f}m")
+        reasons.append(f"needs_later_line_movement_recheck:{too_fresh_previous_age:.1f}<{min_recheck_minutes:.1f}m")
     elif previous is None and no_next_run:
         status = "publish_now_no_next_cron" if value_ok else "value_failed"
         passed = value_ok
@@ -200,7 +225,7 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         status = "value_failed"
         passed = False
 
-    if not too_soon_for_second_snapshot:
+    if not latest_snapshot_too_fresh:
         snapshots.append(current)
     entry["snapshots"] = snapshots[-max_snapshots:]
     entry["last_snapshot"] = current
@@ -231,4 +256,6 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         "previous_snapshot_at_utc": previous.get("captured_at_utc") if isinstance(previous, dict) else None,
         "previous_snapshot_age_minutes": round(previous_age_minutes, 2) if previous_age_minutes is not None else None,
         "min_recheck_minutes": min_recheck_minutes,
+        "eligible_previous_snapshot_at_utc": previous.get("captured_at_utc") if isinstance(previous, dict) else None,
+        "latest_snapshot_too_fresh_age_minutes": round(too_fresh_previous_age, 2) if too_fresh_previous_age is not None else None,
     }

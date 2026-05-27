@@ -337,6 +337,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
     from app.services import windowed_core_coverage_runtime_patch as wc
 
     token = str(os.getenv("BZZOIRO_API_KEY") or getattr(getattr(self, "settings", None), "bzzoiro_api_key", "") or "").strip()
+    ignore_plan = _truthy(os.getenv("BZZOIRO_CONTEXT_GAP_IGNORE_PLAN"), True)
     stats: dict[str, Any] = {
         "enabled": bool(token),
         "requests": 0,
@@ -352,6 +353,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         "matched_by_v1_prediction": 0,
         "matched_by_v1_event": 0,
         "matched_by_v2_fuzzy": 0,
+        "ignore_plan": ignore_plan,
         "stats_resources": 0,
         "metadata_resources": 0,
         "lineups_resources": 0,
@@ -362,7 +364,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
     if not token or not matches:
         return {}, stats, preview
 
-    gap_keys = _gap_keys()
+    gap_keys = set() if ignore_plan else _gap_keys()
     now = datetime.now(UTC)
     candidates: list[Match] = []
     for match in matches:
@@ -382,7 +384,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
             continue
         candidates.append(match)
     candidates.sort(key=lambda m: ((m.commence_time.astimezone(UTC) - now).total_seconds(), 0 if _bzzoiro_id_from_match(m) else 1, m.league_name.lower()))
-    limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 72, 72))
+    limit = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 160, 160))
     candidates = candidates[:limit]
     stats["target_matches"] = len(candidates)
     preview["target_sample"] = [{"match_key": _match_key(m), "home": m.home_team, "away": m.away_team, "bzzoiro_id": _bzzoiro_id_from_match(m)} for m in candidates[:25]]
@@ -390,7 +392,7 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         stats["stop_reason"] = "no_gap_targets"
         return {}, stats, preview
 
-    max_requests = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 140, 140))
+    max_requests = max(1, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 240, 240))
     headers = {"Authorization": f"Token {token}"}
     added: dict[str, MatchContext] = {}
     min_dt = min(m.commence_time for m in candidates).astimezone(UTC)
@@ -561,8 +563,9 @@ def install() -> dict[str, Any]:
     BzzoiroContextProvider.fetch_context = fetch_context_with_gap_pass  # type: ignore[assignment]
     payload.update({
         "status": "installed",
-        "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 72, 72),
-        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 140, 140),
+        "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 160, 160),
+        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 240, 240),
+        "ignore_plan_default": True,
         "runtime_report": str(RUNTIME_REPORT_PATH),
     })
     _write_json(INSTALL_REPORT_PATH, payload)
