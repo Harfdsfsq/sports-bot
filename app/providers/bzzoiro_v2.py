@@ -9,7 +9,7 @@ from typing import Any
 import httpx
 
 from app.config import Settings
-from app.schemas import Match, MatchContext
+from app.schemas import Match, MatchContext, Offer
 from app.utils import (
     clamp,
     implied_probability,
@@ -565,6 +565,232 @@ class BzzoiroContextProvider:
     @staticmethod
     def _norm(value: Any) -> str:
         return "".join(ch for ch in str(value or "").lower() if ch.isalnum())
+
+
+    async def fetch_offers(self, matches: list[Match]) -> tuple[dict[str, list[Offer]], dict[str, Any], dict[str, Any]]:
+        stats: dict[str, Any] = {
+            "provider_version": self.VERSION,
+            "api_version": "v2",
+            "enabled": bool(self.api_key),
+            "api_key_present": bool(self.api_key),
+            "mode": "offers",
+            "requests": 0,
+            "response_errors": 0,
+            "events_fetched": 0,
+            "event_matches": 0,
+            "event_odds_fetched": 0,
+            "event_comparison_fetched": 0,
+            "offers_parsed": 0,
+            "rows_before_parse": 0,
+            "matched_exact": 0,
+            "matched_loose": 0,
+            "matched_fuzzy": 0,
+            "http_statuses": [],
+            "payload_shapes": [],
+            "last_url": None,
+            "last_error": None,
+            "last_body_preview": None,
+        }
+        preview: dict[str, Any] = {"sample_events": [], "sample_offers": [], "unmatched_examples": []}
+        if not self.api_key:
+            return {}, stats, preview
+        soccer_matches = [m for m in matches if m.sport_key == "soccer"]
+        if not soccer_matches:
+            return {}, stats, preview
+        soccer_matches = self._prioritize_matches(soccer_matches)
+        limit = max(0, int(float(os.getenv("BZZOIRO_ODDS_MATCH_LIMIT", os.getenv("BZZOIRO_CONTEXT_MATCH_LIMIT", "80")) or 80)))
+        if limit > 0:
+            soccer_matches = soccer_matches[:limit]
+        min_dt = min(m.commence_time for m in soccer_matches).astimezone(UTC)
+        max_dt = max(m.commence_time for m in soccer_matches).astimezone(UTC)
+        headers = {"Authorization": f"Token {self.api_key}"}
+        offers_by_match: dict[str, list[Offer]] = {}
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+            events = await self._fetch_events(client, headers, min_dt.date().isoformat(), max_dt.date().isoformat(), stats)
+            stats["events_fetched"] = len(events)
+            preview["sample_events"] = events[:3]
+            for match in soccer_matches:
+                event, quality, score, diag = self._match_event(match, events)
+                if not event:
+                    if len(preview["unmatched_examples"]) < 8:
+                        preview["unmatched_examples"].append({"match_key": match.match_key, "home": match.home_team, "away": match.away_team, "best_event": diag})
+                    continue
+                event_id = self._to_int(event.get("id"))
+                if event_id is None:
+                    continue
+                payloads: list[Any] = []
+                comparison = await self._get_json(client, f"/events/{event_id}/odds/comparison/", headers, {}, stats)
+                if comparison is not None:
+                    stats["event_comparison_fetched"] += 1
+                    payloads.append(comparison)
+                consensus = await self._get_json(client, f"/events/{event_id}/odds/", headers, {}, stats)
+                if consensus is not None:
+                    stats["event_odds_fetched"] += 1
+                    payloads.append(consensus)
+                parsed: list[Offer] = []
+                for payload in payloads:
+                    parsed.extend(self._payload_to_offers(payload, match, str(event_id)))
+                if parsed:
+                    stats["event_matches"] += 1
+                    if quality == "exact":
+                        stats["matched_exact"] += 1
+                    elif quality == "loose":
+                        stats["matched_loose"] += 1
+                    elif quality == "fuzzy":
+                        stats["matched_fuzzy"] += 1
+                    stats["offers_parsed"] += len(parsed)
+                    stats["rows_before_parse"] += len(parsed)
+                    offers_by_match[match.match_key] = parsed
+                    if len(preview["sample_offers"]) < 10:
+                        preview["sample_offers"].extend([
+                            {
+                                "match_key": match.match_key,
+                                "event_id": event_id,
+                                "bookmaker": offer.bookmaker,
+                                "family": offer.family,
+                                "selection": offer.selection,
+                                "point": offer.point,
+                                "price": offer.price,
+                                "quality": quality,
+                                "score": round(score, 2),
+                            }
+                            for offer in parsed[: max(0, 10 - len(preview["sample_offers"]))]
+                        ])
+        return offers_by_match, stats, preview
+
+    def _payload_to_offers(self, payload: Any, match: Match, event_id: str) -> list[Offer]:
+        offers: list[Offer] = []
+        seen: set[tuple[str, str, str, float | None]] = set()
+
+        def add(bookmaker: Any, family: str, selection: str, price: Any, point: float | None = None, team_side: str | None = None, market_name: str = "") -> None:
+            odds = self._to_float(price)
+            if odds is None or odds <= 1.0:
+                return
+            book = str(bookmaker or "bzzoiro-consensus").strip() or "bzzoiro-consensus"
+            key = (book.lower(), family, selection.lower(), point)
+            if key in seen:
+                return
+            seen.add(key)
+            offers.append(
+                Offer(
+                    source="bzzoiro",
+                    bookmaker=book,
+                    family=family,  # type: ignore[arg-type]
+                    selection=selection,
+                    price=float(odds),
+                    point=point,
+                    team_side=team_side,
+                    market_name=market_name or family,
+                    market_key=family,
+                    source_event_id=event_id,
+                    metadata={"bzzoiro_event_id": event_id, "bzzoiro_api_version": "v2"},
+                )
+            )
+
+        if isinstance(payload, dict):
+            odds = payload.get("odds")
+            if isinstance(odds, dict):
+                add("bzzoiro-consensus", "h2h", match.home_team, odds.get("home_win"), team_side="home", market_name="1x2")
+                add("bzzoiro-consensus", "h2h", "Draw", odds.get("draw"), market_name="1x2")
+                add("bzzoiro-consensus", "h2h", match.away_team, odds.get("away_win"), team_side="away", market_name="1x2")
+                add("bzzoiro-consensus", "btts", "Yes", odds.get("btts_yes"), market_name="btts")
+                add("bzzoiro-consensus", "btts", "No", odds.get("btts_no"), market_name="btts")
+                for line in (1.5, 2.5, 3.5):
+                    suffix = str(line).replace(".", "")
+                    add("bzzoiro-consensus", "totals", "Over", odds.get(f"over_{suffix}_goals"), point=line, market_name=f"over_under_{line:g}")
+                    add("bzzoiro-consensus", "totals", "Under", odds.get(f"under_{suffix}_goals"), point=line, market_name=f"over_under_{line:g}")
+
+            markets = payload.get("markets")
+            if isinstance(markets, dict):
+                self._walk_comparison_markets(markets, match, event_id, add)
+
+        for row in self._flatten_odds(payload):
+            market = self._norm(row.get("market") or row.get("market_key") or row.get("market_name"))
+            outcome = self._norm(row.get("outcome") or row.get("name") or row.get("selection"))
+            book = row.get("bookmaker") or row.get("bookmaker_slug") or row.get("bookmaker_name") or "bzzoiro"
+            price = row.get("price") or row.get("odds") or row.get("decimal") or row.get("decimal_odds")
+            point = self._to_float(row.get("line") or row.get("point"))
+            if market in {"1x2", "h2h", "matchwinner", "matchresult"}:
+                if outcome in {"home", "homewin", "1"}:
+                    add(book, "h2h", match.home_team, price, team_side="home", market_name=str(row.get("market") or "1x2"))
+                elif outcome in {"draw", "x"}:
+                    add(book, "h2h", "Draw", price, market_name=str(row.get("market") or "1x2"))
+                elif outcome in {"away", "awaywin", "2"}:
+                    add(book, "h2h", match.away_team, price, team_side="away", market_name=str(row.get("market") or "1x2"))
+            elif "total" in market or "overunder" in market or "ou" == market:
+                if point is None:
+                    point = self._line_from_text(str(row.get("market") or "") + " " + str(row.get("outcome") or row.get("name") or row.get("selection") or ""))
+                if "under" in outcome or outcome.startswith("u"):
+                    add(book, "totals", "Under", price, point=point, market_name=str(row.get("market") or "totals"))
+                elif "over" in outcome or outcome.startswith("o"):
+                    add(book, "totals", "Over", price, point=point, market_name=str(row.get("market") or "totals"))
+            elif "btts" in market or ("both" in market and "score" in market):
+                if "yes" in outcome:
+                    add(book, "btts", "Yes", price, market_name=str(row.get("market") or "btts"))
+                elif "no" in outcome:
+                    add(book, "btts", "No", price, market_name=str(row.get("market") or "btts"))
+        return offers
+
+    def _walk_comparison_markets(self, markets: dict[str, Any], match: Match, event_id: str, add: Any) -> None:
+        outcome_aliases = {"home", "home_win", "homewin", "1", "draw", "x", "away", "away_win", "awaywin", "2", "over", "under", "yes", "no", "btts_yes", "btts_no"}
+
+        def visit(value: Any, market_name: str, outcome_name: str | None = None, bookmaker_name: str | None = None) -> None:
+            if isinstance(value, dict):
+                local_market = str(value.get("market") or value.get("market_key") or value.get("market_name") or market_name or "")
+                local_outcome = str(value.get("outcome") or value.get("selection") or value.get("name") or outcome_name or "")
+                local_book = str(value.get("bookmaker_slug") or value.get("bookmaker_name") or value.get("bookmaker") or bookmaker_name or "")
+                price = value.get("decimal_odds") or value.get("price") or value.get("odds") or value.get("decimal")
+                if price not in (None, "") and local_market and local_outcome:
+                    self._add_comparison_offer(add, match, local_market, local_outcome, price, local_book or "bzzoiro", value)
+                for key, child in value.items():
+                    if isinstance(child, (dict, list)):
+                        key_norm = self._norm(key)
+                        next_outcome = local_outcome
+                        next_book = local_book
+                        if key_norm in {self._norm(x) for x in outcome_aliases}:
+                            next_outcome = str(key)
+                        elif key not in {"markets", "outcomes", "bookmakers", "odds"} and not next_book:
+                            next_book = str(key)
+                        visit(child, local_market, next_outcome, next_book)
+            elif isinstance(value, list):
+                for item in value:
+                    visit(item, market_name, outcome_name, bookmaker_name)
+
+        for market_name, market_payload in markets.items():
+            visit(market_payload, str(market_name), None, None)
+
+    def _add_comparison_offer(self, add: Any, match: Match, market_name: str, outcome_name: str, price: Any, bookmaker: str, row: dict[str, Any]) -> None:
+        market_norm = self._norm(market_name)
+        outcome_norm = self._norm(outcome_name)
+        point = self._to_float(row.get("line") or row.get("point")) or self._line_from_text(f"{market_name} {outcome_name}")
+        if market_norm in {"1x2", "h2h", "matchwinner", "matchresult"}:
+            if outcome_norm in {"home", "homewin", "1"}:
+                add(bookmaker, "h2h", match.home_team, price, team_side="home", market_name=market_name)
+            elif outcome_norm in {"draw", "x"}:
+                add(bookmaker, "h2h", "Draw", price, market_name=market_name)
+            elif outcome_norm in {"away", "awaywin", "2"}:
+                add(bookmaker, "h2h", match.away_team, price, team_side="away", market_name=market_name)
+        elif "overunder" in market_norm or "total" in market_norm or "goals" in market_norm:
+            if "under" in outcome_norm or outcome_norm.startswith("u"):
+                add(bookmaker, "totals", "Under", price, point=point, market_name=market_name)
+            elif "over" in outcome_norm or outcome_norm.startswith("o"):
+                add(bookmaker, "totals", "Over", price, point=point, market_name=market_name)
+        elif "btts" in market_norm or ("both" in market_norm and "score" in market_norm):
+            if "yes" in outcome_norm:
+                add(bookmaker, "btts", "Yes", price, market_name=market_name)
+            elif "no" in outcome_norm:
+                add(bookmaker, "btts", "No", price, market_name=market_name)
+
+    @staticmethod
+    def _line_from_text(text: str) -> float | None:
+        import re
+        match = re.search(r"(\d+(?:[\.,]\d+)?)", str(text or ""))
+        if not match:
+            return None
+        try:
+            return float(match.group(1).replace(",", "."))
+        except Exception:
+            return None
 
     @staticmethod
     def _env_bool(name: str, default: bool) -> bool:

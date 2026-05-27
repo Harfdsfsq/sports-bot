@@ -204,7 +204,7 @@ class Settings(BaseSettings):
     odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"))
     odds_api_io_page_limit: int = Field(default=100, validation_alias=AliasChoices("ODDS_API_IO_PAGE_LIMIT"))
     odds_api_io_max_pages_per_sport: int = Field(default=8, validation_alias=AliasChoices("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT"))
-    odds_api_io_per_run_max: int = Field(default=8, validation_alias=AliasChoices("ODDS_API_IO_PER_RUN_MAX", "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN"))
+    odds_api_io_per_run_max: int = Field(default=64, validation_alias=AliasChoices("ODDS_API_IO_PER_RUN_MAX", "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN"))
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices("SSTATS_API_KEY"))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))

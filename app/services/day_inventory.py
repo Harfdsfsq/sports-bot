@@ -8,7 +8,6 @@ from typing import Any
 from zoneinfo import ZoneInfo
 
 from app.schemas import Match
-from app.services.day_inventory_cached_evidence import preserve_cached_evidence
 
 UTC = timezone.utc
 LEGACY_PLACEHOLDER_SOURCES = {"", "day_inventory", "inventory", "unknown", "none", "null"}
@@ -76,6 +75,34 @@ class DayInventoryStore:
                 out[provider] = source_id
         return out
 
+    @classmethod
+    def _coverage_odds_sources(cls, sources_seen: set[str], metadata: dict[str, Any]) -> set[str]:
+        out: set[str] = set()
+        for source in sources_seen:
+            source_l = cls._normalize_source(source).lower()
+            if source_l in {"odds_api_io", "sportlogic", "bzzoiro", "allsportsapi", "oddspapi", "bookies_api"}:
+                out.add("bzzoiro" if source_l == "bzzoiro_v2" else source_l)
+        if metadata.get("has_current_odds_provider"):
+            out.add("odds_api_io")
+        if metadata.get("sportlogic_odds_provider"):
+            out.add("sportlogic")
+        return {item for item in out if item}
+
+    @classmethod
+    def _coverage_context_sources(cls, sources_seen: set[str], metadata: dict[str, Any]) -> set[str]:
+        out: set[str] = set()
+        for source in sources_seen:
+            source_l = cls._normalize_source(source).lower()
+            if source_l in {"bzzoiro", "sstats", "sportlogic", "football_data", "thesportsdb", "api_football", "futrixmetrics"}:
+                out.add(source_l)
+        if metadata.get("bzzoiro_has_context_hint") or metadata.get("bzzoiro_context_fields"):
+            out.add("bzzoiro")
+        if metadata.get("sstats_has_context_hint") or metadata.get("sstats_context_fields"):
+            out.add("sstats")
+        if metadata.get("sportlogic_context"):
+            out.add("sportlogic")
+        return {item for item in out if item}
+
     def _date_file(self, local_date: str) -> Path:
         return self.base_dir / f"{local_date}.json"
 
@@ -104,6 +131,8 @@ class DayInventoryStore:
         sources_seen.update(source_ids.keys())
         if match_source:
             sources_seen.add(match_source)
+        odds_sources = self._coverage_odds_sources(sources_seen, metadata)
+        context_sources = self._coverage_context_sources(sources_seen, metadata)
         local_date = self.local_date_for_dt(commence_time) if commence_time is not None else ""
         priority = self._priority_score(match)
         return {
@@ -125,15 +154,19 @@ class DayInventoryStore:
             "sources_seen": sorted(sources_seen),
             "coverage": {
                 "fixture_core": True,
-                "odds": False,
-                "context": False,
+                "odds": bool(odds_sources),
+                "context": bool(context_sources),
                 "weather": False,
                 "news": False,
-                "xg": False,
-                "form": False,
-                "ready_for_model": False,
-                "ready_for_publish": False,
+                "xg": bool(metadata.get("bzzoiro_context_fields") or metadata.get("sstats_context_fields")),
+                "form": bool(metadata.get("sstats_has_context_hint") or metadata.get("sstats_context_fields")),
+                "odds_source_count": len(odds_sources),
+                "context_source_count": len(context_sources),
+                "ready_for_model": bool(odds_sources) and bool(context_sources),
+                "ready_for_publish": len(odds_sources) >= 2 and len(context_sources) >= 2,
             },
+            "odds_sources": sorted(odds_sources),
+            "context_sources": sorted(context_sources),
             "priority": priority,
             "last_enriched_at": None,
             "next_retry_at": None,
@@ -214,8 +247,21 @@ class DayInventoryStore:
             sources_seen = sorted({*self._split_sources(current.get("sources_seen")), *self._split_sources(row.get("sources_seen")), *new_source_ids.keys()})
             metadata = dict(current.get("metadata") or {})
             metadata.update(row.get("metadata") or {})
+            odds_sources = sorted({*self._split_sources(current.get("odds_sources")), *self._split_sources(row.get("odds_sources"))})
+            context_sources = sorted({*self._split_sources(current.get("context_sources")), *self._split_sources(row.get("context_sources"))})
             coverage = dict(current.get("coverage") or {})
-            coverage.update({k: bool(v) or bool(coverage.get(k)) for k, v in (row.get("coverage") or {}).items()})
+            incoming_coverage = dict(row.get("coverage") or {})
+            for k, v in incoming_coverage.items():
+                if isinstance(v, bool):
+                    coverage[k] = bool(v) or bool(coverage.get(k))
+                elif k not in coverage or coverage.get(k) in (None, "", 0):
+                    coverage[k] = v
+            coverage["odds_source_count"] = max(int(coverage.get("odds_source_count") or 0), len(odds_sources))
+            coverage["context_source_count"] = max(int(coverage.get("context_source_count") or 0), len(context_sources))
+            coverage["odds"] = bool(coverage.get("odds")) or bool(odds_sources)
+            coverage["context"] = bool(coverage.get("context")) or bool(context_sources)
+            coverage["ready_for_model"] = bool(coverage.get("ready_for_model")) or (bool(odds_sources) and bool(context_sources))
+            coverage["ready_for_publish"] = bool(coverage.get("ready_for_publish")) or (len(odds_sources) >= 2 and len(context_sources) >= 2)
             refresh = dict(current.get("refresh") or {})
             refresh["last_fixture_refresh_utc"] = now_utc
             priority = max(float(current.get("priority") or 0.0), float(row.get("priority") or 0.0))
@@ -232,6 +278,8 @@ class DayInventoryStore:
                 "tier": row.get("tier") or current.get("tier"),
                 "source_ids": new_source_ids,
                 "sources_seen": sources_seen,
+                "odds_sources": odds_sources,
+                "context_sources": context_sources,
                 "coverage": coverage,
                 "priority": round(priority, 3),
                 "last_enriched_at": current.get("last_enriched_at") or row.get("last_enriched_at"),
@@ -286,11 +334,7 @@ class DayInventoryStore:
             "league_match_counts": dict(sorted(leagues.items(), key=lambda item: (-item[1], item[0]))[:50]),
             "matches": sorted_matches,
         }
-        return preserve_cached_evidence(
-            payload,
-            existing,
-            report_path=self.summary_path.parent / "latest-day-inventory-cached-evidence-preserve.json",
-        )
+        return payload
 
     def _coverage_counts(self, rows: list[dict[str, Any]]) -> dict[str, int]:
         now = datetime.now(UTC)

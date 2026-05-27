@@ -1,16 +1,15 @@
 from __future__ import annotations
 
-"""Build canonical daily inventory from the three core providers.
+"""Build canonical daily inventory from core fixture providers.
 
-Providers:
+Core fixture providers:
 - odds_api_io: primary fixture + current odds event ids through existing runner bootstrap;
-- bzzoiro: event/prediction discovery with source ids and lightweight context hints;
-- sstats: Games/list discovery with source ids and stat/context hints.
+- bzzoiro: v2 event discovery with source ids and lightweight context hints;
+- sportlogic: quota-governed fixture discovery and later independent odds source.
 
-The script deliberately avoids deep per-match calls. It fetches broad list
-endpoints first, crosswalks provider rows to canonical matches, then cuts the day
-to <= DAY_INVENTORY_MAX_MATCHES. Deep endpoints should be called later by the
-2-hour runtime only for near-window / top-priority matches.
+SStats is intentionally not used as a fixture source here. It is a historical
+form/context provider and should enrich canonical matches during the 2-hour
+runtime, not create today's inventory rows from historical games.
 """
 
 import asyncio
@@ -48,7 +47,7 @@ SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
 CORE_REPORT_PATH = EXPORT_DIR / "latest-day-inventory-core-build-report.json"
 CROSSWALK_PATH = EXPORT_DIR / "latest-day-inventory-core-crosswalk.json"
 
-CORE_PROVIDERS = ("odds_api_io", "bzzoiro", "sstats")
+CORE_PROVIDERS = ("odds_api_io", "bzzoiro", "sportlogic")
 
 
 def env_bool(name: str, default: bool = False) -> bool:
@@ -331,6 +330,48 @@ async def fetch_bzzoiro(settings: Settings, local_date: str) -> tuple[list[Match
     return matches, stats
 
 
+
+async def fetch_sportlogic(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
+    stats: dict[str, Any] = {
+        "enabled": env_bool("DAY_INVENTORY_ENABLE_SPORTLOGIC", True),
+        "api_key_present": bool(os.getenv("SPORTLOGIC_API_KEY") or os.getenv("SPORTLOGIC_KEY") or os.getenv("SPORTLOGIC_TOKEN") or getattr(settings, "sportlogic_api_key", "")),
+        "requests": 0,
+        "response_errors": 0,
+        "matches_built": 0,
+        "matches_for_target_date": 0,
+        "source": "sportlogic_provider.fetch_matches",
+    }
+    if not stats["enabled"] or not stats["api_key_present"]:
+        return [], stats
+    try:
+        from app.providers.sportlogic_provider import SportLogicProvider
+
+        provider = SportLogicProvider(settings)
+        matches, provider_stats, _preview = await provider.fetch_matches()
+        stats.update({k: v for k, v in dict(provider_stats or {}).items() if k not in {"last_body_preview"}})
+        rows: list[Match] = []
+        for match in matches or []:
+            if getattr(match, "sport_key", "") != "soccer":
+                continue
+            if local_date_for(settings, match.commence_time) != local_date:
+                continue
+            meta2 = dict(match.metadata or {})
+            source_ids = dict(meta2.get("provider_source_ids") or {})
+            if match.source_event_id:
+                source_ids["sportlogic"] = str(match.source_event_id)
+            meta2["provider_source_ids"] = source_ids
+            meta2["sources_seen"] = ",".join(sorted({"sportlogic", *(str(meta2.get("sources_seen") or "").split(","))})).strip(",")
+            meta2["core_inventory"] = True
+            meta2["sportlogic_fixture_source"] = True
+            rows.append(Match(**{**asdict(match), "source": "sportlogic", "metadata": meta2}))
+        stats["matches_built"] = len(matches or [])
+        stats["matches_for_target_date"] = len(rows)
+        return rows, stats
+    except Exception as exc:
+        stats["response_errors"] = int(stats.get("response_errors") or 0) + 1
+        stats["last_error"] = f"{type(exc).__name__}: {exc}"
+        return [], stats
+
 def sstats_team(row: dict[str, Any], side: str) -> str:
     candidates = [
         f"{side}Team.name", f"{side}.name", f"{side}_team.name", f"{side}Name", f"{side}_name", f"{side}Team", f"{side}",
@@ -414,7 +455,7 @@ def merge_matches(matches_by_provider: dict[str, list[Match]], settings: Setting
     crosswalk: dict[str, Any] = {"matched_rows": [], "unmatched_rows": [], "provider_rows": {k: len(v) for k, v in matches_by_provider.items()}}
 
     # Seed with odds_api_io first because it has current line ids.
-    ordered = ["odds_api_io", "bzzoiro", "sstats"]
+    ordered = ["odds_api_io", "bzzoiro", "sportlogic"]
     for provider in ordered:
         for match in matches_by_provider.get(provider, []):
             best_key: str | None = None
@@ -490,9 +531,9 @@ def priority_score(match: Match, now_utc: datetime) -> float:
         score += 30
     if "bzzoiro" in sources:
         score += 18
-    if "sstats" in sources:
+    if "sportlogic" in sources:
         score += 18
-    if meta.get("bzzoiro_has_context_hint") or meta.get("sstats_has_context_hint"):
+    if meta.get("bzzoiro_has_context_hint") or meta.get("sportlogic_context") or meta.get("sstats_has_context_hint"):
         score += 10
     league = str(match.league_name or "").lower()
     if any(term in league for term in ("premier", "serie a", "la liga", "bundesliga", "ligue 1", "eredivisie", "mls", "championship", "k league", "j1")):
@@ -520,10 +561,10 @@ def enrich_payload_coverage(payload: dict[str, Any]) -> dict[str, Any]:
             sources.update(str(k) for k in row["source_ids"].keys())
         meta = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
         coverage = dict(row.get("coverage") or {})
-        has_odds = "odds_api_io" in sources or bool(meta.get("has_current_odds_provider"))
-        has_context = bool({"sstats", "bzzoiro"} & sources) or bool(meta.get("bzzoiro_has_context_hint") or meta.get("sstats_has_context_hint"))
-        has_xg = bool(meta.get("bzzoiro_context_fields") or meta.get("sstats_context_fields"))
-        has_form = "sstats" in sources
+        has_odds = bool({"odds_api_io", "sportlogic"} & sources) or bool(meta.get("has_current_odds_provider"))
+        has_context = "bzzoiro" in sources or bool(meta.get("bzzoiro_has_context_hint"))
+        has_xg = bool(meta.get("bzzoiro_context_fields"))
+        has_form = False
         coverage.update({
             "fixture_core": True,
             "odds": has_odds,
@@ -565,12 +606,12 @@ async def main_async() -> int:
     results = await asyncio.gather(
         fetch_odds_api_io(settings, local_date),
         fetch_bzzoiro(settings, local_date),
-        fetch_sstats(settings, local_date),
+        fetch_sportlogic(settings, local_date),
         return_exceptions=True,
     )
     names = list(CORE_PROVIDERS)
     matches_by_provider: dict[str, list[Match]] = {}
-    source_meta: dict[str, Any] = {"mode": "core_provider_discovery_top300", "providers": list(CORE_PROVIDERS), "attempts": {}}
+    source_meta: dict[str, Any] = {"mode": "core_fixture_discovery_top300", "providers": list(CORE_PROVIDERS), "attempts": {}}
     for name, result in zip(names, results):
         if isinstance(result, Exception):
             matches_by_provider[name] = []
@@ -582,7 +623,7 @@ async def main_async() -> int:
 
     merged, crosswalk = merge_matches(matches_by_provider, settings)
     selected = top_cut(merged, max_matches)
-    existing = {} if env_bool("DAY_INVENTORY_REBUILD_FROM_SCRATCH", True) else store.load_inventory(local_date)
+    existing = {} if env_bool("DAY_INVENTORY_REBUILD_FROM_SCRATCH", False) else store.load_inventory(local_date)
     payload = store.build_payload(local_date=local_date, matches=selected, source_meta=source_meta, existing=existing)
     payload = enrich_payload_coverage(payload)
     payload.setdefault("counts", {})["matches_after_top_cut"] = len(selected)
@@ -601,12 +642,12 @@ async def main_async() -> int:
     report = {
         "date_local": local_date,
         "build_status": "ok",
-        "mode": "core_provider_discovery_top300",
+        "mode": "core_fixture_discovery_top300",
         "max_matches": max_matches,
         "target_matches": max_matches,
         "target_shortfall": max(0, max_matches - len(selected)),
         "target_full": len(selected) >= max_matches,
-        "inventory_policy": "rank providers into top 300; if providers return fewer high-quality matches, report target_shortfall instead of silently treating a partial inventory as complete",
+        "inventory_policy": "merge-only top-300 core fixture inventory; SStats is reserved for runtime form/context enrichment",
         "providers": {name: dict(source_meta["attempts"].get(name, {}).get("stats") or {}) for name in CORE_PROVIDERS},
         "counts": dict(payload.get("counts") or {}),
         "source_match_counts": dict(payload.get("source_match_counts") or {}),

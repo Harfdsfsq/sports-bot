@@ -21,8 +21,7 @@ from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
-from app.services.publication_tiers import classify_publication_tier
-from app.services.candidate_lifecycle_state import record_candidate_lifecycle
+from app.services.coverage_planner import CoveragePlanner
 from app.services.publication_lifecycle import (
     append_sent_candidate_index,
     candidate_dedupe_keys,
@@ -54,7 +53,7 @@ class PredictionRunner:
         self.sportlogic = self._safe_provider('app.providers.sportlogic_provider', 'SportLogicProvider')
         self.futrixmetrics = self._safe_provider('app.providers.futrixmetrics', 'FutrixMetricsContextProvider')
         self.sstats = self._safe_provider('app.providers.sstats', 'SStatsContextProvider')
-        self.bzzoiro = self._safe_provider('app.providers.bzzoiro', 'BzzoiroContextProvider')
+        self.bzzoiro = self._safe_provider('app.providers.bzzoiro_v2', 'BzzoiroContextProvider')
         self.api_football = self._safe_provider('app.providers.api_football', 'ApiFootballContextProvider')
         self.espn = self._safe_provider('app.providers.espn', 'EspnContextProvider')
         self.thesportsdb = self._safe_provider('app.providers.thesportsdb', 'TheSportsDbContextProvider')
@@ -77,6 +76,8 @@ class PredictionRunner:
     def _provider_name_from_module(module_name: str) -> str:
         if module_name.endswith('sportlogic_provider'):
             return 'sportlogic'
+        if module_name.endswith('bzzoiro_v2') or module_name.endswith('bzzoiro'):
+            return 'bzzoiro'
         return module_name.rsplit('.', 1)[-1]
 
     @staticmethod
@@ -245,7 +246,7 @@ class PredictionRunner:
         if module_name.endswith('futrixmetrics') and not getattr(self.settings, 'enable_futrixmetrics_context', False):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
-        if module_name.endswith('bzzoiro') and not getattr(self.settings, 'enable_bzzoiro_context', True):
+        if (module_name.endswith('bzzoiro') or module_name.endswith('bzzoiro_v2')) and not getattr(self.settings, 'enable_bzzoiro_context', True):
             self._mark_provider_status(provider_name, enabled=False, loaded=False, reason='disabled_by_config')
             return None
         if module_name.endswith('sstats') and not self._provider_enabled('sstats', default=True):
@@ -333,6 +334,7 @@ class PredictionRunner:
                 (oddspapi_offers, oddspapi_stats, oddspapi_preview),
                 (allsportsapi_offers, allsportsapi_stats, allsportsapi_preview),
                 (sportlogic_offers, sportlogic_stats, sportlogic_preview),
+                (bzzoiro_offers, bzzoiro_odds_stats, bzzoiro_odds_preview),
             ) = await asyncio.gather(
                 self._fetch_provider(
                     self.odds_api_io,
@@ -364,6 +366,12 @@ class PredictionRunner:
                     filtered_matches,
                     empty_data={},
                 ),
+                self._fetch_provider(
+                    self.bzzoiro,
+                    'fetch_offers',
+                    filtered_matches,
+                    empty_data={},
+                ),
             )
 
             offer_maps = {
@@ -372,6 +380,7 @@ class PredictionRunner:
                 'oddspapi': oddspapi_offers,
                 'allsportsapi': allsportsapi_offers,
                 'sportlogic': sportlogic_offers,
+                'bzzoiro': bzzoiro_offers,
             }
             merged_offers = self._merge_offers(*offer_maps.values())
             market_signals: dict[str, dict[str, Any]] = {}
@@ -380,7 +389,8 @@ class PredictionRunner:
             if self.market_monitor is not None:
                 market_signals, market_monitor_stats, market_monitor_preview = self.market_monitor.build_signals(filtered_matches, merged_offers, now_utc)
 
-            context_target_matches, context_enrichment = self._select_context_enrichment_matches(
+            coverage_planner = CoveragePlanner(self.settings)
+            context_target_matches, context_enrichment = coverage_planner.select_context_targets(
                 filtered_matches,
                 merged_offers,
                 now_utc,
@@ -399,6 +409,10 @@ class PredictionRunner:
                 'newsapi': self._select_provider_context_matches(context_target_matches, 'newsapi', fallback_matches=filtered_matches, offers_by_match=merged_offers),
                 'gnews': self._select_provider_context_matches(context_target_matches, 'gnews', fallback_matches=filtered_matches, offers_by_match=merged_offers),
                 'sportlogic': self._select_provider_context_matches(context_target_matches, 'sportlogic', fallback_matches=filtered_matches, offers_by_match=merged_offers),
+            }
+            provider_targets = {
+                name: coverage_planner.provider_targets(name, items, merged_offers)
+                for name, items in provider_targets.items()
             }
             provider_target_counts = {name: len(items) for name, items in provider_targets.items()}
             provider_target_counts['weather'] = min(
@@ -462,28 +476,6 @@ class PredictionRunner:
             raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
             candidates_before_quality = list(raw_candidates)
             raw_candidates, quality_rejections, quality_debug = self.quality.apply_to_candidates(raw_candidates, quality_report, now_utc)
-            quality_passed_ids = {id(item) for item in raw_candidates}
-            for candidate in candidates_before_quality:
-                try:
-                    tier_decision = classify_publication_tier(candidate, self.settings, now=now_utc)
-                    lifecycle_report = dict(tier_decision.report)
-                    quality_passed = id(candidate) in quality_passed_ids
-                    lifecycle_report['quality_passed'] = bool(quality_passed)
-                    lifecycle_report['candidate_stage'] = 'post_quality' if quality_passed else 'blocked_before_quality_publish'
-                    lifecycle_report['found_value'] = True
-                    if not quality_passed:
-                        lifecycle_report['can_publish'] = False
-                        lifecycle_report['publication_tier_passed'] = False
-                        lifecycle_report['found_value_but_blocked'] = True
-                    lifecycle_reasons = list(tier_decision.reasons)
-                    if not quality_passed:
-                        lifecycle_reasons.append('quality_blocked_before_publication')
-                    record_candidate_lifecycle(candidate, lifecycle_report, lifecycle_reasons, now=now_utc)
-                    candidate.source_summary['publication_tier_report'] = lifecycle_report
-                    candidate.source_summary['publication_tier'] = str(lifecycle_report.get('publication_tier') or tier_decision.tier)
-                    candidate.source_summary['line_movement_lifecycle_status'] = str((lifecycle_report.get('line_movement') or {}).get('status') or '')
-                except Exception as exc:
-                    self.provider_runtime_errors['candidate_lifecycle_state'].append(self._format_exception(exc))
             for reason, count in quality_rejections.items():
                 rejections[f'quality_{reason}'] = rejections.get(f'quality_{reason}', 0) + count
 
@@ -668,6 +660,7 @@ class PredictionRunner:
                 'oddspapi': oddspapi_stats,
                 'allsportsapi': allsportsapi_stats,
                 'sportlogic': sportlogic_stats,
+                'bzzoiro_odds': bzzoiro_odds_stats,
                 'sportlogic_context': sportlogic_context_stats,
                 'futrixmetrics': futrixmetrics_stats,
                 'sstats': sstats_stats,
@@ -1841,19 +1834,12 @@ class PredictionRunner:
                 candidate.source_summary['publication_blocked_reason'] = 'already_telegram_sent_semantic_dedupe'
                 candidate.source_summary['publication_dedupe_keys_matched'] = sorted(candidate_keys.intersection(seen_keys))[:6]
                 continue
-            tier_decision = classify_publication_tier(candidate, self.settings, now=datetime.now(UTC))
-            candidate.diagnostics.setdefault('publish_coverage_contract', tier_decision.report)
-            candidate.diagnostics['publication_tier'] = tier_decision.report
-            candidate.source_summary['publish_coverage_contract'] = tier_decision.report
-            candidate.source_summary['publication_tier'] = tier_decision.tier
-            candidate.source_summary['publication_tier_report'] = tier_decision.report
-            candidate.source_summary['line_movement_lifecycle_status'] = str((tier_decision.report.get('line_movement') or {}).get('status') or '')
-            candidate.source_summary['found_value'] = True
-            candidate.source_summary['can_publish'] = bool(tier_decision.passed)
-            record_candidate_lifecycle(candidate, tier_decision.report, list(tier_decision.reasons), now=datetime.now(UTC))
-            if not tier_decision.passed:
-                candidate.source_summary['publish_coverage_reasons'] = list(tier_decision.reasons)
-                candidate.reasons.extend(f'publish_tier={reason}' for reason in tier_decision.reasons)
+            coverage_decision = sync_candidate_publish_coverage(candidate, self.settings)
+            candidate.diagnostics.setdefault('publish_coverage_contract', coverage_decision.report)
+            candidate.source_summary['publish_coverage_contract'] = coverage_decision.report
+            if not coverage_decision.passed:
+                candidate.source_summary['publish_coverage_reasons'] = list(coverage_decision.reasons)
+                candidate.reasons.extend(f'publish_coverage={reason}' for reason in coverage_decision.reasons)
                 continue
             publishable.append(candidate)
         return publishable
