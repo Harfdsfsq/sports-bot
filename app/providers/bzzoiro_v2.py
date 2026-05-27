@@ -51,6 +51,7 @@ class BzzoiroContextProvider:
         self.fetch_event_odds = self._env_bool("BZZOIRO_V2_FETCH_EVENT_ODDS", True)
         self.fetch_event_stats = self._env_bool("BZZOIRO_V2_FETCH_EVENT_STATS", True)
         self.fetch_event_metadata = self._env_bool("BZZOIRO_V2_FETCH_EVENT_METADATA", False)
+        self.fetch_event_prediction = self._env_bool("BZZOIRO_V2_FETCH_EVENT_PREDICTION", True)
         self.enforce_context_limit = self._env_bool("BZZOIRO_ENFORCE_CONTEXT_LIMIT", False)
 
     async def fetch_context(self, matches: list[Match]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
@@ -70,6 +71,7 @@ class BzzoiroContextProvider:
             "event_odds_fetched": 0,
             "event_stats_fetched": 0,
             "event_metadata_fetched": 0,
+            "event_prediction_fetched": 0,
             "contexts_built": 0,
             "matched_exact": 0,
             "matched_loose": 0,
@@ -120,7 +122,7 @@ class BzzoiroContextProvider:
                         })
                     continue
                 event_id = self._to_int(event.get("id"))
-                details: dict[str, Any] = {"event": event, "odds": None, "stats": None, "metadata": None}
+                details: dict[str, Any] = {"event": event, "odds": None, "stats": None, "metadata": None, "prediction": None}
                 if event_id is not None:
                     details = detail_cache.get(event_id) or details
                     if event_id not in detail_cache:
@@ -136,6 +138,11 @@ class BzzoiroContextProvider:
                             details["metadata"] = await self._get_json(client, f"/events/{event_id}/metadata/", headers, {}, stats)
                             if details["metadata"] is not None:
                                 stats["event_metadata_fetched"] += 1
+                        if self.fetch_event_prediction:
+                            prediction = await self._get_json(client, f"/events/{event_id}/prediction/", headers, {}, stats)
+                            if prediction is not None:
+                                details["prediction"] = prediction
+                                stats["event_prediction_fetched"] += 1
                         detail_cache[event_id] = details
 
                 context = self._event_to_context(details, quality)
@@ -282,16 +289,28 @@ class BzzoiroContextProvider:
         odds_payload = details.get("odds")
         stats_payload = details.get("stats")
         metadata_payload = details.get("metadata")
+        prediction_payload = details.get("prediction")
+        prediction_markets = self._prediction_markets(prediction_payload)
+        match_result_prediction = prediction_markets.get("match_result") if isinstance(prediction_markets.get("match_result"), dict) else {}
+        expected_goals_prediction = prediction_markets.get("expected_goals") if isinstance(prediction_markets.get("expected_goals"), dict) else {}
+        over_under_prediction = prediction_markets.get("over_under") if isinstance(prediction_markets.get("over_under"), dict) else {}
 
+        compact_odds = self._compact_odds_dict(odds_payload)
         home_price = self._first_float(event, ["odds_home", "home_odds", "home_win_odds"])
         draw_price = self._first_float(event, ["odds_draw", "draw_odds"])
         away_price = self._first_float(event, ["odds_away", "away_odds", "away_win_odds"])
+        home_price = home_price or self._to_float(compact_odds.get("home_win") or compact_odds.get("home") or compact_odds.get("home_odds"))
+        draw_price = draw_price or self._to_float(compact_odds.get("draw") or compact_odds.get("draw_odds"))
+        away_price = away_price or self._to_float(compact_odds.get("away_win") or compact_odds.get("away") or compact_odds.get("away_odds"))
         odds_flat = self._flatten_odds(odds_payload)
         home_price = home_price or self._odds_price(odds_flat, market_aliases={"1x2", "h2h", "match_winner"}, outcome_aliases={"home", "1"})
         draw_price = draw_price or self._odds_price(odds_flat, market_aliases={"1x2", "h2h", "match_winner"}, outcome_aliases={"draw", "x"})
         away_price = away_price or self._odds_price(odds_flat, market_aliases={"1x2", "h2h", "match_winner"}, outcome_aliases={"away", "2"})
 
         home_prob = away_prob = draw_prob = None
+        predicted_home_prob = self._probability_value(match_result_prediction.get("prob_home") or match_result_prediction.get("home") or match_result_prediction.get("home_win"))
+        predicted_draw_prob = self._probability_value(match_result_prediction.get("prob_draw") or match_result_prediction.get("draw"))
+        predicted_away_prob = self._probability_value(match_result_prediction.get("prob_away") or match_result_prediction.get("away") or match_result_prediction.get("away_win"))
         if home_price and away_price:
             normalized = strip_vig_three_way(home_price, draw_price or 0.0, away_price)
             if normalized is not None:
@@ -305,10 +324,21 @@ class BzzoiroContextProvider:
                 home_prob = clamp(raw_home / denom, 0.01, 0.95)
                 away_prob = clamp(raw_away / denom, 0.01, 0.95)
                 draw_prob = clamp((raw_draw or 0.0) / denom, 0.01, 0.60) if raw_draw else None
+        home_prob = home_prob if home_prob is not None else predicted_home_prob
+        draw_prob = draw_prob if draw_prob is not None else predicted_draw_prob
+        away_prob = away_prob if away_prob is not None else predicted_away_prob
 
         expected_home = self._extract_xg(stats_payload, event, side="home")
         expected_away = self._extract_xg(stats_payload, event, side="away")
+        expected_home = expected_home if expected_home is not None else self._to_float(expected_goals_prediction.get("home") or expected_goals_prediction.get("expected_home") or expected_goals_prediction.get("home_xg"))
+        expected_away = expected_away if expected_away is not None else self._to_float(expected_goals_prediction.get("away") or expected_goals_prediction.get("expected_away") or expected_goals_prediction.get("away_xg"))
         over25 = self._two_way_probability(event, odds_flat, 2.5)
+        if over25 is None:
+            over25 = self._two_way_probability_from_prices(
+                compact_odds.get("over_25_goals") or compact_odds.get("over_2_5") or compact_odds.get("over25"),
+                compact_odds.get("under_25_goals") or compact_odds.get("under_2_5") or compact_odds.get("under25"),
+            )
+        over25 = over25 if over25 is not None else self._probability_value(over_under_prediction.get("prob_over_25") or over_under_prediction.get("over_25") or over_under_prediction.get("over25"))
         if (expected_home is None or expected_away is None) and over25 is not None:
             total_lambda = self._infer_total_lambda(over25, 2.5)
             if total_lambda is not None:
@@ -324,6 +354,7 @@ class BzzoiroContextProvider:
         if expected_home is None and expected_away is None and home_prob is None and away_prob is None:
             return None
 
+        prediction_confidence = self._prediction_confidence(prediction_payload)
         confidence = 54.0
         if expected_home is not None and expected_away is not None:
             confidence += 5.0
@@ -333,8 +364,12 @@ class BzzoiroContextProvider:
             confidence += 2.0
         if stats_payload is not None:
             confidence += 3.0
+        if prediction_payload is not None:
+            confidence += 2.0
         if metadata_payload is not None:
             confidence += 1.0
+        if prediction_confidence is not None:
+            confidence += clamp((prediction_confidence - 0.50) * 8.0, -1.5, 2.5)
         if quality == "fuzzy":
             confidence -= 5.0
         elif quality == "loose":
@@ -342,7 +377,7 @@ class BzzoiroContextProvider:
         confidence = clamp(confidence, 50.0, 72.0)
 
         return MatchContext(
-            source="bzzoiro_v2",
+            source="bzzoiro",
             payload=details,
             expected_home=expected_home,
             expected_away=expected_away,
@@ -354,6 +389,7 @@ class BzzoiroContextProvider:
                 "bzzoiro_match_quality": quality,
                 "bzzoiro_draw_probability": draw_prob,
                 "bzzoiro_over25_probability": over25,
+                "bzzoiro_prediction_confidence": prediction_confidence,
                 "bzzoiro_event_id": event.get("id"),
                 "bzzoiro_status": event.get("status"),
                 "bzzoiro_is_neutral_ground": event.get("is_neutral_ground"),
@@ -361,8 +397,90 @@ class BzzoiroContextProvider:
                 "bzzoiro_travel_distance_km": event.get("travel_distance_km"),
                 "bzzoiro_weather": event.get("weather"),
                 "bzzoiro_context_limit_removed": True,
+                "bzzoiro_context_sources_used": {
+                    "compact_odds": bool(compact_odds),
+                    "odds_flat_rows": len(odds_flat),
+                    "stats": stats_payload is not None,
+                    "prediction": prediction_payload is not None,
+                    "metadata": metadata_payload is not None,
+                },
             },
         )
+
+    @staticmethod
+    def _compact_odds_dict(payload: Any) -> dict[str, Any]:
+        if isinstance(payload, dict):
+            odds = payload.get("odds")
+            if isinstance(odds, dict):
+                return odds
+            # Some Bzzoiro deployments return the compact odds shape directly.
+            compact_keys = {"home_win", "draw", "away_win", "over_25_goals", "under_25_goals", "btts_yes", "btts_no"}
+            if compact_keys & set(str(k) for k in payload.keys()):
+                return payload
+        return {}
+
+    @staticmethod
+    def _prediction_markets(payload: Any) -> dict[str, Any]:
+        if not isinstance(payload, dict):
+            return {}
+        markets = payload.get("markets")
+        if isinstance(markets, dict):
+            return markets
+        # Prediction detail may be returned wrapped in a result/data object.
+        for key in ("prediction", "result", "data"):
+            nested = payload.get(key)
+            if isinstance(nested, dict):
+                markets = nested.get("markets")
+                if isinstance(markets, dict):
+                    return markets
+        return {}
+
+    @classmethod
+    def _probability_value(cls, value: Any) -> float | None:
+        number = cls._to_float(value)
+        if number is None:
+            return None
+        if number > 1.0:
+            number /= 100.0
+        return clamp(number, 0.01, 0.99)
+
+    @classmethod
+    def _prediction_confidence(cls, payload: Any) -> float | None:
+        if not isinstance(payload, dict):
+            return None
+        candidates = [
+            payload.get("confidence"),
+            payload.get("model_confidence"),
+        ]
+        model = payload.get("model")
+        if isinstance(model, dict):
+            candidates.append(model.get("confidence"))
+        for key in ("prediction", "result", "data"):
+            nested = payload.get(key)
+            if isinstance(nested, dict):
+                candidates.append(nested.get("confidence"))
+                model = nested.get("model")
+                if isinstance(model, dict):
+                    candidates.append(model.get("confidence"))
+        for item in candidates:
+            prob = cls._probability_value(item)
+            if prob is not None:
+                return prob
+        return None
+
+    @classmethod
+    def _two_way_probability_from_prices(cls, over_price: Any, under_price: Any) -> float | None:
+        over = cls._to_float(over_price)
+        under = cls._to_float(under_price)
+        if over and under:
+            stripped = strip_vig_two_way(over, under)
+            if stripped is not None:
+                return stripped[0]
+        if over:
+            return clamp(implied_probability(over), 0.01, 0.99)
+        if under:
+            return clamp(1.0 - implied_probability(under), 0.01, 0.99)
+        return None
 
     def _extract_xg(self, stats_payload: Any, event: dict[str, Any], *, side: str) -> float | None:
         keys = [

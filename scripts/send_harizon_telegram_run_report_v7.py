@@ -63,6 +63,20 @@ def _max_bzzoiro_v2(data: dict[str, Any]) -> dict[str, Any]:
     candidates: list[dict[str, Any]] = []
     debug = _first_dict(data.get("debug"))
     candidates.extend(_walk_dicts(debug, "bzzoiro_v2"))
+    try:
+        source_stats = v5.source_stats(data)
+    except Exception:
+        source_stats = {}
+    direct_bzz = _first_dict(source_stats.get("bzzoiro"))
+    version_text = f"{direct_bzz.get('provider_version') or ''} {direct_bzz.get('api_version') or ''}".lower()
+    if direct_bzz and ("v2" in version_text or "api/v2" in str(direct_bzz.get("base_url") or "")):
+        row = dict(direct_bzz)
+        row.setdefault("odds_resources", _as_int(row.get("event_odds_fetched")) + _as_int(row.get("event_comparison_fetched")))
+        row.setdefault("stats_resources", _as_int(row.get("event_stats_fetched")))
+        row.setdefault("lineups_resources", _as_int(row.get("event_lineups_fetched")))
+        row.setdefault("prediction_resources", _as_int(row.get("event_prediction_fetched")))
+        row.setdefault("errors", _as_int(row.get("response_errors")))
+        candidates.append(row)
     # Also inspect optional JSON artifacts if they exist.
     for path in (
         EXPORT_DIR / "latest-windowed-core-coverage.json",
@@ -78,7 +92,12 @@ def _max_bzzoiro_v2(data: dict[str, Any]) -> dict[str, Any]:
     if not candidates:
         return {}
     def score(row: dict[str, Any]) -> int:
-        return _as_int(row.get("requests")) + _as_int(row.get("contexts_built")) * 4 + _as_int(row.get("odds_resources")) * 5
+        return (
+            _as_int(row.get("requests"))
+            + _as_int(row.get("contexts_built")) * 4
+            + _as_int(row.get("odds_resources")) * 5
+            + _as_int(row.get("prediction_resources")) * 3
+        )
     return dict(max(candidates, key=score))
 
 
@@ -123,6 +142,7 @@ def build_payload() -> dict[str, Any]:
         bzz["v2_odds_resources"] = _as_int(bzz_v2.get("odds_resources"))
         bzz["v2_stats_resources"] = _as_int(bzz_v2.get("stats_resources"))
         bzz["v2_lineups_resources"] = _as_int(bzz_v2.get("lineups_resources"))
+        bzz["v2_prediction_resources"] = _as_int(bzz_v2.get("prediction_resources"))
         bzz["v2_errors"] = _as_int(bzz_v2.get("errors"))
         bzz["requests_total_effective"] = max(_as_int(bzz.get("requests")), _as_int(bzz_v2.get("requests")))
         bzz["contexts_total_effective"] = max(_as_int(bzz.get("contexts")), _as_int(bzz_v2.get("contexts_built")))
@@ -153,6 +173,7 @@ def render(payload: dict[str, Any]) -> str:
     new_bzz = (
         f"• bzzoiro: direct req {_as_int(bzz.get('requests'))}, v2 req {_as_int(bzz.get('v2_requests'))}, "
         f"v2 ctx {_as_int(bzz.get('v2_contexts'))}, v2 odds {_as_int(bzz.get('v2_odds_resources'))}, "
+        f"v2 pred {_as_int(bzz.get('v2_prediction_resources'))}, "
         f"secondary offers {_as_int(bzz.get('secondary_offers_added'))}, overlap odds-api.io {_as_int(bzz.get('overlap'))}, "
         f"err {max(_as_int(bzz.get('errors')), _as_int(bzz.get('v2_errors')))}"
     )
