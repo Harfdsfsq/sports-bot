@@ -568,6 +568,93 @@ def _merge_context(base: MatchContext | None, resources_context: MatchContext | 
     )
 
 
+
+
+def _team_search_query(name: str) -> str:
+    tokens = _norm_text(name).split()
+    # Drop very generic suffixes and keep a compact query; BSD team search is
+    # partial and tends to perform better with the distinctive part of a club
+    # name than with the full odds-api.io label.
+    if len(tokens) >= 3:
+        return " ".join(tokens[:3])
+    return " ".join(tokens) or str(name or "").strip()
+
+
+def _team_results(payload: Any) -> list[dict[str, Any]]:
+    return _results(payload)
+
+
+async def _targeted_team_fixture_event(
+    client: httpx.AsyncClient,
+    headers: dict[str, str],
+    match: Match,
+    stats: dict[str, Any],
+    max_requests: int,
+) -> tuple[dict[str, Any] | None, float, str | None]:
+    """Resolve a Bzzoiro v2 event through /teams/?name= and /teams/{id}/fixtures/.
+
+    The broad /api/v2/events/ daily window may only return a small slice of the
+    provider universe.  The v2 docs expose team search and team fixtures, so for
+    priority gap targets we search both teams and then inspect that team's
+    fixtures in the same UTC window.  This is intentionally bounded by request
+    budget and target limit; it improves context coverage without weakening any
+    publication guard.
+    """
+    if _to_int(stats.get("requests"), 0) >= max_requests:
+        return None, 0.0, None
+    date_from = match.commence_time.astimezone(UTC).date().isoformat()
+    date_to = (match.commence_time.astimezone(UTC).date() + timedelta(days=1)).isoformat()
+    best_event: dict[str, Any] | None = None
+    best_score = 0.0
+    best_quality: str | None = None
+    searched_team_ids: set[str] = set()
+    for side_name in (match.home_team, match.away_team):
+        query = _team_search_query(side_name)
+        if not query:
+            continue
+        if _to_int(stats.get("requests"), 0) >= max_requests:
+            break
+        stats["targeted_team_search_requests"] = _to_int(stats.get("targeted_team_search_requests"), 0) + 1
+        team_payload = await _fetch_json(
+            client,
+            "https://sports.bzzoiro.com/api/v2/teams/",
+            headers,
+            stats,
+            {"name": query, "limit": 10, "offset": 0},
+        )
+        teams = _team_results(team_payload)
+        stats["targeted_team_rows"] = _to_int(stats.get("targeted_team_rows"), 0) + len(teams)
+        for team in teams[:5]:
+            team_id = team.get("id") or team.get("team_id")
+            if team_id in (None, ""):
+                continue
+            sid = str(team_id)
+            if sid in searched_team_ids:
+                continue
+            searched_team_ids.add(sid)
+            if _to_int(stats.get("requests"), 0) >= max_requests:
+                break
+            stats["targeted_fixture_requests"] = _to_int(stats.get("targeted_fixture_requests"), 0) + 1
+            fixtures_payload = await _fetch_json(
+                client,
+                f"https://sports.bzzoiro.com/api/v2/teams/{sid}/fixtures/",
+                headers,
+                stats,
+                {"date_from": date_from, "date_to": date_to, "limit": 50, "offset": 0},
+            )
+            fixtures = _team_results(fixtures_payload)
+            stats["targeted_fixture_rows"] = _to_int(stats.get("targeted_fixture_rows"), 0) + len(fixtures)
+            for event in fixtures:
+                score, quality = _relaxed_event_score(match, event)
+                if score > best_score:
+                    best_event, best_score, best_quality = event, score, quality or "targeted_team_fixture"
+    min_score = _to_float(os.getenv("BZZOIRO_CONTEXT_GAP_TARGETED_MIN_SCORE")) or 50.0
+    if best_event is not None and best_score >= min_score:
+        stats["matched_by_targeted_team_fixture"] = _to_int(stats.get("matched_by_targeted_team_fixture"), 0) + 1
+        return best_event, best_score, best_quality or "targeted_team_fixture"
+    return None, best_score, None
+
+
 async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str, MatchContext]) -> tuple[dict[str, MatchContext], dict[str, Any], dict[str, Any]]:
     from app.services import windowed_core_coverage_runtime_patch as wc
 
@@ -590,6 +677,11 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         "matched_by_v2_fuzzy": 0,
         "matched_by_relaxed_event": 0,
         "matched_by_relaxed_prediction": 0,
+        "matched_by_targeted_team_fixture": 0,
+        "targeted_team_search_requests": 0,
+        "targeted_fixture_requests": 0,
+        "targeted_team_rows": 0,
+        "targeted_fixture_rows": 0,
         "relaxed_match_enabled": True,
         "ignore_plan": ignore_plan,
         "stats_resources": 0,
@@ -791,7 +883,24 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
                     resources.update(await _fetch_v2_resources(client, headers, event_id, stats, max_requests))
                     context = _context_from_resources(event, resources, float(score or 0.0), quality)
 
-            # 4) If v1 gave a context and we can cheaply enrich it through v2 ids, merge.
+            # 5) Targeted team-search fallback from the documented v2 API.
+            # Broad event windows can be small; /teams/?name= + /teams/{id}/fixtures/
+            # often finds the same event for obscure leagues that are absent from the
+            # first list page.
+            targeted_limit = max(0, _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_TARGETED_SEARCH_LIMIT") or 60, 60))
+            if context is None and targeted_limit > 0 and _to_int(stats.get("targeted_attempts"), 0) < targeted_limit:
+                stats["targeted_attempts"] = _to_int(stats.get("targeted_attempts"), 0) + 1
+                event, targeted_score, targeted_quality = await _targeted_team_fixture_event(client, headers, match, stats, max_requests)
+                if event is not None:
+                    event_for_resources = event
+                    event_id = event.get("id") or event.get("event_id")
+                    resources = {"event": event}
+                    resources.update(await _fetch_v2_resources(client, headers, event_id, stats, max_requests))
+                    context = _context_from_resources(event, resources, float(targeted_score or 0.0), targeted_quality or "targeted_team_fixture")
+                    score = float(targeted_score or 0.0)
+                    quality = targeted_quality or "targeted_team_fixture"
+
+            # 6) If v1 gave a context and we can cheaply enrich it through v2 ids, merge.
             if context is not None and event_for_resources is not None and _to_int(stats.get("requests"), 0) < max_requests:
                 event_id = event_for_resources.get("id") or event_for_resources.get("event_id")
                 if event_id not in (None, ""):
@@ -864,7 +973,7 @@ def install() -> dict[str, Any]:
     payload.update({
         "status": "installed",
         "match_limit": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MATCH_LIMIT") or 240, 240),
-        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 360, 360),
+        "max_requests": _to_int(os.getenv("BZZOIRO_CONTEXT_GAP_MAX_REQUESTS") or 420, 420),
         "ignore_plan_default": True,
         "runtime_report": str(RUNTIME_REPORT_PATH),
     })

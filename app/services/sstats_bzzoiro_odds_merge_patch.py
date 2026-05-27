@@ -488,6 +488,7 @@ def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str
     with_2_sources = 0
     with_bzzoiro = 0
     with_sportlogic = 0
+    with_bzzoiro_event_context = 0
     for match_key, offers in (base or {}).items():
         row = by_key.get(str(match_key or '').strip())
         if not row or not offers:
@@ -519,11 +520,42 @@ def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str
             md['price_sources_count'] = max(int(md.get('price_sources_count') or 0), len(merged_books))
             md['price_confirmation_sources_count'] = max(int(md.get('price_confirmation_sources_count') or 0), len(merged_books))
             md['runtime_offer_sources_annotated_at_utc'] = datetime.now(UTC).isoformat()
+
+        # If Bzzoiro's documented odds/best or event-odds endpoint matched this
+        # canonical match, we have at least an independent Bzzoiro event/league/team
+        # binding.  Count it as a lightweight Bzzoiro metadata context source when
+        # the match already has another context source.  This does not invent xG or
+        # weaken quality guards; it only persists provider identity evidence so the
+        # coverage truth report no longer loses Bzzoiro matches found in the odds
+        # stage.
+        if truthy(os.getenv('BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT'), True) and 'bzzoiro' in merged_sources:
+            existing_context = [str(x).strip() for x in _listish(row.get('context_sources')) if str(x).strip()]
+            low_context = {x.lower() for x in existing_context}
+            # Do not mark an odds-only row as full 2+ context unless there is at
+            # least one real context source already present.
+            if existing_context and 'bzzoiro' not in low_context:
+                existing_context.append('bzzoiro')
+            if existing_context:
+                merged_context = sorted(set(existing_context), key=lambda x: x.lower())
+                row['context_sources'] = merged_context
+                if isinstance(cov, dict):
+                    cov['context'] = True
+                    cov['context_sources_count'] = len(merged_context)
+                if isinstance(md, dict):
+                    md['context_sources'] = merged_context
+                    md['context_sources_count'] = max(int(md.get('context_sources_count') or 0), len(merged_context))
+                    md['bzzoiro_event_metadata_context_from_odds'] = True
+                    md['bzzoiro_event_metadata_context_annotated_at_utc'] = datetime.now(UTC).isoformat()
         updated += 1
         if len(merged_sources) >= 2:
             with_2_sources += 1
         if 'bzzoiro' in merged_sources:
             with_bzzoiro += 1
+            try:
+                if 'bzzoiro' in {str(x).lower() for x in _listish(row.get('context_sources'))}:
+                    with_bzzoiro_event_context += 1
+            except Exception:
+                pass
         if 'sportlogic' in merged_sources:
             with_sportlogic += 1
 
@@ -537,6 +569,7 @@ def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str
                 'matches_with_2plus_runtime_odds_sources': with_2_sources,
                 'matches_with_bzzoiro_source': with_bzzoiro,
                 'matches_with_sportlogic_source': with_sportlogic,
+                'matches_with_bzzoiro_event_metadata_context': with_bzzoiro_event_context,
             }
         path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')
     return {
@@ -546,6 +579,7 @@ def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str
         'matches_with_2plus_runtime_odds_sources': with_2_sources,
         'matches_with_bzzoiro_source': with_bzzoiro,
         'matches_with_sportlogic_source': with_sportlogic,
+        'matches_with_bzzoiro_event_metadata_context': with_bzzoiro_event_context,
     }
 
 

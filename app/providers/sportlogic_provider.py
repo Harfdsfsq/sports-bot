@@ -154,10 +154,11 @@ class SportLogicProvider:
             # SportLogic docs: GET /games uses date_from/date_to/status and cursor pagination.
             # One window request avoids wasting the free 10 RPM bucket on one request per day.
             # Fallback without status is kept for accounts returning localized/legacy status values.
-            for params in (
-                {"date_from": date_from, "date_to": date_to, "status": "scheduled", "per_page": 100},
-                {"date_from": date_from, "date_to": date_to, "per_page": 100},
-            ):
+            status_variants = ["scheduled", "notstarted", "not_started", "pending", "upcoming", ""]
+            for status_value in status_variants:
+                params = {"date_from": date_from, "date_to": date_to, "per_page": 100}
+                if status_value:
+                    params["status"] = status_value
                 if not self._budget_left():
                     stats["budget_exhausted"] = True
                     break
@@ -316,10 +317,11 @@ class SportLogicProvider:
                 # Use the day after the last target date to avoid empty responses
                 # from accounts where date_to is treated as an exclusive boundary.
                 date_to = (datetime.fromisoformat(dates[-1]).date() + timedelta(days=1)).isoformat()
-                for params in (
-                    {"date_from": date_from, "date_to": date_to, "status": "scheduled", "per_page": 100},
-                    {"date_from": date_from, "date_to": date_to, "per_page": 100},
-                ):
+                status_variants = ["scheduled", "notstarted", "not_started", "pending", "upcoming", ""]
+                for status_value in status_variants:
+                    params = {"date_from": date_from, "date_to": date_to, "per_page": 100}
+                    if status_value:
+                        params["status"] = status_value
                     if not self._budget_left():
                         stats["budget_exhausted"] = True
                         break
@@ -341,6 +343,31 @@ class SportLogicProvider:
         stats["fixtures_fetched"] = len(fixtures)
         preview["sample_fixtures"] = fixtures[:3]
         return fixtures, stats, preview
+
+
+    def _fixture_from_odds_row(self, row: dict[str, Any]) -> dict[str, Any] | None:
+        """Build a fixture-like row from an /odds discovery row when possible.
+
+        Some SportLogic /odds responses embed a `game` object while /games/{id}
+        details may return stale rows outside the requested date window.  When
+        the odds row already contains the game payload, use it directly so the
+        provider can become useful without spending another request.
+        """
+        if not isinstance(row, dict):
+            return None
+        for key in ("game", "fixture", "match", "event"):
+            value = row.get(key)
+            if isinstance(value, dict):
+                candidate = dict(value)
+                candidate.setdefault("id", row.get("game_id") or row.get("event_id") or row.get("fixture_id") or candidate.get("id"))
+                if self._team_name(candidate, "home") and self._team_name(candidate, "away") and self._fixture_datetime(candidate):
+                    return candidate
+        # Some flattened rows contain enough game fields directly.
+        if self._team_name(row, "home") and self._team_name(row, "away") and self._fixture_datetime(row):
+            candidate = dict(row)
+            candidate.setdefault("id", row.get("game_id") or row.get("event_id") or row.get("fixture_id"))
+            return candidate
+        return None
 
     async def _discover_fixtures_from_active_odds(
         self,
@@ -382,7 +409,17 @@ class SportLogicProvider:
         stats["odds_discovery_rows"] = len(odds_rows)
         game_ids: list[str] = []
         seen: set[str] = set()
+        fixtures: list[dict[str, Any]] = []
+        embedded_fixtures = 0
+        preview.setdefault("sample_odds", [])
+        for row in odds_rows[:10]:
+            if isinstance(preview.get("sample_odds"), list) and len(preview["sample_odds"]) < 5:
+                preview["sample_odds"].append(self._sanitize(row))
         for row in odds_rows:
+            embedded = self._fixture_from_odds_row(row)
+            if embedded is not None:
+                fixtures.append(embedded)
+                embedded_fixtures += 1
             gid = row.get("game_id") or row.get("event_id") or row.get("fixture_id")
             if gid in (None, ""):
                 continue
@@ -393,7 +430,6 @@ class SportLogicProvider:
             game_ids.append(sid)
             if len(game_ids) >= max_games:
                 break
-        fixtures: list[dict[str, Any]] = []
         for gid in game_ids:
             if not self._budget_left():
                 stats["budget_exhausted"] = True
@@ -403,6 +439,7 @@ class SportLogicProvider:
             if isinstance(row, dict) and (row.get("id") or row.get("game_id")):
                 fixtures.append(row)
         stats["odds_discovery_game_ids"] = len(game_ids)
+        stats["odds_discovery_embedded_fixtures"] = embedded_fixtures
         stats["odds_discovery_fixtures"] = len(fixtures)
         if fixtures:
             preview.setdefault("sample_fixtures", [])
