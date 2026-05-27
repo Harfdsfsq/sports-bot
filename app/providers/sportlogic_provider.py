@@ -341,6 +341,8 @@ class SportLogicProvider:
         preview: dict[str, Any],
         *,
         limit: int | None = None,
+        max_pages: int | None = None,
+        **_compat: Any,
     ) -> list[dict[str, Any]]:
         """Fetch SportLogic cursor/page envelopes defensively.
 
@@ -354,6 +356,7 @@ class SportLogicProvider:
         page = 1
         per_page = int((params or {}).get("per_page") or self.per_page)
         seen_cursors: set[str] = set()
+        max_pages = max(1, int(max_pages or getattr(self, "sportlogic_max_pages", 0) or os.getenv("SPORTLOGIC_MAX_GAME_PAGES_PER_RUN") or 5))
         while self._budget_left():
             query = dict(params or {})
             query.setdefault("per_page", per_page)
@@ -377,7 +380,7 @@ class SportLogicProvider:
                 break
             page += 1
             # Avoid accidental quota drain if a provider ignores pagination.
-            if page > 5:
+            if page > max_pages:
                 break
         return rows
 

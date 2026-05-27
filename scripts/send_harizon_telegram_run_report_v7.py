@@ -113,13 +113,21 @@ def _sportlogic_diagnostics(data: dict[str, Any]) -> dict[str, Any]:
             if len(start) >= 10:
                 sample_dates.append(start[:10])
     stale_sample = bool(sample_dates and len(set(sample_dates)) == 1 and sample_dates[0] not in {datetime.now(UTC).date().isoformat()})
+    runtime_error = str(stats.get("runtime_error") or "").strip()
+    if runtime_error:
+        diagnosis = "runtime_error"
+    elif _as_int(stats.get("fixtures_fetched")) and not _as_int(stats.get("events_matched")):
+        diagnosis = "games_endpoint_returned_unmatched_or_stale_rows"
+    else:
+        diagnosis = "ok_or_no_data"
     return {
         "fixtures_fetched": _as_int(stats.get("fixtures_fetched"),),
         "games_fetched": _as_int(stats.get("games_fetched")),
         "sample_dates": sorted(set(sample_dates)),
         "stale_sample": stale_sample,
         "query_variants_used": stats.get("query_variants_used") if isinstance(stats.get("query_variants_used"), list) else [],
-        "diagnosis": "games_endpoint_returned_unmatched_or_stale_rows" if _as_int(stats.get("fixtures_fetched")) and not _as_int(stats.get("events_matched")) else "ok_or_no_data",
+        "diagnosis": diagnosis,
+        "runtime_error": runtime_error,
     }
 
 
@@ -155,6 +163,7 @@ def build_payload() -> dict[str, Any]:
         "stale_sample": bool(sport_diag.get("stale_sample")),
         "sample_dates": sport_diag.get("sample_dates") or [],
         "diagnosis": sport_diag.get("diagnosis"),
+        "runtime_error": sport.get("runtime_error") or sport_diag.get("runtime_error") or "",
     })
     api["sportlogic"] = sport
     payload["api"] = api
@@ -187,7 +196,8 @@ def render(payload: dict[str, Any]) -> str:
     new_sport = (
         f"• sportlogic: enabled {bool(sport.get('enabled'))}, req {_as_int(sport.get('requests'))}, fixtures {_as_int(sport.get('fixtures_fetched'))}, "
         f"matched {_as_int(sport.get('matched'))}, odds req {_as_int(sport.get('odds_requests'))}, offers {_as_int(sport.get('offers'))}, "
-        f"sample_dates {dates}, diag {sport.get('diagnosis')}, err {_as_int(sport.get('errors'))}"
+        f"sample_dates {dates}, diag {sport.get('diagnosis')}, "
+        f"runtime_error {str(sport.get('runtime_error') or '')[:120] or 'n/a'}, err {_as_int(sport.get('errors'))}"
     )
     if old_sport in text:
         text = text.replace(old_sport, new_sport)
