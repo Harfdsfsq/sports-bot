@@ -21,6 +21,8 @@ EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 FALLBACK_REPORT = EXPORT_DIR / "latest-controlled-fallback-report.json"
+FALLBACK_PUBLISHED_PICKS = EXPORT_DIR / "latest-controlled-fallback-published-picks.json"
+BZZOIRO_CONTEXT_GAP_REPORT = EXPORT_DIR / "latest-bzzoiro-context-gap-finalizer.json"
 DAY_SUMMARY = EXPORT_DIR / "latest-day-inventory-summary.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 
@@ -85,6 +87,30 @@ def _load_json(path: Path) -> dict[str, Any]:
     return {}
 
 
+def _load_json_any(path: Path) -> Any:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return None
+    return None
+
+
+def _tier_code(row: dict[str, Any]) -> str:
+    raw = str(row.get("tier") or row.get("publication_tier") or row.get("tier_code") or "").strip().lower()
+    if raw in {"a", "tier_a", "a-tier", "уровень a", "уровень а", "а"}:
+        return "A"
+    if raw in {"b", "tier_b", "b-tier", "уровень b", "уровень б", "б"}:
+        return "B"
+    metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+    odds_sources = _as_int(row.get("odds_sources_count") or metrics.get("odds_sources_count"))
+    confirmations = _as_int(row.get("confirmation_sources_count") or metrics.get("confirmation_sources_count") or row.get("sources_count") or metrics.get("sources_count"))
+    books = _as_int(row.get("books_count") or metrics.get("books_count"))
+    if odds_sources >= 2 and confirmations >= 2 and books >= 2:
+        return "A"
+    if odds_sources >= 1 or confirmations >= 1 or books >= 1:
+        return "B"
+    return ""
 
 
 def _fallback_tier_counts(report: dict[str, Any]) -> dict[str, int]:
@@ -92,7 +118,12 @@ def _fallback_tier_counts(report: dict[str, Any]) -> dict[str, int]:
     if not rows and isinstance(report.get("selected"), dict):
         rows = [report["selected"]]
     selected = [row for row in rows if isinstance(row, dict)]
-    published = bool(report.get("published")) or str(report.get("status") or "") == "published"
+
+    published_picks = _load_json_any(FALLBACK_PUBLISHED_PICKS)
+    if isinstance(published_picks, list) and published_picks:
+        selected = [row for row in published_picks if isinstance(row, dict)] or selected
+
+    published = bool(report.get("published")) or str(report.get("status") or "") == "published" or bool(selected and isinstance(published_picks, list))
     out = {
         "published_total": len(selected) if published else 0,
         "selected_total": len(selected),
@@ -102,7 +133,7 @@ def _fallback_tier_counts(report: dict[str, Any]) -> dict[str, int]:
         "tier_b_selected": 0,
     }
     for row in selected:
-        tier = str(row.get("tier") or row.get("publication_tier") or "").strip().upper()
+        tier = _tier_code(row)
         if tier == "A":
             out["tier_a_selected"] += 1
             if published:
@@ -165,9 +196,35 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     api["sstats"] = sstats_api
 
 
+
+def _augment_bzzoiro_from_gap_report(payload: dict[str, Any]) -> None:
+    gap = _load_json(BZZOIRO_CONTEXT_GAP_REPORT)
+    stats = gap.get("stats") if isinstance(gap.get("stats"), dict) else {}
+    if not stats:
+        return
+    api = payload.setdefault("api", {})
+    bzz = dict(api.get("bzzoiro") or {})
+    gap_requests = _as_int(stats.get("requests"))
+    if gap_requests:
+        bzz["context_gap_requests"] = gap_requests
+        bzz["requests_total_effective"] = _as_int(bzz.get("requests_total_effective")) + gap_requests
+    bzz["context_gap_targets"] = _as_int(stats.get("target_matches"))
+    bzz["context_gap_added"] = _as_int(stats.get("contexts_added"))
+    bzz["context_gap_matched"] = _as_int(stats.get("matched"))
+    bzz["context_gap_v1_events"] = _as_int(stats.get("v1_events_fetched"))
+    bzz["context_gap_v1_predictions"] = _as_int(stats.get("v1_predictions_fetched"))
+    bzz["context_gap_v2_events"] = _as_int(stats.get("v2_events_fetched"))
+    bzz["context_gap_errors"] = _as_int(stats.get("errors"))
+    bzz["v2_stats_resources"] = _as_int(bzz.get("v2_stats_resources")) + _as_int(stats.get("stats_resources"))
+    bzz["v2_odds_resources"] = _as_int(bzz.get("v2_odds_resources")) + _as_int(stats.get("odds_resources"))
+    bzz["v2_lineups_resources"] = _as_int(bzz.get("v2_lineups_resources")) + _as_int(stats.get("lineups_resources"))
+    bzz["contexts_total_effective"] = max(_as_int(bzz.get("contexts_total_effective")), _as_int(bzz.get("contexts")) + _as_int(stats.get("contexts_added")))
+    api["bzzoiro"] = bzz
+
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
+    _augment_bzzoiro_from_gap_report(payload)
 
     plan = _load_json(PROGRESSIVE_PLAN)
     day_summary = _load_json(DAY_SUMMARY)
@@ -217,7 +274,9 @@ def _coverage_counts(payload: dict[str, Any]) -> tuple[dict[str, Any], dict[str,
 
 def _status_explanation(payload: dict[str, Any], truth: dict[str, Any]) -> str:
     published = _as_int(_first_dict(payload.get("funnel")).get("published_count"))
-    if published > 0 or payload.get("status") == "published":
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    fb_tiers = diag.get("controlled_fallback_tiers") if isinstance(diag.get("controlled_fallback_tiers"), dict) else {}
+    if published > 0 or _as_int(fb_tiers.get("published_total")) > 0 or payload.get("status") == "published":
         return "✅ Прогноз опубликован. Ниже — проверка покрытия и причин, почему опубликован именно этот кандидат."
     waiting = _as_int(truth.get("matches_waiting_line_movement")) + _as_int(truth.get("candidate_lifecycle_waiting_line_movement"))
     tier_b_cov = _as_int(truth.get("matches_tier_b_coverage_ready"))
@@ -260,7 +319,12 @@ def _core_provider_lines(api: dict[str, Any], coverage: dict[str, Any]) -> list[
     odds_requests = _as_int(odds_api.get("events_req")) + _as_int(odds_api.get("odds_req"))
     if odds_requests <= 0:
         odds_requests = _as_int(odds_api.get("requests"))
-    bzz_requests = _as_int(bzz.get("requests_total_effective")) or (_as_int(bzz.get("requests")) + _as_int(bzz.get("v2_requests")))
+    bzz_direct_requests = _as_int(bzz.get("requests"))
+    bzz_v2_requests = _as_int(bzz.get("v2_requests"))
+    bzz_gap_requests = _as_int(bzz.get("context_gap_requests"))
+    bzz_requests = bzz_direct_requests + bzz_v2_requests + bzz_gap_requests
+    if bzz_requests <= 0:
+        bzz_requests = _as_int(bzz.get("requests_total_effective"))
     sstats_requests = _as_int(sstats.get("requests"))
     sport_requests = _as_int(sport.get("requests")) or _as_int(sport.get("odds_requests"))
 
@@ -282,8 +346,9 @@ def _core_provider_lines(api: dict[str, Any], coverage: dict[str, Any]) -> list[
         ),
         (
             f"• Bzzoiro: запросы {bzz_requests} "
-            f"(direct {_as_int(bzz.get('requests'))}, v2 {_as_int(bzz.get('v2_requests'))}); "
+            f"(direct {bzz_direct_requests}, v2 {bzz_v2_requests}, gap {bzz_gap_requests}); "
             f"событий {bzz_events}; контекстов {bzz_context}; "
+            f"gap targets {_as_int(bzz.get('context_gap_targets'))}, matched {_as_int(bzz.get('context_gap_matched'))}, added {_as_int(bzz.get('context_gap_added'))}; "
             f"v2 resources stats/odds/lineups {bzz_resources}; "
             f"secondary offers {bzz_secondary}; overlap с odds-api.io {bzz_overlap}; "
             f"ошибок {_as_int(bzz.get('errors')) or _as_int(bzz.get('v2_errors'))}."

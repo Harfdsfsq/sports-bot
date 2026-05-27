@@ -83,6 +83,26 @@ def _match_key(match: Match) -> str:
         return ""
 
 
+def _has_bzzoiro_context(ctx: MatchContext | None) -> bool:
+    if ctx is None:
+        return False
+    if str(getattr(ctx, "source", "") or "").lower() == "bzzoiro":
+        return True
+    details = getattr(ctx, "details", None)
+    if isinstance(details, dict):
+        tokens = details.get("source_tokens") or details.get("context_sources") or []
+        if isinstance(tokens, str):
+            tokens = [tokens]
+        if any(str(x).strip().lower() == "bzzoiro" for x in tokens if x is not None):
+            return True
+    payload = getattr(ctx, "payload", None)
+    if isinstance(payload, dict):
+        provider = str(payload.get("provider") or payload.get("source") or "").lower()
+        if "bzzoiro" in provider:
+            return True
+    return False
+
+
 def _gap_keys() -> set[str]:
     plan = _read_json(PLAN_PATH)
     rows = plan.get("core_gap_sample") or plan.get("gap_sample") or []
@@ -450,7 +470,12 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         key = _match_key(match)
         if key in existing_contexts:
             stats["contexts_already_present"] += 1
-            continue
+            # Existing SStats/ClubElo context is not enough for A-tier.  Keep the
+            # match in the Bzzoiro gap pass unless it already has a Bzzoiro
+            # context; this is how we build 2+ independent context sources.
+            if _has_bzzoiro_context(existing_contexts.get(key)):
+                stats["already_has_bzzoiro_context"] = _to_int(stats.get("already_has_bzzoiro_context"), 0) + 1
+                continue
         try:
             hours = (match.commence_time.astimezone(UTC) - now).total_seconds() / 3600.0
         except Exception:
@@ -597,6 +622,9 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
                 if len(preview["unmatched"]) < 25:
                     preview["unmatched"].append({"match_key": _match_key(match), "home": match.home_team, "away": match.away_team})
                 continue
+            existing = existing_contexts.get(_match_key(match))
+            if existing is not None:
+                context = _merge_context(existing, context) or context
             added[_match_key(match)] = context
             stats["matched"] += 1
             stats["contexts_added"] = len(added)
