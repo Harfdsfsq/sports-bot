@@ -591,9 +591,92 @@ async def fetch_sstats(settings: Any, matches: list[Match], base: dict[str, list
     return out, stats
 
 
+
+def _match_bzzoiro_row_to_match(row: dict[str, Any], target: list[Match]) -> tuple[Match | None, float]:
+    try:
+        st = parse_datetime(row.get('event_date') or row.get('date') or row.get('start_time') or row.get('kickoff'))
+    except Exception:
+        return None, 0.0
+    home = str(row.get('home_team') or row.get('home') or row.get('home_name') or '')
+    away = str(row.get('away_team') or row.get('away') or row.get('away_name') or '')
+    league = str(row.get('league_name') or row.get('league') or '')
+    if not home or not away:
+        return None, 0.0
+    best_match: Match | None = None
+    best_score = 0.0
+    for match in target:
+        try:
+            score, _ = score_event_match('soccer', match.home_team, match.away_team, match.commence_time, match.league_name, home, away, st, league, exact_tolerance_hours=8, fuzzy_tolerance_hours=30)
+        except Exception:
+            score = 0.0
+        if score > best_score:
+            best_score = score
+            best_match = match
+    if best_score < 62:
+        return None, best_score
+    return best_match, best_score
+
+
+async def fetch_bzzoiro_best_odds(client: httpx.AsyncClient, api: str, headers: dict[str, str], target: list[Match], d1: str, d2: str, stats: dict[str, Any]) -> dict[str, list[Offer]]:
+    """Use Bzzoiro's documented /api/v2/odds/best/ list endpoint.
+
+    Event-detail odds are precise but expensive because they need one request per
+    event.  /odds/best/ is broad and includes event/team/date fields, so it can
+    build a much larger second-source overlap with odds-api.io before spending
+    detail requests.
+    """
+    out: dict[str, list[Offer]] = {}
+    markets_raw = os.getenv('BZZOIRO_BEST_ODDS_MARKETS') or '1x2,over_under_25,over_under_15,over_under_35,btts'
+    markets = [m.strip() for m in markets_raw.split(',') if m.strip()]
+    max_pages = max(1, int(float(os.getenv('BZZOIRO_ODDS_BEST_MAX_PAGES_PER_MARKET', '2') or 2)))
+    limit = min(200, max(20, int(float(os.getenv('BZZOIRO_ODDS_BEST_PAGE_SIZE', '200') or 200))))
+    seen_rows: set[str] = set()
+    for market in markets:
+        offset = 0
+        for _ in range(max_pages):
+            params: dict[str, Any] = {'date_from': d1, 'date_to': d2, 'limit': limit, 'offset': offset}
+            if market and market.lower() not in {'default', 'none'}:
+                params['market'] = market
+            stats['requests'] += 1
+            stats['odds_best_requests'] += 1
+            try:
+                resp = await client.get(f'{api}/odds/best/', headers=headers, params=params)
+                if resp.status_code == 400 and 'market' in params:
+                    break
+                if resp.status_code >= 400:
+                    stats['response_errors'] += 1
+                    break
+                payload = resp.json()
+                batch = rows(payload)
+            except Exception:
+                stats['response_errors'] += 1
+                break
+            if not batch:
+                break
+            stats['odds_best_rows'] += len(batch)
+            for row in batch:
+                sig = str(row.get('event_id') or row.get('id') or '') + '|' + str(row.get('market') or market)
+                if sig in seen_rows:
+                    continue
+                seen_rows.add(sig)
+                match, _score = _match_bzzoiro_row_to_match(row, target)
+                if match is None:
+                    continue
+                event_id = str(row.get('event_id') or row.get('id') or '').strip() or None
+                offers = parse_any(row, match, 'bzzoiro', event_id)
+                if offers:
+                    out.setdefault(match.match_key, []).extend(offers)
+                    stats['odds_best_matched'] += 1
+                    stats['offers_from_best'] += len(offers)
+            if len(batch) < limit:
+                break
+            offset += limit
+    return out
+
+
 async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, list[Offer]], amap: dict[str, dict[str, str]]) -> tuple[dict[str, list[Offer]], dict[str, Any]]:
     key = os.getenv('BZZOIRO_API_KEY') or getattr(settings, 'bzzoiro_api_key', None)
-    stats = {'enabled': bool(key), 'requests': 0, 'response_errors': 0, 'events_fetched': 0, 'events_matched': 0, 'event_odds_requests': 0, 'event_comparison_requests': 0, 'offers_parsed': 0, 'offers_from_compact_odds': 0, 'offers_from_comparison': 0}
+    stats = {'enabled': bool(key), 'requests': 0, 'response_errors': 0, 'events_fetched': 0, 'events_matched': 0, 'event_odds_requests': 0, 'event_comparison_requests': 0, 'odds_best_requests': 0, 'odds_best_rows': 0, 'odds_best_matched': 0, 'offers_parsed': 0, 'offers_from_compact_odds': 0, 'offers_from_comparison': 0, 'offers_from_best': 0}
     if not key:
         return {}, stats
     api = (os.getenv('BZZOIRO_BASE_URL') or 'https://sports.bzzoiro.com/api/v2').rstrip('/')
@@ -605,6 +688,10 @@ async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, lis
     d2 = (max(m.commence_time.astimezone(UTC).date() for m in target) + timedelta(days=1)).isoformat()
     out: dict[str, list[Offer]] = {}
     async with httpx.AsyncClient(timeout=14, follow_redirects=True) as client:
+        best_extra = await fetch_bzzoiro_best_odds(client, api, headers, target, d1, d2, stats)
+        for mk, offers in best_extra.items():
+            if offers:
+                out.setdefault(mk, []).extend(offers)
         events: list[dict[str, Any]] = []
         offset = 0
         while offset < 600:
@@ -626,7 +713,8 @@ async def fetch_bzzoiro(settings: Any, matches: list[Match], base: dict[str, lis
             offset += 200
         stats['events_fetched'] = len(events)
         for match in target:
-            if source_count(base.get(match.match_key, [])) >= 2:
+            existing_for_match = list(base.get(match.match_key, [])) + list(out.get(match.match_key, []))
+            if source_count(existing_for_match) >= 2:
                 continue
             eid = provider_id(match, 'bzzoiro', amap)
             event = next((e for e in events if str(e.get('id') or '') == str(eid)), None) if eid else None

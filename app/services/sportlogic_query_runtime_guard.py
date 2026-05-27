@@ -154,7 +154,7 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
 
     fixtures: list[dict[str, Any]] = []
     requested_dates = set(dates or [])
-    per_page = max(5, int(float(os.getenv("SPORTLOGIC_SMOKE_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100)))
+    per_page = 100
     async with httpx.AsyncClient(timeout=provider.timeout, follow_redirects=True) as client:
         # SportLogic docs support date_from/date_to on /games, so use one
         # cursor-paginated window request first.  The old per-date probe loop
@@ -196,7 +196,7 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                 stats["date_filter_effective"] = True
                 fixtures.extend(filtered)
 
-        if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), True):
+        if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), False):
             for params in _broad_param_variants(per_page=per_page):
                 if not provider._budget_left():
                     stats["budget_exhausted"] = True
@@ -220,6 +220,8 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                     break
                 stats["broad_fallback_stale_rows"] = _to_int(stats.get("broad_fallback_stale_rows"), 0) + len(rows)
     deduped = _dedupe_rows(fixtures, provider)
+    if not deduped:
+        stats.setdefault("diagnosis", "documented_date_window_returned_no_current_rows")
     if not deduped and _to_int(stats.get("stale_or_ignored_date_filter_rows"), 0) > 0:
         stats["diagnosis"] = "games_endpoint_returned_unmatched_or_stale_rows"
     elif deduped:
