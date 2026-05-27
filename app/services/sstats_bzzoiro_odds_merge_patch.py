@@ -463,6 +463,84 @@ def _listish(value: Any) -> list[Any]:
     return []
 
 
+
+# v20 inventory alias helpers: runtime match keys and frozen day-inventory keys can
+# differ by provider/order/date.  Resolve rows by several canonical aliases before
+# giving up, otherwise bzzoiro+odds_api_io runtime overlap is lost in coverage truth.
+def _canon_text(value: Any) -> str:
+    return re.sub(r'[^a-z0-9]+', ' ', str(value or '').lower()).strip()
+
+def _canon_compact(value: Any) -> str:
+    return re.sub(r'[^a-z0-9]+', '', str(value or '').lower())
+
+def _date10(value: Any) -> str:
+    text = str(value or '').strip()
+    m = re.search(r'(\d{4}-\d{2}-\d{2})', text)
+    return m.group(1) if m else ''
+
+def _row_aliases(row: dict[str, Any]) -> set[str]:
+    aliases: set[str] = set()
+    raw_keys = [
+        row.get('match_key'), row.get('canonical_match_id'), row.get('provider_match_key'),
+        row.get('source_match_key'), row.get('fixture_key'), row.get('event_key'),
+    ]
+    md = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
+    cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
+    for container in (md, cov):
+        for key in ('match_key', 'canonical_match_id', 'provider_match_key', 'source_match_key', 'fixture_key', 'event_key'):
+            raw_keys.append(container.get(key))
+    for key in raw_keys:
+        if str(key or '').strip():
+            aliases.add(str(key).strip().lower())
+    home = _canon_text(row.get('home_team') or row.get('home') or md.get('home_team'))
+    away = _canon_text(row.get('away_team') or row.get('away') or md.get('away_team'))
+    date = _date10(row.get('kickoff_utc') or row.get('commence_time') or row.get('start_time') or row.get('kickoff_local') or md.get('kickoff_utc'))
+    if home and away and date:
+        for a,b in ((home,away),(away,home)):
+            aliases.add(f'{date}|{a}|{b}')
+            aliases.add(f'soccer|{a}|{b}|{date}')
+            aliases.add(f'{_canon_compact(a)}|{_canon_compact(b)}|{date}')
+        pair = '|'.join(sorted([_canon_compact(home), _canon_compact(away)]))
+        aliases.add(f'pair|{pair}|{date}')
+    return {a for a in aliases if a}
+
+def _key_aliases(key: Any) -> set[str]:
+    text = str(key or '').strip().lower()
+    aliases: set[str] = {text} if text else set()
+    parts = [p for p in re.split(r'[|:/]+', text) if p]
+    date = ''
+    teams: list[str] = []
+    for part in parts:
+        d = _date10(part)
+        if d:
+            date = d
+        elif part not in {'soccer', 'football'}:
+            teams.append(_canon_text(part))
+    if len(teams) >= 2 and date:
+        a,b = teams[0], teams[1]
+        for x,y in ((a,b),(b,a)):
+            aliases.add(f'{date}|{x}|{y}')
+            aliases.add(f'soccer|{x}|{y}|{date}')
+            aliases.add(f'{_canon_compact(x)}|{_canon_compact(y)}|{date}')
+        aliases.add(f"pair|{'|'.join(sorted([_canon_compact(a), _canon_compact(b)]))}|{date}")
+    return {a for a in aliases if a}
+
+def _build_inventory_alias_index(matches: list[dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    out: dict[str, dict[str, Any]] = {}
+    for row in matches:
+        if not isinstance(row, dict):
+            continue
+        for alias in _row_aliases(row):
+            out.setdefault(alias, row)
+    return out
+
+def _resolve_inventory_row(match_key: Any, alias_index: dict[str, dict[str, Any]]) -> dict[str, Any] | None:
+    for alias in _key_aliases(match_key):
+        row = alias_index.get(alias)
+        if row:
+            return row
+    return None
+
 def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str, Any]:
     """Persist runtime odds-source evidence back into the frozen day inventory.
 
@@ -483,14 +561,14 @@ def annotate_day_inventory_from_offers(base: dict[str, list[Offer]]) -> dict[str
     if not isinstance(matches, list):
         return {'status': 'bad_inventory_shape', 'date_local': day, 'path': str(path)}
 
-    by_key = {str(row.get('match_key') or row.get('canonical_match_id') or '').strip(): row for row in matches if isinstance(row, dict)}
+    by_key = _build_inventory_alias_index(matches)
     updated = 0
     with_2_sources = 0
     with_bzzoiro = 0
     with_sportlogic = 0
     with_bzzoiro_event_context = 0
     for match_key, offers in (base or {}).items():
-        row = by_key.get(str(match_key or '').strip())
+        row = _resolve_inventory_row(match_key, by_key)
         if not row or not offers:
             continue
         sources = sorted({ _truth_source(getattr(o, 'source', '')) for o in offers if _truth_source(getattr(o, 'source', '')) in {'odds_api_io', 'bzzoiro', 'sportlogic'} })

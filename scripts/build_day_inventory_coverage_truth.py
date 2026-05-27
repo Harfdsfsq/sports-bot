@@ -156,6 +156,50 @@ def price_confirmations(row: dict[str, Any]) -> int:
     )
 
 
+
+def line_movement_status(row: dict[str, Any]) -> str:
+    md = metadata(row)
+    cov = coverage(row)
+    for container in (row, md, cov):
+        for key in (
+            "line_movement_status", "line_movement_lifecycle_status", "movement_status",
+            "line_guard_status", "line_state", "movement_lifecycle_status",
+        ):
+            val = container.get(key) if isinstance(container, dict) else None
+            if str(val or "").strip():
+                return norm(val)
+    return ""
+
+def line_movement_confirmed(row: dict[str, Any]) -> bool:
+    status = line_movement_status(row)
+    if any(token in status for token in ("confirmed", "passed", "kept", "movement_ok")):
+        return True
+    md = metadata(row)
+    cov = coverage(row)
+    for container in (row, md, cov):
+        for key in ("line_movement_confirmed", "movement_confirmed", "line_guard_kept", "has_second_line_snapshot"):
+            val = container.get(key) if isinstance(container, dict) else None
+            if str(val).strip().lower() in {"1", "true", "yes", "on"}:
+                return True
+    return False
+
+def line_movement_waiting(row: dict[str, Any]) -> bool:
+    status = line_movement_status(row)
+    if any(token in status for token in ("awaiting", "wait", "needs_next", "needs_later", "next_cron")):
+        return True
+    md = metadata(row)
+    cov = coverage(row)
+    for container in (row, md, cov):
+        for key in ("awaiting_line_movement", "waiting_line_movement", "needs_line_movement_recheck"):
+            val = container.get(key) if isinstance(container, dict) else None
+            if str(val).strip().lower() in {"1", "true", "yes", "on"}:
+                return True
+    return False
+
+def line_movement_declined(row: dict[str, Any]) -> bool:
+    status = line_movement_status(row)
+    return any(token in status for token in ("declined", "rejected", "dropped", "failed"))
+
 def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str, Any]:
     cov = coverage(row)
     osrc = odds_sources(row)
@@ -171,7 +215,13 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         missing.append("independent_odds_sources")
     if cc < min_context:
         missing.append("context_sources")
-    ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
+    tier_a_coverage_ready = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
+    tier_b_coverage_ready = has_odds and has_context and pc >= 1 and len(osrc) >= 1 and cc >= 1
+    movement_ok = line_movement_confirmed(row)
+    movement_wait = line_movement_waiting(row)
+    movement_drop = line_movement_declined(row)
+    ready_publish = tier_a_coverage_ready and movement_ok
+    tier_b_publish_ready = tier_b_coverage_ready and movement_ok
     return {
         "match_key": row.get("match_key") or row.get("canonical_match_id") or "",
         "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff_local") or "",
@@ -188,6 +238,14 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         "has_context": has_context,
         "ready_for_model": bool(cov.get("ready_for_model")) or (has_odds and has_context),
         "ready_for_publish": ready_publish,
+        "tier_a_coverage_ready": tier_a_coverage_ready,
+        "tier_b_coverage_ready": tier_b_coverage_ready,
+        "tier_a_publish_ready": ready_publish,
+        "tier_b_publish_ready": tier_b_publish_ready,
+        "line_movement_confirmed": movement_ok,
+        "line_movement_waiting": movement_wait,
+        "line_movement_declined": movement_drop,
+        "line_movement_status": line_movement_status(row),
         "need_price_confirmations": max(0, min_odds - pc),
         "need_odds_sources": max(0, min_odds - len(osrc)),
         "need_context_sources": max(0, min_context - cc),
@@ -213,6 +271,14 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "has_context",
         "ready_for_model",
         "ready_for_publish",
+        "tier_a_coverage_ready",
+        "tier_b_coverage_ready",
+        "tier_a_publish_ready",
+        "tier_b_publish_ready",
+        "line_movement_confirmed",
+        "line_movement_waiting",
+        "line_movement_declined",
+        "line_movement_status",
         "need_price_confirmations",
         "need_odds_sources",
         "need_context_sources",
@@ -248,6 +314,12 @@ def main() -> int:
         "matches_with_2plus_context_sources": sum(1 for r in rows if r["context_sources_count"] >= min_context),
         "matches_ready_for_model": sum(1 for r in rows if r["ready_for_model"]),
         "matches_ready_for_publish": sum(1 for r in rows if r["ready_for_publish"]),
+        "matches_tier_a_coverage_ready": sum(1 for r in rows if r["tier_a_coverage_ready"]),
+        "matches_tier_b_coverage_ready": sum(1 for r in rows if r["tier_b_coverage_ready"]),
+        "matches_ready_for_publish_tier_a": sum(1 for r in rows if r["tier_a_publish_ready"]),
+        "matches_ready_for_publish_tier_b": sum(1 for r in rows if r["tier_b_publish_ready"]),
+        "matches_waiting_line_movement": sum(1 for r in rows if r["line_movement_waiting"]),
+        "matches_declined_after_second_snapshot": sum(1 for r in rows if r["line_movement_declined"]),
     }
     counts["matches_missing_price_2plus"] = max(0, len(rows) - counts["matches_with_2plus_price_confirmations"])
     counts["matches_missing_odds_source_2plus"] = max(0, len(rows) - counts["matches_with_2plus_odds_sources"])
@@ -267,7 +339,8 @@ def main() -> int:
         "notes": [
             "odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.",
             "price_confirmations is bookmaker/line depth and is tracked separately from provider independence.",
-            "ready_for_publish requires 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.",
+            "ready_for_publish strict truth requires tier A coverage plus confirmed line movement.",
+            "tier_b_coverage_ready means 1+ line evidence, 1+ context source, and later still needs confirmed line movement/value.",
         ],
     }
     write_json(OUT_JSON, payload)
