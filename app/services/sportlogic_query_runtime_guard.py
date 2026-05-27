@@ -168,14 +168,15 @@ async def _discover_current_fixtures_from_active_odds(provider: Any, client: Any
     requested_dates = set(dates or [])
     if not requested_dates:
         requested_dates = {datetime.now(UTC).date().isoformat()}
-    max_pages = max(1, _to_int(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES"), 2))
-    max_games = max(1, _to_int(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT"), 24))
+    max_pages = max(1, _to_int(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES"), 4))
+    max_games = max(1, _to_int(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT"), 60))
     variants = [
         {"is_active": "true", "per_page": 100},
         {"is_active": "1", "per_page": 100},
         {"per_page": 100},
     ]
     all_odds_rows: list[dict[str, Any]] = []
+    seen_odds: set[str] = set()
     for params in variants:
         if not provider._budget_left():
             stats["budget_exhausted"] = True
@@ -187,8 +188,15 @@ async def _discover_current_fixtures_from_active_odds(provider: Any, client: Any
             "rows": len(rows),
         })
         stats["odds_discovery_requests_used"] = _to_int(stats.get("odds_discovery_requests_used"), 0) + 1
-        if rows:
-            all_odds_rows.extend(rows)
+        for row in rows:
+            sig = str(row.get("id") or row.get("game_id") or row)
+            if sig in seen_odds:
+                continue
+            seen_odds.add(sig)
+            all_odds_rows.append(row)
+        # Continue probing when the first endpoint returns stale rows.  Stop only
+        # after enough unique game ids have been found to stay inside free quota.
+        if len(all_odds_rows) >= max_games * 4:
             break
     stats["odds_discovery_rows"] = len(all_odds_rows)
     game_ids: list[str] = []
@@ -221,6 +229,9 @@ async def _discover_current_fixtures_from_active_odds(provider: Any, client: Any
             elif row_date:
                 preview.setdefault("odds_discovery_rejected_game_dates", []).append({"game_id": gid, "date": row_date})
     stats["odds_discovery_fixtures"] = len(fixtures)
+    if all_odds_rows and not fixtures:
+        stats["odds_discovery_no_current_game_details"] = True
+        stats.setdefault("diagnosis", "active_odds_found_but_no_game_detail_inside_requested_dates")
     if fixtures:
         preview.setdefault("sample_fixtures", [])
         preview["sample_fixtures"] = (preview.get("sample_fixtures") or []) + fixtures[:3]

@@ -355,16 +355,30 @@ class SportLogicProvider:
         of /games/{id} details while staying inside the free minute/day bucket.
         """
         stats["odds_discovery_fallback_enabled"] = True
-        max_pages = max(1, int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES") or 2)))
-        max_games = max(1, int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT") or 20)))
-        odds_rows = await self._get_paginated_list(
-            client,
-            "/odds",
+        max_pages = max(1, int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES") or 4)))
+        max_games = max(1, int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT") or 60)))
+        odds_rows: list[dict[str, Any]] = []
+        seen_odds: set[str] = set()
+        # Try several documented boolean encodings.  Do not stop on the first
+        # non-empty batch if it only contains stale/non-matchable rows.
+        for params in (
             {"is_active": "true", "per_page": 100},
-            stats,
-            preview,
-            max_pages=max_pages,
-        )
+            {"is_active": "1", "per_page": 100},
+            {"per_page": 100},
+        ):
+            if not self._budget_left():
+                stats["budget_exhausted"] = True
+                break
+            batch = await self._get_paginated_list(client, "/odds", params, stats, preview, max_pages=max_pages)
+            preview.setdefault("odds_discovery_variants", []).append({"params": params, "rows": len(batch)})
+            for row in batch:
+                sig = str(row.get("id") or row.get("game_id") or row)
+                if sig in seen_odds:
+                    continue
+                seen_odds.add(sig)
+                odds_rows.append(row)
+            if len(odds_rows) >= max_games * 4:
+                break
         stats["odds_discovery_rows"] = len(odds_rows)
         game_ids: list[str] = []
         seen: set[str] = set()
@@ -1205,6 +1219,10 @@ class SportLogicProvider:
             row.get("datetime"),
             row.get("timestamp"),
             SportLogicProvider._dig(row, "fixture", "date"),
+            SportLogicProvider._dig(row, "game", "start_time"),
+            SportLogicProvider._dig(row, "game", "commence_time"),
+            SportLogicProvider._dig(row, "match", "start_time"),
+            SportLogicProvider._dig(row, "event", "start_time"),
         ]
         date_value = row.get("date") or row.get("match_date")
         time_value = row.get("time") or row.get("match_time")
@@ -1233,8 +1251,11 @@ class SportLogicProvider:
             value = row.get(key)
             if value not in (None, ""):
                 return str(value)
-        nested = SportLogicProvider._dig(row, "fixture", "id")
-        return str(nested or "")
+        for nested_path in (("fixture", "id"), ("game", "id"), ("event", "id"), ("match", "id")):
+            nested = SportLogicProvider._dig(row, *nested_path)
+            if nested not in (None, ""):
+                return str(nested)
+        return ""
 
     @staticmethod
     def _canonical_bookmaker(name: Any) -> str:

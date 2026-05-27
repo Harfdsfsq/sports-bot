@@ -15,6 +15,9 @@ for upcoming progressive gaps.
 
 import json
 import os
+import re
+import unicodedata
+from difflib import SequenceMatcher
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -225,6 +228,141 @@ def _context_from_resources(event: dict[str, Any], resources: dict[str, Any], sc
     )
 
 
+
+
+
+def _norm_text(value: Any) -> str:
+    text = unicodedata.normalize("NFKD", str(value or "")).encode("ascii", "ignore").decode("ascii")
+    text = text.lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    stop = {
+        "fc", "cf", "sc", "fk", "ac", "cd", "club", "de", "la", "the", "team",
+        "women", "u19", "u20", "u21", "u23", "ii", "2", "b",
+    }
+    tokens = [tok for tok in text.split() if tok and tok not in stop]
+    return " ".join(tokens)
+
+
+def _event_name(row: dict[str, Any], side: str) -> str:
+    prefixes = [side, f"{side}_team", f"{side}Team"]
+    for key in prefixes + (["домашняя команда"] if side == "home" else []):
+        value = row.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+        if isinstance(value, dict):
+            for nested in ("name", "team_name", "short_name", "display_name", "title"):
+                if value.get(nested):
+                    return str(value.get(nested)).strip()
+    for key in (f"{side}_team_name", f"{side}_name", f"{side}Name"):
+        if row.get(key):
+            return str(row.get(key)).strip()
+    return ""
+
+
+def _event_start(row: dict[str, Any]) -> datetime | None:
+    values = [
+        row.get("event_date"), row.get("start_time"), row.get("commence_time"),
+        row.get("kickoff"), row.get("utcDate"), row.get("date_time"), row.get("datetime"),
+    ]
+    event = row.get("event")
+    if isinstance(event, dict):
+        values.extend([event.get("event_date"), event.get("start_time"), event.get("commence_time")])
+    for value in values:
+        if value in (None, ""):
+            continue
+        try:
+            if isinstance(value, (int, float)) or str(value).isdigit():
+                raw = float(value)
+                if raw > 10_000_000_000:
+                    raw /= 1000.0
+                return datetime.fromtimestamp(raw, tz=UTC)
+            text = str(value).strip().replace(" ", "T")
+            if text.endswith("Z"):
+                text = text[:-1] + "+00:00"
+            if "T" in text and "+" not in text and text.count("-") >= 2:
+                text += "+00:00"
+            parsed = datetime.fromisoformat(text)
+            if parsed.tzinfo is None:
+                parsed = parsed.replace(tzinfo=UTC)
+            return parsed.astimezone(UTC)
+        except Exception:
+            continue
+    return None
+
+
+def _token_similarity(a: str, b: str) -> float:
+    na, nb = _norm_text(a), _norm_text(b)
+    if not na or not nb:
+        return 0.0
+    if na == nb:
+        return 100.0
+    sa, sb = set(na.split()), set(nb.split())
+    overlap = len(sa & sb) / max(1, len(sa | sb))
+    seq = SequenceMatcher(None, na, nb).ratio()
+    # Token overlap is more reliable for club names with prefixes/suffixes.
+    return 100.0 * max(overlap, seq * 0.92)
+
+
+def _relaxed_event_score(match: Match, row: dict[str, Any]) -> tuple[float, str | None]:
+    event = row.get("event") if isinstance(row.get("event"), dict) else row
+    if not isinstance(event, dict):
+        return 0.0, None
+    home = _event_name(event, "home")
+    away = _event_name(event, "away")
+    if not home or not away:
+        return 0.0, None
+    direct = (_token_similarity(match.home_team, home) + _token_similarity(match.away_team, away)) / 2.0
+    swapped = (_token_similarity(match.home_team, away) + _token_similarity(match.away_team, home)) / 2.0
+    name_score = max(direct, swapped - 8.0)
+    start = _event_start(event)
+    hours_delta = 999.0
+    time_score = 45.0
+    if start is not None:
+        try:
+            hours_delta = abs((match.commence_time.astimezone(UTC) - start).total_seconds()) / 3600.0
+            if hours_delta <= 0.25:
+                time_score = 100.0
+            elif hours_delta <= 1.0:
+                time_score = 92.0
+            elif hours_delta <= 3.0:
+                time_score = 82.0
+            elif hours_delta <= 8.0:
+                time_score = 68.0
+            elif hours_delta <= 18.0:
+                time_score = 55.0
+            else:
+                time_score = 10.0
+        except Exception:
+            pass
+    league_score = 0.0
+    league = str(event.get("league_name") or event.get("league") or "")
+    if isinstance(event.get("league"), dict):
+        league = str(event["league"].get("name") or "")
+    if league and match.league_name:
+        league_score = _token_similarity(match.league_name, league)
+    score = name_score * 0.70 + time_score * 0.25 + league_score * 0.05
+    quality = "relaxed_exact" if score >= 82 else "relaxed_fuzzy" if score >= 58 else None
+    return score, quality
+
+
+def _best_relaxed_event(match: Match, rows: list[dict[str, Any]], used_ids: set[str] | None = None) -> tuple[dict[str, Any] | None, float, str | None]:
+    min_score = _to_float(os.getenv("BZZOIRO_CONTEXT_GAP_RELAXED_MIN_SCORE")) or 54.0
+    best: dict[str, Any] | None = None
+    best_score = 0.0
+    best_quality: str | None = None
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        event = row.get("event") if isinstance(row.get("event"), dict) else row
+        event_id = str((event or {}).get("id") or (event or {}).get("event_id") or row.get("id") or "")
+        if used_ids and event_id and event_id in used_ids:
+            continue
+        score, quality = _relaxed_event_score(match, row)
+        if score > best_score:
+            best, best_score, best_quality = row, score, quality
+    if best is not None and best_score >= min_score:
+        return best, best_score, best_quality
+    return None, best_score, None
 
 
 def _inventory_target_date() -> str:
@@ -450,6 +588,9 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
         "matched_by_v1_prediction": 0,
         "matched_by_v1_event": 0,
         "matched_by_v2_fuzzy": 0,
+        "matched_by_relaxed_event": 0,
+        "matched_by_relaxed_prediction": 0,
+        "relaxed_match_enabled": True,
         "ignore_plan": ignore_plan,
         "stats_resources": 0,
         "metadata_resources": 0,
@@ -581,7 +722,43 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
                         score = float(event_score or 0.0)
                         quality = event_quality
 
-            # 3) v2 direct/fuzzy fallback.
+            # 3) Relaxed Bzzoiro event/prediction fallback.  The upstream API
+            # uses slightly different team labels than odds-api.io/SStats, so
+            # strict provider matchers often leave gap targets at matched=0.
+            if context is None:
+                relaxed_pred, relaxed_score, relaxed_quality = _best_relaxed_event(match, v1_predictions, used_prediction_ids)
+                if relaxed_pred is not None:
+                    try:
+                        pred_id = self._prediction_identity(relaxed_pred)
+                    except Exception:
+                        pred_id = None
+                    if pred_id:
+                        used_prediction_ids.add(pred_id)
+                    try:
+                        event_for_resources = self._prediction_event(relaxed_pred, v1_events)
+                    except Exception:
+                        event_for_resources = relaxed_pred.get("event") if isinstance(relaxed_pred.get("event"), dict) else None
+                    try:
+                        context = self._prediction_to_context(relaxed_pred, event_for_resources, relaxed_quality or "relaxed")
+                        stats["matched_by_relaxed_prediction"] += 1
+                        score = float(relaxed_score or 0.0)
+                        quality = relaxed_quality
+                    except Exception:
+                        context = None
+            if context is None:
+                relaxed_event, relaxed_score, relaxed_quality = _best_relaxed_event(match, v1_events)
+                if relaxed_event is not None:
+                    event_for_resources = relaxed_event
+                    try:
+                        context = self._event_to_context(relaxed_event, relaxed_quality or "relaxed")
+                    except Exception:
+                        context = None
+                    if context is not None:
+                        stats["matched_by_relaxed_event"] += 1
+                        score = float(relaxed_score or 0.0)
+                        quality = relaxed_quality
+
+            # 4) v2 direct/fuzzy fallback.
             if context is None:
                 event = None
                 bzz_id = _bzzoiro_id_from_match(match)
@@ -601,6 +778,12 @@ async def _gap_pass(self: Any, matches: list[Match], existing_contexts: dict[str
                     event, score, quality = wc._match_bzzoiro_event(match, v2_events, getattr(self, "settings", None))
                     if event is not None:
                         stats["matched_by_v2_fuzzy"] += 1
+                if event is None:
+                    event, relaxed_score, relaxed_quality = _best_relaxed_event(match, v2_events)
+                    if event is not None:
+                        score = relaxed_score
+                        quality = relaxed_quality
+                        stats["matched_by_relaxed_event"] += 1
                 if event is not None:
                     event_for_resources = event
                     event_id = event.get("id") or event.get("event_id")
