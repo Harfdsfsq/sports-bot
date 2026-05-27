@@ -116,6 +116,8 @@ def _sportlogic_diagnostics(data: dict[str, Any]) -> dict[str, Any]:
     runtime_error = str(stats.get("runtime_error") or "").strip()
     if runtime_error:
         diagnosis = "runtime_error"
+    elif str(stats.get("diagnosis") or "").strip():
+        diagnosis = str(stats.get("diagnosis") or "").strip()
     elif _as_int(stats.get("fixtures_fetched")) and not _as_int(stats.get("events_matched")):
         diagnosis = "games_endpoint_returned_unmatched_or_stale_rows"
     else:
@@ -128,6 +130,12 @@ def _sportlogic_diagnostics(data: dict[str, Any]) -> dict[str, Any]:
         "query_variants_used": stats.get("query_variants_used") if isinstance(stats.get("query_variants_used"), list) else [],
         "diagnosis": diagnosis,
         "runtime_error": runtime_error,
+        "odds_discovery_requests_used": _as_int(stats.get("odds_discovery_requests_used")),
+        "odds_discovery_rows": _as_int(stats.get("odds_discovery_rows")),
+        "odds_discovery_game_ids": _as_int(stats.get("odds_discovery_game_ids")),
+        "odds_discovery_fixtures": _as_int(stats.get("odds_discovery_fixtures")),
+        "odds_discovery_max_pages_effective": _as_int(stats.get("odds_discovery_max_pages_effective")),
+        "odds_discovery_detail_limit_effective": _as_int(stats.get("odds_discovery_detail_limit_effective")),
     }
 
 
@@ -164,6 +172,12 @@ def build_payload() -> dict[str, Any]:
         "sample_dates": sport_diag.get("sample_dates") or [],
         "diagnosis": sport_diag.get("diagnosis"),
         "runtime_error": sport.get("runtime_error") or sport_diag.get("runtime_error") or "",
+        "odds_discovery_requests_used": sport_diag.get("odds_discovery_requests_used", 0),
+        "odds_discovery_rows": sport_diag.get("odds_discovery_rows", 0),
+        "odds_discovery_game_ids": sport_diag.get("odds_discovery_game_ids", 0),
+        "odds_discovery_fixtures": sport_diag.get("odds_discovery_fixtures", 0),
+        "odds_discovery_max_pages_effective": sport_diag.get("odds_discovery_max_pages_effective", 0),
+        "odds_discovery_detail_limit_effective": sport_diag.get("odds_discovery_detail_limit_effective", 0),
     })
     api["sportlogic"] = sport
     payload["api"] = api
@@ -196,6 +210,8 @@ def render(payload: dict[str, Any]) -> str:
     new_sport = (
         f"• sportlogic: enabled {bool(sport.get('enabled'))}, req {_as_int(sport.get('requests'))}, fixtures {_as_int(sport.get('fixtures_fetched'))}, "
         f"matched {_as_int(sport.get('matched'))}, odds req {_as_int(sport.get('odds_requests'))}, offers {_as_int(sport.get('offers'))}, "
+        f"active_odds pages {_as_int(sport.get('odds_discovery_requests_used'))}/{_as_int(sport.get('odds_discovery_max_pages_effective'))}, "
+        f"rows {_as_int(sport.get('odds_discovery_rows'))}, game_ids {_as_int(sport.get('odds_discovery_game_ids'))}, fixtures_from_odds {_as_int(sport.get('odds_discovery_fixtures'))}, "
         f"sample_dates {dates}, diag {sport.get('diagnosis')}, "
         f"runtime_error {str(sport.get('runtime_error') or '')[:120] or 'n/a'}, err {_as_int(sport.get('errors'))}"
     )
