@@ -199,6 +199,15 @@ async def _discover_current_fixtures_from_active_odds(provider: Any, client: Any
         if len(all_odds_rows) >= max_games * 4:
             break
     stats["odds_discovery_rows"] = len(all_odds_rows)
+    preview.setdefault("sample_odds", [])
+    for row in all_odds_rows[:5]:
+        sample = row
+        try:
+            sample = provider._sanitize(row)
+        except Exception:
+            pass
+        if len(preview["sample_odds"]) < 5:
+            preview["sample_odds"].append(sample)
     game_ids: list[str] = []
     seen: set[str] = set()
     for row in all_odds_rows:
@@ -224,10 +233,15 @@ async def _discover_current_fixtures_from_active_odds(provider: Any, client: Any
         row = payload.get("data") if isinstance(payload, dict) and isinstance(payload.get("data"), dict) else payload
         if isinstance(row, dict) and (row.get("id") or row.get("game_id")):
             row_date = _row_date(provider, row)
+            stats.setdefault("odds_discovery_game_detail_dates", {})
+            if row_date:
+                stats["odds_discovery_game_detail_dates"][row_date] = _to_int(stats["odds_discovery_game_detail_dates"].get(row_date), 0) + 1
             if row_date in requested_dates:
                 fixtures.append(row)
             elif row_date:
                 preview.setdefault("odds_discovery_rejected_game_dates", []).append({"game_id": gid, "date": row_date})
+            else:
+                preview.setdefault("odds_discovery_rejected_game_dates", []).append({"game_id": gid, "date": "unparsed"})
     stats["odds_discovery_fixtures"] = len(fixtures)
     if all_odds_rows and not fixtures:
         stats["odds_discovery_no_current_game_details"] = True

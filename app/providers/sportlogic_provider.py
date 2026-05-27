@@ -226,6 +226,11 @@ class SportLogicProvider:
             fixtures, fixture_stats, fixture_preview = await self._load_fixtures_for_matches(soccer_matches)
             self._merge_stats(stats, fixture_stats)
             preview["sample_fixtures"] = fixture_preview.get("sample_fixtures", [])[:3]
+            if fixture_preview.get("sample_odds"):
+                preview["sample_odds"] = list(fixture_preview.get("sample_odds") or [])[:5]
+            for key in ("query_variants_used", "odds_discovery_rejected_game_dates"):
+                if fixture_preview.get(key):
+                    preview[key] = fixture_preview.get(key)
         else:
             preview["sample_fixtures"] = fixtures[:3]
 

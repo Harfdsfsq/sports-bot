@@ -389,6 +389,115 @@ def _listish(value: Any) -> list[Any]:
     return []
 
 
+
+
+
+def _row_contains_bzzoiro_line_evidence(row: dict[str, Any]) -> bool:
+    """Return True when the inventory row already has Bzzoiro-derived line/odds evidence.
+
+    This is a controlled context bridge: when Bzzoiro has already matched the
+    event well enough to provide odds/line evidence, we can mark it as a light
+    event metadata context source. It does not create xG/lineup confidence and it
+    does not weaken quality guards; it only fixes the coverage truth gap where
+    bzzoiro+odds_api_io overlap was visible in the report but Bzzoiro was not
+    counted as a second context source for the same row.
+    """
+    if not isinstance(row, dict):
+        return False
+    containers: list[Any] = [row]
+    for key in ("metadata", "coverage", "debug", "diagnostics"):
+        value = row.get(key)
+        if isinstance(value, dict):
+            containers.append(value)
+    for container in containers:
+        for key in (
+            "line_sources", "odds_sources", "price_sources", "source_combinations",
+            "provider_sources", "sources", "books", "bookmakers",
+        ):
+            value = container.get(key) if isinstance(container, dict) else None
+            tokens = _listish(value)
+            if any("bzzoiro" in str(token).lower() for token in tokens):
+                return True
+        for key, value in list(container.items()) if isinstance(container, dict) else []:
+            if "bzzoiro" in str(key).lower() and value not in (None, "", False, 0):
+                return True
+            if isinstance(value, str) and "bzzoiro" in value.lower():
+                return True
+    return False
+
+
+def _light_context_from_bzzoiro_line_evidence(match: Match, row: dict[str, Any]) -> MatchContext:
+    return MatchContext(
+        source="bzzoiro",
+        payload={
+            "provider": "bzzoiro_line_evidence_context_bridge",
+            "inventory_match_key": _match_key(match),
+            "inventory_row": {
+                "match_key": row.get("match_key"),
+                "home_team": row.get("home_team") or row.get("home"),
+                "away_team": row.get("away_team") or row.get("away"),
+                "league_name": row.get("league_name") or row.get("league"),
+            },
+        },
+        expected_home=None,
+        expected_away=None,
+        confidence=52.0,
+        details={
+            "bzzoiro_line_evidence_context_bridge": True,
+            "bzzoiro_context_quality": "light_event_metadata_from_matched_odds",
+            "source_tokens": ["bzzoiro"],
+        },
+    )
+
+
+def _inventory_rows_by_key() -> dict[str, dict[str, Any]]:
+    day = _inventory_target_date()
+    path = ROOT / ".data" / "day_inventory" / f"{day}.json"
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+    rows = payload.get("matches") if isinstance(payload, dict) else None
+    if not isinstance(rows, list):
+        return {}
+    out: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        key = str(row.get("match_key") or row.get("canonical_match_id") or "").strip()
+        if key:
+            out[key] = row
+    return out
+
+
+def _contexts_from_bzzoiro_line_evidence(matches: list[Match], existing_contexts: dict[str, MatchContext]) -> tuple[dict[str, MatchContext], dict[str, Any]]:
+    if not _truthy(os.getenv("BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT"), True):
+        return {}, {"enabled": False}
+    rows_by_key = _inventory_rows_by_key()
+    added: dict[str, MatchContext] = {}
+    inspected = 0
+    skipped_has_bzz = 0
+    for match in matches or []:
+        if getattr(match, "sport_key", "") != "soccer":
+            continue
+        key = _match_key(match)
+        if not key or key not in rows_by_key:
+            continue
+        inspected += 1
+        if _has_bzzoiro_context(existing_contexts.get(key)):
+            skipped_has_bzz += 1
+            continue
+        row = rows_by_key[key]
+        if not _row_contains_bzzoiro_line_evidence(row):
+            continue
+        added[key] = _light_context_from_bzzoiro_line_evidence(match, row)
+    return added, {
+        "enabled": True,
+        "inspected": inspected,
+        "added": len(added),
+        "skipped_already_has_bzzoiro": skipped_has_bzz,
+    }
+
 def _annotate_day_inventory_from_contexts(contexts: dict[str, MatchContext]) -> dict[str, Any]:
     day = _inventory_target_date()
     path = ROOT / ".data" / "day_inventory" / f"{day}.json"
@@ -570,14 +679,29 @@ def _merge_context(base: MatchContext | None, resources_context: MatchContext | 
 
 
 
-def _team_search_query(name: str) -> str:
+def _team_search_queries(name: str) -> list[str]:
     tokens = _norm_text(name).split()
-    # Drop very generic suffixes and keep a compact query; BSD team search is
-    # partial and tends to perform better with the distinctive part of a club
-    # name than with the full odds-api.io label.
+    full = " ".join(tokens)
+    queries: list[str] = []
+    if full:
+        queries.append(full)
     if len(tokens) >= 3:
-        return " ".join(tokens[:3])
-    return " ".join(tokens) or str(name or "").strip()
+        queries.append(" ".join(tokens[:3]))
+        queries.append(" ".join(tokens[-3:]))
+    if len(tokens) >= 2:
+        queries.append(" ".join(tokens[:2]))
+    raw = str(name or "").strip()
+    if raw:
+        queries.append(raw)
+    seen: set[str] = set()
+    out: list[str] = []
+    for query in queries:
+        q = str(query or "").strip()
+        if not q or q.lower() in seen:
+            continue
+        seen.add(q.lower())
+        out.append(q)
+    return out[:4]
 
 
 def _team_results(payload: Any) -> list[dict[str, Any]]:
@@ -609,45 +733,60 @@ async def _targeted_team_fixture_event(
     best_quality: str | None = None
     searched_team_ids: set[str] = set()
     for side_name in (match.home_team, match.away_team):
-        query = _team_search_query(side_name)
-        if not query:
-            continue
-        if _to_int(stats.get("requests"), 0) >= max_requests:
-            break
-        stats["targeted_team_search_requests"] = _to_int(stats.get("targeted_team_search_requests"), 0) + 1
-        team_payload = await _fetch_json(
-            client,
-            "https://sports.bzzoiro.com/api/v2/teams/",
-            headers,
-            stats,
-            {"name": query, "limit": 10, "offset": 0},
-        )
-        teams = _team_results(team_payload)
-        stats["targeted_team_rows"] = _to_int(stats.get("targeted_team_rows"), 0) + len(teams)
-        for team in teams[:5]:
-            team_id = team.get("id") or team.get("team_id")
-            if team_id in (None, ""):
+        for query in _team_search_queries(side_name):
+            if not query:
                 continue
-            sid = str(team_id)
-            if sid in searched_team_ids:
-                continue
-            searched_team_ids.add(sid)
             if _to_int(stats.get("requests"), 0) >= max_requests:
                 break
-            stats["targeted_fixture_requests"] = _to_int(stats.get("targeted_fixture_requests"), 0) + 1
-            fixtures_payload = await _fetch_json(
+            stats["targeted_team_search_requests"] = _to_int(stats.get("targeted_team_search_requests"), 0) + 1
+            team_payload = await _fetch_json(
                 client,
-                f"https://sports.bzzoiro.com/api/v2/teams/{sid}/fixtures/",
+                "https://sports.bzzoiro.com/api/v2/teams/",
                 headers,
                 stats,
-                {"date_from": date_from, "date_to": date_to, "limit": 50, "offset": 0},
+                {"name": query, "limit": 10, "offset": 0},
             )
-            fixtures = _team_results(fixtures_payload)
-            stats["targeted_fixture_rows"] = _to_int(stats.get("targeted_fixture_rows"), 0) + len(fixtures)
-            for event in fixtures:
-                score, quality = _relaxed_event_score(match, event)
-                if score > best_score:
-                    best_event, best_score, best_quality = event, score, quality or "targeted_team_fixture"
+            teams = _team_results(team_payload)
+            stats["targeted_team_rows"] = _to_int(stats.get("targeted_team_rows"), 0) + len(teams)
+            for team in teams[:5]:
+                team_id = team.get("id") or team.get("team_id")
+                if team_id in (None, ""):
+                    continue
+                sid = str(team_id)
+                if sid in searched_team_ids:
+                    continue
+                searched_team_ids.add(sid)
+                if _to_int(stats.get("requests"), 0) >= max_requests:
+                    break
+                stats["targeted_fixture_requests"] = _to_int(stats.get("targeted_fixture_requests"), 0) + 1
+                fixtures_payload = await _fetch_json(
+                    client,
+                    f"https://sports.bzzoiro.com/api/v2/teams/{sid}/fixtures/",
+                    headers,
+                    stats,
+                    {"date_from": date_from, "date_to": date_to, "limit": 50, "offset": 0},
+                )
+                fixtures = _team_results(fixtures_payload)
+                if not fixtures and _to_int(stats.get("requests"), 0) < max_requests:
+                    # BSD docs say team fixtures default to now-3h..now+7d when no
+                    # date filters are supplied. Some accounts appear to ignore or
+                    # over-restrict date-only filters, so try the documented default
+                    # window as a bounded fallback.
+                    stats["targeted_fixture_default_window_requests"] = _to_int(stats.get("targeted_fixture_default_window_requests"), 0) + 1
+                    default_payload = await _fetch_json(
+                        client,
+                        f"https://sports.bzzoiro.com/api/v2/teams/{sid}/fixtures/",
+                        headers,
+                        stats,
+                        {"limit": 50, "offset": 0},
+                    )
+                    fixtures = _team_results(default_payload)
+                    stats["targeted_fixture_default_window_rows"] = _to_int(stats.get("targeted_fixture_default_window_rows"), 0) + len(fixtures)
+                stats["targeted_fixture_rows"] = _to_int(stats.get("targeted_fixture_rows"), 0) + len(fixtures)
+                for event in fixtures:
+                    score, quality = _relaxed_event_score(match, event)
+                    if score > best_score:
+                        best_event, best_score, best_quality = event, score, quality or "targeted_team_fixture"
     min_score = _to_float(os.getenv("BZZOIRO_CONTEXT_GAP_TARGETED_MIN_SCORE")) or 50.0
     if best_event is not None and best_score >= min_score:
         stats["matched_by_targeted_team_fixture"] = _to_int(stats.get("matched_by_targeted_team_fixture"), 0) + 1
@@ -958,7 +1097,14 @@ def install() -> dict[str, Any]:
         try:
             added, gap_stats, gap_preview = await _gap_pass(self, matches, contexts)
             contexts.update(added)
-            gap_stats["day_inventory_context_annotation"] = _annotate_day_inventory_from_contexts(added)
+            evidence_contexts, evidence_stats = _contexts_from_bzzoiro_line_evidence(matches, contexts)
+            contexts.update(evidence_contexts)
+            all_added = dict(added)
+            all_added.update(evidence_contexts)
+            gap_stats["line_evidence_context_bridge"] = evidence_stats
+            gap_stats["contexts_added_from_line_evidence"] = len(evidence_contexts)
+            gap_stats["contexts_added_total"] = len(all_added)
+            gap_stats["day_inventory_context_annotation"] = _annotate_day_inventory_from_contexts(all_added)
             stats["context_gap_pass"] = gap_stats
             stats["contexts_built"] = max(_to_int(stats.get("contexts_built"), 0), len(contexts))
             preview["context_gap_pass"] = gap_preview
