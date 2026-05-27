@@ -5,7 +5,7 @@ from __future__ import annotations
 This module fixes two runtime issues seen in the 2026-05-12 logs:
 
 1. `latest-windowed-core-coverage.json` can be overwritten by an install-only
-   report when later workflow steps install runtime extensions again. We keep a stable
+   report when later workflow steps import usercustomize again. We keep a stable
    candidate-audit copy and restore it over install-only payloads.
 2. Bzzoiro provides useful secondary odds, but only overlaps odds-api.io on a
    small match subset. SportLogic has a configured key/quota and should be used
@@ -101,6 +101,17 @@ def _install_report_guard() -> dict[str, Any]:
     return result
 
 
+def _env_positive_int(name: str, default: str) -> str:
+    raw = os.getenv(name)
+    try:
+        if raw is None or str(raw).strip() == "":
+            return default
+        value = int(float(str(raw)))
+        return str(value if value > 0 else int(float(default)))
+    except Exception:
+        return default
+
+
 def _enable_controlled_sportlogic() -> dict[str, Any]:
     has_key = bool(os.getenv("SPORTLOGIC_API_KEY") or os.getenv("SPORTLOGIC_KEY") or os.getenv("SPORTLOGIC_TOKEN"))
     payload = {"api_key_present": has_key, "enabled": False, "mode": "controlled_near_window_secondary_odds"}
@@ -110,13 +121,16 @@ def _enable_controlled_sportlogic() -> dict[str, Any]:
         "ENABLE_SPORTLOGIC": "true",
         "SPORTLOGIC_ENABLED": "true",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
-        "SPORTLOGIC_PER_RUN_MAX": os.getenv("SPORTLOGIC_PER_RUN_MAX") or "30",
-        "SPORTLOGIC_MAX_REQUESTS_PER_RUN": os.getenv("SPORTLOGIC_MAX_REQUESTS_PER_RUN") or "30",
-        "SPORTLOGIC_MATCH_LIMIT": os.getenv("SPORTLOGIC_MATCH_LIMIT") or "80",
-        "SPORTLOGIC_ODDS_MATCH_LIMIT": os.getenv("SPORTLOGIC_ODDS_MATCH_LIMIT") or "24",
+        "SPORTLOGIC_PER_RUN_MAX": _env_positive_int("SPORTLOGIC_PER_RUN_MAX", "30"),
+        "SPORTLOGIC_MAX_REQUESTS_PER_RUN": _env_positive_int("SPORTLOGIC_MAX_REQUESTS_PER_RUN", "30"),
+        "SPORTLOGIC_MATCH_LIMIT": _env_positive_int("SPORTLOGIC_MATCH_LIMIT", "80"),
+        "SPORTLOGIC_ODDS_MATCH_LIMIT": _env_positive_int("SPORTLOGIC_ODDS_MATCH_LIMIT", "24"),
         "SPORTLOGIC_TIMEOUT_SECONDS": os.getenv("SPORTLOGIC_TIMEOUT_SECONDS") or "20",
         "SPORTLOGIC_NEAR_WINDOW_HOURS": os.getenv("SPORTLOGIC_NEAR_WINDOW_HOURS") or "12",
         "SPORTLOGIC_ODDS_ONLY_IF_PRIMARY_HAS_ONE": "true",
+        "SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED": "true",
+        "SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES": os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES") or "2",
+        "SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT": os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT") or "24",
     }
     for key, value in overrides.items():
         os.environ[key] = str(value)
