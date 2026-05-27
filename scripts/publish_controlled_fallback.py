@@ -221,6 +221,113 @@ def sync_controlled_fallback_publication_exports(selected_rows: list[dict[str, A
     }
 
 
+
+
+def _sent_publication_record(row: dict[str, Any], *, source: str = "controlled_fallback") -> dict[str, Any]:
+    now = datetime.now(UTC).isoformat()
+    metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+    return {
+        "source": source,
+        "sent_at": row.get("sent_at") or row.get("published_at_utc") or now,
+        "published_at_utc": row.get("published_at_utc") or now,
+        "telegram_sent": True,
+        "published": True,
+        "publication_lifecycle_status": "telegram_sent",
+        "status": "published",
+        "dedupe_key": row.get("dedupe_key") or dedupe_key(row),
+        "match_key": row.get("match_key"),
+        "canonical_match_id": row.get("canonical_match_id"),
+        "event_id": row.get("event_id"),
+        "home_team": row.get("home_team"),
+        "away_team": row.get("away_team"),
+        "home_team_ru": row.get("home_team_ru"),
+        "away_team_ru": row.get("away_team_ru"),
+        "match_name": row.get("match_name") or f"{row.get('home_team') or ''} — {row.get('away_team') or ''}".strip(),
+        "league_name": row.get("league_name"),
+        "family": row.get("family") or row.get("market_family"),
+        "market_family": row.get("market_family") or row.get("family"),
+        "selection": row.get("selection"),
+        "selection_key": row.get("selection_key"),
+        "point": row.get("point") or row.get("line") or row.get("handicap"),
+        "odds": row.get("odds") or row.get("selected_odds") or row.get("price"),
+        "selected_odds": row.get("selected_odds") or row.get("odds") or row.get("price"),
+        "stake": row.get("stake"),
+        "stake_amount": row.get("stake_amount") or row.get("stake"),
+        "tier": row.get("tier") or row.get("publication_tier"),
+        "commence_time": row.get("commence_time") or row.get("kickoff") or row.get("start_time"),
+        "kickoff": row.get("kickoff") or row.get("commence_time") or row.get("start_time"),
+        "ev_pct": row.get("ev_pct") if row.get("ev_pct") is not None else metrics.get("canonical_ev_pct"),
+        "edge_pp": row.get("edge_pp") if row.get("edge_pp") is not None else metrics.get("canonical_edge_pp"),
+        "quality_score": row.get("quality_score") if row.get("quality_score") is not None else metrics.get("quality_score"),
+    }
+
+
+def _merge_index_records(existing: Any, rows: list[dict[str, Any]], *, source: str) -> dict[str, Any]:
+    index: dict[str, Any] = {}
+    if isinstance(existing, dict):
+        for key, value in existing.items():
+            if isinstance(value, dict):
+                index[str(key)] = dict(value)
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        record = _sent_publication_record(row, source=source)
+        keys = set(broad_dedupe_keys(record))
+        keys.add(str(record.get("dedupe_key") or dedupe_key(record)))
+        for key in keys:
+            if key:
+                index[key] = dict(record)
+    return index
+
+
+def sync_publication_state_indices(selected_rows: list[dict[str, Any]], *, sent: bool, dry_run: bool) -> dict[str, Any]:
+    """Durably persist sent picks for dedupe across future workflow runs.
+
+    latest-picks/latest-bets are useful reports, but they can be overwritten or
+    absent in a run artifact.  These indices are the durable source for duplicate
+    blocking: same match + market + selection + point is blocked even if the odds
+    or Telegram text changed.
+    """
+    if not sent or dry_run:
+        return {"synced": False, "reason": "not_sent", "rows": len(selected_rows or [])}
+    rows = [dict(row) for row in (selected_rows or []) if isinstance(row, dict)]
+    if not rows:
+        return {"synced": False, "reason": "no_rows", "rows": 0}
+
+    Path(".data").mkdir(parents=True, exist_ok=True)
+    Path(".data/exports").mkdir(parents=True, exist_ok=True)
+
+    fallback_path = Path(".data/fallback-sent-index.json")
+    published_path = Path(".data/published-candidate-index.json")
+    fallback_index = _merge_index_records(load_json(fallback_path, {}), rows, source="controlled_fallback")
+    published_index = _merge_index_records(load_json(published_path, {}), rows, source="controlled_fallback")
+    write_json(fallback_path, fallback_index)
+    write_json(published_path, published_index)
+
+    export_dir = Path(".data/exports")
+    ledger_files = [
+        export_dir / "published-picks-ledger.json",
+        export_dir / "controlled-fallback-published-ledger.json",
+        export_dir / "published-bets-ledger.json",
+    ]
+    ledger_counts: dict[str, int] = {}
+    sent_rows = [_sent_publication_record(row, source="controlled_fallback") for row in rows]
+    for ledger_path in ledger_files:
+        merged = _merge_export_rows(load_json(ledger_path, []), sent_rows)
+        write_json(ledger_path, merged)
+        ledger_counts[ledger_path.name] = len(merged)
+
+    # Also keep a compact latest sent snapshot for downstream reports/artifacts.
+    write_json(export_dir / "latest-controlled-fallback-published-picks.json", sent_rows)
+    return {
+        "synced": True,
+        "rows": len(rows),
+        "fallback_index_keys": len(fallback_index),
+        "published_index_keys": len(published_index),
+        "ledgers": ledger_counts,
+    }
+
+
 def payload_timestamp(payload: Any) -> datetime | None:
     if not isinstance(payload, dict):
         return None
@@ -980,27 +1087,31 @@ def load_sent_dedupe_index() -> dict[str, Any]:
     lookback_hours = env_int("CONTROLLED_FALLBACK_DEDUPE_LOOKBACK_HOURS", 96)
     cutoff = now - timedelta(hours=max(1, lookback_hours))
     index: dict[str, Any] = {}
-    existing = load_json(".data/fallback-sent-index.json", {})
-    if isinstance(existing, dict):
-        for key, row in existing.items():
-            if not isinstance(row, dict):
-                continue
-            ts = parse_dt(row.get("sent_at") or row.get("published_at_utc") or row.get("created_at_utc"))
-            if ts is not None and ts < cutoff:
-                continue
+    for index_path, default_source in (
+        (".data/fallback-sent-index.json", "fallback_sent_index"),
+        (".data/published-candidate-index.json", "published_candidate_index"),
+    ):
+        existing = load_json(index_path, {})
+        if isinstance(existing, dict):
+            for key, row in existing.items():
+                if not isinstance(row, dict):
+                    continue
+                ts = parse_dt(row.get("sent_at") or row.get("published_at_utc") or row.get("created_at_utc"))
+                if ts is not None and ts < cutoff:
+                    continue
 
-            # Older versions stored only one exact dedupe hash in
-            # .data/fallback-sent-index.json.  That hash can change when the
-            # same pick is re-rendered with translated selection text, a slightly
-            # different price, or a rebuilt candidate payload.  Re-expand every
-            # legacy row into the broad same-match/same-market keys so old
-            # publications are still protected.
-            record = dict(row)
-            record.setdefault("source", "fallback_sent_index")
-            record.setdefault("sent_at", (ts or now).isoformat())
-            index[str(key)] = record
-            for broad_key in broad_dedupe_keys(record):
-                index[broad_key] = dict(record)
+                # Older versions stored only one exact dedupe hash in the index.
+                # That hash can change when the same pick is re-rendered with
+                # translated selection text, a slightly different price, or a
+                # rebuilt candidate payload. Re-expand every legacy row into the
+                # broad same-match/same-market keys so old publications are still
+                # protected.
+                record = dict(row)
+                record.setdefault("source", default_source)
+                record.setdefault("sent_at", (ts or now).isoformat())
+                index[str(key)] = record
+                for broad_key in broad_dedupe_keys(record):
+                    index[broad_key] = dict(record)
     for source, rows in _iter_sent_pick_sources():
         if not isinstance(rows, list):
             continue
@@ -2305,6 +2416,12 @@ def main() -> int:
             })
 
     sync_result = sync_controlled_fallback_publication_exports(selected_rows, sent=bool(sent), dry_run=bool(dry_run))
+    state_sync_result = sync_publication_state_indices(selected_rows, sent=bool(sent), dry_run=bool(dry_run))
+    # Re-save the dedupe index after the durable state sync, because the export
+    # sync can normalize rows and add broader duplicate keys.
+    if sent:
+        sent_index = load_sent_dedupe_index()
+        save_sent_dedupe_index(sent_index)
     report.update({
         "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
         "published": bool(sent),
@@ -2315,6 +2432,7 @@ def main() -> int:
         "telegram_result": send_result,
         "message": message,
         "latest_exports_sync": sync_result,
+        "publication_state_sync": state_sync_result,
     })
     write_json("artifacts/controlled-fallback-report.json", report)
     write_json(".data/exports/latest-controlled-fallback-report.json", report)

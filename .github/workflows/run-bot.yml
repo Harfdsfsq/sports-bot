@@ -86,6 +86,8 @@ jobs:
       CONTROLLED_FALLBACK_DEDUPE_LOOKBACK_HOURS: "96"
       CONTROLLED_FALLBACK_SKIP_IF_LATEST_PICKS: "true"
       CONTROLLED_FALLBACK_SKIP_IF_INTERNAL_PUBLISHED: "true"
+      CONTROLLED_FALLBACK_PERSIST_PUBLICATION_STATE: "true"
+      CONTROLLED_FALLBACK_APPEND_ONLY_LEDGER_ENABLED: "true"
       CONTROLLED_FALLBACK_DEDUPE_STATE_BETS: "true"
       CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED: "true"
       LINE_MOVEMENT_MIN_RECHECK_MINUTES: "60"
@@ -259,6 +261,14 @@ jobs:
           path: |
             .data/day_inventory
             .data/line_history
+            .data/fallback-sent-index.json
+            .data/published-candidate-index.json
+            .data/exports/published-picks-ledger.json
+            .data/exports/published-bets-ledger.json
+            .data/exports/controlled-fallback-published-ledger.json
+            .data/exports/latest-controlled-fallback-published-picks.json
+            .data/exports/latest-picks.json
+            .data/exports/latest-bets.json
           key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
           restore-keys: |
             run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-
@@ -387,6 +397,12 @@ jobs:
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
+          cp .data/fallback-sent-index.json artifacts/run-bot/fallback-sent-index.json 2>/dev/null || true
+          cp .data/published-candidate-index.json artifacts/run-bot/published-candidate-index.json 2>/dev/null || true
+          cp .data/exports/published-picks-ledger.json artifacts/run-bot/published-picks-ledger.json 2>/dev/null || true
+          cp .data/exports/published-bets-ledger.json artifacts/run-bot/published-bets-ledger.json 2>/dev/null || true
+          cp .data/exports/controlled-fallback-published-ledger.json artifacts/run-bot/controlled-fallback-published-ledger.json 2>/dev/null || true
+          cp .data/exports/latest-controlled-fallback-published-picks.json artifacts/run-bot/latest-controlled-fallback-published-picks.json 2>/dev/null || true
 
       - name: Update cumulative day inventory coverage
         if: always()
@@ -450,6 +466,14 @@ jobs:
           path: |
             .data/day_inventory
             .data/line_history
+            .data/fallback-sent-index.json
+            .data/published-candidate-index.json
+            .data/exports/published-picks-ledger.json
+            .data/exports/published-bets-ledger.json
+            .data/exports/controlled-fallback-published-ledger.json
+            .data/exports/latest-controlled-fallback-published-picks.json
+            .data/exports/latest-picks.json
+            .data/exports/latest-bets.json
           key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
 
       - name: Upload run artifact
