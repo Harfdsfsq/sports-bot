@@ -25,8 +25,6 @@ EXPORT_DIR = ROOT / ".data" / "exports"
 OUT_JSON = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 OUT_CSV = EXPORT_DIR / "latest-day-inventory-coverage-truth.csv"
 SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
-LINE_HISTORY_DIR = ROOT / ".data" / "line_history"
-CANDIDATE_LIFECYCLE_PATH = ROOT / ".data" / "candidate-lifecycle-state.json"
 
 LIVE_ODDS_SOURCES = {"odds_api_io", "bzzoiro", "sportlogic"}
 CONTEXT_ONLY = {"sstats", "bzzoiro", "sportlogic", "clubelo", "football_data", "thesportsdb", "openfootball", "openligadb", "espn", "weatherapi", "open_meteo"}
@@ -124,82 +122,19 @@ def count_from_metadata(row: dict[str, Any], *keys: str) -> int:
             best = max(best, as_int(container.get(key)))
     return best
 
-def load_line_state(day: str) -> dict[str, Any]:
-    state = load_json(LINE_HISTORY_DIR / f"{day}.json", {})
-    if isinstance(state, dict):
-        return state
-    return {}
-
-
-def load_candidate_lifecycle() -> dict[str, Any]:
-    state = load_json(CANDIDATE_LIFECYCLE_PATH, {})
-    return state if isinstance(state, dict) else {}
-
-
-def row_match_key(row: dict[str, Any]) -> str:
-    key = row.get("match_key") or row.get("canonical_match_id") or ""
-    if key:
-        return str(key)
-    parts = [row.get("league_name"), row.get("home_team"), row.get("away_team"), row.get("kickoff_utc") or row.get("commence_time")]
-    return "|".join(norm(x) for x in parts if str(x or "").strip())
-
-
-def line_status_for_row(row: dict[str, Any], line_state: dict[str, Any]) -> dict[str, Any]:
-    lines = line_state.get("lines") if isinstance(line_state, dict) else {}
-    if not isinstance(lines, dict) or not lines:
-        return {"status": "missing", "snapshot_count": 0, "matched_lines": 0, "confirmed_lines": 0, "waiting_lines": 0, "declined_lines": 0}
-    match_key = str(row_match_key(row) or "")
-    norm_home = norm(row.get("home_team"))
-    norm_away = norm(row.get("away_team"))
-    matched: list[dict[str, Any]] = []
-    for key, entry in lines.items():
-        key_s = str(key)
-        if match_key and match_key in key_s:
-            matched.append(entry if isinstance(entry, dict) else {})
-        elif norm_home and norm_away and norm_home in key_s and norm_away in key_s:
-            matched.append(entry if isinstance(entry, dict) else {})
-    if not matched:
-        return {"status": "missing", "snapshot_count": 0, "matched_lines": 0, "confirmed_lines": 0, "waiting_lines": 0, "declined_lines": 0}
-    statuses = [str(x.get("last_status") or "") for x in matched]
-    snapshot_count = max(as_int(len(x.get("snapshots") or [])) for x in matched)
-    confirmed = sum(1 for x in statuses if x == "movement_confirmed")
-    waiting = sum(1 for x in statuses if x == "awaiting_next_run")
-    declined = sum(1 for x in statuses if x in {"movement_failed", "value_failed"})
-    if confirmed:
-        status = "movement_confirmed"
-    elif waiting:
-        status = "awaiting_next_run"
-    elif declined:
-        status = "declined_after_second_snapshot"
-    else:
-        status = statuses[-1] or "seen"
-    return {"status": status, "snapshot_count": snapshot_count, "matched_lines": len(matched), "confirmed_lines": confirmed, "waiting_lines": waiting, "declined_lines": declined}
-
 
 def odds_sources(row: dict[str, Any]) -> list[str]:
-    md = metadata(row)
-    cov = coverage(row)
-    sources = unique_norm(
-        list_from_any(row.get("odds_sources"))
-        + list_from_any(row.get("line_sources"))
-        + list_from_any(md.get("odds_sources"))
-        + list_from_any(md.get("line_sources"))
-        + list_from_any(cov.get("odds_sources"))
-        + list_from_any(cov.get("line_sources"))
-    )
+    sources = unique_norm(list_from_any(row.get("odds_sources")) + list_from_any(row.get("line_sources")))
     return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
 
 
 def context_sources(row: dict[str, Any]) -> list[str]:
     md = metadata(row)
-    cov = coverage(row)
     sources = unique_norm(
         list_from_any(row.get("context_sources"))
         + list_from_any(row.get("context_confirmations"))
         + list_from_any(md.get("context_sources"))
         + list_from_any(md.get("context_confirmations"))
-        + list_from_any(cov.get("context_sources"))
-        + list_from_any(cov.get("context_confirmations"))
     )
     cleaned = []
     for item in sources:
@@ -221,34 +156,22 @@ def price_confirmations(row: dict[str, Any]) -> int:
     )
 
 
-def row_truth(row: dict[str, Any], min_odds: int, min_context: int, line_state: dict[str, Any]) -> dict[str, Any]:
+def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str, Any]:
     cov = coverage(row)
     osrc = odds_sources(row)
     csrc = context_sources(row)
     pc = price_confirmations(row)
     cc = len(csrc)
-    line_evidence_count = max(pc, len(osrc), count_from_metadata(row, "line_sources_count", "price_sources_count"))
-    cc_effective = max(cc, count_from_metadata(row, "context_sources_count", "context_source_count"))
-    has_odds = bool(cov.get("odds")) or line_evidence_count > 0
-    has_context = bool(cov.get("context")) or cc_effective > 0
+    has_odds = bool(cov.get("odds")) or pc > 0
+    has_context = bool(cov.get("context")) or cc > 0
     missing: list[str] = []
     if pc < min_odds:
         missing.append("price_confirmations")
     if len(osrc) < min_odds:
         missing.append("independent_odds_sources")
-    if cc_effective < min_context:
+    if cc < min_context:
         missing.append("context_sources")
-    ready_tier_a_coverage = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc_effective >= min_context
-    # B-tier needs 1+ line/price evidence and 1+ context.  It does not require
-    # two independent odds providers, but it still requires confirmed movement.
-    ready_tier_b_coverage = has_odds and has_context and line_evidence_count >= 1 and cc_effective >= 1
-    movement = line_status_for_row(row, line_state)
-    movement_status = str(movement.get("status") or "")
-    ready_tier_a = ready_tier_a_coverage and movement_status in {"movement_confirmed", "publish_now_no_next_cron"}
-    ready_tier_b = ready_tier_b_coverage and movement_status == "movement_confirmed"
-    waiting_movement = ready_tier_b_coverage and movement_status in {"missing", "awaiting_next_run", "seen"}
-    declined_after_second_snapshot = ready_tier_b_coverage and movement_status == "declined_after_second_snapshot"
-    ready_publish = ready_tier_a or ready_tier_b
+    ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
     return {
         "match_key": row.get("match_key") or row.get("canonical_match_id") or "",
         "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff_local") or "",
@@ -258,26 +181,16 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int, line_state: 
         "odds_sources": osrc,
         "odds_sources_count": len(osrc),
         "price_confirmations": pc,
-        "line_evidence_count": line_evidence_count,
         "books_count": max(count_from_metadata(row, "books_count"), len(list_from_any(row.get("books")))),
         "context_sources": csrc,
-        "context_sources_count": cc_effective,
+        "context_sources_count": cc,
         "has_odds": has_odds,
         "has_context": has_context,
         "ready_for_model": bool(cov.get("ready_for_model")) or (has_odds and has_context),
         "ready_for_publish": ready_publish,
-        "ready_for_publish_tier_a": ready_tier_a,
-        "ready_for_publish_tier_b": ready_tier_b and not ready_tier_a,
-        "tier_a_coverage_ready": ready_tier_a_coverage,
-        "tier_b_coverage_ready": ready_tier_b_coverage,
-        "line_movement_status": movement_status,
-        "line_snapshot_count": movement.get("snapshot_count", 0),
-        "line_waiting_next_run": waiting_movement,
-        "line_declined_after_second_snapshot": declined_after_second_snapshot,
         "need_price_confirmations": max(0, min_odds - pc),
         "need_odds_sources": max(0, min_odds - len(osrc)),
-        "need_context_sources": max(0, min_context - cc_effective),
-        "need_line_evidence_for_tier_b": max(0, 1 - line_evidence_count),
+        "need_context_sources": max(0, min_context - cc),
         "missing": missing,
     }
 
@@ -293,7 +206,6 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "odds_sources_count",
         "odds_sources",
         "price_confirmations",
-        "line_evidence_count",
         "books_count",
         "context_sources_count",
         "context_sources",
@@ -301,18 +213,9 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "has_context",
         "ready_for_model",
         "ready_for_publish",
-        "ready_for_publish_tier_a",
-        "ready_for_publish_tier_b",
-        "tier_a_coverage_ready",
-        "tier_b_coverage_ready",
-        "line_movement_status",
-        "line_snapshot_count",
-        "line_waiting_next_run",
-        "line_declined_after_second_snapshot",
         "need_price_confirmations",
         "need_odds_sources",
         "need_context_sources",
-        "need_line_evidence_for_tier_b",
         "missing",
     ]
     with path.open("w", encoding="utf-8", newline="") as f:
@@ -333,9 +236,7 @@ def main() -> int:
     inv_path = DAY_INV_DIR / f"{d}.json"
     inv = load_json(inv_path, {})
     matches = [row for row in inv.get("matches", []) if isinstance(row, dict)] if isinstance(inv, dict) else []
-    line_state = load_line_state(d)
-    lifecycle = load_candidate_lifecycle()
-    rows = [row_truth(row, min_odds, min_context, line_state) for row in matches]
+    rows = [row_truth(row, min_odds, min_context) for row in matches]
     rows.sort(key=lambda x: (str(x.get("kickoff_utc") or ""), str(x.get("league_name") or ""), str(x.get("home_team") or "")))
 
     counts = {
@@ -343,23 +244,10 @@ def main() -> int:
         "matches_with_odds": sum(1 for r in rows if r["has_odds"]),
         "matches_with_context": sum(1 for r in rows if r["has_context"]),
         "matches_with_2plus_price_confirmations": sum(1 for r in rows if r["price_confirmations"] >= min_odds),
-        "matches_with_1plus_line_evidence": sum(1 for r in rows if r["line_evidence_count"] >= 1),
         "matches_with_2plus_odds_sources": sum(1 for r in rows if r["odds_sources_count"] >= min_odds),
         "matches_with_2plus_context_sources": sum(1 for r in rows if r["context_sources_count"] >= min_context),
         "matches_ready_for_model": sum(1 for r in rows if r["ready_for_model"]),
-        "matches_tier_a_coverage_ready": sum(1 for r in rows if r["tier_a_coverage_ready"]),
-        "matches_tier_b_coverage_ready": sum(1 for r in rows if r["tier_b_coverage_ready"]),
-        "matches_waiting_line_movement": sum(1 for r in rows if r["line_waiting_next_run"]),
-        "matches_declined_after_second_snapshot": sum(1 for r in rows if r["line_declined_after_second_snapshot"]),
-        "matches_ready_for_publish_tier_a": sum(1 for r in rows if r["ready_for_publish_tier_a"]),
-        "matches_ready_for_publish_tier_b": sum(1 for r in rows if r["ready_for_publish_tier_b"]),
         "matches_ready_for_publish": sum(1 for r in rows if r["ready_for_publish"]),
-        "candidate_lifecycle_seen": as_int((lifecycle.get("counts") or {}).get("total_candidates_seen")) if isinstance(lifecycle, dict) else 0,
-        "candidate_lifecycle_waiting_line_movement": as_int((lifecycle.get("counts") or {}).get("waiting_line_movement")) if isinstance(lifecycle, dict) else 0,
-        "candidate_lifecycle_tier_a_publishable": as_int((lifecycle.get("counts") or {}).get("tier_a_publishable")) if isinstance(lifecycle, dict) else 0,
-        "candidate_lifecycle_tier_b_publishable": as_int((lifecycle.get("counts") or {}).get("tier_b_publishable")) if isinstance(lifecycle, dict) else 0,
-        "candidate_lifecycle_found_value_but_blocked": as_int((lifecycle.get("counts") or {}).get("found_value_but_blocked")) if isinstance(lifecycle, dict) else 0,
-        "candidate_lifecycle_quality_blocked": as_int((lifecycle.get("counts") or {}).get("quality_blocked")) if isinstance(lifecycle, dict) else 0,
     }
     counts["matches_missing_price_2plus"] = max(0, len(rows) - counts["matches_with_2plus_price_confirmations"])
     counts["matches_missing_odds_source_2plus"] = max(0, len(rows) - counts["matches_with_2plus_odds_sources"])
@@ -379,9 +267,7 @@ def main() -> int:
         "notes": [
             "odds_sources_count is independent live provider count only: odds_api_io, bzzoiro, sportlogic.",
             "price_confirmations is bookmaker/line depth and is tracked separately from provider independence.",
-            "A-tier requires 2+ price confirmations, 2+ independent odds sources, 2+ context sources, and confirmed line movement or no next cron window.",
-            "B-tier requires 1+ line/price evidence, 1+ context source, confirmed second line movement snapshot, and value still alive at candidate time.",
-            "Inventory truth can prove coverage and line-state; final candidate lifecycle proves value-vs-publication decisions.",
+            "ready_for_publish requires 2+ price confirmations, 2+ independent odds sources, and 2+ context sources.",
         ],
     }
     write_json(OUT_JSON, payload)

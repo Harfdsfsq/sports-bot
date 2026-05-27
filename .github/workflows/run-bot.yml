@@ -106,6 +106,14 @@ jobs:
       PROVIDER_REQUEST_BUDGET_MODE: "per_run_only"
       PROVIDER_REQUEST_BUDGET_DISABLE_DAILY_MONTHLY: "true"
       ALL_SOURCES_FREE_MAXIMIZE: "true"
+      API_INVENTORY_REPAIR_RUN_DISCOVERY: "true"
+      API_INVENTORY_REPAIR_MIN_MATCH_SCORE: "0.72"
+      PROVIDER_DAY_DISCOVERY_INCLUDE_SPORTLOGIC: "true"
+      PROVIDER_DAY_DISCOVERY_BZZOIRO_V2_PAGES: "4"
+      PROVIDER_DAY_DISCOVERY_ODDS_API_IO_PAGES: "4"
+      PROVIDER_DAY_DISCOVERY_TIMEOUT_SECONDS: "18"
+      PROVIDER_DAY_DISCOVERY_MAX_SECONDS: "150"
+      PROVIDER_DAY_DISCOVERY_CONCURRENCY: "4"
       PROVIDER_SMOKE_FAIL_ON_ERROR: "false"
       PROVIDER_SMOKE_FAIL_ON_CORE_ERROR: "true"
       PROVIDER_SMOKE_REQUIRED_CORE_PROVIDERS: "odds_api_io,sstats,bzzoiro"
@@ -202,6 +210,13 @@ jobs:
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
       SPORTLOGIC_MATCH_MIN_SCORE: "42"
+      FOOTBALL_DATA_REQUESTS_MAX_PER_RUN: "8"
+      FOOTBALL_DATA_MATCH_LIMIT: "80"
+      THESPORTSDB_REQUESTS_MAX_PER_RUN: "10"
+      THESPORTSDB_MAX_LEAGUES: "30"
+      ALLSPORTSAPI_FIXTURE_DISCOVERY_ENABLED: "true"
+      HIGHLIGHTLY_FIXTURE_DISCOVERY_ENABLED: "true"
+      WEATHER_BULK_SHORTLIST_LIMIT: "40"
 
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
@@ -361,6 +376,16 @@ jobs:
           cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
           cp .data/exports/latest-core-provider-smoke-validation.json artifacts/run-bot/latest-core-provider-smoke-validation.json 2>/dev/null || true
 
+      - name: Build provider canonical day pool
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache .data/day_inventory artifacts/run-bot
+          echo "provider canonical day pool start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          timeout 170s python -u scripts/provider_day_discovery_canonical_pool.py || true
+          cp .data/exports/provider-day-discovery-canonical-pool.json artifacts/run-bot/provider-day-discovery-canonical-pool.json 2>/dev/null || true
+          cp .data/exports/provider-day-discovery-canonical-pool.txt artifacts/run-bot/provider-day-discovery-canonical-pool.txt 2>/dev/null || true
+
       - name: Run tests
         shell: bash
         run: |
@@ -434,6 +459,23 @@ jobs:
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
           cp -r .data/line_history artifacts/run-bot/line_history || true
+
+      - name: Repair full API inventory coverage
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip API inventory repair: fresh run-bot log was not created"
+            exit 0
+          fi
+          mkdir -p .data/exports .data/day_inventory artifacts/run-bot
+          python -u scripts/api_inventory_full_coverage_repair.py || true
+          python -u scripts/build_day_inventory_coverage_truth.py || true
+          cp .data/exports/latest-api-inventory-full-coverage-repair.json artifacts/run-bot/latest-api-inventory-full-coverage-repair.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
+          cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
 
       - name: Normalize published pick payloads
         if: always()

@@ -191,7 +191,6 @@ def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
     # cumulative coverage sees bookmaker-confirmed price depth and independent
     # context confirmations instead of stale bootstrap counters.
     steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_source_counts.py'))
-    steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_evidence_key_aliases.py'))
     steps.append(run_python_script(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'))
     return steps
 

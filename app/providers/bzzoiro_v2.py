@@ -176,7 +176,7 @@ class BzzoiroContextProvider:
                 client,
                 "/events/",
                 headers,
-                {"date_from": date_from, "date_to": date_to, "status": "notstarted", "limit": self.page_size, "offset": offset},
+                {"date_from": date_from, "date_to": date_to, "limit": self.page_size, "offset": offset},
                 stats,
             )
             batch = self._rows(payload)
@@ -509,76 +509,23 @@ class BzzoiroContextProvider:
     @staticmethod
     def _flatten_odds(payload: Any) -> list[dict[str, Any]]:
         rows: list[dict[str, Any]] = []
-
-        def add_compact(key: str, price: Any, bookmaker: Any = None) -> None:
-            low = str(key or "").lower()
-            if price in (None, "") or isinstance(price, (dict, list)):
-                return
-            if low in {"home_win", "home", "home_win_odds"}:
-                rows.append({"market": "1x2", "outcome": "home", "price": price, "bookmaker": bookmaker})
-            elif low in {"away_win", "away", "away_win_odds"}:
-                rows.append({"market": "1x2", "outcome": "away", "price": price, "bookmaker": bookmaker})
-            elif low in {"draw", "x", "draw_odds"}:
-                rows.append({"market": "1x2", "outcome": "draw", "price": price, "bookmaker": bookmaker})
-            elif low in {"btts_yes", "both_teams_to_score_yes"}:
-                rows.append({"market": "btts", "outcome": "yes", "price": price, "bookmaker": bookmaker})
-            elif low in {"btts_no", "both_teams_to_score_no"}:
-                rows.append({"market": "btts", "outcome": "no", "price": price, "bookmaker": bookmaker})
-            else:
-                import re
-                m = re.match(r"^(over|under)[_\- ]?(\d+)(?:[_\- ]?(\d+))?[_\- ]?(?:goals?)?$", low)
-                if m:
-                    side = m.group(1)
-                    if m.group(3):
-                        point = cls_float(f"{m.group(2)}.{m.group(3)}")
-                    else:
-                        token = m.group(2)
-                        point = cls_float(f"{token[0]}.{token[1:]}") if len(token) > 1 else cls_float(token)
-                    rows.append({"market": "totals", "outcome": side, "line": point, "price": price, "bookmaker": bookmaker})
-
-        def cls_float(value: Any) -> float | None:
-            try:
-                if value in (None, ""):
-                    return None
-                return float(str(value).replace(",", "."))
-            except Exception:
-                return None
-
         def walk(value: Any, inherited: dict[str, Any] | None = None) -> None:
             inherited = inherited or {}
             if isinstance(value, list):
                 for item in value:
                     walk(item, inherited)
             elif isinstance(value, dict):
-                # Documented /events/{id}/odds/ compact map.
-                compact = value.get("odds") if isinstance(value.get("odds"), dict) else None
-                if compact:
-                    for key, price in compact.items():
-                        add_compact(str(key), price, inherited.get("bookmaker"))
                 row = dict(inherited)
-                for key in ("market", "market_key", "market_name", "outcome", "name", "selection", "line", "point", "price", "odds", "decimal", "decimal_odds", "bookmaker", "bookmaker_slug", "bookmaker_name"):
+                for key in ("market", "market_key", "market_name", "outcome", "name", "selection", "line", "point", "price", "odds", "decimal", "decimal_odds", "bookmaker"):
                     if key in value and not isinstance(value.get(key), (dict, list)):
-                        mapped = "bookmaker" if key in {"bookmaker_slug", "bookmaker_name"} else key
-                        row[mapped] = value.get(key)
-                if isinstance(value.get("bookmaker"), dict):
-                    book = value["bookmaker"]
-                    row["bookmaker"] = book.get("slug") or book.get("name") or row.get("bookmaker")
-                if isinstance(value.get("market"), dict):
-                    market = value["market"]
-                    row["market"] = market.get("key") or market.get("name") or row.get("market")
+                        row[key] = value.get(key)
                 if any(k in row for k in ("price", "odds", "decimal", "decimal_odds")) and any(k in row for k in ("outcome", "name", "selection")):
                     rows.append(row)
-                # Scalar compact children, e.g. {"over_25_goals": 2.04}.
-                for key, child in value.items():
-                    if not isinstance(child, (dict, list)):
-                        add_compact(str(key), child, row.get("bookmaker"))
                 for key, child in value.items():
                     if isinstance(child, (dict, list)):
                         next_inherited = dict(row)
-                        if key.lower() in {"1x2", "h2h", "totals", "total", "btts", "over_under", "over_under_15", "over_under_25", "over_under_35"}:
+                        if key.lower() in {"1x2", "h2h", "totals", "total", "btts", "over_under"}:
                             next_inherited.setdefault("market", key)
-                        elif row.get("market") and key.lower() not in {"outcomes", "selections", "values", "odds", "results", "data"}:
-                            next_inherited.setdefault("bookmaker", key)
                         walk(child, next_inherited)
         walk(payload)
         return rows

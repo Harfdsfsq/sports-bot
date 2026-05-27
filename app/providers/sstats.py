@@ -323,11 +323,16 @@ class SStatsContextProvider:
         while True:
             if self._http_budget_exhausted(stats):
                 break
+            # SStats OpenAPI is case-insensitive in many deployments, but the
+            # documented contract uses From/To/Limit/Offset/TimeZone.  `To` is a
+            # strict upper boundary when only a date is passed, so callers should
+            # already pass the day after the requested window for same-day scans.
             params = {
-                "from": from_date,
-                "to": to_date,
-                "limit": limit,
-                "offset": offset,
+                "From": from_date,
+                "To": to_date,
+                "TimeZone": int(float(os.getenv("SSTATS_TIMEZONE", "3") or 3)),
+                "Limit": limit,
+                "Offset": offset,
                 "apikey": self.settings.sstats_api_key,
             }
 

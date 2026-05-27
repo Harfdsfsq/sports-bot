@@ -42,9 +42,6 @@ CANDIDATE_PATHS = [
     EXPORT_DIR / "latest-candidates-after-quality.json",
     EXPORT_DIR / "latest-candidates.json",
     EXPORT_DIR / "latest-controlled-fallback-report.json",
-    EXPORT_DIR / "latest-quality-consensus-safe-relief.json",
-    EXPORT_DIR / "latest-api-coverage-consensus-runtime-patch.json",
-    EXPORT_DIR / "latest-candidate-value-runtime-patch.json",
     ROOT / "artifacts" / "controlled-fallback-report.json",
 ]
 
@@ -191,8 +188,6 @@ def candidate_rows(payload: Any) -> list[dict[str, Any]]:
         "evaluated",
         "blocked_top",
         "near_miss",
-        "sample",
-        "rejected_samples",
         "publishable_candidates",
         "candidates_before_quality",
         "passed_candidates",
@@ -322,37 +317,8 @@ def candidate_evidence(candidate: dict[str, Any], path_name: str) -> dict[str, A
     merge_count_max(ev, "price_confirmation_sources_count", max(len(ev["price_confirmations"]), as_int(ev["counts"].get("independent_odds_sources_count")), as_int(ev["counts"].get("books_count"))))
     merge_count_max(ev, "context_sources_count", max(len(ev["context_sources"]), deep_count(candidate, "context_sources_count", "confirmation_sources_count")))
     merge_count_max(ev, "confirmation_sources_count", max(len(ev["context_confirmations"]), as_int(ev["counts"].get("context_sources_count"))))
-    # Runtime audit artifacts such as latest-api-coverage-consensus-runtime-patch.json
-    # and latest-quality-consensus-safe-relief.json carry already-normalized
-    # counts but not always raw_bucket_offers. Use those counters as evidence so
-    # coverage truth reflects the same candidate that the model/quality layers
-    # evaluated. This is report/inventory evidence only; publish guards still
-    # verify the candidate itself before Telegram.
-    for key in ("exact_odds_sources", "odds_sources", "price_sources"):
-        for src in list_from_any(candidate.get(key)) + list_from_any(summary.get(key)) + list_from_any(diagnostics.get(key)):
-            srcn = norm_source(src)
-            if srcn and srcn not in {"model", "market", "ensemble"}:
-                ev["odds_sources"].add(srcn)
-                ev["line_sources"].add(srcn)
-                ev["price_confirmations"].add(f"provider:{srcn}")
-    for key in ("context_sources", "confirmation_sources"):
-        for src in list_from_any(candidate.get(key)) + list_from_any(summary.get(key)) + list_from_any(diagnostics.get(key)):
-            srcn = norm_source(src)
-            if srcn and srcn not in {"market", "odds_api_io", "ensemble"}:
-                ev["context_sources"].add(srcn)
-                ev["context_confirmations"].add(srcn)
-    numeric_odds_sources = deep_count(candidate, "exact_odds_sources_count", "odds_sources_count", "independent_odds_sources_count")
-    numeric_books = deep_count(candidate, "exact_books_count", "books_count", "odds_books_count", "paired_books", "exact_line_bookmakers_count")
-    numeric_context = deep_count(candidate, "context_sources_count", "confirmation_sources_count")
-    for idx in range(max(0, numeric_books)):
-        ev["price_confirmations"].add(f"book_confirmation_{idx + 1}")
-    merge_count_max(ev, "independent_odds_sources_count", max(len(ev["odds_sources"]), numeric_odds_sources))
-    merge_count_max(ev, "books_count", max(len(ev["books"]), numeric_books))
-    merge_count_max(ev, "price_confirmation_sources_count", max(len(ev["price_confirmations"]), as_int(ev["counts"].get("independent_odds_sources_count")), as_int(ev["counts"].get("books_count"))))
-    merge_count_max(ev, "context_sources_count", max(len(ev["context_sources"]), numeric_context))
-    merge_count_max(ev, "confirmation_sources_count", max(len(ev["context_confirmations"]), as_int(ev["counts"].get("context_sources_count"))))
-    ev["latest_odds_at"] = datetime.now(UTC).isoformat() if ev["odds_sources"] or ev["price_confirmations"] or numeric_odds_sources or numeric_books else None
-    ev["latest_context_at"] = datetime.now(UTC).isoformat() if ev["context_sources"] or ev["context_confirmations"] or numeric_context else None
+    ev["latest_odds_at"] = datetime.now(UTC).isoformat() if ev["odds_sources"] or ev["price_confirmations"] else None
+    ev["latest_context_at"] = datetime.now(UTC).isoformat() if ev["context_sources"] or ev["context_confirmations"] else None
     return ev
 
 

@@ -357,10 +357,16 @@ def build_calls() -> list[CallSpec]:
     if bzz:
         h = {"Authorization": f"Token {bzz}"}
         calls.extend([
-            CallSpec("bzzoiro", "events_v1_day", "https://sports.bzzoiro.com/api/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "tz": "UTC", "limit": 100}, h),
-            CallSpec("bzzoiro", "predictions_v1_day", "https://sports.bzzoiro.com/api/predictions/", "fixture_primary_prediction", {"date_from": t, "date_to": tm, "upcoming": "true", "tz": "UTC", "limit": 100}, h),
-            CallSpec("bzzoiro", "events_v2_day_offset_0", "https://sports.bzzoiro.com/api/v2/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "limit": 100, "offset": 0}, h),
+            CallSpec("bzzoiro", "events_v1_day", "https://sports.bzzoiro.com/api/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "tz": "UTC", "limit": 200}, h),
+            CallSpec("bzzoiro", "predictions_v1_day", "https://sports.bzzoiro.com/api/predictions/", "fixture_primary_prediction", {"date_from": t, "date_to": tm, "upcoming": "true", "tz": "UTC", "limit": 200}, h),
         ])
+        # BSD/Bzzoiro v2 uses limit/offset and max page size 200. Query several
+        # offsets so the canonical day pool is not restricted to the first page.
+        bzz_pages = max(1, min(as_int(env("PROVIDER_DAY_DISCOVERY_BZZOIRO_V2_PAGES"), 3), 8))
+        for page in range(bzz_pages):
+            calls.append(CallSpec("bzzoiro", f"events_v2_day_offset_{page * 200}", "https://sports.bzzoiro.com/api/v2/events/", "fixture_primary_context", {"date_from": t, "date_to": tm, "limit": 200, "offset": page * 200}, h))
+        for market in ("1x2", "over_under_25", "over_under_15", "over_under_35", "btts"):
+            calls.append(CallSpec("bzzoiro", f"odds_best_{market}", "https://sports.bzzoiro.com/api/v2/odds/best/", "odds_secondary_discovery", {"market": market, "date_from": f"{t}T00:00:00Z", "date_to": f"{tm}T00:00:00Z", "limit": 200, "offset": 0}, h))
     _, sstats = first_env("SSTATS_API_KEY")
     if sstats:
         calls.extend([
@@ -379,8 +385,10 @@ def build_calls() -> list[CallSpec]:
     base_url = env("HIGHLIGHTLY_BASE_URL")
     if hl and base_url:
         calls.append(CallSpec("highlightly", "matches_day", base_url.rstrip("/") + "/matches", "fixture_supplemental_mapping", {"date": t}, {"x-api-key": hl}))
-    # SportLogic is intentionally not broad by default because current free quota is small.
-    if env("PROVIDER_DAY_DISCOVERY_INCLUDE_SPORTLOGIC", "false").lower() in {"1", "true", "yes", "on"}:
+    # SportLogic has a 500/day and 10/min free quota; include one documented
+    # /games page by default so it can become a real current-day source when the
+    # account has current football rows.
+    if env("PROVIDER_DAY_DISCOVERY_INCLUDE_SPORTLOGIC", "true").lower() in {"1", "true", "yes", "on"}:
         _, sl = first_env("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN")
         if sl:
             root = env("SPORTLOGIC_BASE_URL", "https://api.sportlogic.io/api/v1").rstrip("/")
