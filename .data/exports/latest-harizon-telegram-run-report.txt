@@ -1,37 +1,37 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 56 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: tier a quality below min
+🟡 Прогнозов нет: есть 81 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: quality: вероятность после калибровки ниже порога
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 233 матчей. В этом run обработано: 31.
-• 1+ линия: 228/233 (98%) | 1+ контекст: 115/233 (49%)
-• 2+ подтверждения цены: 63/233 (27%)
+• Инвентарь дня: 233 матчей. В этом run обработано: 35.
+• 1+ линия: 228/233 (98%) | 1+ контекст: 149/233 (64%)
+• 2+ подтверждения цены: 87/233 (37%)
 • 2+ независимых odds-source: 15/233 (6%)
 • 2+ контекста: 37/233 (16%)
-• Готово для модели: 113/233 (48%)
+• Готово для модели: 147/233 (63%)
 
 🏷️ A/B-tier публикация
 • A-tier coverage: 5 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 56 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 81 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 56 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 81 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 3
-• Line guard: увидел 2, оставил 0, снял 0
+• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
+• Line guard: увидел 4, оставил 0, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/1
+• Raw/candidates before quality: 2/2
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 31; дал offers 2365 (296/запрос); 2+ букмекера 10; ошибок 0.
+• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 35; дал offers 2636 (330/запрос); 2+ букмекера 11; ошибок 0.
 • Bzzoiro: запросы 38 (direct 19, v2 19, gap 0); событий 31; контекстов 6; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 12; secondary offers 0; overlap с odds-api.io 6; ошибок 0.
-• SStats: запросы 21; сырых строк 16962 (808/запрос); контекстов 13; deep-enriched 8; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 21; сырых строк 16962 (808/запрос); контекстов 14; deep-enriched 8; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 12, bzzoiro+odds_api_io: 6
+• Комбинации источников линий: odds_api_io: 15, bzzoiro+odds_api_io: 6
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 11. Нужно обновить линии: 0.
@@ -40,25 +40,25 @@
 • 0–12 часов: 0/3 core-ready.
 
 🚫 Почему не опубликовано
-• tier a quality below min: 1 (9%)
-• tier a canonical edge below min: 1 (9%)
-• tier a canonical ev below min: 1 (9%)
-• tier b confidence below min: 1 (9%)
-• tier b quality below min: 1 (9%)
-• tier b canonical edge below min: 1 (9%)
-• tier b canonical ev below min: 1 (9%)
-• tier c quality below min: 1 (9%)
+• quality: вероятность после калибровки ниже порога: 2 (29%)
+• line movement not confirmed:awaiting next run: 1 (14%)
+• line movement:needs next cron line movement recheck: 1 (14%)
+• controlled fallback confirmation sources below min:1/2: 1 (14%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (14%)
+• line movement guard снял кандидата: 1 (14%)
 
 🔎 Последние проверенные кандидаты
-1. CD El Nacional — CD Universidad Catolica del Ecuador | Меньше 2.5 @2.32 | EV +0.2% | edge +0.1 п.п. | q 52.4
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
+1. CD El Nacional — CD Universidad Catolica del Ecuador | Меньше 2.5 @2.58 | EV +12.7% | edge +4.9 п.п. | q 69.8
+   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, controlled fallback confirmation sources below min:1/2
+2. SE Palmeiras SP — CD Junior FC | Меньше 2.5 @2.44 | EV -3.2% | edge -1.3 п.п. | q 69.7
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26595575927
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26595575927
-• Artifact: run-bot-26595575927
+• Run ID: 26596391890
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26596391890
+• Artifact: run-bot-26596391890
 • workflow run-bot, attempt 1

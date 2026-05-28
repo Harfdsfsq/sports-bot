@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-28T18:57:10.801105+00:00
+UTC: 2026-05-28T19:12:51.063194+00:00
 target_date: 2026-05-28
-canonical_matches: 171
+canonical_matches: 166
 2+ provider sources: 58
-2+ primary sources: 56
+2+ primary sources: 55
 all 3 primary sources: 5
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=102 event_like=102 unique=31 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=97 event_like=97 unique=31 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=6 event_like=6 unique=6 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=98 event_like=98 unique=49 statuses={"OK": 2, "EMPTY": 4}
+- odds_api_io: commands=6 ok=2 rows=86 event_like=86 unique=43 statuses={"OK": 2, "EMPTY": 4}
 - sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"RATE_LIMIT": 1}
 - sstats: commands=1 ok=1 rows=160 event_like=152 unique=152 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 113, "3": 8, "2": 48, "4": 2}
-- primary providers: {"1": 115, "2": 51, "3": 5}
+- all providers: {"1": 108, "3": 7, "2": 49, "4": 2}
+- primary providers: {"1": 111, "2": 50, "3": 5}
 
 ## Top canonical matches
 - 2026-05-27T22:00:00+00:00 | Caravaggio — Nação | providers=sstats ids={"sstats": "1541971"}
@@ -40,17 +40,17 @@ all 3 primary sources: 5
 - 2026-05-27T22:30:00+00:00 | Bethesda SC — Lionsbridge | providers=sstats ids={"sstats": "1524608"}
 - 2026-05-27T22:30:00+00:00 | Port City — Wake | providers=sstats ids={"sstats": "1524609"}
 - 2026-05-27T23:00:00+00:00 | Fluminense-SC — Juventus SC | providers=sstats ids={"sstats": "1541972"}
+- 2026-05-27T23:00:00+00:00 | Rio Branco ES — Anápolis | providers=sstats ids={"sstats": "1545360"}
 - 2026-05-27T23:00:00+00:00 | Chattanooga Red Wolves — Richmond Kickers | providers=sstats ids={"sstats": "1493840"}
 - 2026-05-27T23:00:00+00:00 | NY Cosmos — Union Omaha | providers=sstats ids={"sstats": "1493841"}
+- 2026-05-27T23:00:00+00:00 | AC Connecticut — Blackwatch Rush | providers=sstats ids={"sstats": "1524610"}
+- 2026-05-27T23:00:00+00:00 | Boston Bolts — New England FC | providers=sstats ids={"sstats": "1524612"}
 - 2026-05-27T23:00:00+00:00 | Hickory — Charlotte Eagles | providers=sstats ids={"sstats": "1524615"}
 - 2026-05-27T23:00:00+00:00 | Hill City — Charlottesville Blues | providers=sstats ids={"sstats": "1524616"}
 - 2026-05-27T23:00:00+00:00 | Long Island Rough Riders — Staten Island Athletic | providers=sstats ids={"sstats": "1524617"}
 - 2026-05-27T23:00:00+00:00 | Real Central New Jersey — Reading United | providers=sstats ids={"sstats": "1524621"}
+- 2026-05-27T23:00:00+00:00 | Capo W — SoCal Dutch Lions W | providers=sstats ids={"sstats": "1532058"}
 - 2026-05-27T23:00:00+00:00 | Eagle FC W — Loudoun United FC W | providers=sstats ids={"sstats": "1532375"}
-- 2026-05-27T23:00:00+00:00 | Erie Sports Center W — Cleveland Force W | providers=sstats ids={"sstats": "1532057"}
-- 2026-05-27T23:00:00+00:00 | Toledo Villa W — Dayton Dutch Lions W | providers=sstats ids={"sstats": "1532055"}
-- 2026-05-27T23:00:00+00:00 | Union Macomb W — Detroit City W | providers=sstats ids={"sstats": "1532049"}
-- 2026-05-27T23:00:00+00:00 | Virginia Beach United W — Charlottesville Blues W | providers=sstats ids={"sstats": "1532060"}
 
 ## Targeted enrichment plan sample
 - Caravaggio — Nação | primary=1 providers=sstats
@@ -129,7 +129,7 @@ all 3 primary sources: 5
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Chattanooga Red Wolves — Richmond Kickers | primary=1 providers=sstats
+- Rio Branco ES — Anápolis | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
