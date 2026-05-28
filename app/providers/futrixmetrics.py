@@ -150,6 +150,19 @@ class FutrixMetricsContextProvider:
             return None
         stats["http_statuses"].append(response.status_code)
         stats["last_body_preview"] = response.text[:1600]
+        if response.status_code == 429:
+            stats["response_errors"] += 1
+            stats["rate_limited"] = True
+            stats["budget_exhausted"] = True
+            # Stop the rest of this run; no daily/monthly lock is written.
+            self.max_requests_per_run = min(self.max_requests_per_run, int(stats.get("requests") or 0))
+            return None
+        if response.status_code >= 500:
+            stats["response_errors"] += 1
+            stats["server_error_stop"] = True
+            stats["budget_exhausted"] = True
+            self.max_requests_per_run = min(self.max_requests_per_run, int(stats.get("requests") or 0))
+            return None
         if response.status_code != 200:
             stats["response_errors"] += 1
             return None

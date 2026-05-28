@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 from collections import defaultdict
 from dataclasses import asdict
@@ -24,6 +25,13 @@ class AllSportsApiOddsProvider:
         self.timeout = float(getattr(settings, "allsportsapi_timeout_seconds", 12.0) or 12.0)
         self.min_interval = max(30, int(getattr(settings, "allsportsapi_min_fetch_interval_minutes", 120) or 120))
         self.match_limit = max(1, int(getattr(settings, "allsportsapi_match_limit", 12) or 12))
+        self.max_http_requests = max(0, int(float(
+            os.getenv("ALLSPORTSAPI_MAX_REQUESTS_PER_RUN")
+            or os.getenv("ALLSPORTSAPI_REQUESTS_MAX_PER_RUN")
+            or getattr(settings, "allsportsapi_requests_max_per_run", 8)
+            or 8
+        )))
+        self._rate_limited_this_run = False
         self._bootstrap_fixtures_cache: list[dict[str, Any]] = []
 
     async def fetch_matches(self) -> tuple[list[Match], dict[str, Any], dict[str, Any]]:
@@ -36,6 +44,9 @@ class AllSportsApiOddsProvider:
             "matches_built": 0,
             "http_statuses": [],
             "last_body_preview": None,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
+            "rate_limited": False,
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_matches": []}
         if not self.api_key:
@@ -113,6 +124,9 @@ class AllSportsApiOddsProvider:
             "matched_fuzzy": 0,
             "http_statuses": [],
             "last_body_preview": None,
+            "max_http_requests_per_run": self.max_http_requests,
+            "budget_exhausted": False,
+            "rate_limited": False,
         }
         preview: dict[str, Any] = {"sample_fixtures": [], "sample_odds": []}
         if not self.api_key:
@@ -190,6 +204,8 @@ class AllSportsApiOddsProvider:
 
             offers_by_match: dict[str, list[Offer]] = defaultdict(list)
             for item in mapping.values():
+                if self._budget_exhausted(stats):
+                    break
                 event_id = str(item["row"].get("event_key") or item["row"].get("match_id") or "")
                 if not event_id:
                     continue
@@ -210,7 +226,19 @@ class AllSportsApiOddsProvider:
         self._write_cache(output)
         return output, stats, preview
 
+    def _budget_exhausted(self, stats: dict[str, Any]) -> bool:
+        if self._rate_limited_this_run:
+            stats["rate_limited"] = True
+            stats["budget_exhausted"] = True
+            return True
+        if self.max_http_requests <= 0 or int(stats.get("requests") or 0) >= self.max_http_requests:
+            stats["budget_exhausted"] = True
+            return True
+        return False
+
     async def _get_json(self, client: httpx.AsyncClient, params: dict[str, Any], stats: dict[str, Any]) -> Any | None:
+        if self._budget_exhausted(stats):
+            return None
         stats["requests"] += 1
         try:
             response = await client.get(f"{self.base_url}/", params=params)
@@ -220,6 +248,17 @@ class AllSportsApiOddsProvider:
             return None
         stats["http_statuses"].append(response.status_code)
         stats["last_body_preview"] = response.text[:1800]
+        if response.status_code == 429:
+            stats["response_errors"] += 1
+            stats["rate_limited"] = True
+            stats["budget_exhausted"] = True
+            self._rate_limited_this_run = True
+            return None
+        if response.status_code >= 500:
+            stats["response_errors"] += 1
+            stats["server_error_stop"] = True
+            self._rate_limited_this_run = True
+            return None
         if response.status_code != 200:
             stats["response_errors"] += 1
             return None

@@ -452,6 +452,18 @@ class SStatsContextProvider:
                     stats["response_errors"] += 1
                     return None
             stats["last_error"] = f"http_status={response.status_code}"
+            if response.status_code == 429:
+                stats["response_errors"] += 1
+                stats["rate_limited"] = True
+                stats["budget_exhausted"] = True
+                self.max_http_requests = min(self.max_http_requests, int(stats.get("requests") or 0)) if self.max_http_requests > 0 else self.max_http_requests
+                return None
+            if response.status_code >= 500:
+                stats["response_errors"] += 1
+                stats["server_error_stop"] = True
+                stats["budget_exhausted"] = True
+                self.max_http_requests = min(self.max_http_requests, int(stats.get("requests") or 0)) if self.max_http_requests > 0 else self.max_http_requests
+                return None
             if response.status_code not in {408, 409, 425, 429} and response.status_code < 500:
                 stats["response_errors"] += 1
                 return None

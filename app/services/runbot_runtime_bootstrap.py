@@ -55,6 +55,10 @@ def install() -> dict[str, list[str]]:
         "sportlogic_query_runtime_guard",
         lambda: __import__("app.services.sportlogic_query_runtime_guard", fromlist=["install"]).install(),
     )
+    _try_install(
+        "targeted_enrichment_runtime_patch",
+        lambda: __import__("app.services.targeted_enrichment_runtime_patch", fromlist=["install"]).install(),
+    )
     return {"installed": INSTALLED, "failed": FAILED, "skipped": SKIPPED}
 
 

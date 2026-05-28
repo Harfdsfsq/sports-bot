@@ -323,16 +323,11 @@ class SStatsContextProvider:
         while True:
             if self._http_budget_exhausted(stats):
                 break
-            # SStats OpenAPI is case-insensitive in many deployments, but the
-            # documented contract uses From/To/Limit/Offset/TimeZone.  `To` is a
-            # strict upper boundary when only a date is passed, so callers should
-            # already pass the day after the requested window for same-day scans.
             params = {
-                "From": from_date,
-                "To": to_date,
-                "TimeZone": int(float(os.getenv("SSTATS_TIMEZONE", "3") or 3)),
-                "Limit": limit,
-                "Offset": offset,
+                "from": from_date,
+                "to": to_date,
+                "limit": limit,
+                "offset": offset,
                 "apikey": self.settings.sstats_api_key,
             }
 
@@ -433,6 +428,20 @@ class SStatsContextProvider:
                 return response
 
             stats["last_error"] = f"http_status={response.status_code}"
+            if response.status_code == 429:
+                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                stats["rate_limited"] = True
+                stats["budget_exhausted"] = True
+                stats["stop_on_429"] = True
+                # Per-run stop only; do not write daily/monthly state.
+                self.max_http_requests = min(self.max_http_requests, int(stats.get("requests") or 0)) if self.max_http_requests > 0 else self.max_http_requests
+                return None
+            if response.status_code >= 500:
+                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                stats["server_error_stop"] = True
+                stats["budget_exhausted"] = True
+                self.max_http_requests = min(self.max_http_requests, int(stats.get("requests") or 0)) if self.max_http_requests > 0 else self.max_http_requests
+                return None
             if attempt >= retries or not self._retryable_status(response.status_code):
                 stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
                 return None

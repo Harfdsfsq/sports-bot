@@ -338,6 +338,18 @@ class BzzoiroContextProvider:
                 return response
 
             stats["last_error"] = f"http_status={response.status_code}"
+            if response.status_code == 429:
+                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                stats["rate_limited"] = True
+                stats["budget_exhausted"] = True
+                self._requests_used = max(self._requests_used, self.max_http_requests)
+                return None
+            if response.status_code >= 500:
+                stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
+                stats["server_error_stop"] = True
+                stats["budget_exhausted"] = True
+                self._requests_used = max(self._requests_used, self.max_http_requests)
+                return None
             if attempt >= retries or not self._retryable_status(response.status_code):
                 stats["response_errors"] = int(stats.get("response_errors", 0) or 0) + 1
                 return None
