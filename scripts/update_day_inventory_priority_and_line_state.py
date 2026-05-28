@@ -82,6 +82,17 @@ CANDIDATE_PATHS = [
     EXPORT_DIR / "latest-candidates.json",
 ]
 
+# These diagnostic files are not publication queues, but they contain candidates
+# that were blocked by coverage/value/movement guards before controlled fallback
+# created a candidate file.  We still persist their first line snapshot so the
+# next 2-hour run can do a real movement recheck instead of reporting
+# candidates_seen=0.
+WATCHLIST_SOURCE_PATHS = [
+    EXPORT_DIR / "latest-candidate-value-runtime-patch.json",
+    EXPORT_DIR / "latest-windowed-core-candidate-audit.json",
+    EXPORT_DIR / "latest-candidate-factory-output-dedup.json",
+]
+
 
 def env(name: str, default: str = "") -> str:
     return str(os.getenv(name) or default).strip()
@@ -145,35 +156,15 @@ def parse_dt(value: Any) -> datetime | None:
 
 
 def now_utc_from_debug() -> datetime:
-    """Return a trustworthy run timestamp.
-
-    Old cached day-inventory artifacts may contain .logs/debug-last-run.json from
-    a previous day.  If that stale timestamp is trusted, minutes_to_kickoff can
-    jump by tens of thousands of minutes and the bot stops performing final
-    pre-kickoff refresh / line-movement logic.  Prefer explicit runtime time,
-    then fresh debug time, otherwise wall clock.
-    """
-    for env_name in ("HARIZON_RUN_NOW_UTC", "RUN_NOW_UTC", "CURRENT_TIME_UTC"):
-        dt = parse_dt(os.getenv(env_name))
+    debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
+    for value in (
+        (debug.get("summary") or {}).get("current_time_utc") if isinstance(debug.get("summary"), dict) else None,
+        debug.get("current_time_utc") if isinstance(debug, dict) else None,
+    ):
+        dt = parse_dt(value)
         if dt is not None:
             return dt
-
-    wall = datetime.now(UTC)
-    debug = load_json(ROOT / ".logs" / "debug-last-run.json", {})
-    candidates = []
-    if isinstance(debug, dict):
-        summary = debug.get("summary") if isinstance(debug.get("summary"), dict) else {}
-        candidates.extend([summary.get("current_time_utc"), debug.get("current_time_utc")])
-    max_age_min = max(1, env_int("MAX_TRUSTED_ARTIFACT_NOW_AGE_MINUTES", 360))
-    allow_stale = env_bool("ALLOW_STALE_DEBUG_TIME_FOR_INVENTORY", False)
-    for value in candidates:
-        dt = parse_dt(value)
-        if dt is None:
-            continue
-        age_min = abs((wall - dt).total_seconds()) / 60.0
-        if age_min <= max_age_min or allow_stale:
-            return dt
-    return wall
+    return datetime.now(UTC)
 
 
 def target_date(now: datetime) -> str:
@@ -440,12 +431,100 @@ def replace_candidates(payload: Any, key: str | None, candidates: list[dict[str,
     return payload
 
 
+
+
+def normalize_watchlist_candidate(row: dict[str, Any]) -> dict[str, Any] | None:
+    if not isinstance(row, dict):
+        return None
+    match_key = str(row.get("match_key") or row.get("canonical_match_id") or row.get("kept_match_key") or row.get("dropped_match_key") or "").strip()
+    family = str(row.get("family") or "").strip()
+    selection = str(row.get("selection") or row.get("selection_key") or "").strip()
+    if not match_key or not family or not selection:
+        return None
+    candidate = dict(row)
+    candidate.setdefault("match_key", match_key)
+    candidate.setdefault("family", family)
+    candidate.setdefault("selection", selection)
+    candidate.setdefault("kickoff_utc", row.get("kickoff") or row.get("commence_time") or row.get("start_time"))
+    if "odds" not in candidate and "price" in row:
+        candidate["odds"] = row.get("price")
+    if "ev_pct" not in candidate and "canonical_ev_pct" in row:
+        candidate["ev_pct"] = row.get("canonical_ev_pct")
+    if "edge_pp" not in candidate and "canonical_edge_pp" in row:
+        candidate["edge_pp"] = row.get("canonical_edge_pp")
+    candidate.setdefault("source_summary", {})
+    if isinstance(candidate.get("source_summary"), dict):
+        if row.get("odds_sources"):
+            candidate["source_summary"].setdefault("sources", row.get("odds_sources"))
+        if row.get("bookmaker"):
+            candidate["source_summary"].setdefault("selected_bookmaker", row.get("bookmaker"))
+        if row.get("source"):
+            candidate["source_summary"].setdefault("selected_source", row.get("source"))
+    return candidate
+
+
+def watchlist_candidates_from_payload(payload: Any) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if isinstance(payload, dict):
+        for key in ("candidates", "rows", "sample", "blocked_sample", "returned_candidates", "top_candidates"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                rows.extend([row for row in value if isinstance(row, dict)])
+    elif isinstance(payload, list):
+        rows.extend([row for row in payload if isinstance(row, dict)])
+    out: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for row in rows:
+        candidate = normalize_watchlist_candidate(row)
+        if not candidate:
+            continue
+        key = candidate_key(candidate)
+        if not key or key in seen:
+            continue
+        seen.add(key)
+        out.append(candidate)
+    return out
+
+
+def ingest_watchlist_sources(lines: dict[str, Any], now: datetime) -> tuple[list[dict[str, Any]], int, int]:
+    source_reports: list[dict[str, Any]] = []
+    seen_total = 0
+    snapshots_written = 0
+    for path in WATCHLIST_SOURCE_PATHS:
+        payload = load_json(path, None)
+        if payload is None:
+            continue
+        candidates = watchlist_candidates_from_payload(payload)
+        if not candidates:
+            continue
+        seen_total += len(candidates)
+        written_here = 0
+        for candidate in candidates:
+            key = "watchlist|" + candidate_key(candidate)
+            entry = lines.setdefault(key, {"snapshots": []})
+            snapshots = entry.get("snapshots") if isinstance(entry.get("snapshots"), list) else []
+            snap = snapshot_from_candidate(candidate, now)
+            # Do not duplicate the same run snapshot if the hook is called twice.
+            if not snapshots or snapshots[-1].get("captured_at_utc") != snap.get("captured_at_utc"):
+                snapshots.append(snap)
+                written_here += 1
+            entry["snapshots"] = snapshots[-env_int("LINE_HISTORY_MAX_SNAPSHOTS_PER_LINE", 12):]
+            entry["last_snapshot"] = snap
+            entry["watchlist_source"] = str(path)
+            entry["watchlist_only"] = True
+        snapshots_written += written_here
+        source_reports.append({"path": str(path), "seen": len(candidates), "snapshots_written": written_here})
+    return source_reports, seen_total, snapshots_written
+
 def mutate_candidate_files(local_date: str, now: datetime) -> dict[str, Any]:
     history = load_line_history(local_date)
     lines: dict[str, Any] = history["lines"]
     drop_bad = env_bool("LINE_MOVEMENT_DROP_BAD_CANDIDATES", True)
     files_report: list[dict[str, Any]] = []
+    watchlist_report: list[dict[str, Any]] = []
     total_seen = total_kept = total_dropped = 0
+    watchlist_seen = 0
+    watchlist_snapshots_written = 0
     for path in CANDIDATE_PATHS:
         payload = load_json(path, None)
         if payload is None:
@@ -496,6 +575,8 @@ def mutate_candidate_files(local_date: str, now: datetime) -> dict[str, Any]:
             "dropped": len(dropped_rows),
             "dropped_sample": dropped_rows[:20],
         })
+    watchlist_report, watchlist_seen, watchlist_snapshots_written = ingest_watchlist_sources(lines, now)
+    total_seen += watchlist_seen
     history["updated_at_utc"] = now.isoformat()
     write_json(history_path_for_date(local_date), history)
     write_json(LINE_HISTORY_DIR / "latest.json", history)
@@ -504,11 +585,16 @@ def mutate_candidate_files(local_date: str, now: datetime) -> dict[str, Any]:
         "date_local": local_date,
         "updated_at_utc": now.isoformat(),
         "candidate_files_seen": len(files_report),
+        "watchlist_source_files_seen": len(watchlist_report),
         "candidates_seen": total_seen,
+        "candidate_file_candidates_seen": total_seen - watchlist_seen,
+        "watchlist_candidates_seen": watchlist_seen,
+        "watchlist_snapshots_written": watchlist_snapshots_written,
         "candidates_kept": total_kept,
         "candidates_dropped": total_dropped,
         "drop_bad_candidates": drop_bad,
         "files": files_report,
+        "watchlist_sources": watchlist_report,
     }
     write_json(LINE_GUARD_REPORT_PATH, report)
     return report

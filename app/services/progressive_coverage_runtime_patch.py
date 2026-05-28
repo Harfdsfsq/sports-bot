@@ -24,6 +24,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[2]
@@ -32,6 +33,7 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 STATE_PATH = DAY_INV_DIR / "progressive_coverage_state.json"
 PLAN_PATH = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 STATE_EXPORT_PATH = EXPORT_DIR / "latest-progressive-coverage-state.json"
+ARCHIVE_DIR = DAY_INV_DIR / "progressive_coverage_archive"
 
 ODDS_PROVIDERS = {"odds_api_io", "bookies_api", "oddspapi", "allsportsapi", "sportlogic", "bzzoiro"}
 CONTEXT_PROVIDERS = {"sstats", "bzzoiro", "api_football", "espn", "thesportsdb", "football_data", "openligadb", "futrixmetrics", "openfootball", "newsapi", "gnews", "sportlogic", "weather", "self_history"}
@@ -110,6 +112,70 @@ def _target_date() -> str:
     if isinstance(payload, dict) and payload.get("date_local"):
         return str(payload.get("date_local"))
     return _now().date().isoformat()
+
+
+
+def _app_tz() -> ZoneInfo | timezone:
+    name = str(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow").strip()
+    try:
+        return ZoneInfo(name)
+    except Exception:
+        return UTC
+
+
+def _empty_state(date_local: str | None = None) -> dict[str, Any]:
+    return {
+        "version": "progressive_coverage_v2_date_scoped",
+        "date_local": str(date_local or _target_date()),
+        "matches": {},
+        "runs": [],
+        "reset_reason": "new_target_date_or_missing_state",
+    }
+
+
+def _row_local_date(row: dict[str, Any]) -> str | None:
+    kickoff = _parse_dt(row.get("kickoff_utc") or row.get("commence_time") or row.get("start_time"))
+    if kickoff is None:
+        return None
+    try:
+        return kickoff.astimezone(_app_tz()).date().isoformat()
+    except Exception:
+        return kickoff.date().isoformat()
+
+
+def _prune_state_to_date(state: dict[str, Any], date_local: str) -> dict[str, Any]:
+    matches = state.get("matches") if isinstance(state.get("matches"), dict) else {}
+    kept: dict[str, Any] = {}
+    dropped = 0
+    for key, row in matches.items():
+        if not isinstance(row, dict):
+            dropped += 1
+            continue
+        row_date = str(row.get("date_local") or "").strip() or _row_local_date(row)
+        # Rows without kickoff are not useful for a pre-match 2-hour lifecycle.
+        if row_date == date_local:
+            row["date_local"] = date_local
+            kept[str(key)] = row
+        else:
+            dropped += 1
+    state["matches"] = kept
+    if dropped:
+        state["date_scope_pruned_matches"] = int(state.get("date_scope_pruned_matches") or 0) + dropped
+        state["last_date_scope_prune_at_utc"] = _now().isoformat()
+    return state
+
+
+def _archive_stale_state(payload: dict[str, Any], target_date: str) -> None:
+    if not payload or not _truthy(os.getenv("PROGRESSIVE_COVERAGE_ARCHIVE_STALE_STATE"), True):
+        return
+    try:
+        ARCHIVE_DIR.mkdir(parents=True, exist_ok=True)
+        old_date = str(payload.get("date_local") or "unknown").replace("/", "-")
+        stamp = _now().strftime("%Y%m%dT%H%M%SZ")
+        path = ARCHIVE_DIR / f"{old_date}-to-{target_date}-{stamp}.json"
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
 
 
 def _match_key(match: Any) -> str:
@@ -199,22 +265,33 @@ def _sources_from_inventory_match(match: Any) -> tuple[set[str], set[str]]:
 
 
 def _load_state() -> dict[str, Any]:
+    target_date = _target_date()
     payload = _read_json(STATE_PATH, {})
-    if not isinstance(payload, dict):
-        payload = {}
-    payload.setdefault("version", "progressive_coverage_v1")
-    payload.setdefault("date_local", _target_date())
-    payload.setdefault("matches", {})
-    payload.setdefault("runs", [])
+    if not isinstance(payload, dict) or not payload:
+        return _empty_state(target_date)
+    state_date = str(payload.get("date_local") or "").strip()
+    if state_date and state_date != target_date:
+        _archive_stale_state(payload, target_date)
+        payload = _empty_state(target_date)
+        payload["reset_reason"] = f"target_date_changed:{state_date}->{target_date}"
+    else:
+        payload.setdefault("version", "progressive_coverage_v2_date_scoped")
+        payload["date_local"] = target_date
+        payload.setdefault("matches", {})
+        payload.setdefault("runs", [])
     if not isinstance(payload.get("matches"), dict):
         payload["matches"] = {}
     if not isinstance(payload.get("runs"), list):
         payload["runs"] = []
-    return payload
+    payload["runs"] = payload.get("runs", [])[-120:]
+    return _prune_state_to_date(payload, target_date)
 
 
 def _save_state(state: dict[str, Any]) -> None:
     global _LAST_STATE
+    target_date = _target_date()
+    state["date_local"] = target_date
+    state = _prune_state_to_date(state, target_date)
     state["updated_at_utc"] = _now().isoformat()
     _LAST_STATE = state
     _write_json(STATE_PATH, state)
@@ -231,6 +308,10 @@ def _entry_for(state: dict[str, Any], match: Any) -> dict[str, Any]:
     kickoff = _match_kickoff(match)
     if kickoff is not None:
         row["kickoff_utc"] = kickoff.isoformat()
+        try:
+            row["date_local"] = kickoff.astimezone(_app_tz()).date().isoformat()
+        except Exception:
+            row["date_local"] = _target_date()
     inv_odds, inv_context = _sources_from_inventory_match(match)
     row.setdefault("odds_sources", [])
     row.setdefault("context_sources", [])
@@ -508,7 +589,9 @@ def _sync_inventory_rows_from_state() -> None:
     matches = state.get("matches") if isinstance(state.get("matches"), dict) else {}
     if not matches:
         return
-    for path in [DAY_INV_DIR / "latest.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "today.json", DAY_INV_DIR / f"{state.get('date_local')}.json"]:
+    target_date = _target_date()
+    state = _prune_state_to_date(state, target_date)
+    for path in [DAY_INV_DIR / "latest.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "today.json", DAY_INV_DIR / f"{target_date}.json"]:
         payload = _read_json(path, None)
         if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
             continue

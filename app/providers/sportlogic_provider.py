@@ -64,7 +64,6 @@ class SportLogicProvider:
                 or 40
             )),
         )
-        self.per_page = max(1, min(100, int(float(os.getenv("SPORTLOGIC_PER_PAGE") or 100))))
         self.max_requests_per_run = max(
             0,
             int(float(
@@ -72,26 +71,6 @@ class SportLogicProvider:
                 or os.getenv("SPORTLOGIC_PER_RUN_MAX")
                 or 80
             )),
-        )
-        self.odds_discovery_max_pages = max(
-            1,
-            int(float(
-                os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MAX_PAGES")
-                or getattr(settings, "sportlogic_odds_discovery_max_pages", None)
-                or 4
-            )),
-        )
-        self.odds_discovery_game_detail_limit = max(
-            0,
-            int(float(
-                os.getenv("SPORTLOGIC_ODDS_DISCOVERY_GAME_DETAIL_LIMIT")
-                or getattr(settings, "sportlogic_odds_discovery_game_detail_limit", None)
-                or 16
-            )),
-        )
-        self.odds_discovery_min_detail_budget = max(
-            0,
-            int(float(os.getenv("SPORTLOGIC_ODDS_DISCOVERY_MIN_DETAIL_BUDGET") or 8)),
         )
         self.enabled = self._env_bool("ENABLE_SPORTLOGIC", True) and self._env_bool("SPORTLOGIC_ENABLED", True)
         self._requests = 0
@@ -153,14 +132,8 @@ class SportLogicProvider:
                     stats["budget_exhausted"] = True
                     break
                 date_key = (now + timedelta(days=offset)).date().isoformat()
-                fixtures.extend(await self._get_paginated_list(
-                    client,
-                    "/games",
-                    {"date_from": date_key, "date_to": date_key, "per_page": self.per_page},
-                    stats,
-                    preview,
-                    limit=self.match_limit * 3,
-                ))
+                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
+                fixtures.extend(self._extract_list(payload))
 
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
@@ -226,19 +199,8 @@ class SportLogicProvider:
                 event_id = str(item["event_id"] or "").strip()
                 if not event_id:
                     continue
-                cached_rows = []
-                row_payload = item.get("row") if isinstance(item, dict) else None
-                if isinstance(row_payload, dict):
-                    raw_cached = row_payload.get("__sportlogic_odds_rows")
-                    if isinstance(raw_cached, list):
-                        cached_rows = [row for row in raw_cached if isinstance(row, dict)]
-                if cached_rows:
-                    rows = cached_rows
-                    payload = {"source": "active_odds_discovery", "rows": cached_rows[:10]}
-                    stats["odds_discovery_cached_rows_used"] = int(stats.get("odds_discovery_cached_rows_used", 0) or 0) + len(rows)
-                else:
-                    payload = await self._fetch_odds_payload(client, event_id, stats, preview)
-                    rows = self._extract_odds_rows(payload)
+                payload = await self._fetch_odds_payload(client, event_id, stats, preview)
+                rows = self._extract_odds_rows(payload)
                 stats["rows_before_parse"] += len(rows)
                 stats["odds_payload_rows"] += len(rows)
                 if not rows:
@@ -312,192 +274,12 @@ class SportLogicProvider:
                 if not self._budget_left():
                     stats["budget_exhausted"] = True
                     break
-                fixtures.extend(await self._get_paginated_list(
-                    client,
-                    "/games",
-                    {"date_from": date_key, "date_to": date_key, "per_page": self.per_page},
-                    stats,
-                    preview,
-                    limit=max(self.match_limit * 3, len(matches) * 2),
-                ))
-        if not fixtures and self._env_bool("SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED", True):
-            discovery_rows = await self._load_fixtures_from_active_odds(soccer_matches := matches, stats, preview)
-            if discovery_rows:
-                fixtures.extend(discovery_rows)
-
+                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
+                fixtures.extend(self._extract_list(payload))
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
-        stats["games_fetched"] = max(int(stats.get("games_fetched", 0) or 0), len(fixtures))
         preview["sample_fixtures"] = fixtures[:3]
         return fixtures, stats, preview
-
-    async def _load_fixtures_from_active_odds(
-        self,
-        matches: list[Match],
-        stats: dict[str, Any],
-        preview: dict[str, Any],
-    ) -> list[dict[str, Any]]:
-        """Discover SportLogic games from active odds without draining the run budget.
-
-        Some free SportLogic accounts return zero rows from /games for current
-        date filters, while /odds?is_active=true is populated.  The old runtime
-        guard scanned /odds until the run budget was exhausted, then had no
-        requests left to fetch game details.  This core fallback scans only a
-        small number of odds pages, preserves a detail budget, and reuses odds
-        rows that already contain embedded fixture/game payloads.
-        """
-        if not matches or not self._budget_left():
-            return []
-        max_pages = max(1, int(getattr(self, "odds_discovery_max_pages", 4) or 4))
-        detail_limit = max(0, int(getattr(self, "odds_discovery_game_detail_limit", 16) or 16))
-        reserve = max(0, int(getattr(self, "odds_discovery_min_detail_budget", 8) or 8))
-        per_page = max(10, min(100, int(getattr(self, "per_page", 100) or 100)))
-        requested_dates = {m.commence_time.astimezone(UTC).date().isoformat() for m in matches if getattr(m, "commence_time", None)}
-        direct_fixtures: list[dict[str, Any]] = []
-        odds_by_game: dict[str, list[dict[str, Any]]] = defaultdict(list)
-        seen_game_ids: list[str] = []
-        cursor: str | None = None
-        scanned_pages = 0
-        scanned_rows = 0
-        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
-            while self._budget_left() and scanned_pages < max_pages:
-                if self.max_requests_per_run > 0 and (self.max_requests_per_run - self._requests) <= reserve:
-                    stats["odds_discovery_stopped_for_detail_budget"] = True
-                    break
-                params: dict[str, Any] = {"is_active": "true", "per_page": per_page}
-                if cursor:
-                    params["cursor"] = cursor
-                payload = await self._get_json(client, "/odds", params, stats, preview)
-                scanned_pages += 1
-                rows = self._extract_odds_rows(payload)
-                scanned_rows += len(rows)
-                if rows and len(preview.get("sample_odds", [])) < 3:
-                    preview.setdefault("sample_odds", []).extend(rows[: max(0, 3 - len(preview.get("sample_odds", [])))])
-                for row in rows:
-                    if not isinstance(row, dict):
-                        continue
-                    game_id = self._event_id(row) or self._first_nested_id(row, "game", "fixture", "event", "match")
-                    if game_id:
-                        odds_by_game[str(game_id)].append(row)
-                        if str(game_id) not in seen_game_ids:
-                            seen_game_ids.append(str(game_id))
-                    fixture = self._fixture_from_odds_row(row)
-                    if fixture:
-                        if game_id:
-                            fixture.setdefault("id", game_id)
-                        fixture.setdefault("__sportlogic_odds_rows", []).append(row)
-                        if self._fixture_is_relevant(fixture, matches, requested_dates):
-                            direct_fixtures.append(fixture)
-                cursor = self._next_cursor(payload)
-                if not cursor or not rows:
-                    break
-                if len(seen_game_ids) >= detail_limit and direct_fixtures:
-                    break
-            detail_rows: list[dict[str, Any]] = []
-            detail_budget = min(detail_limit, len(seen_game_ids))
-            for game_id in seen_game_ids[:detail_budget]:
-                if not self._budget_left():
-                    stats["budget_exhausted"] = True
-                    break
-                payload = await self._get_json(client, f"/games/{game_id}", {}, stats, preview)
-                row = self._detail_row(payload)
-                if not row:
-                    continue
-                row.setdefault("id", game_id)
-                cached = odds_by_game.get(str(game_id), [])
-                if cached:
-                    row["__sportlogic_odds_rows"] = cached
-                if self._fixture_is_relevant(row, matches, requested_dates):
-                    detail_rows.append(row)
-        fixtures = self._dedupe_fixture_rows(direct_fixtures + detail_rows)
-        stats["odds_discovery_requests_used"] = scanned_pages
-        stats["odds_discovery_rows"] = scanned_rows
-        stats["odds_discovery_game_ids"] = len(seen_game_ids)
-        stats["odds_discovery_direct_fixtures"] = len(direct_fixtures)
-        stats["odds_discovery_detail_fixtures"] = len(detail_rows)
-        stats["odds_discovery_fixtures"] = len(fixtures)
-        stats["odds_discovery_max_pages_effective"] = max_pages
-        stats["odds_discovery_detail_limit_effective"] = detail_limit
-        if fixtures:
-            stats["diagnosis"] = "active_odds_discovery_built_fixtures"
-        elif scanned_rows:
-            stats["diagnosis"] = "active_odds_found_but_no_matchable_current_fixture"
-        return fixtures
-
-    def _fixture_from_odds_row(self, row: dict[str, Any]) -> dict[str, Any] | None:
-        for key in ("game", "fixture", "event", "match"):
-            value = row.get(key)
-            if isinstance(value, dict):
-                candidate = dict(value)
-                if self._team_name(candidate, "home") and self._team_name(candidate, "away"):
-                    return candidate
-        if self._team_name(row, "home") and self._team_name(row, "away"):
-            return dict(row)
-        return None
-
-    def _fixture_is_relevant(self, row: dict[str, Any], matches: list[Match], requested_dates: set[str]) -> bool:
-        dt = self._fixture_datetime(row)
-        if dt is not None:
-            row_date = dt.astimezone(UTC).date().isoformat()
-            if row_date in requested_dates:
-                return True
-        home = self._team_name(row, "home")
-        away = self._team_name(row, "away")
-        if not home or not away:
-            return False
-        for match in matches:
-            try:
-                # If a provider detail lacks a date, accept only a strong name
-                # match.  The later _match_fixtures call still enforces time
-                # when SportLogic supplies it.
-                mh = str(match.home_team or "").lower()
-                ma = str(match.away_team or "").lower()
-                rh = home.lower()
-                ra = away.lower()
-                if (rh == mh and ra == ma) or (rh == ma and ra == mh):
-                    return True
-            except Exception:
-                continue
-        return False
-
-    @staticmethod
-    def _detail_row(payload: Any) -> dict[str, Any] | None:
-        if isinstance(payload, dict):
-            for key in ("data", "game", "fixture", "event", "match", "result"):
-                value = payload.get(key)
-                if isinstance(value, dict):
-                    return value
-            return payload
-        if isinstance(payload, list):
-            for item in payload:
-                if isinstance(item, dict):
-                    return item
-        return None
-
-    @staticmethod
-    def _first_nested_id(row: dict[str, Any], *keys: str) -> str:
-        for key in keys:
-            value = row.get(key)
-            if isinstance(value, dict):
-                nested = value.get("id") or value.get("game_id") or value.get("event_id") or value.get("fixture_id")
-                if nested not in (None, ""):
-                    return str(nested)
-        return ""
-
-    def _dedupe_fixture_rows(self, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        out: list[dict[str, Any]] = []
-        seen: set[str] = set()
-        for row in rows:
-            event_id = self._event_id(row)
-            home = self._team_name(row, "home")
-            away = self._team_name(row, "away")
-            dt = self._fixture_datetime(row)
-            key = event_id or f"{home}|{away}|{dt.isoformat() if dt else ''}"
-            if not key or key in seen:
-                continue
-            seen.add(key)
-            out.append(row)
-        return out
 
     async def _get_json(
         self,
@@ -537,77 +319,6 @@ class SportLogicProvider:
             self._preview_error(preview, "json", exc)
             return None
 
-    async def _get_paginated_list(
-        self,
-        client: httpx.AsyncClient,
-        path: str,
-        params: dict[str, Any] | None,
-        stats: dict[str, Any],
-        preview: dict[str, Any],
-        *,
-        limit: int | None = None,
-        max_pages: int | None = None,
-        **_compat: Any,
-    ) -> list[dict[str, Any]]:
-        """Fetch SportLogic cursor/page envelopes defensively.
-
-        Kept as a first-class method because older runtime wrappers and smoke
-        scripts call this name directly.  It also fixes free-plan coverage by
-        following cursor/next_page values instead of treating the first page as
-        the complete fixture set.
-        """
-        rows: list[dict[str, Any]] = []
-        cursor: str | None = None
-        page = 1
-        per_page = int((params or {}).get("per_page") or self.per_page)
-        seen_cursors: set[str] = set()
-        max_pages = max(1, int(max_pages or getattr(self, "sportlogic_max_pages", 0) or os.getenv("SPORTLOGIC_MAX_GAME_PAGES_PER_RUN") or 5))
-        while self._budget_left():
-            query = dict(params or {})
-            query.setdefault("per_page", per_page)
-            if cursor:
-                query["cursor"] = cursor
-            elif page > 1:
-                query.setdefault("page", page)
-            payload = await self._get_json(client, path, query, stats, preview)
-            batch = self._extract_list(payload)
-            rows.extend(batch)
-            if limit is not None and len(rows) >= limit:
-                return rows[:limit]
-            next_cursor = self._next_cursor(payload)
-            if next_cursor:
-                if next_cursor in seen_cursors:
-                    break
-                seen_cursors.add(next_cursor)
-                cursor = next_cursor
-                continue
-            if not batch or len(batch) < per_page:
-                break
-            page += 1
-            # Avoid accidental quota drain if a provider ignores pagination.
-            if page > max_pages:
-                break
-        return rows
-
-    @staticmethod
-    def _next_cursor(payload: Any) -> str | None:
-        if not isinstance(payload, dict):
-            return None
-        direct_keys = ("next_cursor", "nextCursor", "cursor_next", "cursor", "next")
-        for key in direct_keys:
-            value = payload.get(key)
-            if value not in (None, "", False):
-                text = str(value)
-                if text.lower() not in {"none", "null", "false"}:
-                    return text
-        for key in ("meta", "pagination", "paging", "links"):
-            nested = payload.get(key)
-            if isinstance(nested, dict):
-                found = SportLogicProvider._next_cursor(nested)
-                if found:
-                    return found
-        return None
-
     async def _fetch_odds_payload(
         self,
         client: httpx.AsyncClient,
@@ -618,9 +329,6 @@ class SportLogicProvider:
         endpoints = [
             (f"/games/{event_id}/odds", {}),
             ("/odds", {"game_id": event_id}),
-            ("/odds", {"fixture_id": event_id}),
-            ("/odds", {"event_id": event_id}),
-            ("/games/odds", {"game_id": event_id}),
         ]
         for path, params in endpoints:
             if not self._budget_left():
@@ -697,7 +405,7 @@ class SportLogicProvider:
             return [row for row in payload if isinstance(row, dict)]
         if not isinstance(payload, dict):
             return []
-        for key in ("data", "response", "results", "fixtures", "matches", "events", "items", "games", "odds"):
+        for key in ("data", "response", "results", "fixtures", "matches", "events", "items"):
             value = payload.get(key)
             if isinstance(value, list):
                 return [row for row in value if isinstance(row, dict)]
@@ -705,11 +413,6 @@ class SportLogicProvider:
                 nested = SportLogicProvider._extract_list(value)
                 if nested:
                     return nested
-        # Some envelopes use a single result object.
-        for key in ("game", "fixture", "event", "match", "result"):
-            value = payload.get(key)
-            if isinstance(value, dict):
-                return [value]
         return []
 
     @staticmethod
@@ -730,10 +433,10 @@ class SportLogicProvider:
         if commence is None:
             return None
         league = self._league_name(row)
-        event_id = self._event_id(row)
+        game_id = self._game_id(row)
         return Match(
             source="sportlogic",
-            source_event_id=event_id,
+            source_event_id=game_id,
             sport_key="soccer",
             league_name=league,
             home_team=home,
@@ -780,10 +483,14 @@ class SportLogicProvider:
                     best_quality = quality
             if best_match is None or best_score < 50:
                 continue
+            game_id = self._game_id(row)
+            if not game_id:
+                stats["missing_game_id"] = int(stats.get("missing_game_id") or 0) + 1
+                continue
             mapping[best_match.match_key] = {
                 "match": best_match,
                 "row": row,
-                "event_id": self._event_id(row),
+                "event_id": game_id,
                 "score": best_score,
                 "quality": best_quality,
             }
@@ -846,25 +553,22 @@ class SportLogicProvider:
 
         for row in rows:
             self._record_odds_shape(row, stats)
-            if self._is_suspended_odds_row(row):
-                reject("suspended_odds")
-                continue
             # Shape A: bookmakers -> markets -> outcomes
             bookmakers = row.get("bookmakers") if isinstance(row, dict) else None
             if isinstance(bookmakers, list):
                 for bookmaker_payload in [x for x in bookmakers if isinstance(x, dict)]:
-                    book = self._bookmaker_name_from_payload(bookmaker_payload)
+                    book = str(bookmaker_payload.get("name") or bookmaker_payload.get("bookmaker") or bookmaker_payload.get("sportsbook") or bookmaker_payload.get("provider") or bookmaker_payload.get("title") or "SportLogic")
                     for market in self._market_rows(bookmaker_payload):
                         self._parse_market(market, match, book, add)
                 continue
 
             # Shape B: markets at top level
             for market in self._market_rows(row):
-                book = self._bookmaker_name_from_payload(row)
+                book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("sportsbook") or row.get("provider") or row.get("book") or "SportLogic")
                 self._parse_market(market, match, book, add)
 
             # Shape C: flattened odds fields
-            book = self._bookmaker_name_from_payload(row)
+            book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("sportsbook") or row.get("provider") or row.get("book") or "SportLogic")
             self._parse_flat_odds_row(row, match, book, add, reject)
             add(book, "h2h", match.home_team, row.get("home") or row.get("home_odds") or row.get("odd_1"), team_side="home")
             add(book, "h2h", "Draw", row.get("draw") or row.get("draw_odds") or row.get("odd_x"))
@@ -927,9 +631,9 @@ class SportLogicProvider:
                                 self._record_seen(stats, "price_keys_seen", low)
 
     def _parse_flat_odds_row(self, row: dict[str, Any], match: Match, book: str, add: Any, reject: Any) -> None:
-        market_name = str(row.get("market") or row.get("market_name") or row.get("market_key") or row.get("market_id") or row.get("bet_type") or row.get("type") or "").strip()
+        market_name = str(row.get("market") or row.get("market_name") or row.get("market_key") or row.get("type") or "").strip()
         selection_name = str(row.get("outcome") or row.get("selection") or row.get("label") or row.get("option") or row.get("option_name") or row.get("name") or "").strip()
-        price = row.get("price") or row.get("decimal_odds") or row.get("decimalPrice") or row.get("value") or row.get("odd") or row.get("odds") or row.get("decimal") or row.get("option_value")
+        price = row.get("price") or row.get("decimal_odds") or row.get("value") or row.get("odd") or row.get("odds") or row.get("decimal") or row.get("option_value")
         point = self._float(row.get("total") or row.get("handicap") or row.get("line") or row.get("points") or row.get("point"))
         if not market_name and not selection_name and price in (None, ""):
             return
@@ -982,38 +686,6 @@ class SportLogicProvider:
                 reject("unknown_btts_selection")
 
     @staticmethod
-    def _is_suspended_odds_row(row: dict[str, Any]) -> bool:
-        for key in ("is_suspended", "suspended", "isSuspended", "inactive", "is_active"):
-            if key not in row:
-                continue
-            value = row.get(key)
-            text = str(value).strip().lower()
-            if key == "is_active":
-                return text in {"0", "false", "no"}
-            if isinstance(value, bool):
-                return value
-            if text in {"1", "true", "yes", "suspended", "inactive"}:
-                return True
-        return False
-
-    @staticmethod
-    def _bookmaker_name_from_payload(row: dict[str, Any]) -> str:
-        for key in ("bookmaker", "book", "sportsbook", "provider"):
-            value = row.get(key)
-            if isinstance(value, dict):
-                for nested_key in ("name", "title", "slug", "key"):
-                    nested = value.get(nested_key)
-                    if nested not in (None, ""):
-                        return str(nested)
-            if value not in (None, ""):
-                return str(value)
-        for key in ("bookmaker_name", "bookmaker_slug", "sportsbook_name", "provider_name", "title", "name"):
-            value = row.get(key)
-            if value not in (None, "") and not isinstance(value, (dict, list)):
-                return str(value)
-        return "SportLogic"
-
-    @staticmethod
     def _market_rows(payload: dict[str, Any]) -> list[dict[str, Any]]:
         rows = []
         for key in ("markets", "odds", "bets", "bookmaker_markets", "market_odds"):
@@ -1045,7 +717,7 @@ class SportLogicProvider:
         family = self._market_family(raw_name)
         for outcome in [x for x in outcomes if isinstance(x, dict)]:
             name = str(outcome.get("name") or outcome.get("outcome") or outcome.get("selection") or outcome.get("label") or outcome.get("option") or outcome.get("option_name") or outcome.get("team") or "").strip()
-            price = outcome.get("price") or outcome.get("decimal_odds") or outcome.get("decimalPrice") or outcome.get("odds") or outcome.get("value") or outcome.get("odd") or outcome.get("decimal") or outcome.get("option_value")
+            price = outcome.get("price") or outcome.get("decimal_odds") or outcome.get("odds") or outcome.get("value") or outcome.get("odd") or outcome.get("decimal") or outcome.get("option_value")
             point = self._float(outcome.get("point") or outcome.get("line") or outcome.get("points") or outcome.get("total") or outcome.get("handicap"))
             low = name.lower()
 
@@ -1079,23 +751,13 @@ class SportLogicProvider:
 
     @staticmethod
     def _market_family(raw_name: str) -> str:
-        text = str(raw_name or "").strip().lower().replace("-", "_").replace(" ", "_")
-        if not text:
-            return "h2h"
-        if any(token in text for token in ("btts", "both_teams_to_score", "bothteams", "обе_забьют")):
-            return "btts"
-        if (
-            any(token in text for token in ("total", "over_under", "over/under", "goals_over", "goals_under", "больше_меньше"))
-            or re.search(r"(?:^|_)(?:over|under|o|u)_?\d+(?:[._]\d+)?", text)
-            or re.search(r"(?:^|_)(?:over|under)(?:$|_)", text)
-        ):
+        text = raw_name.lower()
+        if any(token in text for token in ("total", "over/under", "goals over")):
             return "totals"
-        if any(token in text for token in ("spread", "handicap", "asian_handicap", "ah", "фора")):
+        if any(token in text for token in ("spread", "handicap", "asian handicap")):
             return "spreads"
-        if any(token in text for token in ("double_chance", "doublechance")):
-            return "doubleChance"
-        if any(token in text for token in ("draw_no_bet", "dnb")):
-            return "dnb"
+        if "both" in text and "score" in text or "btts" in text:
+            return "btts"
         return "h2h"
 
     def _context_from_fixture(self, match: Match, row: dict[str, Any]) -> MatchContext | None:
@@ -1200,7 +862,7 @@ class SportLogicProvider:
 
     @staticmethod
     def _team_name(row: dict[str, Any], side: str) -> str:
-        direct_keys = [f"{side}_team", f"{side}Team", side, f"{side}_name", f"{side}Name", f"{side}_participant", f"{side}Participant"]
+        direct_keys = [f"{side}_team", f"{side}Team", side, f"{side}_name"]
         for key in direct_keys:
             value = row.get(key)
             if isinstance(value, str) and value.strip():
@@ -1235,21 +897,11 @@ class SportLogicProvider:
         candidates = [
             row.get("commence_time"),
             row.get("start_time"),
-            row.get("starts_at"),
-            row.get("start_at"),
-            row.get("scheduled_at"),
             row.get("kickoff"),
-            row.get("kickoff_at"),
             row.get("date_time"),
             row.get("datetime"),
             row.get("timestamp"),
-            row.get("startsAt"),
-            row.get("startTime"),
             SportLogicProvider._dig(row, "fixture", "date"),
-            SportLogicProvider._dig(row, "game", "start_time"),
-            SportLogicProvider._dig(row, "game", "starts_at"),
-            SportLogicProvider._dig(row, "event", "start_time"),
-            SportLogicProvider._dig(row, "match", "start_time"),
         ]
         date_value = row.get("date") or row.get("match_date")
         time_value = row.get("time") or row.get("match_time")
@@ -1273,16 +925,39 @@ class SportLogicProvider:
         return None
 
     @staticmethod
-    def _event_id(row: dict[str, Any]) -> str:
-        for key in ("id", "fixture_id", "fixtureId", "event_id", "eventId", "match_id", "matchId", "game_id", "gameId"):
+    def _game_id(row: dict[str, Any]) -> str:
+        """Return the SportLogic game id, not the odds-row id.
+
+        Odds rows have their own `id`, while `/games/{id}` and
+        `/games/{id}/odds` require `game_id`. Prefer explicit game/fixture
+        identifiers and only fall back to `id` for fixture-shaped rows.
+        """
+        for key in ("game_id", "gameId", "fixture_id", "fixtureId", "event_id", "eventId", "match_id", "matchId"):
             value = row.get(key)
             if value not in (None, ""):
                 return str(value)
-        for path in (("fixture", "id"), ("game", "id"), ("event", "id"), ("match", "id")):
+        for path in (("game", "id"), ("fixture", "id"), ("event", "id"), ("match", "id")):
             nested = SportLogicProvider._dig(row, *path)
             if nested not in (None, ""):
                 return str(nested)
+        if not SportLogicProvider._looks_like_odds_row(row):
+            value = row.get("id")
+            if value not in (None, ""):
+                return str(value)
         return ""
+
+    @staticmethod
+    def _event_id(row: dict[str, Any]) -> str:
+        return SportLogicProvider._game_id(row)
+
+    @staticmethod
+    def _looks_like_odds_row(row: dict[str, Any]) -> bool:
+        keys = {str(key).lower() for key in row.keys()}
+        return bool(keys & {
+            "market", "market_id", "market_name", "market_key", "option_name",
+            "option_value", "outcome", "selection", "bookmaker", "bookmaker_id",
+            "odds", "decimal_odds", "price", "is_suspended",
+        })
 
     @staticmethod
     def _canonical_bookmaker(name: Any) -> str:

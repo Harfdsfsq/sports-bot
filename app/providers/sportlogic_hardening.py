@@ -4,7 +4,7 @@ from __future__ import annotations
 
 The provider must survive slightly different SportLogic JSON envelopes and odds
 row shapes.  This module is intentionally self-contained so it can be installed
-from explicit runtime hooks without making the main runner brittle.
+from sitecustomize/runtime hooks without making the main runner brittle.
 """
 
 import os
@@ -512,14 +512,27 @@ def direct_parse_rows(self: Any, rows: list[dict[str, Any]], match: Any, event_i
     return offers
 
 
+def _looks_like_sportlogic_odds_row(payload: dict[str, Any]) -> bool:
+    keys = {str(key).lower() for key in payload.keys()}
+    return bool(keys & {
+        "market", "market_id", "market_name", "market_key", "option_name",
+        "option_value", "outcome", "selection", "bookmaker", "bookmaker_id",
+        "odds", "decimal_odds", "price", "is_suspended",
+    })
+
+
 def _find_event_id(payload: Any) -> str:
     if isinstance(payload, dict):
-        for key in ("event_id", "eventId", "game_id", "gameId", "fixture_id", "fixtureId", "match_id", "matchId", "id"):
+        for key in ("game_id", "gameId", "fixture_id", "fixtureId", "event_id", "eventId", "match_id", "matchId"):
             value = payload.get(key)
             if value not in (None, ""):
                 return str(value)
         for path in (("game", "id"), ("fixture", "id"), ("event", "id"), ("match", "id")):
             value = _dig(payload, *path)
+            if value not in (None, ""):
+                return str(value)
+        if not _looks_like_sportlogic_odds_row(payload):
+            value = payload.get("id")
             if value not in (None, ""):
                 return str(value)
     return ""
@@ -595,15 +608,22 @@ def install() -> bool:
 
     if callable(original_event_id):
         def event_id_patched(self: Any, row: dict[str, Any]) -> str:
+            # Prefer game_id-aware extraction before the original provider method;
+            # the original used `id` first and could turn an odds-row id into
+            # `/games/{odds_row_id}`, causing 404s and quota waste.
+            value = _find_event_id(row)
+            if value not in (None, ""):
+                return str(value)
             try:
                 value = original_event_id(self, row)
                 if value not in (None, ""):
                     return str(value)
             except Exception:
                 pass
-            return _find_event_id(row)
+            return ""
 
         cls._event_id = event_id_patched
+        cls._game_id = staticmethod(_find_event_id)
 
     setattr(cls, PATCH_MARKER, True)
     return True
