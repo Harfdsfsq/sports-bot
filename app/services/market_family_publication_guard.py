@@ -39,50 +39,6 @@ def _min_odds_sources() -> int:
     return max(1, _to_int(os.getenv('PUBLICATION_MIN_ODDS_SOURCES') or os.getenv('TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES') or '2', 2))
 
 
-def _csv_set(*names: str, default: str = '') -> set[str]:
-    raw = ''
-    for name in names:
-        value = str(os.getenv(name) or '').strip()
-        if value:
-            raw = value
-            break
-    if not raw:
-        raw = default
-    return {item.strip().lower() for item in raw.split(',') if item.strip()}
-
-
-def _candidate_discovery_single_line_relief(candidate: Any, count: int) -> bool:
-    """Let Tier-B candidates reach quality/fallback evaluation.
-
-    This guard runs too early in the pipeline to enforce the final Telegram odds
-    source contract.  In hybrid mode a candidate with one real line source may be
-    valid for controlled fallback only when later checks prove 2+ bookmakers,
-    3+ context confirmations, positive canonical EV/edge and no quality/xG
-    conflicts.  TelegramPublisher/text guards remain strict because they call
-    this module outside candidate-discovery mode.
-    """
-    if not _truthy(os.getenv('CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_MODE_ENABLED'), False):
-        return False
-    if not _truthy(os.getenv('CANDIDATE_FACTORY_ALLOW_SINGLE_LINE_FOR_CONTROLLED_FALLBACK'), True):
-        return False
-    family = _family(candidate)
-    allowed = _csv_set(
-        'CONTROLLED_FALLBACK_SINGLE_LINE_CONTEXT_ALLOWED_FAMILIES',
-        'CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES',
-        default='totals,spreads',
-    )
-    if family not in allowed:
-        return False
-    min_sources = max(1, _to_int(os.getenv('CONTROLLED_FALLBACK_SINGLE_LINE_MIN_ODDS_SOURCES') or '1', 1))
-    if int(count or 0) < min_sources:
-        return False
-    # Do not use SStats/context-like providers as price confirmation.
-    basis_sources = {str((offer.get('source') or '')).strip().lower() for offer in _raw_bucket_offers(candidate)}
-    if basis_sources and not any(src and src not in _PRICE_CONTEXT_SOURCES for src in basis_sources):
-        return False
-    return True
-
-
 def _write(event: dict[str, Any]) -> None:
     try:
         AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
@@ -203,29 +159,27 @@ def _odds_source_count(candidate: Any) -> tuple[int, str]:
     return best
 
 
-def _reject_reason(candidate: Any, *, discovery: bool = False) -> str | None:
+def _reject_reason(candidate: Any, *, enforce_min_odds: bool = True) -> str | None:
     family = _family(candidate)
     if not family:
         return 'missing_market_family'
     if family not in _allowed():
         return f'blocked_market_family:{family};allowed={"/".join(sorted(_allowed()))}'
-    if _truthy(os.getenv('PUBLICATION_REQUIRE_MIN_ODDS_SOURCES'), True):
+    if enforce_min_odds and _truthy(os.getenv('PUBLICATION_REQUIRE_MIN_ODDS_SOURCES'), True):
         count, basis = _odds_source_count(candidate)
         required = _min_odds_sources()
         if count < required:
-            if discovery and _candidate_discovery_single_line_relief(candidate, count):
-                return None
             return f'insufficient_publication_odds_sources:{count}<{required};basis={basis}'
     return None
 
 
-def _filter_candidates(candidates: Any, rejections: dict[str, int] | None = None, *, discovery: bool = False) -> tuple[Any, list[dict[str, Any]]]:
+def _filter_candidates(candidates: Any, rejections: dict[str, int] | None = None, *, enforce_min_odds: bool = True) -> tuple[Any, list[dict[str, Any]]]:
     if not isinstance(candidates, list) or not candidates:
         return candidates, []
     kept: list[Any] = []
     blocked: list[dict[str, Any]] = []
     for candidate in candidates:
-        reason = _reject_reason(candidate, discovery=discovery)
+        reason = _reject_reason(candidate, enforce_min_odds=enforce_min_odds)
         if reason:
             blocked.append({'label': _label(candidate), 'family': _family(candidate), 'reason': reason})
             if isinstance(rejections, dict):
@@ -252,7 +206,9 @@ def _install_env() -> None:
         'PUBLICATION_REQUIRE_MIN_ODDS_SOURCES': 'true',
         'PUBLICATION_MIN_ODDS_SOURCES': str(_min_odds_sources()),
         'TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES': str(_min_odds_sources()),
-        'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'true',
+        # Do not override the workflow fallback contract.  B-tier controlled
+        # fallback is allowed to publish with one line source after line movement
+        # is confirmed when the workflow sets this env to false.
         'H2H_PUBLICATION_ENABLED': 'false',
         'BTTS_PUBLICATION_ENABLED': 'false',
         'DNB_PUBLICATION_ENABLED': 'false',
@@ -278,7 +234,11 @@ def _patch_candidate_factory() -> None:
     def build_candidates_patched(self, matches, offers_by_match, contexts_by_match, market_signals_by_match=None):  # type: ignore[no-untyped-def]
         candidates, rejections, debug = original(self, matches, offers_by_match, contexts_by_match, market_signals_by_match=market_signals_by_match)
         rejections = dict(rejections or {})
-        kept, blocked = _filter_candidates(candidates, rejections, discovery=True)
+        # Candidate generation must preserve B-tier lifecycle candidates: they may
+        # have one current odds source now and only become publishable after the
+        # next line-movement snapshot.  Enforce market family here, but leave
+        # min-odds-source publication checks to the final Telegram/publish guards.
+        kept, blocked = _filter_candidates(candidates, rejections, enforce_min_odds=False)
         if blocked:
             debug = dict(debug or {})
             debug['market_family_publication_guard'] = {
@@ -307,7 +267,7 @@ def _patch_telegram_publisher() -> None:
     original_publish = TelegramPublisher.publish
 
     async def publish_patched(self, bets, bankroll_summary=None):  # type: ignore[no-untyped-def]
-        kept, blocked = _filter_candidates(bets)
+        kept, blocked = _filter_candidates(bets, enforce_min_odds=True)
         if blocked:
             _write({'telegram_publisher_filter': True, 'before': len(bets or []), 'after': len(kept or []), 'blocked': blocked[:25]})
         if isinstance(bets, list) and bets and not kept:
@@ -337,7 +297,8 @@ def _text_block_reasons(text: str) -> list[str]:
         reasons.append('telegram_market_not_totals_or_spreads')
     # Last-mile text guard for reports/messages that include source counts.
     match = re.search(r'odds\s+sources\s+(\d+)', low)
-    if match and int(match.group(1)) < _min_odds_sources():
+    require_2_odds_for_fallback = _truthy(os.getenv('CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM'), True)
+    if match and require_2_odds_for_fallback and int(match.group(1)) < _min_odds_sources():
         reasons.append(f'telegram_insufficient_odds_sources:{match.group(1)}<{_min_odds_sources()}')
     blocked_patterns = [
         (r'🎯\s*ставка:\s*исход', 'telegram_h2h_outcome_blocked'),

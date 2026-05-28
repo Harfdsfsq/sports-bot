@@ -149,6 +149,97 @@ def _filter_rows_to_requested_dates(provider: Any, rows: list[dict[str, Any]], d
     return filtered
 
 
+
+def _embedded_game_from_odds_row(row: dict[str, Any]) -> dict[str, Any] | None:
+    """Return a fixture-shaped object embedded in an odds row, if present."""
+    for key in ("game", "fixture", "event", "match"):
+        value = row.get(key) if isinstance(row, dict) else None
+        if isinstance(value, dict):
+            return value
+    return None
+
+
+async def _load_games_from_active_odds(provider: Any, dates: list[str], stats: dict[str, Any], preview: dict[str, Any]) -> list[dict[str, Any]]:
+    """Recover SportLogic fixtures via /odds when /games ignores date filters.
+
+    SportLogic's /games endpoint can return stale default rows even with date
+    params.  Active odds rows, however, often contain game_id and sometimes an
+    embedded game object.  Use that as a conservative fallback, then filter every
+    recovered game back to requested UTC dates before it can enter matching.
+    """
+    if not _truthy(os.getenv("SPORTLOGIC_ACTIVE_ODDS_FALLBACK_ENABLED"), True):
+        return []
+    import httpx
+
+    requested_dates = set(dates or [])
+    if not requested_dates:
+        return []
+    per_page = max(5, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100)))
+    detail_limit = max(0, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_GAME_DETAIL_LIMIT") or 30)))
+    recovered: list[dict[str, Any]] = []
+    seen_game_ids: set[str] = set()
+    async with httpx.AsyncClient(timeout=provider.timeout, follow_redirects=True) as client:
+        if not provider._budget_left():
+            stats["budget_exhausted"] = True
+            return []
+        payload = await provider._get_json(client, "/odds", {"is_active": "true", "per_page": per_page}, stats, preview)
+        rows = provider._extract_odds_rows(payload)
+        stats["active_odds_rows_seen"] = _to_int(stats.get("active_odds_rows_seen"), 0) + len(rows)
+        preview.setdefault("query_variants_used", []).append({
+            "scope": "active_odds_fallback",
+            "params": {"is_active": "true", "per_page": per_page},
+            "rows": len(rows),
+        })
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            embedded = _embedded_game_from_odds_row(row)
+            if isinstance(embedded, dict):
+                row_date = _row_date(provider, embedded)
+                if row_date in requested_dates:
+                    recovered.append(embedded)
+                    stats["active_odds_embedded_games_recovered"] = _to_int(stats.get("active_odds_embedded_games_recovered"), 0) + 1
+                    continue
+                if row_date:
+                    stats["active_odds_embedded_games_outside_requested_dates"] = _to_int(stats.get("active_odds_embedded_games_outside_requested_dates"), 0) + 1
+                    continue
+            try:
+                game_id = str(provider._game_id(row) or provider._event_id(row) or "").strip()
+            except Exception:
+                game_id = ""
+            if not game_id or game_id in seen_game_ids:
+                continue
+            seen_game_ids.add(game_id)
+            if detail_limit <= 0:
+                continue
+            if _to_int(stats.get("active_odds_game_detail_requests"), 0) >= detail_limit:
+                stats["active_odds_game_detail_limit_reached"] = True
+                break
+            if not provider._budget_left():
+                stats["budget_exhausted"] = True
+                break
+            detail = await provider._get_json(client, f"/games/{game_id}", {}, stats, preview)
+            stats["active_odds_game_detail_requests"] = _to_int(stats.get("active_odds_game_detail_requests"), 0) + 1
+            detail_rows = provider._extract_list(detail)
+            if not detail_rows and isinstance(detail, dict):
+                detail_rows = [detail]
+            for game in detail_rows:
+                if not isinstance(game, dict):
+                    continue
+                row_date = _row_date(provider, game)
+                if row_date in requested_dates:
+                    recovered.append(game)
+                    stats["active_odds_game_details_recovered"] = _to_int(stats.get("active_odds_game_details_recovered"), 0) + 1
+    deduped = _dedupe_rows(recovered, provider)
+    stats["active_odds_recovered_fixtures"] = len(deduped)
+    if deduped:
+        preview.setdefault("query_variants_used", []).append({
+            "scope": "active_odds_fallback_result",
+            "rows_inside_requested_dates": len(deduped),
+            "requested_dates": sorted(requested_dates),
+        })
+    return deduped
+
 async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: dict[str, Any], preview: dict[str, Any]) -> list[dict[str, Any]]:
     import httpx
 
@@ -175,6 +266,10 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                 day_rows.extend(_filter_rows_to_requested_dates(provider, rows, {date_key}))
                 break
             fixtures.extend(day_rows)
+        if not fixtures:
+            active_rows = await _load_games_from_active_odds(provider, dates, stats, preview)
+            if active_rows:
+                fixtures.extend(active_rows)
         if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), True):
             for params in _broad_param_variants(per_page=per_page):
                 if not provider._budget_left():
@@ -227,14 +322,6 @@ def install() -> bool:
         preview: dict[str, Any] = {"sample_fixtures": [], "errors": [], "query_variants_used": []}
         dates = sorted({m.commence_time.astimezone(UTC).date().isoformat() for m in matches or []})[:6]
         fixtures = await _load_fixtures_with_fallback(self, dates, stats, preview)
-        if not fixtures and callable(getattr(self, "_load_fixtures_from_active_odds", None)):
-            try:
-                fixtures = await self._load_fixtures_from_active_odds(matches or [], stats, preview)
-                if fixtures:
-                    stats["sportlogic_query_guard_active_odds_bridge"] = True
-            except Exception as exc:
-                preview.setdefault("errors", []).append({"scope": "active_odds_bridge", "error": f"{type(exc).__name__}: {exc}"})
-                stats["sportlogic_query_guard_active_odds_bridge_error"] = f"{type(exc).__name__}: {exc}"
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         stats["sportlogic_query_guard_enabled"] = True
@@ -252,14 +339,6 @@ def install() -> bool:
         days_ahead = max(1, int(getattr(self.settings, "run_days_ahead", 3) or 3))
         dates = [(now + timedelta(days=offset)).date().isoformat() for offset in range(days_ahead + 1)]
         fixtures = await _load_fixtures_with_fallback(self, dates, stats, preview)
-        if not fixtures and callable(getattr(self, "_load_fixtures_from_active_odds", None)):
-            try:
-                fixtures = await self._load_fixtures_from_active_odds(probe_matches, stats, preview)
-                if fixtures:
-                    stats["sportlogic_query_guard_active_odds_bridge"] = True
-            except Exception as exc:
-                preview.setdefault("errors", []).append({"scope": "active_odds_bridge", "error": f"{type(exc).__name__}: {exc}"})
-                stats["sportlogic_query_guard_active_odds_bridge_error"] = f"{type(exc).__name__}: {exc}"
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         stats["sportlogic_query_guard_enabled"] = True

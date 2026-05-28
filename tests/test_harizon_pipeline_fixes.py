@@ -103,3 +103,83 @@ def test_line_guard_ingests_watchlist_diagnostic_snapshots(tmp_path, monkeypatch
     assert report["watchlist_snapshots_written"] == 1
     history = json.loads((line_history / "2026-05-28.json").read_text(encoding="utf-8"))
     assert history["lines"]
+
+
+def test_market_family_guard_keeps_b_tier_candidate_factory_rows(monkeypatch):
+    from app.services import market_family_publication_guard as guard
+
+    candidate = {
+        "family": "totals",
+        "selection": "Under 2.5",
+        "source_summary": {"odds_sources": ["odds_api_io"], "odds_sources_count": 1},
+        "raw_bucket_offers": [{"source": "odds_api_io", "family": "totals", "point": 2.5, "price": 2.0}],
+        "point": 2.5,
+    }
+    monkeypatch.setenv("PUBLICATION_REQUIRE_MIN_ODDS_SOURCES", "true")
+    monkeypatch.setenv("PUBLICATION_MIN_ODDS_SOURCES", "2")
+
+    kept, blocked = guard._filter_candidates([candidate], enforce_min_odds=False)
+    assert kept == [candidate]
+    assert blocked == []
+
+    kept_publish, blocked_publish = guard._filter_candidates([candidate], enforce_min_odds=True)
+    assert kept_publish == []
+    assert blocked_publish
+    assert "insufficient_publication_odds_sources" in blocked_publish[0]["reason"]
+
+
+def test_market_family_guard_telegram_odds_text_respects_fallback_env(monkeypatch):
+    from app.services import market_family_publication_guard as guard
+
+    text = "🎯 Ставка: Тотал меньше 2.5\nodds sources 1"
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM", "false")
+    assert "telegram_insufficient_odds_sources:1<2" not in guard._text_block_reasons(text)
+
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM", "true")
+    assert "telegram_insufficient_odds_sources:1<2" in guard._text_block_reasons(text)
+
+
+def test_sportlogic_active_odds_embedded_game_fallback_filters_requested_date(monkeypatch):
+    from app.services import sportlogic_query_runtime_guard as guard
+
+    class Provider:
+        timeout = 1
+        def __init__(self):
+            self.calls = 0
+        def _budget_left(self):
+            return True
+        def _headers(self):
+            return {}
+        def _extract_odds_rows(self, payload):
+            return payload.get("data", [])
+        def _extract_list(self, payload):
+            if isinstance(payload, dict) and isinstance(payload.get("data"), list):
+                return payload["data"]
+            return []
+        def _fixture_datetime(self, row):
+            return guard.datetime.fromisoformat(row["start_time"].replace("Z", "+00:00"))
+        def _event_id(self, row):
+            return str(row.get("game_id") or row.get("id") or "")
+        def _game_id(self, row):
+            return str(row.get("game_id") or "")
+        async def _get_json(self, client, path, params, stats, preview):
+            self.calls += 1
+            assert path == "/odds"
+            return {
+                "data": [
+                    {"id": 999, "game_id": 123, "game": {"id": 123, "start_time": "2026-05-28T18:00:00Z"}},
+                    {"id": 1000, "game_id": 124, "game": {"id": 124, "start_time": "2026-05-02T18:00:00Z"}},
+                ]
+            }
+
+    monkeypatch.setenv("SPORTLOGIC_ACTIVE_ODDS_FALLBACK_ENABLED", "true")
+    provider = Provider()
+    stats = {}
+    preview = {}
+
+    import asyncio
+    rows = asyncio.run(guard._load_games_from_active_odds(provider, ["2026-05-28"], stats, preview))
+
+    assert [row["id"] for row in rows] == [123]
+    assert stats["active_odds_rows_seen"] == 2
+    assert stats["active_odds_recovered_fixtures"] == 1
