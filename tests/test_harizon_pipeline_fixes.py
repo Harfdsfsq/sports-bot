@@ -183,3 +183,52 @@ def test_sportlogic_active_odds_embedded_game_fallback_filters_requested_date(mo
     assert [row["id"] for row in rows] == [123]
     assert stats["active_odds_rows_seen"] == 2
     assert stats["active_odds_recovered_fixtures"] == 1
+
+
+def test_controlled_fallback_guard_prefers_candidate_confirmed_movement(monkeypatch):
+    import scripts.publish_controlled_fallback_guarded as guarded
+
+    candidate = {
+        "match_key": "soccer|jazz|salpa|2026-05-28",
+        "family": "totals",
+        "selection": "Меньше 2.5",
+        "point": 2.5,
+        "line_movement_guard": {
+            "passed": True,
+            "status": "movement_confirmed",
+            "line_movement_lifecycle_status": "movement_confirmed",
+            "reasons": [],
+        },
+        "source_summary": {
+            "line_movement_lifecycle_status": "movement_confirmed",
+            "publication_lifecycle_status": "movement_ready",
+        },
+    }
+    metrics = {}
+
+    movement = guarded.controlled_line_movement_report_guarded(candidate, metrics)
+
+    assert movement["passed"] is True
+    assert movement["status"] == "movement_confirmed"
+    assert metrics["line_movement"]["status"] == "movement_confirmed"
+
+
+def test_controlled_fallback_guard_ignores_stale_windowed_block_when_candidate_movement_confirmed(tmp_path, monkeypatch):
+    import scripts.publish_controlled_fallback_guarded as guarded
+
+    monkeypatch.setattr(guarded, "ROOT", tmp_path)
+    export_dir = tmp_path / ".data" / "exports"
+    export_dir.mkdir(parents=True)
+    (export_dir / "latest-windowed-core-publication-filter.json").write_text(
+        '{"blocked_sample":[{"match_key":"soccer|jazz|salpa|2026-05-28","family":"totals","selection":"Меньше 2.5","point":2.5,"coverage":{"reject_reasons":["needs_next_cron_line_movement_recheck"],"movement":{"reason":"needs_next_cron_line_movement_recheck"}}}]}',
+        encoding="utf-8",
+    )
+    candidate = {
+        "match_key": "soccer|jazz|salpa|2026-05-28",
+        "family": "totals",
+        "selection": "Меньше 2.5",
+        "point": 2.5,
+        "line_movement_guard": {"passed": True, "status": "movement_confirmed", "reasons": []},
+    }
+
+    assert guarded._windowed_movement_reasons(candidate) == []

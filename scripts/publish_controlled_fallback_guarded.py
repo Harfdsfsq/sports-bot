@@ -136,7 +136,73 @@ def _row_from_windowed_block(item: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
+def _movement_status(value: Any) -> str:
+    return str(value or "").strip().lower()
+
+
+def _candidate_confirmed_movement(candidate: dict[str, Any]) -> dict[str, Any] | None:
+    """Return a fresh/current movement payload already attached to the candidate.
+
+    The line-movement job may update latest-rescue-candidates after the earlier
+    windowed audit has written a stale `needs_next_cron_line_movement_recheck`
+    block. Controlled fallback must prefer the candidate-level guard when it is
+    positive, otherwise the same candidate keeps waiting forever even though the
+    second snapshot is already confirmed.
+    """
+    if not isinstance(candidate, dict):
+        return None
+    candidates: list[dict[str, Any]] = []
+    for key in ("line_movement_guard", "movement", "market_movement_guard"):
+        payload = candidate.get(key)
+        if isinstance(payload, dict):
+            candidates.append(payload)
+    diagnostics = candidate.get("diagnostics")
+    if isinstance(diagnostics, dict):
+        payload = diagnostics.get("line_movement_guard")
+        if isinstance(payload, dict):
+            candidates.append(payload)
+    source_summary = candidate.get("source_summary")
+    if isinstance(source_summary, dict):
+        payload = source_summary.get("line_movement_guard")
+        if isinstance(payload, dict):
+            candidates.append(payload)
+        status = _movement_status(source_summary.get("line_movement_lifecycle_status") or source_summary.get("market_movement") or source_summary.get("market_move"))
+        publication_status = _movement_status(source_summary.get("publication_lifecycle_status"))
+        if status in {"movement_confirmed", "publish_now_no_next_cron"} and publication_status in {"", "movement_ready", "publishable", "published"}:
+            candidates.append({
+                "passed": True,
+                "status": status,
+                "line_movement_lifecycle_status": status,
+                "reasons": [],
+                "source": "candidate.source_summary",
+            })
+
+    for payload in candidates:
+        status = _movement_status(payload.get("status") or payload.get("line_movement_lifecycle_status") or payload.get("market_move"))
+        if bool(payload.get("passed")) and status in {"movement_confirmed", "publish_now_no_next_cron"}:
+            out = dict(payload)
+            out["passed"] = True
+            out["status"] = status
+            out["line_movement_lifecycle_status"] = status
+            out["reasons"] = []
+            out.setdefault("source", "candidate.line_movement_guard")
+            return out
+    return None
+
+
 def _windowed_movement_reasons(candidate: dict[str, Any]) -> list[str]:
+    if _candidate_confirmed_movement(candidate) is not None:
+        _GUARD_EVENTS.append({
+            "guard": "windowed_publication_filter",
+            "match_key": candidate.get("match_key"),
+            "home_team": candidate.get("home_team"),
+            "away_team": candidate.get("away_team"),
+            "family": candidate.get("family"),
+            "selection": candidate.get("selection"),
+            "point": candidate.get("point"),
+            "decision": "ignored_stale_windowed_block_candidate_movement_confirmed",
+        })
+        return []
     if not _truthy(os.getenv("CONTROLLED_FALLBACK_RESPECT_WINDOWED_MOVEMENT_GUARD"), True):
         return []
     payload = _load_json(ROOT / ".data" / "exports" / "latest-windowed-core-publication-filter.json", {})
@@ -214,6 +280,34 @@ def _duplicate_sent_index_reason(candidate: dict[str, Any]) -> str | None:
         if _same_candidate(candidate, row):
             return "duplicate_persisted_fallback_sent_index"
     return None
+
+
+_original_controlled_line_movement_report = getattr(base, "controlled_line_movement_report", None)
+
+
+def controlled_line_movement_report_guarded(candidate: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+    confirmed = _candidate_confirmed_movement(candidate)
+    if confirmed is not None:
+        metrics["line_movement"] = confirmed
+        _GUARD_EVENTS.append({
+            "guard": "controlled_line_movement_report",
+            "match_key": candidate.get("match_key"),
+            "home_team": candidate.get("home_team"),
+            "away_team": candidate.get("away_team"),
+            "family": candidate.get("family"),
+            "selection": candidate.get("selection"),
+            "point": candidate.get("point"),
+            "decision": "used_candidate_confirmed_movement",
+            "movement": confirmed,
+        })
+        return confirmed
+    if callable(_original_controlled_line_movement_report):
+        return _original_controlled_line_movement_report(candidate, metrics)
+    return {"passed": False, "status": "unavailable", "reasons": ["line_movement_report_unavailable"]}
+
+
+if hasattr(base, "controlled_line_movement_report"):
+    base.controlled_line_movement_report = controlled_line_movement_report_guarded
 
 
 _original_hard_reject_reasons = base.hard_reject_reasons
