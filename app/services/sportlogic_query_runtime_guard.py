@@ -114,11 +114,18 @@ def _accept_dated_rows(provider: Any, rows: list[dict[str, Any]], date_key: str,
 
 
 def _param_variants_for_date(date_key: str, per_page: int = 100) -> list[dict[str, Any]]:
-    # Use documented params first.  Non-documented aliases are only probes and
-    # must pass the inside-window test before being accepted.
+    # Production mode must be cheap: SportLogic is useful as a targeted
+    # confirmation source, not as an 8-variant fixture scraper.  Keep the old
+    # probe variants opt-in for diagnostics only.
+    compact = _truthy(os.getenv("SPORTLOGIC_COMPACT_QUERY_MODE"), True)
+    base = [
+        {"date_from": date_key, "date_to": date_key, "per_page": per_page},
+    ]
+    if compact:
+        return base
     return [
         {"status": "scheduled", "date_from": date_key, "date_to": date_key, "per_page": per_page},
-        {"date_from": date_key, "date_to": date_key, "per_page": per_page},
+        *base,
         {"status": "live", "date_from": date_key, "date_to": date_key, "per_page": per_page},
         {"status": "pending", "date_from": date_key, "date_to": date_key, "per_page": per_page},
         {"date": date_key, "per_page": per_page},
@@ -280,7 +287,7 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
             active_rows = await _load_games_from_active_odds(provider, dates, stats, preview)
             if active_rows:
                 fixtures.extend(active_rows)
-        if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), True):
+        if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), False):
             for params in _broad_param_variants(per_page=per_page):
                 if not provider._budget_left():
                     stats["budget_exhausted"] = True

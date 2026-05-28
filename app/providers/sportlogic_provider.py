@@ -214,7 +214,15 @@ class SportLogicProvider:
                     offers_by_match[item["match"].match_key].extend(parsed)
                     stats["offers_parsed"] += len(parsed)
 
-        stats["events_matched"] = len(mapping)
+        if self._env_bool("SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED", True):
+            min_targeted = max(1, int(float(os.getenv("SPORTLOGIC_TARGETED_MIN_OFFER_MATCHES") or 1)))
+            if len(offers_by_match) < min_targeted and self._budget_left():
+                targeted_offers = await self._fetch_active_odds_targeted(soccer_matches, stats, preview)
+                for match_key, offers in targeted_offers.items():
+                    if offers:
+                        offers_by_match[match_key].extend(offers)
+
+        stats["events_matched"] = max(len(mapping), int(stats.get("active_odds_targeted_matches", 0) or 0))
         stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)
         reject_reasons = stats.get("parse_reject_reasons") if isinstance(stats.get("parse_reject_reasons"), dict) else {}
         if int(stats.get("rows_before_parse", 0) or 0) > 0 and int(stats.get("offers_parsed", 0) or 0) <= 0:
@@ -304,6 +312,7 @@ class SportLogicProvider:
         if response.status_code == 429:
             stats["rate_limited"] = True
             stats["diagnosis"] = "sportlogic_rate_limited"
+            self._write_rate_limit_state(response)
             body_text = str(response.text or "")
             if "RATE_LIMIT_EXCEEDED" in body_text or "Daily limit" in body_text or "daily limit" in body_text.lower():
                 stats["daily_limit_exceeded"] = True
@@ -351,6 +360,134 @@ class SportLogicProvider:
                 stats["odds_endpoint_used"] = path
                 return payload
         return None
+
+    async def _fetch_active_odds_targeted(
+        self,
+        matches: list[Match],
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+    ) -> dict[str, list[Offer]]:
+        """Use one active-odds page as a targeted line confirmation source.
+
+        This is intentionally conservative: SportLogic is quota-sensitive, so it
+        should not behave as a broad fixture discovery provider during runtime.
+        We only accept active odds rows that contain enough embedded game data to
+        match a current bot match by teams/date, then parse those rows directly.
+        """
+        if not matches or not self._budget_left():
+            return {}
+        per_page = max(5, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100)))
+        params: dict[str, Any] = {"is_active": "true", "per_page": per_page}
+        market_id = str(os.getenv("SPORTLOGIC_ACTIVE_ODDS_MARKET_ID") or "").strip()
+        if market_id:
+            params["market_id"] = market_id
+
+        async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
+            payload = await self._get_json(client, "/odds", params, stats, preview)
+        rows = self._extract_odds_rows(payload)
+        stats["active_odds_rows_seen"] = int(stats.get("active_odds_rows_seen") or 0) + len(rows)
+        preview.setdefault("query_variants_used", []).append({
+            "scope": "active_odds_targeted_confirmation",
+            "params": params,
+            "rows": len(rows),
+        })
+        if not rows:
+            return {}
+
+        grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+        match_by_key: dict[str, Match] = {m.match_key: m for m in matches}
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if self._is_suspended(row):
+                stats["active_odds_suspended_rows_skipped"] = int(stats.get("active_odds_suspended_rows_skipped") or 0) + 1
+                continue
+            fixture_row = self._fixture_from_odds_row(row)
+            if fixture_row is None:
+                stats["active_odds_rows_without_matchable_fixture"] = int(stats.get("active_odds_rows_without_matchable_fixture") or 0) + 1
+                continue
+            best = self._best_match_for_fixture_row(matches, fixture_row, stats)
+            if best is None:
+                continue
+            game_id = str(self._game_id(row) or self._game_id(fixture_row) or "").strip()
+            if not game_id:
+                stats["active_odds_rows_without_game_id"] = int(stats.get("active_odds_rows_without_game_id") or 0) + 1
+                continue
+            grouped[(best.match_key, game_id)].append(row)
+
+        offers_by_match: dict[str, list[Offer]] = defaultdict(list)
+        for (match_key, game_id), group_rows in grouped.items():
+            match = match_by_key.get(match_key)
+            if match is None:
+                continue
+            parsed = self._parse_odds(group_rows, match, game_id, stats)
+            if parsed:
+                offers_by_match[match_key].extend(parsed)
+                stats["active_odds_targeted_offers_parsed"] = int(stats.get("active_odds_targeted_offers_parsed") or 0) + len(parsed)
+
+        stats["active_odds_targeted_matches"] = len(offers_by_match)
+        if offers_by_match:
+            stats["active_odds_targeted_enabled"] = True
+            preview["sample_active_odds_targeted_matches"] = list(offers_by_match.keys())[:8]
+        return {key: value for key, value in offers_by_match.items() if value}
+
+    def _fixture_from_odds_row(self, row: dict[str, Any]) -> dict[str, Any] | None:
+        for key in ("game", "fixture", "event", "match"):
+            value = row.get(key)
+            if isinstance(value, dict):
+                merged = dict(value)
+                # Preserve ids from the odds row when the embedded game omits them.
+                for id_key in ("game_id", "gameId", "fixture_id", "fixtureId", "event_id", "eventId"):
+                    if id_key not in merged and row.get(id_key) not in (None, ""):
+                        merged[id_key] = row.get(id_key)
+                return merged
+        if self._team_name(row, "home") and self._team_name(row, "away") and self._fixture_datetime(row) is not None:
+            return row
+        return None
+
+    def _best_match_for_fixture_row(self, matches: list[Match], row: dict[str, Any], stats: dict[str, Any]) -> Match | None:
+        home = self._team_name(row, "home")
+        away = self._team_name(row, "away")
+        start = self._fixture_datetime(row)
+        if not home or not away or start is None:
+            stats["active_odds_unmatchable_fixture_rows"] = int(stats.get("active_odds_unmatchable_fixture_rows") or 0) + 1
+            return None
+        league = self._league_name(row)
+        exact_tol = float(getattr(self.settings, "match_start_tolerance_hours", 12) or 12)
+        fuzzy_tol = float(getattr(self.settings, "fallback_match_start_tolerance_hours", 8) or 8)
+        best_match: Match | None = None
+        best_score = 0.0
+        best_quality = None
+        for match in matches:
+            score, quality = score_event_match(
+                sport="soccer",
+                match_home=match.home_team,
+                match_away=match.away_team,
+                match_start=match.commence_time,
+                match_league=match.league_name,
+                event_home=home,
+                event_away=away,
+                event_start=start,
+                event_league=league,
+                exact_tolerance_hours=exact_tol,
+                fuzzy_tolerance_hours=fuzzy_tol,
+            )
+            if score > best_score:
+                best_score = score
+                best_match = match
+                best_quality = quality
+        min_score = float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_MATCH_MIN_SCORE") or 50)
+        if best_match is None or best_score < min_score:
+            stats["active_odds_unmatched_rows"] = int(stats.get("active_odds_unmatched_rows") or 0) + 1
+            return None
+        stats["active_odds_matched_rows"] = int(stats.get("active_odds_matched_rows") or 0) + 1
+        if best_quality == "exact":
+            stats["active_odds_matched_exact"] = int(stats.get("active_odds_matched_exact") or 0) + 1
+        elif best_quality == "loose":
+            stats["active_odds_matched_loose"] = int(stats.get("active_odds_matched_loose") or 0) + 1
+        elif best_quality == "fuzzy":
+            stats["active_odds_matched_fuzzy"] = int(stats.get("active_odds_matched_fuzzy") or 0) + 1
+        return best_match
 
     def _write_debug_export(self, stats: dict[str, Any], preview: dict[str, Any]) -> None:
         try:
@@ -567,18 +704,21 @@ class SportLogicProvider:
             bookmakers = row.get("bookmakers") if isinstance(row, dict) else None
             if isinstance(bookmakers, list):
                 for bookmaker_payload in [x for x in bookmakers if isinstance(x, dict)]:
-                    book = str(bookmaker_payload.get("name") or bookmaker_payload.get("bookmaker") or bookmaker_payload.get("sportsbook") or bookmaker_payload.get("provider") or bookmaker_payload.get("title") or "SportLogic")
+                    book = self._bookmaker_name(bookmaker_payload)
                     for market in self._market_rows(bookmaker_payload):
                         self._parse_market(market, match, book, add)
                 continue
 
             # Shape B: markets at top level
             for market in self._market_rows(row):
-                book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("sportsbook") or row.get("provider") or row.get("book") or "SportLogic")
+                book = self._bookmaker_name(row)
                 self._parse_market(market, match, book, add)
 
             # Shape C: flattened odds fields
-            book = str(row.get("bookmaker") or row.get("bookmaker_name") or row.get("sportsbook") or row.get("provider") or row.get("book") or "SportLogic")
+            book = self._bookmaker_name(row)
+            if self._is_suspended(row):
+                reject("suspended_odds_row")
+                continue
             self._parse_flat_odds_row(row, match, book, add, reject)
             add(book, "h2h", match.home_team, row.get("home") or row.get("home_odds") or row.get("odd_1"), team_side="home")
             add(book, "h2h", "Draw", row.get("draw") or row.get("draw_odds") or row.get("odd_x"))
@@ -610,8 +750,8 @@ class SportLogicProvider:
             return
         market_fields = {"market", "market_name", "market_key", "key", "name", "label", "type"}
         option_fields = {"outcome", "selection", "label", "option", "option_name", "name", "team"}
-        price_fields = {"price", "decimal_odds", "value", "odd", "odds", "decimal", "option_value"}
-        point_fields = {"total", "handicap", "line", "points", "point"}
+        price_fields = {"price", "decimal_odds", "value", "odd", "odds", "decimal", "option_price"}
+        point_fields = {"total", "handicap", "line", "points", "point", "option_value"}
         for key, value in row.items():
             low = str(key).lower()
             if low in market_fields:
@@ -641,10 +781,10 @@ class SportLogicProvider:
                                 self._record_seen(stats, "price_keys_seen", low)
 
     def _parse_flat_odds_row(self, row: dict[str, Any], match: Match, book: str, add: Any, reject: Any) -> None:
-        market_name = str(row.get("market") or row.get("market_name") or row.get("market_key") or row.get("type") or "").strip()
+        market_name = self._market_name_from_row(row)
         selection_name = str(row.get("outcome") or row.get("selection") or row.get("label") or row.get("option") or row.get("option_name") or row.get("name") or "").strip()
-        price = row.get("price") or row.get("decimal_odds") or row.get("value") or row.get("odd") or row.get("odds") or row.get("decimal") or row.get("option_value")
-        point = self._float(row.get("total") or row.get("handicap") or row.get("line") or row.get("points") or row.get("point"))
+        price = row.get("price") or row.get("decimal_odds") or row.get("value") or row.get("odd") or row.get("odds") or row.get("decimal") or row.get("option_price")
+        point = self._float(row.get("total") or row.get("handicap") or row.get("line") or row.get("points") or row.get("point") or row.get("option_value"))
         if not market_name and not selection_name and price in (None, ""):
             return
         if price in (None, ""):
@@ -671,10 +811,14 @@ class SportLogicProvider:
             if point is None:
                 match_obj = re.search(r"(\d+(?:\.\d+)?)", combined)
                 point = self._float(match_obj.group(1)) if match_obj else None
-            if "under" in combined or low.startswith("u"):
-                add(book, "totals", "Under", price, point, market_name=market_name)
-            elif "over" in combined or low.startswith("o"):
+            if low.startswith("o") or low in {"over", "o"}:
                 add(book, "totals", "Over", price, point, market_name=market_name)
+            elif low.startswith("u") or low in {"under", "u"}:
+                add(book, "totals", "Under", price, point, market_name=market_name)
+            elif "over" in combined and "under" not in low:
+                add(book, "totals", "Over", price, point, market_name=market_name)
+            elif "under" in combined:
+                add(book, "totals", "Under", price, point, market_name=market_name)
             else:
                 reject("unknown_total_selection")
         elif family == "spreads":
@@ -728,7 +872,7 @@ class SportLogicProvider:
         for outcome in [x for x in outcomes if isinstance(x, dict)]:
             name = str(outcome.get("name") or outcome.get("outcome") or outcome.get("selection") or outcome.get("label") or outcome.get("option") or outcome.get("option_name") or outcome.get("team") or "").strip()
             price = outcome.get("price") or outcome.get("decimal_odds") or outcome.get("odds") or outcome.get("value") or outcome.get("odd") or outcome.get("decimal") or outcome.get("option_value")
-            point = self._float(outcome.get("point") or outcome.get("line") or outcome.get("points") or outcome.get("total") or outcome.get("handicap"))
+            point = self._float(outcome.get("point") or outcome.get("line") or outcome.get("points") or outcome.get("total") or outcome.get("handicap") or outcome.get("option_value"))
             low = name.lower()
 
             if family == "h2h":
@@ -742,10 +886,10 @@ class SportLogicProvider:
                     side = "home" if name == match.home_team else "away" if name == match.away_team else None
                     add(bookmaker, "h2h", name, price, team_side=side, market_name=raw_name)
             elif family == "totals":
-                if "under" in low or low.startswith("u"):
-                    add(bookmaker, "totals", "Under", price, point, market_name=raw_name)
-                elif "over" in low or low.startswith("o"):
+                if low.startswith("o") or low in {"over", "o"}:
                     add(bookmaker, "totals", "Over", price, point, market_name=raw_name)
+                elif low.startswith("u") or low in {"under", "u"}:
+                    add(bookmaker, "totals", "Under", price, point, market_name=raw_name)
             elif family == "spreads":
                 side = "home" if low in {"home", "1"} or name == match.home_team else "away" if low in {"away", "2"} or name == match.away_team else None
                 selection = match.home_team if side == "home" else match.away_team if side == "away" else name
@@ -761,12 +905,12 @@ class SportLogicProvider:
 
     @staticmethod
     def _market_family(raw_name: str) -> str:
-        text = raw_name.lower()
-        if any(token in text for token in ("total", "over/under", "goals over")):
+        text = str(raw_name or "").lower().replace("-", "_").replace(" ", "_")
+        if any(token in text for token in ("total", "over_under", "over/under", "goals_over", "goals_over_under", "goal_line")):
             return "totals"
-        if any(token in text for token in ("spread", "handicap", "asian handicap")):
+        if any(token in text for token in ("spread", "handicap", "asian_handicap")):
             return "spreads"
-        if "both" in text and "score" in text or "btts" in text:
+        if ("both" in text and "score" in text) or "btts" in text:
             return "btts"
         return "h2h"
 
@@ -844,7 +988,67 @@ class SportLogicProvider:
             "http_statuses": [],
             "top_level_keys": [],
             "last_body_preview": None,
+            "active_odds_rows_seen": 0,
+            "active_odds_targeted_matches": 0,
+            "active_odds_targeted_offers_parsed": 0,
         }
+
+    def _sportlogic_rate_limit_state_paths(self) -> list[Path]:
+        return [
+            Path(".data/line_history/sportlogic_rate_limit_open.json"),
+            Path(".data/cache/sportlogic_rate_limit_open.json"),
+        ]
+
+    def _open_rate_limit_state(self) -> dict[str, Any] | None:
+        now = datetime.now(UTC)
+        for path in self._sportlogic_rate_limit_state_paths():
+            try:
+                if not path.exists() or path.stat().st_size <= 0:
+                    continue
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            if str(payload.get("status") or "").lower() != "open":
+                continue
+            expires_raw = payload.get("expires_at_utc")
+            try:
+                expires = parse_datetime(str(expires_raw)) if expires_raw else None
+            except Exception:
+                expires = None
+            if expires is not None and expires.tzinfo is None:
+                expires = expires.replace(tzinfo=UTC)
+            if expires is not None and expires.astimezone(UTC) <= now:
+                continue
+            return payload
+        return None
+
+    def _write_rate_limit_state(self, response: httpx.Response) -> None:
+        retry_after = response.headers.get("Retry-After") if response is not None else None
+        try:
+            cooldown = int(float(str(retry_after))) if retry_after not in (None, "") else int(float(os.getenv("SPORTLOGIC_429_COOLDOWN_SECONDS") or 90))
+        except Exception:
+            cooldown = 90
+        cooldown = max(30, min(cooldown, int(float(os.getenv("SPORTLOGIC_429_MAX_COOLDOWN_SECONDS") or 3600))))
+        now = datetime.now(UTC)
+        payload = {
+            "status": "open",
+            "reason": "sportlogic_429_cooldown",
+            "date_utc": self._today_utc_key(),
+            "opened_at_utc": now.isoformat(),
+            "expires_at_utc": (now + timedelta(seconds=cooldown)).isoformat(),
+            "retry_after_seconds": cooldown,
+            "status_code": getattr(response, "status_code", None),
+            "url": str(getattr(response, "url", "")),
+            "body_preview": str(getattr(response, "text", "") or "")[:1200],
+        }
+        for path in self._sportlogic_rate_limit_state_paths():
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            except Exception:
+                continue
 
     def _sportlogic_daily_limit_state_paths(self) -> list[Path]:
         return [
@@ -911,6 +1115,14 @@ class SportLogicProvider:
         if not self.api_key:
             stats["enabled"] = False
             stats["reason"] = "missing_api_key"
+            return False
+        rate_state = self._open_rate_limit_state()
+        if rate_state is not None and self._env_bool("SPORTLOGIC_SKIP_WHEN_RATE_LIMIT_OPEN", True):
+            stats["enabled"] = False
+            stats["reason"] = "sportlogic_rate_limit_open"
+            stats["rate_limited"] = True
+            stats["rate_limit_state"] = rate_state
+            stats["diagnosis"] = "sportlogic_rate_limit_open"
             return False
         state = self._open_daily_limit_state()
         if state is not None and self._env_bool("SPORTLOGIC_SKIP_WHEN_DAILY_LIMIT_OPEN", True):
@@ -1035,6 +1247,48 @@ class SportLogicProvider:
             "option_value", "outcome", "selection", "bookmaker", "bookmaker_id",
             "odds", "decimal_odds", "price", "is_suspended",
         })
+
+    @staticmethod
+    def _is_suspended(row: dict[str, Any]) -> bool:
+        for key in ("is_suspended", "suspended", "isSuspended", "disabled", "is_disabled"):
+            if key not in row:
+                continue
+            raw = str(row.get(key) or "").strip().lower()
+            if raw in {"1", "true", "yes", "on", "suspended", "disabled"}:
+                return True
+        return False
+
+    @staticmethod
+    def _bookmaker_name(row: dict[str, Any]) -> str:
+        for key in ("bookmaker", "bookmaker_name", "sportsbook", "provider", "book"):
+            value = row.get(key)
+            if isinstance(value, dict):
+                nested = value.get("name") or value.get("title") or value.get("label") or value.get("key")
+                if nested:
+                    return str(nested).strip()
+            elif value not in (None, ""):
+                return str(value).strip()
+        return "SportLogic"
+
+    @staticmethod
+    def _market_name_from_row(row: dict[str, Any]) -> str:
+        market = row.get("market")
+        if isinstance(market, dict):
+            name = market.get("key") or market.get("name") or market.get("title") or market.get("label")
+            if name:
+                return str(name).strip()
+            if market.get("id") not in (None, ""):
+                return f"market_id_{market.get('id')}"
+        for key in ("market_name", "market_key", "type", "market_type"):
+            value = row.get(key)
+            if value not in (None, ""):
+                return str(value).strip()
+        market_id = str(row.get("market_id") or row.get("marketId") or "").strip()
+        if market_id == "5":
+            return "goals_over_under"
+        if market_id:
+            return f"market_id_{market_id}"
+        return ""
 
     @staticmethod
     def _canonical_bookmaker(name: Any) -> str:
