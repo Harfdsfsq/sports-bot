@@ -1,74 +1,61 @@
-🧾 HARIZON run report v9 — единая фактическая сводка
-• Итог: 🟡 кандидаты есть, quality/value не пропустили
-• Главная причина: quality: вероятность после калибровки ниже порога
+🧾 HARIZON — понятный отчёт по запуску
+🟡 Прогнозов нет: есть 8 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
-📦 Покрытие
-• Матчи в run: 101 | day inventory: 300
-• С линиями: 90 | с контекстом: 91 | ready model: 211
-• odds-api.io offers: 12975 | Bzzoiro secondary offers: 176
-• 2+ букмекера odds-api.io: 72 | 2-source overlap Bzzoiro+odds-api.io: 10
-• Source combinations: odds_api_io: 80, bzzoiro+odds_api_io: 10
+📦 Инвентарь и покрытие
+• Инвентарь дня: 233 матчей. В этом run обработано: 39.
+• 1+ линия: 228/233 (98%) | 1+ контекст: 49/233 (21%)
+• 2+ подтверждения цены: 15/233 (6%)
+• 2+ независимых odds-source: 14/233 (6%)
+• 2+ контекста: 34/233 (15%)
+• Готово для модели: 48/233 (21%)
+
+🏷️ A/B-tier публикация
+• A-tier coverage: 5 | A-tier готово main: 0 | опубликовано fallback: 0
+  A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
+• B-tier coverage: 8 | B-tier готово main: 0 | опубликовано fallback: 0
+  B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
+• Ждут второй снимок линии: 8 | отклонены после второго снимка: 0
+
+🛡️ Движение линии и финальный фильтр
+• Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 3 / 3
-• Passed quality: 0 | publishable: 0 | опубликовано: 0
-• Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 2 | evaluated 2 | published False (0)
-• Windowed coverage: audit 3 | allowed 0 | blocked 3 | publish-filter input 0
+• Raw/candidates before quality: 2/2
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 2 | evaluated 2 | published 0
 
-🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 42 | no next regular run: 42
-• Line guard: seen 0 | kept 0 | dropped 0
+📡 Провайдеры: запросы и полезные данные
+• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 39; дал offers 3583 (448/запрос); 2+ букмекера 18; ошибок 0.
+• Bzzoiro: запросы 50 (direct 25, v2 25, gap 0); событий 31; контекстов 8; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 16; secondary offers 0; overlap с odds-api.io 9; ошибок 1.
+• SStats: запросы 21; сырых строк 16963 (808/запрос); контекстов 21; deep-enriched 13; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 17; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 17; diag ok_or_no_data.
+• Комбинации источников линий: odds_api_io: 17, bzzoiro+odds_api_io: 9
 
-📡 Core API
-• odds_api_io: events req 0, odds req 20, matched 100, offers 12975, 2+ books 72, err 0, auth_failed False
-• sstats: req 30, ctx 91, rows 25360, err 0, deep enriched 15
-• bzzoiro: direct req 1, v2 req 29, v2 ctx 7, v2 odds 7, secondary offers 176, overlap odds-api.io 10, err 0
-• sportlogic: enabled True, req 21, fixtures 0, matched 0, odds req 0, offers 0, sample_dates n/a, diag ok_or_no_data, err 3
-
-🧭 Progressive core coverage
-• Active core odds/line: bzzoiro,odds_api_io,sportlogic
-• Active core context: bzzoiro,sstats
-• Tracked: 1684 | core odds 2+: 223 | core context 2+: 189 | core-ready both: 150
-• 0–4ч: 8/79 core-ready
-• 0–12ч: 10/104 core-ready
-
-Coverage truth
-• Inventory rows: 300
-• 2+ price confirmations: 120
-• 2+ independent odds sources: 117
-• 2+ context sources: 33
-• ready publish fresh: 26 | strict: 26 | already sent: 0
+🧭 Покрытие ближайших окон
+• Активных матчей сейчас: 11. Нужно обновить линии: 0.
+• Core-ready 2+/2+ по всем tracked: 2.
+• 0–4 часа: 2/11 core-ready.
+• 0–12 часов: 2/11 core-ready.
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 2 (29%)
-• telegram publish odds sources guard:1/2: 1 (14%)
-• tier c watch only: 1 (14%)
-• controlled fallback confirmation sources below min:1/2: 1 (14%)
-• telegram quality stop not allowed:post calibration probability guard: 1 (14%)
-• направление ставки конфликтует с xG: 1 (14%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 2 (40%)
+• quality: вероятность после калибровки ниже порога: 2 (40%)
+• направление ставки конфликтует с xG: 1 (20%)
 
-🔎 Проверенные reserve-кандидаты
-1. Hapoel Kfar Saba FC — Hapoel Ramat Gan Givatayim FC | Меньше 2.5 @2.62 | EV +8.8% | edge +3.3 п.п. | q 69.0
-   • reject: telegram publish odds sources guard:1/2, tier c watch only, controlled fallback confirmation sources below min:1/2
-2. CA Bartolome Mitre — Club Tucuman Central Deportes | Меньше 1.5 @2.75 | EV +7.2% | edge +2.6 п.п. | q 62.6
-   • reject: направление ставки конфликтует с xG
+🔎 Последние проверенные кандидаты
+1. SE Palmeiras SP — CD Junior FC | Меньше 2.5 @2.41 | EV -2.0% | edge -0.8 п.п. | q 70.3
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+2. CD El Nacional — CD Universidad Catolica del Ecuador | Меньше 2.5 @2.21 | EV -0.9% | edge -0.4 п.п. | q 63.5
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, направление ставки конфликтует с xG
 
+📌 Что это значит
+• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
+• Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
-
-🧯 Controlled fallback pool
-• Frozen day inventory keys: 609
-• Pool sources: debug_candidates_before_quality: 2
-• Смысл: это источники пула, а не причины отказа.
-• Также отфильтровано до fallback: отрицательная контрольная ценность до fallback: 1
-• Смысл: часть кандидатов fallback реально оценил; отдельные строки были отсеяны до evaluation.
-
-📌 Вывод
-• Candidate pipeline работает: резерв проверял кандидатов, но value/xG/quality/coverage guards не разрешили публикацию. Core-ready: 150; 0–4ч: 8/79; 0–12ч: 10/104.
-• Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
-
-🕒 Current day inventory windows
-• Active matches: 107 | odds refresh needed: 22
-• Final pre-kickoff checks: 42 | no next regular run: 42
-• 0–4ч inventory: 11/95 ready | strict 11 | already sent 0 | context 2+: 12 | price 2+: 54
-• 0–12ч inventory: 13/124 ready | strict 13 | already sent 0 | context 2+: 14 | price 2+: 71
+🔗 GitHub Actions
+• Run ID: 26592327922
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26592327922
+• Artifact: run-bot-26592327922
+• workflow run-bot, attempt 1
