@@ -29,6 +29,55 @@ def _load_v8() -> Any:
 
 
 v8 = _load_v8()
+
+
+def _strict_current_run_fallback_tier_counts(report: dict[str, Any]) -> dict[str, int]:
+    """Count fallback publication tiers for the current run only.
+
+    ``latest-controlled-fallback-published-picks.json`` is a persisted ledger and
+    may contain a pick from a previous run.  The human report must not say that
+    the current run published a forecast when this run only rejected the old pick
+    as a duplicate.
+    """
+    rows = report.get("selected_all") if isinstance(report.get("selected_all"), list) else []
+    if not rows and isinstance(report.get("selected"), dict):
+        rows = [report["selected"]]
+    published = bool(report.get("published")) or str(report.get("status") or "") == "published"
+    if published:
+        try:
+            published_picks = v8._load_json_any(v8.FALLBACK_PUBLISHED_PICKS)
+        except Exception:
+            published_picks = None
+        if isinstance(published_picks, list) and published_picks:
+            rows = [row for row in published_picks if isinstance(row, dict)] or rows
+    selected = [row for row in rows if isinstance(row, dict)]
+    out = {
+        "published_total": len(selected) if published else 0,
+        "selected_total": len(selected),
+        "tier_a_published": 0,
+        "tier_b_published": 0,
+        "tier_a_selected": 0,
+        "tier_b_selected": 0,
+    }
+    for row in selected:
+        try:
+            tier = v8._tier_code(row)
+        except Exception:
+            tier = str(row.get("tier") or row.get("publication_tier") or "").strip().upper()
+        if tier == "A":
+            out["tier_a_selected"] += 1
+            if published:
+                out["tier_a_published"] += 1
+        elif tier == "B":
+            out["tier_b_selected"] += 1
+            if published:
+                out["tier_b_published"] += 1
+    return out
+
+
+if hasattr(v8, "_fallback_tier_counts"):
+    v8._fallback_tier_counts = _strict_current_run_fallback_tier_counts
+
 _original_render = v8.render
 
 
@@ -52,7 +101,7 @@ def render(payload: dict[str, Any]) -> str:
 v8.render = render
 v8.v7.render = render
 v8.v7.v5.render = render
-_write_status({"status": "installed", "renderer": "v9-github-run-reference", "github_actions": github_run_context()})
+_write_status({"status": "installed", "renderer": "v9-github-run-reference", "github_actions": github_run_context(), "current_run_fallback_tier_counts": True})
 
 
 if __name__ == "__main__":

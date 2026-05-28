@@ -303,6 +303,16 @@ class SportLogicProvider:
             stats["auth_error"] = True
         if response.status_code == 429:
             stats["rate_limited"] = True
+            stats["diagnosis"] = "sportlogic_rate_limited"
+            body_text = str(response.text or "")
+            if "RATE_LIMIT_EXCEEDED" in body_text or "Daily limit" in body_text or "daily limit" in body_text.lower():
+                stats["daily_limit_exceeded"] = True
+                stats["diagnosis"] = "sportlogic_daily_limit_exceeded"
+                self._write_daily_limit_state(response)
+            if self._env_bool("SPORTLOGIC_STOP_RUN_ON_429", True):
+                self._rate_limited_this_run = True
+                if self.max_requests_per_run > 0:
+                    self._requests = max(self._requests, self.max_requests_per_run)
         if response.status_code >= 400:
             stats["response_errors"] += 1
             return None
@@ -836,6 +846,63 @@ class SportLogicProvider:
             "last_body_preview": None,
         }
 
+    def _sportlogic_daily_limit_state_paths(self) -> list[Path]:
+        return [
+            Path(".data/line_history/sportlogic_daily_limit_open.json"),
+            Path(".data/cache/sportlogic_daily_limit_open.json"),
+        ]
+
+    def _today_utc_key(self) -> str:
+        return datetime.now(UTC).date().isoformat()
+
+    def _open_daily_limit_state(self) -> dict[str, Any] | None:
+        today = self._today_utc_key()
+        for path in self._sportlogic_daily_limit_state_paths():
+            try:
+                if not path.exists() or path.stat().st_size <= 0:
+                    continue
+                payload = json.loads(path.read_text(encoding="utf-8"))
+            except Exception:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            if str(payload.get("status") or "").lower() != "open":
+                continue
+            if str(payload.get("date_utc") or "") != today:
+                continue
+            return payload
+        return None
+
+    def _write_daily_limit_state(self, response: httpx.Response) -> None:
+        text = str(response.text or "")
+        today = self._today_utc_key()
+        payload = {
+            "status": "open",
+            "reason": "sportlogic_daily_429",
+            "date_utc": today,
+            "opened_at_utc": datetime.now(UTC).isoformat(),
+            "status_code": response.status_code,
+            "url": str(response.url),
+            "body_preview": text[:1200],
+        }
+        try:
+            body = response.json()
+            if isinstance(body, dict):
+                err = body.get("error") if isinstance(body.get("error"), dict) else {}
+                nested = err.get("errors") if isinstance(err.get("errors"), dict) else {}
+                payload["error_code"] = err.get("code") or body.get("code")
+                payload["retry_after_seconds"] = nested.get("retry_after_seconds") or err.get("retry_after")
+                payload["current"] = nested.get("current")
+                payload["limit"] = nested.get("limit")
+        except Exception:
+            pass
+        for path in self._sportlogic_daily_limit_state_paths():
+            try:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            except Exception:
+                continue
+
     def _ready(self, stats: dict[str, Any]) -> bool:
         if not self.enabled:
             stats["enabled"] = False
@@ -845,9 +912,19 @@ class SportLogicProvider:
             stats["enabled"] = False
             stats["reason"] = "missing_api_key"
             return False
+        state = self._open_daily_limit_state()
+        if state is not None and self._env_bool("SPORTLOGIC_SKIP_WHEN_DAILY_LIMIT_OPEN", True):
+            stats["enabled"] = False
+            stats["reason"] = "sportlogic_daily_limit_open"
+            stats["daily_limit_exceeded"] = True
+            stats["daily_limit_state"] = state
+            stats["diagnosis"] = "sportlogic_daily_limit_open"
+            return False
         return True
 
     def _budget_left(self) -> bool:
+        if getattr(self, "_rate_limited_this_run", False):
+            return False
         return self.max_requests_per_run <= 0 or self._requests < self.max_requests_per_run
 
     @staticmethod

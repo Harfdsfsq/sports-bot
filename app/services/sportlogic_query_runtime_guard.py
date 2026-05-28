@@ -138,6 +138,10 @@ def _broad_param_variants(per_page: int = 100) -> list[dict[str, Any]]:
     ]
 
 
+def _rate_limited(stats: dict[str, Any]) -> bool:
+    return bool(stats.get("rate_limited") or stats.get("daily_limit_exceeded"))
+
+
 def _filter_rows_to_requested_dates(provider: Any, rows: list[dict[str, Any]], dates: set[str]) -> list[dict[str, Any]]:
     if not dates:
         return rows
@@ -183,6 +187,8 @@ async def _load_games_from_active_odds(provider: Any, dates: list[str], stats: d
             stats["budget_exhausted"] = True
             return []
         payload = await provider._get_json(client, "/odds", {"is_active": "true", "per_page": per_page}, stats, preview)
+        if _rate_limited(stats):
+            return []
         rows = provider._extract_odds_rows(payload)
         stats["active_odds_rows_seen"] = _to_int(stats.get("active_odds_rows_seen"), 0) + len(rows)
         preview.setdefault("query_variants_used", []).append({
@@ -219,6 +225,8 @@ async def _load_games_from_active_odds(provider: Any, dates: list[str], stats: d
                 stats["budget_exhausted"] = True
                 break
             detail = await provider._get_json(client, f"/games/{game_id}", {}, stats, preview)
+            if _rate_limited(stats):
+                break
             stats["active_odds_game_detail_requests"] = _to_int(stats.get("active_odds_game_detail_requests"), 0) + 1
             detail_rows = provider._extract_list(detail)
             if not detail_rows and isinstance(detail, dict):
@@ -257,6 +265,8 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                     stats["budget_exhausted"] = True
                     break
                 payload = await provider._get_json(client, "/games", params, stats, preview)
+                if _rate_limited(stats):
+                    break
                 rows = provider._extract_list(payload)
                 if not rows:
                     preview.setdefault("query_variants_used", []).append({"scope": "dated", "date": date_key, "params": params, "rows": 0, "date_filter_effective": False})
@@ -276,6 +286,8 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                     stats["budget_exhausted"] = True
                     break
                 payload = await provider._get_json(client, "/games", params, stats, preview)
+                if _rate_limited(stats):
+                    break
                 rows = provider._extract_list(payload)
                 if not rows:
                     continue
@@ -294,7 +306,9 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                     break
                 stats["broad_fallback_stale_rows"] = _to_int(stats.get("broad_fallback_stale_rows"), 0) + len(rows)
     deduped = _dedupe_rows(fixtures, provider)
-    if not deduped and _to_int(stats.get("stale_or_ignored_date_filter_rows"), 0) > 0:
+    if _rate_limited(stats):
+        stats["diagnosis"] = "sportlogic_rate_limited"
+    elif not deduped and _to_int(stats.get("stale_or_ignored_date_filter_rows"), 0) > 0:
         stats["diagnosis"] = "games_endpoint_returned_unmatched_or_stale_rows"
     elif deduped:
         stats["diagnosis"] = "date_filter_effective"
