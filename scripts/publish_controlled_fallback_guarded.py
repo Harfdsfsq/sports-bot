@@ -310,6 +310,68 @@ if hasattr(base, "controlled_line_movement_report"):
     base.controlled_line_movement_report = controlled_line_movement_report_guarded
 
 
+
+_original_tier_reasons = getattr(base, "tier_reasons", None)
+
+
+def _tier_name(value: Any) -> str:
+    return str(value or "").replace("уровень", "").strip().upper()
+
+
+def tier_reasons_guarded(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    reasons = list(_original_tier_reasons(tier, candidate, metrics) or []) if callable(_original_tier_reasons) else []
+    tier_name = _tier_name(tier)
+
+    # Project contract: A-tier means 2+ independent odds sources, 2+ context/confirmation
+    # sources, confirmed movement and value. The base fallback used bookmaker/line count
+    # as enough for "уровень A", which made a 3-book / 1-provider pick look like A-tier.
+    # Keep such candidates publishable as B-tier when they satisfy all safety checks, but
+    # do not label them A-tier unless there are at least two independent odds providers.
+    if tier_name == "A" and _truthy(os.getenv("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES"), True):
+        min_odds_sources = int(float(os.getenv("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES") or 2))
+        odds_sources = int(metrics.get("odds_sources_count") or 0)
+        if odds_sources < min_odds_sources:
+            reasons.append(f"tier_a_odds_sources_below_min:{odds_sources}/{min_odds_sources}")
+    return reasons
+
+
+if callable(_original_tier_reasons):
+    base.tier_reasons = tier_reasons_guarded
+
+
+_original_final_publish_guard_reasons = getattr(base, "final_publish_guard_reasons", None)
+
+
+def final_publish_guard_reasons_guarded(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> list[str]:
+    reasons = list(_original_final_publish_guard_reasons(candidate, metrics, tier) or []) if callable(_original_final_publish_guard_reasons) else []
+    tier_name = _tier_name(tier)
+
+    # B-tier lifecycle rule: if the match will start before the next regular cron pass,
+    # the candidate may be published after the same final checks as A-tier. The original
+    # fallback only allowed publish_now_no_next_cron for non-B tiers, which encouraged
+    # false A-tier labelling for safe but one-provider B-tier candidates.
+    movement = metrics.get("line_movement") if isinstance(metrics.get("line_movement"), dict) else _candidate_confirmed_movement(candidate)
+    status = _movement_status((movement or {}).get("status") or (movement or {}).get("line_movement_lifecycle_status")) if isinstance(movement, dict) else ""
+    if tier_name == "B" and status == "publish_now_no_next_cron" and bool((movement or {}).get("passed")):
+        reasons = [r for r in reasons if r != "line_movement_not_confirmed:publish_now_no_next_cron"]
+        _GUARD_EVENTS.append({
+            "guard": "final_publish_guard",
+            "match_key": candidate.get("match_key"),
+            "home_team": candidate.get("home_team"),
+            "away_team": candidate.get("away_team"),
+            "family": candidate.get("family"),
+            "selection": candidate.get("selection"),
+            "point": candidate.get("point"),
+            "decision": "allowed_b_tier_publish_now_no_next_cron",
+            "movement": movement,
+        })
+    return reasons
+
+
+if callable(_original_final_publish_guard_reasons):
+    base.final_publish_guard_reasons = final_publish_guard_reasons_guarded
+
+
 _original_hard_reject_reasons = base.hard_reject_reasons
 
 
