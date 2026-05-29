@@ -201,7 +201,10 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
     text_metrics = _parse_text_metrics(text)
     parsed_tier = _tier_code(text_metrics.get("tier") or _metric(selected, "tier", "level"))
     if parsed_tier == "B":
-        min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_ODDS_SOURCES", 1))
+        # B-tier requires one independent odds provider; 2+ is A-tier.
+        # Ignore any inherited global/env min=2 here so B-tier no-next-cron
+        # candidates are not blocked by an A-tier publication threshold.
+        min_odds_sources = 1
         min_context_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_CONTEXT_SOURCES", 1))
     elif parsed_tier == "C":
         min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_C_TELEGRAM_MIN_ODDS_SOURCES", 1))

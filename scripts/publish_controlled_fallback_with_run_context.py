@@ -248,9 +248,15 @@ def tier_reasons_with_honest_ab_rules(tier: str, candidate: dict[str, Any], metr
         if confirmations < min_conf:
             reasons.append(f"tier_a_confirmation_sources_below_min:{confirmations}/{min_conf}")
     elif code == "B":
-        min_odds = _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1)
+        # B-tier by project rules is allowed with one independent odds provider.
+        # Some global workflow envs still set CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES=2
+        # because A-tier/main publication uses 2+ odds-source.  Do not let that
+        # global value leak into B-tier fallback evaluation.
+        min_odds = 1
         min_conf = _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1)
-        if odds_sources < min_odds:
+        if odds_sources >= min_odds:
+            reasons = [r for r in reasons if not str(r).startswith("tier_b_odds_sources_below_min:")]
+        else:
             reasons.append(f"tier_b_odds_sources_below_min:{odds_sources}/{min_odds}")
         if confirmations < min_conf:
             reasons.append(f"tier_b_confirmation_sources_below_min:{confirmations}/{min_conf}")
