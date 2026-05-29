@@ -109,7 +109,6 @@ def _telegram_text(req: Any) -> str:
         return ""
 
 
-
 def _tier_code(value: Any) -> str:
     raw = str(value or "").strip().lower()
     raw = raw.replace("уровень", "").strip()
@@ -126,6 +125,7 @@ def _tier_code(value: Any) -> str:
     if raw.endswith((" c", " с")):
         return "C"
     return ""
+
 
 def _parse_text_metrics(text: str) -> dict[str, Any]:
     low = text.lower()
@@ -190,6 +190,13 @@ def _set_request_text(req: Any, text: str) -> Any:
     return req
 
 
+def _strict_selected_independent_odds_sources(selected: dict[str, Any]) -> int:
+    # Prefer corrected independent provider counts.  Do not fall back to books_count
+    # or price_sources_count: those are bookmaker/depth signals, not independent APIs.
+    value = _metric(selected, "independent_odds_sources_count", "odds_sources_count")
+    return _as_int(value)
+
+
 def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
     text_metrics = _parse_text_metrics(text)
     parsed_tier = _tier_code(text_metrics.get("tier") or _metric(selected, "tier", "level"))
@@ -209,10 +216,14 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
             ),
         )
     min_quality = _env_float("CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY", 70.0)
-    odds_sources = max(
-        _as_int(text_metrics.get("odds_sources")),
-        _as_int(_metric(selected, "odds_sources_count", "price_sources_count", "independent_odds_sources_count", "price_confirmation_sources_count", "books_count")),
-    )
+    selected_independent = _strict_selected_independent_odds_sources(selected)
+    if selected_independent > 0:
+        odds_sources = selected_independent
+    else:
+        odds_sources = max(
+            _as_int(text_metrics.get("odds_sources")),
+            _as_int(_metric(selected, "odds_sources_count", "independent_odds_sources_count")),
+        )
     context_sources = max(
         _as_int(text_metrics.get("confirmation_sources")),
         _as_int(text_metrics.get("context_sources")),
@@ -233,6 +244,7 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
         "quality": quality,
         "min_quality": min_quality,
         "tier": tier,
+        "selected_independent_odds_sources": selected_independent,
     }
     if _env_bool("CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM", True) and odds_sources < min_odds_sources:
         return True, f"telegram_price_odds_sources_below_min:{odds_sources}/{min_odds_sources}", details
@@ -258,7 +270,7 @@ def install() -> None:
         "blocked_telegram_sends": 0,
         "telegram_send_attempts": 0,
         "telegram_sends_succeeded": 0,
-        "guard_version": "telegram-hard-odds-context-sources-quality-v3",
+        "guard_version": "telegram-hard-independent-odds-context-sources-quality-v4",
     }
     _write_audit(audit)
 
@@ -292,6 +304,6 @@ def install() -> None:
     url_request.urlopen = guarded_urlopen
     os.environ["CONTROLLED_FALLBACK_PREPUBLISH_GUARD_ACTIVE"] = "true"
     try:
-        print("controlled fallback prepublish guard active: telegram-hard-odds-context-sources-quality-v3")
+        print("controlled fallback prepublish guard active: telegram-hard-independent-odds-context-sources-quality-v4")
     except Exception:
         pass
