@@ -1,5 +1,5 @@
 {
-  "created_at_utc": "2026-05-29T18:52:55.891541+00:00",
+  "created_at_utc": "2026-05-29T19:15:25.632974+00:00",
   "notes": [
     "Probe-only: no publication decisions are changed.",
     "All limits are per-run; any 429/5xx stops that provider for this probe only.",
@@ -24,34 +24,140 @@
       "errors": [],
       "fixtures_seen": 0,
       "http_statuses": [
+        200,
         200
       ],
       "lineups_probe_rows": 0,
       "matched_targets": 0,
       "provider": "api_football",
-      "requests": 1,
+      "requests": 2,
       "samples": [],
       "statistics_probe_rows": 0
     },
     "highlightly": {
+      "auth_header_mode": "x-rapidapi-key",
       "configured": true,
       "errors": [
-        "403:{\"status\":403,\"error\":\"Missing mandatory HTTP Headers. Please visit https://highlightly.net/ documentation for more information\"}",
-        "403:{\"status\":403,\"error\":\"Missing mandatory HTTP Headers. Please visit https://highlightly.net/ documentation for more information\"}"
+        "401:{\"message\":\"Odds are not available in Basic plan. Please upgrade your plan.\",\"statusCode\":401}"
       ],
       "http_statuses": [
-        403,
-        403
+        200,
+        200,
+        401
       ],
-      "matched_targets": 0,
-      "matches_seen": 0,
+      "matched_targets": 1,
+      "matches_seen": 200,
+      "odds_probe_rows": 0,
       "provider": "highlightly",
-      "requests": 2,
-      "samples": []
+      "requests": 3,
+      "samples": [
+        {
+          "awayTeam": {
+            "id": 22156569,
+            "logo": null,
+            "name": "Huaquillas"
+          },
+          "country": {
+            "code": "EC",
+            "logo": "https://highlightly.net/soccer/images/countries/EC.svg",
+            "name": "Ecuador"
+          },
+          "date": "2026-05-29T23:30:00.000Z",
+          "homeTeam": {
+            "id": 16198718,
+            "logo": "https://highlightly.net/soccer/images/teams/16198718.png",
+            "name": "Leones del Norte"
+          },
+          "id": 1313032512,
+          "league": {
+            "id": 781151,
+            "logo": "https://highlightly.net/soccer/images/leagues/781151.png",
+            "name": "Copa Ecuador",
+            "season": 2025
+          },
+          "round": "Round of 32",
+          "state": {
+            "clock": null,
+            "description": "Not started",
+            "score": {
+              "current": null,
+              "penalties": null
+            }
+          }
+        },
+        {
+          "awayTeam": {
+            "id": 23415198,
+            "logo": null,
+            "name": "Connecticut Rush"
+          },
+          "country": {
+            "code": "US",
+            "logo": "https://highlightly.net/soccer/images/countries/US.svg",
+            "name": "USA"
+          },
+          "date": "2026-05-29T23:30:00.000Z",
+          "homeTeam": {
+            "id": 3489884,
+            "logo": "https://highlightly.net/soccer/images/teams/3489884.png",
+            "name": "Western Mass Pioneers"
+          },
+          "id": 1297471126,
+          "league": {
+            "id": 218640,
+            "logo": "https://highlightly.net/soccer/images/leagues/218640.png",
+            "name": "USL League Two",
+            "season": 2026
+          },
+          "round": "Group Stage",
+          "state": {
+            "clock": null,
+            "description": "Not started",
+            "score": {
+              "current": null,
+              "penalties": null
+            }
+          }
+        },
+        {
+          "awayTeam": {
+            "id": 21995730,
+            "logo": null,
+            "name": "Hudson Valley Crusaders"
+          },
+          "country": {
+            "code": "US",
+            "logo": "https://highlightly.net/soccer/images/countries/US.svg",
+            "name": "USA"
+          },
+          "date": "2026-05-29T23:30:00.000Z",
+          "homeTeam": {
+            "id": 3400529,
+            "logo": "https://highlightly.net/soccer/images/teams/3400529.png",
+            "name": "Hartford Athletic"
+          },
+          "id": 1304021273,
+          "league": {
+            "id": 951351,
+            "logo": null,
+            "name": "USL W League",
+            "season": 2026
+          },
+          "round": "Regular Season - 1",
+          "state": {
+            "clock": null,
+            "description": "Not started",
+            "score": {
+              "current": null,
+              "penalties": null
+            }
+          }
+        }
+      ]
     }
   },
   "status": "ok",
-  "target_count": 3,
+  "target_count": 4,
   "target_sample": [
     {
       "away": "CD Tecnico Universitario",
@@ -59,14 +165,19 @@
       "kickoff": "2026-05-29T20:30:00+00:00"
     },
     {
-      "away": "America FC MG",
-      "home": "EC Juventude RS",
-      "kickoff": "2026-05-30T00:00:00+00:00"
+      "away": "FC Tokyo",
+      "home": "Cerezo Osaka",
+      "kickoff": "2026-05-30T06:00:00+00:00"
     },
     {
       "away": "CA Cerro",
       "home": "Cerro Largo FC",
       "kickoff": "2026-05-29T22:30:00+00:00"
+    },
+    {
+      "away": "America FC MG",
+      "home": "EC Juventude RS",
+      "kickoff": "2026-05-30T00:00:00+00:00"
     }
   ]
 }

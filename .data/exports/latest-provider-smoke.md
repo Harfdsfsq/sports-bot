@@ -3,7 +3,7 @@
 - status: **warning**
 - enabled ok: 7/8
 - missing keys: 0
-- non-core env violations: 6
+- non-core env violations: 5
 
 | provider | enabled | ok | status | items | http |
 | --- | --- | --- | --- | ---: | ---: |
@@ -20,6 +20,5 @@
 - ALLSPORTSAPI: enabled={'ALLSPORTSAPI_ENABLED': 'true'} limits={'ALLSPORTSAPI_REQUESTS_MAX_PER_RUN': '4', 'ALLSPORTSAPI_REQUEST_BUDGET_GRANTED': '4', 'ALLSPORTSAPI_PER_RUN_MAX': '4', 'ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN': '4'}
 - SPORTLOGIC: enabled={'SPORTLOGIC_QUERY_GUARD_ENABLED': 'true', 'SPORTLOGIC_CONTROLLED_ODDS_ENABLED': 'true', 'SPORTLOGIC_ENABLED': 'true'} limits={'SPORTLOGIC_REQUEST_BUDGET_GRANTED': '16', 'SPORTLOGIC_PER_RUN_MAX': '16', 'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN': '16', 'SPORTLOGIC_REQUESTS_MAX_PER_RUN': '16'}
 - CURRENTS: enabled={'CURRENTS_NEWS_CONTEXT_ENABLED': 'true'} limits={}
-- RAPIDAPI_FREE_FOOTBALL: enabled={'RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED': 'true'} limits={}
 - SHARPAPI: enabled={'SHARPAPI_TEXT_ENRICHMENT_ENABLED': 'true'} limits={}
 - OPENFOOTBALL: enabled={} limits={'OPENFOOTBALL_PUBLIC_REQUEST_BUDGET_GRANTED': '2', 'OPENFOOTBALL_PUBLIC_MAX_HTTP_REQUESTS_PER_RUN': '2'}

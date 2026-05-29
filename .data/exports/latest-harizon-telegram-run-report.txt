@@ -1,68 +1,68 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 132 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+🟡 Прогнозов нет: есть 134 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
 • Главная причина: line movement guard снял кандидата
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 95.
-• 1+ линия: 256/300 (85%) | 1+ контекст: 223/300 (74%)
-• 2+ подтверждения цены: 132/300 (44%)
-• 2+ независимых odds-source: 20/300 (7%)
-• 2+ контекста: 25/300 (8%)
-• Готово для модели: 179/300 (60%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 128.
+• 1+ линия: 258/300 (86%) | 1+ контекст: 223/300 (74%)
+• 2+ подтверждения цены: 134/300 (45%)
+• 2+ независимых odds-source: 22/300 (7%)
+• 2+ контекста: 23/300 (8%)
+• Готово для модели: 181/300 (60%)
 
 🏷️ A/B-tier публикация
 • A-tier coverage: 14 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 132 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 134 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 132 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 134 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 11 | матчей без следующего регулярного run: 11
-• Line guard: увидел 11, оставил 0, снял 3
+• Line guard: увидел 11, оставил 0, снял 4
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1/4
 • Quality прошло: 1 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 3 | evaluated 3 | published 0
+• Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 20 (events 0, odds 20); смэтчил матчей 95; дал offers 9601 (480/запрос); 2+ букмекера 58; ошибок 0.
-• Bzzoiro: запросы 42 (direct 21, v2 21, gap 0); событий 66; контекстов 5; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 10; secondary offers 0; overlap с odds-api.io 6; ошибок 0.
-• SStats: запросы 26; сырых строк 22572 (868/запрос); контекстов 76; deep-enriched 8; team-form 0; direct 0; ошибок 0.
+• odds-api.io: запросы 26 (events 0, odds 26); смэтчил матчей 128; дал offers 11310 (435/запрос); 2+ букмекера 73; ошибок 0.
+• Bzzoiro: запросы 58 (direct 29, v2 29, gap 0); событий 66; контекстов 7; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 14; secondary offers 0; overlap с odds-api.io 10; ошибок 0.
+• SStats: запросы 26; сырых строк 22572 (868/запрос); контекстов 96; deep-enriched 7; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 4; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 71, bzzoiro+odds_api_io: 6
+• Комбинации источников линий: odds_api_io: 94, bzzoiro+odds_api_io: 10
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 340. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 19.
-• 0–4 часа: 0/17 core-ready.
-• 0–12 часов: 0/17 core-ready.
+• 0–4 часа: 0/9 core-ready.
+• 0–12 часов: 0/9 core-ready.
 
 🚫 Почему не опубликовано
-• line movement guard снял кандидата: 3 (19%)
+• line movement guard снял кандидата: 4 (24%)
 • направление ставки конфликтует с xG: 2 (12%)
 • quality: market sanity totals/xG contradiction: 2 (12%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (6%)
-• tier a quality below min: 1 (6%)
-• tier a canonical edge below min: 1 (6%)
-• tier a canonical ev below min: 1 (6%)
-• tier a odds sources below min:1/2: 1 (6%)
+• tier c watch only: 1 (6%)
+• line movement not confirmed:awaiting next run: 1 (6%)
+• line movement:needs next cron line movement recheck: 1 (6%)
+• final edge below min: 1 (6%)
+• final ev below min: 1 (6%)
 
 🔎 Последние проверенные кандидаты
-1. Cde Juventud Italiana — CD Tecnico Universitario | Больше 2.5 @2.50 | EV +5.1% | edge +2.0 п.п. | q 37.3
+1. Cde Juventud Italiana — CD Tecnico Universitario | Больше 2.5 @2.50 | EV +4.8% | edge +1.9 п.п. | q 36.9
    • причина: направление ставки конфликтует с xG
-2. EC Juventude RS — America FC MG | Больше 2.5 @2.52 | EV +2.0% | edge +0.8 п.п. | q 52.4
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-3. Cerro Largo FC — CA Cerro | Больше 2.5 @2.50 | EV +1.6% | edge +0.6 п.п. | q 58.1
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
+2. Cerezo Osaka — FC Tokyo | Меньше 2.75 @1.77 | EV +4.7% | edge +2.7 п.п. | q 70.4
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+3. Cerro Largo FC — CA Cerro | Больше 2.5 @2.52 | EV +2.7% | edge +1.1 п.п. | q 60.0
+   • причина: tier a canonical edge below min, tier a canonical ev below min, tier a odds sources below min:1/2
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26655555009
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26655555009
-• Artifact: run-bot-26655555009
+• Run ID: 26656466500
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26656466500
+• Artifact: run-bot-26656466500
 • workflow run-bot, attempt 1
