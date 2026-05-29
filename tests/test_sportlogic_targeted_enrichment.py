@@ -210,3 +210,48 @@ async def test_active_odds_embedded_stale_game_is_not_matched(monkeypatch) -> No
     assert stats["active_odds_embedded_games_outside_requested_dates"] == 1
     assert stats["active_odds_stale_only"] is True
     assert stats["diagnosis"] == "active_odds_stale_only_no_current_fixture"
+
+@pytest.mark.asyncio
+async def test_fetch_offers_skips_active_odds_when_games_empty(monkeypatch, tmp_path) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("SPORTLOGIC_API_KEY", "test-key")
+    monkeypatch.delenv("SPORTLOGIC_ACTIVE_ODDS_ALLOW_WITHOUT_CURRENT_GAMES", raising=False)
+    provider = SportLogicProvider(DummySettings())
+    provider.max_requests_per_run = 6
+    calls: list[tuple[str, dict]] = []
+
+    async def fake_load_fixtures(matches):
+        return [], {"requests": 1, "fixtures_fetched": 0, "games_query_variants": [{"params": {"date_from": "2026-05-28"}, "rows": 0}]}, {"sample_fixtures": []}
+
+    async def fake_get_json(client, path, params, stats_arg, preview_arg):
+        calls.append((path, dict(params or {})))
+        raise AssertionError("/odds should not be called when /games has no current fixtures")
+
+    monkeypatch.setattr(provider, "_load_fixtures_for_matches", fake_load_fixtures)
+    monkeypatch.setattr(provider, "_get_json", fake_get_json)
+
+    offers, stats, preview = await provider.fetch_offers([_match()])
+
+    assert offers == {}
+    assert calls == []
+    assert stats["active_odds_skipped_reason"] == "no_current_games_from_games_endpoint"
+    assert stats["diagnosis"] == "sportlogic_no_current_games_probe_only"
+    probe = tmp_path / ".data" / "exports" / "latest-sportlogic-coverage-probe.json"
+    assert probe.exists()
+    payload = __import__("json").loads(probe.read_text(encoding="utf-8"))
+    assert payload["current_games"] == 0
+    assert payload["can_use_as_odds_source"] is False
+
+
+def test_sportlogic_query_guard_compact_mode_uses_two_dated_variants(monkeypatch) -> None:
+    from app.services import sportlogic_query_runtime_guard as guard
+
+    monkeypatch.setenv("SPORTLOGIC_COMPACT_QUERY_MODE", "true")
+    monkeypatch.delenv("SPORTLOGIC_GAMES_DATE_FROM_ONLY_FALLBACK", raising=False)
+
+    variants = guard._param_variants_for_date("2026-05-29", per_page=50)
+
+    assert variants == [
+        {"status": "scheduled", "date_from": "2026-05-29", "date_to": "2026-05-30", "per_page": 50},
+        {"date_from": "2026-05-29", "date_to": "2026-05-30", "per_page": 50},
+    ]

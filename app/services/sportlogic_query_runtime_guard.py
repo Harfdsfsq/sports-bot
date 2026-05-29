@@ -129,10 +129,7 @@ def _param_variants_for_date(date_key: str, per_page: int = 100) -> list[dict[st
         {"date_from": date_key, "date_to": next_day, "per_page": per_page},
     ]
     if compact:
-        # The public docs use date_from + status=scheduled as the first request.
-        # Keep this third variant in compact mode because some deployments treat
-        # date_to as a strict/exclusive cursor-like bound and otherwise return 0.
-        return base + [{"date_from": date_key, "status": "scheduled", "per_page": per_page}]
+        return base
     return base + [
         {"status": "live", "date_from": date_key, "date_to": next_day, "per_page": per_page},
         {"status": "pending", "date_from": date_key, "date_to": next_day, "per_page": per_page},
@@ -290,12 +287,10 @@ async def _load_fixtures_with_fallback(provider: Any, dates: list[str], stats: d
                 day_rows.extend(_filter_rows_to_requested_dates(provider, rows, {date_key}))
                 break
             fixtures.extend(day_rows)
-        if not fixtures and _truthy(os.getenv("SPORTLOGIC_ACTIVE_ODDS_FIXTURE_RECOVERY_ENABLED"), False):
+        if not fixtures:
             active_rows = await _load_games_from_active_odds(provider, dates, stats, preview)
             if active_rows:
                 fixtures.extend(active_rows)
-        elif not fixtures:
-            stats["active_odds_fixture_recovery_skipped"] = True
         if not fixtures and _truthy(os.getenv("SPORTLOGIC_BROAD_FALLBACK_ENABLED"), False):
             for params in _broad_param_variants(per_page=per_page):
                 if not provider._budget_left():

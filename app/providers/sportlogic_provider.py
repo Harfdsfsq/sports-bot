@@ -199,7 +199,23 @@ class SportLogicProvider:
             preview["sample_fixtures"] = fixtures[:3]
 
         mapping = self._match_fixtures(soccer_matches, fixtures, stats)
+        self._write_coverage_probe(stats, preview, soccer_matches, fixtures, mapping)
         offers_by_match: dict[str, list[Offer]] = defaultdict(list)
+
+        if not fixtures and not mapping and self._env_bool("SPORTLOGIC_SKIP_ACTIVE_ODDS_WHEN_NO_CURRENT_GAMES", True):
+            # SportLogic /odds?is_active=true has repeatedly returned stale odds
+            # for old fixtures when /games has no current rows.  Do not spend
+            # extra requests or risk false matching; keep SportLogic as a cheap
+            # coverage probe until /games returns current fixtures.
+            stats["active_odds_skipped_reason"] = "no_current_games_from_games_endpoint"
+            stats["active_odds_targeted_confirmation_skipped"] = True
+            stats["diagnosis"] = "sportlogic_no_current_games_probe_only"
+            stats["events_matched"] = 0
+            stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)
+            self._write_coverage_probe(stats, preview, soccer_matches, fixtures, mapping)
+            self._write_debug_export(stats, preview)
+            return {}, stats, preview
+
         prioritized_items = list(mapping.values())[: self.odds_match_limit]
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
@@ -228,11 +244,15 @@ class SportLogicProvider:
         if self._env_bool("SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED", True):
             min_targeted = max(1, int(float(os.getenv("SPORTLOGIC_TARGETED_MIN_OFFER_MATCHES") or 1)))
             if len(offers_by_match) < min_targeted and self._budget_left():
-                targeted_offers = await self._fetch_active_odds_targeted(soccer_matches, stats, preview)
-                for match_key, offers in targeted_offers.items():
-                    if offers:
-                        offers_by_match[match_key].extend(offers)
-                        stats["offers_parsed"] += len(offers)
+                if not fixtures and not self._env_bool("SPORTLOGIC_ACTIVE_ODDS_ALLOW_WITHOUT_CURRENT_GAMES", False):
+                    stats["active_odds_skipped_reason"] = "no_current_games_from_games_endpoint"
+                    stats["diagnosis"] = "sportlogic_no_current_games_probe_only"
+                else:
+                    targeted_offers = await self._fetch_active_odds_targeted(soccer_matches, stats, preview)
+                    for match_key, offers in targeted_offers.items():
+                        if offers:
+                            offers_by_match[match_key].extend(offers)
+                            stats["offers_parsed"] += len(offers)
 
         stats["events_matched"] = max(len(mapping), int(stats.get("active_odds_targeted_matches", 0) or 0))
         stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)
@@ -620,7 +640,64 @@ class SportLogicProvider:
             stats["active_odds_matched_fuzzy"] = int(stats.get("active_odds_matched_fuzzy") or 0) + 1
         return best_match
 
+    def _write_coverage_probe(
+        self,
+        stats: dict[str, Any],
+        preview: dict[str, Any],
+        matches: list[Match] | None = None,
+        fixtures: list[dict[str, Any]] | None = None,
+        mapping: dict[str, dict[str, Any]] | None = None,
+    ) -> None:
+        try:
+            fixtures = fixtures or []
+            mapping = mapping or {}
+            requested_dates = sorted({
+                dt.astimezone(UTC).date().isoformat()
+                for dt in (self._safe_match_datetime(match) for match in (matches or []))
+                if dt is not None
+            })
+            sample_games: list[dict[str, Any]] = []
+            for row in fixtures[:8]:
+                if not isinstance(row, dict):
+                    continue
+                sample_games.append({
+                    "id": self._event_id(row),
+                    "date": self._fixture_date_key(row),
+                    "league": self._league_name(row),
+                    "home": self._team_name(row, "home"),
+                    "away": self._team_name(row, "away"),
+                    "start_time": self._fixture_datetime(row).isoformat() if self._fixture_datetime(row) else None,
+                })
+            current_games = len(fixtures)
+            matched_games = len(mapping)
+            stale_only = bool(stats.get("active_odds_stale_only"))
+            can_use = bool(current_games > 0 and (matched_games > 0 or self._env_bool("SPORTLOGIC_USE_UNMATCHED_CURRENT_GAMES_FOR_PROBE", False)))
+            payload = {
+                "status": "ok",
+                "created_at_utc": datetime.now(UTC).isoformat(),
+                "mode": "coverage_probe",
+                "requested_dates": requested_dates,
+                "current_games": current_games,
+                "matched_games": matched_games,
+                "can_use_as_odds_source": can_use,
+                "active_odds_rows_seen": int(stats.get("active_odds_rows_seen") or 0),
+                "active_odds_stale_only": stale_only,
+                "active_odds_skipped_reason": stats.get("active_odds_skipped_reason"),
+                "diagnosis": stats.get("diagnosis") or ("sportlogic_current_games_available" if current_games else "sportlogic_no_current_games_probe_only"),
+                "requests": int(stats.get("requests") or 0),
+                "http_statuses": list(stats.get("http_statuses") or []),
+                "games_query_variants": list(stats.get("games_query_variants") or []),
+                "sample_games": self._sanitize(sample_games),
+                "preview_query_variants": self._sanitize(preview.get("query_variants_used") if isinstance(preview, dict) else []),
+            }
+            path = Path(".data/exports/latest-sportlogic-coverage-probe.json")
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        except Exception:
+            return
+
     def _write_debug_export(self, stats: dict[str, Any], preview: dict[str, Any]) -> None:
+        self._write_coverage_probe(stats, preview)
         try:
             path = Path(".data/exports/latest-sportlogic-debug.json")
             path.parent.mkdir(parents=True, exist_ok=True)
@@ -1137,6 +1214,8 @@ class SportLogicProvider:
             "active_odds_rows_seen": 0,
             "active_odds_targeted_matches": 0,
             "active_odds_targeted_offers_parsed": 0,
+            "active_odds_skipped_reason": None,
+            "diagnosis": "ok_or_no_data",
         }
 
     def _sportlogic_rate_limit_state_paths(self) -> list[Path]:
