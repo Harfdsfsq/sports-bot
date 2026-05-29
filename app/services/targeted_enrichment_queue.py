@@ -3,19 +3,28 @@ from __future__ import annotations
 """Targeted enrichment queue for HARIZON runtime.
 
 This module is intentionally API-free: it only ranks matches and caps provider
-shortlists per run. It is used to make paid/free-quota providers work as
+shortlists per run.  It is used to make paid/free-quota providers work as
 shortlist enrichers instead of broad 300-match scanners.
+
+Important runtime note: this queue is installed before some post-run artifacts
+(`coverage_truth`, `context-source-index`) are regenerated.  Therefore it must
+also infer pending B-tier/coverage state directly from the current day inventory,
+otherwise provider shortlists miss the very matches that are waiting for second
+line snapshots.
 """
 
 import json
 import os
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
-EXPORT_DIR = Path(".data/exports")
+ROOT = Path(".").resolve()
+EXPORT_DIR = ROOT / ".data" / "exports"
+DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 
 
 def truthy(value: Any, default: bool = False) -> bool:
@@ -45,6 +54,20 @@ def load_json_any(path: str | Path, default: Any = None) -> Any:
     return default
 
 
+def app_tz() -> ZoneInfo:
+    try:
+        return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
+    except Exception:
+        return ZoneInfo("Europe/Moscow")
+
+
+def target_date() -> str:
+    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or "").strip()
+    if explicit:
+        return explicit
+    return datetime.now(UTC).astimezone(app_tz()).date().isoformat()
+
+
 def ensure_utc(value: Any) -> datetime | None:
     if isinstance(value, datetime):
         dt = value
@@ -62,40 +85,31 @@ def ensure_utc(value: Any) -> datetime | None:
     return dt.astimezone(UTC)
 
 
-def app_target_date() -> str:
-    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or "").strip()
-    if explicit:
-        return explicit[:10]
-    try:
-        tz = ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
-    except Exception:
-        tz = ZoneInfo("Europe/Moscow")
-    return datetime.now(UTC).astimezone(tz).date().isoformat()
+def _norm_text(value: Any) -> str:
+    text = str(value or "").strip().lower()
+    text = re.sub(r"[^a-z0-9]+", " ", text)
+    return re.sub(r"\s+", " ", text).strip()
 
 
-def date_from_match_key(key: Any) -> str:
-    parts = str(key or "").strip().split("|")
-    if parts:
-        tail = parts[-1].strip()
-        if len(tail) >= 10 and tail[:4].isdigit() and tail[4] == "-":
-            return tail[:10]
-    return ""
+def _norm_key_part(value: Any) -> str:
+    return _norm_text(value).replace(" ", "_")
 
 
-def row_date_key(row: dict[str, Any]) -> str:
-    for key in ("date_local", "target_date", "kickoff_utc", "commence_time", "start_time", "kickoff"):
+def _date_from_any(value: Any) -> str:
+    dt = ensure_utc(value)
+    return dt.date().isoformat() if dt else ""
+
+
+def _row_date(row: dict[str, Any]) -> str:
+    for key in ("kickoff_utc", "commence_time", "start_time", "kickoff"):
         value = row.get(key)
-        if not value:
-            continue
-        if key in {"date_local", "target_date"}:
-            text = str(value).strip()
-            if len(text) >= 10:
-                return text[:10]
-        dt = ensure_utc(value)
-        if dt is not None:
-            return dt.date().isoformat()
-    mk_date = date_from_match_key(row_match_key(row))
-    return mk_date
+        if value:
+            d = _date_from_any(value)
+            if d:
+                return d
+    mk = str(row.get("match_key") or row.get("canonical_match_id") or "")
+    m = re.search(r"(20\d{2}-\d{2}-\d{2})", mk)
+    return m.group(1) if m else ""
 
 
 def match_key_of(match: Any) -> str:
@@ -109,8 +123,46 @@ def row_match_key(row: dict[str, Any]) -> str:
             return value
     home = str(row.get("home_team") or row.get("home") or "").strip().lower()
     away = str(row.get("away_team") or row.get("away") or "").strip().lower()
-    kickoff = str(row.get("commence_time") or row.get("kickoff") or row.get("start_time") or "").strip()
+    kickoff = str(row.get("commence_time") or row.get("kickoff_utc") or row.get("kickoff") or row.get("start_time") or "").strip()
     return f"{home}|{away}|{kickoff}"
+
+
+def _key_variants(home: Any, away: Any, date: Any, base: str = "") -> set[str]:
+    h = _norm_key_part(home)
+    a = _norm_key_part(away)
+    d = str(date or "").strip()[:10]
+    out = {str(base or "").strip()} if str(base or "").strip() else set()
+    if h and a and d:
+        out.update({
+            f"soccer|{h}|{a}|{d}",
+            f"soccer|{a}|{h}|{d}",
+            f"{d}|{h}|{a}",
+            f"{d}|{a}|{h}",
+            f"{h}|{a}|{d}",
+            f"{a}|{h}|{d}",
+        })
+    return {x for x in out if x}
+
+
+def row_key_variants(row: dict[str, Any]) -> set[str]:
+    d = _row_date(row)
+    return _key_variants(
+        row.get("home_team") or row.get("home"),
+        row.get("away_team") or row.get("away"),
+        d,
+        row_match_key(row),
+    )
+
+
+def match_key_variants(match: Any) -> set[str]:
+    kickoff = ensure_utc(getattr(match, "commence_time", None))
+    d = kickoff.date().isoformat() if kickoff else ""
+    return _key_variants(
+        getattr(match, "home_team", ""),
+        getattr(match, "away_team", ""),
+        d,
+        match_key_of(match),
+    )
 
 
 def _rows_from_payload(payload: Any) -> list[dict[str, Any]]:
@@ -127,8 +179,166 @@ def _rows_from_payload(payload: Any) -> list[dict[str, Any]]:
     return []
 
 
+def _inventory_payloads() -> list[dict[str, Any]]:
+    d = target_date()
+    paths = [
+        DAY_INV_DIR / f"{d}.json",
+        DAY_INV_DIR / "current.json",
+        DAY_INV_DIR / "latest.json",
+        ROOT / ".data" / "cache" / "day_inventory" / f"{d}.json",
+        ROOT / ".data" / "cache" / "day_inventory" / "current.json",
+        ROOT / ".data" / "cache" / "day_inventory" / "latest.json",
+        ROOT / "artifacts" / "run-bot" / "day_inventory" / f"{d}.json",
+    ]
+    out: list[dict[str, Any]] = []
+    for path in paths:
+        payload = load_json_any(path, {})
+        if isinstance(payload, dict):
+            if str(payload.get("date_local") or d) not in {"", d}:
+                continue
+            out.append(payload)
+    return out
+
+
+def load_inventory_rows() -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for payload in _inventory_payloads():
+        raw = payload.get("matches") if isinstance(payload.get("matches"), list) else []
+        for row in raw:
+            if not isinstance(row, dict):
+                continue
+            if _row_date(row) and _row_date(row) != target_date():
+                continue
+            sig = row_match_key(row) or repr(sorted(row.items()))[:240]
+            if sig in seen:
+                continue
+            seen.add(sig)
+            rows.append(row)
+    return rows
+
+
+def _list_from_any(value: Any) -> list[str]:
+    if isinstance(value, dict):
+        return [str(k).strip() for k in value.keys() if str(k).strip()]
+    if isinstance(value, (list, tuple, set)):
+        return [str(x).strip() for x in value if str(x).strip()]
+    if isinstance(value, str) and value.strip():
+        return [v.strip() for v in re.split(r"[,|;/]+", value) if v.strip()]
+    return []
+
+
+def _count_from_any(value: Any) -> int:
+    if isinstance(value, (list, tuple, set, dict)):
+        return len(value)
+    try:
+        if value in (None, ""):
+            return 0
+        return int(float(str(value)))
+    except Exception:
+        return 0
+
+
+def _coverage(row: dict[str, Any]) -> dict[str, Any]:
+    return row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+
+
+def _metadata(row: dict[str, Any]) -> dict[str, Any]:
+    return row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+
+
+def _row_context_sources(row: dict[str, Any]) -> set[str]:
+    cov = _coverage(row)
+    md = _metadata(row)
+    raw: list[Any] = []
+    for container in (row, cov, md):
+        if not isinstance(container, dict):
+            continue
+        for key in (
+            "context_sources", "context_confirmations", "all_context_sources",
+            "core_context_sources", "supplemental_context_sources",
+        ):
+            raw.extend(_list_from_any(container.get(key)))
+    sources = {_norm_text(x).replace(" ", "_") for x in raw if _norm_text(x)}
+    return {x for x in sources if x not in {"market", "ensemble", "odds_api_io", "line_history"}}
+
+
+def _row_odds_sources(row: dict[str, Any]) -> set[str]:
+    cov = _coverage(row)
+    md = _metadata(row)
+    raw: list[Any] = []
+    for container in (row, cov, md):
+        if not isinstance(container, dict):
+            continue
+        for key in ("odds_sources", "line_sources", "all_odds_sources", "core_odds_sources"):
+            raw.extend(_list_from_any(container.get(key)))
+    aliases = {"oddsapiio": "odds_api_io", "odds_api": "odds_api_io", "bzzoiro_v2": "bzzoiro"}
+    return {aliases.get(_norm_text(x).replace(" ", "_"), _norm_text(x).replace(" ", "_")) for x in raw if _norm_text(x)}
+
+
+def _price_confirmations(row: dict[str, Any]) -> int:
+    cov = _coverage(row)
+    md = _metadata(row)
+    return max(
+        _count_from_any(row.get("price_confirmations")),
+        _count_from_any(row.get("books")),
+        _count_from_any(cov.get("books_count")),
+        _count_from_any(md.get("books_count")),
+        _count_from_any(md.get("latest_books_max")),
+        _count_from_any(md.get("price_confirmation_sources_count")),
+        _count_from_any(md.get("price_sources_count")),
+    )
+
+
+def _line_movement_status(row: dict[str, Any]) -> str:
+    cov = _coverage(row)
+    md = _metadata(row)
+    for container in (row, cov, md):
+        if not isinstance(container, dict):
+            continue
+        for key in (
+            "line_movement_status", "line_movement_lifecycle_status", "movement_status",
+            "line_guard_status", "line_state", "movement_lifecycle_status",
+        ):
+            value = str(container.get(key) or "").strip().lower()
+            if value:
+                return value
+    return ""
+
+
+def _movement_confirmed(row: dict[str, Any]) -> bool:
+    status = _line_movement_status(row)
+    if any(token in status for token in ("confirmed", "passed", "kept", "movement_ok")):
+        return True
+    cov = _coverage(row)
+    md = _metadata(row)
+    for container in (row, cov, md):
+        if isinstance(container, dict):
+            for key in ("line_movement_confirmed", "movement_confirmed", "line_guard_kept", "has_second_line_snapshot"):
+                if truthy(container.get(key)):
+                    return True
+    return False
+
+
+def _movement_declined(row: dict[str, Any]) -> bool:
+    status = _line_movement_status(row)
+    return any(token in status for token in ("declined", "rejected", "dropped", "failed"))
+
+
+def _inventory_waiting_keys() -> set[str]:
+    keys: set[str] = set()
+    for row in load_inventory_rows():
+        cov = _coverage(row)
+        has_odds = bool(cov.get("odds")) or _price_confirmations(row) >= 1 or bool(_row_odds_sources(row))
+        has_context = bool(cov.get("context")) or bool(_row_context_sources(row))
+        tier_b_like = has_odds and has_context and _price_confirmations(row) >= 1 and len(_row_odds_sources(row)) >= 1
+        if tier_b_like and not _movement_confirmed(row) and not _movement_declined(row):
+            keys.update(row_key_variants(row))
+    return keys
+
+
 def load_value_priority() -> dict[str, float]:
-    """Return match_key -> priority from current run candidate artifacts."""
+    """Return match_key/variant -> priority from current run candidate artifacts."""
     priority: dict[str, float] = {}
     paths = [
         ".data/exports/latest-rescue-candidates.json",
@@ -137,6 +347,7 @@ def load_value_priority() -> dict[str, float]:
         "artifacts/controlled-fallback-report.json",
         ".logs/debug-last-run.json",
     ]
+    current_date = target_date()
     for path in paths:
         payload = load_json_any(path)
         rows: list[dict[str, Any]] = []
@@ -146,8 +357,7 @@ def load_value_priority() -> dict[str, float]:
             rows.extend([x for x in payload.get("candidates_after_quality") if isinstance(x, dict)])
         rows.extend(_rows_from_payload(payload))
         for idx, row in enumerate(rows):
-            key = row_match_key(row)
-            if not key:
+            if _row_date(row) and _row_date(row) != current_date:
                 continue
             metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
             ev = row.get("ev_pct") or row.get("canonical_ev_pct") or metrics.get("canonical_ev_pct") or metrics.get("ev_pct")
@@ -157,150 +367,102 @@ def load_value_priority() -> dict[str, float]:
                 score = max(0.0, float(ev or 0.0)) * 1.8 + max(0.0, float(edge or 0.0)) * 2.2 + max(0.0, float(quality or 0.0)) / 30.0
             except Exception:
                 score = 1.0
-            priority[key] = max(priority.get(key, 0.0), score + max(0.0, 0.001 * (len(rows) - idx)))
+            variants = row_key_variants(row)
+            if not variants:
+                variants = {row_match_key(row)}
+            for key in variants:
+                priority[key] = max(priority.get(key, 0.0), score + max(0.0, 0.001 * (len(rows) - idx)))
     return priority
-
-
-def _line_waiting_row(row: dict[str, Any]) -> bool:
-    containers = [row]
-    for key in ("metadata", "coverage", "line_movement", "movement"):
-        value = row.get(key)
-        if isinstance(value, dict):
-            containers.append(value)
-    text_parts: list[str] = []
-    for container in containers:
-        for key in (
-            "status",
-            "publication_lifecycle_status",
-            "lifecycle_status",
-            "line_movement_status",
-            "line_state",
-            "movement_status",
-            "line_guard_status",
-        ):
-            val = container.get(key)
-            if val not in (None, ""):
-                text_parts.append(str(val).lower())
-        for key in ("reasons", "reject_reasons", "quality_reasons"):
-            val = container.get(key)
-            if isinstance(val, list):
-                text_parts.extend(str(x).lower() for x in val)
-            elif val:
-                text_parts.append(str(val).lower())
-        for key in ("line_movement_waiting", "waiting_line_movement", "awaiting_line_movement", "needs_line_movement_recheck"):
-            val = container.get(key)
-            if str(val).strip().lower() in {"1", "true", "yes", "on"}:
-                return True
-    joined = " ".join(text_parts)
-    return any(token in joined for token in ("awaiting_next_run", "needs_next_cron", "line_movement_not_confirmed", "waiting_line", "needs_line_movement"))
-
-
-def _candidate_lifecycle_rows(payload: Any) -> list[dict[str, Any]]:
-    rows: list[dict[str, Any]] = []
-    if isinstance(payload, list):
-        return [x for x in payload if isinstance(x, dict)]
-    if not isinstance(payload, dict):
-        return []
-    candidates = payload.get("candidates")
-    if isinstance(candidates, dict):
-        rows.extend([x for x in candidates.values() if isinstance(x, dict)])
-    elif isinstance(candidates, list):
-        rows.extend([x for x in candidates if isinstance(x, dict)])
-    for key in ("rows", "items", "evaluated", "selected_all", "watchlist"):
-        value = payload.get(key)
-        if isinstance(value, list):
-            rows.extend([x for x in value if isinstance(x, dict)])
-        elif isinstance(value, dict):
-            rows.append(value)
-    return rows
 
 
 def load_waiting_line_movement_keys() -> set[str]:
     keys: set[str] = set()
-    target_date = app_target_date()
+    current_date = target_date()
 
-    # Current coverage truth is the best source when available: it already knows
-    # which inventory rows are B/A-covered but still lack a confirmed second line
-    # snapshot.  Older versions of this queue only read candidate-lifecycle-state
-    # and therefore reported waiting_line_items=0 while the run report showed 200+.
-    truth_paths = [
+    # Current/pre-run inventory inference is the most important source because the
+    # post-run coverage truth artifact is rebuilt after provider shortlists run.
+    keys.update(_inventory_waiting_keys())
+
+    for path in (
         ".data/exports/latest-day-inventory-coverage-truth.json",
         "artifacts/run-bot/latest-day-inventory-coverage-truth.json",
-    ]
-    for path in truth_paths:
+    ):
         payload = load_json_any(path, {})
-        rows = payload.get("rows") if isinstance(payload, dict) else None
-        if not isinstance(rows, list):
-            continue
+        rows = payload.get("rows") if isinstance(payload, dict) and isinstance(payload.get("rows"), list) else []
         for row in rows:
             if not isinstance(row, dict):
                 continue
-            if bool(row.get("line_movement_waiting")) or _line_waiting_row(row):
-                key = row_match_key(row)
-                if key:
-                    keys.add(key)
-
-    # Lifecycle state may contain current-run candidates before the coverage truth
-    # step has been rebuilt.  Parse its nested `candidates` dict correctly and
-    # ignore stale rows from prior local dates when a date can be determined.
-    for path in (".data/candidate-lifecycle-state.json", "artifacts/run-bot/candidate-lifecycle-state.json"):
-        payload = load_json_any(path, {})
-        for row in _candidate_lifecycle_rows(payload):
-            row_date = row_date_key(row)
-            if row_date and row_date != target_date:
+            if _row_date(row) and _row_date(row) != current_date:
                 continue
-            if not _line_waiting_row(row):
-                continue
-            key = row_match_key(row)
-            if key:
-                keys.add(key)
-    return keys
+            if truthy(row.get("line_movement_waiting")):
+                keys.update(row_key_variants(row))
 
-
-def _context_count_from_value(value: Any) -> int:
-    if isinstance(value, list):
-        return len({str(x).strip().lower() for x in value if str(x).strip()})
-    if isinstance(value, set | tuple):
-        return len({str(x).strip().lower() for x in value if str(x).strip()})
-    if isinstance(value, dict):
-        sources = value.get("sources") or value.get("context_sources") or value.get("providers")
-        if isinstance(sources, dict):
-            return len([k for k, v in sources.items() if v])
-        if isinstance(sources, list):
-            return len({str(x).strip().lower() for x in sources if str(x).strip()})
-        for key in ("count", "context_source_count", "context_sources_count", "sources_count"):
-            try:
-                return max(0, int(float(str(value.get(key) or 0))))
-            except Exception:
+    payload = load_json_any(".data/candidate-lifecycle-state.json", {})
+    rows: list[Any] = []
+    if isinstance(payload, dict):
+        candidates = payload.get("candidates")
+        if isinstance(candidates, dict):
+            rows.extend(candidates.values())
+        elif isinstance(candidates, list):
+            rows.extend(candidates)
+        for key, value in payload.items():
+            if key == "candidates":
                 continue
-    return 0
+            if isinstance(value, list):
+                rows.extend(value)
+            elif isinstance(value, dict) and any(k in value for k in ("match_key", "kickoff_utc", "status", "last_value_ok")):
+                rows.append(value)
+    elif isinstance(payload, list):
+        rows = payload
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        if _row_date(row) and _row_date(row) != current_date:
+            continue
+        status = str(row.get("status") or row.get("publication_lifecycle_status") or "").lower()
+        reasons = " ".join(str(x).lower() for x in row.get("reasons") or row.get("reject_reasons") or [])
+        waiting_like = (
+            "await" in status or "waiting" in status or "line" in status or "movement" in status or
+            "line" in reasons or "movement" in reasons or truthy(row.get("last_value_ok"))
+        )
+        if waiting_like:
+            keys.update(row_key_variants(row))
+    return {k for k in keys if k}
 
 
 def load_context_counts() -> dict[str, int]:
     counts: dict[str, int] = {}
+
+    # First use the current day inventory.  This exists before targeted provider
+    # shortlists are computed; latest-context-source-index is often post-run only.
+    for row in load_inventory_rows():
+        sources = _row_context_sources(row)
+        for key in row_key_variants(row):
+            counts[key] = max(counts.get(key, 0), len(sources))
+
     for path in (".data/exports/latest-context-source-index.json", ".data/provider_cache/context-source-index/latest.json"):
         payload = load_json_any(path, {})
         if not isinstance(payload, dict):
             continue
-        by_match = payload.get("by_match")
-        if isinstance(by_match, dict):
-            for key, value in by_match.items():
-                count = _context_count_from_value(value)
-                if key and count:
-                    counts[str(key)] = max(counts.get(str(key), 0), count)
-        raw = payload.get("matches") or payload.get("rows") or payload.get("items")
+        raw = payload.get("by_match") or payload.get("matches") or payload.get("rows") or payload.get("items") or payload
         if isinstance(raw, dict):
             for key, value in raw.items():
-                count = _context_count_from_value(value)
-                if key and count:
+                if isinstance(value, dict):
+                    sources = value.get("sources") or value.get("context_sources") or []
+                    count = len(sources) if isinstance(sources, list) else int(value.get("count") or value.get("context_source_count") or 0)
+                elif isinstance(value, list):
+                    count = len(value)
+                else:
+                    count = _count_from_any(value)
+                if str(key).strip():
                     counts[str(key)] = max(counts.get(str(key), 0), count)
         elif isinstance(raw, list):
             for row in raw:
                 if not isinstance(row, dict):
                     continue
-                key = row_match_key(row)
-                count = _context_count_from_value(row)
-                if key and count:
+                sources = row.get("sources") or row.get("context_sources") or []
+                count = len(sources) if isinstance(sources, list) else int(row.get("count") or row.get("context_source_count") or 0)
+                for key in row_key_variants(row):
                     counts[key] = max(counts.get(key, 0), count)
     return counts
 
@@ -334,6 +496,13 @@ def provider_limit(provider_key: str, fallback: int | None = None) -> int:
     return min(limit, hard) if hard > 0 else limit
 
 
+def _lookup_any(mapping: dict[str, Any], variants: set[str], default: Any = 0) -> Any:
+    for key in variants:
+        if key in mapping:
+            return mapping[key]
+    return default
+
+
 def rank_matches(
     matches: list[Any],
     provider_key: str,
@@ -344,15 +513,16 @@ def rank_matches(
     waiting_line_keys: set[str] | None = None,
 ) -> list[Any]:
     offers_by_match = offers_by_match or {}
-    context_counts = context_counts if context_counts is not None else load_context_counts()
-    value_priority = value_priority if value_priority is not None else load_value_priority()
-    waiting_line_keys = waiting_line_keys if waiting_line_keys is not None else load_waiting_line_movement_keys()
+    context_counts = context_counts or load_context_counts()
+    value_priority = value_priority or load_value_priority()
+    waiting_line_keys = waiting_line_keys or load_waiting_line_movement_keys()
     now = datetime.now(UTC)
     key = str(provider_key or "").strip().lower()
     ranked: list[tuple[tuple[float, ...], Any]] = []
     for match in matches:
         if str(getattr(match, "sport_key", "") or "") != "soccer":
             continue
+        variants = match_key_variants(match)
         match_key = match_key_of(match)
         kickoff = ensure_utc(getattr(match, "commence_time", None)) or now
         seconds = max((kickoff - now).total_seconds(), 0.0)
@@ -362,11 +532,11 @@ def rank_matches(
         odds_sources = {str(getattr(offer, "source", "") or "").lower() for offer in offers if str(getattr(offer, "source", "") or "").strip()}
         books = {str(getattr(offer, "bookmaker", "") or "").lower() for offer in offers if str(getattr(offer, "bookmaker", "") or "").strip()}
         families = {str(getattr(offer, "family", "") or "").lower() for offer in offers if str(getattr(offer, "family", "") or "").strip()}
-        ctx_count = int(context_counts.get(match_key, 0) or 0)
-        context_gap = 1.0 if ctx_count < 2 and offers else 0.0
+        ctx_count = int(_lookup_any(context_counts, variants, 0) or 0)
+        context_gap = 1.0 if ctx_count < 2 and (offers or ctx_count >= 1) else 0.0
         second_odds_gap = 1.0 if len(odds_sources) < 2 and offers else 0.0
-        value = float(value_priority.get(match_key, 0.0) or 0.0)
-        waiting = 1.0 if match_key in waiting_line_keys else 0.0
+        value = float(max(float(value_priority.get(v, 0.0) or 0.0) for v in variants) if variants else 0.0)
+        waiting = 1.0 if variants.intersection(waiting_line_keys) else 0.0
         source_id_bonus = 0.0
         metadata = getattr(match, "metadata", {}) if isinstance(getattr(match, "metadata", {}), dict) else {}
         source_ids = metadata.get("day_inventory_source_ids") if isinstance(metadata.get("day_inventory_source_ids"), dict) else {}
@@ -376,8 +546,8 @@ def rank_matches(
         rank = (
             value,
             waiting,
-            second_odds_gap,
             context_gap,
+            second_odds_gap,
             window,
             source_id_bonus,
             float(len(offers)),
@@ -421,18 +591,20 @@ def select_for_provider(
         waiting_line_keys=waiting_line_keys,
     )
     selected = ranked[:limit] if limit > 0 else []
-    combined_keys = {match_key_of(match) for match in combined if match_key_of(match)}
+    pool_variants: set[str] = set()
+    for match in combined:
+        pool_variants.update(match_key_variants(match))
     return selected, {
         "provider": key,
         "input_matches": len(combined),
         "selected_matches": len(selected),
         "limit": limit,
         "value_priority_items": len(value_priority),
-        "value_priority_items_in_pool": len(set(value_priority).intersection(combined_keys)),
-        "waiting_line_items": len(waiting_line_keys.intersection(combined_keys)),
+        "value_priority_items_in_pool": sum(1 for k in value_priority if k in pool_variants),
+        "waiting_line_items": sum(1 for match in combined if match_key_variants(match).intersection(waiting_line_keys)),
         "waiting_line_items_total": len(waiting_line_keys),
         "context_index_items": len(context_counts),
-        "context_index_items_in_pool": len(set(context_counts).intersection(combined_keys)),
+        "context_index_items_in_pool": sum(1 for match in combined if any(v in context_counts for v in match_key_variants(match))),
     }
 
 
