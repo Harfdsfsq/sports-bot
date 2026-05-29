@@ -31,6 +31,10 @@ MODULES = [
     'app.services.day_inventory_extra_fixture_sources',
     'app.services.day_inventory_bucketed_top_v3_runtime_patch',
     'app.services.day_inventory_runtime_guard',
+    # Hard scope run-once back to the top-300 day inventory after fixture sources
+    # have had a chance to merge/repair inventory. This prevents broad provider
+    # returns from re-inflating progressive state to 800+ active matches.
+    'app.services.top_inventory_runtime_scope_patch',
     'app.services.near_window_priority_runtime_patch',
     'app.services.context_family_matching_runtime_patch',
     'app.services.runner_step_trace',
