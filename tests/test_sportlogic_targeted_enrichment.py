@@ -156,3 +156,57 @@ async def test_active_odds_rows_without_embedded_game_fetch_detail_and_parse(mon
     assert _match().match_key in out
     assert out[_match().match_key][0].selection == "Under"
     assert out[_match().match_key][0].point == 2.5
+
+
+def test_sportlogic_request_budget_env_overrides_settings(monkeypatch) -> None:
+    monkeypatch.setenv("SPORTLOGIC_REQUEST_BUDGET_GRANTED", "4")
+    monkeypatch.setenv("SPORTLOGIC_PER_RUN_MAX", "16")
+    provider = SportLogicProvider(DummySettings())
+    assert provider.max_requests_per_run == 4
+
+
+@pytest.mark.asyncio
+async def test_active_odds_embedded_stale_game_is_not_matched(monkeypatch) -> None:
+    provider = SportLogicProvider(DummySettings())
+    provider.max_requests_per_run = 6
+    stats = provider._stats("offers")
+    preview = {"errors": []}
+
+    async def fake_get_json(client, path, params, stats_arg, preview_arg):
+        provider._requests += 1
+        stats_arg["requests"] += 1
+        assert path == "/odds"
+        return {
+            "success": True,
+            "data": [
+                {
+                    "id": 251538,
+                    "game_id": 193,
+                    "market_id": 5,
+                    "market": {"id": 5, "key": "goals_over_under", "name": "Goals Over/Under"},
+                    "option_name": "Under",
+                    "option_value": "2.5",
+                    "odds": "2.10",
+                    "is_suspended": False,
+                    "bookmaker": {"name": "Bet365"},
+                    "game": {
+                        "id": 193,
+                        "league": {"name": "England - Northern Premier League"},
+                        "home_team": "United of Manchester",
+                        "away_team": "Stockton Town",
+                        "start_time": "2026-04-21T18:45:00Z",
+                        "status": "scheduled",
+                    },
+                }
+            ],
+        }
+
+    monkeypatch.setattr(provider, "_get_json", fake_get_json)
+
+    out = await provider._fetch_active_odds_targeted([_match()], stats, preview)
+
+    assert out == {}
+    assert stats["active_odds_rows_seen"] == 1
+    assert stats["active_odds_embedded_games_outside_requested_dates"] == 1
+    assert stats["active_odds_stale_only"] is True
+    assert stats["diagnosis"] == "active_odds_stale_only_no_current_fixture"

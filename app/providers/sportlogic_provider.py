@@ -67,9 +67,12 @@ class SportLogicProvider:
         self.max_requests_per_run = max(
             0,
             int(float(
-                getattr(settings, "sportlogic_per_run_max", None)
+                os.getenv("SPORTLOGIC_REQUEST_BUDGET_GRANTED")
+                or os.getenv("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN")
+                or os.getenv("SPORTLOGIC_REQUESTS_MAX_PER_RUN")
                 or os.getenv("SPORTLOGIC_PER_RUN_MAX")
-                or 80
+                or getattr(settings, "sportlogic_per_run_max", None)
+                or 6
             )),
         )
         self.enabled = self._env_bool("ENABLE_SPORTLOGIC", True) and self._env_bool("SPORTLOGIC_ENABLED", True)
@@ -324,7 +327,7 @@ class SportLogicProvider:
             {"date_from": date_key, "date_to": next_day, "status": "scheduled", "per_page": per_page},
             {"date_from": date_key, "date_to": next_day, "per_page": per_page},
         ]
-        if self._env_bool("SPORTLOGIC_GAMES_DATE_FROM_ONLY_FALLBACK", False):
+        if self._env_bool("SPORTLOGIC_GAMES_DATE_FROM_ONLY_FALLBACK", True):
             variants.append({"date_from": date_key, "status": "scheduled", "per_page": per_page})
         return variants
 
@@ -416,6 +419,11 @@ class SportLogicProvider:
         """
         if not matches or not self._budget_left():
             return {}
+        requested_dates = {
+            dt.astimezone(UTC).date().isoformat()
+            for dt in (self._safe_match_datetime(match) for match in matches)
+            if dt is not None
+        }
         per_page = max(5, min(100, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100))))
         params: dict[str, Any] = {"is_active": "true", "per_page": per_page}
         market_id = str(os.getenv("SPORTLOGIC_ACTIVE_ODDS_MARKET_ID") or "").strip()
@@ -436,6 +444,7 @@ class SportLogicProvider:
 
             grouped_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
             embedded_games: dict[str, dict[str, Any]] = {}
+            stale_embedded_game_ids: set[str] = set()
             rows_without_game = 0
             for row in rows:
                 if not isinstance(row, dict):
@@ -450,7 +459,12 @@ class SportLogicProvider:
                 grouped_rows[game_id].append(row)
                 embedded = self._fixture_from_odds_row(row)
                 if embedded is not None:
-                    embedded_games.setdefault(game_id, embedded)
+                    embedded_date = self._fixture_date_key(embedded)
+                    if requested_dates and embedded_date and embedded_date not in requested_dates:
+                        stats["active_odds_embedded_games_outside_requested_dates"] = int(stats.get("active_odds_embedded_games_outside_requested_dates") or 0) + 1
+                        stale_embedded_game_ids.add(game_id)
+                    else:
+                        embedded_games.setdefault(game_id, embedded)
 
             stats["active_odds_game_ids_seen"] = len(grouped_rows)
             stats["active_odds_rows_without_game_id"] = rows_without_game
@@ -474,6 +488,9 @@ class SportLogicProvider:
                     candidate_games[game_id] = embedded_games[game_id]
                     stats["active_odds_embedded_games_used"] = int(stats.get("active_odds_embedded_games_used") or 0) + 1
                     continue
+                if game_id in stale_embedded_game_ids:
+                    stats["active_odds_stale_embedded_game_ids_skipped"] = int(stats.get("active_odds_stale_embedded_game_ids_skipped") or 0) + 1
+                    continue
                 if detail_limit <= 0:
                     stats["active_odds_game_detail_limit_zero"] = True
                     continue
@@ -488,6 +505,10 @@ class SportLogicProvider:
                 game_row = self._extract_single_object(detail)
                 if game_row is None:
                     stats["active_odds_game_detail_empty"] = int(stats.get("active_odds_game_detail_empty") or 0) + 1
+                    continue
+                detail_date = self._fixture_date_key(game_row)
+                if requested_dates and detail_date and detail_date not in requested_dates:
+                    stats["active_odds_game_detail_outside_requested_dates"] = int(stats.get("active_odds_game_detail_outside_requested_dates") or 0) + 1
                     continue
                 candidate_games[game_id] = game_row
 
@@ -508,10 +529,38 @@ class SportLogicProvider:
                 stats["active_odds_targeted_offers_parsed"] = int(stats.get("active_odds_targeted_offers_parsed") or 0) + len(parsed)
 
         stats["active_odds_targeted_matches"] = len(offers_by_match)
+        if not offers_by_match and int(stats.get("active_odds_rows_seen") or 0) > 0:
+            outside = int(stats.get("active_odds_embedded_games_outside_requested_dates") or 0) + int(stats.get("active_odds_game_detail_outside_requested_dates") or 0)
+            if outside > 0 and int(stats.get("active_odds_targeted_matches") or 0) <= 0:
+                stats["active_odds_stale_only"] = True
+                stats["diagnosis"] = "active_odds_stale_only_no_current_fixture"
         if offers_by_match:
             stats["active_odds_targeted_enabled"] = True
             preview["sample_active_odds_targeted_matches"] = list(offers_by_match.keys())[:8]
         return {key: value for key, value in offers_by_match.items() if value}
+
+    @staticmethod
+    def _safe_match_datetime(match: Match) -> datetime | None:
+        try:
+            dt = getattr(match, "commence_time", None)
+            if isinstance(dt, datetime):
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=UTC)
+                return dt.astimezone(UTC)
+        except Exception:
+            return None
+        return None
+
+    def _fixture_date_key(self, row: dict[str, Any]) -> str:
+        try:
+            dt = self._fixture_datetime(row)
+            if isinstance(dt, datetime):
+                if dt.tzinfo is None:
+                    dt = dt.replace(tzinfo=UTC)
+                return dt.astimezone(UTC).date().isoformat()
+        except Exception:
+            return ""
+        return ""
 
     def _fixture_from_odds_row(self, row: dict[str, Any]) -> dict[str, Any] | None:
         for key in ("game", "fixture", "event", "match"):
