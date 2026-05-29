@@ -1,9 +1,10 @@
 {
-  "created_at_utc": "2026-05-29T19:15:25.632974+00:00",
+  "created_at_utc": "2026-05-29T22:22:54.654296+00:00",
+  "github_run_id": "26664059904",
   "notes": [
-    "Probe-only: no publication decisions are changed.",
+    "Probe-only: no publication decisions are changed directly.",
     "All limits are per-run; any 429/5xx stops that provider for this probe only.",
-    "If matched_targets and odds/stat rows are non-zero over several runs, promote the provider into runtime enrichment."
+    "Matched fixture rows can be merged as context evidence by merge_targeted_secondary_context.py."
   ],
   "providers": {
     "allsportsapi": {
@@ -11,12 +12,14 @@
       "errors": [],
       "fixtures_seen": 0,
       "http_statuses": [
+        200,
         200
       ],
+      "matched_contexts": [],
       "matched_targets": 0,
       "odds_probe_rows": 0,
       "provider": "allsportsapi",
-      "requests": 1,
+      "requests": 2,
       "samples": []
     },
     "api_football": {
@@ -28,6 +31,7 @@
         200
       ],
       "lineups_probe_rows": 0,
+      "matched_contexts": [],
       "matched_targets": 0,
       "provider": "api_football",
       "requests": 2,
@@ -45,7 +49,49 @@
         200,
         401
       ],
-      "matched_targets": 1,
+      "matched_contexts": [
+        {
+          "away_team": "CD Tecnico Universitario",
+          "home_team": "Cde Juventud Italiana",
+          "kickoff_utc": "2026-05-29T20:30:00+00:00",
+          "match_key": "soccer|cde juventud italiana|tecnico universitario|2026-05-29",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "EC",
+            "logo": "https://highlightly.net/soccer/images/countries/EC.svg",
+            "name": "Ecuador"
+          },
+          "provider_date": "2026-05-29T20:30:00.000Z",
+          "provider_event_id": 1313037618,
+          "provider_league": {
+            "id": 781151,
+            "logo": "https://highlightly.net/soccer/images/leagues/781151.png",
+            "name": "Copa Ecuador",
+            "season": 2025
+          }
+        },
+        {
+          "away_team": "CA Cerro",
+          "home_team": "Cerro Largo FC",
+          "kickoff_utc": "2026-05-29T22:30:00+00:00",
+          "match_key": "soccer|ca cerro|cerro largo|2026-05-29",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "UY",
+            "logo": "https://highlightly.net/soccer/images/countries/UY.svg",
+            "name": "Uruguay"
+          },
+          "provider_date": "2026-05-29T22:30:00.000Z",
+          "provider_event_id": 1316325031,
+          "provider_league": {
+            "id": 228852,
+            "logo": "https://highlightly.net/soccer/images/leagues/228852.png",
+            "name": "Primera División - Apertura",
+            "season": 2026
+          }
+        }
+      ],
+      "matched_targets": 2,
       "matches_seen": 200,
       "odds_probe_rows": 0,
       "provider": "highlightly",
@@ -162,22 +208,26 @@
     {
       "away": "CD Tecnico Universitario",
       "home": "Cde Juventud Italiana",
-      "kickoff": "2026-05-29T20:30:00+00:00"
-    },
-    {
-      "away": "FC Tokyo",
-      "home": "Cerezo Osaka",
-      "kickoff": "2026-05-30T06:00:00+00:00"
-    },
-    {
-      "away": "CA Cerro",
-      "home": "Cerro Largo FC",
-      "kickoff": "2026-05-29T22:30:00+00:00"
+      "kickoff": "2026-05-29T20:30:00+00:00",
+      "match_key": "soccer|cde juventud italiana|tecnico universitario|2026-05-29"
     },
     {
       "away": "America FC MG",
       "home": "EC Juventude RS",
-      "kickoff": "2026-05-30T00:00:00+00:00"
+      "kickoff": "2026-05-30T00:00:00+00:00",
+      "match_key": "soccer|america mg|juventude rs|2026-05-30"
+    },
+    {
+      "away": "CA Cerro",
+      "home": "Cerro Largo FC",
+      "kickoff": "2026-05-29T22:30:00+00:00",
+      "match_key": "soccer|ca cerro|cerro largo|2026-05-29"
+    },
+    {
+      "away": "FC Tokyo",
+      "home": "Cerezo Osaka",
+      "kickoff": "2026-05-30T06:00:00+00:00",
+      "match_key": "soccer|cerezo osaka|tokyo|2026-05-30"
     }
   ]
 }
