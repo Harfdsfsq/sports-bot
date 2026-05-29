@@ -1,59 +1,53 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 33 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: line movement not confirmed:awaiting next run
+🟡 Прогнозов нет: есть 56 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 388.
-• 1+ линия: 242/300 (81%) | 1+ контекст: 146/300 (49%)
-• 2+ подтверждения цены: 101/300 (34%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 215.
+• 1+ линия: 261/300 (87%) | 1+ контекст: 183/300 (61%)
+• 2+ подтверждения цены: 109/300 (36%)
 • 2+ независимых odds-source: 11/300 (4%)
-• 2+ контекста: 10/300 (3%)
-• Готово для модели: 146/300 (49%)
+• 2+ контекста: 11/300 (4%)
+• Готово для модели: 154/300 (51%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 8 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 9 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 33 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 56 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 33 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 56 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 15 | матчей без следующего регулярного run: 15
-• Line guard: увидел 3, оставил 0, снял 1
+• Pre-kickoff проверок: 7 | матчей без следующего регулярного run: 7
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/1
-• Quality прошло: 1 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Raw/candidates before quality: 0/0
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 78 (events 0, odds 78); смэтчил матчей 384; дал offers 28370 (364/запрос); 2+ букмекера 162; ошибок 0.
-• Bzzoiro: запросы 130 (direct 65, v2 65, gap 0); событий 66; контекстов 18; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 32; secondary offers 0; overlap с odds-api.io 20; ошибок 1.
-• SStats: запросы 26; сырых строк 22572 (868/запрос); контекстов 225; deep-enriched 9; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 4; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 228, bzzoiro+odds_api_io: 20, bzzoiro: 1
+• odds-api.io: запросы 1 (events 1, odds 0); смэтчил матчей 0; дал offers 525 (525/запрос); 2+ букмекера 0; ошибок 1.
+• Bzzoiro: запросы 66 (direct 33, v2 33, gap 0); событий 46; контекстов 9; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 16; secondary offers 0; overlap с odds-api.io 0; ошибок 0.
+• SStats: запросы 26; сырых строк 22571 (868/запрос); контекстов 160; deep-enriched 3; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: bzzoiro: 12
 
 🧭 Покрытие ближайших окон
-• Активных матчей сейчас: 388. Нужно обновить линии: 0.
-• Core-ready 2+/2+ по всем tracked: 17.
-• 0–4 часа: 1/29 core-ready.
-• 0–12 часов: 10/250 core-ready.
+• Активных матчей сейчас: 228. Нужно обновить линии: 0.
+• Core-ready 2+/2+ по всем tracked: 9.
+• 0–4 часа: 2/27 core-ready.
+• 0–12 часов: 9/218 core-ready.
 
 🚫 Почему не опубликовано
-• line movement not confirmed:awaiting next run: 1 (33%)
-• line movement:needs next cron line movement recheck: 1 (33%)
-• line movement guard снял кандидата: 1 (33%)
-
-🔎 Последние проверенные кандидаты
-1. HJK Helsinki — IFK Mariehamn | Меньше @2.75 | EV +34.7% | edge +12.6 п.п. | q 100.0
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+• В свежих артефактах нет явных reject reasons.
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26664059904
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26664059904
-• Artifact: run-bot-26664059904
+• Run ID: 26666536671
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26666536671
+• Artifact: run-bot-26666536671
 • workflow run-bot, attempt 1
