@@ -3,16 +3,16 @@ from __future__ import annotations
 """Targeted enrichment queue for HARIZON runtime.
 
 This module is intentionally API-free: it only ranks matches and caps provider
-shortlists per run.  It is used to make paid/free-quota providers work as
+shortlists per run. It is used to make paid/free-quota providers work as
 shortlist enrichers instead of broad 300-match scanners.
 """
 
 import json
 import os
-from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 EXPORT_DIR = Path(".data/exports")
@@ -60,6 +60,42 @@ def ensure_utc(value: Any) -> datetime | None:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=UTC)
     return dt.astimezone(UTC)
+
+
+def app_target_date() -> str:
+    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or "").strip()
+    if explicit:
+        return explicit[:10]
+    try:
+        tz = ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
+    except Exception:
+        tz = ZoneInfo("Europe/Moscow")
+    return datetime.now(UTC).astimezone(tz).date().isoformat()
+
+
+def date_from_match_key(key: Any) -> str:
+    parts = str(key or "").strip().split("|")
+    if parts:
+        tail = parts[-1].strip()
+        if len(tail) >= 10 and tail[:4].isdigit() and tail[4] == "-":
+            return tail[:10]
+    return ""
+
+
+def row_date_key(row: dict[str, Any]) -> str:
+    for key in ("date_local", "target_date", "kickoff_utc", "commence_time", "start_time", "kickoff"):
+        value = row.get(key)
+        if not value:
+            continue
+        if key in {"date_local", "target_date"}:
+            text = str(value).strip()
+            if len(text) >= 10:
+                return text[:10]
+        dt = ensure_utc(value)
+        if dt is not None:
+            return dt.date().isoformat()
+    mk_date = date_from_match_key(row_match_key(row))
+    return mk_date
 
 
 def match_key_of(match: Any) -> str:
@@ -125,28 +161,119 @@ def load_value_priority() -> dict[str, float]:
     return priority
 
 
+def _line_waiting_row(row: dict[str, Any]) -> bool:
+    containers = [row]
+    for key in ("metadata", "coverage", "line_movement", "movement"):
+        value = row.get(key)
+        if isinstance(value, dict):
+            containers.append(value)
+    text_parts: list[str] = []
+    for container in containers:
+        for key in (
+            "status",
+            "publication_lifecycle_status",
+            "lifecycle_status",
+            "line_movement_status",
+            "line_state",
+            "movement_status",
+            "line_guard_status",
+        ):
+            val = container.get(key)
+            if val not in (None, ""):
+                text_parts.append(str(val).lower())
+        for key in ("reasons", "reject_reasons", "quality_reasons"):
+            val = container.get(key)
+            if isinstance(val, list):
+                text_parts.extend(str(x).lower() for x in val)
+            elif val:
+                text_parts.append(str(val).lower())
+        for key in ("line_movement_waiting", "waiting_line_movement", "awaiting_line_movement", "needs_line_movement_recheck"):
+            val = container.get(key)
+            if str(val).strip().lower() in {"1", "true", "yes", "on"}:
+                return True
+    joined = " ".join(text_parts)
+    return any(token in joined for token in ("awaiting_next_run", "needs_next_cron", "line_movement_not_confirmed", "waiting_line", "needs_line_movement"))
+
+
+def _candidate_lifecycle_rows(payload: Any) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if not isinstance(payload, dict):
+        return []
+    candidates = payload.get("candidates")
+    if isinstance(candidates, dict):
+        rows.extend([x for x in candidates.values() if isinstance(x, dict)])
+    elif isinstance(candidates, list):
+        rows.extend([x for x in candidates if isinstance(x, dict)])
+    for key in ("rows", "items", "evaluated", "selected_all", "watchlist"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            rows.extend([x for x in value if isinstance(x, dict)])
+        elif isinstance(value, dict):
+            rows.append(value)
+    return rows
+
+
 def load_waiting_line_movement_keys() -> set[str]:
     keys: set[str] = set()
-    payload = load_json_any(".data/candidate-lifecycle-state.json", {})
-    rows: list[Any] = []
-    if isinstance(payload, dict):
-        for value in payload.values():
-            if isinstance(value, list):
-                rows.extend(value)
-            elif isinstance(value, dict):
-                rows.append(value)
-    elif isinstance(payload, list):
-        rows = payload
-    for row in rows:
-        if not isinstance(row, dict):
+    target_date = app_target_date()
+
+    # Current coverage truth is the best source when available: it already knows
+    # which inventory rows are B/A-covered but still lack a confirmed second line
+    # snapshot.  Older versions of this queue only read candidate-lifecycle-state
+    # and therefore reported waiting_line_items=0 while the run report showed 200+.
+    truth_paths = [
+        ".data/exports/latest-day-inventory-coverage-truth.json",
+        "artifacts/run-bot/latest-day-inventory-coverage-truth.json",
+    ]
+    for path in truth_paths:
+        payload = load_json_any(path, {})
+        rows = payload.get("rows") if isinstance(payload, dict) else None
+        if not isinstance(rows, list):
             continue
-        status = str(row.get("status") or row.get("publication_lifecycle_status") or "").lower()
-        reasons = " ".join(str(x).lower() for x in row.get("reasons") or row.get("reject_reasons") or [])
-        if "line" in status or "movement" in status or "line" in reasons:
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            if bool(row.get("line_movement_waiting")) or _line_waiting_row(row):
+                key = row_match_key(row)
+                if key:
+                    keys.add(key)
+
+    # Lifecycle state may contain current-run candidates before the coverage truth
+    # step has been rebuilt.  Parse its nested `candidates` dict correctly and
+    # ignore stale rows from prior local dates when a date can be determined.
+    for path in (".data/candidate-lifecycle-state.json", "artifacts/run-bot/candidate-lifecycle-state.json"):
+        payload = load_json_any(path, {})
+        for row in _candidate_lifecycle_rows(payload):
+            row_date = row_date_key(row)
+            if row_date and row_date != target_date:
+                continue
+            if not _line_waiting_row(row):
+                continue
             key = row_match_key(row)
             if key:
                 keys.add(key)
     return keys
+
+
+def _context_count_from_value(value: Any) -> int:
+    if isinstance(value, list):
+        return len({str(x).strip().lower() for x in value if str(x).strip()})
+    if isinstance(value, set | tuple):
+        return len({str(x).strip().lower() for x in value if str(x).strip()})
+    if isinstance(value, dict):
+        sources = value.get("sources") or value.get("context_sources") or value.get("providers")
+        if isinstance(sources, dict):
+            return len([k for k, v in sources.items() if v])
+        if isinstance(sources, list):
+            return len({str(x).strip().lower() for x in sources if str(x).strip()})
+        for key in ("count", "context_source_count", "context_sources_count", "sources_count"):
+            try:
+                return max(0, int(float(str(value.get(key) or 0))))
+            except Exception:
+                continue
+    return 0
 
 
 def load_context_counts() -> dict[str, int]:
@@ -155,20 +282,25 @@ def load_context_counts() -> dict[str, int]:
         payload = load_json_any(path, {})
         if not isinstance(payload, dict):
             continue
-        raw = payload.get("matches") or payload.get("rows") or payload.get("items") or payload
+        by_match = payload.get("by_match")
+        if isinstance(by_match, dict):
+            for key, value in by_match.items():
+                count = _context_count_from_value(value)
+                if key and count:
+                    counts[str(key)] = max(counts.get(str(key), 0), count)
+        raw = payload.get("matches") or payload.get("rows") or payload.get("items")
         if isinstance(raw, dict):
             for key, value in raw.items():
-                if isinstance(value, dict):
-                    sources = value.get("sources") or value.get("context_sources") or []
-                    counts[str(key)] = max(counts.get(str(key), 0), len(sources) if isinstance(sources, list) else int(value.get("count") or 0))
+                count = _context_count_from_value(value)
+                if key and count:
+                    counts[str(key)] = max(counts.get(str(key), 0), count)
         elif isinstance(raw, list):
             for row in raw:
                 if not isinstance(row, dict):
                     continue
                 key = row_match_key(row)
-                sources = row.get("sources") or row.get("context_sources") or []
-                count = len(sources) if isinstance(sources, list) else int(row.get("count") or row.get("context_source_count") or 0)
-                if key:
+                count = _context_count_from_value(row)
+                if key and count:
                     counts[key] = max(counts.get(key, 0), count)
     return counts
 
@@ -212,9 +344,9 @@ def rank_matches(
     waiting_line_keys: set[str] | None = None,
 ) -> list[Any]:
     offers_by_match = offers_by_match or {}
-    context_counts = context_counts or load_context_counts()
-    value_priority = value_priority or load_value_priority()
-    waiting_line_keys = waiting_line_keys or load_waiting_line_movement_keys()
+    context_counts = context_counts if context_counts is not None else load_context_counts()
+    value_priority = value_priority if value_priority is not None else load_value_priority()
+    waiting_line_keys = waiting_line_keys if waiting_line_keys is not None else load_waiting_line_movement_keys()
     now = datetime.now(UTC)
     key = str(provider_key or "").strip().lower()
     ranked: list[tuple[tuple[float, ...], Any]] = []
@@ -244,8 +376,8 @@ def rank_matches(
         rank = (
             value,
             waiting,
-            context_gap,
             second_odds_gap,
+            context_gap,
             window,
             source_id_bonus,
             float(len(offers)),
@@ -277,15 +409,30 @@ def select_for_provider(
             continue
         seen.add(mk)
         combined.append(match)
-    ranked = rank_matches(combined, key, offers_by_match)
+    context_counts = load_context_counts()
+    value_priority = load_value_priority()
+    waiting_line_keys = load_waiting_line_movement_keys()
+    ranked = rank_matches(
+        combined,
+        key,
+        offers_by_match,
+        context_counts=context_counts,
+        value_priority=value_priority,
+        waiting_line_keys=waiting_line_keys,
+    )
     selected = ranked[:limit] if limit > 0 else []
+    combined_keys = {match_key_of(match) for match in combined if match_key_of(match)}
     return selected, {
         "provider": key,
         "input_matches": len(combined),
         "selected_matches": len(selected),
         "limit": limit,
-        "value_priority_items": len(load_value_priority()),
-        "waiting_line_items": len(load_waiting_line_movement_keys()),
+        "value_priority_items": len(value_priority),
+        "value_priority_items_in_pool": len(set(value_priority).intersection(combined_keys)),
+        "waiting_line_items": len(waiting_line_keys.intersection(combined_keys)),
+        "waiting_line_items_total": len(waiting_line_keys),
+        "context_index_items": len(context_counts),
+        "context_index_items_in_pool": len(set(context_counts).intersection(combined_keys)),
     }
 
 
