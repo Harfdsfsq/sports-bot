@@ -19,7 +19,7 @@ from urllib import request as url_request
 
 ROOT = Path(__file__).resolve().parents[1]
 AUDIT_PATH = ROOT / ".data" / "exports" / "latest-controlled-fallback-prepublish-guard.json"
-TARGET_SCRIPT_NAMES = {"publish_controlled_fallback.py", "publish_controlled_fallback_guarded.py"}
+TARGET_SCRIPT = "publish_controlled_fallback.py"
 _ORIGINAL_URL_OPEN = url_request.urlopen
 
 
@@ -109,6 +109,24 @@ def _telegram_text(req: Any) -> str:
         return ""
 
 
+
+def _tier_code(value: Any) -> str:
+    raw = str(value or "").strip().lower()
+    raw = raw.replace("уровень", "").strip()
+    if raw in {"a", "а", "tier_a", "a-tier"}:
+        return "A"
+    if raw in {"b", "б", "tier_b", "b-tier"}:
+        return "B"
+    if raw in {"c", "с", "tier_c", "c-tier"}:
+        return "C"
+    if raw.endswith((" a", " а")):
+        return "A"
+    if raw.endswith((" b", " б")):
+        return "B"
+    if raw.endswith((" c", " с")):
+        return "C"
+    return ""
+
 def _parse_text_metrics(text: str) -> dict[str, Any]:
     low = text.lower()
     out: dict[str, Any] = {}
@@ -172,51 +190,24 @@ def _set_request_text(req: Any, text: str) -> Any:
     return req
 
 
-
-
-def _is_controlled_pick_message(text: str) -> bool:
-    """Return True only for actual controlled-pick Telegram messages.
-
-    The fallback script also sends no-pick diagnostic reports. Those reports may
-    mention zero odds/context sources because no candidate was selected; they
-    must not be blocked by the hard pick prepublish guard. The guard below stays
-    strict for messages that contain a real betting card.
-    """
-    low = str(text or "").lower()
-    if not low.strip():
-        return False
-    no_pick_markers = (
-        "прогнозов не было",
-        "не нашёл безопасный вариант",
-        "отчёт по запуску бота",
-        "no viable controlled fallback",
-        "проверено резервных кандидатов: 0",
-    )
-    has_pick_markers = (
-        "🎯 ставка:" in low,
-        "💰 сумма ставки:" in low,
-        "контролируемый прогноз" in low,
-        "лучшая ставка" in low,
-        "controlled pick" in low,
-    )
-    if any(has_pick_markers):
-        return True
-    if any(marker in low for marker in no_pick_markers):
-        return False
-    return False
-
 def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, dict[str, Any]]:
-    if not _is_controlled_pick_message(text):
-        return False, "non_pick_report", {"text_kind": "no_pick_or_diagnostic_report"}
     text_metrics = _parse_text_metrics(text)
-    min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES", 2))
-    min_context_sources = max(
-        1,
-        _env_int(
-            "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES",
-            _env_int("PUBLISH_MIN_CONTEXT_SOURCES", _env_int("MIN_CONTEXT_SOURCES_PUBLISH", 2)),
-        ),
-    )
+    parsed_tier = _tier_code(text_metrics.get("tier") or _metric(selected, "tier", "level"))
+    if parsed_tier == "B":
+        min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_ODDS_SOURCES", 1))
+        min_context_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_CONTEXT_SOURCES", 1))
+    elif parsed_tier == "C":
+        min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_C_TELEGRAM_MIN_ODDS_SOURCES", 1))
+        min_context_sources = max(1, _env_int("CONTROLLED_FALLBACK_TIER_C_TELEGRAM_MIN_CONTEXT_SOURCES", 1))
+    else:
+        min_odds_sources = max(1, _env_int("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES", 2))
+        min_context_sources = max(
+            1,
+            _env_int(
+                "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES",
+                _env_int("PUBLISH_MIN_CONTEXT_SOURCES", _env_int("MIN_CONTEXT_SOURCES_PUBLISH", 2)),
+            ),
+        )
     min_quality = _env_float("CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY", 70.0)
     odds_sources = max(
         _as_int(text_metrics.get("odds_sources")),
@@ -231,7 +222,7 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
         _as_float(text_metrics.get("quality")),
         _as_float(_metric(selected, "quality", "quality_score", "publication_quality")),
     )
-    tier = str(text_metrics.get("tier") or _metric(selected, "tier", "level") or "").upper()
+    tier = parsed_tier or str(text_metrics.get("tier") or _metric(selected, "tier", "level") or "").upper()
     details = {
         "text_metrics": text_metrics,
         "selected_match_key": selected.get("match_key"),
@@ -249,7 +240,7 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
         return True, f"telegram_context_sources_below_min:{context_sources}/{min_context_sources}", details
     if quality > 0 and quality < min_quality:
         return True, f"telegram_quality_below_min:{quality:.1f}/{min_quality:.1f}", details
-    if tier == "B" and not _env_bool("CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B", False):
+    if tier == "B" and not _env_bool("CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B", True):
         return True, "telegram_tier_b_blocked", details
     if tier == "C" and not _env_bool("CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C", False):
         return True, "telegram_tier_c_blocked", details
@@ -257,7 +248,7 @@ def _should_block_send(text: str, selected: dict[str, Any]) -> tuple[bool, str, 
 
 
 def install() -> None:
-    if Path(sys.argv[0] or "").name not in TARGET_SCRIPT_NAMES:
+    if Path(sys.argv[0] or "").name != TARGET_SCRIPT:
         return
     selected = _load_selected()
     audit: dict[str, Any] = {

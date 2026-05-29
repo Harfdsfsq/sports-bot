@@ -2,11 +2,9 @@ from __future__ import annotations
 
 """Build an auditable per-match coverage truth table for the day inventory.
 
-The Telegram summary is intentionally compact, but debugging the 300-match
-contract needs a row-level artifact.  This script does not call external APIs;
-it only normalizes the persisted inventory evidence into explicit columns:
-independent live odds providers, price confirmations, context sources, and the
-remaining gaps before a match can be considered publish-ready.
+This script does not call external APIs.  It normalizes persisted inventory
+coverage, line evidence and runtime context-source-index evidence into a strict
+row-level truth table used by Telegram reports and diagnostics.
 """
 
 import csv
@@ -25,9 +23,9 @@ EXPORT_DIR = ROOT / ".data" / "exports"
 OUT_JSON = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 OUT_CSV = EXPORT_DIR / "latest-day-inventory-coverage-truth.csv"
 SUMMARY_PATH = EXPORT_DIR / "latest-day-inventory-summary.json"
+CONTEXT_SOURCE_INDEX_PATH = EXPORT_DIR / "latest-context-source-index.json"
 
 LIVE_ODDS_SOURCES = {"odds_api_io", "bzzoiro", "sportlogic"}
-CONTEXT_ONLY = {"sstats", "bzzoiro", "sportlogic", "clubelo", "football_data", "thesportsdb", "openfootball", "openligadb", "espn", "weatherapi", "open_meteo"}
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -80,6 +78,12 @@ def norm(value: Any) -> str:
         "football_data_org": "football_data",
         "sportsdb": "thesportsdb",
         "the_sports_db": "thesportsdb",
+        "weatherapi": "weather",
+        "open_meteo": "weather",
+        "openweather": "weather",
+        "openweathermap": "weather",
+        "xg_model": "model_xg",
+        "model_xg_context": "model_xg",
     }
     return aliases.get(text, text)
 
@@ -106,12 +110,36 @@ def unique_norm(values: list[Any]) -> list[str]:
     return out
 
 
+def load_context_source_index() -> dict[str, list[str]]:
+    payload = load_json(CONTEXT_SOURCE_INDEX_PATH, {})
+    if not isinstance(payload, dict):
+        return {}
+    by_match = payload.get("by_match") if isinstance(payload.get("by_match"), dict) else {}
+    out: dict[str, list[str]] = {}
+    for key, value in by_match.items():
+        if isinstance(key, str) and key.strip():
+            out[key] = unique_norm(list_from_any(value))
+    return out
+
+
 def metadata(row: dict[str, Any]) -> dict[str, Any]:
     return row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
 
 
 def coverage(row: dict[str, Any]) -> dict[str, Any]:
     return row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
+
+
+def context_index_sources_for_row(row: dict[str, Any], index: dict[str, list[str]] | None) -> list[str]:
+    if not index:
+        return []
+    md = metadata(row)
+    keys = [row.get("match_key"), row.get("canonical_match_id"), md.get("match_key"), md.get("canonical_match_id")]
+    found: list[str] = []
+    for key in keys:
+        if key not in (None, ""):
+            found.extend(index.get(str(key)) or [])
+    return unique_norm(found)
 
 
 def count_from_metadata(row: dict[str, Any], *keys: str) -> int:
@@ -134,16 +162,16 @@ def row_has_bzzoiro_context_hint(row: dict[str, Any]) -> bool:
     if str(row.get("source") or "").lower() == "bzzoiro":
         return True
     if any(bool(md.get(key)) for key in (
-        "bzzoiro_context_fields", "bzzoiro_has_prediction", "bzzoiro_has_context_hint",
-        "bzzoiro_context_gap_annotated_at_utc", "bzzoiro_line_evidence_context_bridge",
+        "bzzoiro_context_fields",
+        "bzzoiro_has_prediction",
+        "bzzoiro_has_context_hint",
+        "bzzoiro_context_gap_annotated_at_utc",
+        "bzzoiro_line_evidence_context_bridge",
     )):
         return True
     source_ids = row.get("source_ids") if isinstance(row.get("source_ids"), dict) else {}
     provider_ids = md.get("provider_source_ids") if isinstance(md.get("provider_source_ids"), dict) else {}
     has_bzz_id = any(str(k).lower().startswith(("bzzoiro", "bsd")) for k in list(source_ids.keys()) + list(provider_ids.keys()))
-    # Count provider-day Bzzoiro prediction/event rows as context when the row
-    # also carries a context/xG/form flag. This fixes the frozen inventory losing
-    # the provider even though Bzzoiro supplied prediction/event metadata.
     return bool(has_bzz_id and (cov.get("context") or cov.get("xg") or md.get("bzzoiro_raw_source")))
 
 
@@ -158,7 +186,7 @@ def context_sources(row: dict[str, Any]) -> list[str]:
     if row_has_bzzoiro_context_hint(row):
         raw_sources.append("bzzoiro")
     sources = unique_norm(raw_sources)
-    cleaned = []
+    cleaned: list[str] = []
     for item in sources:
         if item.startswith("provider_"):
             item = item.removeprefix("provider_")
@@ -178,19 +206,23 @@ def price_confirmations(row: dict[str, Any]) -> int:
     )
 
 
-
 def line_movement_status(row: dict[str, Any]) -> str:
     md = metadata(row)
     cov = coverage(row)
     for container in (row, md, cov):
         for key in (
-            "line_movement_status", "line_movement_lifecycle_status", "movement_status",
-            "line_guard_status", "line_state", "movement_lifecycle_status",
+            "line_movement_status",
+            "line_movement_lifecycle_status",
+            "movement_status",
+            "line_guard_status",
+            "line_state",
+            "movement_lifecycle_status",
         ):
             val = container.get(key) if isinstance(container, dict) else None
             if str(val or "").strip():
                 return norm(val)
     return ""
+
 
 def line_movement_confirmed(row: dict[str, Any]) -> bool:
     status = line_movement_status(row)
@@ -205,6 +237,7 @@ def line_movement_confirmed(row: dict[str, Any]) -> bool:
                 return True
     return False
 
+
 def line_movement_waiting(row: dict[str, Any]) -> bool:
     status = line_movement_status(row)
     if any(token in status for token in ("awaiting", "wait", "needs_next", "needs_later", "next_cron")):
@@ -218,14 +251,16 @@ def line_movement_waiting(row: dict[str, Any]) -> bool:
                 return True
     return False
 
+
 def line_movement_declined(row: dict[str, Any]) -> bool:
     status = line_movement_status(row)
     return any(token in status for token in ("declined", "rejected", "dropped", "failed"))
 
-def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str, Any]:
+
+def row_truth(row: dict[str, Any], min_odds: int, min_context: int, context_index: dict[str, list[str]] | None = None) -> dict[str, Any]:
     cov = coverage(row)
     osrc = odds_sources(row)
-    csrc = context_sources(row)
+    csrc = unique_norm(context_sources(row) + context_index_sources_for_row(row, context_index))
     pc = price_confirmations(row)
     cc = len(csrc)
     has_odds = bool(cov.get("odds")) or pc > 0
@@ -242,11 +277,6 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
     movement_ok = line_movement_confirmed(row)
     movement_drop = line_movement_declined(row)
     movement_wait = line_movement_waiting(row)
-    # Row-level artifacts often do not persist an explicit "awaiting" flag for
-    # every covered match.  If A/B coverage is present but no confirmed second
-    # snapshot exists, the row is still waiting for line-movement confirmation.
-    # This keeps the Telegram/coverage truth from saying B-tier coverage exists
-    # while "waiting line movement" is zero.
     if not movement_ok and not movement_drop and (tier_a_coverage_ready or tier_b_coverage_ready):
         movement_wait = True
     ready_publish = tier_a_coverage_ready and movement_ok
@@ -285,33 +315,13 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
 def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     fields = [
-        "match_key",
-        "kickoff_utc",
-        "league_name",
-        "home_team",
-        "away_team",
-        "odds_sources_count",
-        "odds_sources",
-        "price_confirmations",
-        "books_count",
-        "context_sources_count",
-        "context_sources",
-        "has_odds",
-        "has_context",
-        "ready_for_model",
-        "ready_for_publish",
-        "tier_a_coverage_ready",
-        "tier_b_coverage_ready",
-        "tier_a_publish_ready",
-        "tier_b_publish_ready",
-        "line_movement_confirmed",
-        "line_movement_waiting",
-        "line_movement_declined",
-        "line_movement_status",
-        "need_price_confirmations",
-        "need_odds_sources",
-        "need_context_sources",
-        "missing",
+        "match_key", "kickoff_utc", "league_name", "home_team", "away_team",
+        "odds_sources_count", "odds_sources", "price_confirmations", "books_count",
+        "context_sources_count", "context_sources", "has_odds", "has_context",
+        "ready_for_model", "ready_for_publish", "tier_a_coverage_ready", "tier_b_coverage_ready",
+        "tier_a_publish_ready", "tier_b_publish_ready", "line_movement_confirmed",
+        "line_movement_waiting", "line_movement_declined", "line_movement_status",
+        "need_price_confirmations", "need_odds_sources", "need_context_sources", "missing",
     ]
     with path.open("w", encoding="utf-8", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=fields)
@@ -331,7 +341,8 @@ def main() -> int:
     inv_path = DAY_INV_DIR / f"{d}.json"
     inv = load_json(inv_path, {})
     matches = [row for row in inv.get("matches", []) if isinstance(row, dict)] if isinstance(inv, dict) else []
-    rows = [row_truth(row, min_odds, min_context) for row in matches]
+    context_index = load_context_source_index()
+    rows = [row_truth(row, min_odds, min_context, context_index) for row in matches]
     rows.sort(key=lambda x: (str(x.get("kickoff_utc") or ""), str(x.get("league_name") or ""), str(x.get("home_team") or "")))
 
     counts = {
@@ -370,6 +381,7 @@ def main() -> int:
             "price_confirmations is bookmaker/line depth and is tracked separately from provider independence.",
             "ready_for_publish strict truth requires tier A coverage plus confirmed line movement.",
             "tier_b_coverage_ready means 1+ line evidence, 1+ context source, and later still needs confirmed line movement/value.",
+            "context_sources also merge latest-context-source-index.json so ClubElo/weather/TheSportsDB/SStats runtime evidence is counted.",
         ],
     }
     write_json(OUT_JSON, payload)
