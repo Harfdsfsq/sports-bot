@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-29T05:03:01.014964+00:00
+UTC: 2026-05-29T08:53:01.372370+00:00
 target_date: 2026-05-29
-canonical_matches: 366
-2+ provider sources: 131
-2+ primary sources: 131
+canonical_matches: 368
+2+ provider sources: 120
+2+ primary sources: 120
 all 3 primary sources: 11
 
 ## Provider fixture discovery
@@ -13,12 +13,12 @@ all 3 primary sources: 11
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
 - odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=168 event_like=148 unique=148 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=159 event_like=138 unique=138 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 235, "3": 16, "2": 115}
-- primary providers: {"1": 235, "2": 120, "3": 11}
+- all providers: {"1": 248, "3": 16, "2": 104}
+- primary providers: {"1": 248, "2": 109, "3": 11}
 
 ## Top canonical matches
 - 2026-05-28T21:45:00+00:00 | Rio Branco ES — Vilavelhense | providers=sstats ids={"sstats": "1542048"}
@@ -37,20 +37,20 @@ all 3 primary sources: 11
 - 2026-05-29T00:00:00+00:00 | Nacional AM — Paysandu | providers=sstats ids={"sstats": "1544606"}
 - 2026-05-29T00:30:00+00:00 | Boca Juniors — Universidad Católica | providers=bzzoiro,football_data,sstats ids={"bzzoiro": "9456", "football_data": "557131", "sstats": "1535314"}
 - 2026-05-29T00:30:00+00:00 | Cruzeiro — Barcelona SC Guayaquil | providers=bzzoiro,football_data,sstats ids={"bzzoiro": "9457", "football_data": "557130", "sstats": "1535318"}
-- 2026-05-29T00:30:00+00:00 | Tigre — Alianza Atlético de Sullana | providers=bzzoiro,sstats ids={"bzzoiro": "9345", "sstats": "1535232"}
 - 2026-05-29T00:30:00+00:00 | América de Cali — Macará | providers=bzzoiro,sstats ids={"bzzoiro": "9344", "sstats": "1535218"}
+- 2026-05-29T00:30:00+00:00 | Tigre — Alianza Atlético de Sullana | providers=bzzoiro,sstats ids={"bzzoiro": "9345", "sstats": "1535232"}
 - 2026-05-29T00:30:00+00:00 | Orsomarso W — Junior W | providers=sstats ids={"sstats": "1525738"}
 - 2026-05-29T01:00:00+00:00 | Flatirons Rush — Colorado Storm | providers=sstats ids={"sstats": "1524633"}
 - 2026-05-29T01:00:00+00:00 | Colorado Storm W — Albion Colorado W | providers=sstats ids={"sstats": "1532067"}
 - 2026-05-29T01:00:00+00:00 | San Antonio FC 2 — Lonestar | providers=sstats ids={"sstats": "1524637"}
 - 2026-05-29T07:00:00+00:00 | Shaanxi Union FC — Nanjing City | providers=odds_api_io,sstats ids={"odds_api_io": "69455902", "sstats": "1528616"}
 - 2026-05-29T07:00:00+00:00 | PFC Levski Sofia II — Septemvri Sofia II | providers=odds_api_io,sstats ids={"odds_api_io": "66479672", "sstats": "1489003"}
-- 2026-05-29T07:00:00+00:00 | Manukau United FC — Fencibles United FC | providers=odds_api_io ids={"odds_api_io": "69460628"}
 - 2026-05-29T07:00:00+00:00 | Western Springs AFC — Bay Olympic | providers=odds_api_io ids={"odds_api_io": "69460630"}
 - 2026-05-29T07:30:00+00:00 | Sydney FC — Western Sydney Wanderers | providers=odds_api_io,sstats ids={"odds_api_io": "67693078", "sstats": "1517548"}
 - 2026-05-29T08:00:00+00:00 | Blacktown Spartans FC — Western City Rangers FC | providers=odds_api_io ids={"odds_api_io": "67691626"}
-- 2026-05-29T08:00:00+00:00 | Broadmeadow Magic FC Reserve — Maitland FC Reserve | providers=odds_api_io ids={"odds_api_io": "67807834"}
 - 2026-05-29T08:15:00+00:00 | Spring Hills FC — Melbourne City | providers=odds_api_io ids={"odds_api_io": "68162402"}
+- 2026-05-29T08:30:00+00:00 | Taroona — South Hobart FC | providers=odds_api_io ids={"odds_api_io": "68686936"}
+- 2026-05-29T08:45:00+00:00 | Adelaide University FC Reserve — Adelaide Comets FC Reserves | providers=odds_api_io ids={"odds_api_io": "68049816"}
 
 ## Targeted enrichment plan sample
 - Rio Branco ES — Vilavelhense | primary=1 providers=sstats
@@ -117,11 +117,11 @@ all 3 primary sources: 11
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Tigre — Alianza Atlético de Sullana | primary=2 providers=bzzoiro,sstats
+- América de Cali — Macará | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- América de Cali — Macará | primary=2 providers=bzzoiro,sstats
+- Tigre — Alianza Atlético de Sullana | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
