@@ -80,6 +80,30 @@ def metric(row: dict[str, Any], *keys: str) -> Any:
     return None
 
 
+def target_dates(targets: list[dict[str, Any]], fallback_days: int = 1) -> list[str]:
+    dates: list[str] = []
+    for row in targets:
+        raw = str(metric(row, 'commence_time', 'kickoff_utc', 'start_time', 'kickoff') or '').strip()
+        if raw[:10] and raw[:4].isdigit() and raw[:10] not in dates:
+            dates.append(raw[:10])
+    if not dates:
+        today = datetime.now(UTC).date()
+        dates = [(today + timedelta(days=i)).isoformat() for i in range(max(1, fallback_days))]
+    return dates[:3]
+
+
+def response_rows(payload: Any) -> list[dict[str, Any]]:
+    # Provider wrappers differ: Highlightly returns {data:[...]}, API-Football
+    # returns {response:[...]}, AllSportsAPI often returns {result:[...]}.
+    rows = extract_rows(payload)
+    if len(rows) == 1 and isinstance(rows[0], dict):
+        inner = rows[0]
+        for key in ('data', 'response', 'result', 'items', 'events', 'matches'):
+            if isinstance(inner.get(key), list):
+                return [x for x in inner[key] if isinstance(x, dict)]
+    return rows
+
+
 def target_rows(limit: int = 8) -> list[dict[str, Any]]:
     paths = [
         EXPORT / 'latest-rejected-near-miss-report.json',
@@ -158,24 +182,32 @@ def extract_rows(payload: Any) -> list[dict[str, Any]]:
 
 
 async def probe_highlightly(client: httpx.AsyncClient, targets: list[dict[str, Any]]) -> dict[str, Any]:
-    key = os.getenv('HIGHLIGHTLY_API_KEY') or os.getenv('HIGHLIGHTLY_KEY')
+    key = os.getenv('HIGHLIGHTLY_API_KEY') or os.getenv('HIGHLIGHTLY_KEY') or os.getenv('HIGHLIGHTLY_RAPIDAPI_KEY')
     budget = ProbeBudget('highlightly', as_int(os.getenv('HIGHLIGHTLY_PROBE_MAX_REQUESTS'), 3))
-    result = {'provider': 'highlightly', 'configured': bool(key), 'requests': 0, 'matches_seen': 0, 'matched_targets': 0, 'samples': [], 'http_statuses': [], 'errors': []}
+    result = {'provider': 'highlightly', 'configured': bool(key), 'requests': 0, 'matches_seen': 0, 'matched_targets': 0, 'odds_probe_rows': 0, 'samples': [], 'http_statuses': [], 'errors': [], 'auth_header_mode': 'x-rapidapi-key'}
     if not key:
         return result
+    # Docs: direct base is https://soccer.highlightly.net and the API expects
+    # x-rapidapi-key even for Highlightly keys. RapidAPI also requires host.
     base = (os.getenv('HIGHLIGHTLY_BASE_URL') or 'https://soccer.highlightly.net').rstrip('/')
-    headers = {'x-api-key': key}
-    dates = sorted({str(metric(t, 'commence_time', 'kickoff_utc', 'start_time') or '')[:10] for t in targets if str(metric(t, 'commence_time', 'kickoff_utc', 'start_time') or '')[:10]})[:2]
-    if not dates:
-        dates = [datetime.now(UTC).date().isoformat()]
+    host = os.getenv('HIGHLIGHTLY_RAPIDAPI_HOST') or ('football-highlights-api.p.rapidapi.com' if 'rapidapi' in base else '')
+    headers = {'x-rapidapi-key': key, 'accept': 'application/json', 'user-agent': 'HARIZON sports-bot secondary-provider-probe'}
+    if host or os.getenv('HIGHLIGHTLY_SEND_RAPIDAPI_HOST', '').lower() in {'1', 'true', 'yes', 'on', 'force'}:
+        headers['x-rapidapi-host'] = host or 'football-highlights-api.p.rapidapi.com'
+    dates = target_dates(targets, fallback_days=2)[:2]
     rows: list[dict[str, Any]] = []
     for d in dates:
-        payload = await budget.get(client, f'{base}/matches', headers=headers, params={'date': d, 'limit': 100})
-        rows.extend(extract_rows(payload))
+        payload = await budget.get(client, f'{base}/matches', headers=headers, params={'date': d, 'timezone': 'Etc/UTC', 'limit': 100})
+        rows.extend(response_rows(payload))
     result.update({'requests': budget.used, 'http_statuses': budget.http_statuses, 'errors': budget.errors, 'matches_seen': len(rows), 'samples': rows[:3]})
     result['matched_targets'] = fuzzy_count(rows, targets)
+    if rows and budget.can():
+        # Cheap odds probe by date; if the free plan exposes odds, this tells us
+        # whether Highlightly can become a second odds-source later.
+        payload = await budget.get(client, f'{base}/odds', headers=headers, params={'date': dates[0], 'oddsType': 'prematch', 'timezone': 'Etc/UTC', 'limit': 5})
+        result['odds_probe_rows'] = len(response_rows(payload))
+        result.update({'requests': budget.used, 'http_statuses': budget.http_statuses, 'errors': budget.errors})
     return result
-
 
 async def probe_allsportsapi(client: httpx.AsyncClient, targets: list[dict[str, Any]]) -> dict[str, Any]:
     key = os.getenv('ALLSPORTSAPI_API_KEY')
@@ -184,17 +216,16 @@ async def probe_allsportsapi(client: httpx.AsyncClient, targets: list[dict[str, 
     if not key:
         return result
     base = (os.getenv('ALLSPORTSAPI_BASE_URL') or 'https://apiv2.allsportsapi.com/football/').rstrip('/') + '/'
-    today = datetime.now(UTC).date().isoformat()
-    max_date = (datetime.now(UTC) + timedelta(days=1)).date().isoformat()
-    payload = await budget.get(client, base, params={'met': 'Fixtures', 'APIkey': key, 'from': today, 'to': max_date, 'timezone': 'UTC'})
-    rows = extract_rows(payload.get('result') if isinstance(payload, dict) else payload)
+    dates = target_dates(targets, fallback_days=2)
+    payload = await budget.get(client, base, params={'met': 'Fixtures', 'APIkey': key, 'from': min(dates), 'to': max(dates), 'timezone': 'UTC'})
+    rows = response_rows(payload.get('result') if isinstance(payload, dict) else payload)
     result['fixtures_seen'] = len(rows); result['matched_targets'] = fuzzy_count(rows, targets); result['samples'] = rows[:3]
     # one cheap odds probe for the first matched/available event
     if rows and budget.can():
         event_id = str(rows[0].get('event_key') or rows[0].get('match_id') or '')
         if event_id:
             odds_payload = await budget.get(client, base, params={'met': 'Odds', 'APIkey': key, 'matchId': event_id})
-            result['odds_probe_rows'] = len(extract_rows(odds_payload.get('result') if isinstance(odds_payload, dict) else odds_payload))
+            result['odds_probe_rows'] = len(response_rows(odds_payload.get('result') if isinstance(odds_payload, dict) else odds_payload))
     result.update({'requests': budget.used, 'http_statuses': budget.http_statuses, 'errors': budget.errors})
     return result
 
@@ -209,9 +240,12 @@ async def probe_api_football(client: httpx.AsyncClient, targets: list[dict[str, 
     headers = {'x-apisports-key': key}
     if os.getenv('API_FOOTBALL_RAPIDAPI_HOST'):
         headers = {'x-rapidapi-key': key, 'x-rapidapi-host': os.getenv('API_FOOTBALL_RAPIDAPI_HOST') or 'api-football-v1.p.rapidapi.com'}
-    date = datetime.now(UTC).date().isoformat()
-    payload = await budget.get(client, f'{base}/fixtures', headers=headers, params={'date': date})
-    rows = extract_rows(payload)
+    rows: list[dict[str, Any]] = []
+    for date in target_dates(targets, fallback_days=2)[:2]:
+        if not budget.can():
+            break
+        payload = await budget.get(client, f'{base}/fixtures', headers=headers, params={'date': date, 'timezone': 'UTC'})
+        rows.extend(response_rows(payload))
     result['fixtures_seen'] = len(rows); result['matched_targets'] = fuzzy_count(rows, targets); result['samples'] = rows[:3]
     fixture_id = ''
     if rows:
@@ -219,10 +253,10 @@ async def probe_api_football(client: httpx.AsyncClient, targets: list[dict[str, 
         fixture_id = str(fixture.get('id') or rows[0].get('fixture_id') or '')
     if fixture_id and budget.can():
         stats_payload = await budget.get(client, f'{base}/fixtures/statistics', headers=headers, params={'fixture': fixture_id})
-        result['statistics_probe_rows'] = len(extract_rows(stats_payload))
+        result['statistics_probe_rows'] = len(response_rows(stats_payload))
     if fixture_id and budget.can():
         lineup_payload = await budget.get(client, f'{base}/fixtures/lineups', headers=headers, params={'fixture': fixture_id})
-        result['lineups_probe_rows'] = len(extract_rows(lineup_payload))
+        result['lineups_probe_rows'] = len(response_rows(lineup_payload))
     result.update({'requests': budget.used, 'http_statuses': budget.http_statuses, 'errors': budget.errors})
     return result
 
@@ -230,9 +264,15 @@ async def probe_api_football(client: httpx.AsyncClient, targets: list[dict[str, 
 def name_parts(row: dict[str, Any]) -> tuple[str, str]:
     home = str(row.get('home_team') or row.get('home') or row.get('event_home_team') or '').lower()
     away = str(row.get('away_team') or row.get('away') or row.get('event_away_team') or '').lower()
+    if not home and isinstance(row.get('homeTeam'), dict):
+        home = str(row['homeTeam'].get('name') or row['homeTeam'].get('displayName') or '').lower()
+    if not away and isinstance(row.get('awayTeam'), dict):
+        away = str(row['awayTeam'].get('name') or row['awayTeam'].get('displayName') or '').lower()
     if not home and isinstance(row.get('teams'), dict):
-        home = str(row['teams'].get('home', {}).get('name') if isinstance(row['teams'].get('home'), dict) else '').lower()
-        away = str(row['teams'].get('away', {}).get('name') if isinstance(row['teams'].get('away'), dict) else '').lower()
+        home_obj = row['teams'].get('home')
+        away_obj = row['teams'].get('away')
+        home = str(home_obj.get('name') if isinstance(home_obj, dict) else home_obj or '').lower()
+        away = str(away_obj.get('name') if isinstance(away_obj, dict) else away_obj or '').lower()
     return home, away
 
 

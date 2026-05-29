@@ -54,6 +54,27 @@ def load_json_any(path: str | Path, default: Any = None) -> Any:
     return default
 
 
+def load_jsonl_rows(path: str | Path, limit: int = 80) -> list[dict[str, Any]]:
+    rows: list[dict[str, Any]] = []
+    try:
+        p = Path(path)
+        if not p.exists() or p.stat().st_size <= 0:
+            return rows
+        for line in p.read_text(encoding="utf-8", errors="replace").splitlines()[-max(1, limit):]:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                item = json.loads(line)
+            except Exception:
+                continue
+            if isinstance(item, dict):
+                rows.append(item)
+    except Exception:
+        return rows
+    return rows
+
+
 def app_tz() -> ZoneInfo:
     try:
         return ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
@@ -341,10 +362,14 @@ def load_value_priority() -> dict[str, float]:
     """Return match_key/variant -> priority from current run candidate artifacts."""
     priority: dict[str, float] = {}
     paths = [
+        ".data/exports/latest-rejected-near-miss-report.json",
+        "artifacts/run-bot/latest-rejected-near-miss-report.json",
         ".data/exports/latest-rescue-candidates.json",
         "artifacts/run-bot/latest-rescue-candidates.json",
         ".data/exports/latest-controlled-fallback-report.json",
         "artifacts/controlled-fallback-report.json",
+        ".data/rejected-near-miss-ledger.jsonl",
+        "artifacts/run-bot/rejected-near-miss-ledger.jsonl",
         ".logs/debug-last-run.json",
     ]
     current_date = target_date()
@@ -355,7 +380,11 @@ def load_value_priority() -> dict[str, float]:
             rows.extend([x for x in payload.get("candidates_before_quality") if isinstance(x, dict)])
         if isinstance(payload, dict) and isinstance(payload.get("candidates_after_quality"), list):
             rows.extend([x for x in payload.get("candidates_after_quality") if isinstance(x, dict)])
+        if isinstance(payload, dict) and isinstance(payload.get("sample"), list):
+            rows.extend([x for x in payload.get("sample") if isinstance(x, dict)])
         rows.extend(_rows_from_payload(payload))
+        if str(path).endswith("rejected-near-miss-ledger.jsonl"):
+            rows.extend(load_jsonl_rows(path, limit=120))
         for idx, row in enumerate(rows):
             if _row_date(row) and _row_date(row) != current_date:
                 continue
