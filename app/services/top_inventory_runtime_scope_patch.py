@@ -1,14 +1,21 @@
 from __future__ import annotations
 
-"""Restrict 2-hour runtime processing to the current top day-inventory scope.
+"""Restrict run-once processing to the current top day-inventory scope.
 
-The daily inventory is deliberately capped at 300 top matches.  During broad API
-runs some providers can still return many more fixtures for the same local date;
-if those are allowed into the main PredictionRunner state, progressive coverage
-and Telegram diagnostics start tracking 800+ active matches even though the
-publishable day inventory is 300.  This patch keeps discovery broad enough for
-the 00:00 build, but makes run-once use only matches that are already in the
-current day-inventory top scope.
+The daily inventory is deliberately capped at 300 top matches.  Some runtime
+layers can still re-introduce broad provider rows after the first bootstrap
+filter (for example when day inventory rows are merged back with slightly
+different keys, or when provider-target wrappers receive an expanded match
+list).  This patch therefore scopes three boundaries:
+
+* PredictionRunner._fetch_matches output;
+* PredictionRunner._merge_day_inventory_matches output;
+* PredictionRunner._filter_matches output and provider target inputs.
+
+The allowlist is intentionally strict: exact inventory match keys plus ordered
+home/away/date identities.  It no longer adds reversed/sorted key variants,
+because those variants were too permissive and let same-day non-top rows leak
+into progressive state.
 """
 
 import json
@@ -24,7 +31,9 @@ ROOT = Path(__file__).resolve().parents[2]
 EXPORT_DIR = ROOT / ".data" / "exports"
 DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = EXPORT_DIR / "latest-top-inventory-runtime-scope.json"
-_MARKER = "_harizon_top_inventory_runtime_scope_v1"
+PROGRESSIVE_STATE_PATH = DAY_INV_DIR / "progressive_coverage_state.json"
+PROGRESSIVE_EXPORT_PATH = EXPORT_DIR / "latest-progressive-coverage-state.json"
+_MARKER = "_harizon_top_inventory_runtime_scope_v2"
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -57,6 +66,16 @@ def _read_json(path: Path, default: Any = None) -> Any:
     except Exception:
         return default
     return default
+
+
+def _append_report(stage: str, payload: dict[str, Any]) -> None:
+    current = _read_json(REPORT_PATH, {})
+    if not isinstance(current, dict):
+        current = {}
+    events = current.get("events") if isinstance(current.get("events"), list) else []
+    events.append({"stage": stage, **payload})
+    merged = {**current, **payload, "stage": stage, "events": events[-20:]}
+    _write_json(REPORT_PATH, merged)
 
 
 def _app_tz() -> ZoneInfo | timezone:
@@ -127,38 +146,53 @@ def _row_date(row: dict[str, Any]) -> str:
     return match.group(1) if match else ""
 
 
-def _key_variants_from_values(home: Any, away: Any, date: str, direct: Any = "") -> set[str]:
-    variants: set[str] = set()
-    direct_text = str(direct or "").strip()
-    if direct_text:
-        variants.add(direct_text)
+def _match_key(match: Any) -> str:
+    if isinstance(match, dict):
+        return str(match.get("match_key") or match.get("canonical_match_id") or "").strip()
+    return str(getattr(match, "match_key", "") or "").strip()
+
+
+def _match_home(match: Any) -> str:
+    if isinstance(match, dict):
+        return str(match.get("home_team") or match.get("home") or "")
+    return str(getattr(match, "home_team", "") or "")
+
+
+def _match_away(match: Any) -> str:
+    if isinstance(match, dict):
+        return str(match.get("away_team") or match.get("away") or "")
+    return str(getattr(match, "away_team", "") or "")
+
+
+def _match_date(match: Any) -> str:
+    if isinstance(match, dict):
+        return _row_date(match)
+    return _local_date_from_any(getattr(match, "commence_time", None))
+
+
+def _identity(home: Any, away: Any, date: str) -> str:
     home_c = _compact(home)
     away_c = _compact(away)
-    if home_c and away_c and date:
-        variants.add(f"soccer|{home_c}|{away_c}|{date}")
-        variants.add(f"soccer|{away_c}|{home_c}|{date}")
-        first, second = sorted([home_c, away_c])
-        variants.add(f"soccer|{first}|{second}|{date}")
-        variants.add(f"{home_c}|{away_c}|{date}")
-        variants.add(f"{first}|{second}|{date}")
-    return {v for v in variants if v}
+    if not home_c or not away_c or not date:
+        return ""
+    # Ordered home/away identity only.  Do not add reversed/sorted variants: those
+    # caused non-top rows to pass scope after midnight.
+    return f"soccer|{home_c}|{away_c}|{date}"
 
 
-def _match_variants(match: Any) -> set[str]:
-    direct = str(getattr(match, "match_key", "") or "")
-    home = getattr(match, "home_team", "")
-    away = getattr(match, "away_team", "")
-    kickoff = getattr(match, "commence_time", None)
-    date = _local_date_from_any(kickoff)
+def _match_identity(match: Any) -> str:
+    return _identity(_match_home(match), _match_away(match), _match_date(match))
+
+
+def _is_day_inventory_match(match: Any) -> bool:
     if isinstance(match, dict):
-        direct = str(match.get("match_key") or match.get("canonical_match_id") or direct)
-        home = match.get("home_team") or match.get("home") or home
-        away = match.get("away_team") or match.get("away") or away
-        date = _row_date(match) or date
-    return _key_variants_from_values(home, away, date, direct)
+        meta = match.get("metadata") if isinstance(match.get("metadata"), dict) else {}
+        return bool(match.get("source") == "day_inventory" or meta.get("day_inventory"))
+    meta = getattr(match, "metadata", None)
+    return bool(getattr(match, "source", "") == "day_inventory" or (isinstance(meta, dict) and meta.get("day_inventory")))
 
 
-def _inventory_allowlist() -> tuple[set[str], dict[str, Any]]:
+def _inventory_scope() -> tuple[dict[str, set[str]], dict[str, Any]]:
     date = _target_date()
     paths = [DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json"]
     max_matches = max(1, _to_int(os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or 300, 300))
@@ -169,73 +203,194 @@ def _inventory_allowlist() -> tuple[set[str], dict[str, Any]]:
         rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
         if not rows:
             continue
-        # The inventory file should already be top-cut.  Still hard-cap here so a
-        # stale overgrown file cannot poison run-once after midnight.
         rows = rows[:max_matches]
-        allowed: set[str] = set()
+        direct_keys: set[str] = set()
+        identities: set[str] = set()
         for row in rows:
-            direct = row.get("match_key") or row.get("canonical_match_id")
-            allowed |= _key_variants_from_values(row.get("home_team") or row.get("home"), row.get("away_team") or row.get("away"), _row_date(row) or date, direct)
-        return allowed, {"date_local": date, "inventory_path": str(path), "inventory_rows": len(rows), "allowlist_keys": len(allowed), "max_matches": max_matches}
-    return set(), {"date_local": date, "inventory_path": None, "inventory_rows": 0, "allowlist_keys": 0, "max_matches": max_matches}
+            direct = str(row.get("match_key") or row.get("canonical_match_id") or "").strip()
+            if direct:
+                direct_keys.add(direct)
+            ident = _identity(row.get("home_team") or row.get("home"), row.get("away_team") or row.get("away"), _row_date(row) or date)
+            if ident:
+                identities.add(ident)
+        scope = {"direct_keys": direct_keys, "identities": identities}
+        info = {
+            "date_local": date,
+            "inventory_path": str(path),
+            "inventory_rows": len(rows),
+            "direct_keys": len(direct_keys),
+            "identity_keys": len(identities),
+            "allowlist_keys": len(direct_keys) + len(identities),
+            "max_matches": max_matches,
+        }
+        return scope, info
+    return {"direct_keys": set(), "identities": set()}, {"date_local": date, "inventory_path": None, "inventory_rows": 0, "direct_keys": 0, "identity_keys": 0, "allowlist_keys": 0, "max_matches": max_matches}
 
 
-def _filter_matches(matches: list[Any], allowed: set[str]) -> list[Any]:
-    if not allowed:
-        return matches
-    out: list[Any] = []
+def _in_scope(match: Any, scope: dict[str, set[str]]) -> bool:
+    direct = _match_key(match)
+    if direct and direct in scope.get("direct_keys", set()):
+        return True
+    ident = _match_identity(match)
+    return bool(ident and ident in scope.get("identities", set()))
+
+
+def _dedupe_scoped(matches: list[Any], max_matches: int) -> list[Any]:
+    chosen: dict[str, Any] = {}
+    order: list[str] = []
     for match in matches:
-        if _match_variants(match) & allowed:
-            out.append(match)
-    return out
+        ident = _match_identity(match) or _match_key(match)
+        if not ident:
+            continue
+        old = chosen.get(ident)
+        if old is None:
+            chosen[ident] = match
+            order.append(ident)
+            continue
+        # Prefer the canonical day-inventory row when duplicate provider rows use a
+        # different match_key for the same fixture.
+        if _is_day_inventory_match(match) and not _is_day_inventory_match(old):
+            chosen[ident] = match
+    out = [chosen[key] for key in order if key in chosen]
+    return out[:max_matches] if max_matches > 0 else out
+
+
+def _filter_matches(matches: list[Any], scope: dict[str, set[str]], max_matches: int) -> list[Any]:
+    if not scope.get("direct_keys") and not scope.get("identities"):
+        return matches[:max_matches] if max_matches > 0 else matches
+    return _dedupe_scoped([m for m in matches if _in_scope(m, scope)], max_matches)
+
+
+
+def _prune_progressive_state_to_scope(scope: dict[str, set[str]], info: dict[str, Any], stage: str) -> dict[str, Any]:
+    """Remove same-day non-top rows left by previous broad runs.
+
+    The progressive coverage patch only date-prunes its state.  After a broad
+    provider expansion, same-date rows outside top-300 can stay in
+    progressive_coverage_state and make reports show 300+ active matches even
+    when the current runtime match list is scoped.  Prune those rows using the
+    same strict direct-key/ordered-identity scope.
+    """
+    payload = _read_json(PROGRESSIVE_STATE_PATH, {})
+    if not isinstance(payload, dict):
+        return {"progressive_pruned": 0, "progressive_kept": 0}
+    rows = payload.get("matches") if isinstance(payload.get("matches"), dict) else {}
+    if not rows:
+        return {"progressive_pruned": 0, "progressive_kept": 0}
+    kept: dict[str, Any] = {}
+    pruned = 0
+    for key, row in rows.items():
+        if not isinstance(row, dict):
+            pruned += 1
+            continue
+        row_with_key = {**row, "match_key": row.get("match_key") or key}
+        direct = str(row_with_key.get("match_key") or key or "").strip()
+        ident = _identity(row_with_key.get("home_team"), row_with_key.get("away_team"), _row_date(row_with_key) or str(info.get("date_local") or ""))
+        if (direct and direct in scope.get("direct_keys", set())) or (ident and ident in scope.get("identities", set())):
+            kept[str(key)] = row
+        else:
+            pruned += 1
+    if pruned:
+        payload["matches"] = kept
+        payload["top_inventory_scope_pruned_at_utc"] = datetime.now(UTC).isoformat()
+        payload["top_inventory_scope_pruned_stage"] = stage
+        payload["top_inventory_scope_pruned_rows"] = int(payload.get("top_inventory_scope_pruned_rows") or 0) + pruned
+        _write_json(PROGRESSIVE_STATE_PATH, payload)
+        _write_json(PROGRESSIVE_EXPORT_PATH, payload)
+    return {"progressive_pruned": pruned, "progressive_kept": len(kept)}
+
+
+def _scope_result(stage: str, matches: list[Any], *, extra: dict[str, Any] | None = None) -> tuple[list[Any], dict[str, Any]]:
+    scope, info = _inventory_scope()
+    filtered = _filter_matches(matches, scope, int(info.get("max_matches") or 300))
+    fail_open_min = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_FAIL_OPEN_MIN_MATCHES") or 20, 20))
+    used_fail_open = bool((scope.get("direct_keys") or scope.get("identities")) and matches and len(filtered) < fail_open_min)
+    final_matches = matches if used_fail_open else filtered
+    prune_report = _prune_progressive_state_to_scope(scope, info, stage)
+    report = {
+        **info,
+        "enabled": True,
+        "input_matches": len(matches),
+        "output_matches": len(final_matches),
+        "filtered_out": max(0, len(matches) - len(final_matches)),
+        "fail_open": used_fail_open,
+        "fail_open_min_matches": fail_open_min,
+        **prune_report,
+    }
+    if extra:
+        report.update(extra)
+    _append_report(stage, report)
+    return final_matches, report
 
 
 def install() -> dict[str, Any]:
-    if not _truthy(os.getenv("TOP_INVENTORY_RUNTIME_SCOPE_ENABLED"), True):
+    if not _truthy(os.getenv("TOP_INVENTORY_RUNTIME_SCOPE_ENABLED", "true"), True):
         return {"status": "disabled"}
     try:
         from app.services.runner import PredictionRunner
     except Exception as exc:
         return {"status": "error", "error": f"import_runner:{type(exc).__name__}: {exc}"}
 
-    original = getattr(PredictionRunner, "_fetch_matches", None)
-    if not callable(original):
+    original_fetch_matches = getattr(PredictionRunner, "_fetch_matches", None)
+    original_merge_inventory = getattr(PredictionRunner, "_merge_day_inventory_matches", None)
+    original_filter_matches = getattr(PredictionRunner, "_filter_matches", None)
+    original_fetch_provider = getattr(PredictionRunner, "_fetch_provider", None)
+    if not callable(original_fetch_matches):
         return {"status": "missing_fetch_matches"}
-    if getattr(original, _MARKER, False):
+    if getattr(original_fetch_matches, _MARKER, False):
         return {"status": "already_wrapped"}
 
     async def fetch_matches_top_inventory_scoped(self: Any):  # type: ignore[no-untyped-def]
-        result = await original(self)
+        result = await original_fetch_matches(self)
         if not isinstance(result, tuple) or len(result) < 1:
             return result
-        matches = list(result[0] or [])
+        matches, report = _scope_result("fetch_matches", list(result[0] or []))
         meta = result[1] if len(result) > 1 and isinstance(result[1], dict) else {}
-        allowed, info = _inventory_allowlist()
-        filtered = _filter_matches(matches, allowed)
-        # Fail-open when keys clearly do not match; otherwise a schema drift could
-        # accidentally produce a zero-match run.  If there is at least one match,
-        # use the scoped list.
-        fail_open_min = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_FAIL_OPEN_MIN_MATCHES") or 20, 20))
-        used_fail_open = bool(allowed and matches and len(filtered) < fail_open_min)
-        final_matches = matches if used_fail_open else filtered
         scoped_meta = dict(meta)
-        scoped_meta["top_inventory_runtime_scope"] = {
-            **info,
-            "enabled": True,
-            "input_matches": len(matches),
-            "output_matches": len(final_matches),
-            "filtered_out": max(0, len(matches) - len(final_matches)),
-            "fail_open": used_fail_open,
-            "fail_open_min_matches": fail_open_min,
-        }
-        _write_json(REPORT_PATH, scoped_meta["top_inventory_runtime_scope"])
+        scoped_meta["top_inventory_runtime_scope"] = report
         if len(result) == 1:
-            return (final_matches,)
-        return (final_matches, scoped_meta, *result[2:])
+            return (matches,)
+        return (matches, scoped_meta, *result[2:])
 
     setattr(fetch_matches_top_inventory_scoped, _MARKER, True)
-    setattr(fetch_matches_top_inventory_scoped, "_harizon_original_fetch_matches", original)
+    setattr(fetch_matches_top_inventory_scoped, "_harizon_original_fetch_matches", original_fetch_matches)
     PredictionRunner._fetch_matches = fetch_matches_top_inventory_scoped  # type: ignore[assignment]
-    allowed, info = _inventory_allowlist()
-    _write_json(REPORT_PATH, {**info, "enabled": True, "installed": True})
-    return {"status": "installed", **info}
+
+    if callable(original_merge_inventory) and not getattr(original_merge_inventory, _MARKER, False):
+        def merge_day_inventory_scoped(self: Any, bootstrap_matches: list[Any], bootstrap_meta: dict[str, Any], now_utc: Any):  # type: ignore[no-untyped-def]
+            merged_matches, merged_meta = original_merge_inventory(self, bootstrap_matches, bootstrap_meta, now_utc)
+            scoped, report = _scope_result("merge_day_inventory", list(merged_matches or []))
+            meta = dict(merged_meta or {})
+            meta["top_inventory_runtime_scope_after_merge"] = report
+            return scoped, meta
+
+        setattr(merge_day_inventory_scoped, _MARKER, True)
+        PredictionRunner._merge_day_inventory_matches = merge_day_inventory_scoped  # type: ignore[assignment]
+
+    if callable(original_filter_matches) and not getattr(original_filter_matches, _MARKER, False):
+        def filter_matches_scoped(self: Any, matches: list[Any], now_utc: Any):  # type: ignore[no-untyped-def]
+            result = original_filter_matches(self, matches, now_utc)
+            if not isinstance(result, tuple) or len(result) < 1:
+                return result
+            scoped, report = _scope_result("filter_matches", list(result[0] or []))
+            filtering = dict(result[1] or {}) if len(result) > 1 and isinstance(result[1], dict) else {}
+            filtering["top_inventory_runtime_scope"] = report
+            return (scoped, filtering, *result[2:]) if len(result) > 2 else (scoped, filtering)
+
+        setattr(filter_matches_scoped, _MARKER, True)
+        PredictionRunner._filter_matches = filter_matches_scoped  # type: ignore[assignment]
+
+    if callable(original_fetch_provider) and not getattr(original_fetch_provider, _MARKER, False):
+        async def fetch_provider_scoped(self: Any, provider: Any, method_name: str, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
+            if method_name in {"fetch_offers", "fetch_context"} and args and isinstance(args[0], list):
+                scoped, _report = _scope_result(f"provider_{method_name}", list(args[0] or []), extra={"provider_method": method_name})
+                args = (scoped, *args[1:])
+            return await original_fetch_provider(self, provider, method_name, *args, **kwargs)
+
+        setattr(fetch_provider_scoped, _MARKER, True)
+        PredictionRunner._fetch_provider = fetch_provider_scoped  # type: ignore[assignment]
+
+    scope, info = _inventory_scope()
+    prune_report = _prune_progressive_state_to_scope(scope, info, "install")
+    _append_report("install", {**info, **prune_report, "enabled": True, "installed": True})
+    return {"status": "installed", **info, **prune_report, "wrapped": ["_fetch_matches", "_merge_day_inventory_matches", "_filter_matches", "_fetch_provider"]}
