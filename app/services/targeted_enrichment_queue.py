@@ -469,16 +469,16 @@ def load_context_counts() -> dict[str, int]:
 
 def provider_default_limit(provider_key: str) -> int:
     defaults = {
-        "sstats": 120,
-        "bzzoiro": 48,
-        "thesportsdb": 24,
-        "football_data": 14,
+        "sstats": 140,
+        "bzzoiro": 96,
+        "thesportsdb": 36,
+        "football_data": 18,
         "futrixmetrics": 4,
-        "api_football": 8,
-        "allsportsapi": 8,
-        "newsapi": 3,
-        "gnews": 3,
-        "weather": 12,
+        "api_football": 12,
+        "allsportsapi": 12,
+        "newsapi": 4,
+        "gnews": 4,
+        "weather": 8,
         "openfootball": 80,
         "openligadb": 18,
         "espn": 18,
@@ -543,19 +543,52 @@ def rank_matches(
         if key and (source_ids.get(key) or metadata.get(f"{key}_event_id") or metadata.get(f"{key}_id")):
             source_id_bonus = 1.5
         cheap_alias_bonus = 0.5 if key in {"thesportsdb", "openfootball", "openligadb"} else 0.0
-        rank = (
-            value,
-            waiting,
-            context_gap,
-            second_odds_gap,
-            window,
-            source_id_bonus,
-            float(len(offers)),
-            float(len(books)),
-            float(len(families)),
-            cheap_alias_bonus,
-            -seconds,
-        )
+        # Provider-specific ordering: Bzzoiro is the main near-term path to a
+        # true second odds-source, while SStats/TheSportsDB/etc. are primarily
+        # context boosters.  Keep value/waiting first, then sort the provider by
+        # the gap it can actually close.
+        if key == "bzzoiro":
+            rank = (
+                value,
+                waiting,
+                second_odds_gap,
+                context_gap,
+                window,
+                source_id_bonus,
+                float(len(books)),
+                float(len(offers)),
+                float(len(families)),
+                cheap_alias_bonus,
+                -seconds,
+            )
+        elif key in {"sstats", "thesportsdb", "football_data", "api_football", "allsportsapi", "futrixmetrics", "weather", "newsapi", "gnews"}:
+            rank = (
+                value,
+                waiting,
+                context_gap,
+                window,
+                second_odds_gap,
+                source_id_bonus,
+                cheap_alias_bonus,
+                float(len(offers)),
+                float(len(books)),
+                float(len(families)),
+                -seconds,
+            )
+        else:
+            rank = (
+                value,
+                waiting,
+                context_gap,
+                second_odds_gap,
+                window,
+                source_id_bonus,
+                float(len(offers)),
+                float(len(books)),
+                float(len(families)),
+                cheap_alias_bonus,
+                -seconds,
+            )
         ranked.append((rank, match))
     ranked.sort(key=lambda item: item[0], reverse=True)
     return [match for _, match in ranked]
@@ -594,6 +627,10 @@ def select_for_provider(
     pool_variants: set[str] = set()
     for match in combined:
         pool_variants.update(match_key_variants(match))
+    selected_keys = [match_key_of(match) for match in selected]
+    selected_variants: set[str] = set()
+    for match in selected:
+        selected_variants.update(match_key_variants(match))
     return selected, {
         "provider": key,
         "input_matches": len(combined),
@@ -601,10 +638,15 @@ def select_for_provider(
         "limit": limit,
         "value_priority_items": len(value_priority),
         "value_priority_items_in_pool": sum(1 for k in value_priority if k in pool_variants),
+        "value_priority_items_selected": sum(1 for k in value_priority if k in selected_variants),
         "waiting_line_items": sum(1 for match in combined if match_key_variants(match).intersection(waiting_line_keys)),
         "waiting_line_items_total": len(waiting_line_keys),
+        "waiting_line_items_selected": sum(1 for match in selected if match_key_variants(match).intersection(waiting_line_keys)),
         "context_index_items": len(context_counts),
         "context_index_items_in_pool": sum(1 for match in combined if any(v in context_counts for v in match_key_variants(match))),
+        "selected_context_gap": sum(1 for match in selected if max([int(context_counts.get(v, 0) or 0) for v in match_key_variants(match)] or [0]) < 2),
+        "selected_second_odds_source_gap": sum(1 for match in selected if offers_by_match and len({str(getattr(o, 'source', '') or '').strip().lower() for o in offers_by_match.get(match_key_of(match), []) if str(getattr(o, 'source', '') or '').strip()}) < 2),
+        "selected_sample": selected_keys[:10],
     }
 
 

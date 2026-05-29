@@ -110,15 +110,26 @@ jobs:
       TARGETED_ENRICHMENT_REORDER_CORE_QUEUE: "true"
       TARGETED_ENRICHMENT_CORE_MATCH_LIMIT: "120"
       TARGETED_ENRICHMENT_MAX_MATCHES_PER_PROVIDER: "120"
-      TARGETED_ENRICHMENT_SSTATS_MATCH_LIMIT: "120"
-      TARGETED_ENRICHMENT_BZZOIRO_MATCH_LIMIT: "48"
-      TARGETED_ENRICHMENT_THESPORTSDB_MATCH_LIMIT: "24"
+      TARGETED_ENRICHMENT_SSTATS_MATCH_LIMIT: "140"
+      TARGETED_ENRICHMENT_BZZOIRO_MATCH_LIMIT: "96"
+      TARGETED_ENRICHMENT_THESPORTSDB_MATCH_LIMIT: "36"
       TARGETED_ENRICHMENT_FOOTBALL_DATA_MATCH_LIMIT: "14"
       TARGETED_ENRICHMENT_FUTRIXMETRICS_MATCH_LIMIT: "4"
       TARGETED_ENRICHMENT_NEWSAPI_MATCH_LIMIT: "3"
       TARGETED_ENRICHMENT_GNEWS_MATCH_LIMIT: "3"
-      TARGETED_ENRICHMENT_API_FOOTBALL_MATCH_LIMIT: "8"
-      TARGETED_ENRICHMENT_ALLSPORTSAPI_MATCH_LIMIT: "8"
+      TARGETED_ENRICHMENT_API_FOOTBALL_MATCH_LIMIT: "12"
+      TARGETED_ENRICHMENT_ALLSPORTSAPI_MATCH_LIMIT: "12"
+      BZZOIRO_CONTEXT_GAP_MATCH_LIMIT: "120"
+      BZZOIRO_EXACT_BRIDGE_MIN_SECOND_SOURCE_TARGET: "25"
+      HIGHLIGHTLY_PROBE_MAX_REQUESTS: "3"
+      ALLSPORTSAPI_PROBE_MAX_REQUESTS: "3"
+      API_FOOTBALL_PROBE_MAX_REQUESTS: "4"
+      SECONDARY_PROVIDER_PROBE_TARGET_LIMIT: "8"
+      SECONDARY_PROVIDER_PROBE_MAX_REQUESTS_PER_RUN: "12"
+      PERFORMANCE_LEDGER_ENABLED: "true"
+      REJECTED_NEAR_MISS_LEDGER_ENABLED: "true"
+      NEAR_MISS_LEDGER_MIN_EV_PCT: "2.0"
+      NEAR_MISS_LEDGER_MIN_EDGE_PP: "0.8"
 
       ENABLE_THESPORTSDB_CONTEXT: "true"
       THESPORTSDB_CONTEXT_ENABLED: "true"
@@ -136,9 +147,9 @@ jobs:
       FUTRIXMETRICS_ENABLED: "true"
       FUTRIXMETRICS_MAX_REQUESTS_PER_RUN: "4"
       FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: "2"
-      NEWSAPI_CONTEXT_MATCH_LIMIT: "3"
-      GNEWS_CONTEXT_MATCH_LIMIT: "3"
-      WEATHER_CONTEXT_MATCH_LIMIT: "8"
+      NEWSAPI_CONTEXT_MATCH_LIMIT: "4"
+      GNEWS_CONTEXT_MATCH_LIMIT: "4"
+      WEATHER_CONTEXT_MATCH_LIMIT: "6"
       ALLSPORTSAPI_MAX_REQUESTS_PER_RUN: "4"
       ALLSPORTSAPI_MATCH_LIMIT: "8"
       ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES: "60"
@@ -170,9 +181,9 @@ jobs:
       BZZOIRO_MAX_PAGES: "8"
       BZZOIRO_REQUEST_RETRIES: "0"
       BZZOIRO_RETRY_BACKOFF_SECONDS: "0"
-      BZZOIRO_CONTEXT_MATCH_LIMIT: "80"
+      BZZOIRO_CONTEXT_MATCH_LIMIT: "120"
       BZZOIRO_PRICE_BACKFILL_ENABLED: "true"
-      BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "48"
+      BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "80"
 
       SSTATS_RATE_LIMIT_PER_MINUTE: "150"
       SSTATS_PER_RUN_MAX: "120"
@@ -213,8 +224,8 @@ jobs:
       SPORTLOGIC_429_COOLDOWN_SECONDS: "90"
       SPORTLOGIC_COMPACT_QUERY_MODE: "true"
       SPORTLOGIC_BROAD_FALLBACK_ENABLED: "false"
-      SPORTLOGIC_ACTIVE_ODDS_FALLBACK_ENABLED: "true"
-      SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED: "true"
+      SPORTLOGIC_ACTIVE_ODDS_FALLBACK_ENABLED: "false"
+      SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED: "false"
       SPORTLOGIC_ACTIVE_ODDS_PER_PAGE: "100"
       SPORTLOGIC_TARGETED_MIN_OFFER_MATCHES: "1"
 
@@ -443,6 +454,34 @@ jobs:
           python scripts/normalize_published_pick_payloads.py || true
           cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
 
+      - name: Build performance and near-miss ledgers
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip performance ledgers: fresh run-bot log was not created"
+            exit 0
+          fi
+          python scripts/build_performance_and_near_miss_ledgers.py || true
+          cp .data/exports/latest-performance-ledger-summary.json artifacts/run-bot/latest-performance-ledger-summary.json 2>/dev/null || true
+          cp .data/exports/latest-rejected-near-miss-report.json artifacts/run-bot/latest-rejected-near-miss-report.json 2>/dev/null || true
+          cp .data/performance-ledger.jsonl artifacts/run-bot/performance-ledger.jsonl 2>/dev/null || true
+          cp .data/rejected-near-miss-ledger.jsonl artifacts/run-bot/rejected-near-miss-ledger.jsonl 2>/dev/null || true
+
+      - name: Probe targeted secondary providers
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
+            echo "skip secondary provider probe: fresh run-bot log was not created"
+            exit 0
+          fi
+          timeout 60s python scripts/probe_targeted_secondary_sources.py || true
+          cp .data/exports/latest-targeted-secondary-provider-probe.json artifacts/run-bot/latest-targeted-secondary-provider-probe.json 2>/dev/null || true
+          cp -r .data/provider_cache/targeted-secondary-probes artifacts/run-bot/targeted-secondary-probes 2>/dev/null || true
+
       - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
@@ -472,7 +511,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/performance-ledger.jsonl .data/rejected-near-miss-ledger.jsonl .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
           git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
@@ -504,6 +543,8 @@ jobs:
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
             .data/candidate-lifecycle-state.json
+            .data/performance-ledger.jsonl
+            .data/rejected-near-miss-ledger.jsonl
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 7

@@ -24,6 +24,7 @@ MODULES = [
     'app.services.signal_stack_runtime_patch',
     'app.services.odds_movement_cache_bridge_patch',
     'app.services.sportlogic_query_runtime_guard',
+    'app.services.provider_signal_expansion_runtime_patch',
     'app.services.targeted_enrichment_runtime_patch',
     'app.services.api_runtime_enhancements',
     'app.services.secondary_odds_rescue_runtime_patch',
