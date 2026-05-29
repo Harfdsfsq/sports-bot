@@ -1,62 +1,59 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 199 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: направление ставки конфликтует с xG
+🟡 Прогнозов нет: есть 208 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: odds above global max
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 289.
-• 1+ линия: 293/300 (98%) | 1+ контекст: 232/300 (77%)
-• 2+ подтверждения цены: 140/300 (47%)
-• 2+ независимых odds-source: 16/300 (5%)
-• 2+ контекста: 51/300 (17%)
-• Готово для модели: 229/300 (76%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 293.
+• 1+ линия: 295/300 (98%) | 1+ контекст: 236/300 (79%)
+• 2+ подтверждения цены: 141/300 (47%)
+• 2+ независимых odds-source: 17/300 (6%)
+• 2+ контекста: 53/300 (18%)
+• Готово для модели: 233/300 (78%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 15 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 16 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 199 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 208 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 199 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 208 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 14 | матчей без следующего регулярного run: 14
-• Line guard: увидел 5, оставил 0, снял 1
+• Pre-kickoff проверок: 24 | матчей без следующего регулярного run: 24
+• Line guard: увидел 3, оставил 0, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/2
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 2 | evaluated 2 | published 0
+• Raw/candidates before quality: 1/1
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 19 (events 0, odds 19); смэтчил матчей 285; дал offers 7895 (416/запрос); 2+ букмекера 30; ошибок 1.
-• Bzzoiro: запросы 92 (direct 46, v2 46, gap 0); событий 20; контекстов 14; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 30; secondary offers 22; overlap с odds-api.io 2; ошибок 5.
-• SStats: запросы 26; сырых строк 22293 (857/запрос); контекстов 209; deep-enriched 10; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 4; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 58, bzzoiro: 12, bzzoiro+odds_api_io: 2
+• odds-api.io: запросы 58 (events 0, odds 58); смэтчил матчей 289; дал offers 25479 (439/запрос); 2+ букмекера 113; ошибок 0.
+• Bzzoiro: запросы 98 (direct 49, v2 49, gap 0); событий 66; контекстов 15; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 32; secondary offers 0; overlap с odds-api.io 15; ошибок 5.
+• SStats: запросы 26; сырых строк 22573 (868/запрос); контекстов 233; deep-enriched 10; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 7; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag active_odds_stale_only_no_current_fixture.
+• Комбинации источников линий: odds_api_io: 171, bzzoiro+odds_api_io: 15
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 340. Нужно обновить линии: 0.
-• Core-ready 2+/2+ по всем tracked: 17.
-• 0–4 часа: 2/107 core-ready.
-• 0–12 часов: 12/273 core-ready.
+• Core-ready 2+/2+ по всем tracked: 19.
+• 0–4 часа: 4/135 core-ready.
+• 0–12 часов: 14/273 core-ready.
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 2 (40%)
-• quality: вероятность после калибровки ниже порога: 1 (20%)
-• quality post calibration edge guard: 1 (20%)
-• line movement guard снял кандидата: 1 (20%)
+• odds above global max: 1 (33%)
+• quality: вероятность после калибровки ниже порога: 1 (33%)
+• line movement guard снял кандидата: 1 (33%)
 
 🔎 Последние проверенные кандидаты
-1. FA Tartu Kalev — FCI Levadia Tallinn | Больше 4.5 @2.45 | EV +5.0% | edge +2.1 п.п. | q 39.8
-   • причина: направление ставки конфликтует с xG
-2. Zed FC — Kahrabaa Ismailia | Меньше 2.5 @1.82 | EV +5.3% | edge +2.9 п.п. | q 60.6
-   • причина: направление ставки конфликтует с xG
+1. FA Tartu Kalev — FCI Levadia Tallinn | Меньше 2.5 @3.60 | EV +35.4% | edge +9.8 п.п. | q 100.0
+   • причина: odds above global max
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26635285972
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26635285972
-• Artifact: run-bot-26635285972
+• Run ID: 26636614620
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26636614620
+• Artifact: run-bot-26636614620
 • workflow run-bot, attempt 1
