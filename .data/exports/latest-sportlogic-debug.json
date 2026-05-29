@@ -16,20 +16,20 @@
     "sample_odds": []
   },
   "stats": {
-    "active_odds_detail_unmatched_games": 2,
     "active_odds_embedded_games_outside_requested_dates": 100,
-    "active_odds_embedded_games_used": 2,
+    "active_odds_fixture_recovery_skipped": true,
     "active_odds_game_ids_seen": 2,
-    "active_odds_recovered_fixtures": 0,
-    "active_odds_rows_seen": 200,
+    "active_odds_rows_seen": 100,
     "active_odds_rows_without_game_id": 0,
+    "active_odds_stale_embedded_game_ids_skipped": 2,
+    "active_odds_stale_only": true,
     "active_odds_targeted_matches": 0,
     "active_odds_targeted_offers_parsed": 0,
-    "active_odds_unmatched_rows": 2,
     "api_key_present": 2,
     "auth_error": 0,
     "budget_exhausted": 0,
     "contexts_built": 0,
+    "diagnosis": "active_odds_stale_only_no_current_fixture",
     "empty_odds_payloads": 0,
     "enabled": 2,
     "events_matched": 0,
@@ -37,6 +37,9 @@
     "fixtures_skipped": 0,
     "games_fetched": 0,
     "http_statuses": [
+      200,
+      200,
+      200,
       200,
       200,
       200,
@@ -81,16 +84,53 @@
         "scope": "dated"
       },
       {
+        "date": "2026-05-29",
+        "date_filter_effective": false,
         "params": {
-          "is_active": "true",
-          "per_page": 100
+          "date_from": "2026-05-29",
+          "per_page": 50,
+          "status": "scheduled"
         },
-        "rows": 100,
-        "scope": "active_odds_fallback"
+        "rows": 0,
+        "scope": "dated"
+      },
+      {
+        "date": "2026-05-30",
+        "date_filter_effective": false,
+        "params": {
+          "date_from": "2026-05-30",
+          "date_to": "2026-05-31",
+          "per_page": 50,
+          "status": "scheduled"
+        },
+        "rows": 0,
+        "scope": "dated"
+      },
+      {
+        "date": "2026-05-30",
+        "date_filter_effective": false,
+        "params": {
+          "date_from": "2026-05-30",
+          "date_to": "2026-05-31",
+          "per_page": 50
+        },
+        "rows": 0,
+        "scope": "dated"
+      },
+      {
+        "date": "2026-05-30",
+        "date_filter_effective": false,
+        "params": {
+          "date_from": "2026-05-30",
+          "per_page": 50,
+          "status": "scheduled"
+        },
+        "rows": 0,
+        "scope": "dated"
       }
     ],
     "rate_limited": 0,
-    "requests": 4,
+    "requests": 7,
     "response_errors": 0,
     "rows_before_parse": 0,
     "sportlogic_query_guard_enabled": true,
