@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-29T15:03:27.346800+00:00
+UTC: 2026-05-29T17:05:39.884491+00:00
 target_date: 2026-05-29
-canonical_matches: 374
-2+ provider sources: 94
-2+ primary sources: 94
-all 3 primary sources: 10
+canonical_matches: 318
+2+ provider sources: 62
+2+ primary sources: 59
+all 3 primary sources: 7
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=257 event_like=257 unique=66 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=202 event_like=202 unique=66 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=2 event_like=2 unique=2 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=554 event_like=554 unique=277 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=4 rows=362 event_like=362 unique=181 statuses={"OK": 4, "EMPTY": 2}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=157 event_like=137 unique=137 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=158 event_like=138 unique=138 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 280, "3": 15, "2": 79}
-- primary providers: {"1": 280, "2": 84, "3": 10}
+- all providers: {"1": 256, "3": 9, "2": 53}
+- primary providers: {"1": 259, "2": 52, "3": 7}
 
 ## Top canonical matches
 - 2026-05-28T21:45:00+00:00 | Rio Branco ES — Vilavelhense | providers=sstats ids={"sstats": "1542048"}
@@ -36,10 +36,10 @@ all 3 primary sources: 10
 - 2026-05-29T00:00:00+00:00 | Memphis 901 — Louisiana Krewe | providers=sstats ids={"sstats": "1525388"}
 - 2026-05-29T00:00:00+00:00 | Rockford Raptors W — Minnesota Aurora W | providers=sstats ids={"sstats": "1532338"}
 - 2026-05-29T00:00:00+00:00 | Nacional AM — Paysandu | providers=sstats ids={"sstats": "1544606"}
-- 2026-05-29T00:30:00+00:00 | Boca Juniors — Universidad Católica | providers=bzzoiro,football_data,sstats ids={"bzzoiro": "9456", "football_data": "557131", "sstats": "1535314"}
 - 2026-05-29T00:30:00+00:00 | Cruzeiro — Barcelona SC Guayaquil | providers=bzzoiro,football_data,sstats ids={"bzzoiro": "9457", "football_data": "557130", "sstats": "1535318"}
-- 2026-05-29T00:30:00+00:00 | América de Cali — Macará | providers=bzzoiro,sstats ids={"bzzoiro": "9344", "sstats": "1535218"}
+- 2026-05-29T00:30:00+00:00 | Boca Juniors — Universidad Católica | providers=bzzoiro,football_data,sstats ids={"bzzoiro": "9456", "football_data": "557131", "sstats": "1535314"}
 - 2026-05-29T00:30:00+00:00 | Tigre — Alianza Atlético de Sullana | providers=bzzoiro,sstats ids={"bzzoiro": "9345", "sstats": "1535232"}
+- 2026-05-29T00:30:00+00:00 | América de Cali — Macará | providers=bzzoiro,sstats ids={"bzzoiro": "9344", "sstats": "1535218"}
 - 2026-05-29T00:30:00+00:00 | Orsomarso W — Junior W | providers=sstats ids={"sstats": "1525738"}
 - 2026-05-29T01:00:00+00:00 | Pride of Gall Hill — Weymouth Wales | providers=sstats ids={"sstats": "1514452"}
 - 2026-05-29T01:00:00+00:00 | Flatirons Rush — Colorado Storm | providers=sstats ids={"sstats": "1524633"}
@@ -113,19 +113,19 @@ all 3 primary sources: 10
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Boca Juniors — Universidad Católica | primary=2 providers=bzzoiro,football_data,sstats
-  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Cruzeiro — Barcelona SC Guayaquil | primary=2 providers=bzzoiro,football_data,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- América de Cali — Macará | primary=2 providers=bzzoiro,sstats
+- Boca Juniors — Universidad Católica | primary=2 providers=bzzoiro,football_data,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Tigre — Alianza Atlético de Sullana | primary=2 providers=bzzoiro,sstats
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- América de Cali — Macará | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
