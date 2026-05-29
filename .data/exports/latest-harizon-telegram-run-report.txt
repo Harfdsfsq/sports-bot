@@ -1,25 +1,25 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 56 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: tier a quality below min
+🟡 Прогнозов нет: есть 91 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: odds above global max
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 233 матчей. В этом run обработано: 31.
-• 1+ линия: 228/233 (98%) | 1+ контекст: 115/233 (49%)
-• 2+ подтверждения цены: 63/233 (27%)
-• 2+ независимых odds-source: 15/233 (6%)
-• 2+ контекста: 37/233 (16%)
-• Готово для модели: 113/233 (48%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 244.
+• 1+ линия: 284/300 (95%) | 1+ контекст: 210/300 (70%)
+• 2+ подтверждения цены: 137/300 (46%)
+• 2+ независимых odds-source: 16/300 (5%)
+• 2+ контекста: 17/300 (6%)
+• Готово для модели: 207/300 (69%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 5 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 15 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 56 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 91 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 56 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 91 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 3
-• Line guard: увидел 2, оставил 0, снял 0
+• Line guard: увидел 3, оставил 1, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1/1
@@ -27,38 +27,32 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 31; дал offers 2365 (296/запрос); 2+ букмекера 10; ошибок 0.
-• Bzzoiro: запросы 38 (direct 19, v2 19, gap 0); событий 31; контекстов 6; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 12; secondary offers 0; overlap с odds-api.io 6; ошибок 0.
-• SStats: запросы 21; сырых строк 16962 (808/запрос); контекстов 13; deep-enriched 8; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 0; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 12, bzzoiro+odds_api_io: 6
+• odds-api.io: запросы 48 (events 0, odds 48); смэтчил матчей 239; дал offers 17055 (355/запрос); 2+ букмекера 78; ошибок 0.
+• Bzzoiro: запросы 80 (direct 40, v2 40, gap 0); событий 20; контекстов 12; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 26; secondary offers 22; overlap с odds-api.io 12; ошибок 4.
+• SStats: запросы 26; сырых строк 22296 (858/запрос); контекстов 162; deep-enriched 9; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 3; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
+• Комбинации источников линий: odds_api_io: 127, bzzoiro+odds_api_io: 12
 
 🧭 Покрытие ближайших окон
-• Активных матчей сейчас: 11. Нужно обновить линии: 0.
-• Core-ready 2+/2+ по всем tracked: 2.
-• 0–4 часа: 0/3 core-ready.
-• 0–12 часов: 0/3 core-ready.
+• Активных матчей сейчас: 330. Нужно обновить линии: 0.
+• Core-ready 2+/2+ по всем tracked: 15.
+• 0–4 часа: 0/13 core-ready.
+• 0–12 часов: 10/247 core-ready.
 
 🚫 Почему не опубликовано
-• tier a quality below min: 1 (9%)
-• tier a canonical edge below min: 1 (9%)
-• tier a canonical ev below min: 1 (9%)
-• tier b confidence below min: 1 (9%)
-• tier b quality below min: 1 (9%)
-• tier b canonical edge below min: 1 (9%)
-• tier b canonical ev below min: 1 (9%)
-• tier c quality below min: 1 (9%)
+• odds above global max: 1 (50%)
+• quality quality high odds confidence guard: 1 (50%)
 
 🔎 Последние проверенные кандидаты
-1. CD El Nacional — CD Universidad Catolica del Ecuador | Меньше 2.5 @2.32 | EV +0.2% | edge +0.1 п.п. | q 52.4
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
+1. Casuarina FC — Hellenic Athletic Club | Меньше @3.25 | EV +11.5% | edge +3.5 п.п. | q 78.8
+   • причина: odds above global max
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26595575927
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26595575927
-• Artifact: run-bot-26595575927
+• Run ID: 26619012244
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26619012244
+• Artifact: run-bot-26619012244
 • workflow run-bot, attempt 1
