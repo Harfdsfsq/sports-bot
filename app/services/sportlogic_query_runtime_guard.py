@@ -114,24 +114,28 @@ def _accept_dated_rows(provider: Any, rows: list[dict[str, Any]], date_key: str,
 
 
 def _param_variants_for_date(date_key: str, per_page: int = 100) -> list[dict[str, Any]]:
-    # Production mode must be cheap: SportLogic is useful as a targeted
-    # confirmation source, not as an 8-variant fixture scraper.  Keep the old
-    # probe variants opt-in for diagnostics only.
+    # Use documented params and keep production probing cheap.  Docs show
+    # date_from + status=scheduled as the first fixture request.  `date_to` is
+    # optional, but when present use next day so provider implementations that
+    # treat it as an exclusive upper bound still return the target date.
+    try:
+        day = datetime.fromisoformat(str(date_key)).date()
+        next_day = (datetime.combine(day, datetime.min.time(), tzinfo=UTC) + timedelta(days=1)).date().isoformat()
+    except Exception:
+        next_day = str(date_key)
     compact = _truthy(os.getenv("SPORTLOGIC_COMPACT_QUERY_MODE"), True)
     base = [
-        {"date_from": date_key, "date_to": date_key, "per_page": per_page},
+        {"status": "scheduled", "date_from": date_key, "date_to": next_day, "per_page": per_page},
+        {"date_from": date_key, "date_to": next_day, "per_page": per_page},
     ]
     if compact:
         return base
-    return [
-        {"status": "scheduled", "date_from": date_key, "date_to": date_key, "per_page": per_page},
-        *base,
-        {"status": "live", "date_from": date_key, "date_to": date_key, "per_page": per_page},
-        {"status": "pending", "date_from": date_key, "date_to": date_key, "per_page": per_page},
+    return base + [
+        {"status": "live", "date_from": date_key, "date_to": next_day, "per_page": per_page},
+        {"status": "pending", "date_from": date_key, "date_to": next_day, "per_page": per_page},
+        {"date_from": date_key, "status": "scheduled", "per_page": per_page},
         {"date": date_key, "per_page": per_page},
         {"starts_at_from": f"{date_key}T00:00:00Z", "starts_at_to": f"{date_key}T23:59:59Z", "per_page": per_page},
-        {"from": date_key, "to": date_key, "per_page": per_page},
-        {"start_date": date_key, "end_date": date_key, "per_page": per_page},
     ]
 
 

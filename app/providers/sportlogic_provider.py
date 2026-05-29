@@ -132,8 +132,16 @@ class SportLogicProvider:
                     stats["budget_exhausted"] = True
                     break
                 date_key = (now + timedelta(days=offset)).date().isoformat()
-                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
-                fixtures.extend(self._extract_list(payload))
+                for params in self._game_query_params(date_key):
+                    if not self._budget_left():
+                        stats["budget_exhausted"] = True
+                        break
+                    payload = await self._get_json(client, "/games", params, stats, preview)
+                    rows = self._extract_list(payload)
+                    stats.setdefault("games_query_variants", []).append({"params": params, "rows": len(rows)})
+                    if rows:
+                        fixtures.extend(rows)
+                        break
 
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
@@ -221,6 +229,7 @@ class SportLogicProvider:
                 for match_key, offers in targeted_offers.items():
                     if offers:
                         offers_by_match[match_key].extend(offers)
+                        stats["offers_parsed"] += len(offers)
 
         stats["events_matched"] = max(len(mapping), int(stats.get("active_odds_targeted_matches", 0) or 0))
         stats["games_fetched"] = int(stats.get("fixtures_fetched", 0) or 0)
@@ -282,12 +291,42 @@ class SportLogicProvider:
                 if not self._budget_left():
                     stats["budget_exhausted"] = True
                     break
-                payload = await self._get_json(client, "/games", {"date_from": date_key, "date_to": date_key, "per_page": 100}, stats, preview)
-                fixtures.extend(self._extract_list(payload))
+                for params in self._game_query_params(date_key):
+                    if not self._budget_left():
+                        stats["budget_exhausted"] = True
+                        break
+                    payload = await self._get_json(client, "/games", params, stats, preview)
+                    rows = self._extract_list(payload)
+                    stats.setdefault("games_query_variants", []).append({"params": params, "rows": len(rows)})
+                    if rows:
+                        fixtures.extend(rows)
+                        break
         self._fixture_cache = fixtures
         stats["fixtures_fetched"] = len(fixtures)
         preview["sample_fixtures"] = fixtures[:3]
         return fixtures, stats, preview
+
+    def _game_query_params(self, date_key: str) -> list[dict[str, Any]]:
+        """Cheap documented /games probes for a single UTC date.
+
+        SportLogic docs show `date_from` + `status=scheduled` as the first
+        fixture request and list `date_to` as optional.  Use at most two
+        variants in runtime: the scheduled form first, then a no-status fallback.
+        The old 8-variant probing burned free-plan quota without adding signal.
+        """
+        try:
+            day = datetime.fromisoformat(str(date_key)).date()
+            next_day = (datetime.combine(day, datetime.min.time(), tzinfo=UTC) + timedelta(days=1)).date().isoformat()
+        except Exception:
+            next_day = str(date_key)
+        per_page = max(5, min(100, int(float(os.getenv("SPORTLOGIC_GAMES_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100))))
+        variants = [
+            {"date_from": date_key, "date_to": next_day, "status": "scheduled", "per_page": per_page},
+            {"date_from": date_key, "date_to": next_day, "per_page": per_page},
+        ]
+        if self._env_bool("SPORTLOGIC_GAMES_DATE_FROM_ONLY_FALLBACK", False):
+            variants.append({"date_from": date_key, "status": "scheduled", "per_page": per_page})
+        return variants
 
     async def _get_json(
         self,
@@ -367,16 +406,17 @@ class SportLogicProvider:
         stats: dict[str, Any],
         preview: dict[str, Any],
     ) -> dict[str, list[Offer]]:
-        """Use one active-odds page as a targeted line confirmation source.
+        """Use one `/odds?is_active=true` page as targeted confirmation.
 
-        This is intentionally conservative: SportLogic is quota-sensitive, so it
-        should not behave as a broad fixture discovery provider during runtime.
-        We only accept active odds rows that contain enough embedded game data to
-        match a current bot match by teams/date, then parse those rows directly.
+        The documented `/odds` response usually contains `game_id` but not the
+        embedded teams/start time.  The previous implementation skipped those
+        rows as unmatchable.  This version groups rows by `game_id`, fetches a
+        very small number of `/games/{id}` details, matches only those details
+        against current bot matches, and parses the grouped odds rows directly.
         """
         if not matches or not self._budget_left():
             return {}
-        per_page = max(5, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100)))
+        per_page = max(5, min(100, int(float(os.getenv("SPORTLOGIC_ACTIVE_ODDS_PER_PAGE") or os.getenv("SPORTLOGIC_PER_PAGE") or 100))))
         params: dict[str, Any] = {"is_active": "true", "per_page": per_page}
         market_id = str(os.getenv("SPORTLOGIC_ACTIVE_ODDS_MARKET_ID") or "").strip()
         if market_id:
@@ -384,45 +424,87 @@ class SportLogicProvider:
 
         async with httpx.AsyncClient(timeout=self.timeout, follow_redirects=True) as client:
             payload = await self._get_json(client, "/odds", params, stats, preview)
-        rows = self._extract_odds_rows(payload)
-        stats["active_odds_rows_seen"] = int(stats.get("active_odds_rows_seen") or 0) + len(rows)
-        preview.setdefault("query_variants_used", []).append({
-            "scope": "active_odds_targeted_confirmation",
-            "params": params,
-            "rows": len(rows),
-        })
-        if not rows:
-            return {}
+            rows = self._extract_odds_rows(payload)
+            stats["active_odds_rows_seen"] = int(stats.get("active_odds_rows_seen") or 0) + len(rows)
+            preview.setdefault("query_variants_used", []).append({
+                "scope": "active_odds_targeted_confirmation",
+                "params": params,
+                "rows": len(rows),
+            })
+            if not rows:
+                return {}
 
-        grouped: dict[tuple[str, str], list[dict[str, Any]]] = defaultdict(list)
+            grouped_rows: dict[str, list[dict[str, Any]]] = defaultdict(list)
+            embedded_games: dict[str, dict[str, Any]] = {}
+            rows_without_game = 0
+            for row in rows:
+                if not isinstance(row, dict):
+                    continue
+                if self._is_suspended(row):
+                    stats["active_odds_suspended_rows_skipped"] = int(stats.get("active_odds_suspended_rows_skipped") or 0) + 1
+                    continue
+                game_id = str(self._game_id(row) or "").strip()
+                if not game_id:
+                    rows_without_game += 1
+                    continue
+                grouped_rows[game_id].append(row)
+                embedded = self._fixture_from_odds_row(row)
+                if embedded is not None:
+                    embedded_games.setdefault(game_id, embedded)
+
+            stats["active_odds_game_ids_seen"] = len(grouped_rows)
+            stats["active_odds_rows_without_game_id"] = rows_without_game
+            if not grouped_rows:
+                return {}
+
+            # Prefer game ids whose rows are relevant to publishable families and
+            # have more bookmaker depth.  Without embedded fixture data this is the
+            # cheapest useful ordering before spending detail requests.
+            def group_rank(item: tuple[str, list[dict[str, Any]]]) -> tuple[int, int, int]:
+                _gid, group = item
+                families = {self._market_family(self._market_name_from_row(r)) for r in group if isinstance(r, dict)}
+                books = {self._canonical_bookmaker(self._bookmaker_name(r)) for r in group if isinstance(r, dict)}
+                useful = int(bool(families & {"totals", "spreads", "btts", "h2h"}))
+                return (useful, len(books), len(group))
+
+            detail_limit = max(0, int(float(os.getenv("SPORTLOGIC_TARGETED_GAME_DETAIL_LIMIT") or os.getenv("SPORTLOGIC_ACTIVE_ODDS_GAME_DETAIL_LIMIT") or 4)))
+            candidate_games: dict[str, dict[str, Any]] = {}
+            for game_id, group in sorted(grouped_rows.items(), key=group_rank, reverse=True):
+                if game_id in embedded_games:
+                    candidate_games[game_id] = embedded_games[game_id]
+                    stats["active_odds_embedded_games_used"] = int(stats.get("active_odds_embedded_games_used") or 0) + 1
+                    continue
+                if detail_limit <= 0:
+                    stats["active_odds_game_detail_limit_zero"] = True
+                    continue
+                if int(stats.get("active_odds_game_detail_requests") or 0) >= detail_limit:
+                    stats["active_odds_game_detail_limit_reached"] = True
+                    break
+                if not self._budget_left():
+                    stats["budget_exhausted"] = True
+                    break
+                detail = await self._get_json(client, f"/games/{game_id}", {}, stats, preview)
+                stats["active_odds_game_detail_requests"] = int(stats.get("active_odds_game_detail_requests") or 0) + 1
+                game_row = self._extract_single_object(detail)
+                if game_row is None:
+                    stats["active_odds_game_detail_empty"] = int(stats.get("active_odds_game_detail_empty") or 0) + 1
+                    continue
+                candidate_games[game_id] = game_row
+
         match_by_key: dict[str, Match] = {m.match_key: m for m in matches}
-        for row in rows:
-            if not isinstance(row, dict):
-                continue
-            if self._is_suspended(row):
-                stats["active_odds_suspended_rows_skipped"] = int(stats.get("active_odds_suspended_rows_skipped") or 0) + 1
-                continue
-            fixture_row = self._fixture_from_odds_row(row)
-            if fixture_row is None:
-                stats["active_odds_rows_without_matchable_fixture"] = int(stats.get("active_odds_rows_without_matchable_fixture") or 0) + 1
-                continue
+        offers_by_match: dict[str, list[Offer]] = defaultdict(list)
+        seen_game_matches: set[str] = set()
+        for game_id, fixture_row in candidate_games.items():
             best = self._best_match_for_fixture_row(matches, fixture_row, stats)
             if best is None:
+                stats["active_odds_detail_unmatched_games"] = int(stats.get("active_odds_detail_unmatched_games") or 0) + 1
                 continue
-            game_id = str(self._game_id(row) or self._game_id(fixture_row) or "").strip()
-            if not game_id:
-                stats["active_odds_rows_without_game_id"] = int(stats.get("active_odds_rows_without_game_id") or 0) + 1
+            if best.match_key in seen_game_matches:
                 continue
-            grouped[(best.match_key, game_id)].append(row)
-
-        offers_by_match: dict[str, list[Offer]] = defaultdict(list)
-        for (match_key, game_id), group_rows in grouped.items():
-            match = match_by_key.get(match_key)
-            if match is None:
-                continue
-            parsed = self._parse_odds(group_rows, match, game_id, stats)
+            seen_game_matches.add(best.match_key)
+            parsed = self._parse_odds(grouped_rows.get(game_id, []), best, game_id, stats)
             if parsed:
-                offers_by_match[match_key].extend(parsed)
+                offers_by_match[best.match_key].extend(parsed)
                 stats["active_odds_targeted_offers_parsed"] = int(stats.get("active_odds_targeted_offers_parsed") or 0) + len(parsed)
 
         stats["active_odds_targeted_matches"] = len(offers_by_match)
@@ -568,8 +650,23 @@ class SportLogicProvider:
         if rows:
             return rows
         if isinstance(payload, dict):
-            return [payload]
+            data = payload.get("data")
+            if isinstance(data, dict) and SportLogicProvider._looks_like_odds_row(data):
+                return [data]
+            if SportLogicProvider._looks_like_odds_row(payload):
+                return [payload]
         return []
+
+    @staticmethod
+    def _extract_single_object(payload: Any) -> dict[str, Any] | None:
+        if isinstance(payload, dict):
+            data = payload.get("data")
+            if isinstance(data, dict):
+                return data
+            if any(key in payload for key in ("id", "home_team", "away_team", "start_time", "game_id")):
+                return payload
+        rows = SportLogicProvider._extract_list(payload)
+        return rows[0] if rows else None
 
     def _row_to_match(self, row: dict[str, Any]) -> Match | None:
         home = self._team_name(row, "home")
@@ -871,7 +968,7 @@ class SportLogicProvider:
         family = self._market_family(raw_name)
         for outcome in [x for x in outcomes if isinstance(x, dict)]:
             name = str(outcome.get("name") or outcome.get("outcome") or outcome.get("selection") or outcome.get("label") or outcome.get("option") or outcome.get("option_name") or outcome.get("team") or "").strip()
-            price = outcome.get("price") or outcome.get("decimal_odds") or outcome.get("odds") or outcome.get("value") or outcome.get("odd") or outcome.get("decimal") or outcome.get("option_value")
+            price = outcome.get("price") or outcome.get("decimal_odds") or outcome.get("odds") or outcome.get("value") or outcome.get("odd") or outcome.get("decimal")
             point = self._float(outcome.get("point") or outcome.get("line") or outcome.get("points") or outcome.get("total") or outcome.get("handicap") or outcome.get("option_value"))
             low = name.lower()
 
