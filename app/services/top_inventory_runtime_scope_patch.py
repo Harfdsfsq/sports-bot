@@ -33,7 +33,7 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = EXPORT_DIR / "latest-top-inventory-runtime-scope.json"
 PROGRESSIVE_STATE_PATH = DAY_INV_DIR / "progressive_coverage_state.json"
 PROGRESSIVE_EXPORT_PATH = EXPORT_DIR / "latest-progressive-coverage-state.json"
-_MARKER = "_harizon_top_inventory_runtime_scope_v2"
+_MARKER = "_harizon_top_inventory_runtime_scope_v3_authoritative_inventory"
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -323,6 +323,32 @@ def _scope_result(stage: str, matches: list[Any], *, extra: dict[str, Any] | Non
     return final_matches, report
 
 
+
+def _authoritative_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], dict[str, Any]]:
+    """Return the current day-inventory matches as the authoritative run scope.
+
+    A broad bootstrap can return hundreds of provider rows and then the regular
+    merge step may keep older provider duplicates for the same team/date identity.
+    In late intraday runs this caused the filter to see only already-started rows
+    even though the top-300 inventory still had future fixtures.  The run scope is
+    the day inventory, so prefer those canonical Match objects whenever they can
+    be loaded.  Fail open only if the inventory bridge is unavailable.
+    """
+    if not _truthy(os.getenv("TOP_INVENTORY_AUTHORITATIVE_RUN_SCOPE", "true"), True):
+        return [], {"enabled": False, "reason": "disabled"}
+    loader = getattr(self, "_load_day_inventory_matches", None)
+    if not callable(loader):
+        return [], {"enabled": False, "reason": "missing_loader"}
+    try:
+        matches, stats = loader(now_utc)
+    except Exception as exc:
+        return [], {"enabled": False, "reason": f"loader_error:{type(exc).__name__}: {exc}"}
+    if not isinstance(matches, list) or not matches:
+        return [], {"enabled": True, "reason": "no_inventory_matches", **(dict(stats or {}) if isinstance(stats, dict) else {})}
+    scope, info = _inventory_scope()
+    scoped = _filter_matches(matches, scope, int(info.get("max_matches") or 300))
+    return scoped, {"enabled": True, "loaded": len(matches), "scoped": len(scoped), **info, **(dict(stats or {}) if isinstance(stats, dict) else {})}
+
 def install() -> dict[str, Any]:
     if not _truthy(os.getenv("TOP_INVENTORY_RUNTIME_SCOPE_ENABLED", "true"), True):
         return {"status": "disabled"}
@@ -359,9 +385,21 @@ def install() -> dict[str, Any]:
     if callable(original_merge_inventory) and not getattr(original_merge_inventory, _MARKER, False):
         def merge_day_inventory_scoped(self: Any, bootstrap_matches: list[Any], bootstrap_meta: dict[str, Any], now_utc: Any):  # type: ignore[no-untyped-def]
             merged_matches, merged_meta = original_merge_inventory(self, bootstrap_matches, bootstrap_meta, now_utc)
-            scoped, report = _scope_result("merge_day_inventory", list(merged_matches or []))
+            authoritative, inv_report = _authoritative_inventory_matches(self, now_utc)
+            source_matches = authoritative if authoritative else list(merged_matches or [])
+            scoped, report = _scope_result(
+                "merge_day_inventory",
+                list(source_matches or []),
+                extra={
+                    "authoritative_inventory_scope": bool(authoritative),
+                    "authoritative_inventory_loaded": int(inv_report.get("loaded") or 0),
+                    "authoritative_inventory_scoped": int(inv_report.get("scoped") or 0),
+                    "authoritative_inventory_reason": inv_report.get("reason") or "ok",
+                },
+            )
             meta = dict(merged_meta or {})
             meta["top_inventory_runtime_scope_after_merge"] = report
+            meta["day_inventory_authoritative_scope"] = inv_report
             return scoped, meta
 
         setattr(merge_day_inventory_scoped, _MARKER, True)
