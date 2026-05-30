@@ -204,6 +204,38 @@ def row_key(row: dict[str, Any]) -> str:
     return f"soccer|{home}|{away}|{d}" if home and away and d else ""
 
 
+
+def team_key(value: Any) -> str:
+    try:
+        from app.utils import canonicalize_team_name
+        text = canonicalize_team_name(str(value or ""))
+    except Exception:
+        text = str(value or "").lower()
+    text = re.sub(r"[^a-z0-9а-яё]+", " ", text.lower()).strip()
+    text = re.sub(r"\s+", " ", text)
+    stop = {"fc", "fk", "sc", "cf", "ac", "club", "cd", "de", "da", "del", "if", "bk", "afc", "ii", "b"}
+    parts = [part for part in text.split() if part and part not in stop]
+    return " ".join(parts).strip()
+
+
+def generated_match_key_variants(row: dict[str, Any]) -> set[str]:
+    d = row_date(row)
+    if not d:
+        return set()
+    home = team_key(row.get("home_team") or row.get("home") or metadata(row).get("home_team"))
+    away = team_key(row.get("away_team") or row.get("away") or metadata(row).get("away_team"))
+    if not home or not away:
+        return set()
+    first, second = sorted([home, away])
+    return {
+        f"{d}|{home}|{away}",
+        f"{d}|{away}|{home}",
+        f"{d}|{first}|{second}",
+        f"soccer|{home}|{away}|{d}",
+        f"soccer|{away}|{home}|{d}",
+        f"soccer|{first}|{second}|{d}",
+    }
+
 def row_key_variants(row: dict[str, Any]) -> set[str]:
     md = metadata(row)
     values = {
@@ -215,6 +247,12 @@ def row_key_variants(row: dict[str, Any]) -> set[str]:
     key = row_key(row)
     if key:
         values.add(key)
+    # Runtime/progressive state uses app.utils.build_match_key
+    # (soccer|sorted_home|sorted_away|YYYY-MM-DD), while day inventory rows often
+    # use date|home|away. Include both families every time, even when a direct key
+    # exists, otherwise progressive/SStats/Bzzoiro evidence cannot be joined back
+    # to the frozen inventory row and coverage appears to drop.
+    values |= generated_match_key_variants(row)
     return {v for v in values if v}
 
 
@@ -414,6 +452,11 @@ def load_progressive_index(date_local: str) -> dict[str, dict[str, Any]]:
         for key, value in matches.items():
             if not isinstance(value, dict):
                 continue
+            value_with_key = dict(value)
+            value_with_key.setdefault("match_key", str(key))
+            rd = row_date(value_with_key)
+            if rd and rd != date_local:
+                continue
             entry = {
                 "odds_sources": unique_norm(list_from_any(value.get("odds_sources"))),
                 "context_sources": unique_norm(list_from_any(value.get("context_sources"))),
@@ -422,7 +465,7 @@ def load_progressive_index(date_local: str) -> dict[str, dict[str, Any]]:
                 "has_odds": bool(value.get("odds_sources")) or bool(value.get("has_odds")),
                 "has_context": bool(value.get("context_sources")) or bool(value.get("has_context")),
             }
-            keys = {str(key)}
+            keys = {str(key)} | row_key_variants(value_with_key)
             if value.get("match_key"):
                 keys.add(str(value.get("match_key")))
             if value.get("canonical_match_id"):

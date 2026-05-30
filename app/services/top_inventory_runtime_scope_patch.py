@@ -33,7 +33,7 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = EXPORT_DIR / "latest-top-inventory-runtime-scope.json"
 PROGRESSIVE_STATE_PATH = DAY_INV_DIR / "progressive_coverage_state.json"
 PROGRESSIVE_EXPORT_PATH = EXPORT_DIR / "latest-progressive-coverage-state.json"
-_MARKER = "_harizon_top_inventory_runtime_scope_v3_authoritative_inventory"
+_MARKER = "_harizon_top_inventory_runtime_scope_v4_direct_inventory_fallback"
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -95,6 +95,48 @@ def _target_date() -> str:
         return str(payload.get("date_local"))
     return datetime.now(UTC).astimezone(_app_tz()).date().isoformat()
 
+
+
+def _frozen_roster_path(date: str) -> Path:
+    return DAY_INV_DIR / f"frozen_inventory_roster_{date}.json"
+
+
+def _ensure_frozen_roster(date: str, max_matches: int) -> dict[str, Any]:
+    if not _truthy(os.getenv("DAY_INVENTORY_FREEZE_ROSTER_ENABLED", "true"), True):
+        return {"enabled": False, "reason": "disabled"}
+    frozen = _frozen_roster_path(date)
+    existing = _read_json(frozen, {})
+    if isinstance(existing, dict) and str(existing.get("date_local") or "") == date and isinstance(existing.get("matches"), list) and existing.get("matches"):
+        return {"enabled": True, "path": str(frozen), "exists": True, "rows": len(existing.get("matches") or [])}
+    for path in [DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]:
+        payload = _read_json(path, {})
+        if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
+            continue
+        rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
+        if not rows:
+            continue
+        rows = rows[:max_matches]
+        now = datetime.now(UTC).isoformat()
+        frozen_payload = {
+            "version": "frozen_day_inventory_roster_v1",
+            "date_local": date,
+            "created_at_utc": now,
+            "updated_at_utc": now,
+            "source_path": str(path),
+            "target_size": max_matches,
+            "matches": rows,
+            "notes": [
+                "Created before the run starts by top_inventory_runtime_scope_patch.",
+                "This keeps the daily top inventory denominator stable; evidence is merged later, rows are not replaced intraday.",
+            ],
+        }
+        _write_json(frozen, frozen_payload)
+        try:
+            _write_json(EXPORT_DIR / "latest-day-inventory-frozen-roster.json", {k: v for k, v in frozen_payload.items() if k != "matches"} | {"frozen_rows": len(rows)})
+        except Exception:
+            pass
+        return {"enabled": True, "path": str(frozen), "created": True, "rows": len(rows), "source_path": str(path)}
+    return {"enabled": True, "path": str(frozen), "created": False, "rows": 0, "reason": "no_inventory_rows"}
 
 def _parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
@@ -194,8 +236,9 @@ def _is_day_inventory_match(match: Any) -> bool:
 
 def _inventory_scope() -> tuple[dict[str, set[str]], dict[str, Any]]:
     date = _target_date()
-    paths = [DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json"]
-    max_matches = max(1, _to_int(os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or 300, 300))
+    max_matches = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_TARGET_SIZE") or 300, 300))
+    freeze_report = _ensure_frozen_roster(date, max_matches)
+    paths = [_frozen_roster_path(date), DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json"]
     for path in paths:
         payload = _read_json(path, {})
         if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
@@ -222,6 +265,7 @@ def _inventory_scope() -> tuple[dict[str, set[str]], dict[str, Any]]:
             "identity_keys": len(identities),
             "allowlist_keys": len(direct_keys) + len(identities),
             "max_matches": max_matches,
+            "frozen_roster": freeze_report,
         }
         return scope, info
     return {"direct_keys": set(), "identities": set()}, {"date_local": date, "inventory_path": None, "inventory_rows": 0, "direct_keys": 0, "identity_keys": 0, "allowlist_keys": 0, "max_matches": max_matches}
@@ -324,30 +368,115 @@ def _scope_result(stage: str, matches: list[Any], *, extra: dict[str, Any] | Non
 
 
 
-def _authoritative_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], dict[str, Any]]:
-    """Return the current day-inventory matches as the authoritative run scope.
 
-    A broad bootstrap can return hundreds of provider rows and then the regular
-    merge step may keep older provider duplicates for the same team/date identity.
-    In late intraday runs this caused the filter to see only already-started rows
-    even though the top-300 inventory still had future fixtures.  The run scope is
-    the day inventory, so prefer those canonical Match objects whenever they can
-    be loaded.  Fail open only if the inventory bridge is unavailable.
+def _direct_day_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], dict[str, Any]]:
+    """Load canonical Match objects directly from the current top-300 inventory file.
+
+    Do not rely on PredictionRunner._load_day_inventory_matches here: that helper
+    can read an intermediate broad inventory during intraday rebuilds and may load
+    400 provider rows.  This direct reader uses the final top inventory files and
+    hard-caps to TOP_INVENTORY_RUNTIME_MAX_MATCHES/DAY_INVENTORY_MAX_MATCHES.
     """
+    try:
+        from app.schemas import Match
+        from app.utils import canonicalize_league_name, canonicalize_team_name, parse_datetime
+    except Exception as exc:
+        return [], {"enabled": False, "reason": f"import_error:{type(exc).__name__}: {exc}"}
+
+    date = _target_date()
+    paths = [_frozen_roster_path(date), DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]
+    max_matches = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_TARGET_SIZE") or 300, 300))
+    stats: dict[str, Any] = {"enabled": True, "date_local": date, "path": None, "rows_seen": 0, "loaded": 0, "skipped_wrong_date": 0, "skipped_invalid": 0, "max_matches": max_matches, "source": "direct_day_inventory_file"}
+    payload: dict[str, Any] = {}
+    selected_path: Path | None = None
+    for path in paths:
+        candidate = _read_json(path, {})
+        if isinstance(candidate, dict) and isinstance(candidate.get("matches"), list) and candidate.get("matches"):
+            payload = candidate
+            selected_path = path
+            break
+    if not payload or selected_path is None:
+        stats["reason"] = "inventory_file_missing"
+        return [], stats
+    rows = [r for r in payload.get("matches", []) if isinstance(r, dict)]
+    stats["path"] = str(selected_path)
+    stats["rows_seen"] = len(rows)
+    out: list[Any] = []
+    for row in rows[:max_matches]:
+        if _row_date(row) not in {"", date}:
+            stats["skipped_wrong_date"] += 1
+            continue
+        kickoff_raw = row.get("kickoff_utc") or row.get("commence_time") or row.get("start_time") or row.get("kickoff") or row.get("kickoff_local")
+        try:
+            commence_time = parse_datetime(kickoff_raw)
+        except Exception:
+            stats["skipped_invalid"] += 1
+            continue
+        home = str(row.get("home_team") or row.get("home") or "").strip()
+        away = str(row.get("away_team") or row.get("away") or "").strip()
+        league = str(row.get("league_name") or row.get("competition") or "").strip()
+        if not home or not away or not league:
+            stats["skipped_invalid"] += 1
+            continue
+        source_ids = row.get("source_ids") if isinstance(row.get("source_ids"), dict) else {}
+        md = dict(row.get("metadata") or {})
+        md.update({
+            "day_inventory": True,
+            "day_inventory_path": str(selected_path),
+            "top_inventory_direct_file_scope": True,
+            "day_inventory_coverage": row.get("coverage") or {},
+            "day_inventory_refresh": row.get("refresh") or {},
+            "day_inventory_source_ids": source_ids,
+            "inventory_match_key": row.get("match_key") or row.get("canonical_match_id"),
+        })
+        source_event_id = (
+            str(row.get("source_event_id") or "").strip()
+            or str(source_ids.get("odds_api_io") or source_ids.get("bzzoiro") or source_ids.get("football_data") or source_ids.get("thesportsdb") or "").strip()
+            or str(row.get("match_key") or row.get("canonical_match_id") or "").strip()
+        )
+        try:
+            out.append(Match(
+                source="day_inventory",
+                source_event_id=source_event_id,
+                sport_key=str(row.get("sport_key") or "soccer"),
+                league_name=league,
+                home_team=home,
+                away_team=away,
+                commence_time=commence_time,
+                home_team_norm=str(row.get("home_team_norm") or canonicalize_team_name(home)),
+                away_team_norm=str(row.get("away_team_norm") or canonicalize_team_name(away)),
+                league_key=str(row.get("league_key") or canonicalize_league_name(league)),
+                tier=str(row.get("tier") or "mid"),
+                metadata=md,
+            ))
+        except Exception:
+            stats["skipped_invalid"] += 1
+    stats["loaded"] = len(out)
+    return out, stats
+
+def _authoritative_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], dict[str, Any]]:
+    """Return current top-inventory matches as authoritative run scope."""
     if not _truthy(os.getenv("TOP_INVENTORY_AUTHORITATIVE_RUN_SCOPE", "true"), True):
         return [], {"enabled": False, "reason": "disabled"}
+
+    direct_matches, direct_stats = _direct_day_inventory_matches(self, now_utc)
+    if direct_matches:
+        scope, info = _inventory_scope()
+        scoped = _filter_matches(direct_matches, scope, int(info.get("max_matches") or 300))
+        return scoped, {"enabled": True, "reason": "direct_day_inventory", "loaded": len(direct_matches), "scoped": len(scoped), **info, **direct_stats}
+
     loader = getattr(self, "_load_day_inventory_matches", None)
     if not callable(loader):
-        return [], {"enabled": False, "reason": "missing_loader"}
+        return [], {"enabled": False, "reason": "missing_loader", **direct_stats}
     try:
         matches, stats = loader(now_utc)
     except Exception as exc:
-        return [], {"enabled": False, "reason": f"loader_error:{type(exc).__name__}: {exc}"}
+        return [], {"enabled": False, "reason": f"loader_error:{type(exc).__name__}: {exc}", **direct_stats}
     if not isinstance(matches, list) or not matches:
-        return [], {"enabled": True, "reason": "no_inventory_matches", **(dict(stats or {}) if isinstance(stats, dict) else {})}
+        return [], {"enabled": True, "reason": "no_inventory_matches", **direct_stats, **(dict(stats or {}) if isinstance(stats, dict) else {})}
     scope, info = _inventory_scope()
     scoped = _filter_matches(matches, scope, int(info.get("max_matches") or 300))
-    return scoped, {"enabled": True, "loaded": len(matches), "scoped": len(scoped), **info, **(dict(stats or {}) if isinstance(stats, dict) else {})}
+    return scoped, {"enabled": True, "reason": "runner_loader_fallback", "loaded": len(matches), "scoped": len(scoped), **info, **(dict(stats or {}) if isinstance(stats, dict) else {})}
 
 def install() -> dict[str, Any]:
     if not _truthy(os.getenv("TOP_INVENTORY_RUNTIME_SCOPE_ENABLED", "true"), True):
@@ -410,8 +539,28 @@ def install() -> dict[str, Any]:
             result = original_filter_matches(self, matches, now_utc)
             if not isinstance(result, tuple) or len(result) < 1:
                 return result
-            scoped, report = _scope_result("filter_matches", list(result[0] or []))
+            filtered_initial = list(result[0] or [])
             filtering = dict(result[1] or {}) if len(result) > 1 and isinstance(result[1], dict) else {}
+            fallback_used = False
+            fallback_report: dict[str, Any] = {}
+            # If all scoped rows were considered already-started, retry directly
+            # from the current top inventory file.  This prevents a stale provider
+            # duplicate set from turning a run with future inventory rows into a
+            # zero-provider run.
+            if not filtered_initial and matches:
+                direct_matches, direct_stats = _direct_day_inventory_matches(self, now_utc)
+                if direct_matches:
+                    retry = original_filter_matches(self, direct_matches, now_utc)
+                    if isinstance(retry, tuple) and len(retry) >= 1 and list(retry[0] or []):
+                        filtered_initial = list(retry[0] or [])
+                        fallback_used = True
+                        fallback_filtering = dict(retry[1] or {}) if len(retry) > 1 and isinstance(retry[1], dict) else {}
+                        fallback_report = {"direct_inventory_filter_fallback": True, "direct_inventory_stats": direct_stats, "retry_filtering": fallback_filtering}
+                        filtering.setdefault("original_zero_filtering", dict(filtering))
+                        filtering.update(fallback_filtering)
+            scoped, report = _scope_result("filter_matches", filtered_initial, extra=fallback_report if fallback_report else None)
+            if fallback_used:
+                report["direct_inventory_filter_fallback"] = True
             filtering["top_inventory_runtime_scope"] = report
             return (scoped, filtering, *result[2:]) if len(result) > 2 else (scoped, filtering)
 
