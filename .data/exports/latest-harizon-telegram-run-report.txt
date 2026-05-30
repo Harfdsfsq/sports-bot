@@ -1,53 +1,68 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 13 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: no viable controlled fallback
+🟡 Прогнозов нет: есть 42 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: missing sources
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 0.
-• 1+ линия: 296/300 (99%) | 1+ контекст: 15/300 (5%)
-• 2+ подтверждения цены: 10/300 (3%)
-• 2+ независимых odds-source: 4/300 (1%)
-• 2+ контекста: 0/300 (0%)
-• Готово для модели: 13/300 (4%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 36.
+• 1+ линия: 296/300 (99%) | 1+ контекст: 44/300 (15%)
+• 2+ подтверждения цены: 21/300 (7%)
+• 2+ независимых odds-source: 5/300 (2%)
+• 2+ контекста: 16/300 (5%)
+• Готово для модели: 42/300 (14%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 0 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 1 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 13 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 42 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 13 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 42 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 19 | матчей без следующего регулярного run: 19
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 66 | матчей без следующего регулярного run: 66
+• Line guard: увидел 11, оставил 1, снял 2
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/0
+• Raw/candidates before quality: 4/4
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 0 | evaluated 0 | published 0
+• Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 0 (events 0, odds 0); смэтчил матчей 0; дал offers 0 (0/запрос); 2+ букмекера 0; ошибок 0.
-• Bzzoiro: запросы 0 (direct 0, v2 0, gap 0); событий 0; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 0; secondary offers 0; overlap с odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0 (0/запрос); контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 0; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: данных нет.
+• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 36; дал offers 2364 (296/запрос); 2+ букмекера 15; ошибок 0.
+• Bzzoiro: запросы 2 (direct 1, v2 1, gap 0); событий 47; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 0; secondary offers 0; overlap с odds-api.io 1; ошибок 0.
+• SStats: запросы 25; сырых строк 22547 (902/запрос); контекстов 26; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: odds_api_io: 28, bzzoiro+odds_api_io: 1
 
 🧭 Покрытие ближайших окон
-• Активных матчей сейчас: 226. Нужно обновить линии: 0.
-• Core-ready 2+/2+ по всем tracked: 9.
-• 0–4 часа: 0/0 core-ready.
-• 0–12 часов: 0/0 core-ready.
+• Активных матчей сейчас: 36. Нужно обновить линии: 0.
+• Core-ready 2+/2+ по всем tracked: 0.
+• 0–4 часа: 0/36 core-ready.
+• 0–12 часов: 0/36 core-ready.
 
 🚫 Почему не опубликовано
-• В свежих артефактах нет явных reject reasons.
+• missing sources: 3 (17%)
+• quality: вероятность после калибровки ниже порога: 3 (17%)
+• направление ставки конфликтует с xG: 2 (11%)
+• line movement guard снял кандидата: 2 (11%)
+• модель слишком оптимистична относительно xG-ориентира: 1 (6%)
+• quality: market sanity totals/xG contradiction: 1 (6%)
+• tier a quality below min: 1 (6%)
+• tier a canonical edge below min: 1 (6%)
+
+🔎 Последние проверенные кандидаты
+1. AD Cabofriense RJ — Audax Rio EC RJ | Меньше 1.5 @2.72 | EV +10.2% | edge +3.7 п.п. | q 59.4
+   • причина: missing sources, направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+2. Kansas City NWSL — Boston Legacy FC | Меньше 2.5 @2.35 | EV +0.2% | edge +0.1 п.п. | q 49.0
+   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min
+3. AB Argir — NSI Runavik | Меньше 2.5 @2.75 | EV +3.9% | edge +1.4 п.п. | q 67.9
+   • причина: missing sources, направление ставки конфликтует с xG
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26687016176
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26687016176
-• Artifact: run-bot-26687016176
+• Run ID: 26688436905
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26688436905
+• Artifact: run-bot-26688436905
 • workflow run-bot, attempt 1
