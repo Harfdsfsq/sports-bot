@@ -1,9 +1,9 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: есть 44 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: missing sources
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 26.
+• Инвентарь дня: 300 матчей. В этом run обработано: 0.
 • 1+ линия: 296/300 (99%) | 1+ контекст: 46/300 (15%)
 • 2+ подтверждения цены: 21/300 (7%)
 • 2+ независимых odds-source: 5/300 (2%)
@@ -18,47 +18,36 @@
 • Ждут второй снимок линии: 44 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 93 | матчей без следующего регулярного run: 93
-• Line guard: увидел 6, оставил 1, снял 1
+• Pre-kickoff проверок: 36 | матчей без следующего регулярного run: 36
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/2
+• Raw/candidates before quality: 0/0
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 2 | evaluated 2 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 6 (events 0, odds 6); смэтчил матчей 26; дал offers 1611 (268/запрос); 2+ букмекера 8; ошибок 0.
-• Bzzoiro: запросы 2 (direct 1, v2 1, gap 0); событий 47; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 0; secondary offers 0; overlap с odds-api.io 0; ошибок 0.
-• SStats: запросы 25; сырых строк 22547 (902/запрос); контекстов 19; deep-enriched 0; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 21
+• odds-api.io: запросы 0 (events 0, odds 0); смэтчил матчей 0; дал offers 0 (0/запрос); 2+ букмекера 0; ошибок 0.
+• Bzzoiro: запросы 0 (direct 0, v2 0, gap 0); событий 0; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 0; secondary offers 0; overlap с odds-api.io 0; ошибок 0.
+• SStats: запросы 0; сырых строк 0 (0/запрос); контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 0; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
+• Комбинации источников линий: данных нет.
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 36. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 0.
-• 0–4 часа: 0/32 core-ready.
-• 0–12 часов: 0/32 core-ready.
+• 0–4 часа: 0/0 core-ready.
+• 0–12 часов: 0/0 core-ready.
 
 🚫 Почему не опубликовано
-• missing sources: 2 (29%)
-• направление ставки конфликтует с xG: 1 (14%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (14%)
-• quality: market sanity totals/xG contradiction: 1 (14%)
-• quality: вероятность после калибровки ниже порога: 1 (14%)
-• line movement guard снял кандидата: 1 (14%)
-
-🔎 Последние проверенные кандидаты
-1. AD Cabofriense RJ — Audax Rio EC RJ | Меньше 1.5 @2.74 | EV +11.3% | edge +4.1 п.п. | q 61.1
-   • причина: missing sources, направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-2. KI Klaksvik — Eb/Streymur | Меньше 3.5 @2.08 | EV +1.0% | edge +0.5 п.п. | q 59.2
-   • причина: missing sources
+• В свежих артефактах нет явных reject reasons.
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26689691006
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26689691006
-• Artifact: run-bot-26689691006
+• Run ID: 26692265804
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26692265804
+• Artifact: run-bot-26692265804
 • workflow run-bot, attempt 1
