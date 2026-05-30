@@ -1,5 +1,5 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-29T23:03:19.702904+00:00
+UTC: 2026-05-30T01:03:15.572201+00:00
 target_date: 2026-05-30
 canonical_matches: 327
 2+ provider sources: 143
@@ -8,10 +8,10 @@ all 3 primary sources: 8
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=467 event_like=467 unique=101 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=462 event_like=462 unique=101 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=1 rows=6 event_like=6 unique=6 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=3 rows=303 event_like=300 unique=300 statuses={"RATE_LIMIT": 3, "OK": 3}
+- odds_api_io: commands=6 ok=6 rows=600 event_like=600 unique=300 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=175 event_like=147 unique=147 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
@@ -25,10 +25,10 @@ all 3 primary sources: 8
 - 2026-05-29T22:30:00+00:00 | America-RN — Central SC | providers=sstats ids={"sstats": "1537984"}
 - 2026-05-29T22:30:00+00:00 | One Knoxville — Greenville Triumph | providers=sstats ids={"sstats": "1493842"}
 - 2026-05-29T22:30:00+00:00 | Cerro Largo — Cerro | providers=sstats ids={"sstats": "1546797"}
-- 2026-05-29T23:00:00+00:00 | Leones FC — Independiente Medellin | providers=sstats ids={"sstats": "1544287"}
-- 2026-05-29T23:00:00+00:00 | Forward Madison — Corpus Christi | providers=sstats ids={"sstats": "1491521"}
 - 2026-05-29T23:00:00+00:00 | AFC Ann Arbor — Union Macomb | providers=sstats ids={"sstats": "1524638"}
 - 2026-05-29T23:00:00+00:00 | Ocean City Nor'easters — Delaware FC | providers=sstats ids={"sstats": "1524640"}
+- 2026-05-29T23:00:00+00:00 | Leones FC — Independiente Medellin | providers=sstats ids={"sstats": "1544287"}
+- 2026-05-29T23:00:00+00:00 | Forward Madison — Corpus Christi | providers=sstats ids={"sstats": "1491521"}
 - 2026-05-29T23:30:00+00:00 | Huaquillas — Leones del Norte | providers=sstats ids={"sstats": "1542928"}
 - 2026-05-29T23:30:00+00:00 | Western Mass Pioneers — Connecticut Rush | providers=sstats ids={"sstats": "1524642"}
 - 2026-05-29T23:30:00+00:00 | Hartford Athletic W — Hudson Valley Crusaders W | providers=sstats ids={"sstats": "1532339"}
@@ -37,6 +37,7 @@ all 3 primary sources: 8
 - 2026-05-30T00:00:00+00:00 | CA Racing de Cordoba — Ferro Carril Oeste | providers=odds_api_io,sstats ids={"odds_api_io": "67117704", "sstats": "1498575"}
 - 2026-05-30T00:00:00+00:00 | Municipal Puente Alto — CD Comunal Cabrero | providers=odds_api_io ids={"odds_api_io": "71769714"}
 - 2026-05-30T00:00:00+00:00 | Eastern Suburbs AFC — Auckland City FC | providers=odds_api_io ids={"odds_api_io": "69460636"}
+- 2026-05-30T00:13:00+00:00 | Orlando Pride — Bay FC | providers=odds_api_io ids={"odds_api_io": "67912094"}
 - 2026-05-30T00:30:00+00:00 | Universidad de Concepcion — Deportes Union La Calera | providers=odds_api_io,sstats ids={"odds_api_io": "67681888", "sstats": "1505458"}
 - 2026-05-30T01:10:00+00:00 | Atletico FC Cali — Millonarios FC | providers=odds_api_io ids={"odds_api_io": "71335390"}
 - 2026-05-30T01:30:00+00:00 | Cooks Hill United FC Reserve — Valentine FC Reserve | providers=odds_api_io,sstats ids={"odds_api_io": "67807404", "sstats": "1523757"}
@@ -50,7 +51,6 @@ all 3 primary sources: 8
 - 2026-05-30T02:00:00+00:00 | South Coast Flame FC — Marconi Stallions | providers=odds_api_io ids={"odds_api_io": "67693946"}
 - 2026-05-30T02:15:00+00:00 | Riverside Olympic — Launceston City | providers=odds_api_io,sstats ids={"odds_api_io": "68683210", "sstats": "1533103"}
 - 2026-05-30T02:15:00+00:00 | Modbury Vista Reserves — Flinders United Wfc Reserves | providers=odds_api_io ids={"odds_api_io": "68049822"}
-- 2026-05-30T02:15:00+00:00 | Devonport City SC — Glenorchy Knights | providers=odds_api_io ids={"odds_api_io": "68686940"}
 
 ## Targeted enrichment plan sample
 - Cobresal — Nublense | primary=1 providers=sstats
@@ -69,19 +69,19 @@ all 3 primary sources: 8
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Leones FC — Independiente Medellin | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Forward Madison — Corpus Christi | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - AFC Ann Arbor — Union Macomb | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Ocean City Nor'easters — Delaware FC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Leones FC — Independiente Medellin | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Forward Madison — Corpus Christi | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -118,6 +118,10 @@ all 3 primary sources: 8
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Orlando Pride — Bay FC | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Universidad de Concepcion — Deportes Union La Calera | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
@@ -127,10 +131,6 @@ all 3 primary sources: 8
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Cooks Hill United FC Reserve — Valentine FC Reserve | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Edgeworth FC Reserve — Kahibah FC Reserve | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
