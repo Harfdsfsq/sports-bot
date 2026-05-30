@@ -1,58 +1,53 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 97 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: odds above global max
+🟡 Прогнозов нет: есть 66 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 73.
-• 1+ линия: 280/300 (93%) | 1+ контекст: 188/300 (63%)
-• 2+ подтверждения цены: 138/300 (46%)
-• 2+ независимых odds-source: 10/300 (3%)
-• 2+ контекста: 8/300 (3%)
-• Готово для модели: 176/300 (59%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 0.
+• 1+ линия: 281/300 (94%) | 1+ контекст: 140/300 (47%)
+• 2+ подтверждения цены: 106/300 (35%)
+• 2+ независимых odds-source: 8/300 (3%)
+• 2+ контекста: 2/300 (1%)
+• Готово для модели: 129/300 (43%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 7 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 2 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 97 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 66 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 97 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 66 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 41 | матчей без следующего регулярного run: 41
-• Line guard: увидел 3, оставил 1, снял 0
+• Pre-kickoff проверок: 52 | матчей без следующего регулярного run: 52
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/1
+• Raw/candidates before quality: 0/0
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 16 (events 0, odds 16); смэтчил матчей 72; дал offers 2680 (168/запрос); 2+ букмекера 18; ошибок 0.
-• Bzzoiro: запросы 10 (direct 5, v2 5, gap 0); событий 47; контекстов 1; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 2; secondary offers 0; overlap с odds-api.io 1; ошибок 0.
-• SStats: запросы 25; сырых строк 22546 (902/запрос); контекстов 60; deep-enriched 0; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 34, bzzoiro+odds_api_io: 1
+• odds-api.io: запросы 0 (events 0, odds 0); смэтчил матчей 0; дал offers 0 (0/запрос); 2+ букмекера 0; ошибок 0.
+• Bzzoiro: запросы 0 (direct 0, v2 0, gap 0); событий 0; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 0; secondary offers 0; overlap с odds-api.io 0; ошибок 0.
+• SStats: запросы 0; сырых строк 0 (0/запрос); контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 0; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
+• Комбинации источников линий: данных нет.
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 226. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 9.
-• 0–4 часа: 1/83 core-ready.
-• 0–12 часов: 1/83 core-ready.
+• 0–4 часа: 0/0 core-ready.
+• 0–12 часов: 0/0 core-ready.
 
 🚫 Почему не опубликовано
-• odds above global max: 1 (50%)
-• quality quality high odds totals xg headroom guard: 1 (50%)
-
-🔎 Последние проверенные кандидаты
-1. Mitchelton FC — Caboolture FC | Меньше @3.40 | EV +30.7% | edge +9.0 п.п. | q 100.0
-   • причина: odds above global max
+• В свежих артефактах нет явных reject reasons.
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26677520328
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26677520328
-• Artifact: run-bot-26677520328
+• Run ID: 26679860267
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26679860267
+• Artifact: run-bot-26679860267
 • workflow run-bot, attempt 1
