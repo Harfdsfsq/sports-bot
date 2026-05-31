@@ -101,42 +101,96 @@ def _frozen_roster_path(date: str) -> Path:
     return DAY_INV_DIR / f"frozen_inventory_roster_{date}.json"
 
 
+def _min_valid_roster_rows(max_matches: int) -> int:
+    # A frozen roster with just the last few not-started matches is worse than no
+    # roster: it changes the day denominator from 300 to 3 and makes coverage look
+    # perfect while the real inventory is hidden.  Accept tiny rosters only when no
+    # fuller same-day inventory is available.
+    configured = _to_int(os.getenv("TOP_INVENTORY_FROZEN_MIN_VALID_ROWS") or os.getenv("DAY_INVENTORY_FROZEN_MIN_VALID_ROWS"), 0)
+    if configured > 0:
+        return min(max_matches, configured)
+    return min(max_matches, max(50, int(max_matches * 0.5)))
+
+
+def _candidate_inventory_paths(date: str) -> list[Path]:
+    return [DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]
+
+
+def _rows_from_inventory_path(path: Path, date: str, max_matches: int) -> list[dict[str, Any]]:
+    payload = _read_json(path, {})
+    if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
+        return []
+    rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
+    return rows[:max_matches]
+
+
+def _best_source_inventory(date: str, max_matches: int) -> tuple[Path | None, list[dict[str, Any]]]:
+    best_path: Path | None = None
+    best_rows: list[dict[str, Any]] = []
+    for path in _candidate_inventory_paths(date):
+        rows = _rows_from_inventory_path(path, date, max_matches)
+        if len(rows) > len(best_rows):
+            best_path = path
+            best_rows = rows
+        if len(best_rows) >= max_matches:
+            break
+    return best_path, best_rows
+
+
+def _write_frozen_roster(date: str, max_matches: int, rows: list[dict[str, Any]], source_path: Path | None, *, reason: str) -> dict[str, Any]:
+    frozen = _frozen_roster_path(date)
+    now = datetime.now(UTC).isoformat()
+    frozen_payload = {
+        "version": "frozen_day_inventory_roster_v2_min_valid",
+        "date_local": date,
+        "created_at_utc": now,
+        "updated_at_utc": now,
+        "source_path": str(source_path) if source_path else None,
+        "target_size": max_matches,
+        "matches": rows[:max_matches],
+        "repair_reason": reason,
+        "notes": [
+            "Created/repaired before the run starts by top_inventory_runtime_scope_patch.",
+            "Tiny frozen rosters are ignored when a fuller same-day day-inventory exists, so the denominator cannot collapse from top-300 to the last few future matches.",
+        ],
+    }
+    _write_json(frozen, frozen_payload)
+    try:
+        _write_json(EXPORT_DIR / "latest-day-inventory-frozen-roster.json", {k: v for k, v in frozen_payload.items() if k != "matches"} | {"frozen_rows": len(frozen_payload["matches"])})
+    except Exception:
+        pass
+    return {"enabled": True, "path": str(frozen), "created": True, "rows": len(frozen_payload["matches"]), "source_path": str(source_path) if source_path else None, "reason": reason}
+
+
 def _ensure_frozen_roster(date: str, max_matches: int) -> dict[str, Any]:
     if not _truthy(os.getenv("DAY_INVENTORY_FREEZE_ROSTER_ENABLED", "true"), True):
         return {"enabled": False, "reason": "disabled"}
     frozen = _frozen_roster_path(date)
+    min_valid = _min_valid_roster_rows(max_matches)
+    source_path, source_rows = _best_source_inventory(date, max_matches)
     existing = _read_json(frozen, {})
-    if isinstance(existing, dict) and str(existing.get("date_local") or "") == date and isinstance(existing.get("matches"), list) and existing.get("matches"):
-        return {"enabled": True, "path": str(frozen), "exists": True, "rows": len(existing.get("matches") or [])}
-    for path in [DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]:
-        payload = _read_json(path, {})
-        if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
-            continue
-        rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
-        if not rows:
-            continue
-        rows = rows[:max_matches]
-        now = datetime.now(UTC).isoformat()
-        frozen_payload = {
-            "version": "frozen_day_inventory_roster_v1",
-            "date_local": date,
-            "created_at_utc": now,
-            "updated_at_utc": now,
-            "source_path": str(path),
-            "target_size": max_matches,
-            "matches": rows,
-            "notes": [
-                "Created before the run starts by top_inventory_runtime_scope_patch.",
-                "This keeps the daily top inventory denominator stable; evidence is merged later, rows are not replaced intraday.",
-            ],
-        }
-        _write_json(frozen, frozen_payload)
-        try:
-            _write_json(EXPORT_DIR / "latest-day-inventory-frozen-roster.json", {k: v for k, v in frozen_payload.items() if k != "matches"} | {"frozen_rows": len(rows)})
-        except Exception:
-            pass
-        return {"enabled": True, "path": str(frozen), "created": True, "rows": len(rows), "source_path": str(path)}
-    return {"enabled": True, "path": str(frozen), "created": False, "rows": 0, "reason": "no_inventory_rows"}
+    existing_rows = []
+    if isinstance(existing, dict) and str(existing.get("date_local") or "") == date and isinstance(existing.get("matches"), list):
+        existing_rows = [r for r in existing.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
+
+    if existing_rows:
+        # Keep a normal frozen roster.  Repair only pathological tiny rosters when
+        # the authoritative day inventory still has a much fuller top list.
+        if len(existing_rows) >= min_valid or len(source_rows) <= len(existing_rows):
+            return {
+                "enabled": True,
+                "path": str(frozen),
+                "exists": True,
+                "rows": len(existing_rows),
+                "min_valid_rows": min_valid,
+                "source_rows": len(source_rows),
+                "valid": len(existing_rows) >= min_valid,
+            }
+        return _write_frozen_roster(date, max_matches, source_rows, source_path, reason=f"repair_tiny_existing_roster:{len(existing_rows)}<{min_valid};source_rows={len(source_rows)}")
+
+    if source_rows:
+        return _write_frozen_roster(date, max_matches, source_rows, source_path, reason="create_from_full_day_inventory")
+    return {"enabled": True, "path": str(frozen), "created": False, "rows": 0, "min_valid_rows": min_valid, "source_rows": 0, "reason": "no_inventory_rows"}
 
 def _parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
@@ -384,21 +438,21 @@ def _direct_day_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], d
         return [], {"enabled": False, "reason": f"import_error:{type(exc).__name__}: {exc}"}
 
     date = _target_date()
-    paths = [_frozen_roster_path(date), DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]
     max_matches = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_TARGET_SIZE") or 300, 300))
-    stats: dict[str, Any] = {"enabled": True, "date_local": date, "path": None, "rows_seen": 0, "loaded": 0, "skipped_wrong_date": 0, "skipped_invalid": 0, "max_matches": max_matches, "source": "direct_day_inventory_file"}
-    payload: dict[str, Any] = {}
+    freeze_report = _ensure_frozen_roster(date, max_matches)
+    paths = [_frozen_roster_path(date), DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]
+    stats: dict[str, Any] = {"enabled": True, "date_local": date, "path": None, "rows_seen": 0, "loaded": 0, "skipped_wrong_date": 0, "skipped_invalid": 0, "max_matches": max_matches, "source": "direct_day_inventory_file", "frozen_roster": freeze_report}
+    rows: list[dict[str, Any]] = []
     selected_path: Path | None = None
     for path in paths:
-        candidate = _read_json(path, {})
-        if isinstance(candidate, dict) and isinstance(candidate.get("matches"), list) and candidate.get("matches"):
-            payload = candidate
+        candidate_rows = _rows_from_inventory_path(path, date, max_matches)
+        if candidate_rows:
+            rows = candidate_rows
             selected_path = path
             break
-    if not payload or selected_path is None:
+    if not rows or selected_path is None:
         stats["reason"] = "inventory_file_missing"
         return [], stats
-    rows = [r for r in payload.get("matches", []) if isinstance(r, dict)]
     stats["path"] = str(selected_path)
     stats["rows_seen"] = len(rows)
     out: list[Any] = []

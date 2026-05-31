@@ -345,27 +345,40 @@ def apply_frozen_roster(inv: dict[str, Any], date_local: str, now_iso: str) -> t
     if not report["enabled"] or not rows:
         return inv, report
 
-    if not isinstance(existing, dict) or str(existing.get("date_local") or "") != date_local or not isinstance(existing.get("matches"), list):
+    min_valid_rows = min(max_matches, max(50, int(max_matches * 0.5)))
+    report["min_valid_rows"] = min_valid_rows
+
+    def create_or_repair(reason: str) -> tuple[dict[str, Any], dict[str, Any]]:
         frozen_rows = rows[:max_matches]
         payload = {
-            "version": "frozen_day_inventory_roster_v1",
+            "version": "frozen_day_inventory_roster_v2_min_valid",
             "date_local": date_local,
             "created_at_utc": now_iso,
             "updated_at_utc": now_iso,
             "target_size": max_matches,
             "matches": frozen_rows,
+            "repair_reason": reason,
             "notes": [
                 "This file freezes the local-day top inventory roster so coverage metrics accumulate over a stable denominator.",
-                "Later runs may merge evidence into these rows but must not replace the match set unless the local date changes.",
+                "Tiny frozen rosters are repaired when a fuller same-day inventory exists; otherwise reports can collapse from 300 matches to only the last few future matches.",
             ],
         }
         write_json(path, payload)
         write_json(FROZEN_ROSTER_EXPORT_PATH, {k: v for k, v in payload.items() if k != "matches"} | {"frozen_rows": len(frozen_rows)})
         inv["matches"] = frozen_rows
-        report.update({"created": True, "frozen_rows": len(frozen_rows), "overlap": len(frozen_rows)})
+        report.update({"created": True, "repaired": reason.startswith("repair_"), "repair_reason": reason, "frozen_rows": len(frozen_rows), "overlap": len(frozen_rows)})
         return inv, report
 
+    if not isinstance(existing, dict) or str(existing.get("date_local") or "") != date_local or not isinstance(existing.get("matches"), list):
+        return create_or_repair("create_from_current_inventory")
+
     frozen_rows = [row for row in existing.get("matches", []) if isinstance(row, dict)]
+    # Repair the pathological case introduced by a late-day runtime freeze: the
+    # frozen roster can contain only 3 remaining future matches while the real
+    # day inventory still has hundreds of same-day rows.  A frozen roster smaller
+    # than min_valid_rows is ignored when current rows are clearly fuller.
+    if frozen_rows and len(frozen_rows) < min_valid_rows and len(rows) > len(frozen_rows):
+        return create_or_repair(f"repair_tiny_existing_roster:{len(frozen_rows)}<{min_valid_rows};current_rows={len(rows)}")
     frozen_by_key = {row_key(row): row for row in frozen_rows if row_key(row)}
     overlap = len(set(frozen_by_key) & set(current_by_key))
     merged_rows: list[dict[str, Any]] = []
