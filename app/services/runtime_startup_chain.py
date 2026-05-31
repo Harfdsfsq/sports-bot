@@ -28,6 +28,10 @@ MODULES = [
     'app.services.day_inventory_extra_fixture_sources',
     'app.services.day_inventory_bucketed_top_v3_runtime_patch',
     'app.services.day_inventory_runtime_guard',
+    # Keep this before runner/progressive wrappers. It prevents broad provider
+    # pools from replacing the authoritative top inventory, and it enables the
+    # rolling future-match top-up when the frozen day roster has already started.
+    'app.services.top_inventory_runtime_scope_patch',
     'app.services.near_window_priority_runtime_patch',
     'app.services.context_family_matching_runtime_patch',
     'app.services.runner_step_trace',
