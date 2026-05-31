@@ -33,7 +33,7 @@ DAY_INV_DIR = ROOT / ".data" / "day_inventory"
 REPORT_PATH = EXPORT_DIR / "latest-top-inventory-runtime-scope.json"
 PROGRESSIVE_STATE_PATH = DAY_INV_DIR / "progressive_coverage_state.json"
 PROGRESSIVE_EXPORT_PATH = EXPORT_DIR / "latest-progressive-coverage-state.json"
-_MARKER = "_harizon_top_inventory_runtime_scope_v4_direct_inventory_fallback"
+_MARKER = "_harizon_top_inventory_runtime_scope_v5_rolling_topup"
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -101,6 +101,10 @@ def _frozen_roster_path(date: str) -> Path:
     return DAY_INV_DIR / f"frozen_inventory_roster_{date}.json"
 
 
+def _runtime_topup_roster_path(date: str) -> Path:
+    return DAY_INV_DIR / f"runtime_topup_roster_{date}.json"
+
+
 def _min_valid_roster_rows(max_matches: int) -> int:
     # A frozen roster with just the last few not-started matches is worse than no
     # roster: it changes the day denominator from 300 to 3 and makes coverage look
@@ -116,11 +120,14 @@ def _candidate_inventory_paths(date: str) -> list[Path]:
     return [DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]
 
 
-def _rows_from_inventory_path(path: Path, date: str, max_matches: int) -> list[dict[str, Any]]:
+def _rows_from_inventory_path(path: Path, date: str, max_matches: int, *, allow_cross_date: bool = False) -> list[dict[str, Any]]:
     payload = _read_json(path, {})
     if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
         return []
-    rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
+    if allow_cross_date:
+        rows = [r for r in payload.get("matches", []) if isinstance(r, dict)]
+    else:
+        rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
     return rows[:max_matches]
 
 
@@ -191,6 +198,112 @@ def _ensure_frozen_roster(date: str, max_matches: int) -> dict[str, Any]:
     if source_rows:
         return _write_frozen_roster(date, max_matches, source_rows, source_path, reason="create_from_full_day_inventory")
     return {"enabled": True, "path": str(frozen), "created": False, "rows": 0, "min_valid_rows": min_valid, "source_rows": 0, "reason": "no_inventory_rows"}
+
+
+def _runtime_window_hours() -> float:
+    try:
+        return max(1.0, float(os.getenv("TOP_INVENTORY_RUNTIME_TOPUP_WINDOW_HOURS") or os.getenv("PUBLISH_WINDOW_HOURS") or 24))
+    except Exception:
+        return 24.0
+
+
+def _runtime_min_future_rows() -> int:
+    return max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_MIN_FUTURE_ROWS") or 10, 10))
+
+
+def _coerce_utc(value: Any) -> datetime | None:
+    return _parse_dt(value)
+
+
+def _match_dt(match: Any) -> datetime | None:
+    if isinstance(match, dict):
+        return _coerce_utc(match.get("commence_time") or match.get("kickoff_utc") or match.get("start_time") or match.get("kickoff") or match.get("kickoff_local"))
+    return _coerce_utc(getattr(match, "commence_time", None))
+
+
+def _is_future_match(match: Any, now_utc: Any, *, window_hours: float | None = None, min_lead_minutes: float = 0.0) -> bool:
+    dt = _match_dt(match)
+    now = _coerce_utc(now_utc) or datetime.now(UTC)
+    if dt is None:
+        return False
+    lead = (dt - now).total_seconds() / 60.0
+    if lead < min_lead_minutes:
+        return False
+    if window_hours is not None and lead > float(window_hours) * 60.0:
+        return False
+    return True
+
+
+def _future_count(matches: list[Any], now_utc: Any, *, window_hours: float | None = None, min_lead_minutes: float = 0.0) -> int:
+    return sum(1 for match in matches if _is_future_match(match, now_utc, window_hours=window_hours, min_lead_minutes=min_lead_minutes))
+
+
+def _future_matches(matches: list[Any], now_utc: Any, *, window_hours: float | None = None, min_lead_minutes: float = 0.0) -> list[Any]:
+    out = [m for m in matches if _is_future_match(m, now_utc, window_hours=window_hours, min_lead_minutes=min_lead_minutes)]
+    out.sort(key=lambda m: (_match_dt(m) or datetime.max.replace(tzinfo=UTC), _match_home(m), _match_away(m)))
+    return out
+
+
+def _row_from_match(match: Any) -> dict[str, Any]:
+    if isinstance(match, dict):
+        row = dict(match)
+        if not row.get("kickoff_utc") and row.get("commence_time"):
+            row["kickoff_utc"] = row.get("commence_time")
+        return row
+    dt = _match_dt(match)
+    meta = getattr(match, "metadata", None) if isinstance(getattr(match, "metadata", None), dict) else {}
+    return {
+        "source": getattr(match, "source", "runtime_topup"),
+        "source_event_id": getattr(match, "source_event_id", ""),
+        "sport_key": getattr(match, "sport_key", "soccer"),
+        "league_name": getattr(match, "league_name", ""),
+        "home_team": getattr(match, "home_team", ""),
+        "away_team": getattr(match, "away_team", ""),
+        "kickoff_utc": dt.isoformat() if dt is not None else "",
+        "match_key": _match_key(match),
+        "metadata": {**meta, "runtime_topup_roster": True},
+    }
+
+
+def _write_runtime_topup_roster(date: str, max_matches: int, matches: list[Any], now_utc: Any, *, reason: str) -> dict[str, Any]:
+    if not _truthy(os.getenv("TOP_INVENTORY_RUNTIME_TOPUP_ENABLED", "true"), True):
+        return {"enabled": False, "reason": "disabled"}
+    window_hours = _runtime_window_hours()
+    future = _future_matches(matches, now_utc, window_hours=window_hours, min_lead_minutes=0)[:max_matches]
+    if not future:
+        return {"enabled": True, "created": False, "reason": "no_future_matches", "rows": 0, "window_hours": window_hours}
+    path = _runtime_topup_roster_path(date)
+    rows = [_row_from_match(match) for match in future]
+    now = datetime.now(UTC).isoformat()
+    payload = {
+        "version": "runtime_topup_roster_v1",
+        "date_local": date,
+        "created_at_utc": now,
+        "updated_at_utc": now,
+        "target_size": max_matches,
+        "window_hours": window_hours,
+        "reason": reason,
+        "matches": rows,
+        "notes": [
+            "Runtime-only rolling roster used when the frozen calendar-day top-300 has no future rows left.",
+            "This file may include next-local-date matches so the 2-hour runner can keep processing the next 12-24h window.",
+        ],
+    }
+    _write_json(path, payload)
+    _write_json(EXPORT_DIR / "latest-top-inventory-runtime-topup.json", {k: v for k, v in payload.items() if k != "matches"} | {"rows": len(rows)})
+    return {"enabled": True, "created": True, "path": str(path), "rows": len(rows), "window_hours": window_hours, "reason": reason}
+
+
+def _valid_runtime_topup_rows(date: str, max_matches: int) -> tuple[Path | None, list[dict[str, Any]], dict[str, Any]]:
+    path = _runtime_topup_roster_path(date)
+    rows = _rows_from_inventory_path(path, date, max_matches, allow_cross_date=True)
+    now = datetime.now(UTC)
+    future = _future_matches(rows, now, window_hours=_runtime_window_hours(), min_lead_minutes=0)
+    min_future = _runtime_min_future_rows()
+    report = {"enabled": True, "path": str(path), "rows": len(rows), "future_rows": len(future), "min_future_rows": min_future}
+    if len(future) >= min_future:
+        return path, future[:max_matches], {**report, "valid": True}
+    return None, [], {**report, "valid": False}
 
 def _parse_dt(value: Any) -> datetime | None:
     if value in (None, ""):
@@ -292,15 +405,20 @@ def _inventory_scope() -> tuple[dict[str, set[str]], dict[str, Any]]:
     date = _target_date()
     max_matches = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_TARGET_SIZE") or 300, 300))
     freeze_report = _ensure_frozen_roster(date, max_matches)
-    paths = [_frozen_roster_path(date), DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json"]
-    for path in paths:
-        payload = _read_json(path, {})
-        if not isinstance(payload, dict) or not isinstance(payload.get("matches"), list):
-            continue
-        rows = [r for r in payload.get("matches", []) if isinstance(r, dict) and (_row_date(r) in {"", date})]
+    topup_path, topup_rows, topup_report = _valid_runtime_topup_rows(date, max_matches)
+    candidate_paths: list[tuple[Path, bool, dict[str, Any]]] = []
+    if topup_path is not None and topup_rows:
+        candidate_paths.append((topup_path, True, {"runtime_topup": topup_report}))
+    candidate_paths.extend([
+        (_frozen_roster_path(date), False, {}),
+        (DAY_INV_DIR / f"{date}.json", False, {}),
+        (DAY_INV_DIR / "current.json", False, {}),
+        (DAY_INV_DIR / "latest.json", False, {}),
+    ])
+    for path, allow_cross_date, path_extra in candidate_paths:
+        rows = _rows_from_inventory_path(path, date, max_matches, allow_cross_date=allow_cross_date)
         if not rows:
             continue
-        rows = rows[:max_matches]
         direct_keys: set[str] = set()
         identities: set[str] = set()
         for row in rows:
@@ -320,6 +438,7 @@ def _inventory_scope() -> tuple[dict[str, set[str]], dict[str, Any]]:
             "allowlist_keys": len(direct_keys) + len(identities),
             "max_matches": max_matches,
             "frozen_roster": freeze_report,
+            **path_extra,
         }
         return scope, info
     return {"direct_keys": set(), "identities": set()}, {"date_local": date, "inventory_path": None, "inventory_rows": 0, "direct_keys": 0, "identity_keys": 0, "allowlist_keys": 0, "max_matches": max_matches}
@@ -398,12 +517,25 @@ def _prune_progressive_state_to_scope(scope: dict[str, set[str]], info: dict[str
     return {"progressive_pruned": pruned, "progressive_kept": len(kept)}
 
 
-def _scope_result(stage: str, matches: list[Any], *, extra: dict[str, Any] | None = None) -> tuple[list[Any], dict[str, Any]]:
+def _scope_result(stage: str, matches: list[Any], *, extra: dict[str, Any] | None = None, now_utc: Any | None = None) -> tuple[list[Any], dict[str, Any]]:
+    now_value = _coerce_utc(now_utc) or datetime.now(UTC)
     scope, info = _inventory_scope()
-    filtered = _filter_matches(matches, scope, int(info.get("max_matches") or 300))
+    max_matches = int(info.get("max_matches") or 300)
+    filtered = _filter_matches(matches, scope, max_matches)
     fail_open_min = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_FAIL_OPEN_MIN_MATCHES") or 20, 20))
-    used_fail_open = bool((scope.get("direct_keys") or scope.get("identities")) and matches and len(filtered) < fail_open_min)
-    final_matches = matches if used_fail_open else filtered
+    min_future = _runtime_min_future_rows()
+    topup_report: dict[str, Any] = {}
+    raw_future = _future_count(matches, now_value, window_hours=_runtime_window_hours())
+    filtered_future = _future_count(filtered, now_value, window_hours=_runtime_window_hours())
+    if stage in {"fetch_matches", "merge_day_inventory"} and raw_future >= min_future and filtered_future < min_future:
+        topup_report = _write_runtime_topup_roster(str(info.get("date_local") or _target_date()), max_matches, matches, now_value, reason=f"rolling_topup_from_{stage}:filtered_future={filtered_future};raw_future={raw_future}")
+        if topup_report.get("created"):
+            scope, info = _inventory_scope()
+            max_matches = int(info.get("max_matches") or 300)
+            filtered = _filter_matches(matches, scope, max_matches)
+            filtered_future = _future_count(filtered, now_value, window_hours=_runtime_window_hours())
+    used_fail_open = bool((scope.get("direct_keys") or scope.get("identities")) and matches and len(filtered) < fail_open_min and filtered_future < min_future)
+    final_matches = matches[:max_matches] if used_fail_open and max_matches > 0 else (matches if used_fail_open else filtered)
     prune_report = _prune_progressive_state_to_scope(scope, info, stage)
     report = {
         **info,
@@ -413,6 +545,9 @@ def _scope_result(stage: str, matches: list[Any], *, extra: dict[str, Any] | Non
         "filtered_out": max(0, len(matches) - len(final_matches)),
         "fail_open": used_fail_open,
         "fail_open_min_matches": fail_open_min,
+        "raw_future_matches": raw_future,
+        "filtered_future_matches": filtered_future,
+        "runtime_topup_report": topup_report,
         **prune_report,
     }
     if extra:
@@ -440,15 +575,21 @@ def _direct_day_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], d
     date = _target_date()
     max_matches = max(1, _to_int(os.getenv("TOP_INVENTORY_RUNTIME_MAX_MATCHES") or os.getenv("DAY_INVENTORY_MAX_MATCHES") or os.getenv("DAY_INVENTORY_TARGET_SIZE") or 300, 300))
     freeze_report = _ensure_frozen_roster(date, max_matches)
-    paths = [_frozen_roster_path(date), DAY_INV_DIR / f"{date}.json", DAY_INV_DIR / "current.json", DAY_INV_DIR / "latest.json", DAY_INV_DIR / "today.json"]
-    stats: dict[str, Any] = {"enabled": True, "date_local": date, "path": None, "rows_seen": 0, "loaded": 0, "skipped_wrong_date": 0, "skipped_invalid": 0, "max_matches": max_matches, "source": "direct_day_inventory_file", "frozen_roster": freeze_report}
+    topup_path, topup_rows, topup_report = _valid_runtime_topup_rows(date, max_matches)
+    paths: list[tuple[Path, bool]] = []
+    if topup_path is not None and topup_rows:
+        paths.append((topup_path, True))
+    paths.extend([(_frozen_roster_path(date), False), (DAY_INV_DIR / f"{date}.json", False), (DAY_INV_DIR / "current.json", False), (DAY_INV_DIR / "latest.json", False), (DAY_INV_DIR / "today.json", False)])
+    stats: dict[str, Any] = {"enabled": True, "date_local": date, "path": None, "rows_seen": 0, "loaded": 0, "skipped_wrong_date": 0, "skipped_invalid": 0, "max_matches": max_matches, "source": "direct_day_inventory_file", "frozen_roster": freeze_report, "runtime_topup": topup_report}
     rows: list[dict[str, Any]] = []
     selected_path: Path | None = None
-    for path in paths:
-        candidate_rows = _rows_from_inventory_path(path, date, max_matches)
+    allow_selected_cross_date = False
+    for path, allow_cross_date in paths:
+        candidate_rows = _rows_from_inventory_path(path, date, max_matches, allow_cross_date=allow_cross_date)
         if candidate_rows:
             rows = candidate_rows
             selected_path = path
+            allow_selected_cross_date = allow_cross_date
             break
     if not rows or selected_path is None:
         stats["reason"] = "inventory_file_missing"
@@ -457,7 +598,7 @@ def _direct_day_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any], d
     stats["rows_seen"] = len(rows)
     out: list[Any] = []
     for row in rows[:max_matches]:
-        if _row_date(row) not in {"", date}:
+        if not allow_selected_cross_date and _row_date(row) not in {"", date}:
             stats["skipped_wrong_date"] += 1
             continue
         kickoff_raw = row.get("kickoff_utc") or row.get("commence_time") or row.get("start_time") or row.get("kickoff") or row.get("kickoff_local")
@@ -515,6 +656,8 @@ def _authoritative_inventory_matches(self: Any, now_utc: Any) -> tuple[list[Any]
 
     direct_matches, direct_stats = _direct_day_inventory_matches(self, now_utc)
     if direct_matches:
+        if _future_count(direct_matches, now_utc, window_hours=_runtime_window_hours()) < _runtime_min_future_rows() and not (direct_stats.get("runtime_topup") or {}).get("valid"):
+            return [], {"enabled": True, "reason": "direct_day_inventory_stale_no_future", "loaded": len(direct_matches), "scoped": 0, **direct_stats}
         scope, info = _inventory_scope()
         scoped = _filter_matches(direct_matches, scope, int(info.get("max_matches") or 300))
         return scoped, {"enabled": True, "reason": "direct_day_inventory", "loaded": len(direct_matches), "scoped": len(scoped), **info, **direct_stats}
@@ -553,7 +696,7 @@ def install() -> dict[str, Any]:
         result = await original_fetch_matches(self)
         if not isinstance(result, tuple) or len(result) < 1:
             return result
-        matches, report = _scope_result("fetch_matches", list(result[0] or []))
+        matches, report = _scope_result("fetch_matches", list(result[0] or []), now_utc=datetime.now(UTC))
         meta = result[1] if len(result) > 1 and isinstance(result[1], dict) else {}
         scoped_meta = dict(meta)
         scoped_meta["top_inventory_runtime_scope"] = report
@@ -573,6 +716,7 @@ def install() -> dict[str, Any]:
             scoped, report = _scope_result(
                 "merge_day_inventory",
                 list(source_matches or []),
+                now_utc=now_utc,
                 extra={
                     "authoritative_inventory_scope": bool(authoritative),
                     "authoritative_inventory_loaded": int(inv_report.get("loaded") or 0),
@@ -612,7 +756,7 @@ def install() -> dict[str, Any]:
                         fallback_report = {"direct_inventory_filter_fallback": True, "direct_inventory_stats": direct_stats, "retry_filtering": fallback_filtering}
                         filtering.setdefault("original_zero_filtering", dict(filtering))
                         filtering.update(fallback_filtering)
-            scoped, report = _scope_result("filter_matches", filtered_initial, extra=fallback_report if fallback_report else None)
+            scoped, report = _scope_result("filter_matches", filtered_initial, extra=fallback_report if fallback_report else None, now_utc=now_utc)
             if fallback_used:
                 report["direct_inventory_filter_fallback"] = True
             filtering["top_inventory_runtime_scope"] = report
@@ -624,7 +768,7 @@ def install() -> dict[str, Any]:
     if callable(original_fetch_provider) and not getattr(original_fetch_provider, _MARKER, False):
         async def fetch_provider_scoped(self: Any, provider: Any, method_name: str, *args: Any, **kwargs: Any):  # type: ignore[no-untyped-def]
             if method_name in {"fetch_offers", "fetch_context"} and args and isinstance(args[0], list):
-                scoped, _report = _scope_result(f"provider_{method_name}", list(args[0] or []), extra={"provider_method": method_name})
+                scoped, _report = _scope_result(f"provider_{method_name}", list(args[0] or []), extra={"provider_method": method_name}, now_utc=datetime.now(UTC))
                 args = (scoped, *args[1:])
             return await original_fetch_provider(self, provider, method_name, *args, **kwargs)
 

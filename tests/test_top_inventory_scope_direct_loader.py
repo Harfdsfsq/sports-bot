@@ -4,7 +4,7 @@ from app.services import top_inventory_runtime_scope_patch as scope
 
 
 def test_scope_report_marker_version():
-    assert "v4_direct_inventory_fallback" in scope._MARKER
+    assert "v5_rolling_topup" in scope._MARKER
 
 
 def test_identity_is_ordered_not_sorted():
