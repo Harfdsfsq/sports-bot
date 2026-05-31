@@ -1,19 +1,20 @@
 {
-  "created_at_utc": "2026-05-30T21:01:41.738682+00:00",
+  "created_at_utc": "2026-05-31T15:31:01.669342+00:00",
   "date_local": "2026-05-31",
-  "frozen_rows": 3,
+  "frozen_rows": 300,
   "last_merge": {
     "current_rows": 300,
-    "lost_from_current": 0,
-    "new_in_current": 297,
-    "overlap": 3
+    "lost_from_current": 300,
+    "new_in_current": 300,
+    "overlap": 0
   },
   "notes": [
-    "Created before the run starts by top_inventory_runtime_scope_patch.",
-    "This keeps the daily top inventory denominator stable; evidence is merged later, rows are not replaced intraday."
+    "Created/repaired before the run starts by top_inventory_runtime_scope_patch.",
+    "Tiny frozen rosters are ignored when a fuller same-day day-inventory exists, so the denominator cannot collapse from top-300 to the last few future matches."
   ],
+  "repair_reason": "repair_tiny_existing_roster:3<150;source_rows=300",
   "source_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-05-31.json",
   "target_size": 300,
-  "updated_at_utc": "2026-05-31T15:05:56.814017+00:00",
+  "updated_at_utc": "2026-05-31T15:34:39.530234+00:00",
   "version": "frozen_day_inventory_roster_v1"
 }
