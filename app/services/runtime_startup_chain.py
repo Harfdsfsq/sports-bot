@@ -14,7 +14,6 @@ MODULES = [
     'app.services.runtime_provider_budget_guard',
     'app.services.core_coverage_quota_runtime_override',
     'app.services.free_context_runtime_enrichment',
-    'app.services.weather_location_guard_runtime_patch',
     'app.services.api_matching_quality_runtime_guard',
     'app.services.bzzoiro_provider_runtime_fix',
     'app.services.market_family_publication_guard',
@@ -24,17 +23,11 @@ MODULES = [
     'app.services.signal_stack_runtime_patch',
     'app.services.odds_movement_cache_bridge_patch',
     'app.services.sportlogic_query_runtime_guard',
-    'app.services.provider_signal_expansion_runtime_patch',
-    'app.services.targeted_enrichment_runtime_patch',
     'app.services.api_runtime_enhancements',
     'app.services.secondary_odds_rescue_runtime_patch',
     'app.services.day_inventory_extra_fixture_sources',
     'app.services.day_inventory_bucketed_top_v3_runtime_patch',
     'app.services.day_inventory_runtime_guard',
-    # Hard scope run-once back to the top-300 day inventory after fixture sources
-    # have had a chance to merge/repair inventory. This prevents broad provider
-    # returns from re-inflating progressive state to 800+ active matches.
-    'app.services.top_inventory_runtime_scope_patch',
     'app.services.near_window_priority_runtime_patch',
     'app.services.context_family_matching_runtime_patch',
     'app.services.runner_step_trace',
@@ -68,30 +61,17 @@ MODULES = [
     'app.services.bzzoiro_context_gap_source_id_finalizer',
     'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
     'app.services.progressive_provider_alias_finalizer',
-    # Re-install targeted queue late as well: other runtime wrappers can replace
-    # provider-selection methods, so this must be one of the last PredictionRunner
-    # wrappers before CandidateFactory diagnostics.
-    'app.services.targeted_enrichment_runtime_patch',
     'app.services.candidate_value_final_reinstall',
-    # Last-resort bridge: if early hard guards still leave zero raw candidates,
-    # rebuild controlled rescue rows for fallback evaluation (not direct publish).
-    'app.services.post_integrity_candidate_rescue',
     'app.services.windowed_coverage_state_bridge',
     'app.services.odds_movement_cache_bridge_patch',
     'app.services.api_coverage_consensus_runtime_patch',
-    # Keep API coverage strict for final publication, but soft at discovery time so
-    # rejected candidates still reach quality/fallback/watchlist diagnostics.
-    'app.services.api_coverage_discovery_soft_guard_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
-    'app.providers.odds_api_io_fast_event_account_patch',
-    'app.services.bzzoiro_total_point_normalization_patch',
     'app.services.bzzoiro_exact_offer_bridge_patch',
-    'app.services.candidate_inventory_evidence_annotation_patch',
+    'app.services.main_publish_strict_value_guard',
     'app.services.candidate_factory_runtime_diagnostics',
-    'app.services.candidate_factory_output_dedup_patch',
 ]
 
 
