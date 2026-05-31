@@ -1,9 +1,9 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ Прогноз опубликован. Ниже — проверка покрытия и причин, почему опубликован именно этот кандидат.
-• Главная причина: опубликовано основным пайплайном
+🟡 Прогнозов нет: есть 178 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: duplicate already sent:state:published candidates
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 155.
+• Инвентарь дня: 300 матчей. В этом run обработано: 151.
 • 1+ линия: 300/300 (100%) | 1+ контекст: 194/300 (65%)
 • 2+ подтверждения цены: 150/300 (50%)
 • 2+ независимых odds-source: 17/300 (6%)
@@ -18,36 +18,41 @@
 • Ждут второй снимок линии: 178 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 152 | матчей без следующего регулярного run: 152
-• Line guard: увидел 4, оставил 0, снял 1
+• Pre-kickoff проверок: 164 | матчей без следующего регулярного run: 164
+• Line guard: увидел 2, оставил 0, снял 1
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 2/2
-• Quality прошло: 2 | publishable: 1 | опубликовано: 1
-• Controlled fallback: seen 0 | evaluated 0 | published 0
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 32 (events 0, odds 32); смэтчил матчей 155; дал offers 14234 (445/запрос); 2+ букмекера 83; ошибок 0.
-• Bzzoiro: запросы 82 (direct 41, v2 41, gap 0); событий 69; контекстов 17; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 20; secondary offers 11; overlap с odds-api.io 14; ошибок 0.
-• SStats: запросы 25; сырых строк 23032 (921/запрос); контекстов 121; deep-enriched 10; team-form 0; direct 0; ошибок 0.
+• odds-api.io: запросы 32 (events 0, odds 32); смэтчил матчей 151; дал offers 14407 (450/запрос); 2+ букмекера 80; ошибок 0.
+• Bzzoiro: запросы 50 (direct 25, v2 25, gap 0); событий 69; контекстов 15; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 16; secondary offers 11; overlap с odds-api.io 12; ошибок 0.
+• SStats: запросы 25; сырых строк 23032 (921/запрос); контекстов 120; deep-enriched 10; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 4; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 107, bzzoiro+odds_api_io: 14, bzzoiro: 3
+• Комбинации источников линий: odds_api_io: 104, bzzoiro+odds_api_io: 12, bzzoiro: 3
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 143. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 23.
-• 0–4 часа: 14/129 core-ready.
-• 0–12 часов: 14/129 core-ready.
+• 0–4 часа: 13/112 core-ready.
+• 0–12 часов: 13/112 core-ready.
 
-🚫 Почему часть кандидатов отсеяна
-• Не применимо к публикации: один прогноз уже отправлен.
+🚫 Почему не опубликовано
+• duplicate already sent:state:published candidates: 1 (50%)
+• line movement guard снял кандидата: 1 (50%)
+
+🔎 Последние проверенные кандидаты
+1. SD Juazeirense BA — Alagoinhas AC BA | Больше 2.5 @1.95 | EV +2.2% | edge +1.1 п.п. | q 66.0
+   • причина: duplicate already sent:state:published candidates
 
 📌 Что это значит
-• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах.
+• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26718159027
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26718159027
-• Artifact: run-bot-26718159027
+• Run ID: 26718753241
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26718753241
+• Artifact: run-bot-26718753241
 • workflow run-bot, attempt 1
