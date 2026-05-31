@@ -1,10 +1,10 @@
 # Provider day discovery canonical pool
-UTC: 2026-05-31T07:03:09.841193+00:00
+UTC: 2026-05-31T09:03:10.859281+00:00
 target_date: 2026-05-31
-canonical_matches: 421
-2+ provider sources: 127
-2+ primary sources: 120
-all 3 primary sources: 12
+canonical_matches: 439
+2+ provider sources: 114
+2+ primary sources: 107
+all 3 primary sources: 10
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
@@ -17,8 +17,8 @@ all 3 primary sources: 12
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 294, "2": 114, "3": 13}
-- primary providers: {"1": 301, "2": 108, "3": 12}
+- all providers: {"1": 325, "2": 103, "3": 11}
+- primary providers: {"1": 332, "2": 97, "3": 10}
 
 ## Top canonical matches
 - 2026-05-30T21:30:00+00:00 | Universidad de Chile — Concepción | providers=sstats ids={"sstats": "1505457"}
@@ -27,6 +27,7 @@ all 3 primary sources: 12
 - 2026-05-30T22:00:00+00:00 | Portuguesa RJ — América RJ | providers=sstats ids={"sstats": "1538020"}
 - 2026-05-30T22:00:00+00:00 | Sampaio Corrêa RJ — Velo Clube | providers=sstats ids={"sstats": "1538022"}
 - 2026-05-30T22:00:00+00:00 | Pacific FC — Atlético Ottawa | providers=sstats ids={"sstats": "1517291"}
+- 2026-05-30T22:00:00+00:00 | Charleston Battery — Detroit City | providers=sstats ids={"sstats": "1493515"}
 - 2026-05-30T22:00:00+00:00 | AC Connecticut — Boston City | providers=sstats ids={"sstats": "1524648"}
 - 2026-05-30T22:00:00+00:00 | Blackwatch Rush — Seacoast United Phantoms | providers=sstats ids={"sstats": "1524649"}
 - 2026-05-30T22:00:00+00:00 | Dayton Dutch Lions W — Racing Louisville W | providers=sstats ids={"sstats": "1532075"}
@@ -34,7 +35,6 @@ all 3 primary sources: 12
 - 2026-05-30T22:00:00+00:00 | Midwest United W — Detroit City W | providers=sstats ids={"sstats": "1532076"}
 - 2026-05-30T22:00:00+00:00 | Monterey Bay FC W — Oakland Soul W | providers=sstats ids={"sstats": "1532379"}
 - 2026-05-30T22:00:00+00:00 | Colón — Miramar | providers=sstats ids={"sstats": "1546064"}
-- 2026-05-30T22:00:00+00:00 | Charleston Battery — Detroit City | providers=sstats ids={"sstats": "1493515"}
 - 2026-05-30T22:30:00+00:00 | Caxias — Ituano | providers=sstats ids={"sstats": "1526844"}
 - 2026-05-30T22:30:00+00:00 | General Caballero — Paraguari AC | providers=sstats ids={"sstats": "1546535"}
 - 2026-05-30T22:30:00+00:00 | Sport Boys — Comerciantes Unidos | providers=sstats ids={"sstats": "1512631"}
@@ -45,12 +45,12 @@ all 3 primary sources: 12
 - 2026-05-30T22:30:00+00:00 | Port City NC W — Charlotte Eagles II W | providers=sstats ids={"sstats": "1532424"}
 - 2026-05-30T23:00:00+00:00 | Santos — Vitoria | providers=sstats ids={"sstats": "1492288"}
 - 2026-05-30T23:00:00+00:00 | Galvez — Porto Velho | providers=sstats ids={"sstats": "1537998"}
-- 2026-05-30T23:00:00+00:00 | Chattanooga Red Wolves — Charlotte Independence | providers=sstats ids={"sstats": "1493843"}
-- 2026-05-30T23:00:00+00:00 | Richmond Kickers — Boise | providers=sstats ids={"sstats": "1493846"}
-- 2026-05-30T23:00:00+00:00 | Appalachian — Wake | providers=sstats ids={"sstats": "1524657"}
-- 2026-05-30T23:00:00+00:00 | Bigfoot — Snohomish United | providers=sstats ids={"sstats": "1524646"}
-- 2026-05-30T23:00:00+00:00 | Boston Bolts — Black Rock | providers=sstats ids={"sstats": "1524658"}
 - 2026-05-30T23:00:00+00:00 | Eagle FC — Reading United | providers=sstats ids={"sstats": "1525390"}
+- 2026-05-30T23:00:00+00:00 | Flint City Bucks — Kalamazoo FC | providers=sstats ids={"sstats": "1524660"}
+- 2026-05-30T23:00:00+00:00 | SC United Bantams — North Carolina II | providers=sstats ids={"sstats": "1524674"}
+- 2026-05-30T23:00:00+00:00 | TLH Reckoning W — Miami AC W | providers=sstats ids={"sstats": "1493524"}
+- 2026-05-30T23:00:00+00:00 | Virginia Beach United W — Richmond Ivy W | providers=sstats ids={"sstats": "1532082"}
+- 2026-05-30T23:00:00+00:00 | Hartford Athletic — New Mexico United | providers=sstats ids={"sstats": "1493517"}
 
 ## Targeted enrichment plan sample
 - Universidad de Chile — Concepción | primary=1 providers=sstats
@@ -74,6 +74,10 @@ all 3 primary sources: 12
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Pacific FC — Atlético Ottawa | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Charleston Battery — Detroit City | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -102,10 +106,6 @@ all 3 primary sources: 12
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Colón — Miramar | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Charleston Battery — Detroit City | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
