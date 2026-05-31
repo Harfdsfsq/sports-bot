@@ -191,6 +191,15 @@ def ensure_latest_run_coverage_merged() -> list[dict[str, Any]]:
     # cumulative coverage sees bookmaker-confirmed price depth and independent
     # context confirmations instead of stale bootstrap counters.
     steps.append(run_python_script(ROOT / 'scripts' / 'repair_inventory_source_counts.py'))
+
+    # Secondary context providers such as Highlightly are probed after the main
+    # run.  Their matched fixture/alias evidence must be merged before the
+    # truth table is rebuilt; otherwise Telegram/coverage truth reports the
+    # previous context-source state and the 2+ context count lags by one run.
+    if str(os.getenv('TARGETED_SECONDARY_CONTEXT_PRE_COVERAGE_ENABLED', 'true')).strip().lower() in {'1', 'true', 'yes', 'on'}:
+        steps.append(run_python_script(ROOT / 'scripts' / 'probe_targeted_secondary_sources.py'))
+        steps.append(run_python_script(ROOT / 'scripts' / 'merge_targeted_secondary_context.py'))
+
     steps.append(run_python_script(ROOT / 'scripts' / 'build_day_inventory_coverage_truth.py'))
     return steps
 
