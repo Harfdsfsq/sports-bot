@@ -1,9 +1,9 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: no viable controlled fallback.
-• Главная причина: no viable controlled fallback
+🟡 Прогнозов нет: missing sources.
+• Главная причина: missing sources
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 3 матчей. В этом run обработано: 0.
+• Инвентарь дня: 3 матчей. В этом run обработано: 2.
 • 1+ линия: 3/3 (100%) | 1+ контекст: 3/3 (100%)
 • 2+ подтверждения цены: 0/3 (0%)
 • 2+ независимых odds-source: 3/3 (100%)
@@ -18,36 +18,41 @@
 • Ждут второй снимок линии: 0 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 18 | матчей без следующего регулярного run: 18
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 13 | матчей без следующего регулярного run: 13
+• Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/0
+• Raw/candidates before quality: 1/1
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 0 | evaluated 0 | published 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 0 (events 0, odds 0); смэтчил матчей 0; дал offers 0 (0/запрос); 2+ букмекера 0; ошибок 0.
-• Bzzoiro: запросы 0 (direct 0, v2 0, gap 0); событий 0; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 0; secondary offers 0; overlap с odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0 (0/запрос); контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 0; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: данных нет.
+• odds-api.io: запросы 2 (events 0, odds 2); смэтчил матчей 2; дал offers 481 (240/запрос); 2+ букмекера 2; ошибок 0.
+• Bzzoiro: запросы 18 (direct 9, v2 9, gap 0); событий 55; контекстов 2; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 4; secondary offers 0; overlap с odds-api.io 2; ошибок 0.
+• SStats: запросы 20; сырых строк 18201 (910/запрос); контекстов 2; deep-enriched 1; team-form 0; direct 0; ошибок 1.
+• SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: bzzoiro+odds_api_io: 2
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 3. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 3.
 • 0–4 часа: 0/0 core-ready.
-• 0–12 часов: 0/0 core-ready.
+• 0–12 часов: 2/2 core-ready.
 
 🚫 Почему не опубликовано
-• В свежих артефактах нет явных reject reasons.
+• missing sources: 1 (50%)
+• quality: вероятность после калибровки ниже порога: 1 (50%)
+
+🔎 Последние проверенные кандидаты
+1. Burgos — FC Andorra | Больше 2.5 @2.06 | EV +0.7% | edge +0.4 п.п. | q 53.8
+   • причина: missing sources
 
 📌 Что это значит
 • Главный gap: мало 2+ контекста. Нужно добирать Bzzoiro/SStats context на ближайшие окна.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26701645464
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26701645464
-• Artifact: run-bot-26701645464
+• Run ID: 26703775392
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26703775392
+• Artifact: run-bot-26703775392
 • workflow run-bot, attempt 1
