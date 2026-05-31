@@ -1,20 +1,62 @@
 {
   "date_local": "2026-05-31",
   "line_movement_guard": {
-    "candidate_file_candidates_seen": 0,
-    "candidate_files_seen": 0,
-    "candidates_dropped": 0,
+    "candidate_file_candidates_seen": 1,
+    "candidate_files_seen": 1,
+    "candidates_dropped": 1,
     "candidates_kept": 0,
-    "candidates_seen": 0,
+    "candidates_seen": 3,
     "date_local": "2026-05-31",
     "drop_bad_candidates": true,
-    "files": [],
+    "files": [
+      {
+        "container_key": "candidates",
+        "dropped": 1,
+        "dropped_sample": [
+          {
+            "guard": {
+              "current_edge_pp": 2.489000000000008,
+              "current_ev_pct": 2.191120261397006,
+              "current_odds": 1.9425,
+              "final_pre_kickoff_check": true,
+              "lead_minutes": 145.12,
+              "line_move_pct": 0.0,
+              "line_movement_lifecycle_status": "not_publishable",
+              "no_more_cron_before_kickoff": true,
+              "passed": false,
+              "previous_odds": null,
+              "previous_snapshot_at_utc": null,
+              "reasons": [
+                "current_ev_below_floor:2.2<3.0"
+              ]
+            },
+            "match_key": "soccer|alagoinhas ba|juazeirense ba|2026-05-31",
+            "odds": 1.9425,
+            "selection": "Больше 2.5"
+          }
+        ],
+        "kept": 0,
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-rescue-candidates.json",
+        "seen": 1
+      }
+    ],
     "status": "ok",
-    "updated_at_utc": "2026-05-31T15:34:35.614694+00:00",
-    "watchlist_candidates_seen": 0,
-    "watchlist_snapshots_written": 0,
-    "watchlist_source_files_seen": 0,
-    "watchlist_sources": []
+    "updated_at_utc": "2026-05-31T16:04:52.608671+00:00",
+    "watchlist_candidates_seen": 2,
+    "watchlist_snapshots_written": 1,
+    "watchlist_source_files_seen": 2,
+    "watchlist_sources": [
+      {
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-candidate-value-runtime-patch.json",
+        "seen": 1,
+        "snapshots_written": 1
+      },
+      {
+        "path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-windowed-core-candidate-audit.json",
+        "seen": 1,
+        "snapshots_written": 0
+      }
+    ]
   },
   "notes": [
     "Inventory rows are now sorted by kickoff urgency and missing coverage so the next run naturally spends quota on matches that need it most.",
@@ -22,7 +64,7 @@
     "If there is still another regular cron before kickoff and no previous line snapshot exists, candidates move to awaiting_next_run instead of being published immediately."
   ],
   "refresh_plan": {
-    "active_matches": 242,
+    "active_matches": 355,
     "alias_update": {
       "paths": [
         "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
@@ -32,30 +74,30 @@
       "status": "ok",
       "target_date": "2026-05-31"
     },
-    "count_repaired_at_utc": "2026-05-31T15:34:35.614694+00:00",
+    "count_repaired_at_utc": "2026-05-31T16:04:52.608671+00:00",
     "count_semantics": {
       "matches_missing_odds_coverage": "active row without coverage.odds",
       "matches_needing_odds_refresh": "row.refresh_plan.needs_odds_refresh == true",
       "matches_stale_odds_refresh": "active row with odds but row.refresh_plan.needs_odds_refresh == true"
     },
     "date_local": "2026-05-31",
-    "final_pre_kickoff_checks": 52,
-    "low_quality_rows_filtered_from_priority": 207,
-    "matches_missing_odds_coverage": 19,
-    "matches_needing_odds_refresh": 190,
-    "matches_stale_odds_refresh": 171,
-    "no_more_regular_run_before_kickoff": 52,
+    "final_pre_kickoff_checks": 101,
+    "low_quality_rows_filtered_from_priority": 219,
+    "matches_missing_odds_coverage": 88,
+    "matches_needing_odds_refresh": 236,
+    "matches_stale_odds_refresh": 152,
+    "no_more_regular_run_before_kickoff": 101,
     "status": "ok",
     "top_priority_matches": [
       {
-        "away_team": "Málaga",
-        "home_team": "Real Zaragoza",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spanish La Liga 2",
-        "match_key": "soccer|m_laga|real_zaragoza|2026-05-31",
-        "minutes_to_kickoff": 55.41,
+        "away_team": "FC Dinamo City",
+        "home_team": "KF Egnatia Rrogozhine",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Albania - Kategoria Superiore",
+        "match_key": "soccer|dinamo city|kf egnatia rrogozhine|2026-05-31",
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 157.531,
+        "priority": 157.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -63,106 +105,6 @@
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Gimnasia Y Tiro de Salta",
-        "home_team": "CA Atlanta",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Argentina - Primera Nacional",
-        "match_key": "2026-05-31|ca atlanta|gimnasia y tiro salta",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Deportes Iquique",
-        "home_team": "Deportes Magallanes",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Chile - Primera B",
-        "match_key": "2026-05-31|deportes magallanes|deportes iquique",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Coquimbo Unido",
-        "home_team": "Deportes Limache",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Chile - Primera Division",
-        "match_key": "2026-05-31|deportes limache|coquimbo unido",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "AS Real Bamako",
-        "home_team": "AS Korofina",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Mali - Ligue 1",
-        "match_key": "soccer|as korofina|as real bamako|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Usfas Bamako",
-        "home_team": "Stade Malien de Bamako",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Mali - Ligue 1",
-        "match_key": "soccer|stade malien bamako|usfas bamako|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 149.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
@@ -173,173 +115,13 @@
         "kickoff_utc": "2026-05-31T17:15:00+00:00",
         "league_name": "Eliteserien",
         "match_key": "2026-05-31|brann|sarpsborg 08",
-        "minutes_to_kickoff": 100.41,
+        "minutes_to_kickoff": 70.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 142.531,
+        "priority": 152.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "KRC Genk",
-        "home_team": "KAA Gent",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Belgium - Pro League",
-        "match_key": "soccer|kaa gent|krc genk|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Cádiz",
-        "home_team": "Real Racing Club",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Segunda División",
-        "match_key": "2026-05-31|real racing|cadiz",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "SD Eibar",
-        "home_team": "CD Castellon",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spain - LaLiga 2",
-        "match_key": "soccer|castellon|eibar|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "UD Las Palmas",
-        "home_team": "RC Deportivo De La Coruna",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spain - LaLiga 2",
-        "match_key": "soccer|las palmas|rc la coruna|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Malaga CF",
-        "home_team": "Real Zaragoza",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spain - LaLiga 2",
-        "match_key": "soccer|malaga|real zaragoza|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-30T21:04:25.368581+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Real Valladolid",
-        "home_team": "UD Almeria",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spain - LaLiga 2",
-        "match_key": "soccer|almeria|real valladolid|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Andorra",
-        "home_team": "Burgos",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spanish La Liga 2",
-        "match_key": "soccer|burgos|fc_andorra|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "FC Andorra",
-        "home_team": "Burgos",
-        "kickoff_utc": "2026-05-31T16:30:00+00:00",
-        "league_name": "Spanish La Liga 2",
-        "match_key": "soccer|andorra|burgos|2026-05-31",
-        "minutes_to_kickoff": 55.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": "2026-05-31T09:05:20.870121+00:00",
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": false,
@@ -353,9 +135,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Albania - Kategoria Superiore",
         "match_key": "2026-05-31|kf egnatia rrogozhine|dinamo city",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -373,9 +155,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Albania - Kategoria Superiore",
         "match_key": "2026-05-31|vllaznia shkoder|af elbasani",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -393,9 +175,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Iceland - 1. deild",
         "match_key": "2026-05-31|leiknir reykjavik|hk kopavogur",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -413,9 +195,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Iceland - 4. deild",
         "match_key": "2026-05-31|arborg|hafnir",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -433,9 +215,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Iceland - Besta deild",
         "match_key": "2026-05-31|ibv vestmannaeyjar|keflavik if",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -453,9 +235,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Iceland - Besta deild",
         "match_key": "2026-05-31|kr reykjavik|ka akureyri",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -473,9 +255,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Iceland - Besta deild",
         "match_key": "2026-05-31|thor akureyri|stjarnan gardabae",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -493,9 +275,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Luxembourg - Division Nationale",
         "match_key": "2026-05-31|mamer 32|wiltz 71",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -513,9 +295,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Spain - Segunda Federacion",
         "match_key": "2026-05-31|atletico baleares|real jaen",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -533,9 +315,9 @@
         "kickoff_utc": "2026-05-31T17:00:00+00:00",
         "league_name": "Spain - Segunda Federacion",
         "match_key": "2026-05-31|ub conquense|ud ourense",
-        "minutes_to_kickoff": 85.41,
+        "minutes_to_kickoff": 55.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 139.531,
+        "priority": 149.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -548,14 +330,194 @@
         }
       },
       {
+        "away_team": "Af Elbasani",
+        "home_team": "Vllaznia Shkoder",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Albania - Kategoria Superiore",
+        "match_key": "soccer|af elbasani|vllaznia shkoder|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "HK Kopavogur",
+        "home_team": "Leiknir Reykjavik",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Iceland - 1. deild",
+        "match_key": "soccer|hk kopavogur|leiknir reykjavik|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Hafnir",
+        "home_team": "Arborg",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Iceland - 4. deild",
+        "match_key": "soccer|arborg|hafnir|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Keflavik IF",
+        "home_team": "IBV Vestmannaeyjar",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Iceland - Besta deild",
+        "match_key": "soccer|ibv vestmannaeyjar|keflavik if|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "KA Akureyri",
+        "home_team": "KR Reykjavik",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Iceland - Besta deild",
+        "match_key": "soccer|ka akureyri|kr reykjavik|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Stjarnan Gardabae",
+        "home_team": "Thor Akureyri",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Iceland - Besta deild",
+        "match_key": "soccer|stjarnan gardabae|thor akureyri|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "FC Wiltz 71",
+        "home_team": "FC Mamer 32",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Luxembourg - Division Nationale",
+        "match_key": "soccer|mamer 32|wiltz 71|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Real Jaen CF",
+        "home_team": "CD Atletico Baleares",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Spain - Segunda Federacion",
+        "match_key": "soccer|atletico baleares|real jaen|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "UD Ourense",
+        "home_team": "UB Conquense",
+        "kickoff_utc": "2026-05-31T17:00:00+00:00",
+        "league_name": "Spain - Segunda Federacion",
+        "match_key": "soccer|ourense|ub conquense|2026-05-31",
+        "minutes_to_kickoff": 55.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 141.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
         "away_team": "Argentino de Merlo",
         "home_team": "CS Italiano",
         "kickoff_utc": "2026-05-31T17:30:00+00:00",
         "league_name": "Argentina - Primera B",
         "match_key": "2026-05-31|cs italiano|argentino merlo",
-        "minutes_to_kickoff": 115.41,
+        "minutes_to_kickoff": 85.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 129.531,
+        "priority": 139.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -573,9 +535,9 @@
         "kickoff_utc": "2026-05-31T17:30:00+00:00",
         "league_name": "Argentina - Primera B",
         "match_key": "2026-05-31|deportivo camioneros|ca talleres remedios",
-        "minutes_to_kickoff": 115.41,
+        "minutes_to_kickoff": 85.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 129.531,
+        "priority": 139.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -593,89 +555,9 @@
         "kickoff_utc": "2026-05-31T17:30:00+00:00",
         "league_name": "Bolivia - Copa Simon Bolivar",
         "match_key": "2026-05-31|garcia agreda|municipal tarija",
-        "minutes_to_kickoff": 115.41,
+        "minutes_to_kickoff": 85.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 129.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Brooklyn FC",
-        "home_team": "SC Jacksonville",
-        "kickoff_utc": "2026-05-31T18:00:00+00:00",
-        "league_name": "USL Championship",
-        "match_key": "soccer|brooklyn|jacksonville|2026-05-31",
-        "minutes_to_kickoff": 145.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 127.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "AFC Chindia Targoviste",
-        "home_team": "FC Farul Constanta",
-        "kickoff_utc": "2026-05-31T17:30:00+00:00",
-        "league_name": "Romania - Superliga",
-        "match_key": "soccer|chindia targoviste|farul constanta|2026-05-31",
-        "minutes_to_kickoff": 115.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 121.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CA Acassuso",
-        "home_team": "Deportivo Madryn",
-        "kickoff_utc": "2026-05-31T18:00:00+00:00",
-        "league_name": "Argentina - Primera Nacional",
-        "match_key": "2026-05-31|deportivo madryn|ca acassuso",
-        "minutes_to_kickoff": 145.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CAS Defensores de Belgrano",
-        "home_team": "CA Linqueno",
-        "kickoff_utc": "2026-05-31T18:00:00+00:00",
-        "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|ca linqueno|cas defensores belgrano",
-        "minutes_to_kickoff": 145.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
+        "priority": 139.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -692,37 +574,17 @@
         "home_team": "CDC Nicanor Otamendi",
         "kickoff_utc": "2026-05-31T18:00:00+00:00",
         "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|cdc nicanor otamendi|villa mitre bahia blanca",
-        "minutes_to_kickoff": 145.41,
+        "match_key": "soccer|cdc nicanor otamendi|villa mitre bahia blanca|2026-05-31",
+        "minutes_to_kickoff": 115.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
+        "priority": 137.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CD Santamarina Tandil",
-        "home_team": "CSD Sol de Mayo",
-        "kickoff_utc": "2026-05-31T18:00:00+00:00",
-        "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|csd sol mayo|santamarina tandil",
-        "minutes_to_kickoff": 145.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
@@ -732,17 +594,17 @@
         "home_team": "Costa Brava de General Pico",
         "kickoff_utc": "2026-05-31T18:00:00+00:00",
         "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|costa brava general pico|argentino monte maiz",
-        "minutes_to_kickoff": 145.41,
+        "match_key": "soccer|argentino monte maiz|costa brava general pico|2026-05-31",
+        "minutes_to_kickoff": 115.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
+        "priority": 137.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
@@ -752,57 +614,17 @@
         "home_team": "Deportivo Rincon",
         "kickoff_utc": "2026-05-31T18:00:00+00:00",
         "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|deportivo rincon|fadep",
-        "minutes_to_kickoff": 145.41,
+        "match_key": "soccer|fadep|rincon|2026-05-31",
+        "minutes_to_kickoff": 115.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
+        "priority": 137.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CA Alvarado",
-        "home_team": "Guillermo Brown",
-        "kickoff_utc": "2026-05-31T18:00:00+00:00",
-        "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|guillermo brown|ca alvarado",
-        "minutes_to_kickoff": 145.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "CA 9 de Julio Rafaela",
-        "home_team": "Independiente de Chivilcoy",
-        "kickoff_utc": "2026-05-31T18:00:00+00:00",
-        "league_name": "Argentina - Torneo Federal A",
-        "match_key": "2026-05-31|independiente chivilcoy|ca 9 julio rafaela",
-        "minutes_to_kickoff": 145.41,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "last_odds_refresh_utc": null,
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
@@ -812,17 +634,17 @@
         "home_team": "Deportivo Escara",
         "kickoff_utc": "2026-05-31T18:00:00+00:00",
         "league_name": "Bolivia - Copa Simon Bolivar",
-        "match_key": "2026-05-31|deportivo escara|afiz",
-        "minutes_to_kickoff": 145.41,
+        "match_key": "soccer|afiz|escara|2026-05-31",
+        "minutes_to_kickoff": 115.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
+        "priority": 137.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
           "last_odds_refresh_utc": null,
           "max_current_line_age_minutes": 35,
           "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
+          "needs_context_refresh": false,
           "needs_odds_refresh": true,
           "no_more_regular_run_before_kickoff": true
         }
@@ -832,10 +654,230 @@
         "home_team": "EC Vitoria da Conquista BA",
         "kickoff_utc": "2026-05-31T18:00:00+00:00",
         "league_name": "Brazil - Baiano, Serie B",
-        "match_key": "2026-05-31|ec vitoria da conquista ba|grapiuna ba",
-        "minutes_to_kickoff": 145.41,
+        "match_key": "soccer|grapiuna ba|vitoria conquista ba|2026-05-31",
+        "minutes_to_kickoff": 115.12,
         "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 119.531,
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Barreiras FC BA",
+        "home_team": "Fluminense de Feira FC BA",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "Brazil - Baiano, Serie B",
+        "match_key": "soccer|barreiras ba|fluminense feira ba|2026-05-31",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Camacari BA",
+        "home_team": "Jacobina EC BA",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "Brazil - Baiano, Serie B",
+        "match_key": "soccer|camacari ba|jacobina ba|2026-05-31",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Fluminense SC",
+        "home_team": "CA Tubarao SC",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "Brazil - Catarinense, Serie B",
+        "match_key": "soccer|ca tubarao|fluminense|2026-05-31",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Rio Branco FC ES",
+        "home_team": "SC Brasil Capixaba ES",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "Brazil - Copa Espirito Santo",
+        "match_key": "soccer|brasil capixaba es|rio branco es|2026-05-31",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Minnesota Blizzard FC",
+        "home_team": "Sioux Falls Thunder FC",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "USA - National Premier Soccer League",
+        "match_key": "soccer|minnesota blizzard|sioux falls thunder|2026-05-31",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Brooklyn FC",
+        "home_team": "SC Jacksonville",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "USL Championship",
+        "match_key": "soccer|brooklyn|jacksonville|2026-05-31",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 137.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": null,
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": true,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "Argentino de Merlo",
+        "home_team": "CS Italiano",
+        "kickoff_utc": "2026-05-31T17:30:00+00:00",
+        "league_name": "Argentina - Primera B",
+        "match_key": "soccer|argentino merlo|cs italiano|2026-05-31",
+        "minutes_to_kickoff": 85.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 131.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CA Talleres de Remedios",
+        "home_team": "Deportivo Camioneros",
+        "kickoff_utc": "2026-05-31T17:30:00+00:00",
+        "league_name": "Argentina - Primera B",
+        "match_key": "soccer|ca talleres remedios|camioneros|2026-05-31",
+        "minutes_to_kickoff": 85.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 131.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CD Municipal Tarija",
+        "home_team": "Garcia Agreda",
+        "kickoff_utc": "2026-05-31T17:30:00+00:00",
+        "league_name": "Bolivia - Copa Simon Bolivar",
+        "match_key": "soccer|garcia agreda|municipal tarija|2026-05-31",
+        "minutes_to_kickoff": 85.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 131.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "AFC Chindia Targoviste",
+        "home_team": "FC Farul Constanta",
+        "kickoff_utc": "2026-05-31T17:30:00+00:00",
+        "league_name": "Romania - Superliga",
+        "match_key": "soccer|chindia targoviste|farul constanta|2026-05-31",
+        "minutes_to_kickoff": 85.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 131.626,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": true,
+          "last_odds_refresh_utc": "2026-05-31T16:04:55.336281+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "no_more_regular_run_before_kickoff": true
+        }
+      },
+      {
+        "away_team": "CA Acassuso",
+        "home_team": "Deportivo Madryn",
+        "kickoff_utc": "2026-05-31T18:00:00+00:00",
+        "league_name": "Argentina - Primera Nacional",
+        "match_key": "2026-05-31|deportivo madryn|ca acassuso",
+        "minutes_to_kickoff": 115.12,
+        "pre_kickoff_status": "urgent_near_kickoff",
+        "priority": 129.626,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": true,
@@ -848,8 +890,8 @@
         }
       }
     ],
-    "updated_at_utc": "2026-05-31T15:34:35.614694+00:00"
+    "updated_at_utc": "2026-05-31T16:04:52.608671+00:00"
   },
   "status": "ok",
-  "updated_at_utc": "2026-05-31T15:34:35.614694+00:00"
+  "updated_at_utc": "2026-05-31T16:04:52.608671+00:00"
 }
