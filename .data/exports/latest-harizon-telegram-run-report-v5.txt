@@ -1,6 +1,6 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: есть 1 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+• Главная причина: tier a canonical edge below min
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: 3 матчей. В этом run обработано: 3.
@@ -18,16 +18,16 @@
 • Ждут второй снимок линии: 1 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 95 | матчей без следующего регулярного run: 95
-• Line guard: увидел 1, оставил 0, снял 0
+• Pre-kickoff проверок: 37 | матчей без следующего регулярного run: 37
+• Line guard: увидел 2, оставил 0, снял 1
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1/1
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 2 (events 0, odds 2); смэтчил матчей 3; дал offers 760 (380/запрос); 2+ букмекера 3; ошибок 0.
+• odds-api.io: запросы 2 (events 0, odds 2); смэтчил матчей 3; дал offers 747 (374/запрос); 2+ букмекера 3; ошибок 0.
 • Bzzoiro: запросы 26 (direct 13, v2 13, gap 0); событий 55; контекстов 3; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 6; secondary offers 0; overlap с odds-api.io 3; ошибок 0.
 • SStats: запросы 25; сырых строк 22392 (896/запрос); контекстов 3; deep-enriched 2; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
@@ -36,23 +36,29 @@
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 3. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 3.
-• 0–4 часа: 2/2 core-ready.
+• 0–4 часа: 3/3 core-ready.
 • 0–12 часов: 3/3 core-ready.
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
-• quality: вероятность после калибровки ниже порога: 1 (50%)
+• tier a canonical edge below min: 1 (11%)
+• tier a canonical ev below min: 1 (11%)
+• tier b quality below min: 1 (11%)
+• tier b canonical edge below min: 1 (11%)
+• tier b canonical ev below min: 1 (11%)
+• tier c canonical edge below min: 1 (11%)
+• tier c canonical ev below min: 1 (11%)
+• quality: вероятность после калибровки ниже порога: 1 (11%)
 
 🔎 Последние проверенные кандидаты
-1. Córdoba — Huesca | Меньше 2.5 @2.28 | EV -0.1% | edge -0.0 п.п. | q 74.5
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+1. Córdoba — Huesca | Меньше 2.5 @2.26 | EV +0.2% | edge +0.1 п.п. | q 74.5
+   • причина: tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26713314546
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26713314546
-• Artifact: run-bot-26713314546
+• Run ID: 26716034998
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26716034998
+• Artifact: run-bot-26716034998
 • workflow run-bot, attempt 1
