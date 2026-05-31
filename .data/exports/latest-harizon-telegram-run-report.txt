@@ -1,61 +1,57 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 178 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: направление ставки конфликтует с xG
+✅ Прогноз опубликован. Ниже — проверка покрытия и причин, почему опубликован именно этот кандидат.
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 43.
-• 1+ линия: 300/300 (100%) | 1+ контекст: 194/300 (65%)
-• 2+ подтверждения цены: 150/300 (50%)
-• 2+ независимых odds-source: 17/300 (6%)
-• 2+ контекста: 26/300 (9%)
-• Готово для модели: 194/300 (65%)
+• Инвентарь дня: 224 матчей. В этом run обработано: 104.
+• 1+ линия: 219/224 (98%) | 1+ контекст: 200/224 (89%)
+• 2+ подтверждения цены: 86/224 (38%)
+• 2+ независимых odds-source: 24/224 (11%)
+• 2+ контекста: 55/224 (25%)
+• Готово для модели: 196/224 (88%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 11 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 15 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 178 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 166 | B-tier готово main: 0 | опубликовано fallback: 1
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 178 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 166 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 24 | матчей без следующего регулярного run: 24
-• Line guard: увидел 6, оставил 0, снял 2
+• Pre-kickoff проверок: 10 | матчей без следующего регулярного run: 10
+• Line guard: увидел 6, оставил 2, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/4
-• Quality прошло: 1 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 2 | evaluated 2 | published 0
+• Raw/candidates before quality: 2/2
+• Quality прошло: 2 | publishable: 0 | опубликовано: 1
+• Controlled fallback: seen 2 | evaluated 2 | published 1
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 10 (events 0, odds 10); смэтчил матчей 43; дал offers 4021 (402/запрос); 2+ букмекера 19; ошибок 0.
-• Bzzoiro: запросы 20 (direct 10, v2 10, gap 0); событий 69; контекстов 3; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 6; secondary offers 0; overlap с odds-api.io 3; ошибок 0.
-• SStats: запросы 25; сырых строк 23032 (921/запрос); контекстов 28; deep-enriched 6; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 4; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 24, bzzoiro+odds_api_io: 3
+• odds-api.io: запросы 22 (events 0, odds 22); смэтчил матчей 103; дал offers 8633 (392/запрос); 2+ букмекера 44; ошибок 0.
+• Bzzoiro: запросы 74 (direct 37, v2 37, gap 0); событий 14; контекстов 10; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 24; secondary offers 44; overlap с odds-api.io 11; ошибок 8.
+• SStats: запросы 25; сырых строк 23032 (921/запрос); контекстов 80; deep-enriched 4; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: odds_api_io: 55, bzzoiro+odds_api_io: 11, bzzoiro: 1
 
 🧭 Покрытие ближайших окон
-• Активных матчей сейчас: 143. Нужно обновить линии: 0.
-• Core-ready 2+/2+ по всем tracked: 24.
-• 0–4 часа: 0/3 core-ready.
-• 0–12 часов: 0/3 core-ready.
+• Активных матчей сейчас: 104. Нужно обновить линии: 0.
+• Core-ready 2+/2+ по всем tracked: 6.
+• 0–4 часа: 0/9 core-ready.
+• 0–12 часов: 0/21 core-ready.
 
-🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 2 (33%)
-• quality: вероятность после калибровки ниже порога: 2 (33%)
-• line movement guard снял кандидата: 2 (33%)
+🚫 Почему часть кандидатов отсеяна
+• Не применимо к публикации: один прогноз уже отправлен.
 
 🔎 Последние проверенные кандидаты
-1. Orlando City B — Chattanooga FC | Меньше 2.5 @2.44 | EV +1.2% | edge +0.5 п.п. | q 69.0
-   • причина: направление ставки конфликтует с xG
-2. Metropolitanos FC — Carabobo FC | Больше 2.5 @2.29 | EV +2.4% | edge +1.0 п.п. | q 60.7
-   • причина: направление ставки конфликтует с xG
+1. Vietnam — Timor-Leste | Меньше @1.90 | EV +26.4% | edge +13.9 п.п. | q 100.0
+2. Indonesia — Myanmar | Меньше @1.82 | EV +15.8% | edge +8.7 п.п. | q 100.0
 
 📌 Что это значит
-• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
+• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26723302395
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26723302395
-• Artifact: run-bot-26723302395
+• Run ID: 26726989072
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26726989072
+• Artifact: run-bot-26726989072
 • workflow run-bot, attempt 1
