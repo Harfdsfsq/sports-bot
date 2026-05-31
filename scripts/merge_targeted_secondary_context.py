@@ -5,9 +5,15 @@ from __future__ import annotations
 This is intentionally conservative: it only adds fixture/context evidence for
 explicitly matched candidate rows.  It does not add odds, does not change model
 probabilities, and does not bypass xG/value/line-movement guards.
+
+Important: probe rows can arrive with legacy/reversed match_key values from
+near-miss/candidate ledgers.  Write context evidence to the original key *and*
+canonical home/away/date bridge keys so coverage truth can attach the evidence
+to the current day-inventory/runtime-topup row.
 """
 
 import json
+import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -40,6 +46,8 @@ def normalize_sources(value: Any) -> list[str]:
         return [str(x).strip().lower() for x in value if str(x).strip()]
     if isinstance(value, set):
         return sorted(str(x).strip().lower() for x in value if str(x).strip())
+    if isinstance(value, tuple):
+        return [str(x).strip().lower() for x in value if str(x).strip()]
     if isinstance(value, str) and value.strip():
         return [value.strip().lower()]
     return []
@@ -66,6 +74,64 @@ def source_counts(by_match: dict[str, list[str]]) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def _norm(value: Any) -> str:
+    text = str(value or '').lower().strip()
+    text = re.sub(r'[^a-z0-9а-яё]+', ' ', text)
+    return re.sub(r'\s+', ' ', text).strip()
+
+
+def _compact(value: Any) -> str:
+    return _norm(value).replace(' ', '_')
+
+
+def _date_from_any(value: Any) -> str:
+    text = str(value or '').strip()
+    if len(text) >= 10 and re.match(r'^20\d\d-\d\d-\d\d', text):
+        return text[:10]
+    return ''
+
+
+def _canonical_identity(home: Any, away: Any, date: str) -> str:
+    h = _compact(home)
+    a = _compact(away)
+    if not h or not a or not date:
+        return ''
+    return f'soccer|{h}|{a}|{date}'
+
+
+def _date_identity(home: Any, away: Any, date: str) -> str:
+    h = _compact(home)
+    a = _compact(away)
+    if not h or not a or not date:
+        return ''
+    return f'{date}|{h}|{a}'
+
+
+def context_key_variants(row: dict[str, Any]) -> list[str]:
+    """Return conservative key variants for one matched secondary context.
+
+    The primary probe key can be reversed or use old aliases.  Keep it for
+    backward compatibility, then add ordered home/away/date variants and a
+    reversed variant.  Coverage truth already de-dupes sources per match, so the
+    extra bridge keys only help key matching; they do not count as more sources.
+    """
+    original = str(row.get('match_key') or '').strip()
+    home = row.get('home_team') or row.get('home')
+    away = row.get('away_team') or row.get('away')
+    date = _date_from_any(row.get('kickoff_utc') or row.get('commence_time') or row.get('start_time') or row.get('provider_date'))
+    variants: list[str] = []
+    for key in (
+        original,
+        _canonical_identity(home, away, date),
+        _canonical_identity(away, home, date),
+        _date_identity(home, away, date),
+        _date_identity(away, home, date),
+    ):
+        if key and key not in variants:
+            variants.append(key)
+    return variants
+
+
 def matched_contexts_from_probe(probe: dict[str, Any]) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
     providers = probe.get('providers') if isinstance(probe.get('providers'), dict) else {}
@@ -77,7 +143,7 @@ def matched_contexts_from_probe(probe: dict[str, Any]) -> list[dict[str, Any]]:
             if not isinstance(row, dict):
                 continue
             match_key = str(row.get('match_key') or '').strip()
-            if match_key:
+            if match_key or (row.get('home_team') and row.get('away_team')):
                 rows.append({**row, 'provider': key})
     return rows
 
@@ -90,15 +156,24 @@ def main() -> int:
     by = index_by_match(index)
     before = {k: list(v) for k, v in by.items()}
     additions: list[dict[str, Any]] = []
+    bridge_additions = 0
     for row in matched_contexts_from_probe(probe if isinstance(probe, dict) else {}):
-        mk = str(row.get('match_key') or '').strip()
         provider = str(row.get('provider') or '').strip().lower()
-        if not mk or provider not in ALLOWED_CONTEXT_PROVIDERS:
+        if provider not in ALLOWED_CONTEXT_PROVIDERS:
             continue
-        sources = by.setdefault(mk, [])
-        if provider not in sources:
-            sources.append(provider)
-            additions.append(row)
+        keys = context_key_variants(row)
+        if not keys:
+            continue
+        primary_added = False
+        for mk in keys:
+            sources = by.setdefault(mk, [])
+            if provider not in sources:
+                sources.append(provider)
+                if not primary_added:
+                    additions.append({**row, 'match_key': mk, 'bridge_keys': keys})
+                    primary_added = True
+                else:
+                    bridge_additions += 1
     for key, sources in list(by.items()):
         by[key] = sorted(set(normalize_sources(sources)))
     index['by_match'] = by
@@ -107,8 +182,10 @@ def main() -> int:
     index['status'] = 'ok'
     notes = index.get('notes') if isinstance(index.get('notes'), list) else []
     note = 'Targeted secondary provider fixture matches are counted as context/alias evidence only, not as odds sources.'
-    if note not in notes:
-        notes.append(note)
+    bridge_note = 'Secondary context is written to original and canonical home/away/date bridge keys to avoid losing evidence on legacy/reversed match_key formats.'
+    for item in (note, bridge_note):
+        if item not in notes:
+            notes.append(item)
     index['notes'] = notes
     index['updated_at_utc'] = datetime.now(timezone.utc).isoformat()
     write_json(INDEX, index)
@@ -121,6 +198,7 @@ def main() -> int:
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
         'probe_status': probe.get('status') if isinstance(probe, dict) else None,
         'additions': len(additions),
+        'bridge_additions': bridge_additions,
         'matches_touched': len(touched),
         'matches_touched_sample': touched[:20],
         'context_2plus_before': before_2plus,
