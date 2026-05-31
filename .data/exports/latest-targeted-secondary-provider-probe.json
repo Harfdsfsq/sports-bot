@@ -1,10 +1,11 @@
 {
-  "created_at_utc": "2026-05-31T19:50:34.176078+00:00",
-  "github_run_id": "26722550963",
+  "created_at_utc": "2026-05-31T20:08:21.640256+00:00",
+  "github_run_id": "26722960961",
   "notes": [
     "Probe-only: no publication decisions are changed directly.",
     "All limits are per-run; any 429/5xx stops that provider for this probe only.",
-    "Matched fixture rows can be merged as context evidence by merge_targeted_secondary_context.py."
+    "Matched fixture rows can be merged as context evidence by merge_targeted_secondary_context.py.",
+    "Targets are filtered to active/upcoming runtime inventory rows so stale near-misses do not spend quota or create unmergeable context keys."
   ],
   "providers": {
     "allsportsapi": {
@@ -12,14 +13,13 @@
       "errors": [],
       "fixtures_seen": 0,
       "http_statuses": [
-        200,
         200
       ],
       "matched_contexts": [],
       "matched_targets": 0,
       "odds_probe_rows": 0,
       "provider": "allsportsapi",
-      "requests": 2,
+      "requests": 1,
       "samples": []
     },
     "api_football": {
@@ -27,27 +27,22 @@
       "errors": [],
       "fixtures_seen": 0,
       "http_statuses": [
-        200,
         200
       ],
       "lineups_probe_rows": 0,
       "matched_contexts": [],
       "matched_targets": 0,
       "provider": "api_football",
-      "requests": 2,
+      "requests": 1,
       "samples": [],
       "statistics_probe_rows": 0
     },
     "highlightly": {
       "auth_header_mode": "x-rapidapi-key",
       "configured": true,
-      "errors": [
-        "401:{\"message\":\"Odds are not available in Basic plan. Please upgrade your plan.\",\"statusCode\":401}"
-      ],
+      "errors": [],
       "http_statuses": [
-        200,
-        200,
-        401
+        200
       ],
       "matched_contexts": [
         {
@@ -71,118 +66,184 @@
           }
         },
         {
-          "away_team": "SD Huesca",
-          "home_team": "Cordoba CF",
-          "kickoff_utc": "2026-05-31T19:00:00+00:00",
-          "match_key": "soccer|cordoba|huesca|2026-05-31",
+          "away_team": "Chattanooga FC",
+          "home_team": "Orlando City B",
+          "kickoff_utc": "2026-05-31T23:00:00+00:00",
+          "match_key": "soccer|chattanooga|orlando city b|2026-05-31",
           "provider": "highlightly",
           "provider_country": {
-            "code": "ES",
-            "logo": "https://highlightly.net/soccer/images/countries/ES.svg",
-            "name": "Spain"
+            "code": "US",
+            "logo": "https://highlightly.net/soccer/images/countries/US.svg",
+            "name": "USA"
           },
-          "provider_date": "2026-05-31T19:00:00.000Z",
-          "provider_event_id": 1184777451,
+          "provider_date": "2026-05-31T23:00:00.000Z",
+          "provider_event_id": 1287818233,
           "provider_league": {
-            "id": 120775,
-            "logo": "https://highlightly.net/soccer/images/leagues/120775.png",
+            "id": 774343,
+            "logo": "https://highlightly.net/soccer/images/leagues/774343.png",
+            "name": "MLS Next Pro",
+            "season": 2026
+          }
+        },
+        {
+          "away_team": "Carabobo FC",
+          "home_team": "Metropolitanos FC",
+          "kickoff_utc": "2026-05-31T21:00:00+00:00",
+          "match_key": "soccer|carabobo|metropolitanos|2026-05-31",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "VE",
+            "logo": "https://highlightly.net/soccer/images/countries/VE.svg",
+            "name": "Venezuela"
+          },
+          "provider_date": "2026-05-31T21:00:00.000Z",
+          "provider_event_id": 1313275047,
+          "provider_league": {
+            "id": 255233,
+            "logo": "https://highlightly.net/soccer/images/leagues/255233.png",
+            "name": "Primera División",
+            "season": 2026
+          }
+        },
+        {
+          "away_team": "Bolivar SC",
+          "home_team": "Atletico Avila FC",
+          "kickoff_utc": "2026-05-31T20:00:00+00:00",
+          "match_key": "soccer|atletico avila|bolivar|2026-05-31",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "VE",
+            "logo": "https://highlightly.net/soccer/images/countries/VE.svg",
+            "name": "Venezuela"
+          },
+          "provider_date": "2026-05-31T20:00:00.000Z",
+          "provider_event_id": 1314896202,
+          "provider_league": {
+            "id": 256084,
+            "logo": "https://highlightly.net/soccer/images/leagues/256084.png",
             "name": "Segunda División",
+            "season": 2026
+          }
+        },
+        {
+          "away_team": "SV River Plate Aruba",
+          "home_team": "Brazil Juniors",
+          "kickoff_utc": "2026-05-31T20:00:00+00:00",
+          "match_key": "soccer|brazil juniors|sv river plate aruba|2026-05-31",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "AW",
+            "logo": "https://highlightly.net/soccer/images/countries/AW.svg",
+            "name": "Aruba"
+          },
+          "provider_date": "2026-05-31T20:00:00.000Z",
+          "provider_event_id": 1315272344,
+          "provider_league": {
+            "id": 359055,
+            "logo": "https://highlightly.net/soccer/images/leagues/359055.png",
+            "name": "Division di Honor",
             "season": 2025
+          }
+        },
+        {
+          "away_team": "Chacarita Juniors",
+          "home_team": "CD Maipu",
+          "kickoff_utc": "2026-05-31T20:00:00+00:00",
+          "match_key": "soccer|chacarita juniors|maipu|2026-05-31",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "AR",
+            "logo": "https://highlightly.net/soccer/images/countries/AR.svg",
+            "name": "Argentina"
+          },
+          "provider_date": "2026-05-31T20:00:00.000Z",
+          "provider_event_id": 1275283854,
+          "provider_league": {
+            "id": 110563,
+            "logo": "https://highlightly.net/soccer/images/leagues/110563.png",
+            "name": "Primera Nacional",
+            "season": 2026
+          }
+        },
+        {
+          "away_team": "Aragua FC",
+          "home_team": "Dynamo Puerto FC",
+          "kickoff_utc": "2026-05-31T20:00:00+00:00",
+          "match_key": "soccer|aragua|dynamo puerto|2026-05-31",
+          "provider": "highlightly",
+          "provider_country": {
+            "code": "VE",
+            "logo": "https://highlightly.net/soccer/images/countries/VE.svg",
+            "name": "Venezuela"
+          },
+          "provider_date": "2026-05-31T20:00:00.000Z",
+          "provider_event_id": 1314897053,
+          "provider_league": {
+            "id": 256084,
+            "logo": "https://highlightly.net/soccer/images/leagues/256084.png",
+            "name": "Segunda División",
+            "season": 2026
           }
         }
       ],
-      "matched_targets": 2,
-      "matches_seen": 200,
+      "matched_targets": 7,
+      "matches_seen": 100,
       "odds_probe_rows": 0,
       "provider": "highlightly",
-      "requests": 3,
+      "requests": 1,
       "samples": [
         {
           "awayTeam": {
-            "id": 11227176,
-            "logo": "https://highlightly.net/soccer/images/teams/11227176.png",
-            "name": "Virginia Beach City"
-          },
-          "country": {
-            "code": "US",
-            "logo": "https://highlightly.net/soccer/images/countries/US.svg",
-            "name": "USA"
-          },
-          "date": "2026-05-30T23:30:00.000Z",
-          "homeTeam": {
-            "id": 20400105,
+            "id": 21997432,
             "logo": null,
-            "name": "Annapolis Blues"
-          },
-          "id": 1297503464,
-          "league": {
-            "id": 218640,
-            "logo": "https://highlightly.net/soccer/images/leagues/218640.png",
-            "name": "USL League Two",
-            "season": 2026
-          },
-          "round": "Group Stage",
-          "state": {
-            "clock": 90,
-            "description": "Finished",
-            "score": {
-              "current": "0 - 2",
-              "penalties": null
-            }
-          }
-        },
-        {
-          "awayTeam": {
-            "id": 3457546,
-            "logo": "https://highlightly.net/soccer/images/teams/3457546.png",
-            "name": "Long Island Rough Riders"
+            "name": "Knoxville"
           },
           "country": {
             "code": "US",
             "logo": "https://highlightly.net/soccer/images/countries/US.svg",
             "name": "USA"
           },
-          "date": "2026-05-30T23:30:00.000Z",
+          "date": "2026-05-31T23:30:00.000Z",
           "homeTeam": {
-            "id": 18112617,
-            "logo": "https://highlightly.net/soccer/images/teams/18112617.png",
-            "name": "Ironbound"
+            "id": 20358406,
+            "logo": null,
+            "name": "SSA Royals"
           },
-          "id": 1297505166,
+          "id": 1303811076,
           "league": {
-            "id": 218640,
-            "logo": "https://highlightly.net/soccer/images/leagues/218640.png",
-            "name": "USL League Two",
+            "id": 951351,
+            "logo": null,
+            "name": "USL W League",
             "season": 2026
           },
-          "round": "Group Stage",
+          "round": "Regular Season - 1",
           "state": {
-            "clock": 90,
-            "description": "Finished",
+            "clock": null,
+            "description": "Not started",
             "score": {
-              "current": "2 - 2",
+              "current": null,
               "penalties": null
             }
           }
         },
         {
           "awayTeam": {
-            "id": 643289,
-            "logo": "https://highlightly.net/soccer/images/teams/643289.png",
-            "name": "Nautico Recife"
+            "id": 125030,
+            "logo": "https://highlightly.net/soccer/images/teams/125030.png",
+            "name": "CRB"
           },
           "country": {
             "code": "BR",
             "logo": "https://highlightly.net/soccer/images/countries/BR.svg",
             "name": "Brazil"
           },
-          "date": "2026-05-30T23:30:00.000Z",
+          "date": "2026-05-31T23:30:00.000Z",
           "homeTeam": {
-            "id": 105457,
-            "logo": "https://highlightly.net/soccer/images/teams/105457.png",
-            "name": "Sport Recife"
+            "id": 1016027,
+            "logo": "https://highlightly.net/soccer/images/teams/1016027.png",
+            "name": "Cuiabá"
           },
-          "id": 1294124143,
+          "id": 1294119888,
           "league": {
             "id": 62056,
             "logo": "https://highlightly.net/soccer/images/leagues/62056.png",
@@ -191,10 +252,44 @@
           },
           "round": "Regular Season - 11",
           "state": {
-            "clock": 90,
-            "description": "Finished",
+            "clock": null,
+            "description": "Not started",
             "score": {
-              "current": "2 - 0",
+              "current": null,
+              "penalties": null
+            }
+          }
+        },
+        {
+          "awayTeam": {
+            "id": 106308,
+            "logo": "https://highlightly.net/soccer/images/teams/106308.png",
+            "name": "Fluminense"
+          },
+          "country": {
+            "code": "BR",
+            "logo": "https://highlightly.net/soccer/images/countries/BR.svg",
+            "name": "Brazil"
+          },
+          "date": "2026-05-31T23:30:00.000Z",
+          "homeTeam": {
+            "id": 115669,
+            "logo": "https://highlightly.net/soccer/images/teams/115669.png",
+            "name": "Cruzeiro"
+          },
+          "id": 1269933617,
+          "league": {
+            "id": 61205,
+            "logo": "https://highlightly.net/soccer/images/leagues/61205.png",
+            "name": "Serie A",
+            "season": 2026
+          },
+          "round": "Regular Season - 18",
+          "state": {
+            "clock": null,
+            "description": "Not started",
+            "score": {
+              "current": null,
               "penalties": null
             }
           }
@@ -206,52 +301,52 @@
   "target_count": 8,
   "target_sample": [
     {
-      "away": "Caboolture FC",
-      "home": "Mitchelton FC",
-      "kickoff": "2026-05-30T08:00:00+00:00",
-      "match_key": "soccer|caboolture|mitchelton|2026-05-30"
-    },
-    {
-      "away": "Audax Rio EC RJ",
-      "home": "AD Cabofriense RJ",
-      "kickoff": "2026-05-30T17:45:00+00:00",
-      "match_key": "soccer|ad cabofriense rj|audax rio rj|2026-05-30"
-    },
-    {
-      "away": "NSI Runavik",
-      "home": "AB Argir",
-      "kickoff": "2026-05-30T18:00:00+00:00",
-      "match_key": "soccer|ab argir|nsi runavik|2026-05-30"
-    },
-    {
-      "away": "Huesca",
-      "home": "Córdoba",
-      "kickoff": "2026-05-31T19:00:00+00:00",
-      "match_key": "soccer|cordoba|huesca|2026-05-31"
-    },
-    {
-      "away": "FC Andorra",
-      "home": "Burgos",
-      "kickoff": "2026-05-31T16:30:00+00:00",
-      "match_key": "soccer|andorra|burgos|2026-05-31"
-    },
-    {
-      "away": "Alagoinhas AC BA",
-      "home": "SD Juazeirense BA",
-      "kickoff": "2026-05-31T18:30:00+00:00",
-      "match_key": "soccer|alagoinhas ba|juazeirense ba|2026-05-31"
-    },
-    {
       "away": "Blooming Santa Cruz",
       "home": "Oriente Petrolero",
       "kickoff": "2026-05-31T20:00:00+00:00",
       "match_key": "soccer|blooming santa cruz|oriente petrolero|2026-05-31"
     },
     {
-      "away": "SD Huesca",
-      "home": "Cordoba CF",
-      "kickoff": "2026-05-31T19:00:00+00:00",
-      "match_key": "soccer|cordoba|huesca|2026-05-31"
+      "away": "Chattanooga FC",
+      "home": "Orlando City B",
+      "kickoff": "2026-05-31T23:00:00+00:00",
+      "match_key": "soccer|chattanooga|orlando city b|2026-05-31"
+    },
+    {
+      "away": "Carabobo FC",
+      "home": "Metropolitanos FC",
+      "kickoff": "2026-05-31T21:00:00+00:00",
+      "match_key": "soccer|carabobo|metropolitanos|2026-05-31"
+    },
+    {
+      "away": "Bolivar SC",
+      "home": "Atletico Avila FC",
+      "kickoff": "2026-05-31T20:00:00+00:00",
+      "match_key": "soccer|atletico avila|bolivar|2026-05-31"
+    },
+    {
+      "away": "CD Inca",
+      "home": "Atletico Balboa",
+      "kickoff": "2026-05-31T20:00:00+00:00",
+      "match_key": "soccer|atletico balboa|inca|2026-05-31"
+    },
+    {
+      "away": "SV River Plate Aruba",
+      "home": "Brazil Juniors",
+      "kickoff": "2026-05-31T20:00:00+00:00",
+      "match_key": "soccer|brazil juniors|sv river plate aruba|2026-05-31"
+    },
+    {
+      "away": "Chacarita Juniors",
+      "home": "CD Maipu",
+      "kickoff": "2026-05-31T20:00:00+00:00",
+      "match_key": "soccer|chacarita juniors|maipu|2026-05-31"
+    },
+    {
+      "away": "Aragua FC",
+      "home": "Dynamo Puerto FC",
+      "kickoff": "2026-05-31T20:00:00+00:00",
+      "match_key": "soccer|aragua|dynamo puerto|2026-05-31"
     }
   ]
 }
