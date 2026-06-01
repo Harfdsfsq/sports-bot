@@ -22,6 +22,13 @@ from app.services.market_monitor import MarketMonitor
 from app.services.model import CandidateFactory
 from app.services.coverage_contract import evaluate_publish_candidate, sync_candidate_publish_coverage
 from app.services.coverage_planner import CoveragePlanner
+from app.services.evidence import (
+    build_consensus_lines,
+    build_context_bundles,
+    build_line_snapshots,
+    build_match_serving,
+    serialize_dataclass,
+)
 from app.services.publication_lifecycle import (
     append_sent_candidate_index,
     candidate_dedupe_keys,
@@ -473,7 +480,13 @@ class PredictionRunner:
             if weather_contexts:
                 contexts.update(weather_contexts)
 
-            raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, contexts, market_signals)
+            context_bundles = build_context_bundles(context_maps, contexts, now_utc)
+            context_input = context_bundles if bool(getattr(self.settings, 'context_bundle_model_input_enabled', True)) else contexts
+            match_serving = build_match_serving(filtered_matches, merged_offers, context_bundles, market_signals, now_utc)
+            line_snapshots = build_line_snapshots(merged_offers, now_utc)
+            consensus_lines = build_consensus_lines(merged_offers, market_signals)
+
+            raw_candidates, rejections, model_debug = self.factory.build_candidates(filtered_matches, merged_offers, context_input, market_signals)
             candidates_before_quality = list(raw_candidates)
             raw_candidates, quality_rejections, quality_debug = self.quality.apply_to_candidates(raw_candidates, quality_report, now_utc)
             for reason, count in quality_rejections.items():
@@ -638,6 +651,14 @@ class PredictionRunner:
                 filtered_matches,
                 publishable_candidates,
                 forecast_rows=forecast_rows,
+                match_serving_rows=[serialize_dataclass(item) for item in match_serving.values()],
+                context_observation_rows=[
+                    serialize_dataclass(observation)
+                    for bundle in context_bundles.values()
+                    for observation in bundle.contexts
+                ],
+                line_snapshot_rows=[serialize_dataclass(item) for item in line_snapshots],
+                consensus_line_rows=[serialize_dataclass(item) for item in consensus_lines],
                 settings=self.settings,
             )
             export_paths.update(rescue_export_paths)
@@ -705,6 +726,16 @@ class PredictionRunner:
                 'context_enrichment': context_enrichment,
                 'provider_context_targets': provider_target_counts,
                 'contexts_built': len(contexts),
+                'context_observations_built': sum(len(bundle.contexts) for bundle in context_bundles.values()),
+                'matches_with_2plus_context_sources': sum(1 for item in match_serving.values() if item.context_source_count >= 2),
+                'line_snapshots_built': len(line_snapshots),
+                'consensus_lines_built': len(consensus_lines),
+                'matches_with_2plus_line_sources': sum(1 for item in match_serving.values() if item.line_source_count >= 2),
+                'matches_ready_2plus_context_and_lines': sum(
+                    1
+                    for item in match_serving.values()
+                    if item.context_source_count >= 2 and item.line_source_count >= 2
+                ),
                 'self_history_contexts_built': len(self_history_contexts),
                 'candidates': len(candidates),
                 'candidates_publishable': len(publishable_candidates),

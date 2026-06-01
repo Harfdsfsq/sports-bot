@@ -1033,6 +1033,10 @@ class JsonStateStore:
         matches: list[Match],
         candidates: list[CandidateBet],
         forecast_rows: list[dict[str, Any]] | None = None,
+        match_serving_rows: list[dict[str, Any]] | None = None,
+        context_observation_rows: list[dict[str, Any]] | None = None,
+        line_snapshot_rows: list[dict[str, Any]] | None = None,
+        consensus_line_rows: list[dict[str, Any]] | None = None,
         settings: Any | None = None,
     ) -> dict[str, str]:
         root = Path(export_dir)
@@ -1046,22 +1050,42 @@ class JsonStateStore:
         pending = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
         settled = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') not in {'pending', 'generated'}]
         bank = self.bankroll_summary()
+        match_serving_rows = list(match_serving_rows or [])
+        context_observation_rows = list(context_observation_rows or [])
+        line_snapshot_rows = list(line_snapshot_rows or [])
+        consensus_line_rows = list(consensus_line_rows or [])
         return {
             'matches_json': str(self._write_json(dated / f'{stamp}-matches.json', match_rows)),
             'picks_json': str(self._write_json(dated / f'{stamp}-picks.json', pick_rows)),
             'bets_json': str(self._write_json(dated / f'{stamp}-bets.json', bet_rows)),
+            'match_serving_json': str(self._write_json(dated / f'{stamp}-match-serving.json', match_serving_rows)),
+            'context_observations_json': str(self._write_json(dated / f'{stamp}-context-observations.json', context_observation_rows)),
+            'line_snapshots_json': str(self._write_json(dated / f'{stamp}-line-snapshots.json', line_snapshot_rows)),
+            'consensus_lines_json': str(self._write_json(dated / f'{stamp}-consensus-lines.json', consensus_line_rows)),
             'matches_csv': str(self._write_csv(dated / f'{stamp}-matches.csv', match_rows)),
             'picks_csv': str(self._write_csv(dated / f'{stamp}-picks.csv', pick_rows)),
             'bets_csv': str(self._write_csv(dated / f'{stamp}-bets.csv', bet_rows)),
+            'match_serving_csv': str(self._write_csv(dated / f'{stamp}-match-serving.csv', match_serving_rows)),
+            'context_observations_csv': str(self._write_csv(dated / f'{stamp}-context-observations.csv', context_observation_rows)),
+            'line_snapshots_csv': str(self._write_csv(dated / f'{stamp}-line-snapshots.csv', line_snapshot_rows)),
+            'consensus_lines_csv': str(self._write_csv(dated / f'{stamp}-consensus-lines.csv', consensus_line_rows)),
             'bankroll_json': str(self._write_json(dated / f'{stamp}-bankroll.json', bank)),
             'pending_bets_json': str(self._write_json(dated / f'{stamp}-pending-bets.json', pending)),
             'settled_bets_json': str(self._write_json(dated / f'{stamp}-settled-bets.json', settled)),
             'latest_matches_json': str(self._write_json(root / 'latest-matches.json', match_rows)),
             'latest_picks_json': str(self._write_json(root / 'latest-picks.json', pick_rows)),
             'latest_bets_json': str(self._write_json(root / 'latest-bets.json', bet_rows)),
+            'latest_match_serving_json': str(self._write_json(root / 'latest-match-serving.json', match_serving_rows)),
+            'latest_context_observations_json': str(self._write_json(root / 'latest-context-observations.json', context_observation_rows)),
+            'latest_line_snapshots_json': str(self._write_json(root / 'latest-line-snapshots.json', line_snapshot_rows)),
+            'latest_consensus_lines_json': str(self._write_json(root / 'latest-consensus-lines.json', consensus_line_rows)),
             'latest_matches_csv': str(self._write_csv(root / 'latest-matches.csv', match_rows)),
             'latest_picks_csv': str(self._write_csv(root / 'latest-picks.csv', pick_rows)),
             'latest_bets_csv': str(self._write_csv(root / 'latest-bets.csv', bet_rows)),
+            'latest_match_serving_csv': str(self._write_csv(root / 'latest-match-serving.csv', match_serving_rows)),
+            'latest_context_observations_csv': str(self._write_csv(root / 'latest-context-observations.csv', context_observation_rows)),
+            'latest_line_snapshots_csv': str(self._write_csv(root / 'latest-line-snapshots.csv', line_snapshot_rows)),
+            'latest_consensus_lines_csv': str(self._write_csv(root / 'latest-consensus-lines.csv', consensus_line_rows)),
             'latest_bankroll_json': str(self._write_json(root / 'latest-bankroll.json', bank)),
             'latest_pending_bets_json': str(self._write_json(root / 'latest-pending-bets.json', pending)),
             'latest_settled_bets_json': str(self._write_json(root / 'latest-settled-bets.json', settled)),

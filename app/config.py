@@ -97,6 +97,10 @@ class Settings(BaseSettings):
         default=2,
         validation_alias=AliasChoices("MIN_CONTEXT_SOURCES_PUBLISH", "PUBLISH_MIN_CONTEXT_SOURCES"),
     )
+    context_bundle_model_input_enabled: bool = Field(
+        default=True,
+        validation_alias=AliasChoices("CONTEXT_BUNDLE_MODEL_INPUT_ENABLED"),
+    )
 
     min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
     min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EV_PCT"))

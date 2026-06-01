@@ -66,6 +66,91 @@ class MatchContext:
 
 
 @dataclass(slots=True)
+class ContextObservation:
+    match_key: str
+    provider: str
+    kind: str
+    observed_at: datetime
+    effective_at: datetime | None = None
+    freshness_sec: int | None = None
+    confidence: float | None = None
+    metrics: dict[str, Any] = field(default_factory=dict)
+    payload: dict[str, Any] = field(default_factory=dict)
+    details: dict[str, Any] = field(default_factory=dict)
+    provenance_hash: str = ""
+    schema_version: int = 1
+
+
+@dataclass(slots=True)
+class MatchContextBundle:
+    match_key: str
+    contexts: list[ContextObservation] = field(default_factory=list)
+    merged_context: MatchContext | None = None
+    context_source_count: int = 0
+    agreement_score: float | None = None
+    provider_conflict_score: float | None = None
+    has_weather: bool = False
+    has_lineups: bool = False
+    has_injuries: bool = False
+    has_news: bool = False
+
+
+@dataclass(slots=True)
+class LineSnapshot:
+    match_key: str
+    market_key: str
+    provider: str
+    bookmaker: str
+    family: MarketFamily
+    selection: str
+    price: float
+    observed_at: datetime
+    point: float | None = None
+    team_side: str | None = None
+    source_event_id: str | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+    schema_version: int = 1
+
+
+@dataclass(slots=True)
+class ConsensusLine:
+    match_key: str
+    market_key: str
+    family: MarketFamily
+    selection: str
+    point: float | None = None
+    team_side: str | None = None
+    best_price: float | None = None
+    consensus_fair_odds: float | None = None
+    books: list[str] = field(default_factory=list)
+    sources: list[str] = field(default_factory=list)
+    snapshots_count: int = 0
+    dispersion_pct: float | None = None
+    steam_score: float | None = None
+
+
+@dataclass(slots=True)
+class MatchServing:
+    match_key: str
+    context_source_count: int = 0
+    line_family_count: int = 0
+    line_source_count: int = 0
+    line_snapshot_count: int = 0
+    line_snapshot_count_6h: int = 0
+    agreement_score: float | None = None
+    provider_conflict_score: float | None = None
+    has_weather: bool = False
+    has_lineups: bool = False
+    has_injuries: bool = False
+    has_news: bool = False
+    steam_score: float | None = None
+    best_market_movement: str | None = None
+    context_sources: list[str] = field(default_factory=list)
+    line_sources: list[str] = field(default_factory=list)
+    line_families: list[str] = field(default_factory=list)
+
+
+@dataclass(slots=True)
 class CandidateBet:
     match_key: str
     sport_key: SportKey
