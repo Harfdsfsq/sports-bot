@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-01T17:32:22.625569+00:00
+UTC: 2026-06-01T19:02:59.595237+00:00
 target_date: 2026-06-01
-canonical_matches: 104
-2+ provider sources: 52
-2+ primary sources: 50
-all 3 primary sources: 10
+canonical_matches: 100
+2+ provider sources: 39
+2+ primary sources: 37
+all 3 primary sources: 7
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=78 event_like=78 unique=20 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=63 event_like=63 unique=20 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=120 event_like=120 unique=60 statuses={"OK": 2, "EMPTY": 4}
+- odds_api_io: commands=6 ok=2 rows=80 event_like=80 unique=40 statuses={"OK": 2, "EMPTY": 4}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=154 event_like=84 unique=84 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 52, "2": 42, "3": 10}
-- primary providers: {"1": 53, "0": 1, "2": 40, "3": 10}
+- all providers: {"1": 61, "2": 32, "3": 7}
+- primary providers: {"1": 62, "0": 1, "2": 30, "3": 7}
 
 ## Top canonical matches
 - 2026-06-01T00:00:00+00:00 | Caravel — Nacional | providers=sstats ids={"sstats": "1545562"}
@@ -34,7 +34,7 @@ all 3 primary sources: 10
 - 2026-06-01T10:00:00+00:00 | UCSA — Nyva Ternopil | providers=sstats ids={"sstats": "1400648"}
 - 2026-06-01T10:30:00+00:00 | Bulleen Lions — Port Melbourne | providers=sstats ids={"sstats": "1522118"}
 - 2026-06-01T10:30:00+00:00 | Melbourne Victory II — Melbourne Knights | providers=sstats ids={"sstats": "1522117"}
-- 2026-06-01T11:00:00+00:00 | Pakistan — Bangladesh U23 | providers=bzzoiro ids={"bzzoiro": "207949"}
+- 2026-06-01T11:00:00+00:00 | Pakistan — Bangladesh | providers=bzzoiro ids={"bzzoiro": "207949"}
 - 2026-06-01T11:00:00+00:00 | Tromsø II — Strømsgodset II | providers=sstats ids={"sstats": "1497169"}
 - 2026-06-01T11:30:00+00:00 | Denmark U17 — Italy U17 | providers=sstats ids={"sstats": "1540171"}
 - 2026-06-01T11:30:00+00:00 | France U17 — Montenegro U17 | providers=sstats ids={"sstats": "1540172"}
@@ -104,7 +104,7 @@ all 3 primary sources: 10
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Pakistan — Bangladesh U23 | primary=1 providers=bzzoiro
+- Pakistan — Bangladesh | primary=1 providers=bzzoiro
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
