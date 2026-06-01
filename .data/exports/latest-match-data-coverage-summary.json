@@ -2,14 +2,14 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 2,
-      "rows_seen": 2,
+      "rows_kept": 10,
+      "rows_seen": 10,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 377,
-      "rows_seen": 377,
+      "rows_kept": 454,
+      "rows_seen": 454,
       "rows_stale": 0
     },
     "lifecycle": {
@@ -26,39 +26,39 @@
     },
     "rescue": {
       "files_present": 1,
-      "rows_kept": 0,
-      "rows_seen": 0,
+      "rows_kept": 3,
+      "rows_seen": 3,
       "rows_stale": 0
     }
   },
   "core_counts": {
-    "candidates_before_quality": 2,
+    "candidates_before_quality": 8,
     "candidates_publishable": 0,
-    "candidates_raw": 1,
-    "contexts_built": 47,
-    "controlled_candidates_seen": 1,
+    "candidates_raw": 0,
+    "contexts_built": 46,
+    "controlled_candidates_seen": 4,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 165,
+    "coverage_candidates_current_date": 167,
     "matches_seen": 52,
     "matches_with_offers": 48
   },
-  "created_at": "2026-06-01T14:36:13.836842+00:00",
+  "created_at": "2026-06-01T14:57:19.458087+00:00",
   "family_counts": {
     "dnb": 3,
     "doublechance": 1,
     "h2h": 3,
-    "spreads": 119,
-    "totals": 39
+    "spreads": 123,
+    "totals": 37
   },
   "matches_with_candidates": 48,
   "missing_data_flags": {
-    "confidence_below_micro_c": 157,
+    "confidence_below_micro_c": 156,
     "edge_below_micro_c": 165,
-    "ev_below_micro_c": 163,
-    "single_book": 155,
-    "single_context_source": 164,
-    "single_odds_source": 160
+    "ev_below_micro_c": 161,
+    "single_book": 157,
+    "single_context_source": 167,
+    "single_odds_source": 162
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -72,7 +72,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 3,
+  "positive_near_miss_count": 5,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -85,7 +85,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2250,
+      "offers_parsed": 2251,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -104,7 +104,7 @@
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 5325,
+      "offers_parsed": 5333,
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 0,
@@ -134,10 +134,29 @@
       "team_form_contexts_built": null
     },
     {
+      "api_key_present": true,
+      "budget_exhausted": null,
+      "contexts_built": null,
+      "direct_event_contexts_built": 0,
+      "enabled": true,
+      "events_fetched": 15,
+      "events_matched": null,
+      "fixtures_fetched": null,
+      "gap_flags": [],
+      "matches_built": null,
+      "offers_parsed": 1150,
+      "provider": "bzzoiro_odds",
+      "rate_limited": null,
+      "response_errors": 0,
+      "rows_fetched": null,
+      "status_category": "working",
+      "team_form_contexts_built": null
+    },
+    {
       "api_key_present": null,
       "budget_exhausted": true,
-      "contexts_built": 17,
-      "direct_event_contexts_built": 17,
+      "contexts_built": 16,
+      "direct_event_contexts_built": 16,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -164,7 +183,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 72,
+      "matches_built": 73,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -179,11 +198,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 98,
+      "events_fetched": 99,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 72,
+      "matches_built": 73,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -195,8 +214,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 39,
-      "direct_event_contexts_built": 39,
+      "contexts_built": 38,
+      "direct_event_contexts_built": 38,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -511,10 +530,11 @@
   "provider_status_counts": {
     "low_overlap_or_matching_issue": 2,
     "no_data": 9,
-    "working": 10
+    "working": 11
   },
   "reject_reason_counts_from_rows": {
-    "post_calibration_probability_guard": 1
+    "market_sanity_totals_xg_contradiction": 2,
+    "post_calibration_probability_guard": 2
   },
   "target_date": "2026-06-01",
   "top_near_miss": [
@@ -537,12 +557,64 @@
         "selection": "Меньше 2.5",
         "sources_count": 0
       },
-      "best_confidence": 67.12,
+      "best_confidence": 67.3,
       "best_edge_pp": 0.0,
       "best_ev_pct": 72.628,
-      "books_max": 4,
-      "candidate_count": 5,
+      "books_max": 0,
+      "candidate_count": 4,
       "commence_time": "",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 2,
+        "totals": 2
+      },
+      "home_team": "",
+      "league_name": "",
+      "match_key": "soccer|ca atlas|cs barracas|2026-06-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 4,
+        "ev_below_micro_c": 3,
+        "single_book": 4,
+        "single_context_source": 4,
+        "single_odds_source": 4
+      },
+      "odds_sources_max": 0,
+      "origins": {
+        ".logs/debug-last-run.json": 4
+      },
+      "reject_reasons": {},
+      "sources_max": 0
+    },
+    {
+      "away_team": "Tallinna JK Legion",
+      "best_candidate": {
+        "adjusted_probability": 0.470691,
+        "books_count": 2,
+        "canonical_edge_pp": 7.853,
+        "canonical_ev_pct": 20.026,
+        "confidence": 76.1,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.55,
+        "odds_sources_count": 1,
+        "origin": ".logs/debug-last-run.json",
+        "point": 5.5,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Больше 5.5",
+        "sources_count": 1
+      },
+      "best_confidence": 76.1,
+      "best_edge_pp": 7.853,
+      "best_ev_pct": 20.026,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-06-01T16:00:00+00:00",
       "confirmation_sources_max": 1,
       "context_sources_max": 1,
       "controlled_count": 0,
@@ -550,9 +622,63 @@
         "spreads": 2,
         "totals": 3
       },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|ca atlas|cs barracas|2026-06-01",
+      "home_team": "FCI Levadia Tallinn",
+      "league_name": "Estonia - Esiliiga B",
+      "match_key": "soccer|fci levadia tallinn|tallinna jk legion|2026-06-01",
+      "missing_flags": {
+        "confidence_below_micro_c": 4,
+        "edge_below_micro_c": 3,
+        "ev_below_micro_c": 3,
+        "single_book": 4,
+        "single_context_source": 5,
+        "single_odds_source": 5
+      },
+      "odds_sources_max": 1,
+      "origins": {
+        ".logs/debug-last-run.json": 5
+      },
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 1
+    },
+    {
+      "away_team": "Maghreb AS de Fes",
+      "best_candidate": {
+        "adjusted_probability": 0.401346,
+        "books_count": 2,
+        "canonical_edge_pp": 2.715,
+        "canonical_ev_pct": 9.969,
+        "confidence": 72.079,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
+        "family": "totals",
+        "odds": 2.74,
+        "odds_sources_count": 2,
+        "origin": ".logs/debug-last-run.json",
+        "point": 1.5,
+        "reject_reasons": [
+          "post_calibration_probability_guard"
+        ],
+        "selection": "Меньше 1.5",
+        "sources_count": 2
+      },
+      "best_confidence": 72.079,
+      "best_edge_pp": 2.715,
+      "best_ev_pct": 9.969,
+      "books_max": 2,
+      "candidate_count": 5,
+      "commence_time": "2026-06-01T18:00:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
+      "controlled_count": 0,
+      "families": {
+        "spreads": 3,
+        "totals": 2
+      },
+      "home_team": "Olympique Club de Safi",
+      "league_name": "Morocco - Botola Pro D1",
+      "match_key": "soccer|maghreb as fes|olympique safi|2026-06-01",
       "missing_flags": {
         "confidence_below_micro_c": 5,
         "edge_below_micro_c": 5,
@@ -565,88 +691,94 @@
       "origins": {
         ".logs/debug-last-run.json": 5
       },
-      "reject_reasons": {},
+      "reject_reasons": {
+        "post_calibration_probability_guard": 1
+      },
       "sources_max": 2
     },
     {
-      "away_team": "",
+      "away_team": "North Macedonia",
       "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 20.026,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "adjusted_probability": 0.425233,
+        "books_count": 4,
+        "canonical_edge_pp": 2.714,
+        "canonical_ev_pct": 9.71,
+        "confidence": 74.572,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.55,
-        "odds_sources_count": 0,
+        "odds": 2.58,
+        "odds_sources_count": 2,
         "origin": ".logs/debug-last-run.json",
-        "point": 5.5,
-        "reject_reasons": [],
-        "selection": "Больше 5.5",
-        "sources_count": 0
+        "point": 3.5,
+        "reject_reasons": [
+          "market_sanity_totals_xg_contradiction"
+        ],
+        "selection": "Больше 3.5",
+        "sources_count": 2
       },
-      "best_confidence": 68.79,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 20.026,
-      "books_max": 2,
+      "best_confidence": 75.8,
+      "best_edge_pp": 2.714,
+      "best_ev_pct": 9.71,
+      "books_max": 4,
       "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 0,
-      "context_sources_max": 0,
+      "commence_time": "2026-06-01T17:30:00+00:00",
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 0,
       "families": {
-        "spreads": 2,
-        "totals": 3
+        "spreads": 3,
+        "totals": 2
       },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|fci levadia tallinn|tallinna jk legion|2026-06-01",
+      "home_team": "Turkiye",
+      "league_name": "International - Int. Friendly Games",
+      "match_key": "soccer|north macedonia|turkiye|2026-06-01",
       "missing_flags": {
-        "confidence_below_micro_c": 5,
+        "confidence_below_micro_c": 3,
         "edge_below_micro_c": 5,
         "ev_below_micro_c": 4,
         "single_book": 4,
         "single_context_source": 5,
-        "single_odds_source": 5
+        "single_odds_source": 4
       },
-      "odds_sources_max": 1,
+      "odds_sources_max": 2,
       "origins": {
         ".logs/debug-last-run.json": 5
       },
-      "reject_reasons": {},
-      "sources_max": 1
+      "reject_reasons": {
+        "market_sanity_totals_xg_contradiction": 1
+      },
+      "sources_max": 2
     },
     {
       "away_team": "Malta",
       "best_candidate": {
-        "adjusted_probability": 0.455702,
-        "books_count": 6,
-        "canonical_edge_pp": 2.452,
-        "canonical_ev_pct": 1.758,
-        "confidence": 77.372,
-        "confirmation_sources_count": 3,
-        "context_sources_count": 3,
+        "adjusted_probability": 0.448687,
+        "books_count": 5,
+        "canonical_edge_pp": 2.757,
+        "canonical_ev_pct": 9.48,
+        "confidence": 78.922,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "family": "totals",
-        "odds": 2.233,
-        "odds_sources_count": 3,
+        "odds": 2.44,
+        "odds_sources_count": 2,
         "origin": ".logs/debug-last-run.json",
         "point": 2.5,
         "reject_reasons": [
           "post_calibration_probability_guard"
         ],
         "selection": "Меньше 2.5",
-        "sources_count": 3
+        "sources_count": 2
       },
-      "best_confidence": 77.372,
-      "best_edge_pp": 2.452,
-      "best_ev_pct": 1.758,
-      "books_max": 6,
+      "best_confidence": 78.922,
+      "best_edge_pp": 2.757,
+      "best_ev_pct": 9.48,
+      "books_max": 5,
       "candidate_count": 5,
       "commence_time": "2026-06-01T16:00:00+00:00",
-      "confirmation_sources_max": 3,
-      "context_sources_max": 3,
+      "confirmation_sources_max": 1,
+      "context_sources_max": 1,
       "controlled_count": 0,
       "families": {
         "spreads": 3,
@@ -658,19 +790,19 @@
       "missing_flags": {
         "confidence_below_micro_c": 3,
         "edge_below_micro_c": 5,
-        "ev_below_micro_c": 5,
+        "ev_below_micro_c": 4,
         "single_book": 4,
-        "single_context_source": 4,
+        "single_context_source": 5,
         "single_odds_source": 4
       },
-      "odds_sources_max": 3,
+      "odds_sources_max": 2,
       "origins": {
         ".logs/debug-last-run.json": 5
       },
       "reject_reasons": {
         "post_calibration_probability_guard": 1
       },
-      "sources_max": 3
+      "sources_max": 2
     }
   ]
 }
