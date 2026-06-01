@@ -62,6 +62,7 @@ MODULES = [
     'app.services.bzzoiro_context_gap_timeout_guard',
     'app.services.bzzoiro_context_gap_source_id_finalizer',
     'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
+    'app.services.bzzoiro_gap_plan_targets_runtime_patch',
     'app.services.progressive_provider_alias_finalizer',
     'app.services.candidate_value_final_reinstall',
     'app.services.windowed_coverage_state_bridge',

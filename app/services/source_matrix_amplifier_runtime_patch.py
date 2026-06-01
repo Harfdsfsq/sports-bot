@@ -94,11 +94,14 @@ def _count_sources(value: Any) -> int:
 
 
 def _row_counts(row: dict[str, Any]) -> tuple[int | None, int | None]:
-    # Explicit gap plan rows.
-    if "odds_needed" in row or "context_needed" in row:
-        odds = 2 - max(0, _to_int(row.get("odds_needed"), 0))
-        ctx = 2 - max(0, _to_int(row.get("context_needed"), 0))
-        return max(0, odds), max(0, ctx)
+    # Explicit progressive gap plan rows.  latest-progressive-coverage-plan.json
+    # stores core_*_needed, not odds_needed/context_needed.  The first version of
+    # this patch ignored those rows, so source_matrix_gap_keys stayed at zero and
+    # Bzzoiro gap targets were never appended to the provider pass.
+    explicit_odds_gap = _to_int(row.get("odds_needed"), 0) or _to_int(row.get("core_odds_needed"), 0)
+    explicit_ctx_gap = _to_int(row.get("context_needed"), 0) or _to_int(row.get("core_context_needed"), 0)
+    if explicit_odds_gap > 0 or explicit_ctx_gap > 0:
+        return max(0, 2 - explicit_odds_gap), max(0, 2 - explicit_ctx_gap)
 
     coverage = row.get("coverage") if isinstance(row.get("coverage"), dict) else {}
     progressive = row.get("progressive_coverage") if isinstance(row.get("progressive_coverage"), dict) else {}
@@ -108,6 +111,8 @@ def _row_counts(row: dict[str, Any]) -> tuple[int | None, int | None]:
         row.get("odds_source_count"),
         row.get("odds_sources_count"),
         row.get("independent_odds_source_count"),
+        _count_sources(row.get("core_odds_sources")) if isinstance(row.get("core_odds_sources"), (list, dict, set, tuple)) else None,
+        _count_sources(row.get("supplemental_odds_sources")) if isinstance(row.get("supplemental_odds_sources"), (list, dict, set, tuple)) else None,
         coverage.get("odds_source_count"),
         coverage.get("odds_sources_count"),
         progressive.get("odds_source_count"),
@@ -118,6 +123,8 @@ def _row_counts(row: dict[str, Any]) -> tuple[int | None, int | None]:
     ctx_candidates = [
         row.get("context_source_count"),
         row.get("context_sources_count"),
+        _count_sources(row.get("core_context_sources")) if isinstance(row.get("core_context_sources"), (list, dict, set, tuple)) else None,
+        _count_sources(row.get("supplemental_context_sources")) if isinstance(row.get("supplemental_context_sources"), (list, dict, set, tuple)) else None,
         coverage.get("context_source_count"),
         coverage.get("context_sources_count"),
         progressive.get("context_source_count"),
@@ -178,7 +185,12 @@ def _load_gap_map() -> dict[str, dict[str, Any]]:
             odds_count, ctx_count = _row_counts(row)
             odds_needed = max(0, 2 - (odds_count if odds_count is not None else 0))
             ctx_needed = max(0, 2 - (ctx_count if ctx_count is not None else 0))
-            explicit_gap = _to_int(row.get("odds_needed"), 0) > 0 or _to_int(row.get("context_needed"), 0) > 0
+            explicit_gap = (
+                _to_int(row.get("odds_needed"), 0) > 0
+                or _to_int(row.get("context_needed"), 0) > 0
+                or _to_int(row.get("core_odds_needed"), 0) > 0
+                or _to_int(row.get("core_context_needed"), 0) > 0
+            )
             if not explicit_gap and odds_count is None and ctx_count is None:
                 continue
             if odds_needed <= 0 and ctx_needed <= 0 and not explicit_gap:
@@ -311,6 +323,8 @@ def _apply_env_defaults() -> dict[str, str]:
         "BZZOIRO_CONTEXT_GAP_INCLUDE_PROGRESSIVE_STATE": "true",
         "BZZOIRO_CONTEXT_GAP_MATCH_LIMIT": "160",
         "BZZOIRO_CONTEXT_GAP_MAX_REQUESTS": "180",
+        "BZZOIRO_FORCE_GAP_PLAN_TARGETS": "true",
+        "BZZOIRO_FORCE_GAP_TARGET_LIMIT": "180",
         "BZZOIRO_ODDS_COMPARISON_ENABLED": "true",
         "BZZOIRO_EXACT_OFFER_BRIDGE_ENABLED": "true",
         "SSTATS_CONTEXT_MATCH_LIMIT": "300",
