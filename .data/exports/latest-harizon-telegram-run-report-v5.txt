@@ -1,57 +1,57 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ Прогноз опубликован. Ниже — проверка покрытия и причин, почему опубликован именно этот кандидат.
-• Главная причина: опубликовано fallback-пайплайном
+🟡 Прогнозов нет: есть 177 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: duplicate already sent:controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 224 матчей. В этом run обработано: 104.
-• 1+ линия: 219/224 (98%) | 1+ контекст: 200/224 (89%)
-• 2+ подтверждения цены: 86/224 (38%)
-• 2+ независимых odds-source: 24/224 (11%)
-• 2+ контекста: 55/224 (25%)
-• Готово для модели: 196/224 (88%)
+• Инвентарь дня: 224 матчей. В этом run обработано: 33.
+• 1+ линия: 219/224 (98%) | 1+ контекст: 209/224 (93%)
+• 2+ подтверждения цены: 101/224 (45%)
+• 2+ независимых odds-source: 26/224 (12%)
+• 2+ контекста: 76/224 (34%)
+• Готово для модели: 205/224 (92%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 15 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 16 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 166 | B-tier готово main: 0 | опубликовано fallback: 1
+• B-tier coverage: 177 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 166 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 177 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 10 | матчей без следующего регулярного run: 10
-• Line guard: увидел 6, оставил 2, снял 0
+• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Line guard: увидел 3, оставил 1, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/2
-• Quality прошло: 2 | publishable: 0 | опубликовано: 1
-• Controlled fallback: seen 2 | evaluated 2 | published 1
+• Raw/candidates before quality: 1/1
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 22 (events 0, odds 22); смэтчил матчей 103; дал offers 8633 (392/запрос); 2+ букмекера 44; ошибок 0.
-• Bzzoiro: запросы 74 (direct 37, v2 37, gap 0); событий 14; контекстов 10; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 24; secondary offers 44; overlap с odds-api.io 11; ошибок 8.
-• SStats: запросы 25; сырых строк 23032 (921/запрос); контекстов 80; deep-enriched 4; team-form 0; direct 0; ошибок 0.
+• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 32; дал offers 1307 (163/запрос); 2+ букмекера 9; ошибок 0.
+• Bzzoiro: запросы 14 (direct 7, v2 7, gap 0); событий 14; контекстов 0; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 4; secondary offers 0; overlap с odds-api.io 1; ошибок 2.
+• SStats: запросы 27; сырых строк 23322 (864/запрос); контекстов 27; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 55, bzzoiro+odds_api_io: 11, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 12, bzzoiro: 1, bzzoiro+odds_api_io: 1
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 104. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 6.
-• 0–4 часа: 0/9 core-ready.
-• 0–12 часов: 0/21 core-ready.
+• 0–4 часа: 0/0 core-ready.
+• 0–12 часов: 0/33 core-ready.
 
-🚫 Почему часть кандидатов отсеяна
-• Не применимо к публикации: один прогноз уже отправлен.
+🚫 Почему не опубликовано
+• duplicate already sent:controlled fallback: 1 (100%)
 
 🔎 Последние проверенные кандидаты
-1. Vietnam — Timor-Leste | Меньше @1.90 | EV +26.4% | edge +13.9 п.п. | q 100.0
-2. Indonesia — Myanmar | Меньше @1.82 | EV +15.8% | edge +8.7 п.п. | q 100.0
+1. Vietnam — Timor-Leste | Меньше @1.90 | EV +30.7% | edge +16.1 п.п. | q 100.0
+   • причина: duplicate already sent:controlled fallback
 
 📌 Что это значит
-• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах.
+• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26726989072
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26726989072
-• Artifact: run-bot-26726989072
+• Run ID: 26729738929
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26729738929
+• Artifact: run-bot-26729738929
 • workflow run-bot, attempt 1
