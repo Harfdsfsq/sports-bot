@@ -73,7 +73,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
     if is_a and movement_status in {"movement_confirmed", "publish_now_no_next_cron"} and bool(movement.get("passed")):
         tier = "A"
         passed = True
-    elif is_b and movement_status == "movement_confirmed" and bool(movement.get("passed")):
+    elif is_b and movement_status in {"movement_confirmed", "publish_now_no_next_cron"} and bool(movement.get("passed")):
         tier = "B"
         passed = True
     else:
@@ -85,7 +85,7 @@ def classify_publication_tier(candidate: Any, settings: Any, *, now: datetime | 
             )
         elif is_a and movement_status not in {"movement_confirmed", "publish_now_no_next_cron"}:
             reasons.append(f"tier_a_line_movement_not_ready:{movement_status}")
-        elif is_b and movement_status != "movement_confirmed":
+        elif is_b and movement_status not in {"movement_confirmed", "publish_now_no_next_cron"}:
             reasons.append(f"tier_b_line_movement_not_confirmed:{movement_status}")
         if movement.get("reasons"):
             reasons.extend(str(item) for item in movement.get("reasons") or [])

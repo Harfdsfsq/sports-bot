@@ -404,10 +404,89 @@ def load_context_source_index() -> dict[str, Any]:
     for path in paths:
         payload = load_json(path, {})
         if isinstance(payload, dict) and isinstance(payload.get("by_match"), dict):
-            _CONTEXT_SOURCE_INDEX_CACHE = payload
-            return payload
-    _CONTEXT_SOURCE_INDEX_CACHE = {}
+            _CONTEXT_SOURCE_INDEX_CACHE = _augment_context_source_index(payload)
+            return _CONTEXT_SOURCE_INDEX_CACHE
+    _CONTEXT_SOURCE_INDEX_CACHE = _augment_context_source_index({})
     return _CONTEXT_SOURCE_INDEX_CACHE
+
+
+def _context_index_add(by_match: dict[str, list[str]], match_key: Any, source: Any) -> None:
+    key = str(match_key or "").strip().lower()
+    src = normalize_confirmation_source(source)
+    if not key or not src:
+        return
+    values = by_match.setdefault(key, [])
+    if src not in values:
+        values.append(src)
+
+
+def _context_index_aliases(row: dict[str, Any]) -> list[str]:
+    keys = [str(row.get("match_key") or "").strip()]
+    home = row.get("home_team") or row.get("home")
+    away = row.get("away_team") or row.get("away")
+    kickoff = str(row.get("commence_time") or row.get("kickoff_utc") or row.get("start_time") or "")[:10]
+    if home and away and kickoff:
+        home_key = str(home).strip().lower().replace(" ", "_")
+        away_key = str(away).strip().lower().replace(" ", "_")
+        keys.extend([
+            f"{kickoff}|{home_key}|{away_key}",
+            f"{kickoff}|{away_key}|{home_key}",
+            f"soccer|{home_key}|{away_key}|{kickoff}",
+            f"soccer|{away_key}|{home_key}|{kickoff}",
+        ])
+    return [key for key in keys if key]
+
+
+def _augment_context_source_index(payload: dict[str, Any]) -> dict[str, Any]:
+    """Merge newer evidence exports into the legacy context-source index.
+
+    Controlled fallback runs after the main pipeline, while the legacy
+    latest-context-source-index can lag behind current-run evidence.  The evidence
+    exports are keyed by the same match_key and keep provider provenance, so they
+    are safe context confirmations without being counted as price sources.
+    """
+    out = dict(payload or {})
+    by_match_raw = out.get("by_match") if isinstance(out.get("by_match"), dict) else {}
+    by_match: dict[str, list[str]] = {
+        str(key).strip().lower(): [src for src in _source_values(value) if normalize_confirmation_source(src)]
+        for key, value in by_match_raw.items()
+    }
+
+    observations = load_json(".data/exports/latest-context-observations.json", [])
+    if isinstance(observations, list):
+        for row in observations:
+            if not isinstance(row, dict):
+                continue
+            for key in _context_index_aliases(row):
+                _context_index_add(by_match, key, row.get("provider") or row.get("source"))
+
+    serving_rows = load_json(".data/exports/latest-match-serving.json", [])
+    if isinstance(serving_rows, list):
+        for row in serving_rows:
+            if not isinstance(row, dict):
+                continue
+            for source in _source_values(row.get("context_sources")):
+                for key in _context_index_aliases(row):
+                    _context_index_add(by_match, key, source)
+
+    inventory = load_json(".data/cache/day_inventory/latest.json", {})
+    inv_rows = inventory.get("matches") if isinstance(inventory, dict) and isinstance(inventory.get("matches"), list) else []
+    for row in inv_rows:
+        if not isinstance(row, dict):
+            continue
+        sources = []
+        for field in ("context_sources", "confirmation_sources", "merged_context_sources"):
+            sources.extend(_source_values(row.get(field)))
+        metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
+        for field in ("context_sources", "confirmation_sources", "merged_context_sources"):
+            sources.extend(_source_values(metadata.get(field)))
+        for source in sources:
+            for key in _context_index_aliases(row):
+                _context_index_add(by_match, key, source)
+
+    out["by_match"] = {key: sorted(set(values)) for key, values in by_match.items() if values}
+    out["augmented_from_current_evidence"] = True
+    return out
 
 
 def normalize_confirmation_source(value: Any) -> str | None:
@@ -1416,7 +1495,7 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
         movement = controlled_line_movement_report(candidate, metrics)
         metrics["line_movement"] = movement
         status = str(movement.get("status") or "")
-        allowed = {"movement_confirmed"} if tier_name == "B" else {"movement_confirmed", "publish_now_no_next_cron"}
+        allowed = {"movement_confirmed", "publish_now_no_next_cron"} if tier_name == "B" else {"movement_confirmed", "publish_now_no_next_cron"}
         if not bool(movement.get("passed")) or status not in allowed:
             reasons.append(f"line_movement_not_confirmed:{status}")
             for item in movement.get("reasons") or []:
