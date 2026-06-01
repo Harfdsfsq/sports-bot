@@ -70,3 +70,36 @@ def test_single_provider_candidate_not_promoted_to_tier_a(monkeypatch):
     assert tier != "уровень A"
     assert "tier_a_odds_sources_below_min:1/2" in pcf.tier_reasons("A", candidate, metrics)
     assert any(str(reason).startswith("telegram_publish_odds_sources_guard") or str(reason) == "tier_c_watch_only" for reason in reasons)
+
+
+def test_over_total_below_xg_line_is_direction_conflict(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    candidate = _candidate()
+    candidate.update(
+        {
+            "selection": "Over 2.5",
+            "point": 2.5,
+            "expected_home": 1.39,
+            "expected_away": 1.00,
+            "adjusted_probability": 0.442,
+            "odds": 2.48,
+            "source_summary": {
+                **candidate["source_summary"],
+                "publish_coverage_contract": {
+                    "books_count": 5,
+                    "context_sources": ["bzzoiro", "highlightly", "sstats"],
+                    "context_sources_count": 3,
+                    "odds_sources": ["bzzoiro", "odds_api_io"],
+                    "odds_sources_count": 2,
+                },
+                "line_sources": ["bzzoiro", "odds_api_io"],
+                "context_sources": ["bzzoiro", "highlightly", "sstats"],
+            },
+        }
+    )
+
+    metrics = pcf.candidate_metrics(candidate)
+
+    assert metrics["xg_sanity"]["xg_total"] == 2.39
+    assert metrics["xg_sanity"]["xg_direction_ok"] is False
+    assert "xg_direction_conflict" in pcf.hard_reject_reasons(candidate, metrics, {})

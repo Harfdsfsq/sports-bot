@@ -847,7 +847,7 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
     is_under = any(token in selection_text for token in ("under", "меньше", "тм"))
 
     direction_ok = True
-    margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.18)
+    margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.0)
     if total_xg is not None and line is not None:
         if is_over and total_xg < line - margin:
             direction_ok = False

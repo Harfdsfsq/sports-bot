@@ -128,6 +128,18 @@ def app_tz() -> ZoneInfo:
         return ZoneInfo("Europe/Moscow")
 
 
+def next_scheduled_run_at(now: datetime, interval_min: int) -> datetime | None:
+    if interval_min <= 0:
+        return None
+    local_now = now.astimezone(app_tz())
+    anchor_minute = max(0, min(env_int("LINE_MOVEMENT_CRON_ANCHOR_MINUTE", 0), 1439))
+    anchor = local_now.replace(hour=0, minute=0, second=0, microsecond=0)
+    anchor = anchor.replace(hour=anchor_minute // 60, minute=anchor_minute % 60)
+    while anchor <= local_now:
+        anchor += timedelta(minutes=interval_min)
+    return anchor.astimezone(UTC)
+
+
 def load_json(path: Path, default: Any) -> Any:
     try:
         return json.loads(path.read_text(encoding="utf-8"))
@@ -280,6 +292,7 @@ def line_guard(candidate: dict[str, Any], previous: dict[str, Any] | None, now: 
     kickoff = candidate_kickoff(candidate)
     lead_min = ((kickoff - now).total_seconds() / 60.0) if kickoff else None
     next_run_min = env_int("CRON_EXPECTED_INTERVAL_MINUTES", 120)
+    cron_interval_min = env_int("LINE_MOVEMENT_CRON_INTERVAL_MINUTES", next_run_min)
     min_lead = env_int("MIN_KICKOFF_LEAD_MINUTES", 30)
     final_window_min = env_int("FINAL_PRE_KICKOFF_REFRESH_WINDOW_MINUTES", next_run_min + min_lead)
     max_negative_move_pct = env_float("LINE_MOVEMENT_MAX_NEGATIVE_PRICE_MOVE_PCT", 8.0)
@@ -307,7 +320,16 @@ def line_guard(candidate: dict[str, Any], previous: dict[str, Any] | None, now: 
         passed = False
         reasons.append(f"current_edge_below_floor:{edge_pp:.1f}<{min_edge:.1f}")
     final_check = lead_min is not None and min_lead <= lead_min <= final_window_min
-    no_more_cron_before_kickoff = lead_min is not None and lead_min <= next_run_min + min_lead
+    next_run_at = next_scheduled_run_at(now, cron_interval_min) if env_bool("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) else None
+    latest_useful_run_at = kickoff - timedelta(minutes=min_lead) if kickoff else None
+    has_next_regular_run = (
+        bool(kickoff and next_run_at and latest_useful_run_at)
+        and next_run_at <= latest_useful_run_at
+    )
+    if env_bool("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) and kickoff is not None:
+        no_more_cron_before_kickoff = not has_next_regular_run
+    else:
+        no_more_cron_before_kickoff = lead_min is not None and lead_min <= next_run_min + min_lead
     needs_next_cron_recheck = (
         previous is None
         and not no_more_cron_before_kickoff
@@ -348,6 +370,10 @@ def line_guard(candidate: dict[str, Any], previous: dict[str, Any] | None, now: 
         "lead_minutes": round(lead_min, 2) if lead_min is not None else None,
         "final_pre_kickoff_check": final_check,
         "no_more_cron_before_kickoff": no_more_cron_before_kickoff,
+        "next_scheduled_run_at_utc": next_run_at.isoformat() if next_run_at else None,
+        "latest_useful_run_at_utc": latest_useful_run_at.isoformat() if latest_useful_run_at else None,
+        "has_next_regular_run_before_kickoff": has_next_regular_run,
+        "cron_interval_minutes": cron_interval_min,
         "previous_snapshot_at_utc": previous_time.isoformat() if previous_time else None,
     }
 

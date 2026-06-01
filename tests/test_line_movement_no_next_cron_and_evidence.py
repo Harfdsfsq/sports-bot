@@ -7,6 +7,7 @@ from pathlib import Path
 from uuid import uuid4
 
 from app.schemas import CandidateBet
+from app.services.line_movement_state import evaluate_and_record_line_movement
 from app.services.publication_tiers import classify_publication_tier
 
 UTC = timezone.utc
@@ -68,6 +69,23 @@ def test_b_tier_can_publish_when_no_next_cron(monkeypatch):
     assert decision.passed is True
     assert decision.tier == "B"
     assert decision.report["line_movement"]["status"] == "publish_now_no_next_cron"
+
+
+def test_first_snapshot_waits_when_scheduled_cron_exists_before_kickoff(monkeypatch):
+    now = datetime(2026, 6, 1, 13, 51, tzinfo=UTC)  # 16:51 MSK
+    kickoff = datetime(2026, 6, 1, 16, 0, tzinfo=UTC)  # 19:00 MSK
+    state_path = f".data/test-line-movement-waits-for-18msk/{uuid4().hex}.json"
+    monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", state_path)
+    monkeypatch.setenv("APP_TIMEZONE", "Europe/Moscow")
+    monkeypatch.setenv("LINE_MOVEMENT_CRON_INTERVAL_MINUTES", "120")
+    monkeypatch.setenv("LINE_MOVEMENT_MIN_LEAD_MINUTES", "15")
+
+    decision = evaluate_and_record_line_movement(_candidate(kickoff), TierSettings(), now=now)
+
+    assert decision["passed"] is False
+    assert decision["status"] == "awaiting_next_run"
+    assert decision["next_scheduled_run_at_utc"] == "2026-06-01T15:00:00+00:00"
+    assert decision["has_next_regular_run_before_kickoff"] is True
 
 
 def test_controlled_fallback_context_index_uses_current_evidence_exports(monkeypatch):

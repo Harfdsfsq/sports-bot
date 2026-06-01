@@ -170,6 +170,7 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     snapshots = entry.get("snapshots") if isinstance(entry.get("snapshots"), list) else []
 
     next_run_min = int(float(os.getenv("LINE_MOVEMENT_NEXT_RUN_MINUTES") or getattr(settings, "line_movement_next_run_minutes", 120) or 120))
+    cron_interval_min = int(float(os.getenv("LINE_MOVEMENT_CRON_INTERVAL_MINUTES") or os.getenv("CRON_EXPECTED_INTERVAL_MINUTES") or next_run_min))
     min_lead_min = int(float(os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES") or 15))
     max_adverse_drift_pct = float(os.getenv("LINE_MOVEMENT_MAX_ADVERSE_DRIFT_PCT") or 3.0)
     min_ev_pct = float(os.getenv("LINE_MOVEMENT_MIN_CURRENT_EV_PCT") or 0.0)
@@ -178,7 +179,20 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
 
     kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc"))
     lead_minutes = ((kickoff - now).total_seconds() / 60.0) if kickoff else None
-    no_next_run = lead_minutes is not None and lead_minutes <= next_run_min + min_lead_min
+    next_scheduled_run_at = (
+        _next_scheduled_run_at(now, cron_interval_min)
+        if _bool_env("LINE_MOVEMENT_USE_SCHEDULED_CRON", True)
+        else None
+    )
+    latest_useful_run_at = kickoff - timedelta(minutes=min_lead_min) if kickoff else None
+    has_next_regular_run = (
+        bool(kickoff and next_scheduled_run_at and latest_useful_run_at)
+        and next_scheduled_run_at <= latest_useful_run_at
+    )
+    if _bool_env("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) and kickoff is not None:
+        no_next_run = not has_next_regular_run
+    else:
+        no_next_run = lead_minutes is not None and lead_minutes <= next_run_min + min_lead_min
     value_ok, value_reasons = _value_ok(candidate, min_ev_pct=min_ev_pct, min_edge_pct=min_edge_pct)
 
     current = _snapshot(candidate, now)
@@ -282,6 +296,10 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
         "line_move_pct": round(line_move_pct, 4),
         "lead_minutes": round(lead_minutes, 2) if lead_minutes is not None else None,
         "no_more_cron_before_kickoff": no_next_run,
+        "next_scheduled_run_at_utc": next_scheduled_run_at.isoformat() if next_scheduled_run_at else None,
+        "latest_useful_run_at_utc": latest_useful_run_at.isoformat() if latest_useful_run_at else None,
+        "has_next_regular_run_before_kickoff": has_next_regular_run,
+        "cron_interval_minutes": cron_interval_min,
         "state_path": str(path),
         "latest_state_path": str(latest_path) if latest_path else None,
         "previous_snapshot_at_utc": previous.get("captured_at_utc") if isinstance(previous, dict) else None,
