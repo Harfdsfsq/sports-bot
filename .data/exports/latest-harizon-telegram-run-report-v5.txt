@@ -1,13 +1,13 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: есть 130 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: tier a odds sources below min:0/2
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 224 матчей. В этом run обработано: 40.
+• Инвентарь дня: 224 матчей. В этом run обработано: 30.
 • 1+ линия: 224/224 (100%) | 1+ контекст: 219/224 (98%)
 • 2+ подтверждения цены: 130/224 (58%)
 • 2+ независимых odds-source: 26/224 (12%)
-• 2+ контекста: 159/224 (71%)
+• 2+ контекста: 162/224 (72%)
 • Готово для модели: 219/224 (98%)
 
 🏷️ A/B-tier публикация
@@ -18,44 +18,34 @@
 • Ждут второй снимок линии: 130 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 33 | матчей без следующего регулярного run: 29
-• Line guard: увидел 6, оставил 2, снял 0
+• Pre-kickoff проверок: 30 | матчей без следующего регулярного run: 24
+• Line guard: увидел 2, оставил 1, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/8
-• Quality прошло: 2 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Raw/candidates before quality: 1/2
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 8 (events 0, odds 8); смэтчил матчей 38; дал offers 5909 (739/запрос); 2+ букмекера 27; ошибок 0.
-• Bzzoiro: запросы 26 (direct 13, v2 13, gap 0); событий 20; контекстов 5; gap targets 23, matched 0, added 0; v2 resources stats/odds/lineups 16; secondary offers 0; overlap с odds-api.io 5; ошибок 1.
-• SStats: запросы 27; сырых строк 23440 (868/запрос); контекстов 37; deep-enriched 6; team-form 0; direct 0; ошибок 0.
+• odds-api.io: запросы 6 (events 0, odds 6); смэтчил матчей 28; дал offers 4643 (774/запрос); 2+ букмекера 22; ошибок 0.
+• Bzzoiro: запросы 26 (direct 13, v2 13, gap 0); событий 20; контекстов 3; gap targets 14, matched 0, added 0; v2 resources stats/odds/lineups 12; secondary offers 0; overlap с odds-api.io 4; ошибок 1.
+• SStats: запросы 27; сырых строк 23440 (868/запрос); контекстов 26; deep-enriched 13; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 31, bzzoiro+odds_api_io: 5, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 22, bzzoiro+odds_api_io: 4
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 104. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 6.
-• 0–4 часа: 5/32 core-ready.
-• 0–12 часов: 5/32 core-ready.
+• 0–4 часа: 3/27 core-ready.
+• 0–12 часов: 3/27 core-ready.
 
 🚫 Почему не опубликовано
-• tier a odds sources below min:0/2: 4 (16%)
-• quality: вероятность после калибровки ниже порога: 3 (12%)
-• направление ставки конфликтует с xG: 2 (8%)
-• tier a canonical edge below min: 2 (8%)
-• tier b confidence below min: 2 (8%)
-• tier b quality below min: 2 (8%)
-• tier b canonical edge below min: 2 (8%)
-• tier b canonical ev below min: 2 (8%)
+• направление ставки конфликтует с xG: 1 (50%)
+• quality: вероятность после калибровки ниже порога: 1 (50%)
 
 🔎 Последние проверенные кандидаты
-1. Austria — Tunisia | Больше 2.5 @2.04 | EV +5.7% | edge +2.8 п.п. | q 64.0
+1. Argentino de Quilmes — CA Ituzaingo | Больше 2.5 @2.39 | EV +3.2% | edge +1.3 п.п. | q 61.9
    • причина: направление ставки конфликтует с xG
-2. Argentino de Quilmes — CA Ituzaingo | Больше 2.5 @2.54 | EV +9.5% | edge +3.7 п.п. | q 60.5
-   • причина: направление ставки конфликтует с xG
-3. Lyn 1896 FK II — FK Gjoevik-Lyn | Меньше 3.25 @2.13 | EV +4.2% | edge +2.0 п.п. | q 60.3
-   • причина: tier a canonical edge below min, tier a odds sources below min:0/2, tier a confirmation sources below min:1/2
 
 📌 Что это значит
 • Следующий шаг: не форсировать публикацию; текущие кандидаты отрезаны quality/xG/value, ждать новых top-кандидатов.
