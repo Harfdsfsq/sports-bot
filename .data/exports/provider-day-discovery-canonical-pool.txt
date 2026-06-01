@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-01T03:02:21.958993+00:00
+UTC: 2026-06-01T05:02:20.982484+00:00
 target_date: 2026-06-01
-canonical_matches: 135
+canonical_matches: 134
 2+ provider sources: 71
 2+ primary sources: 69
 all 3 primary sources: 10
@@ -11,14 +11,14 @@ all 3 primary sources: 10
 - bzzoiro: commands=10 ok=8 rows=108 event_like=108 unique=20 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=4 rows=216 event_like=216 unique=108 statuses={"OK": 4, "EMPTY": 2}
+- odds_api_io: commands=6 ok=4 rows=214 event_like=214 unique=107 statuses={"OK": 4, "EMPTY": 2}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=106 event_like=90 unique=90 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 64, "2": 60, "3": 11}
-- primary providers: {"1": 66, "2": 59, "3": 10}
+- all providers: {"1": 63, "2": 60, "3": 11}
+- primary providers: {"1": 65, "2": 59, "3": 10}
 
 ## Top canonical matches
 - 2026-05-31T21:30:00+00:00 | Anápolis — Maranhão | providers=sstats ids={"sstats": "1526835"}
@@ -31,8 +31,8 @@ all 3 primary sources: 10
 - 2026-05-31T22:00:00+00:00 | Chicago Dutch Lions — Edgewater Castle | providers=sstats ids={"sstats": "1524694"}
 - 2026-05-31T22:00:00+00:00 | Marin — Academica | providers=sstats ids={"sstats": "1524691"}
 - 2026-05-31T22:00:00+00:00 | Albion Colorado W — Flatirons II W | providers=sstats ids={"sstats": "1524696"}
-- 2026-05-31T23:00:00+00:00 | Westchester Flames — Staten Island Athletic | providers=sstats ids={"sstats": "1524698"}
 - 2026-05-31T23:00:00+00:00 | Orlando City II — Chattanooga | providers=sstats ids={"sstats": "1513299"}
+- 2026-05-31T23:00:00+00:00 | Westchester Flames — Staten Island Athletic | providers=sstats ids={"sstats": "1524698"}
 - 2026-05-31T23:00:00+00:00 | Cleveland Force W — Steel City W | providers=sstats ids={"sstats": "1532087"}
 - 2026-05-31T23:00:00+00:00 | Tacoma Galaxy W — Portland Cherry Bombs FC W | providers=sstats ids={"sstats": "1532427"}
 - 2026-05-31T23:10:00+00:00 | Emelec — Universidad Catolica | providers=sstats ids={"sstats": "1519377"}
@@ -44,13 +44,13 @@ all 3 primary sources: 10
 - 2026-06-01T00:00:00+00:00 | RKC — Rockford Raptors | providers=sstats ids={"sstats": "1524697"}
 - 2026-06-01T00:00:00+00:00 | Palestino — A. Italiano | providers=sstats ids={"sstats": "1505456"}
 - 2026-06-01T00:00:00+00:00 | Oriental — Tacuarembo | providers=sstats ids={"sstats": "1546068"}
-- 2026-06-01T01:45:00+00:00 | Northern AFC — Coastal Spirit FC | providers=odds_api_io ids={"odds_api_io": "71737512"}
 - 2026-06-01T08:15:00+00:00 | FC Bulleen Lions — Port Melbourne Sharks SC | providers=odds_api_io,sstats ids={"odds_api_io": "68160588", "sstats": "1522118"}
 - 2026-06-01T08:15:00+00:00 | Melbourne Victory FC — Melbourne Knights FC | providers=odds_api_io,sstats ids={"odds_api_io": "68160590", "sstats": "1522117"}
 - 2026-06-01T09:00:00+00:00 | Vietnam — Timor-Leste | providers=odds_api_io,sstats ids={"odds_api_io": "71561886", "sstats": "1547206"}
 - 2026-06-01T10:00:00+00:00 | Agrobiznes Volochisk — FC Chernigiv | providers=odds_api_io,sstats,thesportsdb ids={"odds_api_io": "61840822", "thesportsdb": "2287926", "sstats": "1400645"}
 - 2026-06-01T10:00:00+00:00 | FC Chernomorets Odessa — FC Metalist Kharkiv | providers=odds_api_io,thesportsdb ids={"odds_api_io": "71766730", "thesportsdb": "2287925"}
 - 2026-06-01T10:00:00+00:00 | Vanraure Hachinohe FC — Fukushima United FC | providers=odds_api_io,sstats ids={"odds_api_io": "71715902", "sstats": "1546391"}
+- 2026-06-01T10:00:00+00:00 | FSK Mariupol — FC Viktoriya Sumy | providers=odds_api_io,thesportsdb ids={"odds_api_io": "61840826", "thesportsdb": "2287923"}
 
 ## Targeted enrichment plan sample
 - Anápolis — Maranhão | primary=1 providers=sstats
@@ -93,11 +93,11 @@ all 3 primary sources: 10
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Westchester Flames — Staten Island Athletic | primary=1 providers=sstats
+- Orlando City II — Chattanooga | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Orlando City II — Chattanooga | primary=1 providers=sstats
+- Westchester Flames — Staten Island Athletic | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
