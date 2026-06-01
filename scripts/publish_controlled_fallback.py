@@ -1086,6 +1086,65 @@ def quality_reasons(candidate: dict[str, Any]) -> list[str]:
     return []
 
 
+def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    if not env_bool("CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD", True):
+        return []
+    min_books = env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 2)
+    if int(metrics.get("odds_sources_count") or 0) >= env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2):
+        return []
+    if int(metrics.get("books_count") or 0) < min_books:
+        return [f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}"]
+
+    rows = candidate.get("raw_bucket_offers")
+    if not isinstance(rows, list) or not rows:
+        source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+        rows = source_summary.get("raw_bucket_offers") or source_summary.get("bucket_offers") or source_summary.get("offers")
+    if not isinstance(rows, list):
+        rows = []
+
+    prices_by_book: dict[str, float] = {}
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        price = as_float(row.get("price") or row.get("odds") or row.get("decimal_odds"), 0.0)
+        if price <= 1.0:
+            continue
+        book = str(row.get("bookmaker") or row.get("book") or row.get("sportsbook") or "").strip().lower()
+        if not book:
+            continue
+        current = prices_by_book.get(book)
+        if current is None or abs(price - float(metrics.get("odds") or 0.0)) < abs(current - float(metrics.get("odds") or 0.0)):
+            prices_by_book[book] = price
+
+    metrics["tier_b_bookmaker_quorum"] = {
+        "enabled": True,
+        "books_count": int(metrics.get("books_count") or 0),
+        "odds_sources_count": int(metrics.get("odds_sources_count") or 0),
+        "priced_books_count": len(prices_by_book),
+        "mode": "bookmaker_quorum",
+    }
+    if len(prices_by_book) < min_books:
+        return [f"tier_b_bookmaker_quorum_prices_missing:{len(prices_by_book)}/{min_books}"]
+
+    prices = sorted(prices_by_book.values())
+    mid = len(prices) // 2
+    median_price = prices[mid] if len(prices) % 2 else (prices[mid - 1] + prices[mid]) / 2.0
+    selected = float(metrics.get("odds") or 0.0)
+    if median_price <= 1.0 or selected <= 1.0:
+        return ["tier_b_bookmaker_quorum_missing_selected_price"]
+    deviation_pct = abs(selected - median_price) / median_price * 100.0
+    max_deviation = env_float("CONTROLLED_FALLBACK_TIER_B_MAX_BOOKMAKER_MEDIAN_DEVIATION_PCT", 8.0)
+    metrics["tier_b_bookmaker_quorum"].update({
+        "median_price": round(median_price, 4),
+        "selected_price": round(selected, 4),
+        "selected_vs_median_deviation_pct": round(deviation_pct, 3),
+        "max_deviation_pct": max_deviation,
+    })
+    if deviation_pct > max_deviation:
+        return [f"tier_b_bookmaker_quorum_price_outlier:{deviation_pct:.2f}>{max_deviation:.2f}"]
+    return []
+
+
 def selected_bookmaker(candidate: dict[str, Any]) -> str:
     ss = candidate.get("source_summary") or {}
     return str(candidate.get("bookmaker") or ss.get("selected_bookmaker") or ss.get("bookmaker") or "").strip()
@@ -1506,9 +1565,16 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
     elif tier == "B":
+        min_odds_sources = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1))
+        if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
+            reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
+        min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2)))
+        if int(metrics.get("books_count") or 0) < min_books:
+            reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
         min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1))
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
+        reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))
 
     xg = metrics.get("xg_sanity") or {}
     if bool(xg.get("enabled")):

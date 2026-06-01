@@ -428,7 +428,64 @@ def _render_samples(payload: dict[str, Any]) -> list[str]:
     return lines
 
 
+def _reason_tokens(payload: dict[str, Any]) -> list[str]:
+    tokens: list[str] = []
+    for value in (payload.get("top_reason"), payload.get("status"), payload.get("status_ru")):
+        if value not in (None, ""):
+            tokens.append(str(value).lower())
+    reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
+    for row in reasons:
+        if not isinstance(row, dict):
+            continue
+        for key in ("reason", "reason_ru"):
+            value = row.get(key)
+            if value not in (None, ""):
+                tokens.append(str(value).lower())
+    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
+    for key in ("fallback_evaluated", "candidates", "recent_candidates"):
+        rows = samples.get(key) if isinstance(samples.get(key), list) else []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            for reason in row.get("reject_reasons") or []:
+                tokens.append(str(reason).lower())
+            for reason in row.get("reject_reasons_ru") or []:
+                tokens.append(str(reason).lower())
+    return tokens
+
+
+def _current_candidates_wait_for_line_movement(payload: dict[str, Any]) -> bool:
+    for token in _reason_tokens(payload):
+        if "line_movement" in token and ("awaiting_next_run" in token or "needs_next_cron" in token or "not_confirmed:awaiting" in token):
+            return True
+        if "line movement" in token and ("awaiting next run" in token or "needs next cron" in token):
+            return True
+    return False
+
+
+def _current_candidates_blocked_by_quality(payload: dict[str, Any]) -> bool:
+    quality_markers = (
+        "xg_direction_conflict",
+        "xg direction",
+        "quality",
+        "post_calibration",
+        "market_sanity",
+        "value",
+        "edge",
+        "ev",
+        "вероятность",
+        "направление ставки конфликтует",
+    )
+    return any(any(marker in token for marker in quality_markers) for token in _reason_tokens(payload))
+
+
 def _next_step(payload: dict[str, Any], truth: dict[str, Any], progressive: dict[str, Any]) -> str:
+    if _as_int(_first_dict(payload.get("funnel")).get("published_count")) > 0:
+        return "• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах."
+    if _current_candidates_wait_for_line_movement(payload):
+        return "• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline."
+    if _current_candidates_blocked_by_quality(payload):
+        return "• Следующий шаг: не форсировать публикацию; текущие кандидаты отрезаны quality/xG/value, ждать новых top-кандидатов."
     if _as_int(_first_dict(payload.get("funnel")).get("published_count")) > 0:
         return "• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах."
     if _as_int(truth.get("matches_waiting_line_movement")) > 0:
@@ -496,7 +553,7 @@ def render(payload: dict[str, Any]) -> str:
         f"• A-tier coverage: {tier_a_cov} | A-tier готово main: {tier_a_ready} | опубликовано fallback: {fallback_a_published}",
         f"  A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.",
         f"• B-tier coverage: {tier_b_cov} | B-tier готово main: {tier_b_ready} | опубликовано fallback: {fallback_b_published}",
-        f"  B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.",
+        f"  B-tier = 1+ odds-source + 2+ букмекера + 1+ context + второй снимок линии + value сохранился.",
         f"• Ждут второй снимок линии: {waiting_movement} | отклонены после второго снимка: {declined_after_second}",
         "",
         "🛡️ Движение линии и финальный фильтр",

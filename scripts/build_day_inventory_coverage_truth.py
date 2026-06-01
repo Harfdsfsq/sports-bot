@@ -695,8 +695,11 @@ def finalize_truth(row: dict[str, Any], min_odds: int, min_context: int, context
         missing.append("independent_odds_sources")
     if truth["context_sources_count"] < min_context:
         missing.append("context_sources")
+    tier_b_min_books = max(2, as_int(os.getenv("PUBLISH_TIER_B_MIN_BOOKS") or os.getenv("PUBLISH_MIN_BOOKS"), 2))
     tier_a_coverage_ready = truth["has_odds"] and truth["has_context"] and truth["price_confirmations"] >= min_odds and truth["odds_sources_count"] >= min_odds and truth["context_sources_count"] >= min_context
-    tier_b_coverage_ready = truth["has_odds"] and truth["has_context"] and truth["price_confirmations"] >= 1 and truth["odds_sources_count"] >= 1 and truth["context_sources_count"] >= 1
+    tier_b_bookmaker_quorum = truth["odds_sources_count"] >= 1 and truth["books_count"] >= tier_b_min_books
+    tier_b_independent_source_quorum = truth["odds_sources_count"] >= min_odds
+    tier_b_coverage_ready = truth["has_odds"] and truth["has_context"] and (tier_b_bookmaker_quorum or tier_b_independent_source_quorum) and truth["context_sources_count"] >= 1
     movement_ok = line_movement_confirmed(row)
     movement_drop = line_movement_declined(row)
     movement_wait = line_movement_waiting(row)
@@ -706,6 +709,10 @@ def finalize_truth(row: dict[str, Any], min_odds: int, min_context: int, context
         "ready_for_publish": tier_a_coverage_ready and movement_ok,
         "tier_a_coverage_ready": tier_a_coverage_ready,
         "tier_b_coverage_ready": tier_b_coverage_ready,
+        "tier_b_bookmaker_quorum_ready": tier_b_bookmaker_quorum,
+        "tier_b_independent_source_quorum_ready": tier_b_independent_source_quorum,
+        "tier_b_min_books": tier_b_min_books,
+        "tier_b_confirmation_mode": "bookmaker_quorum" if tier_b_bookmaker_quorum and not tier_a_coverage_ready else "independent_source_quorum" if tier_b_independent_source_quorum else "none",
         "tier_a_publish_ready": tier_a_coverage_ready and movement_ok,
         "tier_b_publish_ready": tier_b_coverage_ready and movement_ok,
         "line_movement_confirmed": movement_ok,
@@ -726,6 +733,7 @@ def write_csv(path: Path, rows: list[dict[str, Any]]) -> None:
         "odds_sources_count", "odds_sources", "price_confirmations", "books_count",
         "context_sources_count", "context_sources", "has_odds", "has_context",
         "ready_for_model", "ready_for_publish", "tier_a_coverage_ready", "tier_b_coverage_ready",
+        "tier_b_bookmaker_quorum_ready", "tier_b_independent_source_quorum_ready", "tier_b_confirmation_mode",
         "tier_a_publish_ready", "tier_b_publish_ready", "line_movement_confirmed",
         "line_movement_waiting", "line_movement_declined", "line_movement_status",
         "need_price_confirmations", "need_odds_sources", "need_context_sources", "missing",
@@ -768,6 +776,9 @@ def update_inventory_rows(inv: dict[str, Any], rows_by_key: dict[str, dict[str, 
             "books_count": truth["books_count"],
             "ready_for_publish_coverage": bool(truth["tier_a_coverage_ready"]),
             "tier_b_coverage_ready": bool(truth["tier_b_coverage_ready"]),
+            "tier_b_bookmaker_quorum_ready": bool(truth.get("tier_b_bookmaker_quorum_ready")),
+            "tier_b_independent_source_quorum_ready": bool(truth.get("tier_b_independent_source_quorum_ready")),
+            "tier_b_confirmation_mode": truth.get("tier_b_confirmation_mode"),
             "coverage_truth_highwater_applied": True,
         })
         row["coverage"] = cov
@@ -785,6 +796,8 @@ def counts_from_rows(rows: list[dict[str, Any]], min_odds: int, min_context: int
         "matches_ready_for_publish": sum(1 for r in rows if r["ready_for_publish"]),
         "matches_tier_a_coverage_ready": sum(1 for r in rows if r["tier_a_coverage_ready"]),
         "matches_tier_b_coverage_ready": sum(1 for r in rows if r["tier_b_coverage_ready"]),
+        "matches_tier_b_bookmaker_quorum_ready": sum(1 for r in rows if r.get("tier_b_bookmaker_quorum_ready")),
+        "matches_tier_b_independent_source_quorum_ready": sum(1 for r in rows if r.get("tier_b_independent_source_quorum_ready")),
         "matches_ready_for_publish_tier_a": sum(1 for r in rows if r["tier_a_publish_ready"]),
         "matches_ready_for_publish_tier_b": sum(1 for r in rows if r["tier_b_publish_ready"]),
         "matches_waiting_line_movement": sum(1 for r in rows if r["line_movement_waiting"]),
@@ -794,6 +807,10 @@ def counts_from_rows(rows: list[dict[str, Any]], min_odds: int, min_context: int
     counts["matches_missing_odds_source_2plus"] = max(0, len(rows) - counts["matches_with_2plus_odds_sources"])
     counts["matches_missing_context_2plus"] = max(0, len(rows) - counts["matches_with_2plus_context_sources"])
     return counts
+
+
+def row_truth(row: dict[str, Any], min_odds: int, min_context: int, context_index: dict[str, list[str]] | None = None) -> dict[str, Any]:
+    return finalize_truth(row, min_odds, min_context, context_index or {}, {})
 
 
 def main() -> int:

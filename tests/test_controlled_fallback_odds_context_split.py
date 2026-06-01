@@ -103,3 +103,39 @@ def test_over_total_below_xg_line_is_direction_conflict(monkeypatch):
     assert metrics["xg_sanity"]["xg_total"] == 2.39
     assert metrics["xg_sanity"]["xg_direction_ok"] is False
     assert "xg_direction_conflict" in pcf.hard_reject_reasons(candidate, metrics, {})
+
+
+def test_b_tier_bookmaker_quorum_accepts_one_api_two_books(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_LINE_MOVEMENT_FOR_TELEGRAM", "false")
+    candidate = _candidate()
+    candidate["books_count"] = 2
+    candidate["raw_bucket_offers"] = [
+        {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Under", "point": 2.25, "price": 2.18},
+        {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Under", "point": 2.25, "price": 2.22},
+    ]
+    candidate["odds"] = 2.20
+
+    metrics = pcf.candidate_metrics(candidate)
+    reasons = pcf.tier_reasons("B", candidate, metrics)
+
+    assert metrics["odds_sources_count"] == 1
+    assert metrics["books_count"] == 2
+    assert not [reason for reason in reasons if "bookmaker_quorum" in reason]
+
+
+def test_b_tier_bookmaker_quorum_rejects_price_outlier(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_TIER_B_MAX_BOOKMAKER_MEDIAN_DEVIATION_PCT", "5")
+    candidate = _candidate()
+    candidate["books_count"] = 2
+    candidate["raw_bucket_offers"] = [
+        {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Under", "point": 2.25, "price": 1.80},
+        {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Under", "point": 2.25, "price": 1.82},
+    ]
+    candidate["odds"] = 2.20
+
+    metrics = pcf.candidate_metrics(candidate)
+    reasons = pcf.tier_reasons("B", candidate, metrics)
+
+    assert any(str(reason).startswith("tier_b_bookmaker_quorum_price_outlier") for reason in reasons)

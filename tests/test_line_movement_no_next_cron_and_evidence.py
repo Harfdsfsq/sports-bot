@@ -69,6 +69,27 @@ def test_b_tier_can_publish_when_no_next_cron(monkeypatch):
     assert decision.passed is True
     assert decision.tier == "B"
     assert decision.report["line_movement"]["status"] == "publish_now_no_next_cron"
+    assert decision.report["tier_b_bookmaker_quorum_passed"] is True
+    assert decision.report["tier_b_confirmation_mode"] == "bookmaker_quorum"
+
+
+def test_b_tier_bookmaker_quorum_requires_two_books(monkeypatch):
+    now = datetime(2026, 6, 1, 15, 0, tzinfo=UTC)
+    state_path = f".data/test-line-movement-one-book-blocked/{uuid4().hex}.json"
+    monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", state_path)
+    monkeypatch.setenv("PUBLISH_TIER_B_MIN_BOOKS", "2")
+    item = _candidate(now + timedelta(minutes=80))
+    item.books_count = 1
+    item.raw_bucket_offers = [
+        {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Over", "point": 2.5, "price": 2.04},
+    ]
+    item.source_summary["books"] = ["Bet365"]
+
+    decision = classify_publication_tier(item, TierSettings(), now=now)
+
+    assert decision.passed is False
+    assert decision.tier == "blocked"
+    assert any("books=1/2" in reason for reason in decision.reasons)
 
 
 def test_first_snapshot_waits_when_scheduled_cron_exists_before_kickoff(monkeypatch):

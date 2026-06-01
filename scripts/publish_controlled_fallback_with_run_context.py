@@ -144,8 +144,11 @@ def final_publish_guard_reasons_with_b_tier_lifecycle(candidate: dict[str, Any],
         prefix = "controlled_fallback_confirmation_sources_below_min:"
         reasons = [r for r in reasons if not str(r).startswith(prefix)]
 
-    # Remove any accidental inherited A-tier odds-source requirement from B-tier.
-    reasons = [r for r in reasons if not str(r).startswith("tier_b_odds_sources_below_min:")]
+    # Remove only accidental inherited A-tier odds-source requirements. B-tier
+    # still needs at least one live odds provider plus the bookmaker quorum.
+    odds_sources = _as_int(metrics.get("independent_odds_sources_count"), _as_int(metrics.get("odds_sources_count"), _as_int(metrics.get("sources_count"))))
+    if odds_sources >= 1:
+        reasons = [r for r in reasons if not str(r).startswith("tier_b_odds_sources_below_min:")]
 
     movement = metrics.get("line_movement") if isinstance(metrics.get("line_movement"), dict) else {}
     status = str(movement.get("status") or "")
