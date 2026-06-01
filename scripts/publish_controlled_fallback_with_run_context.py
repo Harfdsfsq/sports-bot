@@ -20,6 +20,7 @@ from app.services.github_actions_context import append_github_run_reference, git
 TARGET = Path(__file__).with_name("publish_controlled_fallback.py")
 STATUS_PATH = Path(".data/exports/latest-controlled-fallback-run-context-wrapper.json")
 PRE_ENRICH_PATH = Path(".data/exports/latest-controlled-fallback-prepublish-secondary-enrichment.json")
+DUP_PRUNE_PATH = Path(".data/exports/latest-controlled-fallback-duplicate-prune.json")
 
 
 def _load_target() -> Any:
@@ -31,20 +32,20 @@ def _load_target() -> Any:
     return module
 
 
-def _write_status(payload: dict[str, Any]) -> None:
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
     try:
-        STATUS_PATH.parent.mkdir(parents=True, exist_ok=True)
-        STATUS_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     except Exception:
         pass
+
+
+def _write_status(payload: dict[str, Any]) -> None:
+    _write_json(STATUS_PATH, payload)
 
 
 def _write_pre_enrich(payload: dict[str, Any]) -> None:
-    try:
-        PRE_ENRICH_PATH.parent.mkdir(parents=True, exist_ok=True)
-        PRE_ENRICH_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    except Exception:
-        pass
+    _write_json(PRE_ENRICH_PATH, payload)
 
 
 publisher = _load_target()
@@ -52,8 +53,8 @@ _original_send_telegram = publisher.send_telegram
 
 
 # HARIZON patch: enforce honest A/B tier rules without changing the original
-# publisher file.  A-tier must have 2+ independent odds sources and 2+
-# confirmations.  B-tier is allowed with 1 odds source + 1 confirmation when the
+# publisher file. A-tier must have 2+ independent odds sources and 2+
+# confirmations. B-tier is allowed with 1 odds source + 1 confirmation when the
 # line movement guard has already approved the candidate or there is no next cron
 # before kickoff.
 def _tier_code(value: object) -> str:
@@ -104,6 +105,7 @@ def _as_int(value: object, default: int = 0) -> int:
 
 _original_tier_reasons = publisher.tier_reasons
 _original_final_publish_guard_reasons = publisher.final_publish_guard_reasons
+_original_load_candidate_pool = publisher.load_candidate_pool
 
 
 def tier_reasons_with_honest_ab_rules(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
@@ -119,7 +121,7 @@ def tier_reasons_with_honest_ab_rules(tier: str, candidate: dict[str, Any], metr
         if confirmations < min_conf:
             reasons.append(f"tier_a_confirmation_sources_below_min:{confirmations}/{min_conf}")
     elif code == "B":
-        # B-tier contract is intentionally 1+ independent odds source.  Do not let
+        # B-tier contract is intentionally 1+ independent odds source. Do not let
         # global/A-tier env vars accidentally turn B-tier into A-tier.
         min_odds = 1
         min_conf = max(1, _env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1))
@@ -156,8 +158,72 @@ def final_publish_guard_reasons_with_b_tier_lifecycle(candidate: dict[str, Any],
     return reasons
 
 
+def load_candidate_pool_with_sent_duplicate_pruning() -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Drop already-sent fallback candidates before evaluation when alternatives exist.
+
+    The durable duplicate ledger must still block repeats.  This wrapper only keeps
+    a strong already-published match from occupying the only rescue slot for many
+    consecutive runs.  If every candidate is a duplicate, keep the original pool so
+    the report remains transparent and still says duplicate_already_sent.
+    """
+    pool, counts = _original_load_candidate_pool()
+    if not _env_bool("CONTROLLED_FALLBACK_PRUNE_SENT_DUPLICATES_BEFORE_EVAL", True):
+        return pool, counts
+    try:
+        hours = _env_int("CONTROLLED_FALLBACK_DEDUPE_HOURS", 72)
+        sent_index = publisher.prune_sent_index(publisher.load_sent_index(), hours)
+        sent_index = publisher.load_sent_dedupe_index() | sent_index
+    except Exception as exc:
+        _write_json(DUP_PRUNE_PATH, {"status": "error", "error": f"{type(exc).__name__}: {exc}", "input_candidates": len(pool or [])})
+        return pool, counts
+
+    kept: list[dict[str, Any]] = []
+    duplicate_rows: list[dict[str, Any]] = []
+    for row in pool or []:
+        try:
+            reason = publisher.duplicate_reason(row, sent_index)
+        except Exception:
+            reason = None
+        if reason:
+            duplicate_rows.append({
+                "match_key": row.get("match_key") or row.get("canonical_match_id"),
+                "home_team": row.get("home_team") or row.get("home"),
+                "away_team": row.get("away_team") or row.get("away"),
+                "family": row.get("family") or row.get("market_family"),
+                "selection": row.get("selection") or row.get("selection_key"),
+                "point": row.get("point") or row.get("line") or row.get("handicap"),
+                "reason": reason,
+                "candidate_source": row.get("_candidate_source"),
+            })
+        else:
+            kept.append(row)
+
+    out_counts = dict(counts or {})
+    out_counts["duplicate_prune_input_candidates"] = len(pool or [])
+    out_counts["duplicate_pruned_before_eval"] = len(duplicate_rows)
+    out_counts["duplicate_prune_kept_candidates"] = len(kept)
+    all_duplicates = bool(pool) and not kept and bool(duplicate_rows)
+    out_counts["duplicate_prune_all_candidates_were_duplicates"] = int(all_duplicates)
+
+    payload = {
+        "status": "ok",
+        "enabled": True,
+        "input_candidates": len(pool or []),
+        "duplicates": len(duplicate_rows),
+        "kept": len(kept),
+        "all_candidates_were_duplicates": all_duplicates,
+        "action": "kept_original_pool_for_transparent_duplicate_report" if all_duplicates else "pruned_duplicates_before_eval",
+        "duplicate_sample": duplicate_rows[:10],
+    }
+    _write_json(DUP_PRUNE_PATH, payload)
+    if all_duplicates:
+        return pool, out_counts
+    return kept, out_counts
+
+
 publisher.tier_reasons = tier_reasons_with_honest_ab_rules
 publisher.final_publish_guard_reasons = final_publish_guard_reasons_with_b_tier_lifecycle
+publisher.load_candidate_pool = load_candidate_pool_with_sent_duplicate_pruning
 
 
 def send_telegram_with_run_context(message: Any):
@@ -166,7 +232,13 @@ def send_telegram_with_run_context(message: Any):
 
 
 publisher.send_telegram = send_telegram_with_run_context
-_write_status({"status": "installed", "wrapper": "controlled-fallback-github-run-reference", "github_actions": github_run_context(), "independent_ab_tier_rules": True})
+_write_status({
+    "status": "installed",
+    "wrapper": "controlled-fallback-github-run-reference",
+    "github_actions": github_run_context(),
+    "independent_ab_tier_rules": True,
+    "sent_duplicate_pruning": True,
+})
 
 
 def _run_helper(script_name: str, timeout_seconds: int = 70) -> dict[str, Any]:
