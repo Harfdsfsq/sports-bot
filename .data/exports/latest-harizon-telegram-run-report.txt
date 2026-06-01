@@ -18,51 +18,42 @@
 • Ждут второй снимок линии: 127 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 17 | матчей без следующего регулярного run: 0
-• Line guard: увидел 12, оставил 3, снял 1
+• Pre-kickoff проверок: 23 | матчей без следующего регулярного run: 17
+• Line guard: увидел 3, оставил 0, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Raw/candidates before quality: 1/2
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 12 (events 0, odds 12); смэтчил матчей 51; дал offers 7670 (639/запрос); 2+ букмекера 35; ошибок 0.
+• odds-api.io: запросы 12 (events 0, odds 12); смэтчил матчей 51; дал offers 7695 (641/запрос); 2+ букмекера 35; ошибок 0.
 • Bzzoiro: запросы 62 (direct 31, v2 31, gap 0); событий 15; контекстов 10; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 20; secondary offers 0; overlap с odds-api.io 11; ошибок 6.
-• SStats: запросы 27; сырых строк 23310 (863/запрос); контекстов 38; deep-enriched 4; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 27; сырых строк 23310 (863/запрос); контекстов 41; deep-enriched 4; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: odds_api_io: 37, bzzoiro+odds_api_io: 11
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 104. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 6.
-• 0–4 часа: 5/46 core-ready.
-• 0–12 часов: 6/58 core-ready.
+• 0–4 часа: 5/44 core-ready.
+• 0–12 часов: 6/52 core-ready.
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 3 (25%)
-• quality: вероятность после калибровки ниже порога: 2 (17%)
-• quality: market sanity totals/xG contradiction: 2 (17%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (8%)
-• tier c watch only: 1 (8%)
-• line movement not confirmed:awaiting next run: 1 (8%)
-• line movement:needs next cron line movement recheck: 1 (8%)
-• line movement guard снял кандидата: 1 (8%)
+• направление ставки конфликтует с xG: 1 (33%)
+• quality: вероятность после калибровки ниже порога: 1 (33%)
+• line movement guard снял кандидата: 1 (33%)
 
 🔎 Последние проверенные кандидаты
-1. Slovakia — Malta | Меньше 2.5 @2.44 | EV +9.5% | edge +3.9 п.п. | q 74.3
-   • причина: направление ставки конфликтует с xG
-2. FCI Levadia Tallinn — Tallinna JK Legion | Больше 5.5 @2.55 | EV +20.0% | edge +7.9 п.п. | q 66.4
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-3. Turkiye — North Macedonia | Больше 3.5 @2.58 | EV +9.7% | edge +3.8 п.п. | q 53.6
+1. Slovakia — Malta | Меньше 2.5 @2.26 | EV +2.3% | edge +1.0 п.п. | q 75.0
    • причина: направление ставки конфликтует с xG
 
 📌 Что это значит
-• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
+• Следующий шаг: не форсировать публикацию; текущие кандидаты отрезаны quality/xG/value, ждать новых top-кандидатов.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26762553781
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26762553781
-• Artifact: run-bot-26762553781
+• Run ID: 26763082327
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26763082327
+• Artifact: run-bot-26763082327
 • workflow run-bot, attempt 1
