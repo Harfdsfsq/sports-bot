@@ -1,35 +1,35 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 196 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: missing sources
+🟡 Прогнозов нет: есть 197 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: 224 матчей. В этом run обработано: 61.
 • 1+ линия: 224/224 (100%) | 1+ контекст: 216/224 (96%)
-• 2+ подтверждения цены: 127/224 (57%)
+• 2+ подтверждения цены: 128/224 (57%)
 • 2+ независимых odds-source: 26/224 (12%)
-• 2+ контекста: 113/224 (50%)
+• 2+ контекста: 111/224 (50%)
 • Готово для модели: 215/224 (96%)
 
 🏷️ A/B-tier публикация
-• A-tier coverage: 20 | A-tier готово main: 0 | опубликовано fallback: 0
+• A-tier coverage: 21 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 196 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 197 | B-tier готово main: 0 | опубликовано fallback: 0
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
-• Ждут второй снимок линии: 196 | отклонены после второго снимка: 0
+• Ждут второй снимок линии: 197 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
-• Line guard: увидел 11, оставил 1, снял 3
+• Line guard: увидел 11, оставил 2, снял 1
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/8
-• Quality прошло: 2 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 8/8
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 12 (events 0, odds 12); смэтчил матчей 60; дал offers 7730 (644/запрос); 2+ букмекера 37; ошибок 0.
-• Bzzoiro: запросы 62 (direct 31, v2 31, gap 0); событий 15; контекстов 10; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 20; secondary offers 11; overlap с odds-api.io 11; ошибок 6.
-• SStats: запросы 27; сырых строк 23310 (863/запрос); контекстов 49; deep-enriched 4; team-form 0; direct 0; ошибок 0.
+• odds-api.io: запросы 12 (events 0, odds 12); смэтчил матчей 60; дал offers 7810 (651/запрос); 2+ букмекера 37; ошибок 0.
+• Bzzoiro: запросы 62 (direct 31, v2 31, gap 0); событий 15; контекстов 10; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 20; secondary offers 0; overlap с odds-api.io 11; ошибок 6.
+• SStats: запросы 27; сырых строк 23310 (863/запрос); контекстов 47; deep-enriched 4; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: odds_api_io: 41, bzzoiro+odds_api_io: 11
 
@@ -40,29 +40,29 @@
 • 0–12 часов: 6/62 core-ready.
 
 🚫 Почему не опубликовано
-• missing sources: 3 (23%)
-• line movement guard снял кандидата: 3 (23%)
-• quality: вероятность после калибровки ниже порога: 2 (15%)
-• направление ставки конфликтует с xG: 1 (8%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (8%)
-• quality: market sanity totals/xG contradiction: 1 (8%)
-• line movement not confirmed:awaiting next run: 1 (8%)
-• line movement:needs next cron line movement recheck: 1 (8%)
+• направление ставки конфликтует с xG: 3 (19%)
+• модель слишком оптимистична относительно xG-ориентира: 3 (19%)
+• quality: market sanity totals/xG contradiction: 3 (19%)
+• tier c watch only: 1 (6%)
+• line movement not confirmed:awaiting next run: 1 (6%)
+• line movement:needs next cron line movement recheck: 1 (6%)
+• controlled fallback confirmation sources below min:1/2: 1 (6%)
+• quality: вероятность после калибровки ниже порога: 1 (6%)
 
 🔎 Последние проверенные кандидаты
-1. Tartu JK Tammeka — Parnu JK Vaprus II | Меньше 3.5 @2.55 | EV +14.9% | edge +5.9 п.п. | q 77.4
-   • причина: missing sources
-2. FCI Levadia Tallinn — Tallinna JK Legion | Больше 5.5 @2.55 | EV +15.7% | edge +6.2 п.п. | q 55.0
-   • причина: missing sources, направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-3. Vard Haugesund — Aasane Fotball 2 | Меньше 4.25 @1.80 | EV +11.8% | edge +6.6 п.п. | q 80.7
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+1. Bulgaria — Montenegro | Больше 2.5 @2.48 | EV +9.5% | edge +3.8 п.п. | q 65.4
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+2. FCI Levadia Tallinn — Tallinna JK Legion | Больше 5.5 @2.55 | EV +21.9% | edge +8.6 п.п. | q 69.7
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+3. AL Talaba — AL Karkh | Меньше 2.5 @2.10 | EV +3.6% | edge +1.7 п.п. | q 36.3
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
 
 📌 Что это значит
 • Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26756471189
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26756471189
-• Artifact: run-bot-26756471189
+• Run ID: 26757200022
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26757200022
+• Artifact: run-bot-26757200022
 • workflow run-bot, attempt 1
