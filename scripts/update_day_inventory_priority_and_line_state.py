@@ -696,7 +696,16 @@ def update_inventory_priority(local_date: str, now: datetime) -> dict[str, Any]:
         if has_odds and not has_context:
             priority += 8.0
         final_check = minutes is not None and min_lead <= minutes <= final_window_min
-        no_more = minutes is not None and minutes <= next_run_min + min_lead
+        next_run_at = next_scheduled_run_at(now, env_int("LINE_MOVEMENT_CRON_INTERVAL_MINUTES", next_run_min)) if env_bool("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) else None
+        latest_useful_run_at = kickoff - timedelta(minutes=min_lead) if kickoff else None
+        has_next_regular_run = (
+            bool(kickoff and next_run_at and latest_useful_run_at)
+            and next_run_at <= latest_useful_run_at
+        )
+        if env_bool("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) and kickoff is not None:
+            no_more = not has_next_regular_run
+        else:
+            no_more = minutes is not None and minutes <= next_run_min + min_lead
         final_checks += int(bool(final_check))
         no_more_runs += int(bool(no_more and minutes >= min_lead))
         active_rows += int(minutes is not None and minutes >= 0)
@@ -712,6 +721,9 @@ def update_inventory_priority(local_date: str, now: datetime) -> dict[str, Any]:
             "needs_context_refresh": bool(has_odds and not has_context and minutes is not None and minutes >= min_lead),
             "final_pre_kickoff_check_required": bool(final_check),
             "no_more_regular_run_before_kickoff": bool(no_more and minutes is not None and minutes >= min_lead),
+            "next_scheduled_run_at_utc": next_run_at.isoformat() if next_run_at else None,
+            "latest_useful_run_at_utc": latest_useful_run_at.isoformat() if latest_useful_run_at else None,
+            "has_next_regular_run_before_kickoff": has_next_regular_run,
             "expected_next_run_interval_minutes": next_run_min,
             "min_kickoff_lead_minutes": min_lead,
             "max_current_line_age_minutes": max_age,
