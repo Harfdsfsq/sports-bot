@@ -6,7 +6,9 @@
     "sample_odds": []
   },
   "stats": {
-    "active_odds_rows_seen": 0,
+    "active_odds_embedded_games_outside_requested_dates": 50,
+    "active_odds_recovered_fixtures": 0,
+    "active_odds_rows_seen": 50,
     "active_odds_skipped_reason": "no_current_games_from_games_endpoint",
     "active_odds_targeted_confirmation_skipped": true,
     "active_odds_targeted_matches": 0,
@@ -23,6 +25,9 @@
     "fixtures_skipped": 0,
     "games_fetched": 0,
     "http_statuses": [
+      200,
+      200,
+      200,
       200,
       200
     ],
@@ -63,10 +68,41 @@
         },
         "rows": 0,
         "scope": "dated"
+      },
+      {
+        "date": "2026-06-02",
+        "date_filter_effective": false,
+        "params": {
+          "date_from": "2026-06-02",
+          "date_to": "2026-06-03",
+          "per_page": 50,
+          "status": "scheduled"
+        },
+        "rows": 0,
+        "scope": "dated"
+      },
+      {
+        "date": "2026-06-02",
+        "date_filter_effective": false,
+        "params": {
+          "date_from": "2026-06-02",
+          "date_to": "2026-06-03",
+          "per_page": 50
+        },
+        "rows": 0,
+        "scope": "dated"
+      },
+      {
+        "params": {
+          "is_active": "true",
+          "per_page": 50
+        },
+        "rows": 50,
+        "scope": "active_odds_fallback"
       }
     ],
     "rate_limited": 0,
-    "requests": 2,
+    "requests": 5,
     "response_errors": 0,
     "rows_before_parse": 0,
     "sportlogic_query_guard_enabled": true,

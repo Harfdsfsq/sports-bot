@@ -1,0 +1,422 @@
+{
+  "active_provider_checks": [
+    "odds_api_io",
+    "allsportsapi",
+    "sportlogic",
+    "sstats",
+    "bzzoiro",
+    "football_data",
+    "thesportsdb",
+    "highlightly",
+    "weatherapi",
+    "openweathermap",
+    "meteostat",
+    "newsapi",
+    "currents",
+    "gnews",
+    "newsdata",
+    "guardian",
+    "sharpapi",
+    "futrixmetrics"
+  ],
+  "by_group": {
+    "context": {
+      "config_only": 1,
+      "ok": 5
+    },
+    "news": {
+      "ok": 5
+    },
+    "odds": {
+      "ok": 2
+    },
+    "odds_context": {
+      "ok": 1
+    },
+    "utility": {
+      "missing_secret": 1
+    },
+    "weather": {
+      "ok": 3
+    }
+  },
+  "by_status": {
+    "config_only": 1,
+    "missing_secret": 1,
+    "ok": 16
+  },
+  "created_at_utc": "2026-06-01T16:19:56.134624+00:00",
+  "critical_failures": [],
+  "mode": "quick",
+  "recommendations": [
+    "odds-api.io inventory is healthy; keep dual-account bookmaker split active.",
+    "SportLogic is reachable; use controlled shortlist mode only after fixture freshness/matching checks.",
+    "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
+    "TheSportsDB is reachable; use it for team/league alias enrichment.",
+    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
+  ],
+  "removed_providers": [
+    "api_football",
+    "bookies_api",
+    "oddspapi"
+  ],
+  "results": [
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"count\":8,\"next\":null,\"previous\":null,\"results\":[{\"id\":4591,\"event\":{\"id\":207483,\"league\":{\"id\":53,\"name\":\"Botola Pro\",\"country\":\"Morocco\",\"is_women\":false,\"current_season\":null},\"season\":null,\"home_team\":\"Union Touarga Sport\",\"away_team\":\"Kawkab Athletic Club Marrakech\",\"home_team_obj\":{\"id\":2062,\"name\":\"Union Touarga Sport\",\"short_name\":\"Union Touarga\",\"country\":\"Morocco\",\"coach\":{\"name\":\"Abdelouahed Zamrat\",\"shortName\":\"A. Zamrat\"},\"venue\":null},\"away_team_obj\":{\"id\":2065,\"name\":\"Kawkab Athletic Club Marrakech\",\"short_name\":\"KACM\",\"country\":\"Morocco\",\"coach\":{\"name\":\"Hicham Dmiai\",\"shortName\":\"H. Dmiai\"},\"venue\":null},\"event_date\":\"2026-06-01T16:00:00Z\",\"round_number\":22,\"round_name\":\"\",\"group_name\":null,\"status\":\"1st_half\",\"home_score\":0,\"away_score\":0,\"home_score_ht\":null,\"away_score_ht\":null,\"current_minute\":18,\"period\":\"1T\",\"odds_home\":2.13,\"odds_draw\":2.64,\"odds_away\":2.76,\"odds_over_15\":1.34,\"odds_over_25\":1.95,\"odds_over_35\":3.76,\"odds_under_15\":2.21,\"odds_under_25\":1.36,\"odds_under_35\":1.14,\"odds_btts_yes\":1.84,\"odds_btts_no\":1.62,\"actual_home_xg\":null,\"actual_away_xg\":null,\"home_xg_live\":null,\"away_xg_live\":null,\"penalty_shootout\":null,\"extra_time_score\":null,\"is_local",
+        "payload_shape": "count,next,previous,results"
+      },
+      "endpoint": "https://sports.bzzoiro.com/api/predictions/?date_from=2026-06-01&date_to=2026-06-02&upcoming=true&tz=UTC&page=1",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 1151,
+      "message": "ok",
+      "provider": "bzzoiro",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 8
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"count\":13,\"filters\":{\"client\":\"Rick Dalton\"},\"competitions\":[{\"id\":2013,\"area\":{\"id\":2032,\"name\":\"Brazil\",\"code\":\"BRA\",\"flag\":\"https://crests.football-data.org/764.svg\"},\"name\":\"Campeonato Brasileiro Série A\",\"code\":\"BSA\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/bsa.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2474,\"startDate\":\"2026-01-28\",\"endDate\":\"2026-12-02\",\"currentMatchday\":18,\"winner\":null},\"numberOfAvailableSeasons\":10,\"lastUpdated\":\"2024-09-13T16:55:53Z\"},{\"id\":2016,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Championship\",\"code\":\"ELC\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/ELC.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2416,\"startDate\":\"2025-08-08\",\"endDate\":\"2026-05-12\",\"currentMatchday\":46,\"winner\":null},\"numberOfAvailableSeasons\":9,\"lastUpdated\":\"2026-05-11T15:45:39Z\"},{\"id\":2021,\"area\":{\"id\":2072,\"name\":\"England\",\"code\":\"ENG\",\"flag\":\"https://crests.football-data.org/770.svg\"},\"name\":\"Premier League\",\"code\":\"PL\",\"type\":\"LEAGUE\",\"emblem\":\"https://crests.football-data.org/PL.png\",\"plan\":\"TIER_ONE\",\"currentSeason\":{\"id\":2403,\"startDate\":\"2025-08-15\",\"endDate\":\"2026-05-",
+        "payload_shape": "competitions,count,filters"
+      },
+      "endpoint": "https://api.football-data.org/v4/competitions",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 856,
+      "message": "ok",
+      "provider": "football_data",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 13
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "runtime_effect": "not treated as health failure",
+        "set": "FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT for live probe"
+      },
+      "endpoint": "",
+      "group": "context",
+      "http_statuses": [],
+      "latency_ms": null,
+      "message": "key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured",
+      "provider": "futrixmetrics",
+      "requests": 0,
+      "status": "config_only",
+      "useful_rows": 0
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"data\":[{\"id\":1286368129,\"round\":\"Regular Season - 14\",\"date\":\"2026-06-01T23:00:00.000Z\",\"country\":{\"code\":\"CL\",\"name\":\"Chile\",\"logo\":\"https://highlightly.net/soccer/images/countries/CL.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":1981061,\"logo\":\"https://highlightly.net/soccer/images/teams/1981061.png\",\"name\":\"Antofagasta\"},\"homeTeam\":{\"id\":1971700,\"logo\":\"https://highlightly.net/soccer/images/teams/1971700.png\",\"name\":\"Curicó Unido\"},\"league\":{\"id\":227150,\"logo\":\"https://highlightly.net/soccer/images/leagues/227150.png\",\"name\":\"Primera B\",\"season\":2026}},{\"id\":1299338220,\"round\":\"Regular Season - 9\",\"date\":\"2026-06-01T23:00:00.000Z\",\"country\":{\"code\":\"BR\",\"name\":\"Brazil\",\"logo\":\"https://highlightly.net/soccer/images/countries/BR.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":1031345,\"logo\":\"https://highlightly.net/soccer/images/teams/1031345.png\",\"name\":\"Brusque\"},\"homeTeam\":{\"id\":15549405,\"logo\":null,\"name\":\"Barra\"},\"league\":{\"id\":64609,\"logo\":\"https://highlightly.net/soccer/images/leagues/64609.png\",\"name\":\"Serie C\",\"season\":2026}},{\"id\":12",
+        "expected_base": "https://soccer.highlightly.net",
+        "payload_shape": "data,pagination,plan",
+        "rapidapi_base": "https://football-highlights-api.p.rapidapi.com"
+      },
+      "endpoint": "https://soccer.highlightly.net/matches?date=2026-06-01&limit=5",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 248,
+      "message": "ok",
+      "provider": "highlightly",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 5
+    },
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"status\":\"OK\",\"count\":5,\"data\":[{\"id\":1513128,\"flashId\":\"zw3295mK\",\"date\":\"2026-05-30T21:00:00+00:00\",\"dateUtc\":1780174800,\"status\":8,\"periods\":[\"2026-05-30T21:00:00+00:00\",\"2026-05-30T22:00:00+00:00\"],\"statusName\":\"Finished\",\"elapsed\":90,\"extraMinutes\":4,\"homeResult\":2,\"awayResult\":0,\"homeHTResult\":0,\"awayHTResult\":0,\"homeFTResult\":2,\"awayFTResult\":0,\"homeTeam\":{\"id\":18740,\"name\":\"St. Louis City II\",\"flashId\":null,\"country\":{\"code\":\"US\",\"name\":\"USA\"}},\"awayTeam\":{\"id\":10282,\"name\":\"North Texas\",\"flashId\":\"north-texas/S8tR4xvt\",\"country\":{\"code\":\"US\",\"name\":\"USA\"}},\"season\":{\"uid\":\"5e4f1e14-f9d5-11f0-9833-3cecef730a49\",\"year\":2026,\"league\":{\"id\":909,\"name\":\"MLS Next Pro\",\"country\":{\"code\":\"US\",\"name\":\"USA\"},\"flashScoreId\":\"usa/mls-next-pro\"}},\"roundName\":\"Group Stage\",\"odds\":[{\"marketId\":1,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.43,\"openingValue\":null},{\"name\":\"Away\",\"value\":5.6,\"openingValue\":null},{\"name\":\"Draw\",\"value\":4.35,\"openingValue\":null}]},{\"marketId\":2,\"marketName\":null,\"odds\":[{\"name\":\"Home\",\"value\":1.15,\"openingValue\":null},{\"name\":\"Away\",\"value\":4.1,\"openingValue\":null}]},{\"marketId\":12,\"marketName\":null,\"odds\":[{\"name\":\"Home/Draw\",\"value\":1.08,\"openingVal",
+        "payload_shape": "count,data,offset,status,traceId"
+      },
+      "endpoint": "https://api.sstats.net/Games/list?apikey=***&from=2026-05-31&to=2026-06-01&limit=5&offset=0",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 609,
+      "message": "ok",
+      "provider": "sstats",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 5
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"countries\":[{\"idLeague\":\"4570\",\"idAPIfootball\":\"7364\",\"idAPIfootballv3\":\"48\",\"strSport\":\"Soccer\",\"strLeague\":\"EFL Cup\",\"strLeagueAlternate\":\"Football League Cup, Carabao Cup\",\"intDivision\":\"99\",\"idCup\":\"1\",\"strCurrentSeason\":\"2025-2026\",\"intFormedYear\":\"1960\",\"dateFirstEvent\":\"2006-02-26\",\"strGender\":\"Male\",\"strCountry\":\"England\",\"strWebsite\":\"www.efl.com\\/carabao-cup\",\"strFacebook\":\"www.facebook.com\\/TheCarabaoCup\\/\",\"strInstagram\":\"\",\"strTwitter\":\"twitter.com\\/carabao_cup\",\"strYoutube\":\"\",\"strRSS\":\"\",\"strDescriptionEN\":\"The EFL Cup (referred to historically, and colloquially, as simply the League Cup), currently known as the Carabao Cup for sponsorship reasons, is an annual knockout football competition in men's domestic English football. Organised by the English Football League (EFL), it is open to any club within the top four levels of the English football league system – 92 clubs in total – comprising the top level Premier League, and the three divisions of the English Football League's own league competition (Championship, League One and League Two).\\r\\n\\r\\nFirst held in 1960–61 as the Football League Cup, it is one of the three top-tier domestic football competitions in En",
+        "free_key_defaulted": true,
+        "payload_shape": "countries"
+      },
+      "endpoint": "https://www.thesportsdb.com/api/v1/json/123/search_all_leagues.php?c=England&s=Soccer",
+      "group": "context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 169,
+      "message": "ok",
+      "provider": "thesportsdb",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 5
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"2611fd00-2d77-5a65-85a6-17f5eeee95d9\",\"title\":\"Captain Williamson ruled out of England qualifiers v Spain and Ukraine\",\"description\":\"LONDON, June 1 - Lionesses captain Leah Williamson will miss England's World Cup qualifiers against Spain and Ukraine due to a hamstring injury. Read more at straitstimes.com. Read more at straitstimes.com.\",\"url\":\"https://www.straitstimes.com/sport/football/captain-williamson-ruled-out-of-england-qualifiers-v-spain-and-ukraine\",\"author\":\"\",\"image\":\"https://cassette.sphdigital.com.sg/image/straitstimes/57eca85936135d99ffaf7a10dd0f70ee79692f1fecdae5fb253b745fa2bba670\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-06-01 16:10:22 +0000\"},{\"id\":\"a423b625-f538-5c86-8b5d-7049ead51f2a\",\"title\":\"R\\u00faaidhr\\u00ed O\\u2019Connor: James Lowe\\u2019s exit will weaken Leinster and lessen Ireland\\u2019s World Cup chances next year\",\"description\":\"The Leinster fans who chanted \\u2018one more year\\u2019 want James Lowe to stay, Leo Cullen has said he wanted Lowe to stay, Andy Farrell said he wants him to stay, and while he wasn\\u2019t asked about his future during a brief television interview on Sa",
+        "payload_shape": "news,page,status"
+      },
+      "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 1013,
+      "message": "ok",
+      "provider": "currents",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 30
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":324821,\"articles\":[{\"id\":\"ede58d7ac25b047bb10bd01a985ca666\",\"title\":\"Olly Burdett on his work with the Tigers Trust as Volunteers' Week begins\",\"description\":\"'Football opens the door, builds trust and brings people in, but what happens after that is far bigger than sport. It becomes about confidence, employability, wellbeing and giving people opportunities they might never have believed were possible.'\",\"content\":\"To mark Volunteers’ Week, which is running from June 1 to 7 in 2026, Hull Live is helping to tell the stories of Hull people giving their time to support local charities. First to be spotlighted is Olly Burdett, a trustee with the Tigers Trust.\\nGrowi... [5204 chars]\",\"url\":\"https://www.hulldailymail.co.uk/news/hull-east-yorkshire-news/olly-burdett-work-tigers-trust-10992002\",\"image\":\"https://i2-prod.hulldailymail.co.uk/article10992015.ece/ALTERNATES/s1200d/0_hum-310526-olly-burdett.jpg\",\"publishedAt\":\"2026-06-01T04:00:00Z\",\"lang\":\"en\",\"source\":{\"id\":\"",
+        "payload_shape": "articles,information,totalArticles"
+      },
+      "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 380,
+      "message": "ok",
+      "provider": "gnews",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"response\":{\"status\":\"ok\",\"userTier\":\"developer\",\"total\":134606,\"startIndex\":1,\"pageSize\":1,\"currentPage\":1,\"pages\":134606,\"orderBy\":\"relevance\",\"results\":[{\"id\":\"football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"type\":\"article\",\"sectionId\":\"football\",\"sectionName\":\"Football\",\"webPublicationDate\":\"2026-04-28T14:14:05Z\",\"webTitle\":\"Brighton plan Europe’s first purpose-built women’s football stadium\",\"webUrl\":\"https://www.theguardian.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"apiUrl\":\"https://content.guardianapis.com/football/2026/apr/28/brighton-plan-europes-first-purpose-built-womens-football-stadium\",\"isHosted\":false,\"pillarId\":\"pillar/sport\",\"pillarName\":\"Sport\"}]}}",
+        "payload_shape": "response"
+      },
+      "endpoint": "https://content.guardianapis.com/search?api-key=***&q=football&section=football&page-size=1",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 747,
+      "message": "ok",
+      "provider": "guardian",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":26367,\"articles\":[{\"source\":{\"id\":\"usa-today\",\"name\":\"USA Today\"},\"author\":\"Lee Ann Herring Olvedo, UK Wildcats Wire\",\"title\":\"Cornerback Miles Brown details his decision to commit to Kentucky\",\"description\":\"Four-star recruit Miles Brown explains why he chose Kentucky over Tennessee, citing authentic staff relationships.\",\"url\":\"https://ukwildcatswire.usatoday.com/story/sports/college/kentucky/football/2026/05/31/why-miles-brown-picked-kentucky-football-tennessee/90321723007/\",\"urlToImage\":\"https://s.yimg.com/lo/mysterio/api/f5f6f8df644fb6dda4ba0307e3bf226b5ab266fa2a4db2659c4ebb4ca919dc9b/lightyear_networkapi/resizefill_w1200;quality_80;format_webp/https:%2F%2Fmedia.zenfs.com%2Fen%2Fwildcats_wire_articles_598%2F14fa0628dc5e52edf293835d67c8ae11\",\"publishedAt\":\"2026-05-31T16:18:36Z\",\"content\":\"There is a version of this recruitment where Tennessee wins. Where the volume of the orange machine, the proximity of Knoxville, and the gravitational pull of the Volunteers' resurgence swallow Miles… [+4222 chars]\"}]}",
+        "payload_shape": "articles,status,totalResults"
+      },
+      "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 162,
+      "message": "ok",
+      "provider": "newsapi",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"status\":\"success\",\"totalResults\":6980,\"results\":[{\"article_id\":\"af237bcdb844bf015d156db9d0b24a8a\",\"link\":\"https://ghananewss.com/four-players-invited-to-join-black-queens-camp/\",\"title\":\"Four players invited to join Black Queens camp\",\"description\":\"Four more players have been invited to join the 22 initially called up for the Black Queens camping in Accra.The players are goalkeeper Osman Huzeima of Jonina Football Academy, Diana Amoako of Ampem Darkoa Ladies and Mavis Owusu of Fomeget GSK in Turkey.The quartet were included to the team after a successful screening by Black [...] The post Four players invited to join Black Queens camp appeared first on Ghana News Online .\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":null,\"creator\":[\"ghana newss\"],\"language\":\"english\",\"country\":[\"ghana\"],\"category\":[\"top\",\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-06-01 04:17:22\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-06-01 04:45:21\",\"image_url\":\"https://cms.ghanasoccernet.com/wp-content/uploads/2026/06/QUEENS.jpg\",\"video_url\":null,\"source_id\":\"ghananewss\",\"source_name\":\"Ghana News Online\",\"source_priority\":967162,\"source_url\":\"https://ghananewss.com\",\"source_icon\":\"https://n.bytvi.com/ghan",
+        "payload_shape": "nextPage,results,status,totalResults"
+      },
+      "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
+      "group": "news",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 402,
+      "message": "ok",
+      "provider": "newsdata",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "[{\"id\":67919964,\"home\":\"Gneist\",\"away\":\"Sogndal 2\",\"homeId\":818,\"awayId\":7479,\"date\":\"2026-06-01T16:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Norway - 3rd Division Group 3\",\"slug\":\"norway-3rd-division-group-3\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":70771304,\"home\":\"Venezuela\",\"away\":\"Canada Youth\",\"homeId\":903537,\"awayId\":1342250,\"date\":\"2026-06-01T16:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International Youth - Toulon Tournament\",\"slug\":\"international-youth-toulon-tournament\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71544086,\"home\":\"FC Wurzburger Kickers\",\"away\":\"1. FC Lokomotive Leipzig\",\"homeId\":23947,\"awayId\":24093,\"date\":\"2026-06-01T16:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Germany Amateur - Regionalliga Playoffs\",\"slug\":\"germany-amateur-regionalliga-playoffs\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68311638,\"home\":\"Skovde AIK\",\"away\":\"Jonkopings Sodra IF\",\"homeId\":7063,\"awayId\":1841,\"date\":\"2026-06-01T17:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Sweden - Ettan, Relegation/Promotion\",\"slug\":\"sweden-ettan-re",
+        "bookmakers_account1": "Bet365,Unibet",
+        "bookmakers_account2": "Betfair Exchange,Sbobet",
+        "key2_present": true,
+        "payload_shape": "list"
+      },
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-06-01T16%3A19%3A54Z&to=2026-06-03T16%3A19%3A54Z&limit=10&page=1",
+      "group": "odds",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 500,
+      "message": "ok",
+      "provider": "odds_api_io_events",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 10
+    },
+    {
+      "configured": true,
+      "critical": true,
+      "details": {
+        "body_preview": "{\"success\":true,\"data\":[{\"id\":51480,\"sport_id\":null,\"external_id\":null,\"league_id\":894,\"season\":2026,\"home_team_id\":12147,\"away_team_id\":11298,\"home_team\":{\"id\":12147,\"sport_id\":1,\"name\":\"Oriente Petrolero\",\"short_name\":\"ORI\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/3707.png\",\"country\":\"Bolivia\",\"founded\":1955,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:29.000000Z\",\"updated_at\":\"2026-01-27T20:13:29.000000Z\"},\"away_team\":{\"id\":11298,\"sport_id\":1,\"name\":\"Real Tomayapo\",\"short_name\":\"Real Tomayapo\",\"logo_url\":\"https:\\/\\/media.api-sports.io\\/football\\/teams\\/15708.png\",\"country\":\"Bolivia\",\"founded\":1999,\"venue_name\":\"Unknown\",\"venue_capacity\":null,\"popularity_weight\":0,\"created_at\":\"2026-01-27T20:13:27.000000Z\",\"updated_at\":\"2026-01-27T20:13:27.000000Z\"},\"start_time\":\"2026-05-02T23:30:00.000000Z\",\"bet_start_time\":\"2026-05-02T22:30:00.000000Z\",\"bet_end_time\":\"2026-05-02T23:30:00.000000Z\",\"status\":\"match finished\",\"status_short\":\"FT\",\"is_live\":false,\"completed\":true,\"events_synced_at\":null,\"elapsed_time\":90,\"home_score\":3,\"away_score\":1,\"home_score_ht\":3,\"away_score_ht\":0,\"extra_time_score\":null,\"penalty_score\":null",
+        "controlled_odds_enabled": true,
+        "payload_shape": "data,pagination,success"
+      },
+      "endpoint": "https://api.sportlogic.io/api/v1/games?sport=football&limit=5",
+      "group": "odds",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 717,
+      "message": "ok",
+      "provider": "sportlogic",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 50
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"success\":1}",
+        "payload_shape": "success"
+      },
+      "endpoint": "https://apiv2.allsportsapi.com/football/?met=Fixtures&APIkey=***&from=2026-06-01&to=2026-06-02&timezone=UTC",
+      "group": "odds_context",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 543,
+      "message": "ok",
+      "provider": "allsportsapi",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 0
+    },
+    {
+      "configured": false,
+      "critical": false,
+      "details": {
+        "note": "configured base; current runtime treats SharpAPI as text-enrichment only"
+      },
+      "endpoint": "https://sharpapi.com/api/v1/quota",
+      "group": "utility",
+      "http_statuses": [],
+      "latency_ms": null,
+      "message": "required secret is not configured",
+      "provider": "sharpapi_configured_base",
+      "requests": 0,
+      "status": "missing_secret",
+      "useful_rows": 0
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"meta\":{\"generated\":\"2026-06-01 16:19:55\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "payload_shape": "data,meta"
+      },
+      "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
+      "group": "weather",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 1063,
+      "message": "ok",
+      "provider": "meteostat",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":803,\"main\":\"Clouds\",\"description\":\"broken clouds\",\"icon\":\"04d\"}],\"base\":\"stations\",\"main\":{\"temp\":20.71,\"feels_like\":20.51,\"temp_min\":19.98,\"temp_max\":21.41,\"pressure\":1011,\"humidity\":64,\"sea_level\":1011,\"grnd_level\":1007},\"visibility\":10000,\"wind\":{\"speed\":5.14,\"deg\":210},\"clouds\":{\"all\":75},\"dt\":1780330279,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1780285757,\"sunset\":1780344461},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
+      },
+      "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
+      "group": "weather",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 114,
+      "message": "ok",
+      "provider": "openweathermap",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 0
+    },
+    {
+      "configured": true,
+      "critical": false,
+      "details": {
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1780330822,\"localtime\":\"2026-06-01 17:20\"},\"current\":{\"last_updated_epoch\":1780329600,\"last_updated\":\"2026-06-01 17:00\",\"temp_c\":21.4,\"temp_f\":70.6,\"is_day\":1,\"condition\":{\"text\":\"Patchy rain nearby\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/176.png\",\"code\":1063},\"wind_mph\":13.2,\"wind_kph\":21.2,\"wind_degree\":215,\"wind_dir\":\"SW\",\"pressure_mb\":1011.0,\"pressure_in\":29.86,\"precip_mm\":0.03,\"precip_in\":0.0,\"humidity\":53,\"cloud\":100,\"feelslike_c\":13.3,\"feelslike_f\":55.9,\"windchill_c\":21.4,\"windchill_f\":70.6,\"heatindex_c\":24.4,\"heatindex_f\":75.9,\"dewpoint_c\":11.5,\"dewpoint_f\":52.7,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":1.8,\"gust_mph\":15.2,\"gust_kph\":24.4,\"will_it_rain\":0,\"chance_of_rain\":8,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-06-01\",\"date_epoch\":1780272000,\"day\":{\"maxtemp_c\":22.3,\"maxtemp_f\":72.1,\"mintemp_c\":12.5,\"mintemp_f\":54.4,\"avgtemp_c\":17.3,\"avgtemp_f\":63.2,\"maxwind_mph\":13.2,\"maxwind_kph\":21.2,\"totalprecip_mm\":2.52,\"totalprecip_in\":0.1,\"totalsnow_cm\":0.0,\"avgvis_km\":10.0,\"avgv",
+        "payload_shape": "current,forecast,location"
+      },
+      "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
+      "group": "weather",
+      "http_statuses": [
+        200
+      ],
+      "latency_ms": 227,
+      "message": "ok",
+      "provider": "weatherapi",
+      "requests": 1,
+      "status": "ok",
+      "useful_rows": 1
+    }
+  ],
+  "summary": {
+    "auth_error": 0,
+    "config_only": 1,
+    "critical_failures": 0,
+    "degraded": 0,
+    "healthy_or_config_only": 17,
+    "missing_secret": 1,
+    "ok": 16,
+    "providers_checked": 18,
+    "rate_limited": 0,
+    "skipped": 0,
+    "skipped_daily_circuit": 0
+  }
+}
