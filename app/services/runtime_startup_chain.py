@@ -28,10 +28,6 @@ MODULES = [
     'app.services.day_inventory_extra_fixture_sources',
     'app.services.day_inventory_bucketed_top_v3_runtime_patch',
     'app.services.day_inventory_runtime_guard',
-    # Keep this before runner/progressive wrappers. It prevents broad provider
-    # pools from replacing the authoritative top inventory, and it enables the
-    # rolling future-match top-up when the frozen day roster has already started.
-    'app.services.top_inventory_runtime_scope_patch',
     'app.services.near_window_priority_runtime_patch',
     'app.services.context_family_matching_runtime_patch',
     'app.services.runner_step_trace',
@@ -60,6 +56,8 @@ MODULES = [
     'app.services.progressive_core_sources_finalizer',
     'app.services.progressive_fetch_provider_signature_finalizer',
     'app.services.progressive_upcoming_gap_finalizer',
+    'app.services.source_matrix_amplifier_runtime_patch',
+    'app.services.bzzoiro_odds_comparison_bridge_patch',
     'app.services.bzzoiro_context_gap_finalizer',
     'app.services.bzzoiro_context_gap_timeout_guard',
     'app.services.bzzoiro_context_gap_source_id_finalizer',
@@ -71,10 +69,11 @@ MODULES = [
     'app.services.api_coverage_consensus_runtime_patch',
     'app.services.odds_api_io_account_source_split_patch',
     'app.services.quality_consensus_safe_relief_patch',
+    'app.services.source_matrix_amplifier_runtime_patch',
+    'app.services.bzzoiro_odds_comparison_bridge_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',
-    'app.services.main_publish_strict_value_guard',
     'app.services.candidate_factory_runtime_diagnostics',
 ]
 

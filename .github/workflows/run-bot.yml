@@ -75,21 +75,25 @@ jobs:
       PUBLISH_MIN_CONTEXT_SOURCES: "2"
       MIN_CONTEXT_SOURCES_PUBLISH: "2"
       CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "2"
-      CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES: "2"
-      CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES: "2"
-      CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_B_ALLOW_NO_NEXT_CRON: "true"
-      CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_B_TELEGRAM_MIN_CONTEXT_SOURCES: "1"
       CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "true"
       CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
-      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
+      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "false"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
       ODDS_MOVEMENT_SNAPSHOTS_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_LIMIT: "8"
       BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
+      SOURCE_MATRIX_AMPLIFIER_ENABLED: "true"
+      SOURCE_MATRIX_CONTEXT_TARGET_LIMIT: "300"
+      SOURCE_MATRIX_GAP_APPEND_LIMIT: "180"
+      CONTEXT_ENRICHMENT_REQUIRES_OFFERS: "false"
+      BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED: "true"
+      BZZOIRO_CONTEXT_GAP_PASS_ENABLED: "true"
+      BZZOIRO_CONTEXT_GAP_INCLUDE_PROGRESSIVE_STATE: "true"
+      BZZOIRO_CONTEXT_GAP_MATCH_LIMIT: "160"
+      BZZOIRO_CONTEXT_GAP_MAX_REQUESTS: "180"
+      BZZOIRO_ODDS_COMPARISON_ENABLED: "true"
+      BZZOIRO_EXACT_OFFER_BRIDGE_ENABLED: "true"
       SSTATS_ROLLING_METRICS_ENABLED: "true"
       SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
 
@@ -104,55 +108,6 @@ jobs:
       PROVIDER_SMOKE_FAIL_ON_ERROR: "false"
       PROVIDER_SMOKE_TIMEOUT_SECONDS: "10"
       API_HEALTH_DURING_RUN_ENABLED: "true"
-
-      RUNBOT_BOOTSTRAP_TARGETED_ENRICHMENT_RUNTIME_PATCH_ENABLED: "true"
-      TARGETED_ENRICHMENT_QUEUE_ENABLED: "true"
-      TARGETED_ENRICHMENT_REORDER_CORE_QUEUE: "true"
-      TARGETED_ENRICHMENT_CORE_MATCH_LIMIT: "120"
-      TARGETED_ENRICHMENT_MAX_MATCHES_PER_PROVIDER: "120"
-      TARGETED_ENRICHMENT_SSTATS_MATCH_LIMIT: "140"
-      TARGETED_ENRICHMENT_BZZOIRO_MATCH_LIMIT: "96"
-      TARGETED_ENRICHMENT_THESPORTSDB_MATCH_LIMIT: "36"
-      TARGETED_ENRICHMENT_FOOTBALL_DATA_MATCH_LIMIT: "14"
-      TARGETED_ENRICHMENT_FUTRIXMETRICS_MATCH_LIMIT: "4"
-      TARGETED_ENRICHMENT_NEWSAPI_MATCH_LIMIT: "3"
-      TARGETED_ENRICHMENT_GNEWS_MATCH_LIMIT: "3"
-      TARGETED_ENRICHMENT_API_FOOTBALL_MATCH_LIMIT: "12"
-      TARGETED_ENRICHMENT_ALLSPORTSAPI_MATCH_LIMIT: "12"
-      BZZOIRO_CONTEXT_GAP_MATCH_LIMIT: "120"
-      BZZOIRO_EXACT_BRIDGE_MIN_SECOND_SOURCE_TARGET: "25"
-      HIGHLIGHTLY_PROBE_MAX_REQUESTS: "3"
-      ALLSPORTSAPI_PROBE_MAX_REQUESTS: "3"
-      API_FOOTBALL_PROBE_MAX_REQUESTS: "4"
-      SECONDARY_PROVIDER_PROBE_TARGET_LIMIT: "8"
-      SECONDARY_PROVIDER_PROBE_MAX_REQUESTS_PER_RUN: "12"
-      PERFORMANCE_LEDGER_ENABLED: "true"
-      REJECTED_NEAR_MISS_LEDGER_ENABLED: "true"
-      NEAR_MISS_LEDGER_MIN_EV_PCT: "2.0"
-      NEAR_MISS_LEDGER_MIN_EDGE_PP: "0.8"
-
-      ENABLE_THESPORTSDB_CONTEXT: "true"
-      THESPORTSDB_CONTEXT_ENABLED: "true"
-      THESPORTSDB_REQUESTS_MAX_PER_RUN: "4"
-      THESPORTSDB_CONTEXT_MATCH_LIMIT: "24"
-      THESPORTSDB_MAX_LEAGUES: "8"
-      ENABLE_FOOTBALL_DATA_CONTEXT: "true"
-      FOOTBALL_DATA_ENABLED: "true"
-      FOOTBALL_DATA_REQUESTS_MAX_PER_RUN: "4"
-      FOOTBALL_DATA_CONTEXT_MATCH_LIMIT: "14"
-      FOOTBALL_DATA_STANDINGS_LIMIT: "2"
-      FOOTBALL_DATA_HISTORY_COMPETITIONS_LIMIT: "2"
-      FOOTBALL_DATA_MATCH_LIMIT: "20"
-      ENABLE_FUTRIXMETRICS_CONTEXT: "true"
-      FUTRIXMETRICS_ENABLED: "true"
-      FUTRIXMETRICS_MAX_REQUESTS_PER_RUN: "4"
-      FUTRIXMETRICS_CONTEXT_MATCH_LIMIT: "2"
-      NEWSAPI_CONTEXT_MATCH_LIMIT: "4"
-      GNEWS_CONTEXT_MATCH_LIMIT: "4"
-      WEATHER_CONTEXT_MATCH_LIMIT: "6"
-      ALLSPORTSAPI_MAX_REQUESTS_PER_RUN: "4"
-      ALLSPORTSAPI_MATCH_LIMIT: "8"
-      ALLSPORTSAPI_MIN_FETCH_INTERVAL_MINUTES: "60"
 
       ODDS_API_IO_HOURLY_LIMIT: "100"
       ODDS_API_IO_PER_RUN_MAX: "100"
@@ -170,30 +125,28 @@ jobs:
       MAX_MATCHES_FOR_ODDS_FETCH: "300"
 
       BZZOIRO_RATE_LIMIT_PER_MINUTE: "200"
-      BZZOIRO_PER_RUN_MAX: "80"
-      BZZOIRO_MAX_REQUESTS_PER_RUN: "80"
-      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "80"
-      BZZOIRO_REQUESTS_MAX_PER_RUN: "80"
-      BZZOIRO_REQUEST_BUDGET_GRANTED: "80"
-      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "32"
-      BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "16"
+      BZZOIRO_PER_RUN_MAX: "200"
+      BZZOIRO_MAX_REQUESTS_PER_RUN: "200"
+      BZZOIRO_MAX_HTTP_REQUESTS_PER_RUN: "200"
+      BZZOIRO_REQUESTS_MAX_PER_RUN: "200"
+      BZZOIRO_REQUEST_BUDGET_GRANTED: "200"
+      BZZOIRO_EVENTS_MAX_REQUESTS_PER_RUN: "80"
+      BZZOIRO_PREDICTIONS_MAX_REQUESTS_PER_RUN: "40"
       BZZOIRO_PREDICTIONS_MAX_PAGES: "10"
-      BZZOIRO_MAX_PAGES: "8"
-      BZZOIRO_REQUEST_RETRIES: "0"
-      BZZOIRO_RETRY_BACKOFF_SECONDS: "0"
-      BZZOIRO_CONTEXT_MATCH_LIMIT: "120"
+      BZZOIRO_MAX_PAGES: "20"
+      BZZOIRO_CONTEXT_MATCH_LIMIT: "300"
       BZZOIRO_PRICE_BACKFILL_ENABLED: "true"
       BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT: "80"
 
       SSTATS_RATE_LIMIT_PER_MINUTE: "150"
-      SSTATS_PER_RUN_MAX: "120"
-      SSTATS_MAX_REQUESTS_PER_RUN: "120"
-      SSTATS_REQUESTS_MAX_PER_RUN: "120"
-      SSTATS_REQUEST_BUDGET_GRANTED: "120"
-      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "120"
-      SSTATS_CONTEXT_MATCH_LIMIT: "120"
-      SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "24"
-      SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "48"
+      SSTATS_PER_RUN_MAX: "150"
+      SSTATS_MAX_REQUESTS_PER_RUN: "150"
+      SSTATS_REQUESTS_MAX_PER_RUN: "150"
+      SSTATS_REQUEST_BUDGET_GRANTED: "150"
+      SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
+      SSTATS_CONTEXT_MATCH_LIMIT: "300"
+      SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "80"
+      SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "80"
       SSTATS_DEEP_ENRICHMENT_ENABLED: "true"
       SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK: "true"
       SSTATS_DEEP_SMOKE_DETAIL_GAMES: "30"
@@ -202,32 +155,21 @@ jobs:
       SSTATS_INJURIES_ENABLED: "false"
       SSTATS_GLICKO_ENABLED: "true"
       SSTATS_ODDS_RESCUE_ENABLED: "true"
-      SSTATS_REQUEST_RETRIES: "0"
-      SSTATS_RETRY_BACKOFF_SECONDS: "0"
 
       SPORTLOGIC_DAILY_LIMIT: "500"
       SPORTLOGIC_ENABLED: "true"
       ENABLE_SPORTLOGIC: "true"
       SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "true"
-      SPORTLOGIC_PER_RUN_MAX: "6"
-      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "6"
-      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "6"
-      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "6"
-      SPORTLOGIC_MATCH_LIMIT: "40"
-      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "40"
-      SPORTLOGIC_ODDS_MATCH_LIMIT: "8"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "0"
-      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "0"
+      SPORTLOGIC_PER_RUN_MAX: "40"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "40"
+      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "40"
+      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "40"
+      SPORTLOGIC_MATCH_LIMIT: "160"
+      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "160"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "60"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "2"
+      SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
-      SPORTLOGIC_STOP_RUN_ON_429: "true"
-      SPORTLOGIC_SKIP_WHEN_RATE_LIMIT_OPEN: "true"
-      SPORTLOGIC_429_COOLDOWN_SECONDS: "90"
-      SPORTLOGIC_COMPACT_QUERY_MODE: "true"
-      SPORTLOGIC_BROAD_FALLBACK_ENABLED: "false"
-      SPORTLOGIC_ACTIVE_ODDS_FALLBACK_ENABLED: "false"
-      SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED: "false"
-      SPORTLOGIC_ACTIVE_ODDS_PER_PAGE: "100"
-      SPORTLOGIC_TARGETED_MIN_OFFER_MATCHES: "1"
 
       TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN || secrets.TELEGRAM_TOKEN }}
       TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN || secrets.TELEGRAM_BOT_TOKEN }}
@@ -420,7 +362,7 @@ jobs:
             exit 0
           fi
           python -u scripts/apply_publication_family_policy.py || true
-          python scripts/publish_controlled_fallback_with_run_context.py || python scripts/publish_controlled_fallback.py || true
+          python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
@@ -454,34 +396,6 @@ jobs:
           python scripts/normalize_published_pick_payloads.py || true
           cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
 
-      - name: Build performance and near-miss ledgers
-        if: always()
-        shell: bash
-        run: |
-          set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip performance ledgers: fresh run-bot log was not created"
-            exit 0
-          fi
-          python scripts/build_performance_and_near_miss_ledgers.py || true
-          cp .data/exports/latest-performance-ledger-summary.json artifacts/run-bot/latest-performance-ledger-summary.json 2>/dev/null || true
-          cp .data/exports/latest-rejected-near-miss-report.json artifacts/run-bot/latest-rejected-near-miss-report.json 2>/dev/null || true
-          cp .data/performance-ledger.jsonl artifacts/run-bot/performance-ledger.jsonl 2>/dev/null || true
-          cp .data/rejected-near-miss-ledger.jsonl artifacts/run-bot/rejected-near-miss-ledger.jsonl 2>/dev/null || true
-
-      - name: Probe targeted secondary providers
-        if: always()
-        shell: bash
-        run: |
-          set -uo pipefail
-          if [[ ! -s .data/exports/latest-run-bot.log ]]; then
-            echo "skip secondary provider probe: fresh run-bot log was not created"
-            exit 0
-          fi
-          timeout 60s python scripts/probe_targeted_secondary_sources.py || true
-          cp .data/exports/latest-targeted-secondary-provider-probe.json artifacts/run-bot/latest-targeted-secondary-provider-probe.json 2>/dev/null || true
-          cp -r .data/provider_cache/targeted-secondary-probes artifacts/run-bot/targeted-secondary-probes 2>/dev/null || true
-
       - name: Send HARIZON Telegram run report
         if: always()
         shell: bash
@@ -491,14 +405,12 @@ jobs:
             echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+          python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
           cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.json artifacts/run-bot/latest-harizon-telegram-run-report-v5.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
-          cp .data/exports/latest-github-actions-run-context.json artifacts/run-bot/latest-github-actions-run-context.json 2>/dev/null || true
-          cp .data/exports/latest-harizon-telegram-run-report-v9-status.json artifacts/run-bot/latest-harizon-telegram-run-report-v9-status.json 2>/dev/null || true
 
       - name: Commit runtime artifacts
         if: always()
@@ -511,7 +423,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/performance-ledger.jsonl .data/rejected-near-miss-ledger.jsonl .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
           git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
@@ -543,8 +455,6 @@ jobs:
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
             .data/candidate-lifecycle-state.json
-            .data/performance-ledger.jsonl
-            .data/rejected-near-miss-ledger.jsonl
           if-no-files-found: ignore
           include-hidden-files: true
           retention-days: 7
