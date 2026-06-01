@@ -1,9 +1,9 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: есть 197 матчей, которые ждут второй снимок линии. Это нормально для B-tier/A-tier lifecycle.
-• Главная причина: направление ставки конфликтует с xG
+✅ Прогноз опубликован. Ниже — проверка покрытия и причин, почему опубликован именно этот кандидат.
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 224 матчей. В этом run обработано: 61.
+• Инвентарь дня: 224 матчей. В этом run обработано: 59.
 • 1+ линия: 224/224 (100%) | 1+ контекст: 216/224 (96%)
 • 2+ подтверждения цены: 128/224 (57%)
 • 2+ независимых odds-source: 26/224 (12%)
@@ -13,56 +13,48 @@
 🏷️ A/B-tier публикация
 • A-tier coverage: 21 | A-tier готово main: 0 | опубликовано fallback: 0
   A-tier = 2+ odds-source + 2+ context + подтверждённое движение линии + value.
-• B-tier coverage: 197 | B-tier готово main: 0 | опубликовано fallback: 0
+• B-tier coverage: 197 | B-tier готово main: 0 | опубликовано fallback: 1
   B-tier = 1+ линия + 1+ context + второй снимок линии + value сохранился.
 • Ждут второй снимок линии: 197 | отклонены после второго снимка: 0
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
-• Line guard: увидел 11, оставил 2, снял 1
+• Pre-kickoff проверок: 18 | матчей без следующего регулярного run: 18
+• Line guard: увидел 12, оставил 4, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Raw/candidates before quality: 2/8
+• Quality прошло: 2 | publishable: 0 | опубликовано: 1
+• Controlled fallback: seen 4 | evaluated 4 | published 1
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: запросы 12 (events 0, odds 12); смэтчил матчей 60; дал offers 7810 (651/запрос); 2+ букмекера 37; ошибок 0.
+• odds-api.io: запросы 12 (events 0, odds 12); смэтчил матчей 58; дал offers 7696 (641/запрос); 2+ букмекера 36; ошибок 0.
 • Bzzoiro: запросы 62 (direct 31, v2 31, gap 0); событий 15; контекстов 10; gap targets 0, matched 0, added 0; v2 resources stats/odds/lineups 20; secondary offers 0; overlap с odds-api.io 11; ошибок 6.
-• SStats: запросы 27; сырых строк 23310 (863/запрос); контекстов 47; deep-enriched 4; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 27; сырых строк 23310 (863/запрос); контекстов 46; deep-enriched 4; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 2; fixtures/games 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 41, bzzoiro+odds_api_io: 11
+• Комбинации источников линий: odds_api_io: 40, bzzoiro+odds_api_io: 11
 
 🧭 Покрытие ближайших окон
 • Активных матчей сейчас: 104. Нужно обновить линии: 0.
 • Core-ready 2+/2+ по всем tracked: 6.
-• 0–4 часа: 1/30 core-ready.
-• 0–12 часов: 6/62 core-ready.
+• 0–4 часа: 3/34 core-ready.
+• 0–12 часов: 6/61 core-ready.
 
-🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 3 (19%)
-• модель слишком оптимистична относительно xG-ориентира: 3 (19%)
-• quality: market sanity totals/xG contradiction: 3 (19%)
-• tier c watch only: 1 (6%)
-• line movement not confirmed:awaiting next run: 1 (6%)
-• line movement:needs next cron line movement recheck: 1 (6%)
-• controlled fallback confirmation sources below min:1/2: 1 (6%)
-• quality: вероятность после калибровки ниже порога: 1 (6%)
+🚫 Почему часть кандидатов отсеяна
+• Не применимо к публикации: один прогноз уже отправлен.
 
 🔎 Последние проверенные кандидаты
 1. Bulgaria — Montenegro | Больше 2.5 @2.48 | EV +9.5% | edge +3.8 п.п. | q 65.4
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
-2. FCI Levadia Tallinn — Tallinna JK Legion | Больше 5.5 @2.55 | EV +21.9% | edge +8.6 п.п. | q 69.7
+2. FCI Levadia Tallinn — Tallinna JK Legion | Больше 5.5 @2.55 | EV +21.6% | edge +8.5 п.п. | q 69.3
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-3. AL Talaba — AL Karkh | Меньше 2.5 @2.10 | EV +3.6% | edge +1.7 п.п. | q 36.3
+3. Vard Haugesund — Aasane Fotball 2 | Больше 4 @2.00 | EV +23.1% | edge +11.6 п.п. | q 79.5
    • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
 
 📌 Что это значит
-• Следующий шаг: дождаться следующего регулярного run — он сделает второй снимок линии и решит publish/decline.
+• Следующий шаг: не форсировать объём, а ждать новых top-кандидатов в следующих окнах.
 • Коротко: отчёт теперь разделяет покрытие, качество, A/B-tier и line movement — чтобы было видно, где именно узкое место.
 
 🔗 GitHub Actions
-• Run ID: 26757200022
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26757200022
-• Artifact: run-bot-26757200022
+• Run ID: 26758910959
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/26758910959
+• Artifact: run-bot-26758910959
 • workflow run-bot, attempt 1
