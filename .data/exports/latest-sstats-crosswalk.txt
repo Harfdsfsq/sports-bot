@@ -1,42 +1,56 @@
 # SStats inventory crosswalk probe v2
-UTC: 2026-05-31T20:04:19.272971+00:00
-Inventory checked: 300/880 | SStats events: 1637
-Matched: 192 | unmatched: 108 | rate=64.0%
-Potential uplift: context_deep=192 xg_or_rating=192 form=192 odds_rescue=0
+UTC: 2026-06-01T07:02:44.237419+00:00
+Inventory checked: 180/180 | SStats events: 1046
+Matched: 109 | unmatched: 71 | rate=60.56%
+Potential uplift: context_deep=109 xg_or_rating=109 form=109 odds_rescue=6
 
 ## SStats calls
-- games_today_date: OK http=200 rows=639 event_like=639
+- games_today_date: OK http=200 rows=119 event_like=119
 - games_upcoming: OK http=200 rows=1000 event_like=1000
-- games_tomorrow_date: OK http=200 rows=117 event_like=117
+- games_tomorrow_date: OK http=200 rows=77 event_like=77
 
 ## By kickoff bucket
-- started: matched=192 missing_context=0 missing_xg=0 missing_form=0 odds_rescue=0
+- 0_2h: matched=2 missing_context=0 missing_xg=0 missing_form=0 odds_rescue=0
+- 12_24h: matched=15 missing_context=1 missing_xg=0 missing_form=0 odds_rescue=0
+- 24h_plus: matched=4 missing_context=0 missing_xg=0 missing_form=0 odds_rescue=0
+- 2_6h: matched=15 missing_context=2 missing_xg=0 missing_form=0 odds_rescue=4
+- 6_12h: matched=47 missing_context=3 missing_xg=2 missing_form=2 odds_rescue=0
+- started: matched=26 missing_context=2 missing_xg=0 missing_form=0 odds_rescue=2
 
 ## Next SStats deep enrichment queue
+- 2_6h | 2026-06-01T11:30:00+00:00 | Denmark — Italy => gameId=1540171 score=0.8064 missing=context:True xg:False form:False
+- 2_6h | 2026-06-01T11:30:00+00:00 | France — Montenegro => gameId=1540172 score=0.8064 missing=context:True xg:False form:False
+- 6_12h | 2026-06-01T14:30:00+00:00 | AS Fortuna — Canon Sportif Yaounde => gameId=1512920 score=0.8064 missing=context:False xg:True form:True
+- 6_12h | 2026-06-01T16:00:00+00:00 | FC Elva — Tartu JK Welco => gameId=1519570 score=0.8532 missing=context:True xg:False form:False
+- 6_12h | 2026-06-01T16:30:00+00:00 | Venezuela — Canada Youth => gameId=1545456 score=0.8532 missing=context:True xg:False form:False
+- 6_12h | 2026-06-01T19:00:00+00:00 | Santa Clara — Gil Vicente FC => gameId=1546330 score=0.9 missing=context:True xg:True form:True
+- 12_24h | 2026-06-01T19:30:00+00:00 | FC Jeunesse Canach — Residence Walferdange => gameId=1546575 score=0.82 missing=context:True xg:False form:False
+- started | 2026-06-01T00:00:00+00:00 | RKC Third Coast — Rockford Raptors => gameId=1524697 score=0.8532 missing=context:True xg:False form:False
+- started | 2026-06-01T01:00:00+00:00 | Albion SC Colorado — Flatirons FC => gameId=1524696 score=0.8532 missing=context:True xg:False form:False
 
 ## Unmatched sample
-- started | Greenville United — 865 Alliance | best_score=0.409
-- started | Serra FC ES — Porto Vitoria ES | best_score=0.6925
-- started | Alexandria Reds — Virginia Beach City FC | best_score=0.586
-- started | Joy AC St Louis Park — Duluth FC | best_score=0.4058
-- started | Siouxland United FC — Minnesota Blizzard FC | best_score=0.4816
-- started | Southern Indiana Guardians FC — FC Pride Elite | best_score=0.4359
-- started | Cccul Dublanc FC — Mighty Avengers | best_score=0.4071
-- started | Portsmouth Bombers — Point Michel | best_score=0.4938
-- started | Sao Raimundo EC RR — Gremio Atletico Sampaio RR | best_score=0.5439
-- started | Buffalo Stallions — Erie Commodores FC | best_score=0.4126
-- started | Cleveland SC — Niagara 1812 | best_score=0.5282
-- started | Hub City FC — Grove Soccer United | best_score=0.4989
-- started | Jackson Lions FC — FC Motown | best_score=0.4351
-- started | New Haven United FC — American Soccer Club New York | best_score=0.5533
-- started | New York Shockers — Santa Cruz FC | best_score=0.5157
-- started | Philadelphia Ukrainian Nationals — Hershey FC | best_score=0.3974
-- started | Ristozi FC — FC Frederick | best_score=0.4143
-- started | Statesville FC — Burlington United FC | best_score=0.543
-- started | Fort Lauderdale United FC — Miami AC | best_score=0.6341
-- started | LVU Rush — Real Central New Jersey | best_score=0.5936
+- started | CD Cobreloa Calama — CSD Rangers | best_score=0.6654
+- started | CSD San Martin — Arsenal de Sarandi | best_score=0.7183
+- started | EC Sao Jose RS — IF Sao Joseense PR | best_score=0.5969
+- started | Taurinos Cayey — Ds Edusoccer | best_score=0.3956
+- started | Bath Estate — South East | best_score=0.3606
+- started | Michigan Rangers FC — Wisconsin Conquerors FC | best_score=0.4071
+- started | SSA Swarm FC — One Knoxville SC | best_score=0.6685
+- started | Cuiaba EC MT — CR Brasil AL | best_score=0.6192
+- started | Ponce FC — San Juan FC | best_score=0.3962
+- started | FC Olympia — Ballard FC | best_score=0.666
+- started | Socal Reds FC — Los Angeles SC | best_score=0.6586
+- started | Northern AFC — Coastal Spirit FC | best_score=0.3778
+- 2_6h | Probiy Gorodenka — FC Prykarpattya Ivano-Frankivsk | best_score=0.5901
+- 2_6h | Agrobiznes Volochisk — FC Chernigiv | best_score=0.7077
+- 2_6h | FC Chernomorets Odessa — FC Metalist Kharkiv | best_score=0.6364
+- 2_6h | FSK Mariupol — FC Viktoriya Sumy | best_score=0.5553
+- 2_6h | Chornomorets Odesa — Metalist Kharkiv | best_score=0.7029
+- 2_6h | FSC Mariupol — Viktoriya Sumy | best_score=0.5553
+- 2_6h | FC Ingulets Petrove — FC Livyi Bereh Kyiv | best_score=0.5807
+- 2_6h | FC Ucsa Tarasivka — FC Niva Ternopil | best_score=0.7132
 
 ## Full matched persistence
-- matched_full: 192
+- matched_full: 109
 - matched_sample: 40
-- enrichment_queue: 0
+- enrichment_queue: 9
