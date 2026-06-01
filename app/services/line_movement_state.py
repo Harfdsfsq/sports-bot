@@ -3,9 +3,10 @@ from __future__ import annotations
 import json
 import os
 import re
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
 
@@ -76,6 +77,36 @@ def _state_path(candidate: Any, now: datetime) -> Path:
     kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc"))
     day = (kickoff or now).date().isoformat()
     return Path(os.getenv("LINE_MOVEMENT_STATE_PATH") or f".data/line_history/{day}.json")
+
+
+def _bool_env(name: str, default: bool) -> bool:
+    raw = os.getenv(name)
+    if raw is None or str(raw).strip() == "":
+        return default
+    return str(raw).strip().lower() in {"1", "true", "yes", "on", "force"}
+
+
+def _next_scheduled_run_at(now: datetime, interval_min: int) -> datetime | None:
+    if interval_min <= 0:
+        return None
+    tz_name = (
+        os.getenv("LINE_MOVEMENT_CRON_TIMEZONE")
+        or os.getenv("APP_TIMEZONE")
+        or os.getenv("TZ")
+        or "Europe/Moscow"
+    )
+    try:
+        local_tz = ZoneInfo(tz_name)
+    except Exception:
+        local_tz = UTC
+    now_local = now.astimezone(local_tz)
+    anchor_minute = int(float(os.getenv("LINE_MOVEMENT_CRON_ANCHOR_MINUTE") or 0))
+    anchor_minute = max(0, min(anchor_minute, 1439))
+    day_anchor = now_local.replace(hour=0, minute=0, second=0, microsecond=0)
+    anchor = day_anchor.replace(hour=anchor_minute // 60, minute=anchor_minute % 60)
+    while anchor <= now_local:
+        anchor += timedelta(minutes=interval_min)
+    return anchor.astimezone(UTC)
 
 
 def _load(path: Path) -> dict[str, Any]:
