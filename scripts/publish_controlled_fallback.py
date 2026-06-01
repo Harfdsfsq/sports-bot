@@ -189,6 +189,12 @@ def sync_controlled_fallback_publication_exports(selected_rows: list[dict[str, A
         out.setdefault("ev_pct", metrics.get("canonical_ev_pct"))
         out.setdefault("edge_pp", metrics.get("canonical_edge_pp"))
         out.setdefault("quality_score", metrics.get("quality_score"))
+        out.setdefault("books_count", metrics.get("books_count"))
+        out.setdefault("odds_sources_count", metrics.get("odds_sources_count"))
+        out.setdefault("independent_odds_sources_count", metrics.get("independent_odds_sources_count", metrics.get("odds_sources_count")))
+        out.setdefault("confirmation_sources_count", metrics.get("confirmation_sources_count"))
+        out.setdefault("confirmation_sources", metrics.get("confirmation_sources"))
+        out.setdefault("line_sources", metrics.get("line_sources"))
         rows.append(out)
     if not rows:
         return {"synced": False, "rows": 0}
@@ -519,6 +525,36 @@ def normalize_confirmation_source(value: Any) -> str | None:
         "clubelo": "clubelo",
         "wikidata": "wikidata",
         "guardian": "guardian",
+        "highlightly": "highlightly",
+    }
+    if text in aliases:
+        return aliases[text]
+    for needle, canonical in aliases.items():
+        if needle in text:
+            return canonical
+    return None
+
+
+def normalize_line_source(value: Any) -> str | None:
+    text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+    if not text:
+        return None
+    aliases = {
+        "oddsapiio": "odds_api_io",
+        "odds_api": "odds_api_io",
+        "odds_api_io": "odds_api_io",
+        "odds_api_io_account1": "odds_api_io",
+        "odds_api_io_account2": "odds_api_io",
+        "bzzoiro": "bzzoiro",
+        "bzzoiro_current_odds": "bzzoiro",
+        "bzzoiro_event_odds": "bzzoiro",
+        "bzzoiro_v2": "bzzoiro",
+        "sportlogic": "sportlogic",
+        "sport_logic": "sportlogic",
+        "allsportsapi": "allsportsapi",
+        "api_football": "api_football",
+        "rapidapi_odds": "rapidapi_odds",
+        "oddspapi": "oddspapi",
         "highlightly": "highlightly",
     }
     if text in aliases:
@@ -1261,7 +1297,42 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     confidence = as_float(candidate.get("confidence"), 0.0)
     books = as_int(candidate.get("books_count"), 0)
     raw_sources = as_int(candidate.get("sources_count"), 0)
-    odds_sources = as_int(candidate.get("odds_sources_count"), raw_sources)
+    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    coverage_contract = (
+        source_summary.get("publish_coverage_contract")
+        if isinstance(source_summary.get("publish_coverage_contract"), dict)
+        else {}
+    )
+    odds_sources = as_int(candidate.get("odds_sources_count"), 0)
+    if odds_sources <= 0:
+        odds_sources = as_int(source_summary.get("odds_sources_count"), 0)
+    if odds_sources <= 0:
+        odds_sources = as_int(coverage_contract.get("odds_sources_count"), 0)
+    explicit_odds_source_names: set[str] = set()
+    for item in (
+        _source_values(candidate.get("odds_sources"))
+        + _source_values(source_summary.get("odds_sources"))
+        + _source_values(coverage_contract.get("odds_sources"))
+    ):
+        src = normalize_line_source(item)
+        if src:
+            explicit_odds_source_names.add(src)
+    line_source_names: set[str] = set()
+    for item in (
+        _source_values(candidate.get("line_sources"))
+        + _source_values(source_summary.get("line_sources"))
+    ):
+        src = normalize_line_source(item)
+        if src:
+            line_source_names.add(src)
+    odds_source_names = explicit_odds_source_names or line_source_names
+    if odds_sources <= 0:
+        odds_sources = len(odds_source_names)
+    if odds_sources <= 0 and not any(
+        source_summary.get(field) is not None
+        for field in ("context_sources", "providers", "confirmation_sources", "publish_coverage_contract")
+    ):
+        odds_sources = raw_sources
     confirmation_sources, confirmation_meta = candidate_confirmation_sources(candidate)
     declared_confirmation_count = as_int(candidate.get("confirmation_sources_count"), 0)
     confirmation_sources_count = max(declared_confirmation_count, len(confirmation_sources))
@@ -1279,6 +1350,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "publication_score": publication_score,
         "books_count": books,
         "odds_sources_count": odds_sources,
+        "line_sources": sorted(odds_source_names),
         "sources_count": sources,
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
@@ -1307,6 +1379,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "publication_score": round(publication_score, 3),
         "books_count": books,
         "odds_sources_count": odds_sources,
+        "line_sources": sorted(odds_source_names),
         "sources_count": sources,
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
@@ -1425,6 +1498,17 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_RAW_QUALITY", True):
         if str(metrics.get("quality_score_source") or "") == "proxy":
             reasons.append("tier_a_proxy_quality_not_allowed")
+    if tier == "A":
+        min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
+        min_confirmations = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES", 2)
+        if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
+            reasons.append(f"tier_a_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
+        if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
+            reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
+    elif tier == "B":
+        min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1))
+        if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
+            reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
 
     xg = metrics.get("xg_sanity") or {}
     if bool(xg.get("enabled")):

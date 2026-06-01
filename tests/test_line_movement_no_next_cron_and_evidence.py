@@ -4,6 +4,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from app.schemas import CandidateBet
 from app.services.publication_tiers import classify_publication_tier
@@ -57,7 +58,7 @@ def _candidate(commence_time: datetime) -> CandidateBet:
 
 def test_b_tier_can_publish_when_no_next_cron(monkeypatch):
     now = datetime(2026, 6, 1, 15, 0, tzinfo=UTC)
-    state_path = ".data/test-line-movement-no-next-cron/state.json"
+    state_path = f".data/test-line-movement-no-next-cron/{uuid4().hex}.json"
     monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", state_path)
     monkeypatch.setenv("PUBLISH_MIN_ODDS_SOURCES", "2")
     monkeypatch.setenv("PUBLISH_MIN_CONTEXT_SOURCES", "2")
@@ -76,7 +77,7 @@ def test_controlled_fallback_context_index_uses_current_evidence_exports(monkeyp
     base.mkdir(parents=True, exist_ok=True)
     monkeypatch.chdir(base)
     export_dir = Path(".data") / "exports"
-    export_dir.mkdir(parents=True)
+    export_dir.mkdir(parents=True, exist_ok=True)
     (export_dir / "latest-context-observations.json").write_text(
         json.dumps(
             [

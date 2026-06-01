@@ -67,14 +67,58 @@ def _items(value: Any) -> list[Any]:
     return []
 
 
+def _reason_ru_patched(reason: Any) -> str:
+    text = str(reason or "").strip().lower()
+    if "high_odds_totals_xg_headroom_guard" in text:
+        return "высокий коэффициент: не хватает xG-запаса"
+    return v8._reason_ru(reason)
+
+
+def _selection_with_point(row: dict[str, Any]) -> str:
+    selection = str(row.get("selection") or row.get("market") or "СЃС‚Р°РІРєР°")
+    point = row.get("point")
+    if point in (None, "", "null"):
+        return selection
+    point_text = f"{float(point):g}" if isinstance(point, (int, float)) else str(point)
+    if point_text and point_text not in selection:
+        return f"{selection} {point_text}"
+    return selection
+
+
+def _render_samples_with_points(payload: dict[str, Any]) -> list[str]:
+    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
+    evaluated = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
+    rows = [x for x in evaluated if isinstance(x, dict)][:3]
+    if not rows:
+        return []
+    lines = ["рџ”Ћ РџРѕСЃР»РµРґРЅРёРµ РїСЂРѕРІРµСЂРµРЅРЅС‹Рµ РєР°РЅРґРёРґР°С‚С‹"]
+    for idx, row in enumerate(rows, 1):
+        metrics = v8._first_dict(row.get("metrics"))
+        home = row.get("home_team") or row.get("home") or "?"
+        away = row.get("away_team") or row.get("away") or "?"
+        selection = _selection_with_point(row)
+        odds = v8._as_float(metrics.get("odds"))
+        ev = v8._as_float(metrics.get("canonical_ev_pct"))
+        edge = v8._as_float(metrics.get("canonical_edge_pp"))
+        q = v8._as_float(metrics.get("quality_score"))
+        odds_text = f" @{odds:.2f}" if odds > 0 else ""
+        lines.append(f"{idx}. {home} вЂ” {away} | {selection}{odds_text} | EV {ev:+.1f}% | edge {edge:+.1f} Рї.Рї. | q {q:.1f}")
+        reject = ", ".join(_reason_ru_patched(x) for x in (row.get("reject_reasons") or [])[:3])
+        if reject:
+            lines.append(f"   вЂў РїСЂРёС‡РёРЅР°: {reject}")
+    return lines
+
+
 def _independent_odds_count(row: dict[str, Any]) -> int:
     metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+    source_summary = row.get("source_summary") if isinstance(row.get("source_summary"), dict) else {}
+    metrics_source_summary = metrics.get("source_summary") if isinstance(metrics.get("source_summary"), dict) else {}
     details = metrics.get("independent_odds_source_detail") if isinstance(metrics.get("independent_odds_source_detail"), dict) else {}
     sources: set[str] = set()
-    for container in (row, metrics, details):
+    for container in (row, metrics, source_summary, metrics_source_summary, details):
         if not isinstance(container, dict):
             continue
-        for key in ("odds_sources", "independent_odds_sources", "normalized_sources"):
+        for key in ("odds_sources", "line_sources", "independent_odds_sources", "normalized_sources"):
             for item in _items(container.get(key)):
                 src = _norm_source(item)
                 if src in LIVE_ODDS_SOURCES:
