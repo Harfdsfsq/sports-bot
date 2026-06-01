@@ -35,6 +35,7 @@ SELECT_REPORT = EXPORT_DIR / "latest-bzzoiro-v2-source-matrix-selection.json"
 RUNTIME_REPORT = EXPORT_DIR / "latest-bzzoiro-v2-source-matrix-runtime.json"
 # Keep the legacy report name because scripts/send_harizon_telegram_run_report_v8.py reads it.
 LEGACY_GAP_REPORT = EXPORT_DIR / "latest-bzzoiro-context-gap-finalizer.json"
+HINTS_BY_MATCH_REPORT = EXPORT_DIR / "latest-bzzoiro-v2-odds-hints-by-match.json"
 
 _INSTALLED = False
 _ORIGINAL_SELECT = None
@@ -445,6 +446,7 @@ async def _patched_v2_fetch_context(self: Any, matches: list[Match]):  # type: i
     hint_count = 0
     hinted_contexts = 0
     forced_matched = 0
+    hints_by_match: dict[str, Any] = {}
     for key, context in list(contexts.items()):
         if not isinstance(context, MatchContext):
             continue
@@ -453,8 +455,27 @@ async def _patched_v2_fetch_context(self: Any, matches: list[Match]):  # type: i
         hint_count += hints_now
         if hints_now > 0:
             hinted_contexts += 1
+        if hints_now > 0:
+            match_obj = input_by_key.get(str(key))
+            hints_by_match[str(key)] = {
+                "match_key": str(key),
+                "home": getattr(match_obj, "home_team", "") if match_obj is not None else "",
+                "away": getattr(match_obj, "away_team", "") if match_obj is not None else "",
+                "kickoff": getattr(getattr(match_obj, "commence_time", None), "isoformat", lambda: "")() if match_obj is not None else "",
+                "source": "bzzoiro",
+                "hints": _existing_hints(context),
+                "context_details": dict(getattr(context, "details", {}) or {}),
+            }
         if str(key) in target_keys:
             forced_matched += 1
+
+    _write_json(HINTS_BY_MATCH_REPORT, {
+        "created_at_utc": datetime.now(UTC).isoformat(),
+        "matches": hints_by_match,
+        "match_count": len(hints_by_match),
+        "hints_count": hint_count,
+        "note": "current-event Bzzoiro v2 odds hints sidecar for CandidateFactory bridge",
+    })
 
     stats["bzzoiro_v2_source_matrix_patch"] = True
     stats["source_matrix_gap_targets"] = len(target_keys)
@@ -469,6 +490,8 @@ async def _patched_v2_fetch_context(self: Any, matches: list[Match]):  # type: i
         "provider_odds_hints": hint_count,
         "unmatched": max(0, len(target_keys) - forced_matched),
         "odds_comparison_attachment": comparison_stats,
+        "hints_sidecar": str(HINTS_BY_MATCH_REPORT),
+        "hints_sidecar_matches": len(hints_by_match),
         "sample_targets": sorted(target_keys)[:25],
     }
 
@@ -548,6 +571,7 @@ def install() -> dict[str, Any]:
         "odds_comparison_enabled": _truthy(os.getenv("BZZOIRO_V2_FETCH_ODDS_COMPARISON"), True),
         "target_limit": _to_int(os.getenv("BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT"), 180),
         "legacy_gap_report": str(LEGACY_GAP_REPORT),
+        "hints_sidecar": str(HINTS_BY_MATCH_REPORT),
         "why": "runner uses app.providers.bzzoiro_v2, not app.providers.bzzoiro",
     })
     _write_json(INSTALL_REPORT, report)

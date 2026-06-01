@@ -25,12 +25,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from app.schemas import Match, MatchContext, Offer
+from app.schemas import ContextObservation, Match, MatchContext, MatchContextBundle, Offer
 
 UTC = timezone.utc
 ROOT = Path(__file__).resolve().parents[2]
 EXPORT_DIR = ROOT / ".data" / "exports"
 REPORT_PATH = EXPORT_DIR / "latest-bzzoiro-exact-offer-bridge.json"
+BZZOIRO_V2_HINTS_BY_MATCH_PATH = EXPORT_DIR / "latest-bzzoiro-v2-odds-hints-by-match.json"
 
 _INSTALLED = False
 
@@ -69,12 +70,80 @@ def _to_float(value: Any) -> float | None:
 def _iter_contexts(value: Any):
     if isinstance(value, MatchContext):
         yield value
+    elif isinstance(value, MatchContextBundle):
+        if isinstance(value.merged_context, MatchContext):
+            yield value.merged_context
+        for observation in list(getattr(value, "contexts", []) or []):
+            yield from _iter_contexts(observation)
+    elif isinstance(value, ContextObservation):
+        payload = getattr(value, "payload", {}) or {}
+        details = dict(getattr(value, "details", {}) or {})
+        provider = str(getattr(value, "provider", "") or details.get("provider") or "").strip()
+        confidence = getattr(value, "confidence", None)
+        try:
+            conf = float(confidence) if confidence is not None else 58.0
+        except Exception:
+            conf = 58.0
+        yield MatchContext(source=provider or "context_observation", payload=payload if isinstance(payload, dict) else {}, confidence=conf, details=details)
     elif isinstance(value, dict):
+        # Some bundle serializers use plain dicts instead of dataclasses.
+        if isinstance(value.get("merged_context"), MatchContext):
+            yield value["merged_context"]
+        if isinstance(value.get("details"), dict) and isinstance(value.get("payload"), dict):
+            src = str(value.get("source") or value.get("provider") or value.get("details", {}).get("provider") or "").strip()
+            if value.get("details", {}).get("provider_odds_hints"):
+                yield MatchContext(source=src or "dict_context", payload=value.get("payload") or {}, details=value.get("details") or {})
         for item in value.values():
             yield from _iter_contexts(item)
     elif isinstance(value, (list, tuple, set)):
         for item in value:
             yield from _iter_contexts(item)
+
+
+def _read_json(path: Path) -> dict[str, Any]:
+    try:
+        if not path.exists() or path.stat().st_size <= 0:
+            return {}
+        data = json.loads(path.read_text(encoding="utf-8"))
+        return data if isinstance(data, dict) else {}
+    except Exception:
+        return {}
+
+
+def _sidecar_hints_by_match() -> dict[str, list[dict[str, Any]]]:
+    data = _read_json(BZZOIRO_V2_HINTS_BY_MATCH_PATH)
+    raw_matches = data.get("matches") if isinstance(data, dict) else {}
+    out: dict[str, list[dict[str, Any]]] = {}
+    if isinstance(raw_matches, dict):
+        for key, item in raw_matches.items():
+            hints = item.get("hints") if isinstance(item, dict) else None
+            if isinstance(hints, list):
+                out[str(key)] = [h for h in hints if isinstance(h, dict)]
+    return out
+
+
+def _merge_hint_rows(merged: dict[str, list[Offer]], stats: dict[str, Any], key: str, match: Match | None, hints: list[dict[str, Any]], *, source: str) -> None:
+    stats[f"{source}_hints_seen"] = int(stats.get(f"{source}_hints_seen", 0) or 0) + len(hints)
+    if not hints:
+        return
+    existing = {_offer_identity(offer) for offer in merged.get(key, [])}
+    for hint in hints:
+        if not isinstance(hint, dict):
+            stats["offers_skipped_invalid"] += 1
+            continue
+        offer = _offer_from_hint(hint, match)
+        if offer is None:
+            stats["offers_skipped_invalid"] += 1
+            continue
+        ident = _offer_identity(offer)
+        if ident in existing:
+            stats["offers_skipped_duplicate"] += 1
+            continue
+        merged.setdefault(key, []).append(offer)
+        existing.add(ident)
+        stats["offers_added"] += 1
+        stats[f"{source}_offers_added"] = int(stats.get(f"{source}_offers_added", 0) or 0) + 1
+        stats["added_by_source"][_norm(offer.source)] += 1
 
 
 def _clean_family(value: Any) -> str:
@@ -196,27 +265,17 @@ def _merge_offers(matches: list[Match], offers_by_match: dict[str, list[Offer]],
             stats["contexts_scanned"] += 1
             _maybe_enhance_context(context)
             details = dict(getattr(context, "details", {}) or {})
-            hints = list(details.get("provider_odds_hints") or [])
+            hints = [h for h in list(details.get("provider_odds_hints") or []) if isinstance(h, dict)]
             stats["hints_seen"] += len(hints)
-            if not hints:
-                continue
-            existing = {_offer_identity(offer) for offer in merged.get(key, [])}
-            for hint in hints:
-                if not isinstance(hint, dict):
-                    stats["offers_skipped_invalid"] += 1
-                    continue
-                offer = _offer_from_hint(hint, match)
-                if offer is None:
-                    stats["offers_skipped_invalid"] += 1
-                    continue
-                ident = _offer_identity(offer)
-                if ident in existing:
-                    stats["offers_skipped_duplicate"] += 1
-                    continue
-                merged.setdefault(key, []).append(offer)
-                existing.add(ident)
-                stats["offers_added"] += 1
-                stats["added_by_source"][_norm(offer.source)] += 1
+            _merge_hint_rows(merged, stats, key, match, hints, source="context")
+
+    sidecar = _sidecar_hints_by_match()
+    stats["sidecar_matches_seen"] = len(sidecar)
+    for key, hints in sidecar.items():
+        if key not in match_by_key:
+            continue
+        _merge_hint_rows(merged, stats, key, match_by_key.get(key), hints, source="sidecar")
+
     stats["output_matches_with_offers"] = len([1 for v in merged.values() if v])
     stats["added_by_source"] = dict(stats["added_by_source"].most_common())
     return merged, stats
