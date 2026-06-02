@@ -143,124 +143,171 @@ def build_payload() -> dict[str, Any]:
     return payload
 
 
-def _insert_before(text: str, marker: str, block: str) -> str:
-    idx = text.find(marker)
-    if idx < 0:
-        return text + "\n\n" + block
-    return text[:idx].rstrip() + "\n\n" + block.rstrip() + "\n\n" + text[idx:].lstrip()
+
+def _as_float(value: Any) -> float:
+    try:
+        if value in (None, ""):
+            return 0.0
+        return float(str(value).replace(",", "."))
+    except Exception:
+        return 0.0
 
 
-def _replace_conclusion(text: str, counts: dict[str, Any]) -> str:
-    old = "• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards."
-    core_ready = _as_int(counts.get("core_ready_2plus_both") or counts.get("ready_2plus_both"))
-    win4 = _as_int(counts.get("window_0_4h_core_ready_2plus_both") or counts.get("window_0_4h_ready_2plus_both"))
-    win12 = _as_int(counts.get("window_0_12h_core_ready_2plus_both") or counts.get("window_0_12h_ready_2plus_both"))
-    win4_total = _as_int(counts.get("window_0_4h"))
-    win12_total = _as_int(counts.get("window_0_12h"))
-    if core_ready > 0:
-        new = (
-            "• Progressive coverage уже считает core-contract: odds_api_io + bzzoiro + sportlogic для линий, "
-            "sstats + bzzoiro для контекста. Главный gap сейчас — добор Bzzoiro/SStats на ближайшие окна, "
-            f"а не просто общий overlap odds-api.io+Bzzoiro. Core-ready: {core_ready}; 0–4ч: {win4}/{win4_total}; 0–12ч: {win12}/{win12_total}."
+def _pct(part: Any, total: Any) -> str:
+    p = _as_int(part)
+    t = _as_int(total)
+    if t <= 0:
+        return "0%"
+    return f"{round(p * 100.0 / t)}%"
+
+
+def _reason_ru(reason: Any) -> str:
+    try:
+        return v7.v5.reason_ru(str(reason))
+    except Exception:
+        return str(reason or "").replace("_", " ")
+
+
+def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
+    reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
+    if not reasons:
+        return ["• Нет reject reasons в свежих артефактах."]
+    total = sum(_as_int(row.get("count")) for row in reasons if isinstance(row, dict)) or 1
+    out: list[str] = []
+    for row in reasons[:limit]:
+        if not isinstance(row, dict):
+            continue
+        count = _as_int(row.get("count"))
+        if count <= 0:
+            continue
+        ru = row.get("reason_ru") or _reason_ru(row.get("reason"))
+        out.append(f"• {ru}: {count} ({round(count * 100.0 / total)}%)")
+    return out or ["• Нет reject reasons в свежих артефактах."]
+
+
+def _candidate_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
+    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
+    evaluated = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
+    rows = [row for row in evaluated if isinstance(row, dict)][:limit]
+    if not rows:
+        return ["• Нет проверенных reserve-кандидатов в свежем fallback report."]
+    out: list[str] = []
+    for idx, row in enumerate(rows, 1):
+        metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
+        odds = _as_float(metrics.get("odds") or row.get("odds"))
+        ev = _as_float(metrics.get("canonical_ev_pct") or row.get("ev_pct"))
+        edge = _as_float(metrics.get("canonical_edge_pp") or row.get("edge_pct"))
+        q = _as_float(metrics.get("quality_score") or row.get("quality_score"))
+        out.append(
+            f"{idx}. {row.get('home_team')} — {row.get('away_team')} | {row.get('selection')} @{odds:.2f} | "
+            f"EV {ev:+.1f}% | edge {edge:+.1f} п.п. | q {q:.1f}"
         )
-    else:
-        new = (
-            "• Progressive coverage включён, но core-ready 2+ ещё не накоплен. Нужно добирать именно core gaps: "
-            "Bzzoiro/SStats по матчам ближайшего окна; supplemental источники не должны закрывать core-дырки."
-        )
-    return text.replace(old, new)
+        reasons = row.get("reject_reasons") if isinstance(row.get("reject_reasons"), list) else []
+        if reasons:
+            out.append("   • причина: " + ", ".join(_reason_ru(x) for x in reasons[:4]))
+    return out
 
 
-def _patch_sstats_line(text: str, payload: dict[str, Any]) -> str:
-    api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
-    sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
-    if not sstats:
-        return text
-    import re
-    new_line = (
-        f"• sstats: req {_as_int(sstats.get('requests'))}, ctx {_as_int(sstats.get('contexts'))}, "
-        f"rows {_as_int(sstats.get('rows'))}, err {_as_int(sstats.get('errors'))}, "
-        f"deep enriched {_as_int(sstats.get('deep_enriched'))}"
-    )
-    extra = []
-    if sstats.get("runtime_patch"):
-        extra.append(f"patch {sstats.get('runtime_patch')}")
-    if _as_int(sstats.get("team_form_contexts")) or _as_int(sstats.get("direct_contexts")):
-        extra.append(f"direct {_as_int(sstats.get('direct_contexts'))}, form {_as_int(sstats.get('team_form_contexts'))}")
-    if extra:
-        new_line += " | " + "; ".join(extra)
-    return re.sub(r"• sstats: req \d+, ctx \d+, rows \d+, err \d+, deep enriched \d+(?: \| [^\n]*)?", new_line, text)
+def _safe_line(value: Any, default: str = "н/д") -> str:
+    text = str(value or "").strip()
+    return text if text else default
 
-
-
-def _patch_bookmaker_quorum_text(text: str, payload: dict[str, Any], truth_counts: dict[str, Any]) -> str:
-    """Make the Telegram report match the actual publication contract.
-
-    Older renderers say "2+ independent odds-source". The runtime now uses
-    bookmaker quorum, so the user-facing report must not imply that two API
-    providers are required for publication.
-    """
-    total = _as_int(truth_counts.get("matches_total")) or None
-    price2 = _as_int(truth_counts.get("matches_with_2plus_price_confirmations"))
-    if total:
-        text = re.sub(r"• 2\+ независимых odds-source: \d+/\d+ \([^\n]*\)", f"• 2+ букмекера: {price2}/{total}", text)
-        text = re.sub(r"• 2\+ independent odds sources: \d+", f"• 2+ bookmakers: {price2}", text)
-    text = text.replace("2+ независимых odds-source", "2+ букмекера")
-    text = text.replace("2+ independent odds sources", "2+ bookmakers")
-    text = text.replace("2+ odds-source + 2+ context", "2+ букмекера + 2+ context")
-    text = text.replace("2+ odds-source", "2+ букмекера")
-    text = text.replace("A-tier = 2+ букмекера + 2+ context + подтверждённое движение линии + value.", "A-tier = 2+ букмекера + 2+ контекста + подтверждённое движение линии + value.")
-    text = text.replace("B-tier = 1+ odds-source + 2+ букмекера + 1+ context + второй снимок линии + value сохранился.", "B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.")
-    text = text.replace("Core odds/line", "Core bookmaker/line")
-    text = text.replace("core odds 2+", "2+ books")
-    return text
 
 def render(payload: dict[str, Any]) -> str:
-    text = _base_render(payload).replace("HARIZON run report v7", "HARIZON run report v8")
-    text = _patch_sstats_line(text, payload)
-    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
-    prog = diag.get("progressive_core_coverage") if isinstance(diag.get("progressive_core_coverage"), dict) else {}
-    contract = prog.get("contract") if isinstance(prog.get("contract"), dict) else {}
-    counts = prog.get("counts") if isinstance(prog.get("counts"), dict) else {}
+    """Render the user-facing readable report.
 
-    if counts:
-        core_odds_values = list(contract.get("core_odds_providers") or ["bzzoiro", "odds_api_io", "sportlogic"])
-        core_odds_values = [str(x) for x in core_odds_values if str(x) != "sstats"]
-        if "sportlogic" not in core_odds_values:
-            core_odds_values.append("sportlogic")
-        core_odds = ",".join(sorted(set(core_odds_values)))
-        core_context = ",".join(contract.get("core_context_providers") or ["bzzoiro", "sstats"])
-        block = "\n".join([
-            "🧭 Progressive core coverage",
-            f"• Core odds/line: {core_odds}",
-            f"• Core context: {core_context}",
-            f"• Tracked: {_as_int(counts.get('matches_tracked'))} | core odds 2+: {_as_int(counts.get('core_odds_2plus') or counts.get('odds_2plus'))} | core context 2+: {_as_int(counts.get('core_context_2plus') or counts.get('context_2plus'))} | core-ready both: {_as_int(counts.get('core_ready_2plus_both') or counts.get('ready_2plus_both'))}",
-            f"• 0–4ч: {_as_int(counts.get('window_0_4h_core_ready_2plus_both') or counts.get('window_0_4h_ready_2plus_both'))}/{_as_int(counts.get('window_0_4h'))} core-ready",
-            f"• 0–12ч: {_as_int(counts.get('window_0_12h_core_ready_2plus_both') or counts.get('window_0_12h_ready_2plus_both'))}/{_as_int(counts.get('window_0_12h'))} core-ready",
-        ])
-        text = _insert_before(text, "🚫 Почему не опубликовано", block)
-        text = _replace_conclusion(text, counts)
+    This intentionally does not call the v7 renderer.  v7 is still used for data
+    normalization, but the Telegram message must stay in the clear HARIZON format
+    and must describe the current bookmaker-quorum publication contract.
+    """
+    coverage = payload.get("coverage") if isinstance(payload.get("coverage"), dict) else {}
+    funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
+    api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
+    line = payload.get("line_guard") if isinstance(payload.get("line_guard"), dict) else {}
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
-    if truth_counts:
-        block = "\n".join([
-            "Coverage truth",
-            f"• Inventory rows: {_as_int(truth_counts.get('matches_total'))}",
-            f"• 2+ bookmakers / price confirmations: {_as_int(truth_counts.get('matches_with_2plus_price_confirmations'))}",
-            f"• 2+ independent odds sources (diagnostic only): {_as_int(truth_counts.get('matches_with_2plus_odds_sources'))}",
-            f"• 2+ context sources: {_as_int(truth_counts.get('matches_with_2plus_context_sources'))}",
-            f"• ready publish by bookmaker contract: {_as_int(truth_counts.get('matches_ready_for_publish'))}",
-        ])
-        text = _insert_before(text, "🚫 Почему не опубликовано", block)
-    text = _patch_bookmaker_quorum_text(text, payload, truth_counts)
-    return text
+
+    inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
+    with_odds = _as_int(truth_counts.get("matches_with_odds")) or _as_int(coverage.get("day_inventory_with_odds")) or _as_int(coverage.get("matches_with_offers"))
+    with_context = _as_int(truth_counts.get("matches_with_context")) or _as_int(coverage.get("day_inventory_with_context")) or _as_int(coverage.get("matches_with_context"))
+    price2 = _as_int(truth_counts.get("matches_with_2plus_price_confirmations")) or _as_int(coverage.get("matches_with_2plus_books"))
+    odds_sources2 = _as_int(truth_counts.get("matches_with_2plus_odds_sources"))
+    context2 = _as_int(truth_counts.get("matches_with_2plus_context_sources"))
+    ready_model = _as_int(truth_counts.get("matches_ready_for_model")) or _as_int(coverage.get("ready_for_model"))
+    ready_publish = _as_int(truth_counts.get("matches_ready_for_publish"))
+    run_matches = _as_int(coverage.get("matches_seen"))
+
+    top_reason = _reason_ru(payload.get("top_reason"))
+    published = _as_int(funnel.get("published_count")) > 0 or payload.get("status") == "published"
+    status_line = "✅ прогноз опубликован" if published else "🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards."
+
+    odds = api.get("odds_api_io") if isinstance(api.get("odds_api_io"), dict) else {}
+    sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
+    bzz = api.get("bzzoiro") if isinstance(api.get("bzzoiro"), dict) else {}
+    sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
+    combos = coverage.get("secondary_combinations") if isinstance(coverage.get("secondary_combinations"), dict) else {}
+    combo_text = ", ".join(f"{k}: {v}" for k, v in sorted(combos.items(), key=lambda item: -_as_int(item[1]))[:6]) or "н/д"
+
+    lines: list[str] = [
+        "🧾 HARIZON — понятный отчёт по запуску",
+        status_line,
+        f"• Главная причина: {top_reason}",
+        "",
+        "📦 Инвентарь и покрытие",
+        f"• Инвентарь дня: {inv_total} матчей. В этом run обработано: {run_matches}.",
+        f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
+        f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
+        f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
+        f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",
+        f"• Готово для модели: {ready_model}/{inv_total} ({_pct(ready_model, inv_total)})",
+        "",
+        "🏷️ A/B-tier публикация",
+        f"• A-tier bookmaker coverage: {ready_publish} | опубликовано: {_as_int(funnel.get('published_count'))}",
+        "  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.",
+        f"• B-tier bookmaker coverage: {price2} | fallback опубликовано: {_as_int(funnel.get('fallback_published_count'))}",
+        "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
+        "• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.",
+        "",
+        "🛡️ Движение линии и финальный фильтр",
+        f"• Pre-kickoff проверок: {_as_int(line.get('final_pre_kickoff_checks'))} | матчей без следующего регулярного run: {_as_int(line.get('no_more_regular_run_before_kickoff'))}",
+        f"• Line guard: увидел {_as_int(line.get('seen'))}, оставил {_as_int(line.get('kept'))}, снял {_as_int(line.get('dropped'))}",
+        "",
+        "🧪 Воронка кандидатов",
+        f"• Raw/candidates before quality: {_as_int(funnel.get('raw_candidates'))}/{_as_int(funnel.get('candidates_before_quality'))}",
+        f"• Quality прошло: {_as_int(funnel.get('passed_candidates'))} | publishable: {_as_int(funnel.get('publishable_candidates'))} | опубликовано: {_as_int(funnel.get('published_count'))}",
+        f"• Controlled fallback: seen {_as_int(funnel.get('fallback_candidates_seen'))} | evaluated {_as_int(funnel.get('fallback_evaluated'))} | published {_as_int(funnel.get('fallback_published_count'))}",
+        "",
+        "📡 Провайдеры: запросы и полезные данные",
+        f"• odds-api.io: events req {_as_int(odds.get('events_req'))}, odds req {_as_int(odds.get('odds_req'))}; смэтчил матчей {_as_int(odds.get('matched'))}; offers {_as_int(odds.get('offers'))}; 2+ букмекера {_as_int(odds.get('books_2plus'))}; ошибок {_as_int(odds.get('errors'))}.",
+        f"• Bzzoiro: direct req {_as_int(bzz.get('requests'))}, v2 req {_as_int(bzz.get('v2_requests'))}; v2 ctx {_as_int(bzz.get('v2_contexts'))}; v2 odds {_as_int(bzz.get('v2_odds_resources'))}; secondary offers {_as_int(bzz.get('secondary_offers_added'))}; overlap odds-api.io {_as_int(bzz.get('overlap'))}; ошибок {max(_as_int(bzz.get('errors')), _as_int(bzz.get('v2_errors')))}.",
+        f"• SStats: запросы {_as_int(sstats.get('requests'))}; сырых строк {_as_int(sstats.get('rows'))}; контекстов {_as_int(sstats.get('contexts'))}; deep-enriched {_as_int(sstats.get('deep_enriched'))}; team-form {_as_int(sstats.get('team_form_contexts'))}; direct {_as_int(sstats.get('direct_contexts'))}; ошибок {_as_int(sstats.get('errors'))}.",
+        f"• SportLogic: enabled {bool(sport.get('enabled'))}; запросы {_as_int(sport.get('requests'))}; fixtures {_as_int(sport.get('fixtures_fetched'))}; matched {_as_int(sport.get('matched'))}; odds req {_as_int(sport.get('odds_requests'))}; offers {_as_int(sport.get('offers'))}; ошибок {_as_int(sport.get('errors'))}; diag {_safe_line(sport.get('diagnosis'))}.",
+        f"• Комбинации источников линий: {combo_text}",
+        "",
+        "🚫 Почему не опубликовано",
+        *_top_reasons(payload),
+        "",
+        "🔎 Проверенные reserve-кандидаты",
+        *_candidate_lines(payload),
+        "",
+        "📌 Что это значит",
+    ]
+    if published:
+        lines.append("• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.")
+    elif "line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason")):
+        lines.append("• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.")
+    else:
+        lines.append("• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.")
+    lines.append("• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.")
+    return "\n".join(lines)
 
 
 v7.v5.build_payload = build_payload
 v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
-_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5", "sstats_nested_normalizer": True})
+_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5", "format": "readable_bookmaker_quorum", "sstats_nested_normalizer": True})
 
 
 if __name__ == "__main__":
