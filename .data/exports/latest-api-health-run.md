@@ -1,13 +1,13 @@
 # API Health Run
 
-- Created UTC: `2026-06-02T08:45:41.000646+00:00`
+- Created UTC: `2026-06-02T09:07:10.326979+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
-- OK: **14**
+- OK: **16**
 - Config-only: **1**
 - Skipped: **0**
-- Healthy/config/skipped: **15**
+- Healthy/config/skipped: **17**
 - Degraded: **0**
 - Rate-limited: **0**
 - Auth errors: **0**
@@ -34,13 +34,13 @@
 | `thesportsdb` | `context` | `ok` | 1 | 5 | ok |
 | `currents` | `news` | `ok` | 1 | 30 | ok |
 | `gnews` | `news` | `ok` | 1 | 1 | ok |
-| `guardian` | `news` | `error` | 1 | 0 | ConnectTimeout:  |
-| `newsapi` | `news` | `ok` | 1 | 1 | ok |
+| `guardian` | `news` | `ok` | 1 | 1 | ok |
+| `newsapi` | `news` | `ok` | 1 | 0 | ok |
 | `newsdata` | `news` | `ok` | 1 | 1 | ok |
 | `odds_api_io_events` | `odds` | `ok` | 1 | 10 | ok |
 | `sportlogic` | `odds` | `ok` | 1 | 50 | ok |
 | `allsportsapi` | `odds_context` | `ok` | 1 | 0 | ok |
 | `sharpapi_configured_base` | `utility` | `missing_secret` | 0 | 0 | required secret is not configured |
-| `meteostat` | `weather` | `error` | 1 | 0 | ConnectTimeout:  |
+| `meteostat` | `weather` | `ok` | 1 | 1 | ok |
 | `openweathermap` | `weather` | `ok` | 1 | 0 | ok |
 | `weatherapi` | `weather` | `ok` | 1 | 1 | ok |
