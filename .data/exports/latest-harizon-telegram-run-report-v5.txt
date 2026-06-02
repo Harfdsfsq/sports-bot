@@ -3,12 +3,12 @@
 • Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 114.
-• 1+ линия: 193/300 (64%) | 1+ контекст: 291/300 (97%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 113.
+• 1+ линия: 193/300 (64%) | 1+ контекст: 293/300 (98%)
 • 2+ букмекера: 29/300 (10%)
 • 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
-• 2+ контекста: 82/300 (27%)
-• Готово для модели: 184/300 (61%)
+• 2+ контекста: 85/300 (28%)
+• Готово для модели: 186/300 (62%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
@@ -18,8 +18,8 @@
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 1
-• Line guard: увидел 6, оставил 2, снял 0
+• Pre-kickoff проверок: 12 | матчей без следующего регулярного run: 6
+• Line guard: увидел 5, оставил 1, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
@@ -27,22 +27,26 @@
 • Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 14; смэтчил матчей 70; offers 6683; 2+ букмекера 41; ошибок 0.
-• Bzzoiro: direct req 17, v2 req 17; v2 ctx 4; v2 odds 4; secondary offers 0; overlap odds-api.io 4; ошибок 2.
-• SStats: запросы 25; сырых строк 21765; контекстов 90; deep-enriched 2; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 14; смэтчил матчей 70; offers 6613; 2+ букмекера 39; ошибок 0.
+• Bzzoiro: direct req 17, v2 req 17; v2 ctx 4; v2 odds 4; secondary offers 0; overlap odds-api.io 4; ошибок 0.
+• SStats: запросы 25; сырых строк 21765; контекстов 89; deep-enriched 4; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 47, bzzoiro+odds_api_io: 4
+• Комбинации источников линий: odds_api_io: 46, bzzoiro+odds_api_io: 4
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 2 (50%)
-• quality: вероятность после калибровки ниже порога: 1 (25%)
-• quality post calibration edge guard: 1 (25%)
+• направление ставки конфликтует с xG: 1 (14%)
+• quality post calibration edge guard: 1 (14%)
+• tier c watch only: 1 (14%)
+• line movement not confirmed:awaiting next run: 1 (14%)
+• line movement:needs next cron line movement recheck: 1 (14%)
+• controlled fallback confirmation sources below min:1/2: 1 (14%)
+• quality: вероятность после калибровки ниже порога: 1 (14%)
 
 🔎 Проверенные reserve-кандидаты
-1. Podbeskidzie Bielsko-Biała — Slask II Wroclaw | Больше 3.5 @2.66 | EV +10.7% | edge +4.0 п.п. | q 54.4
+1. Al Quwa Al Jawiya — Zakho FC | Меньше 2.5 @1.95 | EV +7.7% | edge +3.9 п.п. | q 58.6
    • причина: направление ставки конфликтует с xG
-2. Al Quwa Al Jawiya — Zakho FC | Меньше 2.5 @1.95 | EV +7.7% | edge +3.9 п.п. | q 58.6
-   • причина: направление ставки конфликтует с xG
+2. Assyriska FF — Enkopings SK | Меньше 3 @2.25 | EV +10.1% | edge +4.5 п.п. | q 64.2
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, controlled fallback confirmation sources below min:1/2
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
