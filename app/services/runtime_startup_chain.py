@@ -50,6 +50,7 @@ MODULES = [
     'app.services.odds_movement_cache_bridge_patch',
     'app.services.prequality_final_consensus_bridge',
     'app.services.candidate_value_runtime_patch',
+    'app.services.bookmaker_quorum_publication_policy',
     'app.services.windowed_core_coverage_finalizer',
     'app.services.windowed_core_report_and_sportlogic_final_guard',
     'app.services.progressive_coverage_runtime_patch',

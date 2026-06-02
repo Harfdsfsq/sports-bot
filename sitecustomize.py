@@ -100,17 +100,28 @@ def _apply_common_prediction_contract() -> None:
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": "12",
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
         "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
+        "PUBLISH_PRICE_CONFIRMATION_MODE": "bookmakers",
+        "PUBLISH_MIN_ODDS_SOURCES": "1",
+        "PUBLISH_MIN_BOOKS": "2",
+        "CORE_COVERAGE_MIN_ODDS_SOURCES": "1",
+        "CORE_COVERAGE_MIN_BOOKMAKERS": "2",
+        "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_C_MIN_ODDS_SOURCES": "1",
+        "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
+        "CONTROLLED_FALLBACK_TIER_C_MIN_BOOKS": "2",
         "MIN_BOOKS_FOR_CONSENSUS": "2",
         "MIN_BOOKS_PUBLISH": "2",
-        "MIN_SOURCES_PUBLISH": "2",
+        "MIN_SOURCES_PUBLISH": "1",
         "MARKET_DERIVED_MIN_BOOKS": "2",
-        "MARKET_DERIVED_MIN_SOURCES": "2",
-        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+        "MARKET_DERIVED_MIN_SOURCES": "1",
+        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
-        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
         "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EV_PCT": "0.0",
         "CONTROLLED_FALLBACK_VISIBLE_MIN_CANONICAL_EDGE_PP": "0.0",
-        "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "2",
+        "TELEGRAM_MAIN_PICK_MIN_ODDS_SOURCES": "1",
         "TELEGRAM_MAIN_PICK_MIN_EDGE_PP": "3.0",
         "SECONDARY_ODDS_RESCUE_ENABLED": "true",
         "BZZOIRO_ODDS_REKEY_ENABLED": "true",
@@ -318,7 +329,7 @@ def _merge_cached_evidence(dst: dict, src: dict, now_iso: str) -> bool:
     dst["metadata"] = dst_md
     pc = max(_price_count(dst), _price_count(src))
     cc = max(_context_count(dst), _context_count(src))
-    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
+    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH") or os.getenv("CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS"), 2))
     min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
     cov = dst.get("coverage") if isinstance(dst.get("coverage"), dict) else {}
     scov = src.get("coverage") if isinstance(src.get("coverage"), dict) else {}
@@ -341,7 +352,7 @@ def _merge_cached_evidence(dst: dict, src: dict, now_iso: str) -> bool:
 
 
 def _recompute_cached_evidence_counts(rows: list[dict], counts: dict, now_iso: str) -> dict:
-    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
+    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH") or os.getenv("CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS"), 2))
     min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
     price2 = context2 = odds_any = context_any = ready_model = ready_publish = 0
     for row in rows:

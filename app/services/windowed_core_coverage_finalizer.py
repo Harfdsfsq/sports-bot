@@ -2,9 +2,9 @@ from __future__ import annotations
 
 """Absolute-final installer for windowed core coverage.
 
-Runtime extensions can be installed in several stages. This module deliberately
-forces the windowed-core policy to be the final PredictionRunner /
-CandidateFactory wrapper.
+`sitecustomize` can load before dependencies are installed, and `usercustomize`
+loads many runtime wrappers after it. This module deliberately forces the
+windowed-core policy to be the final PredictionRunner / CandidateFactory wrapper.
 
 Important: the windowed-core policy must not kill raw candidates. Raw candidates
 are needed for diagnostics, quality analysis and controlled reserve evaluation.
@@ -56,7 +56,10 @@ def _set_defaults() -> None:
         "WINDOWED_CORE_COVERAGE_DROP_RAW_CANDIDATES": "false",
         "CORE_COVERAGE_WINDOW_HOURS": "4",
         "CORE_COVERAGE_CRON_INTERVAL_HOURS": "2",
-        "CORE_COVERAGE_MIN_ODDS_SOURCES": "2",
+        "CORE_COVERAGE_MIN_ODDS_SOURCES": "1",
+        "CORE_COVERAGE_MIN_BOOKMAKERS": "2",
+        "PUBLISH_PRICE_CONFIRMATION_MODE": "bookmakers",
+        "PUBLISH_MIN_BOOKS": "2",
         "CORE_COVERAGE_MIN_CONTEXT_SOURCES": "2",
         "CORE_COVERAGE_MIN_CORE_PROVIDERS": "2",
         "CONTEXT_ENRICHMENT_REQUIRES_OFFERS": "false",
@@ -87,6 +90,51 @@ def _find_callable_in_closure(fn: Callable[..., Any] | None) -> Callable[..., An
     return None
 
 
+
+def _book_values_from_payload(value: Any) -> set[str]:
+    books: set[str] = set()
+    if value in (None, ""):
+        return books
+    if isinstance(value, str):
+        for part in value.replace("|", ",").replace(";", ",").split(","):
+            part = str(part).strip().lower()
+            if part:
+                books.add(part)
+        return books
+    if isinstance(value, (list, tuple, set)):
+        for item in value:
+            books |= _book_values_from_payload(item)
+        return books
+    if isinstance(value, dict):
+        for key in ("bookmaker", "book", "sportsbook", "bookmaker_name", "book_name", "name"):
+            raw = value.get(key)
+            if raw not in (None, ""):
+                books.add(str(raw).strip().lower())
+        for key in ("books", "bookmakers", "selected_books", "raw_bucket_offers", "bucket_offers", "offers"):
+            if key in value:
+                books |= _book_values_from_payload(value.get(key))
+    return {b for b in books if b}
+
+
+def _bookmakers_for_candidate(candidate: Any, offers_by_match: Any, match_key: str) -> set[str]:
+    books: set[str] = set()
+    try:
+        from app.services.coverage_contract import books_for_candidate
+        books |= set(books_for_candidate(candidate))
+    except Exception:
+        pass
+    try:
+        summary = getattr(candidate, "source_summary", {}) or {}
+        books |= _book_values_from_payload(summary)
+    except Exception:
+        pass
+    try:
+        offers = dict(offers_by_match or {}).get(match_key) or []
+        books |= _book_values_from_payload(offers)
+    except Exception:
+        pass
+    return {str(b).strip().lower() for b in books if str(b).strip()}
+
 def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -> None:
     from app.services.model import CandidateFactory
 
@@ -109,7 +157,8 @@ def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -
         now = datetime.now(UTC)
         context_cov = patch._build_context_coverage(contexts_by_match)
         offer_cov = {str(k): patch._offer_sources_from_map(v) for k, v in dict(offers_by_match or {}).items()}
-        min_odds = max(1, patch._to_int(os.getenv("CORE_COVERAGE_MIN_ODDS_SOURCES") or 2, 2))
+        min_odds = max(1, patch._to_int(os.getenv("CORE_COVERAGE_MIN_ODDS_SOURCES") or 1, 1))
+        min_books = max(2, patch._to_int(os.getenv("CORE_COVERAGE_MIN_BOOKMAKERS") or os.getenv("PUBLISH_MIN_BOOKS") or 2, 2))
         min_context = max(1, patch._to_int(os.getenv("CORE_COVERAGE_MIN_CONTEXT_SOURCES") or 2, 2))
         min_core = max(1, patch._to_int(os.getenv("CORE_COVERAGE_MIN_CORE_PROVIDERS") or 2, 2))
 
@@ -119,6 +168,7 @@ def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -
         for candidate in list(candidates or []):
             match_key = str(getattr(candidate, "match_key", "") or "")
             odds_sources = patch._offer_sources_from_candidate(candidate) | offer_cov.get(match_key, set())
+            bookmakers = _bookmakers_for_candidate(candidate, offers_by_match, match_key)
             context_sources = set(context_cov.get(match_key, set()))
             summary = dict(getattr(candidate, "source_summary", {}) or {})
             context_sources |= patch._provider_tokens_from_payload(summary.get("context_source"))
@@ -128,7 +178,9 @@ def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -
             movement = patch._movement_status(candidate, now, getattr(self, "settings", None))
             reject_reasons: list[str] = []
             if len(odds_sources) < min_odds:
-                reject_reasons.append("odds_sources_below_2")
+                reject_reasons.append("price_source_missing")
+            if len(bookmakers) < min_books:
+                reject_reasons.append("bookmakers_below_2")
             if len(context_sources) < min_context:
                 reject_reasons.append("context_sources_below_2")
             if core_count < min_core:
@@ -139,7 +191,11 @@ def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -
             coverage = {
                 "accepted": not reject_reasons,
                 "reject_reasons": reject_reasons,
+                "price_confirmation_mode": "bookmakers",
                 "odds_sources": sorted(odds_sources),
+                "bookmakers": sorted(bookmakers),
+                "books_count": len(bookmakers),
+                "min_bookmakers": min_books,
                 "context_sources": sorted(context_sources),
                 "core_provider_count": core_count,
                 "movement": movement,
@@ -166,6 +222,8 @@ def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -
                     "selection": getattr(candidate, "selection", ""),
                     "reject_reasons": reject_reasons,
                     "odds_sources": sorted(odds_sources),
+                    "bookmakers": sorted(bookmakers),
+                    "books_count": len(bookmakers),
                     "context_sources": sorted(context_sources),
                     "movement": movement,
                 })
@@ -186,7 +244,9 @@ def _install_candidate_annotation_wrapper(patch: Any, payload: dict[str, Any]) -
             "candidates_kept_for_quality": len(candidates or []),
             "publish_allowed_by_coverage": accepted,
             "publish_blocked_by_coverage": blocked,
+            "price_confirmation_mode": "bookmakers",
             "min_odds_sources": min_odds,
+            "min_bookmakers": min_books,
             "min_context_sources": min_context,
             "min_core_providers": min_core,
             "blocked_sample": blocked_rows[:30],
@@ -261,7 +321,7 @@ def install() -> dict[str, Any]:
         "status": "starting",
         "forced": True,
         "raw_candidate_policy": "audit_only",
-        "publication_policy": "block_without_2plus_odds_2plus_context_core_movement",
+        "publication_policy": "block_without_2plus_bookmakers_2plus_context_core_movement",
         "steps": [],
     }
     try:
@@ -269,7 +329,7 @@ def install() -> dict[str, Any]:
         previous_coverage_report = _safe_read_json(patch.LATEST_REPORT)
 
         # Reset module/class markers so the windowed wrappers are applied after
-        # all other runtime wrappers.
+        # all other usercustomize wrappers, not before them.
         patch._INSTALLED = False
         try:
             from app.services.runner import PredictionRunner
@@ -314,7 +374,7 @@ def install() -> dict[str, Any]:
         _install_publishable_filter_wrapper(payload)
 
         # patch.install() writes an install-only coverage report. If a later
-        # post-run step imports the startup chain, do not overwrite the richer
+        # post-run script imports usercustomize, do not overwrite the richer
         # run report produced during CandidateFactory execution.
         current_report = _safe_read_json(patch.LATEST_REPORT)
         if isinstance(previous_coverage_report, dict) and "candidates_in" in previous_coverage_report and isinstance(current_report, dict) and "candidates_in" not in current_report:
