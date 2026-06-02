@@ -105,6 +105,10 @@ jobs:
       BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT: "50"
       BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS: "50"
       BZZOIRO_EXACT_OFFER_BRIDGE_ENABLED: "true"
+      CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED: "true"
+      CONTROLLED_FALLBACK_MAX_SELECTED_BOOK_MEDIAN_DEVIATION_PCT: "16"
+      CONTROLLED_FALLBACK_MAX_SELECTED_VS_MARKET_GAP_PP: "10"
+      CONTROLLED_FALLBACK_PRICE_INTEGRITY_MIN_REAL_BOOKS: "2"
       SSTATS_ROLLING_METRICS_ENABLED: "true"
       SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
 
@@ -373,6 +377,8 @@ jobs:
             exit 0
           fi
           python -u scripts/apply_publication_family_policy.py || true
+          python -u scripts/filter_controlled_fallback_price_integrity.py || true
+          cp .data/exports/latest-controlled-fallback-price-integrity-guard.json artifacts/run-bot/latest-controlled-fallback-price-integrity-guard.json 2>/dev/null || true
           python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true

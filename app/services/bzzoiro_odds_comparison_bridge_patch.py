@@ -112,8 +112,8 @@ def _family_selection_point(market: Any, outcome: Any, row: dict[str, Any]) -> t
 
 def _price_from_row(row: dict[str, Any]) -> float | None:
     for key in (
-        "decimal_odds", "price", "odds", "value", "best_price", "max_decimal_odds",
-        "odd", "current", "quote", "decimal", "coefficient",
+        "decimal_odds", "price", "odds", "best_price", "max_decimal_odds",
+        "odd", "quote", "decimal", "coefficient",
     ):
         price = _to_float(row.get(key))
         if price is not None and price > 1.0:
@@ -137,6 +137,16 @@ def _add_hint(out: list[dict[str, Any]], *, family: str | None, selection: str |
         return
     if family not in {"h2h", "totals", "spreads", "btts"}:
         return
+    row_blob = " ".join(str(row.get(k) or "") for k in ("market_name", "market_key", "path", "field", "source_path")).lower()
+    market_blob = str(market_name or "").lower()
+    if any(token in (market_blob + " " + row_blob) for token in (".line", "/line", "_line", "@1.5.line", "@2.5.line", "@3.5.line")):
+        return
+    sel = str(selection or "").strip().lower()
+    if family == "totals":
+        over_path = any(token in market_blob for token in (".over", "/over", "over@", "_over"))
+        under_path = any(token in market_blob for token in (".under", "/under", "under@", "_under"))
+        if (over_path and sel.startswith("under")) or (under_path and sel.startswith("over")):
+            return
     out.append({
         "source": "bzzoiro",
         "bookmaker": bookmaker or "Bzzoiro",

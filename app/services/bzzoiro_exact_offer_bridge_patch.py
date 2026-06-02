@@ -199,15 +199,74 @@ def _offer_identity(offer: Offer) -> tuple[Any, ...]:
     )
 
 
+def _hint_text_blob(hint: dict[str, Any]) -> str:
+    parts: list[str] = []
+    for key in ("market_name", "market_key", "market", "path", "field", "label", "source_path"):
+        value = hint.get(key)
+        if value not in (None, ""):
+            parts.append(str(value))
+    metadata = hint.get("metadata") if isinstance(hint.get("metadata"), dict) else {}
+    for key in ("market_name", "market_key", "path", "field", "source_path"):
+        value = metadata.get(key)
+        if value not in (None, ""):
+            parts.append(str(value))
+    raw = metadata.get("raw_hint") if isinstance(metadata.get("raw_hint"), dict) else None
+    if raw:
+        for key in ("market_name", "market_key", "path", "field", "source_path"):
+            value = raw.get(key)
+            if value not in (None, ""):
+                parts.append(str(value))
+    return " ".join(parts).strip().lower()
+
+
+def _looks_like_line_value_not_price(hint: dict[str, Any], price: float | None) -> bool:
+    if price is None:
+        return False
+    blob = _hint_text_blob(hint).replace("\\", "/")
+    # Bzzoiro comparison payload contains structural fields such as
+    # odds_comparison.markets.over_under_25.over@2.5.line.  The value there is the
+    # total line (2.5), not a decimal odd.  Treating it as a price caused false
+    # Telegram picks like Under 2.5 @2.64 while bookmaker Under was ~1.40-1.80.
+    line_tokens = (".line", "/line", "_line", " line", "@1.5.line", "@2.5.line", "@3.5.line")
+    if any(token in blob for token in line_tokens):
+        return True
+    if str(hint.get("price_source") or "").strip().lower() in {"line", "point", "handicap", "total"}:
+        return True
+    return False
+
+
+def _total_side_mismatch(hint: dict[str, Any], selection: str, family: str) -> bool:
+    if family != "totals":
+        return False
+    blob = _hint_text_blob(hint)
+    sel = str(selection or "").strip().lower()
+    is_under = sel.startswith("under") or "меньше" in sel
+    is_over = sel.startswith("over") or "больше" in sel
+    # Comparison paths use stable outcome keys: over / under.  If a mined hint says
+    # path=...over@2.5... but selection=Under, the side was inverted upstream and
+    # must not become an Offer.
+    over_path = any(token in blob for token in (".over", "/over", " over@", "over@", "_over"))
+    under_path = any(token in blob for token in (".under", "/under", " under@", "under@", "_under"))
+    if over_path and is_under:
+        return True
+    if under_path and is_over:
+        return True
+    return False
+
+
 def _offer_from_hint(hint: dict[str, Any], match: Match | None) -> Offer | None:
     price = _to_float(hint.get("price"))
     if price is None or price < 1.01 or price > 50.0:
+        return None
+    if _looks_like_line_value_not_price(hint, price):
         return None
     family = _clean_family(hint.get("family") or hint.get("market_key") or hint.get("market"))
     if family not in {"totals", "spreads", "h2h", "btts"}:
         return None
     selection, inferred_side = _clean_selection(hint.get("selection") or hint.get("outcome") or hint.get("option_name"), family, match)
     if not selection:
+        return None
+    if _total_side_mismatch(hint, selection, family):
         return None
     point = _to_float(hint.get("point") if hint.get("point") is not None else hint.get("line") if hint.get("line") is not None else hint.get("option_value"))
     team_side = str(hint.get("team_side") or inferred_side or "").strip().lower() or None
