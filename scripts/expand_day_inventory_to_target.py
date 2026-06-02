@@ -107,6 +107,31 @@ def local_date_for(settings: Settings, dt: datetime | None) -> str:
     return dt.astimezone(app_tz(settings)).date().isoformat()
 
 
+def fill_window_dates(local_date: str) -> tuple[date, date]:
+    """Return inclusive local-date window for inventory target fill.
+
+    The canonical day inventory is still anchored to DAY_INVENTORY_TARGET_DATE, but
+    the project rules allow the tracked pool to include >24h matches.  When the
+    same-day feeds do not contain 300 real soccer fixtures, this optional rolling
+    horizon fills the remaining inventory with future skeleton fixtures.  These rows
+    are marked as target-fill rows and are not publishable until normal odds/context
+    enrichment validates them.
+    """
+    start = date.fromisoformat(local_date)
+    if not env_bool("DAY_INVENTORY_FILL_ALLOW_ROLLING_HORIZON", True):
+        return start, start
+    future_days = max(0, env_int("DAY_INVENTORY_FILL_FUTURE_DAYS", 3))
+    return start, start + timedelta(days=future_days)
+
+
+def in_fill_window(settings: Settings, dt: datetime | None, local_date: str) -> bool:
+    if dt is None:
+        return False
+    day = dt.astimezone(app_tz(settings)).date()
+    start, end = fill_window_dates(local_date)
+    return start <= day <= end
+
+
 def clean_text(value: Any) -> str:
     return re.sub(r"\s+", " ", str(value or "")).strip()
 
@@ -285,6 +310,7 @@ def make_match_from_row(row: dict[str, Any], *, source: str, settings: Settings,
         "provider_source_ids": {source: sid} if sid else {},
         "sources_seen": source,
         "core_inventory": True,
+        "inventory_fill_window": True,
     }
     if metadata_extra:
         metadata.update(metadata_extra)
@@ -408,7 +434,7 @@ async def fetch_odds_api_io(settings: Settings, local_date: str) -> tuple[list[M
         for match in deduped:
             if getattr(match, "sport_key", "") != "soccer":
                 continue
-            if local_date_for(settings, match.commence_time) != local_date:
+            if not in_fill_window(settings, match.commence_time, local_date):
                 continue
             meta2 = dict(match.metadata or {})
             source_ids = dict(meta2.get("provider_source_ids") or {})
@@ -440,9 +466,10 @@ async def fetch_bzzoiro(settings: Settings, local_date: str) -> tuple[list[Match
         stats["api_key_present"] = bool(key)
         return [], stats
     target = date.fromisoformat(local_date)
-    window = env_int("DAY_INVENTORY_FILL_BZZOIRO_WINDOW_DAYS", 1)
-    date_from = (target - timedelta(days=window)).isoformat()
-    date_to = (target + timedelta(days=window)).isoformat()
+    start_day, end_day = fill_window_dates(local_date)
+    window = env_int("DAY_INVENTORY_FILL_BZZOIRO_WINDOW_DAYS", 0)
+    date_from = (start_day - timedelta(days=max(0, window))).isoformat()
+    date_to = (end_day + timedelta(days=max(0, window))).isoformat()
     base = str(os.getenv("BZZOIRO_BASE_URL") or "https://sports.bzzoiro.com/api/v2").rstrip("/")
     headers = {"Authorization": f"Token {key}"}
     rows: list[dict[str, Any]] = []
@@ -495,7 +522,7 @@ async def fetch_bzzoiro(settings: Settings, local_date: str) -> tuple[list[Match
     for row in rows:
         source_row = row.get("event") if isinstance(row.get("event"), dict) else row
         match = make_match_from_row(source_row, source="bzzoiro", settings=settings, metadata_extra={"bzzoiro_raw_source": "prediction_event" if row.get("event") else "events_v2"})
-        if match is not None and local_date_for(settings, match.commence_time) == local_date:
+        if match is not None and in_fill_window(settings, match.commence_time, local_date):
             matches.append(match)
     stats["matches"] = len({m.match_key for m in matches})
     return matches, stats
@@ -508,9 +535,10 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
         stats["api_key_present"] = bool(key)
         return [], stats
     target = date.fromisoformat(local_date)
-    window = env_int("DAY_INVENTORY_FILL_SSTATS_WINDOW_DAYS", 1)
-    date_from = (target - timedelta(days=window)).isoformat()
-    date_to = (target + timedelta(days=window)).isoformat()
+    start_day, end_day = fill_window_dates(local_date)
+    window = env_int("DAY_INVENTORY_FILL_SSTATS_WINDOW_DAYS", 0)
+    date_from = (start_day - timedelta(days=max(0, window))).isoformat()
+    date_to = (end_day + timedelta(days=max(0, window))).isoformat()
     limit = max(100, env_int("DAY_INVENTORY_FILL_SSTATS_PAGE_SIZE", 1000))
     max_requests = max(1, env_int("DAY_INVENTORY_FILL_SSTATS_MAX_REQUESTS", 18))
     rows: list[dict[str, Any]] = []
@@ -539,7 +567,7 @@ async def fetch_sstats(settings: Settings, local_date: str) -> tuple[list[Match]
     matches: list[Match] = []
     for row in rows:
         match = make_match_from_row(row, source="sstats", settings=settings, metadata_extra={"sstats_fixture_fill": True})
-        if match is not None and local_date_for(settings, match.commence_time) == local_date:
+        if match is not None and in_fill_window(settings, match.commence_time, local_date):
             matches.append(match)
     stats["matches"] = len({m.match_key for m in matches})
     return matches, stats
@@ -652,7 +680,7 @@ async def fetch_sportlogic(settings: Settings, local_date: str) -> tuple[list[Ma
     matches: list[Match] = []
     for row in rows:
         match = make_match_from_row(row, source="sportlogic", settings=settings, metadata_extra={"sportlogic_fixture_fill": True})
-        if match is not None and local_date_for(settings, match.commence_time) == local_date:
+        if match is not None and in_fill_window(settings, match.commence_time, local_date):
             matches.append(match)
     stats["matches"] = len({m.match_key for m in matches})
     return matches, stats
@@ -820,15 +848,28 @@ def enrich_and_recount(payload: dict[str, Any], target_size: int) -> dict[str, A
     return payload
 
 
-async def discover_candidates(settings: Settings, local_date: str) -> tuple[list[Match], dict[str, Any]]:
+async def discover_candidates(settings: Settings, local_date: str, target_size: int) -> tuple[list[Match], dict[str, Any]]:
     cache_ttl_minutes = env_int("DAY_INVENTORY_FILL_CANDIDATE_CACHE_TTL_MINUTES", 90)
+    ignore_short_cache = env_bool("DAY_INVENTORY_FILL_IGNORE_SHORT_CACHE", True)
     cached = load_json(CANDIDATE_CACHE_PATH, {})
-    if isinstance(cached, dict) and cached.get("local_date") == local_date:
+    if cache_ttl_minutes > 0 and isinstance(cached, dict) and cached.get("local_date") == local_date:
         ts = parse_dt(cached.get("created_at_utc"))
         if ts is not None and datetime.now(UTC) - ts <= timedelta(minutes=cache_ttl_minutes):
             matches = matches_from_cache(cached.get("matches"))
+            cached_count = len({m.match_key for m in matches})
+            min_acceptable = max(1, int(target_size * env_float("DAY_INVENTORY_FILL_CACHE_MIN_TARGET_RATIO", 0.92)))
+            if matches and (not ignore_short_cache or cached_count >= min_acceptable):
+                return matches, {"cache_used": True, "cached_matches": cached_count, "created_at_utc": cached.get("created_at_utc"), "cache_min_acceptable": min_acceptable}
             if matches:
-                return matches, {"cache_used": True, "cached_matches": len(matches), "created_at_utc": cached.get("created_at_utc")}
+                # Keep this diagnostic but force fresh discovery: a short cache is exactly
+                # why the inventory stayed at 148 instead of moving toward 300.
+                cached_short_diag = {"cache_used": False, "cache_ignored_reason": "short_cache_below_target", "cached_matches": cached_count, "cache_min_acceptable": min_acceptable, "created_at_utc": cached.get("created_at_utc")}
+            else:
+                cached_short_diag = {"cache_used": False, "cache_ignored_reason": "empty_cache"}
+        else:
+            cached_short_diag = {"cache_used": False, "cache_ignored_reason": "expired_cache"}
+    else:
+        cached_short_diag = {"cache_used": False, "cache_ignored_reason": "cache_disabled_or_date_mismatch"}
 
     results = await asyncio.gather(
         fetch_odds_api_io(settings, local_date),
@@ -839,7 +880,7 @@ async def discover_candidates(settings: Settings, local_date: str) -> tuple[list
     )
     provider_names = ["odds_api_io", "bzzoiro", "sstats", "sportlogic"]
     matches: list[Match] = []
-    stats: dict[str, Any] = {"cache_used": False, "providers": {}}
+    stats: dict[str, Any] = {**cached_short_diag, "providers": {}}
     for name, result in zip(provider_names, results):
         if isinstance(result, Exception):
             stats["providers"][name] = {"enabled": True, "errors": 1, "last_error": f"{type(result).__name__}: {result}"}
@@ -881,7 +922,7 @@ async def main_async() -> int:
         write_json(REPORT_PATH, report)
         return 0
 
-    candidates, discovery_stats = await discover_candidates(settings, local_date)
+    candidates, discovery_stats = await discover_candidates(settings, local_date, target_size)
     existing = before_payload if isinstance(before_payload, dict) else {}
     source_meta = dict(existing.get("sources") or {}) if isinstance(existing.get("sources"), dict) else {}
     source_meta["inventory_target_fill"] = {
