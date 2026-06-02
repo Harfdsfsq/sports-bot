@@ -58,6 +58,21 @@ jobs:
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "150"
       DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "100"
       DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "40"
+      DAY_INVENTORY_FILL_TO_TARGET_ENABLED: "true"
+      DAY_INVENTORY_FILL_TARGET_SIZE: "300"
+      DAY_INVENTORY_FILL_HARD_MAX_MATCHES: "300"
+      DAY_INVENTORY_FILL_INCLUDE_LOW_TIER_ODDS: "true"
+      DAY_INVENTORY_FILL_USE_ODDS_API_IO: "true"
+      DAY_INVENTORY_FILL_USE_BZZOIRO: "true"
+      DAY_INVENTORY_FILL_USE_SSTATS_AS_FIXTURE_SOURCE: "true"
+      DAY_INVENTORY_FILL_USE_SPORTLOGIC: "true"
+      DAY_INVENTORY_FILL_SSTATS_MAX_REQUESTS: "18"
+      DAY_INVENTORY_FILL_BZZOIRO_MAX_PAGES: "8"
+      DAY_INVENTORY_FILL_BZZOIRO_PREDICTION_PAGES: "6"
+      DAY_INVENTORY_FILL_SPORTLOGIC_ACTIVE_ODDS_RECOVERY: "true"
+      DAY_INVENTORY_FILL_SPORTLOGIC_ACTIVE_ODDS_PAGES: "2"
+      DAY_INVENTORY_FILL_SPORTLOGIC_ACTIVE_GAME_LIMIT: "60"
+      DAY_INVENTORY_FILL_CANDIDATE_CACHE_TTL_MINUTES: "90"
 
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
       PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
@@ -334,6 +349,20 @@ jobs:
           cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
 
+      - name: Expand day inventory to target
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
+          echo "expand day inventory to target start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          if timeout 150s python -u scripts/expand_day_inventory_to_target.py; then
+            echo "expand day inventory to target completed"
+          else
+            status=$?
+            echo "expand day inventory to target failed or timed out with status ${status}; continuing production run"
+          fi
+          cp .data/exports/latest-day-inventory-target-fill.json artifacts/run-bot/latest-day-inventory-target-fill.json 2>/dev/null || true
+
       - name: Run tests
         shell: bash
         run: |
@@ -393,7 +422,9 @@ jobs:
             echo "skip cumulative day inventory coverage: fresh run-bot log was not created"
             exit 0
           fi
-          mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
+          python -u scripts/expand_day_inventory_to_target.py || true
+          cp .data/exports/latest-day-inventory-target-fill.json artifacts/run-bot/latest-day-inventory-target-fill.json 2>/dev/null || true
           python -u scripts/day_inventory_cumulative_coverage.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
