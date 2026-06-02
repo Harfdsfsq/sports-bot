@@ -1,49 +1,50 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: quality: вероятность после калибровки ниже порога
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 104.
-• 1+ линия: 193/300 (64%) | 1+ контекст: 298/300 (99%)
-• 2+ букмекера: 30/300 (10%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 85.
+• 1+ линия: 193/300 (64%) | 1+ контекст: 299/300 (100%)
+• 2+ букмекера: 32/300 (11%)
 • 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
-• 2+ контекста: 91/300 (30%)
-• Готово для модели: 191/300 (64%)
+• 2+ контекста: 98/300 (33%)
+• Готово для модели: 192/300 (64%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 30 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 32 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 19 | матчей без следующего регулярного run: 15
-• Line guard: увидел 5, оставил 1, снял 0
+• Pre-kickoff проверок: 32 | матчей без следующего регулярного run: 23
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 2 | evaluated 2 | published 0
+• Controlled fallback: seen 3 | evaluated 3 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 14; смэтчил матчей 68; offers 7044; 2+ букмекера 39; ошибок 0.
+• odds-api.io: events req 0, odds req 12; смэтчил матчей 58; offers 6474; 2+ букмекера 32; ошибок 0.
 • Bzzoiro: direct req 17, v2 req 17; v2 ctx 4; v2 odds 4; secondary offers 0; overlap odds-api.io 4; ошибок 0.
-• SStats: запросы 25; сырых строк 21844; контекстов 89; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 25; сырых строк 21836; контекстов 73; deep-enriched 8; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 43, bzzoiro+odds_api_io: 4
+• Комбинации источников линий: odds_api_io: 35, bzzoiro+odds_api_io: 4
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 2 (33%)
-• tier c watch only: 1 (17%)
-• controlled fallback confirmation sources below min:1/2: 1 (17%)
-• final edge below min: 1 (17%)
-• направление ставки конфликтует с xG: 1 (17%)
+• направление ставки конфликтует с xG: 3 (43%)
+• quality: вероятность после калибровки ниже порога: 2 (29%)
+• модель слишком оптимистична относительно xG-ориентира: 1 (14%)
+• quality: market sanity totals/xG contradiction: 1 (14%)
 
 🔎 Проверенные reserve-кандидаты
-1. Assyriska FF — Enkopings SK | Меньше 3 @2.25 | EV +6.3% | edge +2.8 п.п. | q 63.4
-   • причина: tier c watch only, controlled fallback confirmation sources below min:1/2, final edge below min
-2. Fortaleza EC CE — EC Vitoria BA | Больше 2.5 @2.70 | EV +8.1% | edge +3.0 п.п. | q 53.1
+1. Fortaleza EC CE — EC Vitoria BA | Меньше 2.5 @1.79 | EV +11.7% | edge +6.5 п.п. | q 60.2
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+2. CA Banfield — CA Sarmiento de Junin | Больше 2.5 @2.68 | EV +1.4% | edge +0.5 п.п. | q 35.5
+   • причина: направление ставки конфликтует с xG
+3. Colon de Santa Fe Reserve — CA Huracan | Больше 2.5 @2.49 | EV +2.2% | edge +0.9 п.п. | q 36.9
    • причина: направление ставки конфликтует с xG
 
 📌 Что это значит
