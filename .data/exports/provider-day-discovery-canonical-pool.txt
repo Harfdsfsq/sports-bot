@@ -1,7 +1,7 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-02T09:23:11.109232+00:00
+UTC: 2026-06-02T09:46:03.099223+00:00
 target_date: 2026-06-02
-canonical_matches: 244
+canonical_matches: 243
 2+ provider sources: 68
 2+ primary sources: 68
 all 3 primary sources: 5
@@ -11,14 +11,14 @@ all 3 primary sources: 5
 - bzzoiro: commands=10 ok=8 rows=67 event_like=67 unique=17 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=174 event_like=174 unique=87 statuses={"OK": 2, "EMPTY": 4}
+- odds_api_io: commands=6 ok=2 rows=172 event_like=172 unique=86 statuses={"OK": 2, "EMPTY": 4}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=260 event_like=215 unique=215 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 176, "2": 60, "3": 8}
-- primary providers: {"1": 176, "2": 63, "3": 5}
+- all providers: {"1": 175, "2": 60, "3": 8}
+- primary providers: {"1": 175, "2": 63, "3": 5}
 
 ## Top canonical matches
 - 2026-06-01T22:00:00+00:00 | Ponte Preta — Botafogo SP | providers=sstats ids={"sstats": "1520707"}
@@ -35,10 +35,9 @@ all 3 primary sources: 5
 - 2026-06-02T01:00:00+00:00 | Canada — Uzbekistan | providers=bzzoiro,sstats ids={"bzzoiro": "9092", "sstats": "1514472"}
 - 2026-06-02T01:00:00+00:00 | Snohomish United W — Bigfoot W | providers=sstats ids={"sstats": "1532342"}
 - 2026-06-02T08:15:00+00:00 | North Star — Brisbane Strikers | providers=odds_api_io,sstats ids={"odds_api_io": "71792740", "sstats": "1524214"}
+- 2026-06-02T08:55:00+00:00 | Darwin Olympic SC — Hellenic Athletic | providers=odds_api_io ids={"odds_api_io": "70930102"}
 - 2026-06-02T09:00:00+00:00 | Thailand — Brunei Darussalam | providers=odds_api_io,sstats ids={"odds_api_io": "71561982", "sstats": "1547208"}
-- 2026-06-02T09:00:00+00:00 | Darwin Olympic SC — Hellenic Athletic | providers=odds_api_io ids={"odds_api_io": "70930102"}
 - 2026-06-02T09:30:00+00:00 | Wynnum Wolves FC — Brisbane Roar FC | providers=odds_api_io,sstats ids={"odds_api_io": "71792738", "sstats": "1524041"}
-- 2026-06-02T09:30:00+00:00 | Sunshine Coast Wanderers — St George Willawong | providers=odds_api_io ids={"odds_api_io": "71576436"}
 - 2026-06-02T09:30:00+00:00 | Magic United TFA — Queensland State Team | providers=odds_api_io ids={"odds_api_io": "67905222"}
 - 2026-06-02T10:00:00+00:00 | MFC Metalurh Zaporizhya — FSC Bukovyna Chernivtsi | providers=odds_api_io,sstats ids={"odds_api_io": "62493442", "sstats": "1400647"}
 - 2026-06-02T10:00:00+00:00 | Lake Macquarie City FC — New Lambton FC | providers=odds_api_io ids={"odds_api_io": "71804388"}
@@ -51,6 +50,7 @@ all 3 primary sources: 5
 - 2026-06-02T13:00:00+00:00 | China — Congo Dr Youth | providers=odds_api_io,sstats ids={"odds_api_io": "71826656", "sstats": "1545457"}
 - 2026-06-02T13:00:00+00:00 | Malaysia — Singapore | providers=odds_api_io,sstats ids={"odds_api_io": "71561984", "sstats": "1547209"}
 - 2026-06-02T13:30:00+00:00 | FC Fard Alborz — Sanat Mes Kerman FC | providers=odds_api_io,sstats ids={"odds_api_io": "70946098", "sstats": "1521143"}
+- 2026-06-02T13:30:00+00:00 | Havadar SC — Navad Urmia FC | providers=odds_api_io,sstats ids={"odds_api_io": "70946102", "sstats": "1521144"}
 
 ## Targeted enrichment plan sample
 - Ponte Preta — Botafogo SP | primary=1 providers=sstats
@@ -109,21 +109,17 @@ all 3 primary sources: 5
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Thailand — Brunei Darussalam | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Darwin Olympic SC — Hellenic Athletic | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Wynnum Wolves FC — Brisbane Roar FC | primary=2 providers=odds_api_io,sstats
+- Thailand — Brunei Darussalam | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Sunshine Coast Wanderers — St George Willawong | primary=1 providers=odds_api_io
+- Wynnum Wolves FC — Brisbane Roar FC | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Magic United TFA — Queensland State Team | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
@@ -132,4 +128,8 @@ all 3 primary sources: 5
 - MFC Metalurh Zaporizhya — FSC Bukovyna Chernivtsi | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Lake Macquarie City FC — New Lambton FC | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

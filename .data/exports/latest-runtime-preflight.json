@@ -19,13 +19,13 @@
         "core_line_bookmaker_universe_install": {
           "status": "already_installed"
         },
-        "created_at_utc": "2026-06-02T09:24:07.436053+00:00",
+        "created_at_utc": "2026-06-02T09:46:56.314923+00:00",
         "had_value_patch_flag_after": true,
         "had_value_patch_flag_before": true,
         "install_result": {
           "build_candidates_post_filter": true,
           "candidate_factory": "patched",
-          "created_at_utc": "2026-06-02T09:24:07.436095+00:00",
+          "created_at_utc": "2026-06-02T09:46:56.314968+00:00",
           "market_derived_single_snapshot_consensus": true,
           "prequality_filter": "canonical_ev_edge_non_negative",
           "rank_key": "canonical_ev_first",
@@ -265,15 +265,29 @@
           "status": "ok"
         },
         {
+          "module": "app.services.bookmaker_quorum_publication_policy",
+          "result": {
+            "created_at_utc": "2026-06-02T09:46:56.339397+00:00",
+            "fallback_min_odds_sources": 1,
+            "fallback_require_2_odds_sources": "false",
+            "min_bookmakers": 2,
+            "min_odds_sources": 2,
+            "policy": "2plus_bookmakers_not_2plus_odds_sources",
+            "price_integrity_guard_enabled": "true",
+            "status": "installed"
+          },
+          "status": "ok"
+        },
+        {
           "module": "app.services.windowed_core_coverage_finalizer",
           "result": {
-            "created_at_utc": "2026-06-02T09:24:07.460028+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.339561+00:00",
             "forced": true,
             "patch_result": {
               "patch": "windowed_core_coverage_runtime_patch",
               "status": "installed"
             },
-            "publication_policy": "block_without_2plus_odds_2plus_context_core_movement",
+            "publication_policy": "block_without_2plus_bookmakers_2plus_context_core_movement",
             "raw_candidate_policy": "audit_only",
             "status": "installed",
             "steps": [
@@ -287,7 +301,7 @@
         {
           "module": "app.services.windowed_core_report_and_sportlogic_final_guard",
           "result": {
-            "created_at_utc": "2026-06-02T09:24:07.461784+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.341230+00:00",
             "report_guard": {
               "already_wrapped": true,
               "installed": true,
@@ -336,7 +350,7 @@
               "odds_api_io",
               "sportlogic"
             ],
-            "created_at_utc": "2026-06-02T09:24:07.462042+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.341472+00:00",
             "status": "installed",
             "supplemental_context_providers": [
               "api_football",
@@ -363,7 +377,7 @@
         {
           "module": "app.services.progressive_fetch_provider_signature_finalizer",
           "result": {
-            "created_at_utc": "2026-06-02T09:24:07.474538+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.355758+00:00",
             "original_found": false,
             "status": "installed",
             "wrapped_existing_progressive": false
@@ -374,7 +388,7 @@
           "module": "app.services.progressive_upcoming_gap_finalizer",
           "result": {
             "bzzoiro_core_gap_retry_boost": true,
-            "created_at_utc": "2026-06-02T09:24:07.474708+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.355917+00:00",
             "gap_sample_rebuilt_from_full_state": true,
             "gap_sample_upcoming_only": true,
             "sstats_context_gap_retry_boost": true,
@@ -403,7 +417,7 @@
         {
           "module": "app.services.bzzoiro_context_gap_finalizer",
           "result": {
-            "created_at_utc": "2026-06-02T09:24:07.486601+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.368385+00:00",
             "ignore_plan_default": true,
             "match_limit": 160,
             "max_requests": 180,
@@ -415,7 +429,7 @@
         {
           "module": "app.services.bzzoiro_context_gap_timeout_guard",
           "result": {
-            "created_at_utc": "2026-06-02T09:24:07.486792+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.368540+00:00",
             "status": "already_installed"
           },
           "status": "ok"
@@ -423,7 +437,7 @@
         {
           "module": "app.services.bzzoiro_context_gap_source_id_finalizer",
           "result": {
-            "created_at_utc": "2026-06-02T09:24:07.486920+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.368669+00:00",
             "status": "already_installed"
           },
           "status": "ok"
@@ -445,7 +459,7 @@
           "module": "app.services.progressive_provider_alias_finalizer",
           "result": {
             "bzzoiro_success_promoted": 0,
-            "created_at_utc": "2026-06-02T09:24:07.487077+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.368823+00:00",
             "matches_changed": 0,
             "sstats_success_promoted": 0,
             "status": "installed"
@@ -460,13 +474,13 @@
             "core_line_bookmaker_universe_install": {
               "status": "already_installed"
             },
-            "created_at_utc": "2026-06-02T09:24:07.534148+00:00",
+            "created_at_utc": "2026-06-02T09:46:56.419835+00:00",
             "had_value_patch_flag_after": true,
             "had_value_patch_flag_before": true,
             "install_result": {
               "build_candidates_post_filter": true,
               "candidate_factory": "patched",
-              "created_at_utc": "2026-06-02T09:24:07.534171+00:00",
+              "created_at_utc": "2026-06-02T09:46:56.419881+00:00",
               "market_derived_single_snapshot_consensus": true,
               "prequality_filter": "canonical_ev_edge_non_negative",
               "rank_key": "canonical_ev_first",
