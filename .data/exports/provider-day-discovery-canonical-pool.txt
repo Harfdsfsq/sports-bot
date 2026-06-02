@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-02T01:02:59.433153+00:00
+UTC: 2026-06-02T03:03:06.188218+00:00
 target_date: 2026-06-02
 canonical_matches: 109
-2+ provider sources: 51
-2+ primary sources: 50
-all 3 primary sources: 4
+2+ provider sources: 48
+2+ primary sources: 47
+all 3 primary sources: 5
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=72 event_like=72 unique=17 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=67 event_like=67 unique=17 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=182 event_like=182 unique=91 statuses={"OK": 2, "EMPTY": 4}
+- odds_api_io: commands=6 ok=2 rows=178 event_like=178 unique=89 statuses={"OK": 2, "EMPTY": 4}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=61 event_like=57 unique=57 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 58, "2": 45, "3": 6}
-- primary providers: {"1": 59, "2": 46, "3": 4}
+- all providers: {"1": 61, "3": 7, "2": 41}
+- primary providers: {"1": 62, "3": 5, "2": 42}
 
 ## Top canonical matches
 - 2026-06-01T22:00:00+00:00 | Ponte Preta — Botafogo SP | providers=sstats ids={"sstats": "1520707"}
@@ -28,10 +28,10 @@ all 3 primary sources: 4
 - 2026-06-01T23:00:00+00:00 | Curico Unido — Antofagasta | providers=sstats ids={"sstats": "1511595"}
 - 2026-06-01T23:00:00+00:00 | Penarol — Central Espanol | providers=sstats ids={"sstats": "1546804"}
 - 2026-06-01T23:15:00+00:00 | Marcílio Dias — Azuriz | providers=sstats ids={"sstats": "1538010"}
-- 2026-06-02T00:00:00+00:00 | FC Universitario de Vinto — Club Aurora | providers=odds_api_io,sstats ids={"odds_api_io": "70379216", "sstats": "1538404"}
-- 2026-06-02T00:30:00+00:00 | SV Estrella — Jong Aruba | providers=odds_api_io,sstats ids={"odds_api_io": "71804372", "sstats": "1545563"}
-- 2026-06-02T00:30:00+00:00 | CD Tecnico Universitario — Barcelona SC | providers=odds_api_io,sstats ids={"odds_api_io": "68687674", "sstats": "1519383"}
-- 2026-06-02T01:00:00+00:00 | Canada — Uzbekistan | providers=bzzoiro,sstats ids={"bzzoiro": "9092", "sstats": "1514472"}
+- 2026-06-02T00:00:00+00:00 | Universitario de Vinto — Aurora | providers=sstats ids={"sstats": "1538404"}
+- 2026-06-02T00:30:00+00:00 | Estrella — Jong Aruba | providers=sstats ids={"sstats": "1545563"}
+- 2026-06-02T00:30:00+00:00 | Tecnico Universitario — Barcelona SC | providers=sstats ids={"sstats": "1519383"}
+- 2026-06-02T01:00:00+00:00 | Canada — Uzbekistan | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "68880438", "bzzoiro": "9092", "sstats": "1514472"}
 - 2026-06-02T01:00:00+00:00 | Snohomish United W — Bigfoot W | providers=sstats ids={"sstats": "1532342"}
 - 2026-06-02T02:00:00+00:00 | Stars FC — Southern California Eagles | providers=odds_api_io ids={"odds_api_io": "69091342"}
 - 2026-06-02T08:15:00+00:00 | North Star — Brisbane Strikers | providers=odds_api_io,sstats ids={"odds_api_io": "71792740", "sstats": "1524214"}
@@ -81,19 +81,20 @@ all 3 primary sources: 4
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- FC Universitario de Vinto — Club Aurora | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Universitario de Vinto — Aurora | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- SV Estrella — Jong Aruba | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Estrella — Jong Aruba | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- CD Tecnico Universitario — Barcelona SC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Tecnico Universitario — Barcelona SC | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Canada — Uzbekistan | primary=2 providers=bzzoiro,sstats
+- Canada — Uzbekistan | primary=3 providers=bzzoiro,odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
