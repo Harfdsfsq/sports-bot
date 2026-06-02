@@ -1,50 +1,49 @@
-🧾 HARIZON run report v7 — единая фактическая сводка
-• Итог: 🟡 кандидаты есть, quality/value не пропустили
+🧾 HARIZON — понятный отчёт по запуску
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
 • Главная причина: направление ставки конфликтует с xG
 
-📦 Покрытие
-• Матчи в run: 111 | day inventory: 300
-• С линиями: 51 | с контекстом: 86 | ready model: 182
-• odds-api.io offers: 6223 | Bzzoiro secondary offers: 0
-• 2+ букмекера odds-api.io: 40 | 2-source overlap Bzzoiro+odds-api.io: 4
-• Source combinations: odds_api_io: 47, bzzoiro+odds_api_io: 4
+📦 Инвентарь и покрытие
+• Инвентарь дня: 300 матчей. В этом run обработано: 114.
+• 1+ линия: 193/300 (64%) | 1+ контекст: 291/300 (97%)
+• 2+ букмекера: 29/300 (10%)
+• 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
+• 2+ контекста: 82/300 (27%)
+• Готово для модели: 184/300 (61%)
+
+🏷️ A/B-tier публикация
+• A-tier bookmaker coverage: 0 | опубликовано: 0
+  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
+• B-tier bookmaker coverage: 29 | fallback опубликовано: 0
+  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
+• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
+
+🛡️ Движение линии и финальный фильтр
+• Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 1
+• Line guard: увидел 6, оставил 2, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2 / 8
-• Passed quality: 2 | publishable: 0 | опубликовано: 0
-• Main pipeline: published False (0)
-• Controlled fallback: status no_viable_controlled_fallback | seen 4 | evaluated 4 | published False (0)
-• Windowed coverage: audit 8 | allowed 0 | blocked 8 | publish-filter input 0
+• Raw/candidates before quality: 8/8
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 2 | evaluated 2 | published 0
 
-🛡️ Pre-publish / line movement
-• Final pre-kickoff checks: 3 | no next regular run: 1
-• Line guard: seen 7 | kept 3 | dropped 0
-
-📡 Core API
-• odds_api_io: events req 0, odds req 14, matched 68, offers 6223, 2+ books 40, err 0, auth_failed False
-• sstats: req 25, ctx 86, rows 21765, err 0, deep enriched 2
-• bzzoiro: direct req 17, v2 req 17, v2 ctx 4, v2 odds 4, v2 pred 2, secondary offers 0, overlap odds-api.io 4, err 2
-• sportlogic: enabled True, req 3, fixtures 0, matched 0, odds req 0, offers 0, active_odds pages 0/0, rows 0, game_ids 0, fixtures_from_odds 0, sample_dates n/a, diag sportlogic_no_current_games_probe_only, runtime_error n/a, err 0
+📡 Провайдеры: запросы и полезные данные
+• odds-api.io: events req 0, odds req 14; смэтчил матчей 70; offers 6683; 2+ букмекера 41; ошибок 0.
+• Bzzoiro: direct req 17, v2 req 17; v2 ctx 4; v2 odds 4; secondary offers 0; overlap odds-api.io 4; ошибок 2.
+• SStats: запросы 25; сырых строк 21765; контекстов 90; deep-enriched 2; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: odds_api_io: 47, bzzoiro+odds_api_io: 4
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 3 (33%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (11%)
-• quality: market sanity totals/xG contradiction: 1 (11%)
-• quality post calibration edge guard: 1 (11%)
-• quality: вероятность после калибровки ниже порога: 1 (11%)
-• line movement not confirmed:awaiting next run: 1 (11%)
-• line movement:needs next cron line movement recheck: 1 (11%)
+• направление ставки конфликтует с xG: 2 (50%)
+• quality: вероятность после калибровки ниже порога: 1 (25%)
+• quality post calibration edge guard: 1 (25%)
 
 🔎 Проверенные reserve-кандидаты
-1. Podbeskidzie Bielsko-Biała — Slask II Wroclaw | Больше 3.5 @2.66 | EV +9.6% | edge +3.6 п.п. | q 41.4
-   • reject: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+1. Podbeskidzie Bielsko-Biała — Slask II Wroclaw | Больше 3.5 @2.66 | EV +10.7% | edge +4.0 п.п. | q 54.4
+   • причина: направление ставки конфликтует с xG
 2. Al Quwa Al Jawiya — Zakho FC | Меньше 2.5 @1.95 | EV +7.7% | edge +3.9 п.п. | q 58.6
-   • reject: направление ставки конфликтует с xG
-3. Assyriska FF — Enkopings SK | Меньше 2.5 @2.64 | EV +7.8% | edge +3.0 п.п. | q 58.1
-   • reject: направление ставки конфликтует с xG
-4. Morocco — Madagascar | Меньше 3.5 @1.85 | EV +9.5% | edge +5.1 п.п. | q 78.4
-   • reject: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+   • причина: направление ставки конфликтует с xG
 
-📌 Вывод
-• Главный технический bottleneck: мало матчей с 2 independent odds sources. Нужно добирать SportLogic/Bzzoiro overlap, а не ослаблять guards.
-• Отчёт использует один payload, поэтому секции не должны противоречить друг другу.
+📌 Что это значит
+• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
