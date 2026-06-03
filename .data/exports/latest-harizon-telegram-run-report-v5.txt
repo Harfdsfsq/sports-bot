@@ -1,14 +1,14 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: line movement not confirmed:awaiting next run
+• Главная причина: odds above global max
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 144.
-• 1+ линия: 267/300 (89%) | 1+ контекст: 272/300 (91%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 215.
+• 1+ линия: 280/300 (93%) | 1+ контекст: 277/300 (92%)
 • 2+ букмекера: 13/300 (4%)
 • 2+ независимых odds-source: 12/300 (4%) — диагностика, не блок публикации
-• 2+ контекста: 92/300 (31%)
-• Готово для модели: 248/300 (83%)
+• 2+ контекста: 93/300 (31%)
+• Готово для модели: 262/300 (87%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
@@ -18,29 +18,30 @@
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 1
+• Line guard: увидел 1, оставил 1, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 1/1
-• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 22; смэтчил матчей 101; offers 5274; 2+ букмекера 32; ошибок 0.
-• Bzzoiro: direct req 23, v2 req 23; v2 ctx 7; v2 odds 5; secondary offers 0; overlap odds-api.io 3; ошибок 0.
-• SStats: запросы 18; сырых строк 15096; контекстов 76; deep-enriched 4; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 30; смэтчил матчей 145; offers 9297; 2+ букмекера 48; ошибок 0.
+• Bzzoiro: direct req 46, v2 req 46; v2 ctx 15; v2 odds 10; secondary offers 0; overlap odds-api.io 9; ошибок 0.
+• SStats: запросы 18; сырых строк 15083; контекстов 114; deep-enriched 9; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 43, bzzoiro: 3, bzzoiro+odds_api_io: 3
+• Комбинации источников линий: odds_api_io: 65, bzzoiro+odds_api_io: 9, bzzoiro: 5
 
 🚫 Почему не опубликовано
-• line movement not confirmed:awaiting next run: 1 (50%)
-• line movement:needs next cron line movement recheck: 1 (50%)
+• odds above global max: 1 (33%)
+• направление ставки конфликтует с xG: 1 (33%)
+• quality quality high odds totals xg headroom guard: 1 (33%)
 
 🔎 Проверенные reserve-кандидаты
-1. India — Bhutan | Меньше @1.99 | EV +27.6% | edge +13.9 п.п. | q 100.0
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+1. India — Bhutan | Меньше @3.75 | EV +30.4% | edge +8.1 п.п. | q 100.0
+   • причина: odds above global max, направление ставки конфликтует с xG
 
 📌 Что это значит
-• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
+• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
