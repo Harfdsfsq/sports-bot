@@ -5870,7 +5870,10 @@
       "away_team": "Guam",
       "away_team_norm": "guam",
       "books": [
-        "betfair_exchange"
+        "betfair_exchange",
+        "bzzoiro_consensus",
+        "bzzoiroconsensus",
+        "unibet"
       ],
       "books_count": 6,
       "canonical_match_id": "soccer|guam|philippines|2026-06-03",
@@ -5880,7 +5883,8 @@
         "bzzoiro",
         "model_xg",
         "sstats",
-        "thesportsdb"
+        "thesportsdb",
+        "clubelo"
       ],
       "context_sources": [
         "bzzoiro",
@@ -5953,7 +5957,8 @@
       "league_key": "friendlies",
       "league_name": "Friendlies",
       "line_sources": [
-        "bzzoiro"
+        "bzzoiro",
+        "odds_api_io"
       ],
       "loose_key": "soccer|guam|philippines",
       "match_key": "soccer|guam|philippines|2026-06-03",
@@ -5962,14 +5967,15 @@
         "books_count": 4,
         "bzzoiro_has_context_hint": true,
         "bzzoiro_raw_source": "prediction_event",
-        "confirmation_sources_count": 6,
-        "context_sources_count": 6,
+        "confirmation_sources_count": 7,
+        "context_sources_count": 7,
         "core_inventory": true,
         "core_provider_inventory_bridge_updated_utc": "2026-06-02T21:02:59.415398+00:00",
         "coverage_repair_sources": [
           "day_inventory",
           "latest-controlled-fallback-report.json",
-          "line_history"
+          "line_history",
+          "latest-rescue-candidates.json"
         ],
         "fixture_sources_count": 3,
         "independent_odds_sources_count": 2,
@@ -5978,7 +5984,7 @@
         "inventory_target_fill": true,
         "latest_best_confidence": 94,
         "latest_best_edge_pp": 2,
-        "latest_best_ev_pct": 6,
+        "latest_best_ev_pct": 8,
         "latest_books_max": 4,
         "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
@@ -5989,8 +5995,8 @@
         "latest_run_source_event_id": "71601846",
         "latest_sources_max": 2,
         "odds_sources_count": 2,
-        "price_confirmation_sources_count": 6,
-        "price_sources_count": 6,
+        "price_confirmation_sources_count": 11,
+        "price_sources_count": 11,
         "provider_source_ids": {
           "sstats": "1545697"
         },
@@ -6000,7 +6006,12 @@
           "{'metric_keys': ['adjusted_probability', 'books_count', 'btts_sanity', 'canonical_edge_pp', 'canonical_ev_pct', 'confidence', 'confirmation_meta', 'confirmation_sources', 'confirmation_sources_count', 'dnb_sanity'], 'source': 'latest-controlled-fallback-report.json'}",
           "{'metric_keys': ['adjusted_probability', 'books_count', 'btts_sanity', 'canonical_edge_pp', 'canonical_ev_pct', 'confidence', 'confirmation_meta', 'confirmation_sources', 'confirmation_sources_count', 'dnb_sanity'], 'source': 'controlled-fallback-report.json'}",
           "{'bookmaker': 'betfair_exchange', 'captured_at_utc': '2026-06-03T01:07:33.728295+00:00', 'source': 'line_history'}",
-          "{'captured_at_utc': '2026-06-03T01:07:33.728295+00:00', 'source': 'line_history'}"
+          "{'captured_at_utc': '2026-06-03T01:07:33.728295+00:00', 'source': 'line_history'}",
+          "{'bookmaker': 'betfair_exchange', 'market': 'Totals', 'point': '3.5', 'price': 2.26, 'provider': 'odds_api_io', 'selection': 'Under', 'source': 'latest-rescue-candidates.json'}",
+          "{'bookmaker': 'unibet', 'market': 'Totals', 'point': '3.5', 'price': 2.0, 'provider': 'odds_api_io', 'selection': 'Under', 'source': 'latest-rescue-candidates.json'}",
+          "{'bookmaker': 'bzzoiro_consensus', 'market': 'over_under_3.5', 'point': '3.5', 'price': 1.98, 'provider': 'bzzoiro', 'selection': 'Under', 'source': 'latest-rescue-candidates.json'}",
+          "{'bookmaker': 'bzzoiroconsensus', 'market': 'odds.odds.under_35_goals', 'point': '3.5', 'price': 1.98, 'provider': 'bzzoiro', 'selection': 'Under', 'source': 'latest-rescue-candidates.json'}",
+          "{'source': 'latest-rescue-candidates.json', 'summary_keys': ['confirmation_sources', 'context_mode', 'context_source', 'forecast_market_movement', 'learning_adjustment', 'line_movement_lifecycle_status', 'market_move', 'market_movement', 'market_signal_derived', 'odds_books_count']}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 2,
@@ -6022,7 +6033,12 @@
         "book_confirmation_2",
         "book_confirmation_3",
         "book_confirmation_4",
-        "line_history"
+        "line_history",
+        "book:betfair_exchange:Totals:Under:3.5",
+        "book:bzzoiro_consensus:over_under_3.5:Under:3.5",
+        "book:bzzoiroconsensus:odds.odds.under_35_goals:Under:3.5",
+        "book:unibet:Totals:Under:3.5",
+        "provider:odds_api_io"
       ],
       "priority": 20.0,
       "refresh": {
@@ -10133,12 +10149,7 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          {
-            "deep_ok": true,
-            "detail_ok": false,
-            "game_id": "1512923",
-            "source": "latest-sstats-deep-inventory-enrichment.json"
-          }
+          "{'deep_ok': True, 'detail_ok': False, 'game_id': '1512923', 'source': 'latest-sstats-deep-inventory-enrichment.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_seen": "odds_api_io"
@@ -10294,12 +10305,7 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          {
-            "deep_ok": true,
-            "detail_ok": false,
-            "game_id": "1512926",
-            "source": "latest-sstats-deep-inventory-enrichment.json"
-          }
+          "{'deep_ok': True, 'detail_ok': False, 'game_id': '1512926', 'source': 'latest-sstats-deep-inventory-enrichment.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_seen": "odds_api_io"
@@ -11336,7 +11342,7 @@
         "bet365",
         "betfair_exchange"
       ],
-      "books_count": 3,
+      "books_count": 7,
       "canonical_match_id": "soccer|bhutan|india|2026-06-03",
       "context_confirmations": [
         "clubelo",
@@ -11357,18 +11363,20 @@
           "sstats",
           "clubelo",
           "model_xg",
-          "openligadb"
+          "openligadb",
+          "context_equiv_supplemental"
         ],
-        "books_count": 3,
+        "books_count": 7,
         "context": true,
         "context_2plus_sources": true,
         "context_sources": [
           "sstats",
           "clubelo",
           "model_xg",
-          "openligadb"
+          "openligadb",
+          "context_equiv_supplemental"
         ],
-        "context_sources_count": 4,
+        "context_sources_count": 5,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": true,
@@ -11382,7 +11390,7 @@
           "odds_api_io"
         ],
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 3,
+        "price_confirmation_sources_count": 7,
         "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
@@ -11426,7 +11434,7 @@
         "independent_odds_sources_count": 1,
         "latest_best_confidence": 72,
         "latest_best_edge_pp": 0,
-        "latest_best_ev_pct": 36,
+        "latest_best_ev_pct": 61,
         "latest_books_max": 0,
         "latest_candidate_count": 4,
         "latest_confirmation_sources_max": 1,
@@ -11460,7 +11468,7 @@
         "odds_api_io"
       ],
       "pre_kickoff_status": "low_quality_excluded",
-      "price_confirmation_sources_count": 3,
+      "price_confirmation_sources_count": 7,
       "price_confirmations": [
         "book:bet365",
         "price_confirmation_2",
@@ -11570,7 +11578,7 @@
       "match_key": "soccer|georgia|montenegro|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 2,
         "confirmation_sources_count": 3,
         "context_sources_count": 3,
         "coverage_repair_sources": [
@@ -11578,24 +11586,25 @@
         ],
         "fixture_sources_count": 2,
         "independent_odds_sources_count": 1,
-        "latest_best_confidence": 64,
+        "latest_best_confidence": 71,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_books_max": 2,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "day_inventory",
         "latest_run_source_event_id": "69165770",
         "latest_sources_max": 1,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 2,
+        "price_sources_count": 2,
         "source_evidence_samples": [
           "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
-          "{'deep_ok': True, 'detail_ok': False, 'game_id': '1538938', 'source': 'latest-sstats-deep-inventory-enrichment.json'}"
+          "{'deep_ok': True, 'detail_ok': False, 'game_id': '1538938', 'source': 'latest-sstats-deep-inventory-enrichment.json'}",
+          "{'books': 2, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1
@@ -11607,7 +11616,10 @@
       ],
       "pre_kickoff_status": "low_quality_excluded",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2"
+      ],
       "priority": -500.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.789828+00:00",
@@ -11847,11 +11859,11 @@
         ],
         "fixture_sources_count": 2,
         "independent_odds_sources_count": 1,
-        "latest_best_confidence": 61,
+        "latest_best_confidence": 75,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_candidate_count": 4,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
@@ -13327,19 +13339,25 @@
       "canonical_match_id": "soccer|croatia|qatar|2026-06-03",
       "context_confirmations": [],
       "context_sources": [
-        "sstats"
+        "sstats",
+        "clubelo",
+        "openligadb"
       ],
       "coverage": {
         "all_context_sources": [
-          "sstats"
+          "sstats",
+          "clubelo",
+          "openligadb"
         ],
         "books_count": 0,
         "context": true,
-        "context_2plus_sources": false,
+        "context_2plus_sources": true,
         "context_sources": [
-          "sstats"
+          "sstats",
+          "clubelo",
+          "openligadb"
         ],
-        "context_sources_count": 1,
+        "context_sources_count": 3,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": true,
@@ -13385,8 +13403,8 @@
       "metadata": {
         "accumulated_from_latest_matches": true,
         "books_count": 0,
-        "confirmation_sources_count": 1,
-        "context_sources_count": 1,
+        "confirmation_sources_count": 3,
+        "context_sources_count": 3,
         "coverage_repair_sources": [
           "day_inventory"
         ],
@@ -15937,7 +15955,7 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 70,
+        "latest_best_confidence": 74,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
@@ -15978,7 +15996,8 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 0, 'context_sources': 0, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -16797,7 +16816,7 @@
       "match_key": "soccer|hard|rothis|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 2,
         "competition": "Austria Amateur - Vorarlberg, Eliteliga",
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
@@ -16812,22 +16831,22 @@
         "inventory_fill_source": "sstats",
         "inventory_fill_window": true,
         "inventory_target_fill": true,
-        "latest_best_confidence": 66,
+        "latest_best_confidence": 71,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_books_max": 2,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "61927922",
         "latest_sources_max": 1,
         "odds_api_io_id": 61927922,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 2,
+        "price_sources_count": 2,
         "provider_source_ids": {
           "sstats": "1465496"
         },
@@ -16853,7 +16872,8 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 2, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -16868,7 +16888,10 @@
       ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2"
+      ],
       "priority": 20.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.789415+00:00",
@@ -17741,7 +17764,7 @@
         ],
         "fixture_sources_count": 1,
         "independent_odds_sources_count": 1,
-        "latest_best_confidence": 53,
+        "latest_best_confidence": 64,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
@@ -19881,7 +19904,9 @@
     {
       "away_team": "Sollentuna",
       "away_team_norm": "sollentuna",
-      "books": [],
+      "books": [
+        "bet365"
+      ],
       "books_count": 0,
       "canonical_match_id": "soccer|sollentuna|viggbyholms ik|2026-06-03",
       "context_confirmations": [
@@ -19907,13 +19932,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -19940,28 +19965,66 @@
       "match_key": "soccer|sollentuna|viggbyholms ik|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 1,
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "core_inventory": true,
         "core_provider_inventory_bridge_updated_utc": "2026-06-02T21:02:59.415398+00:00",
         "coverage_repair_sources": [
-          "day_inventory"
+          "day_inventory",
+          "line_history"
         ],
         "fixture_sources_count": 2,
         "independent_odds_sources_count": 0,
         "inventory_fill_source": "sstats",
         "inventory_fill_window": true,
         "inventory_target_fill": true,
+        "latest_best_confidence": 72.61,
+        "latest_best_edge_pp": 3.487,
+        "latest_best_ev_pct": 8.281,
+        "latest_books_max": 0,
+        "latest_candidate_count": 5,
+        "latest_confirmation_sources_max": 1,
+        "latest_context_sources_max": 1,
+        "latest_controlled_count": 0,
+        "latest_odds_sources_max": 0,
         "latest_run_source": "day_inventory",
         "latest_run_source_event_id": "soccer|sollentuna|viggbyholms ik|2026-06-03",
+        "latest_sources_max": 1,
         "odds_sources_count": 0,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 2,
+        "price_sources_count": 2,
         "provider_source_ids": {
           "sstats": "1545628"
         },
+        "source_evidence_samples": [
+          {
+            "books": 0,
+            "context_sources": 1,
+            "odds_sources": 0,
+            "source": "latest-match-data-coverage-matches.json"
+          },
+          {
+            "bookmaker": "bet365",
+            "captured_at_utc": "2026-06-03T09:15:12.183198+00:00",
+            "source": "line_history"
+          },
+          {
+            "captured_at_utc": "2026-06-03T09:15:12.183198+00:00",
+            "source": "line_history"
+          },
+          {
+            "bookmaker": "bet365",
+            "captured_at_utc": "2026-06-03T09:15:12.183198+00:00",
+            "source": "line_history"
+          },
+          {
+            "captured_at_utc": "2026-06-03T09:15:12.183198+00:00",
+            "source": "line_history"
+          }
+        ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
+        "sources_count": 1,
         "sources_seen": "sstats",
         "sstats_fixture_fill": true,
         "sstats_has_context_hint": true
@@ -19971,12 +20034,16 @@
       "odds_sources": [],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book:bet365",
+        "line_history"
+      ],
       "priority": 36.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.316719+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:15:12.183198+00:00",
+        "last_run_coverage_merge_utc": "2026-06-03T09:16:02.718427+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -20679,11 +20746,11 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 67,
+        "latest_best_confidence": 70,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_candidate_count": 4,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
@@ -22249,7 +22316,7 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 61,
+        "latest_best_confidence": 66,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
@@ -22718,7 +22785,7 @@
       "match_key": "soccer|schwaz|sk bischofshofen|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 2,
         "competition": "Austria Amateur - Regionalliga West",
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
@@ -22732,22 +22799,22 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 70,
+        "latest_best_confidence": 71,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_books_max": 2,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "61541458",
         "latest_sources_max": 1,
         "odds_api_io_id": 61541458,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 2,
+        "price_sources_count": 2,
         "provider_source_ids": {
           "odds_api_io": "61541458"
         },
@@ -22773,7 +22840,8 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 2, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -22786,7 +22854,10 @@
       ],
       "pre_kickoff_status": "low_quality_excluded",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2"
+      ],
       "priority": -500.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.789214+00:00",
@@ -24561,9 +24632,9 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 55.34,
-        "latest_best_edge_pp": 0.0,
-        "latest_best_ev_pct": 0.0,
+        "latest_best_confidence": 55,
+        "latest_best_edge_pp": 0,
+        "latest_best_ev_pct": 0,
         "latest_books_max": 0,
         "latest_candidate_count": 3,
         "latest_confirmation_sources_max": 1,
@@ -24602,12 +24673,7 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          {
-            "books": 0,
-            "context_sources": 1,
-            "odds_sources": 0,
-            "source": "latest-match-data-coverage-matches.json"
-          }
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -24677,13 +24743,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -24748,7 +24814,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.317528+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "blocked_reason": "low_quality_inventory_match",
@@ -24801,13 +24867,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -24872,7 +24938,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.317748+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "blocked_reason": "low_quality_inventory_match",
@@ -24925,13 +24991,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -24994,7 +25060,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.318977+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -25049,13 +25115,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -25118,7 +25184,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.318780+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -25173,13 +25239,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -25242,7 +25308,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.318559+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -25297,13 +25363,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -25366,7 +25432,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.318375+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -25737,7 +25803,7 @@
       "match_key": "soccer|jarfalla|vasalunds if|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 2,
         "competition": "Sweden - Ettan, Relegation/Promotion",
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
@@ -25751,22 +25817,22 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 70,
+        "latest_best_confidence": 71,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_books_max": 2,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "68310938",
         "latest_sources_max": 1,
         "odds_api_io_id": 68310938,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 2,
+        "price_sources_count": 2,
         "provider_source_ids": {
           "odds_api_io": "68310938"
         },
@@ -25792,7 +25858,8 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 2, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -25805,7 +25872,10 @@
       ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2"
+      ],
       "priority": 20.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.789251+00:00",
@@ -25859,7 +25929,7 @@
         "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
-        "form": false,
+        "form": true,
         "line_sources": [
           "odds_api_io"
         ],
@@ -25880,7 +25950,7 @@
         "tier_b_coverage_ready": false,
         "tier_b_independent_source_quorum_ready": false,
         "weather": false,
-        "xg": false
+        "xg": true
       },
       "date_local": "2026-06-03",
       "fixture_sources": [
@@ -25914,8 +25984,18 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
+        "latest_best_confidence": 60.69,
+        "latest_best_edge_pp": 0.0,
+        "latest_best_ev_pct": 0.0,
+        "latest_books_max": 0,
+        "latest_candidate_count": 3,
+        "latest_confirmation_sources_max": 1,
+        "latest_context_sources_max": 1,
+        "latest_controlled_count": 0,
+        "latest_odds_sources_max": 0,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "69539706",
+        "latest_sources_max": 1,
         "odds_api_io_id": 69539706,
         "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
@@ -25944,7 +26024,16 @@
           },
           "status": "pending"
         },
+        "source_evidence_samples": [
+          {
+            "books": 0,
+            "context_sources": 1,
+            "odds_sources": 0,
+            "source": "latest-match-data-coverage-matches.json"
+          }
+        ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
+        "sources_count": 1,
         "sources_seen": "odds_api_io"
       },
       "minutes_to_kickoff": 1214.91,
@@ -25959,7 +26048,8 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-03T01:08:38.378601+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.250841+00:00",
-        "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00"
+        "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
+        "last_run_coverage_merge_utc": "2026-06-03T09:16:02.718427+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -26062,7 +26152,7 @@
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
-        "latest_candidate_count": 2,
+        "latest_candidate_count": 3,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
@@ -26303,16 +26393,26 @@
       "books": [],
       "books_count": 0,
       "canonical_match_id": "soccer|fcm traiskirchen|sv leobendorf|2026-06-03",
-      "context_confirmations": [],
-      "context_sources": [],
+      "context_confirmations": [
+        "model_xg",
+        "sstats"
+      ],
+      "context_sources": [
+        "model_xg",
+        "sstats"
+      ],
       "coverage": {
-        "all_context_sources": [],
+        "all_context_sources": [
+          "sstats"
+        ],
         "books_count": 0,
         "context": true,
-        "context_2plus_sources": false,
+        "context_2plus_sources": true,
         "context_source_count": 0,
-        "context_sources": [],
-        "context_sources_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": true,
@@ -26358,36 +26458,38 @@
       "match_key": "soccer|fcm traiskirchen|sv leobendorf|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 3,
         "competition": "Austria Amateur - Regionalliga Ost",
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "confirmation_sources_count": 2,
+        "context_sources_count": 2,
         "core_inventory": true,
         "core_provider_inventory_bridge_updated_utc": "2026-06-02T21:02:59.415398+00:00",
         "coverage_repair_sources": [
-          "odds_api_io"
+          "odds_api_io",
+          "latest-controlled-fallback-report.json",
+          "line_history"
         ],
         "fixture_sources_count": 1,
         "has_current_odds_provider": true,
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 67,
-        "latest_best_edge_pp": 0,
-        "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_best_confidence": 75,
+        "latest_best_edge_pp": 5,
+        "latest_best_ev_pct": 11,
+        "latest_books_max": 3,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "62274264",
         "latest_sources_max": 1,
         "odds_api_io_id": 62274264,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 4,
+        "price_sources_count": 4,
         "provider_source_ids": {
           "odds_api_io": "62274264"
         },
@@ -26413,7 +26515,11 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 3, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'metric_keys': ['adjusted_probability', 'books_count', 'btts_sanity', 'canonical_edge_pp', 'canonical_ev_pct', 'confidence', 'confirmation_meta', 'confirmation_sources', 'confirmation_sources_count', 'dnb_sanity'], 'source': 'latest-controlled-fallback-report.json'}",
+          "{'metric_keys': ['adjusted_probability', 'books_count', 'btts_sanity', 'canonical_edge_pp', 'canonical_ev_pct', 'confidence', 'confirmation_meta', 'confirmation_sources', 'confirmation_sources_count', 'dnb_sanity'], 'source': 'controlled-fallback-report.json'}",
+          "{'captured_at_utc': '2026-06-03T09:15:12.183198+00:00', 'source': 'line_history'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -26426,7 +26532,12 @@
       ],
       "pre_kickoff_status": "low_quality_excluded",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2",
+        "book_confirmation_3",
+        "line_history"
+      ],
       "priority": -500.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.789555+00:00",
@@ -26899,15 +27010,21 @@
       "books_count": 0,
       "canonical_match_id": "soccer|ufc siezenheim|ufc sv hallwang|2026-06-03",
       "context_confirmations": [],
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "coverage": {
-        "all_context_sources": [],
+        "all_context_sources": [
+          "sstats"
+        ],
         "books_count": 0,
-        "context": false,
+        "context": true,
         "context_2plus_sources": false,
         "context_source_count": 0,
-        "context_sources": [],
-        "context_sources_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": false,
@@ -26923,7 +27040,7 @@
         ],
         "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -26955,8 +27072,8 @@
         "accumulated_from_latest_matches": true,
         "books_count": 0,
         "competition": "Austria Amateur - Salzburg, Salzburger Liga",
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "core_inventory": true,
         "core_provider_inventory_bridge_updated_utc": "2026-06-02T21:02:59.415398+00:00",
         "coverage_repair_sources": [
@@ -27010,7 +27127,7 @@
       "price_confirmations": [],
       "priority": -500.0,
       "refresh": {
-        "last_context_refresh_utc": null,
+        "last_context_refresh_utc": "2026-06-03T09:16:02.934968+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.249238+00:00",
         "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00"
       },
@@ -27664,7 +27781,7 @@
         "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
-        "form": false,
+        "form": true,
         "line_sources": [
           "odds_api_io"
         ],
@@ -27719,8 +27836,18 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
+        "latest_best_confidence": 55.09,
+        "latest_best_edge_pp": 0.0,
+        "latest_best_ev_pct": 0.0,
+        "latest_books_max": 0,
+        "latest_candidate_count": 3,
+        "latest_confirmation_sources_max": 1,
+        "latest_context_sources_max": 1,
+        "latest_controlled_count": 0,
+        "latest_odds_sources_max": 0,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "71401948",
+        "latest_sources_max": 1,
         "odds_api_io_id": 71401948,
         "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
@@ -27749,7 +27876,16 @@
           },
           "status": "pending"
         },
+        "source_evidence_samples": [
+          {
+            "books": 0,
+            "context_sources": 1,
+            "odds_sources": 0,
+            "source": "latest-match-data-coverage-matches.json"
+          }
+        ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
+        "sources_count": 1,
         "sources_seen": "odds_api_io"
       },
       "minutes_to_kickoff": 1229.91,
@@ -27764,7 +27900,8 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-03T01:08:38.378601+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.251603+00:00",
-        "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00"
+        "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
+        "last_run_coverage_merge_utc": "2026-06-03T09:16:02.718427+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -27817,13 +27954,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -27886,7 +28023,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.324057+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -27941,13 +28078,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -28010,7 +28147,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.323825+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -28065,13 +28202,13 @@
         "form": true,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -28134,7 +28271,7 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.326003+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -28726,25 +28863,31 @@
       "books_count": 0,
       "canonical_match_id": "soccer|iskra|jezero|2026-06-03",
       "context_confirmations": [],
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "coverage": {
-        "all_context_sources": [],
+        "all_context_sources": [
+          "sstats"
+        ],
         "books_count": 0,
-        "context": false,
+        "context": true,
         "context_2plus_sources": false,
-        "context_sources": [],
-        "context_sources_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": false,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -28762,7 +28905,7 @@
       "home_team_norm": "iskra",
       "kickoff_local": "2026-06-03T21:00:00+03:00",
       "kickoff_utc": "2026-06-03T18:00:00+00:00",
-      "last_enriched_at": null,
+      "last_enriched_at": "2026-06-03T09:16:02.934968+00:00",
       "league_key": "first_league",
       "league_name": "First League",
       "line_sources": [],
@@ -28771,8 +28914,8 @@
       "metadata": {
         "accumulated_from_latest_matches": true,
         "books_count": 0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "coverage_repair_sources": [
           "day_inventory"
         ],
@@ -28793,9 +28936,9 @@
       "price_confirmations": [],
       "priority": 36.0,
       "refresh": {
-        "last_context_refresh_utc": null,
+        "last_context_refresh_utc": "2026-06-03T09:16:02.934968+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:15:43.005287+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -28826,25 +28969,35 @@
       "books_count": 0,
       "canonical_match_id": "soccer|congo dr|denmark|2026-06-03",
       "context_confirmations": [],
-      "context_sources": [],
+      "context_sources": [
+        "bzzoiro"
+      ],
       "coverage": {
-        "all_context_sources": [],
+        "all_context_sources": [
+          "bzzoiro"
+        ],
         "books_count": 0,
-        "context": false,
+        "context": true,
         "context_2plus_sources": false,
-        "context_sources": [],
-        "context_sources_count": 0,
+        "context_sources": [
+          "bzzoiro"
+        ],
+        "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": false,
-        "line_sources": [],
+        "line_sources": [
+          "bzzoiro"
+        ],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
-        "odds_sources": [],
-        "odds_sources_count": 0,
+        "odds_sources": [
+          "bzzoiro"
+        ],
+        "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -28862,40 +29015,44 @@
       "home_team_norm": "congo_dr",
       "kickoff_local": "2026-06-03T21:00:00+03:00",
       "kickoff_utc": "2026-06-03T18:00:00+00:00",
-      "last_enriched_at": null,
+      "last_enriched_at": "2026-06-03T09:16:02.934968+00:00",
       "league_key": "friendlies",
       "league_name": "Friendlies",
-      "line_sources": [],
+      "line_sources": [
+        "bzzoiro"
+      ],
       "loose_key": "soccer|congo dr|denmark",
       "match_key": "soccer|congo dr|denmark|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
         "books_count": 0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "coverage_repair_sources": [
           "day_inventory"
         ],
         "fixture_sources_count": 1,
-        "independent_odds_sources_count": 0,
+        "independent_odds_sources_count": 1,
         "latest_run_source": "day_inventory",
         "latest_run_source_event_id": "soccer|congo dr|denmark|2026-06-03",
-        "odds_sources_count": 0,
+        "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
         "price_sources_count": 0,
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00"
       },
       "minutes_to_kickoff": 1244.91,
       "next_retry_at": null,
-      "odds_sources": [],
+      "odds_sources": [
+        "bzzoiro"
+      ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
       "price_confirmations": [],
       "priority": 36.0,
       "refresh": {
-        "last_context_refresh_utc": null,
+        "last_context_refresh_utc": "2026-06-03T09:16:02.934968+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:15:43.005402+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -30919,7 +31076,9 @@
     {
       "away_team": "Servette FC",
       "away_team_norm": "servette_fc",
-      "books": [],
+      "books": [
+        "sbobet"
+      ],
       "books_count": 0,
       "canonical_match_id": "soccer|servette|taverne|2026-06-03",
       "context_confirmations": [],
@@ -30981,36 +31140,37 @@
       "match_key": "soccer|servette|taverne|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 2,
         "competition": "Switzerland - Erste Liga",
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
         "core_inventory": true,
         "core_provider_inventory_bridge_updated_utc": "2026-06-02T21:02:59.415398+00:00",
         "coverage_repair_sources": [
-          "odds_api_io"
+          "odds_api_io",
+          "line_history"
         ],
         "fixture_sources_count": 1,
         "has_current_odds_provider": true,
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 59,
-        "latest_best_edge_pp": 0,
-        "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 2,
+        "latest_best_confidence": 73,
+        "latest_best_edge_pp": 2,
+        "latest_best_ev_pct": 8,
+        "latest_books_max": 2,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "71888340",
         "latest_sources_max": 1,
         "odds_api_io_id": 71888340,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 4,
+        "price_sources_count": 4,
         "provider_source_ids": {
           "odds_api_io": "71888340"
         },
@@ -31036,7 +31196,10 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 2, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'bookmaker': 'sbobet', 'captured_at_utc': '2026-06-03T09:15:12.183198+00:00', 'source': 'line_history'}",
+          "{'captured_at_utc': '2026-06-03T09:15:12.183198+00:00', 'source': 'line_history'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -31049,7 +31212,12 @@
       ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book:sbobet",
+        "book_confirmation_1",
+        "book_confirmation_2",
+        "line_history"
+      ],
       "priority": 28.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T23:14:59.812798+00:00",
@@ -31673,11 +31841,11 @@
         ],
         "fixture_sources_count": 1,
         "independent_odds_sources_count": 1,
-        "latest_best_confidence": 61,
+        "latest_best_confidence": 70,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_candidate_count": 4,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
@@ -31878,25 +32046,31 @@
       "books_count": 0,
       "canonical_match_id": "soccer|berazategui|sacachispas|2026-06-03",
       "context_confirmations": [],
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "coverage": {
-        "all_context_sources": [],
+        "all_context_sources": [
+          "sstats"
+        ],
         "books_count": 0,
-        "context": false,
+        "context": true,
         "context_2plus_sources": false,
-        "context_sources": [],
-        "context_sources_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": false,
         "line_sources": [],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
         "odds_sources": [],
         "odds_sources_count": 0,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -31914,7 +32088,7 @@
       "home_team_norm": "sacachispas",
       "kickoff_local": "2026-06-03T21:30:00+03:00",
       "kickoff_utc": "2026-06-03T18:30:00+00:00",
-      "last_enriched_at": null,
+      "last_enriched_at": "2026-06-03T09:16:02.934968+00:00",
       "league_key": "primera_c",
       "league_name": "Primera C",
       "line_sources": [],
@@ -31923,8 +32097,8 @@
       "metadata": {
         "accumulated_from_latest_matches": true,
         "books_count": 0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "coverage_repair_sources": [
           "day_inventory"
         ],
@@ -31945,9 +32119,9 @@
       "price_confirmations": [],
       "priority": 36.0,
       "refresh": {
-        "last_context_refresh_utc": null,
+        "last_context_refresh_utc": "2026-06-03T09:16:02.934968+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:15:43.006528+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -32036,7 +32210,7 @@
       "match_key": "soccer|ad berazategui|sacachispas|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 3,
         "competition": "Argentina - Primera C",
         "confirmation_sources_count": 1,
         "context_sources_count": 1,
@@ -32050,22 +32224,22 @@
         "independent_odds_sources_count": 1,
         "inventory_fill_source": "odds_api_io",
         "inventory_target_fill": true,
-        "latest_best_confidence": 66,
+        "latest_best_confidence": 74,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_books_max": 3,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 1,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "67122996",
         "latest_sources_max": 1,
         "odds_api_io_id": 67122996,
         "odds_sources_count": 1,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 3,
+        "price_sources_count": 3,
         "provider_source_ids": {
           "odds_api_io": "67122996"
         },
@@ -32091,7 +32265,8 @@
           "status": "pending"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 1, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 3, 'context_sources': 1, 'odds_sources': 1, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
         "sources_count": 1,
@@ -32104,7 +32279,11 @@
       ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2",
+        "book_confirmation_3"
+      ],
       "priority": 20.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.789678+00:00",
@@ -32636,7 +32815,7 @@
         "odds_sources_count": 2,
         "price_confirmation_sources_count": 0,
         "ready_for_model": true,
-        "ready_for_publish": false,
+        "ready_for_publish": true,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
         "tier_b_confirmation_mode": "independent_source_quorum",
@@ -32665,7 +32844,7 @@
       "match_key": "soccer|algeria|netherlands|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
-        "books_count": 0,
+        "books_count": 5,
         "bzzoiro_has_context_hint": true,
         "bzzoiro_raw_source": "prediction_event",
         "confirmation_sources_count": 2,
@@ -32683,26 +32862,27 @@
         "latest_best_confidence": 83,
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
-        "latest_books_max": 0,
-        "latest_candidate_count": 3,
+        "latest_books_max": 5,
+        "latest_candidate_count": 5,
         "latest_confirmation_sources_max": 0,
         "latest_context_sources_max": 0,
         "latest_controlled_count": 0,
-        "latest_odds_sources_max": 0,
+        "latest_odds_sources_max": 2,
         "latest_run_source": "day_inventory",
         "latest_run_source_event_id": "69621688",
-        "latest_sources_max": 0,
+        "latest_sources_max": 2,
         "odds_sources_count": 2,
-        "price_confirmation_sources_count": 0,
-        "price_sources_count": 0,
+        "price_confirmation_sources_count": 5,
+        "price_sources_count": 5,
         "provider_source_ids": {
           "sstats": "1536930"
         },
         "source_evidence_samples": [
-          "{'books': 0, 'context_sources': 0, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}"
+          "{'books': 0, 'context_sources': 0, 'odds_sources': 0, 'source': 'latest-match-data-coverage-matches.json'}",
+          "{'books': 5, 'context_sources': 0, 'odds_sources': 2, 'source': 'latest-match-data-coverage-matches.json'}"
         ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
-        "sources_count": 0,
+        "sources_count": 2,
         "sources_seen": "sstats",
         "sstats_fixture_fill": true,
         "sstats_has_context_hint": true
@@ -32715,7 +32895,13 @@
       ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
-      "price_confirmations": [],
+      "price_confirmations": [
+        "book_confirmation_1",
+        "book_confirmation_2",
+        "book_confirmation_3",
+        "book_confirmation_4",
+        "book_confirmation_5"
+      ],
       "priority": 20.0,
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.579910+00:00",
@@ -32935,13 +33121,17 @@
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": true,
-        "line_sources": [],
+        "line_sources": [
+          "odds_api_io"
+        ],
         "news": false,
         "odds": true,
         "odds_2plus_sources": false,
         "odds_source_count": 0,
-        "odds_sources": [],
-        "odds_sources_count": 0,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
         "ready_for_model": true,
         "ready_for_publish": false,
@@ -32965,7 +33155,9 @@
       "last_enriched_at": "2026-06-02T21:15:48.776218+00:00",
       "league_key": "liga pro serie b",
       "league_name": "Liga Pro Serie B",
-      "line_sources": [],
+      "line_sources": [
+        "odds_api_io"
+      ],
       "loose_key": "soccer|9 octubre|atletico",
       "match_key": "soccer|9 octubre|atletico|2026-06-03",
       "metadata": {
@@ -32979,13 +33171,13 @@
           "day_inventory"
         ],
         "fixture_sources_count": 2,
-        "independent_odds_sources_count": 0,
+        "independent_odds_sources_count": 1,
         "inventory_fill_source": "sstats",
         "inventory_fill_window": true,
         "inventory_target_fill": true,
         "latest_run_source": "day_inventory",
         "latest_run_source_event_id": "soccer|9 octubre|atletico|2026-06-03",
-        "odds_sources_count": 0,
+        "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
         "price_sources_count": 0,
         "provider_source_ids": {
@@ -32998,7 +33190,9 @@
       },
       "minutes_to_kickoff": 1304.91,
       "next_retry_at": null,
-      "odds_sources": [],
+      "odds_sources": [
+        "odds_api_io"
+      ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
       "price_confirmations": [],
@@ -33039,25 +33233,35 @@
       "books_count": 0,
       "canonical_match_id": "soccer|brooke house w|sporting jax w|2026-06-03",
       "context_confirmations": [],
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "coverage": {
-        "all_context_sources": [],
+        "all_context_sources": [
+          "sstats"
+        ],
         "books_count": 0,
-        "context": false,
+        "context": true,
         "context_2plus_sources": false,
-        "context_sources": [],
-        "context_sources_count": 0,
+        "context_sources": [
+          "sstats"
+        ],
+        "context_sources_count": 1,
         "coverage_truth_highwater_applied": true,
         "fixture_core": true,
         "form": false,
-        "line_sources": [],
+        "line_sources": [
+          "odds_api_io"
+        ],
         "news": false,
-        "odds": false,
+        "odds": true,
         "odds_2plus_sources": false,
-        "odds_sources": [],
-        "odds_sources_count": 0,
+        "odds_sources": [
+          "odds_api_io"
+        ],
+        "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
-        "ready_for_model": false,
+        "ready_for_model": true,
         "ready_for_publish": false,
         "ready_for_publish_coverage": false,
         "tier_b_bookmaker_quorum_ready": false,
@@ -33075,40 +33279,44 @@
       "home_team_norm": "sporting_jax_w",
       "kickoff_local": "2026-06-03T22:00:00+03:00",
       "kickoff_utc": "2026-06-03T19:00:00+00:00",
-      "last_enriched_at": null,
+      "last_enriched_at": "2026-06-03T09:16:02.934968+00:00",
       "league_key": "usl_w_league",
       "league_name": "USL W League",
-      "line_sources": [],
+      "line_sources": [
+        "odds_api_io"
+      ],
       "loose_key": "soccer|brooke house w|sporting jax w",
       "match_key": "soccer|brooke house w|sporting jax w|2026-06-03",
       "metadata": {
         "accumulated_from_latest_matches": true,
         "books_count": 0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
+        "confirmation_sources_count": 1,
+        "context_sources_count": 1,
         "coverage_repair_sources": [
           "day_inventory"
         ],
         "fixture_sources_count": 1,
-        "independent_odds_sources_count": 0,
+        "independent_odds_sources_count": 1,
         "latest_run_source": "day_inventory",
         "latest_run_source_event_id": "soccer|brooke house w|sporting jax w|2026-06-03",
-        "odds_sources_count": 0,
+        "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
         "price_sources_count": 0,
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00"
       },
       "minutes_to_kickoff": 1304.91,
       "next_retry_at": null,
-      "odds_sources": [],
+      "odds_sources": [
+        "odds_api_io"
+      ],
       "pre_kickoff_status": "future_today",
       "price_confirmation_sources_count": 0,
       "price_confirmations": [],
       "priority": 36.0,
       "refresh": {
-        "last_context_refresh_utc": null,
+        "last_context_refresh_utc": "2026-06-03T09:16:02.934968+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:15:43.007040+00:00",
-        "last_odds_refresh_utc": null
+        "last_odds_refresh_utc": "2026-06-03T09:16:02.934968+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -33807,7 +34015,7 @@
         "latest_best_edge_pp": 0,
         "latest_best_ev_pct": 0,
         "latest_books_max": 0,
-        "latest_candidate_count": 2,
+        "latest_candidate_count": 3,
         "latest_confirmation_sources_max": 1,
         "latest_context_sources_max": 1,
         "latest_controlled_count": 0,
@@ -34710,8 +34918,18 @@
         "inventory_fill_source": "sstats",
         "inventory_fill_window": true,
         "inventory_target_fill": true,
+        "latest_best_confidence": 70.88,
+        "latest_best_edge_pp": 0.0,
+        "latest_best_ev_pct": 0.0,
+        "latest_books_max": 0,
+        "latest_candidate_count": 1,
+        "latest_confirmation_sources_max": 0,
+        "latest_context_sources_max": 0,
+        "latest_controlled_count": 0,
+        "latest_odds_sources_max": 0,
         "latest_run_source": "odds_api_io",
         "latest_run_source_event_id": "71355738",
+        "latest_sources_max": 0,
         "odds_api_io_id": 71355738,
         "odds_sources_count": 1,
         "price_confirmation_sources_count": 0,
@@ -34740,7 +34958,16 @@
           },
           "status": "pending"
         },
+        "source_evidence_samples": [
+          {
+            "books": 0,
+            "context_sources": 0,
+            "odds_sources": 0,
+            "source": "latest-match-data-coverage-matches.json"
+          }
+        ],
         "source_evidence_updated_utc": "2026-06-02T21:15:48.776218+00:00",
+        "sources_count": 0,
         "sources_seen": "sstats",
         "sstats_fixture_fill": true,
         "sstats_has_context_hint": true
@@ -34757,7 +34984,8 @@
       "refresh": {
         "last_context_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
         "last_fixture_refresh_utc": "2026-06-02T21:02:59.229536+00:00",
-        "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00"
+        "last_odds_refresh_utc": "2026-06-02T21:15:48.776218+00:00",
+        "last_run_coverage_merge_utc": "2026-06-03T09:16:02.718427+00:00"
       },
       "refresh_plan": {
         "expected_next_run_interval_minutes": 120,
@@ -42038,6 +42266,6 @@
   ],
   "repair_reason": "create_from_current_inventory",
   "target_size": 300,
-  "updated_at_utc": "2026-06-03T07:13:24.656297+00:00",
+  "updated_at_utc": "2026-06-03T09:16:03.915559+00:00",
   "version": "frozen_day_inventory_roster_v1"
 }

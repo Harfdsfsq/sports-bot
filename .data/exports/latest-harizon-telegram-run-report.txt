@@ -1,46 +1,50 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: odds above global max
+• Главная причина: tier c watch only
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 215.
-• 1+ линия: 280/300 (93%) | 1+ контекст: 277/300 (92%)
-• 2+ букмекера: 13/300 (4%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 221.
+• 1+ линия: 281/300 (94%) | 1+ контекст: 279/300 (93%)
+• 2+ букмекера: 22/300 (7%)
 • 2+ независимых odds-source: 12/300 (4%) — диагностика, не блок публикации
-• 2+ контекста: 93/300 (31%)
-• Готово для модели: 262/300 (87%)
+• 2+ контекста: 96/300 (32%)
+• Готово для модели: 265/300 (88%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 13 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 22 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 1
-• Line guard: увидел 1, оставил 1, снял 0
+• Pre-kickoff проверок: 5 | матчей без следующего регулярного run: 3
+• Line guard: увидел 5, оставил 1, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/1
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Raw/candidates before quality: 2/8
+• Quality прошло: 2 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 30; смэтчил матчей 145; offers 9297; 2+ букмекера 48; ошибок 0.
-• Bzzoiro: direct req 46, v2 req 46; v2 ctx 15; v2 odds 10; secondary offers 0; overlap odds-api.io 9; ошибок 0.
-• SStats: запросы 18; сырых строк 15083; контекстов 114; deep-enriched 9; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 30; смэтчил матчей 150; offers 10086; 2+ букмекера 48; ошибок 0.
+• Bzzoiro: direct req 51, v2 req 51; v2 ctx 17; v2 odds 11; secondary offers 0; overlap odds-api.io 10; ошибок 0.
+• SStats: запросы 18; сырых строк 15083; контекстов 128; deep-enriched 10; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 65, bzzoiro+odds_api_io: 9, bzzoiro: 5
+• Комбинации источников линий: odds_api_io: 65, bzzoiro+odds_api_io: 10, bzzoiro: 6
 
 🚫 Почему не опубликовано
-• odds above global max: 1 (33%)
-• направление ставки конфликтует с xG: 1 (33%)
-• quality quality high odds totals xg headroom guard: 1 (33%)
+• tier c watch only: 1 (20%)
+• quality: вероятность после калибровки ниже порога: 1 (20%)
+• направление ставки конфликтует с xG: 1 (20%)
+• модель слишком оптимистична относительно xG-ориентира: 1 (20%)
+• quality: market sanity totals/xG contradiction: 1 (20%)
 
 🔎 Проверенные reserve-кандидаты
-1. India — Bhutan | Меньше @3.75 | EV +30.4% | edge +8.1 п.п. | q 100.0
-   • причина: odds above global max, направление ставки конфликтует с xG
+1. Philippines — Guam | Меньше 3.5 @2.26 | EV +8.8% | edge +3.9 п.п. | q 73.4
+   • причина: tier c watch only
+2. SV Leobendorf — FCM Traiskirchen | Меньше 3.5 @2.19 | EV +5.4% | edge +2.5 п.п. | q 38.2
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
