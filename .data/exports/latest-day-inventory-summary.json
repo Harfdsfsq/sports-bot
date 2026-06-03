@@ -1,7 +1,12 @@
 {
-  "all_source_match_counts": {
-    "bzzoiro": 3,
-    "odds_api_io": 160
+  "alias_update": {
+    "paths": [
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    ],
+    "status": "ok",
+    "target_date": "2026-06-04"
   },
   "build_status": "ok",
   "counts": {
@@ -9,30 +14,34 @@
     "fixture_sources_seen": 2,
     "leagues_seen": 39,
     "matches_added": 161,
+    "matches_added_from_latest_run": 0,
     "matches_after_core_merge": 161,
     "matches_after_top_cut": 161,
     "matches_missing_context_2plus": 161,
     "matches_missing_price_2plus": 161,
-    "matches_next_12h": 91,
-    "matches_next_12h_ready": 1,
-    "matches_next_6h": 86,
-    "matches_next_6h_ready": 1,
+    "matches_next_12h": 55,
+    "matches_next_12h_ready": 29,
+    "matches_next_6h": 45,
+    "matches_next_6h_ready": 26,
     "matches_raw_before_merge": 165,
-    "matches_ready_for_model": 2,
+    "matches_ready_for_model": 66,
     "matches_ready_for_publish": 0,
-    "matches_total": 161,
+    "matches_seen_latest_run": 48,
+    "matches_total": 251,
+    "matches_total_high_watermark": 251,
     "matches_updated": 0,
+    "matches_updated_from_latest_run": 0,
     "matches_with_2plus_context_sources": 0,
     "matches_with_2plus_core_fixture_sources": 2,
     "matches_with_2plus_odds_sources": 2,
     "matches_with_2plus_price_confirmations": 0,
     "matches_with_3_core_fixture_sources": 0,
-    "matches_with_context": 3,
-    "matches_with_form": 0,
+    "matches_with_context": 83,
+    "matches_with_form": 62,
     "matches_with_news": 0,
-    "matches_with_odds": 160,
+    "matches_with_odds": 230,
     "matches_with_weather": 0,
-    "matches_with_xg": 3,
+    "matches_with_xg": 74,
     "multi_source_fixture_matches": 2,
     "providers_seen": 2,
     "target_full": false,
@@ -286,13 +295,76 @@
       "status": "ok",
       "updated_at_utc": "2026-06-03T21:01:37.778242+00:00"
     },
+    "coverage_repair": {
+      "evidence_matches": 49,
+      "rows_repaired": 15,
+      "updated_at_utc": "2026-06-03T23:01:11.494098+00:00"
+    },
+    "fixture_expansion": {
+      "added": 0,
+      "providers": {
+        "allsportsapi": {
+          "body_preview": "{\"success\":1}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "football_data": {
+          "body_preview": "{\"filters\":{\"dateFrom\":\"2026-06-04\",\"dateTo\":\"2026-06-04\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "thesportsdb": {
+          "body_preview": "{\"events\":[{\"idEvent\":\"2286038\",\"idAPIfootball\":\"1398944\",\"strTimestamp\":\"2026-06-04T16:00:00\",\"strEvent\":\"Dornbirn vs Reichenau\",\"strEventAlternate\":\"Reichenau @ Dornbirn\",\"strFilename\":\"Austrian Regionalliga West 2026-06-04 Dornbirn vs Reichenau\",\"strSport\":\"Soccer\",\"idLeague\":\"5316\",\"strLeague\":\"Austrian Regionalliga West\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/dimo7o1659092429.png\",\"strSeason\":\"2025-2026\",\"strDescriptionEN\":\"\",\"strHomeTeam\":\"Dornbirn\",\"",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 3
+        }
+      },
+      "rows_fetched": 3,
+      "updated": 3,
+      "updated_at_utc": "2026-06-03T23:01:06.799092+00:00"
+    },
+    "latest_match_accumulation": {
+      "added": 0,
+      "latest_rows_seen": 48,
+      "rejected": 0,
+      "updated": 0,
+      "updated_at_utc": "2026-06-03T23:01:11.372449+00:00"
+    },
     "mode": "core_fixture_discovery_top300",
+    "priority_and_refresh_plan": {
+      "active_rows": 147,
+      "final_pre_kickoff_checks": 24,
+      "low_quality_rows_filtered_from_priority": 61,
+      "needs_odds_refresh": 21,
+      "no_more_regular_run_before_kickoff": 23,
+      "updated_at_utc": "2026-06-03T23:00:00.625943+00:00"
+    },
     "providers": [
       "odds_api_io",
       "bzzoiro",
       "sportlogic"
-    ]
+    ],
+    "refresh_plan_count_repair": {
+      "active_matches": 201,
+      "final_pre_kickoff_checks": 24,
+      "matches_missing_odds_coverage": 20,
+      "matches_needing_odds_refresh": 129,
+      "matches_stale_odds_refresh": 109,
+      "no_more_regular_run_before_kickoff": 23,
+      "updated_at_utc": "2026-06-03T23:00:00.625943+00:00"
+    },
+    "runtime_odds_source_annotation": {
+      "matches_with_2plus_runtime_odds_sources": 2,
+      "matches_with_bzzoiro_event_metadata_context": 2,
+      "matches_with_bzzoiro_source": 2,
+      "matches_with_sportlogic_source": 0,
+      "updated_at_utc": "2026-06-03T22:58:01.765501+00:00",
+      "updated_matches": 21
+    }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-06-03T21:01:37.745787+00:00"
+  "updated_at_utc": "2026-06-03T23:01:11.494098+00:00"
 }
