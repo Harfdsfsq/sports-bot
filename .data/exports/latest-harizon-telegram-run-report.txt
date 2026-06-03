@@ -1,45 +1,53 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: направление ставки конфликтует с xG
+• Главная причина: tier a odds sources below min:0/1
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 253.
+• Инвентарь дня: 300 матчей. В этом run обработано: 42.
 • 1+ линия: 253/300 (84%) | 1+ контекст: 266/300 (89%)
-• 2+ букмекера: 11/300 (4%)
+• 2+ букмекера: 12/300 (4%)
 • 2+ независимых odds-source: 12/300 (4%) — диагностика, не блок публикации
-• 2+ контекста: 63/300 (21%)
-• Готово для модели: 184/300 (61%)
+• 2+ контекста: 78/300 (26%)
+• Готово для модели: 230/300 (77%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 11 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 12 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 12 | матчей без следующего регулярного run: 12
-• Line guard: увидел 5, оставил 1, снял 0
+• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
+• Line guard: увидел 2, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
+• Raw/candidates before quality: 4/4
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 40; смэтчил матчей 200; offers 9367; 2+ букмекера 49; ошибок 0.
-• Bzzoiro: direct req 54, v2 req 54; v2 ctx 17; v2 odds 12; secondary offers 0; overlap odds-api.io 11; ошибок 0.
-• SStats: запросы 25; сырых строк 21830; контекстов 183; deep-enriched 12; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 6; смэтчил матчей 30; offers 1172; 2+ букмекера 11; ошибок 0.
+• Bzzoiro: direct req 5, v2 req 5; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 1; ошибок 0.
+• SStats: запросы 18; сырых строк 15096; контекстов 23; deep-enriched 1; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 75, bzzoiro+odds_api_io: 11, bzzoiro: 5
+• Комбинации источников линий: odds_api_io: 13, bzzoiro+odds_api_io: 1
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 1 (50%)
-• quality: вероятность после калибровки ниже порога: 1 (50%)
+• tier a odds sources below min:0/1: 2 (15%)
+• tier c watch only: 1 (8%)
+• line movement not confirmed:awaiting next run: 1 (8%)
+• line movement:needs next cron line movement recheck: 1 (8%)
+• final edge below min: 1 (8%)
+• quality: вероятность после калибровки ниже порога: 1 (8%)
+• tier a quality below min: 1 (8%)
+• tier a canonical edge below min: 1 (8%)
 
 🔎 Проверенные reserve-кандидаты
-1. Gibraltar — British Virgin Islands | Больше 3.5 @2.72 | EV +11.8% | edge +4.4 п.п. | q 65.7
-   • причина: направление ставки конфликтует с xG
+1. Philippines — Guam | Меньше 3.5 @2.18 | EV +6.3% | edge +2.9 п.п. | q 69.5
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, final edge below min
+2. Belconnen United — Tuggeranong Utd | Меньше 3.5 @1.90 | EV +3.4% | edge +1.8 п.п. | q 57.6
+   • причина: tier a quality below min, tier a canonical edge below min, tier a odds sources below min:0/1, tier a confirmation sources below min:1/2
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
