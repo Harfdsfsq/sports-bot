@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-03T03:04:36.765698+00:00
+UTC: 2026-06-03T05:04:07.781920+00:00
 target_date: 2026-06-03
-canonical_matches: 311
-2+ provider sources: 101
-2+ primary sources: 101
+canonical_matches: 316
+2+ provider sources: 102
+2+ primary sources: 102
 all 3 primary sources: 10
 
 ## Provider fixture discovery
@@ -11,14 +11,14 @@ all 3 primary sources: 10
 - bzzoiro: commands=10 ok=8 rows=142 event_like=142 unique=29 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=452 event_like=452 unique=226 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=464 event_like=464 unique=232 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=230 event_like=173 unique=173 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 210, "2": 88, "3": 13}
-- primary providers: {"1": 210, "2": 91, "3": 10}
+- all providers: {"1": 214, "2": 89, "3": 13}
+- primary providers: {"1": 214, "2": 92, "3": 10}
 
 ## Top canonical matches
 - 2026-06-02T22:00:00+00:00 | Deportivo Merlo — Deportivo Laferrere | providers=sstats ids={"sstats": "1499444"}
@@ -39,9 +39,9 @@ all 3 primary sources: 10
 - 2026-06-03T09:00:00+00:00 | Portugal — Kazakhstan | providers=odds_api_io,sstats ids={"odds_api_io": "69165652", "sstats": "1538898"}
 - 2026-06-03T09:00:00+00:00 | Hawkesbury City SC — Gladesville Ryde Magic | providers=odds_api_io ids={"odds_api_io": "71814042"}
 - 2026-06-03T09:00:00+00:00 | Sydney Olympic FC — University of NSW | providers=odds_api_io ids={"odds_api_io": "71621900"}
-- 2026-06-03T09:30:00+00:00 | Rochedale Rovers — Magic United Tfa | providers=odds_api_io,sstats ids={"odds_api_io": "71576338", "sstats": "1524032"}
 - 2026-06-03T09:30:00+00:00 | Sunshine Coast Wanderers — St George Willawong FC | providers=odds_api_io,sstats ids={"odds_api_io": "71576342", "sstats": "1524145"}
 - 2026-06-03T09:30:00+00:00 | Football Queensland QAS — Queenland Lions FC | providers=odds_api_io ids={"odds_api_io": "71687592"}
+- 2026-06-03T10:00:00+00:00 | Rochedale Rovers — Magic United Tfa | providers=odds_api_io,sstats ids={"odds_api_io": "71576338", "sstats": "1524032"}
 - 2026-06-03T10:00:00+00:00 | Finland — Brazil | providers=odds_api_io ids={"odds_api_io": "71862518"}
 - 2026-06-03T10:00:00+00:00 | Lake Macquarie City FC Reserve — New Lambton FC Reserve | providers=odds_api_io ids={"odds_api_io": "71804388"}
 - 2026-06-03T10:30:00+00:00 | Myanmar — Uzbekistan | providers=odds_api_io,sstats ids={"odds_api_io": "71613184", "sstats": "1546831"}
@@ -125,11 +125,11 @@ all 3 primary sources: 10
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Rochedale Rovers — Magic United Tfa | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Sunshine Coast Wanderers — St George Willawong FC | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Football Queensland QAS — Queenland Lions FC | primary=1 providers=odds_api_io
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
