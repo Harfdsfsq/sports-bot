@@ -1,52 +1,51 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: направление ставки конфликтует с xG
+✅ прогноз опубликован
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 243.
-• 1+ линия: 281/300 (94%) | 1+ контекст: 288/300 (96%)
-• 2+ букмекера: 30/300 (10%)
-• 2+ независимых odds-source: 16/300 (5%) — диагностика, не блок публикации
-• 2+ контекста: 124/300 (41%)
-• Готово для модели: 274/300 (91%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 147.
+• 1+ линия: 281/300 (94%) | 1+ контекст: 295/300 (98%)
+• 2+ букмекера: 32/300 (11%)
+• 2+ независимых odds-source: 19/300 (6%) — диагностика, не блок публикации
+• 2+ контекста: 151/300 (50%)
+• Готово для модели: 276/300 (92%)
 
 🏷️ A/B-tier публикация
-• A-tier bookmaker coverage: 0 | опубликовано: 0
+• A-tier bookmaker coverage: 0 | опубликовано: 1
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 30 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 32 | fallback опубликовано: 1
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 66 | матчей без следующего регулярного run: 53
-• Line guard: увидел 4, оставил 0, снял 0
+• Pre-kickoff проверок: 37 | матчей без следующего регулярного run: 37
+• Line guard: увидел 8, оставил 4, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 2/8
-• Quality прошло: 2 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 3 | evaluated 3 | published 0
+• Quality прошло: 2 | publishable: 0 | опубликовано: 1
+• Controlled fallback: seen 4 | evaluated 4 | published 1
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 40; смэтчил матчей 194; offers 9734; 2+ букмекера 45; ошибок 0.
-• Bzzoiro: direct req 51, v2 req 51; v2 ctx 17; v2 odds 11; secondary offers 0; overlap odds-api.io 10; ошибок 0.
-• SStats: запросы 18; сырых строк 15238; контекстов 139; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 26; смэтчил матчей 130; offers 6041; 2+ букмекера 21; ошибок 0.
+• Bzzoiro: direct req 36, v2 req 36; v2 ctx 11; v2 odds 8; secondary offers 0; overlap odds-api.io 8; ошибок 0.
+• SStats: запросы 18; сырых строк 15237; контекстов 85; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 75, bzzoiro+odds_api_io: 10, bzzoiro: 6
+• Комбинации источников линий: odds_api_io: 49, bzzoiro+odds_api_io: 8, bzzoiro: 4
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 2 (33%)
-• quality: вероятность после калибровки ниже порога: 2 (33%)
-• line movement not confirmed:awaiting next run: 1 (17%)
-• line movement:needs next cron line movement recheck: 1 (17%)
+• направление ставки конфликтует с xG: 3 (50%)
+• quality: вероятность после калибровки ниже порога: 3 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Ittihad Tanger — Wydad AC | Больше 2.5 @2.51 | EV +14.6% | edge +5.8 п.п. | q 70.2
+1. Netherlands — Algeria | Меньше 2.5 @2.64 | EV +13.5% | edge +5.1 п.п. | q 79.8
    • причина: направление ставки конфликтует с xG
-2. Netherlands — Algeria | Меньше 2.5 @2.52 | EV +13.4% | edge +5.3 п.п. | q 79.8
+2. Ittihad Tanger — Wydad AC | Больше 2.5 @2.50 | EV +14.6% | edge +5.8 п.п. | q 70.2
    • причина: направление ставки конфликтует с xG
-3. Luxembourg — Italy | Меньше 2.5 @2.14 | EV +8.7% | edge +4.0 п.п. | q 75.7
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+3. Luxembourg — Italy | Меньше 2.5 @2.16 | EV +8.3% | edge +3.8 п.п. | q 73.4
+4. Albania — Israel | Больше 2.5 @2.22 | EV +6.9% | edge +3.1 п.п. | q 60.9
+   • причина: направление ставки конфликтует с xG
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
