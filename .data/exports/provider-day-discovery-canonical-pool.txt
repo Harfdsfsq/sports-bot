@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-03T01:04:40.249752+00:00
+UTC: 2026-06-03T03:04:36.765698+00:00
 target_date: 2026-06-03
 canonical_matches: 311
-2+ provider sources: 108
-2+ primary sources: 108
-all 3 primary sources: 11
+2+ provider sources: 101
+2+ primary sources: 101
+all 3 primary sources: 10
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
 - bzzoiro: commands=10 ok=8 rows=142 event_like=142 unique=29 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=468 event_like=468 unique=234 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=452 event_like=452 unique=226 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=230 event_like=173 unique=173 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 203, "2": 94, "3": 14}
-- primary providers: {"1": 203, "2": 97, "3": 11}
+- all providers: {"1": 210, "2": 88, "3": 13}
+- primary providers: {"1": 210, "2": 91, "3": 10}
 
 ## Top canonical matches
 - 2026-06-02T22:00:00+00:00 | Deportivo Merlo — Deportivo Laferrere | providers=sstats ids={"sstats": "1499444"}
@@ -26,14 +26,14 @@ all 3 primary sources: 11
 - 2026-06-02T22:00:00+00:00 | North Carolina Fusion W — Carolina Ascent II W | providers=sstats ids={"sstats": "1532093"}
 - 2026-06-02T23:00:00+00:00 | AC Connecticut W — Vermont Green W | providers=sstats ids={"sstats": "1532343"}
 - 2026-06-02T23:00:00+00:00 | Eagle FC — Delaware FC | providers=sstats ids={"sstats": "1525392"}
-- 2026-06-03T00:00:00+00:00 | Texoma FC — Fort Worth Vaqueros FC | providers=odds_api_io,sstats ids={"odds_api_io": "69091352", "sstats": "1524704"}
-- 2026-06-03T00:00:00+00:00 | Fortaleza EC CE — EC Vitoria BA | providers=odds_api_io,sstats ids={"odds_api_io": "71792666", "sstats": "1547221"}
-- 2026-06-03T00:10:00+00:00 | CA Barracas Central — CA Huracan | providers=odds_api_io,sstats ids={"odds_api_io": "71747010", "sstats": "1540052"}
-- 2026-06-03T00:30:00+00:00 | CD Junior FC — Atletico Nacional | providers=odds_api_io,sstats ids={"odds_api_io": "71702728", "sstats": "1546412"}
-- 2026-06-03T00:30:00+00:00 | West Chester United SC USL2 — Reading United AC | providers=odds_api_io,sstats ids={"odds_api_io": "69091354", "sstats": "1524705"}
-- 2026-06-03T00:30:00+00:00 | FC San Nicolas — Real Koyari | providers=odds_api_io,sstats ids={"odds_api_io": "71804374", "sstats": "1545564"}
-- 2026-06-03T00:35:00+00:00 | Haiti — New Zealand | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "71468722", "bzzoiro": "207424", "sstats": "1544806"}
-- 2026-06-03T02:00:00+00:00 | Portland Bangers FC — Midlakes United | providers=odds_api_io,sstats ids={"odds_api_io": "69091356", "sstats": "1524703"}
+- 2026-06-03T00:00:00+00:00 | Fortaleza EC — Vitoria | providers=sstats ids={"sstats": "1547221"}
+- 2026-06-03T00:00:00+00:00 | Texoma — Fort Worth Vaqueros | providers=sstats ids={"sstats": "1524704"}
+- 2026-06-03T00:10:00+00:00 | Barracas Central — Huracan | providers=sstats ids={"sstats": "1540052"}
+- 2026-06-03T00:30:00+00:00 | San Nicolaas — Real Koyari | providers=sstats ids={"sstats": "1545564"}
+- 2026-06-03T00:30:00+00:00 | Junior — Atletico Nacional | providers=sstats ids={"sstats": "1546412"}
+- 2026-06-03T00:30:00+00:00 | West Chester United — Reading United | providers=sstats ids={"sstats": "1524705"}
+- 2026-06-03T00:36:00+00:00 | Haiti — New Zealand | providers=bzzoiro,sstats ids={"bzzoiro": "207424", "sstats": "1544806"}
+- 2026-06-03T02:00:00+00:00 | Bangers — Midlakes United | providers=sstats ids={"sstats": "1524703"}
 - 2026-06-03T07:30:00+00:00 | Belconnen United FC — Tuggeranong United FC | providers=odds_api_io,sstats ids={"odds_api_io": "70867480", "sstats": "1537432"}
 - 2026-06-03T08:15:00+00:00 | Broadmeadow Magic FC — Maitland FC | providers=odds_api_io ids={"odds_api_io": "71802536"}
 - 2026-06-03T09:00:00+00:00 | Portugal — Kazakhstan | providers=odds_api_io,sstats ids={"odds_api_io": "69165652", "sstats": "1538898"}
@@ -73,38 +73,37 @@ all 3 primary sources: 11
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Texoma FC — Fort Worth Vaqueros FC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Fortaleza EC — Vitoria | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Fortaleza EC CE — EC Vitoria BA | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Texoma — Fort Worth Vaqueros | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- CA Barracas Central — CA Huracan | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Barracas Central — Huracan | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- CD Junior FC — Atletico Nacional | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- San Nicolaas — Real Koyari | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- West Chester United SC USL2 — Reading United AC | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Junior — Atletico Nacional | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- FC San Nicolas — Real Koyari | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- West Chester United — Reading United | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Haiti — New Zealand | primary=3 providers=bzzoiro,odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Haiti — New Zealand | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Portland Bangers FC — Midlakes United | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Bangers — Midlakes United | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Belconnen United FC — Tuggeranong United FC | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
