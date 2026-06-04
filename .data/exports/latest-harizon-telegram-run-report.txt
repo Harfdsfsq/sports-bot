@@ -1,45 +1,43 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 49.
-• 1+ линия: 242/300 (81%) | 1+ контекст: 230/300 (77%)
-• 2+ букмекера: 14/300 (5%)
-• 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
-• 2+ контекста: 90/300 (30%)
-• Готово для модели: 179/300 (60%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 98.
+• 1+ линия: 245/300 (82%) | 1+ контекст: 235/300 (78%)
+• 2+ букмекера: 18/300 (6%)
+• 2+ независимых odds-source: 16/300 (5%) — диагностика, не блок публикации
+• 2+ контекста: 95/300 (32%)
+• Готово для модели: 186/300 (62%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 14 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 18 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 2, оставил 0, снял 0
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/4
+• Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 8; смэтчил матчей 36; offers 2804; 2+ букмекера 15; ошибок 0.
-• Bzzoiro: direct req 21, v2 req 21; v2 ctx 5; v2 odds 5; secondary offers 0; overlap odds-api.io 3; ошибок 0.
-• SStats: запросы 19; сырых строк 15369; контекстов 31; deep-enriched 3; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 18; смэтчил матчей 82; offers 6545; 2+ букмекера 31; ошибок 0.
+• Bzzoiro: direct req 45, v2 req 45; v2 ctx 13; v2 odds 10; secondary offers 0; overlap odds-api.io 8; ошибок 0.
+• SStats: запросы 19; сырых строк 15369; контекстов 61; deep-enriched 10; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 19, bzzoiro+odds_api_io: 3, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 43, bzzoiro+odds_api_io: 8, bzzoiro: 6
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
-• quality: вероятность после калибровки ниже порога: 1 (50%)
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. FC Lustenau — VfB Hohenems | Больше 3.5 @2.23 | EV -0.4% | edge -0.2 п.п. | q 32.8
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
