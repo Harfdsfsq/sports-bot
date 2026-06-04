@@ -1,14 +1,14 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier a odds sources below min:0/1
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: 300 матчей. В этом run обработано: 49.
-• 1+ линия: 241/300 (80%) | 1+ контекст: 223/300 (74%)
+• 1+ линия: 242/300 (81%) | 1+ контекст: 230/300 (77%)
 • 2+ букмекера: 14/300 (5%)
-• 2+ независимых odds-source: 6/300 (2%) — диагностика, не блок публикации
-• 2+ контекста: 78/300 (26%)
-• Готово для модели: 167/300 (56%)
+• 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
+• 2+ контекста: 90/300 (30%)
+• Готово для модели: 179/300 (60%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
@@ -18,7 +18,7 @@
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 9 | матчей без следующего регулярного run: 9
+• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
 • Line guard: увидел 2, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -27,25 +27,19 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 8; смэтчил матчей 32; offers 2338; 2+ букмекера 13; ошибок 0.
-• Bzzoiro: direct req 17, v2 req 17; v2 ctx 4; v2 odds 4; secondary offers 0; overlap odds-api.io 3; ошибок 0.
-• SStats: запросы 19; сырых строк 15370; контекстов 30; deep-enriched 3; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 8; смэтчил матчей 36; offers 2804; 2+ букмекера 15; ошибок 0.
+• Bzzoiro: direct req 21, v2 req 21; v2 ctx 5; v2 odds 5; secondary offers 0; overlap odds-api.io 3; ошибок 0.
+• SStats: запросы 19; сырых строк 15369; контекстов 31; deep-enriched 3; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 18, bzzoiro+odds_api_io: 3, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 19, bzzoiro+odds_api_io: 3, bzzoiro: 2
 
 🚫 Почему не опубликовано
-• tier a odds sources below min:0/1: 2 (15%)
-• tier a quality below min: 1 (8%)
-• tier a canonical edge below min: 1 (8%)
-• tier a canonical ev below min: 1 (8%)
-• tier a confirmation sources below min:1/2: 1 (8%)
-• tier b confidence below min: 1 (8%)
-• tier b quality below min: 1 (8%)
-• tier b canonical edge below min: 1 (8%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
+• quality: вероятность после калибровки ниже порога: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. FC Lustenau — VfB Hohenems | Больше 3.5 @2.23 | EV +1.4% | edge +0.6 п.п. | q 34.8
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier a odds sources below min:0/1
+1. FC Lustenau — VfB Hohenems | Больше 3.5 @2.23 | EV -0.4% | edge -0.2 п.п. | q 32.8
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
