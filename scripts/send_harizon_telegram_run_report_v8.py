@@ -172,9 +172,37 @@ def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
     reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
     if not reasons:
         return ["• Нет reject reasons в свежих артефактах."]
-    total = sum(_as_int(row.get("count")) for row in reasons if isinstance(row, dict)) or 1
+
+    # After the bookmaker-quorum switch, stale *_odds_sources_below_min
+    # reasons can still be produced by older diagnostic artifacts.  They should
+    # not dominate the user-facing conclusion.  Keep them visible only as
+    # diagnostics and prefer real blockers: xG, quality, value, line movement,
+    # context/confirmation, price integrity.
+    visible: list[dict[str, Any]] = []
+    diagnostic_odds_source_count = 0
+    for row in reasons:
+        if not isinstance(row, dict):
+            continue
+        reason = str(row.get("reason") or "")
+        count = _as_int(row.get("count"))
+        if count <= 0:
+            continue
+        if "odds_sources_below_min" in reason or "odds sources below min" in reason.lower():
+            diagnostic_odds_source_count += count
+            continue
+        visible.append(row)
+    if not visible and diagnostic_odds_source_count:
+        visible = [
+            {
+                "reason": "bookmaker_contract_no_real_blocker_after_legacy_odds_source_diagnostic",
+                "reason_ru": "устаревшая диагностика odds-source; проверяй 2+ букмекера/price-integrity",
+                "count": diagnostic_odds_source_count,
+            }
+        ]
+
+    total = sum(_as_int(row.get("count")) for row in visible if isinstance(row, dict)) or 1
     out: list[str] = []
-    for row in reasons[:limit]:
+    for row in visible[:limit]:
         if not isinstance(row, dict):
             continue
         count = _as_int(row.get("count"))
@@ -182,6 +210,8 @@ def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
             continue
         ru = row.get("reason_ru") or _reason_ru(row.get("reason"))
         out.append(f"• {ru}: {count} ({round(count * 100.0 / total)}%)")
+    if diagnostic_odds_source_count:
+        out.append(f"• Диагностика legacy odds-source: {diagnostic_odds_source_count} — не блок публикации при 2+ букмекерах")
     return out or ["• Нет reject reasons в свежих артефактах."]
 
 
@@ -263,10 +293,11 @@ def render(payload: dict[str, Any]) -> str:
         f"• Готово для модели: {ready_model}/{inv_total} ({_pct(ready_model, inv_total)})",
         "",
         "🏷️ A/B-tier публикация",
-        f"• A-tier bookmaker coverage: {ready_publish} | опубликовано: {_as_int(funnel.get('published_count'))}",
+        f"• A-tier strict-ready / опубликовано: {max(ready_publish, _as_int(funnel.get('published_count')))} | опубликовано: {_as_int(funnel.get('published_count'))}",
         "  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.",
         f"• B-tier bookmaker coverage: {price2} | fallback опубликовано: {_as_int(funnel.get('fallback_published_count'))}",
         "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
+        f"• Пересечение 2+ букмекера ∩ 2+ контекста: до {min(price2, context2)} матчей; exact-ready считается после movement/value/xG.",
         "• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.",
         "",
         "🛡️ Движение линии и финальный фильтр",

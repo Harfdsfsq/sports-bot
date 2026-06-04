@@ -110,7 +110,7 @@ jobs:
       - name: Prepare local state folders
         shell: bash
         run: |
-          mkdir -p .data .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/daily-report
+          mkdir -p .data .data/bets .data/exports .data/provider_cache/daily-coverage .data/provider_cache/day-shortlist .logs artifacts/daily-report
 
       - name: Apply selected runtime profile
         shell: bash
@@ -215,7 +215,7 @@ jobs:
         if: always()
         shell: bash
         run: |
-          python scripts/build_daily_ops_report.py --send-telegram || true
+          python scripts/build_daily_ops_report_ledger.py --send-telegram || python scripts/build_daily_ops_report.py --send-telegram || true
           cat .data/exports/latest-daily-ops-report.txt || true
 
       - name: Collect daily report artifacts
@@ -229,6 +229,7 @@ jobs:
           cp -f .data/exports/latest-daily-summary.json artifacts/daily-report/latest-daily-summary.json 2>/dev/null || true
           cp -f .data/exports/latest-settlement-review-report.json artifacts/daily-report/latest-settlement-review-report.json 2>/dev/null || true
           cp -f .data/exports/latest-settlement-review-report.txt artifacts/daily-report/latest-settlement-review-report.txt 2>/dev/null || true
+          cp -rf .data/bets artifacts/daily-report/bets 2>/dev/null || true
 
       - name: Upload daily-report artifact
         if: always()
@@ -242,6 +243,7 @@ jobs:
             .logs/debug-last-run.json
             .logs/runs
             .data/*.json
+            .data/bets/**
           if-no-files-found: ignore
           retention-days: 14
 
@@ -251,4 +253,5 @@ jobs:
         env:
           PERSISTENT_STATE_COMMIT_MESSAGE: "Update persistent report state"
         run: |
+          git add -f .data/bets || true
           python scripts/sync_persistent_state.py || true
