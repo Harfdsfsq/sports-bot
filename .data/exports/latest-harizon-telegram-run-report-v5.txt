@@ -1,47 +1,44 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: направление ставки конфликтует с xG
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 21.
-• 1+ линия: 251/300 (84%) | 1+ контекст: 259/300 (86%)
-• 2+ букмекера: 32/300 (11%)
-• 2+ независимых odds-source: 19/300 (6%) — диагностика, не блок публикации
-• 2+ контекста: 139/300 (46%)
-• Готово для модели: 210/300 (70%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 302.
+• 1+ линия: 273/300 (91%) | 1+ контекст: 211/300 (70%)
+• 2+ букмекера: 12/300 (4%)
+• 2+ независимых odds-source: 27/300 (9%) — диагностика, не блок публикации
+• 2+ контекста: 45/300 (15%)
+• Готово для модели: 171/300 (57%)
 
 🏷️ A/B-tier публикация
-• A-tier bookmaker coverage: 0 | опубликовано: 0
+• A-tier strict-ready / опубликовано: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 32 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 12 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 12 матчей; exact-ready считается после movement/value/xG.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
-• Line guard: увидел 3, оставил 0, снял 0
+• Pre-kickoff проверок: 16 | матчей без следующего регулярного run: 3
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 6/6
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 2 | evaluated 2 | published 0
+• Raw/candidates before quality: 2/8
+• Quality прошло: 2 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 4; смэтчил матчей 20; offers 1323; 2+ букмекера 9; ошибок 0.
-• Bzzoiro: direct req 6, v2 req 6; v2 ctx 2; v2 odds 1; secondary offers 0; overlap odds-api.io 1; ошибок 0.
-• SStats: запросы 19; сырых строк 15572; контекстов 12; deep-enriched 2; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 54; смэтчил матчей 261; offers 16486; 2+ букмекера 97; ошибок 0.
+• Bzzoiro: direct req 93, v2 req 93; v2 ctx 29; v2 odds 21; secondary offers 0; overlap odds-api.io 25; ошибок 0.
+• SStats: запросы 19; сырых строк 15573; контекстов 165; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 9, bzzoiro: 1, bzzoiro+odds_api_io: 1
+• Комбинации источников линий: odds_api_io: 141, bzzoiro+odds_api_io: 25, bzzoiro: 3
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 2 (50%)
-• quality: вероятность после калибровки ниже порога: 2 (50%)
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Anapolis FC GO — Paysandu SC PA | Больше 2.5 @2.44 | EV +6.1% | edge +2.5 п.п. | q 54.8
-   • причина: направление ставки конфликтует с xG
-2. Club Deportivo Cuenca Juniors — CSD Macara | Больше 2.5 @2.72 | EV +3.1% | edge +1.1 п.п. | q 44.1
-   • причина: направление ставки конфликтует с xG
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
