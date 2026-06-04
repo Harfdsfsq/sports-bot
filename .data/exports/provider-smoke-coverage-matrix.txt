@@ -12,24 +12,32 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 29 | 25 | 20 | 12 | 20 | 19 | 17 | 0 | 20 | 12 |
-| 2_6h | 59 | 42 | 59 | 26 | 54 | 43 | 45 | 0 | 54 | 26 |
-| 6_12h | 40 | 30 | 39 | 11 | 30 | 21 | 21 | 0 | 29 | 10 |
-| 12_24h | 9 | 8 | 9 | 1 | 3 | 2 | 3 | 0 | 3 | 1 |
-| 24h_plus | 40 | 36 | 39 | 2 | 40 | 33 | 24 | 0 | 39 | 2 |
-| started | 123 | 103 | 94 | 6 | 84 | 72 | 35 | 0 | 55 | 6 |
+| 0_2h | 11 | 9 | 11 | 4 | 11 | 8 | 8 | 0 | 11 | 4 |
+| 2_6h | 69 | 49 | 69 | 32 | 65 | 51 | 53 | 0 | 65 | 31 |
+| 6_12h | 26 | 20 | 25 | 5 | 11 | 6 | 6 | 0 | 10 | 5 |
+| 12_24h | 10 | 8 | 10 | 0 | 10 | 8 | 10 | 0 | 10 | 0 |
+| 24h_plus | 32 | 29 | 31 | 3 | 32 | 26 | 16 | 0 | 31 | 3 |
+| started | 152 | 127 | 117 | 13 | 113 | 99 | 51 | 0 | 78 | 13 |
 
 ## Totals
 
-- fixture_2plus_sources: 244/300
-- odds_2plus_sources: 58/300
-- context_2plus_sources: 190/300
-- ready_for_model: 200/300
-- ready_for_publish: 57/300
+- fixture_2plus_sources: 242/300
+- odds_2plus_sources: 57/300
+- context_2plus_sources: 198/300
+- ready_for_model: 205/300
+- ready_for_publish: 56/300
 
 ## Provider endpoint status
-- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
+- by_status: `{"ok": 5, "skipped_preserve_runtime_quota": 1, "http_502": 1, "ConnectTimeout: ": 1}`
 - not_ok:
+  - open_meteo: http_502 http=502 rows=0 reason=<html>
+<head><title>502 Bad Gateway</title></head>
+<body>
+<center><h1>502 Bad Gateway</h1></center>
+<hr><center>nginx</center>
+</body>
+</html>
+
   - clubelo: ConnectTimeout:  http=None rows=None reason=None
 
 ## Matching diagnostics
@@ -37,42 +45,42 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-06-04T12:00:00+00:00 | Lauterach — Kuchl | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T12:00:00+00:00 | SSA U20 — Galícia U20 | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T12:00:00+00:00 | Wals-Grünau — Rheindorf Altach II | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T12:00:00+00:00 | VfR Mannheim — FC 1931 Eddersheim | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
-- 0_2h | 2026-06-04T12:00:00+00:00 | SV Wals-Grunau — SCR Altach | odds=1 context=4 fixtures=2 missing=odds_source_2plus,weather
-- 0_2h | 2026-06-04T12:00:00+00:00 | Wolaita Dicha SC — Negelle Arsi | odds=1 context=6 fixtures=2 missing=odds_source_2plus,weather
-- 0_2h | 2026-06-04T12:30:00+00:00 | Kattaqurgon — FarDu | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T12:30:00+00:00 | Kitzbühel — TSV St. Johann | odds=1 context=3 fixtures=3 missing=odds_source_2plus,weather
-- 0_2h | 2026-06-04T13:00:00+00:00 | PFC Shurtan — PFK Metallurg Bekabad | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | Hornau — Kassel | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | SG Bornheim — Bad Soden | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | Welayta Dicha — Negelle Arsi | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | Respublika FA — Qiziriq | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | Shortan — Metalourg | odds=0 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | Luks Sportowa Czworka Radom — Polonia Sroda Wielkopolska | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
-- 0_2h | 2026-06-04T13:00:00+00:00 | 1. Wiener Neustadter SC — UFC Sankt Peter Au | odds=1 context=3 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
-- 0_2h | 2026-06-04T13:00:00+00:00 | Respublika Football Academy — PFC Terdu | odds=1 context=3 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
-- 2_6h | 2026-06-04T14:00:00+00:00 | Mauritius — Djibouti | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-04T14:00:00+00:00 | South Sudan — Madagascar | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-04T14:00:00+00:00 | SV Stockerau — SC Wieselburg | odds=1 context=3 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
-- 2_6h | 2026-06-04T15:00:00+00:00 | Colombe Sportive Du Dja Et Lobo — Unisport Du Haut Nkam | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-04T15:00:00+00:00 | Sweden — Finland | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
-- 2_6h | 2026-06-04T15:00:00+00:00 | FC Wolfurt — SV Ludesch | odds=1 context=3 fixtures=2 missing=odds_source_2plus,weather
-- 2_6h | 2026-06-04T15:00:00+00:00 | Bulgaria — Albania | odds=1 context=3 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-06-04T14:00:00+00:00 | Mauritius — Djibouti | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-04T14:00:00+00:00 | South Sudan — Madagascar | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-04T14:00:00+00:00 | SV Stockerau — SC Wieselburg | odds=1 context=3 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 0_2h | 2026-06-04T15:00:00+00:00 | Colombe Sportive Du Dja Et Lobo — Unisport Du Haut Nkam | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-04T15:00:00+00:00 | Sweden — Finland | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-06-04T15:00:00+00:00 | FC Wolfurt — SV Ludesch | odds=1 context=3 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-06-04T15:00:00+00:00 | Bulgaria — Albania | odds=1 context=3 fixtures=2 missing=odds_source_2plus,weather
 - 2_6h | 2026-06-04T15:30:00+00:00 | Abo IFK Turku — P-Iirot | odds=1 context=3 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
 - 2_6h | 2026-06-04T15:30:00+00:00 | Slovenia — Bosnia and Herzegovina | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
-- 2_6h | 2026-06-04T16:00:00+00:00 | FC Saaripotku — Vpv | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-04T16:00:00+00:00 | Larsmo Bollklubb — FC Kiisto | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-04T16:00:00+00:00 | Nykarleby IK — SJK-J | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T16:00:00+00:00 | FC Saaripotku — Vpv | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-04T16:00:00+00:00 | FC Ylivieska — SIF | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T16:00:00+00:00 | Larsmo Bollklubb — FC Kiisto | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T16:00:00+00:00 | Saue JK — FC Tallinn | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 2_6h | 2026-06-04T16:00:00+00:00 | Burkina Faso — Mali | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-06-04T16:00:00+00:00 | LTU — Jyty Turku | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 2_6h | 2026-06-04T16:00:00+00:00 | PEPO Lappeenranta — Lahden Reipas | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-04T16:00:00+00:00 | Ben Aknoun — USM Alger | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-04T16:30:00+00:00 | FC Santa Claus — Rollon Pojat | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T16:30:00+00:00 | Gambia Ports Authority — Gambian Dutch Lions | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-06-04T16:30:00+00:00 | Mjallby AIF — Kalmar FF | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
+- 2_6h | 2026-06-04T16:45:00+00:00 | Lautp — Peka | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T17:00:00+00:00 | PPJ/Ruoholahti — Lohjan Pallo | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T17:00:00+00:00 | ASC Linguere — Walidaan Dkr | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T17:00:00+00:00 | Casa Sport — Dakar Sacre Coeur | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-04T17:00:00+00:00 | Hlm — AS Pikine | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-06-04T17:00:00+00:00 | US Goree — Stade de Mbour | odds=1 context=1 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather
+- 2_6h | 2026-06-04T17:00:00+00:00 | FC Lasten — Fish United | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 2_6h | 2026-06-04T17:00:00+00:00 | Sundby BK — Holbaek B&I | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-04T17:00:00+00:00 | Guédiawaye — Teungueth | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=226 / checked=300 | rate=75.33% | SStats events=1091
+- crosswalk: matched=226 / checked=300 | rate=75.33% | SStats events=1105
 - potential_add: context_deep=226 xg_or_rating=226 form=226 odds_rescue=46
-- projected_upper_bound: context_2plus=300 xg=281 form=273 odds_2plus=104
+- projected_upper_bound: context_2plus=300 xg=279 form=267 odds_2plus=103
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.

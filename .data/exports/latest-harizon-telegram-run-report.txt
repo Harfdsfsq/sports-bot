@@ -1,57 +1,55 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier a odds sources below min:0/1
+• Главная причина: quality: вероятность после калибровки ниже порога
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 122.
-• 1+ линия: 251/300 (84%) | 1+ контекст: 254/300 (85%)
-• 2+ букмекера: 27/300 (9%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 103.
+• 1+ линия: 251/300 (84%) | 1+ контекст: 259/300 (86%)
+• 2+ букмекера: 30/300 (10%)
 • 2+ независимых odds-source: 19/300 (6%) — диагностика, не блок публикации
-• 2+ контекста: 106/300 (35%)
-• Готово для модели: 205/300 (68%)
+• 2+ контекста: 121/300 (40%)
+• Готово для модели: 210/300 (70%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 27 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 30 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 16 | матчей без следующего регулярного run: 16
-• Line guard: увидел 5, оставил 1, снял 0
+• Pre-kickoff проверок: 5 | матчей без следующего регулярного run: 3
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Controlled fallback: seen 3 | evaluated 3 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 22; смэтчил матчей 109; offers 8318; 2+ букмекера 51; ошибок 0.
-• Bzzoiro: direct req 58, v2 req 58; v2 ctx 18; v2 odds 13; secondary offers 0; overlap odds-api.io 12; ошибок 0.
-• SStats: запросы 19; сырых строк 15368; контекстов 69; deep-enriched 12; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 61, bzzoiro+odds_api_io: 12, bzzoiro: 5
+• odds-api.io: events req 0, odds req 20; смэтчил матчей 99; offers 8222; 2+ букмекера 43; ошибок 0.
+• Bzzoiro: direct req 57, v2 req 57; v2 ctx 16; v2 odds 13; secondary offers 0; overlap odds-api.io 10; ошибок 0.
+• SStats: запросы 19; сырых строк 15538; контекстов 66; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: odds_api_io: 54, bzzoiro+odds_api_io: 10, bzzoiro: 4
 
 🚫 Почему не опубликовано
-• tier a odds sources below min:0/1: 4 (17%)
-• quality: вероятность после калибровки ниже порога: 3 (13%)
-• tier a quality below min: 2 (9%)
-• tier b confidence below min: 2 (9%)
-• tier b quality below min: 2 (9%)
-• tier b canonical edge below min: 2 (9%)
-• tier b odds sources below min:0/1: 2 (9%)
-• tier c quality below min: 2 (9%)
+• quality: вероятность после калибровки ниже порога: 3 (20%)
+• tier a odds sources below min:0/1: 2 (13%)
+• tier c watch only: 1 (7%)
+• line movement not confirmed:awaiting next run: 1 (7%)
+• line movement:needs next cron line movement recheck: 1 (7%)
+• controlled fallback confirmation sources below min:1/2: 1 (7%)
+• tier a quality below min: 1 (7%)
+• tier a canonical edge below min: 1 (7%)
 
 🔎 Проверенные reserve-кандидаты
-1. Lesotho — Kenya | Больше 2.5 @2.68 | EV +9.5% | edge +3.5 п.п. | q 59.8
-   • причина: tier a quality below min, tier a odds sources below min:0/1, tier a odds sources below min:0/1, tier b confidence below min
-2. Moldova — Malta | Меньше 2.5 @2.34 | EV +10.5% | edge +4.5 п.п. | q 65.7
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
-3. Laholms FK — Hassleholms IF | Меньше 2.5 @2.72 | EV +16.2% | edge +6.0 п.п. | q 62.3
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
-4. San Lorenzo de Almagro Res. — Velez Sarsfield Reserve | Меньше 2.5 @2.26 | EV +2.6% | edge +1.2 п.п. | q 51.6
+1. San Lorenzo de Almagro Res. — Velez Sarsfield Reserve | Меньше 2.5 @2.36 | EV +8.0% | edge +3.4 п.п. | q 63.0
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, controlled fallback confirmation sources below min:1/2
+2. Sweden — Finland | Меньше 2.5 @2.49 | EV +1.7% | edge +0.7 п.п. | q 51.4
    • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier a odds sources below min:0/1
+3. CA Barracas Central Reserve — CA Aldosivi Reserve | Больше 2.5 @2.62 | EV +4.2% | edge +1.6 п.п. | q 45.5
+   • причина: направление ставки конфликтует с xG
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.

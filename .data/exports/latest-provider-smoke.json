@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":71867292,\"home\":\"Belgium\",\"away\":\"France\",\"homeId\":22583,\"awayId\":22474,\"date\":\"2026-06-04T11:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International Youth - U17 European Championship\",\"slug\":\"international-youth-u17-european-championship\"},\"status\":\"pending\",\"sc",
+      "body_preview": "[{\"id\":71889424,\"home\":\"Sudan\",\"away\":\"Comoros\",\"homeId\":831310,\"awayId\":616232,\"date\":\"2026-06-04T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International - CAF Olympic Qualification, Women\",\"slug\":\"international-caf-olympic-qualification-women\"},\"status\":\"pending\",\"",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1780570988,\"localtime\":\"2026-06-04 12:03\"},\"current\":{\"last_updated_epoch\":1780570800,\"last_updated\":\"2026-06-04 12:00\",\"temp_c\":17.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1780578183,\"localtime\":\"2026-06-04 14:03\"},\"current\":{\"last_updated_epoch\":1780577100,\"last_updated\":\"2026-06-04 13:45\",\"temp_c\":16.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,16 +77,16 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.5,\"longitude\":-0.25,\"generationtime_ms\":225.15690326690674,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"current\":{\"time",
+      "body_preview": "<html>\r\n<head><title>502 Bad Gateway</title></head>\r\n<body>\r\n<center><h1>502 Bad Gateway</h1></center>\r\n<hr><center>nginx</center>\r\n</body>\r\n</html>\r\n",
       "enabled": true,
-      "http_status": 200,
-      "item_count": 9,
+      "http_status": 502,
+      "item_count": 0,
       "key_present": true,
       "key_required": false,
-      "ok": true,
-      "payload_shape": "current,current_units,elevation,generationtime_ms,latitude,longitude,timezone,timezone_abbreviation,utc_offset_seconds",
+      "ok": false,
+      "payload_shape": "NoneType",
       "provider": "open_meteo",
-      "status": "ok"
+      "status": "http_502"
     },
     {
       "enabled": true,
@@ -96,7 +96,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-06-04T11:03:10.297407+00:00",
+  "created_at_utc": "2026-06-04T13:03:26.072561+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -134,15 +134,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -196,9 +200,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -208,9 +216,11 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
@@ -252,10 +262,10 @@
   "summary": {
     "checks_total": 8,
     "enabled_checks": 8,
-    "failed_enabled_checks": 1,
+    "failed_enabled_checks": 2,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 5,
-    "ok_enabled_checks": 7,
+    "non_core_bad_env_prefixes": 9,
+    "ok_enabled_checks": 6,
     "status": "warning"
   }
 }
