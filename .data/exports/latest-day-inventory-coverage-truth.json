@@ -1,24 +1,24 @@
 {
   "counts": {
     "matches_declined_after_second_snapshot": 0,
-    "matches_missing_context_2plus": 205,
-    "matches_missing_odds_source_2plus": 284,
-    "matches_missing_price_2plus": 282,
-    "matches_ready_for_model": 186,
+    "matches_missing_context_2plus": 201,
+    "matches_missing_odds_source_2plus": 282,
+    "matches_missing_price_2plus": 281,
+    "matches_ready_for_model": 198,
     "matches_ready_for_publish": 0,
     "matches_ready_for_publish_tier_a": 0,
     "matches_ready_for_publish_tier_b": 0,
     "matches_tier_a_coverage_ready": 4,
-    "matches_tier_b_bookmaker_quorum_ready": 17,
-    "matches_tier_b_coverage_ready": 29,
-    "matches_tier_b_independent_source_quorum_ready": 16,
+    "matches_tier_b_bookmaker_quorum_ready": 19,
+    "matches_tier_b_coverage_ready": 32,
+    "matches_tier_b_independent_source_quorum_ready": 18,
     "matches_total": 300,
-    "matches_waiting_line_movement": 29,
-    "matches_with_2plus_context_sources": 95,
-    "matches_with_2plus_odds_sources": 16,
-    "matches_with_2plus_price_confirmations": 18,
-    "matches_with_context": 235,
-    "matches_with_odds": 245
+    "matches_waiting_line_movement": 32,
+    "matches_with_2plus_context_sources": 99,
+    "matches_with_2plus_odds_sources": 18,
+    "matches_with_2plus_price_confirmations": 19,
+    "matches_with_context": 247,
+    "matches_with_odds": 251
   },
   "date_local": "2026-06-04",
   "frozen_roster": {
@@ -27,10 +27,10 @@
     "date_local": "2026-06-04",
     "enabled": true,
     "frozen_rows": 300,
-    "lost_from_current": 9,
+    "lost_from_current": 10,
     "min_valid_rows": 150,
-    "new_in_current": 9,
-    "overlap": 291,
+    "new_in_current": 10,
+    "overlap": 290,
     "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/frozen_inventory_roster_2026-06-04.json",
     "restored": true,
     "target_size": 300
@@ -1026,7 +1026,7 @@
     "export_path": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-highwater.json",
     "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/coverage_truth_highwater.json",
     "sources": {
-      "context_source_index_rows": 14,
+      "context_source_index_rows": 240,
       "day_inventory_rows": 300,
       "frozen_roster": {
         "created": false,
@@ -1034,16 +1034,16 @@
         "date_local": "2026-06-04",
         "enabled": true,
         "frozen_rows": 300,
-        "lost_from_current": 9,
+        "lost_from_current": 10,
         "min_valid_rows": 150,
-        "new_in_current": 9,
-        "overlap": 291,
+        "new_in_current": 10,
+        "overlap": 290,
         "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/frozen_inventory_roster_2026-06-04.json",
         "restored": true,
         "target_size": 300
       },
       "previous_highwater_rows": 300,
-      "progressive_index_rows": 396
+      "progressive_index_rows": 481
     }
   },
   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-04.json",
@@ -7632,13 +7632,16 @@
     },
     {
       "away_team": "Indonesia",
-      "books_count": 0,
+      "books_count": 3,
       "context_sources": [
         "clubelo",
+        "highlightly",
+        "model_xg",
         "openligadb",
-        "sstats"
+        "sstats",
+        "weather"
       ],
-      "context_sources_count": 3,
+      "context_sources_count": 6,
       "has_context": true,
       "has_odds": true,
       "home_team": "Timor-Leste",
@@ -7647,27 +7650,26 @@
       "line_movement_confirmed": false,
       "line_movement_declined": false,
       "line_movement_status": "",
-      "line_movement_waiting": false,
+      "line_movement_waiting": true,
       "match_key": "soccer|indonesia|timor leste|2026-06-04",
       "missing": [
-        "price_confirmations",
         "independent_odds_sources"
       ],
       "need_context_sources": 0,
       "need_odds_sources": 1,
-      "need_price_confirmations": 2,
+      "need_price_confirmations": 0,
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 0,
+      "price_confirmations": 3,
       "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
-      "tier_b_bookmaker_quorum_ready": false,
-      "tier_b_confirmation_mode": "none",
-      "tier_b_coverage_ready": false,
+      "tier_b_bookmaker_quorum_ready": true,
+      "tier_b_confirmation_mode": "bookmaker_quorum",
+      "tier_b_coverage_ready": true,
       "tier_b_independent_source_quorum_ready": false,
       "tier_b_min_books": 2,
       "tier_b_publish_ready": false
@@ -9094,9 +9096,10 @@
       "away_team": "Stade Malien de Bamako",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
-      "context_sources_count": 1,
+      "context_sources_count": 2,
       "has_context": true,
       "has_odds": true,
       "home_team": "AS Bakaridjan",
@@ -9109,10 +9112,9 @@
       "match_key": "soccer|as bakaridjan|stade malien bamako|2026-06-04",
       "missing": [
         "price_confirmations",
-        "independent_odds_sources",
-        "context_sources"
+        "independent_odds_sources"
       ],
-      "need_context_sources": 1,
+      "need_context_sources": 0,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -9414,9 +9416,10 @@
       "away_team": "Onze Créateurs",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
-      "context_sources_count": 1,
+      "context_sources_count": 2,
       "has_context": true,
       "has_odds": true,
       "home_team": "USFAS Bamako",
@@ -9429,10 +9432,9 @@
       "match_key": "soccer|onze createurs|usfas bamako|2026-06-04",
       "missing": [
         "price_confirmations",
-        "independent_odds_sources",
-        "context_sources"
+        "independent_odds_sources"
       ],
-      "need_context_sources": 1,
+      "need_context_sources": 0,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -9856,9 +9858,11 @@
     {
       "away_team": "Walidaan Dkr",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
       "has_odds": true,
       "home_team": "ASC Linguere",
       "kickoff_utc": "2026-06-04T17:00:00+00:00",
@@ -9873,7 +9877,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -9881,7 +9885,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -9895,9 +9899,11 @@
     {
       "away_team": "Dakar Sacre Coeur",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Casa Sport",
       "kickoff_utc": "2026-06-04T17:00:00+00:00",
@@ -9912,7 +9918,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -9920,7 +9926,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10053,9 +10059,11 @@
     {
       "away_team": "Sonacos",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
       "has_odds": true,
       "home_team": "US Ouakam",
       "kickoff_utc": "2026-06-04T17:00:00+00:00",
@@ -10070,7 +10078,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10078,7 +10086,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10212,8 +10220,10 @@
     {
       "away_team": "Torns IF",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
       "has_context": true,
       "has_odds": true,
       "home_team": "Solvesborgs GIF",
@@ -10229,7 +10239,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10251,8 +10261,10 @@
     {
       "away_team": "Karlbergs BK",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
       "has_context": true,
       "has_odds": true,
       "home_team": "AFC Eskilstuna",
@@ -10268,7 +10280,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10290,8 +10302,10 @@
     {
       "away_team": "FC Stockholm Internazionale",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
       "has_context": true,
       "has_odds": true,
       "home_team": "IFK Stocksund",
@@ -10307,7 +10321,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10329,10 +10343,12 @@
     {
       "away_team": "CA Lanus",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
-      "has_odds": false,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
+      "has_odds": true,
       "home_team": "At Rafaela Reserve",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
       "league_name": "Argentina - Copa Proyeccion Final, Reserves",
@@ -10346,13 +10362,15 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
-      "need_odds_sources": 2,
+      "need_context_sources": 1,
+      "need_odds_sources": 1,
       "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10386,10 +10404,12 @@
         "context_sources"
       ],
       "need_context_sources": 1,
-      "need_odds_sources": 2,
+      "need_odds_sources": 1,
       "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 0,
       "ready_for_model": true,
       "ready_for_publish": false,
@@ -10422,17 +10442,19 @@
         "context_sources"
       ],
       "need_context_sources": 2,
-      "need_odds_sources": 2,
+      "need_odds_sources": 1,
       "need_price_confirmations": 0,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 2,
       "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
-      "tier_b_bookmaker_quorum_ready": false,
-      "tier_b_confirmation_mode": "none",
+      "tier_b_bookmaker_quorum_ready": true,
+      "tier_b_confirmation_mode": "bookmaker_quorum",
       "tier_b_coverage_ready": false,
       "tier_b_independent_source_quorum_ready": false,
       "tier_b_min_books": 2,
@@ -10441,8 +10463,10 @@
     {
       "away_team": "CA Union Santa Fe Reserve",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
       "has_context": true,
       "has_odds": true,
       "home_team": "CD Godoy Cruz",
@@ -10458,11 +10482,13 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
-      "need_odds_sources": 2,
+      "need_context_sources": 1,
+      "need_odds_sources": 1,
       "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 0,
       "ready_for_model": true,
       "ready_for_publish": false,
@@ -10478,10 +10504,12 @@
     {
       "away_team": "Velez Sarsfield Reserve",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
-      "has_odds": false,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
+      "has_odds": true,
       "home_team": "San Lorenzo de Almagro Res.",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
       "league_name": "Argentina - Copa Proyeccion Final, Reserves",
@@ -10495,13 +10523,15 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
-      "need_odds_sources": 2,
+      "need_context_sources": 1,
+      "need_odds_sources": 1,
       "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10556,9 +10586,11 @@
     {
       "away_team": "Gremio Esportivo Brasil",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
       "has_odds": true,
       "home_team": "GE Bage RS",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
@@ -10573,7 +10605,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10581,7 +10613,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10595,10 +10627,12 @@
     {
       "away_team": "Nacao",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
-      "has_odds": false,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
+      "has_odds": true,
       "home_team": "Avai FC SC",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
       "league_name": "Brazil - U20 Catarinense, Serie A",
@@ -10612,13 +10646,15 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
-      "need_odds_sources": 2,
+      "need_context_sources": 1,
+      "need_odds_sources": 1,
       "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10632,10 +10668,12 @@
     {
       "away_team": "FC Cascavel PR",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
-      "has_odds": false,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
+      "has_odds": true,
       "home_team": "Araucaria ECR PR",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
       "league_name": "Brazil - U20 Paranaense, 1. Divisao",
@@ -10649,13 +10687,13 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 2,
       "need_price_confirmations": 2,
       "odds_sources": [],
       "odds_sources_count": 0,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10669,10 +10707,12 @@
     {
       "away_team": "CA Juventus SP",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
-      "has_odds": false,
+      "context_sources": [
+        "sstats"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
+      "has_odds": true,
       "home_team": "America FC SP",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
       "league_name": "Brazil - U20 Paulista",
@@ -10686,13 +10726,15 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
-      "need_odds_sources": 2,
+      "need_context_sources": 1,
+      "need_odds_sources": 1,
       "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10708,8 +10750,8 @@
       "books_count": 0,
       "context_sources": [],
       "context_sources_count": 0,
-      "has_context": false,
-      "has_odds": false,
+      "has_context": true,
+      "has_odds": true,
       "home_team": "GD Prudente SP",
       "kickoff_utc": "2026-06-04T18:00:00+00:00",
       "league_name": "Brazil - U20 Paulista",
@@ -10718,43 +10760,6 @@
       "line_movement_status": "",
       "line_movement_waiting": false,
       "match_key": "soccer|gd prudente sp|se palmeiras sp|2026-06-04",
-      "missing": [
-        "price_confirmations",
-        "independent_odds_sources",
-        "context_sources"
-      ],
-      "need_context_sources": 2,
-      "need_odds_sources": 2,
-      "need_price_confirmations": 2,
-      "odds_sources": [],
-      "odds_sources_count": 0,
-      "price_confirmations": 0,
-      "ready_for_model": false,
-      "ready_for_publish": false,
-      "tier_a_coverage_ready": false,
-      "tier_a_publish_ready": false,
-      "tier_b_bookmaker_quorum_ready": false,
-      "tier_b_confirmation_mode": "none",
-      "tier_b_coverage_ready": false,
-      "tier_b_independent_source_quorum_ready": false,
-      "tier_b_min_books": 2,
-      "tier_b_publish_ready": false
-    },
-    {
-      "away_team": "FUS Rabat",
-      "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": true,
-      "has_odds": true,
-      "home_team": "Hassania Union Sport Agadir",
-      "kickoff_utc": "2026-06-04T18:00:00+00:00",
-      "league_name": "Morocco - Botola Pro D1",
-      "line_movement_confirmed": false,
-      "line_movement_declined": false,
-      "line_movement_status": "",
-      "line_movement_waiting": false,
-      "match_key": "soccer|fus rabat|hassania union sport agadir|2026-06-04",
       "missing": [
         "price_confirmations",
         "independent_odds_sources",
@@ -10780,11 +10785,54 @@
       "tier_b_publish_ready": false
     },
     {
+      "away_team": "FUS Rabat",
+      "books_count": 0,
+      "context_sources": [
+        "bzzoiro",
+        "sstats"
+      ],
+      "context_sources_count": 2,
+      "has_context": true,
+      "has_odds": true,
+      "home_team": "Hassania Union Sport Agadir",
+      "kickoff_utc": "2026-06-04T18:00:00+00:00",
+      "league_name": "Morocco - Botola Pro D1",
+      "line_movement_confirmed": false,
+      "line_movement_declined": false,
+      "line_movement_status": "",
+      "line_movement_waiting": true,
+      "match_key": "soccer|fus rabat|hassania union sport agadir|2026-06-04",
+      "missing": [
+        "price_confirmations"
+      ],
+      "need_context_sources": 0,
+      "need_odds_sources": 0,
+      "need_price_confirmations": 2,
+      "odds_sources": [
+        "bzzoiro",
+        "odds_api_io"
+      ],
+      "odds_sources_count": 2,
+      "price_confirmations": 0,
+      "ready_for_model": true,
+      "ready_for_publish": false,
+      "tier_a_coverage_ready": false,
+      "tier_a_publish_ready": false,
+      "tier_b_bookmaker_quorum_ready": false,
+      "tier_b_confirmation_mode": "independent_source_quorum",
+      "tier_b_coverage_ready": true,
+      "tier_b_independent_source_quorum_ready": true,
+      "tier_b_min_books": 2,
+      "tier_b_publish_ready": false
+    },
+    {
       "away_team": "Derby Academie",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "context_sources_count": 1,
+      "has_context": true,
       "has_odds": true,
       "home_team": "AS Korofina",
       "kickoff_utc": "2026-06-04T18:30:00+00:00",
@@ -10799,7 +10847,7 @@
         "independent_odds_sources",
         "context_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 1,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10807,7 +10855,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10821,9 +10869,12 @@
     {
       "away_team": "US Bougouni",
       "books_count": 0,
-      "context_sources": [],
-      "context_sources_count": 0,
-      "has_context": false,
+      "context_sources": [
+        "sstats",
+        "weather"
+      ],
+      "context_sources_count": 2,
+      "has_context": true,
       "has_odds": true,
       "home_team": "FC Mali Coura",
       "kickoff_utc": "2026-06-04T18:30:00+00:00",
@@ -10835,10 +10886,9 @@
       "match_key": "soccer|mali coura|us bougouni|2026-06-04",
       "missing": [
         "price_confirmations",
-        "independent_odds_sources",
-        "context_sources"
+        "independent_odds_sources"
       ],
-      "need_context_sources": 2,
+      "need_context_sources": 0,
       "need_odds_sources": 1,
       "need_price_confirmations": 2,
       "odds_sources": [
@@ -10846,7 +10896,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 0,
-      "ready_for_model": false,
+      "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
@@ -10873,28 +10923,28 @@
       "line_movement_confirmed": false,
       "line_movement_declined": false,
       "line_movement_status": "",
-      "line_movement_waiting": false,
+      "line_movement_waiting": true,
       "match_key": "soccer|iraq|spain|2026-06-04",
       "missing": [
-        "price_confirmations",
-        "independent_odds_sources"
+        "price_confirmations"
       ],
       "need_context_sources": 0,
-      "need_odds_sources": 1,
+      "need_odds_sources": 0,
       "need_price_confirmations": 2,
       "odds_sources": [
-        "bzzoiro"
+        "bzzoiro",
+        "odds_api_io"
       ],
-      "odds_sources_count": 1,
+      "odds_sources_count": 2,
       "price_confirmations": 0,
       "ready_for_model": true,
       "ready_for_publish": false,
       "tier_a_coverage_ready": false,
       "tier_a_publish_ready": false,
       "tier_b_bookmaker_quorum_ready": false,
-      "tier_b_confirmation_mode": "none",
-      "tier_b_coverage_ready": false,
-      "tier_b_independent_source_quorum_ready": false,
+      "tier_b_confirmation_mode": "independent_source_quorum",
+      "tier_b_coverage_ready": true,
+      "tier_b_independent_source_quorum_ready": true,
       "tier_b_min_books": 2,
       "tier_b_publish_ready": false
     },
@@ -13057,5 +13107,5 @@
     }
   ],
   "status": "ok",
-  "updated_at_utc": "2026-06-04T05:11:39.263443+00:00"
+  "updated_at_utc": "2026-06-04T07:12:56.000033+00:00"
 }

@@ -1,44 +1,46 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: no viable controlled fallback
+• Главная причина: line movement not confirmed:awaiting next run
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 98.
-• 1+ линия: 245/300 (82%) | 1+ контекст: 235/300 (78%)
-• 2+ букмекера: 18/300 (6%)
-• 2+ независимых odds-source: 16/300 (5%) — диагностика, не блок публикации
-• 2+ контекста: 95/300 (32%)
-• Готово для модели: 186/300 (62%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 119.
+• 1+ линия: 251/300 (84%) | 1+ контекст: 247/300 (82%)
+• 2+ букмекера: 19/300 (6%)
+• 2+ независимых odds-source: 18/300 (6%) — диагностика, не блок публикации
+• 2+ контекста: 99/300 (33%)
+• Готово для модели: 198/300 (66%)
 
 🏷️ A/B-tier публикация
 • A-tier bookmaker coverage: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 18 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 19 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 4, оставил 0, снял 0
+• Pre-kickoff проверок: 5 | матчей без следующего регулярного run: 5
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 0 | evaluated 0 | published 0
+• Raw/candidates before quality: 1/1
+• Quality прошло: 1 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 18; смэтчил матчей 82; offers 6545; 2+ букмекера 31; ошибок 0.
-• Bzzoiro: direct req 45, v2 req 45; v2 ctx 13; v2 odds 10; secondary offers 0; overlap odds-api.io 8; ошибок 0.
-• SStats: запросы 19; сырых строк 15369; контекстов 61; deep-enriched 10; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 22; смэтчил матчей 104; offers 8890; 2+ букмекера 42; ошибок 0.
+• Bzzoiro: direct req 53, v2 req 53; v2 ctx 16; v2 odds 12; secondary offers 0; overlap odds-api.io 12; ошибок 0.
+• SStats: запросы 19; сырых строк 15369; контекстов 76; deep-enriched 12; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 43, bzzoiro+odds_api_io: 8, bzzoiro: 6
+• Комбинации источников линий: odds_api_io: 56, bzzoiro+odds_api_io: 12, bzzoiro: 4
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• line movement not confirmed:awaiting next run: 1 (50%)
+• line movement:needs next cron line movement recheck: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-• Нет проверенных reserve-кандидатов в свежем fallback report.
+1. Timor-Leste — Indonesia | Меньше @1.96 | EV +25.3% | edge +12.9 п.п. | q 100.0
+   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
