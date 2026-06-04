@@ -2,14 +2,10 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v8.
 
-Extends v7 with progressive core coverage metrics. The publication price contract is:
-- selected market side confirmed by 2+ bookmakers;
-- at least one real line source/price feed;
-- 2+ context sources still required.
-
-The report also normalizes runtime-patched SStats counters: the provider wrapper
-stores real v1 numbers under source_stats.sstats.v1_stats / v1_* fields, while
-older renderers only read top-level requests/contexts/rows.
+Readable bookmaker-quorum report. Publication price contract:
+- selected market side confirmed by 2+ real bookmakers;
+- price-integrity guard stays mandatory;
+- 2+ independent odds sources are diagnostic, not a publication blocker.
 """
 
 import importlib.util
@@ -22,6 +18,7 @@ EXPORT_DIR = Path(".data/exports")
 PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
+PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guard.json"
 
 
 def _load_v7() -> Any:
@@ -35,7 +32,6 @@ def _load_v7() -> Any:
 
 v7 = _load_v7()
 _base_build_payload = v7.v5.build_payload
-_base_render = v7.v5.render
 
 
 def _as_int(value: Any) -> int:
@@ -51,14 +47,13 @@ def _as_int(value: Any) -> int:
         return 0
 
 
-def _load_progressive_plan() -> dict[str, Any]:
+def _as_float(value: Any) -> float:
     try:
-        if PROGRESSIVE_PLAN.exists() and PROGRESSIVE_PLAN.stat().st_size > 0:
-            payload = json.loads(PROGRESSIVE_PLAN.read_text(encoding="utf-8"))
-            return payload if isinstance(payload, dict) else {}
+        if value in (None, ""):
+            return 0.0
+        return float(str(value).replace(",", "."))
     except Exception:
-        return {}
-    return {}
+        return 0.0
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -87,7 +82,6 @@ def _first_dict(*values: Any) -> dict[str, Any]:
 
 
 def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
-    """Expose nested SStats v1 counters at the top-level report API row."""
     try:
         data = v7.v5.artifacts()
         stats = v7.v5.source_stats(data)
@@ -122,8 +116,8 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
     _normalize_runtime_patched_sstats(payload)
-    plan = _load_progressive_plan()
-    payload["version"] = "harizon-telegram-report-v8-progressive-core-coverage"
+    plan = _load_json(PROGRESSIVE_PLAN)
+    payload["version"] = "harizon-telegram-report-v8-bookmaker-mapping-guard"
     payload.setdefault("diagnostics", {})["progressive_core_coverage"] = {
         "contract": plan.get("contract") if isinstance(plan.get("contract"), dict) else {},
         "counts": plan.get("counts") if isinstance(plan.get("counts"), dict) else {},
@@ -140,17 +134,15 @@ def build_payload() -> dict[str, Any]:
             "counts": truth_counts,
             "source": sources.get("coverage_truth") if isinstance(sources.get("coverage_truth"), dict) else {"path": str(TRUTH_REPORT)},
         }
+    price_guard = _load_json(PRICE_GUARD_PATH)
+    if price_guard:
+        payload.setdefault("diagnostics", {})["price_integrity_guard"] = {
+            "enabled": bool(price_guard.get("enabled", True)),
+            "policy": price_guard.get("policy") or "",
+            "removed_total": _as_int(price_guard.get("removed_total")),
+            "sources": price_guard.get("sources") if isinstance(price_guard.get("sources"), dict) else {},
+        }
     return payload
-
-
-
-def _as_float(value: Any) -> float:
-    try:
-        if value in (None, ""):
-            return 0.0
-        return float(str(value).replace(",", "."))
-    except Exception:
-        return 0.0
 
 
 def _pct(part: Any, total: Any) -> str:
@@ -172,12 +164,6 @@ def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
     reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
     if not reasons:
         return ["• Нет reject reasons в свежих артефактах."]
-
-    # After the bookmaker-quorum switch, stale *_odds_sources_below_min
-    # reasons can still be produced by older diagnostic artifacts.  They should
-    # not dominate the user-facing conclusion.  Keep them visible only as
-    # diagnostics and prefer real blockers: xG, quality, value, line movement,
-    # context/confirmation, price integrity.
     visible: list[dict[str, Any]] = []
     diagnostic_odds_source_count = 0
     for row in reasons:
@@ -192,14 +178,7 @@ def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
             continue
         visible.append(row)
     if not visible and diagnostic_odds_source_count:
-        visible = [
-            {
-                "reason": "bookmaker_contract_no_real_blocker_after_legacy_odds_source_diagnostic",
-                "reason_ru": "устаревшая диагностика odds-source; проверяй 2+ букмекера/price-integrity",
-                "count": diagnostic_odds_source_count,
-            }
-        ]
-
+        visible = [{"reason_ru": "устаревшая диагностика odds-source; проверяй 2+ букмекера/price-integrity", "count": diagnostic_odds_source_count}]
     total = sum(_as_int(row.get("count")) for row in visible if isinstance(row, dict)) or 1
     out: list[str] = []
     for row in visible[:limit]:
@@ -244,12 +223,6 @@ def _safe_line(value: Any, default: str = "н/д") -> str:
 
 
 def render(payload: dict[str, Any]) -> str:
-    """Render the user-facing readable report.
-
-    This intentionally does not call the v7 renderer.  v7 is still used for data
-    normalization, but the Telegram message must stay in the clear HARIZON format
-    and must describe the current bookmaker-quorum publication contract.
-    """
     coverage = payload.get("coverage") if isinstance(payload.get("coverage"), dict) else {}
     funnel = payload.get("funnel") if isinstance(payload.get("funnel"), dict) else {}
     api = payload.get("api") if isinstance(payload.get("api"), dict) else {}
@@ -257,6 +230,7 @@ def render(payload: dict[str, Any]) -> str:
     diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
+    price_guard = diag.get("price_integrity_guard") if isinstance(diag.get("price_integrity_guard"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
     with_odds = _as_int(truth_counts.get("matches_with_odds")) or _as_int(coverage.get("day_inventory_with_odds")) or _as_int(coverage.get("matches_with_offers"))
@@ -269,7 +243,9 @@ def render(payload: dict[str, Any]) -> str:
     run_matches = _as_int(coverage.get("matches_seen"))
 
     top_reason = _reason_ru(payload.get("top_reason"))
-    published = _as_int(funnel.get("published_count")) > 0 or payload.get("status") == "published"
+    published_count = _as_int(funnel.get("published_count"))
+    fallback_published = _as_int(funnel.get("fallback_published_count"))
+    published = published_count > 0 or payload.get("status") == "published"
     status_line = "✅ прогноз опубликован" if published else "🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards."
 
     odds = api.get("odds_api_io") if isinstance(api.get("odds_api_io"), dict) else {}
@@ -278,6 +254,12 @@ def render(payload: dict[str, Any]) -> str:
     sport = api.get("sportlogic") if isinstance(api.get("sportlogic"), dict) else {}
     combos = coverage.get("secondary_combinations") if isinstance(coverage.get("secondary_combinations"), dict) else {}
     combo_text = ", ".join(f"{k}: {v}" for k, v in sorted(combos.items(), key=lambda item: -_as_int(item[1]))[:6]) or "н/д"
+
+    raw_books2 = _as_int(odds.get("books_2plus"))
+    lost_mapping = max(0, raw_books2 - price2) if raw_books2 else 0
+    raw_book_line = None
+    if raw_books2:
+        raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | lost mapping: {lost_mapping}"
 
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
@@ -288,17 +270,25 @@ def render(payload: dict[str, Any]) -> str:
         f"• Инвентарь дня: {inv_total} матчей. В этом run обработано: {run_matches}.",
         f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
         f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
+    ]
+    if raw_book_line:
+        lines.append(raw_book_line)
+    lines.extend([
         f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
         f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",
         f"• Готово для модели: {ready_model}/{inv_total} ({_pct(ready_model, inv_total)})",
         "",
         "🏷️ A/B-tier публикация",
-        f"• A-tier strict-ready / опубликовано: {max(ready_publish, _as_int(funnel.get('published_count')))} | опубликовано: {_as_int(funnel.get('published_count'))}",
+        f"• A-tier strict-ready: {max(ready_publish, published_count)} | опубликовано: {published_count}",
         "  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.",
-        f"• B-tier bookmaker coverage: {price2} | fallback опубликовано: {_as_int(funnel.get('fallback_published_count'))}",
+        f"• B-tier bookmaker coverage: {price2} | fallback опубликовано: {fallback_published}",
         "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
         f"• Пересечение 2+ букмекера ∩ 2+ контекста: до {min(price2, context2)} матчей; exact-ready считается после movement/value/xG.",
         "• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.",
+    ])
+    if price_guard:
+        lines.append(f"• Price-integrity guard: снял {_as_int(price_guard.get('removed_total'))} подозрительных кандидатов до fallback.")
+    lines.extend([
         "",
         "🛡️ Движение линии и финальный фильтр",
         f"• Pre-kickoff проверок: {_as_int(line.get('final_pre_kickoff_checks'))} | матчей без следующего регулярного run: {_as_int(line.get('no_more_regular_run_before_kickoff'))}",
@@ -306,8 +296,8 @@ def render(payload: dict[str, Any]) -> str:
         "",
         "🧪 Воронка кандидатов",
         f"• Raw/candidates before quality: {_as_int(funnel.get('raw_candidates'))}/{_as_int(funnel.get('candidates_before_quality'))}",
-        f"• Quality прошло: {_as_int(funnel.get('passed_candidates'))} | publishable: {_as_int(funnel.get('publishable_candidates'))} | опубликовано: {_as_int(funnel.get('published_count'))}",
-        f"• Controlled fallback: seen {_as_int(funnel.get('fallback_candidates_seen'))} | evaluated {_as_int(funnel.get('fallback_evaluated'))} | published {_as_int(funnel.get('fallback_published_count'))}",
+        f"• Quality прошло: {_as_int(funnel.get('passed_candidates'))} | publishable: {_as_int(funnel.get('publishable_candidates'))} | опубликовано: {published_count}",
+        f"• Controlled fallback: seen {_as_int(funnel.get('fallback_candidates_seen'))} | evaluated {_as_int(funnel.get('fallback_evaluated'))} | published {fallback_published}",
         "",
         "📡 Провайдеры: запросы и полезные данные",
         f"• odds-api.io: events req {_as_int(odds.get('events_req'))}, odds req {_as_int(odds.get('odds_req'))}; смэтчил матчей {_as_int(odds.get('matched'))}; offers {_as_int(odds.get('offers'))}; 2+ букмекера {_as_int(odds.get('books_2plus'))}; ошибок {_as_int(odds.get('errors'))}.",
@@ -323,13 +313,17 @@ def render(payload: dict[str, Any]) -> str:
         *_candidate_lines(payload),
         "",
         "📌 Что это значит",
-    ]
+    ])
     if published:
         lines.append("• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.")
+    elif _as_int(price_guard.get('removed_total')) > 0 and _as_int(funnel.get('fallback_candidates_seen')) == 0:
+        lines.append("• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.")
     elif "line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason")):
         lines.append("• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.")
     else:
         lines.append("• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.")
+    if lost_mapping > 0:
+        lines.append("• Есть расхождение raw bookmaker coverage и inventory coverage: следующий узкий слой — нормализация bookmaker quorum в coverage truth.")
     lines.append("• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.")
     return "\n".join(lines)
 
@@ -338,7 +332,13 @@ v7.v5.build_payload = build_payload
 v7.v5.render = render
 v7.build_payload = build_payload
 v7.render = render
-_write_status({"status": "installed", "renderer": "v8", "main_module": "v7.v5", "format": "readable_bookmaker_quorum", "sstats_nested_normalizer": True})
+_write_status({
+    "status": "installed",
+    "renderer": "v8",
+    "main_module": "v7.v5",
+    "format": "readable_bookmaker_quorum_mapping_guard",
+    "sstats_nested_normalizer": True,
+})
 
 
 if __name__ == "__main__":

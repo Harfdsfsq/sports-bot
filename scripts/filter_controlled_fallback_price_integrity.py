@@ -2,16 +2,16 @@ from __future__ import annotations
 
 """Pre-publication price integrity guard for controlled fallback candidates.
 
-This script runs immediately before scripts/publish_controlled_fallback.py.  It
-removes candidates whose selected price is not a real same-side bookmaker price.
-The concrete failure it blocks:
+The guard blocks real failure modes that were seen in HARIZON:
+* a line value from Bzzoiro odds/comparison was used as a decimal price;
+* a Bzzoiro over/under path was inverted into the opposite selection;
+* the selected price is a clear outlier versus real same-side bookmaker prices.
 
-* Bzzoiro v2 comparison path `...over@2.5.line` was mined as price=2.5;
-* the hint was also mapped to selection=Under;
-* fallback selected Under 2.5 @2.50-2.66 while real Under offers were ~1.4-1.8.
-
-The guard does not lower thresholds and does not create prices. It only filters
-bad candidate rows from fresh artifacts and writes a diagnostic report.
+Important: unknown-side prices are no longer mixed into the same-side median.
+If an offer cannot be identified as over/under/spread home/away from its own
+selection/path fields, it is not used for the median. This prevents false
+rejections such as Over 3.5 where one real over price and one under price were
+averaged into a bogus median.
 """
 
 import json
@@ -26,7 +26,14 @@ EXPORT_DIR = Path('.data/exports')
 REPORT_PATH = EXPORT_DIR / 'latest-controlled-fallback-price-integrity-guard.json'
 
 TRUTHY = {'1', 'true', 'yes', 'on', 'y'}
-SYNTHETIC_BOOK_TOKENS = ('bzzoiroconsensus', 'bzzoiro-consensus', 'sstatsconsensus', 'consensus')
+SYNTHETIC_BOOK_TOKENS = (
+    'bzzoiroconsensus',
+    'bzzoiro-consensus',
+    'sstatsconsensus',
+    'consensus',
+    'synthetic',
+    'model',
+)
 
 
 def env_bool(name: str, default: bool = True) -> bool:
@@ -72,7 +79,7 @@ def as_float(value: Any, default: float | None = None) -> float | None:
 
 
 def norm(value: Any) -> str:
-    return re.sub(r'[^a-zа-яё0-9_.@/ -]+', ' ', str(value or '').strip().lower()).strip()
+    return re.sub(r'[^a-zа-яё0-9_.@/:+ -]+', ' ', str(value or '').strip().lower()).strip()
 
 
 def family_norm(row: dict[str, Any]) -> str:
@@ -87,17 +94,28 @@ def selected_odds(row: dict[str, Any]) -> float:
     return 0.0
 
 
-def selection_side(row: dict[str, Any]) -> str:
-    text = str(row.get('selection') or row.get('selection_key') or '').strip().lower()
-    if any(token in text for token in ('under', 'меньше', 'тм')):
+def _text_side(text: str) -> str:
+    text = norm(text)
+    if not text:
+        return ''
+    # Check under first to avoid matching words that contain "over" by accident.
+    if any(token in text for token in ('under', 'меньше', 'тотал меньше', ' тм', 'tm ', 'u/')):
         return 'under'
-    if any(token in text for token in ('over', 'больше', 'тб')):
+    if any(token in text for token in ('over', 'больше', 'тотал больше', ' тб', 'tb ', 'o/')):
+        return 'over'
+    if re.search(r'(^|[._/@:+ -])u(?:nder)?([._/@:+ -]|$)', text):
+        return 'under'
+    if re.search(r'(^|[._/@:+ -])o(?:ver)?([._/@:+ -]|$)', text):
         return 'over'
     return ''
 
 
+def selection_side(row: dict[str, Any]) -> str:
+    return _text_side(' '.join(str(row.get(key) or '') for key in ('selection', 'selection_key', 'market_selection', 'label', 'name')))
+
+
 def point_value(row: dict[str, Any]) -> float | None:
-    for key in ('point', 'line', 'handicap'):
+    for key in ('point', 'line', 'handicap', 'hdp'):
         value = as_float(row.get(key), None)
         if value is not None:
             return round(float(value), 3)
@@ -106,18 +124,35 @@ def point_value(row: dict[str, Any]) -> float | None:
 
 def offer_blob(offer: dict[str, Any]) -> str:
     parts: list[str] = []
-    for key in ('market_name', 'market_key', 'market', 'path', 'field', 'source_path', 'selection_key'):
+    for key in (
+        'selection', 'selection_key', 'label', 'name', 'outcome',
+        'market_name', 'market_key', 'market', 'path', 'field', 'source_path',
+    ):
         value = offer.get(key)
         if value not in (None, ''):
             parts.append(str(value))
     meta = offer.get('metadata') if isinstance(offer.get('metadata'), dict) else {}
     raw = meta.get('raw_hint') if isinstance(meta.get('raw_hint'), dict) else None
     for src in (meta, raw or {}):
-        for key in ('market_name', 'market_key', 'market', 'path', 'field', 'source_path'):
+        for key in ('selection', 'selection_key', 'market_name', 'market_key', 'market', 'path', 'field', 'source_path'):
             value = src.get(key)
             if value not in (None, ''):
                 parts.append(str(value))
     return norm(' '.join(parts))
+
+
+def offer_side(offer: dict[str, Any]) -> str:
+    direct = selection_side(offer)
+    if direct:
+        return direct
+    blob = offer_blob(offer)
+    under_path = any(token in blob for token in ('.under', '/under', 'under@', '_under', ':under', ' under'))
+    over_path = any(token in blob for token in ('.over', '/over', 'over@', '_over', ':over', ' over'))
+    if under_path and not over_path:
+        return 'under'
+    if over_path and not under_path:
+        return 'over'
+    return ''
 
 
 def raw_offers(row: dict[str, Any]) -> list[dict[str, Any]]:
@@ -128,40 +163,70 @@ def raw_offers(row: dict[str, Any]) -> list[dict[str, Any]]:
     return [dict(x) for x in rows if isinstance(x, dict)] if isinstance(rows, list) else []
 
 
-def same_side_offer_prices(row: dict[str, Any]) -> tuple[list[float], list[float], list[dict[str, Any]]]:
+def bookmaker_name(offer: dict[str, Any]) -> str:
+    return norm(offer.get('bookmaker') or offer.get('book') or offer.get('sportsbook') or offer.get('provider'))
+
+
+def is_real_bookmaker(book: str) -> bool:
+    return bool(book) and not any(token in book for token in SYNTHETIC_BOOK_TOKENS)
+
+
+def same_side_offer_prices(row: dict[str, Any]) -> tuple[list[float], list[float], list[dict[str, Any]], dict[str, Any]]:
     target_side = selection_side(row)
     target_point = point_value(row)
-    bookmaker_prices: list[float] = []
-    all_prices: list[float] = []
+    prices_by_book: dict[str, float] = {}
+    all_identified_prices: list[float] = []
     same_offers: list[dict[str, Any]] = []
+    skipped_unknown_side = 0
+    skipped_opposite_side = 0
+    skipped_point_mismatch = 0
+
     for offer in raw_offers(row):
         price = as_float(offer.get('price') or offer.get('odds') or offer.get('decimal_odds'), None)
         if price is None or price <= 1.0 or price > 50.0:
             continue
-        offer_side = selection_side(offer)
-        offer_point = point_value(offer)
-        if target_side and offer_side and offer_side != target_side:
+        side = offer_side(offer)
+        if target_side and not side:
+            skipped_unknown_side += 1
             continue
+        if target_side and side != target_side:
+            skipped_opposite_side += 1
+            continue
+        offer_point = point_value(offer)
         if target_point is not None and offer_point is not None and abs(target_point - offer_point) > 1e-6:
+            skipped_point_mismatch += 1
             continue
         same_offers.append(offer)
-        all_prices.append(float(price))
-        book = norm(offer.get('bookmaker') or offer.get('book') or offer.get('sportsbook'))
-        if book and not any(token in book for token in SYNTHETIC_BOOK_TOKENS):
-            bookmaker_prices.append(float(price))
-    return bookmaker_prices, all_prices, same_offers
+        all_identified_prices.append(float(price))
+        book = bookmaker_name(offer)
+        if is_real_bookmaker(book):
+            # Keep the price closest to the selected side. If duplicates exist, the
+            # latest bridge usually puts the selected bookmaker row first; using max
+            # is safer for value integrity because it prevents too-low medians from
+            # unrelated duplicate stale rows.
+            prices_by_book[book] = max(float(price), prices_by_book.get(book, 0.0))
+
+    debug = {
+        'same_side_identified_offers_count': len(same_offers),
+        'skipped_unknown_side': skipped_unknown_side,
+        'skipped_opposite_side': skipped_opposite_side,
+        'skipped_point_mismatch': skipped_point_mismatch,
+    }
+    return list(prices_by_book.values()), all_identified_prices, same_offers, debug
 
 
 def is_line_field_used_as_price(row: dict[str, Any]) -> bool:
     selected = selected_odds(row)
     if selected <= 1.0:
         return False
-    selected_book = norm(row.get('bookmaker') or (row.get('source_summary') or {}).get('selected_bookmaker') if isinstance(row.get('source_summary'), dict) else '')
+    selected_book = ''
+    ss = row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {}
+    selected_book = norm(row.get('bookmaker') or ss.get('selected_bookmaker') or ss.get('bookmaker'))
     for offer in raw_offers(row):
         price = as_float(offer.get('price') or offer.get('odds') or offer.get('decimal_odds'), None)
         if price is None or abs(float(price) - selected) > 0.025:
             continue
-        book = norm(offer.get('bookmaker') or offer.get('book') or offer.get('sportsbook'))
+        book = bookmaker_name(offer)
         if selected_book and book and selected_book != book:
             continue
         blob = offer_blob(offer)
@@ -179,15 +244,10 @@ def has_total_side_mismatch(row: dict[str, Any]) -> bool:
     selected = selected_odds(row)
     for offer in raw_offers(row):
         price = as_float(offer.get('price') or offer.get('odds') or offer.get('decimal_odds'), None)
-        # Prioritize the selected offer, but also block if any same-side Bzzoiro hint was obviously inverted.
         if price is not None and selected > 1.0 and abs(float(price) - selected) > 0.05:
             continue
-        blob = offer_blob(offer)
-        over_path = any(token in blob for token in ('.over', '/over', 'over@', '_over'))
-        under_path = any(token in blob for token in ('.under', '/under', 'under@', '_under'))
-        if target == 'under' and over_path:
-            return True
-        if target == 'over' and under_path:
+        side = offer_side(offer)
+        if side and side != target:
             return True
     return False
 
@@ -196,27 +256,29 @@ def selected_vs_median_outlier(row: dict[str, Any], report: dict[str, Any]) -> b
     selected = selected_odds(row)
     if selected <= 1.0:
         return False
-    real_prices, all_prices, same_offers = same_side_offer_prices(row)
+    real_prices, identified_prices, same_offers, debug = same_side_offer_prices(row)
     min_books = int(env_float('CONTROLLED_FALLBACK_PRICE_INTEGRITY_MIN_REAL_BOOKS', 2.0))
-    prices = real_prices if len(real_prices) >= min_books else all_prices
-    if len(prices) < max(2, min_books):
-        report['price_guard_mode'] = 'insufficient_same_side_prices'
-        report['same_side_prices_count'] = len(prices)
+    report.update(debug)
+    report['same_side_real_book_prices'] = [round(x, 4) for x in real_prices[:20]]
+    report['same_side_identified_prices'] = [round(x, 4) for x in identified_prices[:20]]
+    report['same_side_offers_count'] = len(same_offers)
+
+    if len(real_prices) < min_books:
+        report['price_guard_mode'] = 'insufficient_identified_same_side_real_books'
+        report['same_side_prices_count'] = len(real_prices)
         return False
-    median_price = float(median(prices))
+
+    median_price = float(median(real_prices))
     if median_price <= 1.0:
         return False
     deviation_pct = abs(selected - median_price) / median_price * 100.0
     max_dev = env_float('CONTROLLED_FALLBACK_MAX_SELECTED_BOOK_MEDIAN_DEVIATION_PCT', 16.0)
     report.update({
-        'price_guard_mode': 'same_side_real_book_median',
+        'price_guard_mode': 'identified_same_side_real_book_median',
         'selected_price': round(selected, 4),
         'median_same_side_price': round(median_price, 4),
         'selected_vs_median_deviation_pct': round(deviation_pct, 3),
         'max_deviation_pct': max_dev,
-        'same_side_real_book_prices': [round(x, 4) for x in real_prices[:20]],
-        'same_side_all_prices': [round(x, 4) for x in all_prices[:20]],
-        'same_side_offers_count': len(same_offers),
     })
     return deviation_pct > max_dev
 
@@ -235,8 +297,6 @@ def selected_vs_market_probability_outlier(row: dict[str, Any], report: dict[str
         'selected_vs_market_gap_pp': round(gap_pp, 3),
         'max_selected_vs_market_gap_pp': max_gap,
     })
-    # Only block when selected is materially higher than market consensus. Small positive
-    # gaps are normal value candidates; huge gaps usually mean wrong side/wrong field.
     return gap_pp > max_gap
 
 
@@ -266,6 +326,7 @@ def filter_rows(rows: list[Any], source: str, report: dict[str, Any]) -> list[An
             continue
         reasons, details = candidate_reject_reasons(row)
         if reasons:
+            ss = row.get('source_summary') if isinstance(row.get('source_summary'), dict) else {}
             report['rejected'].append({
                 'source': source,
                 'match_key': row.get('match_key'),
@@ -275,7 +336,7 @@ def filter_rows(rows: list[Any], source: str, report: dict[str, Any]) -> list[An
                 'selection': row.get('selection'),
                 'point': row.get('point'),
                 'odds': selected_odds(row),
-                'bookmaker': row.get('bookmaker') or (row.get('source_summary') or {}).get('selected_bookmaker') if isinstance(row.get('source_summary'), dict) else row.get('bookmaker'),
+                'bookmaker': row.get('bookmaker') or ss.get('selected_bookmaker') or ss.get('bookmaker'),
                 'reasons': reasons,
                 'details': details,
             })
@@ -324,6 +385,7 @@ def filter_debug_file(path: Path, report: dict[str, Any]) -> None:
 def main() -> int:
     report: dict[str, Any] = {
         'enabled': env_bool('CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED', True),
+        'policy': 'identified_same_side_only_for_median_v2',
         'sources': {},
         'rejected': [],
     }
