@@ -1,56 +1,55 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: line movement not confirmed:awaiting next run
+✅ прогноз опубликован
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 91.
+• Инвентарь дня: 300 матчей. В этом run обработано: 42.
 • 1+ линия: 251/300 (84%) | 1+ контекст: 259/300 (86%)
 • 2+ букмекера: 32/300 (11%)
 • 2+ независимых odds-source: 19/300 (6%) — диагностика, не блок публикации
-• 2+ контекста: 125/300 (42%)
+• 2+ контекста: 138/300 (46%)
 • Готово для модели: 210/300 (70%)
 
 🏷️ A/B-tier публикация
-• A-tier bookmaker coverage: 0 | опубликовано: 0
+• A-tier bookmaker coverage: 0 | опубликовано: 1
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 32 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 32 | fallback опубликовано: 1
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 43 | матчей без следующего регулярного run: 40
-• Line guard: увидел 4, оставил 0, снял 0
+• Pre-kickoff проверок: 12 | матчей без следующего регулярного run: 12
+• Line guard: увидел 5, оставил 1, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 2/8
-• Quality прошло: 2 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 3 | evaluated 3 | published 0
+• Quality прошло: 2 | publishable: 0 | опубликовано: 1
+• Controlled fallback: seen 3 | evaluated 3 | published 1
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 18; смэтчил матчей 87; offers 7484; 2+ букмекера 39; ошибок 0.
-• Bzzoiro: direct req 46, v2 req 46; v2 ctx 12; v2 odds 11; secondary offers 0; overlap odds-api.io 9; ошибок 1.
-• SStats: запросы 19; сырых строк 15573; контекстов 59; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 8; смэтчил матчей 39; offers 3183; 2+ букмекера 17; ошибок 0.
+• Bzzoiro: direct req 19, v2 req 19; v2 ctx 6; v2 odds 4; secondary offers 0; overlap odds-api.io 3; ошибок 0.
+• SStats: запросы 19; сырых строк 15573; контекстов 24; deep-enriched 13; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 48, bzzoiro+odds_api_io: 9, bzzoiro: 3
+• Комбинации источников линий: odds_api_io: 23, bzzoiro+odds_api_io: 3, bzzoiro: 1
 
 🚫 Почему не опубликовано
-• line movement not confirmed:awaiting next run: 2 (12%)
-• line movement:needs next cron line movement recheck: 2 (12%)
-• quality: вероятность после калибровки ниже порога: 2 (12%)
-• tier a odds sources below min:0/1: 2 (12%)
-• tier c watch only: 1 (6%)
-• tier a quality below min: 1 (6%)
-• tier a canonical edge below min: 1 (6%)
-• tier a confirmation sources below min:1/2: 1 (6%)
+• quality: вероятность после калибровки ниже порога: 2 (14%)
+• tier a odds sources below min:0/1: 2 (14%)
+• направление ставки конфликтует с xG: 1 (7%)
+• tier a quality below min: 1 (7%)
+• tier a confirmation sources below min:1/2: 1 (7%)
+• tier b confidence below min: 1 (7%)
+• tier b quality below min: 1 (7%)
+• tier b canonical edge below min: 1 (7%)
 
 🔎 Проверенные reserve-кандидаты
-1. Spain — Iraq | Меньше 3.5 @2.40 | EV +12.4% | edge +5.2 п.п. | q 81.8
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
-2. France — Ivory Coast | Меньше 2.5 @2.66 | EV +12.9% | edge +4.8 п.п. | q 79.7
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
-3. San Lorenzo de Almagro Res. — Velez Sarsfield Reserve | Меньше 2.5 @2.30 | EV +4.6% | edge +2.0 п.п. | q 57.7
-   • причина: tier a quality below min, tier a canonical edge below min, tier a odds sources below min:0/1, tier a confirmation sources below min:1/2
+1. Spain — Iraq | Меньше 3.5 @2.42 | EV +12.2% | edge +5.0 п.п. | q 81.4
+2. CA Barracas Central Reserve — CA Aldosivi Reserve | Больше 2.5 @2.72 | EV +9.3% | edge +3.4 п.п. | q 53.1
+   • причина: направление ставки конфликтует с xG
+3. San Lorenzo de Almagro Res. — Velez Sarsfield Reserve | Меньше 2.5 @2.30 | EV +5.2% | edge +2.3 п.п. | q 58.4
+   • причина: tier a quality below min, tier a odds sources below min:0/1, tier a confirmation sources below min:1/2, tier a odds sources below min:0/1
 
 📌 Что это значит
-• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
+• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
