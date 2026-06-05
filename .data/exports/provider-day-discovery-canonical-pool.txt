@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-05T15:59:29.448370+00:00
+UTC: 2026-06-05T16:51:15.574125+00:00
 target_date: 2026-06-05
-canonical_matches: 296
-2+ provider sources: 126
-2+ primary sources: 125
+canonical_matches: 278
+2+ provider sources: 119
+2+ primary sources: 117
 all 3 primary sources: 12
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=259 event_like=259 unique=67 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=244 event_like=244 unique=67 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=4 rows=378 event_like=378 unique=189 statuses={"OK": 4, "EMPTY": 2}
+- odds_api_io: commands=6 ok=4 rows=326 event_like=326 unique=163 statuses={"OK": 4, "EMPTY": 2}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=205 event_like=180 unique=180 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=208 event_like=181 unique=181 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 170, "2": 113, "3": 13}
-- primary providers: {"1": 170, "2": 113, "3": 12, "0": 1}
+- all providers: {"1": 159, "2": 106, "3": 13}
+- primary providers: {"1": 161, "2": 105, "3": 12}
 
 ## Top canonical matches
 - 2026-06-04T21:30:00+00:00 | Deportivo Santani — Resistencia | providers=sstats ids={"sstats": "1546540"}
@@ -27,8 +27,9 @@ all 3 primary sources: 12
 - 2026-06-04T22:00:00+00:00 | Oeste U20 — Velo Clube U20 | providers=sstats ids={"sstats": "1546881"}
 - 2026-06-04T22:00:00+00:00 | Central Córdoba SdE Res. — San Martín San Juan Res. | providers=sstats ids={"sstats": "1512451"}
 - 2026-06-04T23:00:00+00:00 | Richmond Ivy W — Annapolis Blues W | providers=sstats ids={"sstats": "1532111"}
-- 2026-06-04T23:30:00+00:00 | Deportivo Cuenca Juniors — Macara | providers=sstats ids={"sstats": "1542930"}
 - 2026-06-04T23:30:00+00:00 | Manhattan W — New Jersey Copa W | providers=sstats ids={"sstats": "1532113"}
+- 2026-06-04T23:30:00+00:00 | Tormenta W — North Carolina Fusion W | providers=sstats ids={"sstats": "1532114"}
+- 2026-06-04T23:30:00+00:00 | Deportivo Cuenca Juniors — Macara | providers=sstats ids={"sstats": "1542930"}
 - 2026-06-05T00:00:00+00:00 | Czechia — Guatemala | providers=bzzoiro,sstats ids={"bzzoiro": "206893", "sstats": "1542893"}
 - 2026-06-05T00:00:00+00:00 | San Antonio — Ind. Juniors | providers=sstats ids={"sstats": "1526550"}
 - 2026-06-05T00:00:00+00:00 | AHFC Royals W — Lonestar San Antonio W | providers=sstats ids={"sstats": "1532116"}
@@ -50,7 +51,6 @@ all 3 primary sources: 12
 - 2026-06-05T10:00:00+00:00 | Kamatamare Sanuki — Parceiro Nagano | providers=sstats ids={"sstats": "1548062"}
 - 2026-06-05T10:00:00+00:00 | Adelaide City — Sturt Lions | providers=sstats ids={"sstats": "1527073"}
 - 2026-06-05T10:00:00+00:00 | Modbury Jets — Fulham United | providers=sstats ids={"sstats": "1527313"}
-- 2026-06-05T10:00:00+00:00 | Hills Brumbies — Bulls Academy | providers=sstats ids={"sstats": "1517781"}
 
 ## Targeted enrichment plan sample
 - Deportivo Santani — Resistencia | primary=1 providers=sstats
@@ -77,11 +77,15 @@ all 3 primary sources: 12
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Deportivo Cuenca Juniors — Macara | primary=1 providers=sstats
+- Manhattan W — New Jersey Copa W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Manhattan W — New Jersey Copa W | primary=1 providers=sstats
+- Tormenta W — North Carolina Fusion W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Deportivo Cuenca Juniors — Macara | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -126,10 +130,6 @@ all 3 primary sources: 12
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Box Hill — Werribee City | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Eastern Suburbs — Moreton City Excelsior | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
