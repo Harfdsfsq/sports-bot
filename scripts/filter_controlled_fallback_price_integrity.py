@@ -5,7 +5,8 @@ from __future__ import annotations
 The guard blocks real failure modes that were seen in HARIZON:
 * a line value from Bzzoiro odds/comparison was used as a decimal price;
 * a Bzzoiro over/under path was inverted into the opposite selection;
-* the selected price is a clear outlier versus real same-side bookmaker prices.
+* the selected price is a clear outlier versus real same-side bookmaker prices;
+* totals with quarter points (.25/.75, e.g. 4.75) are blocked from publication.
 
 Important: unknown-side prices are no longer mixed into the same-side median.
 If an offer cannot be identified as over/under/spread home/away from its own
@@ -120,6 +121,31 @@ def point_value(row: dict[str, Any]) -> float | None:
         if value is not None:
             return round(float(value), 3)
     return None
+
+
+def point_from_selection_text(row: dict[str, Any]) -> float | None:
+    text = ' '.join(str(row.get(key) or '') for key in ('selection', 'selection_key', 'market_selection', 'label', 'name'))
+    match = re.search(r'(?<!\d)(\d+(?:[.,]\d+)?)(?!\d)', text)
+    if not match:
+        return None
+    return as_float(match.group(1), None)
+
+
+def publication_point_value(row: dict[str, Any]) -> float | None:
+    return point_value(row) if point_value(row) is not None else point_from_selection_text(row)
+
+
+def is_allowed_totals_publication_point(row: dict[str, Any]) -> bool:
+    if not env_bool('CONTROLLED_FALLBACK_BLOCK_QUARTER_TOTALS', True):
+        return True
+    if family_norm(row) not in {'totals', 'teamtotals'}:
+        return True
+    point = publication_point_value(row)
+    if point is None:
+        return True
+    # Publication markets must be whole or half-goal totals only: 2.0, 2.5, 3.0, 3.5...
+    # Asian/quarter totals such as 2.25/2.75/4.75 are intentionally excluded.
+    return abs(point * 2.0 - round(point * 2.0)) <= 1e-6
 
 
 def offer_blob(offer: dict[str, Any]) -> str:
@@ -307,6 +333,10 @@ def candidate_reject_reasons(row: dict[str, Any]) -> tuple[list[str], dict[str, 
         return reasons, details
     if family_norm(row) not in {'totals', 'teamtotals', 'spreads'}:
         return reasons, details
+    if not is_allowed_totals_publication_point(row):
+        details['selected_point'] = publication_point_value(row)
+        details['allowed_total_points'] = 'whole_or_half_only'
+        reasons.append('market_point:quarter_totals_not_allowed')
     if is_line_field_used_as_price(row):
         reasons.append('price_integrity:bzzoiro_line_value_used_as_price')
     if has_total_side_mismatch(row):
@@ -385,7 +415,7 @@ def filter_debug_file(path: Path, report: dict[str, Any]) -> None:
 def main() -> int:
     report: dict[str, Any] = {
         'enabled': env_bool('CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED', True),
-        'policy': 'identified_same_side_only_for_median_v2',
+        'policy': 'identified_same_side_only_for_median_v3_whole_or_half_totals_only',
         'sources': {},
         'rejected': [],
     }

@@ -20,6 +20,7 @@ TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guard.json"
 BOOKMAKER_NORMALIZER_PATH = EXPORT_DIR / "latest-bookmaker-quorum-coverage-normalizer.json"
+TIMING_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-publication-timing-guard.json"
 
 
 def _load_v7() -> Any:
@@ -149,6 +150,9 @@ def build_payload() -> dict[str, Any]:
         # Prefer normalized bookmaker-contract counts over legacy independent-source truth.
         if isinstance(bookmaker_normalizer.get("counts"), dict):
             payload.setdefault("diagnostics", {}).setdefault("coverage_truth", {})["counts"] = bookmaker_normalizer["counts"]
+    timing_guard = _load_json(TIMING_GUARD_PATH)
+    if timing_guard:
+        payload.setdefault("diagnostics", {})["publication_timing_guard"] = timing_guard
     return payload
 
 
@@ -239,6 +243,7 @@ def render(payload: dict[str, Any]) -> str:
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
     price_guard = diag.get("price_integrity_guard") if isinstance(diag.get("price_integrity_guard"), dict) else {}
     bookmaker_norm = diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
+    timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
@@ -266,12 +271,14 @@ def render(payload: dict[str, Any]) -> str:
 
     raw_books2 = _as_int(bookmaker_norm.get("raw_odds_api_2plus_books")) or _as_int(odds.get("books_2plus"))
     normalized_books2 = _as_int(bookmaker_norm.get("normalized_inventory_2plus_books")) or price2
-    lost_mapping = _as_int(bookmaker_norm.get("lost_mapping")) if bookmaker_norm else (max(0, raw_books2 - price2) if raw_books2 else 0)
     if normalized_books2 and normalized_books2 != price2:
         price2 = normalized_books2
+    # Always compute the displayed mapping gap from the same raw/normalized values.
+    # Older normalizer artifacts can contain raw=0/lost=0, while the API section already knows raw books_2plus.
+    lost_mapping = max(0, raw_books2 - price2) if raw_books2 else _as_int(bookmaker_norm.get("lost_mapping"))
     raw_book_line = None
     if raw_books2:
-        raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | lost mapping: {lost_mapping}"
+        raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | mapping gap: {lost_mapping}"
 
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
@@ -300,8 +307,8 @@ def render(payload: dict[str, Any]) -> str:
                 f"• {key} ч: матчей {_as_int(w.get('matches'))}; "
                 f"2+ бук {_as_int(w.get('bookmaker_2plus'))}; "
                 f"2+ конт {_as_int(w.get('context_2plus'))}; "
-                f"A-contract {_as_int(w.get('a_contract'))}; "
-                f"B-contract {_as_int(w.get('b_contract'))}; "
+                f"A-cover {_as_int(w.get('a_contract'))}; "
+                f"B-cover {_as_int(w.get('b_contract'))}; "
                 f"ждут line {_as_int(w.get('waiting_movement'))}"
             )
     lines.extend([
@@ -312,10 +319,16 @@ def render(payload: dict[str, Any]) -> str:
         f"• B-tier bookmaker coverage: {price2} | fallback опубликовано: {fallback_published}",
         "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
         f"• Пересечение 2+ букмекера ∩ 2+ контекста: до {min(price2, context2)} матчей; exact-ready считается после movement/value/xG.",
+        "• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.",
         "• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.",
     ])
     if price_guard:
         lines.append(f"• Price-integrity guard: снял {_as_int(price_guard.get('removed_total'))} подозрительных кандидатов до fallback.")
+    if timing_guard:
+        deferred = _as_int(timing_guard.get('deferred_total'))
+        if deferred:
+            lines.append(f"• Timing guard: отложил {deferred} кандидатов до последнего регулярного run перед матчем.")
+    lines.append("• Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.")
     lines.extend([
         "",
         "🛡️ Движение линии и финальный фильтр",
@@ -351,7 +364,7 @@ def render(payload: dict[str, Any]) -> str:
     else:
         lines.append("• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.")
     if lost_mapping > 0:
-        lines.append("• Есть расхождение raw bookmaker coverage и inventory coverage: следующий узкий слой — нормализация bookmaker quorum в coverage truth.")
+        lines.append("• Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.")
     lines.append("• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.")
     return "\n".join(lines)
 
@@ -364,7 +377,7 @@ _write_status({
     "status": "installed",
     "renderer": "v8",
     "main_module": "v7.v5",
-    "format": "readable_bookmaker_quorum_mapping_guard_windows",
+    "format": "readable_bookmaker_quorum_mapping_timing_point_guard_windows",
     "sstats_nested_normalizer": True,
 })
 
