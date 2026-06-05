@@ -143,6 +143,10 @@ jobs:
       CONTROLLED_FALLBACK_FINAL_RUN_DEFER_ENABLED: "true"
       CONTROLLED_FALLBACK_REGULAR_RUN_INTERVAL_HOURS: "2"
       CONTROLLED_FALLBACK_MIN_KICKOFF_LEAD_MINUTES: "30"
+      ODDS_API_BOOKMAKER_QUORUM_BACKFILL_ENABLED: "true"
+      BOOKMAKER_QUORUM_BACKFILL_MAX_FILES: "80"
+      BOOKMAKER_QUORUM_BACKFILL_MAX_FILE_BYTES: "8000000"
+      BOOKMAKER_QUORUM_BACKFILL_MAX_DICTS_PER_FILE: "120000"
       SSTATS_ROLLING_METRICS_ENABLED: "true"
       SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
 
@@ -449,8 +453,10 @@ jobs:
           python -u scripts/expand_day_inventory_to_target.py || true
           cp .data/exports/latest-day-inventory-target-fill.json artifacts/run-bot/latest-day-inventory-target-fill.json 2>/dev/null || true
           python -u scripts/day_inventory_cumulative_coverage.py || true
+          python -u scripts/backfill_odds_api_bookmaker_quorum_mapping.py || true
           python -u scripts/normalize_bookmaker_quorum_coverage.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
+          cp .data/exports/latest-odds-api-bookmaker-quorum-mapping-backfill.json artifacts/run-bot/latest-odds-api-bookmaker-quorum-mapping-backfill.json 2>/dev/null || true
           cp .data/exports/latest-bookmaker-quorum-coverage-normalizer.json artifacts/run-bot/latest-bookmaker-quorum-coverage-normalizer.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true

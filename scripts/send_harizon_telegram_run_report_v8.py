@@ -10,6 +10,7 @@ Readable bookmaker-quorum report. Publication price contract:
 
 import importlib.util
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,6 +22,7 @@ V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json
 PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guard.json"
 BOOKMAKER_NORMALIZER_PATH = EXPORT_DIR / "latest-bookmaker-quorum-coverage-normalizer.json"
 TIMING_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-publication-timing-guard.json"
+BOOKMAKER_BACKFILL_PATH = EXPORT_DIR / "latest-odds-api-bookmaker-quorum-mapping-backfill.json"
 
 
 def _load_v7() -> Any:
@@ -153,6 +155,15 @@ def build_payload() -> dict[str, Any]:
     timing_guard = _load_json(TIMING_GUARD_PATH)
     if timing_guard:
         payload.setdefault("diagnostics", {})["publication_timing_guard"] = timing_guard
+    bookmaker_backfill = _load_json(BOOKMAKER_BACKFILL_PATH)
+    if bookmaker_backfill:
+        payload.setdefault("diagnostics", {})["bookmaker_quorum_backfill"] = bookmaker_backfill
+    payload.setdefault("diagnostics", {})["github_actions"] = {
+        "run_id": os.getenv("GITHUB_RUN_ID") or "",
+        "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT") or "",
+        "workflow": os.getenv("GITHUB_WORKFLOW") or "run-bot",
+        "repository": os.getenv("GITHUB_REPOSITORY") or "Harfdsfsq/sports-bot",
+    }
     return payload
 
 
@@ -243,7 +254,9 @@ def render(payload: dict[str, Any]) -> str:
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
     price_guard = diag.get("price_integrity_guard") if isinstance(diag.get("price_integrity_guard"), dict) else {}
     bookmaker_norm = diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
+    bookmaker_backfill = diag.get("bookmaker_quorum_backfill") if isinstance(diag.get("bookmaker_quorum_backfill"), dict) else {}
     timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
+    github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
@@ -279,6 +292,13 @@ def render(payload: dict[str, Any]) -> str:
     raw_book_line = None
     if raw_books2:
         raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | mapping gap: {lost_mapping}"
+    backfill_line = None
+    if bookmaker_backfill:
+        backfill_line = (
+            f"• Odds-api mapping backfill: mapped {_as_int(bookmaker_backfill.get('mapped_matches'))}, "
+            f"changed truth {_as_int(bookmaker_backfill.get('changed_truth_rows'))}, "
+            f"changed inventory {_as_int(bookmaker_backfill.get('changed_inventory_rows'))}"
+        )
 
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
@@ -292,6 +312,8 @@ def render(payload: dict[str, Any]) -> str:
     ]
     if raw_book_line:
         lines.append(raw_book_line)
+    if backfill_line:
+        lines.append(backfill_line)
     lines.extend([
         f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
         f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",
@@ -366,6 +388,19 @@ def render(payload: dict[str, Any]) -> str:
     if lost_mapping > 0:
         lines.append("• Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.")
     lines.append("• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.")
+    run_id = str(github_actions.get('run_id') or '').strip()
+    repo = str(github_actions.get('repository') or 'Harfdsfsq/sports-bot').strip()
+    workflow = str(github_actions.get('workflow') or 'run-bot').strip()
+    attempt = str(github_actions.get('run_attempt') or '').strip() or '1'
+    if run_id:
+        lines.extend([
+            "",
+            "🔗 GitHub Actions",
+            f"• Run ID: {run_id}",
+            f"• Run URL: https://github.com/{repo}/actions/runs/{run_id}",
+            f"• Artifact: run-bot-{run_id}",
+            f"• workflow {workflow}, attempt {attempt}",
+        ])
     return "\n".join(lines)
 
 
