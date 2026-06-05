@@ -1,20 +1,20 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: line movement not confirmed:awaiting next run
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 80.
+• Инвентарь дня: 300 матчей. В этом run обработано: 94.
 • 1+ линия: 281/300 (94%) | 1+ контекст: 279/300 (93%)
 • 2+ букмекера: 37/300 (12%)
-• Raw 2+ букмекера odds-api.io: 49 | normalized inventory: 37 | mapping gap: 12
-• Odds-api mapping backfill: mapped 0, changed truth 0, changed inventory 0
-• Odds-api offer snapshot: rows 9053, matches 72, same-side 2+ books 48
+• Raw 2+ букмекера odds-api.io: 53 | normalized inventory: 37 | mapping gap: 16
+• Odds-api mapping backfill: mapped 2, changed truth 0, changed inventory 2
+• Odds-api offer snapshot: rows 8936, matches 82, same-side 2+ books 52
 • 2+ независимых odds-source: 39/300 (13%) — диагностика, не блок публикации
 • 2+ контекста: 178/300 (59%)
 • Готово для модели: 262/300 (87%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 39; 2+ бук 4; 2+ конт 33; A-cover 4; B-cover 4; ждут line 12
+• 0-4 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 4-8 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 8-12 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
@@ -30,41 +30,39 @@
 • Пересечение 2+ букмекера ∩ 2+ контекста: до 37 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 7 подозрительных кандидатов до fallback.
+• Price-integrity guard: снял 8 подозрительных кандидатов до fallback.
+• Timing guard: отложил 2 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 13 | матчей без следующего регулярного run: 11
-• Line guard: увидел 5, оставил 1, снял 0
+• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 16; смэтчил матчей 80; offers 9121; 2+ букмекера 49; ошибок 0.
-• Bzzoiro: direct req 21, v2 req 21; v2 ctx 5; v2 odds 5; secondary offers 0; overlap odds-api.io 8; ошибок 0.
-• SStats: запросы 24; сырых строк 20588; контекстов 69; deep-enriched 10; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 20; смэтчил матчей 94; offers 8996; 2+ букмекера 53; ошибок 0.
+• Bzzoiro: direct req 33, v2 req 33; v2 ctx 8; v2 odds 8; secondary offers 0; overlap odds-api.io 8; ошибок 0.
+• SStats: запросы 24; сырых строк 20588; контекстов 75; deep-enriched 3; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 64, bzzoiro+odds_api_io: 8
+• Комбинации источников линий: odds_api_io: 74, bzzoiro+odds_api_io: 8
 
 🚫 Почему не опубликовано
-• line movement not confirmed:awaiting next run: 1 (33%)
-• line movement:needs next cron line movement recheck: 1 (33%)
-• quality: вероятность после калибровки ниже порога: 1 (33%)
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. KF Aegir — Leiknir Reykjavik | Меньше 2.5 @2.72 | EV +8.4% | edge +3.1 п.п. | q 66.6
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
+• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.
 • Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27029910545
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27029910545
-• Artifact: run-bot-27029910545
+• Run ID: 27034351250
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27034351250
+• Artifact: run-bot-27034351250
 • workflow run-bot, attempt 1
