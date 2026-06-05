@@ -1,62 +1,54 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: quality: вероятность после калибровки ниже порога
+✅ прогноз опубликован
+• Главная причина: опубликовано fallback-пайплайном
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 85.
-• 1+ линия: 280/300 (93%) | 1+ контекст: 228/300 (76%)
-• 2+ букмекера: 20/300 (7%)
-• Raw 2+ букмекера odds-api.io: 36 | normalized inventory: 20 | lost mapping: 16
+• Инвентарь дня: 300 матчей. В этом run обработано: 105.
+• 1+ линия: 280/300 (93%) | 1+ контекст: 231/300 (77%)
+• 2+ букмекера: 23/300 (8%)
+• Raw 2+ букмекера odds-api.io: 48 | normalized inventory: 23 | lost mapping: 25
 • 2+ независимых odds-source: 29/300 (10%) — диагностика, не блок публикации
-• 2+ контекста: 79/300 (26%)
-• Готово для модели: 212/300 (71%)
+• 2+ контекста: 86/300 (29%)
+• Готово для модели: 214/300 (71%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 0 | опубликовано: 0
+• A-tier strict-ready: 1 | опубликовано: 1
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 20 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 23 | fallback опубликовано: 1
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 20 матчей; exact-ready считается после movement/value/xG.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 23 матчей; exact-ready считается после movement/value/xG.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 0 подозрительных кандидатов до fallback.
+• Price-integrity guard: снял 4 подозрительных кандидатов до fallback.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
-• Line guard: увидел 5, оставил 1, снял 0
+• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 2/8
-• Quality прошло: 2 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Quality прошло: 2 | publishable: 0 | опубликовано: 1
+• Controlled fallback: seen 2 | evaluated 2 | published 1
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 14; смэтчил матчей 67; offers 5022; 2+ букмекера 36; ошибок 0.
-• Bzzoiro: direct req 40, v2 req 40; v2 ctx 12; v2 odds 9; secondary offers 0; overlap odds-api.io 9; ошибок 0.
-• SStats: запросы 24; сырых строк 20394; контекстов 66; deep-enriched 9; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 18; смэтчил матчей 82; offers 6726; 2+ букмекера 48; ошибок 0.
+• Bzzoiro: direct req 45, v2 req 45; v2 ctx 14; v2 odds 10; secondary offers 0; overlap odds-api.io 11; ошибок 0.
+• SStats: запросы 24; сырых строк 20393; контекстов 77; deep-enriched 9; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 45, bzzoiro+odds_api_io: 9, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 55, bzzoiro+odds_api_io: 11, bzzoiro: 1
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 2 (20%)
-• направление ставки конфликтует с xG: 2 (20%)
-• tier c watch only: 1 (10%)
-• final edge below min: 1 (10%)
-• line movement not confirmed:awaiting next run: 1 (10%)
-• line movement:needs next cron line movement recheck: 1 (10%)
-• модель слишком оптимистична относительно xG-ориентира: 1 (10%)
-• quality: market sanity totals/xG contradiction: 1 (10%)
+• tier c watch only: 1 (20%)
+• line movement not confirmed:awaiting next run: 1 (20%)
+• line movement:needs next cron line movement recheck: 1 (20%)
+• missing total xg sanity: 1 (20%)
+• quality post calibration edge guard: 1 (20%)
 
 🔎 Проверенные reserve-кандидаты
-1. Mexico — Serbia | Меньше 2.5 @2.24 | EV +6.7% | edge +3.0 п.п. | q 74.1
-   • причина: tier c watch only, final edge below min
-2. Busan I Park — Chungnam Asan FC | Больше 2.5 @2.05 | EV +14.2% | edge +6.9 п.п. | q 72.5
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck
-3. Niger — Mauritania | Больше 2.5 @2.72 | EV +9.2% | edge +3.4 п.п. | q 59.9
-   • причина: направление ставки конфликтует с xG
-4. Singapore — China | Меньше 2.5 @2.19 | EV +4.6% | edge +2.1 п.п. | q 55.4
-   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+1. Armenia — Kazakhstan | Меньше 2.5 @2.04 | EV +8.8% | edge +4.3 п.п. | q 70.1
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
+2. Busan I Park — Chungnam Asan FC | Больше 2.5 @2.06 | EV +14.3% | edge +6.9 п.п. | q 72.4
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
 • Есть расхождение raw bookmaker coverage и inventory coverage: следующий узкий слой — нормализация bookmaker quorum в coverage truth.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
