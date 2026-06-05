@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-05T03:05:17.374684+00:00
+UTC: 2026-06-05T05:05:24.446959+00:00
 target_date: 2026-06-05
 canonical_matches: 330
 2+ provider sources: 161
 2+ primary sources: 160
-all 3 primary sources: 16
+all 3 primary sources: 15
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
 - bzzoiro: commands=10 ok=8 rows=284 event_like=284 unique=67 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=542 event_like=542 unique=271 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=540 event_like=540 unique=270 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=209 event_like=178 unique=178 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 169, "2": 144, "3": 17}
-- primary providers: {"1": 169, "2": 144, "3": 16, "0": 1}
+- all providers: {"1": 169, "2": 145, "3": 16}
+- primary providers: {"1": 169, "2": 145, "3": 15, "0": 1}
 
 ## Top canonical matches
 - 2026-06-04T21:30:00+00:00 | Deportivo Santani — Resistencia | providers=sstats ids={"sstats": "1546540"}
@@ -37,7 +37,7 @@ all 3 primary sources: 16
 - 2026-06-05T00:00:00+00:00 | San Antonio — Ind. Juniors | providers=sstats ids={"sstats": "1526550"}
 - 2026-06-05T00:00:00+00:00 | Minnesota Aurora W — Rally Madison FC W | providers=sstats ids={"sstats": "1532431"}
 - 2026-06-05T01:00:00+00:00 | Snohomish United W — Olympia W | providers=sstats ids={"sstats": "1532344"}
-- 2026-06-05T02:00:00+00:00 | Mexico — Serbia | providers=bzzoiro,odds_api_io,sstats ids={"odds_api_io": "69829866", "bzzoiro": "10278", "sstats": "1528284"}
+- 2026-06-05T02:00:00+00:00 | Mexico — Serbia | providers=bzzoiro,sstats ids={"bzzoiro": "10278", "sstats": "1528284"}
 - 2026-06-05T02:00:00+00:00 | Seahorses — Tucson | providers=sstats ids={"sstats": "1524751"}
 - 2026-06-05T07:30:00+00:00 | Sydney FC — NWS Spirit FC | providers=odds_api_io,sstats ids={"odds_api_io": "67690902", "sstats": "1517555"}
 - 2026-06-05T08:00:00+00:00 | Cooks Hill United FC Reserve — Belmont Swansea United FC Reserves | providers=odds_api_io,sstats ids={"odds_api_io": "71816092", "sstats": "1523754"}
@@ -117,8 +117,7 @@ all 3 primary sources: 16
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Mexico — Serbia | primary=3 providers=bzzoiro,odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+- Mexico — Serbia | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

@@ -1,54 +1,48 @@
 🧾 HARIZON — понятный отчёт по запуску
-✅ прогноз опубликован
-• Главная причина: опубликовано fallback-пайплайном
+🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 105.
-• 1+ линия: 280/300 (93%) | 1+ контекст: 231/300 (77%)
-• 2+ букмекера: 23/300 (8%)
-• Raw 2+ букмекера odds-api.io: 48 | normalized inventory: 23 | lost mapping: 25
+• Инвентарь дня: 300 матчей. В этом run обработано: 212.
+• 1+ линия: 281/300 (94%) | 1+ контекст: 239/300 (80%)
+• 2+ букмекера: 25/300 (8%)
+• Raw 2+ букмекера odds-api.io: 78 | normalized inventory: 25 | lost mapping: 53
 • 2+ независимых odds-source: 29/300 (10%) — диагностика, не блок публикации
-• 2+ контекста: 86/300 (29%)
-• Готово для модели: 214/300 (71%)
+• 2+ контекста: 88/300 (29%)
+• Готово для модели: 223/300 (74%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 1 | опубликовано: 1
+• A-tier strict-ready: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 23 | fallback опубликовано: 1
+• B-tier bookmaker coverage: 25 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 23 матчей; exact-ready считается после movement/value/xG.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 25 матчей; exact-ready считается после movement/value/xG.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 4 подозрительных кандидатов до fallback.
+• Price-integrity guard: снял 9 подозрительных кандидатов до fallback.
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/8
-• Quality прошло: 2 | publishable: 0 | опубликовано: 1
-• Controlled fallback: seen 2 | evaluated 2 | published 1
+• Raw/candidates before quality: 8/8
+• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 18; смэтчил матчей 82; offers 6726; 2+ букмекера 48; ошибок 0.
-• Bzzoiro: direct req 45, v2 req 45; v2 ctx 14; v2 odds 10; secondary offers 0; overlap odds-api.io 11; ошибок 0.
-• SStats: запросы 24; сырых строк 20393; контекстов 77; deep-enriched 9; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 38; смэтчил матчей 184; offers 13186; 2+ букмекера 78; ошибок 0.
+• Bzzoiro: direct req 69, v2 req 69; v2 ctx 20; v2 odds 16; secondary offers 0; overlap odds-api.io 17; ошибок 0.
+• SStats: запросы 24; сырых строк 20390; контекстов 137; deep-enriched 10; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 55, bzzoiro+odds_api_io: 11, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 97, bzzoiro+odds_api_io: 17, bzzoiro: 2
 
 🚫 Почему не опубликовано
-• tier c watch only: 1 (20%)
-• line movement not confirmed:awaiting next run: 1 (20%)
-• line movement:needs next cron line movement recheck: 1 (20%)
-• missing total xg sanity: 1 (20%)
-• quality post calibration edge guard: 1 (20%)
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Armenia — Kazakhstan | Меньше 2.5 @2.04 | EV +8.8% | edge +4.3 п.п. | q 70.1
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
-2. Busan I Park — Chungnam Asan FC | Больше 2.5 @2.06 | EV +14.3% | edge +6.9 п.п. | q 72.4
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
+• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.
 • Есть расхождение raw bookmaker coverage и inventory coverage: следующий узкий слой — нормализация bookmaker quorum в coverage truth.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
