@@ -3,23 +3,25 @@
 • Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 302.
-• 1+ линия: 273/300 (91%) | 1+ контекст: 211/300 (70%)
-• 2+ букмекера: 12/300 (4%)
-• 2+ независимых odds-source: 27/300 (9%) — диагностика, не блок публикации
-• 2+ контекста: 45/300 (15%)
-• Готово для модели: 171/300 (57%)
+• Инвентарь дня: 300 матчей. В этом run обработано: 214.
+• 1+ линия: 281/300 (94%) | 1+ контекст: 273/300 (91%)
+• 2+ букмекера: 30/300 (10%)
+• Raw 2+ букмекера odds-api.io: 87 | normalized inventory: 30 | lost mapping: 57
+• 2+ независимых odds-source: 32/300 (11%) — диагностика, не блок публикации
+• 2+ контекста: 117/300 (39%)
+• Готово для модели: 257/300 (86%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready / опубликовано: 0 | опубликовано: 0
+• A-tier strict-ready: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 12 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 30 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 12 матчей; exact-ready считается после movement/value/xG.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 30 матчей; exact-ready считается после movement/value/xG.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
+• Price-integrity guard: снял 10 подозрительных кандидатов до fallback.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 16 | матчей без следующего регулярного run: 3
+• Pre-kickoff проверок: 26 | матчей без следующего регулярного run: 10
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -28,11 +30,11 @@
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 54; смэтчил матчей 261; offers 16486; 2+ букмекера 97; ошибок 0.
-• Bzzoiro: direct req 93, v2 req 93; v2 ctx 29; v2 odds 21; secondary offers 0; overlap odds-api.io 25; ошибок 0.
-• SStats: запросы 19; сырых строк 15573; контекстов 165; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 42; смэтчил матчей 202; offers 16309; 2+ букмекера 87; ошибок 0.
+• Bzzoiro: direct req 69, v2 req 69; v2 ctx 19; v2 odds 16; secondary offers 0; overlap odds-api.io 19; ошибок 0.
+• SStats: запросы 24; сырых строк 20588; контекстов 165; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 141, bzzoiro+odds_api_io: 25, bzzoiro: 3
+• Комбинации источников линий: odds_api_io: 118, bzzoiro+odds_api_io: 19
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -41,5 +43,6 @@
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.
+• Есть расхождение raw bookmaker coverage и inventory coverage: следующий узкий слой — нормализация bookmaker quorum в coverage truth.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
