@@ -3,16 +3,17 @@
 • Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 195.
+• Инвентарь дня: 300 матчей. В этом run обработано: 184.
 • 1+ линия: 281/300 (94%) | 1+ контекст: 276/300 (92%)
-• 2+ букмекера: 32/300 (11%)
-• Raw 2+ букмекера odds-api.io: 80 | normalized inventory: 32 | mapping gap: 48
-• 2+ независимых odds-source: 34/300 (11%) — диагностика, не блок публикации
-• 2+ контекста: 126/300 (42%)
+• 2+ букмекера: 34/300 (11%)
+• Raw 2+ букмекера odds-api.io: 76 | normalized inventory: 34 | mapping gap: 42
+• Odds-api mapping backfill: mapped 0, changed truth 0, changed inventory 0
+• 2+ независимых odds-source: 35/300 (12%) — диагностика, не блок публикации
+• 2+ контекста: 131/300 (44%)
 • Готово для модели: 260/300 (87%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 163; 2+ бук 17; 2+ конт 32; A-cover 9; B-cover 17; ждут line 28
+• 0-4 ч: матчей 143; 2+ бук 17; 2+ конт 32; A-cover 11; B-cover 17; ждут line 28
 • 4-8 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 8-12 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
@@ -23,29 +24,29 @@
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 32 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 34 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 32 матчей; exact-ready считается после movement/value/xG.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 34 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 9 подозрительных кандидатов до fallback.
+• Price-integrity guard: снял 6 подозрительных кандидатов до fallback.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 56 | матчей без следующего регулярного run: 54
+• Pre-kickoff проверок: 37 | матчей без следующего регулярного run: 29
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
-• Quality прошло: 0 | publishable: 0 | опубликовано: 0
+• Raw/candidates before quality: 2/8
+• Quality прошло: 2 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 38; смэтчил матчей 190; offers 15233; 2+ букмекера 80; ошибок 0.
-• Bzzoiro: direct req 57, v2 req 57; v2 ctx 16; v2 odds 13; secondary offers 0; overlap odds-api.io 17; ошибок 0.
-• SStats: запросы 24; сырых строк 20588; контекстов 149; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 36; смэтчил матчей 179; offers 14635; 2+ букмекера 76; ошибок 0.
+• Bzzoiro: direct req 56, v2 req 56; v2 ctx 16; v2 odds 13; secondary offers 0; overlap odds-api.io 17; ошибок 0.
+• SStats: запросы 24; сырых строк 20588; контекстов 144; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 110, bzzoiro+odds_api_io: 17, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 109, bzzoiro+odds_api_io: 17, bzzoiro: 1
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -57,3 +58,9 @@
 • Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.
 • Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
+
+🔗 GitHub Actions
+• Run ID: 27023567503
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27023567503
+• Artifact: run-bot-27023567503
+• workflow run-bot, attempt 1
