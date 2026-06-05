@@ -19,6 +19,7 @@ PROGRESSIVE_PLAN = EXPORT_DIR / "latest-progressive-coverage-plan.json"
 TRUTH_REPORT = EXPORT_DIR / "latest-day-inventory-coverage-truth.json"
 V8_STATUS_PATH = EXPORT_DIR / "latest-harizon-telegram-run-report-v8-status.json"
 PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guard.json"
+BOOKMAKER_NORMALIZER_PATH = EXPORT_DIR / "latest-bookmaker-quorum-coverage-normalizer.json"
 
 
 def _load_v7() -> Any:
@@ -142,6 +143,12 @@ def build_payload() -> dict[str, Any]:
             "removed_total": _as_int(price_guard.get("removed_total")),
             "sources": price_guard.get("sources") if isinstance(price_guard.get("sources"), dict) else {},
         }
+    bookmaker_normalizer = _load_json(BOOKMAKER_NORMALIZER_PATH)
+    if bookmaker_normalizer:
+        payload.setdefault("diagnostics", {})["bookmaker_quorum_normalizer"] = bookmaker_normalizer
+        # Prefer normalized bookmaker-contract counts over legacy independent-source truth.
+        if isinstance(bookmaker_normalizer.get("counts"), dict):
+            payload.setdefault("diagnostics", {}).setdefault("coverage_truth", {})["counts"] = bookmaker_normalizer["counts"]
     return payload
 
 
@@ -231,6 +238,8 @@ def render(payload: dict[str, Any]) -> str:
     truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
     truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
     price_guard = diag.get("price_integrity_guard") if isinstance(diag.get("price_integrity_guard"), dict) else {}
+    bookmaker_norm = diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
+    window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
     with_odds = _as_int(truth_counts.get("matches_with_odds")) or _as_int(coverage.get("day_inventory_with_odds")) or _as_int(coverage.get("matches_with_offers"))
@@ -255,8 +264,11 @@ def render(payload: dict[str, Any]) -> str:
     combos = coverage.get("secondary_combinations") if isinstance(coverage.get("secondary_combinations"), dict) else {}
     combo_text = ", ".join(f"{k}: {v}" for k, v in sorted(combos.items(), key=lambda item: -_as_int(item[1]))[:6]) or "н/д"
 
-    raw_books2 = _as_int(odds.get("books_2plus"))
-    lost_mapping = max(0, raw_books2 - price2) if raw_books2 else 0
+    raw_books2 = _as_int(bookmaker_norm.get("raw_odds_api_2plus_books")) or _as_int(odds.get("books_2plus"))
+    normalized_books2 = _as_int(bookmaker_norm.get("normalized_inventory_2plus_books")) or price2
+    lost_mapping = _as_int(bookmaker_norm.get("lost_mapping")) if bookmaker_norm else (max(0, raw_books2 - price2) if raw_books2 else 0)
+    if normalized_books2 and normalized_books2 != price2:
+        price2 = normalized_books2
     raw_book_line = None
     if raw_books2:
         raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | lost mapping: {lost_mapping}"
@@ -277,6 +289,22 @@ def render(payload: dict[str, Any]) -> str:
         f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
         f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",
         f"• Готово для модели: {ready_model}/{inv_total} ({_pct(ready_model, inv_total)})",
+    ])
+    if window_counts:
+        lines.extend(["", "🧭 Покрытие ближайших окон"])
+        for key in ("0-4", "4-8", "8-12", "12-16", "16-20", "20-24", ">24"):
+            w = window_counts.get(key) if isinstance(window_counts.get(key), dict) else {}
+            if not w:
+                continue
+            lines.append(
+                f"• {key} ч: матчей {_as_int(w.get('matches'))}; "
+                f"2+ бук {_as_int(w.get('bookmaker_2plus'))}; "
+                f"2+ конт {_as_int(w.get('context_2plus'))}; "
+                f"A-contract {_as_int(w.get('a_contract'))}; "
+                f"B-contract {_as_int(w.get('b_contract'))}; "
+                f"ждут line {_as_int(w.get('waiting_movement'))}"
+            )
+    lines.extend([
         "",
         "🏷️ A/B-tier публикация",
         f"• A-tier strict-ready: {max(ready_publish, published_count)} | опубликовано: {published_count}",
@@ -336,7 +364,7 @@ _write_status({
     "status": "installed",
     "renderer": "v8",
     "main_module": "v7.v5",
-    "format": "readable_bookmaker_quorum_mapping_guard",
+    "format": "readable_bookmaker_quorum_mapping_guard_windows",
     "sstats_nested_normalizer": True,
 })
 

@@ -443,7 +443,9 @@ jobs:
           python -u scripts/expand_day_inventory_to_target.py || true
           cp .data/exports/latest-day-inventory-target-fill.json artifacts/run-bot/latest-day-inventory-target-fill.json 2>/dev/null || true
           python -u scripts/day_inventory_cumulative_coverage.py || true
+          python -u scripts/normalize_bookmaker_quorum_coverage.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
+          cp .data/exports/latest-bookmaker-quorum-coverage-normalizer.json artifacts/run-bot/latest-bookmaker-quorum-coverage-normalizer.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
