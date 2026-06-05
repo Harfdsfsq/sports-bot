@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-05T05:05:24.446959+00:00
+UTC: 2026-06-05T09:05:15.199763+00:00
 target_date: 2026-06-05
-canonical_matches: 330
-2+ provider sources: 161
-2+ primary sources: 160
+canonical_matches: 331
+2+ provider sources: 160
+2+ primary sources: 159
 all 3 primary sources: 15
 
 ## Provider fixture discovery
@@ -11,14 +11,14 @@ all 3 primary sources: 15
 - bzzoiro: commands=10 ok=8 rows=284 event_like=284 unique=67 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=540 event_like=540 unique=270 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=534 event_like=534 unique=267 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=209 event_like=178 unique=178 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 169, "2": 145, "3": 16}
-- primary providers: {"1": 169, "2": 145, "3": 15, "0": 1}
+- all providers: {"1": 171, "2": 144, "3": 16}
+- primary providers: {"1": 171, "2": 144, "3": 15, "0": 1}
 
 ## Top canonical matches
 - 2026-06-04T21:30:00+00:00 | Deportivo Santani — Resistencia | providers=sstats ids={"sstats": "1546540"}
@@ -40,17 +40,17 @@ all 3 primary sources: 15
 - 2026-06-05T02:00:00+00:00 | Mexico — Serbia | providers=bzzoiro,sstats ids={"bzzoiro": "10278", "sstats": "1528284"}
 - 2026-06-05T02:00:00+00:00 | Seahorses — Tucson | providers=sstats ids={"sstats": "1524751"}
 - 2026-06-05T07:30:00+00:00 | Sydney FC — NWS Spirit FC | providers=odds_api_io,sstats ids={"odds_api_io": "67690902", "sstats": "1517555"}
-- 2026-06-05T08:00:00+00:00 | Cooks Hill United FC Reserve — Belmont Swansea United FC Reserves | providers=odds_api_io,sstats ids={"odds_api_io": "71816092", "sstats": "1523754"}
-- 2026-06-05T08:00:00+00:00 | Hills United FC — Bulls FC Academy | providers=odds_api_io,sstats ids={"odds_api_io": "67691646", "sstats": "1517781"}
 - 2026-06-05T08:15:00+00:00 | Eltham Redbacks FC — FC Bulleen Lions | providers=odds_api_io,sstats ids={"odds_api_io": "68160592", "sstats": "1522202"}
 - 2026-06-05T08:15:00+00:00 | Northcote City FC — Langwarrin SC | providers=odds_api_io,sstats ids={"odds_api_io": "68160594", "sstats": "1522119"}
-- 2026-06-05T08:15:00+00:00 | Oakleigh Cannons FC — ST Albans Saints Dinamo SC | providers=odds_api_io,sstats ids={"odds_api_io": "68160214", "sstats": "1521952"}
 - 2026-06-05T08:15:00+00:00 | Bentleigh Greens SC — Boroondara Eagles | providers=odds_api_io ids={"odds_api_io": "68162414"}
 - 2026-06-05T08:30:00+00:00 | Logan Lightning — Capalaba FC | providers=odds_api_io,sstats ids={"odds_api_io": "67903708", "sstats": "1524154"}
 - 2026-06-05T09:00:00+00:00 | Brunei Darussalam — Malaysia | providers=odds_api_io,sstats ids={"odds_api_io": "71561986", "sstats": "1547213"}
 - 2026-06-05T09:00:00+00:00 | Karvina — FC Zlin | providers=odds_api_io,sstats ids={"odds_api_io": "66601930", "sstats": "1490721"}
-- 2026-06-05T09:00:00+00:00 | Darwin Hearts FC — Garuda FC | providers=odds_api_io ids={"odds_api_io": "70930104"}
 - 2026-06-05T09:00:00+00:00 | Casuarina FC Reserves — Darwin Hearts FC Reserves | providers=odds_api_io ids={"odds_api_io": "70934666"}
+- 2026-06-05T09:00:00+00:00 | Darwin Hearts FC — Garuda FC | providers=odds_api_io ids={"odds_api_io": "70930104"}
+- 2026-06-05T09:30:00+00:00 | Green Gully SC — Avondale FC | providers=odds_api_io,sstats ids={"odds_api_io": "68160210", "sstats": "1521950"}
+- 2026-06-05T09:30:00+00:00 | Box Hill United FC — Werribee City FC | providers=odds_api_io,sstats ids={"odds_api_io": "68161736", "sstats": "1541357"}
+- 2026-06-05T09:30:00+00:00 | Gold Coast Knights — Olympic FC Brisbane | providers=odds_api_io,sstats ids={"odds_api_io": "67878264", "sstats": "1524047"}
 
 ## Targeted enrichment plan sample
 - Deportivo Santani — Resistencia | primary=1 providers=sstats
@@ -129,7 +129,7 @@ all 3 primary sources: 15
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Cooks Hill United FC Reserve — Belmont Swansea United FC Reserves | primary=2 providers=odds_api_io,sstats
+- Eltham Redbacks FC — FC Bulleen Lions | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
