@@ -170,6 +170,7 @@ jobs:
       ODDS_API_IO_MAX_REQUESTS_PER_RUN: "100"
       ODDS_API_IO_REQUEST_BUDGET_GRANTED: "100"
       ODDS_API_IO_REQUESTS_MAX_PER_RUN: "100"
+      ODDS_API_IO_OFFER_SNAPSHOT_ENABLED: "true"
       ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "10"
       ODDS_API_IO_MAX_PAGES_PER_SPORT: "10"
       PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT: "5"
@@ -416,6 +417,8 @@ jobs:
           cp -r .data/line_history artifacts/run-bot/line_history || true
           cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
+          cp .data/exports/latest-odds-api-io-offer-snapshot.json artifacts/run-bot/latest-odds-api-io-offer-snapshot.json 2>/dev/null || true
+          cp .data/exports/latest-odds-api-io-offer-snapshot-install.json artifacts/run-bot/latest-odds-api-io-offer-snapshot-install.json 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
@@ -457,6 +460,8 @@ jobs:
           python -u scripts/normalize_bookmaker_quorum_coverage.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-odds-api-bookmaker-quorum-mapping-backfill.json artifacts/run-bot/latest-odds-api-bookmaker-quorum-mapping-backfill.json 2>/dev/null || true
+          cp .data/exports/latest-odds-api-io-offer-snapshot.json artifacts/run-bot/latest-odds-api-io-offer-snapshot.json 2>/dev/null || true
+          cp .data/exports/latest-odds-api-io-offer-snapshot-install.json artifacts/run-bot/latest-odds-api-io-offer-snapshot-install.json 2>/dev/null || true
           cp .data/exports/latest-bookmaker-quorum-coverage-normalizer.json artifacts/run-bot/latest-bookmaker-quorum-coverage-normalizer.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true

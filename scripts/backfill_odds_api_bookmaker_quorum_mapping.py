@@ -27,6 +27,7 @@ ROOT = Path('.').resolve()
 EXPORT_DIR = ROOT / '.data' / 'exports'
 DAY_INV_DIR = ROOT / '.data' / 'day_inventory'
 REPORT_PATH = EXPORT_DIR / 'latest-odds-api-bookmaker-quorum-mapping-backfill.json'
+ODDS_API_SNAPSHOT_PATH = EXPORT_DIR / 'latest-odds-api-io-offer-snapshot.json'
 TRUTH_JSON = EXPORT_DIR / 'latest-day-inventory-coverage-truth.json'
 TRUTH_CSV = EXPORT_DIR / 'latest-day-inventory-coverage-truth.csv'
 SUMMARY_JSON = EXPORT_DIR / 'latest-day-inventory-summary.json'
@@ -294,10 +295,14 @@ def extract_offers_from_file(path: Path, max_dicts: int) -> list[dict[str, Any]]
 def candidate_files() -> list[Path]:
     roots = [EXPORT_DIR, ROOT / 'artifacts' / 'run-bot', ROOT / '.data' / 'cache', DAY_INV_DIR]
     out: list[Path] = []
+    if ODDS_API_SNAPSHOT_PATH.exists():
+        out.append(ODDS_API_SNAPSHOT_PATH)
     for root in roots:
         if not root.exists():
             continue
         for path in root.rglob('*.json'):
+            if path == ODDS_API_SNAPSHOT_PATH and path in out:
+                continue
             name = path.name.lower()
             full = str(path).lower()
             if any(tok in name or tok in full for tok in ('odds', 'offer', 'candidate', 'pick', 'coverage', 'inventory', 'progressive')):
@@ -399,12 +404,20 @@ def main() -> int:
         'date_local': date_local,
         'files_scanned': 0,
         'offer_rows_seen': 0,
+        'snapshot_file_present': ODDS_API_SNAPSHOT_PATH.exists(),
+        'snapshot_rows_count': 0,
+        'snapshot_matches_count': 0,
         'mapped_matches': 0,
         'unmatched_match_groups': 0,
         'changed_truth_rows': 0,
         'changed_inventory_rows': 0,
         'status': 'disabled' if not enabled else 'ok',
     }
+    if ODDS_API_SNAPSHOT_PATH.exists():
+        snapshot = load_json(ODDS_API_SNAPSHOT_PATH, {})
+        if isinstance(snapshot, dict):
+            report['snapshot_rows_count'] = as_int(snapshot.get('rows_count')) or len(snapshot.get('offers') or [])
+            report['snapshot_matches_count'] = as_int(snapshot.get('matches_count')) or len(snapshot.get('by_match') or [])
     if not enabled:
         write_json(REPORT_PATH, report)
         return 0

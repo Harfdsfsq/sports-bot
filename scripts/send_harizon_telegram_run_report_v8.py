@@ -23,6 +23,7 @@ PRICE_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-price-integrity-guar
 BOOKMAKER_NORMALIZER_PATH = EXPORT_DIR / "latest-bookmaker-quorum-coverage-normalizer.json"
 TIMING_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-publication-timing-guard.json"
 BOOKMAKER_BACKFILL_PATH = EXPORT_DIR / "latest-odds-api-bookmaker-quorum-mapping-backfill.json"
+ODDS_API_OFFER_SNAPSHOT_PATH = EXPORT_DIR / "latest-odds-api-io-offer-snapshot.json"
 
 
 def _load_v7() -> Any:
@@ -158,6 +159,15 @@ def build_payload() -> dict[str, Any]:
     bookmaker_backfill = _load_json(BOOKMAKER_BACKFILL_PATH)
     if bookmaker_backfill:
         payload.setdefault("diagnostics", {})["bookmaker_quorum_backfill"] = bookmaker_backfill
+    odds_api_snapshot = _load_json(ODDS_API_OFFER_SNAPSHOT_PATH)
+    if odds_api_snapshot:
+        payload.setdefault("diagnostics", {})["odds_api_io_offer_snapshot"] = {
+            "status": odds_api_snapshot.get("status") or "",
+            "rows_count": _as_int(odds_api_snapshot.get("rows_count")),
+            "matches_count": _as_int(odds_api_snapshot.get("matches_count")),
+            "matches_with_2plus_books_any_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_any_market")),
+            "matches_with_2plus_books_same_side_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_same_side_market")),
+        }
     payload.setdefault("diagnostics", {})["github_actions"] = {
         "run_id": os.getenv("GITHUB_RUN_ID") or "",
         "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT") or "",
@@ -255,6 +265,7 @@ def render(payload: dict[str, Any]) -> str:
     price_guard = diag.get("price_integrity_guard") if isinstance(diag.get("price_integrity_guard"), dict) else {}
     bookmaker_norm = diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
     bookmaker_backfill = diag.get("bookmaker_quorum_backfill") if isinstance(diag.get("bookmaker_quorum_backfill"), dict) else {}
+    odds_api_snapshot = diag.get("odds_api_io_offer_snapshot") if isinstance(diag.get("odds_api_io_offer_snapshot"), dict) else {}
     timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
     github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
@@ -299,6 +310,13 @@ def render(payload: dict[str, Any]) -> str:
             f"changed truth {_as_int(bookmaker_backfill.get('changed_truth_rows'))}, "
             f"changed inventory {_as_int(bookmaker_backfill.get('changed_inventory_rows'))}"
         )
+    snapshot_line = None
+    if odds_api_snapshot:
+        snapshot_line = (
+            f"• Odds-api offer snapshot: rows {_as_int(odds_api_snapshot.get('rows_count'))}, "
+            f"matches {_as_int(odds_api_snapshot.get('matches_count'))}, "
+            f"same-side 2+ books {_as_int(odds_api_snapshot.get('matches_with_2plus_books_same_side_market'))}"
+        )
 
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
@@ -314,6 +332,8 @@ def render(payload: dict[str, Any]) -> str:
         lines.append(raw_book_line)
     if backfill_line:
         lines.append(backfill_line)
+    if snapshot_line:
+        lines.append(snapshot_line)
     lines.extend([
         f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
         f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",

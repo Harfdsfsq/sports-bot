@@ -73,6 +73,9 @@ MODULES = [
     'app.services.quality_consensus_safe_relief_patch',
     'app.services.source_matrix_amplifier_runtime_patch',
     'app.services.bzzoiro_odds_comparison_bridge_patch',
+    # Keep this after odds-api provider/account patches so it snapshots the final
+    # parsed Offer rows that CandidateFactory will really receive.
+    'app.services.odds_api_io_offer_snapshot_runtime_patch',
     # CandidateFactory wrappers must stay last and in this order: first materialize
     # exact provider hints into real Offer rows, then diagnose the final buckets.
     'app.services.bzzoiro_exact_offer_bridge_patch',
