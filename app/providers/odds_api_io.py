@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+import json
 import os
 from collections import defaultdict
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 UTC = timezone.utc
 from typing import Any
 
@@ -408,7 +410,150 @@ class OddsApiIoProvider:
                 for offer in offers:
                     offers_by_family[str(offer.family or "unknown")] += 1
             stats["offers_by_family"] = dict(sorted(offers_by_family.items()))
-            return dict(offers_by_match), stats, preview
+            result_offers = dict(offers_by_match)
+            self._write_offer_snapshot(soccer_matches, result_offers, stats)
+            return result_offers, stats, preview
+
+
+    def _offer_side(self, selection: Any, market_name: Any = "") -> str:
+        text = f"{selection or ''} {market_name or ''}".lower()
+        if any(token in text for token in ("under", "меньше", "тм")):
+            return "under"
+        if any(token in text for token in ("over", "больше", "тб")):
+            return "over"
+        return ""
+
+    @staticmethod
+    def _json_safe(value: Any) -> Any:
+        if isinstance(value, (str, int, float, bool)) or value is None:
+            return value
+        if isinstance(value, dict):
+            return {str(k): OddsApiIoProvider._json_safe(v) for k, v in value.items() if k not in {"raw_event", "raw_payload"}}
+        if isinstance(value, (list, tuple, set)):
+            return [OddsApiIoProvider._json_safe(v) for v in list(value)[:50]]
+        if hasattr(value, "isoformat"):
+            try:
+                return value.isoformat()
+            except Exception:
+                pass
+        return str(value)
+
+    def _write_offer_snapshot(self, matches: list[Match], offers_by_match: dict[str, list[Offer]], stats: dict[str, Any]) -> None:
+        if str(os.getenv("ODDS_API_IO_OFFER_SNAPSHOT_ENABLED", "true")).strip().lower() in {"0", "false", "no", "off"}:
+            return
+        out_dir = Path(".data/exports")
+        snapshot_path = out_dir / "latest-odds-api-io-offer-snapshot.json"
+        status_path = out_dir / "latest-odds-api-io-offer-snapshot-install.json"
+        try:
+            out_dir.mkdir(parents=True, exist_ok=True)
+            match_by_key = {str(match.match_key): match for match in matches or []}
+            rows: list[dict[str, Any]] = []
+            by_match: dict[str, dict[str, Any]] = {}
+            by_market_books: dict[str, set[str]] = defaultdict(set)
+            for match_key, offers in (offers_by_match or {}).items():
+                match = match_by_key.get(str(match_key))
+                if match is None:
+                    continue
+                for offer in offers or []:
+                    metadata = offer.metadata if isinstance(offer.metadata, dict) else {}
+                    price = float(offer.price or 0.0)
+                    if price <= 1.0 or not str(offer.bookmaker or "").strip():
+                        continue
+                    kickoff_utc = match.commence_time.isoformat() if match.commence_time else ""
+                    event_id = (
+                        offer.source_event_id
+                        or match.source_event_id
+                        or metadata.get("event_id")
+                        or metadata.get("source_event_id")
+                        or metadata.get("odds_api_io_id")
+                        or ""
+                    )
+                    side = self._offer_side(offer.selection, offer.market_name)
+                    row = {
+                        "source": "odds_api_io",
+                        "provider": "odds_api_io",
+                        "api": "odds_api_io",
+                        "match_key": str(match.match_key),
+                        "canonical_match_id": str(match.match_key),
+                        "event_id": str(event_id or ""),
+                        "source_event_id": str(event_id or ""),
+                        "sport_key": str(match.sport_key or "soccer"),
+                        "league_name": str(match.league_name or ""),
+                        "home_team": str(match.home_team or ""),
+                        "away_team": str(match.away_team or ""),
+                        "kickoff_utc": kickoff_utc,
+                        "commence_time": kickoff_utc,
+                        "bookmaker": str(offer.bookmaker or ""),
+                        "book": str(offer.bookmaker or ""),
+                        "family": str(offer.family or ""),
+                        "market_family": str(offer.family or ""),
+                        "market_name": str(offer.market_name or ""),
+                        "market_key": str(offer.market_key or ""),
+                        "selection": str(offer.selection or ""),
+                        "selection_key": str(offer.selection or ""),
+                        "side": side,
+                        "point": offer.point,
+                        "price": price,
+                        "odds": price,
+                        "decimal_odds": price,
+                        "team_side": offer.team_side,
+                        "odds_api_io_account": str(metadata.get("odds_api_io_account") or ""),
+                        "requested_bookmakers": str(metadata.get("requested_bookmakers") or ""),
+                        "metadata": self._json_safe(metadata),
+                    }
+                    rows.append(row)
+                    mkey = row["match_key"]
+                    bucket = f"{row.get('family') or ''}|{side}|{row.get('point') if row.get('point') is not None else ''}"
+                    if side and row.get("point") is not None:
+                        by_market_books[f"{mkey}::{bucket}"].add(str(row.get("bookmaker") or "").strip())
+                    summary = by_match.setdefault(mkey, {
+                        "match_key": mkey,
+                        "home_team": row.get("home_team"),
+                        "away_team": row.get("away_team"),
+                        "kickoff_utc": row.get("kickoff_utc"),
+                        "books": set(),
+                        "offers": 0,
+                        "best_same_side_books": 0,
+                    })
+                    summary["books"].add(str(row.get("bookmaker") or "").strip())
+                    summary["offers"] += 1
+            for key, books in by_market_books.items():
+                match_key = key.split("::", 1)[0]
+                if match_key in by_match:
+                    by_match[match_key]["best_same_side_books"] = max(int(by_match[match_key].get("best_same_side_books") or 0), len({b for b in books if b}))
+            flat_by_match = []
+            for item in by_match.values():
+                books = sorted({b for b in item.pop("books", set()) if b})
+                item["books"] = books
+                item["books_count"] = len(books)
+                flat_by_match.append(item)
+            payload = {
+                "status": "ok",
+                "created_at_utc": datetime.now(timezone.utc).isoformat(),
+                "provider": "odds_api_io",
+                "policy": "direct_provider_parsed_offer_snapshot_for_bookmaker_quorum_backfill",
+                "rows_count": len(rows),
+                "matches_count": len(by_match),
+                "matches_with_2plus_books_any_market": sum(1 for item in flat_by_match if int(item.get("books_count") or 0) >= 2),
+                "matches_with_2plus_books_same_side_market": sum(1 for item in flat_by_match if int(item.get("best_same_side_books") or 0) >= 2),
+                "stats": {
+                    "events_matched": int(stats.get("events_matched") or 0),
+                    "offers_parsed": int(stats.get("offers_parsed") or 0),
+                    "matches_with_2plus_books": int(stats.get("matches_with_2plus_books") or 0),
+                    "bookmakers_seen": int(stats.get("bookmakers_seen") or 0),
+                },
+                "by_match": sorted(flat_by_match, key=lambda x: (-int(x.get("best_same_side_books") or 0), str(x.get("kickoff_utc") or ""), str(x.get("match_key") or "")))[:500],
+                "offers": rows[:20000],
+                "truncated": len(rows) > 20000,
+            }
+            snapshot_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            status_path.write_text(json.dumps({"status": "installed_direct_provider", "snapshot_path": str(snapshot_path), "rows_count": len(rows), "matches_count": len(by_match)}, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        except Exception as exc:
+            try:
+                status_path.parent.mkdir(parents=True, exist_ok=True)
+                status_path.write_text(json.dumps({"status": "error", "stage": "direct_provider_snapshot", "error": f"{type(exc).__name__}: {exc}"}, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            except Exception:
+                pass
 
 
     async def _request_odds_multi(
