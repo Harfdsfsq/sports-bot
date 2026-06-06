@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-06T15:06:26.456337+00:00
+UTC: 2026-06-06T17:06:12.305650+00:00
 target_date: 2026-06-06
-canonical_matches: 406
-2+ provider sources: 129
-2+ primary sources: 126
-all 3 primary sources: 14
+canonical_matches: 377
+2+ provider sources: 96
+2+ primary sources: 93
+all 3 primary sources: 10
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=263 event_like=263 unique=60 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=8 rows=258 event_like=258 unique=60 statuses={"OK": 8, "EMPTY": 2}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=568 event_like=568 unique=284 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=450 event_like=450 unique=225 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=218 event_like=216 unique=216 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=211 event_like=208 unique=208 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 277, "2": 115, "3": 14}
-- primary providers: {"1": 280, "2": 112, "3": 14}
+- all providers: {"1": 281, "2": 86, "3": 10}
+- primary providers: {"1": 284, "2": 83, "3": 10}
 
 ## Top canonical matches
 - 2026-06-05T22:00:00+00:00 | Wanderers — Danubio | providers=sstats ids={"sstats": "1546805"}
@@ -39,9 +39,9 @@ all 3 primary sources: 14
 - 2026-06-06T04:00:00+00:00 | Vanuatu — Fiji | providers=bzzoiro,sstats ids={"bzzoiro": "209484", "sstats": "1548437"}
 - 2026-06-06T04:00:00+00:00 | Port Melbourne — Brunswick City | providers=sstats ids={"sstats": "1522121"}
 - 2026-06-06T04:30:00+00:00 | Magic United — Brisbane Roar II | providers=sstats ids={"sstats": "1524049"}
+- 2026-06-06T05:00:00+00:00 | Kashima Antlers — Vissel Kobe | providers=bzzoiro,sstats ids={"bzzoiro": "207917", "sstats": "1546317"}
 - 2026-06-06T05:00:00+00:00 | JEF United Chiba — Avispa Fukuoka | providers=bzzoiro,sstats ids={"bzzoiro": "207919", "sstats": "1546316"}
 - 2026-06-06T05:00:00+00:00 | FC Tokyo — Cerezo Osaka | providers=bzzoiro,sstats ids={"bzzoiro": "207918", "sstats": "1546400"}
-- 2026-06-06T05:00:00+00:00 | Kashima Antlers — Vissel Kobe | providers=bzzoiro,sstats ids={"bzzoiro": "207917", "sstats": "1546317"}
 - 2026-06-06T05:00:00+00:00 | South Cardiff — West Wallsend | providers=sstats ids={"sstats": "1532569"}
 - 2026-06-06T05:00:00+00:00 | Fujieda MYFC — Ehime FC | providers=sstats ids={"sstats": "1547837"}
 - 2026-06-06T05:00:00+00:00 | Matsumoto Yamaga — Nara Club | providers=sstats ids={"sstats": "1548064"}
@@ -125,11 +125,11 @@ all 3 primary sources: 14
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- JEF United Chiba — Avispa Fukuoka | primary=2 providers=bzzoiro,sstats
+- Kashima Antlers — Vissel Kobe | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- FC Tokyo — Cerezo Osaka | primary=2 providers=bzzoiro,sstats
+- JEF United Chiba — Avispa Fukuoka | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
