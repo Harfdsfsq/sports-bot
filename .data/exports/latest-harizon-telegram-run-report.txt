@@ -1,14 +1,14 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: есть кандидаты, но timing guard отложил их до финального run.
-• Главная причина: кандидаты отложены до финального run перед матчем (4)
+• Главная причина: кандидаты отложены до финального run перед матчем (8)
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 390 (это не размер inventory).
+• Инвентарь дня: 300 матчей. Runtime rows processed: 357 (это не размер inventory).
 • 1+ линия: 280/300 (93%) | 1+ контекст: 292/300 (97%)
 • 2+ букмекера: 117/300 (39%)
-• Raw 2+ букмекера odds-api.io: 107 | normalized inventory: 117 | mapping gap: 0
-• Odds-api mapping backfill: mapped 91, changed truth 0, changed inventory 91
-• Odds-api offer snapshot: rows 20424, matches 228, same-side 2+ books 101
+• Raw 2+ букмекера odds-api.io: 97 | normalized inventory: 117 | mapping gap: 0
+• Odds-api mapping backfill: mapped 82, changed truth 0, changed inventory 82
+• Odds-api offer snapshot: rows 19687, matches 213, same-side 2+ books 92
 • 2+ независимых odds-source: 18/300 (6%) — диагностика, не блок публикации
 • 2+ контекста: 153/300 (51%)
 • Готово для модели: 272/300 (91%)
@@ -30,13 +30,13 @@
 • Пересечение 2+ букмекера ∩ 2+ контекста: до 117 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 2 подозрительных кандидатов до fallback.
-• Timing guard: отложил 4 кандидатов до последнего регулярного run перед матчем.
+• Price-integrity guard: снял 0 подозрительных кандидатов до fallback.
+• Timing guard: отложил 8 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 1; pending 1; duplicates removed 2; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 62 | матчей без следующего регулярного run: 0
+• Pre-kickoff проверок: 72 | матчей без следующего регулярного run: 60
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -45,11 +45,11 @@
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 78; смэтчил матчей 387; offers 20495; 2+ букмекера 107; ошибок 0.
-• Bzzoiro: direct req 112, v2 req 112; v2 ctx 27; v2 odds 21; secondary offers 0; overlap odds-api.io 21; ошибок 0.
-• SStats: запросы 24; сырых строк 20736; контекстов 232; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 72; смэтчил матчей 355; offers 20030; 2+ букмекера 97; ошибок 0.
+• Bzzoiro: direct req 103, v2 req 103; v2 ctx 26; v2 odds 19; secondary offers 0; overlap odds-api.io 22; ошибок 0.
+• SStats: запросы 24; сырых строк 20736; контекстов 228; deep-enriched 4; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 207, bzzoiro+odds_api_io: 21, bzzoiro: 4
+• Комбинации источников линий: odds_api_io: 191, bzzoiro+odds_api_io: 22, bzzoiro: 5
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -58,11 +58,11 @@
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Есть кандидаты, но timing guard отложил 4 до финального регулярного run перед стартом. Сейчас публикацию не форсируем.
+• Есть кандидаты, но timing guard отложил 8 до финального регулярного run перед стартом. Сейчас публикацию не форсируем.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27061761449
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27061761449
-• Artifact: run-bot-27061761449
+• Run ID: 27062989233
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27062989233
+• Artifact: run-bot-27062989233
 • workflow run-bot, attempt 1
