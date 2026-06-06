@@ -1,22 +1,22 @@
 {
-  "bookmaker_quorum_backfill_updated_at_utc": "2026-06-05T23:29:33.875867+00:00",
+  "bookmaker_quorum_backfill_updated_at_utc": "2026-06-06T03:29:53.820658+00:00",
   "bookmaker_quorum_normalized": true,
   "counts": {
     "matches_declined_after_second_snapshot": 0,
-    "matches_ready_for_model": 220,
+    "matches_ready_for_model": 244,
     "matches_ready_for_publish": 0,
     "matches_ready_for_publish_tier_a": 0,
     "matches_ready_for_publish_tier_b": 0,
-    "matches_tier_a_coverage_ready": 16,
-    "matches_tier_b_bookmaker_quorum_ready": 87,
-    "matches_tier_b_coverage_ready": 87,
+    "matches_tier_a_coverage_ready": 34,
+    "matches_tier_b_bookmaker_quorum_ready": 96,
+    "matches_tier_b_coverage_ready": 96,
     "matches_total": 300,
-    "matches_waiting_line_movement": 90,
-    "matches_with_2plus_context_sources": 26,
-    "matches_with_2plus_odds_sources": 16,
-    "matches_with_2plus_price_confirmations": 105,
-    "matches_with_context": 242,
-    "matches_with_odds": 269
+    "matches_waiting_line_movement": 100,
+    "matches_with_2plus_context_sources": 81,
+    "matches_with_2plus_odds_sources": 17,
+    "matches_with_2plus_price_confirmations": 109,
+    "matches_with_context": 264,
+    "matches_with_odds": 278
   },
   "date_local": "2026-06-06",
   "inventory_path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-06.json",
@@ -327,33 +327,20 @@
     },
     "soccer|alamein|melbourne city|2026-06-06": {
       "away_team": "Melbourne City",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
+        "clubelo",
         "openligadb"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
-        "odds": true,
-        "price_confirmation_sources_count": 2
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Alamein FC U20",
       "kickoff_utc": "2026-06-06T02:30:00+00:00",
       "league_name": "Australia - U20 Victoria NPL, Women",
       "match_key": "soccer|alamein|melbourne city|2026-06-06",
-      "metadata": {
-        "books_count": 2,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 2,
       "ready_for_model": true
     },
@@ -364,14 +351,14 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Albirex Niigata",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "J2/J3 League",
       "match_key": "soccer|albirex niigata|consadole sapporo|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|albirex niigata|hokkaido consadole sapporo|2026-06-06": {
       "away_team": "Hokkaido Consadole Sapporo",
@@ -379,6 +366,8 @@
       "bookmaker_quorum_contract_ready": false,
       "books_count": 4,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
@@ -443,7 +432,8 @@
       "away_team": "AMSG",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -562,7 +552,10 @@
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
-      "context_sources": [],
+      "context_sources": [
+        "clubelo",
+        "openligadb"
+      ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
         "books_count": 2,
@@ -601,7 +594,7 @@
       "match_key": "soccer|as trencin|zp sport podbrezova|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|asa aarhus|marienlyst|2026-06-06": {
       "away_team": "ASA Aarhus",
@@ -636,8 +629,10 @@
     "soccer|ashfield|rockingham city|2026-06-06": {
       "away_team": "Ashfield SC",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": true,
       "home_team": "Rockingham City",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -647,7 +642,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|assisense|santa fe|2026-06-05": {
       "away_team": "Santa Fé FC",
@@ -667,41 +662,30 @@
     },
     "soccer|atletico ottawa|vancouver|2026-06-06": {
       "away_team": "Atlético Ottawa",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
-      "books_count": 3,
+      "books_count": 7,
       "context_sources": [
+        "clubelo",
+        "model_xg",
         "openligadb",
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 3,
-        "odds": true,
-        "price_confirmation_sources_count": 3
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Vancouver FC",
       "kickoff_utc": "2026-06-06T02:00:00+00:00",
       "league_name": "Canadian Premier League",
       "match_key": "soccer|atletico ottawa|vancouver|2026-06-06",
-      "metadata": {
-        "books_count": 3,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 3
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
-      "price_confirmations": 3,
+      "price_confirmations": 7,
       "ready_for_model": true
     },
     "soccer|auckland city|auckland united|2026-06-06": {
       "away_team": "Auckland United FC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
         "openligadb",
         "sstats"
       ],
@@ -791,16 +775,17 @@
       "away_team": "Avispa Fukuoka",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 6,
+      "books_count": 8,
       "context_sources": [
         "bzzoiro",
+        "model_xg",
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 6,
+        "books_count": 8,
         "odds": true,
-        "price_confirmation_sources_count": 6
+        "price_confirmation_sources_count": 8
       },
       "has_context": true,
       "has_odds": true,
@@ -809,88 +794,64 @@
       "league_name": "J1 League",
       "match_key": "soccer|avispa fukuoka|jef united chiba|2026-06-06",
       "metadata": {
-        "books_count": 6,
+        "books_count": 8,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 6
+        "price_confirmation_sources_count": 8
       },
       "odds_sources": [
         "bzzoiro",
         "odds_api_io"
       ],
       "odds_sources_count": 2,
-      "price_confirmations": 6,
+      "price_confirmations": 8,
       "ready_for_model": true
     },
     "soccer|avondale|green gully|2026-06-06": {
       "away_team": "Avondale FC",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
+        "clubelo",
         "openligadb",
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
-        "odds": true,
-        "price_confirmation_sources_count": 2
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Green Gully SC",
       "kickoff_utc": "2026-06-06T02:30:00+00:00",
       "league_name": "Australia - U23 Victoria NPL",
       "match_key": "soccer|avondale|green gully|2026-06-06",
-      "metadata": {
-        "books_count": 2,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 2,
       "ready_for_model": true
     },
     "soccer|avondale|melbourne victory|2026-06-06": {
       "away_team": "Melbourne Victory FC",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
+        "clubelo",
         "openligadb"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
-        "odds": true,
-        "price_confirmation_sources_count": 2
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Avondale FC",
       "kickoff_utc": "2026-06-06T02:00:00+00:00",
       "league_name": "Australia - U20 Victoria NPL, Women",
       "match_key": "soccer|avondale|melbourne victory|2026-06-06",
-      "metadata": {
-        "books_count": 2,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 2,
       "ready_for_model": true
     },
     "soccer|azzurri united|litchfield|2026-06-06": {
       "away_team": "Azzurri United FC",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Litchfield FC",
       "kickoff_utc": "2026-06-06T07:30:00+00:00",
@@ -903,8 +864,10 @@
     "soccer|azzurri united|palmerston rovers|2026-06-06": {
       "away_team": "Palmerston Rovers",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": true,
       "home_team": "Azzurri United FC",
       "kickoff_utc": "2026-06-06T08:30:00+00:00",
@@ -914,7 +877,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bac ninh|pvf cand b|2026-06-06": {
       "away_team": "PVF Cand B",
@@ -970,7 +933,8 @@
       "away_team": "Balga SC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -998,7 +962,7 @@
       "match_key": "soccer|banik ostrava|sk dynamo ceske budejovice|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bankstown city|northern tigers|2026-06-06": {
       "away_team": "Northern Tigers",
@@ -1044,7 +1008,7 @@
         "odds": true,
         "price_confirmation_sources_count": 2
       },
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Bankstown United FC",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -1060,13 +1024,14 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 2,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|banyule city|southern united|2026-06-06": {
       "away_team": "Banyule City SC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1076,7 +1041,7 @@
       "match_key": "soccer|banyule city|southern united|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|baranovichi 2|dnepr yuni mogilev|2026-06-06": {
       "away_team": "Dnepr Yuni Mogilev",
@@ -1100,6 +1065,8 @@
       "away_team": "Manukau United FC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -1136,6 +1103,8 @@
       "away_team": "Dianella White Eagles SC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -1154,31 +1123,31 @@
       "away_team": "Shanxi Chongde Ronghai",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 3,
       "context_sources": [],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 3,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Beijing Institute of Technology",
       "kickoff_utc": "2026-06-06T11:00:00+00:00",
       "league_name": "China - China League 2",
       "match_key": "soccer|beijing institute of technology|shanxi chongde ronghai|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 3,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
-      "ready_for_model": false
+      "price_confirmations": 3,
+      "ready_for_model": true
     },
     "soccer|belshina 2|torpedo belaz 2|2026-06-06": {
       "away_team": "FC Belshina 2",
@@ -1202,7 +1171,8 @@
       "away_team": "Boroondara-Carey Eagles U20",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1212,38 +1182,25 @@
       "match_key": "soccer|bentleigh greens|boroondara carey eagles|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bentleigh greens|hume city|2026-06-06": {
       "away_team": "Hume City FC",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
+        "clubelo",
         "openligadb",
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
-        "odds": true,
-        "price_confirmation_sources_count": 2
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Bentleigh Greens SC",
       "kickoff_utc": "2026-06-06T03:00:00+00:00",
       "league_name": "Australia - U23 Victoria NPL",
       "match_key": "soccer|bentleigh greens|hume city|2026-06-06",
-      "metadata": {
-        "books_count": 2,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 2,
       "ready_for_model": true
     },
@@ -1336,14 +1293,14 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Tochigi City",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "J2/J3 League",
       "match_key": "soccer|biwako shiga|tochigi city|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bjoerkelangen|sandefjord fotball 2|2026-06-06": {
       "away_team": "Sandefjord Fotball 2",
@@ -1413,7 +1370,8 @@
       "away_team": "FK Blansko",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1431,7 +1389,8 @@
       "away_team": "Tj Jiskra Domazlice",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1483,15 +1442,15 @@
       "away_team": "BK Fremad Amager",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 4,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 4,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 4
       },
       "has_context": true,
       "has_odds": true,
@@ -1500,22 +1459,23 @@
       "league_name": "Denmark - 2nd Division",
       "match_key": "soccer|brabrand if|fremad amager|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 4,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 4
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 4,
       "ready_for_model": true
     },
     "soccer|brandys nad labem|chlumec nad cidlinou|2026-06-06": {
       "away_team": "Chlumec nad Cidlinou",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1565,7 +1525,7 @@
       "away_team": "Brisbane Knights",
       "books_count": 0,
       "context_sources": [],
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Samford Rangers",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -1575,7 +1535,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|brisbane roar 2|magic united|2026-06-06": {
       "away_team": "Brisbane Roar II",
@@ -1584,19 +1544,21 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Magic United",
       "kickoff_utc": "2026-06-06T04:30:00+00:00",
       "league_name": "Queensland NPL",
       "match_key": "soccer|brisbane roar 2|magic united|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|brisbane roar|magic united tfa|2026-06-06": {
       "away_team": "Brisbane Roar FC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -1717,6 +1679,8 @@
       "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
@@ -1745,25 +1709,44 @@
     },
     "soccer|brunswick city|port melbourne|2026-06-06": {
       "away_team": "Brunswick City",
-      "books_count": 0,
+      "bookmaker_quorum_backfilled": true,
+      "bookmaker_quorum_contract_ready": false,
+      "books_count": 2,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
+      "coverage": {
+        "bookmaker_quorum_backfilled": true,
+        "books_count": 2,
+        "odds": true,
+        "price_confirmation_sources_count": 2
+      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Port Melbourne",
       "kickoff_utc": "2026-06-06T04:00:00+00:00",
       "league_name": "Victoria NPL 2",
       "match_key": "soccer|brunswick city|port melbourne|2026-06-06",
-      "odds_sources": [],
-      "price_confirmations": 0,
+      "metadata": {
+        "books_count": 2,
+        "odds_api_bookmaker_quorum_backfilled": true,
+        "price_confirmation_sources_count": 2
+      },
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
+      "price_confirmations": 2,
       "ready_for_model": true
     },
     "soccer|brunswick juventus|bundoora united|2026-06-06": {
       "away_team": "Bundoora United FC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1773,7 +1756,7 @@
       "match_key": "soccer|brunswick juventus|bundoora united|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bsc young boys|luzern|2026-06-06": {
       "away_team": "BSC Young Boys",
@@ -1789,13 +1772,14 @@
       "match_key": "soccer|bsc young boys|luzern|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bulleen lions|keilor park|2026-06-06": {
       "away_team": "FC Bulleen Lions U20",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -1805,7 +1789,7 @@
       "match_key": "soccer|bulleen lions|keilor park|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|bunnys gunma white star|speranza osaka|2026-06-06": {
       "away_team": "Bunnys Gunma FC White Star",
@@ -1876,45 +1860,31 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Pocheon",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "K3 League",
       "match_key": "soccer|busan transportation|pocheon|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|ca ferrocarril midland|gimnasia y tiro salta|2026-06-06": {
       "away_team": "CA Ferrocarril Midland",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 3,
       "context_sources": [
         "openligadb",
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 3,
-        "odds": true,
-        "price_confirmation_sources_count": 3
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Gimnasia Y Tiro de Salta",
       "kickoff_utc": "2026-06-06T00:30:00+00:00",
       "league_name": "Argentina - Primera Nacional",
       "match_key": "soccer|ca ferrocarril midland|gimnasia y tiro salta|2026-06-06",
-      "metadata": {
-        "books_count": 3,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 3
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 3,
       "ready_for_model": true
     },
@@ -2004,7 +1974,7 @@
       "away_team": "Camden Tigers FC",
       "books_count": 0,
       "context_sources": [],
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Gladesville Ryde Magic",
       "kickoff_utc": "2026-06-06T07:30:00+00:00",
@@ -2014,7 +1984,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|campbelltown city|para hills knights|2026-06-06": {
       "away_team": "Para Hills Knights",
@@ -2067,8 +2037,10 @@
     "soccer|canning city|north beach|2026-06-06": {
       "away_team": "North Beach SC",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": true,
       "home_team": "Canning City",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -2078,7 +2050,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|canterbury bankstown|western city rangers|2026-06-06": {
       "away_team": "Canterbury Bankstown FC",
@@ -2135,14 +2107,16 @@
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
-      "context_sources": [],
+      "context_sources": [
+        "sstats"
+      ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
         "books_count": 2,
         "odds": true,
         "price_confirmation_sources_count": 2
       },
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Dandenong Thunder",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -2158,13 +2132,15 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 2,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|carramar shamrock rovers|morley windmills|2026-06-06": {
       "away_team": "Morley Windmills SC",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": true,
       "home_team": "Carramar Shamrock Rovers FC",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -2174,7 +2150,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|cashmere technical|selwyn united|2026-06-06": {
       "away_team": "Cashmere Technical",
@@ -2198,7 +2174,8 @@
       "away_team": "Čáslav",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -2215,8 +2192,10 @@
     "soccer|casuarina|mindil aces|2026-06-06": {
       "away_team": "Casuarina FC",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Mindil Aces",
       "kickoff_utc": "2026-06-06T06:30:00+00:00",
@@ -2262,16 +2241,18 @@
       "away_team": "Cerezo Osaka",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 5,
+      "books_count": 10,
       "context_sources": [
         "bzzoiro",
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 5,
+        "books_count": 10,
         "odds": true,
-        "price_confirmation_sources_count": 5
+        "price_confirmation_sources_count": 10
       },
       "has_context": true,
       "has_odds": true,
@@ -2280,16 +2261,16 @@
       "league_name": "J1 League",
       "match_key": "soccer|cerezo osaka|tokyo|2026-06-06",
       "metadata": {
-        "books_count": 5,
+        "books_count": 10,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 5
+        "price_confirmation_sources_count": 10
       },
       "odds_sources": [
         "bzzoiro",
         "odds_api_io"
       ],
       "odds_sources_count": 2,
-      "price_confirmations": 5,
+      "price_confirmations": 10,
       "ready_for_model": true
     },
     "soccer|changwon|dangjin citizen|2026-06-06": {
@@ -2429,33 +2410,19 @@
     },
     "soccer|coquimbo unido|deportes concepcion|2026-06-06": {
       "away_team": "Coquimbo Unido",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 4,
       "context_sources": [
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 4,
-        "odds": true,
-        "price_confirmation_sources_count": 4
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Deportes Concepcion",
       "kickoff_utc": "2026-06-06T00:00:00+00:00",
       "league_name": "Chile - Copa de la Liga",
       "match_key": "soccer|coquimbo unido|deportes concepcion|2026-06-06",
-      "metadata": {
-        "books_count": 4,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 4
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 4,
       "ready_for_model": true
     },
@@ -2464,6 +2431,7 @@
       "books_count": 0,
       "context_sources": [
         "bzzoiro",
+        "clubelo",
         "openligadb"
       ],
       "has_context": true,
@@ -2483,6 +2451,7 @@
       "away_team": "The Cove FC Reserves",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
         "openligadb",
         "sstats"
       ],
@@ -2598,7 +2567,7 @@
       "match_key": "soccer|dac 1904 dunajska streda|msk fomat martin|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|dandenong city|heidelberg united|2026-06-06": {
       "away_team": "Heidelberg United FC",
@@ -2748,7 +2717,8 @@
       "away_team": "Kalamunda City FC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -2766,6 +2736,8 @@
       "away_team": "Melville United AFC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -2784,15 +2756,17 @@
       "away_team": "Ehime FC",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 3,
+      "books_count": 9,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 3,
+        "books_count": 9,
         "odds": true,
-        "price_confirmation_sources_count": 3
+        "price_confirmation_sources_count": 9
       },
       "has_context": true,
       "has_odds": true,
@@ -2801,22 +2775,23 @@
       "league_name": "J2/J3 League",
       "match_key": "soccer|ehime|fujieda myfc|2026-06-06",
       "metadata": {
-        "books_count": 3,
+        "books_count": 9,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 3
+        "price_confirmation_sources_count": 9
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 3,
+      "price_confirmations": 9,
       "ready_for_model": true
     },
     "soccer|eltham redbacks|manningham united blues|2026-06-06": {
       "away_team": "Manningham United Blues FC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -2826,7 +2801,7 @@
       "match_key": "soccer|eltham redbacks|manningham united blues|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|espergaerde if|fredensborg bi|2026-06-06": {
       "away_team": "Espergaerde IF",
@@ -2847,8 +2822,10 @@
     "soccer|essendon royals|spring hills|2026-06-06": {
       "away_team": "Spring Hills FC",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Essendon Royals SC U20",
       "kickoff_utc": "2026-06-06T02:30:00+00:00",
@@ -2950,6 +2927,8 @@
       "away_team": "Tauranga City AFC",
       "books_count": 2,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -2968,6 +2947,7 @@
       "away_team": "Wanaka AFC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
         "openligadb"
       ],
       "has_context": true,
@@ -2985,8 +2965,10 @@
     "soccer|fiji|hong kong|2026-06-06": {
       "away_team": "Fiji",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Hong Kong",
       "kickoff_utc": "2026-06-06T10:00:00+00:00",
@@ -3019,15 +3001,15 @@
       "away_team": "Fittja IF",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 3,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 3,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "has_context": true,
       "has_odds": true,
@@ -3036,21 +3018,23 @@
       "league_name": "Sweden - Division 2, Promotion Playoffs",
       "match_key": "soccer|fittja if|nykopings bis|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 3,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 3,
       "ready_for_model": true
     },
     "soccer|floreat athena reserves|gwelup croatia reserves|2026-06-06": {
       "away_team": "Gwelup Croatia SC Reserves",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -3069,6 +3053,38 @@
       "away_team": "BK Forward",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
+      "books_count": 3,
+      "context_sources": [
+        "sstats"
+      ],
+      "coverage": {
+        "bookmaker_quorum_backfilled": true,
+        "books_count": 3,
+        "odds": true,
+        "price_confirmation_sources_count": 3
+      },
+      "has_context": true,
+      "has_odds": true,
+      "home_team": "FOC Farsta",
+      "kickoff_utc": "2026-06-06T12:00:00+00:00",
+      "league_name": "Sweden - Division 2, Promotion Playoffs",
+      "match_key": "soccer|foc farsta|forward|2026-06-06",
+      "metadata": {
+        "books_count": 3,
+        "odds_api_bookmaker_quorum_backfilled": true,
+        "price_confirmation_sources_count": 3
+      },
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
+      "price_confirmations": 3,
+      "ready_for_model": true
+    },
+    "soccer|frem|odder igf|2026-06-06": {
+      "away_team": "BK Frem",
+      "bookmaker_quorum_backfilled": true,
+      "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
         "sstats"
@@ -3080,36 +3096,6 @@
         "price_confirmation_sources_count": 2
       },
       "has_context": true,
-      "has_odds": true,
-      "home_team": "FOC Farsta",
-      "kickoff_utc": "2026-06-06T12:00:00+00:00",
-      "league_name": "Sweden - Division 2, Promotion Playoffs",
-      "match_key": "soccer|foc farsta|forward|2026-06-06",
-      "metadata": {
-        "books_count": 2,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
-      },
-      "odds_sources": [
-        "odds_api_io"
-      ],
-      "odds_sources_count": 1,
-      "price_confirmations": 2,
-      "ready_for_model": true
-    },
-    "soccer|frem|odder igf|2026-06-06": {
-      "away_team": "BK Frem",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
-      "context_sources": [],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
-        "odds": true,
-        "price_confirmation_sources_count": 2
-      },
-      "has_context": false,
       "has_odds": true,
       "home_team": "Odder IGF",
       "kickoff_utc": "2026-06-06T11:00:00+00:00",
@@ -3125,7 +3111,7 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 2,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|friska viljor|ifk ostersund|2026-06-06": {
       "away_team": "Friska Viljor",
@@ -3149,15 +3135,15 @@
       "away_team": "Gainare Tottori",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 4,
+      "books_count": 8,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 4,
+        "books_count": 8,
         "odds": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 8
       },
       "has_context": true,
       "has_odds": true,
@@ -3166,15 +3152,15 @@
       "league_name": "J2/J3 League",
       "match_key": "soccer|gainare tottori|gifu|2026-06-06",
       "metadata": {
-        "books_count": 4,
+        "books_count": 8,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 8
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 4,
+      "price_confirmations": 8,
       "ready_for_model": true
     },
     "soccer|gamba osaka|tokyo verdy|2026-06-06": {
@@ -3246,8 +3232,10 @@
     "soccer|garuda reserves|port darwin reserves|2026-06-06": {
       "away_team": "Garuda FC Reserves",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Port Darwin FC Reserves",
       "kickoff_utc": "2026-06-06T10:30:00+00:00",
@@ -3261,7 +3249,8 @@
       "away_team": "Geelong Galaxy United FC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -3271,7 +3260,7 @@
       "match_key": "soccer|geelong galaxy united|ringwood city|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|gimnasia y tiro|midland|2026-06-06": {
       "away_team": "Midland",
@@ -3309,13 +3298,13 @@
       "away_team": "Glostrup FK",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 3,
+      "books_count": 7,
       "context_sources": [],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 3,
+        "books_count": 7,
         "odds": true,
-        "price_confirmation_sources_count": 3
+        "price_confirmation_sources_count": 7
       },
       "has_context": true,
       "has_odds": true,
@@ -3324,22 +3313,24 @@
       "league_name": "Denmark Amateur - Danmarksserien",
       "match_key": "soccer|glostrup|ringsted if|2026-06-06",
       "metadata": {
-        "books_count": 3,
+        "books_count": 7,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 3
+        "price_confirmation_sources_count": 7
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 3,
+      "price_confirmations": 7,
       "ready_for_model": true
     },
     "soccer|gold coast knights|queensland qas|2026-06-06": {
       "away_team": "Football Queensland QAS",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Gold Coast Knights",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -3487,7 +3478,7 @@
       "away_team": "Gyeongju FC",
       "books_count": 0,
       "context_sources": [],
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Jeonbuk FC II",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -3497,7 +3488,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|gyeongnam|yongin city|2026-06-06": {
       "away_team": "Yongin City",
@@ -3563,36 +3554,22 @@
     },
     "soccer|haiti|peru|2026-06-06": {
       "away_team": "Peru",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 4,
       "context_sources": [
         "bzzoiro",
         "openligadb",
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 4,
-        "odds": true,
-        "price_confirmation_sources_count": 4
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Haiti",
       "kickoff_utc": "2026-06-06T00:00:00+00:00",
       "league_name": "Friendlies",
       "match_key": "soccer|haiti|peru|2026-06-06",
-      "metadata": {
-        "books_count": 4,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 4
-      },
       "odds_sources": [
         "bzzoiro",
         "odds_api_io"
       ],
-      "odds_sources_count": 2,
       "price_confirmations": 4,
       "ready_for_model": true
     },
@@ -3630,19 +3607,36 @@
     },
     "soccer|heidelberg united|south melbourne|2026-06-06": {
       "away_team": "Heidelberg United FC U20",
-      "books_count": 0,
+      "bookmaker_quorum_backfilled": true,
+      "bookmaker_quorum_contract_ready": false,
+      "books_count": 2,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
+      "coverage": {
+        "bookmaker_quorum_backfilled": true,
+        "books_count": 2,
+        "odds": true,
+        "price_confirmation_sources_count": 2
+      },
       "has_context": true,
       "has_odds": true,
       "home_team": "South Melbourne FC U20",
       "kickoff_utc": "2026-06-06T03:00:00+00:00",
       "league_name": "Australia - U20 Victoria NPL, Women",
       "match_key": "soccer|heidelberg united|south melbourne|2026-06-06",
-      "odds_sources": [],
-      "price_confirmations": 0,
-      "ready_for_model": false
+      "metadata": {
+        "books_count": 2,
+        "odds_api_bookmaker_quorum_backfilled": true,
+        "price_confirmation_sources_count": 2
+      },
+      "odds_sources": [
+        "odds_api_io"
+      ],
+      "odds_sources_count": 1,
+      "price_confirmations": 2,
+      "ready_for_model": true
     },
     "soccer|helsingoer|vsk aarhus|2026-06-06": {
       "away_team": "FC Helsingoer",
@@ -3696,15 +3690,15 @@
       "away_team": "Hestrafors IF",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 3,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 3,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "has_context": true,
       "has_odds": true,
@@ -3713,15 +3707,15 @@
       "league_name": "Sweden - Division 2, Promotion Playoffs",
       "match_key": "soccer|hestrafors if|torslanda ik|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 3,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 3,
       "ready_for_model": true
     },
     "soccer|hik hellerup|roskilde|2026-06-06": {
@@ -3810,7 +3804,8 @@
       "away_team": "Hlinsko",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -3856,7 +3851,7 @@
       "match_key": "soccer|horsens|odense boldklub|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|hradec kralove|slovan liberec|2026-06-06": {
       "away_team": "FC Slovan Liberec",
@@ -3994,15 +3989,15 @@
       "away_team": "IFK Berga",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 6,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 6,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 6
       },
       "has_context": true,
       "has_odds": true,
@@ -4011,15 +4006,15 @@
       "league_name": "Sweden - Division 2, Promotion Playoffs",
       "match_key": "soccer|ifk berga|linero if|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 6,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 6
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 6,
       "ready_for_model": true
     },
     "soccer|ifk haninge|nacka|2026-06-06": {
@@ -4090,15 +4085,15 @@
       "away_team": "IFK Umea",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 3,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 3,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "has_context": true,
       "has_odds": true,
@@ -4107,30 +4102,30 @@
       "league_name": "Sweden - Division 2, Promotion Playoffs",
       "match_key": "soccer|ifk umea|skellefteaa ff|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 3,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 3,
       "ready_for_model": true
     },
     "soccer|ik tord|lidkopings|2026-06-06": {
       "away_team": "Lidkopings FK",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 3,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 3,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "has_context": true,
       "has_odds": true,
@@ -4139,22 +4134,25 @@
       "league_name": "Sweden - Division 2, Promotion Playoffs",
       "match_key": "soccer|ik tord|lidkopings|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 3,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 3,
       "ready_for_model": true
     },
     "soccer|ipswich knights|uq|2026-06-06": {
       "away_team": "Ipswich Knights",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "sstats",
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": true,
       "home_team": "UQ FC",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
@@ -4164,7 +4162,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|ishoej if|skive ik|2026-06-06": {
       "away_team": "Ishoej IF",
@@ -4218,6 +4216,7 @@
       "away_team": "Island Bay United",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
         "openligadb"
       ],
       "has_context": true,
@@ -4236,7 +4235,8 @@
       "away_team": "FK Jablonec B",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -4272,6 +4272,7 @@
       "away_team": "South Africa",
       "books_count": 0,
       "context_sources": [
+        "bzzoiro",
         "sstats"
       ],
       "has_context": true,
@@ -4281,6 +4282,7 @@
       "league_name": "International - Int. Friendly Games W",
       "match_key": "soccer|japan|south africa|2026-06-06",
       "odds_sources": [
+        "bzzoiro",
         "odds_api_io"
       ],
       "price_confirmations": 0,
@@ -4421,7 +4423,10 @@
       "books_count": 4,
       "context_sources": [
         "bzzoiro",
-        "sstats"
+        "clubelo",
+        "openligadb",
+        "sstats",
+        "thesportsdb"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
@@ -4452,17 +4457,22 @@
       "away_team": "Vissel Kobe",
       "books_count": 0,
       "context_sources": [
+        "bzzoiro",
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Kashima",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "J1 League",
       "match_key": "soccer|kashima|vissel kobe|2026-06-06",
-      "odds_sources": [],
+      "odds_sources": [
+        "bzzoiro"
+      ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|kashiwa reysol|kyoto sanga|2026-06-06": {
       "away_team": "Kyoto Sanga",
@@ -4502,15 +4512,17 @@
       "away_team": "Kataller Toyama",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 4,
+      "books_count": 8,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 4,
+        "books_count": 8,
         "odds": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 8
       },
       "has_context": true,
       "has_odds": true,
@@ -4519,15 +4531,15 @@
       "league_name": "J2/J3 League",
       "match_key": "soccer|kataller toyama|vegalta sendai|2026-06-06",
       "metadata": {
-        "books_count": 4,
+        "books_count": 8,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 8
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 4,
+      "price_confirmations": 8,
       "ready_for_model": true
     },
     "soccer|kawasaki frontale|sanfrecce hiroshima|2026-06-06": {
@@ -4570,7 +4582,8 @@
       "bookmaker_quorum_contract_ready": false,
       "books_count": 3,
       "context_sources": [
-        "bzzoiro"
+        "bzzoiro",
+        "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
@@ -4640,14 +4653,14 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Omiya Ardija",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "J2/J3 League",
       "match_key": "soccer|kochi united|omiya ardija|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|kochi united|rb omiya ardija|2026-06-06": {
       "away_team": "Kochi United SC",
@@ -4655,6 +4668,8 @@
       "bookmaker_quorum_contract_ready": false,
       "books_count": 4,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
@@ -4695,13 +4710,14 @@
       "match_key": "soccer|kosice|petrzalka|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|kurim|sparta brno|2026-06-06": {
       "away_team": "Sparta Brno",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -4801,13 +4817,13 @@
       "away_team": "Lindo FF",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 3,
       "context_sources": [],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 3,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "has_context": false,
       "has_odds": true,
@@ -4816,15 +4832,15 @@
       "league_name": "Sweden - Division 2, Promotion Playoffs",
       "match_key": "soccer|lindo ff|raagsveds if|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 3,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 3
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 3,
       "ready_for_model": false
     },
     "soccer|litchfield|palmerston rovers div 3|2026-06-06": {
@@ -4931,7 +4947,7 @@
       "away_team": "Mandurah City",
       "books_count": 0,
       "context_sources": [],
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Murdoch University Melville FC",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -4941,7 +4957,7 @@
         "odds_api_io"
       ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|manningham united blues|western united youth|2026-06-06": {
       "away_team": "Western United FC Youth",
@@ -4999,7 +5015,8 @@
       "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "thesportsdb"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
@@ -5032,14 +5049,14 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "Melbourne Srbija",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "Victoria NPL 2",
       "match_key": "soccer|melbourne srbija|north geelong warriors|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|merlo|talleres remedios|2026-06-05": {
       "away_team": "Deportivo Merlo",
@@ -5071,13 +5088,14 @@
       "match_key": "soccer|mfk dukla banska bystrica|mfk ruzomberok|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|mfk karvina b|zbrojovka brno b|2026-06-06": {
       "away_team": "FC Zbrojovka Brno B",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -5105,7 +5123,7 @@
       "match_key": "soccer|mfk zemplin michalovce|slovan bratislava|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|miami city w|tlh reckoning w|2026-06-05": {
       "away_team": "TLH Reckoning W",
@@ -5161,8 +5179,10 @@
     "soccer|mindil aces reserves|palmerston rovers reserves|2026-06-06": {
       "away_team": "Mindil Aces FC Reserves",
       "books_count": 0,
-      "context_sources": [],
-      "has_context": false,
+      "context_sources": [
+        "weather"
+      ],
+      "has_context": true,
       "has_odds": false,
       "home_team": "Palmerston Rovers FC Reserves",
       "kickoff_utc": "2026-06-06T06:30:00+00:00",
@@ -5176,6 +5196,8 @@
       "away_team": "Miramar Rangers",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -5194,16 +5216,16 @@
       "away_team": "V-varen Nagasaki",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 4,
+      "books_count": 7,
       "context_sources": [
         "bzzoiro",
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 4,
+        "books_count": 7,
         "odds": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 7
       },
       "has_context": true,
       "has_odds": true,
@@ -5212,34 +5234,48 @@
       "league_name": "J1 League",
       "match_key": "soccer|mito hollyhock|v varen nagasaki|2026-06-06",
       "metadata": {
-        "books_count": 4,
+        "books_count": 7,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 7
       },
       "odds_sources": [
         "bzzoiro",
         "odds_api_io"
       ],
       "odds_sources_count": 2,
-      "price_confirmations": 4,
+      "price_confirmations": 7,
       "ready_for_model": true
     },
     "soccer|mlada boleslav|pardubice|2026-06-06": {
       "away_team": "FC Pardubice",
-      "books_count": 0,
+      "bookmaker_quorum_backfilled": true,
+      "bookmaker_quorum_contract_ready": false,
+      "books_count": 2,
       "context_sources": [
         "sstats"
       ],
+      "coverage": {
+        "bookmaker_quorum_backfilled": true,
+        "books_count": 2,
+        "odds": true,
+        "price_confirmation_sources_count": 2
+      },
       "has_context": true,
       "has_odds": true,
       "home_team": "FK Mlada Boleslav",
       "kickoff_utc": "2026-06-06T08:15:00+00:00",
       "league_name": "Czechia - U19 1st Division",
       "match_key": "soccer|mlada boleslav|pardubice|2026-06-06",
+      "metadata": {
+        "books_count": 2,
+        "odds_api_bookmaker_quorum_backfilled": true,
+        "price_confirmation_sources_count": 2
+      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "price_confirmations": 0,
+      "odds_sources_count": 1,
+      "price_confirmations": 2,
       "ready_for_model": true
     },
     "soccer|modbury jets|sturt lions|2026-06-06": {
@@ -5256,7 +5292,7 @@
       "match_key": "soccer|modbury jets|sturt lions|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|moggill|redcliffe dolphins|2026-06-06": {
       "away_team": "Redcliffe Dolphins",
@@ -5288,7 +5324,7 @@
       "match_key": "soccer|msk zilina|tatran presov|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|mt gravatt hawks|newmarket sfc|2026-06-06": {
       "away_team": "Newmarket SFC",
@@ -5342,7 +5378,8 @@
       "away_team": "SK Benatky Nad Jizerou",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -5411,7 +5448,8 @@
       "away_team": "Prospect United",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -5498,15 +5536,15 @@
       "away_team": "Nordstrand",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 6,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 6,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 6
       },
       "has_context": true,
       "has_odds": true,
@@ -5515,15 +5553,15 @@
       "league_name": "Norway - 3rd Division Group 1",
       "match_key": "soccer|nordstrand|valerenga if 2|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 6,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 6
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 6,
       "ready_for_model": true
     },
     "soccer|north star|sunshine coast wanderers|2026-06-06": {
@@ -5565,14 +5603,16 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "SC Wanderers",
       "kickoff_utc": "2026-06-06T08:00:00+00:00",
       "league_name": "Queensland Premier League",
       "match_key": "soccer|north star|wanderers|2026-06-06",
-      "odds_sources": [],
+      "odds_sources": [
+        "odds_api_io"
+      ],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|olympic kingsway|perth glory|2026-06-06": {
       "away_team": "Olympic Kingsway SC",
@@ -5586,7 +5626,7 @@
         "odds": true,
         "price_confirmation_sources_count": 2
       },
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "Perth Glory FC",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -5602,13 +5642,14 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 2,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|ostrov|sk steti|2026-06-06": {
       "away_team": "FK Ostrov",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -5724,6 +5765,8 @@
       "away_team": "Petone FC",
       "books_count": 0,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "has_context": true,
@@ -5818,7 +5861,7 @@
       "match_key": "soccer|pohronie ziar nad hronom dolna zdana|spartak trnava|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|polock 2019|senno|2026-06-06": {
       "away_team": "Senno",
@@ -5854,41 +5897,28 @@
     },
     "soccer|portland timbers 2|whitecaps 2|2026-06-06": {
       "away_team": "Portland Timbers II",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 4,
       "context_sources": [
         "openligadb"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
-        "odds": true,
-        "price_confirmation_sources_count": 2
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Whitecaps FC 2",
       "kickoff_utc": "2026-06-06T01:00:00+00:00",
       "league_name": "USA - MLS Next Pro",
       "match_key": "soccer|portland timbers 2|whitecaps 2|2026-06-06",
-      "metadata": {
-        "books_count": 2,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 4,
       "ready_for_model": true
     },
     "soccer|predni kopanina|usti nad labem 2|2026-06-06": {
       "away_team": "Přední Kopanina",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -5930,7 +5960,7 @@
         "odds": true,
         "price_confirmation_sources_count": 2
       },
-      "has_context": false,
+      "has_context": true,
       "has_odds": true,
       "home_team": "SD Raiders FC",
       "kickoff_utc": "2026-06-06T07:00:00+00:00",
@@ -5946,14 +5976,18 @@
       ],
       "odds_sources_count": 1,
       "price_confirmations": 2,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|reilac shiga|tochigi city|2026-06-06": {
       "away_team": "Reilac Shiga FC",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
       "books_count": 3,
-      "context_sources": [],
+      "context_sources": [
+        "clubelo",
+        "openligadb",
+        "sstats"
+      ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
         "books_count": 3,
@@ -5980,35 +6014,52 @@
     },
     "soccer|renofa yamaguchi women|seisa osa reia shonan|2026-06-06": {
       "away_team": "Renofa Yamaguchi FC Ladies",
-      "books_count": 0,
+      "bookmaker_quorum_backfilled": true,
+      "bookmaker_quorum_contract_ready": false,
+      "books_count": 2,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
+      "coverage": {
+        "bookmaker_quorum_backfilled": true,
+        "books_count": 2,
+        "odds": true,
+        "price_confirmation_sources_count": 2
+      },
       "has_context": true,
       "has_odds": true,
       "home_team": "Seisa Osa Reia Shonan FC",
       "kickoff_utc": "2026-06-06T04:00:00+00:00",
       "league_name": "Japan - Nadeshiko League, Div 2, Women",
       "match_key": "soccer|renofa yamaguchi women|seisa osa reia shonan|2026-06-06",
+      "metadata": {
+        "books_count": 2,
+        "odds_api_bookmaker_quorum_backfilled": true,
+        "price_confirmation_sources_count": 2
+      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "price_confirmations": 0,
+      "odds_sources_count": 1,
+      "price_confirmations": 2,
       "ready_for_model": true
     },
     "soccer|renofa yamaguchi|yokohama|2026-06-06": {
       "away_team": "Renofa Yamaguchi",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 4,
+      "books_count": 9,
       "context_sources": [
+        "model_xg",
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 4,
+        "books_count": 9,
         "odds": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 9
       },
       "has_context": true,
       "has_odds": true,
@@ -6017,15 +6068,15 @@
       "league_name": "J2/J3 League",
       "match_key": "soccer|renofa yamaguchi|yokohama|2026-06-06",
       "metadata": {
-        "books_count": 4,
+        "books_count": 9,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 4
+        "price_confirmation_sources_count": 9
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 4,
+      "price_confirmations": 9,
       "ready_for_model": true
     },
     "soccer|roasso kumamoto|sagamihara|2026-06-06": {
@@ -6034,6 +6085,8 @@
       "bookmaker_quorum_contract_ready": false,
       "books_count": 4,
       "context_sources": [
+        "clubelo",
+        "openligadb",
         "sstats"
       ],
       "coverage": {
@@ -6176,33 +6229,19 @@
     },
     "soccer|san luis quillota|san marcos arica|2026-06-06": {
       "away_team": "San Marcos de Arica",
-      "bookmaker_quorum_backfilled": true,
-      "bookmaker_quorum_contract_ready": false,
       "books_count": 3,
       "context_sources": [
         "sstats"
       ],
-      "coverage": {
-        "bookmaker_quorum_backfilled": true,
-        "books_count": 3,
-        "odds": true,
-        "price_confirmation_sources_count": 3
-      },
       "has_context": true,
       "has_odds": true,
       "home_team": "San Luis de Quillota",
       "kickoff_utc": "2026-06-06T00:00:00+00:00",
       "league_name": "Chile - Primera B",
       "match_key": "soccer|san luis quillota|san marcos arica|2026-06-06",
-      "metadata": {
-        "books_count": 3,
-        "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 3
-      },
       "odds_sources": [
         "odds_api_io"
       ],
-      "odds_sources_count": 1,
       "price_confirmations": 3,
       "ready_for_model": true
     },
@@ -6254,7 +6293,7 @@
       "match_key": "soccer|seekirchen|wals grunau|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|seekirchen|wals_gr_nau|2026-06-06": {
       "away_team": "Wals-Grünau",
@@ -6270,7 +6309,7 @@
       "match_key": "soccer|seekirchen|wals_gr_nau|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|seko louny|sk ujezd praha 4|2026-06-06": {
       "away_team": "FK Seko Louny",
@@ -6294,15 +6333,15 @@
       "away_team": "Shanghai Second",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 2,
+      "books_count": 6,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 2,
+        "books_count": 6,
         "odds": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 6
       },
       "has_context": true,
       "has_odds": true,
@@ -6311,15 +6350,15 @@
       "league_name": "China - China League 2",
       "match_key": "soccer|shanghai port b|shanghai second|2026-06-06",
       "metadata": {
-        "books_count": 2,
+        "books_count": 6,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 2
+        "price_confirmation_sources_count": 6
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 2,
+      "price_confirmations": 6,
       "ready_for_model": true
     },
     "soccer|shimizu s pulse|yokohama f marinos|2026-06-06": {
@@ -6378,7 +6417,8 @@
       "away_team": "FK Slavoj Cesky Krumlov",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -6412,7 +6452,8 @@
       "away_team": "West Wallsend SFC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -6433,14 +6474,14 @@
         "sstats"
       ],
       "has_context": true,
-      "has_odds": false,
+      "has_odds": true,
       "home_team": "South Cardiff",
       "kickoff_utc": "2026-06-06T05:00:00+00:00",
       "league_name": "NNSW League 1",
       "match_key": "soccer|south cardiff|west wallsend|2026-06-06",
       "odds_sources": [],
       "price_confirmations": 0,
-      "ready_for_model": false
+      "ready_for_model": true
     },
     "soccer|souths united|virginia united|2026-06-06": {
       "away_team": "Virginia United",
@@ -6514,15 +6555,15 @@
       "away_team": "Ventforet Kofu",
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
-      "books_count": 3,
+      "books_count": 5,
       "context_sources": [
         "sstats"
       ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
-        "books_count": 3,
+        "books_count": 5,
         "odds": true,
-        "price_confirmation_sources_count": 3
+        "price_confirmation_sources_count": 5
       },
       "has_context": true,
       "has_odds": true,
@@ -6531,15 +6572,15 @@
       "league_name": "J2/J3 League",
       "match_key": "soccer|tegevajaro miyazaki|ventforet kofu|2026-06-06",
       "metadata": {
-        "books_count": 3,
+        "books_count": 5,
         "odds_api_bookmaker_quorum_backfilled": true,
-        "price_confirmation_sources_count": 3
+        "price_confirmation_sources_count": 5
       },
       "odds_sources": [
         "odds_api_io"
       ],
       "odds_sources_count": 1,
-      "price_confirmations": 3,
+      "price_confirmations": 5,
       "ready_for_model": true
     },
     "soccer|thailand|uzbekistan|2026-06-06": {
@@ -6564,7 +6605,8 @@
       "away_team": "FC Viktoria Marianske Lazne",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "sstats",
+        "weather"
       ],
       "has_context": true,
       "has_odds": true,
@@ -6598,7 +6640,10 @@
       "away_team": "Western City Rangers FC",
       "books_count": 0,
       "context_sources": [
-        "sstats"
+        "clubelo",
+        "openligadb",
+        "sstats",
+        "thesportsdb"
       ],
       "has_context": true,
       "has_odds": true,
@@ -6617,7 +6662,10 @@
       "bookmaker_quorum_backfilled": true,
       "bookmaker_quorum_contract_ready": false,
       "books_count": 2,
-      "context_sources": [],
+      "context_sources": [
+        "clubelo",
+        "openligadb"
+      ],
       "coverage": {
         "bookmaker_quorum_backfilled": true,
         "books_count": 2,
@@ -6660,7 +6708,7 @@
     }
   },
   "sources": {
-    "context_source_index_rows": 0,
+    "context_source_index_rows": 260,
     "day_inventory_rows": 300,
     "frozen_roster": {
       "created": false,
@@ -6668,17 +6716,17 @@
       "date_local": "2026-06-06",
       "enabled": true,
       "frozen_rows": 300,
-      "lost_from_current": 33,
+      "lost_from_current": 56,
       "min_valid_rows": 150,
-      "new_in_current": 33,
-      "overlap": 267,
+      "new_in_current": 56,
+      "overlap": 244,
       "path": "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/frozen_inventory_roster_2026-06-06.json",
       "restored": true,
       "target_size": 300
     },
-    "previous_highwater_rows": 0,
-    "progressive_index_rows": 2114
+    "previous_highwater_rows": 300,
+    "progressive_index_rows": 1576
   },
-  "updated_at_utc": "2026-06-05T23:29:46.670284+00:00",
+  "updated_at_utc": "2026-06-06T03:30:13.826939+00:00",
   "version": "coverage_truth_highwater_v1"
 }
