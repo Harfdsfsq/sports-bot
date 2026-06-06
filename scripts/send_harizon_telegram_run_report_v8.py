@@ -295,11 +295,20 @@ def render(payload: dict[str, Any]) -> str:
     ready_publish = _as_int(truth_counts.get("matches_ready_for_publish"))
     run_matches = _as_int(coverage.get("matches_seen"))
 
-    top_reason = _reason_ru(payload.get("top_reason"))
+    raw_top_reason = str(payload.get("top_reason") or "").strip()
+    timing_deferred_total = _as_int(timing_guard.get("deferred_total"))
+    top_reason = _reason_ru(raw_top_reason)
     published_count = _as_int(funnel.get("published_count"))
     fallback_published = _as_int(funnel.get("fallback_published_count"))
     published = published_count > 0 or payload.get("status") == "published"
-    status_line = "✅ прогноз опубликован" if published else "🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards."
+    if not published and timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
+        top_reason = f"кандидаты отложены до финального run перед матчем ({timing_deferred_total})"
+    if published:
+        status_line = "✅ прогноз опубликован"
+    elif timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
+        status_line = "🟡 Прогнозов нет: есть кандидаты, но timing guard отложил их до финального run."
+    else:
+        status_line = "🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards."
 
     odds = api.get("odds_api_io") if isinstance(api.get("odds_api_io"), dict) else {}
     sstats = api.get("sstats") if isinstance(api.get("sstats"), dict) else {}
@@ -429,6 +438,8 @@ def render(payload: dict[str, Any]) -> str:
     ])
     if published:
         lines.append("• Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.")
+    elif timing_deferred_total > 0 and raw_top_reason.lower() in {"", "no viable controlled fallback", "no_viable_controlled_fallback", "none"}:
+        lines.append(f"• Есть кандидаты, но timing guard отложил {timing_deferred_total} до финального регулярного run перед стартом. Сейчас публикацию не форсируем.")
     elif _as_int(price_guard.get('removed_total')) > 0 and _as_int(funnel.get('fallback_candidates_seen')) == 0:
         lines.append("• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.")
     elif "line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason")):
