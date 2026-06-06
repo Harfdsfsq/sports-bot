@@ -110,6 +110,9 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.quality_consensus_safe_relief_patch',
         'app.services.source_matrix_amplifier_runtime_patch',
         'app.services.bzzoiro_odds_comparison_bridge_patch',
+        # Applies the documented max-coverage policy after older quota/profile patches
+        # have set their defaults. It still respects explicit circuit breakers.
+        'app.services.api_maximum_coverage_runtime_patch',
         # Must be last: several older runtime layers can re-enable SportLogic.
         # The daily-limit guard re-applies the cached marker and zeroes SportLogic
         # after every other installer has finished.
