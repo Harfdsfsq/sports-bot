@@ -24,6 +24,7 @@ BOOKMAKER_NORMALIZER_PATH = EXPORT_DIR / "latest-bookmaker-quorum-coverage-norma
 TIMING_GUARD_PATH = EXPORT_DIR / "latest-controlled-fallback-publication-timing-guard.json"
 BOOKMAKER_BACKFILL_PATH = EXPORT_DIR / "latest-odds-api-bookmaker-quorum-mapping-backfill.json"
 ODDS_API_OFFER_SNAPSHOT_PATH = EXPORT_DIR / "latest-odds-api-io-offer-snapshot.json"
+PUBLICATION_LEDGER_SYNC_PATH = EXPORT_DIR / "latest-publication-ledger-sync.json"
 
 
 def _load_v7() -> Any:
@@ -168,6 +169,9 @@ def build_payload() -> dict[str, Any]:
             "matches_with_2plus_books_any_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_any_market")),
             "matches_with_2plus_books_same_side_market": _as_int(odds_api_snapshot.get("matches_with_2plus_books_same_side_market")),
         }
+    publication_ledger_sync = _load_json(PUBLICATION_LEDGER_SYNC_PATH)
+    if publication_ledger_sync:
+        payload.setdefault("diagnostics", {})["publication_ledger_sync"] = publication_ledger_sync
     payload.setdefault("diagnostics", {})["github_actions"] = {
         "run_id": os.getenv("GITHUB_RUN_ID") or "",
         "run_attempt": os.getenv("GITHUB_RUN_ATTEMPT") or "",
@@ -244,8 +248,18 @@ def _candidate_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
             f"EV {ev:+.1f}% | edge {edge:+.1f} п.п. | q {q:.1f}"
         )
         reasons = row.get("reject_reasons") if isinstance(row.get("reject_reasons"), list) else []
-        if reasons:
-            out.append("   • причина: " + ", ".join(_reason_ru(x) for x in reasons[:4]))
+        visible_reasons = []
+        legacy_count = 0
+        for reason in reasons:
+            text = str(reason or "")
+            if "odds_sources_below_min" in text or "odds sources below min" in text.lower():
+                legacy_count += 1
+                continue
+            visible_reasons.append(reason)
+        if visible_reasons:
+            out.append("   • причина: " + ", ".join(_reason_ru(x) for x in visible_reasons[:4]))
+        elif legacy_count:
+            out.append("   • причина: только legacy odds-source диагностика; публикацию решают 2+ букмекера/price-integrity/value")
     return out
 
 
@@ -268,6 +282,7 @@ def render(payload: dict[str, Any]) -> str:
     odds_api_snapshot = diag.get("odds_api_io_offer_snapshot") if isinstance(diag.get("odds_api_io_offer_snapshot"), dict) else {}
     timing_guard = diag.get("publication_timing_guard") if isinstance(diag.get("publication_timing_guard"), dict) else {}
     github_actions = diag.get("github_actions") if isinstance(diag.get("github_actions"), dict) else {}
+    publication_ledger_sync = diag.get("publication_ledger_sync") if isinstance(diag.get("publication_ledger_sync"), dict) else {}
     window_counts = bookmaker_norm.get("window_counts") if isinstance(bookmaker_norm.get("window_counts"), dict) else {}
 
     inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
@@ -318,13 +333,26 @@ def render(payload: dict[str, Any]) -> str:
             f"same-side 2+ books {_as_int(odds_api_snapshot.get('matches_with_2plus_books_same_side_market'))}"
         )
 
+    ledger_line = None
+    if publication_ledger_sync:
+        bets_sync = publication_ledger_sync.get("bets") if isinstance(publication_ledger_sync.get("bets"), dict) else {}
+        unique_bets = _as_int(bets_sync.get("unique_published_bets") or bets_sync.get("published_ledger_rows"))
+        duplicates_removed = _as_int(bets_sync.get("duplicates_removed"))
+        pending_unique = _as_int(bets_sync.get("pending_unique_rows"))
+        policy = str(bets_sync.get("dedupe_policy") or "semantic dedupe").replace("_", " ")
+        if unique_bets or pending_unique or duplicates_removed:
+            ledger_line = (
+                f"• Ledger: unique published {unique_bets}; pending {pending_unique}; "
+                f"duplicates removed {duplicates_removed}; policy {policy}."
+            )
+
     lines: list[str] = [
         "🧾 HARIZON — понятный отчёт по запуску",
         status_line,
         f"• Главная причина: {top_reason}",
         "",
         "📦 Инвентарь и покрытие",
-        f"• Инвентарь дня: {inv_total} матчей. В этом run обработано: {run_matches}.",
+        f"• Инвентарь дня: {inv_total} матчей. Runtime rows processed: {run_matches} (это не размер inventory).",
         f"• 1+ линия: {with_odds}/{inv_total} ({_pct(with_odds, inv_total)}) | 1+ контекст: {with_context}/{inv_total} ({_pct(with_context, inv_total)})",
         f"• 2+ букмекера: {price2}/{inv_total} ({_pct(price2, inv_total)})",
     ]
@@ -371,6 +399,8 @@ def render(payload: dict[str, Any]) -> str:
         if deferred:
             lines.append(f"• Timing guard: отложил {deferred} кандидатов до последнего регулярного run перед матчем.")
     lines.append("• Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.")
+    if ledger_line:
+        lines.append(ledger_line)
     lines.extend([
         "",
         "🛡️ Движение линии и финальный фильтр",

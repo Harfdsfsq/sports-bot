@@ -103,6 +103,18 @@ def _candidate_has_bookmaker_quorum(module: Any, candidate: dict[str, Any], metr
 def _patch_module(module: Any) -> None:
     original_candidate_metrics = module.candidate_metrics
     original_tier_reasons = module.tier_reasons
+    original_translate_reject_reason = getattr(module, "translate_reject_reason", None)
+
+    def translate_reject_reason_bookmaker_quorum(reason: Any) -> str:
+        text = str(reason or "")
+        if "odds_sources_below_min" in text or "odds sources below min" in text.lower():
+            return "диагностика legacy odds-source; не блок при 2+ букмекерах"
+        if callable(original_translate_reject_reason):
+            try:
+                return str(original_translate_reject_reason(reason))
+            except Exception:
+                return text
+        return text
 
     def candidate_metrics_bookmaker_quorum(candidate: dict[str, Any]) -> dict[str, Any]:
         metrics = dict(original_candidate_metrics(candidate))
@@ -146,6 +158,7 @@ def _patch_module(module: Any) -> None:
 
     module.candidate_metrics = candidate_metrics_bookmaker_quorum
     module.tier_reasons = tier_reasons_bookmaker_quorum
+    module.translate_reject_reason = translate_reject_reason_bookmaker_quorum
 
 
 def main() -> int:
