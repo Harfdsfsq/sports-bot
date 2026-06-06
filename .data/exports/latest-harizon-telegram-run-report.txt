@@ -1,20 +1,20 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier a quality below min
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. В этом run обработано: 382.
-• 1+ линия: 279/300 (93%) | 1+ контекст: 292/300 (97%)
+• Инвентарь дня: 300 матчей. Runtime rows processed: 371 (это не размер inventory).
+• 1+ линия: 280/300 (93%) | 1+ контекст: 292/300 (97%)
 • 2+ букмекера: 117/300 (39%)
-• Raw 2+ букмекера odds-api.io: 127 | normalized inventory: 117 | mapping gap: 10
-• Odds-api mapping backfill: mapped 91, changed truth 0, changed inventory 91
-• Odds-api offer snapshot: rows 26731, matches 211, same-side 2+ books 121
+• Raw 2+ букмекера odds-api.io: 126 | normalized inventory: 117 | mapping gap: 9
+• Odds-api mapping backfill: mapped 90, changed truth 2, changed inventory 90
+• Odds-api offer snapshot: rows 26812, matches 212, same-side 2+ books 121
 • 2+ независимых odds-source: 18/300 (6%) — диагностика, не блок публикации
-• 2+ контекста: 150/300 (50%)
-• Готово для модели: 271/300 (90%)
+• 2+ контекста: 153/300 (51%)
+• Готово для модели: 272/300 (91%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 87; 2+ бук 36; 2+ конт 36; A-cover 19; B-cover 32; ждут line 33
+• 0-4 ч: матчей 84; 2+ бук 36; 2+ конт 37; A-cover 19; B-cover 33; ждут line 34
 • 4-8 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 8-12 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
@@ -31,38 +31,31 @@
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Price-integrity guard: снял 0 подозрительных кандидатов до fallback.
-• Timing guard: отложил 6 кандидатов до последнего регулярного run перед матчем.
+• Timing guard: отложил 8 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
+• Ledger: unique published 1; pending 1; duplicates removed 2; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 29 | матчей без следующего регулярного run: 28
+• Pre-kickoff проверок: 29 | матчей без следующего регулярного run: 18
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 76; смэтчил матчей 375; offers 26769; 2+ букмекера 127; ошибок 0.
-• Bzzoiro: direct req 70, v2 req 70; v2 ctx 21; v2 odds 16; secondary offers 0; overlap odds-api.io 12; ошибок 0.
-• SStats: запросы 24; сырых строк 20737; контекстов 218; deep-enriched 10; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 74; смэтчил матчей 366; offers 26858; 2+ букмекера 126; ошибок 0.
+• Bzzoiro: direct req 66, v2 req 66; v2 ctx 20; v2 odds 15; secondary offers 0; overlap odds-api.io 14; ошибок 0.
+• SStats: запросы 24; сырых строк 20736; контекстов 221; deep-enriched 10; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 3; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 199, bzzoiro+odds_api_io: 12, bzzoiro: 5
+• Комбинации источников линий: odds_api_io: 198, bzzoiro+odds_api_io: 14, bzzoiro: 5
 
 🚫 Почему не опубликовано
-• tier a quality below min: 1 (14%)
-• tier b confidence below min: 1 (14%)
-• tier b quality below min: 1 (14%)
-• tier b canonical edge below min: 1 (14%)
-• tier b bookmaker quorum price outlier:15.24>8.00: 1 (14%)
-• tier c quality below min: 1 (14%)
-• quality: вероятность после калибровки ниже порога: 1 (14%)
-• Диагностика legacy odds-source: 2 — не блок публикации при 2+ букмекерах
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Sagan Tosu — Shonan Bellmare | Больше 2.5 @2.42 | EV +7.2% | edge +3.0 п.п. | q 54.1
-   • причина: tier a quality below min, tier a odds sources below min:0/1, tier b confidence below min, tier b quality below min
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
@@ -70,7 +63,7 @@
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27057932504
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27057932504
-• Artifact: run-bot-27057932504
+• Run ID: 27058681607
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27058681607
+• Artifact: run-bot-27058681607
 • workflow run-bot, attempt 1
