@@ -3,7 +3,7 @@
 - status: **ok**
 - target_date: 2026-06-06
 - inventory_path: `/home/runner/work/sports-bot/sports-bot/.data/day_inventory/2026-06-06.json`
-- inventory_matches_total: 437
+- inventory_matches_total: 355
 - matrix_matches: 300/300
 - full target reached: True
 - min odds/context sources: 2/2
@@ -12,23 +12,23 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 12 | 9 | 12 | 9 | 9 | 9 | 9 | 0 | 9 | 9 |
-| 2_6h | 59 | 47 | 59 | 15 | 15 | 15 | 15 | 0 | 15 | 15 |
-| 6_12h | 166 | 139 | 166 | 7 | 7 | 7 | 7 | 0 | 7 | 7 |
-| 12_24h | 60 | 44 | 57 | 1 | 6 | 3 | 6 | 0 | 4 | 1 |
-| started | 3 | 2 | 3 | 0 | 0 | 0 | 0 | 0 | 0 | 0 |
+| 0_2h | 26 | 17 | 25 | 7 | 24 | 19 | 18 | 0 | 23 | 5 |
+| 2_6h | 89 | 75 | 81 | 43 | 75 | 71 | 48 | 0 | 67 | 36 |
+| 6_12h | 176 | 125 | 173 | 60 | 112 | 108 | 39 | 0 | 109 | 43 |
+| started | 9 | 9 | 9 | 3 | 5 | 4 | 5 | 0 | 5 | 2 |
 
 ## Totals
 
-- fixture_2plus_sources: 241/300
-- odds_2plus_sources: 32/300
-- context_2plus_sources: 34/300
-- ready_for_model: 35/300
-- ready_for_publish: 32/300
+- fixture_2plus_sources: 226/300
+- odds_2plus_sources: 113/300
+- context_2plus_sources: 202/300
+- ready_for_model: 204/300
+- ready_for_publish: 86/300
 
 ## Provider endpoint status
-- by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
+- by_status: `{"ok": 5, "skipped_preserve_runtime_quota": 1, "request_error": 1, "ConnectTimeout: ": 1}`
 - not_ok:
+  - open_meteo: request_error http=None rows=None reason=ConnectTimeout: 
   - clubelo: ConnectTimeout:  http=None rows=None reason=None
 
 ## Matching diagnostics
@@ -36,42 +36,42 @@
 - by_stage: `{}`
 
 ## Next enrichment queue
-- 0_2h | 2026-06-06T00:00:00+00:00 | Nomads United AFC — Northern AFC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-06T00:30:00+00:00 | Western Suburbs FC — Napier City Rovers AFC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 0_2h | 2026-06-06T00:45:00+00:00 | Dunedin City Royals FC — Christchurch United FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T01:30:00+00:00 | FC Olympia — Bigfoot FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:00:00+00:00 | Avondale FC — Melbourne Victory FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:30:00+00:00 | Waterside Karori — Island Bay United | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:30:00+00:00 | Eastern United Reserve — The Cove FC Reserves | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:30:00+00:00 | Alamein FC U20 — Melbourne City | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:30:00+00:00 | Essendon Royals SC U20 — Spring Hills FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:30:00+00:00 | Green Gully SC — Avondale FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:45:00+00:00 | Ferrymead Bays — Wanaka AFC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:45:00+00:00 | West Torrens Birkalla Reserve — Croydon Kings FC Reserve | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T02:45:00+00:00 | Keilor Park SC — FC Bulleen Lions U20 | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Auckland City FC — Auckland United FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | East Coast Bays — Western Springs AFC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Eastern Suburbs AFC — Melville United AFC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Fencibles United FC — Tauranga City AFC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Selwyn United FC — Cashmere Technical | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Upper Hutt City FC — Petone FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Adelaide City FC Reserve — Sturt Lions Reserve | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | South Melbourne FC U20 — Heidelberg United FC U20 | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Bentleigh Greens SC — Hume City FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Floreat Athena FC Reserves — Gwelup Croatia SC Reserves | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:00:00+00:00 | Birkenhead United AFC — Auckland FC Reserves | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:30:00+00:00 | Bay Olympic — Manukau United FC | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T03:45:00+00:00 | Wellington Olympic — Miramar Rangers | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T04:00:00+00:00 | Bayswater City SC — Dianella White Eagles SC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T04:00:00+00:00 | Seisa Osa Reia Shonan FC — Renofa Yamaguchi FC Ladies | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T04:00:00+00:00 | Speranza Osaka — Bunnys Gunma FC White Star | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
-- 2_6h | 2026-06-06T04:00:00+00:00 | Yamato Sylphid — Veertien Mie FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-06T01:30:00+00:00 | Oly Town — Bigfoot | odds=0 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
+- 0_2h | 2026-06-06T01:30:00+00:00 | FC Olympia — Bigfoot FC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
+- 0_2h | 2026-06-06T02:00:00+00:00 | Redlands — AMSG | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
+- 0_2h | 2026-06-06T02:00:00+00:00 | Avondale FC — Melbourne Victory FC | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather
+- 0_2h | 2026-06-06T02:30:00+00:00 | Essendon Royals SC U20 — Spring Hills FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-06T02:30:00+00:00 | Waterside Karori — Island Bay United | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
+- 0_2h | 2026-06-06T02:30:00+00:00 | Eastern United Reserve — The Cove FC Reserves | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-06-06T02:30:00+00:00 | Alamein FC U20 — Melbourne City | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather
+- 0_2h | 2026-06-06T02:45:00+00:00 | Ferrymead Bays — Wanaka AFC | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather
+- 0_2h | 2026-06-06T02:45:00+00:00 | Keilor Park SC — FC Bulleen Lions U20 | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
+- 0_2h | 2026-06-06T02:45:00+00:00 | West Torrens Birkalla Reserve — Croydon Kings FC Reserve | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | East Coast Bays — Western Springs AFC | odds=1 context=1 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-06T03:00:00+00:00 | Manningham United Blues FC — Western United FC | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
+- 0_2h | 2026-06-06T03:00:00+00:00 | Auckland City FC — Auckland United FC | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | Eastern Suburbs AFC — Melville United AFC | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | Selwyn United FC — Cashmere Technical | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | Upper Hutt City FC — Petone FC | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | South Melbourne FC U20 — Heidelberg United FC U20 | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
+- 0_2h | 2026-06-06T03:00:00+00:00 | Birkenhead United AFC — Auckland FC Reserves | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | Adelaide City FC Reserve — Sturt Lions Reserve | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 0_2h | 2026-06-06T03:00:00+00:00 | Floreat Athena FC Reserves — Gwelup Croatia SC Reserves | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-06T03:30:00+00:00 | Bay Olympic — Manukau United FC | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 2_6h | 2026-06-06T03:45:00+00:00 | Wellington Olympic — Miramar Rangers | odds=1 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather
+- 2_6h | 2026-06-06T04:00:00+00:00 | Speranza Osaka — Bunnys Gunma FC White Star | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather,xg
+- 2_6h | 2026-06-06T04:00:00+00:00 | Yamato Sylphid — Veertien Mie FC | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather,xg
+- 2_6h | 2026-06-06T04:00:00+00:00 | AS Harima Albion — Vonds Ichihara FC | odds=2 context=1 fixtures=2 missing=context_source_2plus,weather,xg
+- 2_6h | 2026-06-06T04:00:00+00:00 | Port Melbourne — Brunswick City | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-06T04:00:00+00:00 | Bayswater City SC — Dianella White Eagles SC | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-06T04:00:00+00:00 | Seisa Osa Reia Shonan FC — Renofa Yamaguchi FC Ladies | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather
+- 2_6h | 2026-06-06T04:30:00+00:00 | Magic United — Brisbane Roar II | odds=0 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=172 / checked=300 | rate=57.33% | SStats events=1026
-- potential_add: context_deep=172 xg_or_rating=172 form=172 odds_rescue=4
-- projected_upper_bound: context_2plus=206 xg=192 form=206 odds_2plus=36
+- crosswalk: matched=171 / checked=300 | rate=57.0% | SStats events=1036
+- potential_add: context_deep=171 xg_or_rating=171 form=171 odds_rescue=12
+- projected_upper_bound: context_2plus=300 xg=236 form=220 odds_2plus=125
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
