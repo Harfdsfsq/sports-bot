@@ -3,19 +3,19 @@
 • Главная причина: tier a quality below min
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 256 (это не размер inventory).
-• 1+ линия: 254/300 (85%) | 1+ контекст: 258/300 (86%)
-• 2+ букмекера: 64/300 (21%)
-• Raw 2+ букмекера odds-api.io: 65 | normalized inventory: 64 | mapping gap: 1
-• Odds-api mapping backfill: mapped 65, changed truth 3, changed inventory 65
-• Odds-api offer snapshot: rows 11775, matches 94, same-side 2+ books 65
+• Инвентарь дня: 300 матчей. Runtime rows processed: 320 (это не размер inventory).
+• 1+ линия: 254/300 (85%) | 1+ контекст: 268/300 (89%)
+• 2+ букмекера: 65/300 (22%)
+• Raw 2+ букмекера odds-api.io: 113 | normalized inventory: 65 | mapping gap: 48
+• Odds-api mapping backfill: mapped 107, changed truth 3, changed inventory 107
+• Odds-api offer snapshot: rows 17532, matches 151, same-side 2+ books 108
 • 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
-• 2+ контекста: 67/300 (22%)
-• Готово для модели: 212/300 (71%)
+• 2+ контекста: 84/300 (28%)
+• Готово для модели: 222/300 (74%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 31; 2+ бук 8; 2+ конт 24; A-cover 6; B-cover 8; ждут line 8
-• 4-8 ч: матчей 78; 2+ бук 30; 2+ конт 14; A-cover 9; B-cover 28; ждут line 28
+• 0-4 ч: матчей 78; 2+ бук 31; 2+ конт 31; A-cover 18; B-cover 31; ждут line 31
+• 4-8 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 8-12 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 16-20 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
@@ -25,18 +25,18 @@
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 64 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 65 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 64 матчей; exact-ready считается после movement/value/xG.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 65 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 2 подозрительных кандидатов до fallback.
-• Timing guard: отложил 4 кандидатов до последнего регулярного run перед матчем.
+• Price-integrity guard: снял 4 подозрительных кандидатов до fallback.
+• Timing guard: отложил 2 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 2
+• Pre-kickoff проверок: 25 | матчей без следующего регулярного run: 25
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -45,26 +45,25 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 52; смэтчил матчей 252; offers 11821; 2+ букмекера 65; ошибок 0.
-• Bzzoiro: direct req 36, v2 req 36; v2 ctx 7; v2 odds 7; secondary offers 0; overlap odds-api.io 6; ошибок 1.
-• SStats: запросы 24; сырых строк 20186; контекстов 195; deep-enriched 6; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 64; смэтчил матчей 317; offers 17580; 2+ букмекера 113; ошибок 0.
+• Bzzoiro: direct req 66, v2 req 66; v2 ctx 13; v2 odds 13; secondary offers 0; overlap odds-api.io 11; ошибок 1.
+• SStats: запросы 24; сырых строк 20185; контекстов 228; deep-enriched 12; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 88, bzzoiro+odds_api_io: 6, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 140, bzzoiro+odds_api_io: 11, bzzoiro: 1
 
 🚫 Почему не опубликовано
-• tier a quality below min: 1 (10%)
-• tier a canonical edge below min: 1 (10%)
-• tier b confidence below min: 1 (10%)
-• tier b quality below min: 1 (10%)
-• tier b canonical edge below min: 1 (10%)
-• tier b canonical ev below min: 1 (10%)
-• tier b bookmaker quorum price outlier:9.77>8.00: 1 (10%)
-• tier c quality below min: 1 (10%)
+• tier a quality below min: 1 (14%)
+• tier b confidence below min: 1 (14%)
+• tier b quality below min: 1 (14%)
+• tier b canonical edge below min: 1 (14%)
+• tier b bookmaker quorum price outlier:15.74>8.00: 1 (14%)
+• tier c quality below min: 1 (14%)
+• quality: вероятность после калибровки ниже порога: 1 (14%)
 • Диагностика legacy odds-source: 2 — не блок публикации при 2+ букмекерах
 
 🔎 Проверенные reserve-кандидаты
-1. Oita Trinita — Montedio Yamagata | Больше 2.5 @2.36 | EV +3.1% | edge +1.3 п.п. | q 46.9
-   • причина: tier a quality below min, tier a canonical edge below min, tier b confidence below min, tier b quality below min
+1. Afghanistan — Pakistan | Больше 2.5 @2.72 | EV +8.4% | edge +3.1 п.п. | q 54.8
+   • причина: tier a quality below min, tier b confidence below min, tier b quality below min, tier b canonical edge below min
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
@@ -72,7 +71,7 @@
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27083263982
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27083263982
-• Artifact: run-bot-27083263982
+• Run ID: 27088052815
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27088052815
+• Artifact: run-bot-27088052815
 • workflow run-bot, attempt 1
