@@ -1,14 +1,14 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: направление ставки конфликтует с xG
+• Главная причина: tier a canonical edge below min
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 151 (это не размер inventory).
+• Инвентарь дня: 300 матчей. Runtime rows processed: 127 (это не размер inventory).
 • 1+ линия: 254/300 (85%) | 1+ контекст: 268/300 (89%)
 • 2+ букмекера: 65/300 (22%)
-• Raw 2+ букмекера odds-api.io: 75 | normalized inventory: 65 | mapping gap: 10
-• Odds-api mapping backfill: mapped 62, changed truth 0, changed inventory 62
-• Odds-api offer snapshot: rows 11456, matches 112, same-side 2+ books 72
+• Raw 2+ букмекера odds-api.io: 55 | normalized inventory: 65 | mapping gap: 0
+• Odds-api mapping backfill: mapped 42, changed truth 0, changed inventory 42
+• Odds-api offer snapshot: rows 8835, matches 92, same-side 2+ books 52
 • 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
 • 2+ контекста: 90/300 (30%)
 • Готово для модели: 222/300 (74%)
@@ -30,13 +30,13 @@
 • Пересечение 2+ букмекера ∩ 2+ контекста: до 65 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 4 подозрительных кандидатов до fallback.
+• Price-integrity guard: снял 5 подозрительных кандидатов до fallback.
 • Timing guard: отложил 2 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 16 | матчей без следующего регулярного run: 14
+• Pre-kickoff проверок: 65 | матчей без следующего регулярного run: 60
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -45,27 +45,32 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 32; смэтчил матчей 151; offers 11522; 2+ букмекера 75; ошибок 0.
-• Bzzoiro: direct req 46, v2 req 46; v2 ctx 9; v2 odds 9; secondary offers 0; overlap odds-api.io 9; ошибок 0.
-• SStats: запросы 25; сырых строк 20623; контекстов 128; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 26; смэтчил матчей 127; offers 8885; 2+ букмекера 55; ошибок 0.
+• Bzzoiro: direct req 36, v2 req 36; v2 ctx 7; v2 odds 7; secondary offers 0; overlap odds-api.io 7; ошибок 0.
+• SStats: запросы 25; сырых строк 20629; контекстов 111; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 103, bzzoiro+odds_api_io: 9, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 85, bzzoiro+odds_api_io: 7
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 1 (50%)
-• quality: market sanity totals/xG contradiction: 1 (50%)
+• tier a canonical edge below min: 1 (14%)
+• tier b quality below min: 1 (14%)
+• tier b canonical edge below min: 1 (14%)
+• tier b canonical ev below min: 1 (14%)
+• tier b bookmaker quorum price outlier:10.72>8.00: 1 (14%)
+• tier c canonical edge below min: 1 (14%)
+• quality: вероятность после калибровки ниже порога: 1 (14%)
+• Диагностика legacy odds-source: 2 — не блок публикации при 2+ букмекерах
 
 🔎 Проверенные reserve-кандидаты
-1. Ascoli Calcio 1898 — Union Brescia | Больше 2.5 @2.68 | EV +5.0% | edge +1.9 п.п. | q 38.4
-   • причина: направление ставки конфликтует с xG
+1. Morocco — Norway | Меньше 2.5 @2.22 | EV +3.5% | edge +1.6 п.п. | q 64.5
+   • причина: tier a canonical edge below min, tier b quality below min, tier b canonical edge below min, tier b canonical ev below min
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
-• Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27096093826
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27096093826
-• Artifact: run-bot-27096093826
+• Run ID: 27099004719
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27099004719
+• Artifact: run-bot-27099004719
 • workflow run-bot, attempt 1
