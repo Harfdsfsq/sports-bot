@@ -1,14 +1,14 @@
 # API Health Run
 
-- Created UTC: `2026-06-07T03:02:46.426098+00:00`
+- Created UTC: `2026-06-07T05:02:49.083869+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
-- OK: **15**
+- OK: **16**
 - Config-only: **1**
 - Skipped: **0**
-- Healthy/config/skipped: **16**
-- Degraded: **1**
+- Healthy/config/skipped: **17**
+- Degraded: **0**
 - Rate-limited: **0**
 - Auth errors: **0**
 - Missing secrets: **1**
@@ -32,7 +32,7 @@
 | `highlightly` | `context` | `ok` | 1 | 5 | ok |
 | `sstats` | `context` | `ok` | 1 | 5 | ok |
 | `thesportsdb` | `context` | `ok` | 1 | 5 | ok |
-| `currents` | `news` | `degraded` | 1 | 0 | http_status=400 |
+| `currents` | `news` | `ok` | 1 | 30 | ok |
 | `gnews` | `news` | `ok` | 1 | 1 | ok |
 | `guardian` | `news` | `ok` | 1 | 1 | ok |
 | `newsapi` | `news` | `ok` | 1 | 1 | ok |
