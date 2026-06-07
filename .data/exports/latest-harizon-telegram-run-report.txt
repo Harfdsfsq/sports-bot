@@ -1,20 +1,20 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier a quality below min
+🟡 Прогнозов нет: есть кандидаты, но timing guard отложил их до финального run.
+• Главная причина: кандидаты отложены до финального run перед матчем (2)
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 320 (это не размер inventory).
+• Инвентарь дня: 300 матчей. Runtime rows processed: 307 (это не размер inventory).
 • 1+ линия: 254/300 (85%) | 1+ контекст: 268/300 (89%)
 • 2+ букмекера: 65/300 (22%)
-• Raw 2+ букмекера odds-api.io: 113 | normalized inventory: 65 | mapping gap: 48
-• Odds-api mapping backfill: mapped 107, changed truth 3, changed inventory 107
-• Odds-api offer snapshot: rows 17532, matches 151, same-side 2+ books 108
+• Raw 2+ букмекера odds-api.io: 97 | normalized inventory: 65 | mapping gap: 32
+• Odds-api mapping backfill: mapped 84, changed truth 0, changed inventory 84
+• Odds-api offer snapshot: rows 15362, matches 143, same-side 2+ books 92
 • 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
-• 2+ контекста: 84/300 (28%)
+• 2+ контекста: 90/300 (30%)
 • Готово для модели: 222/300 (74%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 78; 2+ бук 31; 2+ конт 31; A-cover 18; B-cover 31; ждут line 31
+• 0-4 ч: матчей 42; 2+ бук 8; 2+ конт 13; A-cover 7; B-cover 8; ждут line 8
 • 4-8 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 8-12 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
@@ -30,48 +30,40 @@
 • Пересечение 2+ букмекера ∩ 2+ контекста: до 65 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 4 подозрительных кандидатов до fallback.
+• Price-integrity guard: снял 6 подозрительных кандидатов до fallback.
 • Timing guard: отложил 2 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 25 | матчей без следующего регулярного run: 25
+• Pre-kickoff проверок: 42 | матчей без следующего регулярного run: 42
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 64; смэтчил матчей 317; offers 17580; 2+ букмекера 113; ошибок 0.
-• Bzzoiro: direct req 66, v2 req 66; v2 ctx 13; v2 odds 13; secondary offers 0; overlap odds-api.io 11; ошибок 1.
-• SStats: запросы 24; сырых строк 20185; контекстов 228; deep-enriched 12; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 62; смэтчил матчей 304; offers 15504; 2+ букмекера 97; ошибок 0.
+• Bzzoiro: direct req 65, v2 req 65; v2 ctx 12; v2 odds 13; secondary offers 0; overlap odds-api.io 12; ошибок 1.
+• SStats: запросы 24; сырых строк 20186; контекстов 235; deep-enriched 13; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 140, bzzoiro+odds_api_io: 11, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 131, bzzoiro+odds_api_io: 12, bzzoiro: 2
 
 🚫 Почему не опубликовано
-• tier a quality below min: 1 (14%)
-• tier b confidence below min: 1 (14%)
-• tier b quality below min: 1 (14%)
-• tier b canonical edge below min: 1 (14%)
-• tier b bookmaker quorum price outlier:15.74>8.00: 1 (14%)
-• tier c quality below min: 1 (14%)
-• quality: вероятность после калибровки ниже порога: 1 (14%)
-• Диагностика legacy odds-source: 2 — не блок публикации при 2+ букмекерах
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Afghanistan — Pakistan | Больше 2.5 @2.72 | EV +8.4% | edge +3.1 п.п. | q 54.8
-   • причина: tier a quality below min, tier b confidence below min, tier b quality below min, tier b canonical edge below min
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Есть кандидаты, но timing guard отложил 2 до финального регулярного run перед стартом. Сейчас публикацию не форсируем.
 • Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27088052815
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27088052815
-• Artifact: run-bot-27088052815
+• Run ID: 27090613235
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27090613235
+• Artifact: run-bot-27090613235
 • workflow run-bot, attempt 1
