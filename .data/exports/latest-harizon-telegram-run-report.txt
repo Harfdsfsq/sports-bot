@@ -1,14 +1,14 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier a canonical edge below min
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 127 (это не размер inventory).
+• Инвентарь дня: 300 матчей. Runtime rows processed: 56 (это не размер inventory).
 • 1+ линия: 254/300 (85%) | 1+ контекст: 268/300 (89%)
 • 2+ букмекера: 65/300 (22%)
-• Raw 2+ букмекера odds-api.io: 55 | normalized inventory: 65 | mapping gap: 0
-• Odds-api mapping backfill: mapped 42, changed truth 0, changed inventory 42
-• Odds-api offer snapshot: rows 8835, matches 92, same-side 2+ books 52
+• Raw 2+ букмекера odds-api.io: 19 | normalized inventory: 65 | mapping gap: 0
+• Odds-api mapping backfill: mapped 9, changed truth 0, changed inventory 9
+• Odds-api offer snapshot: rows 3380, matches 37, same-side 2+ books 19
 • 2+ независимых odds-source: 7/300 (2%) — диагностика, не блок публикации
 • 2+ контекста: 90/300 (30%)
 • Готово для модели: 222/300 (74%)
@@ -30,47 +30,46 @@
 • Пересечение 2+ букмекера ∩ 2+ контекста: до 65 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
-• Price-integrity guard: снял 5 подозрительных кандидатов до fallback.
-• Timing guard: отложил 2 кандидатов до последнего регулярного run перед матчем.
+• Price-integrity guard: снял 0 подозрительных кандидатов до fallback.
+• Timing guard: отложил 4 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 65 | матчей без следующего регулярного run: 60
+• Pre-kickoff проверок: 15 | матчей без следующего регулярного run: 15
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 26; смэтчил матчей 127; offers 8885; 2+ букмекера 55; ошибок 0.
-• Bzzoiro: direct req 36, v2 req 36; v2 ctx 7; v2 odds 7; secondary offers 0; overlap odds-api.io 7; ошибок 0.
-• SStats: запросы 25; сырых строк 20629; контекстов 111; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 12; смэтчил матчей 56; offers 3390; 2+ букмекера 19; ошибок 0.
+• Bzzoiro: direct req 6, v2 req 6; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 1; ошибок 0.
+• SStats: запросы 25; сырых строк 20629; контекстов 49; deep-enriched 12; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 85, bzzoiro+odds_api_io: 7
+• Комбинации источников линий: odds_api_io: 36, bzzoiro+odds_api_io: 1
 
 🚫 Почему не опубликовано
-• tier a canonical edge below min: 1 (14%)
-• tier b quality below min: 1 (14%)
-• tier b canonical edge below min: 1 (14%)
-• tier b canonical ev below min: 1 (14%)
-• tier b bookmaker quorum price outlier:10.72>8.00: 1 (14%)
-• tier c canonical edge below min: 1 (14%)
-• quality: вероятность после калибровки ниже порога: 1 (14%)
-• Диагностика legacy odds-source: 2 — не блок публикации при 2+ букмекерах
+• направление ставки конфликтует с xG: 1 (20%)
+• модель слишком оптимистична относительно xG-ориентира: 1 (20%)
+• quality post calibration edge guard: 1 (20%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (20%)
+• quality: вероятность после калибровки ниже порога: 1 (20%)
 
 🔎 Проверенные reserve-кандидаты
-1. Morocco — Norway | Меньше 2.5 @2.22 | EV +3.5% | edge +1.6 п.п. | q 64.5
-   • причина: tier a canonical edge below min, tier b quality below min, tier b canonical edge below min, tier b canonical ev below min
+1. Ecuador — Guatemala | Больше 2.5 @1.75 | EV +4.2% | edge +2.4 п.п. | q 59.7
+   • причина: направление ставки конфликтует с xG, модель слишком оптимистична относительно xG-ориентира
+2. Club Deportivo Cuenca Juniors — CD El Nacional | Меньше 2.5 @2.10 | EV -3.3% | edge -1.6 п.п. | q 49.5
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27099004719
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27099004719
-• Artifact: run-bot-27099004719
+• Run ID: 27101821551
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27101821551
+• Artifact: run-bot-27101821551
 • workflow run-bot, attempt 1
