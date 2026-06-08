@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-08T15:06:32.653169+00:00
+UTC: 2026-06-08T17:06:19.179561+00:00
 target_date: 2026-06-08
-canonical_matches: 238
-2+ provider sources: 72
-2+ primary sources: 72
+canonical_matches: 230
+2+ provider sources: 68
+2+ primary sources: 68
 all 3 primary sources: 6
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=8 rows=163 event_like=163 unique=41 statuses={"OK": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=3 rows=123 event_like=123 unique=41 statuses={"OK": 3, "EMPTY": 7}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=126 event_like=126 unique=63 statuses={"OK": 2, "EMPTY": 4}
+- odds_api_io: commands=6 ok=2 rows=106 event_like=106 unique=53 statuses={"OK": 2, "EMPTY": 4}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=261 event_like=215 unique=215 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=257 event_like=212 unique=212 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 166, "2": 63, "3": 9}
-- primary providers: {"1": 166, "2": 66, "3": 6}
+- all providers: {"1": 162, "2": 59, "3": 9}
+- primary providers: {"1": 162, "2": 62, "3": 6}
 
 ## Top canonical matches
 - 2026-06-07T21:30:00+00:00 | Defensor Sporting — Boston River | providers=sstats ids={"sstats": "1546811"}
@@ -36,6 +36,7 @@ all 3 primary sources: 6
 - 2026-06-07T22:00:00+00:00 | Oakland Soul W — Pleasanton Rage W | providers=sstats ids={"sstats": "1532139"}
 - 2026-06-07T22:00:00+00:00 | O'Higgins — Palestino | providers=sstats ids={"sstats": "1540366"}
 - 2026-06-07T22:00:00+00:00 | Long Island Rough Riders — Morris Elite | providers=sstats ids={"sstats": "1524812"}
+- 2026-06-07T22:00:00+00:00 | Bermuda W — Belize W | providers=sstats ids={"sstats": "1546558"}
 - 2026-06-07T22:00:00+00:00 | FC Cincinnati II — New England II | providers=sstats ids={"sstats": "1513146"}
 - 2026-06-07T22:30:00+00:00 | Asheville City — Wake | providers=sstats ids={"sstats": "1524814"}
 - 2026-06-07T23:00:00+00:00 | RKC — St. Croix | providers=sstats ids={"sstats": "1524813"}
@@ -50,7 +51,6 @@ all 3 primary sources: 6
 - 2026-06-08T00:00:00+00:00 | Miramar — Oriental | providers=sstats ids={"sstats": "1548202"}
 - 2026-06-08T00:00:00+00:00 | AHFC Royals W — Lonestar II W | providers=sstats ids={"sstats": "1532144"}
 - 2026-06-08T00:30:00+00:00 | Austin II — Los Angeles FC II | providers=sstats ids={"sstats": "1513148"}
-- 2026-06-08T03:00:00+00:00 | AMSG — Stars FC | providers=sstats ids={"sstats": "1524816"}
 
 ## Targeted enrichment plan sample
 - Defensor Sporting — Boston River | primary=1 providers=sstats
@@ -113,6 +113,10 @@ all 3 primary sources: 6
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Bermuda W — Belize W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - FC Cincinnati II — New England II | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
@@ -126,10 +130,6 @@ all 3 primary sources: 6
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Hill Country Linces W — Challenge W | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Colombia — Jordan | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
