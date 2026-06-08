@@ -1,54 +1,55 @@
 🧾 HARIZON — понятный отчёт по запуску
-🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: no viable controlled fallback
+🟡 Прогнозов нет: есть кандидаты, но timing guard отложил их до финального run.
+• Главная причина: кандидаты отложены до финального run перед матчем (2)
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 42 (это не размер inventory).
+• Инвентарь дня: 300 матчей. Runtime rows processed: 68 (это не размер inventory).
 • 1+ линия: 184/300 (61%) | 1+ контекст: 287/300 (96%)
-• 2+ букмекера: 45/300 (15%)
-• Raw 2+ букмекера odds-api.io: 9 | normalized inventory: 45 | mapping gap: 0
-• Odds-api mapping backfill: mapped 8, changed truth 2, changed inventory 8
-• Odds-api offer snapshot: rows 1800, matches 16, same-side 2+ books 8
-• 2+ независимых odds-source: 8/300 (3%) — диагностика, не блок публикации
-• 2+ контекста: 59/300 (20%)
+• 2+ букмекера: 47/300 (16%)
+• Raw 2+ букмекера odds-api.io: 21 | normalized inventory: 47 | mapping gap: 0
+• Odds-api mapping backfill: mapped 22, changed truth 1, changed inventory 23
+• Odds-api offer snapshot: rows 4321, matches 29, same-side 2+ books 21
+• 2+ независимых odds-source: 9/300 (3%) — диагностика, не блок публикации
+• 2+ контекста: 63/300 (21%)
 • Готово для модели: 174/300 (58%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 3; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
-• 4-8 ч: матчей 2; 2+ бук 2; 2+ конт 0; A-cover 0; B-cover 2; ждут line 2
-• 8-12 ч: матчей 36; 2+ бук 8; 2+ конт 4; A-cover 1; B-cover 8; ждут line 9
-• 12-16 ч: матчей 65; 2+ бук 27; 2+ конт 15; A-cover 5; B-cover 26; ждут line 26
-• 16-20 ч: матчей 14; 2+ бук 6; 2+ конт 5; A-cover 2; B-cover 6; ждут line 6
-• 20-24 ч: матчей 7; 2+ бук 0; 2+ конт 1; A-cover 0; B-cover 0; ждут line 0
+• 0-4 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
+• 4-8 ч: матчей 15; 2+ бук 6; 2+ конт 5; A-cover 1; B-cover 6; ждут line 7
+• 8-12 ч: матчей 54; 2+ бук 19; 2+ конт 9; A-cover 5; B-cover 17; ждут line 17
+• 12-16 ч: матчей 41; 2+ бук 16; 2+ конт 12; A-cover 4; B-cover 16; ждут line 16
+• 16-20 ч: матчей 13; 2+ бук 4; 2+ конт 2; A-cover 1; B-cover 4; ждут line 4
+• 20-24 ч: матчей 1; 2+ бук 0; 2+ конт 1; A-cover 0; B-cover 0; ждут line 0
 • >24 ч: матчей 116; 2+ бук 0; 2+ конт 27; A-cover 0; B-cover 0; ждут line 0
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 0 | опубликовано: 0
   A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 45 | fallback опубликовано: 0
+• B-tier bookmaker coverage: 47 | fallback опубликовано: 0
   B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 45 матчей; exact-ready считается после movement/value/xG.
+• Пересечение 2+ букмекера ∩ 2+ контекста: до 47 матчей; exact-ready считается после movement/value/xG.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Price-integrity guard: снял 0 подозрительных кандидатов до fallback.
+• Timing guard: отложил 2 кандидатов до последнего регулярного run перед матчем.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 1 | матчей без следующего регулярного run: 1
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/0
+• Raw/candidates before quality: 2/2
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 6; смэтчил матчей 23; offers 1847; 2+ букмекера 9; ошибок 0.
-• Bzzoiro: direct req 11, v2 req 11; v2 ctx 2; v2 odds 2; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 25; сырых строк 20757; контекстов 35; deep-enriched 2; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 8; смэтчил матчей 38; offers 4368; 2+ букмекера 21; ошибок 0.
+• Bzzoiro: direct req 23, v2 req 23; v2 ctx 6; v2 odds 4; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 25; сырых строк 20757; контекстов 49; deep-enriched 4; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 16, bzzoiro: 1
+• Комбинации источников линий: odds_api_io: 29, bzzoiro: 1
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -57,11 +58,11 @@
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Есть кандидаты, но timing guard отложил 2 до финального регулярного run перед стартом. Сейчас публикацию не форсируем.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27113490658
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27113490658
-• Artifact: run-bot-27113490658
+• Run ID: 27117007948
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27117007948
+• Artifact: run-bot-27117007948
 • workflow run-bot, attempt 1
