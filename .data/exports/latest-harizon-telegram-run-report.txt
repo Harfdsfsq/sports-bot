@@ -12,10 +12,10 @@
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 0 | опубликовано: 0
-  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.
-• B-tier bookmaker coverage: 0 | fallback опубликовано: 0
-  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.
-• Пересечение 2+ букмекера ∩ 2+ контекста: до 0 матчей; exact-ready считается после movement/value/xG.
+  A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
+• B-tier 1+ bookmaker/context coverage: 6 | fallback опубликовано: 0
+  B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 6 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 0 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
@@ -43,11 +43,11 @@
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
-• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
+• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
+• Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27236224190
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27236224190
-• Artifact: run-bot-27236224190
+• Run ID: 27237491284
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27237491284
+• Artifact: run-bot-27237491284
 • workflow run-bot, attempt 1
