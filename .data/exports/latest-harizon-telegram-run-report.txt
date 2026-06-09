@@ -1,26 +1,26 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier a canonical edge below min
+• Главная причина: направление ставки конфликтует с xG
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 187 (это не размер inventory).
-• 1+ линия: 221/300 (74%) | 1+ контекст: 298/300 (99%)
+• Инвентарь дня: 300 матчей. Runtime rows processed: 178 (это не размер inventory).
+• 1+ линия: 221/300 (74%) | 1+ контекст: 299/300 (100%)
 • 2+ букмекера: 104/300 (35%)
 • Raw 2+ букмекера odds-api.io: 48 | normalized inventory: 104 | mapping gap: 0
-• Odds-api mapping backfill: mapped 48, changed truth 4, changed inventory 51
-• Odds-api offer snapshot: rows 10239, matches 66, same-side 2+ books 48
-• 2+ независимых odds-source: 45/300 (15%) — диагностика, не блок публикации
-• 2+ контекста: 115/300 (38%)
-• Готово для модели: 219/300 (73%)
+• Odds-api mapping backfill: mapped 48, changed truth 0, changed inventory 53
+• Odds-api offer snapshot: rows 10177, matches 65, same-side 2+ books 48
+• 2+ независимых odds-source: 48/300 (16%) — диагностика, не блок публикации
+• 2+ контекста: 116/300 (39%)
+• Готово для модели: 220/300 (73%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 100; 2+ бук 53; 2+ конт 39; A-cover 20; B-cover 53; ждут line 58
-• 4-8 ч: матчей 48; 2+ бук 18; 2+ конт 10; A-cover 5; B-cover 14; ждут line 15
-• 8-12 ч: матчей 26; 2+ бук 7; 2+ конт 5; A-cover 5; B-cover 7; ждут line 7
-• 12-16 ч: матчей 1; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
-• 16-20 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
-• 20-24 ч: матчей 28; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
-• >24 ч: матчей 28; 2+ бук 0; 2+ конт 12; A-cover 0; B-cover 0; ждут line 0
+• 0-4 ч: матчей 116; 2+ бук 59; 2+ конт 44; A-cover 23; B-cover 59; ждут line 67
+• 4-8 ч: матчей 25; 2+ бук 14; 2+ конт 6; A-cover 5; B-cover 11; ждут line 11
+• 8-12 ч: матчей 22; 2+ бук 5; 2+ конт 3; A-cover 3; B-cover 5; ждут line 5
+• 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
+• 16-20 ч: матчей 10; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
+• 20-24 ч: матчей 23; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
+• >24 ч: матчей 23; 2+ бук 0; 2+ конт 12; A-cover 0; B-cover 0; ждут line 0
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 0 | опубликовано: 0
@@ -35,7 +35,7 @@
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 29 | матчей без следующего регулярного run: 27
+• Pre-kickoff проверок: 36 | матчей без следующего регулярного run: 22
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -44,33 +44,26 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 20; смэтчил матчей 92; offers 12313; 2+ букмекера 48; ошибок 0.
-• Bzzoiro: direct req 145, v2 req 145; v2 ctx 40; v2 odds 26; secondary offers 0; overlap odds-api.io 25; ошибок 0.
-• SStats: запросы 24; сырых строк 19704; контекстов 156; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 18; смэтчил матчей 88; offers 12356; 2+ букмекера 48; ошибок 0.
+• Bzzoiro: direct req 134, v2 req 134; v2 ctx 37; v2 odds 24; secondary offers 0; overlap odds-api.io 25; ошибок 0.
+• SStats: запросы 24; сырых строк 19704; контекстов 146; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 41, bzzoiro+odds_api_io: 25, bzzoiro: 14
+• Комбинации источников линий: odds_api_io: 40, bzzoiro+odds_api_io: 25, bzzoiro: 13
 
 🚫 Почему не опубликовано
-• tier a canonical edge below min: 1 (11%)
-• tier a canonical ev below min: 1 (11%)
-• tier b quality below min: 1 (11%)
-• tier b canonical edge below min: 1 (11%)
-• tier b canonical ev below min: 1 (11%)
-• tier b bookmaker quorum price outlier:12.31>8.00: 1 (11%)
-• tier c canonical edge below min: 1 (11%)
-• tier c canonical ev below min: 1 (11%)
-• Диагностика legacy odds-source: 2 — не блок публикации при 2+ букмекерах
+• направление ставки конфликтует с xG: 1 (50%)
+• quality post calibration edge guard: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Serbia U19 — Portugal U19 | Меньше 2.5 @2.19 | EV +0.9% | edge +0.4 п.п. | q 64.4
-   • причина: tier a canonical edge below min, tier a canonical ev below min, tier b quality below min, tier b canonical edge below min
+1. Armenia — Moldova | Меньше 2.5 @2.04 | EV +7.5% | edge +3.7 п.п. | q 68.5
+   • причина: направление ставки конфликтует с xG
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27207865981
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27207865981
-• Artifact: run-bot-27207865981
+• Run ID: 27210225169
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27210225169
+• Artifact: run-bot-27210225169
 • workflow run-bot, attempt 1
