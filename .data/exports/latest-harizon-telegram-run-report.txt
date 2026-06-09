@@ -1,53 +1,71 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: n/a
+• Главная причина: quality: вероятность после калибровки ниже порога
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 131 матчей. Runtime rows processed: 36 (это не размер inventory).
-• 1+ линия: 131/131 (100%) | 1+ контекст: 6/131 (5%)
-• 2+ букмекера: 0/131 (0%)
-• 2+ независимых odds-source: 131/131 (100%) — диагностика, не блок публикации
-• 2+ контекста: 6/131 (5%)
-• Готово для модели: 6/131 (5%)
+• Инвентарь дня: 160 матчей. Runtime rows processed: 162 (это не размер inventory).
+• 1+ линия: 149/160 (93%) | 1+ контекст: 83/160 (52%)
+• 2+ букмекера: 8/160 (5%)
+• Raw 2+ букмекера odds-api.io: 53 | normalized inventory: 8 | mapping gap: 45
+• Odds-api offer snapshot: rows 8969, matches 88, same-side 2+ books 49
+• 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
+• 2+ контекста: 28/160 (18%)
+• Готово для модели: 83/160 (52%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 0 | опубликовано: 0
+• A-tier strict-ready: 4 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 6 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 83 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 6 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 0 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 83 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 8 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 17 | матчей без следующего регулярного run: 11
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/5
+• Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 0 | evaluated 0 | published 0
+• Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 4; смэтчил матчей 36; offers 881; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 11, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 31; сырых строк 26487; контекстов 30; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 32; смэтчил матчей 157; offers 9763; 2+ букмекера 53; ошибок 0.
+• Bzzoiro: direct req 68, v2 req 68; v2 ctx 15; v2 odds 13; secondary offers 0; overlap odds-api.io 11; ошибок 0.
+• SStats: запросы 35; сырых строк 29376; контекстов 126; deep-enriched 11; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: н/д
+• Комбинации источников линий: odds_api_io: 77, bzzoiro+odds_api_io: 11, bzzoiro: 5
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• quality: вероятность после калибровки ниже порога: 4 (18%)
+• tier a quality below min: 2 (9%)
+• tier a canonical edge below min: 2 (9%)
+• tier a canonical ev below min: 2 (9%)
+• tier b quality below min: 2 (9%)
+• tier b canonical edge below min: 2 (9%)
+• tier b canonical ev below min: 2 (9%)
+• tier c quality below min: 2 (9%)
+• Диагностика legacy odds-source: 4 — не блок публикации при 2+ букмекерах
 
 🔎 Проверенные reserve-кандидаты
-• Нет проверенных reserve-кандидатов в свежем fallback report.
+1. Corinthians — Avai | Меньше 2.5 @2.46 | EV +19.3% | edge +7.8 п.п. | q 75.2
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
+2. Portugal — Nigeria | Меньше 2.5 @2.58 | EV +0.7% | edge +0.3 п.п. | q 57.5
+   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
+3. Varbergs — Norrby | Меньше 2.5 @2.28 | EV +0.5% | edge +0.2 п.п. | q 54.8
+   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier a confirmation sources below min:1/2
+4. Costa Rica — Canada | Меньше 2.5 @2.44 | EV -3.0% | edge -1.2 п.п. | q 51.7
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
+• Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27237491284
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27237491284
-• Artifact: run-bot-27237491284
+• Run ID: 27238229037
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27238229037
+• Artifact: run-bot-27238229037
 • workflow run-bot, attempt 1

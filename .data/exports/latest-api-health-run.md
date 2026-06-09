@@ -1,10 +1,10 @@
 # API Health Run
 
-- Created UTC: `2026-06-09T21:41:28.434970+00:00`
+- Created UTC: `2026-06-09T21:56:10.634394+00:00`
 - Mode: `quick`
 - Providers checked: **18**
-- OK: **14**
-- Config-only/skipped: **16**
+- OK: **15**
+- Config-only/skipped: **17**
 - Critical failures: **0**
 
 ## Provider results
@@ -17,7 +17,7 @@
 | `highlightly` | `context` | `ok` | 1 | 5 | ok |
 | `sstats` | `context` | `ok` | 1 | 5 | ok |
 | `thesportsdb` | `context` | `ok` | 1 | 5 | ok |
-| `currents` | `news` | `degraded` | 1 | 0 | http_status=400 |
+| `currents` | `news` | `ok` | 1 | 30 | ok |
 | `gnews` | `news` | `ok` | 1 | 1 | ok |
 | `guardian` | `news` | `ok` | 1 | 1 | ok |
 | `newsapi` | `news` | `ok` | 1 | 1 | ok |
