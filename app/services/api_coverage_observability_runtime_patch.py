@@ -26,6 +26,8 @@ REPORT_PATH = EXPORT_DIR / "latest-api-coverage-observability-policy.json"
 SPORTLOGIC_DIAG_PATH = EXPORT_DIR / "latest-sportlogic-api-diagnostic.json"
 
 _SPORTLOGIC_ATTEMPTS: list[dict[str, Any]] = []
+_ORIG_HTTPX_ASYNC_REQUEST = None
+_ORIG_HTTPX_SYNC_REQUEST = None
 
 
 def _truthy(value: Any, default: bool = False) -> bool:
@@ -125,6 +127,82 @@ def _apply_near_window_context_policy() -> dict[str, Any]:
     return changed
 
 
+def _is_sportlogic_url(url: Any) -> bool:
+    text = str(url or "").lower()
+    return "sportlogic" in text or "api.sportlogic" in text
+
+
+def _record_httpx_attempt(url: Any, method: Any, params: Any, status_code: Any = None, text: str = "", error: str = "") -> None:
+    if not _is_sportlogic_url(url):
+        return
+    attempt = {
+        "started_at_utc": datetime.now(UTC).isoformat(),
+        "path": str(url).split("?", 1)[0][-120:],
+        "method": str(method or "GET"),
+        "params": _param_preview(params),
+        "status_code": int(status_code or 0) if str(status_code or "").isdigit() else str(status_code or ""),
+        "rows_count": 0,
+        "payload_type": "httpx_response",
+        "last_error": str(error or "")[:240],
+        "body_preview": str(text or "")[:600],
+        "capture_layer": "httpx_request",
+    }
+    try:
+        if text:
+            payload = json.loads(text)
+            attempt["rows_count"] = _rows_count(payload)
+            attempt["payload_type"] = type(payload).__name__
+    except Exception:
+        pass
+    _SPORTLOGIC_ATTEMPTS.append(attempt)
+    if len(_SPORTLOGIC_ATTEMPTS) > 120:
+        del _SPORTLOGIC_ATTEMPTS[:-120]
+    _write_sportlogic_diag()
+
+
+def _patch_httpx_sportlogic_capture() -> dict[str, Any]:
+    global _ORIG_HTTPX_ASYNC_REQUEST, _ORIG_HTTPX_SYNC_REQUEST
+    try:
+        import httpx
+    except Exception as exc:
+        return {"httpx_sportlogic_capture": "import_failed", "error": str(exc)[:160]}
+    if getattr(httpx.AsyncClient, "_harizon_sportlogic_httpx_observed", False):
+        return {"httpx_sportlogic_capture": "already_installed"}
+    _ORIG_HTTPX_ASYNC_REQUEST = _ORIG_HTTPX_ASYNC_REQUEST or httpx.AsyncClient.request
+    _ORIG_HTTPX_SYNC_REQUEST = _ORIG_HTTPX_SYNC_REQUEST or httpx.Client.request
+
+    async def async_request_observed(self, method, url, *args, **kwargs):
+        try:
+            response = await _ORIG_HTTPX_ASYNC_REQUEST(self, method, url, *args, **kwargs)
+            try:
+                text = response.text
+            except Exception:
+                text = ""
+            _record_httpx_attempt(url, method, kwargs.get("params"), getattr(response, "status_code", None), text)
+            return response
+        except Exception as exc:
+            _record_httpx_attempt(url, method, kwargs.get("params"), None, "", str(exc))
+            raise
+
+    def sync_request_observed(self, method, url, *args, **kwargs):
+        try:
+            response = _ORIG_HTTPX_SYNC_REQUEST(self, method, url, *args, **kwargs)
+            try:
+                text = response.text
+            except Exception:
+                text = ""
+            _record_httpx_attempt(url, method, kwargs.get("params"), getattr(response, "status_code", None), text)
+            return response
+        except Exception as exc:
+            _record_httpx_attempt(url, method, kwargs.get("params"), None, "", str(exc))
+            raise
+
+    httpx.AsyncClient.request = async_request_observed
+    httpx.Client.request = sync_request_observed
+    httpx.AsyncClient._harizon_sportlogic_httpx_observed = True
+    return {"httpx_sportlogic_capture": "installed"}
+
+
 def _patch_sportlogic_diagnostics() -> dict[str, Any]:
     try:
         from app.providers.sportlogic_provider import SportLogicProvider
@@ -167,7 +245,7 @@ def _patch_sportlogic_diagnostics() -> dict[str, Any]:
 
 def _write_sportlogic_diag() -> None:
     rows_total = sum(_as_int(item.get("rows_count"), 0) for item in _SPORTLOGIC_ATTEMPTS)
-    games_calls = [item for item in _SPORTLOGIC_ATTEMPTS if str(item.get("path") or "") == "/games"]
+    games_calls = [item for item in _SPORTLOGIC_ATTEMPTS if "/games" in str(item.get("path") or "")]
     _write_json(SPORTLOGIC_DIAG_PATH, {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "status": "ok",
@@ -200,6 +278,9 @@ def _write_policy_report(changed_env: dict[str, str], patches: dict[str, Any]) -
 def install() -> None:
     changed_env = _apply_near_window_context_policy()
     patches = _patch_sportlogic_diagnostics()
+    httpx_patch = _patch_httpx_sportlogic_capture()
+    if isinstance(patches, dict):
+        patches.update(httpx_patch)
     _write_policy_report(changed_env, patches)
     _write_sportlogic_diag()
     try:

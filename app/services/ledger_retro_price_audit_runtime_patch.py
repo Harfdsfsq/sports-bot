@@ -38,7 +38,7 @@ def _run_audit() -> None:
         return
     try:
         from scripts.retro_audit_price_integrity_ledger import main as audit_main
-        audit_main()
+        audit_main([])
     except SystemExit:
         pass
     except Exception as exc:

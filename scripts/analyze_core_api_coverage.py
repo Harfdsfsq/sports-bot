@@ -36,6 +36,16 @@ def as_int(value: Any) -> int:
         return 0
 
 
+def _run_retro_price_audit() -> dict[str, Any]:
+    try:
+        from scripts.retro_audit_price_integrity_ledger import main as retro_main
+        retro_main([])
+        report = load(EXPORT / 'latest-ledger-retro-price-integrity-audit.json', {})
+        return report if isinstance(report, dict) else {'status': 'bad_report_shape'}
+    except Exception as exc:
+        return {'status': 'failed', 'error': str(exc)[:300]}
+
+
 def main() -> int:
     report = load(EXPORT / 'latest-harizon-telegram-run-report.json', {})
     truth = load(EXPORT / 'latest-day-inventory-coverage-truth.json', {})
@@ -47,6 +57,7 @@ def main() -> int:
     price_guard = load(EXPORT / 'latest-controlled-fallback-price-integrity-guard.json', {})
     bzz_gap = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer.json', {})
     bzz_gap_install = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer-install.json', {})
+    retro_audit = _run_retro_price_audit()
 
     api = report.get('api') if isinstance(report.get('api'), dict) else {}
     coverage = report.get('coverage') if isinstance(report.get('coverage'), dict) else {}
@@ -90,6 +101,14 @@ def main() -> int:
             'timing_deferred_total': as_int(timing.get('deferred_total')),
             'price_integrity_removed_total': as_int(price_guard.get('removed_total')),
         },
+        'ledger_retro_price_audit': {
+            'status': retro_audit.get('status') if isinstance(retro_audit, dict) else '',
+            'mutated': bool(retro_audit.get('mutated')) if isinstance(retro_audit, dict) else False,
+            'published_flagged': as_int(retro_audit.get('published_flagged')) if isinstance(retro_audit, dict) else 0,
+            'pending_flagged': as_int(retro_audit.get('pending_flagged')) if isinstance(retro_audit, dict) else 0,
+            'changed_rows': as_int(retro_audit.get('changed_rows')) if isinstance(retro_audit, dict) else 0,
+            'policy': retro_audit.get('policy') if isinstance(retro_audit, dict) else '',
+        },
         'bzzoiro_context_gap': {
             'runtime': bzz_gap,
             'install': bzz_gap_install,
@@ -107,6 +126,8 @@ def main() -> int:
         payload['bottlenecks'].append('bzzoiro_secondary_offers_zero')
     if as_int(get(payload, 'api', 'sstats', 'team_form_contexts')) <= 0:
         payload['bottlenecks'].append('sstats_team_form_zero')
+    if as_int(get(payload, 'ledger_retro_price_audit', 'pending_flagged')) or as_int(get(payload, 'ledger_retro_price_audit', 'published_flagged')):
+        payload['bottlenecks'].append('ledger_price_integrity_retro_flags_present')
 
     payload['next_actions'] = [
         'Do not relax publication guards.',

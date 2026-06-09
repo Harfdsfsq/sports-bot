@@ -200,6 +200,18 @@ def _patch_module(module: Any) -> None:
     module.translate_reject_reason = translate_reject_reason_bookmaker_quorum
 
 
+def _run_retro_price_audit_after_publish() -> dict[str, Any]:
+    try:
+        from scripts.retro_audit_price_integrity_ledger import main as retro_main
+        retro_main([])
+        path = ROOT / ".data" / "exports" / "latest-ledger-retro-price-integrity-audit.json"
+        if path.exists() and path.stat().st_size > 0:
+            return json.loads(path.read_text(encoding="utf-8"))
+        return {"status": "missing_report_after_audit"}
+    except Exception as exc:
+        return {"status": "failed", "error": str(exc)[:300]}
+
+
 def main() -> int:
     defaults = {
         "PUBLISH_PRICE_CONFIRMATION_MODE": "bookmakers",
@@ -228,7 +240,26 @@ def main() -> int:
             "price_integrity_preserved": True,
         }
     )
-    return int(module.main() or 0)
+    status = int(module.main() or 0)
+    audit = _run_retro_price_audit_after_publish()
+    # Update wrapper report with audit status so the run artifact proves the retro layer executed.
+    _write_report(
+        {
+            "created_at_utc": datetime.now(timezone.utc).isoformat(),
+            "status": "installed",
+            "wrapper": "publish_controlled_fallback_bookmaker",
+            "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
+            "original_script": str(ORIGINAL),
+            "price_integrity_preserved": True,
+            "retro_price_audit": {
+                "status": audit.get("status") if isinstance(audit, dict) else "",
+                "published_flagged": audit.get("published_flagged") if isinstance(audit, dict) else 0,
+                "pending_flagged": audit.get("pending_flagged") if isinstance(audit, dict) else 0,
+                "changed_rows": audit.get("changed_rows") if isinstance(audit, dict) else 0,
+            },
+        }
+    )
+    return status
 
 
 if __name__ == "__main__":

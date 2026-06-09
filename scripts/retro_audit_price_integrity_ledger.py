@@ -298,10 +298,13 @@ def _audit_rows(rows: list[dict[str, Any]], *, mutate: bool) -> tuple[list[dict[
     return out, flagged, changed
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--no-mutate", action="store_true")
-    args = parser.parse_args()
+    # When called from runtime atexit hooks, sys.argv belongs to app.cli and may
+    # contain unrelated arguments.  Parse an empty argv by default; the __main__
+    # block passes real CLI args explicitly.
+    args = parser.parse_args([] if argv is None else argv)
     mutate = not args.no_mutate and _truthy(os.getenv("LEDGER_RETRO_PRICE_AUDIT_MUTATE", "true"), True)
     BET_DIR.mkdir(parents=True, exist_ok=True)
     EXPORT_DIR.mkdir(parents=True, exist_ok=True)
@@ -338,4 +341,5 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    import sys
+    raise SystemExit(main(sys.argv[1:]))
