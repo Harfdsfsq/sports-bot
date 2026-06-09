@@ -1,22 +1,22 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: направление ставки конфликтует с xG
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 178 (это не размер inventory).
+• Инвентарь дня: 300 матчей. Runtime rows processed: 170 (это не размер inventory).
 • 1+ линия: 221/300 (74%) | 1+ контекст: 299/300 (100%)
 • 2+ букмекера: 104/300 (35%)
-• Raw 2+ букмекера odds-api.io: 48 | normalized inventory: 104 | mapping gap: 0
-• Odds-api mapping backfill: mapped 48, changed truth 0, changed inventory 53
-• Odds-api offer snapshot: rows 10177, matches 65, same-side 2+ books 48
+• Raw 2+ букмекера odds-api.io: 47 | normalized inventory: 104 | mapping gap: 0
+• Odds-api mapping backfill: mapped 47, changed truth 0, changed inventory 53
+• Odds-api offer snapshot: rows 9447, matches 62, same-side 2+ books 47
 • 2+ независимых odds-source: 48/300 (16%) — диагностика, не блок публикации
-• 2+ контекста: 116/300 (39%)
+• 2+ контекста: 118/300 (39%)
 • Готово для модели: 220/300 (73%)
 
 🧭 Покрытие ближайших окон
-• 0-4 ч: матчей 116; 2+ бук 59; 2+ конт 44; A-cover 23; B-cover 59; ждут line 67
-• 4-8 ч: матчей 25; 2+ бук 14; 2+ конт 6; A-cover 5; B-cover 11; ждут line 11
-• 8-12 ч: матчей 22; 2+ бук 5; 2+ конт 3; A-cover 3; B-cover 5; ждут line 5
+• 0-4 ч: матчей 113; 2+ бук 60; 2+ конт 42; A-cover 24; B-cover 60; ждут line 68
+• 4-8 ч: матчей 22; 2+ бук 12; 2+ конт 6; A-cover 5; B-cover 9; ждут line 9
+• 8-12 ч: матчей 21; 2+ бук 5; 2+ конт 3; A-cover 3; B-cover 5; ждут line 5
 • 12-16 ч: матчей 0; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 16-20 ч: матчей 10; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
 • 20-24 ч: матчей 23; 2+ бук 0; 2+ конт 0; A-cover 0; B-cover 0; ждут line 0
@@ -35,35 +35,33 @@
 • Ledger: unique published 2; pending 2; duplicates removed 4; policy semantic match market selection point kickoff.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 36 | матчей без следующего регулярного run: 22
+• Pre-kickoff проверок: 35 | матчей без следующего регулярного run: 16
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 18; смэтчил матчей 88; offers 12356; 2+ букмекера 48; ошибок 0.
-• Bzzoiro: direct req 134, v2 req 134; v2 ctx 37; v2 odds 24; secondary offers 0; overlap odds-api.io 25; ошибок 0.
-• SStats: запросы 24; сырых строк 19704; контекстов 146; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 18; смэтчил матчей 84; offers 11704; 2+ букмекера 47; ошибок 0.
+• Bzzoiro: direct req 133, v2 req 133; v2 ctx 36; v2 odds 24; secondary offers 0; overlap odds-api.io 25; ошибок 0.
+• SStats: запросы 24; сырых строк 19704; контекстов 143; deep-enriched 8; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 40, bzzoiro+odds_api_io: 25, bzzoiro: 13
+• Комбинации источников линий: odds_api_io: 37, bzzoiro+odds_api_io: 25, bzzoiro: 13
 
 🚫 Почему не опубликовано
-• направление ставки конфликтует с xG: 1 (50%)
-• quality post calibration edge guard: 1 (50%)
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Armenia — Moldova | Меньше 2.5 @2.04 | EV +7.5% | edge +3.7 п.п. | q 68.5
-   • причина: направление ставки конфликтует с xG
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
-• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.
+• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.
 • Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27210225169
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27210225169
-• Artifact: run-bot-27210225169
+• Run ID: 27212217053
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27212217053
+• Artifact: run-bot-27212217053
 • workflow run-bot, attempt 1
