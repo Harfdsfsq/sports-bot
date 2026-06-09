@@ -1,0 +1,187 @@
+{
+  "audit_source": "api_maximum_coverage_runtime_patch_atexit",
+  "bookmaker_backfill": {
+    "changed_inventory_rows": 58,
+    "changed_truth_rows": 4,
+    "mapped_matches": 51,
+    "offer_rows_from_snapshot": 9369
+  },
+  "bottlenecks": [
+    "bzzoiro_secondary_offers_zero",
+    "sstats_team_form_zero",
+    "sportlogic_no_fixtures_or_matches"
+  ],
+  "bzzoiro_context_gap": {
+    "install": {
+      "created_at_utc": "2026-06-09T09:42:30.942705+00:00",
+      "ignore_plan_default": true,
+      "match_limit": 160,
+      "max_requests": 180,
+      "runtime_report": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-context-gap-finalizer.json",
+      "status": "installed"
+    },
+    "runtime": {
+      "created_at_utc": "2026-06-09T09:36:56.288440+00:00",
+      "preview": {
+        "hints_sidecar": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json",
+        "hints_sidecar_matches": 36,
+        "matched": 3,
+        "odds_comparison_attachment": {
+          "attached": 42,
+          "attempted": 42,
+          "enabled": true,
+          "errors": 0,
+          "limit": 50,
+          "max_requests": 50
+        },
+        "provider_odds_hints": 3578,
+        "sample_targets": [
+          "soccer|adelaide city|western strikes|2026-06-09",
+          "soccer|aduana|basake holy stars|2026-06-09",
+          "soccer|agrobiznes volochisk|kudrivka|2026-06-09",
+          "soccer|ahrobiznes volochysk|kudrivka|2026-06-09",
+          "soccer|al ahli wad medani|al hilal port sudan|2026-06-09",
+          "soccer|al fallah|umm mughad|2026-06-09",
+          "soccer|albania|ukraine|2026-06-09",
+          "soccer|apejes academy|les astres|2026-06-09",
+          "soccer|ario eslamshahr|niroye zamini tehran|2026-06-09",
+          "soccer|ario eslamshahr|niroye zamini|2026-06-09",
+          "soccer|ashfield reserves|morley windmills reserves|2026-06-09",
+          "soccer|atlantic|kumba|2026-06-09",
+          "soccer|australia|cambodia|2026-06-09",
+          "soccer|avion academy|union abong mbang|2026-06-09",
+          "soccer|azerbaijan|kyrgyz republic|2026-06-09",
+          "soccer|be sat kermanshah|mes soongoun|2026-06-09",
+          "soccer|besat kermanshah|kara gostar|2026-06-09",
+          "soccer|besat kermanshah|mes sungun varzaghan|2026-06-09",
+          "soccer|botswana|niger|2026-06-09",
+          "soccer|brazil|portugal|2026-06-09",
+          "soccer|bulawayo chiefs|telone|2026-06-09",
+          "soccer|burkina faso w|zimbabwe w|2026-06-09",
+          "soccer|cessnock city hornets|singleton strikers|2026-06-09",
+          "soccer|damash gilanian|mes shahr e babak|2026-06-09",
+          "soccer|damash gilan|mes shahr e babak|2026-06-09"
+        ],
+        "target_matches": 69,
+        "unmatched": 66
+      },
+      "stats": {
+        "contexts_added": 3,
+        "contexts_added_total": 3,
+        "enabled": true,
+        "errors": 0,
+        "hinted_contexts": 36,
+        "lineups_resources": 0,
+        "matched": 3,
+        "metadata_resources": 27,
+        "note": "patched actual app.providers.bzzoiro_v2 provider; legacy report path kept for Telegram v8",
+        "odds_comparison_attached": 42,
+        "odds_comparison_attempted": 42,
+        "odds_hints": 3578,
+        "odds_resources": 27,
+        "provider": "bzzoiro_v2",
+        "requests": 0,
+        "stats_resources": 27,
+        "target_matches": 69,
+        "v2_events_fetched": 33
+      },
+      "status": "ran"
+    }
+  },
+  "created_at_utc": "2026-06-09T09:42:31.825279+00:00",
+  "guards": {
+    "price_integrity_removed_total": 2,
+    "timing_deferred_total": 6
+  },
+  "inventory": {
+    "matches_total": 300,
+    "ready_for_model": 213,
+    "with_1plus_context": 294,
+    "with_2plus_bookmakers": 97,
+    "with_2plus_context": 97
+  },
+  "max_policy_installed": true,
+  "near_window_0_4h": {
+    "a_contract": 17,
+    "b_contract": 17,
+    "bookmaker_2plus": 17,
+    "context_2plus": 32,
+    "matches": 39,
+    "publish_ready": 0,
+    "waiting_movement": 19,
+    "with_context": 39,
+    "with_odds": 34
+  },
+  "next_actions": [
+    "Do not relax publication guards.",
+    "If near_window_context_gap persists, prioritize Bzzoiro/SStats context only for 0-4h bookmaker-qualified matches.",
+    "If sportlogic_no_fixtures_or_matches persists, verify SportLogic base URL/auth/date contract outside publication pipeline.",
+    "If bzzoiro_secondary_offers_zero persists, keep Bzzoiro as context/confirmation, not price source, until comparison odds parse is fixed."
+  ],
+  "odds_api_snapshot": {
+    "matches_count": 65,
+    "rows_count": 9568,
+    "same_side_2plus_books": 51
+  },
+  "providers": {
+    "bzzoiro": {
+      "contexts": 42,
+      "contexts_total_effective": 42,
+      "errors": 0,
+      "events": 33,
+      "events_total_effective": 33,
+      "overlap": 22,
+      "requests": 151,
+      "requests_total_effective": 151,
+      "secondary_offers_added": 0,
+      "v2_contexts": 42,
+      "v2_errors": 0,
+      "v2_events": 33,
+      "v2_lineups_resources": 0,
+      "v2_odds_resources": 27,
+      "v2_prediction_resources": 27,
+      "v2_requests": 151,
+      "v2_stats_resources": 27
+    },
+    "odds_api_io": {
+      "auth_failed": false,
+      "books_2plus": 52,
+      "errors": 0,
+      "events_req": 0,
+      "matched": 89,
+      "odds_req": 18,
+      "offers": 11328
+    },
+    "sportlogic": {
+      "diagnosis": "sportlogic_no_current_games_probe_only",
+      "enabled": true,
+      "errors": 0,
+      "fixtures_fetched": 0,
+      "games_fetched": 0,
+      "matched": 0,
+      "odds_discovery_detail_limit_effective": 0,
+      "odds_discovery_fixtures": 0,
+      "odds_discovery_game_ids": 0,
+      "odds_discovery_max_pages_effective": 0,
+      "odds_discovery_requests_used": 0,
+      "odds_discovery_rows": 0,
+      "odds_requests": 0,
+      "offers": 0,
+      "requests": 5,
+      "runtime_error": "",
+      "sample_dates": [],
+      "stale_sample": false
+    },
+    "sstats": {
+      "contexts": 145,
+      "deep_enriched": 0,
+      "direct_contexts": 0,
+      "errors": 0,
+      "requests": 24,
+      "rows": 19558,
+      "runtime_patch": "",
+      "team_form_contexts": 0
+    }
+  },
+  "status": "ok"
+}

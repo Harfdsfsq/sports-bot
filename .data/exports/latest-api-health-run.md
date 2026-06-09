@@ -1,13 +1,13 @@
 # API Health Run
 
-- Created UTC: `2026-06-09T07:03:07.720884+00:00`
+- Created UTC: `2026-06-09T09:25:30.544317+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
-- OK: **15**
+- OK: **16**
 - Config-only: **1**
 - Skipped: **0**
-- Healthy/config/skipped: **16**
+- Healthy/config/skipped: **17**
 - Degraded: **0**
 - Rate-limited: **0**
 - Auth errors: **0**
@@ -27,7 +27,7 @@
 | Provider | Group | Status | Requests | Useful rows | Message |
 |---|---|---:|---:|---:|---|
 | `bzzoiro` | `context` | `ok` | 1 | 47 | ok |
-| `football_data` | `context` | `error` | 1 | 0 | RemoteProtocolError: Server disconnected without sending a response. |
+| `football_data` | `context` | `ok` | 1 | 13 | ok |
 | `futrixmetrics` | `context` | `config_only` | 0 | 0 | key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured |
 | `highlightly` | `context` | `ok` | 1 | 5 | ok |
 | `sstats` | `context` | `ok` | 1 | 5 | ok |
