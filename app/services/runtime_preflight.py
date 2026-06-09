@@ -128,6 +128,48 @@ class RuntimePreflight:
         self._install_native_integrity_hooks()
         return applied
 
+    def apply_phase_policy(self, phase: str = "run-once") -> dict[str, Any]:
+        """Apply lightweight command-phase policy before Settings is created.
+
+        `app.cli` calls this hook before `get_settings()` so env-driven runtime
+        contracts are visible to Pydantic/settings loading.  The method must stay
+        cheap and non-fatal: the expensive discovery/context work is still done by
+        `run_before_prediction()` after settings are loaded.
+
+        This method intentionally exists as a stable compatibility hook.  A missing
+        hook crashed run-bot before `PredictionRunner` started, which made reports
+        show line_guard=0 and skipped controlled fallback even though A/B-tier
+        coverage was present.
+        """
+        payload: dict[str, Any] = {
+            "stage": "phase_policy",
+            "phase": str(phase or "run-once"),
+            "safe_defaults_applied": 0,
+            "runtime_json_repair": {},
+            "status": "ok",
+        }
+        try:
+            payload["safe_defaults_applied"] = self.apply_safe_defaults()
+        except Exception as exc:
+            payload["status"] = "safe_defaults_error_ignored"
+            payload["safe_defaults_error"] = f"{type(exc).__name__}: {exc}"
+            logger.warning("phase policy safe defaults failed; continuing: %s: %s", type(exc).__name__, exc)
+        try:
+            repair_runtime_json_files()
+            payload["runtime_json_repair"] = {"status": "ok"}
+        except Exception as exc:
+            payload["runtime_json_repair"] = {"status": "error_ignored", "error": f"{type(exc).__name__}: {exc}"}
+            logger.warning("phase policy runtime JSON repair failed; continuing: %s: %s", type(exc).__name__, exc)
+        try:
+            self.export_dir.mkdir(parents=True, exist_ok=True)
+            (self.export_dir / "latest-runtime-phase-policy.json").write_text(
+                json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                encoding="utf-8",
+            )
+        except Exception:
+            logger.debug("failed to write runtime phase policy report", exc_info=True)
+        return payload
+
     def prepare_discovery_first_inventory(self) -> dict[str, Any]:
         if not _truthy(os.getenv("RUNBOT_DISCOVERY_FIRST_PREPARE_ENABLED"), True):
             return {"enabled": False, "reason": "disabled"}
