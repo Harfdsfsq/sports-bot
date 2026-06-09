@@ -121,6 +121,8 @@ def _apply_near_window_context_policy() -> dict[str, Any]:
     # contract can be fixed safely.
     os.environ["SPORTLOGIC_DIAGNOSTIC_CAPTURE"] = "true"; mark("SPORTLOGIC_DIAGNOSTIC_CAPTURE")
     os.environ["SPORTLOGIC_DOCS_PATH_PROBE_ENABLED"] = "true"; mark("SPORTLOGIC_DOCS_PATH_PROBE_ENABLED")
+    os.environ["SPORTLOGIC_CONTRACT_PROBE_ENABLED"] = "true"; mark("SPORTLOGIC_CONTRACT_PROBE_ENABLED")
+    os.environ.setdefault("SPORTLOGIC_CONTRACT_PROBE_MAX_ATTEMPTS", "18"); mark("SPORTLOGIC_CONTRACT_PROBE_MAX_ATTEMPTS")
     _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 70); mark("SPORTLOGIC_PER_RUN_MAX")
     _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 70); mark("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN")
     _set_if_lower("SPORTLOGIC_REQUEST_BUDGET_GRANTED", 70); mark("SPORTLOGIC_REQUEST_BUDGET_GRANTED")
@@ -258,6 +260,30 @@ def _write_sportlogic_diag() -> None:
     })
 
 
+def _run_sportlogic_contract_probe_if_needed() -> None:
+    """Write a useful SportLogic diagnostic even when provider calls bypass our wrapper."""
+    if not _truthy(os.getenv("SPORTLOGIC_CONTRACT_PROBE_ENABLED", "true"), True):
+        return
+    try:
+        current = json.loads(SPORTLOGIC_DIAG_PATH.read_text(encoding="utf-8")) if SPORTLOGIC_DIAG_PATH.exists() else {}
+    except Exception:
+        current = {}
+    # If provider-level capture already saw real attempts, keep it.  If it did not,
+    # run a tiny direct contract probe so we know whether the issue is auth/base URL/path/date.
+    if _as_int(current.get("attempts_count"), 0) > 0 and _as_int(current.get("rows_total"), 0) > 0:
+        return
+    try:
+        from scripts.probe_sportlogic_contract import run_probe
+        run_probe()
+    except Exception as exc:
+        _write_json(SPORTLOGIC_DIAG_PATH, {
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "status": "probe_failed",
+            "error": str(exc)[:300],
+            "previous_diag": current,
+        })
+
+
 def _write_policy_report(changed_env: dict[str, str], patches: dict[str, Any]) -> None:
     _write_json(REPORT_PATH, {
         "created_at_utc": datetime.now(UTC).isoformat(),
@@ -285,5 +311,6 @@ def install() -> None:
     _write_sportlogic_diag()
     try:
         atexit.register(_write_sportlogic_diag)
+        atexit.register(_run_sportlogic_contract_probe_if_needed)
     except Exception:
         pass

@@ -58,6 +58,13 @@ def main() -> int:
     bzz_gap = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer.json', {})
     bzz_gap_install = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer-install.json', {})
     retro_audit = _run_retro_price_audit()
+    sportlogic_diag = load(EXPORT / 'latest-sportlogic-api-diagnostic.json', {})
+    try:
+        if as_int(sportlogic_diag.get('attempts_count')) <= 0:
+            from scripts.probe_sportlogic_contract import run_probe
+            sportlogic_diag = run_probe()
+    except Exception as exc:
+        sportlogic_diag = {'status': 'probe_failed', 'error': str(exc)[:300]}
 
     api = report.get('api') if isinstance(report.get('api'), dict) else {}
     coverage = report.get('coverage') if isinstance(report.get('coverage'), dict) else {}
@@ -97,6 +104,13 @@ def main() -> int:
             'changed_truth_rows': as_int(backfill.get('changed_truth_rows')),
             'offer_rows_from_snapshot': as_int(backfill.get('offer_rows_from_snapshot')),
         },
+        'sportlogic_contract_probe': {
+            'status': sportlogic_diag.get('status') if isinstance(sportlogic_diag, dict) else '',
+            'attempts_count': as_int(sportlogic_diag.get('attempts_count')) if isinstance(sportlogic_diag, dict) else 0,
+            'rows_total': as_int(sportlogic_diag.get('rows_total')) if isinstance(sportlogic_diag, dict) else 0,
+            'found_rows': bool(sportlogic_diag.get('found_rows')) if isinstance(sportlogic_diag, dict) else False,
+            'status_counts': sportlogic_diag.get('status_counts') if isinstance(sportlogic_diag, dict) else {},
+        },
         'guards': {
             'timing_deferred_total': as_int(timing.get('deferred_total')),
             'price_integrity_removed_total': as_int(price_guard.get('removed_total')),
@@ -122,6 +136,8 @@ def main() -> int:
         payload['bottlenecks'].append('near_window_context_gap')
     if as_int(get(payload, 'api', 'sportlogic', 'matched')) <= 0 and as_int(get(payload, 'api', 'sportlogic', 'fixtures_fetched')) <= 0:
         payload['bottlenecks'].append('sportlogic_no_fixtures_or_matches')
+    if as_int(get(payload, 'sportlogic_contract_probe', 'attempts_count')) > 0 and as_int(get(payload, 'sportlogic_contract_probe', 'rows_total')) <= 0:
+        payload['bottlenecks'].append('sportlogic_contract_probe_no_rows')
     if as_int(get(payload, 'api', 'bzzoiro', 'secondary_offers_added')) <= 0:
         payload['bottlenecks'].append('bzzoiro_secondary_offers_zero')
     if as_int(get(payload, 'api', 'sstats', 'team_form_contexts')) <= 0:
