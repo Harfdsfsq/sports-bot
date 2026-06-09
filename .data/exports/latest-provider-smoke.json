@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":70844466,\"home\":\"Alftanes\",\"away\":\"Hafnir\",\"homeId\":42343,\"awayId\":876601,\"date\":\"2026-06-09T19:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Iceland - 4. deild\",\"slug\":\"iceland-4-deild\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71899610,\"home\":\"Maghreb",
+      "body_preview": "[{\"id\":69880388,\"home\":\"9 de Octubre FC\",\"away\":\"Vinotinto FC Ecuador\",\"homeId\":676869,\"awayId\":889265,\"date\":\"2026-06-09T20:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Ecuador - LigaPro Primera B\",\"slug\":\"ecuador-ligapro-primera-b\"},\"status\":\"pending\",\"scores\":{\"home\":0,",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781031867,\"localtime\":\"2026-06-09 20:04\"},\"current\":{\"last_updated_epoch\":1781030700,\"last_updated\":\"2026-06-09 19:45\",\"temp_c\":18.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781035758,\"localtime\":\"2026-06-09 21:09\"},\"current\":{\"last_updated_epoch\":1781035200,\"last_updated\":\"2026-06-09 21:00\",\"temp_c\":16.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,7 +77,7 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.5,\"longitude\":-0.25,\"generationtime_ms\":0.07224082946777344,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"current\":{\"tim",
+      "body_preview": "{\"latitude\":51.5,\"longitude\":-0.25,\"generationtime_ms\":0.08165836334228516,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"current\":{\"tim",
       "enabled": true,
       "http_status": 200,
       "item_count": 9,
@@ -96,7 +96,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-06-09T19:05:04.378309+00:00",
+  "created_at_utc": "2026-06-09T20:09:57.814564+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -113,20 +113,13 @@
     },
     {
       "bad_enabled": {
+        "SPORTLOGIC_ACTIVE_ODDS_TARGETED_CONFIRMATION_ENABLED": "true",
         "SPORTLOGIC_CONTRACT_PROBE_ENABLED": "true",
-        "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
-        "SPORTLOGIC_DOCS_DATE_FALLBACK_ENABLED": "true",
         "SPORTLOGIC_DOCS_PATH_PROBE_ENABLED": "true",
-        "SPORTLOGIC_ENABLED": "true",
         "SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED": "true",
         "SPORTLOGIC_QUERY_GUARD_ENABLED": "true"
       },
-      "bad_limits": {
-        "SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN": "70",
-        "SPORTLOGIC_PER_RUN_MAX": "70",
-        "SPORTLOGIC_REQUESTS_MAX_PER_RUN": "40",
-        "SPORTLOGIC_REQUEST_BUDGET_GRANTED": "70"
-      },
+      "bad_limits": {},
       "ok": false,
       "prefix": "SPORTLOGIC"
     },
@@ -137,15 +130,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -199,9 +196,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -211,17 +212,17 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
-      "prefix": "RAPIDAPI_SPORTSBOOK"
-    },
-    {
       "bad_enabled": {
-        "RAPIDAPI_FREE_FOOTBALL_PROBE_ENABLED": "true"
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
       },
       "bad_limits": {},
       "ok": false,
+      "prefix": "RAPIDAPI_SPORTSBOOK"
+    },
+    {
+      "bad_enabled": {},
+      "bad_limits": {},
+      "ok": true,
       "prefix": "RAPIDAPI_FREE_FOOTBALL"
     },
     {
@@ -259,7 +260,7 @@
     "enabled_checks": 8,
     "failed_enabled_checks": 1,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 6,
+    "non_core_bad_env_prefixes": 9,
     "ok_enabled_checks": 7,
     "status": "warning"
   }
