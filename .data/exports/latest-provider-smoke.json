@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":70945246,\"home\":\"Besat Kermanshah\",\"away\":\"Kara Gostar\",\"homeId\":378922,\"awayId\":950423,\"date\":\"2026-06-09T14:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Iran - Azadegan League\",\"slug\":\"iran-azadegan-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":7",
+      "body_preview": "[{\"id\":70945254,\"home\":\"Sanat Naft\",\"away\":\"Pars Jonoubi Jam\",\"homeId\":53701,\"awayId\":295810,\"date\":\"2026-06-09T15:15:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Iran - Azadegan League\",\"slug\":\"iran-azadegan-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":718",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -43,15 +43,12 @@
       "status": "skipped_preserve_runtime_quota"
     },
     {
-      "body_preview": "{\"filters\":{\"dateFrom\":\"2026-06-09\",\"dateTo\":\"2026-06-09\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
       "enabled": true,
-      "http_status": 200,
-      "item_count": 0,
+      "error": "ReadTimeout: ",
       "key_present": true,
-      "ok": true,
-      "payload_shape": "filters,matches,resultSet",
+      "ok": false,
       "provider": "football_data",
-      "status": "ok"
+      "status": "request_error"
     },
     {
       "body_preview": "{\"teams\":[{\"idTeam\":\"133604\",\"idESPN\":\"359\",\"idAPIfootball\":\"42\",\"intLoved\":\"9\",\"strTeam\":\"Arsenal\",\"strTeamAlternate\":\"Arsenal Football Club, AFC, Arsenal FC\",\"strTeamShort\":\"ARS\",\"intFormedYear\":\"1892\",\"strSport\":\"Soccer\",\"strLeague\":\"English Premier League\",\"idLeague\":\"4328\",\"strLeague2\":\"FA Cup\"",
@@ -66,7 +63,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781012662,\"localtime\":\"2026-06-09 14:44\"},\"current\":{\"last_updated_epoch\":1781011800,\"last_updated\":\"2026-06-09 14:30\",\"temp_c\":18.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781017504,\"localtime\":\"2026-06-09 16:05\"},\"current\":{\"last_updated_epoch\":1781017200,\"last_updated\":\"2026-06-09 16:00\",\"temp_c\":18.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -77,7 +74,7 @@
       "status": "ok"
     },
     {
-      "body_preview": "{\"latitude\":51.5,\"longitude\":-0.25,\"generationtime_ms\":0.10228157043457031,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"current\":{\"tim",
+      "body_preview": "{\"latitude\":51.5,\"longitude\":-0.25,\"generationtime_ms\":0.12540817260742188,\"utc_offset_seconds\":0,\"timezone\":\"GMT\",\"timezone_abbreviation\":\"GMT\",\"elevation\":16.0,\"current_units\":{\"time\":\"iso8601\",\"interval\":\"seconds\",\"temperature_2m\":\"°C\",\"precipitation\":\"mm\",\"wind_speed_10m\":\"km/h\"},\"current\":{\"tim",
       "enabled": true,
       "http_status": 200,
       "item_count": 9,
@@ -96,7 +93,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-06-09T13:44:35.155744+00:00",
+  "created_at_utc": "2026-06-09T15:05:19.209513+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -113,6 +110,7 @@
     },
     {
       "bad_enabled": {
+        "SPORTLOGIC_CONTRACT_PROBE_ENABLED": "true",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true",
         "SPORTLOGIC_DOCS_DATE_FALLBACK_ENABLED": "true",
         "SPORTLOGIC_DOCS_PATH_PROBE_ENABLED": "true",
@@ -136,15 +134,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -198,9 +200,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -210,9 +216,11 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
@@ -254,10 +262,10 @@
   "summary": {
     "checks_total": 8,
     "enabled_checks": 8,
-    "failed_enabled_checks": 1,
+    "failed_enabled_checks": 2,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 5,
-    "ok_enabled_checks": 7,
+    "non_core_bad_env_prefixes": 9,
+    "ok_enabled_checks": 6,
     "status": "warning"
   }
 }
