@@ -451,6 +451,61 @@ def selected_vs_external_snapshot_outlier(row: dict[str, Any], report: dict[str,
     return deviation_pct > max_dev or implied_gap_pp > max_gap_pp
 
 
+
+def _bookmaker_quorum_only_high_price_without_external_confirmation(row: dict[str, Any], report: dict[str, Any]) -> bool:
+    """Block high main-total prices when only an internal bookmaker_quorum bucket supports them.
+
+    This is the extra safety net for the leaked Flandria-style failure: internal
+    quorum median looked close to the selected price, but the real public market
+    was much lower. If external odds-api snapshot cannot verify the same match /
+    side / point and the row only has bookmaker_quorum as line evidence, do not
+    allow high-price main totals into Telegram.
+    """
+    if not env_bool('CONTROLLED_FALLBACK_REQUIRE_EXTERNAL_SNAPSHOT_FOR_HIGH_TOTAL_PRICE', True):
+        return False
+    if family_norm(row) not in {'totals', 'teamtotals'}:
+        return False
+    selected = selected_odds(row)
+    if selected < env_float('CONTROLLED_FALLBACK_HIGH_MAIN_TOTAL_SELECTED_ODDS', 2.35):
+        return False
+    point = publication_point_value(row)
+    if point is None or abs(float(point) - 2.5) > 1e-6:
+        return False
+    side = selection_side(row)
+    if side not in {'over', 'under'}:
+        return False
+
+    metrics = row.get('metrics') if isinstance(row.get('metrics'), dict) else {}
+    sources: list[str] = []
+    for src in (row, metrics):
+        value = src.get('line_sources') or src.get('odds_sources') or src.get('price_sources')
+        if isinstance(value, str):
+            sources.extend(x.strip().lower() for x in re.split(r'[,|;]', value) if x.strip())
+        elif isinstance(value, list):
+            sources.extend(str(x).strip().lower() for x in value if str(x).strip())
+    source_set = set(sources)
+    odds_sources_count = int(as_float(row.get('independent_odds_sources_count') or metrics.get('odds_sources_count') or row.get('odds_sources_count'), 0) or 0)
+    confirmation_sources_count = int(as_float(row.get('confirmation_sources_count') or metrics.get('confirmation_sources_count') or metrics.get('sources_count'), 0) or 0)
+    bookmaker_quorum_only = (not source_set) or source_set <= {'bookmaker_quorum', 'bookmaker quorum'}
+
+    prices, offers, debug = external_snapshot_same_side_prices(row)
+    report.update({f'high_price_external_guard_{k}': v for k, v in debug.items()})
+    report['high_price_external_guard_prices'] = [round(x, 4) for x in prices[:20]]
+    report['high_price_external_guard_line_sources'] = sorted(source_set)
+    report['high_price_external_guard_odds_sources_count'] = odds_sources_count
+    report['high_price_external_guard_confirmation_sources_count'] = confirmation_sources_count
+
+    # If external snapshot already has enough prices, the stricter external median
+    # function will decide. This guard handles the dangerous no-verification case.
+    min_books = int(env_float('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_MIN_REAL_BOOKS', 2.0))
+    if len(prices) >= min_books:
+        return False
+    if bookmaker_quorum_only and odds_sources_count <= 1:
+        return True
+    if bookmaker_quorum_only and confirmation_sources_count <= 1:
+        return True
+    return False
+
 def same_side_offer_prices(row: dict[str, Any]) -> tuple[list[float], list[float], list[dict[str, Any]], dict[str, Any]]:
     target_side = selection_side(row)
     target_point = point_value(row)
@@ -599,6 +654,8 @@ def candidate_reject_reasons(row: dict[str, Any]) -> tuple[list[str], dict[str, 
         reasons.append('price_integrity:selected_price_vs_bookmaker_median_outlier')
     if selected_vs_external_snapshot_outlier(row, details):
         reasons.append('price_integrity:external_snapshot_bookmaker_median_outlier')
+    if _bookmaker_quorum_only_high_price_without_external_confirmation(row, details):
+        reasons.append('price_integrity:high_main_total_price_without_external_snapshot_confirmation')
     if selected_vs_market_probability_outlier(row, details):
         reasons.append('price_integrity:selected_price_vs_market_probability_outlier')
     return reasons, details
@@ -671,7 +728,7 @@ def filter_debug_file(path: Path, report: dict[str, Any]) -> None:
 def main() -> int:
     report: dict[str, Any] = {
         'enabled': env_bool('CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED', True),
-        'policy': 'identified_same_side_plus_external_odds_api_snapshot_v4_whole_or_half_totals_only',
+        'policy': 'identified_same_side_plus_external_snapshot_v5_high_price_requires_external_confirmation',
         'sources': {},
         'rejected': [],
     }

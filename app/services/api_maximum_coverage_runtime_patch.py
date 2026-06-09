@@ -102,6 +102,20 @@ def _apply_env_policy() -> dict[str, Any]:
     def mark(name: str) -> None:
         changed[name] = str(os.environ.get(name) or "")
 
+    # odds-api.io: spend the available per-run budget on the full frozen inventory, not only near-window rows.
+    if _has_secret("ODDS_API_IO_KEY", "ODDS_API_IO_KEY_2", "ODDS_API_IO_KEY2"):
+        for name in (
+            "ODDS_API_IO_OFFER_SNAPSHOT_ENABLED",
+            "ODDS_API_IO_PRICE_BACKFILL_INCLUDE_ALL_INVENTORY",
+            "PRICE_BACKFILL_ODDS_API_IO_ENABLED",
+            "ODDS_API_IO_FETCH_FULL_DAY_INVENTORY",
+        ):
+            _set_true(name); mark(name)
+        _set_if_lower("MAX_MATCHES_FOR_ODDS_FETCH", 300); mark("MAX_MATCHES_FOR_ODDS_FETCH")
+        _set_if_lower("PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT", 180); mark("PRICE_BACKFILL_ODDS_API_IO_EVENT_LIMIT")
+        _set_if_lower("PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT", 8); mark("PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT")
+        _set_if_lower("PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST", 20); mark("PRICE_BACKFILL_ODDS_API_IO_MAX_EVENT_IDS_PER_REQUEST")
+
     # Bzzoiro v2 docs: list events first, then details/stats/metadata/odds by event id.
     if _has_secret("BZZOIRO_API_KEY"):
         for name in (
@@ -128,6 +142,11 @@ def _apply_env_policy() -> dict[str, Any]:
         _set_default("BZZOIRO_TIMEOUT_SECONDS", "25"); mark("BZZOIRO_TIMEOUT_SECONDS")
         # Context limit false means use priority queue from the runner rather than a hard provider cut.
         os.environ["BZZOIRO_ENFORCE_CONTEXT_LIMIT"] = "false"; mark("BZZOIRO_ENFORCE_CONTEXT_LIMIT")
+        for name in ("BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE", "BZZOIRO_EXACT_OFFER_BRIDGE_ENABLED", "BZZOIRO_ODDS_COMPARISON_AS_SECONDARY_OFFERS", "BZZOIRO_V2_FETCH_ODDS_COMPARISON"):
+            _set_true(name); mark(name)
+        _set_if_lower("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT", 140); mark("BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT")
+        _set_if_lower("BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS", 120); mark("BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS")
+        _set_if_lower("BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT", 140); mark("BZZOIRO_PRICE_BACKFILL_TARGET_LIMIT")
         # Use already-matched Bzzoiro odds/event evidence as a light context source when
         # a second context is missing. This does not create lines or relax publication guards.
         os.environ["BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT"] = "true"; mark("BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT")
@@ -163,6 +182,10 @@ def _apply_env_policy() -> dict[str, Any]:
         _set_if_lower("SSTATS_DEEP_DETAIL_LIMIT_PER_RUN", 80); mark("SSTATS_DEEP_DETAIL_LIMIT_PER_RUN")
         _set_if_lower("SSTATS_DEEP_CONTEXT_MATCH_LIMIT", 160); mark("SSTATS_DEEP_CONTEXT_MATCH_LIMIT")
         _set_default("SSTATS_REQUEST_CHUNK_DAYS", "10"); mark("SSTATS_REQUEST_CHUNK_DAYS")
+        for name in ("SSTATS_TEAM_FORM_RUNTIME_BRIDGE_ENABLED", "SSTATS_TEAM_FORM_JOIN_BY_ALIAS", "SSTATS_TEAM_FORM_CONTEXT_SOURCE_ENABLED"):
+            _set_true(name); mark(name)
+        _set_if_lower("SSTATS_TEAM_FORM_TARGET_MATCHES", 300); mark("SSTATS_TEAM_FORM_TARGET_MATCHES")
+        _set_if_lower("SSTATS_DEEP_CONTEXT_MATCH_LIMIT", 220); mark("SSTATS_DEEP_CONTEXT_MATCH_LIMIT")
         os.environ["SSTATS_TEAM_FORM_RUNTIME_BRIDGE_ENABLED"] = "true"; mark("SSTATS_TEAM_FORM_RUNTIME_BRIDGE_ENABLED")
         os.environ["SSTATS_TEAM_FORM_JOIN_BY_ALIAS"] = "true"; mark("SSTATS_TEAM_FORM_JOIN_BY_ALIAS")
         _set_if_lower("SSTATS_TEAM_FORM_TARGET_MATCHES", 300); mark("SSTATS_TEAM_FORM_TARGET_MATCHES")
@@ -248,7 +271,8 @@ def _patch_sportlogic() -> dict[str, Any]:
         iso_from = f"{date_from}T00:00:00Z" if "T" not in date_from else date_from
         iso_to = f"{date_to}T23:59:59Z" if "T" not in date_to else date_to
         per_page = (params or {}).get("per_page") or os.getenv("SPORTLOGIC_PER_PAGE") or 100
-        alternatives: list[dict[str, Any]] = [
+        alternatives: list[tuple[str, dict[str, Any]]] = []
+        base_alts: list[dict[str, Any]] = [
             {"date": date_from, "per_page": per_page},
             {"date_from": iso_from, "date_to": iso_to, "per_page": per_page},
             {"from": date_from, "to": date_to, "per_page": per_page},
@@ -256,6 +280,16 @@ def _patch_sportlogic() -> dict[str, Any]:
             {"date_from": date_from, "date_to": date_to, "status": "scheduled", "per_page": per_page},
             {"date_from": date_from, "date_to": date_to, "status": "notstarted", "per_page": per_page},
         ]
+        path_variants = [path]
+        if _truthy(os.environ.get("SPORTLOGIC_DOCS_PATH_PROBE_ENABLED", "true")):
+            path_variants.extend(["/fixtures", "/events", "/matches", "/soccer/games", "/football/games"])
+        seen_paths: set[str] = set()
+        for alt_path in path_variants:
+            if alt_path in seen_paths:
+                continue
+            seen_paths.add(alt_path)
+            for alt in base_alts:
+                alternatives.append((alt_path, alt))
 
         key = str(getattr(self, "api_key", "") or "").strip()
         base_headers = original_headers(self)
@@ -267,7 +301,7 @@ def _patch_sportlogic() -> dict[str, Any]:
                 {"Accept": "application/json", "Authorization": f"Token {key}"},
             ])
         tried = 0
-        for alt in alternatives:
+        for alt_path, alt in alternatives:
             for forced_headers in header_variants:
                 if not self._budget_left():
                     stats["api_maximum_sportlogic_budget_exhausted"] = True
@@ -278,12 +312,13 @@ def _patch_sportlogic() -> dict[str, Any]:
                         self._harizon_api_maximum_forced_headers = forced_headers
                     elif hasattr(self, "_harizon_api_maximum_forced_headers"):
                         delattr(self, "_harizon_api_maximum_forced_headers")
-                    alt_payload = await original_get_json(self, client, path, alt, stats, preview)
+                    alt_payload = await original_get_json(self, client, alt_path, alt, stats, preview)
                 finally:
                     if hasattr(self, "_harizon_api_maximum_forced_headers"):
                         delattr(self, "_harizon_api_maximum_forced_headers")
                 if not _empty_rows(alt_payload, getattr(self, "_extract_list", None)):
                     stats["api_maximum_sportlogic_fallback_used"] = True
+                    stats["api_maximum_sportlogic_alt_path"] = alt_path
                     stats["api_maximum_sportlogic_alt_params"] = alt
                     if forced_headers is not None and forced_headers != base_headers:
                         stats["api_maximum_sportlogic_alt_auth"] = sorted(k for k in forced_headers.keys() if k.lower() != "accept")
@@ -294,7 +329,7 @@ def _patch_sportlogic() -> dict[str, Any]:
     SportLogicProvider._headers = headers_with_forced
     SportLogicProvider._get_json = get_json_maximum
     SportLogicProvider._harizon_api_maximum_patched = True
-    return {"sportlogic_patch": "installed", "fallbacks": "date/date_from_iso/from_to/start_end/status_scheduled/notstarted"}
+    return {"sportlogic_patch": "installed", "fallbacks": "games+fixtures+events+matches path variants with date/date_from_iso/from_to/start_end/status_scheduled/notstarted"}
 
 
 def _patch_bzzoiro_v2() -> dict[str, Any]:

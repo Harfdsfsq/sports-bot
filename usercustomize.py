@@ -112,6 +112,7 @@ if not _SKIP_RUNTIME_INSTALLERS:
         # usercustomize.py is the actual installer path used by python -m app.cli run-once.
         'app.services.odds_api_io_offer_snapshot_runtime_patch',
         'app.services.quality_consensus_safe_relief_patch',
+        'app.services.ledger_retro_price_audit_runtime_patch',
         'app.services.source_matrix_amplifier_runtime_patch',
         'app.services.bzzoiro_odds_comparison_bridge_patch',
         # Must be last: several older runtime layers can re-enable SportLogic.
