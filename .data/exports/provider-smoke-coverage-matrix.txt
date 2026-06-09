@@ -12,11 +12,11 @@
 
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
-| 0_2h | 14 | 10 | 14 | 9 | 11 | 11 | 10 | 0 | 11 | 8 |
-| 2_6h | 29 | 24 | 23 | 10 | 24 | 22 | 13 | 0 | 18 | 10 |
-| 12_24h | 41 | 8 | 7 | 0 | 41 | 39 | 7 | 0 | 7 | 0 |
-| 24h_plus | 16 | 7 | 8 | 0 | 16 | 14 | 4 | 0 | 8 | 0 |
-| started | 200 | 179 | 179 | 99 | 200 | 181 | 124 | 0 | 179 | 95 |
+| 0_2h | 11 | 8 | 11 | 6 | 8 | 8 | 7 | 0 | 8 | 5 |
+| 2_6h | 28 | 23 | 22 | 12 | 23 | 21 | 15 | 0 | 17 | 12 |
+| 12_24h | 43 | 8 | 7 | 0 | 43 | 41 | 7 | 0 | 7 | 0 |
+| 24h_plus | 14 | 7 | 8 | 0 | 14 | 12 | 4 | 0 | 8 | 0 |
+| started | 204 | 182 | 183 | 100 | 204 | 185 | 125 | 0 | 183 | 96 |
 
 ## Totals
 
@@ -47,10 +47,7 @@
 - 2_6h | 2026-06-09T23:00:00+00:00 | Peru — Bolivia | odds=1 context=0 fixtures=4 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-09T23:00:00+00:00 | Uruguay — Venezuela | odds=1 context=0 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-09T23:00:00+00:00 | Senegal — Saudi Arabia | odds=1 context=1 fixtures=3 missing=odds_source_2plus,context_source_2plus,weather
-- 2_6h | 2026-06-09T23:00:00+00:00 | Miami City W — Miami AC W | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
 - 2_6h | 2026-06-09T23:00:00+00:00 | Rally Madison FC W — River Light W | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
-- 2_6h | 2026-06-09T23:00:00+00:00 | Sioux Falls City W — Minnesota Aurora W | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
-- 2_6h | 2026-06-09T23:00:00+00:00 | Wake W — NC Courage II W | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
 - 2_6h | 2026-06-09T23:30:00+00:00 | Swarm FC — Columbus United | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
 - 2_6h | 2026-06-10T00:00:00+00:00 | Players Development Academy — Jackson Lions FC | odds=1 context=0 fixtures=2 missing=odds_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-10T00:00:00+00:00 | Hudson Valley Crusaders W — New England Mutiny W | odds=1 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
@@ -66,12 +63,15 @@
 - 12_24h | 2026-06-10T09:30:00+00:00 | Canberra Olympic — Canberra Juventus | odds=0 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
 - 12_24h | 2026-06-10T09:30:00+00:00 | O'Connor Knights — Cooma Tigers FC | odds=0 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
 - 12_24h | 2026-06-10T09:30:00+00:00 | Tuggeranong United — Monaro Panthers | odds=0 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 12_24h | 2026-06-10T09:30:00+00:00 | Sydney Olympic — SD Raiders | odds=0 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 12_24h | 2026-06-10T09:30:00+00:00 | WDSC Wolves — Eastern Suburbs | odds=0 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
+- 12_24h | 2026-06-10T10:00:00+00:00 | Lake Macquarie — Toronto Awaba Stags | odds=0 context=2 fixtures=1 missing=fixture_source_2plus,odds_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
 
 ## SStats deep projection
-- crosswalk: matched=259 / checked=300 | rate=86.33% | SStats events=1154
+- crosswalk: matched=259 / checked=300 | rate=86.33% | SStats events=1156
 - potential_add: context_deep=259 xg_or_rating=259 form=259 odds_rescue=59
-- projected_upper_bound: context_2plus=300 xg=300 form=281 odds_2plus=177
+- projected_upper_bound: context_2plus=300 xg=300 form=280 odds_2plus=177
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
