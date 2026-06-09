@@ -4,14 +4,18 @@ import os
 import sys
 from pathlib import Path
 
+
 def _is_fallback_publisher_process() -> bool:
     name = Path(str(sys.argv[0] or "")).name
     return name in {"publish_controlled_fallback.py", "publish_controlled_fallback_guarded.py"} or os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1"
 
+
 def _is_stdin_env_helper_process() -> bool:
     return str(sys.argv[0] or "").strip() == "-" or os.getenv("HARIZON_SKIP_USERCUSTOMIZE_INSTALLERS") == "1"
 
+
 _SKIP_RUNTIME_INSTALLERS = _is_fallback_publisher_process() or _is_stdin_env_helper_process()
+
 
 def _install(module_path: str) -> None:
     try:
@@ -20,6 +24,7 @@ def _install(module_path: str) -> None:
         getattr(module, attr).install()
     except Exception:
         pass
+
 
 if not _SKIP_RUNTIME_INSTALLERS:
     for _module in [
@@ -96,7 +101,9 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.ledger_retro_price_audit_runtime_patch',
         'app.services.source_matrix_amplifier_runtime_patch',
         'app.services.bzzoiro_odds_comparison_bridge_patch',
-        # Re-install SportLogic v8 late because older finalizers can overwrite provider methods.
+        # Re-install SportLogic v9 late because older finalizers can overwrite provider methods.
+        # The final daily-limit guard is still last and can disable SportLogic if the 500/day
+        # SportLogic cap is already open for the current UTC day.
         'app.services.sportlogic_games_date_contract_runtime_patch',
         'app.services.sportlogic_daily_limit_guard',
     ]:
