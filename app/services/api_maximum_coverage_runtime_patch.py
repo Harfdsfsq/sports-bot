@@ -11,6 +11,7 @@ it does not fabricate lines or contexts. It only:
 - writes an artifact so reports/runs can prove what was installed.
 """
 
+import atexit
 import json
 import os
 from datetime import datetime, timezone
@@ -19,6 +20,7 @@ from typing import Any
 
 UTC = timezone.utc
 REPORT_PATH = Path(".data/exports/latest-api-maximum-coverage-runtime-policy.json")
+AUDIT_PATH = Path(".data/exports/latest-core-api-coverage-audit.json")
 
 
 def _truthy(value: Any) -> bool:
@@ -118,14 +120,25 @@ def _apply_env_policy() -> dict[str, Any]:
             _set_true(name); mark(name)
         _set_if_lower("BZZOIRO_CONTEXT_MATCH_LIMIT", 300); mark("BZZOIRO_CONTEXT_MATCH_LIMIT")
         _set_if_lower("BZZOIRO_V2_MATCH_LIMIT", 300); mark("BZZOIRO_V2_MATCH_LIMIT")
-        _set_if_lower("BZZOIRO_V2_MAX_EVENTS", 800); mark("BZZOIRO_V2_MAX_EVENTS")
+        _set_if_lower("BZZOIRO_V2_MAX_EVENTS", 1000); mark("BZZOIRO_V2_MAX_EVENTS")
         _set_if_lower("BZZOIRO_V2_PAGE_SIZE", 200); mark("BZZOIRO_V2_PAGE_SIZE")
-        _set_if_lower("BZZOIRO_MAX_REQUESTS_PER_RUN", 200); mark("BZZOIRO_MAX_REQUESTS_PER_RUN")
-        _set_if_lower("BZZOIRO_REQUEST_BUDGET_GRANTED", 200); mark("BZZOIRO_REQUEST_BUDGET_GRANTED")
+        _set_if_lower("BZZOIRO_MAX_REQUESTS_PER_RUN", 260); mark("BZZOIRO_MAX_REQUESTS_PER_RUN")
+        _set_if_lower("BZZOIRO_REQUEST_BUDGET_GRANTED", 260); mark("BZZOIRO_REQUEST_BUDGET_GRANTED")
         _set_default("BZZOIRO_REQUEST_RETRIES", "2"); mark("BZZOIRO_REQUEST_RETRIES")
         _set_default("BZZOIRO_TIMEOUT_SECONDS", "25"); mark("BZZOIRO_TIMEOUT_SECONDS")
         # Context limit false means use priority queue from the runner rather than a hard provider cut.
         os.environ["BZZOIRO_ENFORCE_CONTEXT_LIMIT"] = "false"; mark("BZZOIRO_ENFORCE_CONTEXT_LIMIT")
+        # Use already-matched Bzzoiro odds/event evidence as a light context source when
+        # a second context is missing. This does not create lines or relax publication guards.
+        os.environ["BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT"] = "true"; mark("BZZOIRO_ODDS_MATCH_COUNTS_AS_EVENT_CONTEXT")
+        _set_default("BZZOIRO_CONTEXT_GAP_RELAXED_MIN_SCORE", "50"); mark("BZZOIRO_CONTEXT_GAP_RELAXED_MIN_SCORE")
+        _set_if_lower("BZZOIRO_CONTEXT_GAP_TARGET_LIMIT", 260); mark("BZZOIRO_CONTEXT_GAP_TARGET_LIMIT")
+        _set_if_lower("BZZOIRO_CONTEXT_GAP_MAX_MATCHES", 300); mark("BZZOIRO_CONTEXT_GAP_MAX_MATCHES")
+        _set_if_lower("BZZOIRO_CONTEXT_GAP_TIMEOUT_SECONDS", 165); mark("BZZOIRO_CONTEXT_GAP_TIMEOUT_SECONDS")
+        os.environ["BZZOIRO_CONTEXT_GAP_INCLUDE_BOOKMAKER_QUALIFIED"] = "true"; mark("BZZOIRO_CONTEXT_GAP_INCLUDE_BOOKMAKER_QUALIFIED")
+        os.environ["BZZOIRO_CONTEXT_GAP_INCLUDE_NEAR_WINDOW_WITH_2PLUS_BOOKS"] = "true"; mark("BZZOIRO_CONTEXT_GAP_INCLUDE_NEAR_WINDOW_WITH_2PLUS_BOOKS")
+        os.environ["BZZOIRO_CONTEXT_GAP_LIGHT_CONTEXT_ONLY"] = "true"; mark("BZZOIRO_CONTEXT_GAP_LIGHT_CONTEXT_ONLY")
+        os.environ["BZZOIRO_CONTEXT_GAP_NEAR_WINDOW_FIRST"] = "true"; mark("BZZOIRO_CONTEXT_GAP_NEAR_WINDOW_FIRST")
 
     # SStats docs/project notes: use history to build team_form_index, not only direct future fixture matching.
     if _has_secret("SSTATS_API_KEY"):
@@ -150,6 +163,9 @@ def _apply_env_policy() -> dict[str, Any]:
         _set_if_lower("SSTATS_DEEP_DETAIL_LIMIT_PER_RUN", 80); mark("SSTATS_DEEP_DETAIL_LIMIT_PER_RUN")
         _set_if_lower("SSTATS_DEEP_CONTEXT_MATCH_LIMIT", 160); mark("SSTATS_DEEP_CONTEXT_MATCH_LIMIT")
         _set_default("SSTATS_REQUEST_CHUNK_DAYS", "10"); mark("SSTATS_REQUEST_CHUNK_DAYS")
+        os.environ["SSTATS_TEAM_FORM_RUNTIME_BRIDGE_ENABLED"] = "true"; mark("SSTATS_TEAM_FORM_RUNTIME_BRIDGE_ENABLED")
+        os.environ["SSTATS_TEAM_FORM_JOIN_BY_ALIAS"] = "true"; mark("SSTATS_TEAM_FORM_JOIN_BY_ALIAS")
+        _set_if_lower("SSTATS_TEAM_FORM_TARGET_MATCHES", 300); mark("SSTATS_TEAM_FORM_TARGET_MATCHES")
 
     # SportLogic docs: /games first, then /games/{id}/odds only for matched priority games.
     if _has_secret("SPORTLOGIC_API_KEY", "SPORTLOGIC_KEY", "SPORTLOGIC_TOKEN") and not _truthy(os.environ.get("SPORTLOGIC_DAILY_CIRCUIT_OPEN")):
@@ -161,9 +177,11 @@ def _apply_env_policy() -> dict[str, Any]:
             "SPORTLOGIC_DOCS_DATE_FALLBACK_ENABLED",
         ):
             _set_true(name); mark(name)
-        _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 40); mark("SPORTLOGIC_PER_RUN_MAX")
-        _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 40); mark("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN")
-        _set_if_lower("SPORTLOGIC_REQUEST_BUDGET_GRANTED", 40); mark("SPORTLOGIC_REQUEST_BUDGET_GRANTED")
+        _set_if_lower("SPORTLOGIC_PER_RUN_MAX", 70); mark("SPORTLOGIC_PER_RUN_MAX")
+        _set_if_lower("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN", 70); mark("SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN")
+        _set_if_lower("SPORTLOGIC_REQUEST_BUDGET_GRANTED", 70); mark("SPORTLOGIC_REQUEST_BUDGET_GRANTED")
+        os.environ["SPORTLOGIC_DIAGNOSTIC_CAPTURE"] = "true"; mark("SPORTLOGIC_DIAGNOSTIC_CAPTURE")
+        os.environ["SPORTLOGIC_DOCS_PATH_PROBE_ENABLED"] = "true"; mark("SPORTLOGIC_DOCS_PATH_PROBE_ENABLED")
         _set_if_lower("SPORTLOGIC_MATCH_LIMIT", 100); mark("SPORTLOGIC_MATCH_LIMIT")
         _set_if_lower("SPORTLOGIC_CONTEXT_MATCH_LIMIT", 100); mark("SPORTLOGIC_CONTEXT_MATCH_LIMIT")
         _set_if_lower("SPORTLOGIC_ODDS_MATCH_LIMIT", 40); mark("SPORTLOGIC_ODDS_MATCH_LIMIT")
@@ -328,9 +346,136 @@ def _patch_bzzoiro_v2() -> dict[str, Any]:
     return {"bzzoiro_v2_patch": "installed", "metadata_enabled": True, "events_param_fallbacks": True}
 
 
+
+def _load_json(path: Path, default: Any = None) -> Any:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        pass
+    return {} if default is None else default
+
+
+def _get(data: Any, *keys: str, default: Any = 0) -> Any:
+    cur = data
+    for key in keys:
+        if not isinstance(cur, dict):
+            return default
+        cur = cur.get(key)
+    return cur if cur is not None else default
+
+
+def _write_core_api_audit() -> None:
+    """Write a late-run API audit from whatever artifacts exist at process exit.
+
+    This is intentionally a read-only artifact writer. It does not change candidates,
+    odds, contexts, or publication decisions. usercustomize imports this module in
+    every workflow Python process, so the after-report/after-ledger processes can
+    finally write the audit after all normalizer/fallback artifacts have appeared.
+    """
+    try:
+        export = Path(".data/exports")
+        report = _load_json(export / "latest-harizon-telegram-run-report.json", {})
+        truth = _load_json(export / "latest-day-inventory-coverage-truth.json", {})
+        normalizer = _load_json(export / "latest-bookmaker-quorum-coverage-normalizer.json", {})
+        backfill = _load_json(export / "latest-odds-api-bookmaker-quorum-mapping-backfill.json", {})
+        snapshot = _load_json(export / "latest-odds-api-io-offer-snapshot.json", {})
+        timing = _load_json(export / "latest-controlled-fallback-publication-timing-guard.json", {})
+        price_guard = _load_json(export / "latest-controlled-fallback-price-integrity-guard.json", {})
+        bzz_gap = _load_json(export / "latest-bzzoiro-context-gap-finalizer.json", {})
+        bzz_gap_install = _load_json(export / "latest-bzzoiro-context-gap-finalizer-install.json", {})
+        max_policy = _load_json(REPORT_PATH, {})
+
+        api = report.get("api") if isinstance(report.get("api"), dict) else {}
+        coverage = report.get("coverage") if isinstance(report.get("coverage"), dict) else {}
+        counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
+        if not counts and isinstance(normalizer.get("counts"), dict):
+            counts = normalizer.get("counts")
+        windows = normalizer.get("window_counts") if isinstance(normalizer.get("window_counts"), dict) else {}
+
+        inv_total = _get(counts, "matches_total") or _get(coverage, "day_inventory_total")
+        with_books = _get(counts, "matches_with_2plus_price_confirmations")
+        with_context2 = _get(counts, "matches_with_2plus_context_sources")
+        with_context1 = _get(counts, "matches_with_context") or _get(coverage, "day_inventory_with_context")
+        ready_model = _get(counts, "matches_ready_for_model") or _get(coverage, "ready_for_model")
+        odds = api.get("odds_api_io", {}) if isinstance(api.get("odds_api_io"), dict) else {}
+        bzz = api.get("bzzoiro", {}) if isinstance(api.get("bzzoiro"), dict) else {}
+        sstats = api.get("sstats", {}) if isinstance(api.get("sstats"), dict) else {}
+        sport = api.get("sportlogic", {}) if isinstance(api.get("sportlogic"), dict) else {}
+        near = windows.get("0-4") if isinstance(windows.get("0-4"), dict) else {}
+
+        bottlenecks: list[str] = []
+        if _as_int(with_context2) < max(1, _as_int(with_books) // 2):
+            bottlenecks.append("2plus_context_below_bookmaker_quorum")
+        if _as_int(near.get("bookmaker_2plus")) > 0 and _as_int(near.get("context_2plus")) < _as_int(near.get("bookmaker_2plus")):
+            bottlenecks.append("near_window_context_gap")
+        if _as_int(bzz.get("secondary_offers_added")) <= 0:
+            bottlenecks.append("bzzoiro_secondary_offers_zero")
+        if _as_int(sstats.get("team_form_contexts")) <= 0:
+            bottlenecks.append("sstats_team_form_zero")
+        if _as_int(sport.get("matched")) <= 0 and _as_int(sport.get("fixtures_fetched")) <= 0:
+            bottlenecks.append("sportlogic_no_fixtures_or_matches")
+
+        payload = {
+            "created_at_utc": datetime.now(UTC).isoformat(),
+            "status": "ok",
+            "audit_source": "api_maximum_coverage_runtime_patch_atexit",
+            "max_policy_installed": bool(max_policy),
+            "inventory": {
+                "matches_total": _as_int(inv_total),
+                "with_1plus_context": _as_int(with_context1),
+                "with_2plus_context": _as_int(with_context2),
+                "with_2plus_bookmakers": _as_int(with_books),
+                "ready_for_model": _as_int(ready_model),
+            },
+            "near_window_0_4h": near,
+            "providers": {
+                "odds_api_io": odds,
+                "bzzoiro": bzz,
+                "sstats": sstats,
+                "sportlogic": sport,
+            },
+            "odds_api_snapshot": {
+                "rows_count": _as_int(snapshot.get("rows_count")),
+                "matches_count": _as_int(snapshot.get("matches_count")),
+                "same_side_2plus_books": _as_int(snapshot.get("matches_with_2plus_books_same_side_market")),
+            },
+            "bookmaker_backfill": {
+                "mapped_matches": _as_int(backfill.get("mapped_matches")),
+                "changed_inventory_rows": _as_int(backfill.get("changed_inventory_rows")),
+                "changed_truth_rows": _as_int(backfill.get("changed_truth_rows")),
+                "offer_rows_from_snapshot": _as_int(backfill.get("offer_rows_from_snapshot")),
+            },
+            "guards": {
+                "timing_deferred_total": _as_int(timing.get("deferred_total")),
+                "price_integrity_removed_total": _as_int(price_guard.get("removed_total")),
+            },
+            "bzzoiro_context_gap": {
+                "runtime": bzz_gap,
+                "install": bzz_gap_install,
+            },
+            "bottlenecks": bottlenecks,
+            "next_actions": [
+                "Do not relax publication guards.",
+                "If near_window_context_gap persists, prioritize Bzzoiro/SStats context only for 0-4h bookmaker-qualified matches.",
+                "If sportlogic_no_fixtures_or_matches persists, verify SportLogic base URL/auth/date contract outside publication pipeline.",
+                "If bzzoiro_secondary_offers_zero persists, keep Bzzoiro as context/confirmation, not price source, until comparison odds parse is fixed.",
+            ],
+        }
+        AUDIT_PATH.parent.mkdir(parents=True, exist_ok=True)
+        AUDIT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    except Exception:
+        pass
+
+
 def install() -> None:
     changed_env = _apply_env_policy()
     patches = {}
     patches.update(_patch_bzzoiro_v2())
     patches.update(_patch_sportlogic())
-    _write_report({"changed_env": changed_env, "patches": patches})
+    _write_report({"changed_env": changed_env, "patches": patches, "audit": "atexit_enabled"})
+    try:
+        atexit.register(_write_core_api_audit)
+    except Exception:
+        pass
+    _write_core_api_audit()

@@ -69,6 +69,42 @@ def _bookmaker_mode() -> bool:
     return mode in {"bookmaker", "bookmakers", "bookmaker_quorum", "books", "2books", "2_bookmakers"}
 
 
+
+def _price_integrity_reasons(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    """Run the same pre-publication price guard inside the fallback wrapper.
+
+    This is a second safety net for cases where a candidate reaches the publisher
+    from a source file not rewritten by the pre-filter.  It also uses the external
+    odds-api.io offer snapshot guard, which catches the real failure mode where a
+    bookmaker-quorum bucket says Under 2.5 @2.75 while the live same-side market is
+    near 1.40.
+    """
+    try:
+        from scripts.filter_controlled_fallback_price_integrity import candidate_reject_reasons
+    except Exception:
+        return []
+    row = dict(candidate or {})
+    if isinstance(metrics, dict):
+        row.setdefault('metrics', metrics)
+        for key in (
+            'odds', 'selected_odds', 'price', 'market_probability', 'family',
+            'market_family', 'selection', 'point', 'line', 'handicap',
+        ):
+            if key not in row and key in metrics:
+                row[key] = metrics.get(key)
+    try:
+        reasons, details = candidate_reject_reasons(row)
+    except Exception:
+        return []
+    if reasons and isinstance(metrics, dict):
+        metrics.setdefault('price_integrity_guard', {})
+        if isinstance(metrics['price_integrity_guard'], dict):
+            metrics['price_integrity_guard'].update({
+                'wrapper_reasons': list(reasons),
+                'wrapper_details': details,
+            })
+    return list(reasons or [])
+
 def _candidate_has_bookmaker_quorum(module: Any, candidate: dict[str, Any], metrics: dict[str, Any], tier: str = "") -> bool:
     if not _bookmaker_mode():
         return False
@@ -84,6 +120,9 @@ def _candidate_has_bookmaker_quorum(module: Any, candidate: dict[str, Any], metr
         ),
     )
     if _as_int(metrics.get("books_count"), 0) < min_books:
+        return False
+
+    if _price_integrity_reasons(candidate, metrics):
         return False
 
     # Do not bypass price integrity.  If the original bookmaker-quorum price
@@ -184,7 +223,7 @@ def main() -> int:
             "created_at_utc": datetime.now(timezone.utc).isoformat(),
             "status": "installed",
             "wrapper": "publish_controlled_fallback_bookmaker",
-            "policy": "2plus_bookmakers_replace_api_odds_source_blocker",
+            "policy": "2plus_bookmakers_replace_api_odds_source_blocker_with_external_snapshot_price_guard",
             "original_script": str(ORIGINAL),
             "price_integrity_preserved": True,
         }

@@ -19,12 +19,18 @@ import json
 import math
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 from statistics import median
 from typing import Any
 
 EXPORT_DIR = Path('.data/exports')
 REPORT_PATH = EXPORT_DIR / 'latest-controlled-fallback-price-integrity-guard.json'
+SNAPSHOT_PATHS = (
+    EXPORT_DIR / 'latest-odds-api-io-offer-snapshot.json',
+    Path('artifacts/run-bot/latest-odds-api-io-offer-snapshot.json'),
+)
+_SNAPSHOT_CACHE: list[dict[str, Any]] | None = None
 
 TRUTHY = {'1', 'true', 'yes', 'on', 'y'}
 SYNTHETIC_BOOK_TOKENS = (
@@ -151,7 +157,7 @@ def is_allowed_totals_publication_point(row: dict[str, Any]) -> bool:
 def offer_blob(offer: dict[str, Any]) -> str:
     parts: list[str] = []
     for key in (
-        'selection', 'selection_key', 'label', 'name', 'outcome',
+        'selection', 'selection_key', 'label', 'name', 'outcome', 'side',
         'market_name', 'market_key', 'market', 'path', 'field', 'source_path',
     ):
         value = offer.get(key)
@@ -195,6 +201,254 @@ def bookmaker_name(offer: dict[str, Any]) -> str:
 
 def is_real_bookmaker(book: str) -> bool:
     return bool(book) and not any(token in book for token in SYNTHETIC_BOOK_TOKENS)
+
+
+def _snapshot_payload_rows(payload: Any) -> list[dict[str, Any]]:
+    """Return raw odds-api.io offer rows from the saved provider snapshot.
+
+    The provider snapshot has had a few shapes across runs: either a dict with an
+    ``offers``/``rows`` key or a bare list.  This reader is intentionally broad
+    but only returns dictionaries; no prices are fabricated here.
+    """
+    if isinstance(payload, list):
+        return [dict(x) for x in payload if isinstance(x, dict)]
+    if not isinstance(payload, dict):
+        return []
+    for key in ('offers', 'rows', 'items', 'data'):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return [dict(x) for x in value if isinstance(x, dict)]
+    # Some snapshots keep offers under account/source buckets.
+    out: list[dict[str, Any]] = []
+    for value in payload.values():
+        if isinstance(value, list):
+            out.extend(dict(x) for x in value if isinstance(x, dict))
+        elif isinstance(value, dict):
+            nested = _snapshot_payload_rows(value)
+            if nested:
+                out.extend(nested)
+    return out
+
+
+def odds_api_snapshot_offers() -> list[dict[str, Any]]:
+    global _SNAPSHOT_CACHE
+    if _SNAPSHOT_CACHE is not None:
+        return _SNAPSHOT_CACHE
+    rows: list[dict[str, Any]] = []
+    for path in SNAPSHOT_PATHS:
+        payload = load_json(path, None)
+        if payload is None:
+            continue
+        rows = _snapshot_payload_rows(payload)
+        if rows:
+            break
+    _SNAPSHOT_CACHE = rows
+    return rows
+
+
+def _ascii_norm(value: Any) -> str:
+    text = norm(value)
+    # Keep this lightweight and deterministic; club suffixes are removed because
+    # inventory and odds-api snapshots often disagree on FC/SC/II/U19 suffixes.
+    for token in (' fc ', ' sc ', ' cf ', ' fk ', ' ac ', ' cd ', ' club ', ' de ', ' la ', ' the '):
+        text = f' {text} '.replace(token, ' ')
+    return ' '.join(text.split())
+
+
+def _date_token(value: Any) -> str:
+    if value in (None, ''):
+        return ''
+    if isinstance(value, (int, float)) or str(value).strip().isdigit():
+        try:
+            raw = float(value)
+            if raw > 10_000_000_000:
+                raw /= 1000.0
+            return datetime.fromtimestamp(raw, tz=timezone.utc).date().isoformat()
+        except Exception:
+            pass
+    text = str(value).strip()
+    m = re.search(r'(20\d{2}-\d{2}-\d{2})', text)
+    if m:
+        return m.group(1)
+    try:
+        dt = datetime.fromisoformat(text.replace('Z', '+00:00'))
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
+        return dt.astimezone(timezone.utc).date().isoformat()
+    except Exception:
+        return ''
+
+
+def _row_date(row: dict[str, Any]) -> str:
+    for key in ('kickoff_utc', 'commence_time', 'kickoff', 'start_time', 'event_date', 'date'):
+        d = _date_token(row.get(key))
+        if d:
+            return d
+    return _date_token(row.get('match_key'))
+
+
+def _team_name(row: dict[str, Any], side: str) -> str:
+    keys = ('home_team', 'home', 'home_name', 'homeTeam') if side == 'home' else ('away_team', 'away', 'away_name', 'awayTeam')
+    for key in keys:
+        value = row.get(key)
+        if isinstance(value, dict):
+            value = value.get('name') or value.get('team_name') or value.get('display_name')
+        if value not in (None, ''):
+            return str(value)
+    return ''
+
+
+def _match_aliases(row: dict[str, Any]) -> set[str]:
+    aliases: set[str] = set()
+    raw_key = str(row.get('match_key') or row.get('canonical_match_id') or row.get('event_id') or '').strip().lower()
+    if raw_key:
+        aliases.add(raw_key)
+    date = _row_date(row)
+    home = _ascii_norm(_team_name(row, 'home'))
+    away = _ascii_norm(_team_name(row, 'away'))
+    if date and home and away:
+        aliases.update({
+            f'{date}|{home}|{away}',
+            f'{date}|{away}|{home}',
+            f'soccer|{home}|{away}|{date}',
+            f'soccer|{away}|{home}|{date}',
+        })
+    if raw_key:
+        parts = [p for p in raw_key.replace('_', '|').split('|') if p]
+        maybe_date = next((p for p in parts if re.fullmatch(r'20\d{2}-\d{2}-\d{2}', p)), '')
+        teams = [_ascii_norm(p) for p in parts if p not in {'soccer', maybe_date} and not re.fullmatch(r'20\d{2}-\d{2}-\d{2}', p)]
+        if maybe_date and len(teams) >= 2:
+            aliases.add(f'{maybe_date}|{teams[0]}|{teams[1]}')
+            aliases.add(f'{maybe_date}|{teams[1]}|{teams[0]}')
+            aliases.add(f'soccer|{teams[0]}|{teams[1]}|{maybe_date}')
+            aliases.add(f'soccer|{teams[1]}|{teams[0]}|{maybe_date}')
+    return {a for a in aliases if a}
+
+
+def _token_overlap(a: str, b: str) -> float:
+    sa = set(_ascii_norm(a).split())
+    sb = set(_ascii_norm(b).split())
+    if not sa or not sb:
+        return 0.0
+    return len(sa & sb) / max(1, len(sa | sb))
+
+
+def _snapshot_offer_matches_candidate(candidate: dict[str, Any], offer: dict[str, Any]) -> bool:
+    cand_aliases = _match_aliases(candidate)
+    offer_aliases = _match_aliases(offer)
+    if cand_aliases and offer_aliases and cand_aliases.intersection(offer_aliases):
+        return True
+    # Fallback to date + team-token match for snapshots that do not preserve the
+    # same match_key shape.  Require the same date to avoid cross-day contamination.
+    cdate, odate = _row_date(candidate), _row_date(offer)
+    if cdate and odate and cdate != odate:
+        return False
+    ch, ca = _team_name(candidate, 'home'), _team_name(candidate, 'away')
+    oh, oa = _team_name(offer, 'home'), _team_name(offer, 'away')
+    if not (ch and ca and oh and oa):
+        return False
+    direct = (_token_overlap(ch, oh) + _token_overlap(ca, oa)) / 2.0
+    swapped = (_token_overlap(ch, oa) + _token_overlap(ca, oh)) / 2.0
+    return max(direct, swapped) >= 0.62
+
+
+def _offer_family(offer: dict[str, Any]) -> str:
+    text = norm(' '.join(str(offer.get(k) or '') for k in ('family', 'market_family', 'market', 'market_key', 'market_name', 'path')))
+    if 'total' in text or 'over' in text or 'under' in text or 'тотал' in text:
+        return 'totals'
+    if 'spread' in text or 'handicap' in text or 'фора' in text:
+        return 'spreads'
+    return str(offer.get('family') or offer.get('market_family') or '').strip().lower()
+
+
+def external_snapshot_same_side_prices(row: dict[str, Any]) -> tuple[list[float], list[dict[str, Any]], dict[str, Any]]:
+    target_side = selection_side(row)
+    target_point = publication_point_value(row)
+    target_family = family_norm(row)
+    prices_by_book: dict[str, float] = {}
+    matched_rows = 0
+    side_matched_rows: list[dict[str, Any]] = []
+    point_mismatch = 0
+    side_mismatch = 0
+    unknown_side = 0
+    for offer in odds_api_snapshot_offers():
+        if not _snapshot_offer_matches_candidate(row, offer):
+            continue
+        matched_rows += 1
+        offer_family = _offer_family(offer)
+        if target_family in {'totals', 'teamtotals'} and offer_family and offer_family not in {'totals', 'teamtotals'}:
+            continue
+        side = offer_side(offer) or str(offer.get('side') or '').strip().lower()
+        if target_side and not side:
+            unknown_side += 1
+            continue
+        if target_side and side != target_side:
+            side_mismatch += 1
+            continue
+        offer_point = point_value(offer) if point_value(offer) is not None else point_from_selection_text(offer)
+        if target_point is not None and offer_point is not None and abs(float(target_point) - float(offer_point)) > 1e-6:
+            point_mismatch += 1
+            continue
+        price = as_float(offer.get('price') or offer.get('odds') or offer.get('decimal_odds'), None)
+        if price is None or price <= 1.0 or price > 50.0:
+            continue
+        book = bookmaker_name(offer)
+        if not is_real_bookmaker(book):
+            continue
+        side_matched_rows.append(offer)
+        current = prices_by_book.get(book)
+        # Keep the price closest to the selected price to avoid stale duplicate rows
+        # from the same book pushing the median away from the market.
+        selected = selected_odds(row)
+        if current is None or abs(float(price) - selected) < abs(float(current) - selected):
+            prices_by_book[book] = float(price)
+    debug = {
+        'external_snapshot_rows_total': len(odds_api_snapshot_offers()),
+        'external_snapshot_match_rows': matched_rows,
+        'external_snapshot_side_rows': len(side_matched_rows),
+        'external_snapshot_skipped_unknown_side': unknown_side,
+        'external_snapshot_skipped_opposite_side': side_mismatch,
+        'external_snapshot_skipped_point_mismatch': point_mismatch,
+    }
+    return list(prices_by_book.values()), side_matched_rows, debug
+
+
+def selected_vs_external_snapshot_outlier(row: dict[str, Any], report: dict[str, Any]) -> bool:
+    if not env_bool('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_PRICE_GUARD_ENABLED', True):
+        return False
+    if family_norm(row) not in {'totals', 'teamtotals', 'spreads'}:
+        return False
+    selected = selected_odds(row)
+    if selected <= 1.0:
+        return False
+    prices, offers, debug = external_snapshot_same_side_prices(row)
+    report.update(debug)
+    report['external_snapshot_same_side_real_book_prices'] = [round(x, 4) for x in prices[:20]]
+    min_books = int(env_float('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_MIN_REAL_BOOKS', 2.0))
+    if len(prices) < min_books:
+        return False
+    med = float(median(prices))
+    if med <= 1.0:
+        return False
+    deviation_pct = abs(selected - med) / med * 100.0
+    max_dev = env_float('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_MAX_DEVIATION_PCT', 18.0)
+    hard_selected = env_float('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_HARD_SELECTED_ODDS', 2.35)
+    hard_median = env_float('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_HARD_LOW_MEDIAN_ODDS', 1.75)
+    implied_gap_pp = (1.0 / med - 1.0 / selected) * 100.0
+    max_gap_pp = env_float('CONTROLLED_FALLBACK_EXTERNAL_SNAPSHOT_MAX_IMPLIED_GAP_PP', 12.0)
+    report.update({
+        'external_snapshot_price_guard_mode': 'odds_api_io_same_side_snapshot_median',
+        'external_snapshot_median_same_side_price': round(med, 4),
+        'external_snapshot_selected_price': round(selected, 4),
+        'external_snapshot_selected_vs_median_deviation_pct': round(deviation_pct, 3),
+        'external_snapshot_selected_vs_median_implied_gap_pp': round(implied_gap_pp, 3),
+        'external_snapshot_max_deviation_pct': max_dev,
+        'external_snapshot_max_implied_gap_pp': max_gap_pp,
+    })
+    if selected >= hard_selected and med <= hard_median:
+        report['external_snapshot_hard_rule'] = f'selected>={hard_selected} and snapshot_median<={hard_median}'
+        return True
+    return deviation_pct > max_dev or implied_gap_pp > max_gap_pp
 
 
 def same_side_offer_prices(row: dict[str, Any]) -> tuple[list[float], list[float], list[dict[str, Any]], dict[str, Any]]:
@@ -343,6 +597,8 @@ def candidate_reject_reasons(row: dict[str, Any]) -> tuple[list[str], dict[str, 
         reasons.append('price_integrity:bzzoiro_total_side_mismatch')
     if selected_vs_median_outlier(row, details):
         reasons.append('price_integrity:selected_price_vs_bookmaker_median_outlier')
+    if selected_vs_external_snapshot_outlier(row, details):
+        reasons.append('price_integrity:external_snapshot_bookmaker_median_outlier')
     if selected_vs_market_probability_outlier(row, details):
         reasons.append('price_integrity:selected_price_vs_market_probability_outlier')
     return reasons, details
@@ -415,7 +671,7 @@ def filter_debug_file(path: Path, report: dict[str, Any]) -> None:
 def main() -> int:
     report: dict[str, Any] = {
         'enabled': env_bool('CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED', True),
-        'policy': 'identified_same_side_only_for_median_v3_whole_or_half_totals_only',
+        'policy': 'identified_same_side_plus_external_odds_api_snapshot_v4_whole_or_half_totals_only',
         'sources': {},
         'rejected': [],
     }

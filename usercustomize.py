@@ -84,6 +84,10 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.prequality_final_consensus_bridge',
         'app.services.candidate_value_runtime_patch',
         'app.services.bookmaker_quorum_publication_policy',
+        # Apply max-coverage env before the source/context finalizers below read their settings.
+        # It still preserves all publication guards.
+        'app.services.api_maximum_coverage_runtime_patch',
+        'app.services.api_coverage_observability_runtime_patch',
         'app.services.windowed_core_coverage_finalizer',
         'app.services.windowed_core_report_and_sportlogic_final_guard',
         'app.services.progressive_coverage_runtime_patch',
@@ -110,9 +114,6 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.quality_consensus_safe_relief_patch',
         'app.services.source_matrix_amplifier_runtime_patch',
         'app.services.bzzoiro_odds_comparison_bridge_patch',
-        # Applies the documented max-coverage policy after older quota/profile patches
-        # have set their defaults. It still respects explicit circuit breakers.
-        'app.services.api_maximum_coverage_runtime_patch',
         # Must be last: several older runtime layers can re-enable SportLogic.
         # The daily-limit guard re-applies the cached marker and zeroes SportLogic
         # after every other installer has finished.
