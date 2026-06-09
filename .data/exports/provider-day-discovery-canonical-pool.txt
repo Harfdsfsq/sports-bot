@@ -1,24 +1,24 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-09T15:07:23.206977+00:00
+UTC: 2026-06-09T17:24:49.095149+00:00
 target_date: 2026-06-09
-canonical_matches: 245
-2+ provider sources: 116
-2+ primary sources: 113
-all 3 primary sources: 16
+canonical_matches: 244
+2+ provider sources: 106
+2+ primary sources: 103
+all 3 primary sources: 12
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
 - bzzoiro: commands=10 ok=3 rows=141 event_like=141 unique=47 statuses={"OK": 3, "EMPTY": 7}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=4 rows=222 event_like=222 unique=111 statuses={"OK": 4, "EMPTY": 2}
+- odds_api_io: commands=6 ok=2 rows=190 event_like=190 unique=95 statuses={"OK": 2, "EMPTY": 4}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
-- sstats: commands=1 ok=1 rows=263 event_like=220 unique=220 statuses={"OK": 1}
+- sstats: commands=1 ok=1 rows=265 event_like=221 unique=221 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 129, "2": 100, "3": 16}
-- primary providers: {"1": 132, "2": 97, "3": 16}
+- all providers: {"1": 138, "2": 94, "3": 12}
+- primary providers: {"1": 141, "2": 91, "3": 12}
 
 ## Top canonical matches
 - 2026-06-08T22:00:00+00:00 | Atletico Nacional — Junior | providers=sstats ids={"sstats": "1546413"}
@@ -27,10 +27,11 @@ all 3 primary sources: 16
 - 2026-06-08T22:30:00+00:00 | Mamoré — Uberaba | providers=sstats ids={"sstats": "1547672"}
 - 2026-06-08T23:00:00+00:00 | America Mineiro — Atletico Goianiense | providers=sstats ids={"sstats": "1520710"}
 - 2026-06-08T23:00:00+00:00 | Vila Nova — Botafogo SP | providers=sstats ids={"sstats": "1520719"}
+- 2026-06-08T23:00:00+00:00 | The Villages — Sporting Jax 2 | providers=sstats ids={"sstats": "1524817"}
+- 2026-06-08T23:30:00+00:00 | Paisley Athletic W — Cedar Stars W | providers=sstats ids={"sstats": "1532146"}
+- 2026-06-08T23:30:00+00:00 | Tormenta W — SC United Bantams W | providers=sstats ids={"sstats": "1532147"}
 - 2026-06-08T23:30:00+00:00 | Deportes Temuco — Curico Unido | providers=sstats ids={"sstats": "1511604"}
 - 2026-06-08T23:30:00+00:00 | Union Espanola — Union San Felipe | providers=sstats ids={"sstats": "1511608"}
-- 2026-06-08T23:30:00+00:00 | Tormenta W — SC United Bantams W | providers=sstats ids={"sstats": "1532147"}
-- 2026-06-08T23:30:00+00:00 | Paisley Athletic W — Cedar Stars W | providers=sstats ids={"sstats": "1532146"}
 - 2026-06-09T00:00:00+00:00 | RKC Third Coast W — Edgewater Castle W | providers=sstats ids={"sstats": "1532348"}
 - 2026-06-09T00:00:00+00:00 | Minnesota United II — Sporting KC II | providers=sstats ids={"sstats": "1513144"}
 - 2026-06-09T02:00:00+00:00 | Spain — Peru | providers=bzzoiro ids={"bzzoiro": "206696"}
@@ -50,7 +51,6 @@ all 3 primary sources: 16
 - 2026-06-09T10:30:00+00:00 | Logan Lightning — Redlands United | providers=sstats ids={"sstats": "1524142"}
 - 2026-06-09T10:30:00+00:00 | Myanmar W — Thailand W | providers=sstats ids={"sstats": "1546836"}
 - 2026-06-09T11:30:00+00:00 | Philippines — Myanmar | providers=bzzoiro,sstats ids={"bzzoiro": "207904", "sstats": "1545703"}
-- 2026-06-09T11:35:00+00:00 | China — Thailand | providers=bzzoiro,sstats ids={"bzzoiro": "209432", "sstats": "1546840"}
 
 ## Targeted enrichment plan sample
 - Atletico Nacional — Junior | primary=1 providers=sstats
@@ -77,11 +77,11 @@ all 3 primary sources: 16
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Deportes Temuco — Curico Unido | primary=1 providers=sstats
+- The Villages — Sporting Jax 2 | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Union Espanola — Union San Felipe | primary=1 providers=sstats
+- Paisley Athletic W — Cedar Stars W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -89,7 +89,11 @@ all 3 primary sources: 16
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Paisley Athletic W — Cedar Stars W | primary=1 providers=sstats
+- Deportes Temuco — Curico Unido | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Union Espanola — Union San Felipe | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -126,10 +130,6 @@ all 3 primary sources: 16
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Timor-Leste — Brunei | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Australia W — Mexico W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping

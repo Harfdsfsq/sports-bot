@@ -1,7 +1,7 @@
 # Provider smoke
 
 - status: **warning**
-- enabled ok: 6/8
+- enabled ok: 7/8
 - missing keys: 0
 - non-core env violations: 9
 
@@ -10,7 +10,7 @@
 | odds_api_io | True | True | ok | 5 | 200 |
 | sstats | True | True | ok | 5 | 200 |
 | bzzoiro | True | True | skipped_preserve_runtime_quota |  |  |
-| football_data | True | False | request_error |  |  |
+| football_data | True | True | ok | 0 | 200 |
 | thesportsdb | True | True | ok | 10 | 200 |
 | weatherapi | True | True | ok | 2 | 200 |
 | open_meteo | True | True | ok | 9 | 200 |
