@@ -4,8 +4,8 @@ from __future__ import annotations
 
 The project rules define two public-quality tiers:
 
-* A-tier: 2+ independent odds sources and 2+ context sources.
-* B-tier: 1+ odds source and 1+ context source, but still with the normal
+* A-tier: 2+ bookmakers/price confirmations and 2+ context sources.
+* B-tier: 1+ bookmaker/price confirmation and 1+ context source, but still with the normal
   value, line-movement, xG/context and final Telegram guards.
 
 Several legacy runtime scripts used hard-coded ``max(2, ...)`` floors.  That

@@ -32,6 +32,10 @@ jobs:
       PUBLISH_COVERAGE_TIER_MODE: "hybrid"
       MIN_BOOKS_PUBLISH: "1"
       PUBLISH_MIN_BOOKS: "1"
+      PUBLISH_TIER_A_MIN_BOOKS: "2"
+      PUBLISH_TIER_A_MIN_CONTEXT_SOURCES: "2"
+      PUBLISH_TIER_B_MIN_BOOKS: "1"
+      PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"
       MIN_SOURCES_PUBLISH: "1"
       PREDICTION_PUBLICATION_ENABLED: "true"
       REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY: "false"
@@ -80,6 +84,12 @@ jobs:
       PUBLISH_MIN_CONTEXT_SOURCES: "1"
       MIN_CONTEXT_SOURCES_PUBLISH: "1"
       CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"
+      CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES: "false"
+      CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS: "2"
+      CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES: "2"
+      CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "1"
+      CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES: "1"
+      CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD: "true"
       CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
       CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
@@ -265,6 +275,13 @@ jobs:
           mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/apply_publication_family_policy.py
 
+      - name: Apply A/B tier bookmaker contract
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
+          python -u scripts/apply_ab_tier_bookmaker_contract.py || true
+
       - name: Apply provider quota governor
         shell: bash
         run: |
@@ -363,7 +380,7 @@ jobs:
             exit 0
           fi
           python -u scripts/apply_publication_family_policy.py || true
-          python scripts/publish_controlled_fallback.py || true
+          python scripts/publish_controlled_fallback_guarded.py || python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
@@ -406,7 +423,7 @@ jobs:
             echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+          python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
           cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true

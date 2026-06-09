@@ -2,18 +2,21 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v9.
 
-Small wrapper around v8 that appends GitHub Actions run metadata to the human
-Telegram report. This lets a forwarded Telegram report identify the exact run,
-logs and run-bot artifact without manually uploading ZIP files.
+Renderer-only patch for the owner-requested tier contract:
+- B-tier = 1+ bookmaker/price confirmation + 1+ context;
+- A-tier = 2+ bookmakers/price confirmations + 2+ contexts.
+
+The v8 renderer still described B-tier as 2+ bookmakers.  This wrapper keeps
+v8 data loading and formatting but fixes the displayed coverage contract and
+B-tier coverage numbers so the Telegram report matches the runtime policy.
 """
 
 import importlib.util
 import json
+import os
 import re
 from pathlib import Path
 from typing import Any
-
-from app.services.github_actions_context import append_github_run_reference, github_run_context, write_github_run_context
 
 V8_PATH = Path(__file__).with_name("send_harizon_telegram_run_report_v8.py")
 EXPORT_DIR = Path(".data/exports")
@@ -30,156 +33,39 @@ def _load_v8() -> Any:
 
 
 v8 = _load_v8()
-
-SOURCE_ALIASES = {
-    "oddsapiio": "odds_api_io",
-    "odds_api": "odds_api_io",
-    "odds_api_io_account1": "odds_api_io",
-    "odds_api_io_account2": "odds_api_io",
-    "bzzoiro_current_odds": "bzzoiro",
-    "bzzoiro_v2": "bzzoiro",
-    "sport_logic": "sportlogic",
-}
-LIVE_ODDS_SOURCES = {"odds_api_io", "bzzoiro", "sportlogic", "allsportsapi", "api_football", "rapidapi_odds", "oddspapi", "highlightly"}
+_base_build_payload = v8.build_payload
+_base_render = v8.render
 
 
-def _as_int(value: Any, default: int = 0) -> int:
+def _as_int(value: Any) -> int:
     try:
         if value in (None, ""):
-            return default
-        return int(float(str(value)))
+            return 0
+        if isinstance(value, bool):
+            return int(value)
+        if isinstance(value, (list, tuple, set, dict)):
+            return len(value)
+        return int(float(str(value).replace(",", ".")))
     except Exception:
-        return default
+        return 0
 
 
-def _norm_source(value: Any) -> str:
-    text = re.sub(r"[^a-z0-9]+", "_", str(value or "").strip().lower()).strip("_")
-    return SOURCE_ALIASES.get(text, text)
+def _pct(part: Any, total: Any) -> str:
+    p = _as_int(part)
+    t = _as_int(total)
+    if t <= 0:
+        return "0%"
+    return f"{round(p * 100.0 / t)}%"
 
 
-def _items(value: Any) -> list[Any]:
-    if isinstance(value, dict):
-        return list(value.keys())
-    if isinstance(value, (list, tuple, set)):
-        return list(value)
-    if isinstance(value, str) and value.strip():
-        return [x.strip() for x in re.split(r"[,|;/]+", value) if x.strip()]
-    return []
-
-
-def _reason_ru_patched(reason: Any) -> str:
-    text = str(reason or "").strip().lower()
-    if "high_odds_totals_xg_headroom_guard" in text:
-        return "высокий коэффициент: не хватает xG-запаса"
-    return v8._reason_ru(reason)
-
-
-def _selection_with_point(row: dict[str, Any]) -> str:
-    selection = str(row.get("selection") or row.get("market") or "СЃС‚Р°РІРєР°")
-    point = row.get("point")
-    if point in (None, "", "null"):
-        return selection
-    point_text = f"{float(point):g}" if isinstance(point, (int, float)) else str(point)
-    if point_text and point_text not in selection:
-        return f"{selection} {point_text}"
-    return selection
-
-
-def _render_samples_with_points(payload: dict[str, Any]) -> list[str]:
-    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
-    evaluated = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
-    rows = [x for x in evaluated if isinstance(x, dict)][:3]
-    if not rows:
-        return []
-    lines = ["рџ”Ћ РџРѕСЃР»РµРґРЅРёРµ РїСЂРѕРІРµСЂРµРЅРЅС‹Рµ РєР°РЅРґРёРґР°С‚С‹"]
-    for idx, row in enumerate(rows, 1):
-        metrics = v8._first_dict(row.get("metrics"))
-        home = row.get("home_team") or row.get("home") or "?"
-        away = row.get("away_team") or row.get("away") or "?"
-        selection = _selection_with_point(row)
-        odds = v8._as_float(metrics.get("odds"))
-        ev = v8._as_float(metrics.get("canonical_ev_pct"))
-        edge = v8._as_float(metrics.get("canonical_edge_pp"))
-        q = v8._as_float(metrics.get("quality_score"))
-        odds_text = f" @{odds:.2f}" if odds > 0 else ""
-        lines.append(f"{idx}. {home} вЂ” {away} | {selection}{odds_text} | EV {ev:+.1f}% | edge {edge:+.1f} Рї.Рї. | q {q:.1f}")
-        reject = ", ".join(_reason_ru_patched(x) for x in (row.get("reject_reasons") or [])[:3])
-        if reject:
-            lines.append(f"   вЂў РїСЂРёС‡РёРЅР°: {reject}")
-    return lines
-
-
-def _independent_odds_count(row: dict[str, Any]) -> int:
-    metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
-    source_summary = row.get("source_summary") if isinstance(row.get("source_summary"), dict) else {}
-    metrics_source_summary = metrics.get("source_summary") if isinstance(metrics.get("source_summary"), dict) else {}
-    details = metrics.get("independent_odds_source_detail") if isinstance(metrics.get("independent_odds_source_detail"), dict) else {}
-    sources: set[str] = set()
-    for container in (row, metrics, source_summary, metrics_source_summary, details):
-        if not isinstance(container, dict):
-            continue
-        for key in ("odds_sources", "line_sources", "independent_odds_sources", "normalized_sources"):
-            for item in _items(container.get(key)):
-                src = _norm_source(item)
-                if src in LIVE_ODDS_SOURCES:
-                    sources.add(src)
-    if sources:
-        return len(sources)
-    return _as_int(metrics.get("independent_odds_sources_count"), _as_int(metrics.get("odds_sources_count"), _as_int(row.get("odds_sources_count"))))
-
-
-def _strict_current_run_fallback_tier_counts(report: dict[str, Any]) -> dict[str, int]:
-    """Count fallback publication tiers for the current run only.
-
-    ``latest-controlled-fallback-published-picks.json`` is a persisted ledger and
-    may contain a pick from a previous run.  The human report must not say that
-    the current run published a forecast when this run only rejected the old pick
-    as a duplicate.
-    """
-    rows = report.get("selected_all") if isinstance(report.get("selected_all"), list) else []
-    if not rows and isinstance(report.get("selected"), dict):
-        rows = [report["selected"]]
-    published = bool(report.get("published")) or str(report.get("status") or "") == "published"
-    if published:
-        try:
-            published_picks = v8._load_json_any(v8.FALLBACK_PUBLISHED_PICKS)
-        except Exception:
-            published_picks = None
-        if isinstance(published_picks, list) and published_picks:
-            rows = [row for row in published_picks if isinstance(row, dict)] or rows
-    selected = [row for row in rows if isinstance(row, dict)]
-    out = {
-        "published_total": len(selected) if published else 0,
-        "selected_total": len(selected),
-        "tier_a_published": 0,
-        "tier_b_published": 0,
-        "tier_a_selected": 0,
-        "tier_b_selected": 0,
-    }
-    for row in selected:
-        try:
-            tier = v8._tier_code(row)
-        except Exception:
-            tier = str(row.get("tier") or row.get("publication_tier") or "").strip().upper()
-        # Honest downgrade for reports: raw ``уровень A`` is not enough if the row
-        # has only one independent odds provider after normalization.
-        if tier == "A" and _independent_odds_count(row) < 2:
-            tier = "B"
-        if tier == "A":
-            out["tier_a_selected"] += 1
-            if published:
-                out["tier_a_published"] += 1
-        elif tier == "B":
-            out["tier_b_selected"] += 1
-            if published:
-                out["tier_b_published"] += 1
-    return out
-
-
-if hasattr(v8, "_fallback_tier_counts"):
-    v8._fallback_tier_counts = _strict_current_run_fallback_tier_counts
-
-_original_render = v8.render
+def _load_json(path: Path) -> dict[str, Any]:
+    try:
+        if path.exists() and path.stat().st_size > 0:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            return payload if isinstance(payload, dict) else {}
+    except Exception:
+        return {}
+    return {}
 
 
 def _write_status(payload: dict[str, Any]) -> None:
@@ -190,19 +76,98 @@ def _write_status(payload: dict[str, Any]) -> None:
         pass
 
 
+def _counts(payload: dict[str, Any]) -> dict[str, int]:
+    coverage = payload.get("coverage") if isinstance(payload.get("coverage"), dict) else {}
+    diag = payload.get("diagnostics") if isinstance(payload.get("diagnostics"), dict) else {}
+    truth = diag.get("coverage_truth") if isinstance(diag.get("coverage_truth"), dict) else {}
+    truth_counts = truth.get("counts") if isinstance(truth.get("counts"), dict) else {}
+    bookmaker_norm = diag.get("bookmaker_quorum_normalizer") if isinstance(diag.get("bookmaker_quorum_normalizer"), dict) else {}
+
+    inv_total = _as_int(truth_counts.get("matches_total")) or _as_int(coverage.get("day_inventory_total"))
+    with_odds = (
+        _as_int(truth_counts.get("matches_with_1plus_price_confirmations"))
+        or _as_int(truth_counts.get("matches_with_price_confirmations"))
+        or _as_int(truth_counts.get("matches_with_odds"))
+        or _as_int(coverage.get("day_inventory_with_odds"))
+        or _as_int(coverage.get("matches_with_offers"))
+    )
+    with_context = (
+        _as_int(truth_counts.get("matches_with_context"))
+        or _as_int(coverage.get("day_inventory_with_context"))
+        or _as_int(coverage.get("matches_with_context"))
+    )
+    price2 = (
+        _as_int(truth_counts.get("matches_with_2plus_price_confirmations"))
+        or _as_int(bookmaker_norm.get("normalized_inventory_2plus_books"))
+        or _as_int(coverage.get("matches_with_2plus_books"))
+    )
+    context2 = _as_int(truth_counts.get("matches_with_2plus_context_sources"))
+    published = _as_int((payload.get("funnel") or {}).get("fallback_published_count")) if isinstance(payload.get("funnel"), dict) else 0
+    return {
+        "inv_total": inv_total,
+        "with_odds": with_odds,
+        "with_context": with_context,
+        "price2": price2,
+        "context2": context2,
+        "b_cover": min(with_odds, with_context) if inv_total else 0,
+        "a_cover": min(price2, context2) if inv_total else 0,
+        "fallback_published": published,
+    }
+
+
+def build_payload() -> dict[str, Any]:
+    payload = _base_build_payload()
+    payload["version"] = "harizon-telegram-report-v9-ab-tier-bookmaker-contract"
+    payload.setdefault("diagnostics", {})["ab_tier_contract"] = {
+        "A": {"min_bookmakers": 2, "min_context_sources": 2},
+        "B": {"min_bookmakers": 1, "min_context_sources": 1},
+        "independent_odds_sources": "diagnostic_only",
+    }
+    return payload
+
+
 def render(payload: dict[str, Any]) -> str:
-    ctx = write_github_run_context()
-    try:
-        payload.setdefault("diagnostics", {})["github_actions"] = ctx
-    except Exception:
-        pass
-    return append_github_run_reference(_original_render(payload))
+    text = _base_render(payload)
+    c = _counts(payload)
+
+    # Replace v8's B-tier section.  It used the 2+ bookmaker count for B-tier,
+    # which made a valid 1+ bookmaker/1+ context B-cover look like zero.
+    b_line = f"• B-tier 1+ bookmaker/context coverage: {c['b_cover']} | fallback опубликовано: {c['fallback_published']}"
+    text = re.sub(r"• B-tier bookmaker coverage: .*", b_line, text)
+    text = text.replace(
+        "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
+        "  B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.",
+    )
+    text = text.replace(
+        "  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.",
+        "  A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.",
+    )
+    text = re.sub(
+        r"• Пересечение 2\+ букмекера ∩ 2\+ контекста: .*",
+        f"• B-cover 1+ букмекер ∩ 1+ контекст: до {c['b_cover']} матчей; A-cover 2+ букмекер ∩ 2+ контекст: до {c['a_cover']} матчей.",
+        text,
+    )
+    text = text.replace(
+        "• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.",
+        "• Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.",
+    )
+    text = text.replace(
+        "• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.",
+        "• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.",
+    )
+    return text
 
 
-v8.render = render
-v8.v7.render = render
+v8.v7.v5.build_payload = build_payload
 v8.v7.v5.render = render
-_write_status({"status": "installed", "renderer": "v9-github-run-reference", "github_actions": github_run_context(), "current_run_fallback_tier_counts": True, "honest_independent_odds_tier_counts": True})
+v8.v7.build_payload = build_payload
+v8.v7.render = render
+_write_status({
+    "status": "installed",
+    "renderer": "v9",
+    "main_module": "v8.v7.v5",
+    "contract": "B=1+bookmaker+1+context; A=2+bookmakers+2+contexts",
+})
 
 
 if __name__ == "__main__":

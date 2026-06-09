@@ -304,11 +304,27 @@ def context_sources_for_candidate(candidate: Any) -> set[str]:
 def books_for_candidate(candidate: Any) -> set[str]:
     books: set[str] = set()
     for row in _iter_offer_rows(candidate):
-        book = str(_get(row, "bookmaker") or "").strip().lower()
+        book = str(
+            _get(row, "bookmaker")
+            or _get(row, "bookmaker_slug")
+            or _get(row, "book")
+            or _get(row, "sportsbook")
+            or ""
+        ).strip().lower()
         if book:
             books.add(book)
     for view in _candidate_dict_views(candidate):
-        for key in ("books", "bookmakers", "selected_books"):
+        for key in (
+            "books",
+            "bookmakers",
+            "selected_books",
+            "bookmaker",
+            "bookmaker_slug",
+            "selected_bookmaker",
+            "selected_bookmaker_slug",
+            "sportsbook",
+            "book",
+        ):
             if key not in view:
                 continue
             value = view.get(key)
