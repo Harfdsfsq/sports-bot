@@ -1,29 +1,29 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: quality: вероятность после калибровки ниже порога
+• Главная причина: tier c watch only
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 162 (это не размер inventory).
-• 1+ линия: 149/160 (93%) | 1+ контекст: 83/160 (52%)
-• 2+ букмекера: 8/160 (5%)
-• Raw 2+ букмекера odds-api.io: 53 | normalized inventory: 8 | mapping gap: 45
-• Odds-api offer snapshot: rows 8969, matches 88, same-side 2+ books 49
+• Инвентарь дня: 160 матчей. Runtime rows processed: 192 (это не размер inventory).
+• 1+ линия: 150/160 (94%) | 1+ контекст: 90/160 (56%)
+• 2+ букмекера: 9/160 (6%)
+• Raw 2+ букмекера odds-api.io: 56 | normalized inventory: 9 | mapping gap: 47
+• Odds-api offer snapshot: rows 10086, matches 98, same-side 2+ books 54
 • 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
-• 2+ контекста: 28/160 (18%)
-• Готово для модели: 83/160 (52%)
+• 2+ контекста: 54/160 (34%)
+• Готово для модели: 89/160 (56%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 4 | опубликовано: 0
+• A-tier strict-ready: 5 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 83 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 90 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 83 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 8 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 90 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 9 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 17 | матчей без следующего регулярного run: 11
+• Pre-kickoff проверок: 9 | матчей без следующего регулярного run: 9
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -32,32 +32,32 @@
 • Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 32; смэтчил матчей 157; offers 9763; 2+ букмекера 53; ошибок 0.
-• Bzzoiro: direct req 68, v2 req 68; v2 ctx 15; v2 odds 13; secondary offers 0; overlap odds-api.io 11; ошибок 0.
-• SStats: запросы 35; сырых строк 29376; контекстов 126; deep-enriched 11; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 38; смэтчил матчей 187; offers 11037; 2+ букмекера 56; ошибок 0.
+• Bzzoiro: direct req 69, v2 req 69; v2 ctx 16; v2 odds 13; secondary offers 0; overlap odds-api.io 13; ошибок 0.
+• SStats: запросы 35; сырых строк 29376; контекстов 143; deep-enriched 13; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 77, bzzoiro+odds_api_io: 11, bzzoiro: 5
+• Комбинации источников линий: odds_api_io: 85, bzzoiro+odds_api_io: 13, bzzoiro: 4
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 4 (18%)
-• tier a quality below min: 2 (9%)
-• tier a canonical edge below min: 2 (9%)
-• tier a canonical ev below min: 2 (9%)
-• tier b quality below min: 2 (9%)
-• tier b canonical edge below min: 2 (9%)
-• tier b canonical ev below min: 2 (9%)
-• tier c quality below min: 2 (9%)
-• Диагностика legacy odds-source: 4 — не блок публикации при 2+ букмекерах
+• tier c watch only: 3 (14%)
+• line movement not confirmed:awaiting next run: 3 (14%)
+• line movement:needs next cron line movement recheck: 3 (14%)
+• missing total xg sanity: 3 (14%)
+• quality post calibration edge guard: 3 (14%)
+• tier a quality below min: 1 (5%)
+• tier a canonical edge below min: 1 (5%)
+• tier a canonical ev below min: 1 (5%)
+• Диагностика legacy odds-source: 1 — не блок публикации при 2+ букмекерах
 
 🔎 Проверенные reserve-кандидаты
-1. Corinthians — Avai | Меньше 2.5 @2.46 | EV +19.3% | edge +7.8 п.п. | q 75.2
+1. Goias — Gremio Novorizontino | Меньше 1.5 @2.70 | EV +37.4% | edge +13.8 п.п. | q 83.8
    • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
-2. Portugal — Nigeria | Меньше 2.5 @2.58 | EV +0.7% | edge +0.3 п.п. | q 57.5
+2. Corinthians — Avai | Меньше 2.5 @2.33 | EV +14.8% | edge +6.3 п.п. | q 70.1
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
+3. America — Cabofriense RJ | Больше 1.75 @1.80 | EV +9.9% | edge +5.5 п.п. | q 60.9
+   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
+4. Portugal — Nigeria | Меньше 2.5 @2.58 | EV +1.7% | edge +0.7 п.п. | q 58.9
    • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
-3. Varbergs — Norrby | Меньше 2.5 @2.28 | EV +0.5% | edge +0.2 п.п. | q 54.8
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier a confirmation sources below min:1/2
-4. Costa Rica — Canada | Меньше 2.5 @2.44 | EV -3.0% | edge -1.2 п.п. | q 51.7
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
@@ -65,7 +65,7 @@
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27238229037
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27238229037
-• Artifact: run-bot-27238229037
+• Run ID: 27241347286
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27241347286
+• Artifact: run-bot-27241347286
 • workflow run-bot, attempt 1
