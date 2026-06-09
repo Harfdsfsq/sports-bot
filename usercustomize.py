@@ -4,29 +4,14 @@ import os
 import sys
 from pathlib import Path
 
-
 def _is_fallback_publisher_process() -> bool:
     name = Path(str(sys.argv[0] or "")).name
-    return name in {
-        "publish_controlled_fallback.py",
-        "publish_controlled_fallback_guarded.py",
-    } or os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1"
-
+    return name in {"publish_controlled_fallback.py", "publish_controlled_fallback_guarded.py"} or os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1"
 
 def _is_stdin_env_helper_process() -> bool:
-    """Do not install noisy runtime wrappers for `python -` helper snippets.
-
-    GitHub Actions writes env-vars by redirecting stdout into $GITHUB_ENV in a few
-    workflow steps. Full runtime installers can print JSON diagnostics during
-    startup; if that output is redirected to $GITHUB_ENV, GitHub fails the step
-    with `Invalid format '{'`. The real app/scripts still receive all runtime
-    patches because their sys.argv[0] is an actual script/module path.
-    """
     return str(sys.argv[0] or "").strip() == "-" or os.getenv("HARIZON_SKIP_USERCUSTOMIZE_INSTALLERS") == "1"
 
-
 _SKIP_RUNTIME_INSTALLERS = _is_fallback_publisher_process() or _is_stdin_env_helper_process()
-
 
 def _install(module_path: str) -> None:
     try:
@@ -35,7 +20,6 @@ def _install(module_path: str) -> None:
         getattr(module, attr).install()
     except Exception:
         pass
-
 
 if not _SKIP_RUNTIME_INSTALLERS:
     for _module in [
@@ -84,8 +68,6 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.prequality_final_consensus_bridge',
         'app.services.candidate_value_runtime_patch',
         'app.services.bookmaker_quorum_publication_policy',
-        # Apply max-coverage env before the source/context finalizers below read their settings.
-        # It still preserves all publication guards.
         'app.services.api_maximum_coverage_runtime_patch',
         'app.services.api_coverage_observability_runtime_patch',
         'app.services.sportlogic_games_date_contract_runtime_patch',
@@ -109,16 +91,13 @@ if not _SKIP_RUNTIME_INSTALLERS:
         'app.services.odds_movement_cache_bridge_patch',
         'app.services.api_coverage_consensus_runtime_patch',
         'app.services.odds_api_io_account_source_split_patch',
-        # Must be installed in the main app process, not only runtime_startup_chain;
-        # usercustomize.py is the actual installer path used by python -m app.cli run-once.
         'app.services.odds_api_io_offer_snapshot_runtime_patch',
         'app.services.quality_consensus_safe_relief_patch',
         'app.services.ledger_retro_price_audit_runtime_patch',
         'app.services.source_matrix_amplifier_runtime_patch',
         'app.services.bzzoiro_odds_comparison_bridge_patch',
-        # Must be last: several older runtime layers can re-enable SportLogic.
-        # The daily-limit guard re-applies the cached marker and zeroes SportLogic
-        # after every other installer has finished.
+        # Re-install SportLogic v8 late because older finalizers can overwrite provider methods.
+        'app.services.sportlogic_games_date_contract_runtime_patch',
         'app.services.sportlogic_daily_limit_guard',
     ]:
         _install(_module)
