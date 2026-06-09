@@ -51,6 +51,9 @@ jobs:
       PROVIDER_SMOKE_REPAIR_ENV_GUARD_ENABLED: "true"
       DAY_INVENTORY_PRESERVE_CACHED_EVIDENCE: "true"
       PUBLISH_DRY_RUN: "true"
+      PUBLISH_ALLOW_B_TIER: "true"
+      PUBLISH_COVERAGE_TIER_MODE: "hybrid"
+      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
       PREDICTION_PUBLICATION_ENABLED: "false"
       RUN_REPORT_ENABLED: "false"
       ENHANCED_RUN_REPORT_SEND_TELEGRAM: "false"
@@ -205,10 +208,10 @@ jobs:
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
 
-      PUBLISH_MIN_ODDS_SOURCES: "2"
-      PUBLISH_MIN_CONTEXT_SOURCES: "2"
-      MIN_CONTEXT_SOURCES_PUBLISH: "2"
-      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "2"
+      PUBLISH_MIN_ODDS_SOURCES: "1"
+      PUBLISH_MIN_CONTEXT_SOURCES: "1"
+      MIN_CONTEXT_SOURCES_PUBLISH: "1"
+      CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
       PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
       HARIZON_ALLOWED_PUBLICATION_FAMILIES: "totals,spreads"
@@ -348,8 +351,8 @@ jobs:
             'DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS': '40',
             'DAY_INVENTORY_BZZOIRO_MAX_REQUESTS': '200',
             'DAY_INVENTORY_SSTATS_MAX_REQUESTS': '150',
-            'PUBLISH_MIN_ODDS_SOURCES': '2',
-            'PUBLISH_MIN_CONTEXT_SOURCES': '2',
+            'PUBLISH_MIN_ODDS_SOURCES': '1',
+            'PUBLISH_MIN_CONTEXT_SOURCES': '1',
             'TOTALS_PUBLICATION_ENABLED': 'true',
             'SPREADS_PUBLICATION_ENABLED': 'true',
           }
@@ -439,7 +442,7 @@ jobs:
           cp .data/exports/latest-provider-smoke*.txt artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/provider-smoke-fast-run.log artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-summary.json artifacts/provider-smoke/ 2>/dev/null || true
-          cp .data/exports/latest-day-inventory-cached-evidence-preserve.json artifacts/provider-smoke/ 2>/dev/null || true
+          cp .data/exports/latest-day-inventory-cached-evidence-preserve-patch.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-inventory-source-count-repair.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-context-source-projection.json artifacts/provider-smoke/ 2>/dev/null || true
           cp .data/exports/latest-day-inventory-price-backfill-plan.* artifacts/provider-smoke/ 2>/dev/null || true
@@ -449,8 +452,8 @@ jobs:
           cp .data/exports/provider-smoke-build-day-inventory.log artifacts/provider-smoke/ 2>/dev/null || true
           cp -r .data/day_inventory artifacts/provider-smoke/day_inventory 2>/dev/null || true
           cp -r .data/line_history artifacts/provider-smoke/line_history 2>/dev/null || true
-          echo "----- cached evidence preserve -----"
-          cat .data/exports/latest-day-inventory-cached-evidence-preserve.json 2>/dev/null || true
+          echo "----- cached evidence preserve patch -----"
+          cat .data/exports/latest-day-inventory-cached-evidence-preserve-patch.json 2>/dev/null || true
           echo "----- minimal API repair probe -----"
           cat .data/exports/latest-provider-api-min-repair-probe.txt 2>/dev/null || true
           echo "----- source-count/top-300 inventory repair -----"

@@ -6,7 +6,7 @@ from statistics import mean
 from typing import Any
 
 from app.config import Settings
-from app.schemas import CandidateBet, Match, MatchContext, MatchContextBundle, Offer
+from app.schemas import CandidateBet, Match, MatchContext, Offer
 from app.utils import (
     candidate_selection_key,
     clamp,
@@ -726,7 +726,23 @@ class CandidateFactory:
             if observation_count < max(1, int(getattr(self.settings, 'market_derived_min_observations', 2) or 2)):
                 return False
         elif not self._market_derived_consensus_relief_ready(family, market_signal, books_count, sources_count, observation_count):
-            return False
+            # Do not kill the first snapshot outright.  The lifecycle/line-movement
+            # layer can then keep this as an awaiting-next-run candidate instead of
+            # losing the value setup before movement can be checked.
+            if not bool(getattr(self.settings, 'market_derived_allow_first_snapshot_candidates', True)):
+                return False
+            if observation_count < 1:
+                return False
+            first_snapshot_min_edge = float(getattr(self.settings, 'market_derived_first_snapshot_min_edge_pct', 2.4) or 2.4)
+            first_snapshot_max_dispersion = float(getattr(self.settings, 'market_derived_first_snapshot_max_dispersion_pct', 4.8) or 4.8)
+            edge_pct = self._to_float_safe(market_signal.get('best_vs_consensus_edge_pct')) or 0.0
+            dispersion_pct = self._to_float_safe(market_signal.get('consensus_dispersion_pct'))
+            if edge_pct < first_snapshot_min_edge:
+                return False
+            if dispersion_pct is not None and dispersion_pct > first_snapshot_max_dispersion:
+                return False
+            market_signal['line_movement_lifecycle_status'] = 'awaiting_next_run'
+            market_signal['movement_label'] = market_signal.get('movement_label') or 'awaiting_next_run'
         if books_count < max(1, int(getattr(self.settings, 'market_derived_min_books', 2) or 2)):
             return False
         if sources_count < max(1, int(getattr(self.settings, 'market_derived_min_sources', 1) or 1)):
@@ -1153,8 +1169,6 @@ class CandidateFactory:
 
         context_details = dict(getattr(context, 'details', {}) or {}) if context is not None else {}
         context_sources = self._context_source_names(context)
-        context_observations = context_details.get('context_observations') or []
-        context_source_count = int(context_details.get('context_source_count') or len(context_sources))
         selection_key = candidate_selection_key(
             family,
             selection,
@@ -1264,15 +1278,7 @@ class CandidateFactory:
                 'match_tier': getattr(match, 'tier', None),
                 'context_source': context_source or None,
                 'context_sources': context_sources,
-                'context_sources_count': context_source_count,
-                'context_observation_count': len(context_observations) if isinstance(context_observations, list) else 0,
                 'context_confidence': round(context_confidence, 2) if context is not None else None,
-                'context_agreement_score': context_details.get('context_agreement_score'),
-                'provider_conflict_score': context_details.get('provider_conflict_score'),
-                'has_weather_context': bool(context_details.get('has_weather_context')),
-                'has_lineup_context': bool(context_details.get('has_lineup_context')),
-                'has_injury_context': bool(context_details.get('has_injury_context')),
-                'has_news_context': bool(context_details.get('has_news_context')),
                 'context_mode': context_details.get('sstats_mode') or context_details.get('context_mode') or ('market_signal' if market_signal_derived else None),
                 'home_recent_count': context_details.get('home_recent_count'),
                 'away_recent_count': context_details.get('away_recent_count'),
@@ -3331,19 +3337,6 @@ class CandidateFactory:
             return None
         if isinstance(value, MatchContext):
             return value
-        if isinstance(value, MatchContextBundle):
-            context = value.merged_context
-            if context is not None:
-                details = dict(getattr(context, 'details', {}) or {})
-                details['context_source_count'] = int(getattr(value, 'context_source_count', 0) or 0)
-                details['context_agreement_score'] = getattr(value, 'agreement_score', None)
-                details['provider_conflict_score'] = getattr(value, 'provider_conflict_score', None)
-                details['has_weather_context'] = bool(getattr(value, 'has_weather', False))
-                details['has_lineup_context'] = bool(getattr(value, 'has_lineups', False))
-                details['has_injury_context'] = bool(getattr(value, 'has_injuries', False))
-                details['has_news_context'] = bool(getattr(value, 'has_news', False))
-                context.details = details
-            return context
         if isinstance(value, dict):
             return MatchContext(
                 source=str(value.get('source', 'unknown')),

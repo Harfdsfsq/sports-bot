@@ -16,6 +16,8 @@ import re
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -383,8 +385,8 @@ def merge_inventory(evidence: dict[str, dict[str, dict[str, Any]]], report: dict
     if not isinstance(inv, dict):
         return
     matches = [row for row in inv.get('matches', []) if isinstance(row, dict)]
-    min_price = max(2, as_int(os.getenv('PUBLISH_MIN_ODDS_SOURCES') or os.getenv('CONTROLLED_FALLBACK_MIN_ODDS_SOURCES'), 2))
-    min_context = max(2, as_int(os.getenv('PUBLISH_MIN_CONTEXT_SOURCES') or os.getenv('MIN_CONTEXT_SOURCES_PUBLISH'), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     updated = newly_price_ready = newly_publish_ready = 0
     provider_updated = {'odds_api_io': 0, 'bzzoiro': 0}
     for row in matches:

@@ -28,6 +28,11 @@ jobs:
       APP_ENV: production
       RUN_MODE: ${{ github.event.inputs.mode || 'normal' }}
       PUBLISH_DRY_RUN: "false"
+      PUBLISH_ALLOW_B_TIER: "true"
+      PUBLISH_COVERAGE_TIER_MODE: "hybrid"
+      MIN_BOOKS_PUBLISH: "1"
+      PUBLISH_MIN_BOOKS: "1"
+      MIN_SOURCES_PUBLISH: "1"
       PREDICTION_PUBLICATION_ENABLED: "true"
       REPUBLISH_SEEN_CANDIDATES_WHEN_EMPTY: "false"
       SEEN_CANDIDATE_LOOKBACK_HOURS: "96"
@@ -58,25 +63,6 @@ jobs:
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "150"
       DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "100"
       DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "40"
-      DAY_INVENTORY_FILL_TO_TARGET_ENABLED: "true"
-      DAY_INVENTORY_FILL_TARGET_SIZE: "300"
-      DAY_INVENTORY_FILL_HARD_MAX_MATCHES: "300"
-      DAY_INVENTORY_FILL_ALLOW_ROLLING_HORIZON: "true"
-      DAY_INVENTORY_FILL_FUTURE_DAYS: "3"
-      DAY_INVENTORY_FILL_IGNORE_SHORT_CACHE: "true"
-      DAY_INVENTORY_FILL_CACHE_MIN_TARGET_RATIO: "0.92"
-      DAY_INVENTORY_FILL_INCLUDE_LOW_TIER_ODDS: "true"
-      DAY_INVENTORY_FILL_USE_ODDS_API_IO: "true"
-      DAY_INVENTORY_FILL_USE_BZZOIRO: "true"
-      DAY_INVENTORY_FILL_USE_SSTATS_AS_FIXTURE_SOURCE: "true"
-      DAY_INVENTORY_FILL_USE_SPORTLOGIC: "true"
-      DAY_INVENTORY_FILL_SSTATS_MAX_REQUESTS: "18"
-      DAY_INVENTORY_FILL_BZZOIRO_MAX_PAGES: "8"
-      DAY_INVENTORY_FILL_BZZOIRO_PREDICTION_PAGES: "6"
-      DAY_INVENTORY_FILL_SPORTLOGIC_ACTIVE_ODDS_RECOVERY: "true"
-      DAY_INVENTORY_FILL_SPORTLOGIC_ACTIVE_ODDS_PAGES: "2"
-      DAY_INVENTORY_FILL_SPORTLOGIC_ACTIVE_GAME_LIMIT: "60"
-      DAY_INVENTORY_FILL_CANDIDATE_CACHE_TTL_MINUTES: "0"
 
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
       PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
@@ -91,62 +77,17 @@ jobs:
       TOTALS_PUBLICATION_ENABLED: "true"
       SPREADS_PUBLICATION_ENABLED: "true"
       PUBLISH_MIN_ODDS_SOURCES: "1"
-      PUBLISH_MIN_CONTEXT_SOURCES: "2"
-      PUBLISH_PRICE_CONFIRMATION_MODE: "bookmakers"
-      PUBLISH_MIN_BOOKS: "2"
-      CORE_COVERAGE_MIN_ODDS_SOURCES: "1"
-      CORE_COVERAGE_MIN_BOOKMAKERS: "2"
-      MIN_CONTEXT_SOURCES_PUBLISH: "2"
+      PUBLISH_MIN_CONTEXT_SOURCES: "1"
+      MIN_CONTEXT_SOURCES_PUBLISH: "1"
       CONTROLLED_FALLBACK_MIN_ODDS_SOURCES: "1"
       CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
-      CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_C_MIN_ODDS_SOURCES: "1"
-      CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS: "2"
-      CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "2"
-      CONTROLLED_FALLBACK_TIER_C_MIN_BOOKS: "2"
-      CONTROLLED_FALLBACK_REQUIRE_BOOKMAKER_QUORUM_FOR_TELEGRAM: "true"
       CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
-      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "false"
+      CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
       ODDS_MOVEMENT_SNAPSHOTS_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_ENABLED: "true"
       NEWS_INJURY_SHORTLIST_LIMIT: "8"
       BZZOIRO_CURRENT_ODDS_AS_SECONDARY_SOURCE: "true"
-      SOURCE_MATRIX_AMPLIFIER_ENABLED: "true"
-      SOURCE_MATRIX_CONTEXT_TARGET_LIMIT: "300"
-      SOURCE_MATRIX_GAP_APPEND_LIMIT: "180"
-      CONTEXT_ENRICHMENT_REQUIRES_OFFERS: "false"
-      BZZOIRO_DIRECT_CONTEXT_FETCH_ENABLED: "true"
-      BZZOIRO_CONTEXT_GAP_PASS_ENABLED: "true"
-      BZZOIRO_CONTEXT_GAP_INCLUDE_PROGRESSIVE_STATE: "true"
-      BZZOIRO_CONTEXT_GAP_MATCH_LIMIT: "160"
-      BZZOIRO_CONTEXT_GAP_MAX_REQUESTS: "180"
-      BZZOIRO_FORCE_GAP_PLAN_TARGETS: "true"
-      BZZOIRO_FORCE_GAP_TARGET_LIMIT: "180"
-      BZZOIRO_V2_SOURCE_MATRIX_TARGETS_ENABLED: "true"
-      BZZOIRO_V2_SOURCE_MATRIX_TARGET_LIMIT: "180"
-      BZZOIRO_ODDS_COMPARISON_ENABLED: "true"
-      BZZOIRO_V2_GAP_RELAXED_MATCH_ENABLED: "true"
-      BZZOIRO_V2_GAP_MIN_LOOSE_SCORE: "52"
-      BZZOIRO_V2_GAP_MIN_FUZZY_SCORE: "52"
-      BZZOIRO_V2_GAP_LEAGUE_MISMATCH_PENALTY: "4"
-      BZZOIRO_V2_FETCH_ODDS_COMPARISON: "true"
-      BZZOIRO_V2_ODDS_COMPARISON_MATCH_LIMIT: "50"
-      BZZOIRO_V2_ODDS_COMPARISON_MAX_REQUESTS: "50"
-      BZZOIRO_EXACT_OFFER_BRIDGE_ENABLED: "true"
-      CONTROLLED_FALLBACK_PRICE_INTEGRITY_GUARD_ENABLED: "true"
-      CONTROLLED_FALLBACK_MAX_SELECTED_BOOK_MEDIAN_DEVIATION_PCT: "16"
-      CONTROLLED_FALLBACK_MAX_SELECTED_VS_MARKET_GAP_PP: "10"
-      CONTROLLED_FALLBACK_PRICE_INTEGRITY_MIN_REAL_BOOKS: "2"
-      CONTROLLED_FALLBACK_BLOCK_QUARTER_TOTALS: "true"
-      CONTROLLED_FALLBACK_FINAL_RUN_DEFER_ENABLED: "true"
-      CONTROLLED_FALLBACK_REGULAR_RUN_INTERVAL_HOURS: "2"
-      CONTROLLED_FALLBACK_MIN_KICKOFF_LEAD_MINUTES: "30"
-      ODDS_API_BOOKMAKER_QUORUM_BACKFILL_ENABLED: "true"
-      BOOKMAKER_QUORUM_BACKFILL_MAX_FILES: "80"
-      BOOKMAKER_QUORUM_BACKFILL_MAX_FILE_BYTES: "8000000"
-      BOOKMAKER_QUORUM_BACKFILL_MAX_DICTS_PER_FILE: "120000"
       SSTATS_ROLLING_METRICS_ENABLED: "true"
       SSTATS_HISTORICAL_ODDS_AS_LINES: "false"
 
@@ -170,7 +111,6 @@ jobs:
       ODDS_API_IO_MAX_REQUESTS_PER_RUN: "100"
       ODDS_API_IO_REQUEST_BUDGET_GRANTED: "100"
       ODDS_API_IO_REQUESTS_MAX_PER_RUN: "100"
-      ODDS_API_IO_OFFER_SNAPSHOT_ENABLED: "true"
       ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT: "10"
       ODDS_API_IO_MAX_PAGES_PER_SPORT: "10"
       PRICE_BACKFILL_ODDS_API_IO_BATCHES_PER_ACCOUNT: "5"
@@ -199,7 +139,7 @@ jobs:
       SSTATS_REQUEST_BUDGET_GRANTED: "150"
       SSTATS_MAX_HTTP_REQUESTS_PER_RUN: "150"
       SSTATS_CONTEXT_MATCH_LIMIT: "300"
-      SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "80"
+      SSTATS_DEEP_DETAIL_LIMIT_PER_RUN: "40"
       SSTATS_DEEP_CONTEXT_MATCH_LIMIT: "80"
       SSTATS_DEEP_ENRICHMENT_ENABLED: "true"
       SSTATS_DEEP_ENRICHMENT_AFTER_CROSSWALK: "true"
@@ -218,9 +158,9 @@ jobs:
       SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "40"
       SPORTLOGIC_REQUESTS_MAX_PER_RUN: "40"
       SPORTLOGIC_REQUEST_BUDGET_GRANTED: "40"
-      SPORTLOGIC_MATCH_LIMIT: "160"
-      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "160"
-      SPORTLOGIC_ODDS_MATCH_LIMIT: "60"
+      SPORTLOGIC_MATCH_LIMIT: "100"
+      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "100"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "40"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "2"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
@@ -305,6 +245,13 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Preflight repair runtime JSON
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory .data/line_history artifacts/run-bot
+          python -u scripts/preflight_repair_runtime_json.py || true
+
       - name: Install dependencies
         shell: bash
         run: |
@@ -373,20 +320,6 @@ jobs:
           cp .data/exports/latest-provider-smoke.json artifacts/run-bot/latest-provider-smoke.json 2>/dev/null || true
           cp .data/exports/latest-provider-smoke.md artifacts/run-bot/latest-provider-smoke.md 2>/dev/null || true
 
-      - name: Expand day inventory to target
-        shell: bash
-        run: |
-          set -uo pipefail
-          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
-          echo "expand day inventory to target start $(date -u +%Y-%m-%dT%H:%M:%SZ)"
-          if timeout 150s python -u scripts/expand_day_inventory_to_target.py; then
-            echo "expand day inventory to target completed"
-          else
-            status=$?
-            echo "expand day inventory to target failed or timed out with status ${status}; continuing production run"
-          fi
-          cp .data/exports/latest-day-inventory-target-fill.json artifacts/run-bot/latest-day-inventory-target-fill.json 2>/dev/null || true
-
       - name: Run tests
         shell: bash
         run: |
@@ -417,8 +350,6 @@ jobs:
           cp -r .data/line_history artifacts/run-bot/line_history || true
           cp .logs/debug-last-run.json artifacts/run-bot/debug-last-run.json 2>/dev/null || true
           cp .data/exports/latest-run-bot.log artifacts/run-bot/latest-run-bot.log 2>/dev/null || true
-          cp .data/exports/latest-odds-api-io-offer-snapshot.json artifacts/run-bot/latest-odds-api-io-offer-snapshot.json 2>/dev/null || true
-          cp .data/exports/latest-odds-api-io-offer-snapshot-install.json artifacts/run-bot/latest-odds-api-io-offer-snapshot-install.json 2>/dev/null || true
           cp .data/provider_quota_governor_state.json artifacts/run-bot/provider_quota_governor_state.json 2>/dev/null || true
           cp .data/provider_request_budget_state.json artifacts/run-bot/provider_request_budget_state.json 2>/dev/null || true
           exit ${status}
@@ -432,13 +363,7 @@ jobs:
             exit 0
           fi
           python -u scripts/apply_publication_family_policy.py || true
-          python -u scripts/filter_controlled_fallback_price_integrity.py || true
-          cp .data/exports/latest-controlled-fallback-price-integrity-guard.json artifacts/run-bot/latest-controlled-fallback-price-integrity-guard.json 2>/dev/null || true
-          python -u scripts/filter_controlled_fallback_publication_timing.py || true
-          cp .data/exports/latest-controlled-fallback-publication-timing-guard.json artifacts/run-bot/latest-controlled-fallback-publication-timing-guard.json 2>/dev/null || true
-          python scripts/publish_controlled_fallback_bookmaker.py || python scripts/publish_controlled_fallback.py || true
-          python scripts/sync_publication_ledger.py --phase after-publish || true
-          cp .data/exports/latest-publication-ledger-sync.json artifacts/run-bot/latest-publication-ledger-sync-after-publish.json 2>/dev/null || true
+          python scripts/publish_controlled_fallback.py || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
@@ -452,17 +377,9 @@ jobs:
             echo "skip cumulative day inventory coverage: fresh run-bot log was not created"
             exit 0
           fi
-          mkdir -p .data/exports .data/cache .data/day_inventory .data/line_history artifacts/run-bot
-          python -u scripts/expand_day_inventory_to_target.py || true
-          cp .data/exports/latest-day-inventory-target-fill.json artifacts/run-bot/latest-day-inventory-target-fill.json 2>/dev/null || true
+          mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/day_inventory_cumulative_coverage.py || true
-          python -u scripts/backfill_odds_api_bookmaker_quorum_mapping.py || true
-          python -u scripts/normalize_bookmaker_quorum_coverage.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
-          cp .data/exports/latest-odds-api-bookmaker-quorum-mapping-backfill.json artifacts/run-bot/latest-odds-api-bookmaker-quorum-mapping-backfill.json 2>/dev/null || true
-          cp .data/exports/latest-odds-api-io-offer-snapshot.json artifacts/run-bot/latest-odds-api-io-offer-snapshot.json 2>/dev/null || true
-          cp .data/exports/latest-odds-api-io-offer-snapshot-install.json artifacts/run-bot/latest-odds-api-io-offer-snapshot-install.json 2>/dev/null || true
-          cp .data/exports/latest-bookmaker-quorum-coverage-normalizer.json artifacts/run-bot/latest-bookmaker-quorum-coverage-normalizer.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
@@ -478,7 +395,6 @@ jobs:
             exit 0
           fi
           python scripts/normalize_published_pick_payloads.py || true
-          python scripts/sync_publication_ledger.py --phase after-normalize || true
           cp .data/exports/latest-normalized-publication-payloads.json artifacts/run-bot/latest-normalized-publication-payloads.json 2>/dev/null || true
 
       - name: Send HARIZON Telegram run report
@@ -491,7 +407,6 @@ jobs:
             exit 0
           fi
           python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
-          python scripts/sync_publication_ledger.py --phase after-report || true
           cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
@@ -509,7 +424,7 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/bets .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
           git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
@@ -538,7 +453,6 @@ jobs:
             .data/line_history/**
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
-            .data/bets/**
             .data/published-candidate-index.json
             .data/fallback-sent-index.json
             .data/candidate-lifecycle-state.json

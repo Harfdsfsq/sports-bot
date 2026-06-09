@@ -19,6 +19,8 @@ from collections import Counter, defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
 from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
@@ -398,8 +400,8 @@ def main() -> int:
     now = datetime.now(UTC)
     target_date = _target_date()
     coverage_target = max(1, _as_int(os.getenv("PROVIDER_SMOKE_COVERAGE_TARGET") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300))
-    min_odds_sources = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
-    min_context_sources = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
+    min_odds_sources = publish_min_odds_sources()
+    min_context_sources = publish_min_context_sources()
 
     inventory_path = _inventory_path(target_date)
     inventory = _load_json(inventory_path, {})

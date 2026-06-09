@@ -15,31 +15,33 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 
+from app.services.day_inventory_preflight import repair_runtime_json_files
+
 logger = logging.getLogger(__name__)
 
 
 SAFE_RUNTIME_DEFAULTS = {
+    "PUBLISH_ALLOW_B_TIER": "true",
+    "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
+    "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
     "STRICT_PRICE_INTEGRITY_ENABLED": "true",
-    "STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES": "2",
-    "STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS": "2",
+    "STRICT_PRICE_INTEGRITY_MIN_PRICE_SOURCES": "1",
+    "STRICT_PRICE_INTEGRITY_MIN_BOOKMAKERS": "1",
     "PUBLISH_REJECT_CONTEXT_AS_PRICE_CONFIRMATION": "false",
     "PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE": "true",
-    "MIN_BOOKS_FOR_CONSENSUS": "2",
-    "MIN_BOOKS_PUBLISH": "2",
-    "HARIZON_UNIFIED_SCHEME_ENABLED": "true",
-    "HARIZON_RUN_INTERVAL_HOURS": "2",
-    "HARIZON_LINE_MOVEMENT_GUARD_ENABLED": "true",
-    "PUBLISH_MIN_BOOKS": "2",
-    "MIN_SOURCES_PUBLISH": "2",
-    "PUBLISH_MIN_ODDS_SOURCES": "2",
-    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
-    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
-    "MARKET_DERIVED_MIN_BOOKS": "2",
-    "MARKET_DERIVED_MIN_SOURCES": "2",
-    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+    "MIN_BOOKS_FOR_CONSENSUS": "1",
+    "MIN_BOOKS_PUBLISH": "1",
+    "PUBLISH_MIN_BOOKS": "1",
+    "MIN_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_ODDS_SOURCES": "1",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
+    "MARKET_DERIVED_MIN_BOOKS": "1",
+    "MARKET_DERIVED_MIN_SOURCES": "1",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
     "CONTROLLED_FALLBACK_REQUIRE_ODDS_SOURCE_DIVERSITY": "true",
-    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
-    "TELEGRAM_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
+    "TELEGRAM_MIN_ODDS_SOURCES": "1",
     "MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS": "1.45",
     "MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS": "3",
     "MATCH_TOTAL_OVER15_ABSOLUTE_PRICE_GUARD_ENABLED": "true",
@@ -78,9 +80,6 @@ DISCOVERY_FIRST_DEFAULTS = {
     "SPORTLOGIC_ENABLED": "false",
     "ENABLE_SPORTLOGIC": "false",
     "SPORTLOGIC_MAX_REQUESTS_PER_RUN": "0",
-    "DAY_INVENTORY_TARGET_SIZE": "300",
-    "DAY_INVENTORY_MAX_MATCHES": "300",
-    "HARIZON_SUPPLEMENTAL_API_MODE": "shortlist_and_missing_role_only",
 }
 
 
@@ -169,37 +168,15 @@ class RuntimePreflight:
     def run_before_prediction(self, stage: str = "after_discovery_before_runner") -> PreflightReport:
         report = PreflightReport(stage=stage)
         report.safe_defaults_applied = self.apply_safe_defaults()
+        try:
+            repair_runtime_json_files()
+        except Exception as exc:
+            logger.warning("runtime JSON preflight repair failed; continuing: %s: %s", type(exc).__name__, exc)
         report.discovery_first = self.prepare_discovery_first_inventory()
-        report.legacy_extensions = self.install_legacy_runtime_extensions(stage=stage)
-        self.write_report(report)
-        return report
-
-
-    def apply_phase_policy(self, stage: str = "phase_policy_before_run_once") -> PreflightReport:
-        """Apply the production phase policy expected by app.cli.
-
-        ``app.cli`` is already inside ``asyncio.run()`` when this method is
-        called.  Some discovery-first helper scripts use ``asyncio.run()``
-        internally, so running them here produces non-fatal
-        ``RuntimeError: asyncio.run() cannot be called from a running event
-        loop`` messages in ``latest-run-bot.log``.  Those warnings used to be
-        misclassified as a failed production run.
-
-        Keep this phase deliberately lightweight: install safe defaults and
-        runtime wrappers, but do not execute the heavyweight discovery-prepare
-        script from inside the active event loop.  Workflow-level discovery and
-        cumulative coverage repair still run in normal shell steps.
-        """
-        report = PreflightReport(stage=stage)
-        report.safe_defaults_applied = self.apply_safe_defaults()
-        # Apply the env budget/defaults from discovery-first without executing
-        # its subprocess/runpy pipeline inside the active event loop.
-        setdefault_env(DISCOVERY_FIRST_DEFAULTS)
-        report.discovery_first = {
-            "enabled": True,
-            "status": "env_only_in_async_phase",
-            "reason": "avoid_nested_asyncio_run",
-        }
+        try:
+            repair_runtime_json_files()
+        except Exception as exc:
+            logger.warning("post-discovery runtime JSON repair failed; continuing: %s: %s", type(exc).__name__, exc)
         report.legacy_extensions = self.install_legacy_runtime_extensions(stage=stage)
         self.write_report(report)
         return report
@@ -223,7 +200,6 @@ class RuntimePreflight:
     @staticmethod
     def _install_native_integrity_hooks() -> None:
         for module_path in (
-            "app.services.harizon_unified_scheme_runtime",
             "app.services.api_runtime_enhancements",
             "app.services.market_integrity",
             "app.providers.odds_api_io_startup_compat",

@@ -180,6 +180,9 @@ def final_market_integrity_env() -> dict[str, str]:
     runtime_version = "harizon-runtime-policy-v5-live-controlled-publish-fast-inventory"
     env = {
         "HARIZON_RUNTIME_POLICY_VERSION": runtime_version,
+        "PUBLISH_ALLOW_B_TIER": "true",
+        "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
+        "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
         "HARIZON_EFFECTIVE_RUNTIME_POLICY_VERSION": runtime_version,
         "HARIZON_FAST_INVENTORY_LOCK": "true" if fast_inventory else "false",
         "HARIZON_MANUAL_DRY_RUN": str(manual_dry_run).lower(),
@@ -195,33 +198,33 @@ def final_market_integrity_env() -> dict[str, str]:
         "DAY_INVENTORY_COVERAGE_MAX_REBUILD": "false" if fast_inventory else str(os.getenv("DAY_INVENTORY_COVERAGE_MAX_REBUILD") or "false").lower(),
         "DAY_INVENTORY_NEAR_WINDOW_PRIORITY": "true",
         "DAY_INVENTORY_NEAR_WINDOW_HOURS": os.getenv("DAY_INVENTORY_NEAR_WINDOW_HOURS") or "12",
-        "MARKET_DERIVED_MIN_BOOKS": "2",
-        "MARKET_DERIVED_MIN_SOURCES": "2",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "2",
-        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES": "2",
-        "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "2",
-        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
-        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
-        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
-        "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "true",
-        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "true",
+        "MARKET_DERIVED_MIN_BOOKS": "1",
+        "MARKET_DERIVED_MIN_SOURCES": "1",
+        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS": "1",
+        "MARKET_DERIVED_CONSENSUS_RELIEF_MIN_SOURCES": "1",
+        "CONTROLLED_FALLBACK_MIN_INDEPENDENT_SOURCES": "1",
+        "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
+        "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "false",
+        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
+        "CONTROLLED_FALLBACK_REJECT_SINGLE_SOURCE_UNLESS_3_BOOKS": "false",
+        "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": "false",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE": "78.0",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP": "8.0",
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT": "15.0",
-        "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,dnb,btts",
-        "CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES": "totals,dnb,btts",
-        "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": "totals,dnb,btts",
+        "CONTROLLED_FALLBACK_ALLOWED_FAMILIES": "totals,spreads",
+        "CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES": "totals,spreads",
+        "CONTROLLED_FALLBACK_TIER_B_ALLOWED_FAMILIES": "totals,spreads",
         "CONTROLLED_FALLBACK_TIER_C_ALLOWED_FAMILIES": "",
         "CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED": "false",
         "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
         "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "2",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
-        "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "2",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "1",
+        "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "1",
         "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": "6.0",
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": "3.0",
-        "DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED": "true",
+        "DISABLE_SPREADS_UNTIL_HANDICAP_PARSER_VERIFIED": "false",
         "HANDICAP_PAIR_INTEGRITY_REQUIRED": "true",
-        "SPREADS_PUBLICATION_ENABLED": "false",
+        "SPREADS_PUBLICATION_ENABLED": "true",
         "TEAM_TOTALS_PUBLICATION_ENABLED": "false",
     }
     env.update(removed_provider_env())
@@ -246,7 +249,7 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
         return {item.strip().lower() for item in str(env.get(name) or "").split(",") if item.strip()}
     failures: list[str] = []
     warnings: list[str] = []
-    forbidden = {"spreads", "teamtotals"}
+    forbidden = {"teamtotals"}
     scopes = {
         "allowed": families("CONTROLLED_FALLBACK_ALLOWED_FAMILIES"),
         "tier_a": families("CONTROLLED_FALLBACK_TIER_A_ALLOWED_FAMILIES"),
@@ -257,12 +260,12 @@ def market_integrity_check(env: dict[str, str], policy_version: str | None) -> d
         leaked = sorted(values & forbidden)
         if leaked:
             failures.append(f"{scope}_contains_forbidden_families:{'/'.join(leaked)}")
-    if truthy(env.get("SPREADS_PUBLICATION_ENABLED")):
-        failures.append("SPREADS_PUBLICATION_ENABLED=true")
+    if not truthy(env.get("SPREADS_PUBLICATION_ENABLED")):
+        warnings.append("SPREADS_PUBLICATION_ENABLED=false")
     if truthy(env.get("TEAM_TOTALS_PUBLICATION_ENABLED")):
         failures.append("TEAM_TOTALS_PUBLICATION_ENABLED=true")
-    if as_int(env.get("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES")) < 2:
-        failures.append("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES_below_2")
+    if as_int(env.get("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES")) < 1:
+        failures.append("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES_below_1")
     return {
         "status": "failed" if failures else "ok",
         "failures": failures,

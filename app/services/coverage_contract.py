@@ -5,6 +5,12 @@ import re
 from dataclasses import dataclass
 from typing import Any, Iterable
 
+from app.services.publication_thresholds import (
+    publish_min_books,
+    publish_min_context_sources,
+    publish_min_odds_sources,
+)
+
 
 CONTEXT_ONLY_SOURCES = {
     "api_football",
@@ -83,15 +89,11 @@ CONTEXT_SOURCE_COUNT_KEYS = {
 
 @dataclass(frozen=True)
 class CoverageContract:
-    # Publication price confirmation is intentionally bookmaker-quorum based.
-    # A second API provider is useful diagnostics, but it is no longer required
-    # for publication when the same market side is confirmed by 2+ real books.
-    min_odds_sources: int = 1
+    min_odds_sources: int = 2
     min_context_sources: int = 2
     min_books: int = 2
     context_sources_do_not_confirm_price: bool = True
     count_api_accounts_as_sources: bool = False
-    price_confirmation_mode: str = "bookmakers"
 
 
 @dataclass(frozen=True)
@@ -125,44 +127,19 @@ def contract_from_settings(settings: Any | None = None) -> CoverageContract:
             return getattr(settings, name)
         return default
 
-    mode = str(
-        os.getenv("PUBLISH_PRICE_CONFIRMATION_MODE")
-        or os.getenv("PUBLICATION_PRICE_CONFIRMATION_MODE")
-        or setting("price_confirmation_mode", "bookmakers")
-        or "bookmakers"
-    ).strip().lower()
-    bookmaker_mode = mode in {"bookmaker", "bookmakers", "bookmaker_quorum", "books", "2books", "2_bookmakers"}
-    default_min_odds = 1 if bookmaker_mode else 2
-    min_odds = max(
-        1,
-        _as_int(
-            os.getenv("PUBLISH_MIN_ODDS_SOURCES")
-            or os.getenv("TELEGRAM_MIN_ODDS_SOURCES")
-            or os.getenv("MIN_SOURCES_PUBLISH")
-            or setting("min_sources_publish", default_min_odds),
-            default_min_odds,
-        ),
-    )
-    min_context = max(
-        2,
-        _as_int(
-            os.getenv("PUBLISH_MIN_CONTEXT_SOURCES")
-            or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH")
-            or setting("min_context_sources_publish", 2),
-            2,
-        ),
-    )
-    min_books = max(
-        2,
-        _as_int(os.getenv("PUBLISH_MIN_BOOKS") or os.getenv("MIN_BOOKS_PUBLISH") or setting("min_books_publish", 2), 2),
-    )
+    # B-tier is part of the project rules: 1+ odds source, 1+ context source,
+    # then the usual value/movement/xG/final guards.  Do not hard-floor these
+    # values to 2 here; A-tier strict mode is still available through env:
+    # PUBLISH_COVERAGE_TIER_MODE=strict_a or PUBLISH_ALLOW_B_TIER=false.
+    min_odds = publish_min_odds_sources(settings)
+    min_context = publish_min_context_sources(settings)
+    min_books = publish_min_books(settings)
     return CoverageContract(
         min_odds_sources=min_odds,
         min_context_sources=min_context,
         min_books=min_books,
         context_sources_do_not_confirm_price=_truthy(os.getenv("PROVIDER_CONTEXT_SOURCES_DO_NOT_CONFIRM_PRICE"), True),
         count_api_accounts_as_sources=_truthy(os.getenv("STRICT_PRICE_COUNT_API_ACCOUNTS_AS_SOURCES"), False),
-        price_confirmation_mode="bookmakers" if bookmaker_mode else (mode or "odds_sources"),
     )
 
 
@@ -377,14 +354,13 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
 
     reasons: list[str] = []
     if odds_source_count < contract.min_odds_sources:
-        reasons.append(f"insufficient_price_source:{odds_source_count}/{contract.min_odds_sources}")
+        reasons.append(f"insufficient_odds_sources:{odds_source_count}/{contract.min_odds_sources}")
     if context_source_count < contract.min_context_sources:
         reasons.append(f"insufficient_context_sources:{context_source_count}/{contract.min_context_sources}")
     if books_count < contract.min_books:
         reasons.append(f"insufficient_books:{books_count}/{contract.min_books}")
 
     report = {
-        "price_confirmation_mode": contract.price_confirmation_mode,
         "min_odds_sources": contract.min_odds_sources,
         "min_context_sources": contract.min_context_sources,
         "min_books": contract.min_books,
@@ -419,9 +395,7 @@ def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None)
     source_summary["publish_coverage_reasons"] = list(decision.reasons)
     source_summary["odds_sources_count"] = int(report.get("odds_sources_count") or 0)
     source_summary["independent_odds_sources_count"] = int(report.get("odds_sources_count") or 0)
-    source_summary["price_sources_count"] = int(report.get("books_count") or report.get("odds_sources_count") or 0)
-    source_summary["bookmaker_quorum_count"] = int(report.get("books_count") or 0)
-    source_summary["price_confirmation_mode"] = report.get("price_confirmation_mode") or "bookmakers"
+    source_summary["price_sources_count"] = int(report.get("odds_sources_count") or 0)
     source_summary["exact_odds_sources"] = list(report.get("odds_sources") or [])
     source_summary["odds_sources"] = list(report.get("odds_sources") or [])
     source_summary["context_sources_count"] = int(report.get("context_sources_count") or 0)
@@ -437,5 +411,4 @@ def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None)
     # CandidateBet has slots for these counters; dict rows use the same names.
     _set(candidate, "sources_count", max(_as_int(_get(candidate, "sources_count", 0), 0), int(report.get("odds_sources_count") or 0)))
     _set(candidate, "books_count", max(_as_int(_get(candidate, "books_count", 0), 0), int(report.get("books_count") or 0)))
-    _set(candidate, "bookmaker_quorum_count", int(report.get("books_count") or 0))
     return decision

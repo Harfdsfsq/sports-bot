@@ -15,6 +15,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
+
 ROOT = Path(__file__).resolve().parents[2]
 REPORT = ROOT / ".data" / "exports" / "latest-core-provider-inventory-bridge.json"
 UTC = timezone.utc
@@ -208,8 +210,8 @@ def _normalize_row(row: dict[str, Any], now_iso: str) -> None:
     md["price_sources_count"] = max(_as_int(md.get("price_sources_count")), pc)
     md["core_provider_inventory_bridge_updated_utc"] = now_iso
     row["metadata"] = md
-    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
-    min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     pc = _price_count(row)
     oc = _odds_source_count(row)
     cc = _context_count(row)
@@ -224,8 +226,8 @@ def _normalize_row(row: dict[str, Any], now_iso: str) -> None:
 
 
 def _counts(rows: list[dict[str, Any]], old: dict[str, Any], now_iso: str) -> dict[str, Any]:
-    min_price = max(2, _as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
-    min_context = max(2, _as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     out = dict(old or {})
     out.update({
         "matches_with_odds": sum(1 for r in rows if _price_count(r) > 0 or (r.get("coverage") or {}).get("odds")),

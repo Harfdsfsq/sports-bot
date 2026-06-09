@@ -23,6 +23,8 @@ import re
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
+
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
 from zoneinfo import ZoneInfo
 
 from scripts.day_inventory_aliases import should_update_current_aliases, write_current_aliases
@@ -653,8 +655,8 @@ def main() -> int:
         inv = {"date_local": d, "matches": []}
     matches = [dict(row) for row in inv.get("matches", []) if isinstance(row, dict)]
     evidence = collect_all_evidence(d)
-    min_price = max(2, as_int(os.getenv("PUBLISH_MIN_ODDS_SOURCES") or os.getenv("CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"), 2))
-    min_context = max(2, as_int(os.getenv("PUBLISH_MIN_CONTEXT_SOURCES") or os.getenv("MIN_CONTEXT_SOURCES_PUBLISH"), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     target_size = max(1, as_int(os.getenv("DAY_INVENTORY_TARGET_SIZE") or os.getenv("DAY_INVENTORY_MAX_MATCHES"), 300))
     if target_size < 300 and str(os.getenv("DAY_INVENTORY_FORCE_TOP_300") or "true").lower() in {"1", "true", "yes", "on", "force"}:
         target_size = 300

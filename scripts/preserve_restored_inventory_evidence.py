@@ -8,6 +8,8 @@ import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
 from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
@@ -127,8 +129,8 @@ def merge(dst: dict[str, Any], src: dict[str, Any], now_iso: str) -> bool:
     dst['metadata'] = dmd
     pc = max(price_count(dst), price_count(src))
     cc = max(context_count(dst), context_count(src))
-    min_price = max(2, as_int(os.getenv('PUBLISH_MIN_ODDS_SOURCES') or os.getenv('CONTROLLED_FALLBACK_MIN_ODDS_SOURCES'), 2))
-    min_context = max(2, as_int(os.getenv('PUBLISH_MIN_CONTEXT_SOURCES') or os.getenv('MIN_CONTEXT_SOURCES_PUBLISH'), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     cov = dst.get('coverage') if isinstance(dst.get('coverage'), dict) else {}
     scov = src.get('coverage') if isinstance(src.get('coverage'), dict) else {}
     cov['odds'] = bool(cov.get('odds')) or bool(scov.get('odds')) or pc > 0
@@ -150,8 +152,8 @@ def merge(dst: dict[str, Any], src: dict[str, Any], now_iso: str) -> bool:
 
 
 def recompute_counts(matches: list[dict[str, Any]], old: dict[str, Any], now_iso: str) -> dict[str, Any]:
-    min_price = max(2, as_int(os.getenv('PUBLISH_MIN_ODDS_SOURCES') or os.getenv('CONTROLLED_FALLBACK_MIN_ODDS_SOURCES'), 2))
-    min_context = max(2, as_int(os.getenv('PUBLISH_MIN_CONTEXT_SOURCES') or os.getenv('MIN_CONTEXT_SOURCES_PUBLISH'), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     counts = dict(old or {})
     price2 = context2 = odds_any = context_any = ready_model = ready_publish = 0
     for row in matches:

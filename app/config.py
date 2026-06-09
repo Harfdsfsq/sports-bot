@@ -91,16 +91,14 @@ class Settings(BaseSettings):
     match_start_tolerance_hours: float = Field(default=12.0, validation_alias=AliasChoices("MATCH_START_TOLERANCE_HOURS"))
     fallback_match_start_tolerance_hours: float = Field(default=8.0, validation_alias=AliasChoices("FALLBACK_MATCH_START_TOLERANCE_HOURS"))
     min_books_for_consensus: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_FOR_CONSENSUS", "STRONG_MARKET_MIN_BOOKS"))
-    min_books_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH", "PUBLISH_MIN_BOOKS"))
-    min_sources_publish: int = Field(default=2, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH", "PUBLISH_MIN_ODDS_SOURCES"))
+    min_books_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_BOOKS_PUBLISH", "PUBLISH_MIN_BOOKS"))
+    min_sources_publish: int = Field(default=1, validation_alias=AliasChoices("MIN_SOURCES_PUBLISH", "PUBLISH_MIN_ODDS_SOURCES"))
     min_context_sources_publish: int = Field(
-        default=2,
+        default=1,
         validation_alias=AliasChoices("MIN_CONTEXT_SOURCES_PUBLISH", "PUBLISH_MIN_CONTEXT_SOURCES"),
     )
-    context_bundle_model_input_enabled: bool = Field(
-        default=True,
-        validation_alias=AliasChoices("CONTEXT_BUNDLE_MODEL_INPUT_ENABLED"),
-    )
+    publish_allow_b_tier: bool = Field(default=True, validation_alias=AliasChoices("PUBLISH_ALLOW_B_TIER", "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B"))
+    publish_coverage_tier_mode: str = Field(default="hybrid", validation_alias=AliasChoices("PUBLISH_COVERAGE_TIER_MODE", "HARIZON_PUBLICATION_TIER_MODE"))
 
     min_edge_pct: float = Field(default=2.0, validation_alias=AliasChoices("MIN_EDGE_PCT"))
     min_ev_pct: float = Field(default=1.5, validation_alias=AliasChoices("MIN_EV_PCT"))
@@ -208,7 +206,7 @@ class Settings(BaseSettings):
     odds_api_io_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("ODDS_API_IO_TIMEOUT_SECONDS"))
     odds_api_io_page_limit: int = Field(default=100, validation_alias=AliasChoices("ODDS_API_IO_PAGE_LIMIT"))
     odds_api_io_max_pages_per_sport: int = Field(default=8, validation_alias=AliasChoices("ODDS_API_IO_MAX_EVENT_PAGES_PER_SPORT"))
-    odds_api_io_per_run_max: int = Field(default=64, validation_alias=AliasChoices("ODDS_API_IO_PER_RUN_MAX", "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN"))
+    odds_api_io_per_run_max: int = Field(default=8, validation_alias=AliasChoices("ODDS_API_IO_PER_RUN_MAX", "ODDS_API_IO_MAX_HTTP_REQUESTS_PER_RUN"))
 
     sstats_api_key: str | None = Field(default=None, validation_alias=AliasChoices("SSTATS_API_KEY"))
     sstats_timeout_seconds: float = Field(default=25.0, validation_alias=AliasChoices("SSTATS_TIMEOUT_SECONDS"))

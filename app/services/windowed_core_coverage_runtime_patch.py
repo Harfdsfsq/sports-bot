@@ -456,48 +456,6 @@ def _event_start(row: dict[str, Any]) -> datetime | None:
         return None
 
 
-
-def _bzzoiro_event_id_from_match(match: Match) -> str:
-    """Return an already-known Bzzoiro event id from inventory crosswalk data.
-
-    When build-day-inventory has already matched a fixture to Bzzoiro, runtime
-    should call `/api/v2/events/{id}/...` directly instead of spending requests
-    re-matching by fuzzy team names.
-    """
-    candidates: list[Any] = []
-    try:
-        if _norm_provider(getattr(match, "source", "")) == "bzzoiro":
-            candidates.append(getattr(match, "source_event_id", None))
-    except Exception:
-        pass
-    meta = getattr(match, "metadata", None)
-    if isinstance(meta, dict):
-        for key in ("bzzoiro_event_id", "bzzoiro_id", "bsd_event_id"):
-            candidates.append(meta.get(key))
-        source_ids = meta.get("provider_source_ids")
-        if isinstance(source_ids, dict):
-            for key, value in source_ids.items():
-                if _norm_provider(key) == "bzzoiro":
-                    candidates.append(value)
-        for nested_key in ("bzzoiro", "bzzoiro_event", "bsd"):
-            nested = meta.get(nested_key)
-            if isinstance(nested, dict):
-                candidates.extend([nested.get("id"), nested.get("event_id")])
-    for raw in candidates:
-        if raw in (None, ""):
-            continue
-        if isinstance(raw, (list, tuple, set)):
-            for item in raw:
-                text = str(item or "").strip()
-                if text and text.lower() not in {"none", "null"}:
-                    return text
-            continue
-        text = str(raw).strip()
-        if text and text.lower() not in {"none", "null"}:
-            return text
-    return ""
-
-
 def _match_bzzoiro_event(match: Match, events: list[dict[str, Any]], settings: Any | None = None) -> tuple[dict[str, Any] | None, float, str | None]:
     best: dict[str, Any] | None = None
     best_score = 0.0
@@ -637,13 +595,16 @@ def _apply_env_defaults() -> None:
         "BZZOIRO_V2_LINEUPS_ENABLED": "true",
         "BZZOIRO_V2_ODDS_ENABLED": "true",
         "ODDS_MOVEMENT_SNAPSHOTS_ENABLED": "true",
-        "MARKET_DERIVED_MIN_SOURCES": "2",
-        "MARKET_DERIVED_MIN_BOOKS": "2",
-        "MIN_SOURCES_PUBLISH": "2",
-        "MIN_BOOKS_PUBLISH": "2",
+        "PUBLISH_ALLOW_B_TIER": "true",
+        "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
+        "CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B": "true",
+        "MARKET_DERIVED_MIN_SOURCES": "1",
+        "MARKET_DERIVED_MIN_BOOKS": "1",
+        "MIN_SOURCES_PUBLISH": "1",
+        "MIN_BOOKS_PUBLISH": "1",
     }
     for key, value in defaults.items():
-        os.environ.setdefault(key, str(value))
+        os.environ[key] = str(value)
 
 
 def _patch_odds_api_io_priority() -> None:
@@ -715,23 +676,7 @@ def _patch_bzzoiro_v2() -> None:
                 for match in target_matches:
                     if used >= max_requests:
                         break
-                    direct_event_id = _bzzoiro_event_id_from_match(match)
-                    if direct_event_id:
-                        event = {"id": direct_event_id, "source": "inventory_crosswalk"}
-                        score = 100.0
-                        quality = "source_id"
-                        if used < max_requests:
-                            try:
-                                used += 1; v2_stats["requests"] += 1
-                                response = await client.get(f"https://sports.bzzoiro.com/api/v2/events/{direct_event_id}/", headers=headers)
-                                if response.status_code == 200 and isinstance(_response_json(response), dict):
-                                    event = _response_json(response)
-                                elif response.status_code != 200:
-                                    v2_stats["errors"] += 1
-                            except Exception:
-                                v2_stats["errors"] += 1
-                    else:
-                        event, score, quality = _match_bzzoiro_event(match, events, getattr(self, "settings", None))
+                    event, score, quality = _match_bzzoiro_event(match, events, getattr(self, "settings", None))
                     if not event:
                         continue
                     event_id = event.get("id") or event.get("event_id")

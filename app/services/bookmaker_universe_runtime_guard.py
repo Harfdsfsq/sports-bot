@@ -19,15 +19,15 @@ ALIASES = {
     "ODDS_API_IO_BOOKMAKERS_2": "Betfair Exchange,Sbobet",
     "ODDS_API_IO_BOOKMAKERS_ACCOUNT2": "Betfair Exchange,Sbobet",
     # Actual Settings aliases.
-    "MIN_BOOKS_PUBLISH": "2",
-    "MIN_SOURCES_PUBLISH": "2",
+    "MIN_BOOKS_PUBLISH": "1",
+    "MIN_SOURCES_PUBLISH": "1",
     "MIN_BOOKS_FOR_CONSENSUS": "2",
     "STRONG_MARKET_MIN_BOOKS": "2",
     # Backward-compatible aliases used by older runtime guards.
-    "PUBLISH_MIN_BOOKS": "2",
-    "PUBLISH_MIN_EXACT_BOOKS": "2",
-    "MIN_PUBLISH_BOOKS": "2",
-    "MIN_EXACT_LINE_BOOKS": "2",
+    "PUBLISH_MIN_BOOKS": "1",
+    "PUBLISH_MIN_EXACT_BOOKS": "1",
+    "MIN_PUBLISH_BOOKS": "1",
+    "MIN_EXACT_LINE_BOOKS": "1",
     # Keep the strict suspicious-price protection for low totals.
     "MATCH_TOTAL_OVER15_MIN_EXACT_BOOKS": "3",
     "MATCH_TOTAL_OVER15_MAX_REASONABLE_ODDS": "1.65",

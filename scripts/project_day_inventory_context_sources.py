@@ -15,6 +15,8 @@ import runpy
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+
+from app.services.publication_thresholds import publish_min_context_sources, publish_min_odds_sources
 from zoneinfo import ZoneInfo
 
 UTC = timezone.utc
@@ -237,8 +239,8 @@ def main() -> int:
     now = datetime.now(UTC)
     now_iso = now.isoformat()
     d = target_date(now)
-    min_price = max(2, as_int(os.getenv('PUBLISH_MIN_ODDS_SOURCES') or os.getenv('CONTROLLED_FALLBACK_MIN_ODDS_SOURCES'), 2))
-    min_context = max(2, as_int(os.getenv('PUBLISH_MIN_CONTEXT_SOURCES') or os.getenv('MIN_CONTEXT_SOURCES_PUBLISH'), 2))
+    min_price = publish_min_odds_sources()
+    min_context = publish_min_context_sources()
     inv_path = DAY_INV_DIR / f'{d}.json'
     inv = load_json(inv_path, {})
     if not isinstance(inv, dict):
