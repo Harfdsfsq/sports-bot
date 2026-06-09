@@ -25,7 +25,7 @@
       "ok": 5
     },
     "news": {
-      "error": 1,
+      "degraded": 1,
       "ok": 4
     },
     "odds": {
@@ -44,12 +44,12 @@
   },
   "by_status": {
     "config_only": 1,
-    "error": 1,
+    "degraded": 1,
     "missing_secret": 1,
     "ok": 14,
     "skipped_daily_circuit": 1
   },
-  "created_at_utc": "2026-06-09T21:21:58.238626+00:00",
+  "created_at_utc": "2026-06-09T21:41:28.434970+00:00",
   "critical_failures": [],
   "mode": "quick",
   "recommendations": [
@@ -57,7 +57,8 @@
     "SportLogic daily circuit is open; health probe skipped it without spending quota.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
-    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
+    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi.",
+    "SportLogic daily circuit is open; health probe was skipped to avoid spending exhausted quota."
   ],
   "removed_providers": [
     "api_football",
@@ -77,7 +78,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 3144,
+      "latency_ms": 1964,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -96,7 +97,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 510,
+      "latency_ms": 481,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -134,7 +135,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 281,
+      "latency_ms": 219,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -153,7 +154,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 600,
+      "latency_ms": 517,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -173,7 +174,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 133,
+      "latency_ms": 158,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -183,22 +184,27 @@
     {
       "configured": true,
       "critical": false,
-      "details": {},
+      "details": {
+        "body_preview": "{\"status\":\"400\",\"msg\":\"Database error occurred\"}",
+        "payload_shape": "msg,status"
+      },
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
       "group": "news",
-      "http_statuses": [],
-      "latency_ms": 12078,
-      "message": "ReadTimeout: ",
+      "http_statuses": [
+        400
+      ],
+      "latency_ms": 1885,
+      "message": "http_status=400",
       "provider": "currents",
       "requests": 1,
-      "status": "error",
+      "status": "degraded",
       "useful_rows": 0
     },
     {
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":327287,\"articles\":[{\"id\":\"a6b295cb92aa5bc2e13a1d5432c624f8\",\"title\":\"Climate cost of expanded World Cup under scrutiny as emissions set to soar\",\"description\":\"The World Cup kicks off on Thursday as a celebration of goals, drama and global fandom, but it is also expected to carry a climate cost more than double that of Qatar 2022, throwing a ​harsh spotlight on the environmental price of football's expanding showpiece.\",\"content\":\"MANCHESTER, England, June 9 (Reuters) - The World Cup kicks off on Thursday as a celebration of goals, drama and global fandom, but it is also expected to carry a climate cost more than double that of Qatar 2022, throwing a ​harsh spotlight on the en... [5557 chars]\",\"url\":\"https://www.reuters.com/business/environment/climate-cost-expanded-world-cup-under-scrutiny-emissions-set-soar-2026-06-09/\",\"image\":\"https://www.reuters.com/resizer/v2/P6DA5F676JLR7MW6U4UMSWFZ2I.jpg?auth=dc1fa3f5ce7c9218e2f744c4a78e5f9da194b1c6210cdf7d40207886161c67a",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":327294,\"articles\":[{\"id\":\"a02249fad85d93dc204540b51c24a821\",\"title\":\"One of WA's greatest, Bill Walker, becomes a Hall of Fame Legend\",\"description\":\"The only four-time Sandover medallist in history, Swan Districts champion Bill Walker, has been elevated to Legend status in the Australian Football Hall of Fame\",\"content\":\"IF NOT for the urgings of his father to 'have a go in the city', Bill Walker may never have stepped on to the big stage of football to reveal his incredible skills.\\nThe 34th and newest Legend of Australian Football stands easily alongside the greates... [16053 chars]\",\"url\":\"https://www.afl.com.au/news/1533120/one-of-was-greatest-bill-walker-becomes-a-hall-of-fame-legend\",\"image\":\"https://resources.afl.com.au/afl/photo/2026/06/05/2e0b7eb7-94da-427c-9727-09f3079b2277/1970-Bill-Walker-SD-84-_RGB-1-.jpg\",\"publishedAt\":\"2026-06-09T09:41:00Z\",\"lang\":\"en\",\"source\":{\"id\":\"26382007c85c217297edcfafc2eb837a\",\"name\":\"AFL.com.au\",\"url\":\"https://www.afl.com",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -206,7 +212,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 251,
+      "latency_ms": 341,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -225,7 +231,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 713,
+      "latency_ms": 479,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -236,7 +242,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":27818,\"articles\":[{\"source\":{\"id\":null,\"name\":\"The Topeka Capital-Journal\"},\"author\":\"Liam Keating, Topeka Capital-Journal\",\"title\":\"Vote for Shawnee County's 2026 baseball player of the year, presented by Envista\",\"description\":\"After an exciting year of action on the diamond, it's time to vote for Shawnee County's high school baseball player of the year.\",\"url\":\"https://www.cjonline.com/story/sports/high-school/2026/06/08/shawnee-countys-2026-baseball-player-of-the-year-presented-by-envista-vote/90458277007/\",\"urlToImage\":\"https://s.yimg.com/os/en/the-topeka-capital-journal/d25875e127b0c482b55379f06e18aeaf\",\"publishedAt\":\"2026-06-08T21:21:20Z\",\"content\":\"TOPEKA It was another big season of baseball in Shawnee County. From state championships to runs to big individual performances, the Topeka-area was excellent this spring. Throughout the big wins, to… [+4137 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":27841,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Japan Today\"},\"author\":null,\"title\":\"Eriksen says he is back home and 'doing well' after on-field collapse during Denmark game\",\"description\":\"Soccer star Christian Eriksen was at home with family and “doing well” he said on Monday, a day after collapsing on the field again while playing for Denmark. The reassuring health update by 34-year-old Eriksen came after he clutched his chest with both hands…\",\"url\":\"https://japantoday.com/category/sports/eriksen-%27doing-well%27-and-expected-to-leave-the-hospital-after-on-field-collapse-denmark-team-says\",\"urlToImage\":null,\"publishedAt\":\"2026-06-08T21:40:52Z\",\"content\":\"Soccer star Christian Eriksen was at home with family and doing well he said on Monday, a day after collapsing on the field again while playing for Denmark.\\r\\nThe reassuring health update by 34-year-o… [+3828 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -244,7 +250,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 264,
+      "latency_ms": 320,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -255,7 +261,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":10917,\"results\":[{\"article_id\":\"4207890fb7420be036fb72f576085107\",\"link\":\"https://www.kildare-nationalist.ie/gaynor-cup-a-great-experience-for-kildare-stars-of-the-future_arid-100983.html\",\"title\":\"Gaynor Cup \\\"a great experience\\\" for Kildare stars of the future\",\"description\":\"It was not the way Claire Murphy hoped things would turn out when she led her Kildare and District Underage League (KDUL) side to the 2026 SFAI ...\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"kn-sport/soccer\"],\"creator\":[\"kildare nationalist\"],\"language\":\"english\",\"country\":[\"ireland\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-06-09 09:21:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-06-09 11:19:52\",\"image_url\":\"https://www.kildare-nationalist.ie/cms_media/module_img/7706/3853305_1_articledetail_23672.jpg\",\"video_url\":null,\"source_id\":\"kildare-nationalist\",\"source_name\":\"Kildare Nationalist\",\"source_priority\":2606560,\"source_url\":\"https://kildare-nationalist.ie\",\"source_icon\":\"https://n.bytvi.com/kildare-nationalist.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":10993,\"results\":[{\"article_id\":\"a02249fad85d93dc204540b51c24a821\",\"link\":\"https://www.afl.com.au/news/1533120/one-of-was-greatest-bill-walker-becomes-a-hall-of-fame-legend\",\"title\":\"One of WA's greatest, Bill Walker, becomes a Hall of Fame Legend\",\"description\":\"The only four-time Sandover medallist in history, Swan Districts champion Bill Walker, has been elevated to Legend status in the Australian Football Hall of Fame\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"text\"],\"creator\":[\"patrick keane\"],\"language\":\"english\",\"country\":[\"australia\"],\"category\":[\"top\",\"lifestyle\",\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-06-09 09:41:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-06-09 10:05:06\",\"image_url\":\"https://resources.afl.com.au/photo-resources/2026/06/05/a6d1eac9-6057-43e1-b37d-2366e6c100c2/1970-Bill-Walker-SD-84-_RGB-1-.jpg?width=1000\",\"video_url\":null,\"source_id\":\"afl_au\",\"source_name\":\"Afl Au\",\"source_priority\":33931,\"source_url\":\"https://www.afl.com.au\",\"source_icon\":\"https://n.bytvi.com/afl_au.jpg\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -263,7 +269,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 243,
+      "latency_ms": 313,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -280,12 +286,12 @@
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-06-09T21%3A21%3A46Z&to=2026-06-11T21%3A21%3A46Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-06-09T21%3A41%3A26Z&to=2026-06-11T21%3A41%3A26Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 883,
+      "latency_ms": 1092,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -303,7 +309,7 @@
       "group": "odds",
       "http_statuses": [],
       "latency_ms": null,
-      "message": "SportLogic health check skipped: daily_circuit; no HTTP call was made.",
+      "message": "SportLogic daily circuit is open; health check skipped before HTTP call.",
       "provider": "sportlogic",
       "requests": 0,
       "status": "skipped_daily_circuit",
@@ -321,7 +327,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 382,
+      "latency_ms": 380,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -348,7 +354,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-06-03 19:02:13\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-06-07 23:02:45\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -356,7 +362,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 248,
+      "latency_ms": 159,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -367,7 +373,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":800,\"main\":\"Clear\",\"description\":\"clear sky\",\"icon\":\"01n\"}],\"base\":\"stations\",\"main\":{\"temp\":14.36,\"feels_like\":13.42,\"temp_min\":12.73,\"temp_max\":15.01,\"pressure\":1014,\"humidity\":60,\"sea_level\":1014,\"grnd_level\":1011},\"visibility\":10000,\"wind\":{\"speed\":3.13,\"deg\":294,\"gust\":6.71},\"clouds\":{\"all\":0},\"dt\":1781039370,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1780976664,\"sunset\":1781036117},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":800,\"main\":\"Clear\",\"description\":\"clear sky\",\"icon\":\"01n\"}],\"base\":\"stations\",\"main\":{\"temp\":13.7,\"feels_like\":12.8,\"temp_min\":12.56,\"temp_max\":14.32,\"pressure\":1015,\"humidity\":64,\"sea_level\":1015,\"grnd_level\":1012},\"visibility\":10000,\"wind\":{\"speed\":1.79,\"deg\":204,\"gust\":3.13},\"clouds\":{\"all\":2},\"dt\":1781040951,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1780976664,\"sunset\":1781036117},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -375,7 +381,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 103,
+      "latency_ms": 80,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -386,7 +392,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781040127,\"localtime\":\"2026-06-09 22:22\"},\"current\":{\"last_updated_epoch\":1781039700,\"last_updated\":\"2026-06-09 22:15\",\"temp_c\":13.0,\"temp_f\":55.4,\"is_day\":0,\"condition\":{\"text\":\"Clear\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/night/113.png\",\"code\":1000},\"wind_mph\":9.2,\"wind_kph\":14.8,\"wind_degree\":255,\"wind_dir\":\"WSW\",\"pressure_mb\":1015.0,\"pressure_in\":29.97,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":58,\"cloud\":0,\"feelslike_c\":11.6,\"feelslike_f\":53.0,\"windchill_c\":10.8,\"windchill_f\":51.4,\"heatindex_c\":12.3,\"heatindex_f\":54.2,\"dewpoint_c\":6.4,\"dewpoint_f\":43.5,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":13.9,\"gust_kph\":22.3,\"will_it_rain\":0,\"chance_of_rain\":5,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-06-09\",\"date_epoch\":1780963200,\"day\":{\"maxtemp_c\":18.1,\"maxtemp_f\":64.6,\"mintemp_c\":8.4,\"mintemp_f\":47.2,\"avgtemp_c\":13.2,\"avgtemp_f\":55.8,\"maxwind_mph\":14.8,\"maxwind_kph\":23.8,\"totalprecip_mm\":1.62,\"totalprecip_in\":0.06,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.0,\"a",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781041298,\"localtime\":\"2026-06-09 22:41\"},\"current\":{\"last_updated_epoch\":1781039700,\"last_updated\":\"2026-06-09 22:15\",\"temp_c\":13.0,\"temp_f\":55.4,\"is_day\":0,\"condition\":{\"text\":\"Clear\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/night/113.png\",\"code\":1000},\"wind_mph\":9.2,\"wind_kph\":14.8,\"wind_degree\":255,\"wind_dir\":\"WSW\",\"pressure_mb\":1015.0,\"pressure_in\":29.97,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":58,\"cloud\":0,\"feelslike_c\":11.6,\"feelslike_f\":53.0,\"windchill_c\":10.8,\"windchill_f\":51.4,\"heatindex_c\":12.3,\"heatindex_f\":54.2,\"dewpoint_c\":6.4,\"dewpoint_f\":43.5,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":13.9,\"gust_kph\":22.3,\"will_it_rain\":0,\"chance_of_rain\":5,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-06-09\",\"date_epoch\":1780963200,\"day\":{\"maxtemp_c\":18.1,\"maxtemp_f\":64.6,\"mintemp_c\":8.4,\"mintemp_f\":47.2,\"avgtemp_c\":13.2,\"avgtemp_f\":55.8,\"maxwind_mph\":14.8,\"maxwind_kph\":23.8,\"totalprecip_mm\":1.62,\"totalprecip_in\":0.06,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.0,\"a",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -394,7 +400,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 323,
+      "latency_ms": 451,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -406,7 +412,7 @@
     "auth_error": 0,
     "config_only": 1,
     "critical_failures": 0,
-    "degraded": 0,
+    "degraded": 1,
     "healthy_or_config_only": 16,
     "missing_secret": 1,
     "ok": 14,
