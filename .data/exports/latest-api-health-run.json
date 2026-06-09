@@ -25,7 +25,8 @@
       "ok": 5
     },
     "news": {
-      "ok": 5
+      "error": 1,
+      "ok": 4
     },
     "odds": {
       "ok": 1,
@@ -43,11 +44,12 @@
   },
   "by_status": {
     "config_only": 1,
+    "error": 1,
     "missing_secret": 1,
-    "ok": 15,
+    "ok": 14,
     "skipped_daily_circuit": 1
   },
-  "created_at_utc": "2026-06-09T20:30:10.631519+00:00",
+  "created_at_utc": "2026-06-09T21:21:58.238626+00:00",
   "critical_failures": [],
   "mode": "quick",
   "recommendations": [
@@ -55,8 +57,7 @@
     "SportLogic daily circuit is open; health probe skipped it without spending quota.",
     "FutrixMetrics key is present, but live probe is skipped until FUTRIXMETRICS_BASE_URL and FUTRIXMETRICS_HEALTH_ENDPOINT are configured; this is not a runtime failure.",
     "TheSportsDB is reachable; use it for team/league alias enrichment.",
-    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi.",
-    "SportLogic daily circuit is open; health probe was skipped to avoid spending exhausted quota."
+    "Removed providers are intentionally excluded: bookies_api, api_football, oddspapi."
   ],
   "removed_providers": [
     "api_football",
@@ -76,7 +77,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 5009,
+      "latency_ms": 3144,
       "message": "ok",
       "provider": "bzzoiro",
       "requests": 1,
@@ -95,7 +96,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 541,
+      "latency_ms": 510,
       "message": "ok",
       "provider": "football_data",
       "requests": 1,
@@ -123,7 +124,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"data\":[{\"id\":1297623455,\"round\":\"Group Stage\",\"date\":\"2026-06-09T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":20406913,\"logo\":null,\"name\":\"Columbus United\"},\"homeTeam\":{\"id\":23422006,\"logo\":null,\"name\":\"Swarm Fc\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name\":\"USL League Two\",\"season\":2026}},{\"id\":1319758816,\"round\":\"Friendly International\",\"date\":\"2026-06-09T23:00:00.000Z\",\"country\":{\"code\":\"World\",\"name\":\"World\",\"logo\":\"https://highlightly.net/soccer/images/countries/World.png\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":10657006,\"logo\":\"https://highlightly.net/soccer/images/teams/10657006.png\",\"name\":\"United States U17\"},\"homeTeam\":{\"id\":10639986,\"logo\":null,\"name\":\"Brazil U17\"},\"league\":{\"id\":9294,\"logo\":\"https://highlightly.net/soccer/images/leagues/9294.png\",\"name\":\"Friendlies\",\"season\":2026}},{\"id\":1314257952,\"round\":\"Friendly International\",\"date\":\"2026-06-09T23:00:00.000Z\",\"count",
+        "body_preview": "{\"data\":[{\"id\":1297623455,\"round\":\"Group Stage\",\"date\":\"2026-06-09T23:30:00.000Z\",\"country\":{\"code\":\"US\",\"name\":\"USA\",\"logo\":\"https://highlightly.net/soccer/images/countries/US.svg\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":20406913,\"logo\":null,\"name\":\"Columbus United\"},\"homeTeam\":{\"id\":23422006,\"logo\":null,\"name\":\"Swarm Fc\"},\"league\":{\"id\":218640,\"logo\":\"https://highlightly.net/soccer/images/leagues/218640.png\",\"name\":\"USL League Two\",\"season\":2026}},{\"id\":1319758816,\"round\":\"Friendly International\",\"date\":\"2026-06-09T23:00:00.000Z\",\"country\":{\"code\":\"World\",\"name\":\"World\",\"logo\":\"https://highlightly.net/soccer/images/countries/World.png\"},\"state\":{\"clock\":null,\"score\":{\"current\":null,\"penalties\":null},\"description\":\"Not started\"},\"awayTeam\":{\"id\":10657006,\"logo\":\"https://highlightly.net/soccer/images/teams/10657006.png\",\"name\":\"United States U17\"},\"homeTeam\":{\"id\":10639986,\"logo\":null,\"name\":\"Brazil U17\"},\"league\":{\"id\":9294,\"logo\":\"https://highlightly.net/soccer/images/leagues/9294.png\",\"name\":\"Friendlies\",\"season\":2026}},{\"id\":1297621753,\"round\":\"Group Stage\",\"date\":\"2026-06-09T23:00:00.000Z\",\"country\":{\"code\"",
         "expected_base": "https://soccer.highlightly.net",
         "payload_shape": "data,pagination,plan",
         "rapidapi_base": "https://football-highlights-api.p.rapidapi.com"
@@ -133,7 +134,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 337,
+      "latency_ms": 281,
       "message": "ok",
       "provider": "highlightly",
       "requests": 1,
@@ -152,7 +153,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 461,
+      "latency_ms": 600,
       "message": "ok",
       "provider": "sstats",
       "requests": 1,
@@ -172,7 +173,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 513,
+      "latency_ms": 133,
       "message": "ok",
       "provider": "thesportsdb",
       "requests": 1,
@@ -182,27 +183,22 @@
     {
       "configured": true,
       "critical": false,
-      "details": {
-        "body_preview": "{\"status\":\"ok\",\"news\":[{\"id\":\"17cef1a9-7d52-568a-a20a-8c9ca3362c90\",\"title\":\"Real Madrid confirm Arbeloa's departure to pave way for Mourinho return\",\"description\":\"Arbeloa, who arrived in January to replace Xabi Alonso.\",\"url\":\"https://www.the42.ie/real-madrid-arbeloa-mourinho-7065661-Jun2026/\",\"author\":\"AFP\",\"image\":\"https://img2.thejournal.ie/article/7065661/river/?height=400&version=7065672\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-06-09 20:09:33 +0000\"},{\"id\":\"59e186fe-5c4e-577c-be30-17f95149e90b\",\"title\":\"'Rowdy' Knicks watch party ends with 8 arrested\",\"description\":\"An NBA Finals viewing party in Manhattan on Monday turned \\\"incredibly reckless,\\\" New York City police claimed after eight people were arrested.\",\"url\":\"https://www.espn.com/nba/story/_/id/49012308/rowdy-knicks-watch-party-ends-8-arrested\",\"author\":\"ESPN News Services\",\"image\":\"https://a2.espncdn.com/combiner/i?img=%2Fphoto%2F2026%2F0609%2Fr1670419_1024x576_16%2D9.jpg\",\"language\":\"en\",\"category\":[\"sports\"],\"source_category\":[\"sports\"],\"published\":\"2026-06-09 20:07:35 +0000\"},{\"id\":\"9e663c11-b0b5-5d4d-ba6e-74b01131fa8e\",\"title\":\"Jos\\u00e9 Carreras and Robbie Williams t",
-        "payload_shape": "news,page,status"
-      },
+      "details": {},
       "endpoint": "https://api.currentsapi.services/v1/latest-news?apiKey=***&category=sports&language=en",
       "group": "news",
-      "http_statuses": [
-        200
-      ],
-      "latency_ms": 446,
-      "message": "ok",
+      "http_statuses": [],
+      "latency_ms": 12078,
+      "message": "ReadTimeout: ",
       "provider": "currents",
       "requests": 1,
-      "status": "ok",
-      "useful_rows": 30
+      "status": "error",
+      "useful_rows": 0
     },
     {
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":327263,\"articles\":[{\"id\":\"bd545df72f673995ca18244a67ac977e\",\"title\":\"Grosvenor Sport World Cup offer: Get 14/1 on England to Win the Trophy\",\"description\":\"THE wait is finally over, and the 2026 World Cup is here. Football fans across the nation are asking the ultimate question: Is it finally coming...\",\"content\":\"THE wait is finally over, and the 2026 World Cup is here. Football fans across the nation are asking the ultimate question: Is it finally coming home?\\nIf you are ready to back the Three Lions to go all the way in North America, Grosvenor Sport has ju... [4607 chars]\",\"url\":\"https://www.thesun.co.uk/betting/39343210/grosvenor-sport-world-cup-offer/\",\"image\":\"https://www.thesun.co.uk/wp-content/uploads/2026/06/grosvenor-sport-world-cup-offer-op.jpg?quality=90&strip=all&w=1920&h=1080&crop=1\",\"publishedAt\":\"2026-06-09T08:25:36Z\",\"lang\":\"en\",\"source\":{\"id\":\"f35c9e0c433f608ad7c48c3d4818bec4\",\"name\":\"The Sun\",\"url\":\"https://www.thesun.co.uk\",\"country\":\"gb\"}}]",
+        "body_preview": "{\"information\":{\"realTimeArticles\":{\"message\":\"Real-time news data is only available on paid plans. Free plan has a 12-hour delay. Upgrade your plan here to remove the delay: https://gnews.io/change-plan\"}},\"totalArticles\":327287,\"articles\":[{\"id\":\"a6b295cb92aa5bc2e13a1d5432c624f8\",\"title\":\"Climate cost of expanded World Cup under scrutiny as emissions set to soar\",\"description\":\"The World Cup kicks off on Thursday as a celebration of goals, drama and global fandom, but it is also expected to carry a climate cost more than double that of Qatar 2022, throwing a ​harsh spotlight on the environmental price of football's expanding showpiece.\",\"content\":\"MANCHESTER, England, June 9 (Reuters) - The World Cup kicks off on Thursday as a celebration of goals, drama and global fandom, but it is also expected to carry a climate cost more than double that of Qatar 2022, throwing a ​harsh spotlight on the en... [5557 chars]\",\"url\":\"https://www.reuters.com/business/environment/climate-cost-expanded-world-cup-under-scrutiny-emissions-set-soar-2026-06-09/\",\"image\":\"https://www.reuters.com/resizer/v2/P6DA5F676JLR7MW6U4UMSWFZ2I.jpg?auth=dc1fa3f5ce7c9218e2f744c4a78e5f9da194b1c6210cdf7d40207886161c67a",
         "payload_shape": "articles,information,totalArticles"
       },
       "endpoint": "https://gnews.io/api/v4/search?apikey=***&q=football&lang=en&max=1",
@@ -210,7 +206,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 256,
+      "latency_ms": 251,
       "message": "ok",
       "provider": "gnews",
       "requests": 1,
@@ -229,7 +225,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 609,
+      "latency_ms": 713,
       "message": "ok",
       "provider": "guardian",
       "requests": 1,
@@ -240,7 +236,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"ok\",\"totalResults\":27773,\"articles\":[{\"source\":{\"id\":null,\"name\":\"Sky Sports\"},\"author\":null,\"title\":\"Sullivan facing further scrutiny following investigation by BBC and The Times\",\"description\":\"Billionaire businessman David Sullivan, who stepped down as chairman of West Ham on Saturday over allegations of improper conduct, is facing further scrutiny following a joint investigation by the BBC and The Times.\",\"url\":\"https://www.skysports.com/football/news/11095/13552124/david-sullivan-former-west-ham-chairman-facing-further-scrutiny-following-investigation-by-bbc-and-the-times\",\"urlToImage\":\"https://e0.365dm.com/26/06/1600x900/skysports-david-sullivan-west-ham_7266783.jpg?20260606133503\",\"publishedAt\":\"2026-06-08T20:30:00Z\",\"content\":\"Billionaire businessman David Sullivan, who stepped down as chairman of West Ham on Saturday over allegations of improper conduct, is facing further scrutiny following a joint investigation by the BB… [+1088 chars]\"}]}",
+        "body_preview": "{\"status\":\"ok\",\"totalResults\":27818,\"articles\":[{\"source\":{\"id\":null,\"name\":\"The Topeka Capital-Journal\"},\"author\":\"Liam Keating, Topeka Capital-Journal\",\"title\":\"Vote for Shawnee County's 2026 baseball player of the year, presented by Envista\",\"description\":\"After an exciting year of action on the diamond, it's time to vote for Shawnee County's high school baseball player of the year.\",\"url\":\"https://www.cjonline.com/story/sports/high-school/2026/06/08/shawnee-countys-2026-baseball-player-of-the-year-presented-by-envista-vote/90458277007/\",\"urlToImage\":\"https://s.yimg.com/os/en/the-topeka-capital-journal/d25875e127b0c482b55379f06e18aeaf\",\"publishedAt\":\"2026-06-08T21:21:20Z\",\"content\":\"TOPEKA It was another big season of baseball in Shawnee County. From state championships to runs to big individual performances, the Topeka-area was excellent this spring. Throughout the big wins, to… [+4137 chars]\"}]}",
         "payload_shape": "articles,status,totalResults"
       },
       "endpoint": "https://newsapi.org/v2/everything?apiKey=***&q=football&language=en&pageSize=1&sortBy=publishedAt",
@@ -248,7 +244,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 406,
+      "latency_ms": 264,
       "message": "ok",
       "provider": "newsapi",
       "requests": 1,
@@ -259,7 +255,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"status\":\"success\",\"totalResults\":10646,\"results\":[{\"article_id\":\"3254bd59f3fc8b44819ff87c043343ae\",\"link\":\"https://www.smh.com.au/national/nsw/pm-s-migration-policy-kowtows-to-the-right-20260609-p6051w.html\",\"title\":\"PM’s migration policy kowtows to the right\",\"description\":\"Hawke, Keating and Rudd would surely not have fallen victim to right-wing populism.\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"for subscribers\",\"opinion\",\"letters\"],\"creator\":[\"the sydney morning herald\"],\"language\":\"english\",\"country\":[\"australia\"],\"category\":[\"politics\",\"top\"],\"datatype\":\"news\",\"pubDate\":\"2026-06-09 08:30:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-06-09 08:31:45\",\"image_url\":\"https://static.ffx.io/images/$zoom_0.3307%2C$multiply_0.7025%2C$ratio_1.777778%2C$width_1059%2C$x_944%2C$y_120/t_crop_custom/q_86%2Cf_auto/7c849e375f58341684cad18194f9e66c98459ea2\",\"video_url\":null,\"source_id\":\"smh\",\"source_name\":\"The Sydney Morning Herald\",\"source_priority\":2251,\"source_url\":\"https://www.smh.com.au\",\"source_icon\":\"https://n.bytvi.com/smh.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"ai_tag\":\"ONLY ",
+        "body_preview": "{\"status\":\"success\",\"totalResults\":10917,\"results\":[{\"article_id\":\"4207890fb7420be036fb72f576085107\",\"link\":\"https://www.kildare-nationalist.ie/gaynor-cup-a-great-experience-for-kildare-stars-of-the-future_arid-100983.html\",\"title\":\"Gaynor Cup \\\"a great experience\\\" for Kildare stars of the future\",\"description\":\"It was not the way Claire Murphy hoped things would turn out when she led her Kildare and District Underage League (KDUL) side to the 2026 SFAI ...\",\"content\":\"ONLY AVAILABLE IN PAID PLANS\",\"keywords\":[\"kn-sport/soccer\"],\"creator\":[\"kildare nationalist\"],\"language\":\"english\",\"country\":[\"ireland\"],\"category\":[\"sports\"],\"datatype\":\"news\",\"pubDate\":\"2026-06-09 09:21:00\",\"pubDateTZ\":\"UTC\",\"fetched_at\":\"2026-06-09 11:19:52\",\"image_url\":\"https://www.kildare-nationalist.ie/cms_media/module_img/7706/3853305_1_articledetail_23672.jpg\",\"video_url\":null,\"source_id\":\"kildare-nationalist\",\"source_name\":\"Kildare Nationalist\",\"source_priority\":2606560,\"source_url\":\"https://kildare-nationalist.ie\",\"source_icon\":\"https://n.bytvi.com/kildare-nationalist.png\",\"sentiment\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS\",\"sentiment_stats\":\"ONLY AVAILABLE IN PROFESSIONAL AND CORPORATE PLANS",
         "payload_shape": "nextPage,results,status,totalResults"
       },
       "endpoint": "https://newsdata.io/api/1/news?apikey=***&q=football&language=en&size=1",
@@ -267,7 +263,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 504,
+      "latency_ms": 243,
       "message": "ok",
       "provider": "newsdata",
       "requests": 1,
@@ -278,18 +274,18 @@
       "configured": true,
       "critical": true,
       "details": {
-        "body_preview": "[{\"id\":71941840,\"home\":\"Guatemala\",\"away\":\"El Salvador\",\"homeId\":132934,\"awayId\":132932,\"date\":\"2026-06-09T21:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International - International Friendly Games, Women\",\"slug\":\"international-international-friendly-games-women\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":71948826,\"home\":\"Amsg FC\",\"away\":\"Capo FC\",\"homeId\":1232583,\"awayId\":1232599,\"date\":\"2026-06-09T21:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"USA - USL W League\",\"slug\":\"usa-usl-w-league\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68158906,\"home\":\"CA River Plate (Arg)\",\"away\":\"Rosario Central Reserve\",\"homeId\":295180,\"awayId\":295212,\"date\":\"2026-06-09T22:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Argentina - Primera LPF, Reserves, Apertura\",\"slug\":\"argentina-primera-lpf-reserves-apertura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68158920,\"home\":\"CA Central Cordoba SE Reserve\",\"away\":\"Colon de Santa Fe Reserve\",\"homeId\":626736,\"awayId\":295184,\"date\":\"2026-06-09T22:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Argentina - Primera L",
+        "body_preview": "[{\"id\":68158906,\"home\":\"CA River Plate (Arg)\",\"away\":\"Rosario Central Reserve\",\"homeId\":295180,\"awayId\":295212,\"date\":\"2026-06-09T22:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Argentina - Primera LPF, Reserves, Apertura\",\"slug\":\"argentina-primera-lpf-reserves-apertura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68158920,\"home\":\"CA Central Cordoba SE Reserve\",\"away\":\"Colon de Santa Fe Reserve\",\"homeId\":626736,\"awayId\":295184,\"date\":\"2026-06-09T22:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Argentina - Primera LPF, Reserves, Apertura\",\"slug\":\"argentina-primera-lpf-reserves-apertura\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68822946,\"home\":\"Ponte Preta\",\"away\":\"Cuiaba\",\"homeId\":1969,\"awayId\":49202,\"date\":\"2026-06-09T22:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie B\",\"slug\":\"brazil-brasileiro-serie-b\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":68822960,\"home\":\"Nautico\",\"away\":\"Fortaleza\",\"homeId\":2011,\"awayId\":2020,\"date\":\"2026-06-09T22:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Brazil - Brasileiro Serie B\",\"",
         "bookmakers_account1": "Bet365,Unibet",
         "bookmakers_account2": "Betfair Exchange,Sbobet",
         "key2_present": true,
         "payload_shape": "list"
       },
-      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-06-09T20%3A30%3A05Z&to=2026-06-11T20%3A30%3A05Z&limit=10&page=1",
+      "endpoint": "https://api.odds-api.io/v3/events?apiKey=***&sport=football&status=pending%2Clive&from=2026-06-09T21%3A21%3A46Z&to=2026-06-11T21%3A21%3A46Z&limit=10&page=1",
       "group": "odds",
       "http_statuses": [
         200
       ],
-      "latency_ms": 943,
+      "latency_ms": 883,
       "message": "ok",
       "provider": "odds_api_io_events",
       "requests": 1,
@@ -307,7 +303,7 @@
       "group": "odds",
       "http_statuses": [],
       "latency_ms": null,
-      "message": "SportLogic daily circuit is open; health check skipped before HTTP call.",
+      "message": "SportLogic health check skipped: daily_circuit; no HTTP call was made.",
       "provider": "sportlogic",
       "requests": 0,
       "status": "skipped_daily_circuit",
@@ -325,7 +321,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 380,
+      "latency_ms": 382,
       "message": "ok",
       "provider": "allsportsapi",
       "requests": 1,
@@ -352,7 +348,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"meta\":{\"generated\":\"2026-06-09 13:43:05\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
+        "body_preview": "{\"meta\":{\"generated\":\"2026-06-03 19:02:13\"},\"data\":[{\"id\":\"03779\",\"name\":{\"en\":\"London Weather Centre\"},\"distance\":1288.3}]}",
         "payload_shape": "data,meta"
       },
       "endpoint": "https://meteostat.p.rapidapi.com/stations/nearby?lat=51.5074&lon=-0.1278&limit=1",
@@ -360,7 +356,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 108,
+      "latency_ms": 248,
       "message": "ok",
       "provider": "meteostat",
       "requests": 1,
@@ -371,7 +367,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":800,\"main\":\"Clear\",\"description\":\"clear sky\",\"icon\":\"01n\"}],\"base\":\"stations\",\"main\":{\"temp\":14.98,\"feels_like\":14,\"temp_min\":13.92,\"temp_max\":15.44,\"pressure\":1014,\"humidity\":56,\"sea_level\":1014,\"grnd_level\":1011},\"visibility\":10000,\"wind\":{\"speed\":4.02,\"deg\":310,\"gust\":7.6},\"clouds\":{\"all\":0},\"dt\":1781036548,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1780976664,\"sunset\":1781036117},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
+        "body_preview": "{\"coord\":{\"lon\":-0.1257,\"lat\":51.5085},\"weather\":[{\"id\":800,\"main\":\"Clear\",\"description\":\"clear sky\",\"icon\":\"01n\"}],\"base\":\"stations\",\"main\":{\"temp\":14.36,\"feels_like\":13.42,\"temp_min\":12.73,\"temp_max\":15.01,\"pressure\":1014,\"humidity\":60,\"sea_level\":1014,\"grnd_level\":1011},\"visibility\":10000,\"wind\":{\"speed\":3.13,\"deg\":294,\"gust\":6.71},\"clouds\":{\"all\":0},\"dt\":1781039370,\"sys\":{\"type\":2,\"id\":2075535,\"country\":\"GB\",\"sunrise\":1780976664,\"sunset\":1781036117},\"timezone\":3600,\"id\":2643743,\"name\":\"London\",\"cod\":200}",
         "payload_shape": "base,clouds,cod,coord,dt,id,main,name,sys,timezone,visibility,weather,wind"
       },
       "endpoint": "https://api.openweathermap.org/data/2.5/weather?q=London&appid=***&units=metric",
@@ -379,7 +375,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 73,
+      "latency_ms": 103,
       "message": "ok",
       "provider": "openweathermap",
       "requests": 1,
@@ -390,7 +386,7 @@
       "configured": true,
       "critical": false,
       "details": {
-        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781037016,\"localtime\":\"2026-06-09 21:30\"},\"current\":{\"last_updated_epoch\":1781036100,\"last_updated\":\"2026-06-09 21:15\",\"temp_c\":15.1,\"temp_f\":59.2,\"is_day\":1,\"condition\":{\"text\":\"Sunny\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/day/113.png\",\"code\":1000},\"wind_mph\":10.5,\"wind_kph\":16.9,\"wind_degree\":258,\"wind_dir\":\"WSW\",\"pressure_mb\":1014.0,\"pressure_in\":29.94,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":48,\"cloud\":0,\"feelslike_c\":15.1,\"feelslike_f\":59.2,\"windchill_c\":11.9,\"windchill_f\":53.5,\"heatindex_c\":13.4,\"heatindex_f\":56.1,\"dewpoint_c\":6.4,\"dewpoint_f\":43.6,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":15.7,\"gust_kph\":25.2,\"will_it_rain\":0,\"chance_of_rain\":4,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-06-09\",\"date_epoch\":1780963200,\"day\":{\"maxtemp_c\":18.1,\"maxtemp_f\":64.6,\"mintemp_c\":8.4,\"mintemp_f\":47.2,\"avgtemp_c\":13.2,\"avgtemp_f\":55.7,\"maxwind_mph\":14.8,\"maxwind_kph\":23.8,\"totalprecip_mm\":1.64,\"totalprecip_in\":0.06,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.0,\"av",
+        "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781040127,\"localtime\":\"2026-06-09 22:22\"},\"current\":{\"last_updated_epoch\":1781039700,\"last_updated\":\"2026-06-09 22:15\",\"temp_c\":13.0,\"temp_f\":55.4,\"is_day\":0,\"condition\":{\"text\":\"Clear\",\"icon\":\"//cdn.weatherapi.com/weather/64x64/night/113.png\",\"code\":1000},\"wind_mph\":9.2,\"wind_kph\":14.8,\"wind_degree\":255,\"wind_dir\":\"WSW\",\"pressure_mb\":1015.0,\"pressure_in\":29.97,\"precip_mm\":0.0,\"precip_in\":0.0,\"humidity\":58,\"cloud\":0,\"feelslike_c\":11.6,\"feelslike_f\":53.0,\"windchill_c\":10.8,\"windchill_f\":51.4,\"heatindex_c\":12.3,\"heatindex_f\":54.2,\"dewpoint_c\":6.4,\"dewpoint_f\":43.5,\"vis_km\":10.0,\"vis_miles\":6.0,\"uv\":0.0,\"gust_mph\":13.9,\"gust_kph\":22.3,\"will_it_rain\":0,\"chance_of_rain\":5,\"will_it_snow\":0,\"chance_of_snow\":0},\"forecast\":{\"forecastday\":[{\"date\":\"2026-06-09\",\"date_epoch\":1780963200,\"day\":{\"maxtemp_c\":18.1,\"maxtemp_f\":64.6,\"mintemp_c\":8.4,\"mintemp_f\":47.2,\"avgtemp_c\":13.2,\"avgtemp_f\":55.8,\"maxwind_mph\":14.8,\"maxwind_kph\":23.8,\"totalprecip_mm\":1.62,\"totalprecip_in\":0.06,\"totalsnow_cm\":0.0,\"avgvis_km\":9.3,\"avgvis_miles\":5.0,\"a",
         "payload_shape": "current,forecast,location"
       },
       "endpoint": "https://api.weatherapi.com/v1/forecast.json?key=***&q=London&days=1&aqi=no&alerts=no",
@@ -398,7 +394,7 @@
       "http_statuses": [
         200
       ],
-      "latency_ms": 244,
+      "latency_ms": 323,
       "message": "ok",
       "provider": "weatherapi",
       "requests": 1,
@@ -411,9 +407,9 @@
     "config_only": 1,
     "critical_failures": 0,
     "degraded": 0,
-    "healthy_or_config_only": 17,
+    "healthy_or_config_only": 16,
     "missing_secret": 1,
-    "ok": 15,
+    "ok": 14,
     "providers_checked": 18,
     "rate_limited": 0,
     "skipped": 1,
