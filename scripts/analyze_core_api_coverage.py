@@ -59,6 +59,7 @@ def main() -> int:
     bzz_gap_install = load(EXPORT / 'latest-bzzoiro-context-gap-finalizer-install.json', {})
     retro_audit = _run_retro_price_audit()
     sportlogic_diag = load(EXPORT / 'latest-sportlogic-api-diagnostic.json', {})
+    sportlogic_date_patch = load(EXPORT / 'latest-sportlogic-games-date-contract-patch.json', {})
     try:
         if as_int(sportlogic_diag.get('attempts_count')) <= 0:
             from scripts.probe_sportlogic_contract import run_probe
@@ -110,6 +111,7 @@ def main() -> int:
             'rows_total': as_int(sportlogic_diag.get('rows_total')) if isinstance(sportlogic_diag, dict) else 0,
             'found_rows': bool(sportlogic_diag.get('found_rows')) if isinstance(sportlogic_diag, dict) else False,
             'status_counts': sportlogic_diag.get('status_counts') if isinstance(sportlogic_diag, dict) else {},
+            'date_contract_patch': sportlogic_date_patch if isinstance(sportlogic_date_patch, dict) else {},
         },
         'guards': {
             'timing_deferred_total': as_int(timing.get('deferred_total')),
@@ -138,6 +140,8 @@ def main() -> int:
         payload['bottlenecks'].append('sportlogic_no_fixtures_or_matches')
     if as_int(get(payload, 'sportlogic_contract_probe', 'attempts_count')) > 0 and as_int(get(payload, 'sportlogic_contract_probe', 'rows_total')) <= 0:
         payload['bottlenecks'].append('sportlogic_contract_probe_no_rows')
+    if as_int(get(payload, 'sportlogic_contract_probe', 'rows_total')) > 0 and as_int(get(payload, 'api', 'sportlogic', 'fixtures_fetched')) <= 0:
+        payload['bottlenecks'].append('sportlogic_date_contract_found_but_provider_not_using_rows')
     if as_int(get(payload, 'api', 'bzzoiro', 'secondary_offers_added')) <= 0:
         payload['bottlenecks'].append('bzzoiro_secondary_offers_zero')
     if as_int(get(payload, 'api', 'sstats', 'team_form_contexts')) <= 0:
@@ -148,7 +152,7 @@ def main() -> int:
     payload['next_actions'] = [
         'Do not relax publication guards.',
         'Prioritize 0-4h/4-8h bookmaker-qualified matches for context gap filling.',
-        'If SportLogic remains 0 fixtures, verify base URL/auth/date parameters outside publication flow.',
+        'SportLogic contract probe found that /games?date=YYYY-MM-DD returns rows; provider should query date first.',
         'Keep Bzzoiro as context/confirmation until secondary offers parser becomes non-zero.',
     ]
     OUT.parent.mkdir(parents=True, exist_ok=True)

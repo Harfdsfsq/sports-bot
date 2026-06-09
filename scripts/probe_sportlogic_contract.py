@@ -116,10 +116,10 @@ def _date_param_variants() -> list[dict[str, Any]]:
     next_date = tomorrow.isoformat()
     per_page = max(20, min(200, _as_int(os.getenv("SPORTLOGIC_CONTRACT_PROBE_PER_PAGE"), 100)))
     return [
-        {"date_from": date, "date_to": next_date, "status": "scheduled", "per_page": per_page},
-        {"date_from": date, "date_to": next_date, "per_page": per_page},
         {"date": date, "status": "scheduled", "per_page": per_page},
         {"date": date, "per_page": per_page},
+        {"date_from": date, "date_to": next_date, "status": "scheduled", "per_page": per_page},
+        {"date_from": date, "date_to": next_date, "per_page": per_page},
         {"from": date, "to": next_date, "status": "scheduled", "per_page": per_page},
         {"start_date": date, "end_date": next_date, "status": "scheduled", "per_page": per_page},
     ]
@@ -135,7 +135,7 @@ def run_probe() -> dict[str, Any]:
 
     timeout = float(os.getenv("SPORTLOGIC_CONTRACT_PROBE_TIMEOUT_SECONDS") or "8")
     max_attempts = max(1, _as_int(os.getenv("SPORTLOGIC_CONTRACT_PROBE_MAX_ATTEMPTS"), 18))
-    auth_modes = [m.strip() for m in (os.getenv("SPORTLOGIC_CONTRACT_PROBE_AUTH_MODES") or "x-api-key,bearer,token,apikey,api-key").split(",") if m.strip()]
+    auth_modes = [m.strip() for m in (os.getenv("SPORTLOGIC_CONTRACT_PROBE_AUTH_MODES") or "x-api-key").split(",") if m.strip()]
     if not key:
         auth_modes = ["none"]
 
@@ -192,14 +192,14 @@ def run_probe() -> dict[str, Any]:
     payload = {
         "created_at_utc": datetime.now(UTC).isoformat(),
         "status": "ok",
-        "probe": "sportlogic_contract_probe_v1",
+        "probe": "sportlogic_contract_probe_v2_date_param_first",
         "has_api_key": bool(key),
         "attempts_count": len(attempts),
         "rows_total": rows_total,
         "found_rows": found_rows,
         "status_counts": status_counts,
         "attempts_tail": attempts[-20:],
-        "next_hint": "If all status codes are 401/403, fix secret/auth mode; if 404, fix base URL/path; if 200 with rows=0, fix date/status params or SportLogic plan coverage.",
+        "next_hint": "Provider should use /games with date=YYYY-MM-DD first. If rows_total>0 here but Telegram fixtures=0, check SportLogicProvider query param order/matching.",
     }
     OUT.parent.mkdir(parents=True, exist_ok=True)
     OUT.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")

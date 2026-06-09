@@ -88,6 +88,7 @@ if not _SKIP_RUNTIME_INSTALLERS:
         # It still preserves all publication guards.
         'app.services.api_maximum_coverage_runtime_patch',
         'app.services.api_coverage_observability_runtime_patch',
+        'app.services.sportlogic_games_date_contract_runtime_patch',
         'app.services.windowed_core_coverage_finalizer',
         'app.services.windowed_core_report_and_sportlogic_final_guard',
         'app.services.progressive_coverage_runtime_patch',
