@@ -1,15 +1,15 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier c watch only
+• Главная причина: no viable controlled fallback
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 192 (это не размер inventory).
+• Инвентарь дня: 160 матчей. Runtime rows processed: 29 (это не размер inventory).
 • 1+ линия: 150/160 (94%) | 1+ контекст: 90/160 (56%)
 • 2+ букмекера: 9/160 (6%)
-• Raw 2+ букмекера odds-api.io: 56 | normalized inventory: 9 | mapping gap: 47
-• Odds-api offer snapshot: rows 10086, matches 98, same-side 2+ books 54
+• Raw 2+ букмекера odds-api.io: 10 | normalized inventory: 9 | mapping gap: 1
+• Odds-api offer snapshot: rows 1211, matches 19, same-side 2+ books 9
 • 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
-• 2+ контекста: 54/160 (34%)
+• 2+ контекста: 61/160 (38%)
 • Готово для модели: 89/160 (56%)
 
 🏷️ A/B-tier публикация
@@ -23,41 +23,26 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 9 | матчей без следующего регулярного run: 9
-• Line guard: увидел 4, оставил 0, снял 0
+• Pre-kickoff проверок: 1 | матчей без следующего регулярного run: 1
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
+• Raw/candidates before quality: 0/0
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 38; смэтчил матчей 187; offers 11037; 2+ букмекера 56; ошибок 0.
-• Bzzoiro: direct req 69, v2 req 69; v2 ctx 16; v2 odds 13; secondary offers 0; overlap odds-api.io 13; ошибок 0.
-• SStats: запросы 35; сырых строк 29376; контекстов 143; deep-enriched 13; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 85, bzzoiro+odds_api_io: 13, bzzoiro: 4
+• odds-api.io: events req 0, odds req 6; смэтчил матчей 29; offers 1211; 2+ букмекера 10; ошибок 0.
+• Bzzoiro: direct req 1, v2 req 1; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 32; сырых строк 27354; контекстов 23; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: odds_api_io: 19
 
 🚫 Почему не опубликовано
-• tier c watch only: 3 (14%)
-• line movement not confirmed:awaiting next run: 3 (14%)
-• line movement:needs next cron line movement recheck: 3 (14%)
-• missing total xg sanity: 3 (14%)
-• quality post calibration edge guard: 3 (14%)
-• tier a quality below min: 1 (5%)
-• tier a canonical edge below min: 1 (5%)
-• tier a canonical ev below min: 1 (5%)
-• Диагностика legacy odds-source: 1 — не блок публикации при 2+ букмекерах
+• Нет reject reasons в свежих артефактах.
 
 🔎 Проверенные reserve-кандидаты
-1. Goias — Gremio Novorizontino | Меньше 1.5 @2.70 | EV +37.4% | edge +13.8 п.п. | q 83.8
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
-2. Corinthians — Avai | Меньше 2.5 @2.33 | EV +14.8% | edge +6.3 п.п. | q 70.1
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
-3. America — Cabofriense RJ | Больше 1.75 @1.80 | EV +9.9% | edge +5.5 п.п. | q 60.9
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
-4. Portugal — Nigeria | Меньше 2.5 @2.58 | EV +1.7% | edge +0.7 п.п. | q 58.9
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
+• Нет проверенных reserve-кандидатов в свежем fallback report.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
@@ -65,7 +50,7 @@
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27241347286
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27241347286
-• Artifact: run-bot-27241347286
+• Run ID: 27245959655
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27245959655
+• Artifact: run-bot-27245959655
 • workflow run-bot, attempt 1
