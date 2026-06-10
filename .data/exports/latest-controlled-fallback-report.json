@@ -1,55 +1,64 @@
 {
-  "created_at": "2026-06-10T11:17:16.602245+00:00",
+  "created_at": "2026-06-10T13:17:17.323806+00:00",
   "enabled": true,
   "published": false,
   "status": "no_viable_controlled_fallback",
   "candidates_seen": 1,
   "evaluated": [
     {
-      "match_key": "soccer|lidkopings|skovde|2026-06-10",
-      "home_team": "Lidkopings",
-      "away_team": "Skovde",
-      "home_team_ru": "Лидкопингс",
-      "away_team_ru": "Сковде",
-      "league_name": "Sweden - Svenska Cup, Preliminary Round",
-      "league_name_ru": "Суеден - Свенска Кубок, Прелиминари Рунд",
-      "commence_time": "2026-06-10T17:00:00+00:00",
-      "commence_time_display": "10.06.2026 20:00 MSK",
+      "match_key": "soccer|avai|ceara|2026-06-10",
+      "home_team": "Ceara",
+      "away_team": "Avai",
+      "home_team_ru": "Кира",
+      "away_team_ru": "Авай",
+      "league_name": "Brazil - Brasileiro Serie B",
+      "league_name_ru": "Бразилия - Брасилейро Серия B",
+      "commence_time": "2026-06-10T23:00:00+00:00",
+      "commence_time_display": "11.06.2026 02:00 MSK",
       "candidate_source": "debug_candidates_before_quality",
-      "family": "spreads",
-      "selection": "Skovde",
-      "point": -2.0,
+      "family": "totals",
+      "selection": "Меньше 2.5",
+      "point": 2.5,
       "ok": false,
-      "tier": null,
+      "tier": "уровень A",
       "reject_reasons": [
-        "odds_above_global_max"
+        "line_movement_not_confirmed:awaiting_next_run",
+        "line_movement:needs_next_cron_line_movement_recheck",
+        "missing_total_xg_sanity",
+        "final_edge_below_min",
+        "final_ev_below_min"
       ],
       "reject_reasons_ru": [
-        "коэффициент выше общего максимума"
+        "line movement not confirmed:awaiting next run",
+        "line movement:needs next cron line movement recheck",
+        "missing total xg sanity",
+        "final edge below min",
+        "final ev below min"
       ],
       "metrics": {
-        "odds": 3.475,
-        "selected_implied_probability": 0.28777,
-        "adjusted_probability": 0.946636,
-        "model_probability": 0.9715,
-        "market_probability": 0.9375,
-        "canonical_edge_pp": 65.887,
-        "market_edge_pp": 0.914,
-        "canonical_ev_pct": 228.956,
-        "confidence": 68.556,
-        "quality_score": 100.0,
-        "quality_score_raw": 100.0,
+        "odds": 1.8673,
+        "selected_implied_probability": 0.535533,
+        "adjusted_probability": 0.558776,
+        "model_probability": 0.587326,
+        "market_probability": 0.552326,
+        "canonical_edge_pp": 2.324,
+        "market_edge_pp": 0.645,
+        "canonical_ev_pct": 4.34,
+        "confidence": 77.215,
+        "quality_score": 73.311,
+        "quality_score_raw": 73.311,
         "quality_score_source": "raw",
-        "publication_score": 354.693,
-        "books_count": 3,
-        "odds_sources_count": 1,
+        "publication_score": 91.646,
+        "books_count": 12,
+        "odds_sources_count": 2,
         "line_sources": [
+          "bzzoiro",
           "odds_api_io"
         ],
         "sources_count": 2,
         "confirmation_sources_count": 2,
         "confirmation_sources": [
-          "clubelo",
+          "bzzoiro",
           "sstats"
         ],
         "confirmation_meta": {
@@ -61,11 +70,11 @@
           "weather_dropped_as_neutral": false
         },
         "quality_reasons": [
-          "quarantine_shadow_insufficient_history"
+          "post_calibration_edge_guard"
         ],
         "xg_sanity": {
           "enabled": false,
-          "reason": "family_not_total"
+          "reason": "missing_xg"
         },
         "btts_sanity": {
           "enabled": false,
@@ -74,6 +83,31 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
+        },
+        "line_movement": {
+          "passed": false,
+          "status": "awaiting_next_run",
+          "reasons": [
+            "needs_next_cron_line_movement_recheck"
+          ],
+          "line_key": "soccer_avai_ceara_2026_06_10|totals|totals_under_2.5|2.5|",
+          "snapshot_count": 1,
+          "current_odds": 1.8673,
+          "previous_odds": null,
+          "line_move_pct": 0.0,
+          "lead_minutes": 582.7,
+          "no_more_cron_before_kickoff": false,
+          "next_scheduled_run_at_utc": "2026-06-10T15:00:00+00:00",
+          "latest_useful_run_at_utc": "2026-06-10T22:45:00+00:00",
+          "has_next_regular_run_before_kickoff": true,
+          "cron_interval_minutes": 120,
+          "state_path": ".data/line_history/2026-06-10.json",
+          "latest_state_path": ".data/line_history/latest.json",
+          "previous_snapshot_at_utc": null,
+          "previous_snapshot_age_minutes": null,
+          "min_recheck_minutes": 60.0,
+          "eligible_previous_snapshot_at_utc": null,
+          "latest_snapshot_too_fresh_age_minutes": null
         }
       }
     }
@@ -96,9 +130,55 @@
   },
   "pool_counts": {
     "debug_candidates_before_quality": 1,
+    "debug_candidates_before_quality_duplicate_in_pool": 1,
     "latest_picks_stale_or_outside_window": 2
   },
-  "watchlist": [],
+  "watchlist": [
+    {
+      "match_key": "soccer|avai|ceara|2026-06-10",
+      "home_team": "Ceara",
+      "away_team": "Avai",
+      "home_team_ru": "Кира",
+      "away_team_ru": "Авай",
+      "league_name": "Brazil - Brasileiro Serie B",
+      "league_name_ru": "Бразилия - Брасилейро Серия B",
+      "family": "totals",
+      "selection": "Меньше 2.5",
+      "point": 2.5,
+      "commence_time": "2026-06-10T23:00:00+00:00",
+      "commence_time_display": "11.06.2026 02:00 MSK",
+      "reject_reasons": [
+        "line_movement_not_confirmed:awaiting_next_run",
+        "line_movement:needs_next_cron_line_movement_recheck",
+        "missing_total_xg_sanity",
+        "final_edge_below_min",
+        "final_ev_below_min"
+      ],
+      "reject_reasons_ru": [
+        "line movement not confirmed:awaiting next run",
+        "line movement:needs next cron line movement recheck",
+        "missing total xg sanity",
+        "final edge below min",
+        "final ev below min"
+      ],
+      "metrics": {
+        "odds": 1.8673,
+        "canonical_edge_pp": 2.324,
+        "canonical_ev_pct": 4.34,
+        "confidence": 77.215,
+        "quality_score": 73.311,
+        "quality_score_source": "raw",
+        "books_count": 12,
+        "sources_count": 2,
+        "odds_sources_count": 2,
+        "confirmation_sources_count": 2,
+        "confirmation_sources": [
+          "bzzoiro",
+          "sstats"
+        ]
+      }
+    }
+  ],
   "no_pick_report_sent": true,
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":2458,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1781090237,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":2460,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1781097438,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
 }

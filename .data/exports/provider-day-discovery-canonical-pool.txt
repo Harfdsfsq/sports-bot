@@ -1,9 +1,9 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-10T11:07:27.333409+00:00
+UTC: 2026-06-10T13:07:23.037917+00:00
 target_date: 2026-06-10
-canonical_matches: 228
-2+ provider sources: 82
-2+ primary sources: 81
+canonical_matches: 221
+2+ provider sources: 71
+2+ primary sources: 70
 all 3 primary sources: 5
 
 ## Provider fixture discovery
@@ -11,14 +11,14 @@ all 3 primary sources: 5
 - bzzoiro: commands=10 ok=3 rows=61 event_like=61 unique=21 statuses={"OK": 3, "EMPTY": 7}
 - football_data: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=4 rows=392 event_like=392 unique=196 statuses={"OK": 4, "EMPTY": 2}
+- odds_api_io: commands=6 ok=4 rows=358 event_like=358 unique=179 statuses={"OK": 4, "EMPTY": 2}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=97 event_like=97 unique=97 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 146, "2": 75, "3": 7}
-- primary providers: {"1": 147, "2": 76, "3": 5}
+- all providers: {"1": 150, "2": 64, "3": 7}
+- primary providers: {"1": 151, "2": 65, "3": 5}
 
 ## Top canonical matches
 - 2026-06-09T22:00:00+00:00 | Nautico Recife — Fortaleza EC | providers=sstats ids={"sstats": "1520715"}
@@ -40,17 +40,17 @@ all 3 primary sources: 5
 - 2026-06-10T00:30:00+00:00 | Hill Country Linces W — Lonestar San Antonio W | providers=sstats ids={"sstats": "1532389"}
 - 2026-06-10T00:30:00+00:00 | Marin FC Siren W — San Juan SC W | providers=sstats ids={"sstats": "1532153"}
 - 2026-06-10T00:30:00+00:00 | Brazil W — USA W | providers=sstats ids={"sstats": "1542897"}
-- 2026-06-10T01:00:00+00:00 | Iraq — Venezuela | providers=bzzoiro,sstats ids={"bzzoiro": "209194", "sstats": "1546509"}
 - 2026-06-10T01:00:00+00:00 | Argentina — Iceland | providers=bzzoiro,sstats ids={"bzzoiro": "207441", "sstats": "1540357"}
+- 2026-06-10T01:00:00+00:00 | Iraq — Venezuela | providers=bzzoiro,sstats ids={"bzzoiro": "209194", "sstats": "1546509"}
 - 2026-06-10T01:00:00+00:00 | Laredo Heat — Lonestar | providers=sstats ids={"sstats": "1524822"}
 - 2026-06-10T01:30:00+00:00 | Costa Rica W — Canada W | providers=sstats ids={"sstats": "1546560"}
 - 2026-06-10T02:00:00+00:00 | Portland Cherry Bombs FC W — Olympia W | providers=sstats ids={"sstats": "1532438"}
-- 2026-06-10T09:30:00+00:00 | Canberra Ol. — Canberra Juventus FC | providers=odds_api_io,sstats ids={"odds_api_io": "69194954", "sstats": "1537471"}
-- 2026-06-10T09:30:00+00:00 | O'Connor Knights — Tigers | providers=odds_api_io,sstats ids={"odds_api_io": "69194956", "sstats": "1537469"}
-- 2026-06-10T09:30:00+00:00 | Belconnen — Canberra White | providers=odds_api_io,sstats ids={"odds_api_io": "69194950", "sstats": "1537472"}
-- 2026-06-10T09:30:00+00:00 | Canberra Croatia — Queanbeyan City FC | providers=odds_api_io,sstats ids={"odds_api_io": "69194952", "sstats": "1537468"}
-- 2026-06-10T09:30:00+00:00 | Tuggeranong — Monaro P | providers=odds_api_io,sstats ids={"odds_api_io": "69194958", "sstats": "1537470"}
-- 2026-06-10T09:30:00+00:00 | Sydney Olympic — SD Raiders | providers=odds_api_io,sstats ids={"odds_api_io": "71810354", "sstats": "1517550"}
+- 2026-06-10T09:30:00+00:00 | Belconnen United — Canberra White Eagles | providers=sstats ids={"sstats": "1537472"}
+- 2026-06-10T09:30:00+00:00 | Canberra FC — Queanbeyan City | providers=sstats ids={"sstats": "1537471"}
+- 2026-06-10T09:30:00+00:00 | O'Connor Knights — Cooma Tigers FC | providers=sstats ids={"sstats": "1537469"}
+- 2026-06-10T09:30:00+00:00 | Tuggeranong United — Monaro Panthers | providers=sstats ids={"sstats": "1537470"}
+- 2026-06-10T09:30:00+00:00 | Sydney Olympic — SD Raiders | providers=sstats ids={"sstats": "1517550"}
+- 2026-06-10T09:30:00+00:00 | WDSC Wolves — Eastern Suburbs | providers=sstats ids={"sstats": "1524029"}
 
 ## Targeted enrichment plan sample
 - Nautico Recife — Fortaleza EC | primary=1 providers=sstats
@@ -129,7 +129,7 @@ all 3 primary sources: 5
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Iraq — Venezuela | primary=2 providers=bzzoiro,sstats
+- Argentina — Iceland | primary=2 providers=bzzoiro,sstats
   - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
