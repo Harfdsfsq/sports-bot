@@ -1,15 +1,15 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+• Главная причина: odds above global max
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 122 (это не размер inventory).
+• Инвентарь дня: 160 матчей. Runtime rows processed: 162 (это не размер inventory).
 • 1+ линия: 151/160 (94%) | 1+ контекст: 102/160 (64%)
 • 2+ букмекера: 18/160 (11%)
-• Raw 2+ букмекера odds-api.io: 42 | normalized inventory: 18 | mapping gap: 24
-• Odds-api offer snapshot: rows 8202, matches 65, same-side 2+ books 41
+• Raw 2+ букмекера odds-api.io: 47 | normalized inventory: 18 | mapping gap: 29
+• Odds-api offer snapshot: rows 8604, matches 80, same-side 2+ books 46
 • 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
-• 2+ контекста: 67/160 (42%)
+• 2+ контекста: 74/160 (46%)
 • Готово для модели: 102/160 (64%)
 
 🏷️ A/B-tier публикация
@@ -23,28 +23,28 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
+• Pre-kickoff проверок: 11 | матчей без следующего регулярного run: 9
 • Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/2
+• Raw/candidates before quality: 1/1
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 24; смэтчил матчей 117; offers 8950; 2+ букмекера 42; ошибок 0.
-• Bzzoiro: direct req 43, v2 req 43; v2 ctx 10; v2 odds 8; secondary offers 0; overlap odds-api.io 8; ошибок 0.
-• SStats: запросы 32; сырых строк 27353; контекстов 93; deep-enriched 7; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 32; смэтчил матчей 158; offers 9615; 2+ букмекера 47; ошибок 0.
+• Bzzoiro: direct req 54, v2 req 54; v2 ctx 13; v2 odds 10; secondary offers 0; overlap odds-api.io 11; ошибок 0.
+• SStats: запросы 32; сырых строк 27352; контекстов 128; deep-enriched 10; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 57, bzzoiro+odds_api_io: 8, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 69, bzzoiro+odds_api_io: 11, bzzoiro: 2
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
-• quality post calibration edge guard: 1 (50%)
+• odds above global max: 1 (50%)
+• quality quarantine shadow insufficient history: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Malaga — Las Palmas | Меньше 2.5 @1.89 | EV -1.3% | edge -0.7 п.п. | q 72.8
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+1. Lidkopings — Skovde | Skovde @3.48 | EV +229.0% | edge +65.9 п.п. | q 100.0
+   • причина: odds above global max
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
@@ -52,7 +52,7 @@
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27265295872
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27265295872
-• Artifact: run-bot-27265295872
+• Run ID: 27271632819
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27271632819
+• Artifact: run-bot-27271632819
 • workflow run-bot, attempt 1
