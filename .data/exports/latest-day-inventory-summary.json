@@ -1,7 +1,12 @@
 {
-  "all_source_match_counts": {
-    "bzzoiro": 8,
-    "odds_api_io": 137
+  "alias_update": {
+    "paths": [
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/latest.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/current.json",
+      "/home/runner/work/sports-bot/sports-bot/.data/day_inventory/today.json"
+    ],
+    "status": "ok",
+    "target_date": "2026-06-11"
   },
   "build_status": "ok",
   "counts": {
@@ -9,30 +14,34 @@
     "fixture_sources_seen": 2,
     "leagues_seen": 46,
     "matches_added": 139,
+    "matches_added_from_latest_run": 0,
     "matches_after_core_merge": 139,
     "matches_after_top_cut": 139,
     "matches_missing_context_2plus": 131,
     "matches_missing_price_2plus": 139,
-    "matches_next_12h": 92,
-    "matches_next_12h_ready": 6,
+    "matches_next_12h": 94,
+    "matches_next_12h_ready": 38,
     "matches_next_6h": 91,
-    "matches_next_6h_ready": 6,
+    "matches_next_6h_ready": 37,
     "matches_raw_before_merge": 145,
-    "matches_ready_for_model": 6,
+    "matches_ready_for_model": 41,
     "matches_ready_for_publish": 0,
-    "matches_total": 139,
+    "matches_seen_latest_run": 48,
+    "matches_total": 175,
+    "matches_total_high_watermark": 175,
     "matches_updated": 0,
+    "matches_updated_from_latest_run": 0,
     "matches_with_2plus_context_sources": 8,
     "matches_with_2plus_core_fixture_sources": 6,
     "matches_with_2plus_odds_sources": 139,
     "matches_with_2plus_price_confirmations": 0,
     "matches_with_3_core_fixture_sources": 0,
-    "matches_with_context": 8,
-    "matches_with_form": 0,
+    "matches_with_context": 51,
+    "matches_with_form": 38,
     "matches_with_news": 0,
-    "matches_with_odds": 137,
+    "matches_with_odds": 164,
     "matches_with_weather": 0,
-    "matches_with_xg": 8,
+    "matches_with_xg": 43,
     "multi_source_fixture_matches": 6,
     "providers_seen": 2,
     "target_full": false,
@@ -411,13 +420,76 @@
       "status": "ok",
       "updated_at_utc": "2026-06-10T21:01:58.140873+00:00"
     },
+    "coverage_repair": {
+      "evidence_matches": 51,
+      "rows_repaired": 19,
+      "updated_at_utc": "2026-06-10T22:37:48.637470+00:00"
+    },
+    "fixture_expansion": {
+      "added": 0,
+      "providers": {
+        "allsportsapi": {
+          "body_preview": "{\"success\":1}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "football_data": {
+          "body_preview": "{\"filters\":{\"dateFrom\":\"2026-06-11\",\"dateTo\":\"2026-06-11\",\"permission\":\"TIER_ONE\"},\"resultSet\":{\"count\":0},\"matches\":[]}",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 0
+        },
+        "thesportsdb": {
+          "body_preview": "{\"events\":[{\"idEvent\":\"2391728\",\"idAPIfootball\":\"1489369\",\"strTimestamp\":\"2026-06-11T19:00:00\",\"strEvent\":\"Mexico vs South Africa\",\"strEventAlternate\":\"South Africa @ Mexico\",\"strFilename\":\"FIFA World Cup 2026-06-11 Mexico vs South Africa\",\"strSport\":\"Soccer\",\"idLeague\":\"4429\",\"strLeague\":\"FIFA World Cup\",\"strLeagueBadge\":\"https:\\/\\/r2.thesportsdb.com\\/images\\/media\\/league\\/badge\\/e7er5g1696521789.png\",\"strSeason\":\"2026\",\"strDescriptionEN\":\"\",\"strHomeTeam\":\"Mexico\",\"strAwayTeam\":\"South Africa\",",
+          "http_status": 200,
+          "payload_type": "dict",
+          "rows_parsed": 3
+        }
+      },
+      "rows_fetched": 3,
+      "updated": 3,
+      "updated_at_utc": "2026-06-10T22:37:35.039399+00:00"
+    },
+    "latest_match_accumulation": {
+      "added": 0,
+      "latest_rows_seen": 48,
+      "rejected": 0,
+      "updated": 0,
+      "updated_at_utc": "2026-06-10T22:37:48.539634+00:00"
+    },
     "mode": "core_fixture_discovery_top300",
+    "priority_and_refresh_plan": {
+      "active_rows": 140,
+      "final_pre_kickoff_checks": 32,
+      "low_quality_rows_filtered_from_priority": 29,
+      "needs_odds_refresh": 11,
+      "no_more_regular_run_before_kickoff": 0,
+      "updated_at_utc": "2026-06-10T22:35:08.863283+00:00"
+    },
     "providers": [
       "odds_api_io",
       "bzzoiro",
       "sportlogic"
-    ]
+    ],
+    "refresh_plan_count_repair": {
+      "active_matches": 167,
+      "final_pre_kickoff_checks": 32,
+      "matches_missing_odds_coverage": 10,
+      "matches_needing_odds_refresh": 86,
+      "matches_stale_odds_refresh": 76,
+      "no_more_regular_run_before_kickoff": 0,
+      "updated_at_utc": "2026-06-10T22:35:08.863283+00:00"
+    },
+    "runtime_odds_source_annotation": {
+      "matches_with_2plus_runtime_odds_sources": 4,
+      "matches_with_bzzoiro_event_metadata_context": 4,
+      "matches_with_bzzoiro_source": 4,
+      "matches_with_sportlogic_source": 0,
+      "updated_at_utc": "2026-06-10T22:34:38.889246+00:00",
+      "updated_matches": 18
+    }
   },
   "timezone": "Europe/Moscow",
-  "updated_at_utc": "2026-06-10T21:01:58.109657+00:00"
+  "updated_at_utc": "2026-06-10T22:37:48.637470+00:00"
 }
