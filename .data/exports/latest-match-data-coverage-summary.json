@@ -2,15 +2,15 @@
   "candidate_source_stats": {
     "controlled": {
       "files_present": 2,
-      "rows_kept": 10,
-      "rows_seen": 10,
+      "rows_kept": 2,
+      "rows_seen": 2,
       "rows_stale": 0
     },
     "debug": {
       "files_present": 1,
-      "rows_kept": 260,
-      "rows_seen": 370,
-      "rows_stale": 110
+      "rows_kept": 337,
+      "rows_seen": 337,
+      "rows_stale": 0
     },
     "lifecycle": {
       "files_present": 0,
@@ -32,30 +32,31 @@
     }
   },
   "core_counts": {
-    "candidates_before_quality": 8,
+    "candidates_before_quality": 1,
     "candidates_publishable": 0,
     "candidates_raw": 0,
-    "contexts_built": 89,
-    "controlled_candidates_seen": 4,
+    "contexts_built": 71,
+    "controlled_candidates_seen": 1,
     "controlled_published": false,
     "controlled_status": "no_viable_controlled_fallback",
-    "coverage_candidates_current_date": 93,
-    "matches_seen": 98,
-    "matches_with_offers": 41
+    "coverage_candidates_current_date": 161,
+    "matches_seen": 99,
+    "matches_with_offers": 57
   },
-  "created_at": "2026-06-10T19:14:11.197619+00:00",
+  "created_at": "2026-06-10T23:13:08.942430+00:00",
   "family_counts": {
-    "spreads": 69,
-    "totals": 24
+    "h2h": 4,
+    "spreads": 136,
+    "totals": 21
   },
-  "matches_with_candidates": 28,
+  "matches_with_candidates": 56,
   "missing_data_flags": {
-    "confidence_below_micro_c": 84,
-    "edge_below_micro_c": 91,
-    "ev_below_micro_c": 87,
-    "single_book": 87,
-    "single_context_source": 93,
-    "single_odds_source": 88
+    "confidence_below_micro_c": 157,
+    "edge_below_micro_c": 160,
+    "ev_below_micro_c": 158,
+    "single_book": 160,
+    "single_context_source": 160,
+    "single_odds_source": 160
   },
   "notes": [
     "Stale rescue candidates outside target_date are ignored; this prevents old Apr-26 rows from blocking today's inventory coverage merge.",
@@ -69,7 +70,7 @@
     "provider_gaps": ".data/exports/latest-provider-gaps.json",
     "summary": ".data/exports/latest-match-data-coverage-summary.json"
   },
-  "positive_near_miss_count": 5,
+  "positive_near_miss_count": 1,
   "provider_gap_summary": [
     {
       "api_key_present": true,
@@ -78,11 +79,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 40,
+      "events_matched": 51,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2241,
+      "offers_parsed": 2369,
       "provider": "account1",
       "rate_limited": false,
       "response_errors": 0,
@@ -97,11 +98,11 @@
       "direct_event_contexts_built": 0,
       "enabled": null,
       "events_fetched": null,
-      "events_matched": 19,
+      "events_matched": 30,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 2207,
+      "offers_parsed": 3345,
       "provider": "account2",
       "rate_limited": false,
       "response_errors": 0,
@@ -112,18 +113,20 @@
     {
       "api_key_present": true,
       "budget_exhausted": null,
-      "contexts_built": 9,
-      "direct_event_contexts_built": 9,
+      "contexts_built": 6,
+      "direct_event_contexts_built": 6,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
       "fixtures_fetched": null,
-      "gap_flags": [],
+      "gap_flags": [
+        "response_errors"
+      ],
       "matches_built": null,
       "offers_parsed": null,
       "provider": "bzzoiro",
       "rate_limited": null,
-      "response_errors": 0,
+      "response_errors": 2,
       "rows_fetched": null,
       "status_category": "working",
       "team_form_contexts_built": null
@@ -134,12 +137,12 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 21,
+      "events_fetched": 8,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
       "matches_built": null,
-      "offers_parsed": 1119,
+      "offers_parsed": 553,
       "provider": "bzzoiro_odds",
       "rate_limited": null,
       "response_errors": 0,
@@ -178,7 +181,7 @@
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 151,
+      "matches_built": 94,
       "offers_parsed": null,
       "provider": "odds_api_io",
       "rate_limited": false,
@@ -193,11 +196,11 @@
       "contexts_built": null,
       "direct_event_contexts_built": 0,
       "enabled": true,
-      "events_fetched": 160,
+      "events_fetched": 106,
       "events_matched": null,
       "fixtures_fetched": null,
       "gap_flags": [],
-      "matches_built": 151,
+      "matches_built": 94,
       "offers_parsed": null,
       "provider": "odds_api_io_bootstrap",
       "rate_limited": false,
@@ -209,8 +212,8 @@
     {
       "api_key_present": true,
       "budget_exhausted": false,
-      "contexts_built": 87,
-      "direct_event_contexts_built": 87,
+      "contexts_built": 66,
+      "direct_event_contexts_built": 66,
       "enabled": true,
       "events_fetched": null,
       "events_matched": null,
@@ -530,204 +533,50 @@
     "working": 11
   },
   "reject_reason_counts_from_rows": {
-    "post_calibration_edge_guard": 2,
-    "post_calibration_probability_guard": 1
+    "quarantine_shadow_insufficient_history": 1
   },
-  "target_date": "2026-06-10",
+  "target_date": "2026-06-11",
   "top_near_miss": [
     {
-      "away_team": "Gremio Novorizontino",
+      "away_team": "Algeria",
       "best_candidate": {
         "adjusted_probability": 0.0,
         "books_count": 0,
         "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 78.08,
+        "canonical_ev_pct": 237.995,
         "confidence": 0.0,
         "confirmation_sources_count": 0,
         "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.67,
+        "family": "spreads",
+        "odds": 3.49,
         "odds_sources_count": 0,
         "origin": ".logs/debug-last-run.json",
-        "point": 2.5,
+        "point": -2.0,
         "reject_reasons": [],
-        "selection": "Меньше 2.5",
+        "selection": "Algeria",
         "sources_count": 0
       },
-      "best_confidence": 91.99,
+      "best_confidence": 68.39,
       "best_edge_pp": 0.0,
-      "best_ev_pct": 78.08,
-      "books_max": 6,
-      "candidate_count": 5,
-      "commence_time": "2026-06-10T23:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 1,
-        "totals": 4
-      },
-      "home_team": "Goias",
-      "league_name": "Brazil - Brasileiro Serie B",
-      "match_key": "soccer|goias|gremio novorizontino|2026-06-10",
-      "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 4,
-        "ev_below_micro_c": 2,
-        "single_book": 4,
-        "single_context_source": 5,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {
-        "post_calibration_edge_guard": 1
-      },
-      "sources_max": 2
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 69.293,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.55,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше 3.5",
-        "sources_count": 0
-      },
-      "best_confidence": 78.37,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 69.293,
-      "books_max": 0,
-      "candidate_count": 6,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 3,
-        "totals": 3
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|nigeria|portugal|2026-06-10",
-      "missing_flags": {
-        "confidence_below_micro_c": 5,
-        "edge_below_micro_c": 6,
-        "ev_below_micro_c": 5,
-        "single_book": 6,
-        "single_context_source": 6,
-        "single_odds_source": 6
-      },
-      "odds_sources_max": 0,
-      "origins": {
-        ".logs/debug-last-run.json": 6
-      },
-      "reject_reasons": {},
-      "sources_max": 0
-    },
-    {
-      "away_team": "",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 0.0,
-        "canonical_ev_pct": 56.474,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.475,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": 3.5,
-        "reject_reasons": [],
-        "selection": "Меньше 3.5",
-        "sources_count": 0
-      },
-      "best_confidence": 92.02,
-      "best_edge_pp": 0.0,
-      "best_ev_pct": 56.474,
-      "books_max": 5,
-      "candidate_count": 5,
-      "commence_time": "",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 1,
-        "totals": 4
-      },
-      "home_team": "",
-      "league_name": "",
-      "match_key": "soccer|costa rica|england|2026-06-10",
-      "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 4,
-        "single_book": 4,
-        "single_context_source": 5,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {},
-      "sources_max": 2
-    },
-    {
-      "away_team": "El Paso Locomotive FC",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 5.647,
-        "canonical_ev_pct": 13.328,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 2.36,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": null,
-        "reject_reasons": [],
-        "selection": "Меньше 2.5",
-        "sources_count": 0
-      },
-      "best_confidence": 76.698,
-      "best_edge_pp": 5.647,
-      "best_ev_pct": 13.328,
-      "books_max": 6,
+      "best_ev_pct": 237.995,
+      "books_max": 3,
       "candidate_count": 4,
-      "commence_time": "2026-06-10T23:30:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
+      "commence_time": "",
+      "confirmation_sources_max": 2,
+      "context_sources_max": 2,
       "controlled_count": 0,
       "families": {
-        "spreads": 2,
-        "totals": 2
+        "spreads": 4
       },
-      "home_team": "Detroit City FC",
-      "league_name": "USA - USL, Championship",
-      "match_key": "soccer|detroit city|el paso locomotive|2026-06-10",
+      "home_team": "Bolivia",
+      "league_name": "",
+      "match_key": "soccer|algeria|bolivia|2026-06-11",
       "missing_flags": {
-        "confidence_below_micro_c": 3,
+        "confidence_below_micro_c": 4,
         "edge_below_micro_c": 3,
-        "ev_below_micro_c": 3,
+        "ev_below_micro_c": 1,
         "single_book": 3,
-        "single_context_source": 4,
+        "single_context_source": 3,
         "single_odds_source": 3
       },
       "odds_sources_max": 2,
@@ -735,59 +584,7 @@
         ".logs/debug-last-run.json": 4
       },
       "reject_reasons": {
-        "post_calibration_probability_guard": 1
-      },
-      "sources_max": 2
-    },
-    {
-      "away_team": "Avai",
-      "best_candidate": {
-        "adjusted_probability": 0.0,
-        "books_count": 0,
-        "canonical_edge_pp": 3.408,
-        "canonical_ev_pct": 6.338,
-        "confidence": 0.0,
-        "confirmation_sources_count": 0,
-        "context_sources_count": 0,
-        "family": "totals",
-        "odds": 1.86,
-        "odds_sources_count": 0,
-        "origin": ".logs/debug-last-run.json",
-        "point": null,
-        "reject_reasons": [],
-        "selection": "Меньше 2.5",
-        "sources_count": 0
-      },
-      "best_confidence": 84.9,
-      "best_edge_pp": 3.408,
-      "best_ev_pct": 6.338,
-      "books_max": 7,
-      "candidate_count": 5,
-      "commence_time": "2026-06-10T23:00:00+00:00",
-      "confirmation_sources_max": 1,
-      "context_sources_max": 1,
-      "controlled_count": 0,
-      "families": {
-        "spreads": 2,
-        "totals": 3
-      },
-      "home_team": "Ceara",
-      "league_name": "Brazil - Brasileiro Serie B",
-      "match_key": "soccer|avai|ceara|2026-06-10",
-      "missing_flags": {
-        "confidence_below_micro_c": 3,
-        "edge_below_micro_c": 5,
-        "ev_below_micro_c": 5,
-        "single_book": 4,
-        "single_context_source": 5,
-        "single_odds_source": 4
-      },
-      "odds_sources_max": 2,
-      "origins": {
-        ".logs/debug-last-run.json": 5
-      },
-      "reject_reasons": {
-        "post_calibration_edge_guard": 1
+        "quarantine_shadow_insufficient_history": 1
       },
       "sources_max": 2
     }

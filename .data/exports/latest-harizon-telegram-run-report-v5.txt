@@ -1,70 +1,58 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: quality post calibration edge guard
+• Главная причина: odds above global max
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 98 (это не размер inventory).
-• 1+ линия: 151/160 (94%) | 1+ контекст: 102/160 (64%)
-• 2+ букмекера: 19/160 (12%)
-• Raw 2+ букмекера odds-api.io: 19 | normalized inventory: 19 | mapping gap: 0
-• Odds-api offer snapshot: rows 4448, matches 41, same-side 2+ books 19
-• 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
-• 2+ контекста: 74/160 (46%)
-• Готово для модели: 102/160 (64%)
+• Инвентарь дня: 155 матчей. Runtime rows processed: 99 (это не размер inventory).
+• 1+ линия: 148/155 (95%) | 1+ контекст: 76/155 (49%)
+• 2+ букмекера: 1/155 (1%)
+• Raw 2+ букмекера odds-api.io: 28 | normalized inventory: 1 | mapping gap: 27
+• Odds-api offer snapshot: rows 5714, matches 54, same-side 2+ books 26
+• 2+ независимых odds-source: 139/155 (90%) — диагностика, не блок публикации
+• 2+ контекста: 28/155 (18%)
+• Готово для модели: 74/155 (48%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 10 | опубликовано: 0
+• A-tier strict-ready: 1 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 102 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 76 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 102 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 19 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 76 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 1 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
-• Line guard: увидел 4, оставил 0, снял 0
+• Pre-kickoff проверок: 23 | матчей без следующего регулярного run: 22
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
+• Raw/candidates before quality: 1/1
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 20; смэтчил матчей 98; offers 5260; 2+ букмекера 19; ошибок 0.
-• Bzzoiro: direct req 46, v2 req 46; v2 ctx 9; v2 odds 9; secondary offers 0; overlap odds-api.io 9; ошибок 0.
-• SStats: запросы 32; сырых строк 27511; контекстов 87; deep-enriched 11; team-form 0; direct 0; ошибок 0.
-• SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 32, bzzoiro+odds_api_io: 9
+• odds-api.io: events req 0, odds req 20; смэтчил матчей 94; offers 5964; 2+ букмекера 28; ошибок 0.
+• Bzzoiro: direct req 39, v2 req 39; v2 ctx 6; v2 odds 8; secondary offers 0; overlap odds-api.io 3; ошибок 2.
+• SStats: запросы 32; сырых строк 27511; контекстов 66; deep-enriched 6; team-form 0; direct 0; ошибок 0.
+• SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
+• Комбинации источников линий: odds_api_io: 51, bzzoiro: 3, bzzoiro+odds_api_io: 3
 
 🚫 Почему не опубликовано
-• quality post calibration edge guard: 2 (13%)
-• tier a canonical edge below min: 2 (13%)
-• tier b canonical edge below min: 2 (13%)
-• tier c canonical edge below min: 2 (13%)
-• quality: вероятность после калибровки ниже порога: 2 (13%)
-• tier c watch only: 1 (7%)
-• line movement not confirmed:awaiting next run: 1 (7%)
-• line movement:needs next cron line movement recheck: 1 (7%)
-• Диагностика legacy odds-source: 4 — не блок публикации при 2+ букмекерах
+• odds above global max: 1 (50%)
+• quality quarantine shadow insufficient history: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Goias — Gremio Novorizontino | Меньше 1.5 @2.70 | EV +36.2% | edge +13.4 п.п. | q 83.5
-   • причина: tier c watch only, line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity
-2. Detroit City FC — El Paso Locomotive FC | Меньше 2.5 @2.36 | EV +3.9% | edge +1.6 п.п. | q 65.5
-   • причина: tier a canonical edge below min, tier b canonical edge below min, tier b bookmaker quorum price outlier:16.54>8.00, tier c canonical edge below min
-3. Ceara — Avai | Меньше 2.5 @1.86 | EV +0.3% | edge +0.2 п.п. | q 59.5
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
-4. Portugal — Nigeria | Меньше 2.5 @2.52 | EV -0.4% | edge -0.2 п.п. | q 56.4
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+1. Bolivia — Algeria | Algeria @3.49 | EV +234.3% | edge +67.1 п.п. | q 100.0
+   • причина: odds above global max
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
+• Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27299219515
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27299219515
-• Artifact: run-bot-27299219515
+• Run ID: 27311878423
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27311878423
+• Artifact: run-bot-27311878423
 • workflow run-bot, attempt 1
