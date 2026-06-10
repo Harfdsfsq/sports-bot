@@ -3,27 +3,27 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 114 (это не размер inventory).
-• 1+ линия: 151/160 (94%) | 1+ контекст: 90/160 (56%)
-• 2+ букмекера: 17/160 (11%)
-• Raw 2+ букмекера odds-api.io: 35 | normalized inventory: 17 | mapping gap: 18
-• Odds-api offer snapshot: rows 6065, matches 54, same-side 2+ books 34
+• Инвентарь дня: 160 матчей. Runtime rows processed: 122 (это не размер inventory).
+• 1+ линия: 151/160 (94%) | 1+ контекст: 102/160 (64%)
+• 2+ букмекера: 18/160 (11%)
+• Raw 2+ букмекера odds-api.io: 42 | normalized inventory: 18 | mapping gap: 24
+• Odds-api offer snapshot: rows 8202, matches 65, same-side 2+ books 41
 • 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
-• 2+ контекста: 66/160 (41%)
-• Готово для модели: 90/160 (56%)
+• 2+ контекста: 67/160 (42%)
+• Готово для модели: 102/160 (64%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 9 | опубликовано: 0
+• A-tier strict-ready: 10 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 90 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 102 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 90 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 17 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 102 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 18 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 9 | матчей без следующего регулярного run: 2
+• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
 • Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -32,18 +32,18 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 22; смэтчил матчей 107; offers 6549; 2+ букмекера 35; ошибок 0.
-• Bzzoiro: direct req 33, v2 req 33; v2 ctx 8; v2 odds 6; secondary offers 0; overlap odds-api.io 6; ошибок 0.
-• SStats: запросы 32; сырых строк 27353; контекстов 87; deep-enriched 5; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 24; смэтчил матчей 117; offers 8950; 2+ букмекера 42; ошибок 0.
+• Bzzoiro: direct req 43, v2 req 43; v2 ctx 10; v2 odds 8; secondary offers 0; overlap odds-api.io 8; ошибок 0.
+• SStats: запросы 32; сырых строк 27353; контекстов 93; deep-enriched 7; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 48, bzzoiro+odds_api_io: 6, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 57, bzzoiro+odds_api_io: 8, bzzoiro: 2
 
 🚫 Почему не опубликовано
 • отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
 • quality post calibration edge guard: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Malaga — Las Palmas | Меньше 2.5 @1.88 | EV -4.3% | edge -2.3 п.п. | q 72.8
+1. Malaga — Las Palmas | Меньше 2.5 @1.89 | EV -1.3% | edge -0.7 п.п. | q 72.8
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
@@ -52,7 +52,7 @@
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27259123553
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27259123553
-• Artifact: run-bot-27259123553
+• Run ID: 27265295872
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27265295872
+• Artifact: run-bot-27265295872
 • workflow run-bot, attempt 1
