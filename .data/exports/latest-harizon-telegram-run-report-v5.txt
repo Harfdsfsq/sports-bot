@@ -1,13 +1,13 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: line movement not confirmed:awaiting next run
+• Главная причина: tier a canonical edge below min
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 183 (это не размер inventory).
+• Инвентарь дня: 160 матчей. Runtime rows processed: 174 (это не размер inventory).
 • 1+ линия: 151/160 (94%) | 1+ контекст: 102/160 (64%)
-• 2+ букмекера: 18/160 (11%)
-• Raw 2+ букмекера odds-api.io: 50 | normalized inventory: 18 | mapping gap: 32
-• Odds-api offer snapshot: rows 10540, matches 86, same-side 2+ books 50
+• 2+ букмекера: 19/160 (12%)
+• Raw 2+ букмекера odds-api.io: 51 | normalized inventory: 19 | mapping gap: 32
+• Odds-api offer snapshot: rows 10166, matches 83, same-side 2+ books 51
 • 2+ независимых odds-source: 131/160 (82%) — диагностика, не блок публикации
 • 2+ контекста: 74/160 (46%)
 • Готово для модели: 102/160 (64%)
@@ -17,13 +17,13 @@
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
 • B-tier 1+ bookmaker/context coverage: 102 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 102 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 18 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 102 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 19 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 16 | матчей без следующего регулярного run: 9
+• Pre-kickoff проверок: 29 | матчей без следующего регулярного run: 26
 • Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -32,31 +32,29 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 36; смэтчил матчей 176; offers 11772; 2+ букмекера 50; ошибок 0.
-• Bzzoiro: direct req 69, v2 req 69; v2 ctx 16; v2 odds 13; secondary offers 0; overlap odds-api.io 14; ошибок 0.
-• SStats: запросы 32; сырых строк 27505; контекстов 148; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 34; смэтчил матчей 168; offers 11220; 2+ букмекера 51; ошибок 0.
+• Bzzoiro: direct req 62, v2 req 62; v2 ctx 13; v2 odds 12; secondary offers 0; overlap odds-api.io 12; ошибок 0.
+• SStats: запросы 32; сырых строк 27505; контекстов 144; deep-enriched 15; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 72, bzzoiro+odds_api_io: 14, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 71, bzzoiro+odds_api_io: 12
 
 🚫 Почему не опубликовано
-• line movement not confirmed:awaiting next run: 1 (17%)
-• line movement:needs next cron line movement recheck: 1 (17%)
-• missing total xg sanity: 1 (17%)
-• final edge below min: 1 (17%)
-• final ev below min: 1 (17%)
-• quality post calibration edge guard: 1 (17%)
+• tier a canonical edge below min: 1 (25%)
+• tier b canonical edge below min: 1 (25%)
+• tier c canonical edge below min: 1 (25%)
+• quality post calibration edge guard: 1 (25%)
 
 🔎 Проверенные reserve-кандидаты
-1. Ceara — Avai | Меньше 2.5 @1.87 | EV +4.3% | edge +2.3 п.п. | q 73.3
-   • причина: line movement not confirmed:awaiting next run, line movement:needs next cron line movement recheck, missing total xg sanity, final edge below min
+1. Ceara — Avai | Меньше 2.5 @1.84 | EV +3.3% | edge +1.8 п.п. | q 73.8
+   • причина: tier a canonical edge below min, tier b canonical edge below min, tier c canonical edge below min
 
 📌 Что это значит
-• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
+• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Есть mapping gap между raw bookmaker coverage и normalized inventory: следующий слой — матчинг raw odds-api offers к frozen inventory.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27278040843
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27278040843
-• Artifact: run-bot-27278040843
+• Run ID: 27285441060
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27285441060
+• Artifact: run-bot-27285441060
 • workflow run-bot, attempt 1
