@@ -1,0 +1,135 @@
+# Provider day discovery canonical pool
+UTC: 2026-06-11T09:07:24.985247+00:00
+target_date: 2026-06-11
+canonical_matches: 150
+2+ provider sources: 38
+2+ primary sources: 37
+all 3 primary sources: 1
+
+## Provider fixture discovery
+- allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
+- bzzoiro: commands=10 ok=3 rows=43 event_like=43 unique=15 statuses={"OK": 3, "EMPTY": 7}
+- football_data: commands=1 ok=1 rows=1 event_like=1 unique=1 statuses={"OK": 1}
+- highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
+- odds_api_io: commands=6 ok=2 rows=130 event_like=130 unique=65 statuses={"OK": 2, "EMPTY": 4}
+- sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
+- sstats: commands=1 ok=1 rows=111 event_like=108 unique=108 statuses={"OK": 1}
+- thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
+
+## Source distributions
+- all providers: {"1": 112, "2": 36, "3": 1, "5": 1}
+- primary providers: {"1": 113, "2": 36, "3": 1}
+
+## Top canonical matches
+- 2026-06-10T22:00:00+00:00 | Rochester W — RKC Third Coast W | providers=sstats ids={"sstats": "1532157"}
+- 2026-06-10T22:00:00+00:00 | Chicago Dutch Lions — St. Croix | providers=sstats ids={"sstats": "1524828"}
+- 2026-06-10T22:00:00+00:00 | Nona — Brooke House | providers=sstats ids={"sstats": "1524850"}
+- 2026-06-10T22:00:00+00:00 | Steel City — Pittsburgh Riverhounds 2 | providers=sstats ids={"sstats": "1524833"}
+- 2026-06-10T22:30:00+00:00 | Charlotte Independence 2 — Port City | providers=sstats ids={"sstats": "1524835"}
+- 2026-06-10T23:00:00+00:00 | Fluminense-SC — Metropolitano | providers=sstats ids={"sstats": "1541980"}
+- 2026-06-10T23:00:00+00:00 | Forge — HFX Wanderers FC | providers=sstats ids={"sstats": "1517298"}
+- 2026-06-10T23:00:00+00:00 | Greenville Triumph — Loudoun United | providers=sstats ids={"sstats": "1531188"}
+- 2026-06-10T23:00:00+00:00 | One Knoxville — Chattanooga Red Wolves | providers=sstats ids={"sstats": "1531211"}
+- 2026-06-10T23:00:00+00:00 | Annapolis Blues W — Richmond Ivy W | providers=sstats ids={"sstats": "1532162"}
+- 2026-06-10T23:00:00+00:00 | Eagle FC W — Northern Virginia FC W | providers=sstats ids={"sstats": "1532159"}
+- 2026-06-10T23:00:00+00:00 | Erie Sports Center W — Buffalo W | providers=sstats ids={"sstats": "1532154"}
+- 2026-06-10T23:00:00+00:00 | Indy Eleven W — Racing Louisville W | providers=sstats ids={"sstats": "1532158"}
+- 2026-06-10T23:00:00+00:00 | Kalamazoo FC W — Detroit City W | providers=sstats ids={"sstats": "1532161"}
+- 2026-06-10T23:00:00+00:00 | SC United Bantams W — Port City NC W | providers=sstats ids={"sstats": "1532439"}
+- 2026-06-10T23:00:00+00:00 | Westchester SC — Fort Wayne | providers=sstats ids={"sstats": "1493856"}
+- 2026-06-10T23:00:00+00:00 | AC Connecticut — Vermont Green | providers=sstats ids={"sstats": "1524830"}
+- 2026-06-10T23:00:00+00:00 | Black Rock — Blackwatch Rush | providers=sstats ids={"sstats": "1524838"}
+- 2026-06-10T23:00:00+00:00 | Cedar Stars Rush — Westchester Flames | providers=sstats ids={"sstats": "1524840"}
+- 2026-06-10T23:00:00+00:00 | Christos — Bethesda SC | providers=sstats ids={"sstats": "1524824"}
+- 2026-06-10T23:00:00+00:00 | Connecticut Rush — Boston Bolts | providers=sstats ids={"sstats": "1524841"}
+- 2026-06-10T23:00:00+00:00 | Dayton Dutch Lions — Kings Hammer Columbus | providers=sstats ids={"sstats": "1524842"}
+- 2026-06-10T23:00:00+00:00 | FC Miami City — Weston | providers=sstats ids={"sstats": "1524848"}
+- 2026-06-10T23:00:00+00:00 | Flint City Bucks — AFC Ann Arbor | providers=sstats ids={"sstats": "1524843"}
+- 2026-06-10T23:00:00+00:00 | New England FC — Seacoast United Phantoms | providers=sstats ids={"sstats": "1524849"}
+- 2026-06-10T23:00:00+00:00 | North Carolina II — Wake | providers=sstats ids={"sstats": "1524851"}
+- 2026-06-10T23:00:00+00:00 | Northern Indiana — Toledo Villa | providers=sstats ids={"sstats": "1524852"}
+- 2026-06-10T23:00:00+00:00 | PA Classics — Eagle FC | providers=sstats ids={"sstats": "1525400"}
+- 2026-06-10T23:00:00+00:00 | Reading United — Ocean City Nor'easters | providers=sstats ids={"sstats": "1524853"}
+- 2026-06-10T23:00:00+00:00 | Sueno — Rockford Raptors | providers=sstats ids={"sstats": "1524834"}
+
+## Targeted enrichment plan sample
+- Rochester W — RKC Third Coast W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Chicago Dutch Lions — St. Croix | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Nona — Brooke House | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Steel City — Pittsburgh Riverhounds 2 | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Charlotte Independence 2 — Port City | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Fluminense-SC — Metropolitano | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Forge — HFX Wanderers FC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Greenville Triumph — Loudoun United | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- One Knoxville — Chattanooga Red Wolves | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Annapolis Blues W — Richmond Ivy W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Eagle FC W — Northern Virginia FC W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Erie Sports Center W — Buffalo W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Indy Eleven W — Racing Louisville W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Kalamazoo FC W — Detroit City W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- SC United Bantams W — Port City NC W | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Westchester SC — Fort Wayne | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- AC Connecticut — Vermont Green | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Black Rock — Blackwatch Rush | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Cedar Stars Rush — Westchester Flames | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Christos — Bethesda SC | primary=1 providers=sstats
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
