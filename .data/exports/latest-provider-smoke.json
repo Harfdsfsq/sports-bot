@@ -11,7 +11,7 @@
   ],
   "checks": [
     {
-      "body_preview": "[{\"id\":66601934,\"home\":\"Sparta Prague\",\"away\":\"Sigma Olomouc\",\"homeId\":44164,\"awayId\":44162,\"date\":\"2026-06-11T11:00:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"Czechia - U19 1. Liga\",\"slug\":\"czechia-u19-1-liga\"},\"status\":\"pending\",\"scores\":{\"home\":0,\"away\":0}},{\"id\":7014774",
+      "body_preview": "[{\"id\":70771318,\"home\":\"Venezuela\",\"away\":\"Japan\",\"homeId\":903537,\"awayId\":585789,\"date\":\"2026-06-11T11:30:00Z\",\"sport\":{\"name\":\"Football\",\"slug\":\"football\"},\"league\":{\"name\":\"International Youth - Tournoi Maurice Revello, Group B\",\"slug\":\"international-youth-tournoi-maurice-revello-group-b\"},\"statu",
       "enabled": true,
       "http_status": 200,
       "item_count": 5,
@@ -66,7 +66,7 @@
       "using_free_key": false
     },
     {
-      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781172213,\"localtime\":\"2026-06-11 11:03\"},\"current\":{\"last_updated_epoch\":1781171100,\"last_updated\":\"2026-06-11 10:45\",\"temp_c\":13.",
+      "body_preview": "{\"location\":{\"name\":\"London\",\"region\":\"City of London, Greater London\",\"country\":\"United Kingdom\",\"lat\":51.5171,\"lon\":-0.1062,\"tz_id\":\"Europe/London\",\"localtime_epoch\":1781175955,\"localtime\":\"2026-06-11 12:05\"},\"current\":{\"last_updated_epoch\":1781174700,\"last_updated\":\"2026-06-11 11:45\",\"temp_c\":12.",
       "enabled": true,
       "http_status": 200,
       "item_count": 2,
@@ -78,7 +78,7 @@
     },
     {
       "enabled": true,
-      "error": "ConnectError: ",
+      "error": "ConnectTimeout: ",
       "ok": false,
       "provider": "open_meteo",
       "status": "request_error"
@@ -91,7 +91,7 @@
       "status": "ConnectTimeout: "
     }
   ],
-  "created_at_utc": "2026-06-11T10:03:52.324697+00:00",
+  "created_at_utc": "2026-06-11T11:06:08.329719+00:00",
   "non_core_env_audit": [
     {
       "bad_enabled": {
@@ -132,15 +132,19 @@
       "prefix": "ODDSPAPI"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "ODDS_FEED_RAPIDAPI_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "ODDS_FEED"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_ODDS_FEED_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_ODDS_FEED"
     },
     {
@@ -194,9 +198,13 @@
       "prefix": "GUARDIAN"
     },
     {
-      "bad_enabled": {},
-      "bad_limits": {},
-      "ok": true,
+      "bad_enabled": {
+        "METEOSTAT_RAPIDAPI_ENABLED": "true"
+      },
+      "bad_limits": {
+        "METEOSTAT_RAPIDAPI_MAX_HTTP_REQUESTS_PER_RUN": "1"
+      },
+      "ok": false,
       "prefix": "METEOSTAT"
     },
     {
@@ -206,9 +214,11 @@
       "prefix": "OPENWEATHERMAP"
     },
     {
-      "bad_enabled": {},
+      "bad_enabled": {
+        "RAPIDAPI_SPORTSBOOK_PROBE_ENABLED": "true"
+      },
       "bad_limits": {},
-      "ok": true,
+      "ok": false,
       "prefix": "RAPIDAPI_SPORTSBOOK"
     },
     {
@@ -252,7 +262,7 @@
     "enabled_checks": 8,
     "failed_enabled_checks": 2,
     "missing_key_checks": 0,
-    "non_core_bad_env_prefixes": 5,
+    "non_core_bad_env_prefixes": 9,
     "ok_enabled_checks": 6,
     "status": "warning"
   }
