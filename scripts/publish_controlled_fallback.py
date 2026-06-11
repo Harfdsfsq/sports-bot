@@ -35,22 +35,7 @@ except Exception:
     def is_sent_pick_row(row: Any) -> bool:
         if not isinstance(row, dict):
             return False
-        truthy = {"1", "true", "yes", "on", "sent", "published", "telegram_sent"}
-        for key in (
-            "telegram_sent",
-            "published",
-            "sent",
-            "is_published",
-            "publication_sent",
-        ):
-            if str(row.get(key) or "").strip().lower() in truthy:
-                return True
-        status = str(row.get("status") or row.get("publication_lifecycle_status") or "").strip().lower()
-        if status in {"published", "telegram_sent", "sent", "posted"}:
-            return True
-        if row.get("published_at_utc") or row.get("sent_at") or row.get("telegram_sent_at_utc"):
-            return True
-        return False
+        return str(row.get("telegram_sent") or "").strip().lower() in {"1", "true", "yes", "on"}
 
 
 
@@ -86,37 +71,6 @@ def env_set(name: str, default: str) -> set[str]:
     return {item.strip().lower() for item in str(raw).split(",") if item.strip()}
 
 
-try:
-    from app.services.line_movement_state import evaluate_and_record_line_movement
-except Exception:
-    evaluate_and_record_line_movement = None
-
-
-class _LineMovementSettings:
-    line_movement_next_run_minutes = 120
-
-
-def controlled_line_movement_report(candidate: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
-    if evaluate_and_record_line_movement is None:
-        return {"passed": False, "status": "unavailable", "reasons": ["line_movement_module_unavailable"]}
-    row = dict(candidate)
-    row.update({
-        "odds": metrics.get("odds") or metrics.get("selected_odds") or metrics.get("price_used_for_ev"),
-        "selected_odds": metrics.get("odds") or metrics.get("selected_odds") or metrics.get("price_used_for_ev"),
-        "ev_pct": metrics.get("canonical_ev_pct") or metrics.get("ev_pct"),
-        "edge_pct": metrics.get("canonical_edge_pp") or metrics.get("edge_pct"),
-        "confidence": metrics.get("confidence"),
-        "books_count": metrics.get("books_count"),
-        "sources_count": metrics.get("sources_count") or metrics.get("odds_sources_count"),
-    })
-    if "commence_time" not in row and candidate.get("kickoff_utc"):
-        row["commence_time"] = candidate.get("kickoff_utc")
-    try:
-        return evaluate_and_record_line_movement(row, _LineMovementSettings(), now=datetime.now(UTC))
-    except Exception as exc:
-        return {"passed": False, "status": "error", "reasons": [f"line_movement_error:{exc}"]}
-
-
 def load_json(path: str | Path, default: Any) -> Any:
     try:
         return json.loads(Path(path).read_text(encoding="utf-8"))
@@ -128,210 +82,6 @@ def write_json(path: str | Path, payload: Any) -> None:
     p = Path(path)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-
-
-
-
-def _row_key(row: dict[str, Any]) -> str:
-    return str(
-        row.get("dedupe_key")
-        or row.get("match_key")
-        or row.get("canonical_match_id")
-        or f"{row.get('home_team') or ''}|{row.get('away_team') or ''}|{row.get('commence_time') or row.get('kickoff') or ''}|{row.get('selection') or ''}|{row.get('point') or ''}"
-    )
-
-
-def _merge_export_rows(existing: Any, rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
-    merged: list[dict[str, Any]] = []
-    by_key: dict[str, int] = {}
-    if isinstance(existing, list):
-        for item in existing:
-            if not isinstance(item, dict):
-                continue
-            key = _row_key(item)
-            by_key[key] = len(merged)
-            merged.append(dict(item))
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        normalized = dict(row)
-        normalized.setdefault("export_source", "controlled_fallback")
-        normalized.setdefault("published_by", "controlled_fallback")
-        normalized.setdefault("created_at_utc", datetime.now(UTC).isoformat())
-        key = _row_key(normalized)
-        if key in by_key:
-            old = merged[by_key[key]]
-            old.update(normalized)
-            merged[by_key[key]] = old
-        else:
-            by_key[key] = len(merged)
-            merged.append(normalized)
-    return merged
-
-
-def sync_controlled_fallback_publication_exports(selected_rows: list[dict[str, Any]], *, sent: bool, dry_run: bool) -> dict[str, Any]:
-    """Write fallback Telegram picks into the common latest-picks/latest-bets exports."""
-    export_dir = Path(".data/exports")
-    export_dir.mkdir(parents=True, exist_ok=True)
-    rows: list[dict[str, Any]] = []
-    for row in selected_rows or []:
-        if not isinstance(row, dict):
-            continue
-        out = dict(row)
-        out["telegram_sent"] = bool(sent)
-        out["publication_lifecycle_status"] = "telegram_sent" if sent else ("dry_run_selected" if dry_run else "send_failed")
-        out["status"] = "pending" if sent else ("generated" if dry_run else "send_failed")
-        out.setdefault("source", "controlled_fallback")
-        out.setdefault("export_source", "controlled_fallback")
-        out.setdefault("published_by", "controlled_fallback")
-        out.setdefault("published_at_utc", datetime.now(UTC).isoformat() if sent else "")
-        metrics = out.get("metrics") if isinstance(out.get("metrics"), dict) else {}
-        out.setdefault("ev_pct", metrics.get("canonical_ev_pct"))
-        out.setdefault("edge_pp", metrics.get("canonical_edge_pp"))
-        out.setdefault("quality_score", metrics.get("quality_score"))
-        out.setdefault("books_count", metrics.get("books_count"))
-        out.setdefault("odds_sources_count", metrics.get("odds_sources_count"))
-        out.setdefault("independent_odds_sources_count", metrics.get("independent_odds_sources_count", metrics.get("odds_sources_count")))
-        out.setdefault("confirmation_sources_count", metrics.get("confirmation_sources_count"))
-        out.setdefault("confirmation_sources", metrics.get("confirmation_sources"))
-        out.setdefault("line_sources", metrics.get("line_sources"))
-        rows.append(out)
-    if not rows:
-        return {"synced": False, "rows": 0}
-    latest_picks_path = export_dir / "latest-picks.json"
-    latest_bets_path = export_dir / "latest-bets.json"
-    latest_picks = _merge_export_rows(load_json(latest_picks_path, []), rows)
-    latest_bets = _merge_export_rows(load_json(latest_bets_path, []), rows)
-    write_json(latest_picks_path, latest_picks)
-    write_json(latest_bets_path, latest_bets)
-    write_json(export_dir / "latest-controlled-fallback-published-picks.json", rows)
-
-    # Append-only ledgers are the durable dedupe source.  The latest-* files can
-    # be rebuilt or overwritten earlier in the workflow; ledgers keep every sent
-    # Telegram pick so the next run cannot re-send the same match/market.
-    if sent:
-        for ledger_name in ("published-picks-ledger.json", "controlled-fallback-published-ledger.json"):
-            ledger_path = export_dir / ledger_name
-            ledger_rows = load_json(ledger_path, [])
-            if not isinstance(ledger_rows, list):
-                ledger_rows = []
-            merged_ledger = _merge_export_rows(ledger_rows, rows)
-            write_json(ledger_path, merged_ledger)
-    return {
-        "synced": True,
-        "rows": len(rows),
-        "sent": bool(sent),
-        "dry_run": bool(dry_run),
-        "latest_picks_count": len(latest_picks),
-        "latest_bets_count": len(latest_bets),
-    }
-
-
-
-
-def _sent_publication_record(row: dict[str, Any], *, source: str = "controlled_fallback") -> dict[str, Any]:
-    now = datetime.now(UTC).isoformat()
-    metrics = row.get("metrics") if isinstance(row.get("metrics"), dict) else {}
-    return {
-        "source": source,
-        "sent_at": row.get("sent_at") or row.get("published_at_utc") or now,
-        "published_at_utc": row.get("published_at_utc") or now,
-        "telegram_sent": True,
-        "published": True,
-        "publication_lifecycle_status": "telegram_sent",
-        "status": "published",
-        "dedupe_key": row.get("dedupe_key") or dedupe_key(row),
-        "match_key": row.get("match_key"),
-        "canonical_match_id": row.get("canonical_match_id"),
-        "event_id": row.get("event_id"),
-        "home_team": row.get("home_team"),
-        "away_team": row.get("away_team"),
-        "home_team_ru": row.get("home_team_ru"),
-        "away_team_ru": row.get("away_team_ru"),
-        "match_name": row.get("match_name") or f"{row.get('home_team') or ''} — {row.get('away_team') or ''}".strip(),
-        "league_name": row.get("league_name"),
-        "family": row.get("family") or row.get("market_family"),
-        "market_family": row.get("market_family") or row.get("family"),
-        "selection": row.get("selection"),
-        "selection_key": row.get("selection_key"),
-        "point": row.get("point") or row.get("line") or row.get("handicap"),
-        "odds": row.get("odds") or row.get("selected_odds") or row.get("price"),
-        "selected_odds": row.get("selected_odds") or row.get("odds") or row.get("price"),
-        "stake": row.get("stake"),
-        "stake_amount": row.get("stake_amount") or row.get("stake"),
-        "tier": row.get("tier") or row.get("publication_tier"),
-        "commence_time": row.get("commence_time") or row.get("kickoff") or row.get("start_time"),
-        "kickoff": row.get("kickoff") or row.get("commence_time") or row.get("start_time"),
-        "ev_pct": row.get("ev_pct") if row.get("ev_pct") is not None else metrics.get("canonical_ev_pct"),
-        "edge_pp": row.get("edge_pp") if row.get("edge_pp") is not None else metrics.get("canonical_edge_pp"),
-        "quality_score": row.get("quality_score") if row.get("quality_score") is not None else metrics.get("quality_score"),
-    }
-
-
-def _merge_index_records(existing: Any, rows: list[dict[str, Any]], *, source: str) -> dict[str, Any]:
-    index: dict[str, Any] = {}
-    if isinstance(existing, dict):
-        for key, value in existing.items():
-            if isinstance(value, dict):
-                index[str(key)] = dict(value)
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        record = _sent_publication_record(row, source=source)
-        keys = set(broad_dedupe_keys(record))
-        keys.add(str(record.get("dedupe_key") or dedupe_key(record)))
-        for key in keys:
-            if key:
-                index[key] = dict(record)
-    return index
-
-
-def sync_publication_state_indices(selected_rows: list[dict[str, Any]], *, sent: bool, dry_run: bool) -> dict[str, Any]:
-    """Durably persist sent picks for dedupe across future workflow runs.
-
-    latest-picks/latest-bets are useful reports, but they can be overwritten or
-    absent in a run artifact.  These indices are the durable source for duplicate
-    blocking: same match + market + selection + point is blocked even if the odds
-    or Telegram text changed.
-    """
-    if not sent or dry_run:
-        return {"synced": False, "reason": "not_sent", "rows": len(selected_rows or [])}
-    rows = [dict(row) for row in (selected_rows or []) if isinstance(row, dict)]
-    if not rows:
-        return {"synced": False, "reason": "no_rows", "rows": 0}
-
-    Path(".data").mkdir(parents=True, exist_ok=True)
-    Path(".data/exports").mkdir(parents=True, exist_ok=True)
-
-    fallback_path = Path(".data/fallback-sent-index.json")
-    published_path = Path(".data/published-candidate-index.json")
-    fallback_index = _merge_index_records(load_json(fallback_path, {}), rows, source="controlled_fallback")
-    published_index = _merge_index_records(load_json(published_path, {}), rows, source="controlled_fallback")
-    write_json(fallback_path, fallback_index)
-    write_json(published_path, published_index)
-
-    export_dir = Path(".data/exports")
-    ledger_files = [
-        export_dir / "published-picks-ledger.json",
-        export_dir / "controlled-fallback-published-ledger.json",
-        export_dir / "published-bets-ledger.json",
-    ]
-    ledger_counts: dict[str, int] = {}
-    sent_rows = [_sent_publication_record(row, source="controlled_fallback") for row in rows]
-    for ledger_path in ledger_files:
-        merged = _merge_export_rows(load_json(ledger_path, []), sent_rows)
-        write_json(ledger_path, merged)
-        ledger_counts[ledger_path.name] = len(merged)
-
-    # Also keep a compact latest sent snapshot for downstream reports/artifacts.
-    write_json(export_dir / "latest-controlled-fallback-published-picks.json", sent_rows)
-    return {
-        "synced": True,
-        "rows": len(rows),
-        "fallback_index_keys": len(fallback_index),
-        "published_index_keys": len(published_index),
-        "ledgers": ledger_counts,
-    }
 
 
 def payload_timestamp(payload: Any) -> datetime | None:
@@ -410,89 +160,10 @@ def load_context_source_index() -> dict[str, Any]:
     for path in paths:
         payload = load_json(path, {})
         if isinstance(payload, dict) and isinstance(payload.get("by_match"), dict):
-            _CONTEXT_SOURCE_INDEX_CACHE = _augment_context_source_index(payload)
-            return _CONTEXT_SOURCE_INDEX_CACHE
-    _CONTEXT_SOURCE_INDEX_CACHE = _augment_context_source_index({})
+            _CONTEXT_SOURCE_INDEX_CACHE = payload
+            return payload
+    _CONTEXT_SOURCE_INDEX_CACHE = {}
     return _CONTEXT_SOURCE_INDEX_CACHE
-
-
-def _context_index_add(by_match: dict[str, list[str]], match_key: Any, source: Any) -> None:
-    key = str(match_key or "").strip().lower()
-    src = normalize_confirmation_source(source)
-    if not key or not src:
-        return
-    values = by_match.setdefault(key, [])
-    if src not in values:
-        values.append(src)
-
-
-def _context_index_aliases(row: dict[str, Any]) -> list[str]:
-    keys = [str(row.get("match_key") or "").strip()]
-    home = row.get("home_team") or row.get("home")
-    away = row.get("away_team") or row.get("away")
-    kickoff = str(row.get("commence_time") or row.get("kickoff_utc") or row.get("start_time") or "")[:10]
-    if home and away and kickoff:
-        home_key = str(home).strip().lower().replace(" ", "_")
-        away_key = str(away).strip().lower().replace(" ", "_")
-        keys.extend([
-            f"{kickoff}|{home_key}|{away_key}",
-            f"{kickoff}|{away_key}|{home_key}",
-            f"soccer|{home_key}|{away_key}|{kickoff}",
-            f"soccer|{away_key}|{home_key}|{kickoff}",
-        ])
-    return [key for key in keys if key]
-
-
-def _augment_context_source_index(payload: dict[str, Any]) -> dict[str, Any]:
-    """Merge newer evidence exports into the legacy context-source index.
-
-    Controlled fallback runs after the main pipeline, while the legacy
-    latest-context-source-index can lag behind current-run evidence.  The evidence
-    exports are keyed by the same match_key and keep provider provenance, so they
-    are safe context confirmations without being counted as price sources.
-    """
-    out = dict(payload or {})
-    by_match_raw = out.get("by_match") if isinstance(out.get("by_match"), dict) else {}
-    by_match: dict[str, list[str]] = {
-        str(key).strip().lower(): [src for src in _source_values(value) if normalize_confirmation_source(src)]
-        for key, value in by_match_raw.items()
-    }
-
-    observations = load_json(".data/exports/latest-context-observations.json", [])
-    if isinstance(observations, list):
-        for row in observations:
-            if not isinstance(row, dict):
-                continue
-            for key in _context_index_aliases(row):
-                _context_index_add(by_match, key, row.get("provider") or row.get("source"))
-
-    serving_rows = load_json(".data/exports/latest-match-serving.json", [])
-    if isinstance(serving_rows, list):
-        for row in serving_rows:
-            if not isinstance(row, dict):
-                continue
-            for source in _source_values(row.get("context_sources")):
-                for key in _context_index_aliases(row):
-                    _context_index_add(by_match, key, source)
-
-    inventory = load_json(".data/cache/day_inventory/latest.json", {})
-    inv_rows = inventory.get("matches") if isinstance(inventory, dict) and isinstance(inventory.get("matches"), list) else []
-    for row in inv_rows:
-        if not isinstance(row, dict):
-            continue
-        sources = []
-        for field in ("context_sources", "confirmation_sources", "merged_context_sources"):
-            sources.extend(_source_values(row.get(field)))
-        metadata = row.get("metadata") if isinstance(row.get("metadata"), dict) else {}
-        for field in ("context_sources", "confirmation_sources", "merged_context_sources"):
-            sources.extend(_source_values(metadata.get(field)))
-        for source in sources:
-            for key in _context_index_aliases(row):
-                _context_index_add(by_match, key, source)
-
-    out["by_match"] = {key: sorted(set(values)) for key, values in by_match.items() if values}
-    out["augmented_from_current_evidence"] = True
-    return out
 
 
 def normalize_confirmation_source(value: Any) -> str | None:
@@ -525,36 +196,6 @@ def normalize_confirmation_source(value: Any) -> str | None:
         "clubelo": "clubelo",
         "wikidata": "wikidata",
         "guardian": "guardian",
-        "highlightly": "highlightly",
-    }
-    if text in aliases:
-        return aliases[text]
-    for needle, canonical in aliases.items():
-        if needle in text:
-            return canonical
-    return None
-
-
-def normalize_line_source(value: Any) -> str | None:
-    text = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
-    if not text:
-        return None
-    aliases = {
-        "oddsapiio": "odds_api_io",
-        "odds_api": "odds_api_io",
-        "odds_api_io": "odds_api_io",
-        "odds_api_io_account1": "odds_api_io",
-        "odds_api_io_account2": "odds_api_io",
-        "bzzoiro": "bzzoiro",
-        "bzzoiro_current_odds": "bzzoiro",
-        "bzzoiro_event_odds": "bzzoiro",
-        "bzzoiro_v2": "bzzoiro",
-        "sportlogic": "sportlogic",
-        "sport_logic": "sportlogic",
-        "allsportsapi": "allsportsapi",
-        "api_football": "api_football",
-        "rapidapi_odds": "rapidapi_odds",
-        "oddspapi": "oddspapi",
         "highlightly": "highlightly",
     }
     if text in aliases:
@@ -809,6 +450,44 @@ def total_line_probability_from_xg(selection: Any, point: Any, expected_home: An
     return max(0.0, min(1.0, probability))
 
 
+def _nested_xg_value(candidate: dict[str, Any], side: str) -> Any:
+    """Find xG values even when enrichers stored them in nested context blobs.
+
+    Reports showed B-tier-covered totals candidates blocked by
+    `missing_total_xg_sanity` even though provider context existed.  Keep the
+    guard strict, but search common nested locations before declaring xG absent.
+    """
+    side = "home" if str(side).lower().startswith("h") else "away"
+    direct_keys = (
+        f"expected_{side}", f"{side}_expected", f"xg_{side}", f"{side}_xg",
+        f"expected_goals_{side}", f"{side}_expected_goals",
+    )
+    containers: list[Any] = [candidate]
+    for key in ("context", "source_summary", "diagnostics", "analysis", "metadata", "features", "provider_context"):
+        value = candidate.get(key) if isinstance(candidate, dict) else None
+        if isinstance(value, dict):
+            containers.append(value)
+    for container in list(containers):
+        if not isinstance(container, dict):
+            continue
+        for nested_key in ("xg", "expected_goals", "team_xg", "model_xg", "sstats", "bzzoiro", "form"):
+            value = container.get(nested_key)
+            if isinstance(value, dict):
+                containers.append(value)
+    for container in containers:
+        if not isinstance(container, dict):
+            continue
+        for key in direct_keys:
+            value = container.get(key)
+            if value not in (None, ""):
+                return value
+        # Common {home: ..., away: ...} nested shape.
+        value = container.get(side)
+        if value not in (None, "") and not isinstance(value, dict):
+            return value
+    return None
+
+
 def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
     if not env_bool("CONTROLLED_FALLBACK_XG_SANITY_ENABLED", True):
         return {"enabled": False}
@@ -819,6 +498,9 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     expected_home = candidate.get("expected_home")
     expected_away = candidate.get("expected_away")
+    if expected_home in (None, "") or expected_away in (None, ""):
+        expected_home = _nested_xg_value(candidate, "home")
+        expected_away = _nested_xg_value(candidate, "away")
     if expected_home in (None, "") or expected_away in (None, ""):
         return {"enabled": False, "reason": "missing_xg"}
 
@@ -847,7 +529,7 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
     is_under = any(token in selection_text for token in ("under", "меньше", "тм"))
 
     direction_ok = True
-    margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.0)
+    margin = env_float("CONTROLLED_FALLBACK_XG_DIRECTION_MARGIN", 0.18)
     if total_xg is not None and line is not None:
         if is_over and total_xg < line - margin:
             direction_ok = False
@@ -1086,65 +768,6 @@ def quality_reasons(candidate: dict[str, Any]) -> list[str]:
     return []
 
 
-def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-    if not env_bool("CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD", True):
-        return []
-    min_books = env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 2)
-    if int(metrics.get("odds_sources_count") or 0) >= env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2):
-        return []
-    if int(metrics.get("books_count") or 0) < min_books:
-        return [f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}"]
-
-    rows = candidate.get("raw_bucket_offers")
-    if not isinstance(rows, list) or not rows:
-        source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-        rows = source_summary.get("raw_bucket_offers") or source_summary.get("bucket_offers") or source_summary.get("offers")
-    if not isinstance(rows, list):
-        rows = []
-
-    prices_by_book: dict[str, float] = {}
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        price = as_float(row.get("price") or row.get("odds") or row.get("decimal_odds"), 0.0)
-        if price <= 1.0:
-            continue
-        book = str(row.get("bookmaker") or row.get("book") or row.get("sportsbook") or "").strip().lower()
-        if not book:
-            continue
-        current = prices_by_book.get(book)
-        if current is None or abs(price - float(metrics.get("odds") or 0.0)) < abs(current - float(metrics.get("odds") or 0.0)):
-            prices_by_book[book] = price
-
-    metrics["tier_b_bookmaker_quorum"] = {
-        "enabled": True,
-        "books_count": int(metrics.get("books_count") or 0),
-        "odds_sources_count": int(metrics.get("odds_sources_count") or 0),
-        "priced_books_count": len(prices_by_book),
-        "mode": "bookmaker_quorum",
-    }
-    if len(prices_by_book) < min_books:
-        return [f"tier_b_bookmaker_quorum_prices_missing:{len(prices_by_book)}/{min_books}"]
-
-    prices = sorted(prices_by_book.values())
-    mid = len(prices) // 2
-    median_price = prices[mid] if len(prices) % 2 else (prices[mid - 1] + prices[mid]) / 2.0
-    selected = float(metrics.get("odds") or 0.0)
-    if median_price <= 1.0 or selected <= 1.0:
-        return ["tier_b_bookmaker_quorum_missing_selected_price"]
-    deviation_pct = abs(selected - median_price) / median_price * 100.0
-    max_deviation = env_float("CONTROLLED_FALLBACK_TIER_B_MAX_BOOKMAKER_MEDIAN_DEVIATION_PCT", 8.0)
-    metrics["tier_b_bookmaker_quorum"].update({
-        "median_price": round(median_price, 4),
-        "selected_price": round(selected, 4),
-        "selected_vs_median_deviation_pct": round(deviation_pct, 3),
-        "max_deviation_pct": max_deviation,
-    })
-    if deviation_pct > max_deviation:
-        return [f"tier_b_bookmaker_quorum_price_outlier:{deviation_pct:.2f}>{max_deviation:.2f}"]
-    return []
-
-
 def selected_bookmaker(candidate: dict[str, Any]) -> str:
     ss = candidate.get("source_summary") or {}
     return str(candidate.get("bookmaker") or ss.get("selected_bookmaker") or ss.get("bookmaker") or "").strip()
@@ -1159,150 +782,18 @@ def family_norm(candidate: dict[str, Any]) -> str:
     return str(candidate.get("family") or "").strip().lower()
 
 
-def _norm_dedupe_text(value: Any) -> str:
-    text = str(value or "").strip().lower()
-    repl = {"ё": "е", "—": "-", "–": "-", "_": " ", "/": " ", "\\": " "}
-    for src, dst in repl.items():
-        text = text.replace(src, dst)
-    text = "".join(ch if ch.isalnum() else " " for ch in text)
-    return " ".join(text.split())
-
-
-def _canonical_point(value: Any) -> str:
-    if value is None or str(value).strip() == "":
-        return ""
-    try:
-        number = float(str(value).replace(",", "."))
-        if number.is_integer():
-            return str(int(number))
-        return f"{number:.2f}".rstrip("0").rstrip(".")
-    except Exception:
-        return _norm_dedupe_text(value)
-
-
-def _candidate_match_identity(candidate: dict[str, Any]) -> str:
-    explicit = candidate.get("canonical_match_id") or candidate.get("match_id") or candidate.get("event_id")
-    if explicit:
-        return _norm_dedupe_text(explicit)
-    match_key = candidate.get("match_key")
-    if match_key:
-        return _norm_dedupe_text(match_key)
-    home = candidate.get("home_team") or candidate.get("home") or candidate.get("home_team_ru")
-    away = candidate.get("away_team") or candidate.get("away") or candidate.get("away_team_ru")
-    kickoff = parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
-    day = kickoff.date().isoformat() if kickoff is not None else _norm_dedupe_text(candidate.get("date") or "")
-    return "|".join([day, _norm_dedupe_text(home), _norm_dedupe_text(away)])
-
-
 def dedupe_key(candidate: dict[str, Any]) -> str:
     raw = "|".join(
         [
-            _candidate_match_identity(candidate),
-            _norm_dedupe_text(candidate.get("family") or candidate.get("market_family") or ""),
-            _norm_dedupe_text(candidate.get("selection") or ""),
-            _norm_dedupe_text(candidate.get("selection_key") or ""),
-            _canonical_point(candidate.get("point") or candidate.get("line") or candidate.get("handicap")),
-            _norm_dedupe_text(candidate.get("team_side") or ""),
+            str(candidate.get("match_key") or ""),
+            str(candidate.get("family") or "").lower(),
+            str(candidate.get("selection") or "").lower(),
+            str(candidate.get("selection_key") or "").lower(),
+            str(candidate.get("point") or ""),
+            str(candidate.get("team_side") or "").lower(),
         ]
     )
     return hashlib.sha1(raw.encode("utf-8")).hexdigest()
-
-
-def broad_dedupe_keys(candidate: dict[str, Any]) -> set[str]:
-    """Stable duplicate keys for already-sent Telegram picks.
-
-    The old fallback dedupe depended on one exact match_key. In practice rows can be
-    rewritten by the publisher/report layer, translated to Russian, or stored with a
-    different source id, so the same forecast could be sent again on the next run.
-    These keys intentionally cover both exact pick duplicates and same-match market
-    duplicates for the configured lookback window.
-    """
-    match_id = _candidate_match_identity(candidate)
-    family = _norm_dedupe_text(candidate.get("family") or candidate.get("market_family") or "")
-    selection = _norm_dedupe_text(candidate.get("selection") or candidate.get("selection_key") or "")
-    point = _canonical_point(candidate.get("point") or candidate.get("line") or candidate.get("handicap"))
-    keys = {dedupe_key(candidate)}
-    if match_id:
-        keys.add("match:" + hashlib.sha1(match_id.encode("utf-8")).hexdigest())
-    if match_id and family:
-        keys.add("match_family:" + hashlib.sha1(f"{match_id}|{family}".encode("utf-8")).hexdigest())
-    if match_id and family and selection:
-        keys.add("match_family_selection:" + hashlib.sha1(f"{match_id}|{family}|{selection}|{point}".encode("utf-8")).hexdigest())
-    return keys
-
-
-def _dedupe_row_timestamp(row: dict[str, Any]) -> datetime | None:
-    for key in ("sent_at", "published_at_utc", "telegram_sent_at_utc", "created_at_utc", "updated_at_utc", "commence_time", "kickoff"):
-        dt = parse_dt(row.get(key))
-        if dt is not None:
-            return dt
-    return None
-
-
-def _iter_sent_pick_sources() -> list[tuple[str, list[Any]]]:
-    state = load_json(".data/state.json", {})
-    sources: list[tuple[str, list[Any]]] = [
-        ("latest_picks", load_json(".data/exports/latest-picks.json", [])),
-        ("latest_bets", load_json(".data/exports/latest-bets.json", [])),
-        ("fallback_published", load_json(".data/exports/latest-controlled-fallback-published-picks.json", [])),
-        ("published_picks_ledger", load_json(".data/exports/published-picks-ledger.json", [])),
-        ("controlled_fallback_ledger", load_json(".data/exports/controlled-fallback-published-ledger.json", [])),
-    ]
-    if isinstance(state, dict):
-        for name in ("bets", "published_candidates", "telegram_published", "published_picks"):
-            rows = state.get(name)
-            if isinstance(rows, list):
-                sources.append((f"state:{name}", rows))
-    return sources
-
-
-def load_sent_dedupe_index() -> dict[str, Any]:
-    now = datetime.now(UTC)
-    lookback_hours = env_int("CONTROLLED_FALLBACK_DEDUPE_LOOKBACK_HOURS", 96)
-    cutoff = now - timedelta(hours=max(1, lookback_hours))
-    index: dict[str, Any] = {}
-    for index_path, default_source in (
-        (".data/fallback-sent-index.json", "fallback_sent_index"),
-        (".data/published-candidate-index.json", "published_candidate_index"),
-    ):
-        existing = load_json(index_path, {})
-        if isinstance(existing, dict):
-            for key, row in existing.items():
-                if not isinstance(row, dict):
-                    continue
-                ts = parse_dt(row.get("sent_at") or row.get("published_at_utc") or row.get("created_at_utc"))
-                if ts is not None and ts < cutoff:
-                    continue
-
-                # Older versions stored only one exact dedupe hash in the index.
-                # That hash can change when the same pick is re-rendered with
-                # translated selection text, a slightly different price, or a
-                # rebuilt candidate payload. Re-expand every legacy row into the
-                # broad same-match/same-market keys so old publications are still
-                # protected.
-                record = dict(row)
-                record.setdefault("source", default_source)
-                record.setdefault("sent_at", (ts or now).isoformat())
-                index[str(key)] = record
-                for broad_key in broad_dedupe_keys(record):
-                    index[broad_key] = dict(record)
-    for source, rows in _iter_sent_pick_sources():
-        if not isinstance(rows, list):
-            continue
-        for row in rows:
-            if not isinstance(row, dict) or not is_sent_pick_row(row):
-                continue
-            ts = _dedupe_row_timestamp(row)
-            if ts is not None and ts < cutoff:
-                continue
-            record = {"source": source, "sent_at": (ts or now).isoformat(), "match_key": row.get("match_key"), "home_team": row.get("home_team"), "away_team": row.get("away_team")}
-            for key in broad_dedupe_keys(row):
-                index[key] = record
-    return index
-
-
-def save_sent_dedupe_index(index: dict[str, Any]) -> None:
-    write_json(".data/fallback-sent-index.json", index)
 
 
 def load_sent_index() -> dict[str, Any]:
@@ -1327,24 +818,26 @@ def prune_sent_index(index: dict[str, Any], hours: int) -> dict[str, Any]:
 
 
 def duplicate_reason(candidate: dict[str, Any], sent_index: dict[str, Any]) -> str | None:
-    candidate_keys = broad_dedupe_keys(candidate)
-    for key in candidate_keys:
-        if key in sent_index:
-            source = sent_index.get(key)
-            src_name = source.get("source") if isinstance(source, dict) else "sent_index"
-            return f"duplicate_already_sent:{src_name}"
-
-    # Extra safety: scan all common publication ledgers. This catches cases where a
-    # prior fallback publication was synced to latest-picks/latest-bets but the legacy
-    # fallback index was not updated or used a different exact match_key.
-    for source_name, rows in _iter_sent_pick_sources():
+    key = dedupe_key(candidate)
+    if key in sent_index:
+        return "duplicate_fallback_sent_index"
+    state = load_json(".data/state.json", {})
+    if not isinstance(state, dict):
+        return None
+    collections: list[str] = []
+    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_BETS", True):
+        collections.append("bets")
+    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_PUBLISHED", True):
+        collections.append("published_candidates")
+    if env_bool("CONTROLLED_FALLBACK_DEDUPE_STATE_SHADOW", False):
+        collections.append("shadow_bets")
+    for collection in collections:
+        rows = state.get(collection) or []
         if not isinstance(rows, list):
             continue
         for row in rows:
-            if not isinstance(row, dict) or not is_sent_pick_row(row):
-                continue
-            if candidate_keys.intersection(broad_dedupe_keys(row)):
-                return f"duplicate_already_sent:{source_name}"
+            if isinstance(row, dict) and dedupe_key(row) == key and is_sent_pick_row(row):
+                return f"duplicate_state:{collection}"
     return None
 
 
@@ -1356,42 +849,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     confidence = as_float(candidate.get("confidence"), 0.0)
     books = as_int(candidate.get("books_count"), 0)
     raw_sources = as_int(candidate.get("sources_count"), 0)
-    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-    coverage_contract = (
-        source_summary.get("publish_coverage_contract")
-        if isinstance(source_summary.get("publish_coverage_contract"), dict)
-        else {}
-    )
-    odds_sources = as_int(candidate.get("odds_sources_count"), 0)
-    if odds_sources <= 0:
-        odds_sources = as_int(source_summary.get("odds_sources_count"), 0)
-    if odds_sources <= 0:
-        odds_sources = as_int(coverage_contract.get("odds_sources_count"), 0)
-    explicit_odds_source_names: set[str] = set()
-    for item in (
-        _source_values(candidate.get("odds_sources"))
-        + _source_values(source_summary.get("odds_sources"))
-        + _source_values(coverage_contract.get("odds_sources"))
-    ):
-        src = normalize_line_source(item)
-        if src:
-            explicit_odds_source_names.add(src)
-    line_source_names: set[str] = set()
-    for item in (
-        _source_values(candidate.get("line_sources"))
-        + _source_values(source_summary.get("line_sources"))
-    ):
-        src = normalize_line_source(item)
-        if src:
-            line_source_names.add(src)
-    odds_source_names = explicit_odds_source_names or line_source_names
-    if odds_sources <= 0:
-        odds_sources = len(odds_source_names)
-    if odds_sources <= 0 and not any(
-        source_summary.get(field) is not None
-        for field in ("context_sources", "providers", "confirmation_sources", "publish_coverage_contract")
-    ):
-        odds_sources = raw_sources
+    odds_sources = as_int(candidate.get("odds_sources_count"), raw_sources)
     confirmation_sources, confirmation_meta = candidate_confirmation_sources(candidate)
     declared_confirmation_count = as_int(candidate.get("confirmation_sources_count"), 0)
     confirmation_sources_count = max(declared_confirmation_count, len(confirmation_sources))
@@ -1409,7 +867,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "publication_score": publication_score,
         "books_count": books,
         "odds_sources_count": odds_sources,
-        "line_sources": sorted(odds_source_names),
         "sources_count": sources,
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
@@ -1438,7 +895,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "publication_score": round(publication_score, 3),
         "books_count": books,
         "odds_sources_count": odds_sources,
-        "line_sources": sorted(odds_source_names),
         "sources_count": sources,
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
@@ -1448,6 +904,84 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "btts_sanity": btts_sanity,
         "dnb_sanity": dnb_sanity,
     }
+
+
+def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
+    """Price-integrity helper for B-tier bookmaker contract.
+
+    B-tier is allowed with one real bookmaker + one context.  For one bookmaker
+    there is no meaningful median-quorum check, so this function only verifies
+    that a selected price/book exists.  For 2+ books it keeps the old median
+    outlier guard.
+    """
+    if not env_bool("CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD", True):
+        return []
+    min_books = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 1))
+    books_count = int(metrics.get("books_count") or 0)
+    if books_count < min_books:
+        return [f"tier_b_bookmaker_quorum_books_below_min:{books_count}/{min_books}"]
+
+    rows = candidate.get("raw_bucket_offers")
+    if not isinstance(rows, list) or not rows:
+        source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+        rows = source_summary.get("raw_bucket_offers") or source_summary.get("bucket_offers") or source_summary.get("offers")
+    if not isinstance(rows, list):
+        rows = []
+
+    prices_by_book: dict[str, float] = {}
+    selected_price = as_float(metrics.get("odds") or candidate.get("odds"), 0.0)
+    selected_book = (selected_bookmaker(candidate) or "selected_bookmaker").strip().lower() or "selected_bookmaker"
+    if selected_price > 1.0:
+        prices_by_book[selected_book] = selected_price
+
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        price = as_float(row.get("price") or row.get("odds") or row.get("decimal_odds"), 0.0)
+        if price <= 1.0:
+            continue
+        book = str(row.get("bookmaker") or row.get("book") or row.get("sportsbook") or "").strip().lower()
+        if not book:
+            continue
+        current = prices_by_book.get(book)
+        selected = float(metrics.get("odds") or 0.0)
+        if current is None or abs(price - selected) < abs(current - selected):
+            prices_by_book[book] = price
+
+    metrics["tier_b_bookmaker_quorum"] = {
+        "enabled": True,
+        "books_count": books_count,
+        "odds_sources_count": int(metrics.get("odds_sources_count") or 0),
+        "priced_books_count": len(prices_by_book),
+        "mode": "single_book_contract" if min_books <= 1 else "bookmaker_quorum",
+    }
+    if len(prices_by_book) < min_books:
+        return [f"tier_b_bookmaker_quorum_prices_missing:{len(prices_by_book)}/{min_books}"]
+    if min_books <= 1:
+        metrics["tier_b_bookmaker_quorum"].update({
+            "single_book_b_tier_contract": True,
+            "selected_price": round(selected_price, 4),
+            "max_deviation_pct": None,
+        })
+        return []
+
+    prices = sorted(prices_by_book.values())
+    mid = len(prices) // 2
+    median_price = prices[mid] if len(prices) % 2 else (prices[mid - 1] + prices[mid]) / 2.0
+    selected = float(metrics.get("odds") or 0.0)
+    if median_price <= 1.0 or selected <= 1.0:
+        return ["tier_b_bookmaker_quorum_missing_selected_price"]
+    deviation_pct = abs(selected - median_price) / median_price * 100.0
+    max_deviation = env_float("CONTROLLED_FALLBACK_TIER_B_MAX_BOOKMAKER_MEDIAN_DEVIATION_PCT", 8.0)
+    metrics["tier_b_bookmaker_quorum"].update({
+        "median_price": round(median_price, 4),
+        "selected_price": round(selected, 4),
+        "selected_vs_median_deviation_pct": round(deviation_pct, 3),
+        "max_deviation_pct": max_deviation,
+    })
+    if deviation_pct > max_deviation:
+        return [f"tier_b_bookmaker_quorum_price_outlier:{deviation_pct:.2f}>{max_deviation:.2f}"]
+    return []
 
 
 def kickoff_window_reasons(candidate: dict[str, Any]) -> list[str]:
@@ -1528,7 +1062,8 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     allowed_families = env_set(prefix + "ALLOWED_FAMILIES", "")
     if allowed_families and fam not in allowed_families:
         reasons.append(f"tier_{tier.lower()}_family_not_allowed:{fam}")
-    if metrics["books_count"] < env_int(prefix + "MIN_BOOKS", 2):
+    min_books_for_tier = env_int(prefix + "MIN_BOOKS", 1 if tier == "B" else 2)
+    if metrics["books_count"] < min_books_for_tier:
         reasons.append(f"tier_{tier.lower()}_books_below_min")
     if metrics["confidence"] < env_float(prefix + "MIN_CONFIDENCE", 60.0):
         reasons.append(f"tier_{tier.lower()}_confidence_below_min")
@@ -1557,21 +1092,27 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_RAW_QUALITY", True):
         if str(metrics.get("quality_score_source") or "") == "proxy":
             reasons.append("tier_a_proxy_quality_not_allowed")
+
+    # User contract: A-tier = 2+ bookmakers/price confirmations + 2+ contexts;
+    # B-tier = 1+ bookmaker + 1+ context.  Independent odds-source diversity is
+    # diagnostic unless explicitly re-enabled by env.
     if tier == "A":
-        min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
-        min_confirmations = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES", 2)
-        if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-            reasons.append(f"tier_a_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
+        if env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES", False):
+            min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
+            if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
+                reasons.append(f"tier_a_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
+        min_confirmations = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES", 2))
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
     elif tier == "B":
-        min_odds_sources = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1))
-        if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-            reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-        min_books = max(2, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 2)))
+        if env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", False):
+            min_odds_sources = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1))
+            if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
+                reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
+        min_books = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 1)))
         if int(metrics.get("books_count") or 0) < min_books:
             reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
-        min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", 1))
+        min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 1)))
         if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
             reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
         reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))
@@ -1630,33 +1171,32 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     fam = family_norm(candidate)
     tier_name = tier.replace("уровень ", "").strip().upper()
 
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):
-        if int(metrics.get("books_count") or 0) < 2:
-            reasons.append("telegram_publish_books_guard")
+    if tier_name == "B":
+        require_two_books = env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM", False)
+    else:
+        require_two_books = env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True)
+    if require_two_books and int(metrics.get("books_count") or 0) < 2:
+        reasons.append("telegram_publish_books_guard")
 
-    if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", True):
+    if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", tier_name != "B"):
         if int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy":
             reasons.append("proxy_single_book_guard")
 
     if tier_name == "C" and not env_bool("CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED", False):
         reasons.append("tier_c_watch_only")
 
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_LINE_MOVEMENT_FOR_TELEGRAM", True):
-        movement = controlled_line_movement_report(candidate, metrics)
-        metrics["line_movement"] = movement
-        status = str(movement.get("status") or "")
-        allowed = {"movement_confirmed", "publish_now_no_next_cron"} if tier_name == "B" else {"movement_confirmed", "publish_now_no_next_cron"}
-        if not bool(movement.get("passed")) or status not in allowed:
-            reasons.append(f"line_movement_not_confirmed:{status}")
-            for item in movement.get("reasons") or []:
-                reasons.append(f"line_movement:{item}")
-
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", True):
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", tier_name != "B"):
         if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
             reasons.append("proxy_without_market_confirmation")
 
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES", True):
-        min_sources = env_int("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", 2)
+    if tier_name == "B":
+        require_independent_sources = env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES", False)
+        min_sources_default = 1
+    else:
+        require_independent_sources = env_bool("CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES", True)
+        min_sources_default = 2
+    if require_independent_sources:
+        min_sources = env_int("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", min_sources_default)
         confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
         if confirmation_count < min_sources:
             reasons.append(f"controlled_fallback_confirmation_sources_below_min:{confirmation_count}/{min_sources}")
@@ -1939,11 +1479,11 @@ def load_candidate_pool() -> tuple[list[dict[str, Any]], dict[str, int]]:
             if not row_in_current_window(row):
                 counts[f"{source}_stale_or_outside_window"] += 1
                 continue
-            row_keys = broad_dedupe_keys(row)
-            if seen.intersection(row_keys):
+            key = dedupe_key(row)
+            if key in seen:
                 counts[f"{source}_duplicate_in_pool"] += 1
                 continue
-            seen.update(row_keys)
+            seen.add(key)
             row.setdefault("_candidate_source", source)
             pool.append(row)
             counts[source] += 1
@@ -2454,7 +1994,7 @@ def main() -> int:
         write_json(".data/exports/latest-controlled-fallback-report.json", report)
         return 0
 
-    sent_index = load_sent_dedupe_index()
+    sent_index = prune_sent_index(load_sent_index(), env_int("CONTROLLED_FALLBACK_DEDUPE_HOURS", 72))
     candidates, pool_counts = load_candidate_pool()
     report["candidates_seen"] = len(candidates)
     report["pool_counts"] = pool_counts
@@ -2540,9 +2080,8 @@ def main() -> int:
         for chosen, metrics, tier, stake in selected_items:
             key = dedupe_key(chosen)
             if sent:
-                sent_record = {
+                sent_index[key] = {
                     "sent_at": datetime.now(UTC).isoformat(),
-                    "source": "controlled_fallback",
                     "match_key": chosen.get("match_key"),
                     "home_team": chosen.get("home_team"),
                     "away_team": chosen.get("away_team"),
@@ -2559,8 +2098,6 @@ def main() -> int:
                     "telegram_sent": True,
                     "publication_lifecycle_status": "telegram_sent",
                 }
-                for sent_key in broad_dedupe_keys(chosen):
-                    sent_index[sent_key] = dict(sent_record)
             selected_rows.append({
                 "dedupe_key": key,
                 "telegram_sent": bool(sent),
@@ -2602,7 +2139,7 @@ def main() -> int:
                     "stake_amount": stake,
                 },
             })
-        save_sent_dedupe_index(sent_index)
+        save_sent_index(sent_index)
     else:
         for chosen, metrics, tier, stake in selected_items:
             selected_rows.append({
@@ -2644,13 +2181,6 @@ def main() -> int:
                 },
             })
 
-    sync_result = sync_controlled_fallback_publication_exports(selected_rows, sent=bool(sent), dry_run=bool(dry_run))
-    state_sync_result = sync_publication_state_indices(selected_rows, sent=bool(sent), dry_run=bool(dry_run))
-    # Re-save the dedupe index after the durable state sync, because the export
-    # sync can normalize rows and add broader duplicate keys.
-    if sent:
-        sent_index = load_sent_dedupe_index()
-        save_sent_dedupe_index(sent_index)
     report.update({
         "status": "published" if sent else ("dry_run_selected" if dry_run else "send_failed"),
         "published": bool(sent),
@@ -2660,8 +2190,6 @@ def main() -> int:
         "selected_all": selected_rows,
         "telegram_result": send_result,
         "message": message,
-        "latest_exports_sync": sync_result,
-        "publication_state_sync": state_sync_result,
     })
     write_json("artifacts/controlled-fallback-report.json", report)
     write_json(".data/exports/latest-controlled-fallback-report.json", report)

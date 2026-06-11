@@ -90,6 +90,10 @@ jobs:
       CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS: "1"
       CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES: "1"
       CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD: "true"
+      CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
+      CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES: "false"
+      CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
+      CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES: "false"
       CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
       CONTROLLED_FALLBACK_TELEGRAM_MIN_QUALITY: "70"
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B: "true"
@@ -262,6 +266,13 @@ jobs:
           mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/preflight_repair_runtime_json.py || true
 
+      - name: Snapshot restored day inventory
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory .data/line_history artifacts/run-bot
+          python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
+
       - name: Install dependencies
         shell: bash
         run: |
@@ -360,6 +371,7 @@ jobs:
           status=${PIPESTATUS[0]}
           echo "runtime status ${status}"
           echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          python -u scripts/guard_day_inventory_no_shrink.py repair || true
           find .data/exports -maxdepth 2 -type f -printf '%p\n' | sort || true
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
@@ -397,6 +409,7 @@ jobs:
           fi
           mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/day_inventory_cumulative_coverage.py || true
+          python -u scripts/guard_day_inventory_no_shrink.py repair || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true

@@ -1,0 +1,219 @@
+from __future__ import annotations
+
+"""Protect HARIZON day inventory from accidental shrink/rebuild.
+
+The production lifecycle requires the 00:00 MSK inventory to accumulate coverage
+for the full day instead of being replaced by a smaller publish-window subset.  A
+few runs showed 300 -> 131 -> 160 match shrink, which made later runs operate on
+an incomplete pool.  This script snapshots the largest valid inventory for the
+frozen target date and restores it when current/latest/today are overwritten by a
+smaller payload.
+
+Usage:
+  python scripts/guard_day_inventory_no_shrink.py snapshot
+  python scripts/guard_day_inventory_no_shrink.py repair
+"""
+
+import json
+import os
+import shutil
+import sys
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+ROOT = Path(".").resolve()
+DAY_DIR = ROOT / ".data" / "day_inventory"
+CACHE_DIR = ROOT / ".data" / "cache" / "day_inventory"
+EXPORT_DIR = ROOT / ".data" / "exports"
+ARTIFACT_DIR = ROOT / "artifacts" / "run-bot"
+SNAPSHOT_DIR = ROOT / ".data" / "inventory_guard"
+SNAPSHOT_PATH = SNAPSHOT_DIR / "best-day-inventory.json"
+REPORT_PATH = EXPORT_DIR / "latest-day-inventory-no-shrink-guard.json"
+CONFLICT_MARKERS = ("<<<<<<<", "=======", ">>>>>>>")
+
+
+def _target_date() -> str:
+    explicit = str(os.getenv("DAY_INVENTORY_TARGET_DATE") or os.getenv("DAY_INVENTORY_CACHE_DATE") or "").strip()
+    if explicit:
+        return explicit[:10]
+    try:
+        from zoneinfo import ZoneInfo
+        tz = ZoneInfo(os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow")
+        return datetime.now(timezone.utc).astimezone(tz).date().isoformat()
+    except Exception:
+        return datetime.now(timezone.utc).date().isoformat()
+
+
+def _load_json(path: Path) -> dict[str, Any] | None:
+    try:
+        if not path.exists() or path.stat().st_size <= 0:
+            return None
+        text = path.read_text(encoding="utf-8", errors="replace")
+        if any(marker in text for marker in CONFLICT_MARKERS):
+            return None
+        payload = json.loads(text)
+        return payload if isinstance(payload, dict) else None
+    except Exception:
+        return None
+
+
+def _rows(payload: dict[str, Any] | None) -> list[dict[str, Any]]:
+    if not isinstance(payload, dict):
+        return []
+    rows = payload.get("matches")
+    if isinstance(rows, list):
+        return [row for row in rows if isinstance(row, dict)]
+    return []
+
+
+def _payload_date(payload: dict[str, Any] | None) -> str:
+    if not isinstance(payload, dict):
+        return ""
+    for key in ("date_local", "target_date", "date", "inventory_date"):
+        value = str(payload.get(key) or "").strip()
+        if value:
+            return value[:10]
+    return ""
+
+
+def _score(payload: dict[str, Any], path: Path, target_date: str) -> tuple[int, int, int, int, str]:
+    rows = _rows(payload)
+    counts = payload.get("counts") if isinstance(payload.get("counts"), dict) else {}
+    # Prefer explicit match list size, then counts.matches_total.  Coverage counts
+    # only break ties, so a smaller current inventory cannot replace a larger one.
+    total = len(rows) or int(float(counts.get("matches_total") or 0))
+    with_odds = int(float(counts.get("matches_with_odds") or counts.get("matches_with_offers") or 0))
+    with_context = int(float(counts.get("matches_with_context") or 0))
+    ready = int(float(counts.get("matches_ready_for_model") or counts.get("ready_for_model") or 0))
+    payload_date = _payload_date(payload)
+    date_ok = 1 if not payload_date or payload_date == target_date else 0
+    return (date_ok, total, with_odds + with_context + ready, int(path.stat().st_mtime), str(path))
+
+
+def _candidate_paths(target_date: str) -> list[Path]:
+    names = [f"{target_date}.json", "current.json", "latest.json", "today.json"]
+    paths: list[Path] = []
+    for base in (DAY_DIR, CACHE_DIR, ARTIFACT_DIR / "day_inventory"):
+        paths.extend(base / name for name in names)
+    paths.extend([
+        EXPORT_DIR / "latest-day-inventory.json",
+        EXPORT_DIR / "latest-day-inventory-summary.json",
+    ])
+    # Keep order stable and unique.
+    out: list[Path] = []
+    seen: set[str] = set()
+    for path in paths:
+        key = str(path)
+        if key not in seen:
+            seen.add(key)
+            out.append(path)
+    return out
+
+
+def _best_payload(target_date: str) -> tuple[Path | None, dict[str, Any] | None, tuple[int, int, int, int, str]]:
+    best_path: Path | None = None
+    best_payload: dict[str, Any] | None = None
+    best_score = (0, 0, 0, 0, "")
+    for path in _candidate_paths(target_date):
+        payload = _load_json(path)
+        if payload is None:
+            continue
+        score = _score(payload, path, target_date)
+        if score > best_score:
+            best_path = path
+            best_payload = payload
+            best_score = score
+    return best_path, best_payload, best_score
+
+
+def _write_json(path: Path, payload: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def _copy_payload_to_aliases(payload: dict[str, Any], target_date: str) -> list[str]:
+    DAY_DIR.mkdir(parents=True, exist_ok=True)
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+    changed: list[str] = []
+    for path in (
+        DAY_DIR / f"{target_date}.json",
+        DAY_DIR / "current.json",
+        DAY_DIR / "latest.json",
+        DAY_DIR / "today.json",
+        CACHE_DIR / f"{target_date}.json",
+        CACHE_DIR / "current.json",
+        CACHE_DIR / "latest.json",
+        CACHE_DIR / "today.json",
+    ):
+        old = _load_json(path)
+        if len(_rows(old)) >= len(_rows(payload)):
+            continue
+        _write_json(path, payload)
+        changed.append(str(path))
+    return changed
+
+
+def snapshot() -> dict[str, Any]:
+    target_date = _target_date()
+    best_path, best_payload, best_score = _best_payload(target_date)
+    report: dict[str, Any] = {
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "mode": "snapshot",
+        "target_date": target_date,
+        "status": "no_inventory_found",
+        "best_path": str(best_path) if best_path else "",
+        "best_matches": best_score[1],
+    }
+    if best_payload is not None and best_score[1] > 0:
+        SNAPSHOT_DIR.mkdir(parents=True, exist_ok=True)
+        _write_json(SNAPSHOT_PATH, best_payload)
+        report["status"] = "snapshotted"
+        report["snapshot_path"] = str(SNAPSHOT_PATH)
+    _write_json(REPORT_PATH, report)
+    return report
+
+
+def repair() -> dict[str, Any]:
+    target_date = _target_date()
+    current_path, current_payload, current_score = _best_payload(target_date)
+    snap_payload = _load_json(SNAPSHOT_PATH)
+    snap_rows = len(_rows(snap_payload))
+    current_rows = current_score[1]
+    report: dict[str, Any] = {
+        "created_at_utc": datetime.now(timezone.utc).isoformat(),
+        "mode": "repair",
+        "target_date": target_date,
+        "current_best_path": str(current_path) if current_path else "",
+        "current_best_matches": current_rows,
+        "snapshot_matches": snap_rows,
+        "status": "ok_no_repair_needed",
+        "changed_paths": [],
+    }
+    if snap_payload is None or snap_rows <= 0:
+        report["status"] = "no_snapshot_available"
+    elif snap_rows > current_rows:
+        changed = _copy_payload_to_aliases(snap_payload, target_date)
+        report["status"] = "repaired_shrunk_inventory"
+        report["changed_paths"] = changed
+    elif current_payload is not None and current_rows > snap_rows:
+        _write_json(SNAPSHOT_PATH, current_payload)
+        report["status"] = "snapshot_upgraded"
+        report["snapshot_matches"] = current_rows
+    _write_json(REPORT_PATH, report)
+    return report
+
+
+def main(argv: list[str] | None = None) -> int:
+    argv = list(argv or sys.argv[1:])
+    mode = (argv[0] if argv else "repair").strip().lower()
+    if mode not in {"snapshot", "repair"}:
+        print("Usage: guard_day_inventory_no_shrink.py [snapshot|repair]", file=sys.stderr)
+        return 2
+    payload = snapshot() if mode == "snapshot" else repair()
+    print(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

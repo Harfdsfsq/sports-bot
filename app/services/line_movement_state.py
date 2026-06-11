@@ -15,7 +15,7 @@ def _get(candidate: Any, field: str, default: Any = None) -> Any:
     if isinstance(candidate, dict):
         if field in candidate:
             return candidate.get(field)
-        for container_name in ("source_summary", "diagnostics", "analysis"):
+        for container_name in ("source_summary", "diagnostics", "analysis", "metadata"):
             container = candidate.get(container_name)
             if isinstance(container, dict) and field in container:
                 return container.get(field)
@@ -49,22 +49,56 @@ def _dt(value: Any) -> datetime | None:
 
 
 def _norm(value: Any) -> str:
-    text = str(value or "").strip().casefold()
+    text = str(value or "").strip().casefold().replace("ё", "е")
     text = re.sub(r"[^\w.]+", "_", text, flags=re.UNICODE).strip("_")
     return text
 
 
+def _canonical_match_key(candidate: Any) -> str:
+    for field in ("canonical_match_id", "match_id", "event_id", "match_key"):
+        value = _norm(_get(candidate, field))
+        if value:
+            return value
+    home = _norm(_get(candidate, "home_team") or _get(candidate, "home"))
+    away = _norm(_get(candidate, "away_team") or _get(candidate, "away"))
+    kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc") or _get(candidate, "kickoff"))
+    day = kickoff.date().isoformat() if kickoff else _norm(_get(candidate, "date"))
+    league = _norm(_get(candidate, "league_name"))
+    return "|".join(x for x in (league, day, home, away) if x)
+
+
+def _selection_key(candidate: Any) -> str:
+    explicit = _norm(_get(candidate, "selection_key"))
+    family = _norm(_get(candidate, "family") or _get(candidate, "market_family"))
+    selection = str(_get(candidate, "selection") or "").casefold().replace("ё", "е")
+    side = _norm(_get(candidate, "team_side"))
+    if explicit:
+        return explicit
+    if family in {"totals", "teamtotals"}:
+        if any(token in selection for token in ("under", "меньше", "тотал меньше", "тм")):
+            return "under"
+        if any(token in selection for token in ("over", "больше", "тотал больше", "тб")):
+            return "over"
+    if family in {"spreads", "handicap"}:
+        if side:
+            return side
+    if family == "h2h":
+        home = str(_get(candidate, "home_team") or "").casefold()
+        away = str(_get(candidate, "away_team") or "").casefold()
+        if home and home in selection:
+            return "home"
+        if away and away in selection:
+            return "away"
+        if any(token in selection for token in ("draw", "ничья", "x")):
+            return "draw"
+    return _norm(selection)
+
+
 def _line_key(candidate: Any) -> str:
-    match_key = _norm(_get(candidate, "match_key"))
-    if not match_key:
-        home = _norm(_get(candidate, "home_team"))
-        away = _norm(_get(candidate, "away_team"))
-        kickoff = _norm(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc"))
-        league = _norm(_get(candidate, "league_name"))
-        match_key = "|".join(x for x in (league, home, away, kickoff) if x)
-    family = _norm(_get(candidate, "family"))
-    selection = _norm(_get(candidate, "selection_key") or _get(candidate, "selection"))
-    point = _get(candidate, "point")
+    match_key = _canonical_match_key(candidate)
+    family = _norm(_get(candidate, "family") or _get(candidate, "market_family"))
+    selection = _selection_key(candidate)
+    point = _get(candidate, "point") or _get(candidate, "line") or _get(candidate, "handicap")
     try:
         point_key = f"{float(point):g}" if point not in (None, "") else ""
     except Exception:
@@ -74,7 +108,7 @@ def _line_key(candidate: Any) -> str:
 
 
 def _state_path(candidate: Any, now: datetime) -> Path:
-    kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc"))
+    kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc") or _get(candidate, "kickoff"))
     day = (kickoff or now).date().isoformat()
     return Path(os.getenv("LINE_MOVEMENT_STATE_PATH") or f".data/line_history/{day}.json")
 
@@ -89,12 +123,7 @@ def _bool_env(name: str, default: bool) -> bool:
 def _next_scheduled_run_at(now: datetime, interval_min: int) -> datetime | None:
     if interval_min <= 0:
         return None
-    tz_name = (
-        os.getenv("LINE_MOVEMENT_CRON_TIMEZONE")
-        or os.getenv("APP_TIMEZONE")
-        or os.getenv("TZ")
-        or "Europe/Moscow"
-    )
+    tz_name = os.getenv("LINE_MOVEMENT_CRON_TIMEZONE") or os.getenv("APP_TIMEZONE") or os.getenv("TZ") or "Europe/Moscow"
     try:
         local_tz = ZoneInfo(tz_name)
     except Exception:
@@ -125,8 +154,8 @@ def _write(path: Path, payload: dict[str, Any]) -> None:
 def _value_ok(candidate: Any, *, min_ev_pct: float, min_edge_pct: float) -> tuple[bool, list[str]]:
     reasons: list[str] = []
     odds = _float(_get(candidate, "odds") or _get(candidate, "selected_odds") or _get(candidate, "price_used_for_ev"), 0.0)
-    ev_pct = _float(_get(candidate, "ev_pct"), 0.0)
-    edge_pct = _float(_get(candidate, "edge_pct"), 0.0)
+    ev_pct = _float(_get(candidate, "ev_pct") or _get(candidate, "canonical_ev_pct"), 0.0)
+    edge_pct = _float(_get(candidate, "edge_pct") or _get(candidate, "canonical_edge_pp"), 0.0)
     if odds <= 1.0:
         reasons.append("missing_current_odds")
     if ev_pct < min_ev_pct:
@@ -140,23 +169,21 @@ def _snapshot(candidate: Any, now: datetime) -> dict[str, Any]:
     return {
         "captured_at_utc": now.isoformat(),
         "odds": _float(_get(candidate, "odds") or _get(candidate, "selected_odds") or _get(candidate, "price_used_for_ev"), 0.0),
-        "ev_pct": _float(_get(candidate, "ev_pct"), 0.0),
-        "edge_pct": _float(_get(candidate, "edge_pct"), 0.0),
+        "ev_pct": _float(_get(candidate, "ev_pct") or _get(candidate, "canonical_ev_pct"), 0.0),
+        "edge_pct": _float(_get(candidate, "edge_pct") or _get(candidate, "canonical_edge_pp"), 0.0),
         "confidence": _float(_get(candidate, "confidence"), 0.0),
-        "bookmaker": str(_get(candidate, "bookmaker") or ""),
+        "bookmaker": str(_get(candidate, "bookmaker") or _get(candidate, "selected_bookmaker") or ""),
         "sources_count": int(_float(_get(candidate, "sources_count"), 0.0)),
         "books_count": int(_float(_get(candidate, "books_count"), 0.0)),
     }
 
 
 def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: datetime | None = None) -> dict[str, Any]:
-    """Persist one explicit movement snapshot and return a publish lifecycle decision.
+    """Persist one movement snapshot and return a publication lifecycle decision.
 
-    Lifecycle:
-    - first snapshot and there is another planned run before kickoff: awaiting_next_run;
-    - second+ snapshot: movement_confirmed when odds have not drifted badly and value remains;
-    - first snapshot with no realistic next run before kickoff: publish_now_no_next_cron;
-    - otherwise: movement_failed / value_failed.
+    The key is intentionally stable across English/Russian selection text so an
+    awaiting candidate from one run can be confirmed in the next run instead of
+    being treated as a fresh first snapshot forever.
     """
     now = (now or datetime.now(UTC)).astimezone(UTC)
     path = _state_path(candidate, now)
@@ -177,18 +204,11 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     min_edge_pct = float(os.getenv("LINE_MOVEMENT_MIN_CURRENT_EDGE_PCT") or 0.0)
     max_snapshots = int(float(os.getenv("LINE_HISTORY_MAX_SNAPSHOTS_PER_LINE") or 12))
 
-    kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc"))
+    kickoff = _dt(_get(candidate, "commence_time") or _get(candidate, "commence_time_utc") or _get(candidate, "kickoff"))
     lead_minutes = ((kickoff - now).total_seconds() / 60.0) if kickoff else None
-    next_scheduled_run_at = (
-        _next_scheduled_run_at(now, cron_interval_min)
-        if _bool_env("LINE_MOVEMENT_USE_SCHEDULED_CRON", True)
-        else None
-    )
+    next_scheduled_run_at = _next_scheduled_run_at(now, cron_interval_min) if _bool_env("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) else None
     latest_useful_run_at = kickoff - timedelta(minutes=min_lead_min) if kickoff else None
-    has_next_regular_run = (
-        bool(kickoff and next_scheduled_run_at and latest_useful_run_at)
-        and next_scheduled_run_at <= latest_useful_run_at
-    )
+    has_next_regular_run = bool(kickoff and next_scheduled_run_at and latest_useful_run_at) and next_scheduled_run_at <= latest_useful_run_at
     if _bool_env("LINE_MOVEMENT_USE_SCHEDULED_CRON", True) and kickoff is not None:
         no_next_run = not has_next_regular_run
     else:
@@ -200,10 +220,6 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
     if current_run_id:
         current["run_id"] = current_run_id
 
-    # A second snapshot must come from a later regular run, not from another
-    # script in the same workflow seconds later.  Older snapshots may exist
-    # behind a too-fresh snapshot from the current workflow; use the latest
-    # eligible previous snapshot instead of blindly using snapshots[-1].
     min_recheck_minutes = float(os.getenv("LINE_MOVEMENT_MIN_RECHECK_MINUTES") or 60.0)
 
     def _snapshot_age_minutes(snapshot: Any) -> float | None:
@@ -223,25 +239,16 @@ def evaluate_and_record_line_movement(candidate: Any, settings: Any, *, now: dat
             previous = snapshot
             break
 
-    if previous is None and snapshots:
-        previous = None
-
     current_odds = _float(current.get("odds"), 0.0)
     previous_odds = _float(previous.get("odds") if isinstance(previous, dict) else None, 0.0)
     previous_at = _dt(previous.get("captured_at_utc")) if isinstance(previous, dict) else None
     previous_age_minutes = ((now - previous_at).total_seconds() / 60.0) if previous_at else None
-    latest_snapshot_too_fresh = (
-        too_fresh_previous is not None
-        and too_fresh_previous_age is not None
-        and too_fresh_previous_age < min_recheck_minutes
-        and previous is None
-        and not no_next_run
-    )
+    latest_snapshot_too_fresh = too_fresh_previous is not None and too_fresh_previous_age is not None and too_fresh_previous_age < min_recheck_minutes and previous is None and not no_next_run
 
     line_move_pct = 0.0
     adverse_drift = False
     if previous_odds > 1.0 and current_odds > 1.0:
-        # For a value pick, shortening is positive market confirmation; large drift upward is adverse.
+        # For a value pick, shortening confirms the market; a large drift upward is adverse.
         line_move_pct = (current_odds - previous_odds) / previous_odds * 100.0
         adverse_drift = line_move_pct > abs(max_adverse_drift_pct)
 
