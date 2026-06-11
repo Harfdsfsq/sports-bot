@@ -3,47 +3,54 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 155 матчей. Runtime rows processed: 53 (это не размер inventory).
+• Инвентарь дня: 155 матчей. Runtime rows processed: 58 (это не размер inventory).
 • 1+ линия: 148/155 (95%) | 1+ контекст: 77/155 (50%)
-• 2+ букмекера: 9/155 (6%)
-• Raw 2+ букмекера odds-api.io: 17 | normalized inventory: 9 | mapping gap: 8
-• Odds-api offer snapshot: rows 3232, matches 33, same-side 2+ books 17
+• 2+ букмекера: 13/155 (8%)
+• Raw 2+ букмекера odds-api.io: 22 | normalized inventory: 13 | mapping gap: 9
+• Odds-api offer snapshot: rows 4213, matches 39, same-side 2+ books 22
 • 2+ независимых odds-source: 139/155 (90%) — диагностика, не блок публикации
-• 2+ контекста: 57/155 (37%)
+• 2+ контекста: 58/155 (37%)
 • Готово для модели: 74/155 (48%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 9 | опубликовано: 0
+• A-tier strict-ready: 13 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
 • B-tier 1+ bookmaker/context coverage: 77 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 77 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 9 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 77 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 13 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 1 | матчей без следующего регулярного run: 1
-• Line guard: увидел 1, оставил 0, снял 0
+• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/2
+• Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 1 | evaluated 1 | published 0
+• Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 12; смэтчил матчей 51; offers 3326; 2+ букмекера 17; ошибок 0.
+• odds-api.io: events req 0, odds req 12; смэтчил матчей 56; offers 4307; 2+ букмекера 22; ошибок 0.
 • Bzzoiro: direct req 10, v2 req 10; v2 ctx 1; v2 odds 2; secondary offers 0; overlap odds-api.io 0; ошибок 1.
-• SStats: запросы 21; сырых строк 16932; контекстов 29; deep-enriched 1; team-form 0; direct 0; ошибок 1.
+• SStats: запросы 21; сырых строк 16932; контекстов 28; deep-enriched 1; team-form 0; direct 0; ошибок 1.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 33, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 39, bzzoiro: 2
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
-• quality: вероятность после калибровки ниже порога: 1 (50%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 4 (44%)
+• quality: вероятность после калибровки ниже порога: 4 (44%)
+• missing sources: 1 (11%)
 
 🔎 Проверенные reserve-кандидаты
-1. Helsingborgs — Landskrona | Меньше 2.5 @2.12 | EV -6.4% | edge -3.0 п.п. | q 63.0
+1. Helsingborgs — Landskrona | Меньше 2.5 @2.25 | EV -0.8% | edge -0.4 п.п. | q 53.8
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+2. Elva — Maardu | Больше 3.5 @1.98 | EV -3.4% | edge -1.7 п.п. | q 42.4
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+3. Vaengir Jupiters — Alafoss | Меньше 4.25 @2.21 | EV -3.2% | edge -1.5 п.п. | q 47.5
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, missing sources
+4. Motala — Kumla | Меньше 2.5 @2.62 | EV -4.5% | edge -1.7 п.п. | q 48.0
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📌 Что это значит
@@ -52,7 +59,7 @@
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27329760471
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27329760471
-• Artifact: run-bot-27329760471
+• Run ID: 27335839250
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27335839250
+• Artifact: run-bot-27335839250
 • workflow run-bot, attempt 1
