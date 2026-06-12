@@ -1,5 +1,5 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-12T07:53:41.052504+00:00
+UTC: 2026-06-12T08:23:14.661332+00:00
 target_date: 2026-06-12
 canonical_matches: 232
 2+ provider sources: 112
@@ -11,7 +11,7 @@ all 3 primary sources: 4
 - bzzoiro: commands=10 ok=3 rows=66 event_like=66 unique=22 statuses={"OK": 3, "EMPTY": 7}
 - football_data: commands=1 ok=1 rows=1 event_like=1 unique=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=6 rows=426 event_like=426 unique=213 statuses={"OK": 6}
+- odds_api_io: commands=6 ok=6 rows=424 event_like=424 unique=212 statuses={"OK": 6}
 - sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
 - sstats: commands=1 ok=1 rows=136 event_like=119 unique=119 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
@@ -29,7 +29,6 @@ all 3 primary sources: 4
 - 2026-06-12T02:30:00+00:00 | Snohomish United W — Portland Cherry Bombs FC W | providers=sstats ids={"sstats": "1532441"}
 - 2026-06-12T03:00:00+00:00 | Capo — Tucson | providers=sstats ids={"sstats": "1524871"}
 - 2026-06-12T07:30:00+00:00 | Manly United — Sydney United 58 | providers=odds_api_io,sstats ids={"odds_api_io": "67690932", "sstats": "1517568"}
-- 2026-06-12T08:00:00+00:00 | Central Coast Mariners — Hakoah | providers=odds_api_io,sstats ids={"odds_api_io": "67693612", "sstats": "1517790"}
 - 2026-06-12T08:00:00+00:00 | Marconi Stallions — Sydney | providers=odds_api_io,sstats ids={"odds_api_io": "67690928", "sstats": "1517565"}
 - 2026-06-12T08:00:00+00:00 | Blacktown Spartans — Bankstown City | providers=odds_api_io,sstats ids={"odds_api_io": "67691658", "sstats": "1517785"}
 - 2026-06-12T08:15:00+00:00 | Melbourne Knights — Brunswick Juventus | providers=odds_api_io,sstats ids={"odds_api_io": "68160618", "sstats": "1522205"}
@@ -42,6 +41,7 @@ all 3 primary sources: 4
 - 2026-06-12T09:30:00+00:00 | Elizabeth Downs — Angle Vale | providers=odds_api_io ids={"odds_api_io": "68049212"}
 - 2026-06-12T09:30:00+00:00 | Queensland QAS — Strikers | providers=odds_api_io ids={"odds_api_io": "71489168"}
 - 2026-06-12T09:45:00+00:00 | Kingston City — Moreland City | providers=odds_api_io,sstats ids={"odds_api_io": "68161752", "sstats": "1541315"}
+- 2026-06-12T10:00:00+00:00 | Central Coast Mariners — Hakoah Sydney City East FC | providers=odds_api_io,sstats ids={"odds_api_io": "67693612", "sstats": "1517790"}
 - 2026-06-12T10:00:00+00:00 | Campbelltown — West Torrens | providers=odds_api_io,sstats ids={"odds_api_io": "68048902", "sstats": "1527078"}
 - 2026-06-12T10:00:00+00:00 | Suwon — Sejong Sportstoto | providers=odds_api_io,sstats ids={"odds_api_io": "69976290", "sstats": "1533726"}
 - 2026-06-12T10:00:00+00:00 | Fraser Park — Mounties Wanderers | providers=odds_api_io ids={"odds_api_io": "67692290"}
@@ -82,10 +82,6 @@ all 3 primary sources: 4
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Manly United — Sydney United 58 | primary=2 providers=odds_api_io,sstats
-  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- Central Coast Mariners — Hakoah | primary=2 providers=odds_api_io,sstats
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
@@ -132,4 +128,8 @@ all 3 primary sources: 4
 - Queensland QAS — Strikers | primary=1 providers=odds_api_io
   - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- Kingston City — Moreland City | primary=2 providers=odds_api_io,sstats
+  - odds-api.io: odds/multi by odds event id, both accounts/bookmaker groups
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
