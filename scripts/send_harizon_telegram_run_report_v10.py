@@ -112,7 +112,10 @@ def render(payload: dict[str, Any]) -> str:
         inv_load = promotion.get('inventory_load') if isinstance(promotion.get('inventory_load'), dict) else {}
         if inv_load:
             selected_path = str(inv_load.get('selected_path') or '')
+        selected_b_cover = _as_int(inv_load.get('selected_b_cover_rows')) if inv_load else 0
         suffix = f"; inventory rows {inventory_seen}" if inventory_seen or selected_path else ''
+        if selected_b_cover:
+            suffix += f"; selected B-cover rows {selected_b_cover}"
         if selected_path:
             suffix += f" from {selected_path}"
         lines.append(

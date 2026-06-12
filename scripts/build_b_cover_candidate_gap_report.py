@@ -355,10 +355,53 @@ def load_inventory_with_meta(day: str) -> tuple[list[dict[str, Any]], dict[str, 
     if not candidates:
         diagnostics['selected_path'] = ''
         diagnostics['selected_rows'] = 0
+        diagnostics['selected_b_cover_rows'] = 0
+        diagnostics['selected_ready_model_rows'] = 0
         return [], diagnostics
-    selected_path, best = max(candidates, key=lambda item: len(item[1]))
+
+    def _candidate_score(item: tuple[str, list[dict[str, Any]]]) -> tuple[int, int, int, int]:
+        # Prefer row-level coverage truth / repaired inventory over a raw inventory
+        # file with the same 229 matches but no per-row books/context fields.
+        # The previous v3 patch selected .data/day_inventory first because it had
+        # the same row count as coverage-truth, causing promotion considered=0
+        # while the Telegram report correctly showed B-cover > 100.
+        path, rows = item
+        b_cover = 0
+        ready_model = 0
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            bc = book_count(row)
+            cc = context_count(row)
+            if bc >= 1 and cc >= 1:
+                b_cover += 1
+            if bool(row.get('ready_for_model')) or (bc >= 1 and cc >= 1):
+                ready_model += 1
+        coverage_bonus = 1 if ('coverage-truth' in path or 'cumulative-coverage' in path or 'coverage' in path) else 0
+        return (b_cover, ready_model, len(rows), coverage_bonus)
+
+    selected_path, best = max(candidates, key=_candidate_score)
+    selected_b_cover = sum(
+        1 for row in best
+        if isinstance(row, dict) and book_count(row) >= 1 and context_count(row) >= 1
+    )
+    selected_ready_model = sum(
+        1 for row in best
+        if isinstance(row, dict) and (bool(row.get('ready_for_model')) or (book_count(row) >= 1 and context_count(row) >= 1))
+    )
     diagnostics['selected_path'] = selected_path
     diagnostics['selected_rows'] = len(best)
+    diagnostics['selected_b_cover_rows'] = selected_b_cover
+    diagnostics['selected_ready_model_rows'] = selected_ready_model
+    diagnostics['candidate_source_scores'] = [
+        {
+            'path': path,
+            'rows': len(rows),
+            'b_cover_rows': sum(1 for row in rows if isinstance(row, dict) and book_count(row) >= 1 and context_count(row) >= 1),
+            'ready_model_rows': sum(1 for row in rows if isinstance(row, dict) and (bool(row.get('ready_for_model')) or (book_count(row) >= 1 and context_count(row) >= 1))),
+        }
+        for path, rows in candidates
+    ][:12]
     return best, diagnostics
 
 
