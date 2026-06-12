@@ -1252,9 +1252,13 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         reasons[f'existing_rescue_{reason}'] += count
 
     earliest, latest = publish_window_bounds(now)
+    exhaustion_threshold = env_int('PROMOTE_B_COVER_CURRENT_WINDOW_EXHAUSTED_THRESHOLD', 4, 0)
+    current_window_exhausted = current_window_b_cover <= exhaustion_threshold
     report = {
         'enabled': True,
         'status': 'ok',
+        'current_window_exhausted': current_window_exhausted,
+        'current_window_exhausted_threshold': exhaustion_threshold,
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
         'inventory_rows_seen': len(inventory),
@@ -1298,9 +1302,14 @@ def prebuild_coverage_truth_for_promotion() -> dict[str, Any]:
     started = datetime.now(UTC).isoformat()
     steps: list[dict[str, Any]] = []
     try:
-        # Prefer the cumulative script because it merges latest run coverage,
+        # First expand the day inventory again *after* the runtime has produced
+        # fresh run/export artifacts.  The workflow also expands before Run bot,
+        # but reports kept showing 229/300 because newly discovered rows from the
+        # current run were not merged before promotion/fallback diagnostics.
+        # This is API-free: it only merges already persisted artifacts.
+        # Then prefer the cumulative script because it merges latest run coverage,
         # repairs source counters, and writes coverage-truth rows.
-        for script_name in ('day_inventory_cumulative_coverage.py', 'build_day_inventory_coverage_truth.py'):
+        for script_name in ('expand_day_inventory_to_target.py', 'day_inventory_cumulative_coverage.py', 'build_day_inventory_coverage_truth.py'):
             path = ROOT / 'scripts' / script_name
             if not path.exists():
                 steps.append({'script': script_name, 'status': 'missing'})

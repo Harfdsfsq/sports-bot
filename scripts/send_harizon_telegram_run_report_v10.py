@@ -123,6 +123,9 @@ def render(payload: dict[str, Any]) -> str:
             suffix += f"; selected B-cover rows {selected_b_cover}"
         if b_cover_seen or current_window_b_cover:
             suffix += f"; current-window B-cover {current_window_b_cover}/{b_cover_seen}"
+            if promotion.get('current_window_exhausted'):
+                threshold = _as_int(promotion.get('current_window_exhausted_threshold'))
+                suffix += f"; current-window exhausted <= {threshold}"
         if stale_removed:
             suffix += f"; removed stale rescue {stale_removed}"
         if enriched:
@@ -131,6 +134,11 @@ def render(payload: dict[str, Any]) -> str:
             suffix += f"; loose-enriched {enriched_loose}"
         if selected_path:
             suffix += f" from {selected_path}"
+        prebuild = inv_load.get('prebuild_coverage_truth') if isinstance(inv_load, dict) else {}
+        if isinstance(prebuild, dict) and prebuild.get('steps'):
+            ok_steps = [str(step.get('script')) for step in prebuild.get('steps') or [] if isinstance(step, dict) and step.get('status') == 'ok']
+            if ok_steps:
+                suffix += f"; prebuild {'+'.join(ok_steps[:2])}"
         status = str(promotion.get('status') or 'ok')
         status_prefix = f"status {status}; " if status and status != 'ok' else ''
         lines.append(
