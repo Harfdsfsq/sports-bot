@@ -1070,9 +1070,6 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     """
     reasons: list[str] = []
     fam = family_norm(candidate)
-    line_reasons = total_line_publication_reasons(candidate)
-    if line_reasons:
-        return line_reasons
     tier_name = tier.replace("уровень ", "").strip().upper()
 
     if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):

@@ -30,6 +30,7 @@ import runpy
 import statistics
 from collections import Counter, defaultdict
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 
@@ -104,8 +105,22 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def app_time_zone():
+    try:
+        return ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
+    except Exception:
+        return UTC
+
+
+def local_date_from_dt(dt: datetime) -> str:
+    return dt.astimezone(app_time_zone()).date().isoformat()
+
+
 def target_date() -> str:
-    return (os.getenv('DAY_INVENTORY_TARGET_DATE') or datetime.now(UTC).date().isoformat())[:10]
+    explicit = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or '').strip()
+    if explicit:
+        return explicit[:10]
+    return datetime.now(app_time_zone()).date().isoformat()
 
 
 
@@ -181,7 +196,7 @@ def row_date(row: dict[str, Any]) -> str:
             return str(value)[:10]
         dt = parse_dt(value)
         if dt:
-            return dt.date().isoformat()
+            return local_date_from_dt(dt)
     for key in ('match_key', 'canonical_match_id', 'event_key'):
         m = re.search(r'(20\d{2}-\d{2}-\d{2})', str(row.get(key) or ''))
         if m:
@@ -1261,6 +1276,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         'current_window_exhausted_threshold': exhaustion_threshold,
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
+        'target_timezone': str(app_time_zone()),
         'inventory_rows_seen': len(inventory),
         'b_cover_rows_seen': b_cover_seen,
         'current_window_b_cover_rows': current_window_b_cover,

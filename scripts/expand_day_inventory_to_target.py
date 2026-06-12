@@ -16,6 +16,7 @@ import json
 import os
 import re
 from datetime import datetime, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 
@@ -39,13 +40,22 @@ def env_int(name: str, default: int, minimum: int = 0) -> int:
         return max(minimum, int(default))
 
 
+def app_time_zone():
+    try:
+        return ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
+    except Exception:
+        return UTC
+
+
+def local_date_from_dt(dt: datetime) -> str:
+    return dt.astimezone(app_time_zone()).date().isoformat()
+
+
 def target_date() -> str:
     explicit = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or '').strip()
     if explicit:
         return explicit[:10]
-    # APP_TIMEZONE is usually Europe/Moscow, but this script is only a repair
-    # layer.  UTC fallback is safer than failing the workflow.
-    return datetime.now(UTC).date().isoformat()
+    return datetime.now(app_time_zone()).date().isoformat()
 
 
 def load_json(path: Path, default: Any = None) -> Any:
@@ -98,7 +108,7 @@ def row_date(row: dict[str, Any]) -> str:
             return str(value)[:10]
         dt = parse_dt(value)
         if dt:
-            return dt.date().isoformat()
+            return local_date_from_dt(dt)
     for key in ('match_key', 'canonical_match_id', 'event_key'):
         m = re.search(r'(20\d{2}-\d{2}-\d{2})', str(row.get(key) or ''))
         if m:
@@ -306,6 +316,7 @@ def main() -> int:
         'rows_collected': len(rows),
         'matches_after': len(selected),
         'target_shortfall': max(0, target - len(selected)),
+        'target_timezone': str(app_time_zone()),
         'status': payload['target_expand_status'],
         **diagnostics,
     }
