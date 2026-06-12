@@ -16,7 +16,7 @@ from pathlib import Path
 ROOT = Path('.').resolve()
 OUT_PATH = ROOT / '.data' / 'exports' / 'latest-publication-family-policy.json'
 ALLOWED = 'totals,spreads'
-RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v7-signals-totals-spreads'
+RUNTIME_POLICY_VERSION = 'harizon-runtime-policy-v12-public-total-line-contract'
 
 ENV_UPDATES = {
     'HARIZON_RUNTIME_POLICY_VERSION': RUNTIME_POLICY_VERSION,
@@ -40,12 +40,14 @@ ENV_UPDATES = {
     'TEAM_TOTALS_PUBLICATION_ENABLED': 'false',
     'TOTALS_PUBLICATION_ENABLED': 'true',
     'SPREADS_PUBLICATION_ENABLED': 'true',
-    # Analysis remains broad so diagnostics can still show why non-public
-    # markets looked attractive, but publication remains narrow.
+    # Public totals contract: publish only whole and .5 total lines. Quarter
+    # totals remain analysis/watch-only and are rejected before xG sanity.
+    'CONTROLLED_FALLBACK_REQUIRE_PUBLIC_TOTAL_LINE': 'true',
+    'CONTROLLED_FALLBACK_REQUIRE_TOTAL_POINT_FOR_PUBLICATION': 'true',
+    'PROMOTE_B_COVER_FILTER_BY_TIME': 'true',
+    # Analyze broadly, publish narrowly.
     'ANALYSIS_ALLOWED_MARKET_FAMILIES': 'h2h,totals,spreads,btts,dnb,doubleChance,teamTotals',
-    # Runtime signal-stack switches. These are repeated here because older
-    # workflow/budget layers call this script but not always the full runtime
-    # policy script.
+    # Runtime signal-stack switches.
     'ODDS_MOVEMENT_SNAPSHOTS_ENABLED': 'true',
     'NEWS_INJURY_SHORTLIST_ENABLED': 'true',
     'NEWS_INJURY_SHORTLIST_LIMIT': os.getenv('NEWS_INJURY_SHORTLIST_LIMIT') or '8',
@@ -58,6 +60,13 @@ ENV_UPDATES = {
     'SSTATS_ROLLING_METRICS_ENABLED': 'true',
     'SSTATS_HISTORICAL_ODDS_AS_LINES': 'false',
     'CONTEXT_ENRICHMENT_REQUIRES_OFFERS': 'false',
+    # Try to actually reach the documented 300-match inventory during run-once.
+    'DAY_INVENTORY_TARGET_SIZE': '300',
+    'DAY_INVENTORY_MAX_MATCHES': '300',
+    'DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES': '300',
+    'DAY_INVENTORY_MULTI_SOURCE_MAX_MATCHES': '300',
+    'MAX_MATCHES_FOR_ODDS_FETCH': '300',
+    # A/B-tier contract requested by the user.
     'PUBLISH_ALLOW_B_TIER': 'true',
     'PUBLISH_COVERAGE_TIER_MODE': 'hybrid',
     'MIN_BOOKS_PUBLISH': '1',
@@ -66,16 +75,24 @@ ENV_UPDATES = {
     'PUBLISH_MIN_ODDS_SOURCES': '1',
     'MIN_CONTEXT_SOURCES_PUBLISH': '1',
     'PUBLISH_MIN_CONTEXT_SOURCES': '1',
+    'PUBLISH_TIER_A_MIN_BOOKS': '2',
+    'PUBLISH_TIER_A_MIN_CONTEXT_SOURCES': '2',
+    'PUBLISH_TIER_B_MIN_BOOKS': '1',
+    'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_B': 'true',
     'CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM': 'false',
     'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM': 'false',
-    'CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES': 'true',
+    'CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES': 'false',
+    'CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES': 'false',
+    'CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES': 'false',
     'CONTROLLED_FALLBACK_MIN_ODDS_SOURCES': '1',
     'CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES': '1',
     'CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS': '1',
     'CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES': '1',
+    'CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES': '1',
+    'CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES': '1',
     'MARKET_DERIVED_MIN_BOOKS': '1',
     'MARKET_DERIVED_MIN_SOURCES': '1',
     'MARKET_DERIVED_CONSENSUS_RELIEF_MIN_BOOKS': '1',
@@ -102,17 +119,17 @@ def main() -> int:
     OUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         'created_at_utc': datetime.now(timezone.utc).isoformat(),
-        'policy': 'publication_totals_spreads_only_with_signal_runtime_contract',
+        'policy': 'publication_totals_spreads_only_with_public_total_line_contract',
         'runtime_policy_version': RUNTIME_POLICY_VERSION,
         'allowed_publication_families': ['totals', 'spreads'],
         'blocked_publication_families': ['h2h', 'btts', 'dnb', 'doubleChance', 'teamTotals'],
         'env_updates': ENV_UPDATES,
         'notes': [
             'Only totals and spreads/handicaps may be published.',
-            'H2H/P1/P2/X, BTTS, DNB, double chance and team totals are analysis-only.',
-            'market_family_publication_guard also blocks Telegram text as last-mile safety.',
-            'Runtime signal-stack switches are pinned here because the workflow calls this script before run and fallback.',
-            'Bzzoiro is forced through the predictions endpoint and smoke calls are skipped to preserve request budget.',
+            'Public totals must be whole or .5 lines; .25/.75 Asian totals are analysis-only.',
+            'B-tier = 1+ bookmaker + 1+ context; A-tier = 2+ bookmakers + 2+ contexts.',
+            'Independent odds-source count is diagnostic unless explicitly re-enabled.',
+            'Inventory target overrides are pinned here because the workflow calls this script before run and fallback.',
         ],
     }
     OUT_PATH.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + '\n', encoding='utf-8')

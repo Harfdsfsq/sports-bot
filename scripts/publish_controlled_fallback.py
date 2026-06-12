@@ -298,6 +298,50 @@ def as_int(value: Any, default: int = 0) -> int:
         return default
 
 
+
+
+def total_point_value(candidate: dict[str, Any]) -> float | None:
+    for key in ("point", "line", "total", "handicap"):
+        value = candidate.get(key)
+        if value not in (None, ""):
+            f = as_float(value, 0.0)
+            if f > 0:
+                return f
+    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    for key in ("point", "line", "total", "handicap"):
+        value = source_summary.get(key)
+        if value not in (None, ""):
+            f = as_float(value, 0.0)
+            if f > 0:
+                return f
+    return None
+
+
+def is_public_total_point_supported(point: float | None) -> bool:
+    if point is None or point <= 0:
+        return False
+    # Public Telegram totals are restricted to whole and .5 lines.  Quarter
+    # Asian totals (.25/.75) may remain analysis-only, but must not be sent as
+    # forecasts or spend xG-sanity diagnostics.
+    nearest_half = round(point * 2.0) / 2.0
+    return abs(point - nearest_half) < 1e-9
+
+
+def total_line_publication_reasons(candidate: dict[str, Any]) -> list[str]:
+    fam = family_norm(candidate)
+    if fam not in {"totals", "teamtotals"}:
+        return []
+    if not env_bool("CONTROLLED_FALLBACK_REQUIRE_PUBLIC_TOTAL_LINE", True):
+        return []
+    point = total_point_value(candidate)
+    if point is None:
+        if env_bool("CONTROLLED_FALLBACK_REQUIRE_TOTAL_POINT_FOR_PUBLICATION", True):
+            return ["missing_total_line_point"]
+        return []
+    if not is_public_total_point_supported(point):
+        return [f"unsupported_total_line_for_publication:{point:g}"]
+    return []
+
 def effective_min_kickoff_lead_minutes() -> int:
     # Fixed publication policy: scan matches starting no sooner than MIN_KICKOFF_LEAD_MINUTES.
     # For this bundle the intended value is 30 minutes. Late/manual adaptive lead is disabled
@@ -450,44 +494,6 @@ def total_line_probability_from_xg(selection: Any, point: Any, expected_home: An
     return max(0.0, min(1.0, probability))
 
 
-def _nested_xg_value(candidate: dict[str, Any], side: str) -> Any:
-    """Find xG values even when enrichers stored them in nested context blobs.
-
-    Reports showed B-tier-covered totals candidates blocked by
-    `missing_total_xg_sanity` even though provider context existed.  Keep the
-    guard strict, but search common nested locations before declaring xG absent.
-    """
-    side = "home" if str(side).lower().startswith("h") else "away"
-    direct_keys = (
-        f"expected_{side}", f"{side}_expected", f"xg_{side}", f"{side}_xg",
-        f"expected_goals_{side}", f"{side}_expected_goals",
-    )
-    containers: list[Any] = [candidate]
-    for key in ("context", "source_summary", "diagnostics", "analysis", "metadata", "features", "provider_context"):
-        value = candidate.get(key) if isinstance(candidate, dict) else None
-        if isinstance(value, dict):
-            containers.append(value)
-    for container in list(containers):
-        if not isinstance(container, dict):
-            continue
-        for nested_key in ("xg", "expected_goals", "team_xg", "model_xg", "sstats", "bzzoiro", "form"):
-            value = container.get(nested_key)
-            if isinstance(value, dict):
-                containers.append(value)
-    for container in containers:
-        if not isinstance(container, dict):
-            continue
-        for key in direct_keys:
-            value = container.get(key)
-            if value not in (None, ""):
-                return value
-        # Common {home: ..., away: ...} nested shape.
-        value = container.get(side)
-        if value not in (None, "") and not isinstance(value, dict):
-            return value
-    return None
-
-
 def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) -> dict[str, Any]:
     if not env_bool("CONTROLLED_FALLBACK_XG_SANITY_ENABLED", True):
         return {"enabled": False}
@@ -498,9 +504,6 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     expected_home = candidate.get("expected_home")
     expected_away = candidate.get("expected_away")
-    if expected_home in (None, "") or expected_away in (None, ""):
-        expected_home = _nested_xg_value(candidate, "home")
-        expected_away = _nested_xg_value(candidate, "away")
     if expected_home in (None, "") or expected_away in (None, ""):
         return {"enabled": False, "reason": "missing_xg"}
 
@@ -906,84 +909,6 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _bookmaker_quorum_price_guard(candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-    """Price-integrity helper for B-tier bookmaker contract.
-
-    B-tier is allowed with one real bookmaker + one context.  For one bookmaker
-    there is no meaningful median-quorum check, so this function only verifies
-    that a selected price/book exists.  For 2+ books it keeps the old median
-    outlier guard.
-    """
-    if not env_bool("CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD", True):
-        return []
-    min_books = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", 1))
-    books_count = int(metrics.get("books_count") or 0)
-    if books_count < min_books:
-        return [f"tier_b_bookmaker_quorum_books_below_min:{books_count}/{min_books}"]
-
-    rows = candidate.get("raw_bucket_offers")
-    if not isinstance(rows, list) or not rows:
-        source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
-        rows = source_summary.get("raw_bucket_offers") or source_summary.get("bucket_offers") or source_summary.get("offers")
-    if not isinstance(rows, list):
-        rows = []
-
-    prices_by_book: dict[str, float] = {}
-    selected_price = as_float(metrics.get("odds") or candidate.get("odds"), 0.0)
-    selected_book = (selected_bookmaker(candidate) or "selected_bookmaker").strip().lower() or "selected_bookmaker"
-    if selected_price > 1.0:
-        prices_by_book[selected_book] = selected_price
-
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        price = as_float(row.get("price") or row.get("odds") or row.get("decimal_odds"), 0.0)
-        if price <= 1.0:
-            continue
-        book = str(row.get("bookmaker") or row.get("book") or row.get("sportsbook") or "").strip().lower()
-        if not book:
-            continue
-        current = prices_by_book.get(book)
-        selected = float(metrics.get("odds") or 0.0)
-        if current is None or abs(price - selected) < abs(current - selected):
-            prices_by_book[book] = price
-
-    metrics["tier_b_bookmaker_quorum"] = {
-        "enabled": True,
-        "books_count": books_count,
-        "odds_sources_count": int(metrics.get("odds_sources_count") or 0),
-        "priced_books_count": len(prices_by_book),
-        "mode": "single_book_contract" if min_books <= 1 else "bookmaker_quorum",
-    }
-    if len(prices_by_book) < min_books:
-        return [f"tier_b_bookmaker_quorum_prices_missing:{len(prices_by_book)}/{min_books}"]
-    if min_books <= 1:
-        metrics["tier_b_bookmaker_quorum"].update({
-            "single_book_b_tier_contract": True,
-            "selected_price": round(selected_price, 4),
-            "max_deviation_pct": None,
-        })
-        return []
-
-    prices = sorted(prices_by_book.values())
-    mid = len(prices) // 2
-    median_price = prices[mid] if len(prices) % 2 else (prices[mid - 1] + prices[mid]) / 2.0
-    selected = float(metrics.get("odds") or 0.0)
-    if median_price <= 1.0 or selected <= 1.0:
-        return ["tier_b_bookmaker_quorum_missing_selected_price"]
-    deviation_pct = abs(selected - median_price) / median_price * 100.0
-    max_deviation = env_float("CONTROLLED_FALLBACK_TIER_B_MAX_BOOKMAKER_MEDIAN_DEVIATION_PCT", 8.0)
-    metrics["tier_b_bookmaker_quorum"].update({
-        "median_price": round(median_price, 4),
-        "selected_price": round(selected, 4),
-        "selected_vs_median_deviation_pct": round(deviation_pct, 3),
-        "max_deviation_pct": max_deviation,
-    })
-    if deviation_pct > max_deviation:
-        return [f"tier_b_bookmaker_quorum_price_outlier:{deviation_pct:.2f}>{max_deviation:.2f}"]
-    return []
-
-
 def kickoff_window_reasons(candidate: dict[str, Any]) -> list[str]:
     if not env_bool("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", True):
         return []
@@ -1009,6 +934,7 @@ def hard_reject_reasons(candidate: dict[str, Any], metrics: dict[str, Any], sent
     fam = family_norm(candidate)
     if fam not in env_set("CONTROLLED_FALLBACK_ALLOWED_FAMILIES", "totals,dnb,teamtotals,btts"):
         reasons.append(f"family_not_allowed:{fam}")
+    reasons.extend(total_line_publication_reasons(candidate))
     reasons.extend(kickoff_window_reasons(candidate))
     dup = duplicate_reason(candidate, sent_index)
     if dup:
@@ -1062,8 +988,7 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     allowed_families = env_set(prefix + "ALLOWED_FAMILIES", "")
     if allowed_families and fam not in allowed_families:
         reasons.append(f"tier_{tier.lower()}_family_not_allowed:{fam}")
-    min_books_for_tier = env_int(prefix + "MIN_BOOKS", 1 if tier == "B" else 2)
-    if metrics["books_count"] < min_books_for_tier:
+    if metrics["books_count"] < env_int(prefix + "MIN_BOOKS", 2):
         reasons.append(f"tier_{tier.lower()}_books_below_min")
     if metrics["confidence"] < env_float(prefix + "MIN_CONFIDENCE", 60.0):
         reasons.append(f"tier_{tier.lower()}_confidence_below_min")
@@ -1092,30 +1017,6 @@ def tier_reasons(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) 
     if tier == "A" and env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_RAW_QUALITY", True):
         if str(metrics.get("quality_score_source") or "") == "proxy":
             reasons.append("tier_a_proxy_quality_not_allowed")
-
-    # User contract: A-tier = 2+ bookmakers/price confirmations + 2+ contexts;
-    # B-tier = 1+ bookmaker + 1+ context.  Independent odds-source diversity is
-    # diagnostic unless explicitly re-enabled by env.
-    if tier == "A":
-        if env_bool("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES", False):
-            min_odds_sources = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES", 2)
-            if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-                reasons.append(f"tier_a_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-        min_confirmations = env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES", 2))
-        if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
-            reasons.append(f"tier_a_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
-    elif tier == "B":
-        if env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES", False):
-            min_odds_sources = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES", 1))
-            if int(metrics.get("odds_sources_count") or 0) < min_odds_sources:
-                reasons.append(f"tier_b_odds_sources_below_min:{int(metrics.get('odds_sources_count') or 0)}/{min_odds_sources}")
-        min_books = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_BOOKMAKERS", 1)))
-        if int(metrics.get("books_count") or 0) < min_books:
-            reasons.append(f"tier_b_bookmaker_quorum_books_below_min:{int(metrics.get('books_count') or 0)}/{min_books}")
-        min_confirmations = max(1, env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES", env_int("CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES", 1)))
-        if int(metrics.get("confirmation_sources_count") or 0) < min_confirmations:
-            reasons.append(f"tier_b_confirmation_sources_below_min:{int(metrics.get('confirmation_sources_count') or 0)}/{min_confirmations}")
-        reasons.extend(_bookmaker_quorum_price_guard(candidate, metrics))
 
     xg = metrics.get("xg_sanity") or {}
     if bool(xg.get("enabled")):
@@ -1169,34 +1070,28 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     """
     reasons: list[str] = []
     fam = family_norm(candidate)
+    line_reasons = total_line_publication_reasons(candidate)
+    if line_reasons:
+        return line_reasons
     tier_name = tier.replace("уровень ", "").strip().upper()
 
-    if tier_name == "B":
-        require_two_books = env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM", False)
-    else:
-        require_two_books = env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True)
-    if require_two_books and int(metrics.get("books_count") or 0) < 2:
-        reasons.append("telegram_publish_books_guard")
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM", True):
+        if int(metrics.get("books_count") or 0) < 2:
+            reasons.append("telegram_publish_books_guard")
 
-    if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", tier_name != "B"):
+    if env_bool("CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK", True):
         if int(metrics.get("books_count") or 0) < 2 and str(metrics.get("quality_score_source") or "") == "proxy":
             reasons.append("proxy_single_book_guard")
 
     if tier_name == "C" and not env_bool("CONTROLLED_FALLBACK_TIER_C_PUBLISH_ENABLED", False):
         reasons.append("tier_c_watch_only")
 
-    if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", tier_name != "B"):
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY", True):
         if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("books_count") or 0) < 2:
             reasons.append("proxy_without_market_confirmation")
 
-    if tier_name == "B":
-        require_independent_sources = env_bool("CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES", False)
-        min_sources_default = 1
-    else:
-        require_independent_sources = env_bool("CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES", True)
-        min_sources_default = 2
-    if require_independent_sources:
-        min_sources = env_int("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", min_sources_default)
+    if env_bool("CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES", True):
+        min_sources = env_int("CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES", 2)
         confirmation_count = int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0)
         if confirmation_count < min_sources:
             reasons.append(f"controlled_fallback_confirmation_sources_below_min:{confirmation_count}/{min_sources}")
