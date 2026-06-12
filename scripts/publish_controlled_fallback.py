@@ -197,6 +197,9 @@ def normalize_confirmation_source(value: Any) -> str | None:
         "wikidata": "wikidata",
         "guardian": "guardian",
         "highlightly": "highlightly",
+        "inventory_context": "inventory_context",
+        "coverage_context": "inventory_context",
+        "context_inventory": "inventory_context",
     }
     if text in aliases:
         return aliases[text]
@@ -212,6 +215,156 @@ def _source_values(value: Any) -> list[Any]:
     if isinstance(value, str):
         return re.split(r"[,+;/|\s]+", value)
     return []
+
+
+def _norm_match_token(value: Any) -> str:
+    text = str(value or "").strip().lower().replace("ё", "е")
+    text = re.sub(r"[^a-z0-9а-я]+", " ", text)
+    return " ".join(text.split())
+
+
+def _match_day_from_row(row: dict[str, Any]) -> str:
+    for key in ("commence_time", "kickoff_utc", "start_time", "kickoff", "date"):
+        value = row.get(key)
+        if not value:
+            continue
+        if key == "date" and re.match(r"^20\d{2}-\d{2}-\d{2}$", str(value)[:10]):
+            return str(value)[:10]
+        dt = parse_dt(value)
+        if dt is not None:
+            return dt.date().isoformat()
+    for key in ("match_key", "canonical_match_id", "event_key"):
+        m = re.search(r"(20\d{2}-\d{2}-\d{2})", str(row.get(key) or ""))
+        if m:
+            return m.group(1)
+    return ""
+
+
+def _candidate_match_lookup_keys(row: dict[str, Any]) -> set[str]:
+    keys: set[str] = set()
+    for key in ("match_key", "canonical_match_id", "event_key", "id", "event_id", "fixture_id", "game_id"):
+        value = _norm_match_token(row.get(key))
+        if value:
+            keys.add("id:" + value)
+    home = _norm_match_token(row.get("home_team") or row.get("home") or row.get("home_name") or row.get("team_home"))
+    away = _norm_match_token(row.get("away_team") or row.get("away") or row.get("away_name") or row.get("team_away"))
+    day = _match_day_from_row(row)
+    if home and away:
+        keys.add(f"teams_any:{home}|{away}")
+        keys.add(f"teams_any_rev:{away}|{home}")
+        if day:
+            keys.add(f"teams:{day}|{home}|{away}")
+            keys.add(f"teams_rev:{day}|{away}|{home}")
+    return {k for k in keys if k}
+
+
+def _rows_from_payload_for_context(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if not isinstance(payload, dict):
+        return []
+    out: list[dict[str, Any]] = []
+    for key in ("matches", "rows", "items", "inventory", "match_rows", "coverage_rows"):
+        value = payload.get(key)
+        if isinstance(value, list):
+            out.extend([x for x in value if isinstance(x, dict)])
+    for key in ("by_match", "matches_by_key"):
+        value = payload.get(key)
+        if isinstance(value, dict):
+            for match_key, row in value.items():
+                if isinstance(row, dict):
+                    clone = dict(row)
+                    clone.setdefault("match_key", match_key)
+                    out.append(clone)
+    return out
+
+
+def _context_sources_from_row(row: dict[str, Any]) -> set[str]:
+    sources: set[str] = set()
+    containers: list[dict[str, Any]] = []
+    for value in (row, row.get("coverage"), row.get("metadata"), row.get("source_summary"), row.get("context"), row.get("details")):
+        if isinstance(value, dict):
+            containers.append(value)
+    for container in containers:
+        for field in (
+            "confirmation_sources", "context_sources", "context_source_names", "merged_context_sources",
+            "providers", "provider_names", "all_context_sources", "core_context_sources",
+            "supplemental_context_sources", "sources",
+        ):
+            for item in _source_values(container.get(field)):
+                src = normalize_confirmation_source(item)
+                if src:
+                    sources.add(src)
+        for field in ("context_sources_count", "context_confirmations_count", "context_count", "contexts_count", "context_source_count", "provider_context_count"):
+            if as_int(container.get(field), 0) > 0:
+                sources.add("inventory_context")
+        if container.get("context") or container.get("has_context") or container.get("context_any") or container.get("coverage_context") or container.get("ready_for_model"):
+            sources.add("inventory_context")
+    sources.discard("odds_api_io")
+    sources.discard("market")
+    return sources
+
+
+_INVENTORY_CONTEXT_INDEX_CACHE: dict[str, set[str]] | None = None
+_INVENTORY_CONTEXT_INDEX_DIAG: dict[str, Any] = {}
+
+
+def load_inventory_context_source_index() -> dict[str, set[str]]:
+    global _INVENTORY_CONTEXT_INDEX_CACHE, _INVENTORY_CONTEXT_INDEX_DIAG
+    if _INVENTORY_CONTEXT_INDEX_CACHE is not None:
+        return _INVENTORY_CONTEXT_INDEX_CACHE
+    paths = [
+        Path(".data/exports/latest-day-inventory-coverage-truth.json"),
+        Path(".data/exports/latest-day-inventory-cumulative-coverage.json"),
+        Path(".data/day_inventory/current.json"),
+        Path(".data/day_inventory/latest.json"),
+        Path(".data/day_inventory/today.json"),
+    ]
+    index: dict[str, set[str]] = {}
+    source_stats: list[dict[str, Any]] = []
+    for path in paths:
+        payload = load_json(path, None)
+        rows = _rows_from_payload_for_context(payload)
+        if not rows:
+            continue
+        accepted = 0
+        for row in rows:
+            sources = _context_sources_from_row(row)
+            if not sources:
+                continue
+            keys = _candidate_match_lookup_keys(row)
+            if not keys:
+                continue
+            accepted += 1
+            for key in keys:
+                index.setdefault(key, set()).update(sources)
+        source_stats.append({"path": str(path), "rows": len(rows), "accepted_context_rows": accepted})
+    _INVENTORY_CONTEXT_INDEX_CACHE = index
+    _INVENTORY_CONTEXT_INDEX_DIAG = {"sources": source_stats, "keys": len(index)}
+    return index
+
+
+def inventory_context_sources_for_candidate(candidate: dict[str, Any]) -> tuple[set[str], dict[str, Any]]:
+    if not env_bool("CONTROLLED_FALLBACK_USE_INVENTORY_CONTEXT_FALLBACK", True):
+        return set(), {"inventory_context_fallback_enabled": False}
+    keys = _candidate_match_lookup_keys(candidate)
+    index = load_inventory_context_source_index()
+    found: set[str] = set()
+    matched_keys: list[str] = []
+    for key in keys:
+        values = index.get(key)
+        if values:
+            found.update(values)
+            matched_keys.append(key)
+    found.discard("odds_api_io")
+    found.discard("market")
+    return found, {
+        "inventory_context_fallback_enabled": True,
+        "inventory_context_fallback_used": bool(found),
+        "inventory_context_fallback_sources": sorted(found),
+        "inventory_context_fallback_matched_keys": matched_keys[:5],
+        "inventory_context_fallback_index": _INVENTORY_CONTEXT_INDEX_DIAG,
+    }
 
 
 def weather_confirmation_state(candidate: dict[str, Any]) -> dict[str, Any]:
@@ -268,10 +421,23 @@ def candidate_confirmation_sources(candidate: dict[str, Any]) -> tuple[list[str]
                 if src:
                     sources.add(src)
 
+    # Last-mile source repair: many runtime/debug candidates are created before
+    # coverage-truth rows are merged, so they can have real B-cover in inventory
+    # but no source names in the candidate payload.  B-tier requires 1+ context,
+    # not necessarily a named external provider in the row itself; recover that
+    # evidence from coverage-truth/current inventory before declaring
+    # ``missing_sources``.
+    inventory_sources, inventory_meta = inventory_context_sources_for_candidate(candidate)
+    before_inventory = set(sources)
+    if inventory_sources:
+        sources.update(inventory_sources)
+
     sources.discard("odds_api_io")
     sources.discard("market")
 
     relevance = weather_confirmation_state(candidate)
+    relevance.update(inventory_meta)
+    relevance["inventory_context_fallback_added_sources"] = sorted(set(sources) - before_inventory)
     if "weather" in sources and not relevance["weather_confirmation_relevant"]:
         sources.discard("weather")
         relevance["weather_dropped_as_neutral"] = True
@@ -314,6 +480,38 @@ def total_point_value(candidate: dict[str, Any]) -> float | None:
             f = as_float(value, 0.0)
             if f > 0:
                 return f
+
+    # Some debug/fallback rows arrive as just "Больше"/"Меньше" without point,
+    # while promotion/raw bucket evidence already contains the actual total line.
+    # Recover the point only when there is a single unambiguous bucket line.
+    if env_bool("CONTROLLED_FALLBACK_TOTAL_POINT_FROM_BUCKET_OFFERS", True):
+        offer_rows: list[Any] = []
+        direct_rows = candidate.get("raw_bucket_offers")
+        if isinstance(direct_rows, list):
+            offer_rows.extend(direct_rows)
+        for key in ("raw_bucket_offers", "bucket_offers", "offers"):
+            value = source_summary.get(key)
+            if isinstance(value, list):
+                offer_rows.extend(value)
+        points: set[float] = set()
+        selection_text = str(candidate.get("selection") or candidate.get("selection_key") or "").lower()
+        for row in offer_rows:
+            if not isinstance(row, dict):
+                continue
+            row_selection = str(row.get("selection") or row.get("selection_key") or row.get("outcome") or "").lower()
+            if selection_text and row_selection:
+                if any(t in selection_text for t in ("больше", "over", "тб")) and not any(t in row_selection for t in ("over", "больше", "тб")):
+                    continue
+                if any(t in selection_text for t in ("меньше", "under", "тм")) and not any(t in row_selection for t in ("under", "меньше", "тм")):
+                    continue
+            for key in ("point", "line", "total", "handicap"):
+                value = row.get(key)
+                if value not in (None, ""):
+                    f = as_float(value, 0.0)
+                    if f > 0:
+                        points.add(round(float(f), 4))
+        if len(points) == 1:
+            return next(iter(points))
     return None
 
 
