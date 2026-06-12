@@ -1,73 +1,62 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: quality: вероятность после калибровки ниже порога
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 229 матчей. Runtime rows processed: 214 (это не размер inventory).
-• 1+ линия: 195/229 (85%) | 1+ контекст: 118/229 (52%)
-• 2+ букмекера: 119/229 (52%)
-• Raw 2+ букмекера odds-api.io: 62 | normalized inventory: 119 | mapping gap: 0
-• Odds-api offer snapshot: rows 8736, matches 111, same-side 2+ books 56
+• Инвентарь дня: 229 матчей. Runtime rows processed: 196 (это не размер inventory).
+• 1+ линия: 195/229 (85%) | 1+ контекст: 134/229 (59%)
+• 2+ букмекера: 123/229 (54%)
+• Raw 2+ букмекера odds-api.io: 59 | normalized inventory: 123 | mapping gap: 0
+• Odds-api offer snapshot: rows 9650, matches 105, same-side 2+ books 54
 • 2+ независимых odds-source: 165/229 (72%) — диагностика, не блок публикации
-• 2+ контекста: 75/229 (33%)
-• Готово для модели: 99/229 (43%)
+• 2+ контекста: 86/229 (38%)
+• Готово для модели: 115/229 (50%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 39 | опубликовано: 0
+• A-tier strict-ready: 50 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 118 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 134 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 118 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 75 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 134 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 86 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 19 | матчей без следующего регулярного run: 0
-• Line guard: увидел 4, оставил 0, снял 0
+• Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
+• Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
+• Raw/candidates before quality: 2/2
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 4 | evaluated 4 | published 0
+• Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 38; смэтчил матчей 185; offers 8897; 2+ букмекера 62; ошибок 0.
-• Bzzoiro: direct req 41, v2 req 41; v2 ctx 10; v2 odds 5; secondary offers 0; overlap odds-api.io 3; ошибок 3.
-• SStats: запросы 25; сырых строк 20043; контекстов 136; deep-enriched 6; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 36; смэтчил матчей 171; offers 9835; 2+ букмекера 59; ошибок 0.
+• Bzzoiro: direct req 36, v2 req 36; v2 ctx 11; v2 odds 6; secondary offers 0; overlap odds-api.io 3; ошибок 0.
+• SStats: запросы 25; сырых строк 20042; контекстов 129; deep-enriched 6; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 108, bzzoiro: 5, bzzoiro+odds_api_io: 3
+• Комбинации источников линий: odds_api_io: 102, bzzoiro: 5, bzzoiro+odds_api_io: 3
 
 🚫 Почему не опубликовано
-• quality: вероятность после калибровки ниже порога: 3 (16%)
-• tier a quality below min: 2 (11%)
-• tier a confirmation sources below min:1/2: 2 (11%)
-• tier b quality below min: 2 (11%)
-• tier c quality below min: 2 (11%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 2 (11%)
-• tier b bookmaker quorum price outlier:12.17>8.00: 1 (5%)
-• tier a canonical edge below min: 1 (5%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
+• quality: вероятность после калибровки ниже порога: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Be1 Nfa — Tauras Taurage | Меньше 2.5 @2.65 | EV +6.2% | edge +2.3 п.п. | q 57.0
-   • причина: tier a quality below min, tier a confirmation sources below min:1/2, tier b quality below min, tier b bookmaker quorum price outlier:12.17>8.00
-2. Jonava — Atmosfera | Больше 2.5 @1.95 | EV +2.1% | edge +1.1 п.п. | q 49.8
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier a confirmation sources below min:1/2
-3. Vittsjo — Kristianstads | Меньше 2.5 @2.18 | EV -0.4% | edge -0.2 п.п. | q 50.0
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, missing sources
-4. Dziugas — Siauliai | Меньше 2.5 @2.16 | EV -0.1% | edge -0.0 п.п. | q 53.9
+1. HPS — Kiffen | Больше 3.25 @1.99 | EV -6.6% | edge -3.3 п.п. | q 52.2
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 229/300; shortfall 71; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 248; normalized 70→63; gap after 185.
+• Bookmaker mapping repair: raw 2+ 237; normalized 75→62; gap after 175.
+• B-cover promotion: considered 0; promoted 0; top skips n/a.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27403596975
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27403596975
-• Artifact: run-bot-27403596975
+• Run ID: 27411546900
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27411546900
+• Artifact: run-bot-27411546900
 • workflow run-bot, attempt 1
