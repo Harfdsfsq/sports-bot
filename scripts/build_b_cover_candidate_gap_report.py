@@ -209,9 +209,18 @@ def context_count(row: dict[str, Any]) -> int:
     for container in (row, cov, md):
         if not isinstance(container, dict):
             continue
-        for key in ('context_sources', 'context_confirmations', 'all_context_sources', 'sources'):
+        for key in (
+            'context_sources', 'context_confirmations', 'all_context_sources',
+            'core_context_sources', 'supplemental_context_sources', 'sources',
+            'context_sources_count', 'context_confirmations_count', 'context_count',
+            'contexts_count', 'context_source_count', 'provider_context_count',
+        ):
             best = max(best, count_any(container.get(key)))
-        if container.get('context') or container.get('has_context') or container.get('xg'):
+        if (
+            container.get('context') or container.get('has_context') or container.get('xg')
+            or container.get('ready_for_model') or container.get('context_any')
+            or container.get('coverage_context')
+        ):
             best = max(best, 1)
     if context_sources(row):
         best = max(best, len(context_sources(row)))
@@ -225,11 +234,19 @@ def book_count(row: dict[str, Any]) -> int:
     for container in (row, cov, md):
         if not isinstance(container, dict):
             continue
-        for key in ('books_count', 'bookmakers_count', 'price_confirmations', 'price_sources_count', 'latest_books_max'):
+        for key in (
+            'books_count', 'bookmakers_count', 'bookmaker_count', 'price_confirmations',
+            'price_confirmation_sources_count', 'price_sources_count', 'latest_books_max',
+            'same_side_books_max', 'same_side_2plus_books', 'bookmaker_coverage_count',
+            'bookmakers_or_price_confirmations_count',
+        ):
             best = max(best, count_any(container.get(key)))
-        for key in ('books', 'bookmakers'):
+        for key in ('books', 'bookmakers', 'same_side_books', 'price_sources'):
             best = max(best, count_any(container.get(key)))
-        if container.get('odds') or container.get('has_odds'):
+        if (
+            container.get('odds') or container.get('has_odds') or container.get('odds_any')
+            or container.get('coverage_odds') or container.get('ready_for_model')
+        ):
             best = max(best, 1)
     return best
 
@@ -286,21 +303,68 @@ def has_xg(row: dict[str, Any]) -> bool:
     return h is not None and a is not None
 
 
-def load_inventory(day: str) -> list[dict[str, Any]]:
-    best: list[dict[str, Any]] = []
-    for path in (
+def _rows_from_payload(payload: Any) -> list[dict[str, Any]]:
+    if isinstance(payload, list):
+        return [x for x in payload if isinstance(x, dict)]
+    if not isinstance(payload, dict):
+        return []
+    for key in ('matches', 'rows', 'items', 'inventory', 'match_rows', 'coverage_rows'):
+        value = payload.get(key)
+        if isinstance(value, list):
+            return [x for x in value if isinstance(x, dict)]
+    return []
+
+
+def load_inventory_with_meta(day: str) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Load the best available inventory rows without over-filtering by UTC date.
+
+    The daily inventory is frozen by the workflow's local date (Europe/Moscow).
+    Some kickoff timestamps are stored in UTC and can fall on the previous UTC day,
+    so filtering every row by ``row_date(row) == day`` can accidentally turn a
+    healthy 229-row inventory into zero promotion rows.  The file name/path is the
+    date contract; row dates are diagnostics only.
+    """
+    candidates: list[tuple[str, list[dict[str, Any]]]] = []
+    paths = (
         ROOT / '.data' / 'day_inventory' / f'{day}.json',
         ROOT / '.data' / 'day_inventory' / 'current.json',
         ROOT / '.data' / 'day_inventory' / 'latest.json',
+        ROOT / '.data' / 'day_inventory' / 'today.json',
         ROOT / '.data' / 'cache' / 'day_inventory' / f'{day}.json',
         ROOT / '.data' / 'cache' / 'day_inventory' / 'today.json',
-    ):
-        payload = load_json(path, {})
-        rows = payload.get('matches') if isinstance(payload, dict) and isinstance(payload.get('matches'), list) else []
-        filtered = [x for x in rows if isinstance(x, dict) and (not row_date(x) or row_date(x) == day)]
-        if len(filtered) > len(best):
-            best = filtered
-    return best
+        EXPORT_DIR / 'latest-day-inventory-coverage-truth.json',
+        EXPORT_DIR / 'latest-day-inventory-cumulative-coverage.json',
+        EXPORT_DIR / 'latest-day-inventory-summary.json',
+        ROOT / 'artifacts' / 'run-bot' / 'latest-day-inventory-coverage-truth.json',
+        ROOT / 'artifacts' / 'run-bot' / 'latest-day-inventory-cumulative-coverage.json',
+    )
+    diagnostics: dict[str, Any] = {'sources': []}
+    for path in paths:
+        payload = load_json(path, None)
+        rows = _rows_from_payload(payload)
+        if not rows:
+            if path.exists():
+                diagnostics['sources'].append({'path': str(path), 'rows': 0, 'status': 'no_rows'})
+            continue
+        # Prefer target-date rows when that keeps most of the file, but never drop
+        # below half of a known inventory because of local/UTC date skew.
+        dated = [x for x in rows if isinstance(x, dict) and row_date(x) == day]
+        chosen = dated if len(dated) >= max(20, len(rows) // 2) else rows
+        candidates.append((str(path), chosen))
+        diagnostics['sources'].append({'path': str(path), 'rows': len(rows), 'dated_rows': len(dated), 'chosen_rows': len(chosen)})
+    if not candidates:
+        diagnostics['selected_path'] = ''
+        diagnostics['selected_rows'] = 0
+        return [], diagnostics
+    selected_path, best = max(candidates, key=lambda item: len(item[1]))
+    diagnostics['selected_path'] = selected_path
+    diagnostics['selected_rows'] = len(best)
+    return best, diagnostics
+
+
+def load_inventory(day: str) -> list[dict[str, Any]]:
+    rows, _ = load_inventory_with_meta(day)
+    return rows
 
 
 def candidate_rows() -> list[dict[str, Any]]:
@@ -686,11 +750,18 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
     if promoted:
         merged = promoted + existing
         write_json(RESCUE_PATH, merged[: max(len(merged), limit or len(merged))])
+    if considered == 0:
+        # Make the failure mode visible in Telegram instead of silently reporting 0/0.
+        if not inventory:
+            reasons['promotion_zero_inventory_rows'] += 1
+        else:
+            reasons['promotion_zero_b_cover_rows_after_local_counting'] += 1
     report = {
         'enabled': True,
         'status': 'ok',
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
+        'inventory_rows_seen': len(inventory),
         'considered_b_cover_rows': considered,
         'promoted_count': len(promoted),
         'reason_counts': dict(reasons.most_common()),
@@ -704,7 +775,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
 
 def main() -> int:
     day = target_date()
-    inventory = load_inventory(day)
+    inventory, inventory_load = load_inventory_with_meta(day)
     cands_initial = candidate_rows()
     try:
         promotion = promote_candidates(day, inventory, cands_initial)
@@ -716,6 +787,8 @@ def main() -> int:
             'considered_b_cover_rows': 0,
             'promoted_count': 0,
             'reason_counts': {},
+            'inventory_rows_seen': len(inventory),
+            'inventory_load': inventory_load,
         }
         write_json(PROMOTION_REPORT_JSON, promotion)
     cands = candidate_rows()
@@ -760,12 +833,13 @@ def main() -> int:
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
         'inventory_rows': len(inventory),
+        'inventory_load': inventory_load,
         'candidate_rows_seen': len(cands),
         'candidate_rows_seen_before_promotion': len(cands_initial),
         'b_cover_rows': b_cover,
         'b_cover_without_candidate': sum(1 for r in rows_out if r['gap_reason'].startswith('b_cover_no_candidate')),
         'reason_counts': dict(reasons.most_common()),
-        'promotion': promotion,
+        'promotion': {**promotion, 'inventory_load': inventory_load} if isinstance(promotion, dict) else promotion,
         'promoted_count': int((promotion or {}).get('promoted_count') or 0) if isinstance(promotion, dict) else 0,
         'sample': rows_out[:40],
     }

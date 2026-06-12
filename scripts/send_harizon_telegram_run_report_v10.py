@@ -107,10 +107,18 @@ def render(payload: dict[str, Any]) -> str:
             f"gap after {_as_int(backfill.get('mapping_gap_after'))}."
         )
     if promotion:
+        inventory_seen = _as_int(promotion.get('inventory_rows_seen'))
+        selected_path = ''
+        inv_load = promotion.get('inventory_load') if isinstance(promotion.get('inventory_load'), dict) else {}
+        if inv_load:
+            selected_path = str(inv_load.get('selected_path') or '')
+        suffix = f"; inventory rows {inventory_seen}" if inventory_seen or selected_path else ''
+        if selected_path:
+            suffix += f" from {selected_path}"
         lines.append(
             f"• B-cover promotion: considered {_as_int(promotion.get('considered_b_cover_rows'))}; "
             f"promoted {_as_int(promotion.get('promoted_count'))}; "
-            f"top skips {_top_promotion_reasons(promotion)}."
+            f"top skips {_top_promotion_reasons(promotion)}{suffix}."
         )
     if gap:
         reasons = gap.get('reason_counts') if isinstance(gap.get('reason_counts'), dict) else {}
