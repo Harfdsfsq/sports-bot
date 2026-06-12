@@ -3,27 +3,27 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 229 матчей. Runtime rows processed: 174 (это не размер inventory).
-• 1+ линия: 196/229 (86%) | 1+ контекст: 147/229 (64%)
+• Инвентарь дня: 229 матчей. Runtime rows processed: 151 (это не размер inventory).
+• 1+ линия: 196/229 (86%) | 1+ контекст: 153/229 (67%)
 • 2+ букмекера: 126/229 (55%)
-• Raw 2+ букмекера odds-api.io: 59 | normalized inventory: 126 | mapping gap: 0
-• Odds-api offer snapshot: rows 10677, matches 99, same-side 2+ books 54
+• Raw 2+ букмекера odds-api.io: 51 | normalized inventory: 126 | mapping gap: 0
+• Odds-api offer snapshot: rows 10234, matches 87, same-side 2+ books 49
 • 2+ независимых odds-source: 165/229 (72%) — диагностика, не блок публикации
-• 2+ контекста: 97/229 (42%)
-• Готово для модели: 129/229 (56%)
+• 2+ контекста: 100/229 (44%)
+• Готово для модели: 135/229 (59%)
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 61 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 147 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 153 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 147 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 97 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 153 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 100 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 59 | матчей без следующего регулярного run: 0
+• Pre-kickoff проверок: 45 | матчей без следующего регулярного run: 39
 • Line guard: увидел 1, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -32,30 +32,30 @@
 • Controlled fallback: seen 1 | evaluated 1 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 34; смэтчил матчей 162; offers 10801; 2+ букмекера 59; ошибок 0.
-• Bzzoiro: direct req 24, v2 req 24; v2 ctx 7; v2 odds 4; secondary offers 0; overlap odds-api.io 2; ошибок 0.
-• SStats: запросы 25; сырых строк 20195; контекстов 127; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 30; смэтчил матчей 139; offers 10358; 2+ букмекера 51; ошибок 0.
+• Bzzoiro: direct req 24, v2 req 24; v2 ctx 7; v2 odds 4; secondary offers 0; overlap odds-api.io 3; ошибок 0.
+• SStats: запросы 25; сырых строк 20195; контекстов 114; deep-enriched 15; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 97, bzzoiro: 4, bzzoiro+odds_api_io: 2
+• Комбинации источников линий: odds_api_io: 84, bzzoiro: 4, bzzoiro+odds_api_io: 3
 
 🚫 Почему не опубликовано
 • отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (50%)
 • quality: вероятность после калибровки ниже порога: 1 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Kerry FC — Athlone Town | Больше 2.5 @2.35 | EV -1.6% | edge -0.7 п.п. | q 52.2
+1. Kerry FC — Athlone Town | Больше 2.5 @2.35 | EV -2.1% | edge -0.9 п.п. | q 52.2
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 229/300; shortfall 71; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 228; normalized 78→58; gap after 170.
+• Bookmaker mapping repair: raw 2+ 197; normalized 78→50; gap after 147.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27422446010
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27422446010
-• Artifact: run-bot-27422446010
+• Run ID: 27423934334
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27423934334
+• Artifact: run-bot-27423934334
 • workflow run-bot, attempt 1
