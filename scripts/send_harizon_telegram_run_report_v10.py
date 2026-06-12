@@ -118,6 +118,7 @@ def render(payload: dict[str, Any]) -> str:
         current_window_b_cover = _as_int(promotion.get('current_window_b_cover_rows'))
         stale_removed = _as_int(promotion.get('existing_rescue_rows_removed_stale_or_outside'))
         enriched = _as_int(promotion.get('enriched_duplicate_candidates'))
+        enriched_loose = _as_int(promotion.get('enriched_loose_duplicate_candidates'))
         if selected_b_cover:
             suffix += f"; selected B-cover rows {selected_b_cover}"
         if b_cover_seen or current_window_b_cover:
@@ -126,6 +127,8 @@ def render(payload: dict[str, Any]) -> str:
             suffix += f"; removed stale rescue {stale_removed}"
         if enriched:
             suffix += f"; enriched current rescue {enriched}"
+        if enriched_loose:
+            suffix += f"; loose-enriched {enriched_loose}"
         if selected_path:
             suffix += f" from {selected_path}"
         status = str(promotion.get('status') or 'ok')

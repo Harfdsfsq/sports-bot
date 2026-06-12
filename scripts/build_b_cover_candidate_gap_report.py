@@ -792,6 +792,38 @@ def candidate_signature(row: dict[str, Any]) -> str:
     ])
 
 
+
+def loose_candidate_signature(row: dict[str, Any]) -> str:
+    """Match current rescue rows that missed the totals point.
+
+    Some model rows arrive as just ``Меньше``/``Больше`` without a point while
+    the promotion layer can recover the concrete public line from raw odds
+    buckets.  Exact dedupe then cannot enrich the old row, so it keeps dying on
+    missing_total_xg_sanity.  This signature intentionally ignores point, but it
+    is only used for enrichment when the existing row has no point or the same
+    point as the promoted row.
+    """
+    h = norm(row.get('home_team') or row.get('home'))
+    a = norm(row.get('away_team') or row.get('away'))
+    d = row_date(row)
+    match = norm(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key'))
+    if not match and h and a and d:
+        match = f'{d}|{h}|{a}'
+    fam = norm(row.get('family') or row.get('market_family') or 'totals')
+    sel = selection_key_of(row) or norm(row.get('selection_key') or row.get('selection'))
+    return '|'.join([match, fam, sel])
+
+
+def point_matches_or_missing(existing: dict[str, Any], promoted: dict[str, Any]) -> bool:
+    """Loose enrichment is safe only when the old row lacks point or agrees."""
+    old = point_of(existing)
+    new = point_of(promoted)
+    if old is None:
+        return new is not None
+    if new is None:
+        return False
+    return abs(float(old) - float(new)) < 1e-9
+
 def median(values: list[float]) -> float:
     return float(statistics.median([v for v in values if v > 1.0]))
 
@@ -1012,6 +1044,18 @@ def enrich_existing_candidate(existing: dict[str, Any], promoted: dict[str, Any]
     """
     changed = False
 
+    # Repair incomplete totals rows.  The report examples showed candidates like
+    # "Меньше @2.11" with no point; without a point the xG proxy cannot be
+    # attached to the exact candidate that fallback evaluates.
+    if point_of(existing) is None and point_of(promoted) is not None:
+        existing['point'] = promoted.get('point')
+        existing.setdefault('line', promoted.get('point'))
+        changed = True
+    for key in ('family', 'market_family', 'selection_key'):
+        if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
+            existing[key] = promoted.get(key)
+            changed = True
+
     # Fill missing xG/proxy only; do not overwrite real xG already present.
     for key in ('expected_home', 'expected_away'):
         if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
@@ -1103,6 +1147,13 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
     )
     signatures = {candidate_signature(r) for r in candidate_current + existing if isinstance(r, dict)}
     existing_by_signature = {candidate_signature(r): r for r in existing if isinstance(r, dict)}
+    existing_by_loose_signature: dict[str, dict[str, Any]] = {}
+    for r in existing:
+        if not isinstance(r, dict):
+            continue
+        lsig = loose_candidate_signature(r)
+        if lsig and lsig not in existing_by_loose_signature:
+            existing_by_loose_signature[lsig] = r
 
     promoted: list[dict[str, Any]] = []
     reasons = Counter()
@@ -1142,12 +1193,22 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
                 reasons[cand_window_reason] += 1
                 continue
             sig = candidate_signature(cand)
-            if sig in signatures:
-                existing_row = existing_by_signature.get(sig)
+            loose_sig = loose_candidate_signature(cand)
+            existing_row = existing_by_signature.get(sig)
+            loose_existing = existing_by_loose_signature.get(loose_sig) if env_bool('PROMOTE_B_COVER_ENRICH_LOOSE_DUPLICATES', True) else None
+            if existing_row is None and isinstance(loose_existing, dict) and point_matches_or_missing(loose_existing, cand):
+                existing_row = loose_existing
+            if sig in signatures or isinstance(existing_row, dict):
                 if isinstance(existing_row, dict) and enrich_existing_candidate(existing_row, cand):
+                    if candidate_signature(existing_row) != sig:
+                        # Keep the repaired row reachable through future exact dedupe too.
+                        existing_by_signature[candidate_signature(existing_row)] = existing_row
                     reasons['promotion_enriched_duplicate_candidate'] += 1
+                    if existing_row is loose_existing and sig not in signatures:
+                        reasons['promotion_enriched_loose_duplicate_candidate'] += 1
                 else:
                     reasons['promotion_skip_duplicate_candidate'] += 1
+                signatures.add(sig)
                 continue
             signatures.add(sig)
             candidates_for_match.append(cand)
@@ -1205,6 +1266,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         'existing_rescue_rows_kept_current_window': len(existing),
         'existing_rescue_rows_removed_stale_or_outside': max(0, len(existing_all) - len(existing)),
         'enriched_duplicate_candidates': int(reasons.get('promotion_enriched_duplicate_candidate') or 0),
+        'enriched_loose_duplicate_candidates': int(reasons.get('promotion_enriched_loose_duplicate_candidate') or 0),
         'publish_window': {
             'earliest_utc': earliest.isoformat(),
             'latest_utc': latest.isoformat(),
