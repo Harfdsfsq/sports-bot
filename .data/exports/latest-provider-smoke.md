@@ -1,7 +1,7 @@
 # Provider smoke
 
 - status: **warning**
-- enabled ok: 6/8
+- enabled ok: 7/8
 - missing keys: 0
 - non-core env violations: 9
 
@@ -13,11 +13,11 @@
 | football_data | True | True | ok | 0 | 200 |
 | thesportsdb | True | True | ok | 10 | 200 |
 | weatherapi | True | True | ok | 2 | 200 |
-| open_meteo | True | False | request_error |  |  |
+| open_meteo | True | True | ok | 9 | 200 |
 | clubelo | True | False | ConnectTimeout:  |  |  |
 
 ## Non-core env violations
-- ALLSPORTSAPI: enabled={'ALLSPORTSAPI_ENABLED': 'true'} limits={'ALLSPORTSAPI_REQUESTS_MAX_PER_RUN': '4', 'ALLSPORTSAPI_REQUEST_BUDGET_GRANTED': '4', 'ALLSPORTSAPI_PER_RUN_MAX': '4', 'ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN': '4'}
+- ALLSPORTSAPI: enabled={'ALLSPORTSAPI_ENABLED': 'true'} limits={'ALLSPORTSAPI_REQUESTS_MAX_PER_RUN': '6', 'ALLSPORTSAPI_REQUEST_BUDGET_GRANTED': '6', 'ALLSPORTSAPI_PER_RUN_MAX': '6', 'ALLSPORTSAPI_MAX_HTTP_REQUESTS_PER_RUN': '6'}
 - SPORTLOGIC: enabled={'SPORTLOGIC_QUERY_GUARD_ENABLED': 'true', 'SPORTLOGIC_CONTROLLED_ODDS_ENABLED': 'true', 'SPORTLOGIC_ENABLED': 'true', 'SPORTLOGIC_ODDS_DISCOVERY_FALLBACK_ENABLED': 'true', 'SPORTLOGIC_DOCS_DATE_FALLBACK_ENABLED': 'true', 'SPORTLOGIC_DOCS_PATH_PROBE_ENABLED': 'true', 'SPORTLOGIC_CONTRACT_PROBE_ENABLED': 'true'} limits={'SPORTLOGIC_REQUEST_BUDGET_GRANTED': '70', 'SPORTLOGIC_PER_RUN_MAX': '70', 'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN': '70', 'SPORTLOGIC_REQUESTS_MAX_PER_RUN': '40'}
 - ODDS_FEED: enabled={'ODDS_FEED_RAPIDAPI_ENABLED': 'true'} limits={}
 - RAPIDAPI_ODDS_FEED: enabled={'RAPIDAPI_ODDS_FEED_PROBE_ENABLED': 'true'} limits={}
