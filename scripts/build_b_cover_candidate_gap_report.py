@@ -11,11 +11,11 @@ The runtime already had raw same-side bookmaker coverage, but the model/fallback
 pool did not always get a candidate row for those covered matches.  Promotion is
 limited to rows with:
 - B-cover: 1+ bookmaker/price and 1+ context;
-- a raw totals offer bucket from the same match;
+- a raw totals offer bucket from the same match, matched by id or home/away/date fallback;
 - supported public line: integer or .5 only;
 - price within the same bookmaker-quorum outlier guard envelope;
-- positive conservative canonical EV/edge;
-- xG-like context when totals sanity is required.
+- positive conservative canonical EV/edge for promotion diagnostics;
+- xG-like context is preferred, but final Telegram publication still enforces xG sanity.
 
 It does not publish picks.  Controlled fallback still applies quality, value,
 xG, line movement, price-integrity and duplicate guards.
@@ -137,6 +137,25 @@ def key_variants(row: dict[str, Any]) -> set[str]:
         out.add(f'teams:{d}|{h}|{a}')
         out.add(f'teams_rev:{d}|{a}|{h}')
     return {x for x in out if x}
+
+
+def team_pair(row: dict[str, Any]) -> tuple[str, str]:
+    return (
+        norm(row.get('home_team') or row.get('home') or row.get('home_name') or row.get('team_home')),
+        norm(row.get('away_team') or row.get('away') or row.get('away_name') or row.get('team_away')),
+    )
+
+
+def fallback_match_keys(row: dict[str, Any], day: str) -> set[str]:
+    keys = set(key_variants(row))
+    if keys:
+        return keys
+    h, a = team_pair(row)
+    d = row_date(row) or day
+    if h and a and d:
+        keys.add(f'teams:{d}|{h}|{a}')
+        keys.add(f'teams_rev:{d}|{a}|{h}')
+    return keys
 
 
 def count_any(value: Any) -> int:
@@ -374,10 +393,14 @@ def supported_public_total_line(point: float | None) -> bool:
     return min(abs(frac - 0.0), abs(frac - 0.5), abs(frac - 1.0)) < 1e-9
 
 
-def offer_like(row: dict[str, Any]) -> bool:
+def offer_like(row: dict[str, Any], day: str | None = None) -> bool:
     has_price = any(as_price(row.get(k)) is not None for k in ('price', 'odds', 'decimal_odds', 'selected_odds'))
     has_book = bool(bookmaker_of(row))
+    # Many raw odds leaves do not carry canonical ids, but do carry teams/date.
+    # Use the same fallback as bookmaker-backfill; otherwise promotion sees zero buckets.
     has_match = bool(key_variants(row))
+    if not has_match and day:
+        has_match = bool(fallback_match_keys(row, day))
     return has_price and has_book and has_match
 
 
@@ -407,7 +430,7 @@ def collect_offer_buckets(day: str) -> tuple[dict[str, dict[str, dict[str, Any]]
             if not isinstance(row, dict):
                 continue
             scanned += 1
-            if not offer_like(row):
+            if not offer_like(row, day):
                 continue
             d = row_date(row)
             if d and d != day:
@@ -419,7 +442,7 @@ def collect_offer_buckets(day: str) -> tuple[dict[str, dict[str, dict[str, Any]]
             book = bookmaker_of(row)
             if price is None or not book:
                 continue
-            for match_key in key_variants(row):
+            for match_key in fallback_match_keys(row, day):
                 bucket = by_match[match_key].setdefault(bucket_key, {'rows': [], 'books': set(), 'prices': []})
                 bucket['rows'].append(row)
                 bucket['books'].add(book)
@@ -470,7 +493,7 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
     books = sorted(str(x) for x in (bucket.get('books') or set()) if str(x))
     prices = [as_price(r.get('price') or r.get('odds') or r.get('decimal_odds') or r.get('selected_odds')) for r in rows]
     prices = [p for p in prices if p is not None]
-    min_books = env_int('PROMOTE_B_COVER_MIN_BOOKS', 2, 1)
+    min_books = env_int('PROMOTE_B_COVER_MIN_BOOKS', 1, 1)
     if len(books) < min_books:
         return None, 'promotion_skip_books_below_min'
     if not prices:
@@ -508,20 +531,22 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
     market_prob = max(0.02, min(0.98, 1.0 / median_price))
     best_vs_median_pct = max(0.0, (best_price - median_price) / median_price * 100.0)
     boost_pct = min(3.2, best_vs_median_pct * 0.55)
+    # B-tier may have one bookmaker; use context coverage to create candidates for
+    # final fallback review, but keep the boost small so weak rows still fail final EV/edge.
     boost_pct += min(0.8, max(0, len(books) - 1) * 0.20)
     ctx_sources = context_sources(inv_row)
-    boost_pct += min(0.6, max(0, len(ctx_sources) - 1) * 0.20)
+    boost_pct += min(1.0, max(1, len(ctx_sources)) * 0.25)
     adjusted = max(0.02, min(0.95, market_prob * (1.0 + boost_pct / 100.0)))
     implied = 1.0 / best_price
     edge_pp = (adjusted - implied) * 100.0
     ev_pct = (adjusted * best_price - 1.0) * 100.0
-    if edge_pp < env_float('PROMOTE_B_COVER_MIN_EDGE_PP', 1.2):
+    if edge_pp < env_float('PROMOTE_B_COVER_MIN_EDGE_PP', 0.35):
         return None, 'promotion_skip_edge_below_min'
-    if ev_pct < env_float('PROMOTE_B_COVER_MIN_EV_PCT', 2.0):
+    if ev_pct < env_float('PROMOTE_B_COVER_MIN_EV_PCT', 0.7):
         return None, 'promotion_skip_ev_below_min'
 
     h_xg, a_xg = xg_values(inv_row)
-    require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', env_bool('CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM', True))
+    require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
     if require_xg and (h_xg is None or a_xg is None):
         return None, 'promotion_skip_missing_xg'
 
@@ -663,6 +688,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         write_json(RESCUE_PATH, merged[: max(len(merged), limit or len(merged))])
     report = {
         'enabled': True,
+        'status': 'ok',
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
         'considered_b_cover_rows': considered,
@@ -680,7 +706,18 @@ def main() -> int:
     day = target_date()
     inventory = load_inventory(day)
     cands_initial = candidate_rows()
-    promotion = promote_candidates(day, inventory, cands_initial)
+    try:
+        promotion = promote_candidates(day, inventory, cands_initial)
+    except Exception as exc:
+        promotion = {
+            'enabled': True,
+            'status': 'error',
+            'error': f'{type(exc).__name__}: {exc}',
+            'considered_b_cover_rows': 0,
+            'promoted_count': 0,
+            'reason_counts': {},
+        }
+        write_json(PROMOTION_REPORT_JSON, promotion)
     cands = candidate_rows()
     cand_keys: set[str] = set()
     for row in cands:
