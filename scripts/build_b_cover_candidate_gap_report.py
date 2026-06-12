@@ -29,7 +29,7 @@ import re
 import runpy
 import statistics
 from collections import Counter, defaultdict
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -107,6 +107,70 @@ def parse_dt(value: Any) -> datetime | None:
 def target_date() -> str:
     return (os.getenv('DAY_INVENTORY_TARGET_DATE') or datetime.now(UTC).date().isoformat())[:10]
 
+
+
+
+def effective_min_kickoff_lead_minutes() -> int:
+    base_lead = env_int('MIN_KICKOFF_LEAD_MINUTES', 30, 0)
+    if not env_bool('PROMOTE_B_COVER_USE_MANUAL_LATE_LEAD', False):
+        return base_lead
+    if not env_bool('MANUAL_LATE_MODE_ENABLED', False):
+        return base_lead
+    adaptive = env_int('MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES', base_lead, 0)
+    late = env_int('MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES', base_lead, 0)
+    choices = [base_lead]
+    if adaptive > 0:
+        choices.append(adaptive)
+    if late > 0:
+        choices.append(late)
+    return max(0, min(choices))
+
+
+def kickoff_dt(row: dict[str, Any]) -> datetime | None:
+    return parse_dt(
+        row.get('commence_time')
+        or row.get('start_time')
+        or row.get('kickoff')
+        or row.get('kickoff_utc')
+        or row.get('kickoff_local')
+    )
+
+
+def publish_window_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
+    now = now or datetime.now(UTC)
+    lead = effective_min_kickoff_lead_minutes()
+    hours = max(1, env_int('PUBLISH_WINDOW_HOURS', 12, 1))
+    return now + timedelta(minutes=lead), now + timedelta(hours=hours)
+
+
+def row_in_publish_window(row: dict[str, Any], now: datetime | None = None) -> tuple[bool, str]:
+    if not env_bool('PROMOTE_B_COVER_FILTER_BY_TIME', True):
+        return True, 'time_filter_disabled'
+    kickoff = kickoff_dt(row)
+    if kickoff is None:
+        if env_bool('PROMOTE_B_COVER_ALLOW_UNKNOWN_TIME', False):
+            return True, 'unknown_time_allowed'
+        return False, 'promotion_skip_unknown_kickoff_time'
+    earliest, latest = publish_window_bounds(now)
+    if kickoff < earliest:
+        return False, 'promotion_skip_started_or_too_close'
+    if kickoff > latest:
+        return False, 'promotion_skip_outside_publish_window'
+    return True, 'in_publish_window'
+
+
+def current_window_rows(rows: list[dict[str, Any]], now: datetime | None = None) -> tuple[list[dict[str, Any]], Counter]:
+    kept: list[dict[str, Any]] = []
+    reasons: Counter = Counter()
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        ok, reason = row_in_publish_window(row, now)
+        if ok:
+            kept.append(row)
+        else:
+            reasons[reason] += 1
+    return kept, reasons
 
 def row_date(row: dict[str, Any]) -> str:
     for key in ('commence_time', 'kickoff_utc', 'start_time', 'kickoff', 'date'):
@@ -730,7 +794,9 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         'home_team': inv_row.get('home_team') or inv_row.get('home'),
         'away_team': inv_row.get('away_team') or inv_row.get('away'),
         'league_name': inv_row.get('league_name') or inv_row.get('league'),
-        'commence_time': inv_row.get('commence_time') or inv_row.get('kickoff_utc') or inv_row.get('start_time') or inv_row.get('kickoff'),
+        'commence_time': inv_row.get('commence_time') or inv_row.get('kickoff_utc') or inv_row.get('start_time') or inv_row.get('kickoff') or inv_row.get('kickoff_local'),
+        'start_time': inv_row.get('commence_time') or inv_row.get('kickoff_utc') or inv_row.get('start_time') or inv_row.get('kickoff') or inv_row.get('kickoff_local'),
+        'kickoff_utc': inv_row.get('kickoff_utc') or inv_row.get('commence_time') or inv_row.get('start_time') or inv_row.get('kickoff'),
         'family': 'totals',
         'market_family': 'totals',
         'selection': selection_ru,
@@ -795,30 +861,59 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
 def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candidates: list[dict[str, Any]]) -> dict[str, Any]:
     if not env_bool('PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED', True):
         return {'enabled': False, 'reason': 'disabled'}
+
+    now = datetime.now(UTC)
     offer_buckets, offer_diag = collect_offer_buckets(day)
-    existing = rescue_rows_payload()
-    signatures = {candidate_signature(r) for r in existing_candidates + existing if isinstance(r, dict)}
+    existing_all = rescue_rows_payload()
+    existing_current, existing_window_reasons = current_window_rows(existing_all, now)
+    existing = existing_current if env_bool('PROMOTE_B_COVER_DROP_STALE_RESCUE_ROWS', True) else existing_all
+
+    # Only dedupe against current-window rows.  Old promoted rescue rows were kept
+    # in latest-rescue-candidates.json and showed up as
+    # latest_rescue_candidates_stale_or_outside_window, drowning the diagnostics
+    # without ever being evaluated by controlled fallback.
+    candidate_current, _candidate_window_reasons = current_window_rows(
+        [r for r in existing_candidates if isinstance(r, dict)],
+        now,
+    )
+    signatures = {candidate_signature(r) for r in candidate_current + existing if isinstance(r, dict)}
+
     promoted: list[dict[str, Any]] = []
     reasons = Counter()
     considered = 0
+    b_cover_seen = 0
+    current_window_b_cover = 0
     limit = env_int('PROMOTE_B_COVER_VALUE_CANDIDATE_LIMIT', 24, 0)
+
     for row in inventory:
         if not isinstance(row, dict):
             continue
         if book_count(row) < 1 or context_count(row) < 1:
             continue
+        b_cover_seen += 1
+        in_window, window_reason = row_in_publish_window(row, now)
+        if not in_window:
+            reasons[window_reason] += 1
+            continue
+        current_window_b_cover += 1
         considered += 1
+
         match_buckets: dict[str, dict[str, Any]] = {}
-        for key in key_variants(row):
+        for key in fallback_match_keys(row, day):
             match_buckets.update(offer_buckets.get(key, {}))
         if not match_buckets:
             reasons['promotion_skip_no_offer_bucket'] += 1
             continue
+
         candidates_for_match: list[dict[str, Any]] = []
         for bucket_key, bucket in match_buckets.items():
             cand, reason = build_candidate_from_bucket(row, bucket_key, bucket)
             if cand is None:
                 reasons[reason] += 1
+                continue
+            cand_in_window, cand_window_reason = row_in_publish_window(cand, now)
+            if not cand_in_window:
+                reasons[cand_window_reason] += 1
                 continue
             sig = candidate_signature(cand)
             if sig in signatures:
@@ -826,7 +921,19 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
                 continue
             signatures.add(sig)
             candidates_for_match.append(cand)
-        candidates_for_match.sort(key=lambda c: (float(c.get('ev_pct') or 0.0), float(c.get('edge_pct') or 0.0), float(c.get('confidence') or 0.0)), reverse=True)
+
+        # Prefer candidates that already carry xG, then higher conservative EV/edge.
+        # This keeps missing-xG rows visible when they are the only strong signal,
+        # but stops them from crowding out safer promoted rows.
+        candidates_for_match.sort(
+            key=lambda c: (
+                1 if (c.get('expected_home') not in (None, '') and c.get('expected_away') not in (None, '')) else 0,
+                float(c.get('ev_pct') or 0.0),
+                float(c.get('edge_pct') or 0.0),
+                float(c.get('confidence') or 0.0),
+            ),
+            reverse=True,
+        )
         for cand in candidates_for_match[:1]:
             promoted.append(cand)
             reasons['promoted'] += 1
@@ -834,23 +941,45 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
                 break
         if limit and len(promoted) >= limit:
             break
-    if promoted:
-        merged = promoted + existing
-        write_json(RESCUE_PATH, merged[: max(len(merged), limit or len(merged))])
+
+    # Rewrite the rescue file with current-window rows only.  This prevents stale
+    # promoted rows from staying in the pool for the rest of the day.
+    merged = promoted + existing
+    if promoted or (env_bool('PROMOTE_B_COVER_DROP_STALE_RESCUE_ROWS', True) and len(existing_current) != len(existing_all)):
+        max_len = max(len(merged), limit or len(merged), 1)
+        write_json(RESCUE_PATH, merged[:max_len])
+
     if considered == 0:
-        # Make the failure mode visible in Telegram instead of silently reporting 0/0.
         if not inventory:
             reasons['promotion_zero_inventory_rows'] += 1
-        else:
+        elif b_cover_seen == 0:
             reasons['promotion_zero_b_cover_rows_after_local_counting'] += 1
+        else:
+            reasons['promotion_zero_current_window_b_cover_rows'] += 1
+
+    for reason, count in existing_window_reasons.items():
+        reasons[f'existing_rescue_{reason}'] += count
+
+    earliest, latest = publish_window_bounds(now)
     report = {
         'enabled': True,
         'status': 'ok',
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
         'inventory_rows_seen': len(inventory),
+        'b_cover_rows_seen': b_cover_seen,
+        'current_window_b_cover_rows': current_window_b_cover,
         'considered_b_cover_rows': considered,
         'promoted_count': len(promoted),
+        'existing_rescue_rows_before': len(existing_all),
+        'existing_rescue_rows_kept_current_window': len(existing),
+        'existing_rescue_rows_removed_stale_or_outside': max(0, len(existing_all) - len(existing)),
+        'publish_window': {
+            'earliest_utc': earliest.isoformat(),
+            'latest_utc': latest.isoformat(),
+            'min_kickoff_lead_minutes': effective_min_kickoff_lead_minutes(),
+            'publish_window_hours': max(1, env_int('PUBLISH_WINDOW_HOURS', 12, 1)),
+        },
         'reason_counts': dict(reasons.most_common()),
         'offer_diagnostics': offer_diag,
         'sample': promoted[:12],
@@ -858,7 +987,6 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
     }
     write_json(PROMOTION_REPORT_JSON, report)
     return report
-
 
 def prebuild_coverage_truth_for_promotion() -> dict[str, Any]:
     """Make row-level coverage truth available before promotion/fallback.

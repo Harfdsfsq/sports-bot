@@ -114,8 +114,15 @@ def render(payload: dict[str, Any]) -> str:
             selected_path = str(inv_load.get('selected_path') or '')
         selected_b_cover = _as_int(inv_load.get('selected_b_cover_rows')) if inv_load else 0
         suffix = f"; inventory rows {inventory_seen}" if inventory_seen or selected_path else ''
+        b_cover_seen = _as_int(promotion.get('b_cover_rows_seen'))
+        current_window_b_cover = _as_int(promotion.get('current_window_b_cover_rows'))
+        stale_removed = _as_int(promotion.get('existing_rescue_rows_removed_stale_or_outside'))
         if selected_b_cover:
             suffix += f"; selected B-cover rows {selected_b_cover}"
+        if b_cover_seen or current_window_b_cover:
+            suffix += f"; current-window B-cover {current_window_b_cover}/{b_cover_seen}"
+        if stale_removed:
+            suffix += f"; removed stale rescue {stale_removed}"
         if selected_path:
             suffix += f" from {selected_path}"
         status = str(promotion.get('status') or 'ok')
