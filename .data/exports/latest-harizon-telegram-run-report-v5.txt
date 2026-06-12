@@ -1,71 +1,72 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+• Главная причина: quality post calibration edge guard
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 229 матчей. Runtime rows processed: 107 (это не размер inventory).
-• 1+ линия: 196/229 (86%) | 1+ контекст: 155/229 (68%)
-• 2+ букмекера: 126/229 (55%)
-• Raw 2+ букмекера odds-api.io: 36 | normalized inventory: 126 | mapping gap: 0
-• Odds-api offer snapshot: rows 4606, matches 65, same-side 2+ books 32
-• 2+ независимых odds-source: 165/229 (72%) — диагностика, не блок публикации
-• 2+ контекста: 122/229 (53%)
-• Готово для модели: 137/229 (60%)
+• Инвентарь дня: 246 матчей. Runtime rows processed: 122 (это не размер inventory).
+• 1+ линия: 203/246 (83%) | 1+ контекст: 166/246 (67%)
+• 2+ букмекера: 133/246 (54%)
+• Raw 2+ букмекера odds-api.io: 39 | normalized inventory: 133 | mapping gap: 0
+• Odds-api offer snapshot: rows 4809, matches 73, same-side 2+ books 34
+• 2+ независимых odds-source: 173/246 (70%) — диагностика, не блок публикации
+• 2+ контекста: 133/246 (54%)
+• Готово для модели: 145/246 (59%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 71 | опубликовано: 0
+• A-tier strict-ready: 79 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 155 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 166 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 155 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 122 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 166 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 133 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 1
+• Pre-kickoff проверок: 14 | матчей без следующего регулярного run: 0
 • Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 8/8
+• Raw/candidates before quality: 4/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 22; смэтчил матчей 107; offers 4606; 2+ букмекера 36; ошибок 0.
-• Bzzoiro: direct req 6, v2 req 6; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 25; сырых строк 20195; контекстов 64; deep-enriched 1; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 26; смэтчил матчей 122; offers 4809; 2+ букмекера 39; ошибок 0.
+• Bzzoiro: direct req 7, v2 req 7; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 25; сырых строк 20195; контекстов 74; deep-enriched 1; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 65
+• Комбинации источников линий: odds_api_io: 73
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 4 (44%)
 • quality post calibration edge guard: 3 (33%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 3 (33%)
+• missing total xg sanity: 1 (11%)
 • quality: вероятность после калибровки ниже порога: 1 (11%)
 • missing sources: 1 (11%)
 
 🔎 Проверенные reserve-кандидаты
-1. AC Goianiense — CR Brasil | Больше 2.5 @2.31 | EV -2.3% | edge -1.0 п.п. | q 44.9
+1. San Martin — Villa Dalmine | Меньше 1.75 @1.98 | EV +11.6% | edge +5.9 п.п. | q 66.7
+   • причина: missing total xg sanity
+2. Cambaceres — Berazategui | Больше 2.5 @2.66 | EV -4.7% | edge -1.8 п.п. | q 42.5
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
-2. Audax — Deportes La Serena | Больше 2.5 @1.86 | EV -2.4% | edge -1.3 п.п. | q 49.2
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, missing sources
 3. Weston — Belmont Swansea | Больше 3.5 @1.96 | EV -3.7% | edge -1.9 п.п. | q 46.1
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
-4. Brindabella Blues FC — Belconnen | Меньше 3.5 @1.90 | EV -4.3% | edge -2.3 п.п. | q 49.7
-   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+4. Audax — Deportes La Serena | Больше 2.5 @1.86 | EV -2.9% | edge -1.6 п.п. | q 49.1
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, missing sources
 
 🧯 Диагностика новых стопоров
-• Inventory target repair: 229/300; shortfall 71; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 12; normalized 78→0; gap after 12.
-• B-cover promotion: considered 2; promoted 0; top skips promotion_skip_no_offer_bucket 2; promotion_skip_started_or_too_close 135; inventory rows 229; selected B-cover rows 137; current-window B-cover 2/137 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 137; candidates seen 12; B-covered без кандидата 137.
+• Inventory target repair: 246/300; shortfall 54; status partial_known_rows_only.
+• Bookmaker mapping repair: raw 2+ 12; normalized 80→3; gap after 9.
+• B-cover promotion: considered 9; promoted 3; top skips promotion_skip_edge_below_min 8; promotion_skip_no_offer_bucket 1; promotion_skip_odds_above_max 31; inventory rows 246; selected B-cover rows 145; current-window B-cover 9/145 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json; prebuild expand_day_inventory_to_target.py+day_inventory_cumulative_coverage.py.
+• B-cover funnel: B-cover 145; candidates seen 15; B-covered без кандидата 142.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27438430839
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27438430839
-• Artifact: run-bot-27438430839
+• Run ID: 27440344555
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27440344555
+• Artifact: run-bot-27440344555
 • workflow run-bot, attempt 1
