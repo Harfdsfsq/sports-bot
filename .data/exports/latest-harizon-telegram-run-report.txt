@@ -3,11 +3,11 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 229 матчей. Runtime rows processed: 101 (это не размер inventory).
+• Инвентарь дня: 229 матчей. Runtime rows processed: 107 (это не размер inventory).
 • 1+ линия: 196/229 (86%) | 1+ контекст: 155/229 (68%)
 • 2+ букмекера: 126/229 (55%)
-• Raw 2+ букмекера odds-api.io: 34 | normalized inventory: 126 | mapping gap: 0
-• Odds-api offer snapshot: rows 4286, matches 61, same-side 2+ books 30
+• Raw 2+ букмекера odds-api.io: 36 | normalized inventory: 126 | mapping gap: 0
+• Odds-api offer snapshot: rows 4606, matches 65, same-side 2+ books 32
 • 2+ независимых odds-source: 165/229 (72%) — диагностика, не блок публикации
 • 2+ контекста: 122/229 (53%)
 • Готово для модели: 137/229 (60%)
@@ -23,53 +23,49 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
-• Line guard: увидел 6, оставил 2, снял 0
+• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 1
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/8
+• Raw/candidates before quality: 8/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 6 | evaluated 6 | published 0
+• Controlled fallback: seen 4 | evaluated 4 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 22; смэтчил матчей 101; offers 4286; 2+ букмекера 34; ошибок 0.
+• odds-api.io: events req 0, odds req 22; смэтчил матчей 107; offers 4606; 2+ букмекера 36; ошибок 0.
 • Bzzoiro: direct req 6, v2 req 6; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 25; сырых строк 20195; контекстов 66; deep-enriched 3; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 25; сырых строк 20195; контекстов 64; deep-enriched 1; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
-• Комбинации источников линий: odds_api_io: 61
+• Комбинации источников линий: odds_api_io: 65
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 4 (31%)
-• quality post calibration edge guard: 2 (15%)
-• quality: вероятность после калибровки ниже порога: 2 (15%)
-• missing total xg sanity: 1 (8%)
-• tier a publication score below min: 1 (8%)
-• tier a proxy quality not allowed: 1 (8%)
-• tier b publication score below min: 1 (8%)
-• tier c publication score below min: 1 (8%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 4 (44%)
+• quality post calibration edge guard: 3 (33%)
+• quality: вероятность после калибровки ниже порога: 1 (11%)
+• missing sources: 1 (11%)
 
 🔎 Проверенные reserve-кандидаты
-1. Akranes — Vikingur Reykjavik | Меньше @2.11 | EV +7.1% | edge +3.4 п.п. | q 76.0
-   • причина: missing total xg sanity
-2. Bentin Tacna Heroica — Melgar | Больше @1.98 | EV +4.1% | edge +2.1 п.п. | q 70.0
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b publication score below min, tier c publication score below min
-3. Audax — Deportes La Serena | Больше 2.5 @1.86 | EV -1.2% | edge -0.6 п.п. | q 49.3
+1. AC Goianiense — CR Brasil | Больше 2.5 @2.31 | EV -2.3% | edge -1.0 п.п. | q 44.9
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
-4. Akranes — Vikingur Reykjavik | Меньше 3.5 @2.11 | EV -1.9% | edge -0.9 п.п. | q 53.7
+2. Audax — Deportes La Serena | Больше 2.5 @1.86 | EV -2.4% | edge -1.3 п.п. | q 49.2
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, missing sources
+3. Weston — Belmont Swansea | Больше 3.5 @1.96 | EV -3.7% | edge -1.9 п.п. | q 46.1
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+4. Brindabella Blues FC — Belconnen | Меньше 3.5 @1.90 | EV -4.3% | edge -2.3 п.п. | q 49.7
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 229/300; shortfall 71; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 20; normalized 78→2; gap after 18.
-• B-cover promotion: considered 3; promoted 2; top skips promotion_skip_duplicate_candidate 2; promotion_skip_edge_below_min 5; promotion_skip_no_offer_bucket 1; inventory rows 229; selected B-cover rows 137; current-window B-cover 3/137 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 137; candidates seen 18; B-covered без кандидата 135.
+• Bookmaker mapping repair: raw 2+ 12; normalized 78→0; gap after 12.
+• B-cover promotion: considered 2; promoted 0; top skips promotion_skip_no_offer_bucket 2; promotion_skip_started_or_too_close 135; inventory rows 229; selected B-cover rows 137; current-window B-cover 2/137 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• B-cover funnel: B-cover 137; candidates seen 12; B-covered без кандидата 137.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27436625777
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27436625777
-• Artifact: run-bot-27436625777
+• Run ID: 27438430839
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27438430839
+• Artifact: run-bot-27438430839
 • workflow run-bot, attempt 1
