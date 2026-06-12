@@ -1,29 +1,29 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: missing total xg sanity
+• Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 229 матчей. Runtime rows processed: 182 (это не размер inventory).
-• 1+ линия: 196/229 (86%) | 1+ контекст: 141/229 (62%)
+• Инвентарь дня: 229 матчей. Runtime rows processed: 99 (это не размер inventory).
+• 1+ линия: 196/229 (86%) | 1+ контекст: 155/229 (68%)
 • 2+ букмекера: 126/229 (55%)
-• Raw 2+ букмекера odds-api.io: 62 | normalized inventory: 126 | mapping gap: 0
-• Odds-api offer snapshot: rows 7630, matches 105, same-side 2+ books 50
+• Raw 2+ букмекера odds-api.io: 35 | normalized inventory: 126 | mapping gap: 0
+• Odds-api offer snapshot: rows 5897, matches 64, same-side 2+ books 32
 • 2+ независимых odds-source: 165/229 (72%) — диагностика, не блок публикации
-• 2+ контекста: 93/229 (41%)
-• Готово для модели: 123/229 (54%)
+• 2+ контекста: 117/229 (51%)
+• Готово для модели: 137/229 (60%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 57 | опубликовано: 0
+• A-tier strict-ready: 66 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 141 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 155 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 141 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 93 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 155 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 117 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 48 | матчей без следующего регулярного run: 10
+• Pre-kickoff проверок: 22 | матчей без следующего регулярного run: 22
 • Line guard: увидел 2, оставил 0, снял 0
 
 🧪 Воронка кандидатов
@@ -32,34 +32,32 @@
 • Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 34; смэтчил матчей 168; offers 7812; 2+ букмекера 62; ошибок 0.
-• Bzzoiro: direct req 36, v2 req 36; v2 ctx 11; v2 odds 6; secondary offers 0; overlap odds-api.io 3; ошибок 0.
-• SStats: запросы 25; сырых строк 20195; контекстов 131; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 20; смэтчил матчей 91; offers 5991; 2+ букмекера 35; ошибок 0.
+• Bzzoiro: direct req 12, v2 req 12; v2 ctx 2; v2 odds 2; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 25; сырых строк 20195; контекстов 73; deep-enriched 15; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 102, bzzoiro: 5, bzzoiro+odds_api_io: 3
+• Комбинации источников линий: odds_api_io: 64, bzzoiro: 1
 
 🚫 Почему не опубликовано
-• missing total xg sanity: 1 (25%)
-• quality post calibration edge guard: 1 (25%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (25%)
-• quality: вероятность после калибровки ниже порога: 1 (25%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 2 (50%)
+• quality: вероятность после калибровки ниже порога: 2 (50%)
 
 🔎 Проверенные reserve-кандидаты
-1. Meknes — Renaissance Zemamra | Меньше 2.5 @2.36 | EV +56.9% | edge +24.1 п.п. | q 100.0
-   • причина: missing total xg sanity
-2. Waterford — Sligo Rovers | Меньше 2.5 @2.02 | EV -6.1% | edge -3.0 п.п. | q 65.5
+1. Kerry FC — Athlone Town | Больше 2.5 @2.31 | EV -3.4% | edge -1.5 п.п. | q 52.3
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
+2. Waterford — Sligo Rovers | Меньше 2.5 @1.96 | EV -7.0% | edge -3.6 п.п. | q 65.3
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 229/300; shortfall 71; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 236; normalized 77→57; gap after 179.
+• Bookmaker mapping repair: raw 2+ 81; normalized 78→19; gap after 62.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27418268048
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27418268048
-• Artifact: run-bot-27418268048
+• Run ID: 27430491200
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27430491200
+• Artifact: run-bot-27430491200
 • workflow run-bot, attempt 1
