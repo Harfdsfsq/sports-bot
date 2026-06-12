@@ -117,12 +117,15 @@ def render(payload: dict[str, Any]) -> str:
         b_cover_seen = _as_int(promotion.get('b_cover_rows_seen'))
         current_window_b_cover = _as_int(promotion.get('current_window_b_cover_rows'))
         stale_removed = _as_int(promotion.get('existing_rescue_rows_removed_stale_or_outside'))
+        enriched = _as_int(promotion.get('enriched_duplicate_candidates'))
         if selected_b_cover:
             suffix += f"; selected B-cover rows {selected_b_cover}"
         if b_cover_seen or current_window_b_cover:
             suffix += f"; current-window B-cover {current_window_b_cover}/{b_cover_seen}"
         if stale_removed:
             suffix += f"; removed stale rescue {stale_removed}"
+        if enriched:
+            suffix += f"; enriched current rescue {enriched}"
         if selected_path:
             suffix += f" from {selected_path}"
         status = str(promotion.get('status') or 'ok')

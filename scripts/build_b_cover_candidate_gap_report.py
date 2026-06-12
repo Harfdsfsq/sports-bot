@@ -411,6 +411,99 @@ def has_xg(row: dict[str, Any]) -> bool:
     return h is not None and a is not None
 
 
+
+def _promotion_poisson_cdf(k: int, lam: float) -> float:
+    if lam < 0 or k < 0:
+        return 0.0
+    term = math.exp(-lam)
+    total = term
+    for i in range(1, int(k) + 1):
+        term *= lam / i
+        total += term
+    return max(0.0, min(1.0, total))
+
+
+def _promotion_total_probability(selection: str, point: float, total_xg: float) -> float | None:
+    if point <= 0 or total_xg <= 0:
+        return None
+    selection = str(selection or '').lower()
+    is_over = selection in {'over', 'больше', 'тб'} or 'over' in selection or 'больше' in selection or 'тб' in selection
+    is_under = selection in {'under', 'меньше', 'тм'} or 'under' in selection or 'меньше' in selection or 'тм' in selection
+    if not (is_over or is_under):
+        return None
+
+    frac = round(point - math.floor(point), 2)
+
+    def over_prob(single_line: float) -> float:
+        if abs(single_line - round(single_line)) < 1e-9:
+            return 1.0 - _promotion_poisson_cdf(int(round(single_line)), total_xg)
+        return 1.0 - _promotion_poisson_cdf(int(math.floor(single_line)), total_xg)
+
+    def under_prob(single_line: float) -> float:
+        if abs(single_line - round(single_line)) < 1e-9:
+            return _promotion_poisson_cdf(int(round(single_line)) - 1, total_xg)
+        return _promotion_poisson_cdf(int(math.floor(single_line)), total_xg)
+
+    if frac in {0.25, 0.75}:
+        low = math.floor(point) if frac == 0.25 else math.floor(point) + 0.5
+        high = math.floor(point) + 0.5 if frac == 0.25 else math.floor(point) + 1.0
+        prob = (over_prob(low) + over_prob(high)) / 2.0 if is_over else (under_prob(low) + under_prob(high)) / 2.0
+    else:
+        prob = over_prob(point) if is_over else under_prob(point)
+    return max(0.0, min(1.0, prob))
+
+
+def market_total_xg_proxy(selection: str, point: float, market_probability: float) -> tuple[float | None, dict[str, Any]]:
+    """Infer a conservative total-goals sanity anchor from the market total curve.
+
+    This is not a real team xG model. It is a last-mile sanity substitute for
+    promoted B-cover totals candidates when real xG is absent, and it is only
+    enabled by strict gates in build_candidate_from_bucket().  Final fallback
+    still applies EV, edge, quality, movement, price-integrity and duplicate guards.
+    """
+    try:
+        target = float(market_probability)
+        line = float(point)
+    except Exception:
+        return None, {'enabled': False, 'reason': 'bad_input'}
+    if not (0.05 <= target <= 0.95) or line <= 0:
+        return None, {'enabled': False, 'reason': 'bad_probability_or_line'}
+
+    lo, hi = 0.05, 8.0
+    p_lo = _promotion_total_probability(selection, line, lo)
+    p_hi = _promotion_total_probability(selection, line, hi)
+    if p_lo is None or p_hi is None:
+        return None, {'enabled': False, 'reason': 'unsupported_selection'}
+
+    increasing = p_hi > p_lo
+    for _ in range(70):
+        mid = (lo + hi) / 2.0
+        p_mid = _promotion_total_probability(selection, line, mid)
+        if p_mid is None:
+            return None, {'enabled': False, 'reason': 'unsupported_mid_probability'}
+        if increasing:
+            if p_mid < target:
+                lo = mid
+            else:
+                hi = mid
+        else:
+            if p_mid > target:
+                lo = mid
+            else:
+                hi = mid
+    total = (lo + hi) / 2.0
+    achieved = _promotion_total_probability(selection, line, total)
+    return total, {
+        'enabled': True,
+        'kind': 'market_total_consensus_proxy',
+        'selection': selection,
+        'point': line,
+        'target_probability': round(target, 6),
+        'proxy_total_xg': round(total, 3),
+        'achieved_probability': round(float(achieved or 0.0), 6),
+    }
+
+
 def _rows_from_payload(payload: Any) -> list[dict[str, Any]]:
     if isinstance(payload, list):
         return [x for x in payload if isinstance(x, dict)]
@@ -761,6 +854,34 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         return None, 'promotion_skip_ev_below_min'
 
     h_xg, a_xg = xg_values(inv_row)
+    xg_proxy_meta: dict[str, Any] = {'enabled': False}
+    if (h_xg is None or a_xg is None) and env_bool('PROMOTE_B_COVER_MARKET_XG_PROXY_ENABLED', True):
+        proxy_allowed = True
+        if len(books) < env_int('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_BOOKS', 2, 1):
+            proxy_allowed = False
+            xg_proxy_meta = {'enabled': False, 'reason': 'books_below_proxy_min'}
+        if len(ctx_sources) < env_int('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_CONTEXT_SOURCES', 2, 1):
+            proxy_allowed = False
+            xg_proxy_meta = {'enabled': False, 'reason': 'context_sources_below_proxy_min'}
+        if edge_pp < env_float('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_EDGE_PP', 3.0):
+            proxy_allowed = False
+            xg_proxy_meta = {'enabled': False, 'reason': 'edge_below_proxy_min'}
+        if ev_pct < env_float('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_EV_PCT', 6.0):
+            proxy_allowed = False
+            xg_proxy_meta = {'enabled': False, 'reason': 'ev_below_proxy_min'}
+        if deviation_pct > env_float('PROMOTE_B_COVER_MARKET_XG_PROXY_MAX_DEVIATION_PCT', 4.0):
+            proxy_allowed = False
+            xg_proxy_meta = {'enabled': False, 'reason': 'price_deviation_above_proxy_max'}
+        if proxy_allowed:
+            proxy_total, xg_proxy_meta = market_total_xg_proxy(sel, point, market_prob)
+            if proxy_total is not None:
+                # Total sanity only needs the sum; split evenly to satisfy the existing
+                # expected_home/expected_away interface in controlled fallback.
+                h_xg = round(proxy_total / 2.0, 3)
+                a_xg = round(proxy_total / 2.0, 3)
+            elif not xg_proxy_meta:
+                xg_proxy_meta = {'enabled': False, 'reason': 'proxy_total_unavailable'}
+
     require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
     if require_xg and (h_xg is None or a_xg is None):
         return None, 'promotion_skip_missing_xg'
@@ -825,6 +946,7 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
             f'books={len(books)}',
             f'context_sources={len(ctx_sources)}',
             f'best_vs_median={best_vs_median_pct:.2f}%',
+            'xg_proxy=market_total_consensus' if bool(xg_proxy_meta.get('enabled')) else 'xg_proxy=not_used',
         ],
         'source_summary': {
             'selected_source': 'b_cover_market_promotion',
@@ -837,11 +959,13 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
             'selected_vs_median_deviation_pct': round(deviation_pct, 3),
             'context_sources': ctx_sources,
             'raw_bucket_offers': raw_bucket_offers,
+            'xg_proxy': xg_proxy_meta,
         },
         'context': {
             'expected_home': h_xg,
             'expected_away': a_xg,
             'context_sources': ctx_sources,
+            'xg_proxy': xg_proxy_meta,
         },
         'diagnostics': {
             'promotion': {
@@ -852,11 +976,112 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
                 'selected_vs_median_deviation_pct': round(deviation_pct, 3),
                 'canonical_edge_pp': round(edge_pp, 3),
                 'canonical_ev_pct': round(ev_pct, 3),
+                'xg_proxy': xg_proxy_meta,
             }
         },
     }
     return candidate, 'promoted'
 
+
+
+def _merge_unique_list(*values: Any) -> list[str]:
+    out: list[str] = []
+    seen: set[str] = set()
+    for value in values:
+        for item in list_from_any(value):
+            key = norm(item).replace(' ', '_')
+            if not key or key in seen:
+                continue
+            seen.add(key)
+            out.append(key)
+    return out
+
+
+def _has_candidate_xg(row: dict[str, Any]) -> bool:
+    return row.get('expected_home') not in (None, '') and row.get('expected_away') not in (None, '')
+
+
+def enrich_existing_candidate(existing: dict[str, Any], promoted: dict[str, Any]) -> bool:
+    """Merge strict promotion evidence into an already-current rescue row.
+
+    The previous promotion layer skipped duplicate signatures.  That kept old
+    current-window rescue rows without expected_home/expected_away, so strong
+    candidates such as 4-book/2-context totals still died on missing xG sanity.
+    Keep the original model probability/value, but fill missing support evidence
+    from the safer promoted row.
+    """
+    changed = False
+
+    # Fill missing xG/proxy only; do not overwrite real xG already present.
+    for key in ('expected_home', 'expected_away'):
+        if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
+            existing[key] = promoted.get(key)
+            changed = True
+
+    # Keep richer price/context evidence, especially raw_bucket_offers used by
+    # the B-tier price-integrity guard.
+    ex_ss = existing.setdefault('source_summary', {}) if isinstance(existing.setdefault('source_summary', {}), dict) else {}
+    pr_ss = promoted.get('source_summary') if isinstance(promoted.get('source_summary'), dict) else {}
+    for key in ('raw_bucket_offers', 'bucket_offers', 'offers'):
+        if not ex_ss.get(key) and pr_ss.get(key):
+            ex_ss[key] = pr_ss.get(key)
+            changed = True
+    for key in ('books', 'prices'):
+        merged = _merge_unique_list(ex_ss.get(key), pr_ss.get(key))
+        if merged and merged != ex_ss.get(key):
+            ex_ss[key] = merged
+            changed = True
+    for key in ('selected_source', 'selected_bookmaker', 'bookmaker', 'median_price', 'selected_vs_median_deviation_pct'):
+        if ex_ss.get(key) in (None, '', [], {}) and pr_ss.get(key) not in (None, '', [], {}):
+            ex_ss[key] = pr_ss.get(key)
+            changed = True
+
+    ex_ctx = existing.setdefault('context', {}) if isinstance(existing.setdefault('context', {}), dict) else {}
+    pr_ctx = promoted.get('context') if isinstance(promoted.get('context'), dict) else {}
+    for key in ('expected_home', 'expected_away', 'xg_proxy'):
+        if ex_ctx.get(key) in (None, '', [], {}) and pr_ctx.get(key) not in (None, '', [], {}):
+            ex_ctx[key] = pr_ctx.get(key)
+            changed = True
+
+    ex_diag = existing.setdefault('diagnostics', {}) if isinstance(existing.setdefault('diagnostics', {}), dict) else {}
+    pr_diag = promoted.get('diagnostics') if isinstance(promoted.get('diagnostics'), dict) else {}
+    pr_promo = pr_diag.get('promotion') if isinstance(pr_diag.get('promotion'), dict) else {}
+    ex_promo = ex_diag.setdefault('promotion', {}) if isinstance(ex_diag.setdefault('promotion', {}), dict) else {}
+    for key, value in pr_promo.items():
+        if ex_promo.get(key) in (None, '', [], {}) and value not in (None, '', [], {}):
+            ex_promo[key] = value
+            changed = True
+    if changed:
+        ex_promo['enriched_existing_rescue_candidate'] = True
+        ex_promo['enriched_at_utc'] = datetime.now(UTC).isoformat()
+
+    # Increase counts conservatively; never reduce original candidate metrics.
+    for key in ('books_count', 'sources_count', 'odds_sources_count', 'confirmation_sources_count'):
+        before = count_any(existing.get(key))
+        after = count_any(promoted.get(key))
+        if after > before:
+            existing[key] = after
+            changed = True
+    merged_confirmations = _merge_unique_list(existing.get('confirmation_sources'), promoted.get('confirmation_sources'))
+    if merged_confirmations and merged_confirmations != existing.get('confirmation_sources'):
+        existing['confirmation_sources'] = merged_confirmations
+        existing['confirmation_sources_count'] = max(count_any(existing.get('confirmation_sources_count')), len(merged_confirmations))
+        changed = True
+
+    # Preserve original adjusted_probability/model signal, but ensure fallback sees
+    # the selected bookmaker and line evidence.
+    for key in ('bookmaker', 'selected_bookmaker'):
+        if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
+            existing[key] = promoted.get(key)
+            changed = True
+
+    if changed:
+        reasons = existing.setdefault('reasons', [])
+        if isinstance(reasons, list):
+            marker = 'enriched_by_b_cover_market_promotion'
+            if marker not in reasons:
+                reasons.append(marker)
+    return changed
 
 def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candidates: list[dict[str, Any]]) -> dict[str, Any]:
     if not env_bool('PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED', True):
@@ -877,6 +1102,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         now,
     )
     signatures = {candidate_signature(r) for r in candidate_current + existing if isinstance(r, dict)}
+    existing_by_signature = {candidate_signature(r): r for r in existing if isinstance(r, dict)}
 
     promoted: list[dict[str, Any]] = []
     reasons = Counter()
@@ -917,7 +1143,11 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
                 continue
             sig = candidate_signature(cand)
             if sig in signatures:
-                reasons['promotion_skip_duplicate_candidate'] += 1
+                existing_row = existing_by_signature.get(sig)
+                if isinstance(existing_row, dict) and enrich_existing_candidate(existing_row, cand):
+                    reasons['promotion_enriched_duplicate_candidate'] += 1
+                else:
+                    reasons['promotion_skip_duplicate_candidate'] += 1
                 continue
             signatures.add(sig)
             candidates_for_match.append(cand)
@@ -974,6 +1204,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
         'existing_rescue_rows_before': len(existing_all),
         'existing_rescue_rows_kept_current_window': len(existing),
         'existing_rescue_rows_removed_stale_or_outside': max(0, len(existing_all) - len(existing)),
+        'enriched_duplicate_candidates': int(reasons.get('promotion_enriched_duplicate_candidate') or 0),
         'publish_window': {
             'earliest_utc': earliest.isoformat(),
             'latest_utc': latest.isoformat(),
