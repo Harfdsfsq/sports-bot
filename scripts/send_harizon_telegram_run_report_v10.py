@@ -118,10 +118,17 @@ def render(payload: dict[str, Any]) -> str:
             suffix += f"; selected B-cover rows {selected_b_cover}"
         if selected_path:
             suffix += f" from {selected_path}"
+        status = str(promotion.get('status') or 'ok')
+        status_prefix = f"status {status}; " if status and status != 'ok' else ''
         lines.append(
-            f"• B-cover promotion: considered {_as_int(promotion.get('considered_b_cover_rows'))}; "
+            f"• B-cover promotion: {status_prefix}considered {_as_int(promotion.get('considered_b_cover_rows'))}; "
             f"promoted {_as_int(promotion.get('promoted_count'))}; "
             f"top skips {_top_promotion_reasons(promotion)}{suffix}."
+        )
+    else:
+        lines.append(
+            "• B-cover promotion: report missing; script likely failed before writing "
+            "latest-b-cover-value-promotion.json."
         )
     if gap:
         reasons = gap.get('reason_counts') if isinstance(gap.get('reason_counts'), dict) else {}

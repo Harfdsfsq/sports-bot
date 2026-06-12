@@ -180,6 +180,40 @@ def list_from_any(value: Any) -> list[str]:
     return []
 
 
+_NEUTRAL_CONTEXT_SOURCES = {
+    'market', 'odds_api_io', 'line_history', 'ensemble', 'market_signal',
+    'xg_model_context', 'form_context',
+}
+
+
+def _context_hint(row: dict[str, Any]) -> bool:
+    """Cheap non-recursive context presence test.
+
+    v5 could recurse context_sources -> context_count -> context_sources on
+    rows that had only boolean coverage flags.  In GitHub this made the
+    B-cover promotion report disappear completely, so Telegram showed only the
+    old diagnostics.  Keep the helper flat and safe.
+    """
+    cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
+    md = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
+    for container in (row, cov, md):
+        if not isinstance(container, dict):
+            continue
+        if (
+            container.get('context') or container.get('has_context') or container.get('xg')
+            or container.get('ready_for_model') or container.get('context_any')
+            or container.get('coverage_context')
+        ):
+            return True
+        for key in (
+            'context_sources_count', 'context_confirmations_count', 'context_count',
+            'contexts_count', 'context_source_count', 'provider_context_count',
+        ):
+            if count_any(container.get(key)) >= 1:
+                return True
+    return False
+
+
 def context_sources(row: dict[str, Any]) -> list[str]:
     cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
     md = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
@@ -193,12 +227,12 @@ def context_sources(row: dict[str, Any]) -> list[str]:
     seen: set[str] = set()
     for src in sources:
         key = norm(src).replace(' ', '_')
-        if not key or key in {'market', 'odds_api_io', 'line_history', 'ensemble'}:
+        if not key or key in _NEUTRAL_CONTEXT_SOURCES:
             continue
         if key not in seen:
             seen.add(key)
             cleaned.append(key)
-    if not cleaned and context_count(row) >= 1:
+    if not cleaned and _context_hint(row):
         cleaned.append('inventory_context')
     return cleaned
 
@@ -207,24 +241,33 @@ def context_count(row: dict[str, Any]) -> int:
     cov = row.get('coverage') if isinstance(row.get('coverage'), dict) else {}
     md = row.get('metadata') if isinstance(row.get('metadata'), dict) else {}
     best = 0
+    raw_sources: list[str] = []
     for container in (row, cov, md):
         if not isinstance(container, dict):
             continue
         for key in (
             'context_sources', 'context_confirmations', 'all_context_sources',
             'core_context_sources', 'supplemental_context_sources', 'sources',
+        ):
+            raw_sources.extend(list_from_any(container.get(key)))
+            best = max(best, count_any(container.get(key)))
+        for key in (
             'context_sources_count', 'context_confirmations_count', 'context_count',
             'contexts_count', 'context_source_count', 'provider_context_count',
         ):
             best = max(best, count_any(container.get(key)))
-        if (
-            container.get('context') or container.get('has_context') or container.get('xg')
-            or container.get('ready_for_model') or container.get('context_any')
-            or container.get('coverage_context')
-        ):
-            best = max(best, 1)
-    if context_sources(row):
-        best = max(best, len(context_sources(row)))
+    cleaned = []
+    seen: set[str] = set()
+    for src in raw_sources:
+        key = norm(src).replace(' ', '_')
+        if not key or key in _NEUTRAL_CONTEXT_SOURCES:
+            continue
+        if key not in seen:
+            seen.add(key)
+            cleaned.append(key)
+    best = max(best, len(cleaned))
+    if best <= 0 and _context_hint(row):
+        best = 1
     return best
 
 
