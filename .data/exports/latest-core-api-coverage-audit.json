@@ -7,13 +7,14 @@
     "offer_rows_from_snapshot": 0
   },
   "bottlenecks": [
+    "2plus_context_below_bookmaker_quorum",
     "bzzoiro_secondary_offers_zero",
     "sstats_team_form_zero",
     "sportlogic_no_fixtures_or_matches"
   ],
   "bzzoiro_context_gap": {
     "install": {
-      "created_at_utc": "2026-06-12T20:38:35.429726+00:00",
+      "created_at_utc": "2026-06-12T21:49:32.234671+00:00",
       "ignore_plan_default": true,
       "match_limit": 160,
       "max_requests": 180,
@@ -21,58 +22,84 @@
       "status": "installed"
     },
     "runtime": {
-      "created_at_utc": "2026-06-12T20:30:42.288092+00:00",
+      "created_at_utc": "2026-06-12T21:30:14.741187+00:00",
       "preview": {
         "hints_sidecar": "/home/runner/work/sports-bot/sports-bot/.data/exports/latest-bzzoiro-v2-odds-hints-by-match.json",
-        "hints_sidecar_matches": 0,
-        "matched": 0,
+        "hints_sidecar_matches": 1,
+        "matched": 1,
         "odds_comparison_attachment": {
-          "attached": 1,
-          "attempted": 1,
+          "attached": 3,
+          "attempted": 3,
           "enabled": true,
           "errors": 0,
           "limit": 140,
           "max_requests": 120
         },
-        "provider_odds_hints": 0,
-        "sample_targets": [],
-        "target_matches": 0,
-        "unmatched": 0
+        "provider_odds_hints": 138,
+        "sample_targets": [
+          "soccer|adamstown|broadmeadow|2026-06-13",
+          "soccer|adelaide atletico|fulham united|2026-06-13",
+          "soccer|adelaide comets reserves|west adelaide reserves|2026-06-13",
+          "soccer|adelaide croatia|south adelaide|2026-06-13",
+          "soccer|adelaide hills|noarlunga united|2026-06-13",
+          "soccer|adelaide olympic reserves|eastern united reserves|2026-06-13",
+          "soccer|adelaide university reserves|flinders united wfc reserves|2026-06-13",
+          "soccer|adelaide university reserves|mount barker united reserves|2026-06-13",
+          "soccer|angle vale reserves|elizabeth downs reserves|2026-06-13",
+          "soccer|as harima albion|sfida setagaya|2026-06-13",
+          "soccer|audax|deportes la serena|2026-06-13",
+          "soccer|aymores|ipatinga|2026-06-12",
+          "soccer|belconnen|brindabella blues|2026-06-13",
+          "soccer|belmont swansea|weston|2026-06-13",
+          "soccer|bentleigh greens|preston lions|2026-06-13",
+          "soccer|beograd|para hills|2026-06-13",
+          "soccer|birmingham legion|one knoxville|2026-06-12",
+          "soccer|blue eagles|salisbury unt|2026-06-13",
+          "soccer|brevard riptide|tallahassee reckoning|2026-06-12",
+          "soccer|brisbane|gold coast|2026-06-13",
+          "soccer|brunswick city|eltham redbacks|2026-06-13",
+          "soccer|burnie united|launceston city 2|2026-06-13",
+          "soccer|ca sarmiento la banda|juv antoniana|2026-06-13",
+          "soccer|california storm uslw|oakland soul|2026-06-13",
+          "soccer|campbelltown city reserves|west torrens birkalla reserves|2026-06-13"
+        ],
+        "target_matches": 77,
+        "unmatched": 76
       },
       "stats": {
-        "contexts_added": 0,
-        "contexts_added_total": 0,
+        "contexts_added": 1,
+        "contexts_added_total": 1,
         "enabled": true,
         "errors": 0,
-        "hinted_contexts": 0,
+        "hinted_contexts": 1,
         "lineups_resources": 0,
-        "matched": 0,
-        "metadata_resources": 1,
+        "matched": 1,
+        "metadata_resources": 2,
         "note": "patched actual app.providers.bzzoiro_v2 provider; legacy report path kept for Telegram v8",
-        "odds_comparison_attached": 1,
-        "odds_comparison_attempted": 1,
-        "odds_hints": 0,
-        "odds_resources": 1,
+        "odds_comparison_attached": 3,
+        "odds_comparison_attempted": 3,
+        "odds_hints": 138,
+        "odds_resources": 2,
         "provider": "bzzoiro_v2",
         "requests": 0,
-        "stats_resources": 1,
-        "target_matches": 0,
+        "stats_resources": 2,
+        "target_matches": 77,
         "v2_events_fetched": 22
       },
       "status": "ran"
     }
   },
-  "created_at_utc": "2026-06-12T20:38:41.912199+00:00",
+  "created_at_utc": "2026-06-12T21:49:42.289537+00:00",
   "guards": {
     "price_integrity_removed_total": 0,
     "timing_deferred_total": 0
   },
   "inventory": {
-    "matches_total": 246,
-    "ready_for_model": 145,
-    "with_1plus_context": 166,
-    "with_2plus_bookmakers": 133,
-    "with_2plus_context": 133
+    "matches_total": 300,
+    "ready_for_model": 90,
+    "with_1plus_context": 91,
+    "with_2plus_bookmakers": 174,
+    "with_2plus_context": 45
   },
   "max_policy_installed": true,
   "near_window_0_4h": {},
@@ -83,38 +110,38 @@
     "If bzzoiro_secondary_offers_zero persists, keep Bzzoiro as context/confirmation, not price source, until comparison odds parse is fixed."
   ],
   "odds_api_snapshot": {
-    "matches_count": 73,
-    "rows_count": 4809,
-    "same_side_2plus_books": 34
+    "matches_count": 287,
+    "rows_count": 21709,
+    "same_side_2plus_books": 136
   },
   "providers": {
     "bzzoiro": {
-      "contexts": 1,
-      "contexts_total_effective": 1,
+      "contexts": 3,
+      "contexts_total_effective": 3,
       "errors": 0,
       "events": 22,
       "events_total_effective": 22,
       "overlap": 0,
-      "requests": 7,
-      "requests_total_effective": 7,
+      "requests": 12,
+      "requests_total_effective": 12,
       "secondary_offers_added": 0,
-      "v2_contexts": 1,
+      "v2_contexts": 3,
       "v2_errors": 0,
       "v2_events": 22,
       "v2_lineups_resources": 0,
-      "v2_odds_resources": 1,
-      "v2_prediction_resources": 1,
-      "v2_requests": 7,
-      "v2_stats_resources": 1
+      "v2_odds_resources": 2,
+      "v2_prediction_resources": 2,
+      "v2_requests": 12,
+      "v2_stats_resources": 2
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 39,
+      "books_2plus": 178,
       "errors": 0,
       "events_req": 0,
-      "matched": 122,
-      "odds_req": 26,
-      "offers": 4809
+      "matched": 519,
+      "odds_req": 104,
+      "offers": 21709
     },
     "sportlogic": {
       "diagnosis": "ok_or_no_data",
@@ -137,8 +164,8 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 74,
-      "deep_enriched": 1,
+      "contexts": 189,
+      "deep_enriched": 5,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 25,
