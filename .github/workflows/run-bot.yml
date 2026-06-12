@@ -55,7 +55,7 @@ jobs:
       DAY_INVENTORY_CONTEXT_BACKFILL_ENABLED: "true"
       DAY_INVENTORY_ENABLE_BZZOIRO: "true"
       DAY_INVENTORY_ENABLE_SSTATS: "true"
-      DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"
+      DAY_INVENTORY_ENABLE_SPORTLOGIC: "false"
       DAY_INVENTORY_ENABLE_ALLSPORTSAPI: "false"
       DAY_INVENTORY_TOP_MATCHES_ENABLED: "true"
       DAY_INVENTORY_ODDS_API_IO_TARGET_MATCHES: "220"
@@ -65,8 +65,8 @@ jobs:
       DAY_INVENTORY_BZZOIRO_MAX_REQUESTS: "200"
       DAY_INVENTORY_BZZOIRO_MAX_PAGES: "20"
       DAY_INVENTORY_SSTATS_MAX_REQUESTS: "150"
-      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "100"
-      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "40"
+      DAY_INVENTORY_SPORTLOGIC_MATCH_LIMIT: "0"
+      DAY_INVENTORY_SPORTLOGIC_MAX_REQUESTS: "0"
 
       MARKET_FAMILY_PUBLICATION_GUARD_ENABLED: "true"
       PUBLICATION_ALLOWED_MARKET_FAMILIES: "totals,spreads"
@@ -165,16 +165,16 @@ jobs:
       SSTATS_ODDS_RESCUE_ENABLED: "true"
 
       SPORTLOGIC_DAILY_LIMIT: "500"
-      SPORTLOGIC_ENABLED: "true"
-      ENABLE_SPORTLOGIC: "true"
-      SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "true"
-      SPORTLOGIC_PER_RUN_MAX: "40"
-      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "40"
-      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "40"
-      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "40"
-      SPORTLOGIC_MATCH_LIMIT: "100"
-      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "100"
-      SPORTLOGIC_ODDS_MATCH_LIMIT: "40"
+      SPORTLOGIC_ENABLED: "false"
+      ENABLE_SPORTLOGIC: "false"
+      SPORTLOGIC_CONTROLLED_ODDS_ENABLED: "false"
+      SPORTLOGIC_PER_RUN_MAX: "0"
+      SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "0"
+      SPORTLOGIC_REQUESTS_MAX_PER_RUN: "0"
+      SPORTLOGIC_REQUEST_BUDGET_GRANTED: "0"
+      SPORTLOGIC_MATCH_LIMIT: "0"
+      SPORTLOGIC_CONTEXT_MATCH_LIMIT: "0"
+      SPORTLOGIC_ODDS_MATCH_LIMIT: "0"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_PAGES: "2"
       SPORTLOGIC_ACTIVE_ODDS_SMOKE_GAME_LIMIT: "40"
       SPORTLOGIC_MATCH_MIN_SCORE: "48"
@@ -272,6 +272,15 @@ jobs:
           set -uo pipefail
           mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
+
+      - name: Expand day inventory to target
+        shell: bash
+        run: |
+          set -uo pipefail
+          mkdir -p .data/exports .data/cache/day_inventory .data/day_inventory artifacts/run-bot
+          python -u scripts/expand_day_inventory_to_target.py || true
+          python -u scripts/guard_day_inventory_no_shrink.py snapshot || true
+          cp .data/exports/latest-day-inventory-target-expand.json artifacts/run-bot/latest-day-inventory-target-expand.json 2>/dev/null || true
 
       - name: Install dependencies
         shell: bash
@@ -372,6 +381,8 @@ jobs:
           echo "runtime status ${status}"
           echo "runtime finish $(date -u +%Y-%m-%dT%H:%M:%SZ)"
           python -u scripts/guard_day_inventory_no_shrink.py repair || true
+          python -u scripts/backfill_inventory_bookmaker_coverage.py || true
+          python -u scripts/build_b_cover_candidate_gap_report.py || true
           find .data/exports -maxdepth 2 -type f -printf '%p\n' | sort || true
           cp -r .data/exports artifacts/run-bot/exports || true
           cp -r .data/cache artifacts/run-bot/cache || true
@@ -397,6 +408,9 @@ jobs:
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
+          python -u scripts/build_b_cover_candidate_gap_report.py || true
+          cp .data/exports/latest-b-cover-candidate-gap-report.json artifacts/run-bot/latest-b-cover-candidate-gap-report.json 2>/dev/null || true
+          cp .data/exports/latest-b-cover-candidate-gap-report.csv artifacts/run-bot/latest-b-cover-candidate-gap-report.csv 2>/dev/null || true
 
       - name: Update cumulative day inventory coverage
         if: always()
@@ -409,10 +423,15 @@ jobs:
           fi
           mkdir -p .data/exports .data/day_inventory .data/line_history artifacts/run-bot
           python -u scripts/day_inventory_cumulative_coverage.py || true
+          python -u scripts/backfill_inventory_bookmaker_coverage.py || true
           python -u scripts/guard_day_inventory_no_shrink.py repair || true
+          python -u scripts/build_b_cover_candidate_gap_report.py || true
           cp .data/exports/latest-day-inventory-cumulative-coverage.json artifacts/run-bot/latest-day-inventory-cumulative-coverage.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.json artifacts/run-bot/latest-day-inventory-coverage-truth.json 2>/dev/null || true
           cp .data/exports/latest-day-inventory-coverage-truth.csv artifacts/run-bot/latest-day-inventory-coverage-truth.csv 2>/dev/null || true
+          cp .data/exports/latest-inventory-bookmaker-backfill.json artifacts/run-bot/latest-inventory-bookmaker-backfill.json 2>/dev/null || true
+          cp .data/exports/latest-b-cover-candidate-gap-report.json artifacts/run-bot/latest-b-cover-candidate-gap-report.json 2>/dev/null || true
+          cp .data/exports/latest-b-cover-candidate-gap-report.csv artifacts/run-bot/latest-b-cover-candidate-gap-report.csv 2>/dev/null || true
           cp -r .data/day_inventory artifacts/run-bot/day_inventory || true
           cp -r .data/line_history artifacts/run-bot/line_history || true
 
@@ -437,7 +456,7 @@ jobs:
             echo "skip HARIZON report: fresh run-bot log was not created"
             exit 0
           fi
-          python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
+          python scripts/send_harizon_telegram_run_report_v10.py || python scripts/send_harizon_telegram_run_report_v9.py || python scripts/send_harizon_telegram_run_report_v8.py || python scripts/send_harizon_telegram_run_report_v7.py || python scripts/send_harizon_telegram_run_report_v5.py || python scripts/send_harizon_telegram_run_report_v4.py || python scripts/send_harizon_telegram_run_report_v3.py || python scripts/send_harizon_telegram_run_report.py || true
           cp .data/exports/latest-publication-status.json artifacts/run-bot/latest-publication-status.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.txt artifacts/run-bot/latest-harizon-telegram-run-report.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report.json artifacts/run-bot/latest-harizon-telegram-run-report.json 2>/dev/null || true
@@ -445,6 +464,7 @@ jobs:
           cp .data/exports/latest-harizon-telegram-run-report-v5.txt artifacts/run-bot/latest-harizon-telegram-run-report-v5.txt 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v9.json artifacts/run-bot/latest-harizon-telegram-run-report-v9.json 2>/dev/null || true
           cp .data/exports/latest-harizon-telegram-run-report-v9.txt artifacts/run-bot/latest-harizon-telegram-run-report-v9.txt 2>/dev/null || true
+          cp .data/exports/latest-harizon-telegram-run-report-v10-status.json artifacts/run-bot/latest-harizon-telegram-run-report-v10-status.json 2>/dev/null || true
 
       - name: Commit runtime artifacts
         if: always()
