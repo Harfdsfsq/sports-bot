@@ -26,6 +26,7 @@ import json
 import math
 import os
 import re
+import runpy
 import statistics
 from collections import Counter, defaultdict
 from datetime import datetime, timezone
@@ -816,12 +817,67 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
     return report
 
 
+def prebuild_coverage_truth_for_promotion() -> dict[str, Any]:
+    """Make row-level coverage truth available before promotion/fallback.
+
+    The workflow runs this script before controlled fallback.  Previous versions
+    selected the raw day_inventory file because latest-day-inventory-coverage-
+    truth.json was created later in the job, so promotion saw inventory_rows=229
+    but considered_b_cover_rows=0.  This local prebuild uses only existing run
+    artifacts; it does not call external APIs.
+    """
+    if not env_bool('PROMOTE_B_COVER_PREBUILD_COVERAGE_TRUTH', True):
+        return {'enabled': False, 'reason': 'disabled'}
+    if os.getenv('BCOVER_PROMOTION_COVERAGE_PREBUILD_RUNNING') == '1':
+        return {'enabled': True, 'status': 'skipped_reentrant'}
+    os.environ['BCOVER_PROMOTION_COVERAGE_PREBUILD_RUNNING'] = '1'
+    started = datetime.now(UTC).isoformat()
+    steps: list[dict[str, Any]] = []
+    try:
+        # Prefer the cumulative script because it merges latest run coverage,
+        # repairs source counters, and writes coverage-truth rows.
+        for script_name in ('day_inventory_cumulative_coverage.py', 'build_day_inventory_coverage_truth.py'):
+            path = ROOT / 'scripts' / script_name
+            if not path.exists():
+                steps.append({'script': script_name, 'status': 'missing'})
+                continue
+            try:
+                runpy.run_path(str(path), run_name='__main__')
+                steps.append({'script': script_name, 'status': 'ok'})
+                if script_name == 'day_inventory_cumulative_coverage.py':
+                    # This script already calls build_day_inventory_coverage_truth.py.
+                    break
+            except SystemExit as exc:
+                code = getattr(exc, 'code', 0)
+                steps.append({'script': script_name, 'status': 'ok' if code in (0, None) else 'error', 'code': code})
+                if script_name == 'day_inventory_cumulative_coverage.py' and code in (0, None):
+                    break
+            except Exception as exc:
+                steps.append({'script': script_name, 'status': 'error', 'error': f'{type(exc).__name__}: {exc}'})
+        return {
+            'enabled': True,
+            'status': 'ok' if any(step.get('status') == 'ok' for step in steps) else 'no_ok_steps',
+            'started_at_utc': started,
+            'finished_at_utc': datetime.now(UTC).isoformat(),
+            'steps': steps,
+        }
+    finally:
+        os.environ.pop('BCOVER_PROMOTION_COVERAGE_PREBUILD_RUNNING', None)
+
+
 def main() -> int:
     day = target_date()
+    prebuild = prebuild_coverage_truth_for_promotion()
     inventory, inventory_load = load_inventory_with_meta(day)
+    if isinstance(inventory_load, dict):
+        inventory_load['prebuild_coverage_truth'] = prebuild
     cands_initial = candidate_rows()
     try:
         promotion = promote_candidates(day, inventory, cands_initial)
+        if isinstance(promotion, dict):
+            promotion['inventory_load'] = inventory_load
+            promotion['inventory_rows_seen'] = len(inventory)
+            write_json(PROMOTION_REPORT_JSON, promotion)
     except Exception as exc:
         promotion = {
             'enabled': True,
