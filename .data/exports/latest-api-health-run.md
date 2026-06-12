@@ -1,6 +1,6 @@
 # API Health Run
 
-- Created UTC: `2026-06-11T23:04:30.934965+00:00`
+- Created UTC: `2026-06-12T01:04:52.809946+00:00`
 - Mode: `quick`
 - Providers checked: **18**
 - Removed providers: `api_football, bookies_api, oddspapi`
@@ -26,7 +26,7 @@
 
 | Provider | Group | Status | Requests | Useful rows | Message |
 |---|---|---:|---:|---:|---|
-| `bzzoiro` | `context` | `ok` | 1 | 13 | ok |
+| `bzzoiro` | `context` | `ok` | 1 | 22 | ok |
 | `football_data` | `context` | `ok` | 1 | 13 | ok |
 | `futrixmetrics` | `context` | `config_only` | 0 | 0 | key present; live probe skipped because FUTRIXMETRICS_BASE_URL/FUTRIXMETRICS_HEALTH_ENDPOINT are not configured |
 | `highlightly` | `context` | `ok` | 1 | 5 | ok |
