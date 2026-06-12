@@ -5,7 +5,8 @@ from __future__ import annotations
 Adds post-fix diagnostics for the current blockers:
 - day inventory target expansion status;
 - raw bookmaker -> normalized inventory backfill gap;
-- B-cover -> candidate funnel gap.
+- B-cover -> candidate funnel gap;
+- B-cover market-consensus promotion into controlled fallback pool.
 """
 
 import importlib.util
@@ -65,11 +66,25 @@ def _write_status(payload: dict[str, Any]) -> None:
 
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
-    payload['version'] = 'harizon-telegram-report-v10-inventory-bookmaker-funnel-diagnostics'
-    payload.setdefault('diagnostics', {})['inventory_target_expand'] = _load_json(EXPORT_DIR / 'latest-day-inventory-target-expand.json')
-    payload.setdefault('diagnostics', {})['inventory_bookmaker_backfill'] = _load_json(EXPORT_DIR / 'latest-inventory-bookmaker-backfill.json')
-    payload.setdefault('diagnostics', {})['b_cover_candidate_gap'] = _load_json(EXPORT_DIR / 'latest-b-cover-candidate-gap-report.json')
+    payload['version'] = 'harizon-telegram-report-v10-inventory-bookmaker-funnel-promotion-diagnostics'
+    diag = payload.setdefault('diagnostics', {})
+    diag['inventory_target_expand'] = _load_json(EXPORT_DIR / 'latest-day-inventory-target-expand.json')
+    diag['inventory_bookmaker_backfill'] = _load_json(EXPORT_DIR / 'latest-inventory-bookmaker-backfill.json')
+    diag['b_cover_candidate_gap'] = _load_json(EXPORT_DIR / 'latest-b-cover-candidate-gap-report.json')
+    diag['b_cover_value_promotion'] = _load_json(EXPORT_DIR / 'latest-b-cover-value-promotion.json')
     return payload
+
+
+def _top_promotion_reasons(promotion: dict[str, Any]) -> str:
+    reasons = promotion.get('reason_counts') if isinstance(promotion.get('reason_counts'), dict) else {}
+    if not reasons:
+        return 'n/a'
+    parts = []
+    for key, value in list(reasons.items())[:4]:
+        if key == 'promoted':
+            continue
+        parts.append(f'{key} {_as_int(value)}')
+    return '; '.join(parts) if parts else 'n/a'
 
 
 def render(payload: dict[str, Any]) -> str:
@@ -78,6 +93,7 @@ def render(payload: dict[str, Any]) -> str:
     expand = diag.get('inventory_target_expand') if isinstance(diag.get('inventory_target_expand'), dict) else {}
     backfill = diag.get('inventory_bookmaker_backfill') if isinstance(diag.get('inventory_bookmaker_backfill'), dict) else {}
     gap = diag.get('b_cover_candidate_gap') if isinstance(diag.get('b_cover_candidate_gap'), dict) else {}
+    promotion = diag.get('b_cover_value_promotion') if isinstance(diag.get('b_cover_value_promotion'), dict) else {}
     lines: list[str] = []
     if expand:
         lines.append(
@@ -89,6 +105,12 @@ def render(payload: dict[str, Any]) -> str:
             f"• Bookmaker mapping repair: raw 2+ {_as_int(backfill.get('raw_2plus_matches'))}; "
             f"normalized {_as_int(backfill.get('normalized_2plus_before'))}→{_as_int(backfill.get('normalized_2plus_after'))}; "
             f"gap after {_as_int(backfill.get('mapping_gap_after'))}."
+        )
+    if promotion:
+        lines.append(
+            f"• B-cover promotion: considered {_as_int(promotion.get('considered_b_cover_rows'))}; "
+            f"promoted {_as_int(promotion.get('promoted_count'))}; "
+            f"top skips {_top_promotion_reasons(promotion)}."
         )
     if gap:
         reasons = gap.get('reason_counts') if isinstance(gap.get('reason_counts'), dict) else {}
@@ -111,7 +133,7 @@ v9.v8.v7.v5.build_payload = build_payload
 v9.v8.v7.v5.render = render
 v9.v8.v7.build_payload = build_payload
 v9.v8.v7.render = render
-_write_status({'status': 'installed', 'renderer': 'v10', 'adds': ['inventory_target_expand', 'inventory_bookmaker_backfill', 'b_cover_candidate_gap']})
+_write_status({'status': 'installed', 'renderer': 'v10', 'adds': ['inventory_target_expand', 'inventory_bookmaker_backfill', 'b_cover_candidate_gap', 'b_cover_value_promotion']})
 
 
 if __name__ == '__main__':
