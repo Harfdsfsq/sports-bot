@@ -13,19 +13,19 @@
 | window | matches | fixtures 2+ | odds any | odds 2+ | context any | context 2+ | xG | weather | ready model | ready publish |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |
 | 0_2h | 9 | 8 | 9 | 9 | 7 | 7 | 7 | 0 | 7 | 7 |
-| 2_6h | 116 | 66 | 110 | 110 | 65 | 65 | 38 | 0 | 59 | 59 |
-| 6_12h | 73 | 68 | 66 | 66 | 20 | 20 | 4 | 0 | 14 | 14 |
+| 2_6h | 129 | 77 | 121 | 121 | 75 | 75 | 39 | 0 | 67 | 67 |
+| 6_12h | 60 | 57 | 55 | 55 | 22 | 22 | 4 | 0 | 18 | 18 |
 | 12_24h | 5 | 5 | 4 | 4 | 1 | 1 | 1 | 0 | 0 | 0 |
 | 24h_plus | 14 | 14 | 0 | 0 | 14 | 14 | 14 | 0 | 0 | 0 |
-| started | 46 | 29 | 41 | 41 | 30 | 30 | 2 | 0 | 29 | 29 |
+| started | 46 | 30 | 42 | 42 | 30 | 30 | 2 | 0 | 29 | 29 |
 
 ## Totals
 
-- fixture_2plus_sources: 190/263
-- odds_2plus_sources: 230/263
-- context_2plus_sources: 137/263
-- ready_for_model: 109/263
-- ready_for_publish: 109/263
+- fixture_2plus_sources: 191/263
+- odds_2plus_sources: 231/263
+- context_2plus_sources: 149/263
+- ready_for_model: 121/263
+- ready_for_publish: 121/263
 
 ## Provider endpoint status
 - by_status: `{"ok": 6, "skipped_preserve_runtime_quota": 1, "ConnectTimeout: ": 1}`
@@ -49,7 +49,6 @@
 - 2_6h | 2026-06-12T14:00:00+00:00 | Toktogul — Asiagoal | odds=0 context=2 fixtures=2 missing=odds_source_2plus,weather,xg
 - 2_6h | 2026-06-12T14:30:00+00:00 | FC Zbrojovka Brno B — SK Hranice | odds=1 context=0 fixtures=2 missing=context_source_2plus,weather,xg
 - 2_6h | 2026-06-12T15:00:00+00:00 | Rokycany — FK Spartak Sobeslav | odds=1 context=0 fixtures=2 missing=context_source_2plus,weather,xg
-- 2_6h | 2026-06-12T15:00:00+00:00 | Turan — FC Kaspiy Aktau | odds=1 context=0 fixtures=2 missing=context_source_2plus,weather,xg
 - 2_6h | 2026-06-12T15:30:00+00:00 | Tatran Bohunice — SK Artis B | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-12T15:30:00+00:00 | Lohjan — GrIFK/Akatemia | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-12T15:30:00+00:00 | Futura — FC Lahti 69 | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
@@ -67,6 +66,7 @@
 - 2_6h | 2026-06-12T16:00:00+00:00 | Kontu — VJS/Akatemia | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-12T16:00:00+00:00 | TP-49 — FC Lasten | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
 - 2_6h | 2026-06-12T16:00:00+00:00 | Kundl — Mils | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
+- 2_6h | 2026-06-12T16:00:00+00:00 | Utenos Utenis — Vilnius Football Academy | odds=1 context=0 fixtures=1 missing=fixture_source_2plus,context_source_2plus,weather,xg
 
 Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data diagnostics when asking for the next fix.
 
@@ -74,5 +74,5 @@ Attach `provider-smoke-coverage-matrix.json` plus provider/matching/full-data di
 ## SStats deep projection
 - crosswalk: matched=162 / checked=263 | rate=61.6% | SStats events=1039
 - potential_add: context_deep=162 xg_or_rating=162 form=162 odds_rescue=28
-- projected_upper_bound: context_2plus=263 xg=201 form=200 odds_2plus=258
+- projected_upper_bound: context_2plus=263 xg=201 form=201 odds_2plus=259
 - next action: persist provider_source_ids.sstats=gameId, then call /Games/glicko/{id} + /Games/last-games-stats for the queue.
