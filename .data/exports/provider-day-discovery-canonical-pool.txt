@@ -1,31 +1,31 @@
 # Provider day discovery canonical pool
-UTC: 2026-06-12T18:08:02.472397+00:00
+UTC: 2026-06-12T19:07:53.696018+00:00
 target_date: 2026-06-12
-canonical_matches: 149
-2+ provider sources: 46
-2+ primary sources: 46
-all 3 primary sources: 0
+canonical_matches: 159
+2+ provider sources: 36
+2+ primary sources: 36
+all 3 primary sources: 1
 
 ## Provider fixture discovery
 - allsportsapi: commands=1 ok=1 rows=1 event_like=0 unique=0 statuses={"OK": 1}
-- bzzoiro: commands=10 ok=0 rows=0 event_like=0 unique=0 statuses={"ERROR": 8, "EMPTY": 2}
+- bzzoiro: commands=10 ok=3 rows=66 event_like=66 unique=22 statuses={"OK": 3, "EMPTY": 7}
 - football_data: commands=1 ok=1 rows=1 event_like=1 unique=1 statuses={"OK": 1}
 - highlightly: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"AUTH": 1}
-- odds_api_io: commands=6 ok=2 rows=152 event_like=152 unique=76 statuses={"OK": 2, "EMPTY": 4}
-- sportlogic: commands=1 ok=0 rows=0 event_like=0 unique=0 statuses={"EMPTY": 1}
+- odds_api_io: commands=6 ok=2 rows=110 event_like=110 unique=55 statuses={"OK": 2, "EMPTY": 4}
+- sportlogic: commands=1 ok=0 rows=1 event_like=0 unique=0 statuses={"RATE_LIMIT": 1}
 - sstats: commands=1 ok=1 rows=136 event_like=119 unique=119 statuses={"OK": 1}
 - thesportsdb: commands=1 ok=1 rows=3 event_like=3 unique=3 statuses={"OK": 1}
 
 ## Source distributions
-- all providers: {"1": 103, "2": 42, "3": 4}
-- primary providers: {"1": 103, "2": 46}
+- all providers: {"1": 123, "2": 32, "3": 3, "4": 1}
+- primary providers: {"1": 123, "2": 35, "3": 1}
 
 ## Top canonical matches
 - 2026-06-11T23:30:00+00:00 | River Light W — Rockford Raptors W | providers=sstats ids={"sstats": "1532350"}
 - 2026-06-12T01:00:00+00:00 | Sta Clarita Blue Heat W — Los Angeles SC W | providers=sstats ids={"sstats": "1532392"}
+- 2026-06-12T02:00:00+00:00 | South Korea — Czechia | providers=bzzoiro,sstats ids={"bzzoiro": "8288", "sstats": "1538999"}
 - 2026-06-12T02:00:00+00:00 | Utah United W — Flatirons II W | providers=sstats ids={"sstats": "1532169"}
 - 2026-06-12T02:00:00+00:00 | Sportivo San Juan — Project 51O | providers=sstats ids={"sstats": "1524873"}
-- 2026-06-12T02:00:00+00:00 | South Korea — Czech Republic | providers=sstats ids={"sstats": "1538999"}
 - 2026-06-12T02:30:00+00:00 | Snohomish United W — Portland Cherry Bombs FC W | providers=sstats ids={"sstats": "1532441"}
 - 2026-06-12T03:00:00+00:00 | Capo — Tucson | providers=sstats ids={"sstats": "1524871"}
 - 2026-06-12T08:00:00+00:00 | Central Coast II — Hakoah Sydney City | providers=sstats ids={"sstats": "1517790"}
@@ -61,15 +61,15 @@ all 3 primary sources: 0
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
+- South Korea — Czechia | primary=2 providers=bzzoiro,sstats
+  - Bzzoiro: event detail/stats/odds/metadata/lineups/prediction by bzzoiro event id
+  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
+  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Utah United W — Flatirons II W | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
 - Sportivo San Juan — Project 51O | primary=1 providers=sstats
-  - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
-  - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
-  - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
-- South Korea — Czech Republic | primary=1 providers=sstats
   - SStats: /Games/glicko/{id}, /Games/last-games-stats, /Games/{id}; /Odds/{gameId} only if odds<2
   - Primary repair: try alias crosswalk between odds-api.io/Bzzoiro/SStats before supplemental APIs
   - Supplemental after shortlist only: ClubElo rating, venue->Open-Meteo/WeatherAPI, news by team aliases, TheSportsDB/Wikidata mapping
