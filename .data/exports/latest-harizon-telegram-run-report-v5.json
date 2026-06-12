@@ -1,32 +1,32 @@
 {
   "api": {
     "bzzoiro": {
-      "contexts": 1,
-      "contexts_total_effective": 1,
+      "contexts": 3,
+      "contexts_total_effective": 3,
       "errors": 0,
       "events": 7,
       "events_total_effective": 7,
-      "overlap": 0,
-      "requests": 6,
-      "requests_total_effective": 6,
+      "overlap": 1,
+      "requests": 12,
+      "requests_total_effective": 12,
       "secondary_offers_added": 0,
-      "v2_contexts": 1,
+      "v2_contexts": 3,
       "v2_errors": 0,
       "v2_events": 7,
       "v2_lineups_resources": 0,
-      "v2_odds_resources": 1,
-      "v2_prediction_resources": 1,
-      "v2_requests": 6,
-      "v2_stats_resources": 1
+      "v2_odds_resources": 2,
+      "v2_prediction_resources": 2,
+      "v2_requests": 12,
+      "v2_stats_resources": 2
     },
     "odds_api_io": {
       "auth_failed": false,
-      "books_2plus": 16,
+      "books_2plus": 19,
       "errors": 0,
       "events_req": 0,
-      "matched": 48,
-      "odds_req": 10,
-      "offers": 1960
+      "matched": 52,
+      "odds_req": 12,
+      "offers": 2712
     },
     "sportlogic": {
       "diagnosis": "sportlogic_no_current_games_probe_only",
@@ -49,8 +49,8 @@
       "stale_sample": false
     },
     "sstats": {
-      "contexts": 31,
-      "deep_enriched": 1,
+      "contexts": 38,
+      "deep_enriched": 2,
       "direct_contexts": 0,
       "errors": 0,
       "requests": 25,
@@ -60,29 +60,30 @@
     }
   },
   "artifacts": {
-    "debug_age_min": 3.3934393405914305,
-    "fallback_age_min": 1.485188619295756,
-    "run_log_age_min": 2.6229148944218954,
-    "signal_stack_age_min": 3.5019517461458842
+    "debug_age_min": 3.416010085741679,
+    "fallback_age_min": 1.4820845206578572,
+    "run_log_age_min": 2.6348379294077557,
+    "signal_stack_age_min": 3.565864006678263
   },
   "coverage": {
-    "bzzoiro_odds_overlap_with_odds_api_io": 0,
+    "bzzoiro_odds_overlap_with_odds_api_io": 1,
     "bzzoiro_secondary_offers_added": 0,
     "day_inventory_total": 213,
     "day_inventory_with_context": 82,
     "day_inventory_with_odds": 178,
-    "matches_seen": 49,
-    "matches_with_2plus_books": 16,
-    "matches_with_context": 34,
-    "matches_with_offers": 30,
-    "odds_offers_primary": 1960,
+    "matches_seen": 55,
+    "matches_with_2plus_books": 19,
+    "matches_with_context": 42,
+    "matches_with_offers": 33,
+    "odds_offers_primary": 2712,
     "ready_for_model": 82,
     "secondary_combinations": {
       "bzzoiro": 1,
-      "odds_api_io": 29
+      "bzzoiro+odds_api_io": 1,
+      "odds_api_io": 31
     }
   },
-  "created_at_utc": "2026-06-12T01:14:54.096144+00:00",
+  "created_at_utc": "2026-06-12T03:15:37.976362+00:00",
   "diagnostics": {
     "ab_tier_contract": {
       "A": {
@@ -100,19 +101,19 @@
       "api_version": "v2",
       "base_url": "https://sports.bzzoiro.com/api/v2",
       "bzzoiro_v2_source_matrix_patch": true,
-      "combo_with_odds_api_io": 0,
+      "combo_with_odds_api_io": 1,
       "context_limit_enforced": false,
-      "contexts_built": 1,
+      "contexts_built": 3,
       "enabled": true,
       "errors": 0,
-      "event_matches": 1,
-      "event_metadata_fetched": 1,
-      "event_odds_fetched": 1,
-      "event_prediction_fetched": 1,
+      "event_matches": 3,
+      "event_metadata_fetched": 2,
+      "event_odds_fetched": 2,
+      "event_prediction_fetched": 2,
       "event_rejected_league_mismatch": 0,
       "event_rejected_low_score": 0,
-      "event_rejected_no_quality": 48,
-      "event_stats_fetched": 1,
+      "event_rejected_no_quality": 52,
+      "event_stats_fetched": 2,
       "events_fetched": 7,
       "http_statuses": [
         200,
@@ -120,59 +121,71 @@
         200,
         200,
         200,
+        200,
+        200,
+        200,
+        200,
+        200,
+        200,
         200
       ],
-      "last_body_preview": "{\"event_id\":8288,\"event_date\":\"2026-06-12T02:00:00Z\",\"league_id\":27,\"league_name\":\"World Cup 2026\",\"home_team_id\":453,\"home_team\":\"South Korea\",\"away_team_id\":930,\"away_team\":\"Czechia\",\"bookmakers_count\":16,\"total_odds\":535,\"markets\":{\"1x2\":{\"HOME\":{\"outcome\":\"HOME\",\"line\":null,\"outcome_name\":\"South Korea\",\"best_odds\":2.7,\"best_bookmaker_slug\":\"interwetten\",\"best_bookmaker_name\":\"Interwetten\",\"bookmakers\":{\"consensus\":{\"decimal_odds\":2.64,\"movement\":\"\",\"updated_at\":\"2026-06-02T11:05:32Z\"},\"1xbet\":{\"decimal_odds\":2.676,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-12T00:48:06Z\"},\"betano\":{\"decimal_odds\":2.62,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-12T01:03:06Z\"},\"pinnacle\":{\"decimal_odds\":2.66,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-12T00:51:05Z\"},\"interwetten\":{\"decimal_odds\":2.7,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-12T01:00:20Z\"},\"novibet\":{\"decimal_odds\":2.6,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-12T01:03:06Z\"},\"bwin\":{\"decimal_odds\":2.65,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-02T11:05:32Z\"},\"sportingbet\":{\"decimal_odds\":2.65,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-02T11:05:32Z\"},\"betway\":{\"decimal_odds\":2.5,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-",
+      "last_body_preview": "{\"event_id\":209498,\"event_date\":\"2026-06-12T15:00:00Z\",\"league_id\":53,\"league_name\":\"Botola Pro\",\"home_team_id\":2061,\"home_team\":\"Olympic Safi\",\"away_team_id\":2065,\"away_team\":\"Kawkab Athletic Club Marrakech\",\"bookmakers_count\":15,\"total_odds\":232,\"markets\":{\"1x2\":{\"HOME\":{\"outcome\":\"HOME\",\"line\":null,\"outcome_name\":\"Olympic Safi\",\"best_odds\":2.15,\"best_bookmaker_slug\":\"betano\",\"best_bookmaker_name\":\"Betano\",\"bookmakers\":{\"1xbet\":{\"decimal_odds\":2.1,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-11T23:09:33Z\"},\"betano\":{\"decimal_odds\":2.15,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-11T14:09:50Z\"},\"pinnacle\":{\"decimal_odds\":2.11,\"movement\":\"DRIFTING\",\"updated_at\":\"2026-06-11T20:10:12Z\"},\"interwetten\":{\"decimal_odds\":2.15,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-11T14:09:51Z\"},\"unibet\":{\"decimal_odds\":2.15,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-11T14:09:50Z\"},\"novibet\":{\"decimal_odds\":2.15,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-11T14:09:50Z\"},\"bwin\":{\"decimal_odds\":2.05,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-12T02:10:04Z\"},\"sportingbet\":{\"decimal_odds\":2.05,\"movement\":\"SHORTENING\",\"updated_at\":\"2026-06-12T02:10:04Z\"},\"betway\":{\"decimal_odds\":2.05,\"movement",
       "last_error": null,
-      "last_url": "https://sports.bzzoiro.com/api/v2/events/8288/odds/comparison/",
+      "last_url": "https://sports.bzzoiro.com/api/v2/events/209498/odds/comparison/",
       "lineups_resources": 0,
-      "matched_exact": 1,
-      "matched_fuzzy": 0,
+      "matched_exact": 2,
+      "matched_fuzzy": 1,
       "matched_loose": 0,
       "metric_contexts_enhanced": 0,
       "odds_comparison_attachment": {
-        "attached": 1,
-        "attempted": 1,
+        "attached": 3,
+        "attempted": 3,
         "enabled": true,
         "errors": 0,
         "limit": 140,
         "max_requests": 120
       },
-      "odds_resources": 1,
+      "odds_resources": 2,
       "payload_shapes": [
         "dict:count,next,previous,results",
         "dict:event_id,odds",
         "dict:average_positions,event_id,momentum,shotmap,stats,xg_per_minute",
         "dict:ai_preview,event_id,funfacts,jerseys",
         "dict:created_at,event,id,markets,model,recommendations",
+        "dict:event_id,odds",
+        "dict:average_positions,event_id,momentum,shotmap,stats,xg_per_minute",
+        "dict:ai_preview,event_id,funfacts,jerseys",
+        "dict:created_at,event,id,markets,model,recommendations",
+        "dict:away_team,away_team_id,event_date,event_id,home_team,home_team_id,league_id,league_name",
+        "dict:away_team,away_team_id,event_date,event_id,home_team,home_team_id,league_id,league_name",
         "dict:away_team,away_team_id,event_date,event_id,home_team,home_team_id,league_id,league_name"
       ],
-      "prediction_resources": 1,
-      "provider_odds_hinted_contexts": 1,
-      "provider_odds_hints": 133,
+      "prediction_resources": 2,
+      "provider_odds_hinted_contexts": 2,
+      "provider_odds_hints": 192,
       "provider_version": "bzzoiro-v2-clean-2026-04-29",
       "request_limit_removed": true,
-      "requests": 6,
+      "requests": 12,
       "response_errors": 0,
       "retry_attempts": 0,
-      "secondary_offer_matches": 1,
+      "secondary_offer_matches": 2,
       "secondary_offers_added": 0,
       "source_matrix_gap_matched": 0,
-      "source_matrix_gap_targets": 48,
-      "source_matrix_gap_unmatched": 48,
-      "stats_resources": 1
+      "source_matrix_gap_targets": 52,
+      "source_matrix_gap_unmatched": 52,
+      "stats_resources": 2
     },
     "coverage_truth": {
       "counts": {
-        "matches_missing_context_2plus": 169,
+        "matches_missing_context_2plus": 165,
         "matches_missing_odds_source_2plus": 44,
-        "matches_missing_price_2plus": 203,
+        "matches_missing_price_2plus": 201,
         "matches_ready_for_model": 82,
-        "matches_ready_for_publish": 7,
+        "matches_ready_for_publish": 8,
         "matches_total": 213,
-        "matches_with_2plus_context_sources": 44,
+        "matches_with_2plus_context_sources": 48,
         "matches_with_2plus_odds_sources": 169,
-        "matches_with_2plus_price_confirmations": 10,
+        "matches_with_2plus_price_confirmations": 12,
         "matches_with_context": 82,
         "matches_with_odds": 178
       },
@@ -183,14 +196,14 @@
     "github_actions": {
       "repository": "Harfdsfsq/sports-bot",
       "run_attempt": "1",
-      "run_id": "27387533343",
+      "run_id": "27391646147",
       "workflow": "run-bot"
     },
     "odds_api_io_offer_snapshot": {
-      "matches_count": 29,
-      "matches_with_2plus_books_any_market": 16,
-      "matches_with_2plus_books_same_side_market": 13,
-      "rows_count": 1866,
+      "matches_count": 32,
+      "matches_with_2plus_books_any_market": 19,
+      "matches_with_2plus_books_same_side_market": 17,
+      "rows_count": 2612,
       "status": "ok"
     },
     "progressive_core_coverage": {
@@ -296,9 +309,9 @@
     }
   },
   "funnel": {
-    "candidates_before_quality": 2,
-    "fallback_candidates_seen": 1,
-    "fallback_evaluated": 1,
+    "candidates_before_quality": 4,
+    "fallback_candidates_seen": 2,
+    "fallback_evaluated": 2,
     "fallback_published": false,
     "fallback_published_count": 0,
     "fallback_status": "no_viable_controlled_fallback",
@@ -311,28 +324,33 @@
     "publish_filter_kept": 0,
     "publishable_candidates": 0,
     "published_count": 0,
-    "raw_candidates": 2,
-    "windowed_audit_candidates": 2,
+    "raw_candidates": 4,
+    "windowed_audit_candidates": 4,
     "windowed_publish_allowed": 0,
-    "windowed_publish_blocked": 2
+    "windowed_publish_blocked": 4
   },
   "line_guard": {
     "dropped": 0,
-    "final_pre_kickoff_checks": 5,
+    "final_pre_kickoff_checks": 0,
     "kept": 0,
-    "no_more_regular_run_before_kickoff": 5,
-    "seen": 1
+    "no_more_regular_run_before_kickoff": 0,
+    "seen": 2
   },
   "reasons": [
     {
-      "count": 1,
+      "count": 2,
       "reason": "canonical_negative_value",
       "reason_ru": "отрицательная canonical value после пересчёта по выбранному коэффициенту"
     },
     {
-      "count": 1,
+      "count": 2,
       "reason": "quality_post_calibration_edge_guard",
       "reason_ru": "quality post calibration edge guard"
+    },
+    {
+      "count": 1,
+      "reason": "odds_below_global_min",
+      "reason_ru": "odds below global min"
     }
   ],
   "samples": {
@@ -405,133 +423,89 @@
         ],
         "selection": "Больше 2.5",
         "tier": null
+      },
+      {
+        "away_team": "Kawkab Marrakech",
+        "away_team_ru": "Каукаб Марракеч",
+        "candidate_source": "debug_candidates_before_quality",
+        "commence_time": "2026-06-12T15:00:00+00:00",
+        "commence_time_display": "12.06.2026 18:00 MSK",
+        "family": "totals",
+        "home_team": "Olympique de Safi",
+        "home_team_ru": "Олимпикве де Сафи",
+        "league_name": "Morocco - Botola Pro D1",
+        "league_name_ru": "Морокко - Ботола Про D1",
+        "match_key": "soccer|kawkab marrakech|olympique safi|2026-06-12",
+        "metrics": {
+          "adjusted_probability": 0.656197,
+          "books_count": 16,
+          "btts_sanity": {
+            "enabled": false,
+            "reason": "family_not_btts"
+          },
+          "canonical_edge_pp": -1.346,
+          "canonical_ev_pct": -2.01,
+          "confidence": 75.332,
+          "confirmation_meta": {
+            "weather_confirmation_relevant": false,
+            "weather_dropped_as_neutral": false,
+            "weather_neutral": true,
+            "weather_risk_flag": false,
+            "weather_supports_over": false,
+            "weather_supports_under": false
+          },
+          "confirmation_sources": [
+            "bzzoiro",
+            "sstats"
+          ],
+          "confirmation_sources_count": 2,
+          "dnb_sanity": {
+            "enabled": false,
+            "reason": "family_not_dnb"
+          },
+          "market_edge_pp": 1.793,
+          "market_probability": 0.638267,
+          "model_probability": 0.673267,
+          "odds": 1.4933,
+          "odds_sources_count": 3,
+          "publication_score": 87.796,
+          "quality_reasons": [
+            "post_calibration_edge_guard"
+          ],
+          "quality_score": 72.166,
+          "quality_score_raw": 72.166,
+          "quality_score_source": "raw",
+          "selected_implied_probability": 0.669658,
+          "sources_count": 2,
+          "xg_sanity": {
+            "enabled": false,
+            "reason": "missing_xg"
+          }
+        },
+        "ok": false,
+        "point": 2.5,
+        "reject_reasons": [
+          "odds_below_global_min",
+          "canonical_negative_value"
+        ],
+        "reject_reasons_ru": [
+          "коэффициент ниже общего минимума",
+          "отрицательная контрольная ценность после пересчёта по выбранному коэффициенту"
+        ],
+        "selection": "Меньше 2.5",
+        "tier": null
       }
     ],
     "top_priority_matches": [
-      {
-        "away_team": "Flatirons FC",
-        "home_team": "Utah United",
-        "kickoff_utc": "2026-06-12T02:00:00+00:00",
-        "league_name": "USA - USL W League",
-        "match_key": "soccer|flatirons|utah united|2026-06-12",
-        "minutes_to_kickoff": 48.5,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 159.832,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": null,
-          "latest_useful_run_at_utc": "2026-06-12T01:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-12T03:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Project 51O",
-        "home_team": "San Juan FC",
-        "kickoff_utc": "2026-06-12T02:00:00+00:00",
-        "league_name": "USA - USL, League Two",
-        "match_key": "soccer|project 51o|san juan|2026-06-12",
-        "minutes_to_kickoff": 48.5,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 143.832,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-12T01:14:32.296764+00:00",
-          "latest_useful_run_at_utc": "2026-06-12T01:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-12T03:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Czechia",
-        "home_team": "South Korea",
-        "kickoff_utc": "2026-06-12T02:00:00+00:00",
-        "league_name": "World Cup 2026",
-        "match_key": "soccer|czechia|south korea|2026-06-12",
-        "minutes_to_kickoff": 48.5,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 143.832,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-12T01:14:32.296764+00:00",
-          "latest_useful_run_at_utc": "2026-06-12T01:30:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": false,
-          "next_scheduled_run_at_utc": "2026-06-12T03:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Sun City",
-        "home_team": "Cruizers",
-        "kickoff_utc": "2026-06-12T02:30:00+00:00",
-        "league_name": "USA - National Premier Soccer League",
-        "match_key": "soccer|cruizers|sun city|2026-06-12",
-        "minutes_to_kickoff": 78.5,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 141.832,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-11T23:20:13.975576+00:00",
-          "latest_useful_run_at_utc": "2026-06-12T02:00:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": true,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-12T03:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
-      {
-        "away_team": "Portland Cherry Bombs FC",
-        "home_team": "Snohomish",
-        "kickoff_utc": "2026-06-12T02:30:00+00:00",
-        "league_name": "USA - USL W League",
-        "match_key": "soccer|portland cherry bombs|snohomish|2026-06-12",
-        "minutes_to_kickoff": 78.5,
-        "pre_kickoff_status": "urgent_near_kickoff",
-        "priority": 133.832,
-        "refresh_plan": {
-          "expected_next_run_interval_minutes": 120,
-          "final_pre_kickoff_check_required": true,
-          "has_next_regular_run_before_kickoff": false,
-          "last_odds_refresh_utc": "2026-06-11T23:20:13.975576+00:00",
-          "latest_useful_run_at_utc": "2026-06-12T02:00:00+00:00",
-          "max_current_line_age_minutes": 35,
-          "min_kickoff_lead_minutes": 30,
-          "needs_context_refresh": false,
-          "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-12T03:00:00+00:00",
-          "no_more_regular_run_before_kickoff": true
-        }
-      },
       {
         "away_team": "Angle Vale",
         "home_team": "Elizabeth Downs",
         "kickoff_utc": "2026-06-12T09:30:00+00:00",
         "league_name": "Australia - South Australia State League 2, North",
         "match_key": "soccer|angle vale|elizabeth downs|2026-06-12",
-        "minutes_to_kickoff": 498.5,
+        "minutes_to_kickoff": 377.8,
         "pre_kickoff_status": "near_window",
-        "priority": 77.229,
+        "priority": 82.258,
         "refresh_plan": {
           "expected_next_run_interval_minutes": 120,
           "final_pre_kickoff_check_required": false,
@@ -542,7 +516,122 @@
           "min_kickoff_lead_minutes": 30,
           "needs_context_refresh": true,
           "needs_odds_refresh": true,
-          "next_scheduled_run_at_utc": "2026-06-12T03:00:00+00:00",
+          "next_scheduled_run_at_utc": "2026-06-12T05:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Mount Barker Unt.",
+        "home_team": "Adelaide Uni.",
+        "kickoff_utc": "2026-06-12T10:00:00+00:00",
+        "league_name": "Australia - South Australia State League 2, South",
+        "match_key": "soccer|adelaide uni|mount barker unt|2026-06-12",
+        "minutes_to_kickoff": 407.8,
+        "pre_kickoff_status": "near_window",
+        "priority": 81.008,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-06-11T23:20:13.975576+00:00",
+          "latest_useful_run_at_utc": "2026-06-12T09:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-12T05:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Plympton FC",
+        "home_team": "Western Strikers",
+        "kickoff_utc": "2026-06-12T10:15:00+00:00",
+        "league_name": "Australia - South Australia State League 2, South",
+        "match_key": "soccer|plympton|western strikers|2026-06-12",
+        "minutes_to_kickoff": 422.8,
+        "pre_kickoff_status": "near_window",
+        "priority": 80.383,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-06-11T23:20:13.975576+00:00",
+          "latest_useful_run_at_utc": "2026-06-12T09:45:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-12T05:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Hakoah",
+        "home_team": "Central Coast Mariners",
+        "kickoff_utc": "2026-06-12T08:00:00+00:00",
+        "league_name": "Australia - NSW League One",
+        "match_key": "soccer|central coast mariners|hakoah|2026-06-12",
+        "minutes_to_kickoff": 287.8,
+        "pre_kickoff_status": "near_window",
+        "priority": 78.008,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-06-12T03:15:17.820368+00:00",
+          "latest_useful_run_at_utc": "2026-06-12T07:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-12T05:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "FK Arys",
+        "home_team": "Ekibastuz",
+        "kickoff_utc": "2026-06-12T12:00:00+00:00",
+        "league_name": "Kazakhstan - Pervaya Liga",
+        "match_key": "soccer|arys|ekibastuz|2026-06-12",
+        "minutes_to_kickoff": 527.8,
+        "pre_kickoff_status": "near_window",
+        "priority": 76.008,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-06-11T23:20:13.975576+00:00",
+          "latest_useful_run_at_utc": "2026-06-12T11:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": true,
+          "needs_odds_refresh": true,
+          "next_scheduled_run_at_utc": "2026-06-12T05:00:00+00:00",
+          "no_more_regular_run_before_kickoff": false
+        }
+      },
+      {
+        "away_team": "Garuda FC",
+        "home_team": "Darwin Olympic",
+        "kickoff_utc": "2026-06-12T09:00:00+00:00",
+        "league_name": "Australia - Northern Territory Premier League",
+        "match_key": "soccer|darwin olympic|garuda|2026-06-12",
+        "minutes_to_kickoff": 347.8,
+        "pre_kickoff_status": "near_window",
+        "priority": 75.508,
+        "refresh_plan": {
+          "expected_next_run_interval_minutes": 120,
+          "final_pre_kickoff_check_required": false,
+          "has_next_regular_run_before_kickoff": true,
+          "last_odds_refresh_utc": "2026-06-12T03:15:17.820368+00:00",
+          "latest_useful_run_at_utc": "2026-06-12T08:30:00+00:00",
+          "max_current_line_age_minutes": 35,
+          "min_kickoff_lead_minutes": 30,
+          "needs_context_refresh": false,
+          "needs_odds_refresh": false,
+          "next_scheduled_run_at_utc": "2026-06-12T05:00:00+00:00",
           "no_more_regular_run_before_kickoff": false
         }
       }
@@ -551,7 +640,7 @@
   "status": "candidates_but_quality_rejected",
   "status_ru": "🟡 кандидаты есть, quality/value не пропустили",
   "telegram_sent": true,
-  "text_length": 3255,
+  "text_length": 3520,
   "top_reason": "canonical_negative_value",
   "version": "harizon-telegram-report-v9-ab-tier-bookmaker-contract"
 }
