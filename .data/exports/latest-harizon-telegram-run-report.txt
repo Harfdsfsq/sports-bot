@@ -1,75 +1,68 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: missing total xg sanity
+• Главная причина: controlled fallback next regular run before kickoff
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 157 (это не размер inventory).
-• 1+ линия: 191/300 (64%) | 1+ контекст: 150/300 (50%)
+• Инвентарь дня: 300 матчей. Runtime rows processed: 143 (это не размер inventory).
+• 1+ линия: 191/300 (64%) | 1+ контекст: 151/300 (50%)
 • 2+ букмекера: 179/300 (60%)
-• Raw 2+ букмекера odds-api.io: 38 | normalized inventory: 179 | mapping gap: 0
-• Odds-api offer snapshot: rows 8029, matches 73, same-side 2+ books 37
+• Raw 2+ букмекера odds-api.io: 24 | normalized inventory: 179 | mapping gap: 0
+• Odds-api offer snapshot: rows 5469, matches 58, same-side 2+ books 23
 • 2+ независимых odds-source: 36/300 (12%) — диагностика, не блок публикации
-• 2+ контекста: 99/300 (33%)
-• Готово для модели: 150/300 (50%)
+• 2+ контекста: 105/300 (35%)
+• Готово для модели: 151/300 (50%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 21 | опубликовано: 0
+• A-tier strict-ready: 22 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 150 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 151 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 150 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 99 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 151 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 105 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 31 | матчей без следующего регулярного run: 25
-• Line guard: увидел 24, оставил 20, снял 0
+• Pre-kickoff проверок: 7 | матчей без следующего регулярного run: 0
+• Line guard: увидел 16, оставил 12, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 4/8
+• Raw/candidates before quality: 3/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 18 | evaluated 18 | published 0
+• Controlled fallback: seen 3 | evaluated 3 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 32; смэтчил матчей 156; offers 9231; 2+ букмекера 38; ошибок 0.
+• odds-api.io: events req 0, odds req 30; смэтчил матчей 142; offers 6672; 2+ букмекера 24; ошибок 0.
 • Bzzoiro: direct req 66, v2 req 66; v2 ctx 17; v2 odds 12; secondary offers 0; overlap odds-api.io 13; ошибок 0.
-• SStats: запросы 32; сырых строк 26959; контекстов 133; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 32; сырых строк 26959; контекстов 120; deep-enriched 15; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 60, bzzoiro+odds_api_io: 13, bzzoiro: 4
+• Комбинации источников линий: odds_api_io: 45, bzzoiro+odds_api_io: 13, bzzoiro: 4
 
 🚫 Почему не опубликовано
-• missing total xg sanity: 8 (18%)
-• tier a publication score below min: 5 (11%)
-• tier a proxy quality not allowed: 5 (11%)
-• tier b publication score below min: 5 (11%)
-• tier c publication score below min: 5 (11%)
-• controlled fallback next regular run before kickoff: 4 (9%)
-• quality: вероятность после калибровки ниже порога: 4 (9%)
-• tier a canonical edge below min: 2 (4%)
+• controlled fallback next regular run before kickoff: 3 (43%)
+• quality: вероятность после калибровки ниже порога: 3 (43%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (14%)
 
 🔎 Проверенные reserve-кандидаты
-1. Comunicaciones — Laferrere | Меньше @2.06 | EV +4.1% | edge +2.0 п.п. | q 72.3
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b publication score below min, tier c publication score below min
-2. Dock Sud — Talleres Remedios | Меньше @1.80 | EV +6.4% | edge +3.5 п.п. | q 73.4
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b publication score below min, tier c publication score below min
-3. Italiano — Excursionistas | Больше @1.57 | EV +12.1% | edge +7.7 п.п. | q 76.0
-   • причина: missing total xg sanity
-4. Almagro — Agropecuario | Больше @1.64 | EV +8.8% | edge +5.4 п.п. | q 76.0
-   • причина: missing total xg sanity
+1. El Paso Locomotive FC — Phoenix Rising | Меньше 2.5 @2.56 | EV +4.5% | edge +1.8 п.п. | q 66.7
+   • причина: controlled fallback next regular run before kickoff
+2. Atlanta Utd 2 — Chattanooga | Меньше 2.5 @2.58 | EV -2.4% | edge -0.9 п.п. | q 54.0
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
+3. Jujuy — San Juan | Меньше 1.5 @2.74 | EV +0.1% | edge +0.0 п.п. | q 48.5
+   • причина: controlled fallback next regular run before kickoff
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 121; normalized 132→23; gap after 98.
-• B-cover promotion: considered 150; promoted 9; top skips promotion_skip_duplicate_candidate 20; promotion_skip_edge_below_min 28; promotion_skip_no_offer_bucket 124; inventory rows 300; selected B-cover rows 150 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 150; candidates seen 55; B-covered без кандидата 135.
+• Bookmaker mapping repair: raw 2+ 65; normalized 132→9; gap after 56.
+• B-cover promotion: considered 151; promoted 0; top skips promotion_skip_duplicate_candidate 5; promotion_skip_edge_below_min 31; promotion_skip_no_offer_bucket 138; promotion_skip_odds_above_max 95; inventory rows 300; selected B-cover rows 151 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• B-cover funnel: B-cover 151; candidates seen 23; B-covered без кандидата 143.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27473969492
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27473969492
-• Artifact: run-bot-27473969492
+• Run ID: 27474906417
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27474906417
+• Artifact: run-bot-27474906417
 • workflow run-bot, attempt 1
