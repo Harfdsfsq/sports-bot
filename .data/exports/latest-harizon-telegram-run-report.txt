@@ -3,69 +3,69 @@
 • Главная причина: duplicate match market selection line
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 360 (это не размер inventory).
-• 1+ линия: 202/300 (67%) | 1+ контекст: 96/300 (32%)
-• 2+ букмекера: 162/300 (54%)
-• Raw 2+ букмекера odds-api.io: 156 | normalized inventory: 162 | mapping gap: 0
-• Odds-api offer snapshot: rows 13265, matches 206, same-side 2+ books 116
-• 2+ независимых odds-source: 102/300 (34%) — диагностика, не блок публикации
-• 2+ контекста: 38/300 (13%)
-• Готово для модели: 96/300 (32%)
+• Инвентарь дня: 300 матчей. Runtime rows processed: 341 (это не размер inventory).
+• 1+ линия: 195/300 (65%) | 1+ контекст: 119/300 (40%)
+• 2+ букмекера: 168/300 (56%)
+• Raw 2+ букмекера odds-api.io: 128 | normalized inventory: 168 | mapping gap: 0
+• Odds-api offer snapshot: rows 19173, matches 181, same-side 2+ books 122
+• 2+ независимых odds-source: 75/300 (25%) — диагностика, не блок публикации
+• 2+ контекста: 61/300 (20%)
+• Готово для модели: 119/300 (40%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 29 | опубликовано: 0
+• A-tier strict-ready: 30 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 96 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 119 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 96 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 38 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 119 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 61 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 43 | матчей без следующего регулярного run: 34
-• Line guard: увидел 29, оставил 28, снял 0
+• Pre-kickoff проверок: 66 | матчей без следующего регулярного run: 61
+• Line guard: увидел 41, оставил 37, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/2
+• Raw/candidates before quality: 4/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 14 | evaluated 14 | published 0
+• Controlled fallback: seen 21 | evaluated 21 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 72; смэтчил матчей 357; offers 13355; 2+ букмекера 156; ошибок 0.
-• Bzzoiro: direct req 31, v2 req 31; v2 ctx 10; v2 odds 5; secondary offers 0; overlap odds-api.io 5; ошибок 0.
-• SStats: запросы 31; сырых строк 26439; контекстов 239; deep-enriched 6; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 68; смэтчил матчей 338; offers 19533; 2+ букмекера 128; ошибок 0.
+• Bzzoiro: direct req 36, v2 req 36; v2 ctx 11; v2 odds 6; secondary offers 0; overlap odds-api.io 7; ошибок 0.
+• SStats: запросы 31; сырых строк 26439; контекстов 245; deep-enriched 6; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 5; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 201, bzzoiro+odds_api_io: 5, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 174, bzzoiro+odds_api_io: 7, bzzoiro: 2
 
 🚫 Почему не опубликовано
-• duplicate match market selection line: 14 (67%)
-• controlled fallback next regular run before kickoff: 5 (24%)
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (5%)
-• quality post calibration edge guard: 1 (5%)
+• duplicate match market selection line: 21 (70%)
+• controlled fallback next regular run before kickoff: 5 (17%)
+• quality post calibration edge guard: 2 (7%)
+• quality: вероятность после калибровки ниже порога: 2 (7%)
 
 🔎 Проверенные reserve-кандидаты
-1. Adelaide Utd. — Adelaide | Больше @2.00 | EV +11.0% | edge +5.5 п.п. | q 76.0
+1. FA 2000 — Bronshoj | Меньше @2.36 | EV +9.7% | edge +4.1 п.п. | q 76.0
    • причина: duplicate match market selection line
-2. Mindil Aces — Port Darwin FC | Больше @2.10 | EV +10.9% | edge +5.2 п.п. | q 76.0
+2. Hoersholm-Usseroed — Naesby | Меньше @2.24 | EV +9.4% | edge +4.2 п.п. | q 76.0
    • причина: duplicate match market selection line
-3. Tobol — Kyzylzhar | Больше @2.19 | EV +8.6% | edge +3.9 п.п. | q 76.0
+3. Holbaek — Vejgaard | Больше @1.94 | EV +5.2% | edge +2.7 п.п. | q 69.9
    • причина: duplicate match market selection line
-4. Ogre United — Riga FC | Меньше @1.64 | EV +10.2% | edge +6.2 п.п. | q 76.0
+4. Inter Turku — Oulu | Меньше @2.04 | EV +11.6% | edge +5.7 п.п. | q 76.0
    • причина: duplicate match market selection line
 
 🧯 Диагностика новых стопоров
-• Inventory target repair: 447/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 620; normalized 119→157; gap after 463.
-• B-cover promotion: considered 86; promoted 24; top skips promotion_skip_duplicate_candidate 15; promotion_skip_edge_below_min 89; promotion_skip_ev_below_min 2; inventory rows 406; selected B-cover rows 101 from /home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-13.json.
-• B-cover funnel: B-cover 101; candidates seen 61; B-covered без кандидата 71.
+• Inventory target repair: 399/300; shortfall 0; status ok_target_met.
+• Bookmaker mapping repair: raw 2+ 515; normalized 129→127; gap after 388.
+• B-cover promotion: considered 119; promoted 22; top skips promotion_skip_duplicate_candidate 29; promotion_skip_edge_below_min 193; promotion_skip_no_offer_bucket 47; inventory rows 358; selected B-cover rows 119 from /home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-13.json.
+• B-cover funnel: B-cover 119; candidates seen 82; B-covered без кандидата 90.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27462327599
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27462327599
-• Artifact: run-bot-27462327599
+• Run ID: 27464872465
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27464872465
+• Artifact: run-bot-27464872465
 • workflow run-bot, attempt 1
