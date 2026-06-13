@@ -3,71 +3,73 @@
 • Главная причина: отрицательная canonical value после пересчёта по выбранному коэффициенту
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 127 (это не размер inventory).
-• 1+ линия: 195/300 (65%) | 1+ контекст: 156/300 (52%)
-• 2+ букмекера: 183/300 (61%)
-• Raw 2+ букмекера odds-api.io: 18 | normalized inventory: 183 | mapping gap: 0
-• Odds-api offer snapshot: rows 4354, matches 50, same-side 2+ books 17
-• 2+ независимых odds-source: 44/300 (15%) — диагностика, не блок публикации
-• 2+ контекста: 120/300 (40%)
+• Инвентарь дня: 300 матчей. Runtime rows processed: 122 (это не размер inventory).
+• 1+ линия: 195/300 (65%) | 1+ контекст: 157/300 (52%)
+• 2+ букмекера: 182/300 (61%)
+• Raw 2+ букмекера odds-api.io: 18 | normalized inventory: 182 | mapping gap: 0
+• Odds-api offer snapshot: rows 4198, matches 48, same-side 2+ books 17
+• 2+ независимых odds-source: 46/300 (15%) — диагностика, не блок публикации
+• 2+ контекста: 123/300 (41%)
 • Готово для модели: 155/300 (52%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 30 | опубликовано: 0
+• A-tier strict-ready: 31 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 156 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 157 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 156 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 120 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 157 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 123 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
-• Line guard: увидел 3, оставил 1, снял 0
+• Pre-kickoff проверок: 1 | матчей без следующего регулярного run: 1
+• Line guard: увидел 5, оставил 1, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/4
+• Raw/candidates before quality: 4/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
-• Controlled fallback: seen 3 | evaluated 3 | published 0
+• Controlled fallback: seen 5 | evaluated 5 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 26; смэтчил матчей 127; offers 5552; 2+ букмекера 18; ошибок 0.
+• odds-api.io: events req 0, odds req 26; смэтчил матчей 122; offers 5396; 2+ букмекера 18; ошибок 0.
 • Bzzoiro: direct req 61, v2 req 61; v2 ctx 16; v2 odds 11; secondary offers 0; overlap odds-api.io 13; ошибок 0.
-• SStats: запросы 32; сырых строк 26959; контекстов 104; deep-enriched 14; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 32; сырых строк 26959; контекстов 97; deep-enriched 13; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 37, bzzoiro+odds_api_io: 13, bzzoiro: 3
+• Комбинации источников линий: odds_api_io: 35, bzzoiro+odds_api_io: 13, bzzoiro: 3
 
 🚫 Почему не опубликовано
-• отрицательная canonical value после пересчёта по выбранному коэффициенту: 2 (14%)
-• controlled fallback next regular run before kickoff: 2 (14%)
-• quality post calibration edge guard: 2 (14%)
-• tier a publication score below min: 1 (7%)
-• tier a proxy quality not allowed: 1 (7%)
-• tier b confidence below min: 1 (7%)
-• tier b quality below min: 1 (7%)
-• tier b canonical edge below min: 1 (7%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 4 (22%)
+• controlled fallback next regular run before kickoff: 4 (22%)
+• quality post calibration edge guard: 4 (22%)
+• tier a publication score below min: 1 (6%)
+• tier a proxy quality not allowed: 1 (6%)
+• tier b confidence below min: 1 (6%)
+• tier b canonical edge below min: 1 (6%)
+• tier b publication score below min: 1 (6%)
 
 🔎 Проверенные reserve-кандидаты
-1. AD Comerciantes FC — Sporting Cristal | Больше @2.66 | EV +5.3% | edge +2.0 п.п. | q 68.7
-   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b confidence below min, tier b quality below min
+1. AD Comerciantes FC — Sporting Cristal | Больше @2.76 | EV +8.3% | edge +3.0 п.п. | q 75.7
+   • причина: tier a publication score below min, tier a proxy quality not allowed, tier b confidence below min, tier b canonical edge below min
 2. El Paso Locomotive FC — Phoenix Rising | Меньше 3.5 @1.61 | EV -0.2% | edge -0.1 п.п. | q 75.2
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
-3. Huntsville City FC — Orlando City B | Меньше 3.5 @1.80 | EV -8.3% | edge -4.6 п.п. | q 68.8
+3. Huntsville City FC — Orlando City B | Меньше 3.5 @1.80 | EV -7.5% | edge -4.2 п.п. | q 68.8
+   • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
+4. North Carolina — Salem City FC | Меньше 3.5 @1.80 | EV -4.2% | edge -2.3 п.п. | q 66.1
    • причина: отрицательная canonical value после пересчёта по выбранному коэффициенту, controlled fallback next regular run before kickoff
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 36; normalized 133→1; gap after 35.
-• B-cover promotion: considered 149; promoted 0; top skips promotion_skip_edge_below_min 10; promotion_skip_no_offer_bucket 146; promotion_skip_odds_above_max 20; promotion_skip_odds_below_min 22; inventory rows 292; selected B-cover rows 149 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 149; candidates seen 8; B-covered без кандидата 148.
+• Bookmaker mapping repair: raw 2+ 36; normalized 134→1; gap after 35.
+• B-cover promotion: considered 147; promoted 0; top skips promotion_skip_edge_below_min 3; promotion_skip_no_offer_bucket 146; promotion_skip_odds_above_max 12; promotion_skip_odds_below_min 13; inventory rows 286; selected B-cover rows 147 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• B-cover funnel: B-cover 147; candidates seen 14; B-covered без кандидата 146.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27476086103
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27476086103
-• Artifact: run-bot-27476086103
+• Run ID: 27476899771
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27476899771
+• Artifact: run-bot-27476899771
 • workflow run-bot, attempt 1
