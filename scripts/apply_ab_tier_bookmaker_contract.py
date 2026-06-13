@@ -9,6 +9,14 @@ Owner contract:
 This script writes the contract into GitHub Actions env and records a small
 runtime artifact.  It intentionally does not relax value, xG, movement or
 price-integrity guards.
+
+v7 note:
+The guarded controlled-fallback wrapper had an additional strict
+match/market/selection/line duplicate guard.  That guard scanned the previous
+fallback report's evaluated/selected_all rows even when nothing was actually
+published, so promoted candidates were rejected in the next run as
+`duplicate_match_market_selection_line`.  Keep real publication dedupe through
+sent-index/state, but disable that extra strict unpublished-report dedupe via env.
 """
 
 import json
@@ -37,6 +45,12 @@ CONTRACT_ENV = {
     "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "1",
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
     "CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD": "true",
+    # Real duplicate protection remains active through fallback-sent-index,
+    # published-candidate-index and state.  This disables only the extra strict
+    # wrapper check that was treating previous *unpublished* evaluated rows as duplicates.
+    "CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE": "false",
+    "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
+    "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
 }
 
 
@@ -62,11 +76,19 @@ def main() -> int:
             "B": {"min_bookmakers": 1, "min_context_sources": 1},
             "independent_odds_sources": "diagnostic_only",
             "guards_unchanged": ["value", "xg", "quality", "line_movement", "price_integrity"],
+            "dedupe_contract": {
+                "strict_match_market_wrapper_dedupe": "disabled_for_unpublished_previous_reports",
+                "sent_index_dedupe": "enabled",
+                "previous_published_report_dedupe": "enabled",
+            },
         },
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied A/B tier bookmaker contract: B=1+bookmaker+1+context; A=2+bookmakers+2+contexts")
+    print(
+        "Applied A/B tier bookmaker contract: B=1+bookmaker+1+context; "
+        "A=2+bookmakers+2+contexts; strict unpublished-report duplicate guard disabled"
+    )
     return 0
 
 
