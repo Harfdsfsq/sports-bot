@@ -20,6 +20,7 @@ import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 from pathlib import Path
 from typing import Any
 
@@ -98,14 +99,28 @@ def _parse_dt(value: Any) -> datetime | None:
         return None
 
 
+def _canonical_selection(row: dict[str, Any]) -> str:
+    explicit = _norm(row.get("selection_key"))
+    family = _norm(row.get("family") or row.get("market_family"))
+    selection = str(row.get("selection") or "").strip().casefold().replace("ё", "е")
+    if explicit in {"under", "over", "home", "away", "draw"}:
+        return explicit
+    if family in {"totals", "teamtotals"}:
+        if any(token in selection for token in ("under", "меньше", "тотал меньше", "тм")):
+            return "under"
+        if any(token in selection for token in ("over", "больше", "тотал больше", "тб")):
+            return "over"
+    return explicit or _norm(selection)
+
+
 def _candidate_signature(row: dict[str, Any]) -> dict[str, str]:
     return {
-        "match_key": _norm(row.get("match_key")),
+        "match_key": _norm(row.get("canonical_match_id") or row.get("match_key") or row.get("event_key")),
         "family": _norm(row.get("family") or row.get("market_family")),
-        "selection": _norm(row.get("selection")),
-        "point": _point(row.get("point")),
-        "home": _norm(row.get("home_team")),
-        "away": _norm(row.get("away_team")),
+        "selection": _canonical_selection(row),
+        "point": _point(row.get("point") or row.get("line") or row.get("handicap")),
+        "home": _norm(row.get("home_team") or row.get("home")),
+        "away": _norm(row.get("away_team") or row.get("away")),
     }
 
 
@@ -136,73 +151,7 @@ def _row_from_windowed_block(item: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
-def _movement_status(value: Any) -> str:
-    return str(value or "").strip().lower()
-
-
-def _candidate_confirmed_movement(candidate: dict[str, Any]) -> dict[str, Any] | None:
-    """Return a fresh/current movement payload already attached to the candidate.
-
-    The line-movement job may update latest-rescue-candidates after the earlier
-    windowed audit has written a stale `needs_next_cron_line_movement_recheck`
-    block. Controlled fallback must prefer the candidate-level guard when it is
-    positive, otherwise the same candidate keeps waiting forever even though the
-    second snapshot is already confirmed.
-    """
-    if not isinstance(candidate, dict):
-        return None
-    candidates: list[dict[str, Any]] = []
-    for key in ("line_movement_guard", "movement", "market_movement_guard"):
-        payload = candidate.get(key)
-        if isinstance(payload, dict):
-            candidates.append(payload)
-    diagnostics = candidate.get("diagnostics")
-    if isinstance(diagnostics, dict):
-        payload = diagnostics.get("line_movement_guard")
-        if isinstance(payload, dict):
-            candidates.append(payload)
-    source_summary = candidate.get("source_summary")
-    if isinstance(source_summary, dict):
-        payload = source_summary.get("line_movement_guard")
-        if isinstance(payload, dict):
-            candidates.append(payload)
-        status = _movement_status(source_summary.get("line_movement_lifecycle_status") or source_summary.get("market_movement") or source_summary.get("market_move"))
-        publication_status = _movement_status(source_summary.get("publication_lifecycle_status"))
-        if status in {"movement_confirmed", "publish_now_no_next_cron"} and publication_status in {"", "movement_ready", "publishable", "published"}:
-            candidates.append({
-                "passed": True,
-                "status": status,
-                "line_movement_lifecycle_status": status,
-                "reasons": [],
-                "source": "candidate.source_summary",
-            })
-
-    for payload in candidates:
-        status = _movement_status(payload.get("status") or payload.get("line_movement_lifecycle_status") or payload.get("market_move"))
-        if bool(payload.get("passed")) and status in {"movement_confirmed", "publish_now_no_next_cron"}:
-            out = dict(payload)
-            out["passed"] = True
-            out["status"] = status
-            out["line_movement_lifecycle_status"] = status
-            out["reasons"] = []
-            out.setdefault("source", "candidate.line_movement_guard")
-            return out
-    return None
-
-
 def _windowed_movement_reasons(candidate: dict[str, Any]) -> list[str]:
-    if _candidate_confirmed_movement(candidate) is not None:
-        _GUARD_EVENTS.append({
-            "guard": "windowed_publication_filter",
-            "match_key": candidate.get("match_key"),
-            "home_team": candidate.get("home_team"),
-            "away_team": candidate.get("away_team"),
-            "family": candidate.get("family"),
-            "selection": candidate.get("selection"),
-            "point": candidate.get("point"),
-            "decision": "ignored_stale_windowed_block_candidate_movement_confirmed",
-        })
-        return []
     if not _truthy(os.getenv("CONTROLLED_FALLBACK_RESPECT_WINDOWED_MOVEMENT_GUARD"), True):
         return []
     payload = _load_json(ROOT / ".data" / "exports" / "latest-windowed-core-publication-filter.json", {})
@@ -281,95 +230,154 @@ def _duplicate_sent_index_reason(candidate: dict[str, Any]) -> str | None:
             return "duplicate_persisted_fallback_sent_index"
     return None
 
+def _strict_duplicate_reason(candidate: dict[str, Any]) -> str | None:
+    """Do not resend the same match/market/side/line until kickoff/settlement.
 
-_original_controlled_line_movement_report = getattr(base, "controlled_line_movement_report", None)
+    The base fallback index used localized selection text in the hash, so the same
+    Under 3.5 could be sent again when the row was regenerated as promotion data
+    or when the bookmaker price changed.
+    """
+    if not _truthy(os.getenv("CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE"), True):
+        return None
+    places = [
+        ROOT / ".data" / "fallback-sent-index.json",
+        ROOT / ".data" / "published-candidate-index.json",
+        ROOT / ".data" / "state.json",
+        ROOT / ".data" / "exports" / "latest-controlled-fallback-report.json",
+        ROOT / "artifacts" / "controlled-fallback-report.json",
+    ]
+    rows: list[dict[str, Any]] = []
+    for path in places:
+        payload = _load_json(path, {})
+        if isinstance(payload, dict):
+            rows.extend([v for v in payload.values() if isinstance(v, dict)])
+            for key in ("selected_all", "published", "bets", "published_candidates", "items", "rows"):
+                val = payload.get(key)
+                if isinstance(val, list):
+                    rows.extend([x for x in val if isinstance(x, dict)])
+                elif isinstance(val, dict):
+                    rows.append(val)
+            if isinstance(payload.get("selected"), dict):
+                rows.append(payload["selected"])
+        elif isinstance(payload, list):
+            rows.extend([x for x in payload if isinstance(x, dict)])
+    now = datetime.now(UTC)
+    cand_sig = _candidate_signature(candidate)
+    for row in rows:
+        # Keep active/upcoming rows only.  Unknown kickoff rows are still deduped for the safety window.
+        kickoff = _parse_dt(row.get("commence_time") or row.get("kickoff") or row.get("start_time"))
+        sent_at = _parse_dt(row.get("sent_at") or row.get("created_at") or row.get("published_at"))
+        if kickoff is not None and kickoff < now:
+            continue
+        if kickoff is None and sent_at is not None and (now - sent_at).total_seconds() > 36 * 3600:
+            continue
+        if _same_candidate(candidate, row):
+            return "duplicate_match_market_selection_line"
+        other_sig = _candidate_signature(row)
+        if cand_sig["match_key"] and other_sig["match_key"] and cand_sig["match_key"] == other_sig["match_key"]:
+            if cand_sig["family"] == other_sig["family"] and cand_sig["selection"] == other_sig["selection"] and cand_sig["point"] == other_sig["point"]:
+                return "duplicate_match_market_selection_line"
+    return None
 
 
-def controlled_line_movement_report_guarded(candidate: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
-    confirmed = _candidate_confirmed_movement(candidate)
-    if confirmed is not None:
-        metrics["line_movement"] = confirmed
+def _cron_local_tz() -> Any:
+    for name in (os.getenv("LINE_MOVEMENT_CRON_TIMEZONE"), os.getenv("APP_TIMEZONE"), os.getenv("TZ"), "Europe/Moscow"):
+        try:
+            return ZoneInfo(str(name))
+        except Exception:
+            continue
+    return UTC
+
+
+def _next_scheduled_run_at(now: datetime, interval_min: int) -> datetime | None:
+    if interval_min <= 0:
+        return None
+    local_tz = _cron_local_tz()
+    now_local = now.astimezone(local_tz)
+    anchor_minute = int(float(os.getenv("LINE_MOVEMENT_CRON_ANCHOR_MINUTE") or os.getenv("CONTROLLED_FALLBACK_CRON_ANCHOR_MINUTE") or 0))
+    anchor_minute = max(0, min(anchor_minute, 1439))
+    anchor = now_local.replace(hour=0, minute=0, second=0, microsecond=0).replace(hour=anchor_minute // 60, minute=anchor_minute % 60)
+    while anchor <= now_local:
+        anchor += timedelta(minutes=interval_min)
+    return anchor.astimezone(UTC)
+
+
+def _line_state_has_previous_recheck(candidate: dict[str, Any], now: datetime) -> bool:
+    if not _truthy(os.getenv("CONTROLLED_FALLBACK_REQUIRE_LINE_RECHECK"), True):
+        return True
+    try:
+        import importlib
+        lm = importlib.import_module("app.services.line_movement_state")
+        key = lm._line_key(candidate)  # type: ignore[attr-defined]
+    except Exception:
+        key = ""
+    kickoff = _parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
+    day = (kickoff or now).date().isoformat()
+    paths = [ROOT / ".data" / "line_history" / f"{day}.json", ROOT / ".data" / "line_history" / "latest.json"]
+    min_recheck = float(os.getenv("CONTROLLED_FALLBACK_MIN_RECHECK_MINUTES") or os.getenv("LINE_MOVEMENT_MIN_RECHECK_MINUTES") or 60.0)
+    current_run_id = os.getenv("GITHUB_RUN_ID") or os.getenv("HARIZON_RUN_ID") or ""
+    for path in paths:
+        payload = _load_json(path, {})
+        lines = payload.get("lines") if isinstance(payload, dict) else {}
+        if not isinstance(lines, dict):
+            continue
+        entries = []
+        if key and isinstance(lines.get(key), dict):
+            entries.append(lines.get(key))
+        else:
+            # Fall back to signature comparison by scanning entries.
+            entries.extend([v for v in lines.values() if isinstance(v, dict)])
+        for entry in entries:
+            snaps = entry.get("snapshots") if isinstance(entry, dict) else []
+            if not isinstance(snaps, list):
+                continue
+            for snap in snaps:
+                if not isinstance(snap, dict):
+                    continue
+                captured = _parse_dt(snap.get("captured_at_utc"))
+                if not captured:
+                    continue
+                if current_run_id and str(snap.get("run_id") or "") == current_run_id:
+                    continue
+                if (now - captured).total_seconds() / 60.0 >= min_recheck:
+                    return True
+    # Already annotated candidates from the main pipeline can pass.
+    status = str(candidate.get("publication_lifecycle_status") or (candidate.get("source_summary") or {}).get("publication_lifecycle_status") or "")
+    return status in {"movement_confirmed", "movement_rechecked_across_cron_windows", "publish_now_no_next_cron"}
+
+
+def _final_cron_recheck_reasons(candidate: dict[str, Any]) -> list[str]:
+    if not _truthy(os.getenv("CONTROLLED_FALLBACK_REQUIRE_FINAL_CRON_RECHECK"), True):
+        return []
+    kickoff = _parse_dt(candidate.get("commence_time") or candidate.get("kickoff") or candidate.get("start_time"))
+    if kickoff is None:
+        return ["controlled_fallback_missing_kickoff_for_final_recheck"]
+    now = datetime.now(UTC)
+    min_lead = int(float(os.getenv("LINE_MOVEMENT_MIN_LEAD_MINUTES") or os.getenv("MIN_KICKOFF_LEAD_MINUTES") or 15))
+    interval = int(float(os.getenv("CRON_EXPECTED_INTERVAL_MINUTES") or os.getenv("LINE_MOVEMENT_CRON_INTERVAL_MINUTES") or 120))
+    next_run = _next_scheduled_run_at(now, interval)
+    latest_useful = kickoff - timedelta(minutes=max(0, min_lead))
+    reasons: list[str] = []
+    if next_run is not None and next_run <= latest_useful:
+        reasons.append("controlled_fallback_next_regular_run_before_kickoff")
+    if not _line_state_has_previous_recheck(candidate, now):
+        reasons.append("controlled_fallback_missing_line_recheck")
+    if reasons:
         _GUARD_EVENTS.append({
-            "guard": "controlled_line_movement_report",
+            "guard": "final_cron_recheck",
             "match_key": candidate.get("match_key"),
             "home_team": candidate.get("home_team"),
             "away_team": candidate.get("away_team"),
             "family": candidate.get("family"),
             "selection": candidate.get("selection"),
             "point": candidate.get("point"),
-            "decision": "used_candidate_confirmed_movement",
-            "movement": confirmed,
-        })
-        return confirmed
-    if callable(_original_controlled_line_movement_report):
-        return _original_controlled_line_movement_report(candidate, metrics)
-    return {"passed": False, "status": "unavailable", "reasons": ["line_movement_report_unavailable"]}
-
-
-if hasattr(base, "controlled_line_movement_report"):
-    base.controlled_line_movement_report = controlled_line_movement_report_guarded
-
-
-
-_original_tier_reasons = getattr(base, "tier_reasons", None)
-
-
-def _tier_name(value: Any) -> str:
-    return str(value or "").replace("уровень", "").strip().upper()
-
-
-def tier_reasons_guarded(tier: str, candidate: dict[str, Any], metrics: dict[str, Any]) -> list[str]:
-    reasons = list(_original_tier_reasons(tier, candidate, metrics) or []) if callable(_original_tier_reasons) else []
-    tier_name = _tier_name(tier)
-
-    # Project contract: A-tier means 2+ independent odds sources, 2+ context/confirmation
-    # sources, confirmed movement and value. The base fallback used bookmaker/line count
-    # as enough for "уровень A", which made a 3-book / 1-provider pick look like A-tier.
-    # Keep such candidates publishable as B-tier when they satisfy all safety checks, but
-    # do not label them A-tier unless there are at least two independent odds providers.
-    if tier_name == "A" and _truthy(os.getenv("CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES"), True):
-        min_odds_sources = int(float(os.getenv("CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES") or 2))
-        odds_sources = int(metrics.get("odds_sources_count") or 0)
-        if odds_sources < min_odds_sources:
-            reasons.append(f"tier_a_odds_sources_below_min:{odds_sources}/{min_odds_sources}")
-    return reasons
-
-
-if callable(_original_tier_reasons):
-    base.tier_reasons = tier_reasons_guarded
-
-
-_original_final_publish_guard_reasons = getattr(base, "final_publish_guard_reasons", None)
-
-
-def final_publish_guard_reasons_guarded(candidate: dict[str, Any], metrics: dict[str, Any], tier: str) -> list[str]:
-    reasons = list(_original_final_publish_guard_reasons(candidate, metrics, tier) or []) if callable(_original_final_publish_guard_reasons) else []
-    tier_name = _tier_name(tier)
-
-    # B-tier lifecycle rule: if the match will start before the next regular cron pass,
-    # the candidate may be published after the same final checks as A-tier. The original
-    # fallback only allowed publish_now_no_next_cron for non-B tiers, which encouraged
-    # false A-tier labelling for safe but one-provider B-tier candidates.
-    movement = metrics.get("line_movement") if isinstance(metrics.get("line_movement"), dict) else _candidate_confirmed_movement(candidate)
-    status = _movement_status((movement or {}).get("status") or (movement or {}).get("line_movement_lifecycle_status")) if isinstance(movement, dict) else ""
-    if tier_name == "B" and status == "publish_now_no_next_cron" and bool((movement or {}).get("passed")):
-        reasons = [r for r in reasons if r != "line_movement_not_confirmed:publish_now_no_next_cron"]
-        _GUARD_EVENTS.append({
-            "guard": "final_publish_guard",
-            "match_key": candidate.get("match_key"),
-            "home_team": candidate.get("home_team"),
-            "away_team": candidate.get("away_team"),
-            "family": candidate.get("family"),
-            "selection": candidate.get("selection"),
-            "point": candidate.get("point"),
-            "decision": "allowed_b_tier_publish_now_no_next_cron",
-            "movement": movement,
+            "kickoff_utc": kickoff.isoformat(),
+            "next_regular_run_at_utc": next_run.isoformat() if next_run else None,
+            "latest_useful_run_at_utc": latest_useful.isoformat(),
+            "reasons": reasons,
         })
     return reasons
 
-
-if callable(_original_final_publish_guard_reasons):
-    base.final_publish_guard_reasons = final_publish_guard_reasons_guarded
 
 
 _original_hard_reject_reasons = base.hard_reject_reasons
@@ -378,9 +386,10 @@ _original_hard_reject_reasons = base.hard_reject_reasons
 def hard_reject_reasons_guarded(candidate: dict[str, Any], metrics: dict[str, Any], sent_index: dict[str, Any]) -> list[str]:
     reasons = list(_original_hard_reject_reasons(candidate, metrics, sent_index) or [])
     extra = []
-    duplicate = _duplicate_sent_index_reason(candidate) or _duplicate_previous_report_reason(candidate)
+    duplicate = _strict_duplicate_reason(candidate) or _duplicate_sent_index_reason(candidate) or _duplicate_previous_report_reason(candidate)
     if duplicate:
         extra.append(duplicate)
+    extra.extend(_final_cron_recheck_reasons(candidate))
     extra.extend(_windowed_movement_reasons(candidate))
     if extra:
         _GUARD_EVENTS.append({

@@ -29,8 +29,7 @@ import re
 import runpy
 import statistics
 from collections import Counter, defaultdict
-from datetime import datetime, timezone, timedelta
-from zoneinfo import ZoneInfo
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -105,87 +104,9 @@ def parse_dt(value: Any) -> datetime | None:
         return None
 
 
-def app_time_zone():
-    try:
-        return ZoneInfo(os.getenv('APP_TIMEZONE') or os.getenv('TZ') or 'Europe/Moscow')
-    except Exception:
-        return UTC
-
-
-def local_date_from_dt(dt: datetime) -> str:
-    return dt.astimezone(app_time_zone()).date().isoformat()
-
-
 def target_date() -> str:
-    explicit = str(os.getenv('DAY_INVENTORY_TARGET_DATE') or '').strip()
-    if explicit:
-        return explicit[:10]
-    return datetime.now(app_time_zone()).date().isoformat()
+    return (os.getenv('DAY_INVENTORY_TARGET_DATE') or datetime.now(UTC).date().isoformat())[:10]
 
-
-
-
-def effective_min_kickoff_lead_minutes() -> int:
-    base_lead = env_int('MIN_KICKOFF_LEAD_MINUTES', 30, 0)
-    if not env_bool('PROMOTE_B_COVER_USE_MANUAL_LATE_LEAD', False):
-        return base_lead
-    if not env_bool('MANUAL_LATE_MODE_ENABLED', False):
-        return base_lead
-    adaptive = env_int('MANUAL_LATE_ADAPTIVE_MIN_KICKOFF_LEAD_MINUTES', base_lead, 0)
-    late = env_int('MANUAL_LATE_MIN_KICKOFF_LEAD_MINUTES', base_lead, 0)
-    choices = [base_lead]
-    if adaptive > 0:
-        choices.append(adaptive)
-    if late > 0:
-        choices.append(late)
-    return max(0, min(choices))
-
-
-def kickoff_dt(row: dict[str, Any]) -> datetime | None:
-    return parse_dt(
-        row.get('commence_time')
-        or row.get('start_time')
-        or row.get('kickoff')
-        or row.get('kickoff_utc')
-        or row.get('kickoff_local')
-    )
-
-
-def publish_window_bounds(now: datetime | None = None) -> tuple[datetime, datetime]:
-    now = now or datetime.now(UTC)
-    lead = effective_min_kickoff_lead_minutes()
-    hours = max(1, env_int('PUBLISH_WINDOW_HOURS', 12, 1))
-    return now + timedelta(minutes=lead), now + timedelta(hours=hours)
-
-
-def row_in_publish_window(row: dict[str, Any], now: datetime | None = None) -> tuple[bool, str]:
-    if not env_bool('PROMOTE_B_COVER_FILTER_BY_TIME', True):
-        return True, 'time_filter_disabled'
-    kickoff = kickoff_dt(row)
-    if kickoff is None:
-        if env_bool('PROMOTE_B_COVER_ALLOW_UNKNOWN_TIME', False):
-            return True, 'unknown_time_allowed'
-        return False, 'promotion_skip_unknown_kickoff_time'
-    earliest, latest = publish_window_bounds(now)
-    if kickoff < earliest:
-        return False, 'promotion_skip_started_or_too_close'
-    if kickoff > latest:
-        return False, 'promotion_skip_outside_publish_window'
-    return True, 'in_publish_window'
-
-
-def current_window_rows(rows: list[dict[str, Any]], now: datetime | None = None) -> tuple[list[dict[str, Any]], Counter]:
-    kept: list[dict[str, Any]] = []
-    reasons: Counter = Counter()
-    for row in rows:
-        if not isinstance(row, dict):
-            continue
-        ok, reason = row_in_publish_window(row, now)
-        if ok:
-            kept.append(row)
-        else:
-            reasons[reason] += 1
-    return kept, reasons
 
 def row_date(row: dict[str, Any]) -> str:
     for key in ('commence_time', 'kickoff_utc', 'start_time', 'kickoff', 'date'):
@@ -196,7 +117,7 @@ def row_date(row: dict[str, Any]) -> str:
             return str(value)[:10]
         dt = parse_dt(value)
         if dt:
-            return local_date_from_dt(dt)
+            return dt.date().isoformat()
     for key in ('match_key', 'canonical_match_id', 'event_key'):
         m = re.search(r'(20\d{2}-\d{2}-\d{2})', str(row.get(key) or ''))
         if m:
@@ -398,6 +319,20 @@ def float_or_none(value: Any) -> float | None:
     return None
 
 
+def _valid_xg_pair(home: float | None, away: float | None) -> tuple[float | None, float | None]:
+    if home is None or away is None:
+        return None, None
+    if home < 0 or away < 0:
+        return None, None
+    min_team = env_float('PROMOTE_B_COVER_MIN_TEAM_XG_FOR_SANITY', env_float('CONTROLLED_FALLBACK_MIN_TEAM_XG_FOR_SANITY', 0.03))
+    min_total = env_float('PROMOTE_B_COVER_MIN_TOTAL_XG_FOR_SANITY', env_float('CONTROLLED_FALLBACK_MIN_TOTAL_XG_FOR_SANITY', 0.25))
+    if home <= min_team and away <= min_team:
+        return None, None
+    if home + away < min_total:
+        return None, None
+    return home, away
+
+
 def xg_values(row: dict[str, Any]) -> tuple[float | None, float | None]:
     home_keys = {'expected_home', 'home_expected', 'home_xg', 'xg_home', 'expected_goals_home', 'home_expected_goals'}
     away_keys = {'expected_away', 'away_expected', 'away_xg', 'xg_away', 'expected_goals_away', 'away_expected_goals'}
@@ -417,106 +352,13 @@ def xg_values(row: dict[str, Any]) -> tuple[float | None, float | None]:
         if away is None and not isinstance(item.get('away'), dict):
             away = float_or_none(item.get('away'))
         if home is not None and away is not None:
-            return home, away
-    return home, away
+            return _valid_xg_pair(home, away)
+    return _valid_xg_pair(home, away)
 
 
 def has_xg(row: dict[str, Any]) -> bool:
     h, a = xg_values(row)
     return h is not None and a is not None
-
-
-
-def _promotion_poisson_cdf(k: int, lam: float) -> float:
-    if lam < 0 or k < 0:
-        return 0.0
-    term = math.exp(-lam)
-    total = term
-    for i in range(1, int(k) + 1):
-        term *= lam / i
-        total += term
-    return max(0.0, min(1.0, total))
-
-
-def _promotion_total_probability(selection: str, point: float, total_xg: float) -> float | None:
-    if point <= 0 or total_xg <= 0:
-        return None
-    selection = str(selection or '').lower()
-    is_over = selection in {'over', 'больше', 'тб'} or 'over' in selection or 'больше' in selection or 'тб' in selection
-    is_under = selection in {'under', 'меньше', 'тм'} or 'under' in selection or 'меньше' in selection or 'тм' in selection
-    if not (is_over or is_under):
-        return None
-
-    frac = round(point - math.floor(point), 2)
-
-    def over_prob(single_line: float) -> float:
-        if abs(single_line - round(single_line)) < 1e-9:
-            return 1.0 - _promotion_poisson_cdf(int(round(single_line)), total_xg)
-        return 1.0 - _promotion_poisson_cdf(int(math.floor(single_line)), total_xg)
-
-    def under_prob(single_line: float) -> float:
-        if abs(single_line - round(single_line)) < 1e-9:
-            return _promotion_poisson_cdf(int(round(single_line)) - 1, total_xg)
-        return _promotion_poisson_cdf(int(math.floor(single_line)), total_xg)
-
-    if frac in {0.25, 0.75}:
-        low = math.floor(point) if frac == 0.25 else math.floor(point) + 0.5
-        high = math.floor(point) + 0.5 if frac == 0.25 else math.floor(point) + 1.0
-        prob = (over_prob(low) + over_prob(high)) / 2.0 if is_over else (under_prob(low) + under_prob(high)) / 2.0
-    else:
-        prob = over_prob(point) if is_over else under_prob(point)
-    return max(0.0, min(1.0, prob))
-
-
-def market_total_xg_proxy(selection: str, point: float, market_probability: float) -> tuple[float | None, dict[str, Any]]:
-    """Infer a conservative total-goals sanity anchor from the market total curve.
-
-    This is not a real team xG model. It is a last-mile sanity substitute for
-    promoted B-cover totals candidates when real xG is absent, and it is only
-    enabled by strict gates in build_candidate_from_bucket().  Final fallback
-    still applies EV, edge, quality, movement, price-integrity and duplicate guards.
-    """
-    try:
-        target = float(market_probability)
-        line = float(point)
-    except Exception:
-        return None, {'enabled': False, 'reason': 'bad_input'}
-    if not (0.05 <= target <= 0.95) or line <= 0:
-        return None, {'enabled': False, 'reason': 'bad_probability_or_line'}
-
-    lo, hi = 0.05, 8.0
-    p_lo = _promotion_total_probability(selection, line, lo)
-    p_hi = _promotion_total_probability(selection, line, hi)
-    if p_lo is None or p_hi is None:
-        return None, {'enabled': False, 'reason': 'unsupported_selection'}
-
-    increasing = p_hi > p_lo
-    for _ in range(70):
-        mid = (lo + hi) / 2.0
-        p_mid = _promotion_total_probability(selection, line, mid)
-        if p_mid is None:
-            return None, {'enabled': False, 'reason': 'unsupported_mid_probability'}
-        if increasing:
-            if p_mid < target:
-                lo = mid
-            else:
-                hi = mid
-        else:
-            if p_mid > target:
-                lo = mid
-            else:
-                hi = mid
-    total = (lo + hi) / 2.0
-    achieved = _promotion_total_probability(selection, line, total)
-    return total, {
-        'enabled': True,
-        'kind': 'market_total_consensus_proxy',
-        'selection': selection,
-        'point': line,
-        'target_probability': round(target, 6),
-        'proxy_total_xg': round(total, 3),
-        'achieved_probability': round(float(achieved or 0.0), 6),
-    }
 
 
 def _rows_from_payload(payload: Any) -> list[dict[str, Any]]:
@@ -807,38 +649,6 @@ def candidate_signature(row: dict[str, Any]) -> str:
     ])
 
 
-
-def loose_candidate_signature(row: dict[str, Any]) -> str:
-    """Match current rescue rows that missed the totals point.
-
-    Some model rows arrive as just ``Меньше``/``Больше`` without a point while
-    the promotion layer can recover the concrete public line from raw odds
-    buckets.  Exact dedupe then cannot enrich the old row, so it keeps dying on
-    missing_total_xg_sanity.  This signature intentionally ignores point, but it
-    is only used for enrichment when the existing row has no point or the same
-    point as the promoted row.
-    """
-    h = norm(row.get('home_team') or row.get('home'))
-    a = norm(row.get('away_team') or row.get('away'))
-    d = row_date(row)
-    match = norm(row.get('match_key') or row.get('canonical_match_id') or row.get('event_key'))
-    if not match and h and a and d:
-        match = f'{d}|{h}|{a}'
-    fam = norm(row.get('family') or row.get('market_family') or 'totals')
-    sel = selection_key_of(row) or norm(row.get('selection_key') or row.get('selection'))
-    return '|'.join([match, fam, sel])
-
-
-def point_matches_or_missing(existing: dict[str, Any], promoted: dict[str, Any]) -> bool:
-    """Loose enrichment is safe only when the old row lacks point or agrees."""
-    old = point_of(existing)
-    new = point_of(promoted)
-    if old is None:
-        return new is not None
-    if new is None:
-        return False
-    return abs(float(old) - float(new)) < 1e-9
-
 def median(values: list[float]) -> float:
     return float(statistics.median([v for v in values if v > 1.0]))
 
@@ -901,34 +711,6 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         return None, 'promotion_skip_ev_below_min'
 
     h_xg, a_xg = xg_values(inv_row)
-    xg_proxy_meta: dict[str, Any] = {'enabled': False}
-    if (h_xg is None or a_xg is None) and env_bool('PROMOTE_B_COVER_MARKET_XG_PROXY_ENABLED', True):
-        proxy_allowed = True
-        if len(books) < env_int('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_BOOKS', 2, 1):
-            proxy_allowed = False
-            xg_proxy_meta = {'enabled': False, 'reason': 'books_below_proxy_min'}
-        if len(ctx_sources) < env_int('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_CONTEXT_SOURCES', 2, 1):
-            proxy_allowed = False
-            xg_proxy_meta = {'enabled': False, 'reason': 'context_sources_below_proxy_min'}
-        if edge_pp < env_float('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_EDGE_PP', 3.0):
-            proxy_allowed = False
-            xg_proxy_meta = {'enabled': False, 'reason': 'edge_below_proxy_min'}
-        if ev_pct < env_float('PROMOTE_B_COVER_MARKET_XG_PROXY_MIN_EV_PCT', 6.0):
-            proxy_allowed = False
-            xg_proxy_meta = {'enabled': False, 'reason': 'ev_below_proxy_min'}
-        if deviation_pct > env_float('PROMOTE_B_COVER_MARKET_XG_PROXY_MAX_DEVIATION_PCT', 4.0):
-            proxy_allowed = False
-            xg_proxy_meta = {'enabled': False, 'reason': 'price_deviation_above_proxy_max'}
-        if proxy_allowed:
-            proxy_total, xg_proxy_meta = market_total_xg_proxy(sel, point, market_prob)
-            if proxy_total is not None:
-                # Total sanity only needs the sum; split evenly to satisfy the existing
-                # expected_home/expected_away interface in controlled fallback.
-                h_xg = round(proxy_total / 2.0, 3)
-                a_xg = round(proxy_total / 2.0, 3)
-            elif not xg_proxy_meta:
-                xg_proxy_meta = {'enabled': False, 'reason': 'proxy_total_unavailable'}
-
     require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
     if require_xg and (h_xg is None or a_xg is None):
         return None, 'promotion_skip_missing_xg'
@@ -962,9 +744,7 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         'home_team': inv_row.get('home_team') or inv_row.get('home'),
         'away_team': inv_row.get('away_team') or inv_row.get('away'),
         'league_name': inv_row.get('league_name') or inv_row.get('league'),
-        'commence_time': inv_row.get('commence_time') or inv_row.get('kickoff_utc') or inv_row.get('start_time') or inv_row.get('kickoff') or inv_row.get('kickoff_local'),
-        'start_time': inv_row.get('commence_time') or inv_row.get('kickoff_utc') or inv_row.get('start_time') or inv_row.get('kickoff') or inv_row.get('kickoff_local'),
-        'kickoff_utc': inv_row.get('kickoff_utc') or inv_row.get('commence_time') or inv_row.get('start_time') or inv_row.get('kickoff'),
+        'commence_time': inv_row.get('commence_time') or inv_row.get('kickoff_utc') or inv_row.get('start_time') or inv_row.get('kickoff'),
         'family': 'totals',
         'market_family': 'totals',
         'selection': selection_ru,
@@ -993,7 +773,6 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
             f'books={len(books)}',
             f'context_sources={len(ctx_sources)}',
             f'best_vs_median={best_vs_median_pct:.2f}%',
-            'xg_proxy=market_total_consensus' if bool(xg_proxy_meta.get('enabled')) else 'xg_proxy=not_used',
         ],
         'source_summary': {
             'selected_source': 'b_cover_market_promotion',
@@ -1006,13 +785,11 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
             'selected_vs_median_deviation_pct': round(deviation_pct, 3),
             'context_sources': ctx_sources,
             'raw_bucket_offers': raw_bucket_offers,
-            'xg_proxy': xg_proxy_meta,
         },
         'context': {
             'expected_home': h_xg,
             'expected_away': a_xg,
             'context_sources': ctx_sources,
-            'xg_proxy': xg_proxy_meta,
         },
         'diagnostics': {
             'promotion': {
@@ -1023,223 +800,47 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
                 'selected_vs_median_deviation_pct': round(deviation_pct, 3),
                 'canonical_edge_pp': round(edge_pp, 3),
                 'canonical_ev_pct': round(ev_pct, 3),
-                'xg_proxy': xg_proxy_meta,
             }
         },
     }
     return candidate, 'promoted'
 
 
-
-def _merge_unique_list(*values: Any) -> list[str]:
-    out: list[str] = []
-    seen: set[str] = set()
-    for value in values:
-        for item in list_from_any(value):
-            key = norm(item).replace(' ', '_')
-            if not key or key in seen:
-                continue
-            seen.add(key)
-            out.append(key)
-    return out
-
-
-def _has_candidate_xg(row: dict[str, Any]) -> bool:
-    return row.get('expected_home') not in (None, '') and row.get('expected_away') not in (None, '')
-
-
-def enrich_existing_candidate(existing: dict[str, Any], promoted: dict[str, Any]) -> bool:
-    """Merge strict promotion evidence into an already-current rescue row.
-
-    The previous promotion layer skipped duplicate signatures.  That kept old
-    current-window rescue rows without expected_home/expected_away, so strong
-    candidates such as 4-book/2-context totals still died on missing xG sanity.
-    Keep the original model probability/value, but fill missing support evidence
-    from the safer promoted row.
-    """
-    changed = False
-
-    # Repair incomplete totals rows.  The report examples showed candidates like
-    # "Меньше @2.11" with no point; without a point the xG proxy cannot be
-    # attached to the exact candidate that fallback evaluates.
-    if point_of(existing) is None and point_of(promoted) is not None:
-        existing['point'] = promoted.get('point')
-        existing.setdefault('line', promoted.get('point'))
-        changed = True
-    for key in ('family', 'market_family', 'selection_key'):
-        if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
-            existing[key] = promoted.get(key)
-            changed = True
-
-    # Fill missing xG/proxy only; do not overwrite real xG already present.
-    for key in ('expected_home', 'expected_away'):
-        if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
-            existing[key] = promoted.get(key)
-            changed = True
-
-    # Keep richer price/context evidence, especially raw_bucket_offers used by
-    # the B-tier price-integrity guard.
-    ex_ss = existing.setdefault('source_summary', {}) if isinstance(existing.setdefault('source_summary', {}), dict) else {}
-    pr_ss = promoted.get('source_summary') if isinstance(promoted.get('source_summary'), dict) else {}
-    for key in ('raw_bucket_offers', 'bucket_offers', 'offers'):
-        if not ex_ss.get(key) and pr_ss.get(key):
-            ex_ss[key] = pr_ss.get(key)
-            changed = True
-    for key in ('books', 'prices'):
-        merged = _merge_unique_list(ex_ss.get(key), pr_ss.get(key))
-        if merged and merged != ex_ss.get(key):
-            ex_ss[key] = merged
-            changed = True
-    for key in ('selected_source', 'selected_bookmaker', 'bookmaker', 'median_price', 'selected_vs_median_deviation_pct'):
-        if ex_ss.get(key) in (None, '', [], {}) and pr_ss.get(key) not in (None, '', [], {}):
-            ex_ss[key] = pr_ss.get(key)
-            changed = True
-
-    ex_ctx = existing.setdefault('context', {}) if isinstance(existing.setdefault('context', {}), dict) else {}
-    pr_ctx = promoted.get('context') if isinstance(promoted.get('context'), dict) else {}
-    for key in ('expected_home', 'expected_away', 'xg_proxy'):
-        if ex_ctx.get(key) in (None, '', [], {}) and pr_ctx.get(key) not in (None, '', [], {}):
-            ex_ctx[key] = pr_ctx.get(key)
-            changed = True
-
-    ex_diag = existing.setdefault('diagnostics', {}) if isinstance(existing.setdefault('diagnostics', {}), dict) else {}
-    pr_diag = promoted.get('diagnostics') if isinstance(promoted.get('diagnostics'), dict) else {}
-    pr_promo = pr_diag.get('promotion') if isinstance(pr_diag.get('promotion'), dict) else {}
-    ex_promo = ex_diag.setdefault('promotion', {}) if isinstance(ex_diag.setdefault('promotion', {}), dict) else {}
-    for key, value in pr_promo.items():
-        if ex_promo.get(key) in (None, '', [], {}) and value not in (None, '', [], {}):
-            ex_promo[key] = value
-            changed = True
-    if changed:
-        ex_promo['enriched_existing_rescue_candidate'] = True
-        ex_promo['enriched_at_utc'] = datetime.now(UTC).isoformat()
-
-    # Increase counts conservatively; never reduce original candidate metrics.
-    for key in ('books_count', 'sources_count', 'odds_sources_count', 'confirmation_sources_count'):
-        before = count_any(existing.get(key))
-        after = count_any(promoted.get(key))
-        if after > before:
-            existing[key] = after
-            changed = True
-    merged_confirmations = _merge_unique_list(existing.get('confirmation_sources'), promoted.get('confirmation_sources'))
-    if merged_confirmations and merged_confirmations != existing.get('confirmation_sources'):
-        existing['confirmation_sources'] = merged_confirmations
-        existing['confirmation_sources_count'] = max(count_any(existing.get('confirmation_sources_count')), len(merged_confirmations))
-        changed = True
-
-    # Preserve original adjusted_probability/model signal, but ensure fallback sees
-    # the selected bookmaker and line evidence.
-    for key in ('bookmaker', 'selected_bookmaker'):
-        if existing.get(key) in (None, '') and promoted.get(key) not in (None, ''):
-            existing[key] = promoted.get(key)
-            changed = True
-
-    if changed:
-        reasons = existing.setdefault('reasons', [])
-        if isinstance(reasons, list):
-            marker = 'enriched_by_b_cover_market_promotion'
-            if marker not in reasons:
-                reasons.append(marker)
-    return changed
-
 def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candidates: list[dict[str, Any]]) -> dict[str, Any]:
     if not env_bool('PROMOTE_B_COVER_VALUE_CANDIDATES_ENABLED', True):
         return {'enabled': False, 'reason': 'disabled'}
-
-    now = datetime.now(UTC)
     offer_buckets, offer_diag = collect_offer_buckets(day)
-    existing_all = rescue_rows_payload()
-    existing_current, existing_window_reasons = current_window_rows(existing_all, now)
-    existing = existing_current if env_bool('PROMOTE_B_COVER_DROP_STALE_RESCUE_ROWS', True) else existing_all
-
-    # Only dedupe against current-window rows.  Old promoted rescue rows were kept
-    # in latest-rescue-candidates.json and showed up as
-    # latest_rescue_candidates_stale_or_outside_window, drowning the diagnostics
-    # without ever being evaluated by controlled fallback.
-    candidate_current, _candidate_window_reasons = current_window_rows(
-        [r for r in existing_candidates if isinstance(r, dict)],
-        now,
-    )
-    signatures = {candidate_signature(r) for r in candidate_current + existing if isinstance(r, dict)}
-    existing_by_signature = {candidate_signature(r): r for r in existing if isinstance(r, dict)}
-    existing_by_loose_signature: dict[str, dict[str, Any]] = {}
-    for r in existing:
-        if not isinstance(r, dict):
-            continue
-        lsig = loose_candidate_signature(r)
-        if lsig and lsig not in existing_by_loose_signature:
-            existing_by_loose_signature[lsig] = r
-
+    existing = rescue_rows_payload()
+    signatures = {candidate_signature(r) for r in existing_candidates + existing if isinstance(r, dict)}
     promoted: list[dict[str, Any]] = []
     reasons = Counter()
     considered = 0
-    b_cover_seen = 0
-    current_window_b_cover = 0
     limit = env_int('PROMOTE_B_COVER_VALUE_CANDIDATE_LIMIT', 24, 0)
-
     for row in inventory:
         if not isinstance(row, dict):
             continue
         if book_count(row) < 1 or context_count(row) < 1:
             continue
-        b_cover_seen += 1
-        in_window, window_reason = row_in_publish_window(row, now)
-        if not in_window:
-            reasons[window_reason] += 1
-            continue
-        current_window_b_cover += 1
         considered += 1
-
         match_buckets: dict[str, dict[str, Any]] = {}
-        for key in fallback_match_keys(row, day):
+        for key in key_variants(row):
             match_buckets.update(offer_buckets.get(key, {}))
         if not match_buckets:
             reasons['promotion_skip_no_offer_bucket'] += 1
             continue
-
         candidates_for_match: list[dict[str, Any]] = []
         for bucket_key, bucket in match_buckets.items():
             cand, reason = build_candidate_from_bucket(row, bucket_key, bucket)
             if cand is None:
                 reasons[reason] += 1
                 continue
-            cand_in_window, cand_window_reason = row_in_publish_window(cand, now)
-            if not cand_in_window:
-                reasons[cand_window_reason] += 1
-                continue
             sig = candidate_signature(cand)
-            loose_sig = loose_candidate_signature(cand)
-            existing_row = existing_by_signature.get(sig)
-            loose_existing = existing_by_loose_signature.get(loose_sig) if env_bool('PROMOTE_B_COVER_ENRICH_LOOSE_DUPLICATES', True) else None
-            if existing_row is None and isinstance(loose_existing, dict) and point_matches_or_missing(loose_existing, cand):
-                existing_row = loose_existing
-            if sig in signatures or isinstance(existing_row, dict):
-                if isinstance(existing_row, dict) and enrich_existing_candidate(existing_row, cand):
-                    if candidate_signature(existing_row) != sig:
-                        # Keep the repaired row reachable through future exact dedupe too.
-                        existing_by_signature[candidate_signature(existing_row)] = existing_row
-                    reasons['promotion_enriched_duplicate_candidate'] += 1
-                    if existing_row is loose_existing and sig not in signatures:
-                        reasons['promotion_enriched_loose_duplicate_candidate'] += 1
-                else:
-                    reasons['promotion_skip_duplicate_candidate'] += 1
-                signatures.add(sig)
+            if sig in signatures:
+                reasons['promotion_skip_duplicate_candidate'] += 1
                 continue
             signatures.add(sig)
             candidates_for_match.append(cand)
-
-        # Prefer candidates that already carry xG, then higher conservative EV/edge.
-        # This keeps missing-xG rows visible when they are the only strong signal,
-        # but stops them from crowding out safer promoted rows.
-        candidates_for_match.sort(
-            key=lambda c: (
-                1 if (c.get('expected_home') not in (None, '') and c.get('expected_away') not in (None, '')) else 0,
-                float(c.get('ev_pct') or 0.0),
-                float(c.get('edge_pct') or 0.0),
-                float(c.get('confidence') or 0.0),
-            ),
-            reverse=True,
-        )
+        candidates_for_match.sort(key=lambda c: (float(c.get('ev_pct') or 0.0), float(c.get('edge_pct') or 0.0), float(c.get('confidence') or 0.0)), reverse=True)
         for cand in candidates_for_match[:1]:
             promoted.append(cand)
             reasons['promoted'] += 1
@@ -1247,52 +848,23 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
                 break
         if limit and len(promoted) >= limit:
             break
-
-    # Rewrite the rescue file with current-window rows only.  This prevents stale
-    # promoted rows from staying in the pool for the rest of the day.
-    merged = promoted + existing
-    if promoted or (env_bool('PROMOTE_B_COVER_DROP_STALE_RESCUE_ROWS', True) and len(existing_current) != len(existing_all)):
-        max_len = max(len(merged), limit or len(merged), 1)
-        write_json(RESCUE_PATH, merged[:max_len])
-
+    if promoted:
+        merged = promoted + existing
+        write_json(RESCUE_PATH, merged[: max(len(merged), limit or len(merged))])
     if considered == 0:
+        # Make the failure mode visible in Telegram instead of silently reporting 0/0.
         if not inventory:
             reasons['promotion_zero_inventory_rows'] += 1
-        elif b_cover_seen == 0:
-            reasons['promotion_zero_b_cover_rows_after_local_counting'] += 1
         else:
-            reasons['promotion_zero_current_window_b_cover_rows'] += 1
-
-    for reason, count in existing_window_reasons.items():
-        reasons[f'existing_rescue_{reason}'] += count
-
-    earliest, latest = publish_window_bounds(now)
-    exhaustion_threshold = env_int('PROMOTE_B_COVER_CURRENT_WINDOW_EXHAUSTED_THRESHOLD', 4, 0)
-    current_window_exhausted = current_window_b_cover <= exhaustion_threshold
+            reasons['promotion_zero_b_cover_rows_after_local_counting'] += 1
     report = {
         'enabled': True,
         'status': 'ok',
-        'current_window_exhausted': current_window_exhausted,
-        'current_window_exhausted_threshold': exhaustion_threshold,
         'created_at_utc': datetime.now(UTC).isoformat(),
         'target_date': day,
-        'target_timezone': str(app_time_zone()),
         'inventory_rows_seen': len(inventory),
-        'b_cover_rows_seen': b_cover_seen,
-        'current_window_b_cover_rows': current_window_b_cover,
         'considered_b_cover_rows': considered,
         'promoted_count': len(promoted),
-        'existing_rescue_rows_before': len(existing_all),
-        'existing_rescue_rows_kept_current_window': len(existing),
-        'existing_rescue_rows_removed_stale_or_outside': max(0, len(existing_all) - len(existing)),
-        'enriched_duplicate_candidates': int(reasons.get('promotion_enriched_duplicate_candidate') or 0),
-        'enriched_loose_duplicate_candidates': int(reasons.get('promotion_enriched_loose_duplicate_candidate') or 0),
-        'publish_window': {
-            'earliest_utc': earliest.isoformat(),
-            'latest_utc': latest.isoformat(),
-            'min_kickoff_lead_minutes': effective_min_kickoff_lead_minutes(),
-            'publish_window_hours': max(1, env_int('PUBLISH_WINDOW_HOURS', 12, 1)),
-        },
         'reason_counts': dict(reasons.most_common()),
         'offer_diagnostics': offer_diag,
         'sample': promoted[:12],
@@ -1300,6 +872,7 @@ def promote_candidates(day: str, inventory: list[dict[str, Any]], existing_candi
     }
     write_json(PROMOTION_REPORT_JSON, report)
     return report
+
 
 def prebuild_coverage_truth_for_promotion() -> dict[str, Any]:
     """Make row-level coverage truth available before promotion/fallback.
@@ -1318,14 +891,9 @@ def prebuild_coverage_truth_for_promotion() -> dict[str, Any]:
     started = datetime.now(UTC).isoformat()
     steps: list[dict[str, Any]] = []
     try:
-        # First expand the day inventory again *after* the runtime has produced
-        # fresh run/export artifacts.  The workflow also expands before Run bot,
-        # but reports kept showing 229/300 because newly discovered rows from the
-        # current run were not merged before promotion/fallback diagnostics.
-        # This is API-free: it only merges already persisted artifacts.
-        # Then prefer the cumulative script because it merges latest run coverage,
+        # Prefer the cumulative script because it merges latest run coverage,
         # repairs source counters, and writes coverage-truth rows.
-        for script_name in ('expand_day_inventory_to_target.py', 'day_inventory_cumulative_coverage.py', 'build_day_inventory_coverage_truth.py'):
+        for script_name in ('day_inventory_cumulative_coverage.py', 'build_day_inventory_coverage_truth.py'):
             path = ROOT / 'scripts' / script_name
             if not path.exists():
                 steps.append({'script': script_name, 'status': 'missing'})
