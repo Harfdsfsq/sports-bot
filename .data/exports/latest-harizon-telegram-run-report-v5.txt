@@ -3,68 +3,69 @@
 • Главная причина: duplicate match market selection line
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 300 матчей. Runtime rows processed: 215 (это не размер inventory).
-• 1+ линия: 189/300 (63%) | 1+ контекст: 140/300 (47%)
+• Инвентарь дня: 300 матчей. Runtime rows processed: 177 (это не размер inventory).
+• 1+ линия: 191/300 (64%) | 1+ контекст: 150/300 (50%)
 • 2+ букмекера: 179/300 (60%)
-• Raw 2+ букмекера odds-api.io: 63 | normalized inventory: 179 | mapping gap: 0
-• Odds-api offer snapshot: rows 12718, matches 117, same-side 2+ books 62
-• 2+ независимых odds-source: 32/300 (11%) — диагностика, не блок публикации
-• 2+ контекста: 61/300 (20%)
-• Готово для модели: 140/300 (47%)
+• Raw 2+ букмекера odds-api.io: 43 | normalized inventory: 179 | mapping gap: 0
+• Odds-api offer snapshot: rows 9026, matches 88, same-side 2+ books 41
+• 2+ независимых odds-source: 36/300 (12%) — диагностика, не блок публикации
+• 2+ контекста: 99/300 (33%)
+• Готово для модели: 150/300 (50%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 19 | опубликовано: 0
+• A-tier strict-ready: 21 | опубликовано: 0
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 140 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 150 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 140 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 61 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 150 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 99 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 31 | матчей без следующего регулярного run: 27
-• Line guard: увидел 41, оставил 37, снял 0
+• Pre-kickoff проверок: 39 | матчей без следующего регулярного run: 36
+• Line guard: увидел 27, оставил 23, снял 0
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 2/8
+• Raw/candidates before quality: 3/8
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 16 | evaluated 16 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 44; смэтчил матчей 213; offers 13501; 2+ букмекера 63; ошибок 0.
-• Bzzoiro: direct req 78, v2 req 78; v2 ctx 19; v2 odds 14; secondary offers 0; overlap odds-api.io 18; ошибок 1.
-• SStats: запросы 32; сырых строк 26960; контекстов 185; deep-enriched 15; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 36; смэтчил матчей 176; offers 10134; 2+ букмекера 43; ошибок 0.
+• Bzzoiro: direct req 66, v2 req 66; v2 ctx 17; v2 odds 12; secondary offers 0; overlap odds-api.io 13; ошибок 0.
+• SStats: запросы 32; сырых строк 26959; контекстов 151; deep-enriched 15; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 99, bzzoiro+odds_api_io: 18, bzzoiro: 4
+• Комбинации источников линий: odds_api_io: 75, bzzoiro+odds_api_io: 13, bzzoiro: 4
 
 🚫 Почему не опубликовано
-• duplicate match market selection line: 16 (80%)
-• quality post calibration edge guard: 3 (15%)
-• controlled fallback next regular run before kickoff: 1 (5%)
+• duplicate match market selection line: 16 (70%)
+• controlled fallback next regular run before kickoff: 3 (13%)
+• quality: вероятность после калибровки ниже порога: 3 (13%)
+• отрицательная canonical value после пересчёта по выбранному коэффициенту: 1 (4%)
 
 🔎 Проверенные reserve-кандидаты
-1. Tartu Kalev — Viljandi Tulevik | Меньше @2.74 | EV +10.5% | edge +3.8 п.п. | q 76.0
+1. Runavik — B36 Torshavn | Больше @2.66 | EV +6.9% | edge +2.6 п.п. | q 72.6
    • причина: duplicate match market selection line
-2. Tallinna — Levadia Tallinn | Больше @2.06 | EV +3.7% | edge +1.8 п.п. | q 65.7
+2. Mannucci — Alianza Atletico | Больше @2.06 | EV +9.6% | edge +4.7 п.п. | q 76.0
    • причина: duplicate match market selection line
-3. Lahti — Seinajoen | Меньше @3.00 | EV +7.2% | edge +2.4 п.п. | q 76.0
+3. Comunicaciones — Laferrere | Меньше @1.92 | EV +3.4% | edge +1.7 п.п. | q 64.9
    • причина: duplicate match market selection line
-4. Mariehamn — Gnistan | Больше @2.01 | EV +9.5% | edge +4.7 п.п. | q 76.0
+4. Almagro — Agropecuario | Больше @1.64 | EV +8.0% | edge +4.9 п.п. | q 76.0
    • причина: duplicate match market selection line
 
 🧯 Диагностика новых стопоров
-• Inventory target repair: 358/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 230; normalized 131→51; gap after 179.
-• B-cover promotion: considered 118; promoted 24; top skips promotion_skip_duplicate_candidate 20; promotion_skip_edge_below_min 94; promotion_skip_ev_below_min 1; inventory rows 300; selected B-cover rows 140 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 140; candidates seen 75; B-covered без кандидата 114.
+• Inventory target repair: 300/300; shortfall 0; status ok_target_met.
+• Bookmaker mapping repair: raw 2+ 141; normalized 131→28; gap after 113.
+• B-cover promotion: considered 150; promoted 14; top skips promotion_skip_duplicate_candidate 23; promotion_skip_edge_below_min 61; promotion_skip_no_offer_bucket 109; inventory rows 300; selected B-cover rows 150 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• B-cover funnel: B-cover 150; candidates seen 61; B-covered без кандидата 131.
 
 📌 Что это значит
 • Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27470267759
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27470267759
-• Artifact: run-bot-27470267759
+• Run ID: 27473206799
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27473206799
+• Artifact: run-bot-27473206799
 • workflow run-bot, attempt 1
