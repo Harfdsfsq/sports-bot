@@ -18,7 +18,7 @@ concurrency:
 jobs:
   run-bot:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 45
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
       PYTHONUNBUFFERED: "1"
@@ -92,6 +92,7 @@ jobs:
       CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD: "true"
       CONTROLLED_FALLBACK_TIER_B_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
       CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES: "false"
+      CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM: "false"
       CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM: "false"
       CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES: "false"
       CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"
@@ -100,7 +101,7 @@ jobs:
       CONTROLLED_FALLBACK_TELEGRAM_ALLOW_TIER_C: "false"
       CONTROLLED_FALLBACK_REQUIRE_FINAL_CRON_RECHECK: "true"
       CONTROLLED_FALLBACK_REQUIRE_LINE_RECHECK: "true"
-      CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE: "true"
+      CONTROLLED_FALLBACK_STRICT_MATCH_MARKET_DEDUPE: "false"
       CONTROLLED_FALLBACK_MIN_TOTAL_XG_FOR_SANITY: "0.25"
       CONTROLLED_FALLBACK_MIN_TEAM_XG_FOR_SANITY: "0.03"
       PROMOTE_B_COVER_MIN_TOTAL_XG_FOR_SANITY: "0.25"
@@ -415,13 +416,21 @@ jobs:
             exit 0
           fi
           python -u scripts/apply_publication_family_policy.py || true
+          python -u scripts/restore_awaiting_movement_candidates.py || true
           python scripts/publish_controlled_fallback_guarded.py || python scripts/publish_controlled_fallback.py || true
+          python -u scripts/persist_awaiting_movement_candidates.py || true
+          python -u scripts/build_fresh_b_cover_diagnostics.py || true
+          cp .data/exports/latest-awaiting-movement-candidates.json artifacts/run-bot/latest-awaiting-movement-candidates.json 2>/dev/null || true
+          cp .data/exports/latest-awaiting-movement-restore.json artifacts/run-bot/latest-awaiting-movement-restore.json 2>/dev/null || true
+          cp .data/exports/latest-fresh-b-cover-diagnostics.json artifacts/run-bot/latest-fresh-b-cover-diagnostics.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-report.json artifacts/run-bot/latest-controlled-fallback-report.json 2>/dev/null || true
           cp .data/exports/latest-controlled-fallback-prepublish-guard.json artifacts/run-bot/latest-controlled-fallback-prepublish-guard.json 2>/dev/null || true
           cp artifacts/controlled-fallback-report.json artifacts/run-bot/controlled-fallback-report.json 2>/dev/null || true
           python -u scripts/build_b_cover_candidate_gap_report.py || true
           cp .data/exports/latest-b-cover-candidate-gap-report.json artifacts/run-bot/latest-b-cover-candidate-gap-report.json 2>/dev/null || true
           cp .data/exports/latest-b-cover-candidate-gap-report.csv artifacts/run-bot/latest-b-cover-candidate-gap-report.csv 2>/dev/null || true
+          python -u scripts/build_fresh_b_cover_diagnostics.py || true
+          cp .data/exports/latest-fresh-b-cover-diagnostics.json artifacts/run-bot/latest-fresh-b-cover-diagnostics.json 2>/dev/null || true
 
       - name: Update cumulative day inventory coverage
         if: always()
@@ -488,7 +497,11 @@ jobs:
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json .data/exports .data/cache .data/day_inventory .data/line_history .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
+          git add -f .data/state.json .data/published-candidate-index.json .data/fallback-sent-index.json .data/candidate-lifecycle-state.json \
+            .data/exports/latest-*.json .data/exports/latest-*.txt .data/exports/latest-*.csv \
+            .data/day_inventory/current.json .data/day_inventory/latest.json .data/day_inventory/today.json .data/day_inventory/${DAY_INVENTORY_CACHE_DATE}.json \
+            .data/line_history/latest.json .data/line_history/${DAY_INVENTORY_CACHE_DATE}.json \
+            .data/provider_quota_governor_state.json .data/provider_request_budget_state.json .data/provider_quota_state.json || true
           git reset -- .data/odds_movement_snapshots.jsonl 2>/dev/null || true
           git reset -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
@@ -504,6 +517,13 @@ jobs:
             .data/line_history
           key: run-bot-day-inventory-${{ env.DAY_INVENTORY_CACHE_DATE }}-${{ github.run_id }}
 
+      - name: Prune artifact payload
+        if: always()
+        shell: bash
+        run: |
+          set -uo pipefail
+          python -u scripts/prune_run_artifacts.py || true
+
       - name: Upload run artifact
         if: always()
         uses: actions/upload-artifact@v5
@@ -511,10 +531,13 @@ jobs:
           name: run-bot-${{ github.run_id }}
           path: |
             artifacts/run-bot/**
-            .data/exports/**
-            .data/cache/**
-            .data/day_inventory/**
-            .data/line_history/**
+            .data/exports/latest-*.json
+            .data/exports/latest-*.txt
+            .data/exports/latest-*.csv
+            .data/day_inventory/current.json
+            .data/day_inventory/latest.json
+            .data/day_inventory/today.json
+            .data/line_history/latest.json
             .data/provider_quota_governor_state.json
             .data/provider_request_budget_state.json
             .data/published-candidate-index.json
