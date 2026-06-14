@@ -432,6 +432,8 @@ jobs:
             echo "skip post-run diagnostics: fresh run-bot log was not created"
             exit 0
           fi
+          mkdir -p artifacts/run-bot
+          tail -n 240 .data/exports/latest-run-bot.log | tee artifacts/run-bot/latest-run-bot-tail.txt || true
           python -u scripts/apply_publication_family_policy.py || true
           python -u scripts/restore_awaiting_movement_candidates.py || true
           python -u scripts/persist_awaiting_movement_candidates.py || true
@@ -523,6 +525,17 @@ jobs:
           git checkout -- .data/exports/latest-build-day-inventory.log .data/exports/latest-day-inventory-core-build-report.json .data/exports/latest-day-inventory-core-crosswalk.json .data/exports/latest-day-inventory-core-strict-merge-report.json 2>/dev/null || true
           git commit -m "Update runtime artifacts [skip ci]" || true
           git push || true
+
+      - name: Upload lightweight run log
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: run-bot-log-${{ github.run_id }}
+          path: |
+            .data/exports/latest-run-bot.log
+            artifacts/run-bot/latest-run-bot-tail.txt
+          if-no-files-found: ignore
+          retention-days: 7
 
       - name: Save persisted day inventory
         if: always()

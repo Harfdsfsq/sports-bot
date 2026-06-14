@@ -13,7 +13,7 @@ from app.schemas import CandidateBet, Match
 from app.services.quality import PredictionQualityService
 from app.services.telegram import TelegramPublisher
 from app.utils import normalize_probability_percent, to_decimal_probability
-from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider
+from scripts.apply_provider_request_budget import build_env_for_decision, decide_provider, final_market_integrity_env, market_integrity_check
 from scripts.publish_controlled_fallback import final_publish_guard_reasons, hard_reject_reasons, xg_sanity_metrics
 from scripts.send_harizon_telegram_run_report_v5 import provider_auth_failed
 
@@ -180,6 +180,26 @@ def test_request_budget_blocks_exhausted_daily_budget(monkeypatch):
 
     assert decision["grant"] == 0
     assert decision["reason"] == "daily_budget_exhausted:1/1"
+
+
+def test_request_budget_final_env_keeps_strict_publish_contract(monkeypatch):
+    monkeypatch.delenv("HARIZON_FAST_INVENTORY_LOCK", raising=False)
+    monkeypatch.delenv("DAY_INVENTORY_FAST_MODE", raising=False)
+    monkeypatch.setenv("DAY_INVENTORY_FORCE_PROVIDER_MERGE", "true")
+    monkeypatch.setenv("PUBLISH_DRY_RUN", "false")
+    monkeypatch.setenv("GITHUB_EVENT_NAME", "workflow_dispatch")
+    monkeypatch.setenv("MANUAL_CONTROLLED_PUBLISH_ENABLED", "false")
+
+    env = final_market_integrity_env()
+    check = market_integrity_check(env, "test")
+
+    assert env["HARIZON_FAST_INVENTORY_LOCK"] == "false"
+    assert env["DAY_INVENTORY_FORCE_PROVIDER_MERGE"] == "true"
+    assert env["PUBLISH_DRY_RUN"] == "false"
+    assert env["CONTROLLED_FALLBACK_MIN_ODDS_SOURCES"] == "2"
+    assert env["CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS"] == "2"
+    assert env["CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM"] == "true"
+    assert check["status"] == "ok"
 
 
 def test_xg_guard_allows_conservative_total_model(monkeypatch):
