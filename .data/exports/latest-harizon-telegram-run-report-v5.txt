@@ -4,38 +4,38 @@
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: 300 матчей. Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 299/300 (100%) | 1+ контекст: 34/300 (11%)
-• 2+ букмекера: 130/300 (43%)
-• Odds-api offer snapshot: rows 19348, matches 162, same-side 2+ books 108
+• 1+ линия: 299/300 (100%) | 1+ контекст: 38/300 (13%)
+• 2+ букмекера: 114/300 (38%)
+• Odds-api offer snapshot: rows 11734, matches 113, same-side 2+ books 70
 • 2+ независимых odds-source: 299/300 (100%) — диагностика, не блок публикации
-• 2+ контекста: 34/300 (11%)
-• Готово для модели: 33/300 (11%)
+• 2+ контекста: 38/300 (13%)
+• Готово для модели: 37/300 (12%)
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 19 | опубликовано: 2
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 34 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 38 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 34 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 34 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 38 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 38 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 38 | матчей без следующего регулярного run: 17
-• Line guard: увидел 24, оставил 22, снял 0
+• Pre-kickoff проверок: 27 | матчей без следующего регулярного run: 22
+• Line guard: увидел 9, оставил 6, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0/0
-• Quality прошло: 0 | publishable: 2 | опубликовано: 2
+• Quality прошло: 0 | publishable: 0 | опубликовано: 2
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
 • odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 12; ошибок 0.
+• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 7; ошибок 0.
 • SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 150, bzzoiro+odds_api_io: 12, bzzoiro: 4
+• Комбинации источников линий: odds_api_io: 106, bzzoiro+odds_api_io: 7, bzzoiro: 2
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -45,16 +45,16 @@
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 464; normalized 22→79; gap after 385.
-• B-cover promotion: considered 26; promoted 6; top skips promotion_skip_duplicate_candidate 3; promotion_skip_edge_below_min 40; promotion_skip_no_offer_bucket 10; inventory rows 240; selected B-cover rows 26 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 26; candidates seen 22; B-covered без кандидата 13.
+• Bookmaker mapping repair: raw 2+ 300; normalized 22→43; gap after 257.
+• B-cover promotion: considered 30; promoted 1; top skips promotion_skip_duplicate_candidate 1; promotion_skip_edge_below_min 46; promotion_skip_no_offer_bucket 18; inventory rows 240; selected B-cover rows 30 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• B-cover funnel: B-cover 30; candidates seen 6; B-covered без кандидата 25.
 
 📌 Что это значит
 • Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27499653714
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27499653714
-• Artifact: run-bot-27499653714
+• Run ID: 27502705686
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27502705686
+• Artifact: run-bot-27502705686
 • workflow run-bot, attempt 1
