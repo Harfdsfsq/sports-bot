@@ -2,18 +2,15 @@ from __future__ import annotations
 
 """HARIZON Telegram run report v9.
 
-Renderer-only patch for the owner-requested tier contract:
-- B-tier = 1+ bookmaker/price confirmation + 1+ context;
-- A-tier = 2+ bookmakers/price confirmations + 2+ contexts.
-
-The v8 renderer still described B-tier as 2+ bookmakers.  This wrapper keeps
-v8 data loading and formatting but fixes the displayed coverage contract and
-B-tier coverage numbers so the Telegram report matches the runtime policy.
+Strict A/B publication-contract renderer:
+- 2 independent odds sources;
+- 2 bookmaker/price confirmations;
+- 2 independent context confirmations;
+- line movement/value/xG/quality still required before publication.
 """
 
 import importlib.util
 import json
-import os
 import re
 from pathlib import Path
 from typing import Any
@@ -48,14 +45,6 @@ def _as_int(value: Any) -> int:
         return int(float(str(value).replace(",", ".")))
     except Exception:
         return 0
-
-
-def _pct(part: Any, total: Any) -> str:
-    p = _as_int(part)
-    t = _as_int(total)
-    if t <= 0:
-        return "0%"
-    return f"{round(p * 100.0 / t)}%"
 
 
 def _load_json(path: Path) -> dict[str, Any]:
@@ -102,60 +91,65 @@ def _counts(payload: dict[str, Any]) -> dict[str, int]:
         or _as_int(coverage.get("matches_with_2plus_books"))
     )
     context2 = _as_int(truth_counts.get("matches_with_2plus_context_sources"))
+    odds2 = _as_int(truth_counts.get("matches_with_2plus_odds_sources"))
     published = _as_int((payload.get("funnel") or {}).get("fallback_published_count")) if isinstance(payload.get("funnel"), dict) else 0
+    strict_cover = min(odds2, price2, context2) if inv_total else 0
     return {
         "inv_total": inv_total,
         "with_odds": with_odds,
         "with_context": with_context,
         "price2": price2,
         "context2": context2,
-        "b_cover": min(with_odds, with_context) if inv_total else 0,
-        "a_cover": min(price2, context2) if inv_total else 0,
+        "odds2": odds2,
+        "b_cover": strict_cover,
+        "a_cover": strict_cover,
         "fallback_published": published,
     }
 
 
 def build_payload() -> dict[str, Any]:
     payload = _base_build_payload()
-    payload["version"] = "harizon-telegram-report-v9-ab-tier-bookmaker-contract"
+    payload["version"] = "harizon-telegram-report-v9-strict-ab-contract"
     payload.setdefault("diagnostics", {})["ab_tier_contract"] = {
-        "A": {"min_bookmakers": 2, "min_context_sources": 2},
-        "B": {"min_bookmakers": 1, "min_context_sources": 1},
-        "independent_odds_sources": "diagnostic_only",
+        "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
+        "B": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
+        "independent_odds_sources": "required",
     }
     return payload
 
 
+def _rewrite_contract_lines(text: str, counts: dict[str, int]) -> str:
+    out: list[str] = []
+    for line in text.splitlines():
+        lower = line.lower()
+        if "B-tier bookmaker coverage:" in line or "B-tier 1+ bookmaker/context coverage:" in line:
+            out.append(f"• B-tier strict coverage: {counts['b_cover']} | fallback опубликовано: {counts['fallback_published']}")
+            continue
+        if "B-tier =" in line:
+            out.append("  B-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.")
+            continue
+        if "A-tier =" in line:
+            out.append("  A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.")
+            continue
+        if "odds-source" in lower and "2+" in lower and any(marker in lower for marker in ("диагност", "diagnostic", "не блок публикации", "только диагност", "РґРёР°Рі".lower())):
+            out.append("• 2+ independent odds-source: обязательный блок публикации вместе с 2+ букмекерами и 2+ контекстами.")
+            continue
+        if "B-cover 1+" in line or re.search(r"Пересечение 2\+.*2\+", line):
+            out.append(f"• Strict-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до {counts['a_cover']} матчей.")
+            continue
+        if "Ценовой контракт" in line or "Р¦РµРЅРѕРІРѕР№" in line:
+            out.append("• Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.")
+            continue
+        if "Не форсировать публикацию" in line or "РќРµ С„РѕСЂСЃРёСЂРѕРІР°С‚СЊ" in line:
+            out.append("• Не форсировать публикацию: кандидат должен пройти 2 odds-source, 2 букмекера, 2 контекста, xG/quality/value/line movement.")
+            continue
+        out.append(line)
+    return "\n".join(out)
+
+
 def render(payload: dict[str, Any]) -> str:
     text = _base_render(payload)
-    c = _counts(payload)
-
-    # Replace v8's B-tier section.  It used the 2+ bookmaker count for B-tier,
-    # which made a valid 1+ bookmaker/1+ context B-cover look like zero.
-    b_line = f"• B-tier 1+ bookmaker/context coverage: {c['b_cover']} | fallback опубликовано: {c['fallback_published']}"
-    text = re.sub(r"• B-tier bookmaker coverage: .*", b_line, text)
-    text = text.replace(
-        "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
-        "  B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.",
-    )
-    text = text.replace(
-        "  A-tier = 2+ букмекера по той же стороне рынка + 2+ контекста + подтверждённое движение линии + value.",
-        "  A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.",
-    )
-    text = re.sub(
-        r"• Пересечение 2\+ букмекера ∩ 2\+ контекста: .*",
-        f"• B-cover 1+ букмекер ∩ 1+ контекст: до {c['b_cover']} матчей; A-cover 2+ букмекер ∩ 2+ контекст: до {c['a_cover']} матчей.",
-        text,
-    )
-    text = text.replace(
-        "• Ценовой контракт сейчас: 2+ букмекера по той же стороне рынка; price-integrity guard остаётся обязательным.",
-        "• Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.",
-    )
-    text = text.replace(
-        "• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.",
-        "• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources. B-tier теперь считается по 1+ букмекеру и 1+ контексту.",
-    )
-    return text
+    return _rewrite_contract_lines(text, _counts(payload))
 
 
 v8.v7.v5.build_payload = build_payload
@@ -166,7 +160,7 @@ _write_status({
     "status": "installed",
     "renderer": "v9",
     "main_module": "v8.v7.v5",
-    "contract": "B=1+bookmaker+1+context; A=2+bookmakers+2+contexts",
+    "contract": "A/B=2 odds sources + 2 bookmakers + 2 contexts",
 })
 
 

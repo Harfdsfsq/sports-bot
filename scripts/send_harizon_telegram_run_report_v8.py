@@ -5,7 +5,7 @@ from __future__ import annotations
 Readable bookmaker-quorum report. Publication price contract:
 - selected market side confirmed by 2+ real bookmakers;
 - price-integrity guard stays mandatory;
-- 2+ independent odds sources are diagnostic, not a publication blocker.
+- 2+ independent odds sources are a mandatory publication block.
 """
 
 import importlib.util
@@ -226,7 +226,7 @@ def _top_reasons(payload: dict[str, Any], limit: int = 8) -> list[str]:
         ru = row.get("reason_ru") or _reason_ru(row.get("reason"))
         out.append(f"• {ru}: {count} ({round(count * 100.0 / total)}%)")
     if diagnostic_odds_source_count:
-        out.append(f"• Диагностика legacy odds-source: {diagnostic_odds_source_count} — не блок публикации при 2+ букмекерах")
+        out.append(f"• Диагностика legacy odds-source: {diagnostic_odds_source_count} — не заменяет обязательные 2+ odds-source")
     return out or ["• Нет reject reasons в свежих артефактах."]
 
 
@@ -259,7 +259,7 @@ def _candidate_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
         if visible_reasons:
             out.append("   • причина: " + ", ".join(_reason_ru(x) for x in visible_reasons[:4]))
         elif legacy_count:
-            out.append("   • причина: только legacy odds-source диагностика; публикацию решают 2+ букмекера/price-integrity/value")
+            out.append("   • причина: только legacy odds-source диагностика; публикацию решают 2+ odds-source + 2+ букмекера + 2+ контекста + value")
     return out
 
 
@@ -372,7 +372,7 @@ def render(payload: dict[str, Any]) -> str:
     if snapshot_line:
         lines.append(snapshot_line)
     lines.extend([
-        f"• 2+ независимых odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — диагностика, не блок публикации",
+        f"• 2+ independent odds-source: {odds_sources2}/{inv_total} ({_pct(odds_sources2, inv_total)}) — обязательный блок публикации",
         f"• 2+ контекста: {context2}/{inv_total} ({_pct(context2, inv_total)})",
         f"• Готово для модели: {ready_model}/{inv_total} ({_pct(ready_model, inv_total)})",
     ])
@@ -399,7 +399,7 @@ def render(payload: dict[str, Any]) -> str:
         "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
         f"• Пересечение 2+ букмекера ∩ 2+ контекста: до {min(price2, context2)} матчей; exact-ready считается после movement/value/xG.",
         "• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.",
-        "• 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.",
+        "• 2+ independent odds-source — обязательный блок публикации вместе с 2+ букмекерами и 2+ контекстами.",
     ])
     if price_guard:
         lines.append(f"• Price-integrity guard: снял {_as_int(price_guard.get('removed_total'))} подозрительных кандидатов до fallback.")

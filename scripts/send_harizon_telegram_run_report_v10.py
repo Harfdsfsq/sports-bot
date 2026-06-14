@@ -5,8 +5,8 @@ from __future__ import annotations
 Adds post-fix diagnostics for the current blockers:
 - day inventory target expansion status;
 - raw bookmaker -> normalized inventory backfill gap;
-- B-cover -> candidate funnel gap;
-- B-cover market-consensus promotion into controlled fallback pool.
+- legacy B-cover -> candidate funnel gap;
+- legacy B-cover market-consensus promotion diagnostics.
 """
 
 import importlib.util
@@ -115,27 +115,27 @@ def render(payload: dict[str, Any]) -> str:
         selected_b_cover = _as_int(inv_load.get('selected_b_cover_rows')) if inv_load else 0
         suffix = f"; inventory rows {inventory_seen}" if inventory_seen or selected_path else ''
         if selected_b_cover:
-            suffix += f"; selected B-cover rows {selected_b_cover}"
+            suffix += f"; selected legacy B-cover rows {selected_b_cover}"
         if selected_path:
             suffix += f" from {selected_path}"
         status = str(promotion.get('status') or 'ok')
         status_prefix = f"status {status}; " if status and status != 'ok' else ''
         lines.append(
-            f"• B-cover promotion: {status_prefix}considered {_as_int(promotion.get('considered_b_cover_rows'))}; "
+            f"• Legacy B-cover diagnostic: {status_prefix}considered {_as_int(promotion.get('considered_b_cover_rows'))}; "
             f"promoted {_as_int(promotion.get('promoted_count'))}; "
             f"top skips {_top_promotion_reasons(promotion)}{suffix}."
         )
     else:
         lines.append(
-            "• B-cover promotion: report missing; script likely failed before writing "
+            "• Legacy B-cover diagnostic: report missing; script likely failed before writing "
             "latest-b-cover-value-promotion.json."
         )
     if gap:
         reasons = gap.get('reason_counts') if isinstance(gap.get('reason_counts'), dict) else {}
         no_candidate = _as_int(reasons.get('b_cover_no_candidate')) + _as_int(reasons.get('b_cover_no_candidate_missing_xg_like_context'))
         lines.append(
-            f"• B-cover funnel: B-cover {_as_int(gap.get('b_cover_rows'))}; candidates seen {_as_int(gap.get('candidate_rows_seen'))}; "
-            f"B-covered без кандидата {no_candidate}."
+            f"• Legacy B-cover funnel: legacy rows {_as_int(gap.get('b_cover_rows'))}; candidates seen {_as_int(gap.get('candidate_rows_seen'))}; "
+            f"legacy rows без кандидата {no_candidate}."
         )
     if lines:
         marker = '📌 Что это значит\n'
