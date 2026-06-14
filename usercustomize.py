@@ -1,110 +1,36 @@
-from sitecustomize import *
+from __future__ import annotations
+
+"""Optional user-level startup hook for legacy runtime extensions."""
 
 import os
 import sys
 from pathlib import Path
 
+from sitecustomize import *  # noqa: F401,F403
 
-def _is_fallback_publisher_process() -> bool:
+
+def _truthy(value: str | None) -> bool:
+    return str(value or "").strip().lower() in {"1", "true", "yes", "on", "force"}
+
+
+def _is_helper_process() -> bool:
     name = Path(str(sys.argv[0] or "")).name
-    return name in {"publish_controlled_fallback.py", "publish_controlled_fallback_guarded.py"} or os.getenv("HARIZON_CONTROLLED_FALLBACK_REDIRECTED") == "1"
+    return (
+        str(sys.argv[0] or "").strip() == "-"
+        or name.startswith("publish_controlled_fallback")
+        or os.getenv("HARIZON_SKIP_USERCUSTOMIZE_INSTALLERS") == "1"
+    )
 
 
-def _is_stdin_env_helper_process() -> bool:
-    return str(sys.argv[0] or "").strip() == "-" or os.getenv("HARIZON_SKIP_USERCUSTOMIZE_INSTALLERS") == "1"
-
-
-_SKIP_RUNTIME_INSTALLERS = _is_fallback_publisher_process() or _is_stdin_env_helper_process()
-
-
-def _install(module_path: str) -> None:
+def install_legacy_usercustomize() -> dict[str, str]:
     try:
-        module_name, attr = module_path.rsplit('.', 1)
-        module = __import__(module_name, fromlist=[attr])
-        getattr(module, attr).install()
-    except Exception:
-        pass
+        from app.services import runtime_startup_chain
+
+        result = runtime_startup_chain.install_all()
+        return {"app.services.runtime_startup_chain": str(result)}
+    except Exception as exc:
+        return {"app.services.runtime_startup_chain": f"{type(exc).__name__}: {exc}"}
 
 
-if not _SKIP_RUNTIME_INSTALLERS:
-    for _module in [
-        'app.services.provider_smoke_repair_env_guard',
-        'app.services.runtime_provider_budget_guard',
-        'app.services.core_coverage_quota_runtime_override',
-        'app.services.sportlogic_daily_limit_guard',
-        'app.services.core_provider_inventory_bridge',
-        'app.services.free_context_runtime_enrichment',
-        'app.services.api_matching_quality_runtime_guard',
-        'app.services.bzzoiro_provider_runtime_fix',
-        'app.services.market_family_publication_guard',
-        'app.services.runtime_odds_inventory_matching_patch',
-        'app.services.provider_payload_mining_runtime_patch_v2',
-        'app.services.bzzoiro_direct_fetch_final_guard',
-        'app.services.signal_stack_runtime_patch',
-        'app.services.odds_movement_cache_bridge_patch',
-        'app.services.sportlogic_query_runtime_guard',
-        'app.services.api_runtime_enhancements',
-        'app.services.secondary_odds_rescue_runtime_patch',
-        'app.services.day_inventory_extra_fixture_sources',
-        'app.services.day_inventory_bucketed_top_v3_runtime_patch',
-        'app.services.day_inventory_runtime_guard',
-        'app.services.near_window_priority_runtime_patch',
-        'app.services.context_family_matching_runtime_patch',
-        'app.services.runner_step_trace',
-        'app.services.lifecycle_sent_index_runtime_guard',
-        'app.services.fixture_expansion_runtime_guard',
-        'app.services.api_health_runtime_guard',
-        'app.services.post_run_analytics_runtime_guard',
-        'app.services.rapidapi_probe_runtime_guard',
-        'app.providers.rapidapi_odds_feed_patch',
-        'app.providers.rapidapi_bridge_runtime_patch',
-        'app.providers.sharpapi_runtime_patch',
-        'app.services.sharpapi_text_runtime_patch',
-        'app.services.secondary_odds_rescue_runtime_patch',
-        'app.services.bzzoiro_final_odds_bridge_patch',
-        'app.services.runner_bzzoiro_bridge_runtime_patch',
-        'app.services.provider_smoke_repair_env_guard',
-        'app.services.primary_provider_tier_runtime_guard',
-        'app.services.core_odds_merge_safety_patch',
-        'app.services.core_coverage_quota_runtime_override',
-        'app.services.sportlogic_daily_limit_guard',
-        'app.services.core_provider_inventory_bridge',
-        'app.services.odds_movement_cache_bridge_patch',
-        'app.services.prequality_final_consensus_bridge',
-        'app.services.candidate_value_runtime_patch',
-        'app.services.bookmaker_quorum_publication_policy',
-        'app.services.api_maximum_coverage_runtime_patch',
-        'app.services.api_coverage_observability_runtime_patch',
-        'app.services.sportlogic_games_date_contract_runtime_patch',
-        'app.services.windowed_core_coverage_finalizer',
-        'app.services.windowed_core_report_and_sportlogic_final_guard',
-        'app.services.progressive_coverage_runtime_patch',
-        'app.services.progressive_core_sources_finalizer',
-        'app.services.progressive_fetch_provider_signature_finalizer',
-        'app.services.progressive_upcoming_gap_finalizer',
-        'app.services.source_matrix_amplifier_runtime_patch',
-        'app.services.bzzoiro_odds_comparison_bridge_patch',
-        'app.services.bzzoiro_context_gap_finalizer',
-        'app.services.bzzoiro_context_gap_timeout_guard',
-        'app.services.bzzoiro_context_gap_source_id_finalizer',
-        'app.services.bzzoiro_context_gap_relaxed_match_finalizer',
-        'app.services.bzzoiro_gap_plan_targets_runtime_patch',
-        'app.services.bzzoiro_v2_source_matrix_runtime_patch',
-        'app.services.progressive_provider_alias_finalizer',
-        'app.services.candidate_value_final_reinstall',
-        'app.services.windowed_coverage_state_bridge',
-        'app.services.odds_movement_cache_bridge_patch',
-        'app.services.api_coverage_consensus_runtime_patch',
-        'app.services.odds_api_io_account_source_split_patch',
-        'app.services.odds_api_io_offer_snapshot_runtime_patch',
-        'app.services.quality_consensus_safe_relief_patch',
-        'app.services.ledger_retro_price_audit_runtime_patch',
-        'app.services.source_matrix_amplifier_runtime_patch',
-        'app.services.bzzoiro_odds_comparison_bridge_patch',
-        # Re-install SportLogic v9 late because older finalizers can overwrite provider methods.
-        # The final daily-limit guard is still last and can disable SportLogic if the 500/day
-        # SportLogic cap is already open for the current UTC day.
-        'app.services.sportlogic_games_date_contract_runtime_patch',
-        'app.services.sportlogic_daily_limit_guard',
-    ]:
-        _install(_module)
+if _truthy(os.getenv("LEGACY_RUNTIME_EXTENSIONS_ENABLED")) and not _is_helper_process():
+    install_legacy_usercustomize()

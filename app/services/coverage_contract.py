@@ -127,10 +127,6 @@ def contract_from_settings(settings: Any | None = None) -> CoverageContract:
             return getattr(settings, name)
         return default
 
-    # B-tier is part of the project rules: 1+ odds source, 1+ context source,
-    # then the usual value/movement/xG/final guards.  Do not hard-floor these
-    # values to 2 here; A-tier strict mode is still available through env:
-    # PUBLISH_COVERAGE_TIER_MODE=strict_a or PUBLISH_ALLOW_B_TIER=false.
     min_odds = publish_min_odds_sources(settings)
     min_context = publish_min_context_sources(settings)
     min_books = publish_min_books(settings)
@@ -335,6 +331,29 @@ def books_for_candidate(candidate: Any) -> set[str]:
     return books
 
 
+def line_sources_for_candidate(candidate: Any) -> set[str]:
+    sources: set[str] = set()
+    for row in _iter_offer_rows(candidate):
+        book = str(
+            _get(row, "bookmaker")
+            or _get(row, "bookmaker_slug")
+            or _get(row, "book")
+            or _get(row, "sportsbook")
+            or ""
+        ).strip().lower()
+        if book:
+            sources.add(f"book:{book}")
+            continue
+        source = normalize_source(_get(row, "source"))
+        if source:
+            sources.add(f"source:{source}")
+    for view in _candidate_dict_views(candidate):
+        for key in ("line_sources", "price_confirmations", "price_sources"):
+            if key in view:
+                sources.update(_split_sources(view.get(key)))
+    return {str(item).strip().lower() for item in sources if str(item).strip()}
+
+
 def publication_odds_source_report(candidate: Any, contract: CoverageContract | None = None) -> dict[str, Any]:
     contract = contract or CoverageContract()
     odds_sources = odds_sources_for_candidate(candidate, contract)
@@ -362,7 +381,9 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
     odds_report = publication_odds_source_report(candidate, contract)
     context_sources = context_sources_for_candidate(candidate)
     books = books_for_candidate(candidate)
+    line_sources = line_sources_for_candidate(candidate)
     books_count = max(len(books), _as_int(_get(candidate, "books_count", 0), 0))
+    line_sources_count = max(len(line_sources), books_count)
     odds_sources = set(odds_report["odds_sources"])
     odds_source_count = int(odds_report["odds_sources_count"])
     context_declared_count, context_basis = _declared_count(candidate, CONTEXT_SOURCE_COUNT_KEYS)
@@ -391,6 +412,9 @@ def evaluate_publish_candidate(candidate: Any, settings: Any | None = None) -> C
         "context_sources_basis": context_basis,
         "books": sorted(books),
         "books_count": books_count,
+        "line_sources": sorted(line_sources),
+        "line_sources_count": line_sources_count,
+        "price_sources_count": line_sources_count,
     }
     return CoverageDecision(passed=not reasons, reasons=tuple(reasons), report=report)
 
@@ -418,6 +442,9 @@ def sync_candidate_publish_coverage(candidate: Any, settings: Any | None = None)
     source_summary["context_sources"] = list(report.get("context_sources") or [])
     source_summary["books_count"] = int(report.get("books_count") or 0)
     source_summary["books"] = list(report.get("books") or [])
+    source_summary["line_sources_count"] = int(report.get("line_sources_count") or 0)
+    source_summary["price_sources_count"] = int(report.get("price_sources_count") or 0)
+    source_summary["line_sources"] = list(report.get("line_sources") or [])
     _set(candidate, "source_summary", source_summary)
 
     diagnostics = dict(_get(candidate, "diagnostics", {}) or {})

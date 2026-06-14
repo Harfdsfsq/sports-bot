@@ -44,20 +44,20 @@ def _candidate(commence_time: datetime) -> CandidateBet:
         ev_pct=12.0,
         confidence=72.0,
         books_count=2,
-        sources_count=1,
+        sources_count=2,
         source_summary={
-            "sources": ["odds_api_io"],
+            "sources": ["odds_api_io", "bzzoiro"],
             "books": ["Bet365", "Unibet"],
-            "context_sources": ["sstats"],
+            "context_sources": ["sstats", "football_data"],
         },
         raw_bucket_offers=[
             {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Over", "point": 2.5, "price": 2.04},
-            {"source": "odds_api_io", "bookmaker": "Unibet", "family": "totals", "selection": "Over", "point": 2.5, "price": 2.05},
+            {"source": "bzzoiro", "bookmaker": "Unibet", "family": "totals", "selection": "Over", "point": 2.5, "price": 2.05},
         ],
     )
 
 
-def test_b_tier_can_publish_when_no_next_cron(monkeypatch):
+def test_strict_candidate_can_publish_when_no_next_cron(monkeypatch):
     now = datetime(2026, 6, 1, 15, 0, tzinfo=UTC)
     state_path = f".data/test-line-movement-no-next-cron/{uuid4().hex}.json"
     monkeypatch.setenv("LINE_MOVEMENT_STATE_PATH", state_path)
@@ -67,10 +67,11 @@ def test_b_tier_can_publish_when_no_next_cron(monkeypatch):
     decision = classify_publication_tier(_candidate(now + timedelta(minutes=80)), TierSettings(), now=now)
 
     assert decision.passed is True
-    assert decision.tier == "B"
+    assert decision.tier == "A"
     assert decision.report["line_movement"]["status"] == "publish_now_no_next_cron"
     assert decision.report["tier_b_bookmaker_quorum_passed"] is True
-    assert decision.report["tier_b_confirmation_mode"] == "bookmaker_quorum"
+    assert decision.report["tier_b_strict_coverage_passed"] is True
+    assert decision.report["tier_b_confirmation_mode"] == "strict_independent_sources"
 
 
 def test_b_tier_bookmaker_quorum_requires_two_books(monkeypatch):
@@ -84,12 +85,13 @@ def test_b_tier_bookmaker_quorum_requires_two_books(monkeypatch):
         {"source": "odds_api_io", "bookmaker": "Bet365", "family": "totals", "selection": "Over", "point": 2.5, "price": 2.04},
     ]
     item.source_summary["books"] = ["Bet365"]
+    item.source_summary["sources"] = ["odds_api_io"]
 
     decision = classify_publication_tier(item, TierSettings(), now=now)
 
     assert decision.passed is False
     assert decision.tier == "blocked"
-    assert any("books=1/2" in reason for reason in decision.reasons)
+    assert any("odds_sources=1/2" in reason and "bookmakers=1/2" in reason for reason in decision.reasons)
 
 
 def test_first_snapshot_waits_when_scheduled_cron_exists_before_kickoff(monkeypatch):

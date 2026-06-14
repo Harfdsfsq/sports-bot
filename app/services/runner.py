@@ -37,6 +37,7 @@ from app.services.publication_lifecycle import (
     load_sent_candidate_keys,
     mark_candidate_lifecycle,
 )
+from app.services.publication_tiers import classify_publication_tier
 from app.services.quality import PredictionQualityService
 from app.services.sheet_export import SheetExportService
 from app.services.telegram import TelegramPublisher
@@ -1871,6 +1872,13 @@ class PredictionRunner:
             if not coverage_decision.passed:
                 candidate.source_summary['publish_coverage_reasons'] = list(coverage_decision.reasons)
                 candidate.reasons.extend(f'publish_coverage={reason}' for reason in coverage_decision.reasons)
+                continue
+            tier_decision = classify_publication_tier(candidate, self.settings)
+            candidate.diagnostics.setdefault('publication_tier_contract', tier_decision.report)
+            candidate.source_summary.update(tier_decision.report)
+            if not tier_decision.passed:
+                candidate.source_summary['publish_coverage_reasons'] = list(tier_decision.reasons)
+                candidate.reasons.extend(f'publication_tier={reason}' for reason in tier_decision.reasons)
                 continue
             publishable.append(candidate)
         return publishable

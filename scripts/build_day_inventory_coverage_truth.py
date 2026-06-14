@@ -130,11 +130,12 @@ def odds_sources(row: dict[str, Any]) -> list[str]:
     return sorted(x for x in sources if x in LIVE_ODDS_SOURCES)
 
 
-def context_sources(row: dict[str, Any]) -> list[str]:
+def context_sources(row: dict[str, Any], extra_sources: list[str] | None = None) -> list[str]:
     md = metadata(row)
     sources = unique_norm(
         list_from_any(row.get("context_sources"))
         + list_from_any(row.get("context_confirmations"))
+        + list_from_any(extra_sources)
         + list_from_any(md.get("context_sources"))
         + list_from_any(md.get("context_confirmations"))
     )
@@ -158,10 +159,17 @@ def price_confirmations(row: dict[str, Any]) -> int:
     )
 
 
-def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str, Any]:
+def row_truth(
+    row: dict[str, Any],
+    min_odds: int,
+    min_context: int,
+    context_source_index: dict[str, list[str]] | None = None,
+) -> dict[str, Any]:
     cov = coverage(row)
     osrc = odds_sources(row)
-    csrc = context_sources(row)
+    match_key = str(row.get("match_key") or row.get("canonical_match_id") or "")
+    extra_context = list((context_source_index or {}).get(match_key) or [])
+    csrc = context_sources(row, extra_context)
     pc = price_confirmations(row)
     cc = len(csrc)
     has_odds = bool(cov.get("odds")) or pc > 0
@@ -174,8 +182,9 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
     if cc < min_context:
         missing.append("context_sources")
     ready_publish = has_odds and has_context and pc >= min_odds and len(osrc) >= min_odds and cc >= min_context
+    strict_ready = ready_publish
     return {
-        "match_key": row.get("match_key") or row.get("canonical_match_id") or "",
+        "match_key": match_key,
         "kickoff_utc": row.get("kickoff_utc") or row.get("commence_time") or row.get("kickoff_local") or "",
         "league_name": row.get("league_name") or "",
         "home_team": row.get("home_team") or "",
@@ -190,6 +199,10 @@ def row_truth(row: dict[str, Any], min_odds: int, min_context: int) -> dict[str,
         "has_context": has_context,
         "ready_for_model": bool(cov.get("ready_for_model")) or (has_odds and has_context),
         "ready_for_publish": ready_publish,
+        "tier_a_coverage_ready": strict_ready,
+        "tier_b_coverage_ready": strict_ready,
+        "tier_b_bookmaker_quorum_ready": strict_ready,
+        "tier_b_confirmation_mode": "strict_independent_sources" if strict_ready else "none",
         "need_price_confirmations": max(0, min_odds - pc),
         "need_odds_sources": max(0, min_odds - len(osrc)),
         "need_context_sources": max(0, min_context - cc),

@@ -1,25 +1,10 @@
 from __future__ import annotations
 
-"""Apply HARIZON A/B tier bookmaker-context publication contract.
+"""Apply the strict HARIZON A/B publication evidence contract.
 
-Owner contract:
-- B-tier: 1+ bookmaker/price confirmation and 1+ context source;
-- A-tier: 2+ bookmakers/price confirmations and 2+ context sources.
-
-This script writes the contract into GitHub Actions env and records a small
-runtime artifact.  It intentionally does not relax value, quality, movement or
-price-integrity guards.
-
-V8 update:
-The current bottleneck is not coverage anymore.  Fallback now evaluates promoted
-B-cover candidates, but totals are blocked by missing numeric xG even when the
-candidate has bookmaker quorum, context sources, strong EV/edge and clean market
-price integrity.  Until providers reliably attach numeric xG to every promoted
-totals row, allow a *strict market/context B-tier fallback* by disabling the
-absolute totals-xG Telegram requirement while raising the final B-tier numeric
-bar.  This is not a force publish: candidates still need positive canonical
-value, B-tier coverage, final edge/EV, quality/proxy quality, line-movement
-lifecycle and price-integrity guards.
+Both A-tier and B-tier require 2 independent odds sources, 2 bookmaker/price
+confirmations, 2 context sources and the normal value/quality/movement guards.
+The tier label may still rank candidates, but it no longer relaxes evidence.
 """
 
 import json
@@ -31,25 +16,37 @@ CONTRACT_ENV = {
     # Core A/B coverage contract.
     "PUBLISH_ALLOW_B_TIER": "true",
     "PUBLISH_COVERAGE_TIER_MODE": "hybrid",
-    "PUBLISH_MIN_BOOKS": "1",
-    "MIN_BOOKS_PUBLISH": "1",
-    "PUBLISH_MIN_CONTEXT_SOURCES": "1",
-    "MIN_CONTEXT_SOURCES_PUBLISH": "1",
-    "PUBLISH_MIN_ODDS_SOURCES": "1",
-    "MIN_SOURCES_PUBLISH": "1",
+    "PUBLISH_MIN_BOOKS": "2",
+    "MIN_BOOKS_PUBLISH": "2",
+    "PUBLISH_MIN_CONTEXT_SOURCES": "2",
+    "MIN_CONTEXT_SOURCES_PUBLISH": "2",
+    "PUBLISH_MIN_ODDS_SOURCES": "2",
+    "MIN_SOURCES_PUBLISH": "2",
+    "PUBLISH_TIER_A_MIN_ODDS_SOURCES": "2",
     "PUBLISH_TIER_A_MIN_BOOKS": "2",
     "PUBLISH_TIER_A_MIN_CONTEXT_SOURCES": "2",
-    "PUBLISH_TIER_B_MIN_BOOKS": "1",
-    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "PUBLISH_TIER_B_MIN_ODDS_SOURCES": "2",
+    "PUBLISH_TIER_B_MIN_BOOKS": "2",
+    "PUBLISH_TIER_B_MIN_CONTEXT_SOURCES": "2",
 
     # Controlled fallback must follow the same owner contract.
-    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "1",
-    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "false",
-    "CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES": "false",
+    "CONTROLLED_FALLBACK_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_MIN_CONFIRMATION_SOURCES": "2",
+    "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": "true",
+    "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": "true",
+    "CONTROLLED_FALLBACK_TIER_A_REQUIRE_2_ODDS_SOURCES": "true",
+    "CONTROLLED_FALLBACK_TIER_A_MIN_ODDS_SOURCES": "2",
     "CONTROLLED_FALLBACK_TIER_A_MIN_BOOKS": "2",
     "CONTROLLED_FALLBACK_TIER_A_MIN_CONTEXT_SOURCES": "2",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "1",
-    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "1",
+    "CONTROLLED_FALLBACK_TIER_B_REQUIRE_ODDS_SOURCES": "true",
+    "CONTROLLED_FALLBACK_TIER_B_REQUIRE_INDEPENDENT_SOURCES": "true",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_ODDS_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_BOOKS": "2",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONTEXT_SOURCES": "2",
+    "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIRMATION_SOURCES": "2",
     "CONTROLLED_FALLBACK_TIER_B_BOOKMAKER_QUORUM_PRICE_GUARD": "true",
 
     # V7: prevent unpublished/evaluated rows from blocking future review as
@@ -58,11 +55,7 @@ CONTRACT_ENV = {
     "CONTROLLED_FALLBACK_DEDUPE_SENT_INDEX_STRICT": "true",
     "CONTROLLED_FALLBACK_DEDUPE_PREVIOUS_REPORT": "true",
 
-    # V8: strict B-tier market/context fallback when numeric total xG is missing.
-    # The xG guard was blocking otherwise clean B-tier candidates because providers
-    # often expose context labels (sstats/clubelo/model_xg) without numeric xG pair.
-    # Do not lower the global quality/value bar; raise it for this mode instead.
-    "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": "false",
+    "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": "true",
     "CONTROLLED_FALLBACK_TIER_B_MIN_CONFIDENCE": "68.0",
     "CONTROLLED_FALLBACK_TIER_B_MIN_QUALITY": "70.0",
     "CONTROLLED_FALLBACK_TIER_B_MIN_EDGE_PP": "5.0",
@@ -101,16 +94,15 @@ def main() -> int:
         "created_at_utc": datetime.now(timezone.utc).isoformat(),
         "status": "applied",
         "contract": {
-            "A": {"min_bookmakers": 2, "min_context_sources": 2},
-            "B": {"min_bookmakers": 1, "min_context_sources": 1},
-            "independent_odds_sources": "diagnostic_only",
+            "A": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
+            "B": {"min_odds_sources": 2, "min_bookmakers": 2, "min_context_sources": 2},
+            "independent_odds_sources": "required",
             "guards_unchanged": ["quality", "line_movement", "price_integrity", "dedupe"],
-            "v8_note": "Totals xG is not an absolute Telegram blocker in strict B-tier market/context fallback; final B-tier EV/edge/publication-score thresholds are raised.",
         },
         "env": CONTRACT_ENV,
     }
     out.write_text(json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    print("Applied A/B tier contract v8: B=1+bookmaker+1+context; strict B-tier market/context fallback enabled")
+    print("Applied strict A/B publication contract: 2 odds + 2 books + 2 context")
     return 0
 
 

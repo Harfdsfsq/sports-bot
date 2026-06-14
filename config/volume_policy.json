@@ -5,14 +5,14 @@
     "target_3": {
       "description": "Default balanced volume mode: target 3 picks/day with strict hard guards and no Tier C publication.",
       "daily_target_picks": 3,
-      "daily_soft_cap_picks": 4,
-      "daily_hard_cap_picks": 5,
-      "max_picks_per_run": 2,
+      "daily_soft_cap_picks": 3,
+      "daily_hard_cap_picks": 4,
+      "max_picks_per_run": 1,
       "max_picks_per_match": 1,
       "daily_stake_cap_pct": 2.25,
       "allowed_families": [
         "totals",
-        "dnb"
+        "spreads"
       ],
       "tier_c_publish_enabled": false,
       "extra_pick_min_ev_pct": 8.5,
@@ -22,7 +22,7 @@
         "A": {
           "allowed_families": [
             "totals",
-            "dnb"
+            "spreads"
           ],
           "min_books": 2,
           "min_confidence": 66.0,
@@ -35,7 +35,7 @@
         "B": {
           "allowed_families": [
             "totals",
-            "dnb"
+            "spreads"
           ],
           "min_books": 2,
           "min_confidence": 64.5,
@@ -48,7 +48,7 @@
         "C": {
           "allowed_families": [
             "totals",
-            "dnb"
+            "spreads"
           ],
           "min_books": 2,
           "min_confidence": 68.0,
@@ -68,14 +68,15 @@
       },
       "final_guards": {
         "CONTROLLED_FALLBACK_REQUIRE_2_BOOKS_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM": true,
+        "CONTROLLED_FALLBACK_REQUIRE_INDEPENDENT_SOURCES": true,
         "CONTROLLED_FALLBACK_REJECT_PROXY_SINGLE_BOOK": true,
         "CONTROLLED_FALLBACK_REQUIRE_MARKET_CONFIRMATION_FOR_PROXY": true,
         "CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT": true,
         "CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM": true,
-        "CONTROLLED_FALLBACK_REQUIRE_DNB_SANITY_FOR_TELEGRAM": true,
         "CONTROLLED_FALLBACK_FINAL_MIN_EDGE_PP": 3.0,
-        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": 6.0,
-        "CONTROLLED_FALLBACK_DNB_OUTLIER_GUARD_ENABLED": true
+        "CONTROLLED_FALLBACK_FINAL_MIN_EV_PCT": 6.0
       }
     },
     "target_5": {
