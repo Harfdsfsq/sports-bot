@@ -4,26 +4,26 @@
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: 300 матчей. Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 299/300 (100%) | 1+ контекст: 38/300 (13%)
-• 2+ букмекера: 114/300 (38%)
-• Odds-api offer snapshot: rows 11734, matches 113, same-side 2+ books 70
+• 1+ линия: 299/300 (100%) | 1+ контекст: 40/300 (13%)
+• 2+ букмекера: 63/300 (21%)
+• Odds-api offer snapshot: rows 3004, matches 30, same-side 2+ books 17
 • 2+ независимых odds-source: 299/300 (100%) — диагностика, не блок публикации
-• 2+ контекста: 38/300 (13%)
-• Готово для модели: 37/300 (12%)
+• 2+ контекста: 40/300 (13%)
+• Готово для модели: 40/300 (13%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 19 | опубликовано: 2
+• A-tier strict-ready: 11 | опубликовано: 2
   A-tier = 2+ букмекера/ценовых подтверждения + 2+ контекста + подтверждённое движение линии + value.
-• B-tier 1+ bookmaker/context coverage: 38 | fallback опубликовано: 0
+• B-tier 1+ bookmaker/context coverage: 40 | fallback опубликовано: 0
   B-tier = 1+ букмекер + 1+ контекст + второй снимок линии + value сохранился.
-• B-cover 1+ букмекер ∩ 1+ контекст: до 38 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 38 матчей.
+• B-cover 1+ букмекер ∩ 1+ контекст: до 40 матчей; A-cover 2+ букмекер ∩ 2+ контекст: до 40 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source теперь только диагностическая метрика, а не обязательный блок публикации.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 27 | матчей без следующего регулярного run: 22
-• Line guard: увидел 9, оставил 6, снял 0
+• Pre-kickoff проверок: 3 | матчей без следующего регулярного run: 3
+• Line guard: увидел 4, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0/0
@@ -32,10 +32,10 @@
 
 📡 Провайдеры: запросы и полезные данные
 • odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 7; ошибок 0.
+• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 3; ошибок 0.
 • SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 9; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
-• Комбинации источников линий: odds_api_io: 106, bzzoiro+odds_api_io: 7, bzzoiro: 2
+• Комбинации источников линий: odds_api_io: 27, bzzoiro+odds_api_io: 3, bzzoiro: 1
 
 🚫 Почему не опубликовано
 • Нет reject reasons в свежих артефактах.
@@ -45,16 +45,16 @@
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 300/300; shortfall 0; status ok_target_met.
-• Bookmaker mapping repair: raw 2+ 300; normalized 22→43; gap after 257.
-• B-cover promotion: considered 30; promoted 1; top skips promotion_skip_duplicate_candidate 1; promotion_skip_edge_below_min 46; promotion_skip_no_offer_bucket 18; inventory rows 240; selected B-cover rows 30 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• B-cover funnel: B-cover 30; candidates seen 6; B-covered без кандидата 25.
+• Bookmaker mapping repair: raw 2+ 68; normalized 17→3; gap after 65.
+• B-cover promotion: considered 16; promoted 0; top skips promotion_skip_edge_below_min 2; promotion_skip_no_offer_bucket 15; promotion_skip_odds_above_max 10; promotion_skip_odds_below_min 8; inventory rows 240; selected B-cover rows 16 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• B-cover funnel: B-cover 16; candidates seen 0; B-covered без кандидата 16.
 
 📌 Что это значит
 • Прогноз реально опубликован; отчёт выше показывает, через какой контракт он прошёл.
 • Ценовой контракт сейчас: B-tier 1+ букмекер; A-tier 2+ букмекера. Price-integrity guard остаётся обязательным.
 
 🔗 GitHub Actions
-• Run ID: 27502705686
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27502705686
-• Artifact: run-bot-27502705686
+• Run ID: 27508871638
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27508871638
+• Artifact: run-bot-27508871638
 • workflow run-bot, attempt 1
