@@ -3,13 +3,14 @@
 • Главная причина: n/a
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 111 матчей. Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 110/111 (99%) | 1+ контекст: 75/111 (68%)
-• 2+ букмекера: 62/111 (56%)
-• Odds-api offer snapshot: rows 3853, matches 49, same-side 2+ books 29
+• Инвентарь дня: 111 матчей. Runtime rows processed: 8 (это не размер inventory).
+• 1+ линия: 111/111 (100%) | 1+ контекст: 79/111 (71%)
+• 2+ букмекера: 63/111 (57%)
+• Raw 2+ букмекера odds-api.io: 3 | normalized inventory: 63 | mapping gap: 0
+• Odds-api offer snapshot: rows 249, matches 4, same-side 2+ books 3
 • 2+ independent odds-source: 3/111 (3%) — обязательный блок публикации
 • 2+ контекста: 18/111 (16%)
-• Готово для модели: 74/111 (67%)
+• Готово для модели: 79/111 (71%)
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 3 | опубликовано: 0
@@ -22,8 +23,8 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 5 | матчей без следующего регулярного run: 5
-• Line guard: увидел 3, оставил 3, снял 0
+• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 1
+• Line guard: увидел 0, оставил 0, снял 0
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0/0
@@ -31,9 +32,9 @@
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 2; смэтчил матчей 7; offers 249; 2+ букмекера 3; ошибок 0.
+• Bzzoiro: direct req 4, v2 req 4; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 22; сырых строк 18273; контекстов 4; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled False; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
 • Комбинации источников линий: н/д
 
@@ -45,16 +46,16 @@
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 97/300; shortfall 203; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 116; normalized 36→33; gap after 83.
-• Legacy B-cover diagnostic: considered 51; promoted 6; top skips promotion_skip_edge_below_min 155; promotion_skip_ev_below_min 1; promotion_skip_no_offer_bucket 5; inventory rows 82; selected legacy B-cover rows 51 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 51; candidates seen 18; legacy rows без кандидата 42.
+• Bookmaker mapping repair: raw 2+ 13; normalized 36→14; gap after 0.
+• Legacy B-cover diagnostic: considered 55; promoted 0; top skips promotion_skip_edge_below_min 35; promotion_skip_no_offer_bucket 41; promotion_skip_odds_above_max 20; promotion_skip_odds_below_min 26; inventory rows 82; selected legacy B-cover rows 55 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 55; candidates seen 2; legacy rows без кандидата 53.
 
 📌 Что это значит
 • Не форсировать публикацию: кандидат должен пройти 2 odds-source, 2 букмекера, 2 контекста, xG/quality/value/line movement.
 • Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27514817959
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27514817959
-• Artifact: run-bot-27514817959
+• Run ID: 27516308783
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27516308783
+• Artifact: run-bot-27516308783
 • workflow run-bot, attempt 1
