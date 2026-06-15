@@ -1,12 +1,12 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: n/a
+• Главная причина: line movement guard снял кандидата
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: 111 матчей. Runtime rows processed: 0 (это не размер inventory).
 • 1+ линия: 111/111 (100%) | 1+ контекст: 85/111 (77%)
-• 2+ букмекера: 68/111 (61%)
-• Odds-api offer snapshot: rows 1785, matches 20, same-side 2+ books 10
+• 2+ букмекера: 74/111 (67%)
+• Odds-api offer snapshot: rows 3093, matches 36, same-side 2+ books 22
 • 2+ independent odds-source: 3/111 (3%) — обязательный блок публикации
 • 2+ контекста: 18/111 (16%)
 • Готово для модели: 85/111 (77%)
@@ -23,7 +23,7 @@
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 1, оставил 1, снял 0
+• Line guard: увидел 2, оставил 1, снял 1
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0/0
@@ -38,23 +38,23 @@
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• line movement guard снял кандидата: 1 (100%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 🧯 Диагностика новых стопоров
 • Inventory target repair: 97/300; shortfall 203; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 40; normalized 36→11; gap after 29.
-• Legacy B-cover diagnostic: considered 61; promoted 1; top skips promotion_skip_edge_below_min 68; promotion_skip_ev_below_min 1; promotion_skip_no_offer_bucket 42; inventory rows 82; selected legacy B-cover rows 61 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 61; candidates seen 7; legacy rows без кандидата 56.
+• Bookmaker mapping repair: raw 2+ 92; normalized 37→30; gap after 62.
+• Legacy B-cover diagnostic: considered 61; promoted 3; top skips promotion_skip_edge_below_min 116; promotion_skip_no_offer_bucket 27; promotion_skip_odds_above_max 235; inventory rows 82; selected legacy B-cover rows 61 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 61; candidates seen 14; legacy rows без кандидата 51.
 
 📌 Что это значит
-• Не форсировать публикацию: кандидат должен пройти 2 odds-source, 2 букмекера, 2 контекста, xG/quality/value/line movement.
+• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27525074616
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27525074616
-• Artifact: run-bot-27525074616
+• Run ID: 27527802413
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27527802413
+• Artifact: run-bot-27527802413
 • workflow run-bot, attempt 1
