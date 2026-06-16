@@ -1,29 +1,29 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: n/a
+• Главная причина: line movement guard снял кандидата
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 98 матчей. Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 94/98 (96%) | 1+ контекст: 70/98 (71%)
-• 2+ букмекера: 49/98 (50%)
-• Odds-api offer snapshot: rows 4049, matches 52, same-side 2+ books 30
-• 2+ independent odds-source: 3/98 (3%) — обязательный блок публикации
-• 2+ контекста: 7/98 (7%)
-• Готово для модели: 66/98 (67%)
+• Инвентарь дня: 172 матчей. Runtime rows processed: 0 (это не размер inventory).
+• 1+ линия: 163/172 (95%) | 1+ контекст: 45/172 (26%)
+• 2+ букмекера: 80/172 (47%)
+• Odds-api offer snapshot: rows 3823, matches 36, same-side 2+ books 28
+• 2+ independent odds-source: 4/172 (2%) — обязательный блок публикации
+• 2+ контекста: 28/172 (16%)
+• Готово для модели: 37/172 (22%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 3 | опубликовано: 0
+• A-tier strict-ready: 4 | опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• B-tier strict coverage: 3 | fallback опубликовано: 0
+• B-tier strict coverage: 4 | fallback опубликовано: 0
   B-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
-• Strict-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 3 матчей.
+• Strict-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 4 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — обязательный блок публикации вместе с 2+ букмекерами и 2+ контекстами.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 14 | матчей без следующего регулярного run: 1
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 4 | матчей без следующего регулярного run: 4
+• Line guard: увидел 5, оставил 3, снял 2
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0/0
@@ -38,23 +38,23 @@
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• line movement guard снял кандидата: 2 (100%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 🧯 Диагностика новых стопоров
-• Inventory target repair: 84/300; shortfall 216; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 108; normalized 31→27; gap after 81.
-• Legacy B-cover diagnostic: considered 51; promoted 1; top skips promotion_skip_edge_below_min 154; promotion_skip_ev_below_min 1; promotion_skip_no_offer_bucket 5; inventory rows 69; selected legacy B-cover rows 51 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 51; candidates seen 10; legacy rows без кандидата 42.
+• Inventory target repair: 131/300; shortfall 169; status partial_known_rows_only.
+• Bookmaker mapping repair: raw 2+ 111; normalized 73→55; gap after 56.
+• Legacy B-cover diagnostic: considered 21; promoted 6; top skips promotion_skip_edge_below_min 47; promotion_skip_ev_below_min 2; promotion_skip_no_offer_bucket 10; inventory rows 135; selected legacy B-cover rows 21 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 21; candidates seen 20; legacy rows без кандидата 10.
 
 📌 Что это значит
-• Не форсировать публикацию: кандидат должен пройти 2 odds-source, 2 букмекера, 2 контекста, xG/quality/value/line movement.
+• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27513780125
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27513780125
-• Artifact: run-bot-27513780125
+• Run ID: 27606424817
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27606424817
+• Artifact: run-bot-27606424817
 • workflow run-bot, attempt 1
