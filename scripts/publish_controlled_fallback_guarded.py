@@ -30,6 +30,7 @@ BASE_PATH = Path(__file__).resolve().with_name("publish_controlled_fallback.py")
 REPORT_PATH = ROOT / ".data" / "exports" / "latest-controlled-fallback-prepublish-guard.json"
 
 _GUARD_EVENTS: list[dict[str, Any]] = []
+MOVEMENT_READY_STATUSES = {"movement_confirmed", "movement_rechecked_across_cron_windows", "publish_now_no_next_cron", "movement_ready"}
 
 
 def _load_base_module() -> Any:
@@ -151,8 +152,39 @@ def _row_from_windowed_block(item: dict[str, Any]) -> dict[str, Any]:
     return row
 
 
+def _candidate_movement_confirmed(candidate: dict[str, Any]) -> bool:
+    guards = [
+        candidate.get("line_movement_guard"),
+        candidate.get("line_movement"),
+        (candidate.get("diagnostics") or {}).get("line_movement_guard") if isinstance(candidate.get("diagnostics"), dict) else None,
+    ]
+    for guard in guards:
+        if not isinstance(guard, dict):
+            continue
+        status = str(guard.get("status") or guard.get("line_movement_lifecycle_status") or "").strip()
+        if status in MOVEMENT_READY_STATUSES and bool(guard.get("passed", True)):
+            return True
+    source_summary = candidate.get("source_summary") if isinstance(candidate.get("source_summary"), dict) else {}
+    for key in ("publication_lifecycle_status", "line_movement_lifecycle_status", "movement_status"):
+        if str(source_summary.get(key) or candidate.get(key) or "").strip() in MOVEMENT_READY_STATUSES:
+            return True
+    return False
+
+
+def controlled_line_movement_report_guarded(candidate: dict[str, Any], metrics: dict[str, Any]) -> dict[str, Any]:
+    if _candidate_movement_confirmed(candidate):
+        report = {"passed": True, "status": "movement_confirmed", "reasons": []}
+        metrics["line_movement"] = report
+        return report
+    report = candidate.get("line_movement_guard") if isinstance(candidate.get("line_movement_guard"), dict) else {}
+    metrics["line_movement"] = report
+    return report
+
+
 def _windowed_movement_reasons(candidate: dict[str, Any]) -> list[str]:
     if not _truthy(os.getenv("CONTROLLED_FALLBACK_RESPECT_WINDOWED_MOVEMENT_GUARD"), True):
+        return []
+    if _candidate_movement_confirmed(candidate):
         return []
     payload = _load_json(ROOT / ".data" / "exports" / "latest-windowed-core-publication-filter.json", {})
     blocked = payload.get("blocked_sample") if isinstance(payload, dict) else []
@@ -342,8 +374,7 @@ def _line_state_has_previous_recheck(candidate: dict[str, Any], now: datetime) -
                 if (now - captured).total_seconds() / 60.0 >= min_recheck:
                     return True
     # Already annotated candidates from the main pipeline can pass.
-    status = str(candidate.get("publication_lifecycle_status") or (candidate.get("source_summary") or {}).get("publication_lifecycle_status") or "")
-    return status in {"movement_confirmed", "movement_rechecked_across_cron_windows", "publish_now_no_next_cron"}
+    return _candidate_movement_confirmed(candidate)
 
 
 def _final_cron_recheck_reasons(candidate: dict[str, Any]) -> list[str]:
@@ -357,10 +388,17 @@ def _final_cron_recheck_reasons(candidate: dict[str, Any]) -> list[str]:
     interval = int(float(os.getenv("CRON_EXPECTED_INTERVAL_MINUTES") or os.getenv("LINE_MOVEMENT_CRON_INTERVAL_MINUTES") or 120))
     next_run = _next_scheduled_run_at(now, interval)
     latest_useful = kickoff - timedelta(minutes=max(0, min_lead))
+    has_next_regular_run = bool(next_run is not None and next_run <= latest_useful)
+    has_previous_recheck = _line_state_has_previous_recheck(candidate, now)
     reasons: list[str] = []
-    if next_run is not None and next_run <= latest_useful:
+    if has_next_regular_run and not has_previous_recheck:
         reasons.append("controlled_fallback_next_regular_run_before_kickoff")
-    if not _line_state_has_previous_recheck(candidate, now):
+        reasons.append("controlled_fallback_missing_line_recheck")
+    elif not has_next_regular_run:
+        # Final window: no regular cron remains before kickoff, so the current
+        # run is allowed to be the last movement/value check.
+        has_previous_recheck = True
+    if not has_previous_recheck and "controlled_fallback_missing_line_recheck" not in reasons:
         reasons.append("controlled_fallback_missing_line_recheck")
     if reasons:
         _GUARD_EVENTS.append({

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 
@@ -232,3 +233,57 @@ def test_controlled_fallback_guard_ignores_stale_windowed_block_when_candidate_m
     }
 
     assert guarded._windowed_movement_reasons(candidate) == []
+
+
+def test_controlled_fallback_final_cron_allows_candidate_after_line_recheck(monkeypatch):
+    import scripts.publish_controlled_fallback_guarded as guarded
+
+    now = datetime.now(timezone.utc)
+    candidate = {
+        "match_key": "soccer|jazz|salpa|2026-05-28",
+        "family": "totals",
+        "selection": "Under 2.5",
+        "point": 2.5,
+        "commence_time": (now + timedelta(hours=4)).isoformat(),
+    }
+    monkeypatch.setattr(guarded, "_next_scheduled_run_at", lambda current, interval: current + timedelta(hours=1))
+    monkeypatch.setattr(guarded, "_line_state_has_previous_recheck", lambda row, current: True)
+
+    assert guarded._final_cron_recheck_reasons(candidate) == []
+
+
+def test_controlled_fallback_final_window_allows_last_check_without_prior_snapshot(monkeypatch):
+    import scripts.publish_controlled_fallback_guarded as guarded
+
+    now = datetime.now(timezone.utc)
+    candidate = {
+        "match_key": "soccer|jazz|salpa|2026-05-28",
+        "family": "totals",
+        "selection": "Under 2.5",
+        "point": 2.5,
+        "commence_time": (now + timedelta(minutes=45)).isoformat(),
+    }
+    monkeypatch.setattr(guarded, "_next_scheduled_run_at", lambda current, interval: current + timedelta(hours=2))
+    monkeypatch.setattr(guarded, "_line_state_has_previous_recheck", lambda row, current: False)
+
+    assert guarded._final_cron_recheck_reasons(candidate) == []
+
+
+def test_controlled_fallback_waits_for_next_cron_until_line_recheck(monkeypatch):
+    import scripts.publish_controlled_fallback_guarded as guarded
+
+    now = datetime.now(timezone.utc)
+    candidate = {
+        "match_key": "soccer|jazz|salpa|2026-05-28",
+        "family": "totals",
+        "selection": "Under 2.5",
+        "point": 2.5,
+        "commence_time": (now + timedelta(hours=4)).isoformat(),
+    }
+    monkeypatch.setattr(guarded, "_next_scheduled_run_at", lambda current, interval: current + timedelta(hours=1))
+    monkeypatch.setattr(guarded, "_line_state_has_previous_recheck", lambda row, current: False)
+
+    reasons = guarded._final_cron_recheck_reasons(candidate)
+
+    assert "controlled_fallback_next_regular_run_before_kickoff" in reasons
+    assert "controlled_fallback_missing_line_recheck" in reasons
