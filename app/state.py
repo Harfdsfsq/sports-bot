@@ -5,7 +5,7 @@ import hashlib
 import json
 from collections.abc import Sequence
 from dataclasses import asdict
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 UTC = timezone.utc
 from pathlib import Path
 from typing import Any
@@ -1066,8 +1066,22 @@ class JsonStateStore:
         matches: list[Match],
         candidates: list[CandidateBet],
         forecast_rows: list[dict[str, Any]] | None = None,
+        *,
+        match_serving_rows: list[dict[str, Any]] | None = None,
+        context_observation_rows: list[dict[str, Any]] | None = None,
+        line_snapshot_rows: list[dict[str, Any]] | None = None,
+        consensus_line_rows: list[dict[str, Any]] | None = None,
         settings: Any | None = None,
+        **extra_rows: Any,
     ) -> dict[str, str]:
+        """Export latest runtime payloads without breaking on new runner datasets.
+
+        The runner can evolve faster than the state exporter.  Extra keyword
+        datasets such as match_serving_rows or line_snapshot_rows are useful
+        diagnostics, but missing exporter support must never crash run-once.
+        Known datasets are exported as separate latest/date-stamped files;
+        unknown list/dict datasets are written generically for diagnostics.
+        """
         root = Path(export_dir)
         dated = root / datetime.now(UTC).strftime('%Y-%m-%d')
         dated.mkdir(parents=True, exist_ok=True)
@@ -1078,8 +1092,9 @@ class JsonStateStore:
         bet_rows = self.prediction_ledger(settings)
         pending = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') == 'pending']
         settled = [item for item in (self._state.get('bets') or []) if str(item.get('status') or '') not in {'pending', 'generated'}]
-        bank = self.bankroll_summary()
-        return {
+        bank = self.bankroll_summary(settings)
+
+        exports: dict[str, str] = {
             'matches_json': str(self._write_json(dated / f'{stamp}-matches.json', match_rows)),
             'picks_json': str(self._write_json(dated / f'{stamp}-picks.json', pick_rows)),
             'bets_json': str(self._write_json(dated / f'{stamp}-bets.json', bet_rows)),
@@ -1099,6 +1114,32 @@ class JsonStateStore:
             'latest_pending_bets_json': str(self._write_json(root / 'latest-pending-bets.json', pending)),
             'latest_settled_bets_json': str(self._write_json(root / 'latest-settled-bets.json', settled)),
         }
+
+        optional_datasets: dict[str, Any] = {
+            'match_serving': match_serving_rows or [],
+            'context_observations': context_observation_rows or [],
+            'line_snapshots': line_snapshot_rows or [],
+            'consensus_lines': consensus_line_rows or [],
+        }
+        for raw_name, value in extra_rows.items():
+            if value in (None, ''):
+                continue
+            if isinstance(value, (list, tuple)):
+                optional_datasets[raw_name] = list(value)
+            elif isinstance(value, dict):
+                optional_datasets[raw_name] = value
+
+        for name, rows in optional_datasets.items():
+            if rows in (None, ''):
+                continue
+            slug = str(name).strip().replace('_', '-')
+            exports[f'{name}_json'] = str(self._write_json(dated / f'{stamp}-{slug}.json', rows))
+            exports[f'latest_{name}_json'] = str(self._write_json(root / f'latest-{slug}.json', rows))
+            if isinstance(rows, list) and all(isinstance(item, dict) for item in rows):
+                exports[f'{name}_csv'] = str(self._write_csv(dated / f'{stamp}-{slug}.csv', rows))
+                exports[f'latest_{name}_csv'] = str(self._write_csv(root / f'latest-{slug}.csv', rows))
+
+        return exports
 
     @staticmethod
     def _write_json(path: Path, payload: Any) -> Path:
