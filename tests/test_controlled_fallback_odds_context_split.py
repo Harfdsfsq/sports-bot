@@ -72,6 +72,35 @@ def test_single_provider_candidate_not_promoted_to_tier_a(monkeypatch):
     assert any(str(reason).startswith("telegram_publish_odds_sources_guard") or str(reason) == "tier_c_watch_only" for reason in reasons)
 
 
+def test_proxy_single_source_thresholds_are_recorded(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", "8")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", "15")
+    monkeypatch.setenv("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", "78")
+    candidate = _candidate()
+    candidate["_candidate_source"] = "latest_rescue_candidates"
+    candidate["quality_score"] = 0
+    candidate["diagnostics"]["quality"]["quality_score"] = 0
+    candidate["sources_count"] = 1
+    candidate["source_summary"]["context_sources"] = ["bzzoiro"]
+    candidate["source_summary"]["publish_coverage_contract"]["context_sources"] = ["bzzoiro"]
+    candidate["source_summary"]["publish_coverage_contract"]["context_sources_count"] = 1
+
+    metrics = pcf.candidate_metrics(candidate)
+    reasons = pcf.final_publish_guard_reasons(candidate, metrics, "уровень C")
+
+    assert metrics["quality_score_source"] == "proxy"
+    assert metrics["proxy_single_source_thresholds"] == {
+        "enabled": True,
+        "applies": True,
+        "min_edge_pp": 8.0,
+        "min_ev_pct": 15.0,
+        "min_confidence": 78.0,
+    }
+    assert "proxy_single_source_edge_below_min" in reasons
+    assert "proxy_single_source_confidence_below_min" in reasons
+
+
 def test_over_total_below_xg_line_is_direction_conflict(monkeypatch):
     monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
     candidate = _candidate()

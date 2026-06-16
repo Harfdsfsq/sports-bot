@@ -1073,6 +1073,14 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
     xg_sanity = xg_sanity_metrics(candidate, adjusted)
     btts_sanity = btts_sanity_metrics(candidate, adjusted)
     dnb_sanity = dnb_sanity_metrics(candidate, adjusted)
+    proxy_single_source_applies = quality_score_source == "proxy" and confirmation_sources_count < 2
+    proxy_single_source_thresholds = {
+        "enabled": env_bool("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", True),
+        "applies": proxy_single_source_applies,
+        "min_edge_pp": env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0),
+        "min_ev_pct": env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0),
+        "min_confidence": env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0),
+    }
 
     return {
         "odds": round(odds, 4),
@@ -1095,6 +1103,7 @@ def candidate_metrics(candidate: dict[str, Any]) -> dict[str, Any]:
         "confirmation_sources_count": confirmation_sources_count,
         "confirmation_sources": confirmation_sources,
         "confirmation_meta": confirmation_meta,
+        "proxy_single_source_thresholds": proxy_single_source_thresholds,
         "quality_reasons": quality_reasons(candidate),
         "xg_sanity": xg_sanity,
         "btts_sanity": btts_sanity,
@@ -1465,11 +1474,23 @@ def final_publish_guard_reasons(candidate: dict[str, Any], metrics: dict[str, An
     # strong 2-book signals when there is clear EV, edge and confidence.
     if env_bool("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_STRICT", True):
         if str(metrics.get("quality_score_source") or "") == "proxy" and int(metrics.get("confirmation_sources_count", metrics.get("sources_count") or 0) or 0) < 2:
-            if float(metrics.get("canonical_edge_pp") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0):
+            thresholds = metrics.get("proxy_single_source_thresholds") if isinstance(metrics.get("proxy_single_source_thresholds"), dict) else {}
+            min_edge = env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EDGE_PP", 3.0)
+            min_ev = env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0)
+            min_confidence = env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0)
+            thresholds.update({
+                "enabled": True,
+                "applies": True,
+                "min_edge_pp": min_edge,
+                "min_ev_pct": min_ev,
+                "min_confidence": min_confidence,
+            })
+            metrics["proxy_single_source_thresholds"] = thresholds
+            if float(metrics.get("canonical_edge_pp") or 0.0) < min_edge:
                 reasons.append("proxy_single_source_edge_below_min")
-            if float(metrics.get("canonical_ev_pct") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_EV_PCT", 7.0):
+            if float(metrics.get("canonical_ev_pct") or 0.0) < min_ev:
                 reasons.append("proxy_single_source_ev_below_min")
-            if float(metrics.get("confidence") or 0.0) < env_float("CONTROLLED_FALLBACK_PROXY_SINGLE_SOURCE_MIN_CONFIDENCE", 68.0):
+            if float(metrics.get("confidence") or 0.0) < min_confidence:
                 reasons.append("proxy_single_source_confidence_below_min")
 
     if fam in {"totals", "teamtotals"} and env_bool("CONTROLLED_FALLBACK_REQUIRE_TOTALS_SANITY_FOR_TELEGRAM", True):

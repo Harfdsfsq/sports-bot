@@ -267,6 +267,18 @@ def _candidate_lines(payload: dict[str, Any], limit: int = 4) -> list[str]:
             out.append("   • причина: " + ", ".join(_reason_ru(x) for x in visible_reasons[:4]))
         elif legacy_count:
             out.append("   • причина: только legacy odds-source диагностика; публикацию решают 2+ odds-source + 2+ букмекера + 2+ контекста + value")
+        thresholds = metrics.get("proxy_single_source_thresholds") if isinstance(metrics.get("proxy_single_source_thresholds"), dict) else {}
+        if thresholds and thresholds.get("applies"):
+            out.append(
+                "   • proxy single-source: "
+                f"fact edge {edge:.1f}pp / EV {ev:.1f}% / conf {_as_float(metrics.get('confidence')):.1f}; "
+                f"min edge {_as_float(thresholds.get('min_edge_pp')):.1f}pp / "
+                f"EV {_as_float(thresholds.get('min_ev_pct')):.1f}% / "
+                f"conf {_as_float(thresholds.get('min_confidence')):.1f}"
+            )
+        xg = metrics.get("xg_sanity") if isinstance(metrics.get("xg_sanity"), dict) else {}
+        if xg and not bool(xg.get("enabled")):
+            out.append(f"   • xG sanity: missing ({xg.get('reason') or 'no usable xG'})")
     return out
 
 

@@ -1,5 +1,5 @@
 from scripts.send_harizon_telegram_run_report_v5 import main_pipeline_sent_count
-from scripts.send_harizon_telegram_run_report_v8 import render
+from scripts.send_harizon_telegram_run_report_v8 import _candidate_lines, render
 
 
 def test_main_pipeline_count_ignores_pending_ledger_without_fresh_pick() -> None:
@@ -63,3 +63,39 @@ def test_v8_render_describes_final_line_guard_drop_without_waiting_snapshot() ->
 
     assert "edge/EV/movement" in text
     assert "нужен второй снимок" not in text
+
+
+def test_v8_candidate_lines_show_proxy_single_source_thresholds() -> None:
+    lines = _candidate_lines(
+        {
+            "samples": {
+                "fallback_evaluated": [
+                    {
+                        "home_team": "Fortaleza",
+                        "away_team": "America FC",
+                        "selection": "Under 2.5",
+                        "reject_reasons": ["proxy_single_source_ev_below_min"],
+                        "metrics": {
+                            "odds": 1.96,
+                            "canonical_ev_pct": 9.388,
+                            "canonical_edge_pp": 4.79,
+                            "confidence": 70.925,
+                            "quality_score": 76.0,
+                            "proxy_single_source_thresholds": {
+                                "applies": True,
+                                "min_edge_pp": 8.0,
+                                "min_ev_pct": 15.0,
+                                "min_confidence": 78.0,
+                            },
+                            "xg_sanity": {"enabled": False, "reason": "missing_xg"},
+                        },
+                    }
+                ]
+            }
+        }
+    )
+
+    text = "\n".join(lines)
+    assert "fact edge 4.8pp / EV 9.4% / conf 70.9" in text
+    assert "min edge 8.0pp / EV 15.0% / conf 78.0" in text
+    assert "xG sanity: missing (missing_xg)" in text

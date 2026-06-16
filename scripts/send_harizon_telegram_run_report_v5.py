@@ -511,6 +511,10 @@ def build_payload() -> dict[str, Any]:
         top_reason = str(publish_status.get("top_reason_when_published") or "telegram_sent")
     elif odds_auth_failed and raw_candidates <= 0:
         top_reason = "odds_api_io_auth_failed"
+    elif line_dropped > 0:
+        top_reason = "line_movement_guard_dropped"
+    elif line_waiting_next_run > 0:
+        top_reason = "line_movement_guard_waiting_next_run"
     else:
         top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback_status or "n/a")
     return {
