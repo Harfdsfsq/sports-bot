@@ -1,15 +1,16 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: n/a
+• Главная причина: line movement guard снял кандидата
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 160 матчей. Runtime rows processed: 0 (это не размер inventory).
-• 1+ линия: 152/160 (95%) | 1+ контекст: 36/160 (22%)
-• 2+ букмекера: 68/160 (42%)
-• Odds-api offer snapshot: rows 108, matches 5, same-side 2+ books 2
-• 2+ independent odds-source: 4/160 (2%) — обязательный блок публикации
-• 2+ контекста: 23/160 (14%)
-• Готово для модели: 28/160 (18%)
+• Инвентарь дня: 163 матчей. Runtime rows processed: 16 (это не размер inventory).
+• 1+ линия: 152/163 (93%) | 1+ контекст: 38/163 (23%)
+• 2+ букмекера: 68/163 (42%)
+• Raw 2+ букмекера odds-api.io: 9 | normalized inventory: 68 | mapping gap: 0
+• Odds-api offer snapshot: rows 746, matches 11, same-side 2+ books 7
+• 2+ independent odds-source: 4/163 (2%) — обязательный блок публикации
+• 2+ контекста: 23/163 (14%)
+• Готово для модели: 30/163 (18%)
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 4 | опубликовано: 0
@@ -22,39 +23,39 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 6 | матчей без следующего регулярного run: 6
-• Line guard: увидел 0, оставил 0, снял 0
+• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
+• Line guard: увидел 2, оставил 0, снял 2
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/0
+• Raw/candidates before quality: 4/4
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
-• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 4; смэтчил матчей 16; offers 746; 2+ букмекера 9; ошибок 0.
+• Bzzoiro: direct req 1, v2 req 1; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 22; сырых строк 17162; контекстов 3; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled False; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• Нет reject reasons в свежих артефактах.
+• line movement guard снял кандидата: 2 (100%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 🧯 Диагностика новых стопоров
-• Inventory target repair: 118/300; shortfall 182; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 16; normalized 61→8; gap after 8.
-• Legacy B-cover diagnostic: considered 12; promoted 0; top skips promotion_skip_no_offer_bucket 12; inventory rows 123; selected legacy B-cover rows 12 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 12; candidates seen 0; legacy rows без кандидата 12.
+• Inventory target repair: 119/300; shortfall 181; status partial_known_rows_only.
+• Bookmaker mapping repair: raw 2+ 36; normalized 61→22; gap after 14.
+• Legacy B-cover diagnostic: considered 14; promoted 0; top skips promotion_skip_edge_below_min 12; promotion_skip_no_offer_bucket 8; promotion_skip_odds_above_max 22; promotion_skip_odds_below_min 26; inventory rows 126; selected legacy B-cover rows 14 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 14; candidates seen 5; legacy rows без кандидата 12.
 
 📌 Что это значит
-• Не форсировать публикацию: кандидат должен пройти 2 odds-source, 2 букмекера, 2 контекста, xG/quality/value/line movement.
+• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27585481110
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27585481110
-• Artifact: run-bot-27585481110
+• Run ID: 27586822174
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27586822174
+• Artifact: run-bot-27586822174
 • workflow run-bot, attempt 1
