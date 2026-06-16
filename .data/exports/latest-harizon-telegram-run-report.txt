@@ -3,14 +3,13 @@
 • Главная причина: line movement guard снял кандидата
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: 172 матчей. Runtime rows processed: 49 (это не размер inventory).
-• 1+ линия: 159/172 (92%) | 1+ контекст: 44/172 (26%)
-• 2+ букмекера: 79/172 (46%)
-• Raw 2+ букмекера odds-api.io: 27 | normalized inventory: 79 | mapping gap: 0
-• Odds-api offer snapshot: rows 3494, matches 35, same-side 2+ books 27
+• Инвентарь дня: 172 матчей. Runtime rows processed: 0 (это не размер inventory).
+• 1+ линия: 163/172 (95%) | 1+ контекст: 44/172 (26%)
+• 2+ букмекера: 80/172 (47%)
+• Odds-api offer snapshot: rows 1953, matches 36, same-side 2+ books 19
 • 2+ independent odds-source: 4/172 (2%) — обязательный блок публикации
-• 2+ контекста: 24/172 (14%)
-• Готово для модели: 32/172 (19%)
+• 2+ контекста: 28/172 (16%)
+• Готово для модели: 36/172 (21%)
 
 🏷️ A/B-tier публикация
 • A-tier strict-ready: 4 | опубликовано: 0
@@ -23,18 +22,18 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 0 | матчей без следующего регулярного run: 0
-• Line guard: увидел 4, оставил 2, снял 2
+• Pre-kickoff проверок: 8 | матчей без следующего регулярного run: 2
+• Line guard: увидел 3, оставил 1, снял 2
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 0/8
+• Raw/candidates before quality: 0/0
 • Quality прошло: 0 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 0 | evaluated 0 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 10; смэтчил матчей 46; offers 3494; 2+ букмекера 27; ошибок 0.
-• Bzzoiro: direct req 1, v2 req 1; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 22; сырых строк 17154; контекстов 28; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• odds-api.io: events req 0, odds req 0; смэтчил матчей 0; offers 0; 2+ букмекера 0; ошибок 0.
+• Bzzoiro: direct req 0, v2 req 0; v2 ctx 0; v2 odds 0; secondary offers 0; overlap odds-api.io 0; ошибок 0.
+• SStats: запросы 0; сырых строк 0; контекстов 0; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled False; запросы 0; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag ok_or_no_data.
 • Комбинации источников линий: н/д
 
@@ -45,17 +44,17 @@
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 🧯 Диагностика новых стопоров
-• Inventory target repair: 125/300; shortfall 175; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 107; normalized 72→57; gap after 50.
-• Legacy B-cover diagnostic: considered 20; promoted 2; top skips promotion_skip_edge_below_min 45; promotion_skip_ev_below_min 2; promotion_skip_no_offer_bucket 8; inventory rows 135; selected legacy B-cover rows 20 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 20; candidates seen 27; legacy rows без кандидата 12.
+• Inventory target repair: 131/300; shortfall 169; status partial_known_rows_only.
+• Bookmaker mapping repair: raw 2+ 111; normalized 72→55; gap after 56.
+• Legacy B-cover diagnostic: considered 20; promoted 6; top skips promotion_skip_edge_below_min 25; promotion_skip_ev_below_min 1; promotion_skip_no_offer_bucket 11; inventory rows 135; selected legacy B-cover rows 20 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 20; candidates seen 13; legacy rows без кандидата 14.
 
 📌 Что это значит
 • Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A/B-tier = 2+ odds-source + 2+ букмекера + 2+ контекста; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27598643474
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27598643474
-• Artifact: run-bot-27598643474
+• Run ID: 27600138012
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27600138012
+• Artifact: run-bot-27600138012
 • workflow run-bot, attempt 1
