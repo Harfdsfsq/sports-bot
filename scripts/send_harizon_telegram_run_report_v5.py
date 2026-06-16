@@ -144,6 +144,47 @@ def fallback_sent_count(fallback: dict[str, Any]) -> int:
     return 0
 
 
+def main_pipeline_sent_count(
+    *,
+    summary: dict[str, Any],
+    publishable: int,
+    sent_picks_count: int,
+    sent_pending_count: int,
+) -> tuple[int, dict[str, Any]]:
+    """Return fresh main-pipeline Telegram sends for this run only."""
+    summary_has_publication_counters = any(
+        key in summary
+        for key in ("published_to_telegram", "telegram_picks_sent", "published")
+    )
+    diagnostics = {
+        "summary_has_publication_counters": summary_has_publication_counters,
+        "sent_picks_count": int(sent_picks_count or 0),
+        "sent_pending_count": int(sent_pending_count or 0),
+        "ignored_ledger_sent_pending_count": 0,
+        "counter_inconsistent": False,
+    }
+    if summary_has_publication_counters:
+        count = max(
+            as_int(summary.get("published_to_telegram"), 0),
+            as_int(summary.get("telegram_picks_sent"), 0),
+            as_int(summary.get("published"), 0),
+        )
+        if count > 0 and publishable <= 0 and sent_picks_count <= 0:
+            diagnostics["counter_inconsistent"] = True
+            diagnostics["ignored_summary_published_count"] = count
+            return 0, diagnostics
+        return count, diagnostics
+
+    if sent_picks_count > 0:
+        return int(sent_picks_count), diagnostics
+
+    # latest-pending-bets/latest-bets are cumulative ledger exports.  They can
+    # contain earlier Telegram-confirmed rows for the same day, so they must not
+    # make a later no-pick run look like it published again.
+    diagnostics["ignored_ledger_sent_pending_count"] = int(sent_pending_count or 0)
+    return 0, diagnostics
+
+
 def final_publish_status(
     *,
     main_pipeline_count: int,
@@ -247,6 +288,7 @@ def reason_ru(reason: str) -> str:
         "main_pipeline_published": "опубликовано основным пайплайном",
         "fallback_published": "опубликовано fallback-пайплайном",
         "telegram_sent": "Telegram подтвердил отправку",
+        "publication_counter_inconsistent": "счётчик публикации противоречит fresh-воронке",
     }
     return mapping.get(str(reason), str(reason).replace("_", " "))
 
@@ -355,23 +397,12 @@ def build_payload() -> dict[str, Any]:
     publishable = first_positive(summary.get("publishable_candidates"), rescue_counts.get("publishable_candidates"), windowed_filter.get("kept"))
     sent_picks = [x for x in picks if is_sent_pick_row(x)]
     sent_pending = [x for x in pending if is_sent_pick_row(x)]
-    # For the factual run report, count only picks sent by *this* run when
-    # fresh debug summary is available.  latest-picks/latest-bets are committed
-    # state artifacts and may contain an older Telegram-confirmed pick; using
-    # them as a publication counter made later no-pick runs look like they had
-    # published the same pick again.
-    summary_has_publication_counters = any(
-        key in summary
-        for key in ("published_to_telegram", "telegram_picks_sent", "published")
+    main_pipeline_published_count, publication_counter_diagnostics = main_pipeline_sent_count(
+        summary=summary,
+        publishable=publishable,
+        sent_picks_count=len(sent_picks),
+        sent_pending_count=len(sent_pending),
     )
-    if summary_has_publication_counters:
-        main_pipeline_published_count = max(
-            as_int(summary.get("published_to_telegram"), 0),
-            as_int(summary.get("telegram_picks_sent"), 0),
-            as_int(summary.get("published"), 0),
-        )
-    else:
-        main_pipeline_published_count = max(len(sent_picks), len(sent_pending))
     fallback_status = str(fallback.get("status") or "").strip()
     fallback_published_count = fallback_sent_count(fallback)
     publish_status = final_publish_status(
@@ -418,6 +449,8 @@ def build_payload() -> dict[str, Any]:
         reasons["line_movement_guard_dropped"] += line_dropped
     if odds_auth_failed:
         reasons["odds_api_io_auth_failed"] += 1
+    if bool(publication_counter_diagnostics.get("counter_inconsistent")):
+        reasons["publication_counter_inconsistent"] += 1
 
     coverage = {
         "matches_seen": as_int(summary.get("matches_seen")),
@@ -441,6 +474,7 @@ def build_payload() -> dict[str, Any]:
         "published_count": published_count,
         "main_pipeline_published_count": main_pipeline_published_count,
         "main_pipeline_published": bool(publish_status.get("main_pipeline_published")),
+        "main_pipeline_publication_counter_diagnostics": publication_counter_diagnostics,
         "fallback_candidates_seen": as_int(fallback.get("candidates_seen")),
         "fallback_evaluated": len(evaluated),
         "fallback_status": fallback_status or "n/a",

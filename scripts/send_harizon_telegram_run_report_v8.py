@@ -502,8 +502,10 @@ def render(payload: dict[str, Any]) -> str:
         lines.append(f"• Есть кандидаты, но timing guard отложил {timing_deferred_total} до финального регулярного run перед стартом. Сейчас публикацию не форсируем.")
     elif _as_int(price_guard.get('removed_total')) > 0 and _as_int(funnel.get('fallback_candidates_seen')) == 0:
         lines.append("• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.")
-    elif "line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason")):
+    elif ("line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason"))) and waiting_line_next_run > 0:
         lines.append("• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.")
+    elif ("line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason"))) and dropped_final_line > 0:
+        lines.append("• Кандидат был проверен финальным line guard и снят: публикацию не форсируем, пока edge/EV/movement ниже порога.")
     else:
         lines.append("• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.")
     if lost_mapping > 0:
