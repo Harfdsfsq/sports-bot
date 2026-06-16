@@ -104,6 +104,9 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     errors = _as_int(row.get("response_errors")) or _as_int(row.get("v1_response_errors")) or _as_int(v1.get("response_errors"))
     deep = _as_int(_first_dict(row.get("sstats_deep")).get("contexts_enriched"))
     deep = deep or _as_int(row.get("v1_last_games_stats_fetched")) or _as_int(v1.get("last_games_stats_fetched"))
+    deep_report = _load_json(EXPORT_DIR / "latest-sstats-deep-inventory-enrichment.json")
+    if deep_report:
+        deep = deep or _as_int(deep_report.get("enriched_matches"))
     api = payload.setdefault("api", {})
     sstats_api = dict(api.get("sstats") or {})
     if requests:
@@ -118,6 +121,41 @@ def _normalize_runtime_patched_sstats(payload: dict[str, Any]) -> None:
     sstats_api["team_form_contexts"] = _as_int(row.get("v1_team_form_contexts_built")) or _as_int(v1.get("team_form_contexts_built"))
     sstats_api["direct_contexts"] = _as_int(row.get("v1_direct_contexts_built")) or _as_int(v1.get("direct_contexts_built"))
     api["sstats"] = sstats_api
+
+
+def _line_lifecycle_reason(reason: Any) -> bool:
+    text = str(reason or "").strip()
+    if not text:
+        return False
+    return text in {
+        "line_movement_guard_waiting_next_run",
+        "line_movement_guard_dropped",
+        "needs_next_cron_line_movement_recheck",
+    } or "line_movement" in text
+
+
+def _best_non_line_reject_reason(payload: dict[str, Any]) -> str:
+    reasons = payload.get("reasons") if isinstance(payload.get("reasons"), list) else []
+    for row in reasons:
+        if not isinstance(row, dict):
+            continue
+        reason = str(row.get("reason") or "").strip()
+        if reason and not _line_lifecycle_reason(reason):
+            return reason
+    samples = payload.get("samples") if isinstance(payload.get("samples"), dict) else {}
+    evaluated = samples.get("fallback_evaluated") if isinstance(samples.get("fallback_evaluated"), list) else []
+    try:
+        if v7.v5.has_non_line_candidate_rejections(evaluated):
+            for row in evaluated:
+                if not isinstance(row, dict):
+                    continue
+                for reason in row.get("reject_reasons") or []:
+                    text = str(reason or "").strip()
+                    if text and not _line_lifecycle_reason(text):
+                        return text
+    except Exception:
+        pass
+    return ""
 
 
 def build_payload() -> dict[str, Any]:
@@ -185,6 +223,10 @@ def build_payload() -> dict[str, Any]:
         "workflow": os.getenv("GITHUB_WORKFLOW") or "run-bot",
         "repository": os.getenv("GITHUB_REPOSITORY") or "Harfdsfsq/sports-bot",
     }
+    if str(payload.get("top_reason") or "") == "line_movement_guard_waiting_next_run":
+        replacement = _best_non_line_reject_reason(payload)
+        if replacement:
+            payload["top_reason"] = replacement
     return payload
 
 
@@ -334,6 +376,10 @@ def render(payload: dict[str, Any]) -> str:
         target_note += f"; status {target_status}"
 
     raw_top_reason = str(payload.get("top_reason") or "").strip()
+    if _line_lifecycle_reason(raw_top_reason):
+        replacement_reason = _best_non_line_reject_reason(payload)
+        if replacement_reason:
+            raw_top_reason = replacement_reason
     timing_deferred_total = _as_int(timing_guard.get("deferred_total"))
     top_reason = _reason_ru(raw_top_reason)
     waiting_line_next_run = _as_int(line.get("waiting_next_run"))
@@ -514,9 +560,9 @@ def render(payload: dict[str, Any]) -> str:
         lines.append(f"• Есть кандидаты, но timing guard отложил {timing_deferred_total} до финального регулярного run перед стартом. Сейчас публикацию не форсируем.")
     elif _as_int(price_guard.get('removed_total')) > 0 and _as_int(funnel.get('fallback_candidates_seen')) == 0:
         lines.append("• Fallback-пул опустел после price-integrity: подозрительные цены не публикуем, даже если EV выглядел положительным.")
-    elif ("line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason"))) and waiting_line_next_run > 0:
+    elif ("line movement" in top_reason.lower() or "line_movement" in raw_top_reason) and waiting_line_next_run > 0:
         lines.append("• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.")
-    elif ("line movement" in top_reason.lower() or "line_movement" in str(payload.get("top_reason"))) and dropped_final_line > 0:
+    elif ("line movement" in top_reason.lower() or "line_movement" in raw_top_reason) and dropped_final_line > 0:
         lines.append("• Кандидат был проверен финальным line guard и снят: публикацию не форсируем, пока edge/EV/movement ниже порога.")
     else:
         lines.append("• Не форсировать публикацию: текущие кандидаты отрезаны xG/quality/value/line movement, а не старым требованием 2 independent odds sources.")

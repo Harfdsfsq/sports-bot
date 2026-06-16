@@ -1,5 +1,5 @@
 from scripts.send_harizon_telegram_run_report_v5 import has_non_line_candidate_rejections, main_pipeline_sent_count
-from scripts.send_harizon_telegram_run_report_v8 import _candidate_lines, render
+from scripts.send_harizon_telegram_run_report_v8 import _best_non_line_reject_reason, _candidate_lines, render
 
 
 def test_main_pipeline_count_ignores_pending_ledger_without_fresh_pick() -> None:
@@ -85,6 +85,50 @@ def test_v8_render_describes_final_line_guard_drop_without_waiting_snapshot() ->
 
     assert "edge/EV/movement" in text
     assert "нужен второй снимок" not in text
+
+
+def test_v8_render_does_not_hide_xg_stop_behind_waiting_line_guard() -> None:
+    payload = {
+        "status": "not_published",
+        "status_ru": "not published",
+        "top_reason": "line_movement_guard_waiting_next_run",
+        "reasons": [
+            {"reason": "line_movement_guard_waiting_next_run", "count": 1},
+            {"reason": "missing_total_xg_sanity", "count": 2},
+        ],
+        "funnel": {"published_count": 0},
+        "line_guard": {
+            "seen": 2,
+            "kept": 0,
+            "dropped": 0,
+            "waiting_next_run": 1,
+            "dropped_final": 0,
+        },
+        "coverage": {},
+        "api": {},
+        "diagnostics": {},
+        "samples": {
+            "fallback_evaluated": [
+                {
+                    "home_team": "Qadsia",
+                    "away_team": "Al-Salmiya",
+                    "selection": "Under 5.5",
+                    "reject_reasons": [
+                        "tier_c_watch_only",
+                        "missing_total_xg_sanity",
+                    ],
+                    "metrics": {},
+                }
+            ]
+        },
+        "github_actions": {},
+    }
+
+    assert _best_non_line_reject_reason(payload) == "missing_total_xg_sanity"
+    text = render(payload)
+
+    assert "missing total xg sanity" in text
+    assert "bookmaker-contract" not in text
 
 
 def test_v8_candidate_lines_show_proxy_single_source_thresholds() -> None:
