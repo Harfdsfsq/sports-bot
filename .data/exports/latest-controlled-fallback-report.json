@@ -1,8 +1,8 @@
 {
-  "created_at": "2026-06-16T22:12:06.180032+00:00",
+  "created_at": "2026-06-16T22:33:57.280935+00:00",
   "enabled": true,
-  "published": false,
-  "status": "no_viable_controlled_fallback",
+  "published": true,
+  "status": "published",
   "candidates_seen": 19,
   "evaluated": [
     {
@@ -22,48 +22,30 @@
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
-        "tier_b_quality_below_min",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уверенность ниже минимума уровня B",
-        "качество ниже минимума уровня B",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "направление ставки конфликтует с xG"
       ],
       "metrics": {
-        "odds": 2.67,
-        "selected_implied_probability": 0.374532,
-        "adjusted_probability": 0.395584,
-        "model_probability": 0.395584,
-        "market_probability": 0.386847,
-        "canonical_edge_pp": 2.105,
-        "market_edge_pp": 0.874,
-        "canonical_ev_pct": 5.621,
-        "confidence": 65.629,
-        "quality_score": 69.435,
+        "odds": 2.7,
+        "selected_implied_probability": 0.37037,
+        "adjusted_probability": 0.395444,
+        "model_probability": 0.395444,
+        "market_probability": 0.384615,
+        "canonical_edge_pp": 2.507,
+        "market_edge_pp": 1.083,
+        "canonical_ev_pct": 6.77,
+        "confidence": 67.646,
+        "quality_score": 73.6,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 14.175,
+        "publication_score": 17.4,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -77,18 +59,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.450838,
+          "xg_probability_pct": 45.084,
+          "xg_model_gap_pp": -5.539,
+          "xg_abs_gap_pp": 5.539,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 5.539,
+          "xg_total": 2.879,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -97,18 +84,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 2,
-          "odds_sources_count": 1,
-          "priced_books_count": 2,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 2.585,
-          "selected_price": 2.67,
-          "selected_vs_median_deviation_pct": 3.288,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -129,44 +104,30 @@
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "направление ставки конфликтует с xG"
       ],
       "metrics": {
         "odds": 2.04,
         "selected_implied_probability": 0.490196,
-        "adjusted_probability": 0.524974,
-        "model_probability": 0.524974,
-        "market_probability": 0.510204,
-        "canonical_edge_pp": 3.478,
-        "market_edge_pp": 1.477,
-        "canonical_ev_pct": 7.095,
-        "confidence": 68.093,
+        "adjusted_probability": 0.522103,
+        "model_probability": 0.522103,
+        "market_probability": 0.507614,
+        "canonical_edge_pp": 3.191,
+        "market_edge_pp": 1.449,
+        "canonical_ev_pct": 6.509,
+        "confidence": 69.329,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 19.814,
+        "publication_score": 19.667,
         "books_count": 3,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -180,18 +141,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.405707,
+          "xg_probability_pct": 40.571,
+          "xg_model_gap_pp": 11.64,
+          "xg_abs_gap_pp": 11.64,
+          "xg_model_optimism_gap_pp": 11.64,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.237,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -200,18 +166,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 3,
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 1.96,
-          "selected_price": 2.04,
-          "selected_vs_median_deviation_pct": 4.082,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -235,10 +189,7 @@
         "tier_a_publication_score_below_min",
         "tier_a_proxy_quality_not_allowed",
         "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
         "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
         "tier_b_publication_score_below_min",
         "tier_c_publication_score_below_min"
       ],
@@ -246,32 +197,29 @@
         "уровень A: publication score below min",
         "уровень A не принимает proxy-качество",
         "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уверенность ниже минимума уровня B",
         "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
         "уровень B: publication score below min",
         "уровень C: publication score below min"
       ],
       "metrics": {
         "odds": 2.8,
         "selected_implied_probability": 0.357143,
-        "adjusted_probability": 0.385122,
-        "model_probability": 0.385122,
+        "adjusted_probability": 0.386056,
+        "model_probability": 0.386056,
         "market_probability": 0.373832,
-        "canonical_edge_pp": 2.798,
-        "market_edge_pp": 1.129,
-        "canonical_ev_pct": 7.834,
-        "confidence": 66.625,
-        "quality_score": 74.541,
+        "canonical_edge_pp": 2.891,
+        "market_edge_pp": 1.222,
+        "canonical_ev_pct": 8.096,
+        "confidence": 68.243,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 18.105,
+        "publication_score": 19.693,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -285,7 +233,7 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
@@ -335,46 +283,32 @@
       "selection": "Больше",
       "point": 3.5,
       "ok": false,
-      "tier": null,
+      "tier": "уровень C",
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "tier_c_watch_only"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уверенность ниже минимума уровня B",
-        "запас value ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "уровень C: watch only"
       ],
       "metrics": {
         "odds": 2.6,
         "selected_implied_probability": 0.384615,
-        "adjusted_probability": 0.417082,
-        "model_probability": 0.417082,
+        "adjusted_probability": 0.418092,
+        "model_probability": 0.418092,
         "market_probability": 0.40404,
-        "canonical_edge_pp": 3.247,
-        "market_edge_pp": 1.304,
-        "canonical_ev_pct": 8.441,
-        "confidence": 66.899,
+        "canonical_edge_pp": 3.348,
+        "market_edge_pp": 1.405,
+        "canonical_ev_pct": 8.704,
+        "confidence": 68.517,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 19.701,
+        "publication_score": 21.305,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -388,18 +322,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.467677,
+          "xg_probability_pct": 46.768,
+          "xg_model_gap_pp": -4.958,
+          "xg_abs_gap_pp": 4.958,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 4.958,
+          "xg_total": 3.52,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -437,30 +376,24 @@
       "family": "totals",
       "selection": "Меньше",
       "point": 2.5,
-      "ok": false,
-      "tier": "уровень C",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "missing total xg sanity"
-      ],
+      "ok": true,
+      "tier": "уровень B",
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
       "metrics": {
-        "odds": 1.63,
-        "selected_implied_probability": 0.613497,
-        "adjusted_probability": 0.65973,
-        "model_probability": 0.65973,
-        "market_probability": 0.641026,
-        "canonical_edge_pp": 4.623,
-        "market_edge_pp": 1.87,
-        "canonical_ev_pct": 7.536,
-        "confidence": 66.491,
+        "odds": 1.64,
+        "selected_implied_probability": 0.609756,
+        "adjusted_probability": 0.660293,
+        "model_probability": 0.660293,
+        "market_probability": 0.638978,
+        "canonical_edge_pp": 5.054,
+        "market_edge_pp": 2.131,
+        "canonical_ev_pct": 8.288,
+        "confidence": 68.33,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 21.413,
+        "publication_score": 24.238,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
@@ -487,11 +420,16 @@
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.928662,
+          "xg_probability_pct": 92.866,
+          "xg_model_gap_pp": -26.837,
+          "xg_abs_gap_pp": 26.837,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 26.837,
+          "xg_total": 0.95,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -508,9 +446,9 @@
           "priced_books_count": 2,
           "mode": "bookmaker_quorum",
           "same_market_side_line_only": true,
-          "median_price": 1.56,
-          "selected_price": 1.63,
-          "selected_vs_median_deviation_pct": 4.487,
+          "median_price": 1.565,
+          "selected_price": 1.64,
+          "selected_vs_median_deviation_pct": 4.792,
           "max_deviation_pct": 8.0
         }
       }
@@ -540,19 +478,19 @@
         "missing total xg sanity"
       ],
       "metrics": {
-        "odds": 2.06,
-        "selected_implied_probability": 0.485437,
-        "adjusted_probability": 0.517762,
-        "model_probability": 0.517762,
+        "odds": 2.08,
+        "selected_implied_probability": 0.480769,
+        "adjusted_probability": 0.52054,
+        "model_probability": 0.52054,
         "market_probability": 0.502513,
-        "canonical_edge_pp": 3.233,
-        "market_edge_pp": 1.525,
-        "canonical_ev_pct": 6.659,
-        "confidence": 71.197,
+        "canonical_edge_pp": 3.977,
+        "market_edge_pp": 1.803,
+        "canonical_ev_pct": 8.272,
+        "confidence": 71.923,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 21.123,
+        "publication_score": 24.467,
         "books_count": 4,
         "odds_sources_count": 1,
         "line_sources": [],
@@ -601,8 +539,8 @@
           "mode": "bookmaker_quorum",
           "same_market_side_line_only": true,
           "median_price": 2.005,
-          "selected_price": 2.06,
-          "selected_vs_median_deviation_pct": 2.743,
+          "selected_price": 2.08,
+          "selected_vs_median_deviation_pct": 3.741,
           "max_deviation_pct": 8.0
         }
       }
@@ -622,44 +560,32 @@
       "selection": "Меньше",
       "point": 2.5,
       "ok": false,
-      "tier": null,
+      "tier": "уровень C",
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "tier_c_watch_only"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "уровень C: watch only"
       ],
       "metrics": {
-        "odds": 2.06,
-        "selected_implied_probability": 0.485437,
-        "adjusted_probability": 0.516506,
-        "model_probability": 0.516506,
+        "odds": 2.08,
+        "selected_implied_probability": 0.480769,
+        "adjusted_probability": 0.521796,
+        "model_probability": 0.521796,
         "market_probability": 0.502513,
-        "canonical_edge_pp": 3.107,
-        "market_edge_pp": 1.399,
-        "canonical_ev_pct": 6.4,
-        "confidence": 69.58,
+        "canonical_edge_pp": 4.103,
+        "market_edge_pp": 1.928,
+        "canonical_ev_pct": 8.534,
+        "confidence": 73.54,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 19.474,
+        "publication_score": 26.119,
         "books_count": 4,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 2,
-        "confirmation_sources_count": 2,
+        "sources_count": 3,
+        "confirmation_sources_count": 3,
         "confirmation_sources": [
           "bzzoiro",
           "sstats"
@@ -681,11 +607,16 @@
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.630769,
+          "xg_probability_pct": 63.077,
+          "xg_model_gap_pp": -10.897,
+          "xg_abs_gap_pp": 10.897,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 10.897,
+          "xg_total": 2.17,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -703,8 +634,8 @@
           "mode": "bookmaker_quorum",
           "same_market_side_line_only": true,
           "median_price": 2.005,
-          "selected_price": 2.06,
-          "selected_vs_median_deviation_pct": 2.743,
+          "selected_price": 2.08,
+          "selected_vs_median_deviation_pct": 3.741,
           "max_deviation_pct": 8.0
         }
       }
@@ -830,44 +761,32 @@
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уверенность ниже минимума уровня B",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
       ],
       "metrics": {
         "odds": 2.7,
         "selected_implied_probability": 0.37037,
-        "adjusted_probability": 0.396857,
-        "model_probability": 0.396857,
+        "adjusted_probability": 0.398787,
+        "model_probability": 0.398787,
         "market_probability": 0.3861,
-        "canonical_edge_pp": 2.649,
-        "market_edge_pp": 1.076,
-        "canonical_ev_pct": 7.151,
-        "confidence": 66.318,
-        "quality_score": 73.089,
+        "canonical_edge_pp": 2.842,
+        "market_edge_pp": 1.269,
+        "canonical_ev_pct": 7.672,
+        "confidence": 69.553,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 17.021,
+        "publication_score": 20.207,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 2,
-        "confirmation_sources_count": 2,
+        "sources_count": 3,
+        "confirmation_sources_count": 3,
         "confirmation_sources": [
           "bzzoiro",
           "sstats"
@@ -889,11 +808,16 @@
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.182618,
+          "xg_probability_pct": 18.262,
+          "xg_model_gap_pp": 21.617,
+          "xg_abs_gap_pp": 21.617,
+          "xg_model_optimism_gap_pp": 21.617,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 2.21,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -902,18 +826,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 2,
-          "odds_sources_count": 1,
-          "priced_books_count": 2,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 2.59,
-          "selected_price": 2.7,
-          "selected_vs_median_deviation_pct": 4.247,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -932,38 +844,32 @@
       "selection": "Меньше",
       "point": 2.5,
       "ok": false,
-      "tier": "уровень B",
+      "tier": null,
       "reject_reasons": [
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
+        "направление ставки конфликтует с xG"
       ],
       "metrics": {
         "odds": 2.02,
         "selected_implied_probability": 0.49505,
-        "adjusted_probability": 0.546579,
-        "model_probability": 0.546579,
+        "adjusted_probability": 0.547895,
+        "model_probability": 0.547895,
         "market_probability": 0.526316,
-        "canonical_edge_pp": 5.153,
-        "market_edge_pp": 2.026,
-        "canonical_ev_pct": 10.409,
-        "confidence": 69.584,
+        "canonical_edge_pp": 5.285,
+        "market_edge_pp": 2.158,
+        "canonical_ev_pct": 10.675,
+        "confidence": 71.204,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 26.976,
+        "publication_score": 28.645,
         "books_count": 3,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -977,18 +883,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.458091,
+          "xg_probability_pct": 45.809,
+          "xg_model_gap_pp": 8.98,
+          "xg_abs_gap_pp": 8.98,
+          "xg_model_optimism_gap_pp": 8.98,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 2.848,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -997,18 +908,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 3,
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 1.9,
-          "selected_price": 2.02,
-          "selected_vs_median_deviation_pct": 6.316,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -1027,40 +926,32 @@
       "selection": "Меньше",
       "point": 3.5,
       "ok": false,
-      "tier": "уровень C",
+      "tier": null,
       "reject_reasons": [
-        "tier_c_watch_only",
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "уровень C: watch only",
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
+        "направление ставки конфликтует с xG"
       ],
       "metrics": {
         "odds": 2.16,
         "selected_implied_probability": 0.462963,
-        "adjusted_probability": 0.513119,
-        "model_probability": 0.513119,
+        "adjusted_probability": 0.514356,
+        "model_probability": 0.514356,
         "market_probability": 0.49505,
-        "canonical_edge_pp": 5.016,
-        "market_edge_pp": 1.807,
-        "canonical_ev_pct": 10.834,
-        "confidence": 67.975,
+        "canonical_edge_pp": 5.139,
+        "market_edge_pp": 1.931,
+        "canonical_ev_pct": 11.101,
+        "confidence": 69.595,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 25.99,
+        "publication_score": 27.645,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1074,18 +965,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.43955,
+          "xg_probability_pct": 43.955,
+          "xg_model_gap_pp": 7.481,
+          "xg_abs_gap_pp": 7.481,
+          "xg_model_optimism_gap_pp": 7.481,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.969,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -1094,18 +990,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 2,
-          "odds_sources_count": 1,
-          "priced_books_count": 2,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 2.09,
-          "selected_price": 2.16,
-          "selected_vs_median_deviation_pct": 3.349,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -1126,46 +1010,30 @@
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уверенность ниже минимума уровня B",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "направление ставки конфликтует с xG"
       ],
       "metrics": {
         "odds": 2.44,
         "selected_implied_probability": 0.409836,
-        "adjusted_probability": 0.437261,
-        "model_probability": 0.437261,
+        "adjusted_probability": 0.438325,
+        "model_probability": 0.438325,
         "market_probability": 0.425532,
-        "canonical_edge_pp": 2.742,
-        "market_edge_pp": 1.173,
-        "canonical_ev_pct": 6.692,
-        "confidence": 67.911,
-        "quality_score": 74.169,
+        "canonical_edge_pp": 2.849,
+        "market_edge_pp": 1.279,
+        "canonical_ev_pct": 6.951,
+        "confidence": 69.528,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 17.881,
+        "publication_score": 19.492,
         "books_count": 3,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1179,18 +1047,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.44204,
+          "xg_probability_pct": 44.204,
+          "xg_model_gap_pp": -0.372,
+          "xg_abs_gap_pp": 0.372,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 0.372,
+          "xg_total": 2.917,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -1199,18 +1072,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 3,
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 2.35,
-          "selected_price": 2.44,
-          "selected_vs_median_deviation_pct": 3.83,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -1231,48 +1092,32 @@
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
-        "tier_b_quality_below_min",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "xg_direction_conflict",
+        "xg_probability_gap_hard_reject"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уверенность ниже минимума уровня B",
-        "качество ниже минимума уровня B",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "направление ставки конфликтует с xG",
+        "модель слишком оптимистична относительно xG-ориентира"
       ],
       "metrics": {
         "odds": 2.0,
         "selected_implied_probability": 0.5,
-        "adjusted_probability": 0.523386,
-        "model_probability": 0.523386,
+        "adjusted_probability": 0.524668,
+        "model_probability": 0.524668,
         "market_probability": 0.512821,
-        "canonical_edge_pp": 2.339,
-        "market_edge_pp": 1.057,
-        "canonical_ev_pct": 4.677,
-        "confidence": 67.005,
-        "quality_score": 69.954,
+        "canonical_edge_pp": 2.467,
+        "market_edge_pp": 1.185,
+        "canonical_ev_pct": 4.934,
+        "confidence": 68.62,
+        "quality_score": 72.069,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 14.756,
+        "publication_score": 16.407,
         "books_count": 3,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1286,18 +1131,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.281059,
+          "xg_probability_pct": 28.106,
+          "xg_model_gap_pp": 24.361,
+          "xg_abs_gap_pp": 24.361,
+          "xg_model_optimism_gap_pp": 24.361,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.726,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -1306,18 +1156,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 3,
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 1.95,
-          "selected_price": 2.0,
-          "selected_vs_median_deviation_pct": 2.564,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -1335,39 +1173,29 @@
       "family": "totals",
       "selection": "Больше",
       "point": 2.5,
-      "ok": false,
+      "ok": true,
       "tier": "уровень B",
-      "reject_reasons": [
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
-      ],
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
       "metrics": {
         "odds": 1.8,
         "selected_implied_probability": 0.555556,
-        "adjusted_probability": 0.617507,
-        "model_probability": 0.617507,
+        "adjusted_probability": 0.618991,
+        "model_probability": 0.618991,
         "market_probability": 0.593472,
-        "canonical_edge_pp": 6.195,
-        "market_edge_pp": 2.404,
-        "canonical_ev_pct": 11.151,
-        "confidence": 71.718,
+        "canonical_edge_pp": 6.344,
+        "market_edge_pp": 2.552,
+        "canonical_ev_pct": 11.418,
+        "confidence": 73.338,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 31.114,
+        "publication_score": 32.818,
         "books_count": 4,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1381,18 +1209,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.612744,
+          "xg_probability_pct": 61.274,
+          "xg_model_gap_pp": 0.625,
+          "xg_abs_gap_pp": 0.625,
+          "xg_model_optimism_gap_pp": 0.625,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.165,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -1431,38 +1264,32 @@
       "selection": "Больше",
       "point": 3.0,
       "ok": false,
-      "tier": "уровень B",
+      "tier": null,
       "reject_reasons": [
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
+        "xg_probability_gap_hard_reject"
       ],
       "reject_reasons_ru": [
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
+        "модель слишком оптимистична относительно xG-ориентира"
       ],
       "metrics": {
         "odds": 1.98,
         "selected_implied_probability": 0.505051,
-        "adjusted_probability": 0.561351,
-        "model_probability": 0.561351,
+        "adjusted_probability": 0.562703,
+        "model_probability": 0.562703,
         "market_probability": 0.540541,
-        "canonical_edge_pp": 5.63,
-        "market_edge_pp": 2.081,
-        "canonical_ev_pct": 11.147,
-        "confidence": 69.916,
+        "canonical_edge_pp": 5.765,
+        "market_edge_pp": 2.216,
+        "canonical_ev_pct": 11.415,
+        "confidence": 71.537,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 28.78,
+        "publication_score": 30.458,
         "books_count": 3,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1476,18 +1303,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.359041,
+          "xg_probability_pct": 35.904,
+          "xg_model_gap_pp": 20.366,
+          "xg_abs_gap_pp": 20.366,
+          "xg_model_optimism_gap_pp": 20.366,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.028,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -1496,18 +1328,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 3,
-          "odds_sources_count": 1,
-          "priced_books_count": 3,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 1.85,
-          "selected_price": 1.98,
-          "selected_vs_median_deviation_pct": 7.027,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -1617,41 +1437,29 @@
       "family": "totals",
       "selection": "Больше",
       "point": 3.5,
-      "ok": false,
-      "tier": "уровень C",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
-      ],
+      "ok": true,
+      "tier": "уровень B",
+      "reject_reasons": [],
+      "reject_reasons_ru": [],
       "metrics": {
         "odds": 1.925,
         "selected_implied_probability": 0.519481,
-        "adjusted_probability": 0.575035,
-        "model_probability": 0.575035,
-        "market_probability": 0.554785,
-        "canonical_edge_pp": 5.555,
-        "market_edge_pp": 2.025,
-        "canonical_ev_pct": 10.694,
-        "confidence": 67.912,
+        "adjusted_probability": 0.574827,
+        "model_probability": 0.574827,
+        "market_probability": 0.55325,
+        "canonical_edge_pp": 5.535,
+        "market_edge_pp": 2.158,
+        "canonical_ev_pct": 10.654,
+        "confidence": 69.394,
         "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 26.909,
+        "publication_score": 27.922,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1665,18 +1473,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.624283,
+          "xg_probability_pct": 62.428,
+          "xg_model_gap_pp": -4.946,
+          "xg_abs_gap_pp": 4.946,
+          "xg_model_optimism_gap_pp": 0.0,
+          "xg_model_conservative_gap_pp": 4.946,
+          "xg_total": 4.308,
+          "xg_direction_ok": true
         },
         "btts_sanity": {
           "enabled": false,
@@ -1693,9 +1506,9 @@
           "priced_books_count": 2,
           "mode": "bookmaker_quorum",
           "same_market_side_line_only": true,
-          "median_price": 1.8025,
+          "median_price": 1.8075,
           "selected_price": 1.925,
-          "selected_vs_median_deviation_pct": 6.796,
+          "selected_vs_median_deviation_pct": 6.501,
           "max_deviation_pct": 8.0
         }
       }
@@ -1717,46 +1530,30 @@
       "ok": false,
       "tier": null,
       "reject_reasons": [
-        "tier_a_publication_score_below_min",
-        "tier_a_proxy_quality_not_allowed",
-        "tier_a_odds_sources_below_min:1/2",
-        "tier_a_confirmation_sources_below_min:1/2",
-        "tier_b_confidence_below_min",
-        "tier_b_canonical_edge_below_min",
-        "tier_b_canonical_ev_below_min",
-        "tier_b_publication_score_below_min",
-        "tier_c_publication_score_below_min"
+        "xg_direction_conflict"
       ],
       "reject_reasons_ru": [
-        "уровень A: publication score below min",
-        "уровень A не принимает proxy-качество",
-        "уровень A: odds sources below min:1/2",
-        "уровень A: confirmation sources below min:1/2",
-        "уверенность ниже минимума уровня B",
-        "запас value ниже минимума уровня B",
-        "EV ниже минимума уровня B",
-        "уровень B: publication score below min",
-        "уровень C: publication score below min"
+        "направление ставки конфликтует с xG"
       ],
       "metrics": {
         "odds": 2.54,
         "selected_implied_probability": 0.393701,
-        "adjusted_probability": 0.42362,
-        "model_probability": 0.42362,
+        "adjusted_probability": 0.424649,
+        "model_probability": 0.424649,
         "market_probability": 0.411523,
-        "canonical_edge_pp": 2.992,
-        "market_edge_pp": 1.21,
-        "canonical_ev_pct": 7.599,
-        "confidence": 66.52,
-        "quality_score": 74.511,
+        "canonical_edge_pp": 3.095,
+        "market_edge_pp": 1.313,
+        "canonical_ev_pct": 7.861,
+        "confidence": 68.137,
+        "quality_score": 76.0,
         "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
-        "publication_score": 18.223,
+        "publication_score": 19.83,
         "books_count": 2,
         "odds_sources_count": 1,
         "line_sources": [],
-        "sources_count": 1,
-        "confirmation_sources_count": 1,
+        "sources_count": 2,
+        "confirmation_sources_count": 2,
         "confirmation_sources": [
           "sstats"
         ],
@@ -1770,18 +1567,23 @@
         },
         "proxy_single_source_thresholds": {
           "enabled": true,
-          "applies": true,
+          "applies": false,
           "min_edge_pp": 8.0,
           "min_ev_pct": 15.0,
           "min_confidence": 78.0
         },
         "quality_reasons": [],
         "xg_sanity": {
-          "enabled": false,
-          "reason": "missing_xg",
-          "xg_source": "invalid_or_missing",
-          "xg_home_raw": null,
-          "xg_away_raw": null
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.404374,
+          "xg_probability_pct": 40.437,
+          "xg_model_gap_pp": 2.027,
+          "xg_abs_gap_pp": 2.027,
+          "xg_model_optimism_gap_pp": 2.027,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.231,
+          "xg_direction_ok": false
         },
         "btts_sanity": {
           "enabled": false,
@@ -1790,18 +1592,6 @@
         "dnb_sanity": {
           "enabled": false,
           "reason": "family_not_dnb"
-        },
-        "tier_b_bookmaker_quorum": {
-          "enabled": true,
-          "books_count": 2,
-          "odds_sources_count": 1,
-          "priced_books_count": 2,
-          "mode": "bookmaker_quorum",
-          "same_market_side_line_only": true,
-          "median_price": 2.43,
-          "selected_price": 2.54,
-          "selected_vs_median_deviation_pct": 4.527,
-          "max_deviation_pct": 8.0
         }
       }
     },
@@ -1937,208 +1727,234 @@
     "latest_rescue_candidates": 18,
     "debug_candidates_before_quality": 1
   },
-  "watchlist": [
-    {
-      "match_key": "soccer|levadia tallinn|nomme united|2026-06-17",
-      "home_team": "Nomme United",
-      "away_team": "Levadia Tallinn",
-      "home_team_ru": "Номме Унитед",
-      "away_team_ru": "Левадиа Таллинн",
-      "league_name": "Estonia - Premium Liiga",
-      "league_name_ru": "Естониа - Премиум Лиига",
-      "family": "totals",
-      "selection": "Меньше",
-      "point": 3.5,
-      "commence_time": "2026-06-17T16:00:00+00:00",
-      "commence_time_display": "17.06.2026 19:00 MSK",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
+  "dry_run": false,
+  "selected_count": 1,
+  "selected": {
+    "dedupe_key": "e9438dbf01426447a8af90427bea25e3d59b4b1d",
+    "canonical_publication_key": "soccer|dinamo batumi|kutaisi|2026-06-17|totals|over|2.5|",
+    "telegram_sent": true,
+    "publication_lifecycle_status": "telegram_sent",
+    "status": "pending",
+    "match_key": "soccer|dinamo batumi|kutaisi|2026-06-17",
+    "home_team": "Kutaisi",
+    "away_team": "Dinamo Batumi",
+    "match_name": "Kutaisi — Dinamo Batumi",
+    "home_team_ru": "Кутайси",
+    "away_team_ru": "Динамо Батуми",
+    "league_name": "Georgia - Erovnuli Liga",
+    "league_name_ru": "Георгиа - Еровнули Лига",
+    "family": "totals",
+    "market_family": "totals",
+    "selection": "Больше",
+    "point": 2.5,
+    "odds": 1.8,
+    "selected_odds": 1.8,
+    "price": 1.8,
+    "tier": "уровень B",
+    "stake": 5.0,
+    "stake_amount": 5.0,
+    "commence_time": "2026-06-17T17:00:00+00:00",
+    "kickoff": "2026-06-17T17:00:00+00:00",
+    "commence_time_display": "17.06.2026 20:00 MSK",
+    "metrics": {
+      "odds": 1.8,
+      "selected_implied_probability": 0.555556,
+      "adjusted_probability": 0.618991,
+      "model_probability": 0.618991,
+      "market_probability": 0.593472,
+      "canonical_edge_pp": 6.344,
+      "market_edge_pp": 2.552,
+      "canonical_ev_pct": 11.418,
+      "confidence": 73.338,
+      "quality_score": 76.0,
+      "quality_score_raw": 0.0,
+      "quality_score_source": "proxy",
+      "publication_score": 32.818,
+      "books_count": 4,
+      "odds_sources_count": 1,
+      "line_sources": [],
+      "sources_count": 2,
+      "confirmation_sources_count": 2,
+      "confirmation_sources": [
+        "sstats"
       ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
-      ],
-      "metrics": {
-        "odds": 2.16,
-        "canonical_edge_pp": 5.016,
-        "canonical_ev_pct": 10.834,
-        "confidence": 67.975,
-        "quality_score": 76.0,
-        "quality_score_source": "proxy",
-        "books_count": 2,
-        "sources_count": 1,
+      "confirmation_meta": {
+        "weather_supports_under": false,
+        "weather_supports_over": false,
+        "weather_neutral": true,
+        "weather_risk_flag": false,
+        "weather_confirmation_relevant": false,
+        "weather_dropped_as_neutral": false
+      },
+      "proxy_single_source_thresholds": {
+        "enabled": true,
+        "applies": false,
+        "min_edge_pp": 8.0,
+        "min_ev_pct": 15.0,
+        "min_confidence": 78.0
+      },
+      "quality_reasons": [],
+      "xg_sanity": {
+        "enabled": true,
+        "xg_source": "home_away",
+        "xg_probability": 0.612744,
+        "xg_probability_pct": 61.274,
+        "xg_model_gap_pp": 0.625,
+        "xg_abs_gap_pp": 0.625,
+        "xg_model_optimism_gap_pp": 0.625,
+        "xg_model_conservative_gap_pp": 0.0,
+        "xg_total": 3.165,
+        "xg_direction_ok": true
+      },
+      "btts_sanity": {
+        "enabled": false,
+        "reason": "family_not_btts"
+      },
+      "dnb_sanity": {
+        "enabled": false,
+        "reason": "family_not_dnb"
+      },
+      "tier_b_bookmaker_quorum": {
+        "enabled": true,
+        "books_count": 4,
         "odds_sources_count": 1,
-        "confirmation_sources_count": 1,
-        "confirmation_sources": [
-          "sstats"
-        ]
+        "priced_books_count": 4,
+        "mode": "bookmaker_quorum",
+        "same_market_side_line_only": true,
+        "median_price": 1.685,
+        "selected_price": 1.8,
+        "selected_vs_median_deviation_pct": 6.825,
+        "max_deviation_pct": 8.0
       }
     },
-    {
-      "match_key": "soccer|hafnarfjordur|vestmannaeyjar|2026-06-17",
-      "home_team": "Vestmannaeyjar",
-      "away_team": "Hafnarfjordur",
-      "home_team_ru": "Вестманнаейджар",
-      "away_team_ru": "Хафнарфджордур",
-      "league_name": "Iceland - Cup, Women",
-      "league_name_ru": "Икеланд - Кубок, Уомен",
-      "family": "totals",
+    "bet_payload": {
+      "home_team": "Kutaisi",
+      "away_team": "Dinamo Batumi",
+      "match_name": "Kutaisi — Dinamo Batumi",
+      "league_name": "Georgia - Erovnuli Liga",
+      "kickoff": "2026-06-17T17:00:00+00:00",
+      "commence_time": "2026-06-17T17:00:00+00:00",
+      "odds": 1.8,
       "selection": "Больше",
-      "point": 3.5,
-      "commence_time": "2026-06-17T16:00:00+00:00",
-      "commence_time_display": "17.06.2026 19:00 MSK",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "proxy_single_source_edge_below_min",
-        "proxy_single_source_ev_below_min",
-        "proxy_single_source_confidence_below_min",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "proxy/single-source: value-запас ниже строгого минимума",
-        "proxy/single-source: EV ниже строгого минимума",
-        "proxy/single-source: уверенность ниже строгого минимума",
-        "missing total xg sanity"
-      ],
-      "metrics": {
-        "odds": 1.925,
-        "canonical_edge_pp": 5.555,
-        "canonical_ev_pct": 10.694,
-        "confidence": 67.912,
-        "quality_score": 76.0,
-        "quality_score_source": "proxy",
-        "books_count": 2,
-        "sources_count": 1,
-        "odds_sources_count": 1,
-        "confirmation_sources_count": 1,
-        "confirmation_sources": [
-          "sstats"
-        ]
-      }
-    },
-    {
-      "match_key": "2026-06-17|if gnistan|lahti",
-      "home_team": "IF Gnistan",
-      "away_team": "FC Lahti",
-      "home_team_ru": "IF Гнистан",
-      "away_team_ru": "Лахти",
-      "league_name": "Veikkausliiga",
-      "league_name_ru": "Вейккауслиига",
       "family": "totals",
-      "selection": "Меньше",
+      "stake": 5.0,
+      "stake_amount": 5.0
+    }
+  },
+  "selected_all": [
+    {
+      "dedupe_key": "e9438dbf01426447a8af90427bea25e3d59b4b1d",
+      "canonical_publication_key": "soccer|dinamo batumi|kutaisi|2026-06-17|totals|over|2.5|",
+      "telegram_sent": true,
+      "publication_lifecycle_status": "telegram_sent",
+      "status": "pending",
+      "match_key": "soccer|dinamo batumi|kutaisi|2026-06-17",
+      "home_team": "Kutaisi",
+      "away_team": "Dinamo Batumi",
+      "match_name": "Kutaisi — Dinamo Batumi",
+      "home_team_ru": "Кутайси",
+      "away_team_ru": "Динамо Батуми",
+      "league_name": "Georgia - Erovnuli Liga",
+      "league_name_ru": "Георгиа - Еровнули Лига",
+      "family": "totals",
+      "market_family": "totals",
+      "selection": "Больше",
       "point": 2.5,
-      "commence_time": "2026-06-17T18:00:00+00:00",
-      "commence_time_display": "17.06.2026 21:00 MSK",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "missing total xg sanity"
-      ],
+      "odds": 1.8,
+      "selected_odds": 1.8,
+      "price": 1.8,
+      "tier": "уровень B",
+      "stake": 5.0,
+      "stake_amount": 5.0,
+      "commence_time": "2026-06-17T17:00:00+00:00",
+      "kickoff": "2026-06-17T17:00:00+00:00",
+      "commence_time_display": "17.06.2026 20:00 MSK",
       "metrics": {
-        "odds": 1.99,
-        "canonical_edge_pp": 4.667,
-        "canonical_ev_pct": 9.288,
-        "confidence": 72.38,
+        "odds": 1.8,
+        "selected_implied_probability": 0.555556,
+        "adjusted_probability": 0.618991,
+        "model_probability": 0.618991,
+        "market_probability": 0.593472,
+        "canonical_edge_pp": 6.344,
+        "market_edge_pp": 2.552,
+        "canonical_ev_pct": 11.418,
+        "confidence": 73.338,
         "quality_score": 76.0,
+        "quality_score_raw": 0.0,
         "quality_score_source": "proxy",
+        "publication_score": 32.818,
         "books_count": 4,
-        "sources_count": 2,
         "odds_sources_count": 1,
+        "line_sources": [],
+        "sources_count": 2,
         "confirmation_sources_count": 2,
         "confirmation_sources": [
-          "bzzoiro",
           "sstats"
-        ]
-      }
-    },
-    {
-      "match_key": "soccer|hassani d el jadida|maghreb fes|2026-06-17",
-      "home_team": "Maghreb de Fes",
-      "away_team": "Hassani d'el-Jadida",
-      "home_team_ru": "Магхреб де Фес",
-      "away_team_ru": "Хассани д'ел-Джадида",
-      "league_name": "Morocco - Botola Pro D1",
-      "league_name_ru": "Морокко - Ботола Про D1",
-      "family": "totals",
-      "selection": "Меньше",
-      "point": 2.5,
-      "commence_time": "2026-06-17T15:00:00+00:00",
-      "commence_time_display": "17.06.2026 18:00 MSK",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "missing total xg sanity"
-      ],
-      "metrics": {
-        "odds": 1.63,
-        "canonical_edge_pp": 4.623,
-        "canonical_ev_pct": 7.536,
-        "confidence": 66.491,
-        "quality_score": 76.0,
-        "quality_score_source": "proxy",
-        "books_count": 2,
-        "sources_count": 2,
-        "odds_sources_count": 1,
-        "confirmation_sources_count": 2,
-        "confirmation_sources": [
-          "bzzoiro",
-          "sstats"
-        ]
-      }
-    },
-    {
-      "match_key": "2026-06-17|hjk|inter turku",
-      "home_team": "HJK",
-      "away_team": "Inter Turku",
-      "home_team_ru": "HJK",
-      "away_team_ru": "Интер Турку",
-      "league_name": "Veikkausliiga",
-      "league_name_ru": "Вейккауслиига",
-      "family": "totals",
-      "selection": "Меньше",
-      "point": 2.5,
-      "commence_time": "2026-06-17T15:00:00+00:00",
-      "commence_time_display": "17.06.2026 18:00 MSK",
-      "reject_reasons": [
-        "tier_c_watch_only",
-        "missing_total_xg_sanity"
-      ],
-      "reject_reasons_ru": [
-        "уровень C: watch only",
-        "missing total xg sanity"
-      ],
-      "metrics": {
-        "odds": 2.06,
-        "canonical_edge_pp": 3.233,
-        "canonical_ev_pct": 6.659,
-        "confidence": 71.197,
-        "quality_score": 76.0,
-        "quality_score_source": "proxy",
-        "books_count": 4,
-        "sources_count": 2,
-        "odds_sources_count": 1,
-        "confirmation_sources_count": 2,
-        "confirmation_sources": [
-          "bzzoiro",
-          "sstats"
-        ]
+        ],
+        "confirmation_meta": {
+          "weather_supports_under": false,
+          "weather_supports_over": false,
+          "weather_neutral": true,
+          "weather_risk_flag": false,
+          "weather_confirmation_relevant": false,
+          "weather_dropped_as_neutral": false
+        },
+        "proxy_single_source_thresholds": {
+          "enabled": true,
+          "applies": false,
+          "min_edge_pp": 8.0,
+          "min_ev_pct": 15.0,
+          "min_confidence": 78.0
+        },
+        "quality_reasons": [],
+        "xg_sanity": {
+          "enabled": true,
+          "xg_source": "home_away",
+          "xg_probability": 0.612744,
+          "xg_probability_pct": 61.274,
+          "xg_model_gap_pp": 0.625,
+          "xg_abs_gap_pp": 0.625,
+          "xg_model_optimism_gap_pp": 0.625,
+          "xg_model_conservative_gap_pp": 0.0,
+          "xg_total": 3.165,
+          "xg_direction_ok": true
+        },
+        "btts_sanity": {
+          "enabled": false,
+          "reason": "family_not_btts"
+        },
+        "dnb_sanity": {
+          "enabled": false,
+          "reason": "family_not_dnb"
+        },
+        "tier_b_bookmaker_quorum": {
+          "enabled": true,
+          "books_count": 4,
+          "odds_sources_count": 1,
+          "priced_books_count": 4,
+          "mode": "bookmaker_quorum",
+          "same_market_side_line_only": true,
+          "median_price": 1.685,
+          "selected_price": 1.8,
+          "selected_vs_median_deviation_pct": 6.825,
+          "max_deviation_pct": 8.0
+        }
+      },
+      "bet_payload": {
+        "home_team": "Kutaisi",
+        "away_team": "Dinamo Batumi",
+        "match_name": "Kutaisi — Dinamo Batumi",
+        "league_name": "Georgia - Erovnuli Liga",
+        "kickoff": "2026-06-17T17:00:00+00:00",
+        "commence_time": "2026-06-17T17:00:00+00:00",
+        "odds": 1.8,
+        "selection": "Больше",
+        "family": "totals",
+        "stake": 5.0,
+        "stake_amount": 5.0
       }
     }
   ],
-  "no_pick_report_sent": true,
-  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":2701,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1781647938,\"text\":\"\\ud83e\\uddfe \\u041e\\u0442\\u0447\\u0451\\u0442 \\u043f\\u043e \\u0437\\u0430\\u043f\\u0443\\u0441\\u043a\\u0443 \\u0431\\u043e\\u0442\\u0430\\n\\u274c \\u041f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437\\u043e\\u0432 \\u043d\\u0435 \\u0431\\u044b\\u043b\\u043e.\\n\\n\\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\u043a\\u0430\\u0447\\u0435\\u0441\\u0442\\u0432\\u0430 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0447\\u0438\\u0441\\u0442\\u0443\\u044e \\u0441\\u0442\\u0430\\u0432\\u043a\\u0443, \\u0430 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432 \\u043d\\u0435 \\u043d\\u0430\\u0448\\u0451\\u043b \\u0431\\u0435\\u0437\\u043e\\u043f\\u0430\\u0441\\u043d\\u044b\\u0439 \\u0432\\u0430\\u0440"
+  "telegram_result": "{\"ok\":true,\"result\":{\"message_id\":2704,\"from\":{\"id\":8622299425,\"is_bot\":true,\"first_name\":\"HARIZON\",\"username\":\"elite_auto_bets_bot\"},\"chat\":{\"id\":941375928,\"first_name\":\"\\u041d\\u0438\\u043a\\u0438\\u0442\\u0430\",\"username\":\"Harlz0n13\",\"type\":\"private\"},\"date\":1781649250,\"text\":\"\\ud83d\\udd25 1 \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u043f\\u0440\\u043e\\u0433\\u043d\\u043e\\u0437 \\u043d\\u0430 \\u0431\\u043b\\u0438\\u0436\\u0430\\u0439\\u0448\\u0438\\u0435 24 \\u0447\\u0430\\u0441\\u0430\\n\\n\\ud83d\\udcbc \\u0411\\u0430\\u043d\\u043a: 1000.00 | \\u041e\\u0442\\u043a\\u0440\\u044b\\u0442\\u044b\\u0439 \\u0440\\u0438\\u0441\\u043a: 180.00 | \\u0414\\u043e\\u0441\\u0442\\u0443\\u043f\\u043d\\u043e: 820.00\\n\\n\\u26a0\\ufe0f \\u0420\\u0435\\u0436\\u0438\\u043c: \\u043a\\u043e\\u043d\\u0442\\u0440\\u043e\\u043b\\u0438\\u0440\\u0443\\u0435\\u043c\\u044b\\u0439 \\u0440\\u0435\\u0437\\u0435\\u0440\\u0432, \\u0443\\u0440\\u043e\\u0432\\u0435\\u043d\\u044c B. \\u041e\\u0441\\u043d\\u043e\\u0432\\u043d\\u043e\\u0439 \\u0441\\u043b\\u043e\\u0439 \\",
+  "message": "🔥 1 контролируемый прогноз на ближайшие 24 часа\n\n💼 Банк: 1000.00 | Открытый риск: 180.00 | Доступно: 820.00\n\n⚠️ Режим: контролируемый резерв, уровень B. Основной слой качества не дал чистую ставку, поэтому сумма снижена.\n\n1. Кутайси — Динамо Батуми\n🎯 Ставка: Тотал — Больше (2.5)\n💸 Коэффициент: 1.80\n📊 Скорректированная оценка: 61.9%\n📉 Рынок/консенсус: 59.3%\n✅ Уверенность: 73.3% | качество 76.0 (оценка резерва) | уровень B\n📚 Линии: 4 | odds sources: 1 | confirmation sources: 2\n🔎 Подтверждения: sstats | bet365 / b_cover_market_promotion\n🧮 Контрольная ценность: запас +6.3 п.п. | EV +11.4%\n🏆 Турнир: Георгиа - Еровнули Лига\n🕒 Начало: 17.06.2026 20:00 MSK\n💰 Сумма ставки: 5.00 (ограничение риска)\n📈 Ожидаемые голы: 1.34 : 1.82\n🔎 xG-проверка: ориентир 61.3% | разрыв +0.6 п.п.\n📝 Комментарий: ставка разрешена только после повторного пересчёта от выбранного коэффициента и проверки времени матча. Если матч уже начался или вышел за окно публикации, резервный публикователь такую ставку не отправляет."
 }
