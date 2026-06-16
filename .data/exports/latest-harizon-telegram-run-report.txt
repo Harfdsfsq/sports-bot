@@ -1,29 +1,29 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: кандидаты ждут следующий cron для второго снимка линии (3)
+• Главная причина: кандидаты ждут следующий cron для второго снимка линии (1)
 
 📦 Инвентарь и покрытие
 • Инвентарь дня: собрано 300/300 матчей (цель: 300 лучших, добор каждый run; target-expand stage 248/300, shortfall 52; status partial_known_rows_only). Runtime rows processed: 0 (это не размер inventory).
 • 1+ линия: 289/300 (96%) | 1+ контекст: 132/300 (44%)
 • 2+ букмекера: 268/300 (89%)
-• Odds-api offer snapshot: rows 8118, matches 108, same-side 2+ books 57
+• Odds-api offer snapshot: rows 8178, matches 109, same-side 2+ books 57
 • 2+ independent odds-source: 253/300 (84%) — A-tier strict metric; для B-tier не обязательный блок.
-• 2+ контекста: 61/300 (20%)
+• 2+ контекста: 66/300 (22%)
 • Готово для модели: 130/300 (43%)
 
 🏷️ A/B-tier публикация
-• A-tier strict-ready: 42 | опубликовано: 0
+• A-tier strict-ready: 47 | опубликовано: 0
   A-tier = 2+ independent odds-source + 2+ букмекера/ценовых подтверждения + 2+ контекста + движение линии + value.
 • B-tier 1 line/2 books/1 context coverage: 132 | fallback опубликовано: 0
   B-tier = 1+ линия/odds-source + 2+ букмекера/ценовых подтверждения + 1+ контекст + движение линии + value.
-• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 61 матчей; B-cover: до 132 матчей.
+• A-cover 2+ odds-source ∩ 2+ букмекера ∩ 2+ контекста: до 66 матчей; B-cover: до 132 матчей.
 • A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.
 • 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
 • Pre-kickoff проверок: 34 | матчей без следующего регулярного run: 22
-• Line guard: увидел 12, оставил 9, отложил 3 до следующего cron
+• Line guard: увидел 1, оставил 0, отложил 1 до следующего cron
 
 🧪 Воронка кандидатов
 • Raw/candidates before quality: 0/0
@@ -38,23 +38,23 @@
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• кандидат ждёт следующий cron для второго снимка линии: 3 (100%)
+• кандидат ждёт следующий cron для второго снимка линии: 1 (100%)
 
 🔎 Проверенные reserve-кандидаты
 • Нет проверенных reserve-кандидатов в свежем fallback report.
 
 🧯 Диагностика новых стопоров
 • Inventory target-expand stage: 248/300; shortfall 52; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 236; normalized 87→86; gap after 150.
-• Legacy B-cover diagnostic: considered 107; promoted 5; top skips promotion_skip_duplicate_candidate 2; promotion_skip_edge_below_min 291; promotion_skip_ev_below_min 3; inventory rows 268; selected legacy B-cover rows 107 from /home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-17.json.
-• Legacy B-cover funnel: legacy rows 107; candidates seen 30; legacy rows без кандидата 83.
+• Bookmaker mapping repair: raw 2+ 228; normalized 88→79; gap after 149.
+• Legacy B-cover diagnostic: considered 107; promoted 7; top skips promotion_skip_duplicate_candidate 2; promotion_skip_edge_below_min 253; promotion_skip_ev_below_min 2; inventory rows 269; selected legacy B-cover rows 107 from /home/runner/work/sports-bot/sports-bot/.data/cache/day_inventory/2026-06-17.json.
+• Legacy B-cover funnel: legacy rows 107; candidates seen 25; legacy rows без кандидата 89.
 
 📌 Что это значит
 • Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекера + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27649313586
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27649313586
-• Artifact: run-bot-27649313586
+• Run ID: 27650113999
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27650113999
+• Artifact: run-bot-27650113999
 • workflow run-bot, attempt 1
