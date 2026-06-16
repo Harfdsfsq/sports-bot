@@ -246,7 +246,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
     })
     _put_limit(env, "ALLSPORTSAPI", allsportsapi if _present("ALLSPORTSAPI_API_KEY") else 0)
 
-    sportlogic_enabled = _truthy("SPORTLOGIC_RUNTIME_RESCUE_ENABLED", False) and _present(
+    sportlogic_enabled = _present(
         "SPORTLOGIC_API_KEY",
         "SPORTLOGIC_KEY",
         "SPORTLOGIC_TOKEN",
@@ -255,7 +255,7 @@ def _provider_contract(phase: str) -> tuple[dict[str, str], dict[str, Any]]:
         "ENABLE_SPORTLOGIC": "true" if sportlogic_enabled else "false",
         "SPORTLOGIC_ENABLED": "true" if sportlogic_enabled else "false",
         "SPORTLOGIC_CONTROLLED_ODDS_ENABLED": "true" if sportlogic_enabled else "false",
-        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "true",
+        "SPORTLOGIC_ONLY_IF_PRIMARY_ODDS_EMPTY": "false",
         "SPORTLOGIC_MATCH_LIMIT": "40" if sportlogic_enabled else "0",
         "SPORTLOGIC_CONTEXT_MATCH_LIMIT": "60" if sportlogic_enabled else "0",
         "SPORTLOGIC_ODDS_MATCH_LIMIT": "20" if sportlogic_enabled else "0",

@@ -83,3 +83,15 @@ def test_inventory_workflow_uses_core_rule_providers():
     assert 'DAY_INVENTORY_ENABLE_SPORTLOGIC: "true"' in workflow
     assert 'ENABLE_ODDS_API_IO: "true"' in workflow
     assert 'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "4"' in workflow
+
+
+def test_run_bot_workflow_uses_rules_b_tier_and_sportlogic():
+    workflow = Path(".github/workflows/run-bot.yml").read_text(encoding="utf-8")
+    assert 'PUBLISH_TIER_B_MIN_ODDS_SOURCES: "1"' in workflow
+    assert 'PUBLISH_TIER_B_MIN_CONTEXT_SOURCES: "1"' in workflow
+    assert 'CONTROLLED_FALLBACK_REQUIRE_2_ODDS_SOURCES_FOR_TELEGRAM: "false"' in workflow
+    assert 'CONTROLLED_FALLBACK_REQUIRE_2_CONTEXT_SOURCES_FOR_TELEGRAM: "false"' in workflow
+    assert 'SPORTLOGIC_ENABLED: "true"' in workflow
+    assert 'ENABLE_SPORTLOGIC: "true"' in workflow
+    assert 'SPORTLOGIC_MAX_HTTP_REQUESTS_PER_RUN: "4"' in workflow
+    assert "latest-run-bot-step-status.json" in workflow

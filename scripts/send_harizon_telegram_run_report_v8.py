@@ -357,7 +357,13 @@ def render(payload: dict[str, Any]) -> str:
     lost_mapping = max(0, raw_books2 - price2) if raw_books2 else _as_int(bookmaker_norm.get("lost_mapping"))
     raw_book_line = None
     if raw_books2:
-        raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | mapping gap: {lost_mapping}"
+        if price2 > raw_books2:
+            raw_book_line = (
+                f"• Raw 2+ букмекера odds-api.io current snapshot: {raw_books2} | "
+                f"normalized cumulative inventory: {price2}."
+            )
+        else:
+            raw_book_line = f"• Raw 2+ букмекера odds-api.io: {raw_books2} | normalized inventory: {price2} | mapping gap: {lost_mapping}"
     backfill_line = None
     if bookmaker_backfill:
         backfill_line = (
@@ -430,7 +436,7 @@ def render(payload: dict[str, Any]) -> str:
         "  B-tier = 2+ букмекера + 1+ контекст + второй снимок линии + value сохранился.",
         f"• Пересечение 2+ букмекера ∩ 2+ контекста: до {min(price2, context2)} матчей; exact-ready считается после movement/value/xG.",
         "• A-cover/B-cover в окнах = покрытие; strict-ready = после movement/value/xG/quality.",
-        "• 2+ independent odds-source — обязательный блок публикации вместе с 2+ букмекерами и 2+ контекстами.",
+        "• 2+ independent odds-source — A-tier strict metric; для B-tier не обязательный блок.",
     ])
     if price_guard:
         lines.append(f"• Price-integrity guard: снял {_as_int(price_guard.get('removed_total'))} подозрительных кандидатов до fallback.")

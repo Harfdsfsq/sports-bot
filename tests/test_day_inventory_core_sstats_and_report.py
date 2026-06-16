@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import json
 from dataclasses import asdict
 from datetime import datetime, timezone
+from pathlib import Path
 
 
 def test_core_inventory_wires_sstats_as_fixture_context_source():
@@ -89,3 +91,67 @@ def test_telegram_inventory_line_reports_target_and_shortfall():
     assert "Инвентарь дня: собрано 98/300 матчей" in text
     assert "shortfall 202" in text
     assert "partial_known_rows_only" in text
+
+
+def test_telegram_inventory_shortfall_uses_displayed_inventory_total():
+    from scripts import send_harizon_telegram_run_report_v8 as report
+
+    text = report.render(
+        {
+            "coverage": {"matches_seen": 48},
+            "funnel": {},
+            "api": {},
+            "line_guard": {},
+            "diagnostics": {
+                "coverage_truth": {"counts": {"matches_total": 173}},
+                "inventory_target_expand": {
+                    "target": 300,
+                    "matches_after": 131,
+                    "target_shortfall": 169,
+                    "status": "partial_known_rows_only",
+                },
+            },
+        }
+    )
+
+    assert "собрано 173/300" in text
+    assert "shortfall 127" in text
+    assert "target-expand stage 131/300, shortfall 169" in text
+
+
+def test_telegram_report_marks_failed_runtime_step():
+    from scripts import send_harizon_telegram_run_report_v8 as report
+
+    text = report.render(
+        {
+            "coverage": {"matches_seen": 0},
+            "funnel": {},
+            "api": {},
+            "line_guard": {},
+            "diagnostics": {
+                "coverage_truth": {"counts": {"matches_total": 10}},
+                "run_bot_step_status": {"status": 1},
+            },
+        }
+    )
+
+    assert "Прогнозный прогон не завершился" in text
+    assert "runtime failed: run-once завершился status 1" in text
+
+
+def test_state_json_writer_serializes_datetime(tmp_path):
+    from app.state import JsonStateStore
+
+    path = tmp_path / "payload.json"
+    JsonStateStore._write_json(
+        path,
+        {
+            "observed_at": datetime(2026, 6, 16, 9, 19, tzinfo=timezone.utc),
+            "nested": {"path": Path("x"), "items": {"b", "a"}},
+        },
+    )
+
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    assert payload["observed_at"] == "2026-06-16T09:19:00+00:00"
+    assert payload["nested"]["path"] == "x"
+    assert payload["nested"]["items"] == ["a", "b"]
