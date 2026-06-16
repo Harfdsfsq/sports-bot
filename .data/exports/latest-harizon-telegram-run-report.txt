@@ -1,13 +1,13 @@
 🧾 HARIZON — понятный отчёт по запуску
 🟡 Прогнозов нет: текущие кандидаты не прошли финальные guards.
-• Главная причина: tier c watch only
+• Главная причина: кандидаты ждут следующий cron для второго снимка линии (1)
 
 📦 Инвентарь и покрытие
-• Инвентарь дня: собрано 174/300 матчей (цель: 300 лучших, добор каждый run; shortfall 126; target-expand stage 133/300, shortfall 167; status partial_known_rows_only). Runtime rows processed: 29 (это не размер inventory).
+• Инвентарь дня: собрано 174/300 матчей (цель: 300 лучших, добор каждый run; shortfall 126; target-expand stage 133/300, shortfall 167; status partial_known_rows_only). Runtime rows processed: 30 (это не размер inventory).
 • 1+ линия: 157/174 (90%) | 1+ контекст: 112/174 (64%)
 • 2+ букмекера: 150/174 (86%)
-• Raw 2+ букмекера odds-api.io current snapshot: 1 | normalized cumulative inventory: 150.
-• Odds-api offer snapshot: rows 281, matches 11, same-side 2+ books 1
+• Raw 2+ букмекера odds-api.io current snapshot: 2 | normalized cumulative inventory: 150.
+• Odds-api offer snapshot: rows 405, matches 12, same-side 2+ books 2
 • 2+ independent odds-source: 155/174 (89%) — A-tier strict metric; для B-tier не обязательный блок.
 • 2+ контекста: 85/174 (49%)
 • Готово для модели: 96/174 (55%)
@@ -23,50 +23,52 @@
 • Тоталы к публикации: только целые и .5; четвертные линии .25/.75 не публикуются.
 
 🛡️ Движение линии и финальный фильтр
-• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 0
-• Line guard: увидел 1, оставил 0, снял 1
+• Pre-kickoff проверок: 2 | матчей без следующего регулярного run: 2
+• Line guard: увидел 1, оставил 0, отложил 1 до следующего cron
 
 🧪 Воронка кандидатов
-• Raw/candidates before quality: 1/2
+• Raw/candidates before quality: 1/1
 • Quality прошло: 1 | publishable: 0 | опубликовано: 0
 • Controlled fallback: seen 2 | evaluated 2 | published 0
 
 📡 Провайдеры: запросы и полезные данные
-• odds-api.io: events req 0, odds req 6; смэтчил матчей 29; offers 281; 2+ букмекера 1; ошибок 0.
+• odds-api.io: events req 0, odds req 6; смэтчил матчей 30; offers 405; 2+ букмекера 2; ошибок 0.
 • Bzzoiro: direct req 4, v2 req 4; v2 ctx 1; v2 odds 1; secondary offers 0; overlap odds-api.io 0; ошибок 0.
-• SStats: запросы 22; сырых строк 17221; контекстов 22; deep-enriched 0; team-form 0; direct 0; ошибок 0.
+• SStats: запросы 22; сырых строк 17221; контекстов 24; deep-enriched 0; team-form 0; direct 0; ошибок 0.
 • SportLogic: enabled True; запросы 4; fixtures 0; matched 0; odds req 0; offers 0; ошибок 0; diag sportlogic_no_current_games_probe_only.
 • Комбинации источников линий: н/д
 
 🚫 Почему не опубликовано
-• tier c watch only: 1 (9%)
-• proxy single source edge below min: 1 (9%)
-• proxy single source ev below min: 1 (9%)
-• proxy single source confidence below min: 1 (9%)
-• missing total xg sanity: 1 (9%)
-• tier a quality below min: 1 (9%)
-• tier a canonical edge below min: 1 (9%)
-• tier a canonical ev below min: 1 (9%)
-• Диагностика legacy odds-source: 1 — не заменяет обязательные 2+ odds-source
+• tier c watch only: 2 (20%)
+• missing total xg sanity: 2 (20%)
+• proxy single source edge below min: 1 (10%)
+• proxy single source ev below min: 1 (10%)
+• proxy single source confidence below min: 1 (10%)
+• telegram quality stop not allowed:post calibration probability guard: 1 (10%)
+• quality: вероятность после калибровки ниже порога: 1 (10%)
+• кандидат ждёт следующий cron для второго снимка линии: 1 (10%)
 
 🔎 Проверенные reserve-кандидаты
 1. Fortaleza — America FC | Меньше @1.96 | EV +9.4% | edge +4.8 п.п. | q 76.0
    • причина: tier c watch only, proxy single source edge below min, proxy single source ev below min, proxy single source confidence below min
-2. Fortaleza — America FC | Больше 2.5 @2.02 | EV +2.7% | edge +1.4 п.п. | q 53.2
-   • причина: tier a quality below min, tier a canonical edge below min, tier a canonical ev below min, tier b quality below min
+   • proxy single-source: fact edge 4.8pp / EV 9.4% / conf 70.9; min edge 8.0pp / EV 15.0% / conf 78.0
+   • xG sanity: missing (missing_xg)
+2. Qadsia — Al-Salmiya | Меньше @2.86 | EV +8.7% | edge +3.0 п.п. | q 70.8
+   • причина: tier c watch only, telegram quality stop not allowed:post calibration probability guard, missing total xg sanity
+   • xG sanity: missing (missing_xg)
 
 🧯 Диагностика новых стопоров
 • Inventory target-expand stage: 133/300; shortfall 167; status partial_known_rows_only.
-• Bookmaker mapping repair: raw 2+ 7; normalized 78→38; gap after 0.
-• Legacy B-cover diagnostic: considered 81; promoted 0; top skips promotion_skip_edge_below_min 58; promotion_skip_ev_below_min 1; promotion_skip_no_offer_bucket 45; promotion_skip_odds_above_max 12; inventory rows 137; selected legacy B-cover rows 81 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
-• Legacy B-cover funnel: legacy rows 81; candidates seen 8; legacy rows без кандидата 74.
+• Bookmaker mapping repair: raw 2+ 10; normalized 78→38; gap after 0.
+• Legacy B-cover diagnostic: considered 81; promoted 2; top skips promotion_skip_duplicate_candidate 1; promotion_skip_edge_below_min 61; promotion_skip_ev_below_min 1; inventory rows 137; selected legacy B-cover rows 81 from /home/runner/work/sports-bot/sports-bot/.data/exports/latest-day-inventory-coverage-truth.json.
+• Legacy B-cover funnel: legacy rows 81; candidates seen 12; legacy rows без кандидата 74.
 
 📌 Что это значит
-• Не форсировать публикацию: кандидат должен пройти свой A/B-tier контракт, xG/quality/value/line movement и price-integrity.
+• Есть кандидат по bookmaker-contract, но нужен второй снимок линии. Ждём следующий регулярный run.
 • Контракт публикации сейчас: A-tier = 2 odds-source + 2 букмекера + 2 контекста; B-tier = 1 odds-source + 2 букмекера + 1 контекст; price-integrity guard обязателен.
 
 🔗 GitHub Actions
-• Run ID: 27640154863
-• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27640154863
-• Artifact: run-bot-27640154863
+• Run ID: 27641286728
+• Run URL: https://github.com/Harfdsfsq/sports-bot/actions/runs/27641286728
+• Artifact: run-bot-27641286728
 • workflow run-bot, attempt 1
