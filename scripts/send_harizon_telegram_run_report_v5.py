@@ -257,6 +257,31 @@ def line_guard_waiting_next_run_count(line_guard: dict[str, Any]) -> int:
     return 0
 
 
+def has_non_line_candidate_rejections(evaluated: list[Any]) -> bool:
+    """Return True when candidates are blocked by safety/quality, not just line lifecycle."""
+    line_reasons = {
+        "line_movement_guard_waiting_next_run",
+        "line_movement_guard_dropped",
+        "needs_next_cron_line_movement_recheck",
+    }
+    for row in evaluated:
+        if not isinstance(row, dict):
+            continue
+        for reason in row.get("reject_reasons") or []:
+            text = str(reason or "").strip()
+            if not text:
+                continue
+            if text in line_reasons or "line_movement" in text:
+                continue
+            return True
+        metrics = first_dict(row.get("metrics"))
+        for reason in metrics.get("quality_reasons") or []:
+            text = str(reason or "").strip()
+            if text:
+                return True
+    return False
+
+
 def freshness_minutes(path: str | Path) -> float | None:
     try:
         p = Path(path)
@@ -513,7 +538,7 @@ def build_payload() -> dict[str, Any]:
         top_reason = "odds_api_io_auth_failed"
     elif line_dropped > 0:
         top_reason = "line_movement_guard_dropped"
-    elif line_waiting_next_run > 0:
+    elif line_waiting_next_run > 0 and not has_non_line_candidate_rejections(evaluated):
         top_reason = "line_movement_guard_waiting_next_run"
     else:
         top_reason = reasons.most_common(1)[0][0] if reasons else str(fallback_status or "n/a")

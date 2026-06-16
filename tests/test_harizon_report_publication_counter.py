@@ -1,4 +1,4 @@
-from scripts.send_harizon_telegram_run_report_v5 import main_pipeline_sent_count
+from scripts.send_harizon_telegram_run_report_v5 import has_non_line_candidate_rejections, main_pipeline_sent_count
 from scripts.send_harizon_telegram_run_report_v8 import _candidate_lines, render
 
 
@@ -37,6 +37,28 @@ def test_main_pipeline_count_accepts_fresh_sent_pick() -> None:
 
     assert count == 1
     assert diag["ignored_ledger_sent_pending_count"] == 0
+
+
+def test_non_line_candidate_rejections_block_waiting_line_as_top_reason() -> None:
+    assert has_non_line_candidate_rejections(
+        [
+            {
+                "reject_reasons": [
+                    "tier_c_watch_only",
+                    "missing_total_xg_sanity",
+                ],
+                "metrics": {},
+            }
+        ]
+    )
+    assert not has_non_line_candidate_rejections(
+        [
+            {
+                "reject_reasons": ["needs_next_cron_line_movement_recheck"],
+                "metrics": {},
+            }
+        ]
+    )
 
 
 def test_v8_render_describes_final_line_guard_drop_without_waiting_snapshot() -> None:

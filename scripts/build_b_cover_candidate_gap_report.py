@@ -689,6 +689,11 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         return None, 'promotion_skip_bad_point'
     selection_ru = 'Больше' if sel == 'over' else 'Меньше'
 
+    h_xg, a_xg = xg_values(inv_row)
+    require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
+    if require_xg and (h_xg is None or a_xg is None):
+        return None, 'promotion_skip_missing_xg'
+
     # Conservative market-consensus probability: median price is treated as the
     # fair market anchor, then a very small boost is allowed only for non-outlier
     # best-vs-median edge and multi-book/context coverage. Final fallback still
@@ -700,6 +705,8 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
     # final fallback review, but keep the boost small so weak rows still fail final EV/edge.
     boost_pct += min(0.8, max(0, len(books) - 1) * 0.20)
     ctx_sources = context_sources(inv_row)
+    if h_xg is None or a_xg is None:
+        ctx_sources = [src for src in ctx_sources if src != 'model_xg']
     boost_pct += min(1.0, max(1, len(ctx_sources)) * 0.25)
     adjusted = max(0.02, min(0.95, market_prob * (1.0 + boost_pct / 100.0)))
     implied = 1.0 / best_price
@@ -709,11 +716,6 @@ def build_candidate_from_bucket(inv_row: dict[str, Any], bucket_key: str, bucket
         return None, 'promotion_skip_edge_below_min'
     if ev_pct < env_float('PROMOTE_B_COVER_MIN_EV_PCT', 0.7):
         return None, 'promotion_skip_ev_below_min'
-
-    h_xg, a_xg = xg_values(inv_row)
-    require_xg = env_bool('PROMOTE_B_COVER_REQUIRE_XG_FOR_TOTALS', False)
-    if require_xg and (h_xg is None or a_xg is None):
-        return None, 'promotion_skip_missing_xg'
 
     confidence = 58.0
     confidence += min(8.0, len(books) * 1.8)
