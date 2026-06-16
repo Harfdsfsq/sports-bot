@@ -426,6 +426,8 @@ jobs:
           fi
           python -u scripts/apply_publication_family_policy.py || true
           python -u scripts/restore_awaiting_movement_candidates.py || true
+          python -u scripts/enrich_rescue_candidates_xg_confirmation.py || true
+          cp .data/exports/latest-rescue-xg-confirmation-enrichment.json artifacts/run-bot/latest-rescue-xg-confirmation-enrichment.json 2>/dev/null || true
           python scripts/publish_controlled_fallback_guarded.py || python scripts/publish_controlled_fallback.py || true
           python -u scripts/persist_awaiting_movement_candidates.py || true
           python -u scripts/build_fresh_b_cover_diagnostics.py || true
