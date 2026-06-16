@@ -105,6 +105,43 @@ def test_over_total_below_xg_line_is_direction_conflict(monkeypatch):
     assert "xg_direction_conflict" in pcf.hard_reject_reasons(candidate, metrics, {})
 
 
+def test_totals_xg_sanity_reads_nested_sstats_payload(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    candidate = _candidate()
+    candidate.pop("expected_home", None)
+    candidate.pop("expected_away", None)
+    candidate["provider_context"] = {
+        "source": "sstats",
+        "payload": {
+            "ExpectedGoalsHome": 1.42,
+            "ExpectedGoalsAway": 1.08,
+        },
+    }
+
+    metrics = pcf.candidate_metrics(candidate)
+
+    assert metrics["xg_sanity"]["enabled"] is True
+    assert metrics["xg_sanity"]["xg_total"] == 2.5
+    assert "missing_total_xg_sanity" not in pcf.hard_reject_reasons(candidate, metrics, {})
+
+
+def test_totals_xg_sanity_uses_nested_total_xg(monkeypatch):
+    monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
+    candidate = _candidate()
+    candidate.pop("expected_home", None)
+    candidate.pop("expected_away", None)
+    candidate["context_observations"] = [
+        {"source": "sstats", "details": {"total_xg": 2.5}},
+    ]
+
+    metrics = pcf.candidate_metrics(candidate)
+
+    assert metrics["xg_sanity"]["enabled"] is True
+    assert metrics["xg_sanity"]["xg_source"] == "total_xg"
+    assert metrics["xg_sanity"]["xg_total"] == 2.5
+    assert "missing_total_xg_sanity" not in pcf.hard_reject_reasons(candidate, metrics, {})
+
+
 def test_quarter_total_line_is_never_publishable(monkeypatch):
     monkeypatch.setenv("CONTROLLED_FALLBACK_REQUIRE_MATCH_TIME", "false")
     candidate = _candidate()

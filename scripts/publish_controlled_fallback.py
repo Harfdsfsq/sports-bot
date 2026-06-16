@@ -507,30 +507,82 @@ def _nested_xg_value(candidate: dict[str, Any], side: str) -> Any:
     direct_keys = (
         f"expected_{side}", f"{side}_expected", f"xg_{side}", f"{side}_xg",
         f"expected_goals_{side}", f"{side}_expected_goals",
+        f"expectedgoals{side}", f"{side}xg", f"{side}_xg_value",
     )
     containers: list[Any] = [candidate]
-    for key in ("context", "source_summary", "diagnostics", "analysis", "metadata", "features", "provider_context"):
+    for key in (
+        "context", "contexts", "source_summary", "diagnostics", "analysis",
+        "metadata", "features", "provider_context", "payload", "details",
+        "provider_payload", "raw_context", "context_observations",
+    ):
         value = candidate.get(key) if isinstance(candidate, dict) else None
-        if isinstance(value, dict):
+        if isinstance(value, (dict, list)):
             containers.append(value)
-    for container in list(containers):
+
+    seen: set[int] = set()
+    stack = list(containers)
+    while stack:
+        container = stack.pop(0)
+        marker = id(container)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        if isinstance(container, list):
+            stack.extend(item for item in container if isinstance(item, (dict, list)))
+            continue
         if not isinstance(container, dict):
             continue
-        for nested_key in ("xg", "expected_goals", "team_xg", "model_xg", "sstats", "bzzoiro", "form"):
-            value = container.get(nested_key)
-            if isinstance(value, dict):
-                containers.append(value)
-    for container in containers:
-        if not isinstance(container, dict):
-            continue
+        lower_map = {str(key).replace("-", "_").replace(" ", "_").lower(): value for key, value in container.items()}
         for key in direct_keys:
-            value = container.get(key)
+            value = lower_map.get(str(key).lower())
             if value not in (None, ""):
                 return value
-        # Common {home: ..., away: ...} nested shape.
-        value = container.get(side)
-        if value not in (None, "") and not isinstance(value, dict):
+        # Common {home: ..., away: ...} nested shape inside xG-like containers.
+        value = lower_map.get(side)
+        if value not in (None, "") and not isinstance(value, (dict, list)):
             return value
+        for nested_key in (
+            "xg", "expected_goals", "team_xg", "model_xg", "sstats", "bzzoiro",
+            "form", "payload", "details", "context", "provider_context",
+            "provider_payload", "raw_context", "metrics", "prediction",
+        ):
+            value = lower_map.get(nested_key)
+            if isinstance(value, (dict, list)):
+                stack.append(value)
+    return None
+
+
+def _nested_total_xg_value(candidate: dict[str, Any]) -> Any:
+    keys = (
+        "total_xg", "xg_total", "expected_total", "expected_goals_total",
+        "total_expected_goals", "expectedgoals", "totalxg",
+    )
+    stack: list[Any] = [candidate]
+    seen: set[int] = set()
+    while stack:
+        container = stack.pop(0)
+        marker = id(container)
+        if marker in seen:
+            continue
+        seen.add(marker)
+        if isinstance(container, list):
+            stack.extend(item for item in container if isinstance(item, (dict, list)))
+            continue
+        if not isinstance(container, dict):
+            continue
+        lower_map = {str(key).replace("-", "_").replace(" ", "_").lower(): value for key, value in container.items()}
+        for key in keys:
+            value = lower_map.get(key)
+            if value not in (None, ""):
+                return value
+        for nested_key in (
+            "xg", "expected_goals", "team_xg", "model_xg", "sstats", "bzzoiro",
+            "form", "payload", "details", "context", "contexts", "provider_context",
+            "provider_payload", "raw_context", "context_observations", "metrics", "prediction",
+        ):
+            value = lower_map.get(nested_key)
+            if isinstance(value, (dict, list)):
+                stack.append(value)
     return None
 
 
@@ -547,6 +599,14 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
     if expected_home in (None, "") or expected_away in (None, ""):
         expected_home = _nested_xg_value(candidate, "home")
         expected_away = _nested_xg_value(candidate, "away")
+    xg_source = "home_away"
+    if expected_home in (None, "") or expected_away in (None, ""):
+        total_xg_raw = _nested_total_xg_value(candidate)
+        total_xg = _float_or_none(total_xg_raw)
+        if total_xg is not None:
+            expected_home = total_xg / 2.0
+            expected_away = total_xg / 2.0
+            xg_source = "total_xg"
     valid_xg, xg_reason, expected_home_f, expected_away_f = _xg_pair_is_valid(expected_home, expected_away)
     if not valid_xg:
         return {
@@ -593,6 +653,7 @@ def xg_sanity_metrics(candidate: dict[str, Any], adjusted_probability: float) ->
 
     return {
         "enabled": True,
+        "xg_source": xg_source,
         "xg_probability": round(probability, 6),
         "xg_probability_pct": round(probability * 100.0, 3),
         "xg_model_gap_pp": round(gap_pp, 3),
